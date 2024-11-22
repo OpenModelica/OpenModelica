@@ -712,11 +712,11 @@ _omc_matrix* _omc_multiplyMatrixMatrix(_omc_matrix* mat1, _omc_matrix* mat2)
  * @param stream    Log stream.
  * @param eqnInfo   Information about equation
  */
-void _omc_printVectorWithEquationInfo(_omc_vector* vec, const char* name, const enum LOG_STREAM stream, EQUATION_INFO eqnInfo)
+void _omc_printVectorWithEquationInfo(_omc_vector* vec, const char* name, const enum OMC_LOG_STREAM stream, EQUATION_INFO eqnInfo)
 {
   _omc_size i;
 
-  if (!ACTIVE_STREAM(stream))
+  if (!OMC_ACTIVE_STREAM(stream))
     return;
 
   assertStreamPrint(NULL, NULL != vec->data, "Vector data is NULL pointer");
@@ -736,11 +736,11 @@ void _omc_printVectorWithEquationInfo(_omc_vector* vec, const char* name, const 
  * @param name      Name of vector.
  * @param stream    Log stream.
  */
-void _omc_printVector(_omc_vector* vec, const char* name, const enum LOG_STREAM stream)
+void _omc_printVector(_omc_vector* vec, const char* name, const enum OMC_LOG_STREAM stream)
 {
   _omc_size i;
 
-  if (!ACTIVE_STREAM(stream))
+  if (!OMC_ACTIVE_STREAM(stream))
     return;
 
   assertStreamPrint(NULL, NULL != vec->data, "Vector data is NULL pointer");
@@ -760,8 +760,8 @@ void _omc_printVector(_omc_vector* vec, const char* name, const enum LOG_STREAM 
  * @param name      Name of matrix.
  * @param stream    Log stream.
  */
-void _omc_printMatrix(_omc_matrix* mat, const char* name, const enum LOG_STREAM stream) {
-  if (ACTIVE_STREAM(stream))
+void _omc_printMatrix(_omc_matrix* mat, const char* name, const enum OMC_LOG_STREAM stream) {
+  if (OMC_ACTIVE_STREAM(stream))
   {
     _omc_size i, j;
     char *buffer = (char*)malloc(sizeof(char)*mat->cols*20);

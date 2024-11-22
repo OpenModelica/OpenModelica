@@ -132,7 +132,7 @@ static modelica_boolean searchEvent(double time, RINGBUFFER *delayStruct)
   }
 
   if (foundEvent) {
-    printRingBuffer(delayStruct, LOG_DEBUG, printDelayBuffer);
+    printRingBuffer(delayStruct, OMC_LOG_DEBUG, printDelayBuffer);
   }
 
   return foundEvent;
@@ -199,8 +199,8 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
   }
 
   /* Debug print */
-  infoStreamPrint(LOG_DELAY, 0, "storeDelayed[%d] (%g,%g) position=%d", exprNumber, time, exprValue, ringBufferLength(delayStruct));
-  printRingBuffer(delayStruct, LOG_DELAY, printDelayBuffer);
+  infoStreamPrint(OMC_LOG_DELAY, 0, "storeDelayed[%d] (%g,%g) position=%d", exprNumber, time, exprValue, ringBufferLength(delayStruct));
+  printRingBuffer(delayStruct, OMC_LOG_DELAY, printDelayBuffer);
 }
 
 
@@ -228,7 +228,7 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
   int length = ringBufferLength(delayStruct);
   double time = data->localData[0]->timeValue;
 
-  infoStreamPrint(LOG_DELAY, 0, "delayImpl: exprNumber = %d, exprValue = %g, time = %g, delayTime = %g", exprNumber, exprValue, time, delayTime);
+  infoStreamPrint(OMC_LOG_DELAY, 0, "delayImpl: exprNumber = %d, exprValue = %g, time = %g, delayTime = %g", exprNumber, exprValue, time, delayTime);
 
   /* Check for errors */
   assertStreamPrint(threadData, 0 <= exprNumber, "invalid exprNumber = %d", exprNumber);
@@ -245,7 +245,7 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
 
   /*  Empty delay buffer at initialization phase */
   if (length == 0) {
-    infoStreamPrint(LOG_EVENTS, 0, "delayImpl: Missing initial value, using argument value %g instead.", exprValue);
+    infoStreamPrint(OMC_LOG_EVENTS, 0, "delayImpl: Missing initial value, using argument value %g instead.", exprValue);
     return exprValue;
   }
 
@@ -334,7 +334,7 @@ double delayZeroCrossing(DATA* data, threadData_t *threadData, unsigned int expr
  *
  * @param data          Void pointer to bufferElemData.
  *                      Will be casted to TIME_AND_VALUE*.
- * @param stream        Stream of LOG_STREAM type.
+ * @param stream        Stream of OMC_LOG_STREAM type.
  * @param elemPointer   Address of element storing this data.
  */
 void printDelayBuffer(void* data, int stream, void* elemPointer)

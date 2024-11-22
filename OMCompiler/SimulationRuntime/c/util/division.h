@@ -64,7 +64,7 @@ static inline modelica_real __OMC_DIV_SIM(threadData_t *threadData, const modeli
 
   if(!valid_number(res)){
     if(noThrowDivZero) {
-      warningStreamPrintWithEquationIndexes(LOG_DIVISION, omc_dummyFileInfo, 0, equationIndexes, "division leads to inf or nan at time %g, (a=%g) / (b=%g), where divisor b is: %s", time_, a, b, msg);
+      warningStreamPrintWithEquationIndexes(OMC_LOG_DIVISION, omc_dummyFileInfo, 0, equationIndexes, "division leads to inf or nan at time %g, (a=%g) / (b=%g), where divisor b is: %s", time_, a, b, msg);
     }
     else {
       throwStreamPrintWithEquationIndexes(threadData, omc_dummyFileInfo, equationIndexes, "division leads to inf or nan at time %g, (a=%g) / (b=%g), where divisor b is: %s", time_, a, b, msg);

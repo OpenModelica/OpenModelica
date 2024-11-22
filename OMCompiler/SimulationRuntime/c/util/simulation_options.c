@@ -477,8 +477,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Default value " EXPANDSTRING(DEFAULT_FLAG_LV_MAX_WARN) ".",
   /* FLAG_LV_TIME */
   "  Interval (a comma-separated Double list with two elements) specifies in which\n"
-  "  time interval logging is active. Doesn't affect LOG_STDOUT, LOG_ASSERT, and\n"
-  "  LOG_SUCCESS, LOG_STATS, LOG_STATS_V.",
+  "  time interval logging is active. Doesn't affect OMC_LOG_STDOUT, OMC_LOG_ASSERT, and\n"
+  "  OMC_LOG_SUCCESS, OMC_LOG_STATS, OMC_LOG_STATS_V.",
   /* FLAG_LV_SYSTEM */
   "  Value is a comma-separated list of equation indices (available in the transformational debugger) for which solver logs are shown (by default logs for all systems are shown)",
   /* FLAG_MAX_BISECTION_ITERATIONS */

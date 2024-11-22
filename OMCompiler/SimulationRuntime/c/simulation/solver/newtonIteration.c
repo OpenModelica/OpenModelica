@@ -176,16 +176,16 @@ int _omc_newton(genericResidualFunc f, DATA_NEWTON* solverData, void* userData)
   double error_f  = 1.0 + *eps, scaledError_f = 1.0 + *eps, delta_x = 1.0 + *eps, delta_f = 1.0 + *eps, delta_x_scaled = 1.0 + *eps, lambda = 1.0;
   double current_fvec_enorm, enorm_new;
 
-  if(ACTIVE_STREAM(LOG_NLS_V))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_V))
   {
-    infoStreamPrint(LOG_NLS_V, 1, "######### Start Newton maxfev: %d #########", (int)*maxfev);
+    infoStreamPrint(OMC_LOG_NLS_V, 1, "######### Start Newton maxfev: %d #########", (int)*maxfev);
 
-    infoStreamPrint(LOG_NLS_V, 1, "x vector");
+    infoStreamPrint(OMC_LOG_NLS_V, 1, "x vector");
     for(i=0; i<n; i++)
-      infoStreamPrint(LOG_NLS_V, 0, "x[%d]: %e ", i, x[i]);
-    messageClose(LOG_NLS_V);
+      infoStreamPrint(OMC_LOG_NLS_V, 0, "x[%d]: %e ", i, x[i]);
+    messageClose(OMC_LOG_NLS_V);
 
-    messageClose(LOG_NLS_V);
+    messageClose(OMC_LOG_NLS_V);
   }
 
   *info = 1;
@@ -204,15 +204,15 @@ int _omc_newton(genericResidualFunc f, DATA_NEWTON* solverData, void* userData)
 
   while(error_f > *eps && scaledError_f > *eps  &&  delta_x > *eps  &&  delta_f > *eps  && delta_x_scaled > *eps)
   {
-    if(ACTIVE_STREAM(LOG_NLS_V))
+    if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_V))
     {
-      infoStreamPrint(LOG_NLS_V, 0, "\n**** start Iteration: %d  *****", (int) l);
+      infoStreamPrint(OMC_LOG_NLS_V, 0, "\n**** start Iteration: %d  *****", (int) l);
 
       /*  Debug output */
-      infoStreamPrint(LOG_NLS_V, 1, "function values");
+      infoStreamPrint(OMC_LOG_NLS_V, 1, "function values");
       for(i=0; i<n; i++)
-        infoStreamPrint(LOG_NLS_V, 0, "fvec[%d]: %e ", i, fvec[i]);
-      messageClose(LOG_NLS_V);
+        infoStreamPrint(OMC_LOG_NLS_V, 0, "fvec[%d]: %e ", i, fvec[i]);
+      messageClose(OMC_LOG_NLS_V);
     }
 
     /* calculate jacobian if no matrix is given */
@@ -230,19 +230,19 @@ int _omc_newton(genericResidualFunc f, DATA_NEWTON* solverData, void* userData)
 
 
     /* debug output */
-    if(ACTIVE_STREAM(LOG_NLS_JAC))
+    if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_JAC))
     {
       char *buffer = (char*)malloc(sizeof(char)*solverData->n*15);
 
-      infoStreamPrint(LOG_NLS_JAC, 1, "jacobian matrix [%dx%d]", n, n);
+      infoStreamPrint(OMC_LOG_NLS_JAC, 1, "jacobian matrix [%dx%d]", n, n);
       for(i=0; i<solverData->n;i++)
       {
         buffer[0] = 0;
         for(j=0; j<solverData->n; j++)
           sprintf(buffer, "%s%10g ", buffer, fjac[i*n+j]);
-        infoStreamPrint(LOG_NLS_JAC, 0, "%s", buffer);
+        infoStreamPrint(OMC_LOG_NLS_JAC, 0, "%s", buffer);
       }
-      messageClose(LOG_NLS_JAC);
+      messageClose(OMC_LOG_NLS_JAC);
       free(buffer);
     }
 
@@ -256,12 +256,12 @@ int _omc_newton(genericResidualFunc f, DATA_NEWTON* solverData, void* userData)
       for (i = 0; i < n; i++)
         solverData->x_new[i] = x[i]-solverData->x_increment[i];
 
-      if(ACTIVE_STREAM(LOG_NLS_V)) {
-        infoStreamPrint(LOG_NLS_V, 1, "x_increment");
+      if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_V)) {
+        infoStreamPrint(OMC_LOG_NLS_V, 1, "x_increment");
         for(i = 0; i < n; i++) {
-          infoStreamPrint(LOG_NLS_V, 0, "x_increment[%d] = %e ", i, solverData->x_increment[i]);
+          infoStreamPrint(OMC_LOG_NLS_V, 0, "x_increment[%d] = %e ", i, solverData->x_increment[i]);
         }
-        messageClose(LOG_NLS_V);
+        messageClose(OMC_LOG_NLS_V);
       }
 
       if (solverData->newtonStrategy == NEWTON_DAMPED)
@@ -302,9 +302,9 @@ int _omc_newton(genericResidualFunc f, DATA_NEWTON* solverData, void* userData)
       {
         *info = -1;
         if (solverData->initial) {
-          warningStreamPrint(LOG_NLS_V, 0, "Newton iteration: Maximal number of iteration reached at initialization, but no root found.");
+          warningStreamPrint(OMC_LOG_NLS_V, 0, "Newton iteration: Maximal number of iteration reached at initialization, but no root found.");
         } else {
-          warningStreamPrint(LOG_NLS_V, 0, "Newton iteration: Maximal number of iteration reached at time %f, but no root found.", solverData->time);
+          warningStreamPrint(OMC_LOG_NLS_V, 0, "Newton iteration: Maximal number of iteration reached at time %f, but no root found.", solverData->time);
         }
         break;
       }
@@ -312,17 +312,17 @@ int _omc_newton(genericResidualFunc f, DATA_NEWTON* solverData, void* userData)
       if (k > 5)
       {
         *info = -1;
-        warningStreamPrint(LOG_NLS_V, 0, "Newton iteration: Maximal number of iterations reached.");
+        warningStreamPrint(OMC_LOG_NLS_V, 0, "Newton iteration: Maximal number of iterations reached.");
         break;
       }
     }
 
-    if(ACTIVE_STREAM(LOG_NLS_V))
+    if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_V))
     {
-      infoStreamPrint(LOG_NLS_V, 1, "x vector");
+      infoStreamPrint(OMC_LOG_NLS_V, 1, "x vector");
       for(i = 0; i < n; i++)
-        infoStreamPrint(LOG_NLS_V, 0, "x[%d] = %e ", i, x[i]);
-      messageClose(LOG_NLS_V);
+        infoStreamPrint(OMC_LOG_NLS_V, 0, "x[%d] = %e ", i, x[i]);
+      messageClose(OMC_LOG_NLS_V);
       printErrors(delta_x, delta_x_scaled, delta_f, error_f, scaledError_f, eps);
     }
   }
@@ -348,21 +348,21 @@ int _omc_newton(genericResidualFunc f, DATA_NEWTON* solverData, void* userData)
  */
 void printErrors(double delta_x, double delta_x_scaled, double delta_f, double error_f, double scaledError_f, double* eps)
 {
-  infoStreamPrint(LOG_NLS_V, 1, "errors ");
-  infoStreamPrint(LOG_NLS_V, 0, "delta_x = %e \ndelta_x_scaled = %e \ndelta_f = %e \nerror_f = %e \nscaledError_f = %e", delta_x, delta_x_scaled, delta_f, error_f, scaledError_f);
+  infoStreamPrint(OMC_LOG_NLS_V, 1, "errors ");
+  infoStreamPrint(OMC_LOG_NLS_V, 0, "delta_x = %e \ndelta_x_scaled = %e \ndelta_f = %e \nerror_f = %e \nscaledError_f = %e", delta_x, delta_x_scaled, delta_f, error_f, scaledError_f);
 
   if (delta_x < *eps)
-    infoStreamPrint(LOG_NLS_V, 0, "delta_x reached eps");
+    infoStreamPrint(OMC_LOG_NLS_V, 0, "delta_x reached eps");
   if (delta_x_scaled < *eps)
-    infoStreamPrint(LOG_NLS_V, 0, "delta_x_scaled reached eps");
+    infoStreamPrint(OMC_LOG_NLS_V, 0, "delta_x_scaled reached eps");
   if (delta_f < *eps)
-    infoStreamPrint(LOG_NLS_V, 0, "delta_f reached eps");
+    infoStreamPrint(OMC_LOG_NLS_V, 0, "delta_f reached eps");
   if (error_f < *eps)
-    infoStreamPrint(LOG_NLS_V, 0, "error_f reached eps");
+    infoStreamPrint(OMC_LOG_NLS_V, 0, "error_f reached eps");
   if (scaledError_f < *eps)
-    infoStreamPrint(LOG_NLS_V, 0, "scaledError_f reached eps");
+    infoStreamPrint(OMC_LOG_NLS_V, 0, "scaledError_f reached eps");
 
-  messageClose(LOG_NLS_V);
+  messageClose(OMC_LOG_NLS_V);
 }
 
 /*! \fn solveLinearSystem
@@ -389,12 +389,12 @@ int solveLinearSystem(int n, int* iwork, double* fvec, double *fjac, DATA_NEWTON
 
   if(lapackinfo > 0)
   {
-    warningStreamPrint(LOG_NLS, 0, "Newton iteration linear solver: Jacobian matrix singular.");
+    warningStreamPrint(OMC_LOG_NLS, 0, "Newton iteration linear solver: Jacobian matrix singular.");
     return -1;
   }
   else if(lapackinfo < 0)
   {
-    warningStreamPrint(LOG_NLS, 0, "illegal  input in argument %d", (int)lapackinfo);
+    warningStreamPrint(OMC_LOG_NLS, 0, "illegal  input in argument %d", (int)lapackinfo);
     return -1;
   }
   else
@@ -478,7 +478,7 @@ void compute_scaling_vector(DATA_NEWTON* solverData, double* scalingVector) {
     jac_row_start = i*solverData->n;
     scalingVector[i] = _omc_gen_maximumVectorNorm(&(solverData->fjac[jac_row_start]), solverData->n);
     if(scalingVector[i] <= 0.0) {
-      warningStreamPrint(LOG_NLS_V, 1, "Jacobian matrix is singular.");
+      warningStreamPrint(OMC_LOG_NLS_V, 1, "Jacobian matrix is singular.");
       scalingVector[i] = 1e-16;
     }
   }
@@ -527,7 +527,7 @@ void damping_heuristic(double* x, genericResidualFunc f,
 
   if (enorm_new >= current_fvec_enorm) {
     startDamping = TRUE;
-    infoStreamPrint(LOG_NLS_V, 1, "Start Damping: enorm_new : %e; current_fvec_enorm: %e ", enorm_new, current_fvec_enorm);
+    infoStreamPrint(OMC_LOG_NLS_V, 1, "Start Damping: enorm_new : %e; current_fvec_enorm: %e ", enorm_new, current_fvec_enorm);
   }
 
   while (enorm_new >= current_fvec_enorm)
@@ -549,7 +549,7 @@ void damping_heuristic(double* x, genericResidualFunc f,
 
     if (*lambda <= treshold)
     {
-      warningStreamPrint(LOG_NLS_V, 0, "Warning: lambda reached a threshold.");
+      warningStreamPrint(OMC_LOG_NLS_V, 0, "Warning: lambda reached a threshold.");
 
       /* if damping is without success, trying full newton step;
          after 5 full newton steps try a very little step */
@@ -573,7 +573,7 @@ void damping_heuristic(double* x, genericResidualFunc f,
   *lambda = 1;
 
   if (startDamping)
-    messageClose(LOG_NLS_V);
+    messageClose(OMC_LOG_NLS_V);
 }
 
 /*! \fn damping_heuristic2
@@ -601,7 +601,7 @@ void damping_heuristic2(double damping_parameter, double* x, genericResidualFunc
 
   if (enorm_new >= current_fvec_enorm) {
     startDamping = TRUE;
-    infoStreamPrint(LOG_NLS_V, 1, "StartDamping:");
+    infoStreamPrint(OMC_LOG_NLS_V, 1, "StartDamping:");
   }
 
   while (enorm_new >= current_fvec_enorm)
@@ -610,7 +610,7 @@ void damping_heuristic2(double damping_parameter, double* x, genericResidualFunc
 
     lambda*=damping_parameter;
 
-    infoStreamPrint(LOG_NLS_V, 0, "lambda = %e, k = %d", lambda, *k);
+    infoStreamPrint(OMC_LOG_NLS_V, 0, "lambda = %e, k = %d", lambda, *k);
 
     for (i=0; i<n; i++)
       solverData->x_new[i]=x[i]-lambda*solverData->x_increment[i];
@@ -624,7 +624,7 @@ void damping_heuristic2(double damping_parameter, double* x, genericResidualFunc
 
     if (lambda <= treshold)
     {
-      warningStreamPrint(LOG_NLS_V, 0, "Warning: lambda reached a threshold.");
+      warningStreamPrint(OMC_LOG_NLS_V, 0, "Warning: lambda reached a threshold.");
 
       /* if damping is without success, trying full newton step;
          after 5 full newton steps try a very little step */
@@ -646,7 +646,7 @@ void damping_heuristic2(double damping_parameter, double* x, genericResidualFunc
   }
 
   if (startDamping)
-    messageClose(LOG_NLS_V);
+    messageClose(OMC_LOG_NLS_V);
 }
 
 /*! \fn LineSearch
@@ -687,11 +687,11 @@ void LineSearch(double* x, genericResidualFunc f,
     }
   }
 
-  infoStreamPrint(LOG_NLS_V,0,"lambda_minimum = %e", lambda_minimum);
+  infoStreamPrint(OMC_LOG_NLS_V,0,"lambda_minimum = %e", lambda_minimum);
 
   if (lambda_minimum == 0)
   {
-    warningStreamPrint(LOG_NLS_V, 0, "Warning: lambda_minimum = 0 ");
+    warningStreamPrint(OMC_LOG_NLS_V, 0, "Warning: lambda_minimum = 0 ");
 
     /* if damping is without success, trying full newton step;
        after 5 full newton steps try a very little step */
@@ -763,7 +763,7 @@ void Backtracking(double* x,
   /* Backtracking only if full newton step is useless */
   if (enorm_new >= current_fvec_enorm)
   {
-    infoStreamPrint(LOG_NLS_V, 0, "Start Backtracking\n enorm_new= %f \t current_fvec_enorm=%f", enorm_new, current_fvec_enorm);
+    infoStreamPrint(OMC_LOG_NLS_V, 0, "Start Backtracking\n enorm_new= %f \t current_fvec_enorm=%f", enorm_new, current_fvec_enorm);
 
     /* h(x) = 1/2 * ||f(x)|| ^2
      * g(lambda) = h(x_old + lambda * x_increment)
@@ -827,7 +827,7 @@ void Backtracking(double* x,
     lambda = (a+b)/2;
 
     /* print lambda */
-    infoStreamPrint(LOG_NLS_V, 0, "Backtracking - lambda = %e", lambda);
+    infoStreamPrint(OMC_LOG_NLS_V, 0, "Backtracking - lambda = %e", lambda);
 
     for (i=0; i<n; i++)
       solverData->x_new[i]=x[i]-lambda*solverData->x_increment[i];

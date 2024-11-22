@@ -120,7 +120,7 @@ int functionODE_residual(DATA* data, threadData_t *threadData, double *dx, doubl
     long i;
 
     /* debug */
-    /* printCurrentStatesVector(LOG_JAC, y, data, data->localData[0]->timeValue); */
+    /* printCurrentStatesVector(OMC_LOG_JAC, y, data, data->localData[0]->timeValue); */
 
     /* read input vars */
     externalInputUpdate(data);
@@ -342,12 +342,12 @@ int functionJacA(DATA* data, threadData_t *threadData, double* jac){
   for(i=0; i < jacobian->sizeCols; i++)
   {
     jacobian->seedVars[i] = 1.0;
-    if(ACTIVE_STREAM(LOG_JAC))
+    if(OMC_ACTIVE_STREAM(OMC_LOG_JAC))
     {
       printf("Caluculate one col:\n");
       for(j=0;  j < jacobian->sizeCols;j++)
       {
-        infoStreamPrint(LOG_JAC,0,"seed: jacobian->seedVars[%d]= %f",j,jacobian->seedVars[j]);
+        infoStreamPrint(OMC_LOG_JAC,0,"seed: jacobian->seedVars[%d]= %f",j,jacobian->seedVars[j]);
       }
     }
 
@@ -356,14 +356,14 @@ int functionJacA(DATA* data, threadData_t *threadData, double* jac){
     for(j = 0; j < jacobian->sizeRows; j++)
     {
       jac[k++] = jacobian->resultVars[j];
-      infoStreamPrint(LOG_JAC,0,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,jacobian->resultVars[j]);
+      infoStreamPrint(OMC_LOG_JAC,0,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,jacobian->resultVars[j]);
     }
 
     jacobian->seedVars[i] = 0.0;
   }
-  if(ACTIVE_STREAM(LOG_JAC))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
-    infoStreamPrint(LOG_JAC,0,"Print jac:");
+    infoStreamPrint(OMC_LOG_JAC,0,"Print jac:");
     for(i=0;  i < jacobian->sizeRows;i++)
     {
       for(j=0;  j < jacobian->sizeCols;j++) {
@@ -389,12 +389,12 @@ int functionJacB(DATA* data, threadData_t *threadData, double* jac){
   for(i=0; i < jacobian->sizeCols; i++)
   {
     jacobian->seedVars[i] = 1.0;
-    if(ACTIVE_STREAM(LOG_JAC))
+    if(OMC_ACTIVE_STREAM(OMC_LOG_JAC))
     {
       printf("Caluculate one col:\n");
       for(j=0;  j < jacobian->sizeCols;j++)
       {
-        infoStreamPrint(LOG_JAC,0,"seed: jacobian->seedVars[%d]= %f",j,jacobian->seedVars[j]);
+        infoStreamPrint(OMC_LOG_JAC,0,"seed: jacobian->seedVars[%d]= %f",j,jacobian->seedVars[j]);
       }
     }
 
@@ -403,14 +403,14 @@ int functionJacB(DATA* data, threadData_t *threadData, double* jac){
     for(j = 0; j < jacobian->sizeRows; j++)
     {
       jac[k++] = jacobian->resultVars[j];
-      infoStreamPrint(LOG_JAC,0,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,jacobian->resultVars[j]);
+      infoStreamPrint(OMC_LOG_JAC,0,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,jacobian->resultVars[j]);
     }
 
     jacobian->seedVars[i] = 0.0;
   }
-  if(ACTIVE_STREAM(LOG_JAC))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
-    infoStreamPrint(LOG_JAC, 0, "Print jac:");
+    infoStreamPrint(OMC_LOG_JAC, 0, "Print jac:");
     for(i=0;  i < jacobian->sizeRows;i++)
     {
       for(j=0;  j < jacobian->sizeCols;j++)
@@ -434,11 +434,11 @@ int functionJacC(DATA* data, threadData_t *threadData, double* jac){
   for(i=0; i < jacobian->sizeCols; i++)
   {
     jacobian->seedVars[i] = 1.0;
-    if(ACTIVE_STREAM(LOG_JAC))
+    if(OMC_ACTIVE_STREAM(OMC_LOG_JAC))
     {
       printf("Caluculate one col:\n");
       for(j=0;  j < jacobian->sizeCols;j++)
-        infoStreamPrint(LOG_JAC,0,"seed: jacobian->seedVars[%d]= %f",j,jacobian->seedVars[j]);
+        infoStreamPrint(OMC_LOG_JAC,0,"seed: jacobian->seedVars[%d]= %f",j,jacobian->seedVars[j]);
     }
 
     data->callback->functionJacC_column(data, threadData, jacobian, NULL);
@@ -446,14 +446,14 @@ int functionJacC(DATA* data, threadData_t *threadData, double* jac){
     for(j = 0; j < jacobian->sizeRows; j++)
     {
       jac[k++] = jacobian->resultVars[j];
-      infoStreamPrint(LOG_JAC,0,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,jacobian->resultVars[j]);
+      infoStreamPrint(OMC_LOG_JAC,0,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,jacobian->resultVars[j]);
     }
 
     jacobian->seedVars[i] = 0.0;
   }
-  if(ACTIVE_STREAM(LOG_JAC))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
-    infoStreamPrint(LOG_JAC, 0, "Print jac:");
+    infoStreamPrint(OMC_LOG_JAC, 0, "Print jac:");
     for(i=0;  i < jacobian->sizeRows;i++)
     {
       for(j=0;  j < jacobian->sizeCols;j++)
@@ -477,11 +477,11 @@ int functionJacD(DATA* data, threadData_t *threadData, double* jac){
   for(i=0; i < jacobian->sizeCols; i++)
   {
     jacobian->seedVars[i] = 1.0;
-    if(ACTIVE_STREAM(LOG_JAC))
+    if(OMC_ACTIVE_STREAM(OMC_LOG_JAC))
     {
       printf("Caluculate one col:\n");
       for(j=0;  j < jacobian->sizeCols;j++) {
-        infoStreamPrint(LOG_JAC,0,"seed: jacobian->seedVars[%d]= %f",j,jacobian->seedVars[j]);
+        infoStreamPrint(OMC_LOG_JAC,0,"seed: jacobian->seedVars[%d]= %f",j,jacobian->seedVars[j]);
       }
     }
 
@@ -490,14 +490,14 @@ int functionJacD(DATA* data, threadData_t *threadData, double* jac){
     for(j = 0; j < jacobian->sizeRows; j++)
     {
       jac[k++] = jacobian->resultVars[j];
-      infoStreamPrint(LOG_JAC,0, "write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,jacobian->resultVars[j]);
+      infoStreamPrint(OMC_LOG_JAC,0, "write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,jacobian->resultVars[j]);
     }
 
     jacobian->seedVars[i] = 0.0;
   }
-  if(ACTIVE_STREAM(LOG_JAC))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
-    infoStreamPrint(LOG_JAC, 0, "Print jac:");
+    infoStreamPrint(OMC_LOG_JAC, 0, "Print jac:");
     for(i=0;  i < jacobian->sizeRows;i++)
     {
       for(j=0;  j < jacobian->sizeCols;j++)
@@ -640,7 +640,7 @@ int linearize(DATA* data, threadData_t *threadData)
     else
     {
       // convert the matrices to Python format
-      //infoStreamPrint(LOG_STDOUT, 0, "Python selected");
+      //infoStreamPrint(OMC_LOG_STDOUT, 0, "Python selected");
       strA = array2PythonString(matrixA, size_A, size_A);
       strB = array2PythonString(matrixB, size_A, size_Inputs);
       strC = array2PythonString(matrixC, size_Outputs, size_A);
@@ -651,7 +651,7 @@ int linearize(DATA* data, threadData_t *threadData)
         strDz = array2PythonString(matrixDz, size_z, size_Inputs);
       }
       // strA = "[[-2.887152375617477, -1.62655852935388], [-2.380918056675567, -2.388394731625707]]";
-      //infoStreamPrint(LOG_STDOUT, 0, strA.c_str());
+      //infoStreamPrint(OMC_LOG_STDOUT, 0, strA.c_str());
       if (size_A)
         strX = "[" + array2string(data->localData[0]->realVars, 1, size_A, data) + "]";
       else
@@ -688,27 +688,27 @@ int linearize(DATA* data, threadData_t *threadData)
     }else{
         fprintf(fout, data->callback->linear_model_frame(), strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str(), (double) data->simulationInfo->stopTime);
     }
-    if(ACTIVE_STREAM(LOG_STATS)) {
-      infoStreamPrint(LOG_STATS, 0, data->callback->linear_model_frame(), strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str(), (double) data->simulationInfo->stopTime);
+    if(OMC_ACTIVE_STREAM(OMC_LOG_STATS)) {
+      infoStreamPrint(OMC_LOG_STATS, 0, data->callback->linear_model_frame(), strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str(), (double) data->simulationInfo->stopTime);
     }
 
     fflush(fout);
     fclose(fout);
 
     if (data->modelData->runTestsuite) {
-        infoStreamPrint(LOG_STDOUT, 0, "Linear model is created.");
+        infoStreamPrint(OMC_LOG_STDOUT, 0, "Linear model is created.");
     }
     else {
         char* cwd = getcwd(NULL, 0); /* call with NULL and 0 to allocate the buffer dynamically (no pathmax needed) */
         if(!cwd) {
-          infoStreamPrint(LOG_STDOUT, 0, "Linear model %s is created, but getting the full path failed.", filename.c_str());
+          infoStreamPrint(OMC_LOG_STDOUT, 0, "Linear model %s is created, but getting the full path failed.", filename.c_str());
         }
         else {
-          infoStreamPrint(LOG_STDOUT, 0, "Linear model is created at %s/%s", cwd, filename.c_str());
+          infoStreamPrint(OMC_LOG_STDOUT, 0, "Linear model is created at %s/%s", cwd, filename.c_str());
           free(cwd);
         }
-        infoStreamPrint(LOG_STDOUT, 0, "The output format can be changed with the command line option --linearizationDumpLanguage.");
-        infoStreamPrint(LOG_STDOUT, 0, "The options are: --linearizationDumpLanguage=modelica, matlab, julia, python.");
+        infoStreamPrint(OMC_LOG_STDOUT, 0, "The output format can be changed with the command line option --linearizationDumpLanguage.");
+        infoStreamPrint(OMC_LOG_STDOUT, 0, "The options are: --linearizationDumpLanguage=modelica, matlab, julia, python.");
     }
     TRACE_POP
     return 0;

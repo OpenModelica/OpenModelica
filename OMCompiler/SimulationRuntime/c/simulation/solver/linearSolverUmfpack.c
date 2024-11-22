@@ -158,7 +158,7 @@ int getAnalyticalJacobianUmfPack(DATA* data, threadData_t *threadData, int sysNu
         while(ii < jacobian->sparsePattern->leadindex[j+1])
         {
           l  = jacobian->sparsePattern->index[ii];
-          /* infoStreamPrint(LOG_LS_V, 0, "set on Matrix A (%d, %d)(%d) = %f", i, l, nth, -jacobian->resultVars[l]); */
+          /* infoStreamPrint(OMC_LOG_LS_V, 0, "set on Matrix A (%d, %d)(%d) = %f", i, l, nth, -jacobian->resultVars[l]); */
           systemData->setAElement(i, l, -jacobian->resultVars[l], nth, (void*) systemData, threadData);
           nth++;
           ii++;
@@ -205,7 +205,7 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
   double tmpJacEvalTime;
   int reuseMatrixJac = (data->simulationInfo->currentContext == CONTEXT_SYM_JACOBIAN && data->simulationInfo->currentJacobianEval > 0);
 
-  infoStreamPrintWithEquationIndexes(LOG_LS, omc_dummyFileInfo, 0, indexes,
+  infoStreamPrintWithEquationIndexes(OMC_LOG_LS, omc_dummyFileInfo, 0, indexes,
     "Start solving Linear System %d (size %d) at time %g with UMFPACK Solver",
     eqSystemNumber, (int) systemData->size, data->localData[0]->timeValue);
 
@@ -240,27 +240,27 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
   }
   tmpJacEvalTime = rt_ext_tp_tock(&(solverData->timeClock));
   systemData->jacobianTime += tmpJacEvalTime;
-  infoStreamPrint(LOG_LS_V, 0, "###  %f  time to set Matrix A and vector b.", tmpJacEvalTime);
+  infoStreamPrint(OMC_LOG_LS_V, 0, "###  %f  time to set Matrix A and vector b.", tmpJacEvalTime);
 
-  if (ACTIVE_STREAM(LOG_LS_V))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_LS_V))
   {
-    infoStreamPrint(LOG_LS_V, 1, "Old solution x:");
+    infoStreamPrint(OMC_LOG_LS_V, 1, "Old solution x:");
     for(i = 0; i < solverData->n_row; ++i)
-      infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], aux_x[i]);
-    messageClose(LOG_LS_V);
+      infoStreamPrint(OMC_LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], aux_x[i]);
+    messageClose(OMC_LOG_LS_V);
 
-    infoStreamPrint(LOG_LS_V, 1, "Matrix A n_rows = %d", solverData->n_row);
+    infoStreamPrint(OMC_LOG_LS_V, 1, "Matrix A n_rows = %d", solverData->n_row);
     for (i=0; i<solverData->n_row; i++){
-      infoStreamPrint(LOG_LS_V, 0, "%d. Ap => %d -> %d", i, solverData->Ap[i], solverData->Ap[i+1]);
+      infoStreamPrint(OMC_LOG_LS_V, 0, "%d. Ap => %d -> %d", i, solverData->Ap[i], solverData->Ap[i+1]);
       for (j=solverData->Ap[i]; j<solverData->Ap[i+1]; j++){
-        infoStreamPrint(LOG_LS_V, 0, "A[%d,%d] = %f", i, solverData->Ai[j], solverData->Ax[j]);
+        infoStreamPrint(OMC_LOG_LS_V, 0, "A[%d,%d] = %f", i, solverData->Ai[j], solverData->Ax[j]);
       }
     }
-    messageClose(LOG_LS_V);
+    messageClose(OMC_LOG_LS_V);
 
     for (i=0; i<solverData->n_row; i++) {
       // ToDo Rework stream prints like this one to work in parallel regions
-      infoStreamPrint(LOG_LS_V, 0, "b[%d] = %e", i, systemData->parDynamicData[omc_get_thread_num()].b[i]);
+      infoStreamPrint(OMC_LOG_LS_V, 0, "b[%d] = %e", i, systemData->parDynamicData[omc_get_thread_num()].b[i]);
     }
   }
   rt_ext_tp_tick(&(solverData->timeClock));
@@ -298,7 +298,7 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
       success = 1;
     }
   }
-  infoStreamPrint(LOG_LS_V, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
+  infoStreamPrint(OMC_LOG_LS_V, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
 
   /* print solution */
   if (1 == success){
@@ -312,7 +312,7 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
       residualNorm = _omc_gen_euclideanVectorNorm(solverData->work, solverData->n_row);
 
       if ((isnan(residualNorm)) || (residualNorm>1e-4)){
-        warningStreamPrintWithLimit(LOG_LS, 0, ++(systemData->numberOfFailures) /* Update counter */, data->simulationInfo->maxWarnDisplays,
+        warningStreamPrintWithLimit(OMC_LOG_LS, 0, ++(systemData->numberOfFailures) /* Update counter */, data->simulationInfo->maxWarnDisplays,
                                     "Failed to solve linear system of equations (no. %d) at time %f. Residual norm is %.15g.",
                                     (int)systemData->equationIndex, data->localData[0]->timeValue, residualNorm);
         success = 0;
@@ -321,24 +321,24 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
       /* the solution is automatically in x */
     }
 
-    if (ACTIVE_STREAM(LOG_LS_V))
+    if (OMC_ACTIVE_STREAM(OMC_LOG_LS_V))
     {
       if (1 == systemData->method) {
-        infoStreamPrint(LOG_LS_V, 1, "Residual Norm %.15g of solution x:", residualNorm);
+        infoStreamPrint(OMC_LOG_LS_V, 1, "Residual Norm %.15g of solution x:", residualNorm);
       } else {
-        infoStreamPrint(LOG_LS_V, 1, "Solution x:");
+        infoStreamPrint(OMC_LOG_LS_V, 1, "Solution x:");
       }
-      infoStreamPrint(LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
+      infoStreamPrint(OMC_LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
 
       for(i = 0; i < systemData->size; ++i)
-        infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], aux_x[i]);
+        infoStreamPrint(OMC_LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], aux_x[i]);
 
-      messageClose(LOG_LS_V);
+      messageClose(OMC_LOG_LS_V);
     }
   }
   else
   {
-    warningStreamPrintWithLimit(LOG_LS, 0, ++(systemData->numberOfFailures) /* Update counter */, data->simulationInfo->maxWarnDisplays,
+    warningStreamPrintWithLimit(OMC_LOG_LS, 0, ++(systemData->numberOfFailures) /* Update counter */, data->simulationInfo->maxWarnDisplays,
                                 "Failed to solve linear system of equations (no. %d) at time %f, system status %d.",
                                 (int)systemData->equationIndex, data->localData[0]->timeValue, status);
   }
@@ -390,7 +390,7 @@ int solveSingularSystem(LINEAR_SYSTEM_DATA* systemData, double* aux_x)
   y = (double*) malloc(solverData->n_col * sizeof(double));
   z = (double*) malloc(solverData->n_col * sizeof(double));
 
-  infoStreamPrint(LOG_LS_V, 0, "Solve singular system");
+  infoStreamPrint(OMC_LOG_LS_V, 0, "Solve singular system");
 
   status = umfpack_di_get_numeric((int*) NULL, (int*) NULL, (double*) NULL, Up,
       Ui, Ux, (int*) NULL, Q, (double*) NULL, &do_recip, Rs,
@@ -403,7 +403,7 @@ int solveSingularSystem(LINEAR_SYSTEM_DATA* systemData, double* aux_x)
   case UMFPACK_ERROR_argument_missing:
   case UMFPACK_ERROR_invalid_system:
   case UMFPACK_ERROR_invalid_Numeric_object:
-    infoStreamPrint(LOG_LS_V, 0, "error: %d", status);
+    infoStreamPrint(OMC_LOG_LS_V, 0, "error: %d", status);
   }
 
   /* calculate R*b */
@@ -433,7 +433,7 @@ int solveSingularSystem(LINEAR_SYSTEM_DATA* systemData, double* aux_x)
   case UMFPACK_ERROR_argument_missing:
   case UMFPACK_ERROR_invalid_system:
   case UMFPACK_ERROR_invalid_Numeric_object:
-    infoStreamPrint(LOG_LS_V, 0, "error: %d", status);
+    infoStreamPrint(OMC_LOG_LS_V, 0, "error: %d", status);
   }
 
   /* rank is at most as high as the maximum in Ui */
@@ -452,7 +452,7 @@ int solveSingularSystem(LINEAR_SYSTEM_DATA* systemData, double* aux_x)
     }
     else
     {
-      infoStreamPrint(LOG_LS_V, 0, "error: system is not solvable*");
+      infoStreamPrint(OMC_LOG_LS_V, 0, "error: system is not solvable*");
       /* free all used memory */
       free(Up);
       free(Ui);
@@ -504,7 +504,7 @@ int solveSingularSystem(LINEAR_SYSTEM_DATA* systemData, double* aux_x)
         }
         else
         {
-          infoStreamPrint(LOG_LS_V, 0, "error: system is not solvable");
+          infoStreamPrint(OMC_LOG_LS_V, 0, "error: system is not solvable");
           /* free all used memory */
           free(Up);
           free(Ui);
@@ -604,7 +604,7 @@ void printMatrixCSC(int* Ap, int* Ai, double* Ax, int n)
   }
   for (l=0; l<n; l++)
   {
-    infoStreamPrint(LOG_LS_V, 0, "%s", buffer[l]);
+    infoStreamPrint(OMC_LOG_LS_V, 0, "%s", buffer[l]);
     free(buffer[l]);
   }
   free(buffer);
@@ -630,7 +630,7 @@ void printMatrixCSR(int* Ap, int* Ai, double* Ax, int n)
         sprintf(buffer, "%s %5.2g ", buffer, 0.0);
       }
     }
-    infoStreamPrint(LOG_LS_V, 0, "%s", buffer);
+    infoStreamPrint(OMC_LOG_LS_V, 0, "%s", buffer);
   }
   free(buffer);
 }

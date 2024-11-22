@@ -512,14 +512,14 @@ int doubleEndedListLen(DOUBLE_ENDED_LIST *list) {
  * @brief Print a double ended list with provided print function.
  *
  * @param list              List to print.
- * @param stream            Stream of type LOG_STREAM.
+ * @param stream            Stream of type OMC_LOG_STREAM.
  * @param printDataFunc     Function to print address of node and list->data to stream.
  */
 void doubleEndedListPrint(DOUBLE_ENDED_LIST *list, int stream, void (*printDataFunc)(void*,int,void*)) {
   int i;
   DOUBLE_ENDED_LIST_NODE* tmpNode;
 
-  if (useStream[stream]) {
+  if (omc_useStream[stream]) {
     infoStreamPrint(stream, 1, "Printing double ended list:");
     infoStreamPrint(stream, 0, "list length: %i, size of each item data: %i (bytes)", list->length, list->itemSize);
     infoStreamPrint(stream, 0, "Pointer to first: %p", list->first);

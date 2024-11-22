@@ -74,7 +74,7 @@ void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo)
   {
     solverInfo->currentStepSize = data->simulationInfo->nextSampleEvent - solverInfo->currentTime;
     data->simulationInfo->sampleActivated = 1;
-    infoStreamPrint(LOG_EVENTS_V, 0, "Adjust step-size to %.15g at time %.15g to get next sample event at %.15g", solverInfo->currentStepSize, solverInfo->currentTime, data->simulationInfo->nextSampleEvent );
+    infoStreamPrint(OMC_LOG_EVENTS_V, 0, "Adjust step-size to %.15g at time %.15g to get next sample event at %.15g", solverInfo->currentStepSize, solverInfo->currentTime, data->simulationInfo->nextSampleEvent );
   }
 
   TRACE_POP
@@ -94,32 +94,32 @@ int checkForStateEvent(DATA* data, LIST *eventList)
   TRACE_PUSH
   long i=0;
 
-  debugStreamPrint(LOG_EVENTS, 1, "check state-event zerocrossing at time %g",  data->localData[0]->timeValue);
+  debugStreamPrint(OMC_LOG_EVENTS, 1, "check state-event zerocrossing at time %g",  data->localData[0]->timeValue);
 
   for(i=0; i<data->modelData->nZeroCrossings; i++)
   {
     int *eq_indexes;
-    if (DEBUG_STREAM(LOG_EVENTS))
+    if (OMC_DEBUG_STREAM(OMC_LOG_EVENTS))
     {
       const char *exp_str = data->callback->zeroCrossingDescription(i,&eq_indexes);
-      debugStreamPrintWithEquationIndexes(LOG_EVENTS, omc_dummyFileInfo, 1, eq_indexes, "%s", exp_str);
+      debugStreamPrintWithEquationIndexes(OMC_LOG_EVENTS, omc_dummyFileInfo, 1, eq_indexes, "%s", exp_str);
     }
 
     if(sign(data->simulationInfo->zeroCrossings[i]) != sign(data->simulationInfo->zeroCrossingsPre[i]))
     {
-      debugStreamPrint(LOG_EVENTS, 0, "changed:   %s", (data->simulationInfo->zeroCrossingsPre[i] > 0) ? "TRUE -> FALSE" : "FALSE -> TRUE");
+      debugStreamPrint(OMC_LOG_EVENTS, 0, "changed:   %s", (data->simulationInfo->zeroCrossingsPre[i] > 0) ? "TRUE -> FALSE" : "FALSE -> TRUE");
       listPushFront(eventList, &(data->simulationInfo->zeroCrossingIndex[i]));
     }
     else
     {
-      debugStreamPrint(LOG_EVENTS, 0, "unchanged: %s", (data->simulationInfo->zeroCrossingsPre[i] > 0) ? "TRUE -- TRUE" : "FALSE -- FALSE");
+      debugStreamPrint(OMC_LOG_EVENTS, 0, "unchanged: %s", (data->simulationInfo->zeroCrossingsPre[i] > 0) ? "TRUE -- TRUE" : "FALSE -- FALSE");
     }
 
-    if (DEBUG_STREAM(LOG_EVENTS))
-      messageClose(LOG_EVENTS);
+    if (OMC_DEBUG_STREAM(OMC_LOG_EVENTS))
+      messageClose(OMC_LOG_EVENTS);
   }
-  if (DEBUG_STREAM(LOG_EVENTS))
-    messageClose(LOG_EVENTS);
+  if (OMC_DEBUG_STREAM(OMC_LOG_EVENTS))
+    messageClose(OMC_LOG_EVENTS);
 
   if(listLen(eventList) > 0)
   {
@@ -197,7 +197,7 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
       if(data->simulationInfo->nextSampleTimes[i] <= time + SAMPLE_EPS)
       {
         data->simulationInfo->samples[i] = 1;
-        infoStreamPrint(LOG_EVENTS, 0, "[%ld] sample(%g, %g)", data->modelData->samplesInfo[i].index, data->modelData->samplesInfo[i].start, data->modelData->samplesInfo[i].interval);
+        infoStreamPrint(OMC_LOG_EVENTS, 0, "[%ld] sample(%g, %g)", data->modelData->samplesInfo[i].index, data->modelData->samplesInfo[i].start, data->modelData->samplesInfo[i].interval);
       }
   }
   data->simulationInfo->chatteringInfo.lastStepsNumStateEvents-=data->simulationInfo->chatteringInfo.lastSteps[data->simulationInfo->chatteringInfo.currentIndex];
@@ -207,14 +207,14 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
     data->localData[0]->timeValue = *eventTime;
     /* time = data->localData[0]->timeValue; */
 
-    if (useStream[LOG_EVENTS])
+    if (omc_useStream[OMC_LOG_EVENTS])
     {
       for(it = listFirstNode(eventLst); it; it = listNextNode(it))
       {
         long ix = *((long*) listNodeData(it));
         int *eq_indexes;
         const char *exp_str = data->callback->zeroCrossingDescription(ix,&eq_indexes);
-        infoStreamPrintWithEquationIndexes(LOG_EVENTS, omc_dummyFileInfo, 0, eq_indexes, "[%ld] %s", ix+1, exp_str);
+        infoStreamPrintWithEquationIndexes(OMC_LOG_EVENTS, omc_dummyFileInfo, 0, eq_indexes, "[%ld] %s", ix+1, exp_str);
       }
     }
 
@@ -233,7 +233,7 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
         long ix = *((long*) listNodeData(listFirstNode(eventLst)));
         int *eq_indexes;
         const char *exp_str = data->callback->zeroCrossingDescription(ix,&eq_indexes);
-        infoStreamPrintWithEquationIndexes(LOG_STDOUT, omc_dummyFileInfo, 0, eq_indexes, "Chattering detected around time %.12g..%.12g (%d state events in a row with a total time delta less than the step size %.12g). This can be a performance bottleneck. Use -lv LOG_EVENTS for more information. The zero-crossing was: %s", t0, time, numEventLimit, data->simulationInfo->stepSize, exp_str);
+        infoStreamPrintWithEquationIndexes(OMC_LOG_STDOUT, omc_dummyFileInfo, 0, eq_indexes, "Chattering detected around time %.12g..%.12g (%d state events in a row with a total time delta less than the step size %.12g). This can be a performance bottleneck. Use -lv LOG_EVENTS for more information. The zero-crossing was: %s", t0, time, numEventLimit, data->simulationInfo->stepSize, exp_str);
         data->simulationInfo->chatteringInfo.messageEmitted = 1;
         if (omc_flag[FLAG_ABORT_SLOW])
         {
@@ -273,7 +273,7 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
 
     data->simulationInfo->sampleActivated = 0;
 
-    debugStreamPrint(LOG_EVENTS, 0, "next sample-event at t = %g", data->simulationInfo->nextSampleEvent);
+    debugStreamPrint(OMC_LOG_EVENTS, 0, "next sample-event at t = %g", data->simulationInfo->nextSampleEvent);
 
     solverInfo->sampleEvents++;
   }
@@ -311,7 +311,7 @@ double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double ti
 
   for(it=listFirstNode(eventList); it; it=listNextNode(it))
   {
-    infoStreamPrint(LOG_ZEROCROSSINGS, 0, "search for current event. Events in list: %ld", *((long*)listNodeData(it)));
+    infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "search for current event. Events in list: %ld", *((long*)listNodeData(it)));
   }
 
   /* Search for event time and event_id with bisection method */
@@ -329,28 +329,28 @@ double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double ti
         value = fvalue;
       }
     }
-    infoStreamPrint(LOG_ZEROCROSSINGS, 0, "Minimum value: %e", value);
+    infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "Minimum value: %e", value);
     for(it = listFirstNode(eventList); it; it = listNextNode(it))
     {
       if(value == fabs(data->simulationInfo->zeroCrossings[*((long*) listNodeData(it))]))
       {
         listPushBack(tmpEventList, listNodeData(it));
-        infoStreamPrint(LOG_ZEROCROSSINGS, 0, "added tmp event : %ld", *((long*) listNodeData(it)));
+        infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "added tmp event : %ld", *((long*) listNodeData(it)));
       }
     }
   }
 
   listClear(eventList);
 
-  debugStreamPrint(LOG_EVENTS, 0, (listLen(tmpEventList) == 1) ? "found event: " : "found events: ");
+  debugStreamPrint(OMC_LOG_EVENTS, 0, (listLen(tmpEventList) == 1) ? "found event: " : "found events: ");
   while(listLen(tmpEventList) > 0)
   {
     long event_id = *((long*)listFirstData(tmpEventList));
     listPushFrontNodeNoCopy(eventList, listPopFrontNode(tmpEventList));
-    infoStreamPrint(LOG_ZEROCROSSINGS, 0, "Event id: %ld", event_id);
+    infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "Event id: %ld", event_id);
   }
 
-  debugStreamPrint(LOG_EVENTS, 0, "time: %.10e", time_right);
+  debugStreamPrint(OMC_LOG_EVENTS, 0, "time: %.10e", time_right);
 
   data->localData[0]->timeValue = time_left;
   memcpy(data->localData[0]->realVars, states_left, data->modelData->nStates * sizeof(double));
@@ -393,8 +393,8 @@ void bisection(DATA* data, threadData_t *threadData, double* a, double* b, doubl
 
   memcpy(data->simulationInfo->zeroCrossingsBackup, data->simulationInfo->zeroCrossings, data->modelData->nZeroCrossings * sizeof(modelica_real));
 
-  infoStreamPrint(LOG_ZEROCROSSINGS, 0, "bisection method starts in interval [%e, %e]", *a, *b);
-  infoStreamPrint(LOG_ZEROCROSSINGS, 0, "TTOL is set to %e and maximum number of intersections %d.", TTOL, n);
+  infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "bisection method starts in interval [%e, %e]", *a, *b);
+  infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "TTOL is set to %e and maximum number of intersections %d.", TTOL, n);
 
   while(fabs(*b - *a) > MINIMAL_STEP_SIZE && n-- > 0)
   {
@@ -449,7 +449,7 @@ int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
   LIST_NODE *it;
 
   listClear(tmpEventList);
-  infoStreamPrint(LOG_ZEROCROSSINGS, 0, "bisection checks for condition changes");
+  infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "bisection checks for condition changes");
 
   for(it=listFirstNode(eventList); it; it=listNextNode(it))
   {
@@ -459,7 +459,7 @@ int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
        (data->simulationInfo->zeroCrossings[*((long*) listNodeData(it))] == 1 &&
         data->simulationInfo->zeroCrossingsPre[*((long*) listNodeData(it))] == -1))
     {
-      infoStreamPrint(LOG_ZEROCROSSINGS, 0, "%ld changed from %s to current %s",
+      infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "%ld changed from %s to current %s",
             *((long*) listNodeData(it)),
             (data->simulationInfo->zeroCrossingsPre[*((long*) listNodeData(it))] > 0) ? "TRUE" : "FALSE",
             (data->simulationInfo->zeroCrossings[*((long*) listNodeData(it))] > 0) ? "TRUE" : "FALSE");
@@ -488,7 +488,7 @@ void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData)
   TRACE_PUSH
   long i=0;
 
-  infoStreamPrint(LOG_ZEROCROSSINGS, 0, "save all zerocrossings after an event at time=%g", data->localData[0]->timeValue); /* ??? */
+  infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "save all zerocrossings after an event at time=%g", data->localData[0]->timeValue); /* ??? */
 
   data->callback->function_ZeroCrossings(data, threadData, data->simulationInfo->zeroCrossings);
   for(i=0; i<data->modelData->nZeroCrossings; i++)

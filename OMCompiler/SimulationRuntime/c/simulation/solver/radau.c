@@ -115,7 +115,7 @@ int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   flag = KINSetNumMaxIters(kinsolData->kin_mem, 10000);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetNumMaxIters");
 
-  if (ACTIVE_STREAM(LOG_SOLVER)) {
+  if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) {
     flag = KINSetPrintLevel(kinsolData->kin_mem,2);
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetPrintLevel");
   }
@@ -169,14 +169,14 @@ int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     }
     if (kinOde->lsMethod == IMPRK_LS_UNKNOWN)
     {
-      if (ACTIVE_WARNING_STREAM(LOG_SOLVER))
+      if (OMC_ACTIVE_WARNING_STREAM(OMC_LOG_SOLVER))
       {
-        warningStreamPrint(LOG_SOLVER, 1, "unrecognized linear solver method %s, current options are:", (const char*)omc_flagValue[FLAG_IMPRK_LS]);
+        warningStreamPrint(OMC_LOG_SOLVER, 1, "unrecognized linear solver method %s, current options are:", (const char*)omc_flagValue[FLAG_IMPRK_LS]);
         for(i=1; i < IMPRK_LS_MAX; ++i)
         {
-          warningStreamPrint(LOG_SOLVER, 0, "%-15s [%s]", IMPRK_LS_METHOD[i], IMPRK_LS_METHOD_DESC[i]);
+          warningStreamPrint(OMC_LOG_SOLVER, 0, "%-15s [%s]", IMPRK_LS_METHOD[i], IMPRK_LS_METHOD_DESC[i]);
         }
-        messageClose(LOG_SOLVER);
+        messageClose(OMC_LOG_SOLVER);
       }
       throwStreamPrint(threadData,"unrecognized linear solver method %s", (const char*)omc_flagValue[FLAG_IMPRK_LS]);
     }
@@ -197,7 +197,7 @@ int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
             kinsolData->y, PREC_NONE, kinOde->N * kinOde->nlp->nStates + 1);    /* TODO: Default number of Krylov vectors is 5. Seems we are using  some more... */
         if (kinsolData->linSol == NULL) {
           errorStreamPrint(
-              LOG_STDOUT, 0,
+              OMC_LOG_STDOUT, 0,
               "##KINSOL## In function SUNLinSol_SPGMR: Input incompatible.");
         }
       } else {
@@ -205,7 +205,7 @@ int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
             kinsolData->y, PREC_NONE, kinOde->N * kinOde->nlp->nStates + 1);
         if (kinsolData->linSol == NULL) {
           errorStreamPrint(
-              LOG_STDOUT, 0,
+              OMC_LOG_STDOUT, 0,
               "##KINSOL## In function SUNLinSol_SPBCGS: Input incompatible.");
         }
       }
@@ -217,7 +217,7 @@ int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
       kinsolData->linSol = SUNLinSol_Dense(kinsolData->y, kinsolData->J);
       if (kinsolData->linSol == NULL) {
         errorStreamPrint(
-            LOG_STDOUT, 0,
+            OMC_LOG_STDOUT, 0,
             "##KINSOL## In function SUNLinSol_Dense: Input incompatible.");
       }
       break;
@@ -303,7 +303,7 @@ static KDATAODE* allocateKINSOLODE(KINODE *kinOde, int size) {
   /* Create KINSOL memory block */
   kData->kin_mem = KINCreate();
   if (kData->kin_mem == NULL) {
-    errorStreamPrint(LOG_STDOUT, 0,
+    errorStreamPrint(OMC_LOG_STDOUT, 0,
                      "##KINSOL## In function KINCreate: An error occured.");
   }
 
@@ -448,7 +448,7 @@ int kinsolOde(SOLVER_INFO* solverInfo)  /* TODO: Unify this function with nlsKin
   int retries = 0;
   long int tmp;
 
-  infoStreamPrint(LOG_SOLVER, 1, "##IMPRK## new step from %.15g to %.15g", solverInfo->currentTime, solverInfo->currentTime + solverInfo->currentStepSize);
+  infoStreamPrint(OMC_LOG_SOLVER, 1, "##IMPRK## new step from %.15g to %.15g", solverInfo->currentTime, solverInfo->currentTime + solverInfo->currentStepSize);
   initKinsol(kinOde);
 
   do {
@@ -473,7 +473,7 @@ int kinsolOde(SOLVER_INFO* solverInfo)  /* TODO: Unify this function with nlsKin
           flag = KINSetLinearSolver(kData->kin_mem, kData->linSol, kData->J);
           checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetLinearSolver");
           use_dense = TRUE;
-          warningStreamPrint(LOG_SOLVER, 0, "Restart Kinsol: Change linear solver to SUNLinSol_Dense.");
+          warningStreamPrint(OMC_LOG_SOLVER, 0, "Restart Kinsol: Change linear solver to SUNLinSol_Dense.");
         } else if (retries == 1) {
           /* Change from dense linear solver to SPTFQMR*/
           flag = SUNLinSolFree(kData->linSol);
@@ -483,7 +483,7 @@ int kinsolOde(SOLVER_INFO* solverInfo)  /* TODO: Unify this function with nlsKin
           flag = KINSetLinearSolver(kData->kin_mem, kData->linSol, NULL);
           checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetLinearSolver");
           use_dense = FALSE;
-          warningStreamPrint(LOG_SOLVER, 0, "Restart Kinsol: change linear solver to SUNLinSol_SPTFQMR.");
+          warningStreamPrint(OMC_LOG_SOLVER, 0, "Restart Kinsol: change linear solver to SUNLinSol_SPTFQMR.");
         } else if (retries == 2) {
           /* Change from SPTFQMR solver to SPBCG*/
           flag = SUNLinSolFree(kData->linSol);
@@ -493,7 +493,7 @@ int kinsolOde(SOLVER_INFO* solverInfo)  /* TODO: Unify this function with nlsKin
           flag = KINSetLinearSolver(kData->kin_mem, kData->linSol, NULL);
           checkReturnFlag_SUNDIALS(flag, SUNDIALS_KINLS_FLAG, "KINSetLinearSolver");
           use_dense = FALSE;
-          warningStreamPrint(LOG_SOLVER, 0, "Restart Kinsol: change linear solver to SUNLinSol_SPBCGS.");
+          warningStreamPrint(OMC_LOG_SOLVER, 0, "Restart Kinsol: change linear solver to SUNLinSol_SPBCGS.");
         } else {
           /* Give up */
           try_again = FALSE;
@@ -502,7 +502,7 @@ int kinsolOde(SOLVER_INFO* solverInfo)  /* TODO: Unify this function with nlsKin
       case IMPRK_LS_DENSE:
         use_dense = TRUE;
         if (retries == 1) {
-          warningStreamPrint(LOG_SOLVER, 0, "Restart Kinsol: change KINSOL strategy to basic newton iteration.");
+          warningStreamPrint(OMC_LOG_SOLVER, 0, "Restart Kinsol: change KINSOL strategy to basic newton iteration.");
           kinOde->kData->glstr = KIN_NONE;    /* Switch to basic newton iteration */
         } else {
           try_again = FALSE;
@@ -543,11 +543,11 @@ int kinsolOde(SOLVER_INFO* solverInfo)  /* TODO: Unify this function with nlsKin
   solverInfo->solverStatsTmp.nErrorTestFailures += tmp;               /* beta-condition failures evaluations */
 
   if (solvedSuccessfully != 0) {
-    infoStreamPrint(LOG_SOLVER, 0, "##IMPRK## Integration step finished unsuccessful.");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "##IMPRK## Integration step finished unsuccessful.");
   } else {
-    infoStreamPrint(LOG_SOLVER, 0, "##IMPRK## Integration step finished successful.");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "##IMPRK## Integration step finished successful.");
   }
-  messageClose(LOG_SOLVER);
+  messageClose(OMC_LOG_SOLVER);
 
   return solvedSuccessfully;
 }

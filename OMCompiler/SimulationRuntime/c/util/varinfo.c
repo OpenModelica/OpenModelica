@@ -39,19 +39,19 @@ void printErrorEqSyst(EQUATION_SYSTEM_ERROR err, EQUATION_INFO eq, double time)
   switch(err)
   {
   case ERROR_AT_TIME:
-    warningStreamPrintWithEquationIndexes(LOG_NLS, omc_dummyFileInfo, 0, indexes, "Error solving nonlinear system %d at time %g", eq.id, time);
+    warningStreamPrintWithEquationIndexes(OMC_LOG_NLS, omc_dummyFileInfo, 0, indexes, "Error solving nonlinear system %d at time %g", eq.id, time);
     break;
   case NO_PROGRESS_START_POINT:
-    warningStreamPrintWithEquationIndexes(LOG_NLS, omc_dummyFileInfo, 0, indexes, "Solving nonlinear system %d: iteration not making progress, trying with different starting points (+%g)", eq.id, time);
+    warningStreamPrintWithEquationIndexes(OMC_LOG_NLS, omc_dummyFileInfo, 0, indexes, "Solving nonlinear system %d: iteration not making progress, trying with different starting points (+%g)", eq.id, time);
     break;
   case NO_PROGRESS_FACTOR:
-    warningStreamPrintWithEquationIndexes(LOG_NLS, omc_dummyFileInfo, 0, indexes, "Solving nonlinear system %d: iteration not making progress, trying to decrease factor to %g", eq.id, time);
+    warningStreamPrintWithEquationIndexes(OMC_LOG_NLS, omc_dummyFileInfo, 0, indexes, "Solving nonlinear system %d: iteration not making progress, trying to decrease factor to %g", eq.id, time);
     break;
   case IMPROPER_INPUT:
-    warningStreamPrintWithEquationIndexes(LOG_NLS, omc_dummyFileInfo, 0, indexes, "improper input parameters to nonlinear eq. syst: %d at time %g", eq.id, time);
+    warningStreamPrintWithEquationIndexes(OMC_LOG_NLS, omc_dummyFileInfo, 0, indexes, "improper input parameters to nonlinear eq. syst: %d at time %g", eq.id, time);
     break;
   default:
-    warningStreamPrintWithEquationIndexes(LOG_NLS, omc_dummyFileInfo, 0, indexes, "Unknown equation system error: %d %d %g", err, eq.id, time);
+    warningStreamPrintWithEquationIndexes(OMC_LOG_NLS, omc_dummyFileInfo, 0, indexes, "Unknown equation system error: %d %d %g", err, eq.id, time);
     break;
   }
 }

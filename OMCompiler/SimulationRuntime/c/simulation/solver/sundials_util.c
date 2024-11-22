@@ -66,7 +66,7 @@ void setJacElementSundialsSparse(int row, int column, int nth, double value, voi
   SUNMatrix A = (SUNMatrix) Jac;
   /* TODO: Remove this check for performance reasons? */
   if (SM_SPARSETYPE_S(A) != CSC_MAT) {
-    errorStreamPrint(LOG_STDOUT, 0,
+    errorStreamPrint(OMC_LOG_STDOUT, 0,
                      "In function setJacElementSundialsSparse: Wrong sparse format "
                      "of SUNMatrix A.");
   }

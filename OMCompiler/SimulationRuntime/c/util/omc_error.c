@@ -45,7 +45,7 @@ void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function
 
 const int firstOMCErrorStream = 1;
 
-const char *LOG_STREAM_NAME[SIM_LOG_MAX] = {
+const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX] = {
   "LOG_UNKNOWN",
   "LOG_STDOUT",
   "LOG_ASSERT",
@@ -104,66 +104,66 @@ const char *LOG_STREAM_NAME[SIM_LOG_MAX] = {
   "LOG_ZEROCROSSINGS",
 };
 
-const char *LOG_STREAM_DESC[SIM_LOG_MAX] = {
+const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX] = {
   "unknown",
-  "this stream is always active, can be disabled with -lv=-LOG_STDOUT",         /* LOG_STDOUT */
-  "this stream is always active, can be disabled with -lv=-LOG_ASSERT",         /* LOG_ASSERT */
+  "this stream is always active, can be disabled with -lv=-LOG_STDOUT",         /* OMC_LOG_STDOUT */
+  "this stream is always active, can be disabled with -lv=-LOG_ASSERT",         /* OMC_LOG_ASSERT */
 
-  "additional information about dassl solver",                                  /* LOG_DASSL */
-  "outputs the states at every dassl call",                                     /* LOG_DASSL_STATES */
-  "additional debug information",                                               /* LOG_DEBUG */
-  "debug information for delay operator",                                       /* LOG_DELAY */
-  "Log division by zero",                                                       /* LOG_DIVISION */
-  "outputs information about dynamic state selection",                          /* LOG_DSS */
-  "outputs jacobian of the dynamic state selection",                            /* LOG_DSS_JAC */
-  "additional information about dynamic tearing",                               /* LOG_DT */
-  "additional information about dynamic tearing (local and global constraints)",/* LOG_DT_CONS */
-  "additional information during event iteration",                              /* LOG_EVENTS */
-  "verbose logging of event system",                                            /* LOG_EVENTS_V */
-  "information about GBODE solver",                                             /* LOG_GBODE */
-  "verbose information about GBODE solver",                                     /* LOG_GBODE_V */
-  "log non-linear solver process of GBODE solver",                              /* LOG_GBODE_NLS */
-  "verbose log non-linear solver process of GBODE solver",                      /* LOG_GBODE_NLS_V */
-  "output states at every GBODE call",                                          /* LOG_GBODE_STATES */
-  "additional information during initialization",                               /* LOG_INIT */
-  "log homotopy initialization",                                                /* LOG_INIT_HOMOTOPY */
-  "verbose information during initialization",                                  /* LOG_INIT_V */
-  "information from Ipopt",                                                     /* LOG_IPOPT */
-  "more information from Ipopt",                                                /* LOG_IPOPT_FULL*/
-  "check jacobian matrix with Ipopt",                                           /* LOG_IPOPT_JAC*/
-  "check hessian matrix with Ipopt",                                            /* LOG_IPOPT_HESSE*/
-  "print max error in the optimization",                                        /* LOG_IPOPT_ERROR*/
-  "outputs the jacobian matrix used by ODE solvers",                            /* LOG_JAC */
-  "logging for linear systems",                                                 /* LOG_LS */
-  "verbose logging of linear systems",                                          /* LOG_LS_V */
-  "logging for mixed systems",                                                  /* LOG_MIXED */
-  "logging for nonlinear systems",                                              /* LOG_NLS */
-  "verbose logging of nonlinear systems",                                       /* LOG_NLS_V */
-  "logging of homotopy solver for nonlinear systems",                           /* LOG_NLS_HOMOTOPY */
-  "outputs the jacobian of nonlinear systems",                                  /* LOG_NLS_JAC */
-  "tests the analytical jacobian of nonlinear systems",                         /* LOG_NLS_JAC_TEST */
-  "Log Newton diagnostic",                                                      /* LOG_NLS_NEWTON_DIAG */
-  "outputs every evaluation of the residual function",                          /* LOG_NLS_RES */
-  "outputs debug information about extrapolate process",                        /* LOG_NLS_EXTRAPOLATE */
-  "outputs residuals of the initialization",                                    /* LOG_RES_INIT */
-  "additional information regarding real-time processes",                       /* LOG_RT */
-  "additional information about simulation process",                            /* LOG_SIMULATION */
-  "additional information about solver process",                                /* LOG_SOLVER */
-  "verbose information about the integration process",                          /* LOG_SOLVER_V */
-  "context information during the solver process",                              /* LOG_SOLVER_CONTEXT" */
-  "final solution of the initialization",                                       /* LOG_SOTI */
-  "logging of internal operations for spatialDistribution",                     /* LOG_SPATIALDISTR */
-  "additional statistics about timer/events/solver",                            /* LOG_STATS */
-  "additional statistics for LOG_STATS",                                        /* LOG_STATS_V */
-  "this stream is always active, unless deactivated with -lv=-LOG_SUCCESS",     /* LOG_SUCCESS */
-  "log clocks and sub-clocks for synchronous features",                         /* LOG_SYNCHRONOUS */
+  "additional information about dassl solver",                                  /* OMC_LOG_DASSL */
+  "outputs the states at every dassl call",                                     /* OMC_LOG_DASSL_STATES */
+  "additional debug information",                                               /* OMC_LOG_DEBUG */
+  "debug information for delay operator",                                       /* OMC_LOG_DELAY */
+  "Log division by zero",                                                       /* OMC_LOG_DIVISION */
+  "outputs information about dynamic state selection",                          /* OMC_LOG_DSS */
+  "outputs jacobian of the dynamic state selection",                            /* OMC_LOG_DSS_JAC */
+  "additional information about dynamic tearing",                               /* OMC_LOG_DT */
+  "additional information about dynamic tearing (local and global constraints)",/* OMC_LOG_DT_CONS */
+  "additional information during event iteration",                              /* OMC_LOG_EVENTS */
+  "verbose logging of event system",                                            /* OMC_LOG_EVENTS_V */
+  "information about GBODE solver",                                             /* OMC_LOG_GBODE */
+  "verbose information about GBODE solver",                                     /* OMC_LOG_GBODE_V */
+  "log non-linear solver process of GBODE solver",                              /* OMC_LOG_GBODE_NLS */
+  "verbose log non-linear solver process of GBODE solver",                      /* OMC_LOG_GBODE_NLS_V */
+  "output states at every GBODE call",                                          /* OMC_LOG_GBODE_STATES */
+  "additional information during initialization",                               /* OMC_LOG_INIT */
+  "log homotopy initialization",                                                /* OMC_LOG_INIT_HOMOTOPY */
+  "verbose information during initialization",                                  /* OMC_LOG_INIT_V */
+  "information from Ipopt",                                                     /* OMC_LOG_IPOPT */
+  "more information from Ipopt",                                                /* OMC_LOG_IPOPT_FULL*/
+  "check jacobian matrix with Ipopt",                                           /* OMC_LOG_IPOPT_JAC*/
+  "check hessian matrix with Ipopt",                                            /* OMC_LOG_IPOPT_HESSE*/
+  "print max error in the optimization",                                        /* OMC_LOG_IPOPT_ERROR*/
+  "outputs the jacobian matrix used by ODE solvers",                            /* OMC_LOG_JAC */
+  "logging for linear systems",                                                 /* OMC_LOG_LS */
+  "verbose logging of linear systems",                                          /* OMC_LOG_LS_V */
+  "logging for mixed systems",                                                  /* OMC_LOG_MIXED */
+  "logging for nonlinear systems",                                              /* OMC_LOG_NLS */
+  "verbose logging of nonlinear systems",                                       /* OMC_LOG_NLS_V */
+  "logging of homotopy solver for nonlinear systems",                           /* OMC_LOG_NLS_HOMOTOPY */
+  "outputs the jacobian of nonlinear systems",                                  /* OMC_LOG_NLS_JAC */
+  "tests the analytical jacobian of nonlinear systems",                         /* OMC_LOG_NLS_JAC_TEST */
+  "Log Newton diagnostic",                                                      /* OMC_LOG_NLS_NEWTON_DIAG */
+  "outputs every evaluation of the residual function",                          /* OMC_LOG_NLS_RES */
+  "outputs debug information about extrapolate process",                        /* OMC_LOG_NLS_EXTRAPOLATE */
+  "outputs residuals of the initialization",                                    /* OMC_LOG_RES_INIT */
+  "additional information regarding real-time processes",                       /* OMC_LOG_RT */
+  "additional information about simulation process",                            /* OMC_LOG_SIMULATION */
+  "additional information about solver process",                                /* OMC_LOG_SOLVER */
+  "verbose information about the integration process",                          /* OMC_LOG_SOLVER_V */
+  "context information during the solver process",                              /* OMC_LOG_SOLVER_CONTEXT" */
+  "final solution of the initialization",                                       /* OMC_LOG_SOTI */
+  "logging of internal operations for spatialDistribution",                     /* OMC_LOG_SPATIALDISTR */
+  "additional statistics about timer/events/solver",                            /* OMC_LOG_STATS */
+  "additional statistics for OMC_LOG_STATS",                                        /* OMC_LOG_STATS_V */
+  "this stream is always active, unless deactivated with -lv=-LOG_SUCCESS",     /* OMC_LOG_SUCCESS */
+  "log clocks and sub-clocks for synchronous features",                         /* OMC_LOG_SYNCHRONOUS */
 #ifdef USE_DEBUG_TRACE
-  "enables additional output to trace call stack",                              /* LOG_TRACE */
+  "enables additional output to trace call stack",                              /* OMC_LOG_TRACE */
 #endif
-  "additional information about the zerocrossings"                              /* LOG_ZEROCROSSINGS */
+  "additional information about the zerocrossings"                              /* OMC_LOG_ZEROCROSSINGS */
 };
 
-const char *LOG_TYPE_DESC[LOG_TYPE_MAX] = {
+const char *OMC_LOG_TYPE_DESC[OMC_LOG_TYPE_MAX] = {
   "unknown",
   "info",
   "warning",
@@ -172,33 +172,33 @@ const char *LOG_TYPE_DESC[LOG_TYPE_MAX] = {
   "debug"
 };
 
-int useStream[SIM_LOG_MAX];         /* 1 if LOG is enabled, otherwise 0 */
-int backupUseStream[SIM_LOG_MAX];   /* Backup of useStream */
-int level[SIM_LOG_MAX];
-int lastType[SIM_LOG_MAX];
-int lastStream = LOG_UNKNOWN;
-int showAllWarnings = 0;
-int streamsActive = 1;              /* 1 if info streams from useStream are active, 0 if deactivated */
+int omc_useStream[OMC_SIM_LOG_MAX];         /* 1 if LOG is enabled, otherwise 0 */
+static int backupUseStream[OMC_SIM_LOG_MAX];   /* Backup of omc_useStream */
+static int omc_level[OMC_SIM_LOG_MAX];
+static int omc_lastType[OMC_SIM_LOG_MAX];
+static int omc_lastStream = OMC_LOG_UNKNOWN;
+int omc_showAllWarnings = 0;
+static int streamsActive = 1;              /* 1 if info streams from omc_useStream are active, 0 if deactivated */
 
 #ifdef USE_DEBUG_TRACE
-  int DEBUG_TRACE_PUSH_HELPER(const char* pFnc, const char* pFile, const long ln){if(useStream[LOG_TRACE]) printf("TRACE: push %s (%s:%d)\n", pFnc, pFile, ln); return 0;}
-  int DEBUG_TRACE_POP_HELPER(int traceID){if(useStream[LOG_TRACE]) printf("TRACE: pop\n"); return 0;}
+  int DEBUG_TRACE_PUSH_HELPER(const char* pFnc, const char* pFile, const long ln){if(omc_useStream[OMC_LOG_TRACE]) printf("TRACE: push %s (%s:%d)\n", pFnc, pFile, ln); return 0;}
+  int DEBUG_TRACE_POP_HELPER(int traceID){if(omc_useStream[OMC_LOG_TRACE]) printf("TRACE: pop\n"); return 0;}
 #endif
 
 void initDumpSystem()
 {
   int i;
 
-  for(i=0; i<SIM_LOG_MAX; ++i)
+  for(i=0; i<OMC_SIM_LOG_MAX; ++i)
   {
-    useStream[i] = 0;
-    level[i] = 0;
-    lastType[i] = 0;
+    omc_useStream[i] = 0;
+    omc_level[i] = 0;
+    omc_lastType[i] = 0;
   }
 
-  useStream[LOG_STDOUT] = 1;
-  useStream[LOG_ASSERT] = 1;
-  useStream[LOG_SUCCESS] = 1;
+  omc_useStream[OMC_LOG_STDOUT] = 1;
+  omc_useStream[OMC_LOG_ASSERT] = 1;
+  omc_useStream[OMC_LOG_SUCCESS] = 1;
 }
 
 /* Deactivates streams for logging except for stdout, assert and success. */
@@ -211,26 +211,26 @@ void deactivateLogging()
     return;   /* Do nothing if allready actinactiveive */
   }
 
-  for(i=0; i<SIM_LOG_MAX; ++i)
+  for(i=0; i<OMC_SIM_LOG_MAX; ++i)
   {
-    if (i != LOG_STDOUT && i != LOG_ASSERT && i != LOG_SUCCESS)
+    if (i != OMC_LOG_STDOUT && i != OMC_LOG_ASSERT && i != OMC_LOG_SUCCESS)
     {
-      backupUseStream[i] = useStream[i];
+      backupUseStream[i] = omc_useStream[i];
       /*
-      if (useStream[i] != 0) {
+      if (omc_useStream[i] != 0) {
         printf("Stream %s deactivated\n",LOG_STREAM_NAME[i]);
       }
       */
-      useStream[i] = 0;
+      omc_useStream[i] = 0;
       }
   }
 
-  useStream[LOG_STDOUT] = 1;
-  useStream[LOG_ASSERT] = 1;
-  useStream[LOG_SUCCESS] = 1;
+  omc_useStream[OMC_LOG_STDOUT] = 1;
+  omc_useStream[OMC_LOG_ASSERT] = 1;
+  omc_useStream[OMC_LOG_SUCCESS] = 1;
 
   streamsActive = 0;  /* Deactivate info streams */
-  //infoStreamPrint(LOG_STDOUT,0,"Deactivated logging");
+  //infoStreamPrint(OMC_LOG_STDOUT,0,"Deactivated logging");
 }
 
 /* Resets streams to backup after deactivateLogging() was used. */
@@ -243,13 +243,13 @@ void reactivateLogging()
     return;   /* Do nothing if allready active */
   }
 
-  for(i=0; i<SIM_LOG_MAX; ++i)
+  for(i=0; i<OMC_SIM_LOG_MAX; ++i)
   {
-    if (i != LOG_STDOUT && i != LOG_ASSERT && i != LOG_SUCCESS)
+    if (i != OMC_LOG_STDOUT && i != OMC_LOG_ASSERT && i != OMC_LOG_SUCCESS)
     {
-      useStream[i] = backupUseStream[i];
+      omc_useStream[i] = backupUseStream[i];
       /*
-      if (useStream[i] != 0) {
+      if (omc_useStream[i] != 0) {
         printf("Stream %s reactivated\n",LOG_STREAM_NAME[i]);
       }
       */
@@ -257,7 +257,7 @@ void reactivateLogging()
   }
 
   streamsActive = 1;  /* Activate info streams */
-  //infoStreamPrint(LOG_STDOUT,0,"Reactivated logging");
+  //infoStreamPrint(OMC_LOG_STDOUT,0,"Reactivated logging");
 }
 
 void printInfo(FILE *stream, FILE_INFO info)
@@ -321,12 +321,12 @@ void messageText(int type, int stream, FILE_INFO info, int indentNext, char *msg
   int i;
   int len;
 
-  printf("%-17s | ", (subline || (lastStream == stream && level[stream] > 0)) ? "|" : LOG_STREAM_NAME[stream]);
-  printf("%-7s | ", (subline || (lastStream == stream && lastType[stream] == type && level[stream] > 0)) ? "|" : LOG_TYPE_DESC[type]);
-  lastType[stream] = type;
-  lastStream = stream;
+  printf("%-17s | ", (subline || (omc_lastStream == stream && omc_level[stream] > 0)) ? "|" : OMC_LOG_STREAM_NAME[stream]);
+  printf("%-7s | ", (subline || (omc_lastStream == stream && omc_lastType[stream] == type && omc_level[stream] > 0)) ? "|" : OMC_LOG_TYPE_DESC[type]);
+  omc_lastType[stream] = type;
+  omc_lastStream = stream;
 
-  for(i=0; i<level[stream]; ++i)
+  for(i=0; i<omc_level[stream]; ++i)
       printf("| ");
 
   if (info.filename && strlen(info.filename) > 0) {
@@ -358,7 +358,7 @@ void messageText(int type, int stream, FILE_INFO info, int indentNext, char *msg
     printf("%s\n", msg);
   }
   fflush(NULL);
-  if (indentNext) level[stream]++;
+  if (indentNext) omc_level[stream]++;
 }
 
 /**
@@ -370,8 +370,8 @@ void messageText(int type, int stream, FILE_INFO info, int indentNext, char *msg
  */
 static void messageCloseText(int stream)
 {
-  if(ACTIVE_STREAM(stream)) {
-    level[stream]--;
+  if(OMC_ACTIVE_STREAM(stream)) {
+    omc_level[stream]--;
   }
 }
 
@@ -385,8 +385,8 @@ static void messageCloseText(int stream)
  */
 static void messageCloseTextWarning(int stream)
 {
-  if (ACTIVE_WARNING_STREAM(stream)) {
-    level[stream]--;
+  if (OMC_ACTIVE_WARNING_STREAM(stream)) {
+    omc_level[stream]--;
   }
 }
 
@@ -407,46 +407,46 @@ void (*messageCloseWarning)(int stream) = messageCloseTextWarning;
 #if !defined(OMC_MINIMAL_LOGGING)
 void va_infoStreamPrint(int stream, int indentNext, const char *format, va_list args)
 {
-  if (useStream[stream]) {
+  if (omc_useStream[stream]) {
     char logBuffer[SIZE_LOG_BUFFER];
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-    messageFunction(LOG_TYPE_INFO, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
+    messageFunction(OMC_LOG_TYPE_INFO, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
   }
 }
 
 void infoStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format, ...)
 {
-  if (useStream[stream]) {
+  if (omc_useStream[stream]) {
     char logBuffer[SIZE_LOG_BUFFER];
     va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     va_end(args);
-    messageFunction(LOG_TYPE_INFO, stream, info, indentNext, logBuffer, 0, indexes);
+    messageFunction(OMC_LOG_TYPE_INFO, stream, info, indentNext, logBuffer, 0, indexes);
   }
 }
 
 void infoStreamPrint(int stream, int indentNext, const char *format, ...)
 {
-  if (useStream[stream]) {
+  if (omc_useStream[stream]) {
     char logBuffer[SIZE_LOG_BUFFER];
     va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     va_end(args);
-    messageFunction(LOG_TYPE_INFO, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
+    messageFunction(OMC_LOG_TYPE_INFO, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
   }
 }
 
 void warningStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format, ...)
 {
-  if (ACTIVE_WARNING_STREAM(stream)) {
+  if (OMC_ACTIVE_WARNING_STREAM(stream)) {
     char logBuffer[SIZE_LOG_BUFFER];
     va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     va_end(args);
-    messageFunction(LOG_TYPE_WARNING, stream, info, indentNext, logBuffer, 0, indexes);
+    messageFunction(OMC_LOG_TYPE_WARNING, stream, info, indentNext, logBuffer, 0, indexes);
   }
 }
 
@@ -465,7 +465,7 @@ void warningStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int inden
  */
 void warningStreamPrintWithLimit(int stream, int indentNext, unsigned long nDisplayed, unsigned long maxWarnDisplays, const char *format, ...) {
 
-  if (!ACTIVE_WARNING_STREAM(stream)) {
+  if (!OMC_ACTIVE_WARNING_STREAM(stream)) {
     return;
   }
 
@@ -498,31 +498,31 @@ void warningStreamPrintWithLimit(int stream, int indentNext, unsigned long nDisp
  */
 void warningStreamPrint(int stream, int indentNext, const char *format, ...)
 {
-  if (ACTIVE_WARNING_STREAM(stream)) {
+  if (OMC_ACTIVE_WARNING_STREAM(stream)) {
     char logBuffer[SIZE_LOG_BUFFER];
     va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     va_end(args);
-    messageFunction(LOG_TYPE_WARNING, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
+    messageFunction(OMC_LOG_TYPE_WARNING, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
   }
 }
 
 void va_warningStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format, va_list args)
 {
-  if (ACTIVE_WARNING_STREAM(stream)) {
+  if (OMC_ACTIVE_WARNING_STREAM(stream)) {
     char logBuffer[SIZE_LOG_BUFFER];
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-    messageFunction(LOG_TYPE_WARNING, stream, info, indentNext, logBuffer, 0, indexes);
+    messageFunction(OMC_LOG_TYPE_WARNING, stream, info, indentNext, logBuffer, 0, indexes);
   }
 }
 
 void va_warningStreamPrint(int stream, int indentNext, const char *format, va_list args)
 {
-  if (ACTIVE_WARNING_STREAM(stream)) {
+  if (OMC_ACTIVE_WARNING_STREAM(stream)) {
     char logBuffer[SIZE_LOG_BUFFER];
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-    messageFunction(LOG_TYPE_WARNING, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
+    messageFunction(OMC_LOG_TYPE_WARNING, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
   }
 }
 
@@ -533,14 +533,14 @@ void errorStreamPrint(int stream, int indentNext, const char *format, ...)
   va_start(args, format);
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
   va_end(args);
-  messageFunction(LOG_TYPE_ERROR, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
+  messageFunction(OMC_LOG_TYPE_ERROR, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
 }
 
 void va_errorStreamPrint(int stream, int indentNext, const char *format, va_list args)
 {
   char logBuffer[SIZE_LOG_BUFFER];
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-  messageFunction(LOG_TYPE_ERROR, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
+  messageFunction(OMC_LOG_TYPE_ERROR, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
 }
 
 void va_errorStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format, va_list args)
@@ -548,32 +548,32 @@ void va_errorStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int inde
 
   char logBuffer[SIZE_LOG_BUFFER];
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-  messageFunction(LOG_TYPE_ERROR, stream, info, indentNext, logBuffer, 0, indexes);
+  messageFunction(OMC_LOG_TYPE_ERROR, stream, info, indentNext, logBuffer, 0, indexes);
 }
 #endif
 
 #ifdef USE_DEBUG_OUTPUT
 void debugStreamPrint(int stream, int indentNext, const char *format, ...)
 {
-  if (useStream[stream]) {
+  if (omc_useStream[stream]) {
     char logBuffer[SIZE_LOG_BUFFER];
     va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     va_end(args);
-    messageFunction(LOG_TYPE_DEBUG, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
+    messageFunction(OMC_LOG_TYPE_DEBUG, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
   }
 }
 
 void debugStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format, ...)
 {
-  if (useStream[stream]) {
+  if (omc_useStream[stream]) {
     char logBuffer[SIZE_LOG_BUFFER];
     va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     va_end(args);
-    messageFunction(LOG_TYPE_DEBUG, stream, info, indentNext, logBuffer, 0, indexes);
+    messageFunction(OMC_LOG_TYPE_DEBUG, stream, info, indentNext, logBuffer, 0, indexes);
   }
 }
 #endif
@@ -609,7 +609,7 @@ static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)
 /**
  * @brief Variadic stream print and throw.
  *
- * Print message to LOG_ASSERT.
+ * Print message to OMC_LOG_ASSERT.
  *
  * @param threadData  Thread data for throwing.
  * @param format      Format string.
@@ -618,10 +618,10 @@ static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)
 void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list args)
 {
 #if !defined(OMC_MINIMAL_LOGGING)
-  if (useStream[LOG_ASSERT]) {
+  if (omc_useStream[OMC_LOG_ASSERT]) {
     char logBuffer[SIZE_LOG_BUFFER];
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-    messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, omc_dummyFileInfo, 0, logBuffer, 0, NULL);
+    messageFunction(OMC_LOG_TYPE_DEBUG, OMC_LOG_ASSERT, omc_dummyFileInfo, 0, logBuffer, 0, NULL);
   }
 #endif
   threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
@@ -629,7 +629,7 @@ void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list a
 }
 
 /**
- * @brief Print message to LOG_ASSERT and throw.
+ * @brief Print message to OMC_LOG_ASSERT and throw.
  *
  * @param threadData  Thread data for throwing.
  * @param format      Format string.
@@ -649,7 +649,7 @@ void throwStreamPrint(threadData_t *threadData, const char *format, ...)
 }
 
 /**
- * @brief Print message with equation indices to LOG_ASSERT stream and throw.
+ * @brief Print message with equation indices to OMC_LOG_ASSERT stream and throw.
  *
  * @param threadData    Thread data for throwing.
  * @param info          File info, can be omc_dummyFileInfo.
@@ -660,13 +660,13 @@ void throwStreamPrint(threadData_t *threadData, const char *format, ...)
 void throwStreamPrintWithEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *format, ...)
 {
 #if !defined(OMC_MINIMAL_LOGGING)
-  if (useStream[LOG_ASSERT]) {
+  if (omc_useStream[OMC_LOG_ASSERT]) {
     char logBuffer[SIZE_LOG_BUFFER];
     va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     va_end(args);
-    messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, info, 0, logBuffer, 0, indexes);
+    messageFunction(OMC_LOG_TYPE_DEBUG, OMC_LOG_ASSERT, info, 0, logBuffer, 0, indexes);
   }
 #endif
   threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);

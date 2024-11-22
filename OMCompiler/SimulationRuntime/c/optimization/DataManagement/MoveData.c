@@ -79,7 +79,7 @@ int pickUpModelData(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   pickUpTime(&optData->time, &optData->dim, data, optData->bounds.preSim);
   setRKCoeff(&optData->rk, optData->dim.np);
   calculatedScalingHelper(&optData->bounds,&optData->time, &optData->dim, &optData->rk);
-  messageClose(LOG_SOLVER);
+  messageClose(OMC_LOG_SOLVER);
 
   dim = &optData->dim;
 
@@ -138,7 +138,7 @@ static inline void pickUpDim(OptDataDim * dim, DATA* data, OptDataTime * time){
   if (cflags) {
     dim->np = atoi(cflags);
     if (dim->np != 1 && dim->np!=3) {
-      warningStreamPrint(LOG_STDOUT, 0, "FLAG_OPTIZER_NP is %i. Currently optimizer support only 1 and 3.\nFLAG_OPTIZER_NP set of 3", dim->np);
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "FLAG_OPTIZER_NP is %i. Currently optimizer support only 1 and 3.\nFLAG_OPTIZER_NP set of 3", dim->np);
       dim->np = 3;
     }
   } else {
@@ -198,7 +198,7 @@ static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data, 
   for(i = 0; i<nsi; ++i)
     time->t[i] = (long double*)malloc(np*sizeof(long double));
   if(nsi < 1){
-    errorStreamPrint(LOG_STDOUT, 0, "Not support numberOfIntervals = %i < 1", nsi);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Not support numberOfIntervals = %i < 1", nsi);
     assert(0);
   }
 
@@ -209,7 +209,7 @@ static inline void pickUpTime(OptDataTime * time, OptDataDim * dim, DATA* data, 
     c[1] = 0.64494897427831780981972840747058913919659474806567;
     c[2] = 1.00000;
   }else{
-    errorStreamPrint(LOG_STDOUT, 0, "Not support np = %i", np);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Not support np = %i", np);
     assert(0);
   }
 
@@ -248,7 +248,7 @@ static int getNsi(char*filename, const int nsi, modelica_boolean * exTimeGrid){
   *exTimeGrid = 0;
   pFile = omc_fopen(filename,"r");
   if(pFile == NULL){
-    warningStreamPrint(LOG_STDOUT, 0, "OMC can't find the file %s.", filename);
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "OMC can't find the file %s.", filename);
     fclose(pFile);
     return nsi;
   }
@@ -259,7 +259,7 @@ static int getNsi(char*filename, const int nsi, modelica_boolean * exTimeGrid){
    }
    // check if csv file is empty!
    if (n == 0){
-    warningStreamPrint(LOG_STDOUT, 0, "time grid file: %s is empty", filename);
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "time grid file: %s is empty", filename);
     fclose(pFile);
     return nsi;
    }
@@ -282,8 +282,8 @@ static inline void overwriteTimeGridFile(OptDataTime * time, char* filename, lon
   time->dt[0] = time->t[0][np1] - time->t0;
 
   if(time->dt[0] <= 0){
-    warningStreamPrint(LOG_STDOUT, 0, "read time grid from file fail!");
-    warningStreamPrint(LOG_STDOUT, 0, "line %i: %g <= %g",0, (double)time->t[0][np1], (double)time->t0);
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "read time grid from file fail!");
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "line %i: %g <= %g",0, (double)time->t[0][np1], (double)time->t0);
     EXIT(0);
   }
 
@@ -304,9 +304,9 @@ static inline void overwriteTimeGridFile(OptDataTime * time, char* filename, lon
     }
 
     if(time->dt[i] <= 0){
-      warningStreamPrint(LOG_STDOUT, 0, "read time grid");
-      warningStreamPrint(LOG_STDOUT, 0, "line %i/%i: %g <= %g",i, nsi, (double)time->t[i][np1], (double)time->t[i-1][np1]);
-      warningStreamPrint(LOG_STDOUT, 0, "failed!");
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "read time grid");
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "line %i/%i: %g <= %g",i, nsi, (double)time->t[i][np1], (double)time->t[i-1][np1]);
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "failed!");
       EXIT(0);
     }
 
@@ -614,7 +614,7 @@ void res2file(OptData *optData, SOLVER_INFO* solverInfo, double *vopt){
   }else if(np == 1){
     a[0] = 1.000;
   }else{
-    errorStreamPrint(LOG_STDOUT, 0, "Not support np = %i", np);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Not support np = %i", np);
     assert(0);
   }
 
@@ -928,7 +928,7 @@ static inline void pickUpStates(OptData* optData){
     pFile = omc_fopen(cflags,"r");
 
     if(pFile == NULL){
-      warningStreamPrint(LOG_STDOUT, 0, "OMC can't find the file %s.",cflags);
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "OMC can't find the file %s.",cflags);
     }else{
       int c, n = 0;
       modelica_boolean b;
@@ -961,7 +961,7 @@ static inline void pickUpStates(OptData* optData){
             }
           }
           if(!b)
-            warningStreamPrint(LOG_STDOUT, 0, "it was impossible to set %s.start %g", buffer,start_value);
+            warningStreamPrint(OMC_LOG_STDOUT, 0, "it was impossible to set %s.start %g", buffer,start_value);
           else
           printf("\n[%i]set %s.start %g", i, buffer,start_value);
 

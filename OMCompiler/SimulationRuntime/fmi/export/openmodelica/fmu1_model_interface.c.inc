@@ -184,8 +184,8 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
   }
   /* intialize modelData */
   fmu1_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
-  useStream[LOG_STDOUT] = 1;
-  useStream[LOG_ASSERT] = 1;
+  omc_useStream[OMC_LOG_STDOUT] = 1;
+  omc_useStream[OMC_LOG_ASSERT] = 1;
   initializeDataStruc(comp->fmuData, comp->threadData);
   /* setup model data with default start data */
   setDefaultStartValues(comp);

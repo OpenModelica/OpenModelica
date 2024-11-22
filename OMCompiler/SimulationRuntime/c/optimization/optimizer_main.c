@@ -106,11 +106,11 @@ static inline int optimizationWithIpopt(OptData*optData){
   AddIpoptStrOption(nlp, "evaluate_orig_obj_at_resto_trial", "yes");
 
   /* print level */
-  if(ACTIVE_STREAM(LOG_IPOPT_FULL)){
+  if(OMC_ACTIVE_STREAM(OMC_LOG_IPOPT_FULL)){
     AddIpoptIntOption(nlp, "print_level", 7);
-  }else if(ACTIVE_STREAM(LOG_IPOPT)){
+  }else if(OMC_ACTIVE_STREAM(OMC_LOG_IPOPT)){
     AddIpoptIntOption(nlp, "print_level", 5);
-  }else if(ACTIVE_STREAM(LOG_STATS)){
+  }else if(OMC_ACTIVE_STREAM(OMC_LOG_STATS)){
     AddIpoptIntOption(nlp, "print_level", 3);
   }else {
     AddIpoptIntOption(nlp, "print_level", 2);
@@ -118,13 +118,13 @@ static inline int optimizationWithIpopt(OptData*optData){
   AddIpoptIntOption(nlp, "file_print_level", 0);
 
   /* derivative_test */
-  if(ACTIVE_STREAM(LOG_IPOPT_JAC) && ACTIVE_STREAM(LOG_IPOPT_HESSE)){
+  if(OMC_ACTIVE_STREAM(OMC_LOG_IPOPT_JAC) && OMC_ACTIVE_STREAM(OMC_LOG_IPOPT_HESSE)){
     AddIpoptIntOption(nlp, "print_level", 4);
     AddIpoptStrOption(nlp, "derivative_test", "second-order");
-  }else if(ACTIVE_STREAM(LOG_IPOPT_JAC)){
+  }else if(OMC_ACTIVE_STREAM(OMC_LOG_IPOPT_JAC)){
     AddIpoptIntOption(nlp, "print_level", 4);
     AddIpoptStrOption(nlp, "derivative_test", "first-order");
-  }else if(ACTIVE_STREAM(LOG_IPOPT_HESSE)){
+  }else if(OMC_ACTIVE_STREAM(OMC_LOG_IPOPT_HESSE)){
     AddIpoptIntOption(nlp, "print_level", 4);
     AddIpoptStrOption(nlp, "derivative_test", "only-second-order");
   }else{
@@ -139,7 +139,7 @@ static inline int optimizationWithIpopt(OptData*optData){
     else if(!strcmp(cflags,"const") || !strcmp(cflags,"CONST"))
       AddIpoptStrOption(nlp, "hessian_constant", "yes");
     else if(!(!strcmp(cflags,"num") || !strcmp(cflags,"NUM")))
-      warningStreamPrint(LOG_STDOUT, 0, "not support ipopt_hesse=%s",cflags);
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "not support ipopt_hesse=%s",cflags);
   }
 
   /*linear_solver e.g. mumps, MA27, MA57,...
@@ -217,8 +217,8 @@ static inline int optimizationWithIpopt(OptData*optData){
     optData->index = 1;
     res = IpoptSolve(nlp, vopt, NULL, &obj, mult_g, mult_x_L, mult_x_U, (void*)optData);
   }
-  if(res != 0 && !ACTIVE_STREAM(LOG_IPOPT))
-    warningStreamPrint(LOG_STDOUT, 0, "No optimal solution found!\nUse -lv=LOG_IPOPT for more information.");
+  if(res != 0 && !OMC_ACTIVE_STREAM(OMC_LOG_IPOPT))
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "No optimal solution found!\nUse -lv=LOG_IPOPT for more information.");
   FreeIpoptProblem(nlp);
   return res;
 }

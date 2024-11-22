@@ -3348,9 +3348,9 @@ void OMCProxy::getNonLinearSolvers(QStringList *methods, QStringList *descriptio
  */
 void OMCProxy::getLogStreams(QStringList *names, QStringList *descriptions)
 {
-  for (int i = firstOMCErrorStream ; i < SIM_LOG_MAX ; i++) {
-    *names << LOG_STREAM_NAME[i];
-    *descriptions << LOG_STREAM_DESC[i];
+  for (int i = firstOMCErrorStream ; i < OMC_SIM_LOG_MAX ; i++) {
+    *names << OMC_LOG_STREAM_NAME[i];
+    *descriptions << OMC_LOG_STREAM_DESC[i];
   }
 }
 

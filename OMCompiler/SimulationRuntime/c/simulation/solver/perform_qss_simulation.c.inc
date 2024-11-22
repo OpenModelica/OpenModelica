@@ -95,17 +95,17 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
 
   solverInfo->currentTime = simInfo->startTime;
 
-  warningStreamPrint(LOG_STDOUT, 0, "This QSS method is under development and should not be used yet.");
+  warningStreamPrint(OMC_LOG_STDOUT, 0, "This QSS method is under development and should not be used yet.");
 
   if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian))
   {
-    infoStreamPrint(LOG_STDOUT, 0, "Jacobian or sparse pattern is not generated or failed to initialize.");
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Jacobian or sparse pattern is not generated or failed to initialize.");
     return UNKNOWN;
   }
   printSparseStructure(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern,
       data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeRows,
       data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeCols,
-      LOG_SOLVER, "ODE sparse pattern");
+      OMC_LOG_SOLVER, "ODE sparse pattern");
 
 /* *********************************************************************************** */
   /* Initialization */
@@ -228,7 +228,7 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
 #endif
 
 #ifdef USE_DEBUG_TRACE
-    if (useStream[LOG_TRACE])
+    if (omc_useStream[OMC_LOG_TRACE])
       printf("TRACE: push loop step=%u, time=%.12g\n", currStepNo, solverInfo->currentTime);
 #endif
 
@@ -257,7 +257,7 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
       /* If all derivatives are zero, the states stay constant and only the
        * time propagates till stop->time.
        */
-      warningStreamPrint(LOG_STDOUT, 0, "All derivatives are zero at time %f!.\n", sData->timeValue);
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "All derivatives are zero at time %f!.\n", sData->timeValue);
       solverInfo->currentTime = simInfo->stopTime;
       sData->timeValue = solverInfo->currentTime;
 
@@ -374,7 +374,7 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
     {
       printInfo(stdout, TermInfo);
       fputc('\n', stdout);
-      infoStreamPrint(LOG_STDOUT, 0, "Simulation call terminate() at time %f\nMessage : %s", data->localData[0]->timeValue, TermMsg);
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "Simulation call terminate() at time %f\nMessage : %s", data->localData[0]->timeValue, TermMsg);
       simInfo->stopTime = solverInfo->currentTime;
     }
 
@@ -386,25 +386,25 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
     if (retValIntegrator)
     {
       retValue = -1 + retValIntegrator;
-      infoStreamPrint(LOG_STDOUT, 0, "model terminate | Integrator failed. | Simulation terminated at time %g", solverInfo->currentTime);
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "model terminate | Integrator failed. | Simulation terminated at time %g", solverInfo->currentTime);
       break;
     }
     else if (check_nonlinear_solutions(data, 0))
     {
       retValue = -2;
-      infoStreamPrint(LOG_STDOUT, 0, "model terminate | non-linear system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "model terminate | non-linear system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
       break;
     }
     else if (check_linear_solutions(data, 0))
     {
       retValue = -3;
-      infoStreamPrint(LOG_STDOUT, 0, "model terminate | linear system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "model terminate | linear system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
       break;
     }
     else if (check_mixed_solutions(data, 0))
     {
       retValue = -4;
-      infoStreamPrint(LOG_STDOUT, 0, "model terminate | mixed system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "model terminate | mixed system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
       break;
     }
     success = 1;
@@ -416,7 +416,7 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
     if (!success)
     {
       retValue =  -1;
-      infoStreamPrint(LOG_STDOUT, 0, "model terminate | Simulation terminated by an assert at time: %g", data->localData[0]->timeValue);
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "model terminate | Simulation terminated by an assert at time: %g", data->localData[0]->timeValue);
       break;
     }
 

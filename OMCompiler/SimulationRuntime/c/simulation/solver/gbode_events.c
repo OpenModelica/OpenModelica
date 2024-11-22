@@ -69,8 +69,8 @@ void bisection_gb(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
 
   memcpy(data->simulationInfo->zeroCrossingsBackup, data->simulationInfo->zeroCrossings, data->modelData->nZeroCrossings * sizeof(modelica_real));
 
-  infoStreamPrint(LOG_ZEROCROSSINGS, 0, "bisection method starts in interval [%e, %e]", *a, *b);
-  infoStreamPrint(LOG_ZEROCROSSINGS, 0, "TTOL is set to %e and maximum number of intersections %d.", TTOL, n);
+  infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "bisection method starts in interval [%e, %e]", *a, *b);
+  infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "TTOL is set to %e and maximum number of intersections %d.", TTOL, n);
 
   while(fabs(*b - *a) > MINIMAL_STEP_SIZE && n-- > 0)
   {
@@ -149,7 +149,7 @@ double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
   for(it=listFirstNode(eventList); it; it=listNextNode(it))
   {
-    infoStreamPrint(LOG_ZEROCROSSINGS, 0, "search for current event. Events in list: %ld", *((long*)listNodeData(it)));
+    infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "search for current event. Events in list: %ld", *((long*)listNodeData(it)));
   }
 
   /* Search for event time and event_id with bisection method */
@@ -167,28 +167,28 @@ double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
         value = fvalue;
       }
     }
-    infoStreamPrint(LOG_ZEROCROSSINGS, 0, "Minimum value: %e", value);
+    infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "Minimum value: %e", value);
     for(it = listFirstNode(eventList); it; it = listNextNode(it))
     {
       if(value == fabs(data->simulationInfo->zeroCrossings[*((long*) listNodeData(it))]))
       {
         listPushBack(tmpEventList, listNodeData(it));
-        infoStreamPrint(LOG_ZEROCROSSINGS, 0, "added tmp event : %ld", *((long*) listNodeData(it)));
+        infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "added tmp event : %ld", *((long*) listNodeData(it)));
       }
     }
   }
 
   listClear(eventList);
 
-  debugStreamPrint(LOG_EVENTS, 0, (listLen(tmpEventList) == 1) ? "found event: " : "found events: ");
+  debugStreamPrint(OMC_LOG_EVENTS, 0, (listLen(tmpEventList) == 1) ? "found event: " : "found events: ");
   while(listLen(tmpEventList) > 0)
   {
     long event_id = *((long*)listFirstData(tmpEventList));
     listPushFrontNodeNoCopy(eventList, listPopFrontNode(tmpEventList));
-    infoStreamPrint(LOG_ZEROCROSSINGS, 0, "Event id: %ld", event_id);
+    infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "Event id: %ld", event_id);
   }
 
-  debugStreamPrint(LOG_EVENTS, 0, "time: %.10e", time_right);
+  debugStreamPrint(OMC_LOG_EVENTS, 0, "time: %.10e", time_right);
 
   data->localData[0]->timeValue = time_left;
   memcpy(data->localData[0]->realVars, states_left, data->modelData->nStates * sizeof(double));
@@ -250,10 +250,10 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   if (*foundEvent) {
      if (omc_flag[FLAG_NO_ROOTFINDING]) {
        eventTime = timeRight;
-       infoStreamPrint(LOG_SOLVER, 0, "gbode detected an event at time: %20.16g (rootfinding is disabled)", eventTime);
+       infoStreamPrint(OMC_LOG_SOLVER, 0, "gbode detected an event at time: %20.16g (rootfinding is disabled)", eventTime);
      } else {
        eventTime = findRoot_gb(data, threadData, solverInfo, solverInfo->eventLst, timeLeft, leftValues, timeRight, rightValues, isInnerIntegration);
-       infoStreamPrint(LOG_SOLVER, 0, "gbode detected an event at time: %20.16g", eventTime);
+       infoStreamPrint(OMC_LOG_SOLVER, 0, "gbode detected an event at time: %20.16g", eventTime);
     }
   }
   // re-store the pre values of the zeroCrossings for comparison
