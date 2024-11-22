@@ -794,7 +794,7 @@ static int continue_DASSL(int* idid, double* atol)
     retValue = -9;
     break;
   case -10:
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "A Modelica assert prevents the integrator to continue. For more information use -lv OMC_LOG_SOLVER");
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "A Modelica assert prevents the integrator to continue. For more information use -lv LOG_SOLVER");
     retValue = -10;
     break;
   case -11:

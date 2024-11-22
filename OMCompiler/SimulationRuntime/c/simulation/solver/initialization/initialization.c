@@ -828,7 +828,7 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   if(stateSelection(data, threadData, 0, 1) == 1) {
     if(stateSelection(data, threadData, 1, 1) == 1) {
       /* report a warning about strange start values */
-      warningStreamPrint(OMC_LOG_STDOUT, 0, "Cannot initialize the dynamic state selection in an unique way. Use -lv OMC_LOG_DSS to see the switching state set.");
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "Cannot initialize the dynamic state selection in an unique way. Use -lv LOG_DSS to see the switching state set.");
     }
   }
 #endif

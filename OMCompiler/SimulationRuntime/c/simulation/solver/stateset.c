@@ -408,7 +408,7 @@ int stateSelectionSet(DATA *data, threadData_t *threadData, char reportError, in
         warningStreamPrint(OMC_LOG_DSS, 0, "%s", set->statescandidates[m]->name);
       messageClose(OMC_LOG_DSS);
 
-      throwStreamPrint(threadData, "Error, singular Jacobian for dynamic state selection at time %f\nUse -lv OMC_LOG_DSS_JAC to get the Jacobian", data->localData[0]->timeValue);
+      throwStreamPrint(threadData, "Error, singular Jacobian for dynamic state selection at time %f\nUse -lv LOG_DSS_JAC to get the Jacobian", data->localData[0]->timeValue);
     }
     /* if we have a new set throw event for reinitialization
        and set the A matrix for set.x=A*(states) */

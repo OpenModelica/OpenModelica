@@ -672,7 +672,7 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, dou
           logLevel = OMC_LOG_STDOUT;
         }
         warningStreamPrintWithLimit(logLevel, 0, linsys->numberOfFailures, data->simulationInfo->maxWarnDisplays,
-                                    "The default linear solver fails, the fallback solver with total pivoting is started at time %f. That might raise performance issues, for more information use -lv OMC_LOG_LS.", data->localData[0]->timeValue);
+                                    "The default linear solver fails, the fallback solver with total pivoting is started at time %f. That might raise performance issues, for more information use -lv LOG_LS.", data->localData[0]->timeValue);
         success = solveTotalPivot(data, threadData, sysNumber, aux_x);
         linsys->failed = 1;
       } else {
@@ -755,9 +755,9 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
       return 1;
     }
 #ifdef USE_PARJAC
-    warningStreamPrintWithEquationIndexes(OMC_LOG_STDOUT, omc_dummyFileInfo, 1, indexes, "Thread %u: Solving linear system %d fails at time %g. For more information use -lv OMC_LOG_LS.", omc_get_thread_num(), index, data->localData[0]->timeValue);
+    warningStreamPrintWithEquationIndexes(OMC_LOG_STDOUT, omc_dummyFileInfo, 1, indexes, "Thread %u: Solving linear system %d fails at time %g. For more information use -lv LOG_LS.", omc_get_thread_num(), index, data->localData[0]->timeValue);
 #else
-    warningStreamPrintWithEquationIndexes(OMC_LOG_STDOUT, omc_dummyFileInfo, 1, indexes, "Solving linear system %d fails at time %g. For more information use -lv OMC_LOG_LS.", index, data->localData[0]->timeValue);
+    warningStreamPrintWithEquationIndexes(OMC_LOG_STDOUT, omc_dummyFileInfo, 1, indexes, "Solving linear system %d fails at time %g. For more information use -lv LOG_LS.", index, data->localData[0]->timeValue);
 #endif
 
     for(j=0; j<modelInfoGetEquation(&data->modelData->modelDataXml, (linsys[i]).equationIndex).numVar; ++j) {
