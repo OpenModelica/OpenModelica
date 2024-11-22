@@ -3453,22 +3453,22 @@ let &sub = buffer ""
     /* min ******************************************************** */
     infoStreamPrint(OMC_LOG_INIT, 1, "updating min-values");
     <%minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix)%>
-    if (ACTIVE_STREAM(OMC_LOG_INIT)) messageClose(OMC_LOG_INIT);
+    if (OMC_ACTIVE_STREAM(OMC_LOG_INIT)) messageClose(OMC_LOG_INIT);
 
     /* max ******************************************************** */
     infoStreamPrint(OMC_LOG_INIT, 1, "updating max-values");
     <%maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix)%>
-    if (ACTIVE_STREAM(OMC_LOG_INIT)) messageClose(OMC_LOG_INIT);
+    if (OMC_ACTIVE_STREAM(OMC_LOG_INIT)) messageClose(OMC_LOG_INIT);
 
     /* nominal **************************************************** */
     infoStreamPrint(OMC_LOG_INIT, 1, "updating nominal-values");
     <%nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix)%>
-    if (ACTIVE_STREAM(OMC_LOG_INIT)) messageClose(OMC_LOG_INIT);
+    if (OMC_ACTIVE_STREAM(OMC_LOG_INIT)) messageClose(OMC_LOG_INIT);
 
     /* start ****************************************************** */
     infoStreamPrint(OMC_LOG_INIT, 1, "updating primary start-values");
     <%(startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix) ; separator="\n")%>
-    if (ACTIVE_STREAM(OMC_LOG_INIT)) messageClose(OMC_LOG_INIT);
+    if (OMC_ACTIVE_STREAM(OMC_LOG_INIT)) messageClose(OMC_LOG_INIT);
 
     TRACE_POP
     return 0;
@@ -6379,7 +6379,7 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = at) th
   /* Linear equation system */
   int retValue;
   double aux_x[<%listLength(ls.vars)%>] = { <%ls.vars |> SIMVAR(__) hasindex i0 => '<%contextCrefOld(name, context, auxFunctions, 1)%>' ;separator=","%> };
-  if(ACTIVE_STREAM(OMC_LOG_DT))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_DT))
   {
     infoStreamPrint(OMC_LOG_DT, 1, "Solving linear system <%ls.index%> (STRICT TEARING SET if tearing enabled) at time = %18.10e", data->localData[0]->timeValue);
     messageClose(OMC_LOG_DT);
@@ -6416,7 +6416,7 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(a
   /* Linear equation system */
   int retValue;
 
-  if(ACTIVE_STREAM(OMC_LOG_DT))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_DT))
   {
     infoStreamPrint(OMC_LOG_DT, 1, "Solving linear system <%at.index%> (CASUAL TEARING SET, strict: <%ls.index%>) at time = %18.10e", data->localData[0]->timeValue);
     messageClose(OMC_LOG_DT);
@@ -6435,7 +6435,7 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(a
   }
   else
   {
-    if(ACTIVE_STREAM(OMC_LOG_DT))
+    if(OMC_ACTIVE_STREAM(OMC_LOG_DT))
     {
       infoStreamPrint(OMC_LOG_DT, 1, "Constraints of the casual tearing set are violated! Now the strict tearing set is used.");
       messageClose(OMC_LOG_DT);
@@ -6481,7 +6481,7 @@ template equationNonlinear(SimEqSystem eq, Context context, String modelNamePref
       let returnval2 = match at case at as SOME(__) then 'return 0;' case at as NONE() then ''
       <<
       int retValue;
-      if(ACTIVE_STREAM(OMC_LOG_DT))
+      if(OMC_ACTIVE_STREAM(OMC_LOG_DT))
       {
         infoStreamPrint(OMC_LOG_DT, 1, "Solving nonlinear system <%nls.index%> (STRICT TEARING SET if tearing enabled) at time = %18.10e", data->localData[0]->timeValue);
         messageClose(OMC_LOG_DT);
@@ -6533,7 +6533,7 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, St
       let nonlinindx = at.indexNonLinearSystem
       <<
       int retValue;
-      if(ACTIVE_STREAM(OMC_LOG_DT))
+      if(OMC_ACTIVE_STREAM(OMC_LOG_DT))
       {
         infoStreamPrint(OMC_LOG_DT, 1, "Solving nonlinear system <%at.index%> (CASUAL TEARING SET, strict: <%nls.index%>) at time = %18.10e", data->localData[0]->timeValue);
         messageClose(OMC_LOG_DT);
@@ -6571,7 +6571,7 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, St
       }
       else
       {
-        if(ACTIVE_STREAM(OMC_LOG_DT))
+        if(OMC_ACTIVE_STREAM(OMC_LOG_DT))
         {
           infoStreamPrint(OMC_LOG_DT, 1, "Constraints of the casual tearing set are violated! Now the strict tearing set is used.");
           messageClose(OMC_LOG_DT);
