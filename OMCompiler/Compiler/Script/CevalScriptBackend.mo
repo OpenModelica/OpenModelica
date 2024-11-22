@@ -1903,7 +1903,7 @@ algorithm
       equation
         access = Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
         if access >= Access.documentation then
-          ((str1,str2,str3)) = Interactive.getNamedAnnotation(classpath, SymbolTable.getAbsyn(), Absyn.IDENT("Documentation"), SOME(("","","")),Interactive.getDocumentationAnnotationString);
+          ((str1,str2,str3)) = Interactive.getNamedAnnotationExp(classpath, SymbolTable.getAbsyn(), Absyn.IDENT("Documentation"), SOME(("","","")),Interactive.getDocumentationAnnotationString);
         else
           Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
           ((str1,str2,str3)) = ("", "", "");
@@ -3255,6 +3255,35 @@ algorithm
 
     case ("getNthConnector", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
       then Interactive.getNthConnector(classpath, n, SymbolTable.getAbsyn());
+
+    case ("getNthConnectorIconAnnotation", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
+      then Interactive.getNthConnectorIconAnnotation(classpath, n, SymbolTable.getAbsyn());
+
+    case ("getIconAnnotation", {Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then Interactive.getIconAnnotation(classpath, SymbolTable.getAbsyn());
+
+    case ("getDiagramAnnotation", {Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then Interactive.getDiagramAnnotation(classpath, SymbolTable.getAbsyn());
+
+    case ("refactorIconAnnotation", {Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then Interactive.refactorIconAnnotation(classpath, SymbolTable.getAbsyn());
+
+    case ("refactorDiagramAnnotation", {Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then Interactive.refactorDiagramAnnotation(classpath, SymbolTable.getAbsyn());
+
+    case ("refactorClass", {Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then Interactive.refactorClass(classpath, SymbolTable.getAbsyn());
+
+    case ("getNthInheritedClassIconMapAnnotation", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
+      then Interactive.getNthInheritedClassIconMapAnnotation(classpath, n, SymbolTable.getAbsyn());
+
+    case ("getNthInheritedClassDiagramMapAnnotation", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
+      then Interactive.getNthInheritedClassDiagramMapAnnotation(classpath, n, SymbolTable.getAbsyn());
+
+    case ("getNamedAnnotation",
+        {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
+      then Interactive.getNamedAnnotation(classpath, path, SymbolTable.getAbsyn());
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 
@@ -3583,7 +3612,7 @@ algorithm
             callTranslateModel(cache, env, className, fileNamePrefix, runBackend, runSilent, SOME(simSettings));
         else
           // read the __OpenModelica_commandLineOptions
-          Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotation(className, SymbolTable.getAbsyn(), Absyn.IDENT
+          Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotationExp(className, SymbolTable.getAbsyn(), Absyn.IDENT
                           ("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
           haveAnnotation := boolNot(stringEq(commandLineOptions, ""));
           // backup the flags.
@@ -4099,7 +4128,7 @@ algorithm
     (success, cache, outValue) := callTranslateModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
   else
     // read the __OpenModelica_commandLineOptions
-    Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotation(className, SymbolTable.getAbsyn(), Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
+    Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotationExp(className, SymbolTable.getAbsyn(), Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
     haveAnnotation := boolNot(stringEq(commandLineOptions, ""));
     // backup the flags.
     flags := if haveAnnotation then FlagsUtil.backupFlags() else FlagsUtil.loadFlags();
@@ -4219,7 +4248,7 @@ algorithm
     (cache, outValue) := callBuildModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
   else
     // read the __OpenModelica_commandLineOptions
-    Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotation(className, SymbolTable.getAbsyn(), Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
+    Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotationExp(className, SymbolTable.getAbsyn(), Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
     haveAnnotation := boolNot(stringEq(commandLineOptions, ""));
     // backup the flags.
     flags := if haveAnnotation then FlagsUtil.backupFlags() else FlagsUtil.loadFlags();
@@ -5869,7 +5898,7 @@ algorithm
         // If simflags is empty and --ignoreSimulationFlagsAnnotation isn't used,
         // use the __OpenModelica_simulationFlags annotation in the class to be simulated.
         if stringEmpty(simflags) and not Flags.getConfigBool(Flags.IGNORE_SIMULATION_FLAGS_ANNOTATION) then
-          simflags_mod := Interactive.getNamedAnnotation(classname, SymbolTable.getAbsyn(),
+          simflags_mod := Interactive.getNamedAnnotationExp(classname, SymbolTable.getAbsyn(),
             Absyn.IDENT("__OpenModelica_simulationFlags"), SOME(NONE()), Util.id);
           simflags := formatSimulationFlagsString(simflags_mod);
 
@@ -7654,7 +7683,7 @@ algorithm
   end try;
 end isExperiment;
 
-protected function hasStopTime "For use with getNamedAnnotation"
+protected function hasStopTime "For use with getNamedAnnotationExp"
   input Option<Absyn.Modification> mod;
   output Boolean b;
 algorithm
@@ -7667,7 +7696,7 @@ algorithm
   end match;
 end hasStopTime;
 
-protected function hasStopTime2 "For use with getNamedAnnotation"
+protected function hasStopTime2 "For use with getNamedAnnotationExp"
   input Absyn.ElementArg arg;
   output Boolean b;
 algorithm
@@ -7835,7 +7864,7 @@ algorithm
       String stateStr;
     case(_,_)
       equation
-        stateStr = Interactive.getNamedAnnotation(className, p, Absyn.IDENT("__Dymola_state"), SOME("false"), getDymolaStateAnnotationModStr);
+        stateStr = Interactive.getNamedAnnotationExp(className, p, Absyn.IDENT("__Dymola_state"), SOME("false"), getDymolaStateAnnotationModStr);
       then
         stringEq(stateStr, "true");
   end match;

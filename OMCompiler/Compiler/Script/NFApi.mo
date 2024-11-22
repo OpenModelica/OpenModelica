@@ -373,119 +373,20 @@ algorithm
   end for;
 
   for l in elArgs loop
+    stringLst := {};
 
-  stringLst := {};
+    for e in listReverse(l) loop
+      str := evaluateAnnotation_dispatch(absynProgram, classPath, Absyn.ANNOTATION({e}), true);
+      stringLst := str :: stringLst;
+    end for;
 
-  for e in listReverse(l) loop
-
-    str := evaluateAnnotation_dispatch(absynProgram, classPath, Absyn.ANNOTATION({e}), true);
-
-/* try to use evaluateAnnotation_dispatch instead
-
-    e := AbsynUtil.createChoiceArray(e);
-
-    str := matchcontinue e
-      case Absyn.MODIFICATION(
-          path = Absyn.IDENT(annName),
-          modification = SOME(Absyn.CLASSMOD({}, eqmod as Absyn.EQMOD(absynExp))),
-          info = info)
-        algorithm
-          // no need for the class if there are no crefs
-          if AbsynUtil.onlyLiteralsInEqMod(eqmod) then
-            (program, top) := mkTop(absynProgram, annName);
-            inst_cls := top;
-          else
-            // run the front-end front
-            (program, name, inst_cls) := frontEndFront(absynProgram, classPath);
-          end if;
-
-          exp := NFInst.instExp(absynExp, inst_cls, context, info);
-          (exp, ty, var) := Typing.typeExp(exp, context, info);
-          // exp := NFCeval.evalExp(exp);
-          exp := SimplifyExp.simplify(exp);
-          str := Expression.toString(exp);
-        then
-          stringAppendList({annName, "=", str});
-
-      case Absyn.MODIFICATION(
-          path = Absyn.IDENT(annName),
-          modification = SOME(Absyn.CLASSMOD(mod, Absyn.NOMOD())),
-          info = info)
-        algorithm
-          // no need for the class if there are no crefs
-          if AbsynUtil.onlyLiteralsInAnnotationMod(mod) then
-            (program, top) := mkTop(absynProgram, annName);
-            inst_cls := top;
-          else
-            // run the front-end front
-            (program, name, inst_cls) := frontEndFront(absynProgram, classPath);
-          end if;
-
-          smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(mod, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
-          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, context, AbsynUtil.dummyInfo, checkAccessViolations = false);
-          inst_anncls := NFInst.expand(anncls, context);
-          inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), inst_cls), NFComponent.DEFAULT_ATTR, true, 0, inst_cls, context);
-
-          // Instantiate expressions (i.e. anything that can contains crefs, like
-          // bindings, dimensions, etc). This is done as a separate step after
-          // instantiation to make sure that lookup is able to find the correct nodes.
-          NFInst.instExpressions(inst_anncls, context = context);
-
-          // Mark structural parameters.
-          NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
-
-          dae := frontEndBack(inst_anncls, annName, false);
-          str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
-        then
-          stringAppendList({annName, "(", str, ")"});
-
-      case Absyn.MODIFICATION(
-          path = Absyn.IDENT(annName),
-          modification = SOME(Absyn.CLASSMOD(_, _)))
-        then stringAppendList({annName, "(error)"});
-
-      case Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = NONE(), info = info)
-        algorithm
-          (program, top) := mkTop(absynProgram, annName);
-          inst_cls := top;
-
-          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, context, AbsynUtil.dummyInfo, checkAccessViolations = false);
-
-          inst_anncls := NFInst.instantiate(anncls, context = context);
-
-          // Instantiate expressions (i.e. anything that can contains crefs, like
-          // bindings, dimensions, etc). This is done as a separate step after
-          // instantiation to make sure that lookup is able to find the correct nodes.
-          NFInst.instExpressions(inst_anncls, context = context);
-
-          // Mark structural parameters.
-          NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
-
-          dae := frontEndBack(inst_anncls, annName, false);
-          str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
-        then
-          stringAppendList({annName, "(", str, ")"});
-
-      case Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = NONE(), info = info)
-        then stringAppendList({annName, "(error)"});
-
-    end matchcontinue;
-
-*/
-
-    stringLst := str :: stringLst;
+    str := stringDelimitList(stringLst, ", ");
+    outStringLst := stringAppendList({"{", str, "}"}) :: outStringLst;
   end for;
-
-  str := stringDelimitList(stringLst, ", ");
-  outStringLst := stringAppendList({"{", str, "}"}) :: outStringLst;
-
-  end for;
-
 
   if Flags.isSet(Flags.EXEC_STAT) then
     execStat("NFApi.evaluateAnnotations_dispatch("+ AbsynUtil.pathString(classPath) + " annotation(" + stringDelimitList(List.map(List.flatten(elArgs), Dump.unparseElementArgStr), ", ") + ")");
   end if;
-
 end evaluateAnnotations_dispatch;
 
 public

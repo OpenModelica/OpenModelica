@@ -3018,6 +3018,16 @@ annotation(
   preferredView="text");
 end deleteClass;
 
+function refactorClass
+  input TypeName className;
+  output String result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+</html>"),
+  preferredView="text");
+end refactorClass;
+
 function linearize "creates a model with symbolic linearization matrices"
   input TypeName className "the class that should simulated";
   input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
@@ -3105,6 +3115,42 @@ function setClassComment "Sets the class comment."
 external "builtin";
 annotation(preferredView="text");
 end setClassComment;
+
+function getIconAnnotation
+  input TypeName className;
+  output Expression result;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Returns the Icon annotation for the given class.</p>
+</html>"), preferredView="text");
+end getIconAnnotation;
+
+function getDiagramAnnotation
+  input TypeName className;
+  output Expression result;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Returns the Icon annotation for the given class.</p>
+</html>"), preferredView="text");
+end getDiagramAnnotation;
+
+function refactorIconAnnotation
+  input TypeName className;
+  output Expression result;
+external "builtin";
+annotation(Documentation(info="<html>
+<p></p>
+</html>"), preferredView="text");
+end refactorIconAnnotation;
+
+function refactorDiagramAnnotation
+  input TypeName className;
+  output Expression result;
+external "builtin";
+annotation(Documentation(info="<html>
+<p></p>
+</html>"), preferredView="text");
+end refactorDiagramAnnotation;
 
 function getClassNames "Returns the list of class names defined in the class."
   input TypeName class_ = $TypeName(AllLoadedClasses);
@@ -3918,6 +3964,18 @@ annotation(
   preferredView="text");
 end getNthConnector;
 
+function getNthConnectorIconAnnotation
+  input TypeName className;
+  input Integer n;
+  output Expression result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  <p>Returns the Icon annotation from the type of the n:th public connector in the given class.</p>
+</html>"),
+  preferredView="text");
+end getNthConnectorIconAnnotation;
+
 function getConnectorCount
   input TypeName className;
   output Integer count;
@@ -4637,6 +4695,30 @@ annotation(
   preferredView="text");
 end getNthInheritedClass;
 
+function getNthInheritedClassIconMapAnnotation
+  input TypeName className;
+  input Integer n;
+  output Expression result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the IconMap annotation for the n:th inherited class in the given class.
+</html>"),
+  preferredView="text");
+end getNthInheritedClassIconMapAnnotation;
+
+function getNthInheritedClassDiagramMapAnnotation
+  input TypeName className;
+  input Integer n;
+  output Expression result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the IconMap annotation for the n:th inherited class in the given class.
+</html>"),
+  preferredView="text");
+end getNthInheritedClassDiagramMapAnnotation;
+
 function getComponentsTest "returns an array of records with information about the components of the given class"
   input TypeName name;
   output Component[:] components;
@@ -4739,6 +4821,17 @@ Returns the value of the class annotation <b>annotationName</b> of class <b>clas
 </table>
 </html>"));
 end getBooleanClassAnnotation;
+
+function getNamedAnnotation
+  input TypeName className;
+  input TypeName annotationName;
+  output Expression result;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Returns the value of the annotation with the given name in the given class.</p>
+</html>"),
+  preferredView="text");
+end getNamedAnnotation;
 
 function extendsFrom "returns true if the given class extends from the given base class"
   input TypeName className;

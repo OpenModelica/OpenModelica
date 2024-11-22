@@ -1482,13 +1482,13 @@ algorithm
 
     case ("classAnnotationExists",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
-        b := Interactive.getNamedAnnotation(classpath, SymbolTable.getAbsyn(), path, SOME(false), isSome);
+        b := Interactive.getNamedAnnotationExp(classpath, SymbolTable.getAbsyn(), path, SOME(false), isSome);
       then
         Values.BOOL(b);
 
     case ("getBooleanClassAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
-        Absyn.BOOL(b) := Interactive.getNamedAnnotation(classpath, SymbolTable.getAbsyn(), path, NONE(), Interactive.getAnnotationExp);
+        Absyn.BOOL(b) := Interactive.getNamedAnnotationExp(classpath, SymbolTable.getAbsyn(), path, NONE(), Interactive.getAnnotationExp);
       then
         Values.BOOL(b);
 
@@ -1618,7 +1618,7 @@ algorithm
   evalParamAnn := Config.getEvaluateParametersInAnnotations();
   Config.setEvaluateParametersInAnnotations(true);
   try
-    Absyn.STRING(version) := Interactive.getNamedAnnotation(path, p, Absyn.IDENT("version"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
+    Absyn.STRING(version) := Interactive.getNamedAnnotationExp(path, p, Absyn.IDENT("version"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
   else
     version := "";
   end try;
