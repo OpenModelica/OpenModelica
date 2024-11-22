@@ -628,8 +628,8 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   }
 
   /* initialize modelData */
-  useStream[LOG_STDOUT] = 1;
-  useStream[LOG_ASSERT] = 1;
+  omc_useStream[OMC_LOG_STDOUT] = 1;
+  omc_useStream[OMC_LOG_ASSERT] = 1;
   fmu2_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
   /*
    * load the simulation settings before initializing the DataStruct for fmus
@@ -998,8 +998,8 @@ fmi2Status fmi2Reset(fmi2Component c)
   }
 
   /* Initialize modelData */
-  useStream[LOG_STDOUT] = 1;
-  useStream[LOG_ASSERT] = 1;
+  omc_useStream[OMC_LOG_STDOUT] = 1;
+  omc_useStream[OMC_LOG_ASSERT] = 1;
   fmu2_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
   comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
   initializeDataStruc(comp->fmuData, comp->threadData);
