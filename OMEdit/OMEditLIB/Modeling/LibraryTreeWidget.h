@@ -174,7 +174,7 @@ public:
   void insertChild(int position, LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* child(int row);
   void moveChild(int from, int to);
-  void addInheritedClass(LibraryTreeItem *pLibraryTreeItem);
+  // void addInheritedClass(LibraryTreeItem *pLibraryTreeItem);
   void removeInheritedClasses();
   const QList<LibraryTreeItem*> &getInheritedClasses();
   QList<LibraryTreeItem*> getInheritedClassesDeepList();
@@ -188,7 +188,6 @@ public:
   LibraryTreeItem* parent() const {return mpParentLibraryTreeItem;}
   bool isTopLevel() const;
   bool isSimulationAllowed();
-  void emitLoaded();
   void emitUnLoaded();
   void emitShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void emitComponentAdded(Element *pComponent);
@@ -256,8 +255,8 @@ signals:
   void coOrdinateSystemUpdated(GraphicsView *pGraphicsView);
   void coOrdinateSystemUpdatedForComponent();
 public slots:
-  void handleLoaded(LibraryTreeItem *pLibraryTreeItem);
-  void handleUnloaded();
+  // void handleLoaded(LibraryTreeItem *pLibraryTreeItem);
+  // void handleUnloaded();
   void handleShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void handleComponentAdded(Element *pComponent);
   void handleConnectionAdded(LineAnnotation *pConnectionLineAnnotation);
@@ -304,7 +303,7 @@ public:
   void addModelicaLibraries(const QVector<QPair<QString, QString> > libraries = QVector<QPair<QString, QString> >());
   LibraryTreeItem* createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
                                          bool isSystemLibrary = false, bool load = false, int row = -1, bool loadingMOL = false);
-  LibraryTreeItem* createNonExistingLibraryTreeItem(QString nameStructure);
+  // LibraryTreeItem* createNonExistingLibraryTreeItem(QString nameStructure);
   void createLibraryTreeItems(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem);
   LibraryTreeItem* createLibraryTreeItem(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved,
                                          LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
@@ -312,9 +311,9 @@ public:
                                          LibraryTreeItem *pParentLibraryTreeItem, oms_element_t *pOMSElement = 0,
                                          oms_connector_t *pOMSConnector = 0, oms_busconnector_t *pOMSBusConnector = 0,
                                          oms_tlmbusconnector_t *pOMSTLMBusConnector = 0, int row = -1);
-  void checkIfAnyNonExistingClassLoaded();
-  void addNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.append(pLibraryTreeItem);}
-  void removeNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.removeOne(pLibraryTreeItem);}
+  // void checkIfAnyNonExistingClassLoaded();
+  // void addNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.append(pLibraryTreeItem);}
+  // void removeNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.removeOne(pLibraryTreeItem);}
   void updateLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   void updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName);
@@ -359,7 +358,7 @@ private:
   QString readLibraryTreeItemClassTextFromFile(LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* createLibraryTreeItemImpl(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
                                              bool isSystemLibrary = false, bool load = false, int row = -1, bool activateAccessAnnotations = false);
-  void createNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true, int row = -1);
+  // void createNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true, int row = -1);
   void createLibraryTreeItemsImpl(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem);
   LibraryTreeItem* createLibraryTreeItemImpl(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved,
                                              LibraryTreeItem *pParentLibraryTreeItem, int row = -1);

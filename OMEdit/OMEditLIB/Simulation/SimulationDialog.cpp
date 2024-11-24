@@ -870,7 +870,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     /* issue #11727
      * Select Interval if it is defined in the experiment annotation.
      */
-    if (mpLibraryTreeItem->getModelWidget() && mpLibraryTreeItem->getModelWidget()->isNewApi() && mpLibraryTreeItem->getModelWidget()->getModelInstance()) {
+    if (mpLibraryTreeItem->getModelWidget() && /*mpLibraryTreeItem->getModelWidget()->isNewApi() && */mpLibraryTreeItem->getModelWidget()->getModelInstance()) {
       if (mpLibraryTreeItem->getModelWidget()->getModelInstance()->getAnnotation()->getExperimentAnnotation().hasInterval()) {
         mpIntervalRadioButton->setChecked(true);
         mpLibraryTreeItem->mSimulationOptions.setHasInterval(true);
@@ -1149,7 +1149,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
    * Save Interval in resimulate case only if we can find the class and it is defined in the experiment annotation.
    */
   LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(mClassName);
-  if (pLibraryTreeItem && pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->isNewApi() && pLibraryTreeItem->getModelWidget()->getModelInstance()) {
+  if (pLibraryTreeItem && pLibraryTreeItem->getModelWidget() && /*pLibraryTreeItem->getModelWidget()->isNewApi() && */pLibraryTreeItem->getModelWidget()->getModelInstance()) {
     simulationOptions.setHasInterval(pLibraryTreeItem->getModelWidget()->getModelInstance()->getAnnotation()->getExperimentAnnotation().hasInterval());
   }
 

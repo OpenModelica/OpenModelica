@@ -594,30 +594,30 @@ QList<QPointF> ShapeAnnotation::getExtentsForInheritedShapeFromIconDiagramMap(Gr
   QPointF point2 = defaultPoint2;
   bool preserveAspectRatio = false;
 
-  if (MainWindow::instance()->isNewApi()) {
-    ModelInstance::Extend *pExtend = dynamic_cast<ModelInstance::Extend*>(getExtend());
-    if (pExtend) {
-      if (pGraphicsView->isIconView()) {
-        extent = pExtend->getIconDiagramMapExtent(true);
-        preserveAspectRatio = pExtend->getModel()->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
-      } else {
-        extent = pExtend->getIconDiagramMapExtent(false);
-        preserveAspectRatio = pExtend->getModel()->getAnnotation()->getDiagramAnnotation()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
-      }
-    }
-  } else {
-    int index = pGraphicsView->getModelWidget()->getInheritedClassesList().indexOf(pReferenceShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()) + 1;
-    if (index > 0) {
-      QVector<QPointF> mapExtent(2, QPointF(0, 0));
-      if (pGraphicsView->isIconView()) {
-        mapExtent = pGraphicsView->getModelWidget()->getInheritedClassIconMap().value(index).mExtent;
-      } else {
-        mapExtent = pGraphicsView->getModelWidget()->getInheritedClassDiagramMap().value(index).mExtent;
-      }
-      extent = mapExtent;
-      preserveAspectRatio = pReferenceShapeAnnotation->getGraphicsView() && pReferenceShapeAnnotation->getGraphicsView()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
+  // if (MainWindow::instance()->isNewApi()) {
+  ModelInstance::Extend *pExtend = dynamic_cast<ModelInstance::Extend*>(getExtend());
+  if (pExtend) {
+    if (pGraphicsView->isIconView()) {
+      extent = pExtend->getIconDiagramMapExtent(true);
+      preserveAspectRatio = pExtend->getModel()->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
+    } else {
+      extent = pExtend->getIconDiagramMapExtent(false);
+      preserveAspectRatio = pExtend->getModel()->getAnnotation()->getDiagramAnnotation()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
     }
   }
+  // } else {
+  //   int index = pGraphicsView->getModelWidget()->getInheritedClassesList().indexOf(pReferenceShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()) + 1;
+  //   if (index > 0) {
+  //     QVector<QPointF> mapExtent(2, QPointF(0, 0));
+  //     if (pGraphicsView->isIconView()) {
+  //       mapExtent = pGraphicsView->getModelWidget()->getInheritedClassIconMap().value(index).mExtent;
+  //     } else {
+  //       mapExtent = pGraphicsView->getModelWidget()->getInheritedClassDiagramMap().value(index).mExtent;
+  //     }
+  //     extent = mapExtent;
+  //     preserveAspectRatio = pReferenceShapeAnnotation->getGraphicsView() && pReferenceShapeAnnotation->getGraphicsView()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
+  //   }
+  // }
 
   point1 = extent.size() > 0 ? extent.at(0) : defaultPoint1;
   point2 = extent.size() > 1 ? extent.at(1) : defaultPoint2;
@@ -677,7 +677,7 @@ void ShapeAnnotation::applyTransformation()
   }
 
   if (!mpParentComponent && pGraphicsView && (!pLineAnnotation || pLineAnnotation->isLineShape())
-      && ((mpReferenceShapeAnnotation && mpReferenceShapeAnnotation->getGraphicsView()) || (pGraphicsView->getModelWidget()->isNewApi() && mIsInheritedShape))) {
+      && ((mpReferenceShapeAnnotation && mpReferenceShapeAnnotation->getGraphicsView()) || (/*pGraphicsView->getModelWidget()->isNewApi() && */mIsInheritedShape))) {
     QList<QPointF> extendsCoOrdinateExtents = getExtentsForInheritedShapeFromIconDiagramMap(pGraphicsView, mpReferenceShapeAnnotation);
     ExtentAnnotation extent = pGraphicsView->mMergedCoOrdinateSystem.getExtent();
     qreal left = extent.at(0).x();
@@ -1120,35 +1120,35 @@ void ShapeAnnotation::updateDynamicSelect(double time)
       || (mpParentComponent && mpParentComponent->getGraphicsView() && mpParentComponent->getGraphicsView()->isVisualizationView())) {
     bool updated = false;
 
-    if (MainWindow::instance()->isNewApi()) {
-      updated |= mVisible.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-      updated |= mOrigin.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-      updated |= mRotation.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-      updated |= mLineColor.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-      updated |= mFillColor.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-      updated |= mLineThickness.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-      updated |= mArrowSize.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-      updated |= mExtent.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-      updated |= mRadius.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-      updated |= mStartAngle.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-      updated |= mEndAngle.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-      updated |= mFontSize.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-      updated |= mTextString.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-    } else {
-      updated |= mVisible.update(time, mpParentComponent);
-      updated |= mOrigin.update(time, mpParentComponent);
-      updated |= mRotation.update(time, mpParentComponent);
-      updated |= mLineColor.update(time, mpParentComponent);
-      updated |= mFillColor.update(time, mpParentComponent);
-      updated |= mLineThickness.update(time, mpParentComponent);
-      updated |= mArrowSize.update(time, mpParentComponent);
-      updated |= mExtent.update(time, mpParentComponent);
-      updated |= mRadius.update(time, mpParentComponent);
-      updated |= mStartAngle.update(time, mpParentComponent);
-      updated |= mEndAngle.update(time, mpParentComponent);
-      updated |= mFontSize.update(time, mpParentComponent);
-      updated |= mTextString.update(time, mpParentComponent);
-    }
+    // if (MainWindow::instance()->isNewApi()) {
+    updated |= mVisible.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mOrigin.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mRotation.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mLineColor.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mFillColor.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mLineThickness.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mArrowSize.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mExtent.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mRadius.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mStartAngle.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mEndAngle.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mFontSize.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mTextString.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+    // } else {
+    //   updated |= mVisible.update(time, mpParentComponent);
+    //   updated |= mOrigin.update(time, mpParentComponent);
+    //   updated |= mRotation.update(time, mpParentComponent);
+    //   updated |= mLineColor.update(time, mpParentComponent);
+    //   updated |= mFillColor.update(time, mpParentComponent);
+    //   updated |= mLineThickness.update(time, mpParentComponent);
+    //   updated |= mArrowSize.update(time, mpParentComponent);
+    //   updated |= mExtent.update(time, mpParentComponent);
+    //   updated |= mRadius.update(time, mpParentComponent);
+    //   updated |= mStartAngle.update(time, mpParentComponent);
+    //   updated |= mEndAngle.update(time, mpParentComponent);
+    //   updated |= mFontSize.update(time, mpParentComponent);
+    //   updated |= mTextString.update(time, mpParentComponent);
+    // }
 
     if (updated) {
       applyTransformation();

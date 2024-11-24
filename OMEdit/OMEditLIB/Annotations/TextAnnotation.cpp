@@ -334,7 +334,7 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     // state machine visualization
     // text annotation on a element
     if (mpElement && mpElement->getGraphicsView()->isVisualizationView()
-        && ((mpElement->getGraphicsView()->getModelWidget()->isNewApi() && mpElement->getModel() && mpElement->getModel()->getAnnotation()->isState())
+        && ((/*mpElement->getGraphicsView()->getModelWidget()->isNewApi() && */mpElement->getModel() && mpElement->getModel()->getAnnotation()->isState())
             || (mpElement->getLibraryTreeItem() && mpElement->getLibraryTreeItem()->isState()))) {
       if (mpElement->isActiveState()) {
         painter->setOpacity(1.0);
@@ -577,27 +577,27 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
           QString textValue = parameterValue.first;
           QPair<QString, bool> unit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "unit");
           QPair<QString, bool> displayUnit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "displayUnit");
-          if (MainWindow::instance()->isNewApi()) {
-            ModelInstance::Component* pModelComponent = Element::getModelComponentByName(mpElement->getRootParentElement()->getModel(), variable);
-            if (pModelComponent) {
-              if (!displayUnit.second) {
-                displayUnit = pModelComponent->getModifierValueFromType(QStringList() << "displayUnit");
-              }
-              if (!unit.second) {
-                unit = pModelComponent->getModifierValueFromType(QStringList() << "unit");
-              }
+          // if (MainWindow::instance()->isNewApi()) {
+          ModelInstance::Component* pModelComponent = Element::getModelComponentByName(mpElement->getRootParentElement()->getModel(), variable);
+          if (pModelComponent) {
+            if (!displayUnit.second) {
+              displayUnit = pModelComponent->getModifierValueFromType(QStringList() << "displayUnit");
             }
-          } else {
-            Element *pElement = mpElement->getRootParentElement()->getElementByName(variable);
-            if (pElement) {
-              if (displayUnit.first.isEmpty()) {
-                displayUnit.first = pElement->getDerivedClassModifierValue("displayUnit");
-              }
-              if (unit.first.isEmpty()) {
-                unit.first = pElement->getDerivedClassModifierValue("unit");
-              }
+            if (!unit.second) {
+              unit = pModelComponent->getModifierValueFromType(QStringList() << "unit");
             }
           }
+          // } else {
+          //   Element *pElement = mpElement->getRootParentElement()->getElementByName(variable);
+          //   if (pElement) {
+          //     if (displayUnit.first.isEmpty()) {
+          //       displayUnit.first = pElement->getDerivedClassModifierValue("displayUnit");
+          //     }
+          //     if (unit.first.isEmpty()) {
+          //       unit.first = pElement->getDerivedClassModifierValue("unit");
+          //     }
+          //   }
+          // }
           // if display unit is still empty then use unit
           if (displayUnit.first.isEmpty()) {
             displayUnit = unit;
@@ -665,15 +665,15 @@ void TextAnnotation::updateTextString()
       return;
     }
     if (mTextString.toLower().contains("%name")) {
-      if (mpElement->getGraphicsView()->getModelWidget()->isNewApi()) {
-        QString name = mpElement->getName();
-        if (mpElement->getModelComponent() && mpElement->getModelComponent()->getDimensions().isArray()) {
-          name.append("[" % mpElement->getModelComponent()->getDimensions().getTypedDimensionsString() % "]");
-        }
-        mTextString.replace(QRegExp("%name"), name);
-      } else {
-        mTextString.replace(QRegExp("%name"), mpElement->getName());
+      // if (mpElement->getGraphicsView()->getModelWidget()->isNewApi()) {
+      QString name = mpElement->getName();
+      if (mpElement->getModelComponent() && mpElement->getModelComponent()->getDimensions().isArray()) {
+        name.append("[" % mpElement->getModelComponent()->getDimensions().getTypedDimensionsString() % "]");
       }
+      mTextString.replace(QRegExp("%name"), name);
+      // } else {
+      //   mTextString.replace(QRegExp("%name"), mpElement->getName());
+      // }
     }
     if (mTextString.toLower().contains("%class")) {
       mTextString.replace(QRegExp("%class"), mpElement->getClassName());

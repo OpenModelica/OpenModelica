@@ -335,7 +335,7 @@ void UpdateComponentTransformationsCommand::redoInternal()
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   if (mMoveConnectorsTogether && pModelWidget->getLibraryTreeItem()->isModelica()
       && ((mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector())
-          || (pModelWidget->isNewApi() && mpComponent->getModel() && mpComponent->getModel()->isConnector()))) {
+          || (/*pModelWidget->isNewApi() && */mpComponent->getModel() && mpComponent->getModel()->isConnector()))) {
     GraphicsView *pGraphicsView;
     if (mpComponent->getGraphicsView()->isIconView()) {
       pGraphicsView = pModelWidget->getDiagramGraphicsView();
@@ -363,7 +363,7 @@ void UpdateComponentTransformationsCommand::redoInternal()
   mpComponent->mTransformation = mNewTransformation;
   mpComponent->emitTransformChange(mPositionChanged);
   mpComponent->emitTransformHasChanged();
-  if (mpComponent->getGraphicsView()->isDiagramView() && pModelWidget->isNewApi()) {
+  if (mpComponent->getGraphicsView()->isDiagramView()/* && pModelWidget->isNewApi()*/) {
     pModelWidget->setHandleCollidingConnectionsNeeded(true);
   }
 }
@@ -377,7 +377,7 @@ void UpdateComponentTransformationsCommand::undo()
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   if (mMoveConnectorsTogether && pModelWidget->getLibraryTreeItem()->isModelica()
       && ((mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector())
-          || (pModelWidget->isNewApi() && mpComponent->getModel() && mpComponent->getModel()->isConnector()))) {
+          || (/*pModelWidget->isNewApi() && */mpComponent->getModel() && mpComponent->getModel()->isConnector()))) {
     GraphicsView *pGraphicsView;
     if (mpComponent->getGraphicsView()->isIconView()) {
       pGraphicsView = pModelWidget->getDiagramGraphicsView();
@@ -405,7 +405,7 @@ void UpdateComponentTransformationsCommand::undo()
   mpComponent->mTransformation = mOldTransformation;
   mpComponent->emitTransformChange(mPositionChanged);
   mpComponent->emitTransformHasChanged();
-  if (mpComponent->getGraphicsView()->isDiagramView() && pModelWidget->isNewApi()) {
+  if (mpComponent->getGraphicsView()->isDiagramView()/* && pModelWidget->isNewApi()*/) {
     pModelWidget->setHandleCollidingConnectionsNeeded(true);
   }
 }
@@ -667,12 +667,12 @@ DeleteComponentCommand::DeleteComponentCommand(Element *pComponent, GraphicsView
 {
   mpComponent = pComponent;
   mpGraphicsView = pGraphicsView;
-  if (pGraphicsView->getModelWidget()->isNewApi()) {
+  // if (pGraphicsView->getModelWidget()->isNewApi()) {
 
-  } else {
-    // save component modifiers before deleting if any
-    mpComponent->getElementInfo()->getModifiersMap(MainWindow::instance()->getOMCProxy(), mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mpComponent);
-  }
+  // } else {
+  //   // save component modifiers before deleting if any
+  //   mpComponent->getElementInfo()->getModifiersMap(MainWindow::instance()->getOMCProxy(), mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mpComponent);
+  // }
   //Save sub-model parameters for composite models
   if (pGraphicsView->getModelWidget()->getLibraryTreeItem()->isCompositeModel()) {
     CompositeModelEditor *pEditor = qobject_cast<CompositeModelEditor*>(pGraphicsView->getModelWidget()->getEditor());
@@ -743,11 +743,11 @@ void DeleteComponentCommand::undo()
   mpGraphicsView->deleteElementFromOutOfSceneList(mpComponent);
   mpComponent->emitAdded();
   mpGraphicsView->addElementToClass(mpComponent);
-  if (pModelWidget->isNewApi()) {
+  // if (pModelWidget->isNewApi()) {
 
-  } else {
-    UpdateElementAttributesCommand::updateComponentModifiers(mpComponent, *mpComponent->getElementInfo());
-  }
+  // } else {
+  //   UpdateElementAttributesCommand::updateComponentModifiers(mpComponent, *mpComponent->getElementInfo());
+  // }
   // Restore sub-model parameters for composite models
   if (pModelWidget->getLibraryTreeItem()->isCompositeModel()) {
     CompositeModelEditor *pEditor = qobject_cast<CompositeModelEditor*>(pModelWidget->getEditor());
@@ -781,9 +781,9 @@ void AddConnectionCommand::redoInternal()
       return;
     }
   }
-  if (mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->isNewApi()) {
+  // if (mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->isNewApi()) {
     mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->setHandleCollidingConnectionsNeeded(true);
-  }
+  // }
 }
 
 /*!
@@ -794,9 +794,9 @@ void AddConnectionCommand::undo()
 {
   mpConnectionLineAnnotation->getGraphicsView()->removeConnectionFromView(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->getGraphicsView()->deleteConnectionFromClass(mpConnectionLineAnnotation);
-  if (mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->isNewApi()) {
+  // if (mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->isNewApi()) {
     mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->setHandleCollidingConnectionsNeeded(true);
-  }
+  // }
 }
 
 UpdateConnectionCommand::UpdateConnectionCommand(LineAnnotation *pConnectionLineAnnotation, QString oldAnnotaton, QString newAnnotation, UndoCommand *pParent)

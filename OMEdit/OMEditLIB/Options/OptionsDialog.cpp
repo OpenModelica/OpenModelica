@@ -307,15 +307,6 @@ void OptionsDialog::readGeneralSettings()
   } else {
     mpGeneralSettingsPage->getRecentFilesAndLatestNewsSizeSpinBox()->setValue(OptionsDefaults::GeneralSettings::recentFilesAndLatestNewsSize);
   }
-  // read instance API
-  if (mpSettings->contains("optionalFeatures/disableInstanceAPI")) {
-    mpGeneralSettingsPage->getDisableInstanceAPICheckBox()->setChecked(mpSettings->value("optionalFeatures/disableInstanceAPI").toBool());
-  } else {
-    mpGeneralSettingsPage->getDisableInstanceAPICheckBox()->setChecked(OptionsDefaults::GeneralSettings::disableInstanceAPI);
-  }
-  if (!MainWindow::instance()->isNewApiCommandLine()) {
-    MainWindow::instance()->setNewApi(!mpGeneralSettingsPage->getDisableInstanceAPICheckBox()->isChecked());
-  }
 }
 
 //! Reads the Libraries section settings from omedit.ini
@@ -1704,13 +1695,6 @@ void OptionsDialog::saveGeneralSettings()
     mpSettings->setValue("welcomePage/recentFilesSize", recentFilesAndLatestNewsSize);
   }
   MainWindow::instance()->updateRecentFileActionsAndList();
-  // save instance API
-  bool disableInstanceAPI = mpGeneralSettingsPage->getDisableInstanceAPICheckBox()->isChecked();
-  if (disableInstanceAPI == OptionsDefaults::GeneralSettings::disableInstanceAPI) {
-    mpSettings->remove("optionalFeatures/disableInstanceAPI");
-  } else {
-    mpSettings->setValue("optionalFeatures/disableInstanceAPI", disableInstanceAPI);
-  }
 }
 
 /*!
@@ -3716,20 +3700,6 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pWelcomePageGridLayout->addWidget(pRecentFilesAndLatestNewsSizeLabel, 2, 0);
   pWelcomePageGridLayout->addWidget(mpRecentFilesAndLatestNewsSizeSpinBox, 2, 1);
   mpWelcomePageGroupBox->setLayout(pWelcomePageGridLayout);
-  // Optional Features Box
-  mpOptionalFeaturesGroupBox = new QGroupBox(tr("Optional Features"));
-  // Disable instance api
-  mpDisableInstanceAPICheckBox = new QCheckBox(tr("Disable new instance-based graphical editing of models *"));
-  const QString newAPI = MainWindow::instance()->isNewApi() ? "true" : "false";
-  if (MainWindow::instance()->isNewApiCommandLine()) {
-    mpDisableInstanceAPICheckBox->setText(mpDisableInstanceAPICheckBox->text() % " (You are using command line option --NAPI=" % newAPI % " so this option will be ignored.)");
-  }
-  mpDisableInstanceAPICheckBox->setChecked(OptionsDefaults::GeneralSettings::disableInstanceAPI);
-  // Optional Features Layout
-  QGridLayout *pOptionalFeaturesLayout = new QGridLayout;
-  pOptionalFeaturesLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pOptionalFeaturesLayout->addWidget(mpDisableInstanceAPICheckBox, 0, 0);
-  mpOptionalFeaturesGroupBox->setLayout(pOptionalFeaturesLayout);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -3737,7 +3707,6 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pMainLayout->addWidget(mpLibraryBrowserGroupBox);
   pMainLayout->addWidget(mpEnableAutoSaveGroupBox);
   pMainLayout->addWidget(mpWelcomePageGroupBox);
-  pMainLayout->addWidget(mpOptionalFeaturesGroupBox);
   setLayout(pMainLayout);
 }
 

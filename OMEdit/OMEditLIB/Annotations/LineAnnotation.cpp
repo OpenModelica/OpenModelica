@@ -1470,7 +1470,7 @@ void LineAnnotation::handleCollidingConnections()
   QList<QGraphicsItem*> items = collidingItems(Qt::IntersectsItemShape);
   for (int i = 0; i < items.size(); ++i) {
     if (Element *pElement = dynamic_cast<Element*>(items.at(i))) {
-      if ((mpGraphicsView->getModelWidget()->isNewApi() && pElement->getModel() && pElement->getModel()->isConnector())
+      if ((/*mpGraphicsView->getModelWidget()->isNewApi() && */pElement->getModel() && pElement->getModel()->isConnector())
           || (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isConnector())) {
         mCollidingConnectorElements.append(pElement);
       }
@@ -2151,13 +2151,13 @@ CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, Line
     mpStartExpandableConnectorTreeProxyModel->setSourceModel(mpStartExpandableConnectorTreeModel);
     mpStartExpandableConnectorTreeView = new ExpandableConnectorTreeView(this);
     mpStartExpandableConnectorTreeView->setModel(mpStartExpandableConnectorTreeProxyModel);
-    if (mpGraphicsView->getModelWidget()->isNewApi()) {
-      mpStartExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpStartElement->getRootParentElement()->getModelComponent(), false,
-                                                                             mpStartExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
-    } else {
-      mpStartExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpStartElement->getRootParentElement(),
-                                                                             mpStartExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
-    }
+    // if (mpGraphicsView->getModelWidget()->isNewApi()) {
+    mpStartExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpStartElement->getRootParentElement()->getModelComponent(), false,
+                                                                           mpStartExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
+    // } else {
+    //   mpStartExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpStartElement->getRootParentElement(),
+    //                                                                          mpStartExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
+    // }
     mpStartExpandableConnectorTreeView->expandAll();
     mpStartExpandableConnectorTreeView->setSortingEnabled(true);
     mpStartExpandableConnectorTreeView->sortByColumn(0, Qt::AscendingOrder);
@@ -2174,13 +2174,13 @@ CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, Line
     mpEndExpandableConnectorTreeProxyModel->setSourceModel(mpEndExpandableConnectorTreeModel);
     mpEndExpandableConnectorTreeView = new ExpandableConnectorTreeView(this);
     mpEndExpandableConnectorTreeView->setModel(mpEndExpandableConnectorTreeProxyModel);
-    if (mpGraphicsView->getModelWidget()->isNewApi()) {
-      mpEndExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpEndElement->getRootParentElement()->getModelComponent(), false,
-                                                                           mpEndExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
-    } else {
-      mpEndExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpEndElement->getRootParentElement(),
-                                                                           mpEndExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
-    }
+    // if (mpGraphicsView->getModelWidget()->isNewApi()) {
+    mpEndExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpEndElement->getRootParentElement()->getModelComponent(), false,
+                                                                         mpEndExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
+    // } else {
+    //   mpEndExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpEndElement->getRootParentElement(),
+    //                                                                        mpEndExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
+    // }
     mpEndExpandableConnectorTreeView->expandAll();
     mpEndExpandableConnectorTreeView->setSortingEnabled(true);
     mpEndExpandableConnectorTreeView->sortByColumn(0, Qt::AscendingOrder);
@@ -2620,29 +2620,29 @@ void CreateConnectionDialog::createConnection()
                                                                             mpStartElement, mpStartRootElement, mStartElementSpinBoxList, mStartRootElementSpinBoxList);
   mpConnectionLineAnnotation->setStartElementName(startElementName);
   mpConnectionLineAnnotation->setEndElementName(endElementName);
-  if (mpGraphicsView->getModelWidget()->isNewApi()) {
-    /* Issue #12163. Do not check connection validity when called from GraphicsView::createConnector
+  // if (mpGraphicsView->getModelWidget()->isNewApi()) {
+  /* Issue #12163. Do not check connection validity when called from GraphicsView::createConnector
      * GraphicsView::createConnector creates an incomplete connector. We do this for performance reasons. Avoid calling getModelInstance API.
      * We know for sure that both connectors are compatible in this case so its okay not to check for validity.
      */
-    if (mCreateConnector) {
-      mpConnectionLineAnnotation->drawCornerItems();
-      mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
-      mpGraphicsView->addConnectionToView(mpConnectionLineAnnotation, false);
-      mpGraphicsView->addConnectionToClass(mpConnectionLineAnnotation);
-    } else if (mpGraphicsView->getModelWidget()->getModelInstance()->isValidConnection(startElementName, endElementName)) {
-      mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
-      mpGraphicsView->getModelWidget()->updateModelText();
-    } else {
-      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            GUIMessages::getMessage(GUIMessages::MISMATCHED_CONNECTORS_IN_CONNECT).arg(startElementName, endElementName), QMessageBox::Ok);
-      reject();
-    }
-  } else {
+  if (mCreateConnector) {
+    mpConnectionLineAnnotation->drawCornerItems();
+    mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
+    mpGraphicsView->addConnectionToView(mpConnectionLineAnnotation, false);
+    mpGraphicsView->addConnectionToClass(mpConnectionLineAnnotation);
+  } else if (mpGraphicsView->getModelWidget()->getModelInstance()->isValidConnection(startElementName, endElementName)) {
     mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
-    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpConnectionLineAnnotation);
     mpGraphicsView->getModelWidget()->updateModelText();
+  } else {
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::MISMATCHED_CONNECTORS_IN_CONNECT).arg(startElementName, endElementName), QMessageBox::Ok);
+    reject();
   }
+  // } else {
+  //   mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
+  //   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpConnectionLineAnnotation);
+  //   mpGraphicsView->getModelWidget()->updateModelText();
+  // }
   accept();
 }
 

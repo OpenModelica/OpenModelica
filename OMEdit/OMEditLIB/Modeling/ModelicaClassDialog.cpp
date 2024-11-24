@@ -411,7 +411,7 @@ void ModelicaClassDialog::createModelicaClass()
   } else {
     pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
   }
-  pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
+  // pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
   pLibraryTreeItem->setExpanded(true);
   // show the ModelWidget
   pLibraryTreeModel->showModelWidget(pLibraryTreeItem, true);
@@ -757,7 +757,7 @@ void SaveAsClassDialog::saveAsModelicaClass()
     pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), pLibraryTreeModel->getRootLibraryTreeItem(), false, false, true);
   }
   pLibraryTreeItem->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeItem::SaveInOneFile : LibraryTreeItem::SaveFolderStructure);
-  pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
+  // pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
   // show the ModelWidget
   pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
   accept();
@@ -1196,7 +1196,7 @@ void DuplicateClassDialog::duplicateClass()
     }
     duplicateClassHelper(pLibraryTreeItem, mpLibraryTreeItem, fileType);
     syncDuplicatedModelWithOMC(pLibraryTreeItem);
-    pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
+    // pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
     pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
     // add uses annotation
     const QString containingClassName = mpPathTextBox->text().isEmpty() ? mpNameTextBox->text() : mpPathTextBox->text();
@@ -1559,7 +1559,7 @@ void ConvertClassUsesAnnotationDialog::convert()
     }
     MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(mpLibraryTreeItem, false, false);
     pLibraryTreeModel->createLibraryTreeItem(nameStructure, pLibraryTreeModel->getRootLibraryTreeItem(), true, false, true);
-    pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
+    // pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
   }
   // load any dependent libraries
   pLibraryTreeModel->loadDependentLibraries(MainWindow::instance()->getOMCProxy()->getClassNames());
