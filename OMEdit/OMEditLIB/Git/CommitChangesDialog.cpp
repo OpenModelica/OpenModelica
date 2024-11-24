@@ -243,7 +243,7 @@ void CommitChangesDialog::generateTraceabilityURI(QString activity, QString mode
   }
   toolURI = "Entity.softwareTool:OpenModelica: " + MainWindow::instance()->getOMCProxy()->getVersion();
   agentURI = "Agent:" + OptionsDialog::instance()->getTraceabilityPage()->getEmail()->text();
-  activityURI = "Activity."+ activity +":" + time.toTimeSpec(Qt::OffsetFromUTC).toString(Qt::ISODate)+ "#" + QUuid::createUuid().toString().mid(1, 36);
+  activityURI = "Activity."+ activity +":" + time.toTimeZone(QTimeZone::utc()).toString(Qt::ISODate)+ "#" + QUuid::createUuid().toString().mid(1, 36);
   MainWindow::instance()->getTraceabilityInformationURI()->translateURIToJsonMessageFormat(activity,  toolURI,  activityURI,  agentURI,  sourceModelFileNameURI,  fmuFileNameURI, entityType, path, gitHash);
 }
 
@@ -261,7 +261,7 @@ void CommitChangesDialog::commitAndGenerateTraceabilityURI(QString fileName)
   QDateTime time = QDateTime::currentDateTime();
   toolURI = "Entity.softwareTool:OpenModelica: " + MainWindow::instance()->getOMCProxy()->getVersion();
   agentURI = "Agent:" + OptionsDialog::instance()->getTraceabilityPage()->getEmail()->text();
-  activityURI = "Activity."+ activity +":" + time.toTimeSpec(Qt::OffsetFromUTC).toString(Qt::ISODate)+ "#" + QUuid::createUuid().toString().mid(1, 36);
+  activityURI = "Activity."+ activity +":" + time.toTimeZone(QTimeZone::utc()).toString(Qt::ISODate)+ "#" + QUuid::createUuid().toString().mid(1, 36);
   path = dir.relativeFilePath(fileName);
   if(activity.compare("modelModification")== 0) {
     gitHash = GitCommands::instance()->getGitHash(fileName);
