@@ -95,7 +95,6 @@ public:
   QString getOMCShapeAnnotation() override;
   QString getOMCShapeAnnotationWithShapeName() override;
   QString getShapeAnnotation() override;
-  QString getCompositeModelShapeAnnotation();
   void addPoint(QPointF point) override;
   void addGeometry();
   void removePoint(int index);
@@ -132,14 +131,6 @@ public:
   TextAnnotation* getTextAnnotation() {return mpTextAnnotation;}
   void setOldAnnotation(QString oldAnnotation) {mOldAnnotation = oldAnnotation;}
   QString getOldAnnotation() {return mOldAnnotation;}
-  void setDelay(QString delay) {mDelay = delay;}
-  QString getDelay() {return mDelay;}
-  void setZf(QString zf) {mZf = zf;}
-  QString getZf() {return mZf;}
-  void setZfr(QString zfr) {mZfr = zfr;}
-  QString getZfr() {return mZfr;}
-  void setAlpha(QString alpha) {mAlpha = alpha;}
-  QString getAlpha() {return mAlpha;}
   void setOMSConnectionType(oms_connection_type_enu_t connectionType) {mOMSConnectionType = connectionType;}
   oms_connection_type_enu_t getOMSConnectionType() {return mOMSConnectionType;}
   void setActiveState(bool activeState) {mActiveState = activeState;}
@@ -161,9 +152,6 @@ private:
   ModelInstance::Line *mpLine;
 
   PointArrayAnnotation adjustPointsForDrawing() const;
-protected:
-  QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
-
   private:
   LineType mLineType;
   Element *mpStartElement;
@@ -177,13 +165,7 @@ protected:
   bool mSynchronize;
   int mPriority;
   TextAnnotation *mpTextAnnotation;
-  // MetaModel attributes
   QString mOldAnnotation;
-  // CompositeModel attributes
-  QString mDelay;
-  QString mZf;
-  QString mZfr;
-  QString mAlpha;
   oms_connection_type_enu_t mOMSConnectionType;
   bool mActiveState;
   QVector<Element*> mCollidingConnectorElements;

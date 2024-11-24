@@ -235,20 +235,15 @@ void MessageWidget::addGUIMessage(MessageItem messageItem)
   QString linkFormat = QString("[%1: %2]: <a href=\"omeditmessagesbrowser:///%3?lineNumber=%4\">%5</a>");
   QString errorMessage;
   QString message;
-  if(messageItem.getMessageItemType()== MessageItem::Modelica) {
-    // if message already have tags then just use it.
-    if (Qt::mightBeRichText(messageItem.getMessage())) {
-      message = messageItem.getMessage();
-    } else {
-      message = Qt::convertFromPlainText(messageItem.getMessage()).remove("<p>").remove("</p>");
-    }
-  } else if(messageItem.getMessageItemType()== MessageItem::CompositeModel) {
-    message = messageItem.getMessage().remove("<p>").remove("</p>");
+  // if message already have tags then just use it.
+  if (Qt::mightBeRichText(messageItem.getMessage())) {
+    message = messageItem.getMessage();
+  } else {
+    message = Qt::convertFromPlainText(messageItem.getMessage()).remove("<p>").remove("</p>");
   }
   if (messageItem.getFileName().isEmpty()) { // if custom error message
     errorMessage = message;
-  } else if (messageItem.getMessageItemType()== MessageItem::CompositeModel ||
-             MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(messageItem.getFileName())) {
+  } else if (MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(messageItem.getFileName())) {
     // If the class is only loaded in AST via loadString then create link for the error message.
     errorMessage = linkFormat.arg(messageItem.getFileName())
         .arg(messageItem.getLocation())

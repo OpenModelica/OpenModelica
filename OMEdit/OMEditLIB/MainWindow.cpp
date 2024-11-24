@@ -50,22 +50,18 @@
 #include "Plotting/VariablesWidget.h"
 #include "Search/SearchWidget.h"
 #if !defined(WITHOUT_OSG)
-#include "Animation/ThreeDViewer.h"
 #include "Animation/ViewerWidget.h"
 #endif
 #include "Util/Helper.h"
 #include "Simulation/ArchivedSimulationsWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
 #include "OMS/OMSSimulationOutputWidget.h"
-#include "TLM/FetchInterfaceDataDialog.h"
-#include "TLM/TLMCoSimulationOutputWidget.h"
 #include "OMS/OMSSimulationDialog.h"
 #include "Debugger/DebuggerConfigurationsDialog.h"
 #include "Debugger/Attach/AttachToProcessDialog.h"
 #include "TransformationalDebugger/TransformationsWidget.h"
 #include "Options/NotificationsDialog.h"
 #include "Simulation/SimulationDialog.h"
-#include "TLM/TLMCoSimulationDialog.h"
 #include "FMI/ImportFMUDialog.h"
 #include "FMI/ImportFMUModelDescriptionDialog.h"
 #include "Git/CommitChangesDialog.h"
@@ -89,12 +85,10 @@ namespace ToolBars {
   QString welcomePerspective = "welcomePerspective";
   QString modelingModelicaPerspective = "modelingModelicaPerspective";
   QString modelingTextPerspective = "modelingTextPerspective";
-  QString modelingCompositeModelPerspective = "modelingCompositeModelPerspective";
   QString modelingOMSPerspective = "modelingOMSPerspective";
   QString plottingPerspective = "plottingPerspective";
   QString debuggingModelicaPerspective = "debuggingPerspective";
   QString debuggingTextPerspective = "debuggingTextPerspective";
-  QString debuggingCompositeModelPerspective = "debuggingCompositeModelPerspective";
   QString debuggingOMSPerspective = "debuggingOMSPerspective";
   QString editToolBar = "editToolBar";
   QString viewToolBar = "viewToolBar";
@@ -105,7 +99,6 @@ namespace ToolBars {
   QString reSimulationToolBar = "reSimulationToolBar";
   QString plotToolBar = "plotToolBar";
   QString debuggerToolBar = "debuggerToolBar";
-  QString TLMSimulationToolBar = "TLMSimulationToolBar";
   QString OMSimulatorToolBar = "OMSimulatorToolBar";
 }
 
@@ -348,20 +341,6 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   // create traceability graph view widget
   //  mpTraceabilityGraphViewWidget = new TraceabilityGraphViewWidget(this);
   mpTraceabilityInformationURI = new TraceabilityInformationURI(this);
-#if !defined(WITHOUT_OSG)
-  /* Ticket #4252
-   * Do not create an object of ThreeDViewer by default.
-   * Only create it when user really use it.
-   */
-  mpThreeDViewer = 0;
-  // Create ThreeDViewer dock
-  mpThreeDViewerDockWidget = new QDockWidget(tr("3D Viewer"), this);
-  mpThreeDViewerDockWidget->setObjectName("3DViewer");
-  mpThreeDViewerDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-  addDockWidget(Qt::RightDockWidgetArea, mpThreeDViewerDockWidget);
-  mpThreeDViewerDockWidget->hide();
-  connect(mpThreeDViewerDockWidget, SIGNAL(visibilityChanged(bool)), SLOT(threeDViewerDockWidgetVisibilityChanged(bool)));
-#endif
   // set the corners for the dock widgets
   setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
   setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
@@ -379,8 +358,6 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   ArchivedSimulationsWidget::create();
   // Create simulation dialog when needed
   mpSimulationDialog = 0;
-  // Create TLM co-simulation dialog when needed
-  mpTLMCoSimulationDialog = 0;
   // Create the OMSimulator simulation dialog when needed
   mpOMSSimulationDialog = 0;
   // Create an object of ModelWidgetContainer
@@ -508,33 +485,6 @@ void MainWindow::setNewApiProfiling(bool newApiProfiling)
   }
 }
 
-#if !defined(WITHOUT_OSG)
-/*!
- * \brief MainWindow::isThreeDViewerInitialized
- * Returns true if ThreeDViewer is initialized.
- * \return
- */
-bool MainWindow::isThreeDViewerInitialized()
-{
-  return mpThreeDViewer ? true : false;
-}
-
-/*!
- * \brief MainWindow::getThreeDViewer
- * Returns the ThreeDViewer object. Initializes it if its not initialized.
- * \return
- */
-ThreeDViewer* MainWindow::getThreeDViewer()
-{
-  // create an object of ThreeDViewer
-  if (!mpThreeDViewer) {
-    mpThreeDViewer = new ThreeDViewer(this);
-    mpThreeDViewerDockWidget->setWidget(mpThreeDViewer);
-  }
-  return mpThreeDViewer;
-}
-#endif
-
 /*!
  * \brief MainWindow::isModelingPerspectiveActive
  * Returns true if the Modeling perspective is active.
@@ -601,21 +551,6 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
     mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
-  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isCompositeModel()) {
-    pSettings->beginGroup(ToolBars::modelingCompositeModelPerspective);
-    SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpShapesToolBar, ToolBars::shapesToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpModelSwitcherToolBar, ToolBars::modelSwitcherToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
-    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
-    SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, true);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
   } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isSSP()) {
     pSettings->beginGroup(ToolBars::modelingOMSPerspective);
@@ -629,7 +564,6 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
     mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, true);
   } else { // Covers the case of LibraryTreeItem::Modelica and default.
     pSettings->beginGroup(ToolBars::modelingModelicaPerspective);
@@ -643,7 +577,6 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
     mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
   }
   pSettings->endGroup();
@@ -673,21 +606,6 @@ void MainWindow::showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget)
     mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
-  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isCompositeModel()) {
-    pSettings->beginGroup(ToolBars::debuggingCompositeModelPerspective);
-    SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpShapesToolBar, ToolBars::shapesToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpModelSwitcherToolBar, ToolBars::modelSwitcherToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
-    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
-    SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, true);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
   } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isSSP()) {
     pSettings->beginGroup(ToolBars::debuggingOMSPerspective);
@@ -701,7 +619,6 @@ void MainWindow::showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget)
     mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, true);
   } else { // Covers the case of LibraryTreeItem::Modelica and default.
     pSettings->beginGroup(ToolBars::debuggingModelicaPerspective);
@@ -715,7 +632,6 @@ void MainWindow::showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget)
     mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
   }
   pSettings->endGroup();
@@ -856,9 +772,6 @@ void MainWindow::beforeClosingMainWindow()
   ArchivedSimulationsWidget::destroy();
   if (mpSimulationDialog) {
     delete mpSimulationDialog;
-  }
-  if (mpTLMCoSimulationDialog) {
-    delete mpTLMCoSimulationDialog;
   }
   if (mpOMSSimulationDialog) {
     delete mpOMSSimulationDialog;
@@ -1375,83 +1288,6 @@ void MainWindow::exportModelFigaro(LibraryTreeItem *pLibraryTreeItem)
   }
   ExportFigaroDialog *pExportFigaroDialog = new ExportFigaroDialog(pLibraryTreeItem, this);
   pExportFigaroDialog->exec();
-}
-
-/*!
- * \brief MainWindow::fetchInterfaceData
- * \param pLibraryTreeItem
- * Fetches the interface data for TLM co-simulation.
- */
-void MainWindow::fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem, QString singleModel)
-{
-  /* if CompositeModel text is changed manually by user then validate it before fetching the interface data. */
-  if (pLibraryTreeItem->getModelWidget()) {
-    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
-      return;
-    }
-  }
-  if (pLibraryTreeItem->isSaved()) {
-    fetchInterfaceDataHelper(pLibraryTreeItem, singleModel);
-  } else {
-    QMessageBox *pMessageBox = new QMessageBox(this);
-    pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
-    pMessageBox->setIcon(QMessageBox::Question);
-    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-    pMessageBox->setText(GUIMessages::getMessage(GUIMessages::COMPOSITEMODEL_UNSAVED).arg(pLibraryTreeItem->getNameStructure()));
-    pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    pMessageBox->setDefaultButton(QMessageBox::Yes);
-    int answer = pMessageBox->exec();
-    switch (answer) {
-      case QMessageBox::Yes:
-        if (mpLibraryWidget->saveLibraryTreeItem(pLibraryTreeItem)) {
-          fetchInterfaceDataHelper(pLibraryTreeItem, singleModel);
-        }
-        break;
-      case QMessageBox::No:
-      default:
-        break;
-    }
-  }
-}
-
-/*!
- * \brief MainWindow::TLMSimulate
- * \param pLibraryTreeItem
- * Starts the TLM co-simulation.
- */
-void MainWindow::TLMSimulate(LibraryTreeItem *pLibraryTreeItem)
-{
-  if (!mpTLMCoSimulationDialog) {
-    mpTLMCoSimulationDialog = new TLMCoSimulationDialog(this);
-  }
-  /* if CompositeModel text is changed manually by user then validate it before starting the TLM co-simulation. */
-  if (pLibraryTreeItem->getModelWidget()) {
-    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
-      return;
-    }
-  }
-  if (pLibraryTreeItem->isSaved()) {
-    mpTLMCoSimulationDialog->show(pLibraryTreeItem);
-  } else {
-    QMessageBox *pMessageBox = new QMessageBox(this);
-    pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
-    pMessageBox->setIcon(QMessageBox::Question);
-    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-    pMessageBox->setText(GUIMessages::getMessage(GUIMessages::COMPOSITEMODEL_UNSAVED).arg(pLibraryTreeItem->getNameStructure()));
-    pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    pMessageBox->setDefaultButton(QMessageBox::Yes);
-    int answer = pMessageBox->exec();
-    switch (answer) {
-      case QMessageBox::Yes:
-        if (mpLibraryWidget->saveLibraryTreeItem(pLibraryTreeItem)) {
-          mpTLMCoSimulationDialog->show(pLibraryTreeItem);
-        }
-        break;
-      case QMessageBox::No:
-      default:
-        break;
-    }
-  }
 }
 
 void MainWindow::exportModelToOMNotebook(LibraryTreeItem *pLibraryTreeItem)
@@ -2127,105 +1963,13 @@ void MainWindow::unloadAll(bool onlyModelicaClasses)
         MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pChildLibraryTreeItem, false, false);
       } else if (!onlyModelicaClasses && pChildLibraryTreeItem->isSSP()) {
         MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadOMSModel(pChildLibraryTreeItem, true, false);
-      } else if (!onlyModelicaClasses) { // LibraryTreeItem::CompositeModel or LibraryTreeItem::Text
-        MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadCompositeModelOrTextFile(pChildLibraryTreeItem, false);
+      } else if (!onlyModelicaClasses) { // LibraryTreeItem::Text
+        MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadTextFile(pChildLibraryTreeItem, false);
       }
     }
   }
   // clear everything from OMC
   MainWindow::instance()->getOMCProxy()->clear();
-}
-
-/*!
- * \brief MainWindow::createNewCompositeModelFile
- * Creates a new TLM LibraryTreeItem & ModelWidget.\n
- * Slot activated when mpNewCompositeModelFileAction triggered signal is raised.
- */
-void MainWindow::createNewCompositeModelFile()
-{
-  QString compositeModelName = mpLibraryWidget->getLibraryTreeModel()->getUniqueTopLevelItemName("CompositeModel");
-  LibraryTreeModel *pLibraryTreeModel = mpLibraryWidget->getLibraryTreeModel();
-  LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::CompositeModel, compositeModelName, compositeModelName, "",
-                                                                               false, pLibraryTreeModel->getRootLibraryTreeItem());
-  if (pLibraryTreeItem) {
-    mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
-  }
-}
-
-/*!
- * \brief MainWindow::openCompositeModelFile
- * Opens the CompositeModel file(s).\n
- * Slot activated when mpOpenCompositeModelFileAction triggered signal is raised.
- */
-void MainWindow::openCompositeModelFile()
-{
-  QStringList fileNames;
-  fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles), NULL,
-                                              Helper::xmlFileTypes, NULL);
-  if (fileNames.isEmpty()) {
-    return;
-  }
-  int progressValue = 0;
-  mpProgressBar->setRange(0, fileNames.size());
-  showProgressBar();
-  foreach (QString file, fileNames) {
-    file = file.replace("\\", "/");
-    mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(file));
-    mpProgressBar->setValue(++progressValue);
-    // if file doesn't exists
-    if (!QFile::exists(file)) {
-      QMessageBox *pMessageBox = new QMessageBox(this);
-      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
-      pMessageBox->setIcon(QMessageBox::Critical);
-      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file)));
-      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(file)));
-      pMessageBox->setStandardButtons(QMessageBox::Ok);
-      pMessageBox->exec();
-    } else {
-      mpLibraryWidget->openFile(file, Helper::utf8, false);
-    }
-  }
-  mpStatusBar->clearMessage();
-  hideProgressBar();
-}
-
-/*!
- * \brief MainWindow::loadExternalModels
- * Loads the external model(s) for TLM meta-modeling.\n
- * Slot activated when mpLoadExternModelAction triggered signal is raised.
- */
-void MainWindow::loadExternalModels()
-{
-  QStringList fileNames;
-  fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles), NULL,
-                                              NULL, NULL);
-  if (fileNames.isEmpty()) {
-    return;
-  }
-  int progressValue = 0;
-  mpProgressBar->setRange(0, fileNames.size());
-  showProgressBar();
-  foreach (QString file, fileNames) {
-    file = file.replace("\\", "/");
-    mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(file));
-    mpProgressBar->setValue(++progressValue);
-    // if file doesn't exists
-    if (!QFile::exists(file)) {
-      QMessageBox *pMessageBox = new QMessageBox(this);
-      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
-      pMessageBox->setIcon(QMessageBox::Critical);
-      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file)));
-      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(file)));
-      pMessageBox->setStandardButtons(QMessageBox::Ok);
-      pMessageBox->exec();
-    } else {
-      mpLibraryWidget->openFile(file, Helper::utf8, false, false, true);
-    }
-  }
-  mpStatusBar->clearMessage();
-  hideProgressBar();
 }
 
 /*!
@@ -3050,32 +2794,6 @@ void MainWindow::exportToClipboard()
 }
 
 /*!
- * \brief MainWindow::fetchInterfaceData
- * Slot activated when mpFetchInterfaceDataAction triggered signal is raised.
- * Calls the function that fetches the interface data.
- */
-void MainWindow::fetchInterfaceData()
-{
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
-    fetchInterfaceData(pModelWidget->getLibraryTreeItem());
-  }
-}
-
-/*!
- * \brief MainWindow::TLMSimulate
- * Slot activated when mpTLMSimulateAction triggered signal is raised.
- * Calls the function that starts the TLM simulation.
- */
-void MainWindow::TLMSimulate()
-{
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
-    TLMSimulate(pModelWidget->getLibraryTreeItem());
-  }
-}
-
-/*!
  * \brief MainWindow::openTemporaryDirectory
  * Opens the temporary directory
  */
@@ -3247,19 +2965,6 @@ void MainWindow::openOMSimulatorUsersGuide()
   QDesktopServices::openUrl(OMSimulatorUsersGuideUrl);
 }
 
-/*!
- * \brief MainWindow::openOpenModelicaTLMSimulatorDocumentation
- * Opens the OpenModelica TLM Simulator documentation.
- */
-void MainWindow::openOpenModelicaTLMSimulatorDocumentation()
-{
-  QUrl openModelicaTLMSimulatorDocumentation(QString("file:///%1/OMTLMSimulator/Documentation/OMTLMSimulator.pdf").arg(Helper::OpenModelicaHome));
-  if (!QDesktopServices::openUrl(openModelicaTLMSimulatorDocumentation)) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE)
-                                                          .arg(openModelicaTLMSimulatorDocumentation.toString()), Helper::scriptingKind, Helper::errorLevel));
-  }
-}
-
 void MainWindow::openAboutOMEdit()
 {
   AboutOMEditDialog *pAboutOMEditDialog = new AboutOMEditDialog(this);
@@ -3378,16 +3083,6 @@ void MainWindow::plotToolBarVisibilityChanged(bool visible)
 void MainWindow::debuggerToolBarVisibilityChanged(bool visible)
 {
   toolBarVisibilityChanged(ToolBars::debuggerToolBar, visible);
-}
-
-/*!
- * \brief MainWindow::TLMSimulationToolBarVisibilityChanged
- * Slot activated when toolbar visibility is changed.
- * \param visible
- */
-void MainWindow::TLMSimulationToolBarVisibilityChanged(bool visible)
-{
-  toolBarVisibilityChanged(ToolBars::TLMSimulationToolBar, visible);
 }
 
 /*!
@@ -3547,49 +3242,6 @@ void MainWindow::toggleAutoSave()
 }
 
 /*!
- * \brief MainWindow::readInterfaceData
- * \param pLibraryTreeItem
- * Reads the interface data by reading the interfaceData.xml file and updates the meta-model text.
- */
-void MainWindow::readInterfaceData(LibraryTreeItem *pLibraryTreeItem)
-{
-  if (!pLibraryTreeItem) {
-    return;
-  }
-
-  FetchInterfaceDataDialog *pDialog = qobject_cast<FetchInterfaceDataDialog*>(sender());
-  QString singleModel = pDialog->getSingleModel();
-
-  QFileInfo fileInfo(pLibraryTreeItem->getFileName());
-  QFile file(fileInfo.absoluteDir().absolutePath()+ "/interfaceData.xml");
-  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg("interfaceData.xml")
-                          .arg(file.errorString()), QMessageBox::Ok);
-  } else {
-    QDomDocument modelDataDocument;
-    modelDataDocument.setContent(&file);
-    file.close();
-    // Get the interfaces element
-    QDomElement modelData, interfaces,parameters;
-    modelData = modelDataDocument.documentElement();
-    interfaces = modelData.firstChildElement("Interfaces");
-    parameters = modelData.firstChildElement("Parameters");
-    if(interfaces.isNull() && parameters.isNull()) {
-        interfaces = modelDataDocument.documentElement();   //Backwards compatibility, remove later /Robert
-    }
-
-    // if we don't have ModelWidget then show it.
-    if (!pLibraryTreeItem->getModelWidget()) {
-      mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
-    }
-    CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
-    pCompositeModelEditor->addInterfacesData(interfaces, parameters, singleModel);
-    pLibraryTreeItem->getModelWidget()->updateModelText();
-  }
-}
-
-/*!
  * \brief MainWindow::enableReSimulationToolbar
  * * Handles the VisibilityChanged signal of Variables Dock Widget.
  * \param visible
@@ -3647,22 +3299,6 @@ void MainWindow::documentationDockWidgetVisibilityChanged(bool visible)
       }
     }
   }
-}
-
-/*!
- * \brief MainWindow::threeDViewerDockWidgetVisibilityChanged
- * Handles the VisibilityChanged signal of ThreeDViewer Dock Widget.
- * \param visible
- */
-void MainWindow::threeDViewerDockWidgetVisibilityChanged(bool visible)
-{
-#if !defined(WITHOUT_OSG)
-  if (visible) {
-    getThreeDViewer()->getViewerWidget()->update();
-  }
-#else
-  Q_UNUSED(visible);
-#endif
 }
 
 /*!
@@ -3918,18 +3554,6 @@ void MainWindow::createActions()
   mpUnloadAllAction = new QAction(tr("Unload All"), this);
   mpUnloadAllAction->setStatusTip(tr("Unloads all loaded classes"));
   connect(mpUnloadAllAction, SIGNAL(triggered()), SLOT(unloadAll()));
-  // create new CompositeModel action
-  mpNewCompositeModelFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New Composite Model"), this);
-  mpNewCompositeModelFileAction->setStatusTip(tr("Create New Composite Model file"));
-  connect(mpNewCompositeModelFileAction, SIGNAL(triggered()), SLOT(createNewCompositeModelFile()));
-  // open CompositeModel file action
-  mpOpenCompositeModelFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open Composite Model(s)"), this);
-  mpOpenCompositeModelFileAction->setStatusTip(tr("Opens the Composite Model file(s)"));
-  connect(mpOpenCompositeModelFileAction, SIGNAL(triggered()), SLOT(openCompositeModelFile()));
-  // load External Model action
-  mpLoadExternModelAction = new QAction(tr("Load External Model(s)"), this);
-  mpLoadExternModelAction->setStatusTip(tr("Loads the External Model(s) for the TLM co-simulation"));
-  connect(mpLoadExternModelAction, SIGNAL(triggered()), SLOT(loadExternalModels()));
   // open the directory action
   mpOpenDirectoryAction = new QAction(tr("Open Directory"), this);
   mpOpenDirectoryAction->setStatusTip(tr("Opens the directory"));
@@ -4265,10 +3889,6 @@ void MainWindow::createActions()
   mpOMSimulatorUsersGuideAction = new QAction(tr("OMSimulator User's Guide"), this);
   mpOMSimulatorUsersGuideAction->setStatusTip(tr("Opens the OMSimulator User's Guide"));
   connect(mpOMSimulatorUsersGuideAction, SIGNAL(triggered()), SLOT(openOMSimulatorUsersGuide()));
-  // OMTLMSimulator documenatation action
-  mpOpenModelicaTLMSimulatorDocumentationAction = new QAction(tr("OpenModelica TLM Simulator Documentation"), this);
-  mpOpenModelicaTLMSimulatorDocumentationAction->setStatusTip(tr("Opens the OpenModelica TLM Simulator Documentation"));
-  connect(mpOpenModelicaTLMSimulatorDocumentationAction, SIGNAL(triggered()), SLOT(openOpenModelicaTLMSimulatorDocumentation()));
   // about OMEdit action
   mpAboutOMEditAction = new QAction(tr("About OMEdit"), this);
   mpAboutOMEditAction->setStatusTip(tr("Information about OMEdit"));
@@ -4367,21 +3987,6 @@ void MainWindow::createActions()
   mpClearPlotWindowAction = new QAction(QIcon(":/Resources/icons/clear.svg"), tr("Clear Plot Window"), this);
   mpClearPlotWindowAction->setStatusTip(tr("Clears all the curves from the plot window"));
   connect(mpClearPlotWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(clearPlotWindow()));
-  // simulation parameters
-  mpSimulationParamsAction = new QAction(QIcon(":/Resources/icons/simulation-parameters.svg"), Helper::simulationParams, this);
-  mpSimulationParamsAction->setStatusTip(Helper::simulationParamsTip);
-  // fetch interface data
-  mpFetchInterfaceDataAction = new QAction(QIcon(":/Resources/icons/interface-data.svg"), Helper::fetchInterfaceData, this);
-  mpFetchInterfaceDataAction->setStatusTip(Helper::fetchInterfaceDataTip);
-  connect(mpFetchInterfaceDataAction, SIGNAL(triggered()), SLOT(fetchInterfaceData()));
-  // align interfaces
-  mpAlignInterfacesAction = new QAction(QIcon(":/Resources/icons/align-interfaces.svg"), Helper::alignInterfaces, this);
-  mpAlignInterfacesAction->setStatusTip(Helper::alignInterfacesTip);
-  // TLM simulate action
-  mpTLMCoSimulationAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::tlmCoSimulationSetup, this);
-  mpTLMCoSimulationAction->setStatusTip(Helper::tlmCoSimulationSetupTip);
-  mpTLMCoSimulationAction->setEnabled(false);
-  connect(mpTLMCoSimulationAction, SIGNAL(triggered()), SLOT(TLMSimulate()));
   // Add System Action
   mpAddSystemAction = new QAction(QIcon(":/Resources/icons/add-system.svg"), Helper::addSystem, this);
   mpAddSystemAction->setStatusTip(Helper::addSystemTip);
@@ -4424,10 +4029,6 @@ void MainWindow::createMenus()
   mpFileMenu->addAction(mpOpenTransformationFileAction);
   mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpUnloadAllAction);
-  mpFileMenu->addSeparator();
-  mpFileMenu->addAction(mpNewCompositeModelFileAction);
-  mpFileMenu->addAction(mpOpenCompositeModelFileAction);
-  mpFileMenu->addAction(mpLoadExternModelAction);
   mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpOpenDirectoryAction);
   mpFileMenu->addSeparator();
@@ -4520,16 +4121,12 @@ void MainWindow::createMenus()
   pViewToolbarsMenu->addAction(mpReSimulationToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpPlotToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpDebuggerToolBar->toggleViewAction());
-  pViewToolbarsMenu->addAction(mpTLMSimulationToolbar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpOMSimulatorToolbar->toggleViewAction());
   // Add Actions to Windows View Sub Menu
   pViewWindowsMenu->addAction(mpLibraryDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpElementDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpDocumentationDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpVariablesDockWidget->toggleViewAction());
-#if !defined(WITHOUT_OSG)
-  pViewWindowsMenu->addAction(mpThreeDViewerDockWidget->toggleViewAction());
-#endif
   pViewWindowsMenu->addAction(mpMessagesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpSearchDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpStackFramesDockWidget->toggleViewAction());
@@ -4673,7 +4270,6 @@ void MainWindow::createMenus()
   pHelpMenu->addAction(mpModelicaDocumentationAction);
   pHelpMenu->addSeparator();
   pHelpMenu->addAction(mpOMSimulatorUsersGuideAction);
-  pHelpMenu->addAction(mpOpenModelicaTLMSimulatorDocumentationAction);
   pHelpMenu->addSeparator();
   pHelpMenu->addAction(mpAboutOMEditAction);
   // add Help menu to menu bar
@@ -4723,9 +4319,6 @@ void MainWindow::switchToWelcomePerspective()
   mpLocalsDockWidget->hide();
   mpTargetOutputDockWidget->hide();
   mpGDBLoggerDockWidget->hide();
-#if !defined(WITHOUT_OSG)
-  mpThreeDViewerDockWidget->hide();
-#endif
   // show/hide toolbars
   QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->beginGroup(ToolBars::welcomePerspective);
@@ -4739,7 +4332,6 @@ void MainWindow::switchToWelcomePerspective()
   mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
   SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
   SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
-  SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
   SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
   pSettings->endGroup();
 }
@@ -4820,7 +4412,6 @@ void MainWindow::switchToPlottingPerspective()
   mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
   SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, true);
   SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
-  SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
   SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
   pSettings->endGroup();
   // In case user has tabbed the dock widgets then make VariablesWidget active.
@@ -4833,9 +4424,6 @@ void MainWindow::switchToPlottingPerspective()
   mpLocalsDockWidget->hide();
   mpTargetOutputDockWidget->hide();
   mpGDBLoggerDockWidget->hide();
-#if !defined(WITHOUT_OSG)
-  mpThreeDViewerDockWidget->hide();
-#endif
 }
 
 /*!
@@ -4912,24 +4500,6 @@ void MainWindow::tileSubWindows(QMdiArea *pMdiArea, bool horizontally)
       position.setX(position.x() + pSubWindow->width());
     }
   }
-}
-
-/*!
- * \brief MainWindow::fetchInterfaceDataHelper
- * \param pLibraryTreeItem
- * Helper function for fetching the interface data.
- */
-void MainWindow::fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem, QString singleModel)
-{
-  /* if Modelica text is changed manually by user then validate it before saving. */
-  if (pLibraryTreeItem->getModelWidget()) {
-    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
-      return;
-    }
-  }
-  FetchInterfaceDataDialog *pFetchInterfaceDataDialog = new FetchInterfaceDataDialog(pLibraryTreeItem, singleModel, this);
-  connect(pFetchInterfaceDataDialog, SIGNAL(readInterfaceData(LibraryTreeItem*)), SLOT(readInterfaceData(LibraryTreeItem*)));
-  pFetchInterfaceDataDialog->exec();
 }
 
 //! Creates the toolbars
@@ -5083,18 +4653,6 @@ void MainWindow::createToolbars()
   mpDebugConfigurationToolButton->setIcon(QIcon(":/Resources/icons/debugger.svg"));
   connect(mpDebugConfigurationToolButton, SIGNAL(clicked()), SLOT(runDebugConfiguration()));
   mpDebuggerToolBar->addWidget(mpDebugConfigurationToolButton);
-  // TLM Simulation Toolbar
-  mpTLMSimulationToolbar = addToolBar(tr("TLM Simulation Toolbar"));
-  mpTLMSimulationToolbar->setObjectName("TLM Simulation Toolbar");
-  mpTLMSimulationToolbar->setAllowedAreas(Qt::TopToolBarArea);
-  // add actions to TLM Simulation Toolbar
-  mpTLMSimulationToolbar->addAction(mpSimulationParamsAction);
-  mpTLMSimulationToolbar->addSeparator();
-  mpTLMSimulationToolbar->addAction(mpFetchInterfaceDataAction);
-  mpTLMSimulationToolbar->addAction(mpAlignInterfacesAction);
-  mpTLMSimulationToolbar->addSeparator();
-  mpTLMSimulationToolbar->addAction(mpTLMCoSimulationAction);
-  connect(mpTLMSimulationToolbar, SIGNAL(visibilityChanged(bool)), SLOT(TLMSimulationToolBarVisibilityChanged(bool)));
   // SSP Toolbar
   mpOMSimulatorToolbar = addToolBar(tr("SSP Toolbar"));
   mpOMSimulatorToolbar->setObjectName("SSP Toolbar");
@@ -5135,8 +4693,6 @@ void MainWindow::toolBarVisibilityChanged(const QString &toolbar, bool visible)
       pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
       if (pModelWidget && pModelWidget->getLibraryTreeItem()->isText()) {
         perspective = ToolBars::modelingTextPerspective;
-      } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isCompositeModel()) {
-        perspective = ToolBars::modelingCompositeModelPerspective;
       } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isSSP()) {
         perspective = ToolBars::modelingOMSPerspective;
       } else {
@@ -5150,8 +4706,6 @@ void MainWindow::toolBarVisibilityChanged(const QString &toolbar, bool visible)
       pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
       if (pModelWidget && pModelWidget->getLibraryTreeItem()->isText()) {
         perspective = ToolBars::debuggingTextPerspective;
-      } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isCompositeModel()) {
-        perspective = ToolBars::debuggingCompositeModelPerspective;
       } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isSSP()) {
         perspective = ToolBars::debuggingOMSPerspective;
       } else {

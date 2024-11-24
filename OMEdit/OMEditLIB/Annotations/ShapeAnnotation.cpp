@@ -39,7 +39,6 @@
 #include "ShapePropertiesDialog.h"
 #include "Modeling/Commands.h"
 #include "Element/ElementProperties.h"
-#include "TLM/FetchInterfaceDataDialog.h"
 #include "Plotting/VariablesWidget.h"
 #include "Util/ResourceCache.h"
 
@@ -1812,27 +1811,12 @@ bool ShapeAnnotation::isLineStraight(QPointF point1, QPointF point2)
  */
 void ShapeAnnotation::showShapeProperties()
 {
-  if (!mpGraphicsView || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isCompositeModel()) {
+  if (!mpGraphicsView) {
     return;
   }
   MainWindow *pMainWindow = MainWindow::instance();
   ShapePropertiesDialog *pShapePropertiesDialog = new ShapePropertiesDialog(this, pMainWindow);
   pShapePropertiesDialog->exec();
-}
-
-/*!
- * \brief ShapeAnnotation::showShapeAttributes
- * Slot activated when Attributes option is chosen from context menu of the shape.
- */
-void ShapeAnnotation::showShapeAttributes()
-{
-  if (!mpGraphicsView) {
-    return;
-  }
-  LineAnnotation *pConnectionLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-  CompositeModelConnectionAttributes *pCompositeModelConnectionAttributes;
-  pCompositeModelConnectionAttributes = new CompositeModelConnectionAttributes(mpGraphicsView, pConnectionLineAnnotation, true, MainWindow::instance());
-  pCompositeModelConnectionAttributes->exec();
 }
 
 /*!
