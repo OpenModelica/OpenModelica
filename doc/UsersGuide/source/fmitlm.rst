@@ -1,8 +1,5 @@
-FMI and TLM-Based Simulation and Co-simulation of External Models
-=================================================================
-
 Functional Mock-up Interface - FMI
-----------------------------------
+==================================
 
 The `Functional Mock-up Interface (FMI) <http://www.fmi-standard.org>`_ Standard
 for model exchange and co-simulation allows export, exchange and import of pre-compiled
@@ -13,7 +10,7 @@ different Modelica or non-Modelica tools.
 See also :ref:`OMSimulator documentation<omsimulator-documentation>`.
 
 FMI Export
-~~~~~~~~~~
+----------
 
 To export a FMU use the OpenModelica command :ref:`buildModelFMU()<buildModelFMU>` from
 the command line interface, OMShell, OMNotebook or MDT.
@@ -209,7 +206,7 @@ The ``platforms`` setting specifies for what target system the FMU is compiled:
 .. _fmi-import :
 
 FMI Import - SSP
-~~~~~~~~~~~~~~~~
+----------------
 
 If you want to simulate a single, stand-alone FMU, or possibly a connection
 of several FMUs, the recommended tool to do that is OMSimulator, see the
