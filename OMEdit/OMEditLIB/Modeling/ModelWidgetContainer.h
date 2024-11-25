@@ -446,7 +446,6 @@ public slots:
   void showParameters();
   void showGraphicsViewProperties();
   void showRenameDialog();
-  void showSimulationParamsDialog();
   void manhattanizeItems();
   void deleteItems();
   void duplicateItems();
@@ -782,8 +781,6 @@ public slots:
   void saveTotalModelWidget();
   void printModel();
   void fitToDiagram();
-  void showSimulationParams();
-  void alignInterfaces();
   void addSystem();
   void addOrEditIcon();
   void deleteIcon();

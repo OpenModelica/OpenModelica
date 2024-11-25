@@ -458,14 +458,6 @@ void ShapeAnnotation::createActions()
   mpShapePropertiesAction = new QAction(Helper::properties, mpGraphicsView);
   mpShapePropertiesAction->setStatusTip(tr("Shows the shape properties"));
   connect(mpShapePropertiesAction, SIGNAL(triggered()), SLOT(showShapeProperties()));
-  // shape attributes
-  mpAlignInterfacesAction = new QAction(ResourceCache::getIcon(":/Resources/icons/align-interfaces.svg"), Helper::alignInterfaces, mpGraphicsView);
-  mpAlignInterfacesAction->setStatusTip(Helper::alignInterfacesTip);
-  connect(mpAlignInterfacesAction, SIGNAL(triggered()), SLOT(alignInterfaces()));
-  // shape attributes
-  mpShapeAttributesAction = new QAction(Helper::attributes, mpGraphicsView);
-  mpShapeAttributesAction->setStatusTip(tr("Shows the shape attributes"));
-  connect(mpShapeAttributesAction, SIGNAL(triggered()), SLOT(showShapeAttributes()));
   // edit transition action
   mpEditTransitionAction = new QAction(Helper::editTransition, mpGraphicsView);
   mpEditTransitionAction->setStatusTip(tr("Edits the transition"));
@@ -1831,20 +1823,6 @@ void ShapeAnnotation::editTransition()
   LineAnnotation *pTransitionLineAnnotation = dynamic_cast<LineAnnotation*>(this);
   CreateOrEditTransitionDialog *pCreateOrEditTransitionDialog = new CreateOrEditTransitionDialog(mpGraphicsView, pTransitionLineAnnotation, true, MainWindow::instance());
   pCreateOrEditTransitionDialog->exec();
-}
-
-/*!
- * \brief ShapeAnnotation::alignInterfaces
- * Slot activated when Align Interfaces option is chosen from context menu of the shape.
- */
-void ShapeAnnotation::alignInterfaces()
-{
-  if (!mpGraphicsView) {
-    return;
-  }
-  LineAnnotation *pConnectionLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-  AlignInterfacesDialog *pAlignInterfacesDialog = new AlignInterfacesDialog(mpGraphicsView->getModelWidget(), pConnectionLineAnnotation);
-  pAlignInterfacesDialog->exec();
 }
 
 /*!

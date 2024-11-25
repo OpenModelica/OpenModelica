@@ -122,8 +122,6 @@ private:
   QVector<QPointF> mOldExtents;
   QString mOldAnnotation;
   QAction *mpShapePropertiesAction;
-  QAction *mpAlignInterfacesAction;
-  QAction *mpShapeAttributesAction;
   QAction *mpEditTransitionAction;
 public:
   enum LineGeometryType {VerticalLine, HorizontalLine};
@@ -155,8 +153,6 @@ public:
   QPointF getOldScenePosition() {return mOldScenePosition;}
   bool isCornerItemClicked() const {return mIsCornerItemClicked;}
   QAction* getShapePropertiesAction() const {return mpShapePropertiesAction;}
-  QAction* getAlignInterfacesAction() const {return mpAlignInterfacesAction;}
-  QAction* getShapeAttributesAction() const {return mpShapeAttributesAction;}
   QAction* getEditTransitionAction() const {return mpEditTransitionAction;}
   virtual void addPoint(QPointF point) {Q_UNUSED(point);}
   virtual void clearPoints() {}
@@ -253,8 +249,6 @@ public slots:
   LineGeometryType findLineGeometryType(QPointF point1, QPointF point2);
   bool isLineStraight(QPointF point1, QPointF point2);
   void showShapeProperties();
-  void alignInterfaces();
-  void showShapeAttributes();
   void editTransition();
   void manhattanizeShape(bool addToStack = true);
   void referenceShapeAdded();
