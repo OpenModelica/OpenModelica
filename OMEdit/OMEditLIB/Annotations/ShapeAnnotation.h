@@ -143,7 +143,7 @@ public:
   virtual QString getOMCShapeAnnotationWithShapeName() = 0;
   virtual QString getShapeAnnotation() = 0;
   virtual void drawAnnotation(QPainter *painter) = 0;
-  QList<QPointF> getExtentsForInheritedShapeFromIconDiagramMap(GraphicsView *pGraphicsView, ShapeAnnotation *pReferenceShapeAnnotation);
+  QList<QPointF> getExtentsForInheritedShapeFromIconDiagramMap(GraphicsView *pGraphicsView);
   void applyTransformation();
   void drawCornerItems();
   void setCornerItemsActiveOrPassive();

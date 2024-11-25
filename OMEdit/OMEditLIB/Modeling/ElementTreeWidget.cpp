@@ -389,10 +389,6 @@ QModelIndex ElementTreeModel::elementTreeItemIndex(const ElementTreeItem *pEleme
  */
 void ElementTreeModel::addElements(ModelInstance::Model *pModel)
 {
-  // Element Browser is only available with new API.
-  // if (!MainWindow::instance()->isNewApi()) {
-  //   return;
-  // }
   // remove the existing elements if there are any
   if (mpRootElementTreeItem->childrenSize() > 0) {
     beginRemoveRows(elementTreeItemIndex(mpRootElementTreeItem->parent()), 0, mpRootElementTreeItem->childrenSize() - 1);

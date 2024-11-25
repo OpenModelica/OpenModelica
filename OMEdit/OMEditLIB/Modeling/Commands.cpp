@@ -335,7 +335,7 @@ void UpdateComponentTransformationsCommand::redoInternal()
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   if (mMoveConnectorsTogether && pModelWidget->getLibraryTreeItem()->isModelica()
       && ((mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector())
-          || (/*pModelWidget->isNewApi() && */mpComponent->getModel() && mpComponent->getModel()->isConnector()))) {
+          || (mpComponent->getModel() && mpComponent->getModel()->isConnector()))) {
     GraphicsView *pGraphicsView;
     if (mpComponent->getGraphicsView()->isIconView()) {
       pGraphicsView = pModelWidget->getDiagramGraphicsView();
@@ -363,7 +363,7 @@ void UpdateComponentTransformationsCommand::redoInternal()
   mpComponent->mTransformation = mNewTransformation;
   mpComponent->emitTransformChange(mPositionChanged);
   mpComponent->emitTransformHasChanged();
-  if (mpComponent->getGraphicsView()->isDiagramView()/* && pModelWidget->isNewApi()*/) {
+  if (mpComponent->getGraphicsView()->isDiagramView()) {
     pModelWidget->setHandleCollidingConnectionsNeeded(true);
   }
 }
@@ -377,7 +377,7 @@ void UpdateComponentTransformationsCommand::undo()
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   if (mMoveConnectorsTogether && pModelWidget->getLibraryTreeItem()->isModelica()
       && ((mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector())
-          || (/*pModelWidget->isNewApi() && */mpComponent->getModel() && mpComponent->getModel()->isConnector()))) {
+          || (mpComponent->getModel() && mpComponent->getModel()->isConnector()))) {
     GraphicsView *pGraphicsView;
     if (mpComponent->getGraphicsView()->isIconView()) {
       pGraphicsView = pModelWidget->getDiagramGraphicsView();
@@ -667,12 +667,6 @@ DeleteComponentCommand::DeleteComponentCommand(Element *pComponent, GraphicsView
 {
   mpComponent = pComponent;
   mpGraphicsView = pGraphicsView;
-  // if (pGraphicsView->getModelWidget()->isNewApi()) {
-
-  // } else {
-  //   // save component modifiers before deleting if any
-  //   mpComponent->getElementInfo()->getModifiersMap(MainWindow::instance()->getOMCProxy(), mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mpComponent);
-  // }
 }
 
 /*!
@@ -735,11 +729,6 @@ void DeleteComponentCommand::undo()
   mpGraphicsView->deleteElementFromOutOfSceneList(mpComponent);
   mpComponent->emitAdded();
   mpGraphicsView->addElementToClass(mpComponent);
-  // if (pModelWidget->isNewApi()) {
-
-  // } else {
-  //   UpdateElementAttributesCommand::updateComponentModifiers(mpComponent, *mpComponent->getElementInfo());
-  // }
 }
 
 AddConnectionCommand::AddConnectionCommand(LineAnnotation *pConnectionLineAnnotation, bool addConnection, UndoCommand *pParent)
@@ -766,9 +755,7 @@ void AddConnectionCommand::redoInternal()
       return;
     }
   }
-  // if (mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->isNewApi()) {
-    mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->setHandleCollidingConnectionsNeeded(true);
-  // }
+  mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->setHandleCollidingConnectionsNeeded(true);
 }
 
 /*!
@@ -779,9 +766,7 @@ void AddConnectionCommand::undo()
 {
   mpConnectionLineAnnotation->getGraphicsView()->removeConnectionFromView(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->getGraphicsView()->deleteConnectionFromClass(mpConnectionLineAnnotation);
-  // if (mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->isNewApi()) {
-    mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->setHandleCollidingConnectionsNeeded(true);
-  // }
+  mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->setHandleCollidingConnectionsNeeded(true);
 }
 
 UpdateConnectionCommand::UpdateConnectionCommand(LineAnnotation *pConnectionLineAnnotation, QString oldAnnotaton, QString newAnnotation, UndoCommand *pParent)

@@ -569,8 +569,6 @@ public:
   void setModelFilePathLabel(QString path) {mpModelFilePathLabel->setText(path);}
   QVBoxLayout* getMainLayout() {return mpMainLayout;}
   bool isLoadedWidgetComponents() {return mCreateModelWidgetComponents;}
-  // void addInheritedClass(LibraryTreeItem *pLibraryTreeItem) {mInheritedClassesList.append(pLibraryTreeItem);}
-  void removeInheritedClass(LibraryTreeItem *pLibraryTreeItem) {mInheritedClassesList.removeOne(pLibraryTreeItem);}
   void clearInheritedClasses() {mInheritedClassesList.clear();}
   QList<LibraryTreeItem*> getInheritedClassesList() {return mInheritedClassesList;}
   QMap<int, IconDiagramMap> getInheritedClassIconMap() {return mInheritedClassesIconMap;}
@@ -579,7 +577,6 @@ public:
   QMap<QString, QString> getExtendsModifiersMap(QString extendsClass);
   QMap<QString, QString> getDerivedClassModifiersMap();
 
-  // bool isNewApi();
   void addDependsOnModel(const QString &dependsOnModel);
   void clearDependsOnModels() {mDependsOnModelsList.clear();}
   void setHandleCollidingConnectionsNeeded(bool needed) {mHandleCollidingConnectionsNeeded = needed;}
@@ -593,25 +590,18 @@ public:
   bool isRestoringModel() const {return mRestoringModel;}
 
   void fetchExtendsModifiers(QString extendsClass);
-  // void reDrawModelWidgetInheritedClasses();
   void drawModelCoOrdinateSystem(GraphicsView *pGraphicsView);
   void drawModelIconDiagramShapes(QStringList shapes, GraphicsView *pGraphicsView, bool select);
   ShapeAnnotation* createNonExistingInheritedShape(GraphicsView *pGraphicsView);
   static ShapeAnnotation* createInheritedShape(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   Element* createInheritedComponent(Element *pComponent, GraphicsView *pGraphicsView);
   LineAnnotation* createInheritedConnection(LineAnnotation *pConnectionLineAnnotation);
-  // void loadElements();
 
   void drawModel(const ModelInfo &modelInfo);
   void drawModelIconDiagram(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
-
   void loadModelInstance(bool icon, const ModelInfo &modelInfo);
   void loadDiagramViewNAPI();
-  // void loadDiagramView();
-  // void loadConnections();
-  // void getModelConnections();
   void detectMultipleDeclarations();
-  // void addConnection(QStringList connectionList, QString connectionAnnotationString, bool addToOMC, bool select);
   void createModelWidgetComponents();
   ShapeAnnotation* drawOMSModelElement();
   void addUpdateDeleteOMSElementIcon(const QString &iconPath);
@@ -703,18 +693,7 @@ private:
   void createUndoStack();
   void handleCanUndoRedoChanged();
   IconDiagramMap getIconDiagramMap(QString mapAnnotation);
-  // void getModelInheritedClasses();
-  // void drawModelInheritedClassShapes(ModelWidget *pModelWidget, StringHandler::ViewType viewType);
-
-  // void getModelIconDiagramShapes(StringHandler::ViewType viewType);
   void readCoOrdinateSystemFromInheritedClass(ModelWidget *pModelWidget, GraphicsView *pGraphicsView);
-  // void drawModelInheritedClassComponents(ModelWidget *pModelWidget, StringHandler::ViewType viewType);
-  // void getModelElements();
-  // void drawModelIconElements();
-  // void drawModelDiagramElements();
-  // void drawModelInheritedClassConnections(ModelWidget *pModelWidget);
-  // void getModelTransitions();
-  // void getModelInitialStates();
   void getMetaModelSubModels();
   void getMetaModelConnections();
   void drawOMSModelIconElements();

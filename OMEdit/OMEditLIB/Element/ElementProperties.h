@@ -77,7 +77,6 @@ public:
     Choices,
     ChoicesAllMatching
   };
-  // Parameter(Element *pElement, bool showStartAttribute, QString tab, QString groupBox, ElementParametersOld *pElementParametersOld);
   Parameter(ModelInstance::Element *pElement, bool defaultValue, ElementParameters *pElementParameters);
   Element* getElement() {return mpElement;}
   ModelInstance::Element* getModelInstanceElement() {return mpModelInstanceElement;}
@@ -140,7 +139,6 @@ private:
   Element *mpElement;
   ModelInstance::Element *mpModelInstanceElement;
   ElementParameters *mpElementParameters = 0;
-  // ElementParametersOld *mpElementParametersOld = 0;
   StringAnnotation mTab;
   StringAnnotation mGroup;
   bool mGroupDefined;
@@ -293,48 +291,6 @@ public slots:
   void updateElementParameters();
   virtual void reject() override;
 };
-
-// class ElementParametersOld : public QDialog
-// {
-//   Q_OBJECT
-// public:
-//   ElementParametersOld(Element *pComponent, QWidget *pParent = 0);
-//   ~ElementParametersOld();
-//   QString getElementParentClassName() const;
-// private:
-//   Element *mpElement;
-//   Label *mpParametersHeading;
-//   QFrame *mHorizontalLine;
-//   QTabWidget *mpParametersTabWidget;
-//   QGroupBox *mpComponentGroupBox;
-//   Label *mpComponentNameLabel;
-//   Label *mpComponentNameTextBox;
-//   Label *mpComponentCommentLabel;
-//   Label *mpComponentCommentTextBox;
-//   QGroupBox *mpComponentClassGroupBox;
-//   Label *mpComponentClassNameLabel;
-//   Label *mpComponentClassNameTextBox;
-//   Label *mpComponentClassCommentLabel;
-//   Label *mpComponentClassCommentTextBox;
-//   Label *mpModifiersLabel;
-//   QLineEdit *mpModifiersTextBox;
-//   QMap<QString, int> mTabsMap;
-//   QList<Parameter*> mParametersList;
-//   QPushButton *mpOkButton;
-//   QPushButton *mpCancelButton;
-//   QDialogButtonBox *mpButtonBox;
-
-//   void setUpDialog();
-//   void createTabsGroupBoxesAndParameters(LibraryTreeItem *pLibraryTreeItem);
-//   void createTabsGroupBoxesAndParametersHelper(LibraryTreeItem *pLibraryTreeItem, bool useInsert = false);
-//   void fetchElementExtendsModifiers();
-//   void fetchElementModifiers();
-//   Parameter* findParameter(LibraryTreeItem *pLibraryTreeItem, const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
-//   Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
-// public slots:
-//   void commentLinkClicked(QString link);
-//   void updateElementParameters();
-// };
 
 class ElementAttributes : public QDialog
 {
