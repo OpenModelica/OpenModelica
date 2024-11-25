@@ -351,6 +351,7 @@ public
      and is a record instance it will try to create a binding from the
      component's children."
     input Component component;
+    input InstNode scope;
     output Binding binding;
   protected
     InstNode cls_node;
@@ -363,9 +364,15 @@ public
 
       if InstNode.isRecord(cls_node) then
         try
-          record_exp := Class.makeRecordExp(cls_node);
-          binding := Binding.makeTyped(record_exp, NFBinding.EachType.NOT_EACH,
-            NFBinding.Source.GENERATED, info(component));
+          if isTyped(component) then
+            record_exp := Class.makeRecordExp(cls_node, scope, typed = true);
+            binding := Binding.makeTyped(record_exp, NFBinding.EachType.NOT_EACH,
+              NFBinding.Source.GENERATED, info(component));
+          else
+            record_exp := Class.makeRecordExp(cls_node, scope, typed = false);
+            binding := Binding.makeUntyped(record_exp, scope, NFBinding.EachType.NOT_EACH,
+              NFBinding.Source.GENERATED, info(component));
+          end if;
         else
         end try;
       end if;

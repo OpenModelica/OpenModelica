@@ -2396,7 +2396,7 @@ protected
   algorithm
     try
       comp := InstNode.component(component);
-      default := Binding.getExpOpt(Component.getImplicitBinding(comp));
+      default := Binding.getExpOpt(Component.getImplicitBinding(comp, InstNode.instanceParent(component)));
       name := InstNode.name(component);
 
       // Remove $in_ for OM input output arguments.

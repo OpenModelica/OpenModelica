@@ -106,7 +106,7 @@ algorithm
           exp := Binding.getExp(binding);
           true := Expression.isRecord(exp);
         else
-          exp := Class.makeRecordExp(listHead(fn.outputs));
+          exp := Class.makeRecordExp(listHead(fn.outputs), fn.node, typed = true);
         end if;
 
         for i in fn.inputs loop
@@ -239,7 +239,7 @@ protected
   Binding binding;
   Expression cref_exp, binding_exp;
 algorithm
-  binding := Component.getImplicitBinding(InstNode.component(outputNode));
+  binding := Component.getImplicitBinding(InstNode.component(outputNode), InstNode.instanceParent(outputNode));
 
   if Binding.isBound(binding) then
     cref_exp := Expression.fromCref(ComponentRef.fromNode(outputNode, Type.UNKNOWN()));

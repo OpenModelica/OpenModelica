@@ -106,7 +106,7 @@ public
       binding := NFBinding.EMPTY_BINDING;
       binfo.varKind := VariableKind.ITERATOR();
     else
-      binding := Component.getImplicitBinding(comp);
+      binding := Component.getImplicitBinding(comp, InstNode.instanceParent(node));
     end if;
 
     // get the record children if the variable is a record
