@@ -76,32 +76,32 @@ static void va_omc_assert_simulation_withEquationIndexes(threadData_t *threadDat
   {
   case ERROR_EVENTSEARCH:
   case ERROR_SIMULATION:
-    va_errorStreamPrintWithEquationIndexes(LOG_ASSERT, info, 0, indexes, msg, args);
+    va_errorStreamPrintWithEquationIndexes(OMC_LOG_ASSERT, info, 0, indexes, msg, args);
     longjmp(*threadData->simulationJumpBuffer,1);
     break;
   case ERROR_NONLINEARSOLVER:
-    if(ACTIVE_STREAM(LOG_NLS))
+    if(OMC_ACTIVE_STREAM(OMC_LOG_NLS))
     {
-      va_errorStreamPrintWithEquationIndexes(LOG_ASSERT, info, 0, indexes, msg, args);
+      va_errorStreamPrintWithEquationIndexes(OMC_LOG_ASSERT, info, 0, indexes, msg, args);
     }
 #ifndef OMC_EMCC
     longjmp(*threadData->simulationJumpBuffer,1);
 #endif
     break;
   case ERROR_INTEGRATOR:
-    if(ACTIVE_STREAM(LOG_SOLVER))
+    if(OMC_ACTIVE_STREAM(OMC_LOG_SOLVER))
     {
-      va_errorStreamPrintWithEquationIndexes(LOG_ASSERT, info, 0, indexes, msg, args);
+      va_errorStreamPrintWithEquationIndexes(OMC_LOG_ASSERT, info, 0, indexes, msg, args);
     }
     longjmp(*threadData->simulationJumpBuffer,1);
     break;
   case ERROR_EVENTHANDLING:
-    va_errorStreamPrintWithEquationIndexes(LOG_ASSERT, info, 0, indexes, msg, args);
+    va_errorStreamPrintWithEquationIndexes(OMC_LOG_ASSERT, info, 0, indexes, msg, args);
     longjmp(threadData->globalJumpBuffer ? *threadData->globalJumpBuffer : *threadData->mmc_jumper, 1);
     break;
   case ERROR_OPTIMIZE:
   default:
-    va_errorStreamPrintWithEquationIndexes(LOG_ASSERT, info, 0, indexes, msg, args);
+    va_errorStreamPrintWithEquationIndexes(OMC_LOG_ASSERT, info, 0, indexes, msg, args);
     throwStreamPrint(threadData, "Untreated assertion has been detected.");
   }
 }
@@ -127,7 +127,7 @@ void omc_assert_simulation_withEquationIndexes(threadData_t *threadData, FILE_IN
 
 static void va_omc_assert_warning_simulation(FILE_INFO info, const int *indexes, const char *msg, va_list args)
 {
-  va_warningStreamPrintWithEquationIndexes(LOG_ASSERT, info, 0, indexes, msg, args);
+  va_warningStreamPrintWithEquationIndexes(OMC_LOG_ASSERT, info, 0, indexes, msg, args);
 }
 
 void omc_assert_warning_simulation(FILE_INFO info, const char *msg, ...)

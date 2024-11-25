@@ -300,13 +300,6 @@ File Menu
 
 -  *Unload All* - Unloads all loaded classes.
 
--  *New Composite Model* - Creates a new composite model.
-
--  *Open Composite Model(s)* - Loads an existing composite model.
-
--  *Load External Model(s)* - Loads the external models that can be used within
-   composite model.
-
 -  *Open Directory* - Loads the files of a directory recursively. The files
    are loaded as text files.
 
@@ -500,9 +493,6 @@ Help Menu
 -  *Modelica Documentation* - Opens the Modelica Documentation.
 
 -  *OMSimulator User's Guide* - Opens the OMSimulator User's Guide.
-
--  *OpenModelica TLM Simulator Documentation* - Opens the OpenModelica TLM Simulator
-   Documentation.
 
 -  *About OMEdit* - Shows the information about OpenModelica Connection Editor.
 
@@ -1556,17 +1546,6 @@ MetaModelica Editor Options
 
   -  *Preview* - Shows the demo of the syntax highlighting.
 
-CompositeModel Editor Options
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
--  Colors
-
-  -  *Items* - List of categories used of syntax highlighting the code.
-
-  -  *Item Color* - Sets the color for the selected item.
-
-  -  *Preview* - Shows the demo of the syntax highlighting.
-
 SSP Editor Options
 ~~~~~~~~~~~~~~~~~~
 
@@ -1953,17 +1932,6 @@ FMI Options
 
   -  *Delete FMU directory and generated model when OMEdit is closed* - If true
      then the temporary FMU directory that is created for importing the FMU will be deleted.
-
-OMTLMSimulator Options
-~~~~~~~~~~~~~~~~~~~~~~
-
--  General
-
-  -  *Path* - path to OMTLMSimulator bin directory.
-
-  -  *Manager Process* - path to OMTLMSimulator manager process.
-
-  -  *Monitor Process* - path to OMTLMSimulator monitor process.
 
 OMSimulator/SSP Options
 ~~~~~~~~~~~~~~~~~~~~~~~

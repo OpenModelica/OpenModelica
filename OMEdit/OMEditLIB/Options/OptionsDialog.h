@@ -52,7 +52,6 @@ class LibrariesPage;
 class TextEditorPage;
 class ModelicaEditorPage;
 class MetaModelicaEditorPage;
-class CompositeModelEditorPage;
 class OMSimulatorEditorPage;
 class CEditorPage;
 class HTMLEditorPage;
@@ -66,7 +65,6 @@ class PlottingPage;
 class FigaroPage;
 class DebuggerPage;
 class FMIPage;
-class TLMPage;
 class OMSimulatorPage;
 class TraceabilityPage;
 class TabSettings;
@@ -98,7 +96,6 @@ public:
   void readTextEditorSettings();
   void readModelicaEditorSettings();
   void readMetaModelicaEditorSettings();
-  void readCompositeModelEditorSettings();
   void readOMSimulatorEditorSettings();
   void readCEditorSettings();
   void readHTMLEditorSettings();
@@ -112,7 +109,6 @@ public:
   void readFigaroSettings();
   void readDebuggerSettings();
   void readFMISettings();
-  void readTLMSettings();
   void readOMSimulatorSettings();
   void readTraceabilitySettings();
   void saveGeneralSettings();
@@ -121,11 +117,9 @@ public:
   void saveTextEditorSettings();
   void saveModelicaEditorSettings();
   void saveMetaModelicaEditorSettings();
-  void saveCompositeModelEditorSettings();
   void saveOMSimulatorEditorSettings();
   void saveCEditorSettings();
   void saveHTMLEditorSettings();
-  void saveTLMSettings();
   void saveOMSimulatorSettings();
   void saveTraceabilitySettings();
   void saveGraphicalViewsSettings();
@@ -148,7 +142,6 @@ public:
   TextEditorPage* getTextEditorPage() {return mpTextEditorPage;}
   ModelicaEditorPage* getModelicaEditorPage() {return mpModelicaEditorPage;}
   MetaModelicaEditorPage* getMetaModelicaEditorPage() {return mpMetaModelicaEditorPage;}
-  CompositeModelEditorPage* getCompositeModelEditorPage() {return mpCompositeModelEditorPage;}
   OMSimulatorEditorPage* getOMSimulatorEditorPage() {return mpOMSimulatorEditorPage;}
   CEditorPage* getCEditorPage() {return mpCEditorPage;}
   HTMLEditorPage* getHTMLEditorPage() {return mpHTMLEditorPage;}
@@ -162,7 +155,6 @@ public:
   FigaroPage* getFigaroPage() {return mpFigaroPage;}
   DebuggerPage* getDebuggerPage() {return mpDebuggerPage;}
   FMIPage* getFMIPage() {return mpFMIPage;}
-  TLMPage* getTLMPage() {return mpTLMPage;}
   OMSimulatorPage* getOMSimulatorPage() {return mpOMSimulatorPage;}
   TraceabilityPage* getTraceabilityPage() {return mpTraceabilityPage;}
   void emitModelicaEditorSettingsChanged() {emit modelicaEditorSettingsChanged();}
@@ -174,7 +166,6 @@ signals:
   void textSettingsChanged();
   void modelicaEditorSettingsChanged();
   void metaModelicaEditorSettingsChanged();
-  void compositeModelEditorSettingsChanged();
   void omsimulatorEditorSettingsChanged();
   void cEditorSettingsChanged();
   void HTMLEditorSettingsChanged();
@@ -190,7 +181,6 @@ private:
   TextEditorPage *mpTextEditorPage;
   ModelicaEditorPage *mpModelicaEditorPage;
   MetaModelicaEditorPage *mpMetaModelicaEditorPage;
-  CompositeModelEditorPage *mpCompositeModelEditorPage;
   OMSimulatorEditorPage *mpOMSimulatorEditorPage;
   CEditorPage *mpCEditorPage;
   HTMLEditorPage *mpHTMLEditorPage;
@@ -213,7 +203,6 @@ private:
   FigaroPage *mpFigaroPage;
   DebuggerPage *mpDebuggerPage;
   FMIPage *mpFMIPage;
-  TLMPage *mpTLMPage;
   OMSimulatorPage *mpOMSimulatorPage;
   TraceabilityPage *mpTraceabilityPage;
   QSettings *mpSettings;
@@ -492,24 +481,6 @@ class MetaModelicaEditorPage : public QWidget
   Q_OBJECT
 public:
   MetaModelicaEditorPage(OptionsDialog *pOptionsDialog);
-  OptionsDialog* getOptionsDialog() {return mpOptionsDialog;}
-  void setColor(QString item, QColor color);
-  QColor getColor(QString item);
-  void emitUpdatePreview() {emit updatePreview();}
-private:
-  OptionsDialog *mpOptionsDialog;
-  CodeColorsWidget *mpCodeColorsWidget;
-signals:
-  void updatePreview();
-public slots:
-  void setLineWrapping(bool enabled);
-};
-
-class CompositeModelEditorPage : public QWidget
-{
-  Q_OBJECT
-public:
-  CompositeModelEditorPage(OptionsDialog *pOptionsDialog);
   OptionsDialog* getOptionsDialog() {return mpOptionsDialog;}
   void setColor(QString item, QColor color);
   QColor getColor(QString item);
@@ -1018,35 +989,6 @@ private:
 public slots:
   void selectFMUDirectory();
   void enableIncludeSourcesCheckBox(int index);
-};
-
-class TLMPage : public QWidget
-{
-  Q_OBJECT
-public:
-  TLMPage(OptionsDialog *pOptionsDialog);
-  QString getOMTLMSimulatorPath();
-  QString getOMTLMSimulatorManagerPath();
-  QString getOMTLMSimulatorMonitorPath();
-  QLineEdit* getTLMPluginPathTextBox() {return mpTLMPluginPathTextBox;}
-  QLineEdit* getTLMManagerProcessTextBox() {return mpTLMManagerProcessTextBox;}
-  QLineEdit* getTLMMonitorProcessTextBox() {return mpTLMMonitorProcessTextBox;}
-private:
-  OptionsDialog *mpOptionsDialog;
-  QGroupBox *mpGeneralGroupBox;
-  Label *mpTLMPluginPathLabel;
-  QLineEdit *mpTLMPluginPathTextBox;
-  QPushButton *mpBrowseTLMPluginPathButton;
-  Label *mpTLMManagerProcessLabel;
-  QLineEdit *mpTLMManagerProcessTextBox;
-  QPushButton *mpBrowseTLMManagerProcessButton;
-  Label *mpTLMMonitorProcessLabel;
-  QLineEdit *mpTLMMonitorProcessTextBox;
-  QPushButton *mpBrowseTLMMonitorProcessButton;
-private slots:
-  void browseTLMPluginPath();
-  void browseTLMManagerProcess();
-  void browseTLMMonitorProcess();
 };
 
 class OMSimulatorPage : public QWidget

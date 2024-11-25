@@ -84,7 +84,7 @@ void HTMLEditor::contentsHasChanged(int position, int charsRemoved, int charsAdd
  */
 /*!
  * \brief HTMLHighlighter::HTMLHighlighter
- * \param pCompositeModelEditorPage
+ * \param pHTMLEditorPage
  * \param pPlainTextEdit
  */
 HTMLHighlighter::HTMLHighlighter(HTMLEditorPage *pHTMLEditorPage, QPlainTextEdit *pPlainTextEdit)

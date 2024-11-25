@@ -114,7 +114,6 @@ SOURCES += Util/Helper.cpp \
   Editors/TransformationsEditor.cpp \
   Editors/TextEditor.cpp \
   Editors/CEditor.cpp \
-  Editors/CompositeModelEditor.cpp \
   Editors/OMSimulatorEditor.cpp \
   Editors/MetaModelicaEditor.cpp \
   Editors/HTMLEditor.cpp \
@@ -153,11 +152,6 @@ SOURCES += Util/Helper.cpp \
   Simulation/SimulationOutputHandler.cpp \
   Simulation/OpcUaClient.cpp \
   Simulation/ArchivedSimulationsWidget.cpp \
-  TLM/FetchInterfaceDataDialog.cpp \
-  TLM/FetchInterfaceDataThread.cpp \
-  TLM/TLMCoSimulationDialog.cpp \
-  TLM/TLMCoSimulationOutputWidget.cpp \
-  TLM/TLMCoSimulationThread.cpp \
   FMI/ImportFMUDialog.cpp \
   FMI/ImportFMUModelDescriptionDialog.cpp \
   FMI/FMUExportOutputWidget.cpp \
@@ -229,7 +223,6 @@ HEADERS  += Util/Helper.h \
   Editors/TransformationsEditor.h \
   Editors/TextEditor.h \
   Editors/CEditor.h \
-  Editors/CompositeModelEditor.h \
   Editors/OMSimulatorEditor.h \
   Editors/MetaModelicaEditor.h \
   Editors/HTMLEditor.h \
@@ -269,12 +262,6 @@ HEADERS  += Util/Helper.h \
   Simulation/SimulationOutputHandler.h \
   Simulation/OpcUaClient.h \
   Simulation/ArchivedSimulationsWidget.h \
-  TLM/FetchInterfaceDataDialog.h \
-  TLM/FetchInterfaceDataThread.h \
-  TLM/TLMCoSimulationOptions.h \
-  TLM/TLMCoSimulationDialog.h \
-  TLM/TLMCoSimulationOutputWidget.h \
-  TLM/TLMCoSimulationThread.h \
   FMI/ImportFMUDialog.h \
   FMI/ImportFMUModelDescriptionDialog.h \
   FMI/FMUExportOutputWidget.h \
@@ -352,7 +339,6 @@ CONFIG(osg) {
   HEADERS += Animation/AbstractAnimationWindow.h \
     Animation/ViewerWidget.h \
     Animation/AnimationWindow.h \
-    Animation/ThreeDViewer.h \
     Animation/AnimationUtil.h \
     Animation/ExtraShapes.h \
     Animation/Visualization.h \
@@ -368,7 +354,6 @@ CONFIG(osg) {
 }
 
 OTHER_FILES += Resources/css/stylesheet.qss \
-  Resources/XMLSchema/tlmModelDescription.xsd \
   Debugger/Parser/GDBMIOutput.g \
   Debugger/Parser/GDBMIParser.h \
   Debugger/Parser/GDBMIParser.cpp \

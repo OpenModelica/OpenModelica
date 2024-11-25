@@ -3749,7 +3749,7 @@ template algStmtReinit(DAE.Statement stmt, Context context, Text &varDecls, Text
     <<
     <%preExp%>
     <%expPart1%> = <%expPart2%>;
-    infoStreamPrint(LOG_EVENTS, 0, "reinit <%expPart1%> = %f", <%expPart1%>);
+    infoStreamPrint(OMC_LOG_EVENTS, 0, "reinit <%expPart1%> = %f", <%expPart1%>);
     data->simulationInfo->needToIterate = 1;
     >>
 end algStmtReinit;
@@ -4550,7 +4550,7 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
     const char* assert_cond = "(<%assertExpStr%>)";
     if (data->simulationInfo->noThrowAsserts) {
       FILE_INFO info = {<%infoArgs(info)%>};
-      infoStreamPrintWithEquationIndexes(LOG_ASSERT, info, 0, equationIndexes, <%infoTextContext%>);<%rethrow%>
+      infoStreamPrintWithEquationIndexes(OMC_LOG_ASSERT, info, 0, equationIndexes, <%infoTextContext%>);<%rethrow%>
     } else {
       FILE_INFO info = {<%infoArgs(info)%>};
       <%omcAssertFunc%>info, equationIndexes, <%infoTextContext%>);
@@ -4612,7 +4612,7 @@ template assertCommonVar(Text condVar, Text msgVar, Context context, Text &varDe
     {
       if (data->simulationInfo->noThrowAsserts) {
         FILE_INFO info = {<%infoArgs(info)%>};
-        infoStreamPrintWithEquationIndexes(LOG_ASSERT, info, 0, equationIndexes, "The following assertion has been violated %sat time %f", initial() ? "during initialization " : "", data->localData[0]->timeValue);
+        infoStreamPrintWithEquationIndexes(OMC_LOG_ASSERT, info, 0, equationIndexes, "The following assertion has been violated %sat time %f", initial() ? "during initialization " : "", data->localData[0]->timeValue);
         data->simulationInfo->needToReThrow = 1;
       } else {
         FILE_INFO info = {<%infoArgs(info)%>};

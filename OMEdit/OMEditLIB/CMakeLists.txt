@@ -42,7 +42,6 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Editors/TransformationsEditor.cpp
                       Editors/TextEditor.cpp
                       Editors/CEditor.cpp
-                      Editors/CompositeModelEditor.cpp
                       Editors/OMSimulatorEditor.cpp
                       Editors/MetaModelicaEditor.cpp
                       Editors/HTMLEditor.cpp
@@ -81,11 +80,6 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Simulation/SimulationOutputHandler.cpp
                       Simulation/OpcUaClient.cpp
                       Simulation/ArchivedSimulationsWidget.cpp
-                      TLM/FetchInterfaceDataDialog.cpp
-                      TLM/FetchInterfaceDataThread.cpp
-                      TLM/TLMCoSimulationDialog.cpp
-                      TLM/TLMCoSimulationOutputWidget.cpp
-                      TLM/TLMCoSimulationThread.cpp
                       FMI/ImportFMUDialog.cpp
                       FMI/ImportFMUModelDescriptionDialog.cpp
                       FMI/FMUExportOutputWidget.cpp
@@ -173,7 +167,6 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Editors/TransformationsEditor.h
                       Editors/TextEditor.h
                       Editors/CEditor.h
-                      Editors/CompositeModelEditor.h
                       Editors/OMSimulatorEditor.h
                       Editors/MetaModelicaEditor.h
                       Editors/HTMLEditor.h
@@ -213,12 +206,6 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Simulation/SimulationOutputHandler.h
                       Simulation/OpcUaClient.h
                       Simulation/ArchivedSimulationsWidget.h
-                      TLM/FetchInterfaceDataDialog.h
-                      TLM/FetchInterfaceDataThread.h
-                      TLM/TLMCoSimulationOptions.h
-                      TLM/TLMCoSimulationDialog.h
-                      TLM/TLMCoSimulationOutputWidget.h
-                      TLM/TLMCoSimulationThread.h
                       FMI/ImportFMUDialog.h
                       FMI/ImportFMUModelDescriptionDialog.h
                       FMI/FMUExportOutputWidget.h

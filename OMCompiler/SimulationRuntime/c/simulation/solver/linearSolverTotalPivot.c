@@ -48,7 +48,7 @@
 
 void debugMatrixDoubleLS(int logName, char* matrixName, double* matrix, int n, int m)
 {
-  if(ACTIVE_STREAM(logName))
+  if(OMC_ACTIVE_STREAM(logName))
   {
     int i, j;
     int sparsity = 0;
@@ -81,7 +81,7 @@ void debugMatrixDoubleLS(int logName, char* matrixName, double* matrix, int n, i
 
 void debugVectorDoubleLS(int logName, char* vectorName, double* vector, int n)
 {
-   if(ACTIVE_STREAM(logName))
+   if(OMC_ACTIVE_STREAM(logName))
   {
     int i;
     char *buffer = (char*)malloc(sizeof(char)*n*22);
@@ -111,7 +111,7 @@ void debugVectorDoubleLS(int logName, char* vectorName, double* vector, int n)
 
 void debugStringLS(int logName, char* message)
 {
-  if(ACTIVE_STREAM(logName))
+  if(OMC_ACTIVE_STREAM(logName))
   {
     infoStreamPrint(logName, 1, "%s", message);
     messageClose(logName);
@@ -120,7 +120,7 @@ void debugStringLS(int logName, char* message)
 
 void debugIntLS(int logName, char* message, int value)
 {
-  if(ACTIVE_STREAM(logName))
+  if(OMC_ACTIVE_STREAM(logName))
   {
     infoStreamPrint(logName, 1, "%s %d", message, value);
     messageClose(logName);
@@ -224,13 +224,13 @@ int solveSystemWithTotalPivotSearchLS(DATA* data, int n, double* x, double* Ab, 
     if (absMax < DBL_EPSILON) {
       *rank = i;
       if (data->simulationInfo->initial) {
-        warningStreamPrint(LOG_LS, 1, "Total Pivot: Matrix (nearly) singular at initialization.");
+        warningStreamPrint(OMC_LOG_LS, 1, "Total Pivot: Matrix (nearly) singular at initialization.");
       } else {
-        warningStreamPrint(LOG_LS, 1, "Total Pivot: Matrix (nearly) singular at time %f.", data->localData[0]->timeValue);
+        warningStreamPrint(OMC_LOG_LS, 1, "Total Pivot: Matrix (nearly) singular at time %f.", data->localData[0]->timeValue);
       }
-      warningStreamPrint(LOG_LS, 0, "Continuing anyway. For more information please use -lv %s.", LOG_STREAM_NAME[LOG_LS]);
-      messageCloseWarning(LOG_LS);
-      infoStreamPrint(LOG_LS, 0, "rank =  %u", *rank);
+      warningStreamPrint(OMC_LOG_LS, 0, "Continuing anyway. For more information please use -lv %s.", OMC_LOG_STREAM_NAME[OMC_LOG_LS]);
+      messageCloseWarning(OMC_LOG_LS);
+      infoStreamPrint(OMC_LOG_LS, 0, "rank =  %u", *rank);
       break;
     }
     /* swap row indices */
@@ -256,13 +256,13 @@ int solveSystemWithTotalPivotSearchLS(DATA* data, int n, double* x, double* Ab, 
     }
   }
 
-  debugMatrixDoubleLS(LOG_LS_V,"LGS: matrix Ab manipulated",Ab, n, n+1);
+  debugMatrixDoubleLS(OMC_LOG_LS_V,"LGS: matrix Ab manipulated",Ab, n, n+1);
   /* solve even singular matrix */
   for (i=n-1;i>=0; i--) {
     if (i>=*rank) {
       /* this criteria should be evaluated and may be improved in future */
       if (fabs(Ab[indRow[i] + n*n])>1e-12) {
-        warningStreamPrint(LOG_LS, 0, "under-determined linear system not solvable!");
+        warningStreamPrint(OMC_LOG_LS, 0, "under-determined linear system not solvable!");
         return -1;
       } else {
         x[indCol[i]] = 0.0;
@@ -276,7 +276,7 @@ int solveSystemWithTotalPivotSearchLS(DATA* data, int n, double* x, double* Ab, 
     }
   }
   x[n]=1.0;
-  debugVectorDoubleLS(LOG_LS_V,"LGS: solution vector x",x, n+1);
+  debugVectorDoubleLS(OMC_LOG_LS_V,"LGS: solution vector x",x, n+1);
 
   return 0;
 }
@@ -424,12 +424,12 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double*
   int success = 1;
   double tmpJacEvalTime;
 
-  infoStreamPrintWithEquationIndexes(LOG_LS, omc_dummyFileInfo, 0, indexes,
+  infoStreamPrintWithEquationIndexes(OMC_LOG_LS, omc_dummyFileInfo, 0, indexes,
     "Start solving Linear System %d (size %d) at time %g with Total Pivot Solver",
     eqSystemNumber, (int) systemData->size, data->localData[0]->timeValue);
 
-  debugVectorDoubleLS(LOG_LS_V,"SCALING",systemData->nominal,n);
-  debugVectorDoubleLS(LOG_LS_V,"Old VALUES",aux_x,n);
+  debugVectorDoubleLS(OMC_LOG_LS_V,"SCALING",systemData->nominal,n);
+  debugVectorDoubleLS(OMC_LOG_LS_V,"Old VALUES",aux_x,n);
 
   rt_ext_tp_tick(&(solverData->timeClock));
   if (0 == systemData->method) {
@@ -457,24 +457,24 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double*
   }
   tmpJacEvalTime = rt_ext_tp_tock(&(solverData->timeClock));
   systemData->jacobianTime += tmpJacEvalTime;
-  infoStreamPrint(LOG_LS_V, 0, "###  %f  time to set Matrix A and vector b.", tmpJacEvalTime);
-  debugMatrixDoubleLS(LOG_LS_V,"LGS: matrix Ab",solverData->Ab, n, n+1);
+  infoStreamPrint(OMC_LOG_LS_V, 0, "###  %f  time to set Matrix A and vector b.", tmpJacEvalTime);
+  debugMatrixDoubleLS(OMC_LOG_LS_V,"LGS: matrix Ab",solverData->Ab, n, n+1);
 
   rt_ext_tp_tick(&(solverData->timeClock));
   status = solveSystemWithTotalPivotSearchLS(data, n, solverData->x, solverData->Ab, solverData->indRow, solverData->indCol, &rank);
-  infoStreamPrint(LOG_LS_V, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
+  infoStreamPrint(OMC_LOG_LS_V, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
 
   if (status != 0) {
     // ToDo Rework stream prints like this one to work in parallel regions
 #ifdef USE_PARJAC
-    warningStreamPrint(LOG_STDOUT, 0, "Thread %u: Error solving linear system of equations (no. %d) at time %f.", omc_get_thread_num(), (int)systemData->equationIndex, data->localData[0]->timeValue);
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Thread %u: Error solving linear system of equations (no. %d) at time %f.", omc_get_thread_num(), (int)systemData->equationIndex, data->localData[0]->timeValue);
     success = 0;
 #else
-    warningStreamPrint(LOG_STDOUT, 0, "Error solving linear system of equations (no. %d) at time %f.", (int)systemData->equationIndex, data->localData[0]->timeValue);
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Error solving linear system of equations (no. %d) at time %f.", (int)systemData->equationIndex, data->localData[0]->timeValue);
     success = 0;
 #endif
   } else {
-    debugVectorDoubleLS(LOG_LS_V, "SOLUTION:", solverData->x, n+1);
+    debugVectorDoubleLS(OMC_LOG_LS_V, "SOLUTION:", solverData->x, n+1);
     if (1 == systemData->method) {
       /* add the solution to old solution vector*/
       vecAddLS(n, aux_x, solverData->x, aux_x);
@@ -484,18 +484,18 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double*
        vecCopyLS(n, solverData->x, aux_x);
     }
 
-    if (ACTIVE_STREAM(LOG_LS_V)) {
+    if (OMC_ACTIVE_STREAM(OMC_LOG_LS_V)) {
       if (1 == systemData->method) {
-        infoStreamPrint(LOG_LS_V, 1, "Residual Norm %.15g of solution x:", residualNorm);
+        infoStreamPrint(OMC_LOG_LS_V, 1, "Residual Norm %.15g of solution x:", residualNorm);
       } else {
-        infoStreamPrint(LOG_LS_V, 1, "Solution x:");
+        infoStreamPrint(OMC_LOG_LS_V, 1, "Solution x:");
       }
-      infoStreamPrint(LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
+      infoStreamPrint(OMC_LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
       for(i=0; i<systemData->size; ++i)
       {
-        infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], aux_x[i]);
+        infoStreamPrint(OMC_LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], aux_x[i]);
       }
-      messageClose(LOG_LS_V);
+      messageClose(OMC_LOG_LS_V);
     }
   }
   return success;

@@ -143,8 +143,6 @@
         <file>Resources/icons/simulation-parameters.svg</file>
         <file>Resources/icons/interface-data.svg</file>
         <file>Resources/icons/align-interfaces.svg</file>
-        <file>Resources/icons/tlm-simulate.svg</file>
-        <file>Resources/XMLSchema/tlmModelDescription.xsd</file>
         <file>Resources/icons/initialize.svg</file>
         <file>Resources/icons/play_animation.svg</file>
         <file>Resources/icons/pause.svg</file>

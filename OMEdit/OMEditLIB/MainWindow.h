@@ -79,7 +79,6 @@ class ThreeDViewer;
 #endif
 class BreakpointsWidget;
 class SimulationDialog;
-class TLMCoSimulationDialog;
 class OMSSimulationDialog;
 class ModelWidgetContainer;
 class ModelWidget;
@@ -133,13 +132,7 @@ public:
   VariablesWidget* getVariablesWidget() {return mpVariablesWidget;}
   QDockWidget* getVariablesDockWidget() {return mpVariablesDockWidget;}
   SearchWidget* getSearchWidget() {return mpSearchWidget;}
-#if !defined(WITHOUT_OSG)
-  bool isThreeDViewerInitialized();
-  ThreeDViewer* getThreeDViewer();
-  QDockWidget* getThreeDViewerDockWidget() {return mpThreeDViewerDockWidget;}
-#endif
   SimulationDialog* getSimulationDialog() {return mpSimulationDialog;}
-  TLMCoSimulationDialog* getTLMCoSimulationDialog() {return mpTLMCoSimulationDialog;}
   OMSSimulationDialog* getOMSSimulationDialog() {return mpOMSSimulationDialog;}
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   WelcomePageWidget* getWelcomePageWidget() {return mpWelcomePageWidget;}
@@ -203,10 +196,6 @@ public:
   QAction* getTransitionModeAction() {return mpTransitionModeAction;}
   QAction* getReSimulateModelAction() {return mpReSimulateModelAction;}
   QAction* getReSimulateSetupAction() {return mpReSimulateSetupAction;}
-  QAction* getSimulationParamsAction() {return mpSimulationParamsAction;}
-  QAction* getFetchInterfaceDataAction() {return mpFetchInterfaceDataAction;}
-  QAction* getAlignInterfacesAction() {return mpAlignInterfacesAction;}
-  QAction* getTLMSimulationAction() {return mpTLMCoSimulationAction;}
   QAction* getAddSystemAction() {return mpAddSystemAction;}
   QAction* getAddOrEditIconAction() {return mpAddOrEditIconAction;}
   QAction* getDeleteIconAction() {return mpDeleteIconAction;}
@@ -225,7 +214,6 @@ public:
   QToolBar* getShapesToolBar() const {return mpShapesToolBar;}
   QToolBar* getCheckToolBar() const {return mpCheckToolBar;}
   QToolBar* getSimulationToolBar() const {return mpSimulationToolBar;}
-  QToolBar* getTLMSimulationToolbar() const {return mpTLMSimulationToolbar;}
   QToolBar* getOMSimulatorToobar() const {return mpOMSimulatorToolbar;}
   void showModelingPerspectiveToolBars(ModelWidget *pModelWidget);
   void showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget);
@@ -252,8 +240,6 @@ public:
   void exportReadonlyPackage(LibraryTreeItem *pLibraryTreeItem);
   void exportModelXML(LibraryTreeItem *pLibraryTreeItem);
   void exportModelFigaro(LibraryTreeItem *pLibraryTreeItem);
-  void fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem, QString singleModel=QString());
-  void TLMSimulate(LibraryTreeItem *pLibraryTreeItem);
   void exportModelToOMNotebook(LibraryTreeItem *pLibraryTreeItem);
   void createOMNotebookTitleCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement);
   void createOMNotebookImageCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement, QString filePath);
@@ -305,12 +291,7 @@ private:
   VariablesWidget *mpVariablesWidget;
   QDockWidget *mpVariablesDockWidget;
   TraceabilityGraphViewWidget *mpTraceabilityGraphViewWidget;
-#if !defined(WITHOUT_OSG)
-  ThreeDViewer *mpThreeDViewer;
-  QDockWidget *mpThreeDViewerDockWidget;
-#endif
   SimulationDialog *mpSimulationDialog;
-  TLMCoSimulationDialog *mpTLMCoSimulationDialog;
   OMSSimulationDialog *mpOMSSimulationDialog;
   ModelWidgetContainer *mpModelWidgetContainer;
   WelcomePageWidget *mpWelcomePageWidget;
@@ -337,10 +318,6 @@ private:
   QAction *mpOpenResultFileAction;
   QAction *mpOpenTransformationFileAction;
   QAction *mpUnloadAllAction;
-  // CompositeModel File Actions
-  QAction *mpNewCompositeModelFileAction;
-  QAction *mpOpenCompositeModelFileAction;
-  QAction *mpLoadExternModelAction;
   QAction *mpOpenDirectoryAction;
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
@@ -425,7 +402,6 @@ private:
   QAction *mpOpenModelicaScriptingAction;
   QAction *mpModelicaDocumentationAction;
   QAction *mpOMSimulatorUsersGuideAction;
-  QAction *mpOpenModelicaTLMSimulatorDocumentationAction;
   QAction *mpAboutOMEditAction;
   // Toolbar Actions
   // Shapes Toolbar Actions
@@ -453,11 +429,6 @@ private:
   QAction *mpDiagramWindowAction;
   QAction *mpClearPlotWindowAction;
   QAction *mpExportVariablesAction;
-  // TLM Simulation Action
-  QAction *mpSimulationParamsAction;
-  QAction *mpFetchInterfaceDataAction;
-  QAction *mpAlignInterfacesAction;
-  QAction *mpTLMCoSimulationAction;
   // OMSimulator Actions
   QAction *mpAddSystemAction;
   QAction *mpAddOrEditIconAction;
@@ -487,7 +458,6 @@ private:
   QToolBar *mpDebuggerToolBar;
   QMenu *mpDebugConfigurationMenu;
   QToolButton *mpDebugConfigurationToolButton;
-  QToolBar *mpTLMSimulationToolbar;
   QToolBar *mpOMSimulatorToolbar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
 signals:
@@ -508,9 +478,6 @@ public slots:
   void showOpenResultFileDialog();
   void showOpenTransformationFileDialog();
   void unloadAll(bool onlyModelicaClasses = false);
-  void createNewCompositeModelFile();
-  void openCompositeModelFile();
-  void loadExternalModels();
   void openDirectory();
   void writeOutputFileData(QString data);
   void writeErrorFileData(QString data);
@@ -560,8 +527,6 @@ public slots:
   void importNgspiceNetlist();
   void exportModelAsImage(bool copyToClipboard = false);
   void exportToClipboard();
-  void fetchInterfaceData();
-  void TLMSimulate();
   void openTemporaryDirectory();
   void openWorkingDirectory();
   void openTerminal();
@@ -572,7 +537,6 @@ public slots:
   void openOpenModelicaScriptingDocumentation();
   void openModelicaDocumentation();
   void openOMSimulatorUsersGuide();
-  void openOpenModelicaTLMSimulatorDocumentation();
   void openAboutOMEdit();
   void toggleShapesButton();
   void editToolBarVisibilityChanged(bool visible);
@@ -584,19 +548,16 @@ public slots:
   void reSimulationToolBarVisibilityChanged(bool visible);
   void plotToolBarVisibilityChanged(bool visible);
   void debuggerToolBarVisibilityChanged(bool visible);
-  void TLMSimulationToolBarVisibilityChanged(bool visible);
   void OMSimulatorToolBarVisibilityChanged(bool visible);
   void openRecentModelWidget();
   void updateModelSwitcherMenu(QMdiSubWindow *pSubWindow);
   void runDebugConfiguration();
   void updateDebuggerToolBarMenu();
   void toggleAutoSave();
-  void readInterfaceData(LibraryTreeItem *pLibraryTreeItem);
   void enableReSimulationToolbar(bool visible);
 private slots:
   void perspectiveTabChanged(int tabIndex);
   void documentationDockWidgetVisibilityChanged(bool visible);
-  void threeDViewerDockWidgetVisibilityChanged(bool visible);
   void messagesTabBarClicked(int index);
   void messagesDockWidgetVisibilityChanged(bool visible);
   void messageTabAdded(QWidget *pSimulationOutputTab, const QString &name);
@@ -623,7 +584,6 @@ private:
   void switchToAlgorithmicDebuggingPerspective();
   void closeAllWindowsButThis(QMdiArea *pMdiArea);
   void tileSubWindows(QMdiArea *pMdiArea, bool horizontally);
-  void fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem, QString singleModel = QString());
   void toolBarVisibilityChanged(const QString &toolbar, bool visible);
   MessageTab* createMessageTab(const QString &name, bool fixedTab);
 protected:

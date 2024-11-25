@@ -33,7 +33,9 @@ encapsulated uniontype NFClass
 
 import Attributes = NFAttributes;
 import BaseModelica;
+import NFCall.Call;
 import Component = NFComponent;
+import ComponentRef = NFComponentRef;
 import Dimension = NFDimension;
 import Expression = NFExpression;
 import NFClassTree.ClassTree;
@@ -41,6 +43,7 @@ import NFInstNode.InstNode;
 import NFModifier.Modifier;
 import NFSections.Sections;
 import NFStatement.Statement;
+import Record = NFRecord;
 import Restriction = NFRestriction;
 import SCode.Element;
 import Type = NFType;
@@ -53,6 +56,7 @@ import ComplexType = NFComplexType;
 import IOStream;
 import SCodeUtil;
 import System;
+import MetaModelica.Dangerous.listReverseInPlace;
 
 public
 
@@ -836,19 +840,41 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
 
   function makeRecordExp
     input InstNode clsNode;
+    input InstNode scope;
+    input Boolean typed;
     output Expression exp;
   protected
     Class cls;
     Type ty;
     InstNode ty_node;
-    array<InstNode> fields;
+    list<Record.Field> fields;
+    array<InstNode> comps;
     list<Expression> args;
   algorithm
     cls := InstNode.getClass(clsNode);
-    ty as Type.COMPLEX(complexTy = ComplexType.RECORD(ty_node)) := getType(cls, clsNode);
-    fields := ClassTree.getComponents(classTree(cls));
-    args := list(Binding.getExp(Component.getImplicitBinding(InstNode.component(f))) for f in fields);
-    exp := Expression.makeRecord(InstNode.fullPath(ty_node), ty, args);
+    ty as Type.COMPLEX(complexTy = ComplexType.RECORD(constructor = ty_node)) := getType(cls, clsNode);
+    comps := ClassTree.getComponents(classTree(cls));
+
+    if typed then
+      // Create a record expression if the instance has been typed.
+      args := list(Binding.getExp(Component.getImplicitBinding(InstNode.component(c), scope)) for c in comps);
+      exp := Expression.makeRecord(InstNode.fullPath(ty_node), ty, args);
+    else
+      // Create a record constructor call if the instance hasn't been typed.
+      // Creating a record expression would skip type checking and potentially
+      // lead to issues like missing type casts.
+      args := {};
+      for c in comps loop
+        fields := Record.collectRecordField(c, {});
+
+        if not listEmpty(fields) and Record.Field.isInput(listHead(fields)) then
+          args := Binding.getExp(Component.getImplicitBinding(InstNode.component(c), scope)) :: args;
+        end if;
+      end for;
+
+      args := listReverseInPlace(args);
+      exp := Expression.CALL(Call.UNTYPED_CALL(ComponentRef.fromNode(ty_node, ty), args, {}, scope));
+    end if;
   end makeRecordExp;
 
   function toFlatStream

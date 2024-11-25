@@ -98,9 +98,6 @@ OptionsDialog::OptionsDialog(QWidget *pParent)
   mpMetaModelicaEditorPage = new MetaModelicaEditorPage(this);
   connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpMetaModelicaEditorPage, SIGNAL(updatePreview()));
   connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpMetaModelicaEditorPage, SIGNAL(updatePreview()));
-  mpCompositeModelEditorPage = new CompositeModelEditorPage(this);
-  connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpCompositeModelEditorPage, SIGNAL(updatePreview()));
-  connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpCompositeModelEditorPage, SIGNAL(updatePreview()));
   mpOMSimulatorEditorPage = new OMSimulatorEditorPage(this);
   connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpOMSimulatorEditorPage, SIGNAL(updatePreview()));
   connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpOMSimulatorEditorPage, SIGNAL(updatePreview()));
@@ -120,7 +117,6 @@ OptionsDialog::OptionsDialog(QWidget *pParent)
   mpFigaroPage = new FigaroPage(this);
   mpDebuggerPage = new DebuggerPage(this);
   mpFMIPage = new FMIPage(this);
-  mpTLMPage = new TLMPage(this);
   mpOMSimulatorPage = new OMSimulatorPage(this);
   mpTraceabilityPage = new TraceabilityPage(this);
   // Get the settings.
@@ -145,9 +141,6 @@ void OptionsDialog::readSettings()
   readMetaModelicaEditorSettings();
   emit metaModelicaEditorSettingsChanged();
   mpMetaModelicaEditorPage->emitUpdatePreview();
-  readCompositeModelEditorSettings();
-  emit compositeModelEditorSettingsChanged();
-  mpCompositeModelEditorPage->emitUpdatePreview();
   readOMSimulatorEditorSettings();
   emit omsimulatorEditorSettingsChanged();
   mpOMSimulatorEditorPage->emitUpdatePreview();
@@ -167,7 +160,6 @@ void OptionsDialog::readSettings()
   readFigaroSettings();
   readDebuggerSettings();
   readFMISettings();
-  readTLMSettings();
   readOMSimulatorSettings();
   readTraceabilitySettings();
 }
@@ -548,43 +540,6 @@ void OptionsDialog::readMetaModelicaEditorSettings()
     mpMetaModelicaEditorPage->setColor("Comment", QColor(mpSettings->value("metaModelicaEditor/commentRuleColor").toUInt()));
   } else {
     mpMetaModelicaEditorPage->setColor("Comment", OptionsDefaults::MetaModelicaEditor::commentRuleColor);
-  }
-}
-
-/*!
- * \brief OptionsDialog::readCompositeModelEditorSettings
- * Reads the CompositeModelEditor settings from omedit.ini
- */
-void OptionsDialog::readCompositeModelEditorSettings()
-{
-  if (mpSettings->contains("compositeModelEditor/textRuleColor")) {
-    mpCompositeModelEditorPage->setColor("Text", QColor(mpSettings->value("compositeModelEditor/textRuleColor").toUInt()));
-  } else {
-    mpCompositeModelEditorPage->setColor("Text", OptionsDefaults::ModelicaEditor::textRuleColor);
-  }
-
-  if (mpSettings->contains("compositeModelEditor/tagRuleColor")) {
-    mpCompositeModelEditorPage->setColor("Tag", QColor(mpSettings->value("compositeModelEditor/tagRuleColor").toUInt()));
-  } else {
-    mpCompositeModelEditorPage->setColor("Tag", OptionsDefaults::CompositeModelEditor::tagRuleColor);
-  }
-
-  if (mpSettings->contains("compositeModelEditor/elementsRuleColor")) {
-    mpCompositeModelEditorPage->setColor("Element", QColor(mpSettings->value("compositeModelEditor/elementsRuleColor").toUInt()));
-  } else {
-    mpCompositeModelEditorPage->setColor("Element", OptionsDefaults::CompositeModelEditor::elementRuleColor);
-  }
-
-  if (mpSettings->contains("compositeModelEditor/quotesRuleColor")) {
-    mpCompositeModelEditorPage->setColor("Quotes", QColor(mpSettings->value("compositeModelEditor/quotesRuleColor").toUInt()));
-  } else {
-    mpCompositeModelEditorPage->setColor("Quotes", OptionsDefaults::CompositeModelEditor::quotesRuleColor);
-  }
-
-  if (mpSettings->contains("compositeModelEditor/commentRuleColor")) {
-    mpCompositeModelEditorPage->setColor("Comment", QColor(mpSettings->value("compositeModelEditor/commentRuleColor").toUInt()));
-  } else {
-    mpCompositeModelEditorPage->setColor("Comment", OptionsDefaults::CompositeModelEditor::commentRuleColor);
   }
 }
 
@@ -1446,32 +1401,6 @@ void OptionsDialog::readFMISettings()
 }
 
 /*!
- * \brief OptionsDialog::readTLMSettings
- * Reads the TLM settings from omedit.ini
- */
-void OptionsDialog::readTLMSettings()
-{
-  // read TLM Path
-  if (mpSettings->contains("TLM/PluginPath")) {
-    mpTLMPage->getTLMPluginPathTextBox()->setText(mpSettings->value("TLM/PluginPath").toString());
-  } else {
-    mpTLMPage->getTLMPluginPathTextBox()->clear();
-  }
-  // read the TLM Manager Process
-  if (mpSettings->contains("TLM/ManagerProcess")) {
-    mpTLMPage->getTLMManagerProcessTextBox()->setText(mpSettings->value("TLM/ManagerProcess").toString());
-  } else {
-    mpTLMPage->getTLMManagerProcessTextBox()->clear();
-  }
-  // read TLM Monitor Process
-  if (mpSettings->contains("TLM/MonitorProcess")) {
-    mpTLMPage->getTLMMonitorProcessTextBox()->setText(mpSettings->value("TLM/MonitorProcess").toString());
-  } else {
-    mpTLMPage->getTLMMonitorProcessTextBox()->clear();
-  }
-}
-
-/*!
  * \brief OptionsDialog::readOMSimulatorSettings
  * Reads the OMSimulator settings from omedit.ini
  */
@@ -1958,48 +1887,6 @@ void OptionsDialog::saveMetaModelicaEditorSettings()
     mpSettings->remove("metaModelicaEditor/commentRuleColor");
   } else {
     mpSettings->setValue("metaModelicaEditor/commentRuleColor", commentRuleColor.rgba());
-  }
-}
-
-/*!
- * \brief OptionsDialog::saveCompositeModelEditorSettings
- * Saves the CompositeModelEditor settings to omedit.ini
- */
-void OptionsDialog::saveCompositeModelEditorSettings()
-{
-  QColor textRuleColor = mpCompositeModelEditorPage->getColor("Text");
-  if (textRuleColor == OptionsDefaults::ModelicaEditor::textRuleColor) {
-    mpSettings->remove("compositeModelEditor/textRuleColor");
-  } else {
-    mpSettings->setValue("compositeModelEditor/textRuleColor", textRuleColor.rgba());
-  }
-
-  QColor tagRuleColor = mpCompositeModelEditorPage->getColor("Tag");
-  if (tagRuleColor == OptionsDefaults::CompositeModelEditor::tagRuleColor) {
-    mpSettings->remove("compositeModelEditor/tagRuleColor");
-  } else {
-    mpSettings->setValue("compositeModelEditor/tagRuleColor", tagRuleColor.rgba());
-  }
-
-  QColor elementRuleColor = mpCompositeModelEditorPage->getColor("Element");
-  if (elementRuleColor == OptionsDefaults::CompositeModelEditor::elementRuleColor) {
-    mpSettings->remove("compositeModelEditor/elementsRuleColor");
-  } else {
-    mpSettings->setValue("compositeModelEditor/elementsRuleColor", elementRuleColor.rgba());
-  }
-
-  QColor quotesRuleColor = mpCompositeModelEditorPage->getColor("Quotes");
-  if (quotesRuleColor == OptionsDefaults::CompositeModelEditor::quotesRuleColor) {
-    mpSettings->remove("compositeModelEditor/quotesRuleColor");
-  } else {
-    mpSettings->setValue("compositeModelEditor/quotesRuleColor", quotesRuleColor.rgba());
-  }
-
-  QColor commentRuleColor = mpCompositeModelEditorPage->getColor("Comment");
-  if (commentRuleColor == OptionsDefaults::CompositeModelEditor::commentRuleColor) {
-    mpSettings->remove("compositeModelEditor/commentRuleColor");
-  } else {
-    mpSettings->setValue("compositeModelEditor/commentRuleColor", commentRuleColor.rgba());
   }
 }
 
@@ -3027,35 +2914,6 @@ void OptionsDialog::saveFMISettings()
 }
 
 /*!
- * \brief OptionsDialog::saveTLMSettings
- * Saves the TLM settings in omedit.ini
- */
-void OptionsDialog::saveTLMSettings()
-{
-  // read TLM Path
-  const QString pluginPath = mpTLMPage->getOMTLMSimulatorPath();
-  if (pluginPath.isEmpty() || pluginPath.compare(OptionsDefaults::TLM::pluginPath) == 0) {
-    mpSettings->remove("TLM/PluginPath");
-  } else {
-    mpSettings->setValue("TLM/PluginPath", pluginPath);
-  }
-  // save the TLM Manager Process
-  const QString managerProcess = mpTLMPage->getOMTLMSimulatorManagerPath();
-  if (managerProcess.isEmpty() || managerProcess.compare(OptionsDefaults::TLM::managerProcess) == 0) {
-    mpSettings->remove("TLM/ManagerProcess");
-  } else {
-    mpSettings->setValue("TLM/ManagerProcess", managerProcess);
-  }
-  // save the TLM Monitor Process
-  const QString monitorProcess = mpTLMPage->getOMTLMSimulatorMonitorPath();
-  if (monitorProcess.isEmpty() || monitorProcess.compare(OptionsDefaults::TLM::monitorProcess) == 0) {
-    mpSettings->remove("TLM/MonitorProcess");
-  } else {
-    mpSettings->setValue("TLM/MonitorProcess", monitorProcess);
-  }
-}
-
-/*!
  * \brief OptionsDialog::saveOMSimulatorSettings
  * Saves the OMSimulator settings in omedit.ini
  */
@@ -3209,10 +3067,6 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pMetaModelicaEditorItem = new QListWidgetItem(mpOptionsList);
   pMetaModelicaEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
   pMetaModelicaEditorItem->setText(tr("MetaModelica Editor"));
-  // CompositeModel Editor Item
-  QListWidgetItem *pCompositeModelEditorItem = new QListWidgetItem(mpOptionsList);
-  pCompositeModelEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
-  pCompositeModelEditorItem->setText(tr("CompositeModel Editor"));
   // SSP Editor Item
   QListWidgetItem *pOMSimulatorEditorItem = new QListWidgetItem(mpOptionsList);
   pOMSimulatorEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
@@ -3265,10 +3119,6 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pFMIItem = new QListWidgetItem(mpOptionsList);
   pFMIItem->setIcon(QIcon(":/Resources/icons/fmi.svg"));
   pFMIItem->setText(tr("FMI"));
-  // TLM Item
-  QListWidgetItem *pTLMItem = new QListWidgetItem(mpOptionsList);
-  pTLMItem->setIcon(QIcon(":/Resources/icons/tlm-icon.svg"));
-  pTLMItem->setText(tr("OMTLMSimulator"));
   // OMSimulator Item
   QListWidgetItem *pOMSimulatorItem = new QListWidgetItem(mpOptionsList);
   pOMSimulatorItem->setIcon(QIcon(":/Resources/icons/tlm-icon.svg"));
@@ -3288,7 +3138,6 @@ void OptionsDialog::createPages()
   addPage(mpTextEditorPage);
   addPage(mpModelicaEditorPage);
   addPage(mpMetaModelicaEditorPage);
-  addPage(mpCompositeModelEditorPage);
   addPage(mpOMSimulatorEditorPage);
   addPage(mpCEditorPage);
   addPage(mpHTMLEditorPage);
@@ -3302,7 +3151,6 @@ void OptionsDialog::createPages()
   addPage(mpFigaroPage);
   addPage(mpDebuggerPage);
   addPage(mpFMIPage);
-  addPage(mpTLMPage);
   addPage(mpOMSimulatorPage);
   addPage(mpTraceabilityPage);
 }
@@ -3405,8 +3253,6 @@ void OptionsDialog::saveSettings()
   emit modelicaEditorSettingsChanged();
   saveMetaModelicaEditorSettings();
   emit metaModelicaEditorSettingsChanged();
-  saveCompositeModelEditorSettings();
-  emit compositeModelEditorSettingsChanged();
   saveOMSimulatorEditorSettings();
   emit omsimulatorEditorSettingsChanged();
   saveCEditorSettings();
@@ -3425,7 +3271,6 @@ void OptionsDialog::saveSettings()
   saveFigaroSettings();
   saveDebuggerSettings();
   saveFMISettings();
-  saveTLMSettings();
   saveOMSimulatorSettings();
   saveTraceabilitySettings();
   // emit the signal so that all text editors can set settings & line wrapping mode
@@ -4593,109 +4438,8 @@ void MetaModelicaEditorPage::setLineWrapping(bool enabled)
 }
 
 /*!
- * \class CompositeModelEditorPage
- * \brief Creates an interface for CompositeModel Text settings.
- */
-/*!
- * \brief CompositeModelEditorPage::CompositeModelEditorPage
- * \param pOptionsDialog is the pointer to OptionsDialog
- */
-CompositeModelEditorPage::CompositeModelEditorPage(OptionsDialog *pOptionsDialog)
-  : QWidget(pOptionsDialog)
-{
-  mpOptionsDialog = pOptionsDialog;
-  // code colors widget
-  mpCodeColorsWidget = new CodeColorsWidget(this);
-  connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
-  // Add items to list
-  // tag (blue)
-  new ListWidgetItem("Tag", OptionsDefaults::CompositeModelEditor::tagRuleColor, mpCodeColorsWidget->getItemsListWidget());
-  // element (blue)
-  new ListWidgetItem("Element", OptionsDefaults::CompositeModelEditor::elementRuleColor, mpCodeColorsWidget->getItemsListWidget());
-  // quotes (dark red)
-  new ListWidgetItem("Quotes", OptionsDefaults::CompositeModelEditor::quotesRuleColor, mpCodeColorsWidget->getItemsListWidget());
-  // comment (dark green)
-  new ListWidgetItem("Comment", OptionsDefaults::CompositeModelEditor::commentRuleColor, mpCodeColorsWidget->getItemsListWidget());
-  // preview textbox
-  QString previewText;
-  previewText.append("<!-- This is a comment. -->\n"
-                     "<Model Name=\"model\">\n"
-                     "\t<SubModels>\n"
-                     "\t\t<SubModel Name=\"submodel\">\n"
-                     "\t\t</SubModel>\n"
-                     "\t</SubModels>\n"
-                     "\t<Connections>\n"
-                     "\t\t<Connection From=\"from\" To=\"to\">\n"
-                     "\t</Connections>\n"
-                     "</Model>\n");
-  mpCodeColorsWidget->getPreviewPlainTextEdit()->setPlainText(previewText);
-  // highlight preview textbox
-  CompositeModelHighlighter *pCompositeModelHighlighter = new CompositeModelHighlighter(this, mpCodeColorsWidget->getPreviewPlainTextEdit());
-  connect(this, SIGNAL(updatePreview()), pCompositeModelHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), SIGNAL(toggled(bool)),
-          pCompositeModelHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), SIGNAL(toggled(bool)),
-          pCompositeModelHighlighter, SLOT(settingsChanged()));
-  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), SIGNAL(toggled(bool)), this, SLOT(setLineWrapping(bool)));
-  // set the layout
-  QVBoxLayout *pMainLayout = new QVBoxLayout;
-  pMainLayout->addWidget(mpCodeColorsWidget);
-  setLayout(pMainLayout);
-}
-
-/*!
- * \brief CompositeModelEditorPage::setColor
- * Sets the color of an item.
- * \param item
- * \param color
- */
-void CompositeModelEditorPage::setColor(QString item, QColor color)
-{
-  QList<QListWidgetItem*> items = mpCodeColorsWidget->getItemsListWidget()->findItems(item, Qt::MatchExactly);
-  if (items.size() > 0) {
-    ListWidgetItem *pListWidgetItem = dynamic_cast<ListWidgetItem*>(items.at(0));
-    if (pListWidgetItem) {
-      pListWidgetItem->setColor(color);
-      pListWidgetItem->setForeground(color);
-    }
-  }
-}
-
-/*!
- * \brief CompositeModelEditorPage::getColor
- * Returns the color of an item.
- * \param item
- * \return
- */
-QColor CompositeModelEditorPage::getColor(QString item)
-{
-  QList<QListWidgetItem*> items = mpCodeColorsWidget->getItemsListWidget()->findItems(item, Qt::MatchExactly);
-  if (items.size() > 0) {
-    ListWidgetItem *pListWidgetItem = dynamic_cast<ListWidgetItem*>(items.at(0));
-    if (pListWidgetItem) {
-      return pListWidgetItem->getColor();
-    }
-  }
-  return QColor(0, 0, 0);
-}
-
-/*!
- * \brief CompositeModelEditorPage::setLineWrapping
- * Slot activated when mpLineWrappingCheckbox toggled SIGNAL is raised.
- * Sets the mpPreviewPlainTextBox line wrapping mode.
- */
-void CompositeModelEditorPage::setLineWrapping(bool enabled)
-{
-  if (enabled) {
-    mpCodeColorsWidget->getPreviewPlainTextEdit()->setLineWrapMode(QPlainTextEdit::WidgetWidth);
-  } else {
-    mpCodeColorsWidget->getPreviewPlainTextEdit()->setLineWrapMode(QPlainTextEdit::NoWrap);
-  }
-}
-
-/*!
  * \class OMSimulatorEditorPage
- * \brief Creates an interface for OMS CompositeModel Text settings.
+ * \brief Creates an interface for OMS Text settings.
  */
 /*!
  * \brief OMSimulatorEditorPage::OMSimulatorEditorPage
@@ -6853,146 +6597,6 @@ void FMIPage::enableIncludeSourcesCheckBox(int index)
   } else {
     mpIncludeSourceCodeCheckBox->setEnabled(true);
   }
-}
-
-/*!
- * \class TLMPage
- * Creates an interface for TLM settings.
- */
-TLMPage::TLMPage(OptionsDialog *pOptionsDialog)
-  : QWidget(pOptionsDialog)
-{
-  mpOptionsDialog = pOptionsDialog;
-  mpGeneralGroupBox = new QGroupBox(Helper::general);
-  // TLM Plugin Path
-  mpTLMPluginPathLabel = new Label(tr("Path:"));
-  mpTLMPluginPathTextBox = new QLineEdit;
-  OptionsDefaults::TLM::pluginPath = QString("%1/OMTLMSimulator/bin").arg(Helper::OpenModelicaHome);
-  mpTLMPluginPathTextBox->setPlaceholderText(OptionsDefaults::TLM::pluginPath);
-  mpBrowseTLMPluginPathButton = new QPushButton(Helper::browse);
-  mpBrowseTLMPluginPathButton->setAutoDefault(false);
-  connect(mpBrowseTLMPluginPathButton, SIGNAL(clicked()), SLOT(browseTLMPluginPath()));
-  // TLM Manager Process
-  mpTLMManagerProcessLabel = new Label(tr("Manager Process:"));
-  mpTLMManagerProcessTextBox = new QLineEdit;
-  OptionsDefaults::TLM::managerProcess = QString("%1/OMTLMSimulator/bin/tlmmanager").arg(Helper::OpenModelicaHome);
-  mpTLMManagerProcessTextBox->setPlaceholderText(OptionsDefaults::TLM::managerProcess);
-  mpBrowseTLMManagerProcessButton = new QPushButton(Helper::browse);
-  mpBrowseTLMManagerProcessButton->setAutoDefault(false);
-  connect(mpBrowseTLMManagerProcessButton, SIGNAL(clicked()), SLOT(browseTLMManagerProcess()));
-  // TLM Monitor Process
-  mpTLMMonitorProcessLabel = new Label(tr("Monitor Process:"));
-  mpTLMMonitorProcessTextBox = new QLineEdit;
-  OptionsDefaults::TLM::monitorProcess = QString("%1/OMTLMSimulator/bin/tlmmonitor").arg(Helper::OpenModelicaHome);
-  mpTLMMonitorProcessTextBox->setPlaceholderText(OptionsDefaults::TLM::monitorProcess);
-  mpBrowseTLMMonitorProcessButton = new QPushButton(Helper::browse);
-  mpBrowseTLMMonitorProcessButton->setAutoDefault(false);
-  connect(mpBrowseTLMMonitorProcessButton, SIGNAL(clicked()), SLOT(browseTLMMonitorProcess()));
-  // set the layout
-  QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;
-  pGeneralGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pGeneralGroupBoxLayout->addWidget(mpTLMPluginPathLabel, 0, 0);
-  pGeneralGroupBoxLayout->addWidget(mpTLMPluginPathTextBox, 0, 1);
-  pGeneralGroupBoxLayout->addWidget(mpBrowseTLMPluginPathButton, 0, 2);
-  pGeneralGroupBoxLayout->addWidget(mpTLMManagerProcessLabel, 1, 0);
-  pGeneralGroupBoxLayout->addWidget(mpTLMManagerProcessTextBox, 1, 1);
-  pGeneralGroupBoxLayout->addWidget(mpBrowseTLMManagerProcessButton, 1, 2);
-  pGeneralGroupBoxLayout->addWidget(mpTLMMonitorProcessLabel, 3, 0);
-  pGeneralGroupBoxLayout->addWidget(mpTLMMonitorProcessTextBox, 3, 1);
-  pGeneralGroupBoxLayout->addWidget(mpBrowseTLMMonitorProcessButton, 3, 2);
-  pGeneralGroupBoxLayout->addWidget(new Label(tr("* Default OMTLMSimulator paths are used if above field are empty.")), 4, 0, 1, 3);
-  mpGeneralGroupBox->setLayout(pGeneralGroupBoxLayout);
-  QVBoxLayout *pMainLayout = new QVBoxLayout;
-  pMainLayout->setAlignment(Qt::AlignTop);
-  pMainLayout->addWidget(mpGeneralGroupBox);
-  setLayout(pMainLayout);
-}
-
-/*!
- * \brief TLMPage::getOMTLMSimulatorPath
- * Returns the OMTLMSimulator path.
- * \return
- */
-QString TLMPage::getOMTLMSimulatorPath()
-{
-  if (mpTLMPluginPathTextBox->text().isEmpty()) {
-    return mpTLMPluginPathTextBox->placeholderText();
-  } else {
-    return mpTLMPluginPathTextBox->text();
-  }
-}
-
-/*!
- * \brief TLMPage::getOMTLMSimulatorManagerPath
- * Returns the OMTLMSimulator manager path.
- * \return
- */
-QString TLMPage::getOMTLMSimulatorManagerPath()
-{
-  if (mpTLMManagerProcessTextBox->text().isEmpty()) {
-    return mpTLMManagerProcessTextBox->placeholderText();
-  } else {
-    return mpTLMManagerProcessTextBox->text();
-  }
-}
-
-/*!
- * \brief TLMPage::getOMTLMSimulatorMonitorPath
- * Returns the OMTLMSimulator monitor path.
- * \return
- */
-QString TLMPage::getOMTLMSimulatorMonitorPath()
-{
-  if (mpTLMMonitorProcessTextBox->text().isEmpty()) {
-    return mpTLMMonitorProcessTextBox->placeholderText();
-  } else {
-    return mpTLMMonitorProcessTextBox->text();
-  }
-}
-
-/*!
- * \brief TLMPage::browseTLMPath
- * Browse TLM path.
- */
-void TLMPage::browseTLMPluginPath()
-{
-  QString path = StringHandler::getExistingDirectory(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseDirectory), NULL);
-  path = path.replace('\\', '/');
-  mpTLMPluginPathTextBox->setText(path);
-  if (mpTLMManagerProcessTextBox->text().isEmpty()) {
-#if defined(_WIN32)
-    mpTLMManagerProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmanager.exe");
-#else
-    mpTLMManagerProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmanager");
-#endif
-  }
-  if (mpTLMMonitorProcessTextBox->text().isEmpty()) {
-#if defined(_WIN32)
-    mpTLMMonitorProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmonitor.exe");
-#else
-    mpTLMMonitorProcessTextBox->setText(mpTLMPluginPathTextBox->text() + "/tlmmonitor");
-#endif
-  }
-}
-
-/*!
- * \brief TLMPage::browseTLMManagerProcess
- * Browse TLM Manager Process.
- */
-void TLMPage::browseTLMManagerProcess()
-{
-  mpTLMManagerProcessTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
-                                                                      NULL, Helper::exeFileTypes, NULL));
-}
-
-/*!
- * \brief TLMPage::browseTLMMonitorProcess
- * Browse TLM Monitor Process.
- */
-void TLMPage::browseTLMMonitorProcess()
-{
-  mpTLMMonitorProcessTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
-                                                                     NULL, Helper::exeFileTypes, NULL));
 }
 
 /*!

@@ -120,7 +120,7 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
  *
  *  \brief determine verboselevel by investigating flag -lv flags
  *
- *  Valid flags: see LOG_STREAM_NAME in omc_error.c
+ *  Valid flags: see OMC_LOG_STREAM_NAME in omc_error.c
  */
 void setGlobalVerboseLevel(int argc, char**argv)
 {
@@ -129,25 +129,25 @@ void setGlobalVerboseLevel(int argc, char**argv)
   int i;
 
   if(omc_flag[FLAG_W])
-    showAllWarnings = 1;
+    omc_showAllWarnings = 1;
 
   if(!flags)
   {
     /* default activated */
-    useStream[LOG_STDOUT] = 1;
-    useStream[LOG_ASSERT] = 1;
-    useStream[LOG_SUCCESS] = 1;
+    omc_useStream[OMC_LOG_STDOUT] = 1;
+    omc_useStream[OMC_LOG_ASSERT] = 1;
+    omc_useStream[OMC_LOG_SUCCESS] = 1;
     return; // no lv flag given.
   }
 
   /* default activated, but it can be disabled with -LOG_STDOUT or -LOG_ASSERT */
-  useStream[LOG_STDOUT] = 1;
-  useStream[LOG_ASSERT] = 1;
+  omc_useStream[OMC_LOG_STDOUT] = 1;
+  omc_useStream[OMC_LOG_ASSERT] = 1;
 
   if(flags->find("LOG_ALL", 0) != string::npos)
   {
-    for(i=1; i<SIM_LOG_MAX; ++i)
-      useStream[i] = 1;
+    for(i=1; i<OMC_SIM_LOG_MAX; ++i)
+      omc_useStream[i] = 1;
   }
   else
   {
@@ -169,17 +169,17 @@ void setGlobalVerboseLevel(int argc, char**argv)
         flag = flagList;
       }
 
-      for(i=firstOMCErrorStream; i<SIM_LOG_MAX; ++i)
+      for(i=firstOMCErrorStream; i<OMC_SIM_LOG_MAX; ++i)
       {
-        if(flag == string(LOG_STREAM_NAME[i]))
+        if(flag == string(OMC_LOG_STREAM_NAME[i]))
         {
-          useStream[i] = 1;
+          omc_useStream[i] = 1;
           error = 0;
           break;
         }
-        else if(flag == string("-") + string(LOG_STREAM_NAME[i]))
+        else if(flag == string("-") + string(OMC_LOG_STREAM_NAME[i]))
         {
-          useStream[i] = 0;
+          omc_useStream[i] = 0;
           error = 0;
           break;
         }
@@ -187,66 +187,66 @@ void setGlobalVerboseLevel(int argc, char**argv)
 
       if(error)
       {
-        warningStreamPrint(LOG_STDOUT, 1, "current options are:");
-        for(i=firstOMCErrorStream; i<SIM_LOG_MAX; ++i)
-          warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", LOG_STREAM_NAME[i], LOG_STREAM_DESC[i]);
-        messageClose(LOG_STDOUT);
+        warningStreamPrint(OMC_LOG_STDOUT, 1, "current options are:");
+        for(i=firstOMCErrorStream; i<OMC_SIM_LOG_MAX; ++i)
+          warningStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", OMC_LOG_STREAM_NAME[i], OMC_LOG_STREAM_DESC[i]);
+        messageClose(OMC_LOG_STDOUT);
         throwStreamPrint(NULL,"unrecognized option -lv %s", flags->c_str());
       }
     }while(pos != string::npos);
   }
 
-  /* print LOG_GBODE if LOG_GBODE_V if active */
-  if(useStream[LOG_GBODE_V] == 1)
-    useStream[LOG_GBODE] = 1;
+  /* print OMC_LOG_GBODE if OMC_LOG_GBODE_V if active */
+  if(omc_useStream[OMC_LOG_GBODE_V] == 1)
+    omc_useStream[OMC_LOG_GBODE] = 1;
 
-  /* print LOG_GBODE_NLS if LOG_GBODE_NLS_V if active */
-  if(useStream[LOG_GBODE_NLS_V] == 1)
-    useStream[LOG_GBODE_NLS] = 1;
+  /* print OMC_LOG_GBODE_NLS if OMC_LOG_GBODE_NLS_V if active */
+  if(omc_useStream[OMC_LOG_GBODE_NLS_V] == 1)
+    omc_useStream[OMC_LOG_GBODE_NLS] = 1;
 
-  /* print LOG_INIT and LOG_SOTI if LOG_INIT_V is active */
-  if(useStream[LOG_INIT_V] == 1)
+  /* print OMC_LOG_INIT and OMC_LOG_SOTI if OMC_LOG_INIT_V is active */
+  if(omc_useStream[OMC_LOG_INIT_V] == 1)
   {
-    useStream[LOG_INIT] = 1;
-    useStream[LOG_SOTI] = 1;
+    omc_useStream[OMC_LOG_INIT] = 1;
+    omc_useStream[OMC_LOG_SOTI] = 1;
   }
 
-  /* print LOG_INIT_HOMOTOPY if LOG_INIT is active */
-  if(useStream[LOG_INIT] == 1)
-    useStream[LOG_INIT_HOMOTOPY] = 1;
+  /* print OMC_LOG_INIT_HOMOTOPY if OMC_LOG_INIT is active */
+  if(omc_useStream[OMC_LOG_INIT] == 1)
+    omc_useStream[OMC_LOG_INIT_HOMOTOPY] = 1;
 
-  /* print LOG_STATS if LOG_SOLVER if active */
-  if(useStream[LOG_SOLVER_V] == 1)
-    useStream[LOG_SOLVER] = 1;
+  /* print OMC_LOG_STATS if OMC_LOG_SOLVER if active */
+  if(omc_useStream[OMC_LOG_SOLVER_V] == 1)
+    omc_useStream[OMC_LOG_SOLVER] = 1;
 
-  /* print LOG_STATS if LOG_SOLVER if active */
-  if(useStream[LOG_SOLVER] == 1)
-    useStream[LOG_STATS] = 1;
+  /* print OMC_LOG_STATS if OMC_LOG_SOLVER if active */
+  if(omc_useStream[OMC_LOG_SOLVER] == 1)
+    omc_useStream[OMC_LOG_STATS] = 1;
 
-  /* print LOG_STATS if LOG_STATS_V if active */
-  if(useStream[LOG_STATS_V] == 1)
-    useStream[LOG_STATS] = 1;
+  /* print OMC_LOG_STATS if OMC_LOG_STATS_V if active */
+  if(omc_useStream[OMC_LOG_STATS_V] == 1)
+    omc_useStream[OMC_LOG_STATS] = 1;
 
-  /* print LOG_NLS if LOG_NLS_V if active */
-  if(useStream[LOG_NLS_V])
-    useStream[LOG_NLS] = 1;
+  /* print OMC_LOG_NLS if OMC_LOG_NLS_V if active */
+  if(omc_useStream[OMC_LOG_NLS_V])
+    omc_useStream[OMC_LOG_NLS] = 1;
 
-  /* print LOG_NLS if LOG_NLS_RES if active */
-  if(useStream[LOG_NLS_RES])
-    useStream[LOG_NLS] = 1;
+  /* print OMC_LOG_NLS if OMC_LOG_NLS_RES if active */
+  if(omc_useStream[OMC_LOG_NLS_RES])
+    omc_useStream[OMC_LOG_NLS] = 1;
 
-  /* print LOG_EVENTS if LOG_EVENTS_V if active */
-  if(useStream[LOG_EVENTS_V]) {
-    useStream[LOG_EVENTS] = 1;
+  /* print OMC_LOG_EVENTS if OMC_LOG_EVENTS_V if active */
+  if(omc_useStream[OMC_LOG_EVENTS_V]) {
+    omc_useStream[OMC_LOG_EVENTS] = 1;
   }
 
-  /* print LOG_NLS if LOG_NLS_JAC if active */
-  if(useStream[LOG_NLS_JAC])
-    useStream[LOG_NLS] = 1;
+  /* print OMC_LOG_NLS if OMC_LOG_NLS_JAC if active */
+  if(omc_useStream[OMC_LOG_NLS_JAC])
+    omc_useStream[OMC_LOG_NLS] = 1;
 
-  /* print LOG_DSS if LOG_DSS_JAC if active */
-  if(useStream[LOG_DSS_JAC])
-    useStream[LOG_DSS] = 1;
+  /* print OMC_LOG_DSS if OMC_LOG_DSS_JAC if active */
+  if(omc_useStream[OMC_LOG_DSS_JAC])
+    omc_useStream[OMC_LOG_DSS] = 1;
 
   delete flags;
 }
@@ -293,7 +293,7 @@ void setGlobalLoggingTime(SIMULATION_INFO *simulationInfo)
   simulationInfo->useLoggingTime = 1;
   simulationInfo->loggingTimeRecord[0] = loggingStartTime;
   simulationInfo->loggingTimeRecord[1] = loggingStopTime;
-  infoStreamPrint(LOG_STDOUT, 0, "Time dependent logging enabled. Activate logging in interval [%f, %f]", simulationInfo->loggingTimeRecord[0], simulationInfo->loggingTimeRecord[1]);
+  infoStreamPrint(OMC_LOG_STDOUT, 0, "Time dependent logging enabled. Activate logging in interval [%f, %f]", simulationInfo->loggingTimeRecord[0], simulationInfo->loggingTimeRecord[1]);
 
   /* Deactivate Logging */
   deactivateLogging();
@@ -314,11 +314,11 @@ static void readFlag(int *flag, int max, const char *value, const char *flagName
     }
   }
 
-  warningStreamPrint(LOG_STDOUT, 1, "unrecognized option %s=%s, current options are:", flagName, value);
+  warningStreamPrint(OMC_LOG_STDOUT, 1, "unrecognized option %s=%s, current options are:", flagName, value);
   for (i=1; i<max; ++i) {
-    warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", names[i], desc[i]);
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", names[i], desc[i]);
   }
-  messageClose(LOG_STDOUT);
+  messageClose(OMC_LOG_STDOUT);
   throwStreamPrint(NULL,"see last warning");
 }
 
@@ -444,9 +444,9 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
   data->modelData->create_linearmodel = create_linearmodel;
   const char* lintime = omc_flagValue[FLAG_L];
 
-  /* activated measure time option with LOG_STATS */
+  /* activated measure time option with OMC_LOG_STATS */
   int measure_time_flag_previous = measure_time_flag;
-  if (!measure_time_flag && (ACTIVE_STREAM(LOG_STATS) || omc_flag[FLAG_CPU]))
+  if (!measure_time_flag && (OMC_ACTIVE_STREAM(OMC_LOG_STATS) || omc_flag[FLAG_CPU]))
   {
     measure_time_flag = 1;
   }
@@ -462,7 +462,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
 
   /* calc numStep */
   data->simulationInfo->numSteps = static_cast<modelica_integer>(round((data->simulationInfo->stopTime - data->simulationInfo->startTime)/data->simulationInfo->stepSize));
-  infoStreamPrint(LOG_SOLVER, 0, "numberOfIntervals = %ld", (long) data->simulationInfo->numSteps);
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "numberOfIntervals = %ld", (long) data->simulationInfo->numSteps);
 
   { /* Setup the clock */
     enum omc_rt_clock_t clock = OMC_CLOCK_REALTIME;
@@ -475,11 +475,11 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
       } else if(0 == strcmp(clockName, "CYC")) {
         clock = OMC_CPU_CYCLES;
       } else {
-        warningStreamPrint(LOG_STDOUT, 0, "[unknown clock-type] got %s, expected CPU|RT|CYC. Defaulting to RT.", clockName);
+        warningStreamPrint(OMC_LOG_STDOUT, 0, "[unknown clock-type] got %s, expected CPU|RT|CYC. Defaulting to RT.", clockName);
       }
     }
     if(rt_set_clock(clock)) {
-      warningStreamPrint(LOG_STDOUT, 0, "Chosen clock-type: %s not available for the current platform. Defaulting to real-time.", clockName);
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "Chosen clock-type: %s not available for the current platform. Defaulting to real-time.", clockName);
     }
   }
 
@@ -506,13 +506,13 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     } else {
       data->simulationInfo->stopTime = atof(lintime);
     }
-    infoStreamPrint(LOG_STDOUT, 0, "Linearization will be performed at point of time: %f", data->simulationInfo->stopTime);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Linearization will be performed at point of time: %f", data->simulationInfo->stopTime);
   }
 
   /* set delta x for linearization */
   if(omc_flag[FLAG_DELTA_X_LINEARIZE]) {
     numericalDifferentiationDeltaXlinearize = atof(omc_flagValue[FLAG_DELTA_X_LINEARIZE]);
-    infoStreamPrint(LOG_SOLVER, 0, "Set delta x for numerical differentiation of the linearization to %f", numericalDifferentiationDeltaXlinearize);
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Set delta x for numerical differentiation of the linearization to %f", numericalDifferentiationDeltaXlinearize);
   }else{
     numericalDifferentiationDeltaXlinearize = sqrt(DBL_EPSILON*2e1);
   }
@@ -520,7 +520,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
   /* set delta x for integration methods dassl, ida */
   if(omc_flag[FLAG_DELTA_X_SOLVER]) {
     numericalDifferentiationDeltaXsolver = atof(omc_flagValue[FLAG_DELTA_X_SOLVER]);
-    infoStreamPrint(LOG_SOLVER, 0, "Set delta x for numerical differentiation of the integrator to %f", numericalDifferentiationDeltaXsolver);
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Set delta x for numerical differentiation of the integrator to %f", numericalDifferentiationDeltaXsolver);
   }else{
     numericalDifferentiationDeltaXsolver = sqrt(DBL_EPSILON);
   }
@@ -528,13 +528,13 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
   if(omc_flag[FLAG_S]) {
     if (omc_flagValue[FLAG_S]) {
       data->simulationInfo->solverMethod = GC_strdup(omc_flagValue[FLAG_S]);
-      infoStreamPrint(LOG_SOLVER, 0, "overwrite solver method: %s [from command line]", data->simulationInfo->solverMethod);
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "overwrite solver method: %s [from command line]", data->simulationInfo->solverMethod);
     }
   }
   /* if the model is compiled in daeMode then we have to use ida solver */
   if (compiledInDAEMode && std::string("ida") != data->simulationInfo->solverMethod) {
     data->simulationInfo->solverMethod = GC_strdup(std::string("ida").c_str());
-    infoStreamPrint(LOG_SIMULATION, 0, "overwrite solver method: %s [DAEmode works only with IDA solver]", data->simulationInfo->solverMethod);
+    infoStreamPrint(OMC_LOG_SIMULATION, 0, "overwrite solver method: %s [DAEmode works only with IDA solver]", data->simulationInfo->solverMethod);
   }
 
   // Create a result file
@@ -595,19 +595,19 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     init_lambda_steps = atoi(omc_flagValue[FLAG_ILS]);
     if(init_lambda_steps <= 0) {
       init_lambda_steps = 0;
-      infoStreamPrint(LOG_STDOUT, 0, "Number of lambda steps set to 0. Homotopy is disabled.");
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "Number of lambda steps set to 0. Homotopy is disabled.");
     }
     else {
-      infoStreamPrint(LOG_STDOUT, 0, "Number of lambda steps for homotopy approach changed to %d", init_lambda_steps);
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "Number of lambda steps for homotopy approach changed to %d", init_lambda_steps);
     }
   }
   if(omc_flag[FLAG_MAX_BISECTION_ITERATIONS]) {
     maxBisectionIterations = atoi(omc_flagValue[FLAG_MAX_BISECTION_ITERATIONS]);
-    infoStreamPrint(LOG_STDOUT, 0, "Maximum number of bisection iterations changed to %d", maxBisectionIterations);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Maximum number of bisection iterations changed to %d", maxBisectionIterations);
   }
   if(omc_flag[FLAG_MAX_EVENT_ITERATIONS]) {
     maxEventIterations = atoi(omc_flagValue[FLAG_MAX_EVENT_ITERATIONS]);
-    infoStreamPrint(LOG_STDOUT, 0, "Maximum number of event iterations changed to %d", maxEventIterations);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Maximum number of event iterations changed to %d", maxEventIterations);
   }
   if(omc_flag[FLAG_OUTPUT]) {
     outputVariablesAtEnd = omc_flagValue[FLAG_OUTPUT];
@@ -631,26 +631,26 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
 
   if (omc_flag[FLAG_DATA_RECONCILE])
   {
-    infoStreamPrint(LOG_STDOUT, 0, "DataReconciliation Starting!");
-    infoStreamPrint(LOG_STDOUT, 0, "%s", data->modelData->modelName);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "DataReconciliation Starting!");
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "%s", data->modelData->modelName);
     retVal = dataReconciliation(data, threadData, retVal);
-    infoStreamPrint(LOG_STDOUT, 0, "DataReconciliation Completed!");
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "DataReconciliation Completed!");
   }
 
   if (omc_flag[FLAG_DATA_RECONCILE_BOUNDARY])
   {
-    infoStreamPrint(LOG_STDOUT, 0, "Reconcile Boundary Conditions Starting!");
-    infoStreamPrint(LOG_STDOUT, 0, "%s", data->modelData->modelName);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Reconcile Boundary Conditions Starting!");
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "%s", data->modelData->modelName);
     retVal = boundaryConditions(data, threadData, retVal);
-    infoStreamPrint(LOG_STDOUT, 0, "Reconcile Boundary Conditions Completed!");
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Reconcile Boundary Conditions Completed!");
   }
 
   if (omc_flag[FLAG_DATA_RECONCILE_STATE])
   {
-    infoStreamPrint(LOG_STDOUT, 0, "Reconcile State Estimation Starting!");
-    infoStreamPrint(LOG_STDOUT, 0, "%s", data->modelData->modelName);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Reconcile State Estimation Starting!");
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "%s", data->modelData->modelName);
     retVal = dataReconciliation(data, threadData, retVal);
-    infoStreamPrint(LOG_STDOUT, 0, "Reconcile State Estimation Completed!");
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Reconcile State Estimation Completed!");
   }
 
   if(0 == retVal && create_linearmodel) {
@@ -660,7 +660,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
   }
 
   /* Use the saved state of measure_time_flag.
-   * measure_time_flag is set to active when LOG_STATS is ON.
+   * measure_time_flag is set to active when OMC_LOG_STATS is ON.
    * So before doing the profiling reset the measure_time_flag to measure_time_flag_previous state.
    */
   measure_time_flag = measure_time_flag_previous;
@@ -737,7 +737,7 @@ int initializeResultData(DATA* simData, threadData_t *threadData, int cpuTime)
   }
   initializeOutputFilter(simData->modelData, simData->simulationInfo->variableFilter, resultFormatHasCheapAliasesAndParameters);
   sim_result.init(&sim_result, simData, threadData);
-  infoStreamPrint(LOG_SOLVER, 0, "Allocated simulation result data storage for method '%s' and file='%s'", (char*) simData->simulationInfo->outputFormat, sim_result.filename);
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "Allocated simulation result data storage for method '%s' and file='%s'", (char*) simData->simulationInfo->outputFormat, sim_result.filename);
   return 0;
 }
 
@@ -791,7 +791,7 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
       )
   {
     solverID = S_EULER;
-    infoStreamPrint(LOG_SOLVER, 0, "No states present, continuing without ODE solver.");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "No states present, continuing without ODE solver.");
     if (compiledInDAEMode)
     {
       simData->callback->functionDAE = evaluateDAEResiduals_wrapperEventUpdate;
@@ -800,15 +800,15 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
   }
 
   if(S_UNKNOWN == solverID) {
-    warningStreamPrint(LOG_STDOUT, 0, "unrecognized option -s %s", (char*) simData->simulationInfo->solverMethod);
-    warningStreamPrint(LOG_STDOUT, 0, "current options are:");
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "unrecognized option -s %s", (char*) simData->simulationInfo->solverMethod);
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "current options are:");
     for(i=1; i<S_MAX; ++i) {
-      warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", SOLVER_METHOD_NAME[i], SOLVER_METHOD_DESC[i]);
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", SOLVER_METHOD_NAME[i], SOLVER_METHOD_DESC[i]);
     }
     throwStreamPrint(threadData,"see last warning");
     retVal = 1;
   } else {
-    infoStreamPrint(LOG_SOLVER, 0, "recognized solver: %s", SOLVER_METHOD_NAME[solverID]);
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "recognized solver: %s", SOLVER_METHOD_NAME[solverID]);
     /* special solvers */
 #ifdef _OMC_QSS_LIB
     if(S_QSS == solverID) {
@@ -940,27 +940,27 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
 
 #ifndef NO_INTERACTIVE_DEPENDENCY
   if (isXMLTCP && !sim_communication_port_open) {
-    errorStreamPrint(LOG_STDOUT, 0, "xmltcp log format requires a TCP-port to be passed (and successfully open)");
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "xmltcp log format requires a TCP-port to be passed (and successfully open)");
     EXIT(1);
   }
 #endif
 
   if(logFormatResult || helpFlagSet(argc, argv) || checkArgumentsRes)
   {
-    infoStreamPrint(LOG_STDOUT, 1, "usage: %s", argv[0]);
+    infoStreamPrint(OMC_LOG_STDOUT, 1, "usage: %s", argv[0]);
 
     for(i=1; i<FLAG_MAX; ++i)
     {
       if(FLAG_TYPE[i] == FLAG_TYPE_FLAG) {
-        infoStreamPrint(LOG_STDOUT, 0, "<-%s>\n  %s", FLAG_NAME[i], FLAG_DESC[i]);
+        infoStreamPrint(OMC_LOG_STDOUT, 0, "<-%s>\n  %s", FLAG_NAME[i], FLAG_DESC[i]);
       } else if(FLAG_TYPE[i] == FLAG_TYPE_OPTION) {
-        infoStreamPrint(LOG_STDOUT, 0, "<-%s=value> or <-%s value>\n  %s", FLAG_NAME[i], FLAG_NAME[i], FLAG_DESC[i]);
+        infoStreamPrint(OMC_LOG_STDOUT, 0, "<-%s=value> or <-%s value>\n  %s", FLAG_NAME[i], FLAG_NAME[i], FLAG_DESC[i]);
       } else {
-        warningStreamPrint(LOG_STDOUT, 0, "[unknown flag-type] <-%s>", FLAG_NAME[i]);
+        warningStreamPrint(OMC_LOG_STDOUT, 0, "[unknown flag-type] <-%s>", FLAG_NAME[i]);
       }
     }
 
-    messageClose(LOG_STDOUT);
+    messageClose(OMC_LOG_STDOUT);
     EXIT(1);
   }
 
@@ -974,83 +974,83 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
         int j;
 
         if(FLAG_TYPE[i] == FLAG_TYPE_FLAG)
-          infoStreamPrint(LOG_STDOUT, 1, "detailed flag-description for: <-%s>\n%s", FLAG_NAME[i], FLAG_DETAILED_DESC[i]);
+          infoStreamPrint(OMC_LOG_STDOUT, 1, "detailed flag-description for: <-%s>\n%s", FLAG_NAME[i], FLAG_DETAILED_DESC[i]);
         else if(FLAG_TYPE[i] == FLAG_TYPE_OPTION)
-          infoStreamPrint(LOG_STDOUT, 1, "detailed flag-description for: <-%s=value> or <-%s value>\n%s", FLAG_NAME[i], FLAG_NAME[i], FLAG_DETAILED_DESC[i]);
+          infoStreamPrint(OMC_LOG_STDOUT, 1, "detailed flag-description for: <-%s=value> or <-%s value>\n%s", FLAG_NAME[i], FLAG_NAME[i], FLAG_DETAILED_DESC[i]);
         else
-          warningStreamPrint(LOG_STDOUT, 1, "[unknown flag-type] <-%s>", FLAG_NAME[i]);
+          warningStreamPrint(OMC_LOG_STDOUT, 1, "[unknown flag-type] <-%s>", FLAG_NAME[i]);
 
         /* detailed information for some flags */
         switch(i)
         {
           case FLAG_IDA_LS:
             for(j=1; j<IDA_LS_MAX; ++j) {
-              infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", IDA_LS_METHOD[j], IDA_LS_METHOD_DESC[j]);
+              infoStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", IDA_LS_METHOD[j], IDA_LS_METHOD_DESC[j]);
             }
             break;
 
           case FLAG_IIM:
             for(j=1; j<IIM_MAX; ++j) {
-              infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", INIT_METHOD_NAME[j], INIT_METHOD_DESC[j]);
+              infoStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", INIT_METHOD_NAME[j], INIT_METHOD_DESC[j]);
             }
             break;
 
           case FLAG_JACOBIAN:
             for(j=1; j<JAC_MAX; ++j) {
-              infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", JACOBIAN_METHOD[j], JACOBIAN_METHOD_DESC[j]);
+              infoStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", JACOBIAN_METHOD[j], JACOBIAN_METHOD_DESC[j]);
             }
             break;
 
           case FLAG_LS:
             for(j=1; j<LS_MAX; ++j) {
-              infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", LS_NAME[j], LS_DESC[j]);
+              infoStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", LS_NAME[j], LS_DESC[j]);
             }
             break;
 
           case FLAG_LSS:
             for(j=1; j<LSS_MAX; ++j) {
-              infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", LSS_NAME[j], LSS_DESC[j]);
+              infoStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", LSS_NAME[j], LSS_DESC[j]);
             }
             break;
 
           case FLAG_LV:
-            for(j=firstOMCErrorStream; j<SIM_LOG_MAX; ++j) {
-              infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", LOG_STREAM_NAME[j], LOG_STREAM_DESC[j]);
+            for(j=firstOMCErrorStream; j<OMC_SIM_LOG_MAX; ++j) {
+              infoStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", OMC_LOG_STREAM_NAME[j], OMC_LOG_STREAM_DESC[j]);
             }
             break;
 
           case FLAG_NEWTON_STRATEGY:
             for(j=firstOMCErrorStream; j<NEWTON_MAX; ++j) {
-              infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", NEWTONSTRATEGY_NAME[j], NEWTONSTRATEGY_DESC[j]);
+              infoStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", NEWTONSTRATEGY_NAME[j], NEWTONSTRATEGY_DESC[j]);
             }
             break;
 
           case FLAG_NLS:
             for(j=firstOMCErrorStream; j<NLS_MAX; ++j) {
-              infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", NLS_NAME[j], NLS_DESC[j]);
+              infoStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", NLS_NAME[j], NLS_DESC[j]);
             }
             break;
 
           case FLAG_NLS_LS:
             for(j=firstOMCErrorStream; j<NLS_LS_MAX; ++j) {
-              infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", NLS_LS_METHOD[j], NLS_LS_METHOD_DESC[j]);
+              infoStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", NLS_LS_METHOD[j], NLS_LS_METHOD_DESC[j]);
             }
             break;
 
           case FLAG_S:
             for(j=1; j<S_MAX; ++j) {
-              infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", SOLVER_METHOD_NAME[j], SOLVER_METHOD_DESC[j]);
+              infoStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", SOLVER_METHOD_NAME[j], SOLVER_METHOD_DESC[j]);
             }
             break;
         }
-        messageClose(LOG_STDOUT);
+        messageClose(OMC_LOG_STDOUT);
 
         EXIT(0);
       }
     }
 
-    warningStreamPrint(LOG_STDOUT, 0, "invalid command line option: -help=%s", option.c_str());
-    warningStreamPrint(LOG_STDOUT, 0, "use %s -help for a list of all command-line flags", argv[0]);
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "invalid command line option: -help=%s", option.c_str());
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "use %s -help for a list of all command-line flags", argv[0]);
     EXIT(1);
   }
 
@@ -1058,7 +1058,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
   setGlobalLoggingTime(data->simulationInfo);
   if(omc_flag[FLAG_LV_MAX_WARN]) {
     data->simulationInfo->maxWarnDisplays = atoi(omc_flagValue[FLAG_LV_MAX_WARN]);
-    infoStreamPrint(LOG_STDOUT, 0, "Display limit for repeating warnings changed to %lu.", data->simulationInfo->maxWarnDisplays);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Display limit for repeating warnings changed to %lu.", data->simulationInfo->maxWarnDisplays);
   } else {
     data->simulationInfo->maxWarnDisplays = DEFAULT_FLAG_LV_MAX_WARN;
   }
@@ -1082,102 +1082,102 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
 
   if(omc_flag[FLAG_HOMOTOPY_ADAPT_BEND]) {
     homAdaptBend = atof(omc_flagValue[FLAG_HOMOTOPY_ADAPT_BEND]);
-    infoStreamPrint(LOG_STDOUT, 0, "homotopy parameter homAdaptBend changed to %f", homAdaptBend);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "homotopy parameter homAdaptBend changed to %f", homAdaptBend);
   }
 
   if(omc_flag[FLAG_HOMOTOPY_H_EPS]) {
     homHEps = atof(omc_flagValue[FLAG_HOMOTOPY_H_EPS]);
-    infoStreamPrint(LOG_STDOUT, 0, "homotopy parameter homHEps changed to %f", homHEps);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "homotopy parameter homHEps changed to %f", homHEps);
   }
 
   if(omc_flag[FLAG_HOMOTOPY_MAX_LAMBDA_STEPS]) {
     homMaxLambdaSteps = atoi(omc_flagValue[FLAG_HOMOTOPY_MAX_LAMBDA_STEPS]);
-    infoStreamPrint(LOG_STDOUT, 0, "homotopy parameter homMaxLambdaSteps changed to %d", homMaxLambdaSteps);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "homotopy parameter homMaxLambdaSteps changed to %d", homMaxLambdaSteps);
   }
 
   if(omc_flag[FLAG_HOMOTOPY_MAX_NEWTON_STEPS]) {
     homMaxNewtonSteps = atoi(omc_flagValue[FLAG_HOMOTOPY_MAX_NEWTON_STEPS]);
-    infoStreamPrint(LOG_STDOUT, 0, "homotopy parameter homMaxNewtonSteps changed to %d", homMaxNewtonSteps);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "homotopy parameter homMaxNewtonSteps changed to %d", homMaxNewtonSteps);
   }
 
   if(omc_flag[FLAG_HOMOTOPY_MAX_TRIES]) {
     homMaxTries = atoi(omc_flagValue[FLAG_HOMOTOPY_MAX_TRIES]);
-    infoStreamPrint(LOG_STDOUT, 0, "homotopy parameter homMaxTries changed to %d", homMaxTries);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "homotopy parameter homMaxTries changed to %d", homMaxTries);
   }
 
   if(omc_flag[FLAG_HOMOTOPY_TAU_DEC_FACTOR]) {
     homTauDecreasingFactor = atof(omc_flagValue[FLAG_HOMOTOPY_TAU_DEC_FACTOR]);
-    infoStreamPrint(LOG_STDOUT, 0, "homotopy parameter homTauDecreasingFactor changed to %f", homTauDecreasingFactor);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "homotopy parameter homTauDecreasingFactor changed to %f", homTauDecreasingFactor);
   }
 
   if(omc_flag[FLAG_HOMOTOPY_TAU_DEC_FACTOR_PRED]) {
     homTauDecreasingFactorPredictor = atof(omc_flagValue[FLAG_HOMOTOPY_TAU_DEC_FACTOR_PRED]);
-    infoStreamPrint(LOG_STDOUT, 0, "homotopy parameter homTauDecreasingFactorPredictor changed to %f", homTauDecreasingFactorPredictor);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "homotopy parameter homTauDecreasingFactorPredictor changed to %f", homTauDecreasingFactorPredictor);
   }
 
   if(omc_flag[FLAG_HOMOTOPY_TAU_INC_FACTOR]) {
     homTauIncreasingFactor = atof(omc_flagValue[FLAG_HOMOTOPY_TAU_INC_FACTOR]);
-    infoStreamPrint(LOG_STDOUT, 0, "homotopy parameter homTauIncreasingFactor changed to %f", homTauIncreasingFactor);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "homotopy parameter homTauIncreasingFactor changed to %f", homTauIncreasingFactor);
   }
 
   if(omc_flag[FLAG_HOMOTOPY_TAU_INC_THRESHOLD]) {
     homTauIncreasingThreshold = atof(omc_flagValue[FLAG_HOMOTOPY_TAU_INC_THRESHOLD]);
-    infoStreamPrint(LOG_STDOUT, 0, "homotopy parameter homTauIncreasingThreshold changed to %f", homTauIncreasingThreshold);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "homotopy parameter homTauIncreasingThreshold changed to %f", homTauIncreasingThreshold);
   }
 
   if(omc_flag[FLAG_HOMOTOPY_TAU_MAX]) {
     homTauMax = atof(omc_flagValue[FLAG_HOMOTOPY_TAU_MAX]);
-    infoStreamPrint(LOG_STDOUT, 0, "homotopy parameter homTauMax changed to %f", homTauMax);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "homotopy parameter homTauMax changed to %f", homTauMax);
   }
 
   if(omc_flag[FLAG_HOMOTOPY_TAU_MIN]) {
     homTauMin = atof(omc_flagValue[FLAG_HOMOTOPY_TAU_MIN]);
-    infoStreamPrint(LOG_STDOUT, 0, "homotopy parameter homTauMin changed to %f", homTauMin);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "homotopy parameter homTauMin changed to %f", homTauMin);
   }
 
   if(omc_flag[FLAG_HOMOTOPY_TAU_START]) {
     homTauStart = atof(omc_flagValue[FLAG_HOMOTOPY_TAU_START]);
-    infoStreamPrint(LOG_STDOUT, 0, "homotopy parameter homTauStart changed to %f", homTauStart);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "homotopy parameter homTauStart changed to %f", homTauStart);
   }
 
   if(omc_flag[FLAG_LSS_MAX_DENSITY]) {
     linearSparseSolverMaxDensity = atof(omc_flagValue[FLAG_LSS_MAX_DENSITY]);
-    infoStreamPrint(LOG_STDOUT, 0, "Maximum density for using linear sparse solver changed to %f", linearSparseSolverMaxDensity);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Maximum density for using linear sparse solver changed to %f", linearSparseSolverMaxDensity);
   }
   if(omc_flag[FLAG_LSS_MIN_SIZE]) {
     linearSparseSolverMinSize = atoi(omc_flagValue[FLAG_LSS_MIN_SIZE]);
-    infoStreamPrint(LOG_STDOUT, 0, "Minimum system size for using linear sparse solver changed to %d", linearSparseSolverMinSize);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Minimum system size for using linear sparse solver changed to %d", linearSparseSolverMinSize);
   }
   if(omc_flag[FLAG_NLSS_MAX_DENSITY]) {
     nonlinearSparseSolverMaxDensity = atof(omc_flagValue[FLAG_NLSS_MAX_DENSITY]);
-    infoStreamPrint(LOG_STDOUT, 0, "Maximum density for using non-linear sparse solver changed to %f", nonlinearSparseSolverMaxDensity);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Maximum density for using non-linear sparse solver changed to %f", nonlinearSparseSolverMaxDensity);
   }
   if(omc_flag[FLAG_NLSS_MIN_SIZE]) {
     nonlinearSparseSolverMinSize = atoi(omc_flagValue[FLAG_NLSS_MIN_SIZE]);
-    infoStreamPrint(LOG_STDOUT, 0, "Minimum system size for using non-linear sparse solver changed to %d", nonlinearSparseSolverMinSize);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Minimum system size for using non-linear sparse solver changed to %d", nonlinearSparseSolverMinSize);
   }
   if(omc_flag[FLAG_NEWTON_XTOL]) {
     newtonXTol = atof(omc_flagValue[FLAG_NEWTON_XTOL]);
-    infoStreamPrint(LOG_STDOUT, 0, "Tolerance for updating solution vector in Newton solver changed to %g", newtonXTol);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Tolerance for updating solution vector in Newton solver changed to %g", newtonXTol);
   }
 
   if(omc_flag[FLAG_NEWTON_FTOL]) {
     newtonFTol = atof(omc_flagValue[FLAG_NEWTON_FTOL]);
-    infoStreamPrint(LOG_STDOUT, 0, "Tolerance for accepting accuracy in Newton solver changed to %g", newtonFTol);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Tolerance for accepting accuracy in Newton solver changed to %g", newtonFTol);
   }
 
   if(omc_flag[FLAG_NEWTON_MAX_STEP_FACTOR]) {
     maxStepFactor = atof(omc_flagValue[FLAG_NEWTON_MAX_STEP_FACTOR]);
-    infoStreamPrint(LOG_STDOUT, 0, "Maximum step size factor for a Newton step changed to %g", newtonFTol);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Maximum step size factor for a Newton step changed to %g", newtonFTol);
   }
 
   if(omc_flag[FLAG_STEADY_STATE_TOL]) {
     steadyStateTol = atof(omc_flagValue[FLAG_STEADY_STATE_TOL]);
-    infoStreamPrint(LOG_STDOUT, 0, "Tolerance for steady state detection changed to %g", steadyStateTol);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Tolerance for steady state detection changed to %g", steadyStateTol);
   }
 
   if(omc_flag[FLAG_DAE_MODE]) {
-    warningStreamPrint(LOG_STDOUT, 0, "The daeMode flag is *deprecated*, because it is not needed any more.\n"
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "The daeMode flag is *deprecated*, because it is not needed any more.\n"
       "If a model is compiled in \"DAEmode\" with compiler flag --daeMode, then it simulates automatically in DAE mode.");
   }
 
@@ -1193,25 +1193,25 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
   int num_threads = omc_get_max_threads();
   if (omc_flag[FLAG_JACOBIAN_THREADS]) {
     int num_threads_tmp = atoi(omc_flagValue[FLAG_JACOBIAN_THREADS]);
-    infoStreamPrint(LOG_STDOUT, 0,
+    infoStreamPrint(OMC_LOG_STDOUT, 0,
          "Number of threads passed via -jacobianThreads: %d",
          num_threads_tmp);
     if (0 >= num_threads_tmp) {
-      warningStreamPrint(LOG_STDOUT, 0,
+      warningStreamPrint(OMC_LOG_STDOUT, 0,
           "Number of desired OpenMP threads for parallel Jacobian evaluation is <= 0.");
-      warningStreamPrint(LOG_STDOUT, 0, "Use omp_get_max_threads().");
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "Use omp_get_max_threads().");
     } else {
       num_threads = num_threads_tmp;
     }
   }
   omp_set_num_threads(num_threads);
 
-  infoStreamPrint(LOG_STDOUT, 0,
+  infoStreamPrint(OMC_LOG_STDOUT, 0,
       "Number of OpenMP threads for parallel Jacobian evaluation: %d",
       omc_get_max_threads());
 #else
   if (omc_flag[FLAG_JACOBIAN_THREADS]) {
-      warningStreamPrint(LOG_STDOUT, 0,
+      warningStreamPrint(OMC_LOG_STDOUT, 0,
           "Simulation flag jacobianThreads not available. Make sure you have configured omc with \"--enable-parjac\" and build with a compiler supporting OpenMP.");
   }
 #endif
@@ -1388,7 +1388,7 @@ static inline void sendXMLTCPIfClosed()
 static void messageXMLTCP(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes)
 {
   numOpenTags++;
-  xmlTcpStream << "<message stream=\"" << LOG_STREAM_NAME[stream] << "\" type=\"" << LOG_TYPE_DESC[type] << "\" text=\"";
+  xmlTcpStream << "<message stream=\"" << OMC_LOG_STREAM_NAME[stream] << "\" type=\"" << OMC_LOG_TYPE_DESC[type] << "\" text=\"";
   printEscapedXMLTCP(&xmlTcpStream, msg);
   if (indexes) {
     int i;
@@ -1413,7 +1413,7 @@ static void messageXMLTCP(int type, int stream, FILE_INFO info, int indentNext, 
 
 static void messageCloseXMLTCP(int stream)
 {
-  if (ACTIVE_STREAM(stream)) {
+  if (OMC_ACTIVE_STREAM(stream)) {
     numOpenTags--;
     xmlTcpStream << "</message>\n";
     sendXMLTCPIfClosed();
@@ -1422,7 +1422,7 @@ static void messageCloseXMLTCP(int stream)
 
 static void messageCloseXMLTCPWarning(int stream)
 {
-  if (ACTIVE_WARNING_STREAM(stream)) {
+  if (OMC_ACTIVE_WARNING_STREAM(stream)) {
     numOpenTags--;
     xmlTcpStream << "</message>\n";
     sendXMLTCPIfClosed();
@@ -1444,7 +1444,7 @@ static void printEscapedXML(const char *msg)
 
 static void messageXML(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes)
 {
-  printf("<message stream=\"%s\" type=\"%s\" text=\"", LOG_STREAM_NAME[stream], LOG_TYPE_DESC[type]);
+  printf("<message stream=\"%s\" type=\"%s\" text=\"", OMC_LOG_STREAM_NAME[stream], OMC_LOG_TYPE_DESC[type]);
   printEscapedXML(msg);
   if (indexes) {
     int i;
@@ -1463,7 +1463,7 @@ static void messageXML(int type, int stream, FILE_INFO info, int indentNext, cha
 
 static void messageCloseXML(int stream)
 {
-  if (ACTIVE_STREAM(stream)) {
+  if (OMC_ACTIVE_STREAM(stream)) {
     fputs("</message>\n", stdout);
     fflush(stdout);
   }
@@ -1471,7 +1471,7 @@ static void messageCloseXML(int stream)
 
 static void messageCloseXMLWarning(int stream)
 {
-  if (ACTIVE_WARNING_STREAM(stream)) {
+  if (OMC_ACTIVE_WARNING_STREAM(stream)) {
     fputs("</message>\n", stdout);
     fflush(stdout);
   }

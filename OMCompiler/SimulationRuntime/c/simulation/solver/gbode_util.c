@@ -471,10 +471,10 @@ void projVector_gbf(double* a, double* b, int nIndx, int* indx) {
  * @param nStates  Number of states
  * @param size     Size of buffer
  */
-void debugRingBufferSteps(enum LOG_STREAM stream, double* x, double* k, double *t, int nStates, int size) {
+void debugRingBufferSteps(enum OMC_LOG_STREAM stream, double* x, double* k, double *t, int nStates, int size) {
 
   // If stream is not active do nothing
-  if (!ACTIVE_STREAM(stream)) return;
+  if (!OMC_ACTIVE_STREAM(stream)) return;
 
   infoStreamPrint(stream, 1, "States and derivatives at past accepted time steps:");
 
@@ -505,10 +505,10 @@ void debugRingBufferSteps(enum LOG_STREAM stream, double* x, double* k, double *
  * @param time     Current time of the inegrator (left hand side)
  * @param stepSize Current step size of the integrator
  */
-void debugRingBuffer(enum LOG_STREAM stream, double* x, double* k, int nStates, BUTCHER_TABLEAU* tableau, double time, double stepSize) {
+void debugRingBuffer(enum OMC_LOG_STREAM stream, double* x, double* k, int nStates, BUTCHER_TABLEAU* tableau, double time, double stepSize) {
 
   // If stream is not active do nothing
-  if (!ACTIVE_STREAM(stream)) return;
+  if (!OMC_ACTIVE_STREAM(stream)) return;
 
   int nStages = tableau->nStages, stage_;
 
@@ -533,10 +533,10 @@ void debugRingBuffer(enum LOG_STREAM stream, double* x, double* k, int nStates, 
  * @param n       Size of the vector
  * @param time    Time value
  */
-void printVector_gb(enum LOG_STREAM stream, char name[], double* a, int n, double time) {
+void printVector_gb(enum OMC_LOG_STREAM stream, char name[], double* a, int n, double time) {
 
   // If stream is not active or size of vector to big do nothing
-  if (!ACTIVE_STREAM(stream) || n>1000) return;
+  if (!OMC_ACTIVE_STREAM(stream) || n>1000) return;
 
   // This only works for number of states less than 10!
   // For large arrays, this is not a good output format!
@@ -560,10 +560,10 @@ void printVector_gb(enum LOG_STREAM stream, char name[], double* a, int n, doubl
  * @param n       Size of the vector
  * @param time    Time value
  */
-void printIntVector_gb(enum LOG_STREAM stream, char name[], int* a, int n, double time) {
+void printIntVector_gb(enum OMC_LOG_STREAM stream, char name[], int* a, int n, double time) {
 
   // If stream is not active or size of vector to big do nothing
-  if (!ACTIVE_STREAM(stream) || n>1000) return;
+  if (!OMC_ACTIVE_STREAM(stream) || n>1000) return;
 
   char row_to_print[40960];
   unsigned int bufSize = 40960;
@@ -586,10 +586,10 @@ void printIntVector_gb(enum LOG_STREAM stream, char name[], int* a, int n, doubl
  * @param nIndx   Size of index vector
  * @param indx    Index vector
  */
-void printVector_gbf(enum LOG_STREAM stream, char name[], double* a, int n, double time, int nIndx, int* indx) {
+void printVector_gbf(enum OMC_LOG_STREAM stream, char name[], double* a, int n, double time, int nIndx, int* indx) {
 
   // If stream is not active or size of vector to big do nothing
-  if (!ACTIVE_STREAM(stream) || nIndx>1000) return;
+  if (!OMC_ACTIVE_STREAM(stream) || nIndx>1000) return;
 
   // This only works for number of states less than 10!
   // For large arrays, this is not a good output format!
@@ -617,9 +617,9 @@ void printVector_gbf(enum LOG_STREAM stream, char name[], double* a, int n, doub
 void printSparseJacobianLocal(ANALYTIC_JACOBIAN* jacobian, const char* name) {
   /* Variables */
   unsigned int row, col, i, j;
-  infoStreamPrint(LOG_STDOUT, 0, "Sparse structure of %s [size: %ux%u]", name, jacobian->sizeRows, jacobian->sizeCols);
-  infoStreamPrint(LOG_STDOUT, 0, "%u non-zero elements", jacobian->sparsePattern->numberOfNonZeros);
-  infoStreamPrint(LOG_STDOUT, 0, "Values of the transposed matrix (rows: states)");
+  infoStreamPrint(OMC_LOG_STDOUT, 0, "Sparse structure of %s [size: %ux%u]", name, jacobian->sizeRows, jacobian->sizeCols);
+  infoStreamPrint(OMC_LOG_STDOUT, 0, "%u non-zero elements", jacobian->sparsePattern->numberOfNonZeros);
+  infoStreamPrint(OMC_LOG_STDOUT, 0, "Values of the transposed matrix (rows: states)");
 
   printf("\n");
   i=0;
@@ -726,10 +726,10 @@ modelica_boolean checkFastStatesChange(DATA_GBODE* gbData) {
     }
   }
 
-  if (ACTIVE_STREAM(LOG_SOLVER) && fastStatesChange)
+  if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER) && fastStatesChange)
   {
-    printIntVector_gb(LOG_SOLVER, "old fast States:", gbfData->fastStates_old, gbfData->nFastStates_old, gbfData->time);
-    printIntVector_gb(LOG_SOLVER, "new fast States:", gbData->fastStatesIdx, gbData->nFastStates, gbfData->time);
+    printIntVector_gb(OMC_LOG_SOLVER, "old fast States:", gbfData->fastStates_old, gbfData->nFastStates_old, gbfData->time);
+    printIntVector_gb(OMC_LOG_SOLVER, "new fast States:", gbData->fastStatesIdx, gbData->nFastStates, gbfData->time);
   }
   // Update indices for the current fast states and corresponding counting
   if (fastStatesChange) {
@@ -750,8 +750,8 @@ modelica_boolean checkFastStatesChange(DATA_GBODE* gbData) {
  * @param stepSize        ODE integrator step size.
  * @param stats           Pointer to stats struct.
  */
-void logSolverStats(enum LOG_STREAM stream, const char* name, double timeValue, double integratorTime, double stepSize, SOLVERSTATS* stats) {
-  if (ACTIVE_STREAM(stream)) {
+void logSolverStats(enum OMC_LOG_STREAM stream, const char* name, double timeValue, double integratorTime, double stepSize, SOLVERSTATS* stats) {
+  if (OMC_ACTIVE_STREAM(stream)) {
     infoStreamPrint(stream, 1, "%s call statistics:", name);
     infoStreamPrint(stream, 0, "number of steps taken so far: %d", stats->nStepsTaken);
     infoStreamPrint(stream, 0, "number of calls of functionODE() : %d", stats->nCallsODE);
@@ -765,28 +765,28 @@ void logSolverStats(enum LOG_STREAM stream, const char* name, double timeValue, 
 /**
  * @brief Info message for GBODE replacement.
  *
- * Dumps simulation flags to use to LOG_STDOUT.
+ * Dumps simulation flags to use to OMC_LOG_STDOUT.
  *
  * @param gbMethod  GBODE method to use.
  * @param constant  If true use constant step size.
  */
 void replacementString(enum GB_METHOD gbMethod, modelica_boolean constant) {
   if (constant) {
-    infoStreamPrint(LOG_STDOUT, 1, "Use integration method GBODE with method '%s' and constant step size instead:", GB_METHOD_NAME[gbMethod]);
-    infoStreamPrint(LOG_STDOUT, 0, "Choose integration method '%s' in Simulation Setup->General and additional simulation flags '-%s=%s -%s=%s' in Simulation Setup->Simulation Flags.",
+    infoStreamPrint(OMC_LOG_STDOUT, 1, "Use integration method GBODE with method '%s' and constant step size instead:", GB_METHOD_NAME[gbMethod]);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Choose integration method '%s' in Simulation Setup->General and additional simulation flags '-%s=%s -%s=%s' in Simulation Setup->Simulation Flags.",
                     SOLVER_METHOD_NAME[S_GBODE], FLAG_NAME[FLAG_SR], GB_METHOD_NAME[gbMethod], FLAG_NAME[FLAG_SR_CTRL], GB_CTRL_METHOD_NAME[GB_CTRL_CNST]);
-    infoStreamPrint(LOG_STDOUT, 0, "or");
-    infoStreamPrint(LOG_STDOUT, 0, "Simulation flags '-s=%s -%s=%s -%s=%s'.",
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "or");
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Simulation flags '-s=%s -%s=%s -%s=%s'.",
                     SOLVER_METHOD_NAME[S_GBODE], FLAG_NAME[FLAG_SR], GB_METHOD_NAME[gbMethod], FLAG_NAME[FLAG_SR_CTRL], GB_CTRL_METHOD_NAME[GB_CTRL_CNST]);
   } else {
-    infoStreamPrint(LOG_STDOUT, 1, "Use integration method GBODE with method '%s' instead:", GB_METHOD_NAME[gbMethod]);
-    infoStreamPrint(LOG_STDOUT, 0, "Choose integration method '%s' in Simulation Setup->General and additional simulation flags '-%s=%s' in Simulation Setup->Simulation Flags.",
+    infoStreamPrint(OMC_LOG_STDOUT, 1, "Use integration method GBODE with method '%s' instead:", GB_METHOD_NAME[gbMethod]);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Choose integration method '%s' in Simulation Setup->General and additional simulation flags '-%s=%s' in Simulation Setup->Simulation Flags.",
                     SOLVER_METHOD_NAME[S_GBODE], FLAG_NAME[FLAG_SR], GB_METHOD_NAME[gbMethod]);
-    infoStreamPrint(LOG_STDOUT, 0, "or");
-    infoStreamPrint(LOG_STDOUT, 0, "Simulation flags '-s=%s -%s=%s'.",
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "or");
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Simulation flags '-s=%s -%s=%s'.",
                     SOLVER_METHOD_NAME[S_GBODE], FLAG_NAME[FLAG_SR], GB_METHOD_NAME[gbMethod]);
   }
-  messageClose(LOG_STDOUT);
+  messageClose(OMC_LOG_STDOUT);
 }
 
 /**
@@ -809,7 +809,7 @@ void deprecationWarningGBODE(enum SOLVER_METHOD method) {
       return;
   }
 
-  warningStreamPrint(LOG_STDOUT, 1, "Integration method '%s' is deprecated and will be removed in a future version of OpenModelica.", SOLVER_METHOD_NAME[method]);
+  warningStreamPrint(OMC_LOG_STDOUT, 1, "Integration method '%s' is deprecated and will be removed in a future version of OpenModelica.", SOLVER_METHOD_NAME[method]);
   switch (method) {
     case S_HEUN:
       replacementString(RK_HEUN, TRUE);
@@ -833,7 +833,7 @@ void deprecationWarningGBODE(enum SOLVER_METHOD method) {
       throwStreamPrint(NULL, "Not reachable state");
   }
 
-  infoStreamPrint(LOG_STDOUT, 0 , "See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode");
-  messageClose(LOG_STDOUT);
+  infoStreamPrint(OMC_LOG_STDOUT, 0 , "See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode");
+  messageClose(OMC_LOG_STDOUT);
   return;
 }

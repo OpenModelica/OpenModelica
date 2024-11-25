@@ -140,7 +140,7 @@ void TraceabilityInformationURI::traceabilityInformationSent(QNetworkReply *pNet
                           QString("Following error has occurred while sending the traceability information \n\n%1").arg(pNetworkReply->errorString()), QMessageBox::Ok);
   }
   else
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                           "The traceability information has been sent to Daemon", Helper::scriptingKind, Helper::notificationLevel));
   pNetworkReply->deleteLater();
 }

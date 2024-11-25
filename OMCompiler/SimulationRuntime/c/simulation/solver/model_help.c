@@ -114,27 +114,27 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
   storeRelations(data);
 
   data->callback->functionDAE(data, threadData);
-  debugStreamPrint(LOG_EVENTS_V, 0, "updated discrete System");
+  debugStreamPrint(OMC_LOG_EVENTS_V, 0, "updated discrete System");
 
   relationChanged = checkRelations(data);
   discreteChanged = checkForDiscreteChanges(data, threadData);
   while(discreteChanged || data->simulationInfo->needToIterate || relationChanged)
   {
     if(data->simulationInfo->needToIterate) {
-      debugStreamPrint(LOG_EVENTS_V, 0, "reinit() call. Iteration needed!");
+      debugStreamPrint(OMC_LOG_EVENTS_V, 0, "reinit() call. Iteration needed!");
     }
     if(relationChanged) {
-      debugStreamPrint(LOG_EVENTS_V, 0, "relations changed. Iteration needed.");
+      debugStreamPrint(OMC_LOG_EVENTS_V, 0, "relations changed. Iteration needed.");
     }
     if(discreteChanged) {
-      debugStreamPrint(LOG_EVENTS_V, 0, "discrete Variable changed. Iteration needed.");
+      debugStreamPrint(OMC_LOG_EVENTS_V, 0, "discrete Variable changed. Iteration needed.");
     }
 
     storePreValues(data);
     updateRelationsPre(data);
 
-    printRelations(data, LOG_EVENTS_V);
-    printZeroCrossings(data, LOG_EVENTS_V);
+    printRelations(data, OMC_LOG_EVENTS_V);
+    printZeroCrossings(data, OMC_LOG_EVENTS_V);
 
     data->callback->functionDAE(data, threadData);
 
@@ -162,7 +162,7 @@ void saveZeroCrossings(DATA* data, threadData_t *threadData)
   TRACE_PUSH
   long i = 0;
 
-  debugStreamPrint(LOG_ZEROCROSSINGS, 0, "save all zero-crossings");
+  debugStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "save all zero-crossings");
 
   for(i=0;i<data->modelData->nZeroCrossings;i++)
     data->simulationInfo->zeroCrossingsPre[i] = data->simulationInfo->zeroCrossings[i];
@@ -208,7 +208,7 @@ void printAllVars(DATA *data, int ringSegment, int stream)
   MODEL_DATA      *mData = data->modelData;
   SIMULATION_INFO *sInfo = data->simulationInfo;
 
-  if (!ACTIVE_STREAM(stream)) return;
+  if (!OMC_ACTIVE_STREAM(stream)) return;
 
   infoStreamPrint(stream, 1, "Print values for buffer segment %d regarding point in time : %g", ringSegment, data->localData[ringSegment]->timeValue);
 
@@ -320,7 +320,7 @@ void printParameters(DATA *data, int stream)
   long i;
   MODEL_DATA *mData = data->modelData;
 
-  if (!ACTIVE_STREAM(stream)) return;
+  if (!OMC_ACTIVE_STREAM(stream)) return;
 
   infoStreamPrint(stream, 1, "parameter values");
 
@@ -394,7 +394,7 @@ void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeC
   unsigned int row, col, i, j;
   char *buffer;
 
-  if (!ACTIVE_STREAM(stream))
+  if (!OMC_ACTIVE_STREAM(stream))
   {
     return;
   }
@@ -525,7 +525,7 @@ void printRelations(DATA *data, int stream)
   TRACE_PUSH
   long i;
 
-  if (!ACTIVE_STREAM(stream))
+  if (!OMC_ACTIVE_STREAM(stream))
   {
     TRACE_POP
     return;
@@ -553,7 +553,7 @@ void printZeroCrossings(DATA *data, int stream)
   TRACE_PUSH
   long i;
 
-  if (!ACTIVE_STREAM(stream))
+  if (!OMC_ACTIVE_STREAM(stream))
   {
     TRACE_POP
     return;
@@ -644,30 +644,30 @@ void printRingBufferSimulationData(RINGBUFFER *rb, DATA* data)
 
   for (int i = 0; i < ringBufferLength(rb); i++)
   {
-    messageClose(LOG_STDOUT);
+    messageClose(OMC_LOG_STDOUT);
     SIMULATION_DATA *sdata = (SIMULATION_DATA *)getRingData(rb, i);
-    infoStreamPrint(LOG_STDOUT, 1, "Time: %g ", sdata->timeValue);
+    infoStreamPrint(OMC_LOG_STDOUT, 1, "Time: %g ", sdata->timeValue);
 
-    infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Real Variable");
+    infoStreamPrint(OMC_LOG_STDOUT, 1, "RingBuffer Real Variable");
     for (int j = 0; j < data->modelData->nVariablesReal; ++j)
     {
-      infoStreamPrint(LOG_STDOUT, 0, "%d: %s = %g ", j+1, data->modelData->realVarsData[j].info.name, sdata->realVars[j]);
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "%d: %s = %g ", j+1, data->modelData->realVarsData[j].info.name, sdata->realVars[j]);
     }
-    messageClose(LOG_STDOUT);
+    messageClose(OMC_LOG_STDOUT);
 
-    infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Integer Variable");
+    infoStreamPrint(OMC_LOG_STDOUT, 1, "RingBuffer Integer Variable");
     for (int j = 0; j < data->modelData->nVariablesInteger; ++j)
     {
-      infoStreamPrint(LOG_STDOUT, 0, "%d: %s = %li ", j+1, data->modelData->integerVarsData[j].info.name, sdata->integerVars[j]);
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "%d: %s = %li ", j+1, data->modelData->integerVarsData[j].info.name, sdata->integerVars[j]);
     }
-    messageClose(LOG_STDOUT);
+    messageClose(OMC_LOG_STDOUT);
 
-    infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Boolean Variable");
+    infoStreamPrint(OMC_LOG_STDOUT, 1, "RingBuffer Boolean Variable");
     for(int j = 0; j < data->modelData->nVariablesBoolean; ++j)
     {
-      infoStreamPrint(LOG_STDOUT, 0, "%d: %s = %s ", j+1, data->modelData->booleanVarsData[j].info.name, sdata->booleanVars[j] ? "true" : "false");
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "%d: %s = %s ", j+1, data->modelData->booleanVarsData[j].info.name, sdata->booleanVars[j] ? "true" : "false");
     }
-    messageClose(LOG_STDOUT);
+    messageClose(OMC_LOG_STDOUT);
   }
 
   TRACE_POP
@@ -722,23 +722,23 @@ void setAllVarsToStart(DATA *data)
   for(i=0; i<mData->nVariablesReal; ++i)
   {
     sData->realVars[i] = mData->realVarsData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, 0, "set Real var %s = %g", mData->realVarsData[i].info.name, sData->realVars[i]);
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "set Real var %s = %g", mData->realVarsData[i].info.name, sData->realVars[i]);
   }
   for(i=0; i<mData->nVariablesInteger; ++i)
   {
     sData->integerVars[i] = mData->integerVarsData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, 0, "set Integer var %s = %ld", mData->integerVarsData[i].info.name, sData->integerVars[i]);
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "set Integer var %s = %ld", mData->integerVarsData[i].info.name, sData->integerVars[i]);
   }
   for(i=0; i<mData->nVariablesBoolean; ++i)
   {
     sData->booleanVars[i] = mData->booleanVarsData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, 0, "set Boolean var %s = %s", mData->booleanVarsData[i].info.name, sData->booleanVars[i] ? "true" : "false");
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "set Boolean var %s = %s", mData->booleanVarsData[i].info.name, sData->booleanVars[i] ? "true" : "false");
   }
 #if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
   for(i=0; i<mData->nVariablesString; ++i)
   {
     sData->stringVars[i] = mmc_mk_scon_persist(mData->stringVarsData[i].attribute.start);
-    debugStreamPrint(LOG_DEBUG, 0, "set String var %s = %s", mData->stringVarsData[i].info.name, MMC_STRINGDATA(sData->stringVars[i]));
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "set String var %s = %s", mData->stringVarsData[i].info.name, MMC_STRINGDATA(sData->stringVars[i]));
   }
 #endif
   TRACE_POP
@@ -759,31 +759,31 @@ void setAllStartToVars(DATA *data)
   MODEL_DATA      *mData = data->modelData;
   long i;
 
-  debugStreamPrint(LOG_DEBUG, 1, "the start-attribute of all variables to their current values:");
+  debugStreamPrint(OMC_LOG_DEBUG, 1, "the start-attribute of all variables to their current values:");
   for(i=0; i<mData->nVariablesReal; ++i)
   {
     mData->realVarsData[i].attribute.start = sData->realVars[i];
-    debugStreamPrint(LOG_DEBUG, 0, "Real var %s(start=%g)", mData->realVarsData[i].info.name, sData->realVars[i]);
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "Real var %s(start=%g)", mData->realVarsData[i].info.name, sData->realVars[i]);
   }
   for(i=0; i<mData->nVariablesInteger; ++i)
   {
     mData->integerVarsData[i].attribute.start = sData->integerVars[i];
-    debugStreamPrint(LOG_DEBUG, 0, "Integer var %s(start=%ld)", mData->integerVarsData[i].info.name, sData->integerVars[i]);
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "Integer var %s(start=%ld)", mData->integerVarsData[i].info.name, sData->integerVars[i]);
   }
   for(i=0; i<mData->nVariablesBoolean; ++i)
   {
     mData->booleanVarsData[i].attribute.start = sData->booleanVars[i];
-    debugStreamPrint(LOG_DEBUG, 0, "Boolean var %s(start=%s)", mData->booleanVarsData[i].info.name, sData->booleanVars[i] ? "true" : "false");
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "Boolean var %s(start=%s)", mData->booleanVarsData[i].info.name, sData->booleanVars[i] ? "true" : "false");
   }
 #if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
   for(i=0; i<mData->nVariablesString; ++i)
   {
     mData->stringVarsData[i].attribute.start = MMC_STRINGDATA(sData->stringVars[i]);
-    debugStreamPrint(LOG_DEBUG, 0, "String var %s(start=%s)", mData->stringVarsData[i].info.name, MMC_STRINGDATA(sData->stringVars[i]));
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "String var %s(start=%s)", mData->stringVarsData[i].info.name, MMC_STRINGDATA(sData->stringVars[i]));
   }
 #endif
-  if (DEBUG_STREAM(LOG_DEBUG)) {
-    messageClose(LOG_DEBUG);
+  if (OMC_DEBUG_STREAM(OMC_LOG_DEBUG)) {
+    messageClose(OMC_LOG_DEBUG);
   }
 
   TRACE_POP
@@ -807,22 +807,22 @@ void setAllParamsToStart(DATA *data)
   for(i=0; i<mData->nParametersReal; ++i)
   {
     sInfo->realParameter[i] = mData->realParameterData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, 0, "set Real var %s = %g", mData->realParameterData[i].info.name, sInfo->realParameter[i]);
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "set Real var %s = %g", mData->realParameterData[i].info.name, sInfo->realParameter[i]);
   }
   for(i=0; i<mData->nParametersInteger; ++i)
   {
     sInfo->integerParameter[i] = mData->integerParameterData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, 0, "set Integer var %s = %ld", mData->integerParameterData[i].info.name, sInfo->integerParameter[i]);
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "set Integer var %s = %ld", mData->integerParameterData[i].info.name, sInfo->integerParameter[i]);
   }
   for(i=0; i<mData->nParametersBoolean; ++i)
   {
     sInfo->booleanParameter[i] = mData->booleanParameterData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, 0, "set Boolean var %s = %s", mData->booleanParameterData[i].info.name, sInfo->booleanParameter[i] ? "true" : "false");
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "set Boolean var %s = %s", mData->booleanParameterData[i].info.name, sInfo->booleanParameter[i] ? "true" : "false");
   }
   for(i=0; i<mData->nParametersString; ++i)
   {
     sInfo->stringParameter[i] = mData->stringParameterData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, 0, "set String var %s = %s", mData->stringParameterData[i].info.name, MMC_STRINGDATA(sInfo->stringParameter[i]));
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "set String var %s = %s", mData->stringParameterData[i].info.name, MMC_STRINGDATA(sInfo->stringParameter[i]));
   }
 
   TRACE_POP
@@ -973,7 +973,7 @@ int getNextSampleTimeFMU(DATA *data, double *nextSampleEvent)
 
   if(0 < data->modelData->nSamples)
   {
-    infoStreamPrint(LOG_EVENTS, 0, "Next event time = %f", data->simulationInfo->nextSampleEvent);
+    infoStreamPrint(OMC_LOG_EVENTS, 0, "Next event time = %f", data->simulationInfo->nextSampleEvent);
     TRACE_POP
     *nextSampleEvent = data->simulationInfo->nextSampleEvent;
     return 1 /* TRUE */;
@@ -1438,7 +1438,7 @@ void setZCtol(double relativeTol)
 
   /* lochel: force tolZC > 0 */
   tolZC = TOL_HYSTERESIS_ZEROCROSSINGS * fmax(relativeTol, MINIMAL_STEP_SIZE);
-  infoStreamPrint(LOG_EVENTS_V, 0, "Set tolerance for zero-crossing hysteresis to: %e", tolZC);
+  infoStreamPrint(OMC_LOG_EVENTS_V, 0, "Set tolerance for zero-crossing hysteresis to: %e", tolZC);
 
   TRACE_POP
 }

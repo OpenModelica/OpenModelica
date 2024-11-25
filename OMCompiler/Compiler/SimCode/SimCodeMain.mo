@@ -1059,7 +1059,7 @@ protected
   File.File file;
   String info, revisions, infoHeader;
 algorithm
-  (info, revisions, infoHeader) := Interactive.getNamedAnnotation(simCode.modelInfo.name, program, Absyn.IDENT("Documentation"), SOME(("","","")),Interactive.getDocumentationAnnotationString);
+  (info, revisions, infoHeader) := Interactive.getNamedAnnotationExp(simCode.modelInfo.name, program, Absyn.IDENT("Documentation"), SOME(("","","")),Interactive.getDocumentationAnnotationString);
 
   // do not export if Documentation annotation does not exist
   if (stringEmpty(info) and stringEmpty(revisions) and stringEmpty(infoHeader)) then

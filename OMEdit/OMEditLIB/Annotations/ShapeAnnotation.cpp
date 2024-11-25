@@ -39,7 +39,6 @@
 #include "ShapePropertiesDialog.h"
 #include "Modeling/Commands.h"
 #include "Element/ElementProperties.h"
-#include "TLM/FetchInterfaceDataDialog.h"
 #include "Plotting/VariablesWidget.h"
 #include "Util/ResourceCache.h"
 
@@ -459,14 +458,6 @@ void ShapeAnnotation::createActions()
   mpShapePropertiesAction = new QAction(Helper::properties, mpGraphicsView);
   mpShapePropertiesAction->setStatusTip(tr("Shows the shape properties"));
   connect(mpShapePropertiesAction, SIGNAL(triggered()), SLOT(showShapeProperties()));
-  // shape attributes
-  mpAlignInterfacesAction = new QAction(ResourceCache::getIcon(":/Resources/icons/align-interfaces.svg"), Helper::alignInterfaces, mpGraphicsView);
-  mpAlignInterfacesAction->setStatusTip(Helper::alignInterfacesTip);
-  connect(mpAlignInterfacesAction, SIGNAL(triggered()), SLOT(alignInterfaces()));
-  // shape attributes
-  mpShapeAttributesAction = new QAction(Helper::attributes, mpGraphicsView);
-  mpShapeAttributesAction->setStatusTip(tr("Shows the shape attributes"));
-  connect(mpShapeAttributesAction, SIGNAL(triggered()), SLOT(showShapeAttributes()));
   // edit transition action
   mpEditTransitionAction = new QAction(Helper::editTransition, mpGraphicsView);
   mpEditTransitionAction->setStatusTip(tr("Edits the transition"));
@@ -1812,27 +1803,12 @@ bool ShapeAnnotation::isLineStraight(QPointF point1, QPointF point2)
  */
 void ShapeAnnotation::showShapeProperties()
 {
-  if (!mpGraphicsView || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isCompositeModel()) {
+  if (!mpGraphicsView) {
     return;
   }
   MainWindow *pMainWindow = MainWindow::instance();
   ShapePropertiesDialog *pShapePropertiesDialog = new ShapePropertiesDialog(this, pMainWindow);
   pShapePropertiesDialog->exec();
-}
-
-/*!
- * \brief ShapeAnnotation::showShapeAttributes
- * Slot activated when Attributes option is chosen from context menu of the shape.
- */
-void ShapeAnnotation::showShapeAttributes()
-{
-  if (!mpGraphicsView) {
-    return;
-  }
-  LineAnnotation *pConnectionLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-  CompositeModelConnectionAttributes *pCompositeModelConnectionAttributes;
-  pCompositeModelConnectionAttributes = new CompositeModelConnectionAttributes(mpGraphicsView, pConnectionLineAnnotation, true, MainWindow::instance());
-  pCompositeModelConnectionAttributes->exec();
 }
 
 /*!
@@ -1847,20 +1823,6 @@ void ShapeAnnotation::editTransition()
   LineAnnotation *pTransitionLineAnnotation = dynamic_cast<LineAnnotation*>(this);
   CreateOrEditTransitionDialog *pCreateOrEditTransitionDialog = new CreateOrEditTransitionDialog(mpGraphicsView, pTransitionLineAnnotation, true, MainWindow::instance());
   pCreateOrEditTransitionDialog->exec();
-}
-
-/*!
- * \brief ShapeAnnotation::alignInterfaces
- * Slot activated when Align Interfaces option is chosen from context menu of the shape.
- */
-void ShapeAnnotation::alignInterfaces()
-{
-  if (!mpGraphicsView) {
-    return;
-  }
-  LineAnnotation *pConnectionLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-  AlignInterfacesDialog *pAlignInterfacesDialog = new AlignInterfacesDialog(mpGraphicsView->getModelWidget(), pConnectionLineAnnotation);
-  pAlignInterfacesDialog->exec();
 }
 
 /*!

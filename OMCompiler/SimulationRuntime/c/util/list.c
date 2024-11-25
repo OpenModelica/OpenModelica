@@ -430,7 +430,7 @@ void printList(LIST* list, int stream, void (*printDataFunc)(void*,int,void*))
 {
   LIST_NODE* listElem;
 
-  if (useStream[stream]) {
+  if (omc_useStream[stream]) {
     infoStreamPrint(stream, 1, "Printing list:");
     infoStreamPrint(stream, 0, "length: %d", list->length);
 

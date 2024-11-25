@@ -843,7 +843,7 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data, bool boundaryC
 
   if (filename == NULL && !boundaryConditions)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "Measurement input file not provided (eg:-sx=filename.csv), DataReconciliation cannot be computed!.");
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Measurement input file not provided (eg:-sx=filename.csv), DataReconciliation cannot be computed!.");
     logfile << "|  error   |   " << "Measurement input file not provided (eg:-sx=filename.csv), DataReconciliation cannot be computed!.\n";
     logfile.close();
     createErrorHtmlReport(data);
@@ -852,7 +852,7 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data, bool boundaryC
 
   if (filename == NULL && boundaryConditions)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "Reconciled values input file not provided (eg:-sx=filename.csv), Boundary conditions cannot be computed!.");
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Reconciled values input file not provided (eg:-sx=filename.csv), Boundary conditions cannot be computed!.");
     logfile << "|  error   |   " << "Reconciled values input file not provided (eg:-sx=filename.csv), Boundary conditions cannot be computed!.\n";
     logfile.close();
     createErrorHtmlReportForBoundaryConditions(data);
@@ -875,7 +875,7 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data, bool boundaryC
 
   if (!ip.good() && !boundaryConditions)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "Measurement input file path not found %s.",filename);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Measurement input file path not found %s.",filename);
     logfile << "|  error   |   " << "Measurement input file path not found " << filename << "\n";
     logfile.close();
     createErrorHtmlReport(data);
@@ -884,7 +884,7 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data, bool boundaryC
 
   if (!ip.good() && boundaryConditions)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "Reconciled values input file path not found %s.", filename);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Reconciled values input file path not found %s.", filename);
     logfile << "|  error   |   " << "Reconciled values input file path not found " << filename << "\n";
     logfile.close();
     createErrorHtmlReportForBoundaryConditions(data);
@@ -997,7 +997,7 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data, bool boundaryC
   {
     for (const auto &line : errorInfoHeaders)
     {
-      errorStreamPrint(LOG_STDOUT, 0, "the name of the variable of interest in measurement input file  %s is missing in line #%d ", filename, line);
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "the name of the variable of interest in measurement input file  %s is missing in line #%d ", filename, line);
       logfile << "|  error   |   " << "the name of the variable of interest in measurement input file " << filename << " is missing in line #" << line << "\n";
     }
     logfile.close();
@@ -1010,7 +1010,7 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data, bool boundaryC
   {
     for (const auto & info : errorInfo)
     {
-      errorStreamPrint(LOG_STDOUT, 0, "Entry for variable of interest %s in measurement input file %s is incorrect because of (no-Value/wrong-Type), with following data: [%s, %s, %s] ", info.name.c_str(), filename, info.name.c_str(), info.x.c_str(), info.sx.c_str());
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "Entry for variable of interest %s in measurement input file %s is incorrect because of (no-Value/wrong-Type), with following data: [%s, %s, %s] ", info.name.c_str(), filename, info.name.c_str(), info.x.c_str(), info.sx.c_str());
       logfile << "|  error   |   " << "Entry for variable of interest " <<  info.name << " in measurement input file " << filename << " is incorrect because of (no-Value/wrong-Type), with following data: " << "[" << info.name << ", " << info.x << ", " << info.sx  << "]" <<"\n";
     }
     logfile.close();
@@ -1291,7 +1291,7 @@ void solveMatrixMultiplication(double *matrixA, double *matrixB, int rowsa, int 
   if (colsA != rowsB)
   {
     //cout << "\n Error: Column of First Matrix not equal to Rows  of Second Matrix \n ";
-    errorStreamPrint(LOG_STDOUT, 0, "solveMatrixMultiplication() Failed!, Column of First Matrix not equal to Rows of Second Matrix %i != %i.",colsA,rowsB);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "solveMatrixMultiplication() Failed!, Column of First Matrix not equal to Rows of Second Matrix %i != %i.",colsA,rowsB);
     logfile << "|  error   |   " << "solveMatrixMultiplication() Failed!, Column of First Matrix not equal to Rows of Second Matrix " << colsA << " != " << rowsB << "\n";
     logfile.close();
     createErrorHtmlReport(data);
@@ -1319,7 +1319,7 @@ void solveSystemFstar(int n, int nhrs, double *tmpMatrixD, double *tmpMatrixC, o
   if (info > 0)
   {
     //cout << "The solution could not be computed, The info satus is : " << info;
-    errorStreamPrint(LOG_STDOUT, 0, "solveSystemFstar() Failed !, The solution could not be computed, The info satus is %i ", info);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "solveSystemFstar() Failed !, The solution could not be computed, The info satus is %i ", info);
     logfile << "|  error   |   " << "solveSystemFstar() Failed !, The solution could not be computed, The info satus is " << info << "\n";
     logfile.close();
     createErrorHtmlReport(data);
@@ -1335,7 +1335,7 @@ void solveMatrixSubtraction(matrixData A, matrixData B, double *result, ofstream
   if (A.rows != B.rows && A.column != B.column)
   {
     //cout << "The Matrix Dimensions are not equal to Compute ! \n";
-    errorStreamPrint(LOG_STDOUT, 0, "solveMatrixSubtraction() Failed !, The Matrix Dimensions are not equal to Compute ! %i != %i.", A.rows,B.rows);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "solveMatrixSubtraction() Failed !, The Matrix Dimensions are not equal to Compute ! %i != %i.", A.rows,B.rows);
     logfile << "|  error   |   " << "solveMatrixSubtraction() Failed !, The Matrix Dimensions are not equal to Compute" << A.rows << " != " << B.rows << "\n";
     logfile.close();
     createErrorHtmlReport(data);
@@ -1361,7 +1361,7 @@ matrixData solveMatrixAddition(matrixData A, matrixData B, ofstream &logfile, DA
   if (A.rows != B.rows && A.column != B.column)
   {
     //cout << "The Matrix Dimensions are not equal to Compute ! \n";
-    errorStreamPrint(LOG_STDOUT, 0, "solveMatrixAddition() Failed !, The Matrix Dimensions are not equal to Compute ! %i != %i.", A.rows,B.rows);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "solveMatrixAddition() Failed !, The Matrix Dimensions are not equal to Compute ! %i != %i.", A.rows,B.rows);
     logfile << "|  error   |   " << "solveMatrixAddition() Failed !, The Matrix Dimensions are not equal to Compute" << A.rows << " != " << B.rows << "\n";
     logfile.close();
     createErrorHtmlReport(data);
@@ -1425,7 +1425,7 @@ matrixData solveReconciledX(matrixData x, matrixData Sx, matrixData Ft, matrixDa
   solveMatrixSubtraction(x, rhs, reconciledX, logfile, data);
   //printMatrix(reconciledX,x.rows,x.column,"reconciled X^cap ===> (x - (Sx*Ft*fstar))");
 
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     logfile << "Calculations of Reconciled_x ==> (x - (Sx*Ft*f*))" << "\n";
     logfile << "====================================================";
@@ -1465,7 +1465,7 @@ matrixData solveReconciledSx(matrixData Sx, matrixData Ft, matrixData Fstar, ofs
   solveMatrixSubtraction(Sx, rhs, reconciledSx, logfile, data);
   //printMatrix(reconciledSx,Sx.rows,Sx.column,"reconciled Sx ===> (Sx - (Sx*Ft*Fstar))");
 
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     logfile << "Calculations of Reconciled_Sx ===> (Sx - (Sx*Ft*F*))" << "\n";
     logfile << "============================================";
@@ -1495,7 +1495,7 @@ matrixData getJacobianMatrixF(DATA * data, threadData_t * threadData, ofstream &
   int rows = jacobian->sizeRows;
   if (cols == 0)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "Cannot Compute Jacobian Matrix F");
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Cannot Compute Jacobian Matrix F");
     logfile << "|  error   |   " << "Cannot Compute Jacobian Matrix F" << "\n";
     logfile.close();
     if (!boundaryConditions)
@@ -1540,7 +1540,7 @@ matrixData getJacobianMatrixH(DATA * data, threadData_t * threadData, ofstream &
   //std::cout << "\n check jacobian H :" << rows << "==>" << cols;
   if (cols == 0)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "Cannot Compute Jacobian Matrix H");
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Cannot Compute Jacobian Matrix H");
     logfile << "|  error   |   " << "Cannot Compute Jacobian Matrix H" << "\n";
     logfile.close();
     if (!boundaryConditions)
@@ -1649,12 +1649,12 @@ void validateCorelationInputs(csvData Sx_result, DATA * data, ofstream &logfile,
   {
     if (!boundaryConditions)
     {
-      errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, at %s has multiple entries in correlation input file %s ", multipleEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "variable of interest %s, at %s has multiple entries in correlation input file %s ", multipleEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
       logfile << "|  error   |   " << "variable of interest " << multipleEntry[i] << " at " << comments << " has multiple entries in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << "\n";
     }
     else
     {
-      errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, at %s has multiple entries in reconciled covariance matrix input file %s ", multipleEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "variable of interest %s, at %s has multiple entries in reconciled covariance matrix input file %s ", multipleEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
       logfile << "|  error   |   " << "variable of interest " << multipleEntry[i] << " at " << comments << " has multiple entries in reconciled covariance matrix input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << "\n";
     }
   }
@@ -1664,12 +1664,12 @@ void validateCorelationInputs(csvData Sx_result, DATA * data, ofstream &logfile,
   {
     if (!boundaryConditions)
     {
-      errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, at %s entry in correlation input file %s does not correspond to a variable of interest ", noEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "variable of interest %s, at %s entry in correlation input file %s does not correspond to a variable of interest ", noEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
       logfile << "|  error   |   " << "variable of interest " << noEntry[i]  << ", at " << comments << " entry in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " does not correspond to a variable of interest" << "\n";
     }
     else
     {
-      errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, at %s entry in reconciled covariance matrix input file %s does not correspond to a variable of interest ", noEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "variable of interest %s, at %s entry in reconciled covariance matrix input file %s does not correspond to a variable of interest ", noEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
       logfile << "|  error   |   " << "variable of interest " << noEntry[i]  << ", at " << comments << " entry in reconciled covariance matrix input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " does not correspond to a variable of interest" << "\n";
     }
   }
@@ -1700,12 +1700,12 @@ void validateCorelationInputsSquareMatrix(DATA * data, ofstream &logfile, vector
   {
     if (!boundaryConditions)
     {
-      errorStreamPrint(LOG_STDOUT, 0, "Lines and columns of correlation matrix in correlation input file  %s, do not have identical names in the same order.", omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "Lines and columns of correlation matrix in correlation input file  %s, do not have identical names in the same order.", omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
       logfile << "|  error   |   " << "Lines and columns of correlation matrix in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " do not have identical names in the same order." << "\n";
     }
     else
     {
-      errorStreamPrint(LOG_STDOUT, 0, "Lines and columns of covariance matrix in reconciled covariance matrix input file  %s, do not have identical names in the same order.", omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "Lines and columns of covariance matrix in reconciled covariance matrix input file  %s, do not have identical names in the same order.", omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
       logfile << "|  error   |   " << "Lines and columns of covariance matrix in reconciled covariance matrix input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " do not have identical names in the same order." << "\n";
     }
 
@@ -1715,7 +1715,7 @@ void validateCorelationInputsSquareMatrix(DATA * data, ofstream &logfile, vector
       auto it = std::find(rowHeaders.begin(), rowHeaders.end(), index);
       if (it == rowHeaders.end())
       {
-        errorStreamPrint(LOG_STDOUT, 0, "Line %s is missing", index.c_str());
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "Line %s is missing", index.c_str());
         logfile << "|  error   |   " << "Line " << index << " is missing " << "\n";
       }
     }
@@ -1726,7 +1726,7 @@ void validateCorelationInputsSquareMatrix(DATA * data, ofstream &logfile, vector
       auto it = find(columnHeaders.begin(), columnHeaders.end(), index);
       if (it == columnHeaders.end())
       {
-        errorStreamPrint(LOG_STDOUT, 0, "Column %s is missing", index.c_str());
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "Column %s is missing", index.c_str());
         logfile << "|  error   |   " << "Column " << index << " is missing " << "\n";
       }
     }
@@ -1737,7 +1737,7 @@ void validateCorelationInputsSquareMatrix(DATA * data, ofstream &logfile, vector
       //std::cout << "\n " << i << rowHeaders[i] << " Vs " << columnHeaders[i];
       if (rowHeaders[i] != columnHeaders[i])
       {
-        errorStreamPrint(LOG_STDOUT, 0, "Lines and columns are in different orders %s Vs %s", rowHeaders[i].c_str(), columnHeaders[i].c_str());
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "Lines and columns are in different orders %s Vs %s", rowHeaders[i].c_str(), columnHeaders[i].c_str());
         logfile << "|  error   |   " << "Lines and columns are in different orders " << rowHeaders[i] << " Vs " << columnHeaders[i] << "\n";
       }
     }
@@ -1778,7 +1778,7 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
 
   if (filename == NULL && boundaryConditions)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "Reconciled covariance matrix input file not provided (eg:-cx=filename.csv), Boundary conditions cannot be computed!.");
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Reconciled covariance matrix input file not provided (eg:-cx=filename.csv), Boundary conditions cannot be computed!.");
     logfile << "|  error   |   " << "Reconciled covariance matrix input file not provided (eg:-cx=filename.csv), Boundary conditions cannot be computed!.\n";
     logfile.close();
     createErrorHtmlReportForBoundaryConditions(data);
@@ -1790,7 +1790,7 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
   string line;
   if (!ip.good() && !boundaryConditions)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "correlation coefficient input file path not found %s.", filename);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "correlation coefficient input file path not found %s.", filename);
     logfile << "|  error   |   " << "correlation coefficient input file path not found " << filename << "\n";
     logfile.close();
     createErrorHtmlReport(data);
@@ -1799,7 +1799,7 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
 
   if (!ip.good() && boundaryConditions)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "Reconciled covariance matrix input file path not found %s.", filename);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Reconciled covariance matrix input file path not found %s.", filename);
     logfile << "|  error   |   " << "Reconciled covariance matrix input file path not found " << filename << "\n";
     logfile.close();
     createErrorHtmlReportForBoundaryConditions(data);
@@ -1895,12 +1895,12 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
     {
       if (!boundaryConditions)
       {
-        errorStreamPrint(LOG_STDOUT, 0, "the name of the variable of interest in correlation input file  %s is missing in line #%d ", filename, line);
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "the name of the variable of interest in correlation input file  %s is missing in line #%d ", filename, line);
         logfile << "|  error   |   " << "the name of the variable of interest in correlation input file " << filename << " is missing in line #" << line << "\n";
       }
       else
       {
-        errorStreamPrint(LOG_STDOUT, 0, "the name of the variable of interest in reconciled covariance matrix input file  %s is missing in line #%d ", filename, line);
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "the name of the variable of interest in reconciled covariance matrix input file  %s is missing in line #%d ", filename, line);
         logfile << "|  error   |   " << "the name of the variable of interest in reconciled covariance matrix input file " << filename << " is missing in line #" << line << "\n";
       }
     }
@@ -1923,12 +1923,12 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
     {
       if (!boundaryConditions)
       {
-        errorStreamPrint(LOG_STDOUT, 0, "Entry for variable of interest %s and variable of interest %s in correlation input file %s is incorrect because of wrong-Type: [%s] ", info.name.c_str(), info.x.c_str(), filename, info.sx.c_str());
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "Entry for variable of interest %s and variable of interest %s in correlation input file %s is incorrect because of wrong-Type: [%s] ", info.name.c_str(), info.x.c_str(), filename, info.sx.c_str());
         logfile << "|  error   |   " << "Entry for variable of interest " <<  info.name << " and variable of interest " << info.x << " in correlation input file " << filename <<  " is incorrect because of wrong-Type: " << "[" << info.sx  << "]" <<"\n";
       }
       else
       {
-        errorStreamPrint(LOG_STDOUT, 0, "Entry for variable of interest %s and variable of interest %s in reconciled covariance matrix input file %s is incorrect because of wrong-Type: [%s] ", info.name.c_str(), info.x.c_str(), filename, info.sx.c_str());
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "Entry for variable of interest %s and variable of interest %s in reconciled covariance matrix input file %s is incorrect because of wrong-Type: [%s] ", info.name.c_str(), info.x.c_str(), filename, info.sx.c_str());
         logfile << "|  error   |   " << "Entry for variable of interest " <<  info.name << " and variable of interest " << info.x << " in reconciled covariance matrix input file " << filename <<  " is incorrect because of wrong-Type: " << "[" << info.sx  << "]" <<"\n";
       }
     }
@@ -2036,7 +2036,7 @@ csvData validateMeasurementInputs(csvData Sx_result, DATA * data, ofstream &logf
 {
   if (data->modelData->ndataReconVars != Sx_result.headers.size())
   {
-    errorStreamPrint(LOG_STDOUT, 0, "invalid input file %s, number of variable of interest(%li) != (%zu)number of variables in measurement input file", omc_flagValue[FLAG_DATA_RECONCILE_Sx], data->modelData->ndataReconVars, Sx_result.headers.size());
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "invalid input file %s, number of variable of interest(%li) != (%zu)number of variables in measurement input file", omc_flagValue[FLAG_DATA_RECONCILE_Sx], data->modelData->ndataReconVars, Sx_result.headers.size());
     logfile << "|  error   |   " << "invalid input file "<< omc_flagValue[FLAG_DATA_RECONCILE_Sx] << ", number of variable of interest(" << data->modelData->ndataReconVars << ")" << " != " << "(" << Sx_result.headers.size() << ")" << "number of variables in measurement input file";
     logfile.close();
     if (!boundaryConditions)
@@ -2085,14 +2085,14 @@ csvData validateMeasurementInputs(csvData Sx_result, DATA * data, ofstream &logf
   // dump user error #3: variable of interest, has no entry in measurement input file
   for (int i = 0; i < noEntry.size(); i++)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, has no entry in measurement input file %s ", noEntry[i].c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Sx]);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "variable of interest %s, has no entry in measurement input file %s ", noEntry[i].c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Sx]);
     logfile << "|  error   |   " << "variable of interest " << noEntry[i] << ", has no entry in measurement input file" << omc_flagValue[FLAG_DATA_RECONCILE_Sx] << "\n";
   }
 
   // dump user error #4: variable of interest , has multiple entry in measurement input file
   for (int i = 0; i < multipleEntry.size(); i++)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, has multiple entries in measurement input file %s ", multipleEntry[i].c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Sx]);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "variable of interest %s, has multiple entries in measurement input file %s ", multipleEntry[i].c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Sx]);
     logfile << "|  error   |   " << "variable of interest " << multipleEntry[i] << ", has multiple entries in measurement input file " << omc_flagValue[FLAG_DATA_RECONCILE_Sx] << "\n";
   }
 
@@ -2105,7 +2105,7 @@ csvData validateMeasurementInputs(csvData Sx_result, DATA * data, ofstream &logf
     {
       //std::cout << "\n not found" << i;
       userError5 = true;
-      errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, entry in measurement input file %s does not correspond to a variable of interest ", Sx_result.headers[i].c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Sx]);
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "variable of interest %s, entry in measurement input file %s does not correspond to a variable of interest ", Sx_result.headers[i].c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Sx]);
       logfile << "|  error   |   " << "variable of interest " << Sx_result.headers[i] << ", entry in measurement input file " << omc_flagValue[FLAG_DATA_RECONCILE_Sx] << " does not correspond to a variable of interest" << "\n";
     }
   }
@@ -2483,7 +2483,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   matrixData tmpmatrixC1 = copyMatrix(cpytmpmatrixC);
   matrixData tmpmatrixD1 = copyMatrix(cpytmpmatrixD);
 
-  if(ACTIVE_STREAM(LOG_JAC))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     logfile << "Calculations of Matrix (F*Sx*Ft) f* = c(x,y) " << "\n";
     logfile << "============================================\n";
@@ -2501,7 +2501,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
    */
   solveSystemFstar(jacF.rows, 1, tmpmatrixD, setc, logfile, data);
 
-  if(ACTIVE_STREAM(LOG_JAC))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     printMatrix(setc, jacF.rows, 1, "f*", logfile);
     logfile << "***** Completed ****** \n\n";
@@ -2512,7 +2512,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   matrixData reconciled_X = solveReconciledX(tmpxcap, Sx, jacFt, tmpfstar, logfile, data);
   //printMatrix(reconciled_X.data,reconciled_X.rows,reconciled_X.column,"reconciled_X ===> (x - (Sx*Ft*fstar))");
 
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     logfile << "Calculations of Matrix (F*Sx*Ft) F* = F*Sx " << "\n";
     logfile << "===============================================\n";
@@ -2531,7 +2531,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
    */
   solveSystemFstar(jacF.rows, Sx.column, tmpmatrixD1.data, tmpmatrixC1.data, logfile, data);
 
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     printMatrix(tmpmatrixC1.data, jacF.rows, Sx.column, "F*", logfile);
     logfile << "***** Completed ****** \n\n";
@@ -2604,7 +2604,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   matrixData copyreconSx_diag = {reconciled_Sx.rows, 1, reconSx_diag};
   matrixData tmpcopyreconSx_diag = copyMatrix(copyreconSx_diag);
 
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     logfile << "Calculations of HalfWidth Confidence Interval " << "\n";
     logfile << "===============================================\n";
@@ -2613,7 +2613,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
 
   calculateSquareRoot(copyreconSx_diag.data, reconciled_Sx.rows);
 
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     printMatrix(copyreconSx_diag.data, reconciled_Sx.rows, 1, "reconciled-Sx_SquareRoot", logfile);
     logfile << "*****Completed***********\n";
@@ -2629,7 +2629,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   double *newSx_diag = (double*) calloc (reconciled_Sx.rows * 1, sizeof(double));
   solveMatrixSubtraction(sxdiag, tmpcopyreconSx_diag, newSx_diag, logfile, data);
 
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     logfile << "Calculations of Individual Tests " << "\n";
     logfile << "===============================================\n";
@@ -2638,7 +2638,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
 
   calculateSquareRoot(newSx_diag, reconciled_Sx.rows);
 
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     printMatrix (newSx_diag, sxdiag.rows, sxdiag.column, "squareroot-newSx", logfile);
   }
@@ -2652,7 +2652,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
     newX[a] = fabs (newX[a]);
   }
 
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     printMatrix(newX, xdiag.rows, xdiag.column, "recon_X - X", logfile);
     logfile << "*********Completed***********\n";
@@ -2765,7 +2765,7 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputDat
   double *reconSt_diag = (double*) calloc (jacF.rows * 1, sizeof(double));
   getDiagonalElements(S_t, jacF.rows, jacFt.column, reconSt_diag);
 
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     logfile << "Calculations of half-width confidence interval" << "\n";
     logfile << "===============================================\n";
@@ -2774,7 +2774,7 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputDat
 
   calculateSquareRoot(reconSt_diag, jacF.rows);
 
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     printMatrix(reconSt_diag, jacF.rows, 1, "S_t_SquareRoot", logfile);
   }
@@ -2809,7 +2809,7 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputDat
   }
   else
   {
-    errorStreamPrint(LOG_STDOUT, 0, "Boundary conditions vars filename not found: %s.", boundaryConditionsVarsFilename.c_str());
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Boundary conditions vars filename not found: %s.", boundaryConditionsVarsFilename.c_str());
     logfile << "|  error   |   " << "Boundary conditions vars filename not found: " << boundaryConditionsVarsFilename << "\n";
     logfile.close();
     createErrorHtmlReportForBoundaryConditions(data);

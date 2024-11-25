@@ -230,7 +230,7 @@ void lookupRingBuffer(RINGBUFFER *rb, void **lookup)
  */
 void infoRingBuffer(RINGBUFFER *rb, int stream)
 {
-  if (ACTIVE_STREAM(stream)) {
+  if (OMC_ACTIVE_STREAM(stream)) {
     infoStreamPrint(stream, 1, "RingBuffer-Info");
     infoStreamPrint(stream, 0, "itemSize: %d [size of one item in bytes]", rb->itemSize);
     infoStreamPrint(stream, 0, "firstElement: %d [position of first element in buffer]", rb->firstElement);
@@ -244,14 +244,14 @@ void infoRingBuffer(RINGBUFFER *rb, int stream)
  * @brief Print a ring buffer with provided print function.
  *
  * @param rb                Ring buffer to print.
- * @param stream            Stream of type LOG_STREAM.
+ * @param stream            Stream of type OMC_LOG_STREAM.
  * @param printDataFunc     Function to print address of buffer element and its data to stream.
  */
 void printRingBuffer(RINGBUFFER *rb, int stream, void (*printDataFunc)(void*,int,void*)) {
   int i;
   void* bufferElemData;
 
-  if (useStream[stream]) {
+  if (omc_useStream[stream]) {
     infoStreamPrint(stream, 1, "Printing ring buffer:");
     infoRingBuffer(rb, stream);
 

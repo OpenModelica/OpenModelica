@@ -116,7 +116,7 @@ static void checkReturnFlag_CV(int flag, const char *functionName) {
     case CV_ROOT_RETURN:
       break;
     case CV_WARNING:
-      warningStreamPrint(LOG_STDOUT, 0, "##CVODE## %s In function %s: Got some warning.", flagName, functionName);
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "##CVODE## %s In function %s: Got some warning.", flagName, functionName);
       break;
     case CV_TOO_MUCH_WORK:
       throwStreamPrint(NULL, "##CVODE## %s In function %s: The solver took maximum number of internal steps but could not reach tout.", flagName, functionName);
@@ -269,14 +269,14 @@ void cvodeErrorHandlerFunction(int errorCode, const char *module,
   CVODE_SOLVER* cvodeData;
   DATA* data;
 
-  if (userData != NULL && ACTIVE_STREAM(LOG_SOLVER)) {
+  if (userData != NULL && OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) {
     cvodeData = (CVODE_SOLVER*) userData;
     data = (DATA*)cvodeData->simData->data;
 
-    infoStreamPrint(LOG_SOLVER, 1, "#### CVODE error message #####");
-    infoStreamPrint(LOG_SOLVER, 0, " -> error code %d\n -> module %s\n -> function %s", errorCode, module, function);
-    infoStreamPrint(LOG_SOLVER, 0, " Message: %s", msg);
-    messageClose(LOG_SOLVER);
+    infoStreamPrint(OMC_LOG_SOLVER, 1, "#### CVODE error message #####");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, " -> error code %d\n -> module %s\n -> function %s", errorCode, module, function);
+    infoStreamPrint(OMC_LOG_SOLVER, 0, " Message: %s", msg);
+    messageClose(OMC_LOG_SOLVER);
   }
 }
 
@@ -297,7 +297,7 @@ static void checkReturnFlag_KIN(int flag, const char *functionName) {
   case KIN_STEP_LT_STPTOL:
     break;
   case KIN_WARNING:
-    warningStreamPrint(LOG_STDOUT, 0,
+    warningStreamPrint(OMC_LOG_STDOUT, 0,
                        "##KINSOL## %s In function %s: Got some warning.", flagName, functionName);
     break;
   case KIN_MEM_NULL:
@@ -458,7 +458,7 @@ static void checkReturnFlag_IDA(int flag, const char *functionName) {
   case IDA_ROOT_RETURN:   /* IDASolve succeeded and found one or more roots. */
     break;
   case IDA_WARNING:
-    warningStreamPrint(LOG_STDOUT, 0,
+    warningStreamPrint(OMC_LOG_STDOUT, 0,
                        "##IDA## In function %s: Got some warning.",
                        functionName);
     break;
@@ -913,12 +913,12 @@ void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel
   assertStreamPrint(NULL, NULL != SM_DATA_S(A), "matrix data is NULL pointer");
 
   if (SM_SPARSETYPE_S(A) != CSC_MAT) {
-    errorStreamPrint(LOG_STDOUT, 0,
+    errorStreamPrint(OMC_LOG_STDOUT, 0,
                      "In function sundialsPrintSparseMatrix: Wrong sparse format "
                      "of SUNMatrix A%s.", name);
   }
 
-  if (ACTIVE_STREAM(logLevel)) {
+  if (OMC_ACTIVE_STREAM(logLevel)) {
     nnz = SUNSparseMatrix_NNZ(A);
     np = SM_NP_S(A);
     columns = SUNSparseMatrix_Columns(A);
@@ -989,14 +989,14 @@ void idaErrorHandlerFunction(int errorCode, const char *module,
   IDA_SOLVER* idaData;
   DATA* data;
 
-  if (userData != NULL && ACTIVE_STREAM(LOG_SOLVER)) {
+  if (userData != NULL && OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) {
     idaData = (IDA_SOLVER*) userData;
     data = (DATA*)idaData->userData->data;
 
-    infoStreamPrint(LOG_SOLVER, 1, "#### IDA error message #####");
-    infoStreamPrint(LOG_SOLVER, 0, " -> error code %d\n -> module %s\n -> function %s", errorCode, module, function);
-    infoStreamPrint(LOG_SOLVER, 0, " Message: %s", msg);
-    messageClose(LOG_SOLVER);
+    infoStreamPrint(OMC_LOG_SOLVER, 1, "#### IDA error message #####");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, " -> error code %d\n -> module %s\n -> function %s", errorCode, module, function);
+    infoStreamPrint(OMC_LOG_SOLVER, 0, " Message: %s", msg);
+    messageClose(OMC_LOG_SOLVER);
   }
 }
 
@@ -1029,31 +1029,31 @@ void kinsolErrorHandlerFunction(int errorCode, const char* module,
     }
   }
 
-  if (ACTIVE_STREAM(LOG_NLS)) {
+  if (OMC_ACTIVE_STREAM(OMC_LOG_NLS)) {
     if (userData != NULL && eqSystemNumber > 0) {
       warningStreamPrint(
-          LOG_NLS, 1, "kinsol failed for system %d",
+          OMC_LOG_NLS, 1, "kinsol failed for system %d",
           modelInfoGetEquation(&data->modelData->modelDataXml, eqSystemNumber).id);
     } else {
       warningStreamPrint(
-          LOG_NLS, 1, "kinsol failed");
+          OMC_LOG_NLS, 1, "kinsol failed");
     }
 
-    warningStreamPrint(LOG_NLS, 0,
+    warningStreamPrint(OMC_LOG_NLS, 0,
                        "[module] %s | [function] %s | [error_code] %d", module,
                        function, errorCode);
     if (msg) {
-      warningStreamPrint(LOG_NLS, 0, "%s", msg);
+      warningStreamPrint(OMC_LOG_NLS, 0, "%s", msg);
     }
 
-    messageClose(LOG_NLS);
+    messageClose(OMC_LOG_NLS);
   }
 }
 
 /**
  * @brief Info handler function given to KINSOL.
  *
- * Will only print information when stream LOG_NLS_V is active.
+ * Will only print information when stream OMC_LOG_NLS_V is active.
  *
  * @param module      Name of the KINSOL module reporting the information.
  * @param function    Name of the function reporting the information.
@@ -1064,13 +1064,13 @@ void kinsolInfoHandlerFunction(const char *module, const char *function,
                                char *msg, void *user_data) {
   UNUSED(user_data);  /* Disables compiler warning */
 
-  if (ACTIVE_STREAM(LOG_NLS_V)) {
-    warningStreamPrint(LOG_NLS_V, 1, "[module] %s | [function] %s:", module, function);
+  if (OMC_ACTIVE_STREAM(OMC_LOG_NLS_V)) {
+    warningStreamPrint(OMC_LOG_NLS_V, 1, "[module] %s | [function] %s:", module, function);
     if (msg) {
-      warningStreamPrint(LOG_NLS_V, 0, "%s", msg);
+      warningStreamPrint(OMC_LOG_NLS_V, 0, "%s", msg);
     }
 
-    messageClose(LOG_NLS_V);
+    messageClose(OMC_LOG_NLS_V);
   }
 }
 #endif /* #ifndef OMC_FMI_RUNTIME */

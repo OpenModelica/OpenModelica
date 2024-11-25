@@ -457,7 +457,7 @@ void get_kinsol_statistics(NLS_KINSOL_DATA* kin_mem) {
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINGetNumFuncEvals");
 
   // Report numbers
-  infoStreamPrint(LOG_GBODE_NLS, 0, "Kinsol statistics: nIters = %ld, nFuncEvals = %ld, nJacEvals = %ld,  fnorm:  %14.12g", nIters, nFuncEvals, nJacEvals, fnorm);
+  infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "Kinsol statistics: nIters = %ld, nFuncEvals = %ld, nJacEvals = %ld,  fnorm:  %14.12g", nIters, nFuncEvals, nJacEvals, fnorm);
 }
 /**
  * @brief Special treatment when solving non linear systems of equations
@@ -481,7 +481,7 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
 
   numIter = 20;
 
-  if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
+  if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
     rt_ext_tp_tick(&clock);
   }
 
@@ -493,23 +493,23 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
     solved = solveNLS(data, threadData, nlsData);
     /* Retry solution process with updated Jacobian */
     if (!solved) {
-      infoStreamPrint(LOG_STDOUT, 0, "GBODE: Solution of NLS failed, Try with updated Jacobian at time %g. Number of Iterations %d", gbData->time, numIter);
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "GBODE: Solution of NLS failed, Try with updated Jacobian at time %g. Number of Iterations %d", gbData->time, numIter);
       set_kinsol_parameters(kin_mem, numIter, SUNFALSE, 10, 100*DBL_EPSILON);
       solved = solveNLS(data, threadData, nlsData);
       if (!solved) {
-        infoStreamPrint(LOG_STDOUT, 0, "GBODE: Solution of NLS failed, Try with less accuracy.");
+        infoStreamPrint(OMC_LOG_STDOUT, 0, "GBODE: Solution of NLS failed, Try with less accuracy.");
         set_kinsol_parameters(kin_mem, numIter, SUNFALSE, 10, 1000*DBL_EPSILON);
         solved = solveNLS(data, threadData, nlsData);
       }
     }
-    if (ACTIVE_STREAM(LOG_GBODE_NLS)) get_kinsol_statistics(kin_mem);
+    if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) get_kinsol_statistics(kin_mem);
   } else {
     solved = solveNLS(data, threadData, nlsData);
   }
 
-  if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
+  if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
       cpu_time_used = rt_ext_tp_tock(&clock);
-      infoStreamPrint(LOG_GBODE_NLS, 0, "Time needed for solving the NLS:  %20.16g", cpu_time_used);
+      infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "Time needed for solving the NLS:  %20.16g", cpu_time_used);
   }
 
   return solved;
@@ -691,11 +691,11 @@ void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res,
     res[i] = gbData->res_const[i] - xloc[i] + gbData->stepSize * gbData->tableau->A[stage_ * nStages + stage_] * fODE[i];
   }
 
-  if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
-    infoStreamPrint(LOG_GBODE_NLS, 1, "NLS - x and residual:");
-    printVector_gb(LOG_GBODE_NLS, "x", (double *)xloc, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-    printVector_gb(LOG_GBODE_NLS, "r", res, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-    messageClose(LOG_GBODE_NLS);
+  if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
+    infoStreamPrint(OMC_LOG_GBODE_NLS, 1, "NLS - x and residual:");
+    printVector_gb(OMC_LOG_GBODE_NLS, "x", (double *)xloc, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+    printVector_gb(OMC_LOG_GBODE_NLS, "r", res, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+    messageClose(OMC_LOG_GBODE_NLS);
   }
 
   return;
@@ -757,12 +757,12 @@ void residual_IRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, 
     }
   }
 
-  if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
-    infoStreamPrint(LOG_GBODE_NLS, 1, "NLS - residual:");
+  if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
+    infoStreamPrint(OMC_LOG_GBODE_NLS, 1, "NLS - residual:");
     for (stage=0; stage<nStages; stage++) {
-      printVector_gb(LOG_GBODE_NLS, "r", res + stage*nStates, nStates, gbData->time + gbData->tableau->c[stage] * gbData->stepSize);
+      printVector_gb(OMC_LOG_GBODE_NLS, "r", res + stage*nStates, nStates, gbData->time + gbData->tableau->c[stage] * gbData->stepSize);
     }
-    messageClose(LOG_GBODE_NLS);
+    messageClose(OMC_LOG_GBODE_NLS);
   }
 
   return;

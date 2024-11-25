@@ -387,7 +387,7 @@ template baseClockInit(ClockKind baseClock, Integer baseClockIdx, list<SubPartit
   let warning = match baseClock
     case INFERRED_CLOCK() then
       <<
-      warningStreamPrint(LOG_STDOUT, 0, "Inferred clock, using default clock \'Clock(intervalCounter=1, resolution=1)\'");
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "Inferred clock, using default clock \'Clock(intervalCounter=1, resolution=1)\'");
       >>
     else ''
   <<
@@ -2805,7 +2805,7 @@ template createGlobalConstraints(list<SimEqSystem> innerEqns)
            <%auxFunction%>
            <%preExp%>
            if (!<%condition%>){
-             debugString(LOG_DT_CONS, "The following <%if localCon then "local" else "global"%> constraint is violated:\n<%dumpExp(c,"\"")%>");
+             debugString(OMC_LOG_DT_CONS, "The following <%if localCon then "local" else "global"%> constraint is violated:\n<%dumpExp(c,"\"")%>");
              return 0;
            }
            >>
@@ -2873,8 +2873,8 @@ template createLocalConstraints(SimEqSystem eq)
         <%auxFunction%>
         <%preExp%>
         if (!<%condition%>){
-          debugString(LOG_DT_CONS, "The following local constraint is violated:\n<%dumpExp(c,"\"")%>");
-          debugString(LOG_DT, "Local constraints of the casual tearing set are violated! Let's fail...");
+          debugString(OMC_LOG_DT_CONS, "The following local constraint is violated:\n<%dumpExp(c,"\"")%>");
+          debugString(OMC_LOG_DT, "Local constraints of the casual tearing set are violated! Let's fail...");
           return 1;
         }
         >>
@@ -3174,7 +3174,7 @@ match system
       /* iteration variables */
       for (i=0; i<<%listLength(nls.crefs)%>; i++) {
         if (isinf(xloc[i]) || isnan(xloc[i])) {
-          errorStreamPrint(LOG_NLS, 0, "residualFunc<%nls.index%>: Iteration variable `%s` is inf or nan.",
+          errorStreamPrint(OMC_LOG_NLS, 0, "residualFunc<%nls.index%>: Iteration variable `%s` is inf or nan.",
             modelInfoGetEquation(&data->modelData->modelDataXml, <%nls.index%>).vars[i]);
           for (j=0; j<<%listLength(nls.crefs)%>; j++) {
             res[j] = NAN;
@@ -3451,24 +3451,24 @@ let &sub = buffer ""
   {
     TRACE_PUSH
     /* min ******************************************************** */
-    infoStreamPrint(LOG_INIT, 1, "updating min-values");
+    infoStreamPrint(OMC_LOG_INIT, 1, "updating min-values");
     <%minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix)%>
-    if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
+    if (OMC_ACTIVE_STREAM(OMC_LOG_INIT)) messageClose(OMC_LOG_INIT);
 
     /* max ******************************************************** */
-    infoStreamPrint(LOG_INIT, 1, "updating max-values");
+    infoStreamPrint(OMC_LOG_INIT, 1, "updating max-values");
     <%maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix)%>
-    if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
+    if (OMC_ACTIVE_STREAM(OMC_LOG_INIT)) messageClose(OMC_LOG_INIT);
 
     /* nominal **************************************************** */
-    infoStreamPrint(LOG_INIT, 1, "updating nominal-values");
+    infoStreamPrint(OMC_LOG_INIT, 1, "updating nominal-values");
     <%nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix)%>
-    if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
+    if (OMC_ACTIVE_STREAM(OMC_LOG_INIT)) messageClose(OMC_LOG_INIT);
 
     /* start ****************************************************** */
-    infoStreamPrint(LOG_INIT, 1, "updating primary start-values");
+    infoStreamPrint(OMC_LOG_INIT, 1, "updating primary start-values");
     <%(startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix) ; separator="\n")%>
-    if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
+    if (OMC_ACTIVE_STREAM(OMC_LOG_INIT)) messageClose(OMC_LOG_INIT);
 
     TRACE_POP
     return 0;
@@ -3525,13 +3525,13 @@ case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
   let postExp = if isStartCref(cref) then
     <<
     <%cref(popCref(cref), &sub)%> = <%cref(cref, &sub)%>;
-    infoStreamPrint(LOG_INIT_V, 0, "updated start value: %s(start=<%crefToPrintfArg(popCref(cref))%>)", <%crefVarInfo(popCref(cref))%>.name, (<%crefType(popCref(cref))%>) <%cref(popCref(cref), &sub)%>);
+    infoStreamPrint(OMC_LOG_INIT_V, 0, "updated start value: %s(start=<%crefToPrintfArg(popCref(cref))%>)", <%crefVarInfo(popCref(cref))%>.name, (<%crefType(popCref(cref))%>) <%cref(popCref(cref), &sub)%>);
     >>
   <<
   <%modelicaLine(eqInfo(eq))%>
   <%preExp%>
   <%crefAttributes(cref)%>.<%attribute%> = <%expPart%>;
-  infoStreamPrint(LOG_INIT_V, 0, "%s(<%attribute%>=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(cref)%>.name,
+  infoStreamPrint(OMC_LOG_INIT_V, 0, "%s(<%attribute%>=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(cref)%>.name,
         (<%crefType(cref)%>) <%crefAttributes(cref)%>.<%attribute%>);
   <%postExp%>
   <%endModelicaLine()%>
@@ -3699,7 +3699,7 @@ template functionRemovedInitialEquationsBody(SimEqSystem eq, Text &varDecls, Tex
       <% if profileAll() then 'SIM_PROF_ACC_EQ(<%e.index%>);' %>
       if(fabs(res) > 1e-5)
       {
-        errorStreamPrint(LOG_INIT, 0, "The initialization problem is inconsistent due to the following equation: 0 != %g = <%dumpExp(exp,"\"")%>", res);
+        errorStreamPrint(OMC_LOG_INIT, 0, "The initialization problem is inconsistent due to the following equation: 0 != %g = <%dumpExp(exp,"\"")%>", res);
         return 1;
       }
       >>
@@ -6168,7 +6168,7 @@ case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
   let postExp = if isStartCref(cref) then
     <<
     <%cref(popCref(cref), &sub)%> = <%cref(cref, &sub)%>;
-    infoStreamPrint(LOG_INIT_V, 0, "updated start value: %s(start=<%crefToPrintfArg(popCref(cref))%>)", <%crefVarInfo(popCref(cref))%>.name, (<%crefType(popCref(cref))%>) <%cref(popCref(cref), &sub)%>);
+    infoStreamPrint(OMC_LOG_INIT_V, 0, "updated start value: %s(start=<%crefToPrintfArg(popCref(cref))%>)", <%crefVarInfo(popCref(cref))%>.name, (<%crefType(popCref(cref))%>) <%cref(popCref(cref), &sub)%>);
     >>
   <<
   <%modelicaLine(eqInfo(eq))%>
@@ -6379,10 +6379,10 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = at) th
   /* Linear equation system */
   int retValue;
   double aux_x[<%listLength(ls.vars)%>] = { <%ls.vars |> SIMVAR(__) hasindex i0 => '<%contextCrefOld(name, context, auxFunctions, 1)%>' ;separator=","%> };
-  if(ACTIVE_STREAM(LOG_DT))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_DT))
   {
-    infoStreamPrint(LOG_DT, 1, "Solving linear system <%ls.index%> (STRICT TEARING SET if tearing enabled) at time = %18.10e", data->localData[0]->timeValue);
-    messageClose(LOG_DT);
+    infoStreamPrint(OMC_LOG_DT, 1, "Solving linear system <%ls.index%> (STRICT TEARING SET if tearing enabled) at time = %18.10e", data->localData[0]->timeValue);
+    messageClose(OMC_LOG_DT);
   }
   <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%ls.index%>).profileBlockIndex);' %>
   <% if ls.partOfJac then
@@ -6416,10 +6416,10 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(a
   /* Linear equation system */
   int retValue;
 
-  if(ACTIVE_STREAM(LOG_DT))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_DT))
   {
-    infoStreamPrint(LOG_DT, 1, "Solving linear system <%at.index%> (CASUAL TEARING SET, strict: <%ls.index%>) at time = %18.10e", data->localData[0]->timeValue);
-    messageClose(LOG_DT);
+    infoStreamPrint(OMC_LOG_DT, 1, "Solving linear system <%at.index%> (CASUAL TEARING SET, strict: <%ls.index%>) at time = %18.10e", data->localData[0]->timeValue);
+    messageClose(OMC_LOG_DT);
   }
   <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%at.index%>).profileBlockIndex);' %>
   if (data->simulationInfo->linearSystemData[<%at.indexLinearSystem%>].checkConstraints(data, threadData) == 1)
@@ -6435,10 +6435,10 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(a
   }
   else
   {
-    if(ACTIVE_STREAM(LOG_DT))
+    if(OMC_ACTIVE_STREAM(OMC_LOG_DT))
     {
-      infoStreamPrint(LOG_DT, 1, "Constraints of the casual tearing set are violated! Now the strict tearing set is used.");
-      messageClose(LOG_DT);
+      infoStreamPrint(OMC_LOG_DT, 1, "Constraints of the casual tearing set are violated! Now the strict tearing set is used.");
+      messageClose(OMC_LOG_DT);
     }
     /* Global constraints are violated. Use the strict tearing set now. */
     data->simulationInfo->linearSystemData[<%at.indexLinearSystem%>].strictTearingFunctionCall(data, threadData);
@@ -6481,10 +6481,10 @@ template equationNonlinear(SimEqSystem eq, Context context, String modelNamePref
       let returnval2 = match at case at as SOME(__) then 'return 0;' case at as NONE() then ''
       <<
       int retValue;
-      if(ACTIVE_STREAM(LOG_DT))
+      if(OMC_ACTIVE_STREAM(OMC_LOG_DT))
       {
-        infoStreamPrint(LOG_DT, 1, "Solving nonlinear system <%nls.index%> (STRICT TEARING SET if tearing enabled) at time = %18.10e", data->localData[0]->timeValue);
-        messageClose(LOG_DT);
+        infoStreamPrint(OMC_LOG_DT, 1, "Solving nonlinear system <%nls.index%> (STRICT TEARING SET if tearing enabled) at time = %18.10e", data->localData[0]->timeValue);
+        messageClose(OMC_LOG_DT);
       }
       <% if profileSome() then
       <<
@@ -6533,10 +6533,10 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, St
       let nonlinindx = at.indexNonLinearSystem
       <<
       int retValue;
-      if(ACTIVE_STREAM(LOG_DT))
+      if(OMC_ACTIVE_STREAM(OMC_LOG_DT))
       {
-        infoStreamPrint(LOG_DT, 1, "Solving nonlinear system <%at.index%> (CASUAL TEARING SET, strict: <%nls.index%>) at time = %18.10e", data->localData[0]->timeValue);
-        messageClose(LOG_DT);
+        infoStreamPrint(OMC_LOG_DT, 1, "Solving nonlinear system <%at.index%> (CASUAL TEARING SET, strict: <%nls.index%>) at time = %18.10e", data->localData[0]->timeValue);
+        messageClose(OMC_LOG_DT);
       }
       <% if profileSome() then
       <<
@@ -6571,10 +6571,10 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, St
       }
       else
       {
-        if(ACTIVE_STREAM(LOG_DT))
+        if(OMC_ACTIVE_STREAM(OMC_LOG_DT))
         {
-          infoStreamPrint(LOG_DT, 1, "Constraints of the casual tearing set are violated! Now the strict tearing set is used.");
-          messageClose(LOG_DT);
+          infoStreamPrint(OMC_LOG_DT, 1, "Constraints of the casual tearing set are violated! Now the strict tearing set is used.");
+          messageClose(OMC_LOG_DT);
         }
         /* Global constraints are violated. Use the strict tearing set now. */
         data->simulationInfo->nonlinearSystemData[<%at.indexNonLinearSystem%>].strictTearingFunctionCall(data, threadData);
@@ -6683,7 +6683,7 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
       <<
       <%preExp%>
       <%lhs%>
-      infoStreamPrint(LOG_EVENTS, 0, "reinit <%crefStrNoUnderscore(stateVar)%> = <%crefToPrintfArg(stateVar)%>", <%cref(stateVar, &sub)%>);
+      infoStreamPrint(OMC_LOG_EVENTS, 0, "reinit <%crefStrNoUnderscore(stateVar)%> = <%crefToPrintfArg(stateVar)%>", <%cref(stateVar, &sub)%>);
       data->simulationInfo->needToIterate = 1;
       >>
     case TERMINATE(__) then

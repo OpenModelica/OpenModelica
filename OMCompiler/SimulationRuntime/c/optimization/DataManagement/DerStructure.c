@@ -60,7 +60,7 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
     optData->dim.updateHessian = atoi(cflags);
     if(optData->dim.updateHessian < 0)
     {
-      warningStreamPrint(LOG_STDOUT, 0, "not support %i for keep hessian-matrix constant.", optData->dim.updateHessian);
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "not support %i for keep hessian-matrix constant.", optData->dim.updateHessian);
       optData->dim.updateHessian = 0;
     }
   }else{
@@ -106,11 +106,11 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
   local_jac_struct(data, dim, s, optData->bounds.vnom);
   copy_JacVars(optData);
 
-  if(ACTIVE_STREAM(LOG_IPOPT_JAC) || ACTIVE_STREAM(LOG_IPOPT_HESSE))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_IPOPT_JAC) || OMC_ACTIVE_STREAM(OMC_LOG_IPOPT_HESSE))
     print_local_jac_struct(data, dim, s);
 
   local_hessian_struct(data, dim, s);
-  if(ACTIVE_STREAM(LOG_IPOPT_JAC) || ACTIVE_STREAM(LOG_IPOPT_HESSE))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_IPOPT_JAC) || OMC_ACTIVE_STREAM(OMC_LOG_IPOPT_HESSE))
     print_local_hessian_struct(data, dim, s);
 
   update_local_jac_struct(dim, s);

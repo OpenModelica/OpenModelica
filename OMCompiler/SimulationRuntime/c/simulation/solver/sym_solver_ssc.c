@@ -128,7 +128,7 @@ int sym_solver_ssc_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solve
     }
   }
 
-  infoStreamPrint(LOG_SOLVER,0, "new step: time=%e", userdata->radauTime);
+  infoStreamPrint(OMC_LOG_SOLVER,0, "new step: time=%e", userdata->radauTime);
   while (userdata->radauTime < targetTime)
   {
     do
@@ -137,8 +137,8 @@ int sym_solver_ssc_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solve
 
       for (i=0; i<data->modelData->nStates; i++)
       {
-        infoStreamPrint(LOG_SOLVER, 0, "y1[%d]=%e", i, userdata->y1[i]);
-        infoStreamPrint(LOG_SOLVER, 0, "y2[%d]=%e", i, userdata->y2[i]);
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "y1[%d]=%e", i, userdata->y1[i]);
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "y2[%d]=%e", i, userdata->y2[i]);
       }
 
       /*** calculate error ***/
@@ -152,8 +152,8 @@ int sym_solver_ssc_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solve
       err /= data->modelData->nStates;
 
       userdata->stepsDone += 1;
-      infoStreamPrint(LOG_SOLVER, 0, "err = %e", err);
-      infoStreamPrint(LOG_SOLVER, 0, "min(facmax, max(facmin, fac*sqrt(1/err))) = %e",  fmin(facmax, fmax(facmin, fac*pow(1.0/err, 4))));
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "err = %e", err);
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "min(facmax, max(facmin, fac*sqrt(1/err))) = %e",  fmin(facmax, fmax(facmin, fac*pow(1.0/err, 4))));
 
 
       /* update step size */
@@ -163,8 +163,8 @@ int sym_solver_ssc_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solve
       if (isnan(userdata->radauStepSize) || userdata->radauStepSize < 1e-13)
       {
         userdata->radauStepSize = 1e-13;
-        infoStreamPrint(LOG_SOLVER, 0, "Desired step to small try next one");
-        infoStreamPrint(LOG_SOLVER, 0, "Interpolate linear");
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "Desired step to small try next one");
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "Interpolate linear");
 
         /* explicit euler step*/
         for(i = 0; i < data->modelData->nStates; i++)
@@ -206,7 +206,7 @@ int sym_solver_ssc_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solve
     }
 
     /* update first derivative  */
-    infoStreamPrint(LOG_SOLVER,0, "Time  %e", sData->timeValue);
+    infoStreamPrint(OMC_LOG_SOLVER,0, "Time  %e", sData->timeValue);
     for(i=0; i<data->modelData->nStates; ++i)
     {
       a = 4.0 * (userdata->y2[i] - 2.0 * userdata->y05[i] + userdata->radauVarsOld[i]) / (userdata->radauStepSizeOld * userdata->radauStepSizeOld);
@@ -216,8 +216,8 @@ int sym_solver_ssc_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solve
   }
   else
   {
-    infoStreamPrint(LOG_SOLVER, 0, "Desired step to small try next one");
-    infoStreamPrint(LOG_SOLVER, 0, "Interpolate linear");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Desired step to small try next one");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Interpolate linear");
 
     /* explicit euler step*/
     for(i = 0; i < data->modelData->nStates; i++)
@@ -237,7 +237,7 @@ int sym_solver_ssc_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solve
   /* update step size */
   data->simulationInfo->inlineData->dt = userdata->radauStepSize;
   solverInfo->solverStepSize = userdata->radauStepSizeOld;
-  infoStreamPrint(LOG_SOLVER,0, "Step done to %f with step size = %e", sData->timeValue, solverInfo->solverStepSize);
+  infoStreamPrint(OMC_LOG_SOLVER,0, "Step done to %f with step size = %e", sData->timeValue, solverInfo->solverStepSize);
 
 
   return retVal;
@@ -405,7 +405,7 @@ int generateTwoApproximationsOfDifferentOrder(DATA* data, threadData_t *threadDa
   if (compiledWithSymSolver == 1)  /* compiled with implicit symbolic euler */
   {
     /*** do one step with half step size ***/
-    infoStreamPrint(LOG_SOLVER,0, "radauStepSize = %e", userdata->radauStepSize);
+    infoStreamPrint(OMC_LOG_SOLVER,0, "radauStepSize = %e", userdata->radauStepSize);
 
     /* update step size */
     userdata->radauStepSize /= 2;
@@ -416,7 +416,7 @@ int generateTwoApproximationsOfDifferentOrder(DATA* data, threadData_t *threadDa
     solverInfo->currentTime = userdata->radauTime + userdata->radauStepSize;
     sData->timeValue = solverInfo->currentTime;
 
-    infoStreamPrint(LOG_SOLVER,0, "first system time = %e", sData->timeValue);
+    infoStreamPrint(OMC_LOG_SOLVER,0, "first system time = %e", sData->timeValue);
 
     /* update algebraicOld values */
     memcpy(data->simulationInfo->inlineData->algOldVars, userdata->radauVars, data->modelData->nStates * sizeof(double));
@@ -447,7 +447,7 @@ int generateTwoApproximationsOfDifferentOrder(DATA* data, threadData_t *threadDa
     solverInfo->currentTime = userdata->radauTime + 2.0 * userdata->radauStepSize;
     sData->timeValue = solverInfo->currentTime;
 
-    infoStreamPrint(LOG_SOLVER,0, "second system time = %e", sData->timeValue);
+    infoStreamPrint(OMC_LOG_SOLVER,0, "second system time = %e", sData->timeValue);
 
     /* update step size */
     data->simulationInfo->inlineData->dt = userdata->radauStepSize;
@@ -469,7 +469,7 @@ int generateTwoApproximationsOfDifferentOrder(DATA* data, threadData_t *threadDa
   else if (compiledWithSymSolver == 2) /* compiled with explicit symbolic euler */
   {
     /*** do one step with half step size***/
-    infoStreamPrint(LOG_SOLVER,0, "radauStepSize = %e", userdata->radauStepSize);
+    infoStreamPrint(OMC_LOG_SOLVER,0, "radauStepSize = %e", userdata->radauStepSize);
 
     /* update step size */
     userdata->radauStepSize /= 2;
@@ -483,7 +483,7 @@ int generateTwoApproximationsOfDifferentOrder(DATA* data, threadData_t *threadDa
     solverInfo->currentTime = userdata->radauTime + userdata->radauStepSize;
     sData->timeValue = solverInfo->currentTime;
 
-    infoStreamPrint(LOG_SOLVER,0, "first system time = %e", sData->timeValue);
+    infoStreamPrint(OMC_LOG_SOLVER,0, "first system time = %e", sData->timeValue);
 
     /* evaluate function */
     externalInputUpdate(data);
@@ -511,7 +511,7 @@ int generateTwoApproximationsOfDifferentOrder(DATA* data, threadData_t *threadDa
     solverInfo->currentTime = userdata->radauTime + 2.0 * userdata->radauStepSize;
     sData->timeValue = solverInfo->currentTime;
 
-    infoStreamPrint(LOG_SOLVER,0, "second system time = %e", sData->timeValue);
+    infoStreamPrint(OMC_LOG_SOLVER,0, "second system time = %e", sData->timeValue);
 
     /* update step size */
     data->simulationInfo->inlineData->dt = userdata->radauStepSize;

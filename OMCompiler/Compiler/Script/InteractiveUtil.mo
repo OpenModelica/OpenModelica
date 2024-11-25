@@ -6187,6 +6187,7 @@ public function accessClass
   input Absyn.Program program;
   input Fn fn;
   input Boolean evaluateParams = false;
+  input Boolean graphicsExpMode = false;
   input Access accessLevel = Access.icon;
   output Values.Value result;
 
@@ -6198,9 +6199,10 @@ public function accessClass
   end Fn;
 protected
   Access access;
-  Boolean silent, eval_params;
+  Boolean silent, eval_params, graphics_exp_mode;
 algorithm
   eval_params := Config.getEvaluateParametersInAnnotations();
+  graphics_exp_mode := Config.getGraphicsExpMode();
 
   try
     access := Interactive.checkAccessAnnotationAndEncryption(classPath, program);
@@ -6217,6 +6219,7 @@ algorithm
     end if;
 
     Config.setEvaluateParametersInAnnotations(evaluateParams);
+    Config.setGraphicsExpMode(graphicsExpMode);
     result := fn(classPath, program, access);
   else
     result := ValuesUtil.makeBoolean(false);
@@ -6226,6 +6229,7 @@ algorithm
     ErrorExt.rollBack(getInstanceName());
   end if;
 
+  Config.setGraphicsExpMode(graphics_exp_mode);
   Config.setEvaluateParametersInAnnotations(eval_params);
 end accessClass;
 

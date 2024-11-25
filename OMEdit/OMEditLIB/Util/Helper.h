@@ -229,7 +229,7 @@ public:
   static QString unloadClassTip;
   static QString reloadClass;
   static QString reloadClassTip;
-  static QString unloadCompositeModelOrTextTip;
+  static QString unloadTextFileTip;
   static QString unloadOMSModelTip;
   static QString refresh;
   static QString simulate;
@@ -369,13 +369,6 @@ public:
   static QString unlimited;
   static QString simulationOutput;
   static QString cancelSimulation;
-  static QString fetchInterfaceData;
-  static QString fetchInterfaceDataTip;
-  static QString alignInterfaces;
-  static QString alignInterfacesTip;
-  static QString tlmCoSimulationSetup;
-  static QString tlmCoSimulationSetupTip;
-  static QString tlmCoSimulation;
   static QString animationChooseFile;
   static QString animationChooseFileTip;
   static QString animationInitialize;
@@ -509,9 +502,6 @@ public:
     CLASS_NOT_FOUND,
     BREAKPOINT_INSERT_NOT_SAVED,
     BREAKPOINT_INSERT_NOT_MODELICA_CLASS,
-    TLMMANAGER_NOT_SET,
-    COMPOSITEMODEL_UNSAVED,
-    TLMCOSIMULATION_ALREADY_RUNNING,
     TERMINAL_COMMAND_NOT_SET,
     UNABLE_FIND_COMPONENT_IN_CONNECTION,
     UNABLE_FIND_COMPONENT_IN_CONNECTION_NEW,

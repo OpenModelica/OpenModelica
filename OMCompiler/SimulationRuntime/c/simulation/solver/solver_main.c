@@ -314,7 +314,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
 #ifdef OMC_HAVE_IPOPT
   case S_OPTIMIZATION:
   {
-    infoStreamPrint(LOG_SOLVER, 0, "Initializing optimizer");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Initializing optimizer");
     /* solverInfo->solverData = malloc(sizeof(OptData)); */
     break;
   }
@@ -336,13 +336,13 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
       usedImpRKOrder = atoi(omc_flagValue[FLAG_IMPRK_ORDER]);
       if (usedImpRKOrder>6 || usedImpRKOrder<1)
       {
-        warningStreamPrint(LOG_STDOUT, 0, "Selected order %d is out of range[1-6]. Use default order %d", usedImpRKOrder, DEFAULT_IMPRK_ORDER);
+        warningStreamPrint(OMC_LOG_STDOUT, 0, "Selected order %d is out of range[1-6]. Use default order %d", usedImpRKOrder, DEFAULT_IMPRK_ORDER);
         usedImpRKOrder = DEFAULT_IMPRK_ORDER;
       }
     }
 
     /* Allocate implicit Runge-Kutta methods */
-    infoStreamPrint(LOG_SOLVER, 0, "Initializing Runge-Kutta method with order %d", usedImpRKOrder);
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Initializing Runge-Kutta method with order %d", usedImpRKOrder);
     solverInfo->solverData = calloc(1, sizeof(KINODE));
     allocateKinOde(data, threadData, solverInfo, usedImpRKOrder);
     break;
@@ -351,7 +351,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   {
     IDA_SOLVER* idaData = NULL;
     /* Allocate ida working data */
-    infoStreamPrint(LOG_SOLVER, 0, "Initializing IDA DAE Solver");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Initializing IDA DAE Solver");
     idaData = (IDA_SOLVER*) malloc(sizeof(IDA_SOLVER));
     retValue = ida_solver_initial(data, threadData, solverInfo, idaData);
     solverInfo->solverData = idaData;
@@ -360,7 +360,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   case S_CVODE:
   {
     CVODE_SOLVER* cvodeData = NULL;
-    infoStreamPrint(LOG_SOLVER, 0, "Initializing CVODE ODE Solver");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Initializing CVODE ODE Solver");
     cvodeData = (CVODE_SOLVER*) calloc(1, sizeof(CVODE_SOLVER));
     assertStreamPrint(threadData, cvodeData != NULL, "Out of memory");
     retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData, 0 /* not FMI */);
@@ -369,7 +369,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   }
 #endif
   default:
-    errorStreamPrint(LOG_SOLVER, 0, "Solver %s disabled on this configuration", SOLVER_METHOD_NAME[solverInfo->solverMethod]);
+    errorStreamPrint(OMC_LOG_SOLVER, 0, "Solver %s disabled on this configuration", SOLVER_METHOD_NAME[solverInfo->solverMethod]);
     TRACE_POP
     return 1;
   }
@@ -495,18 +495,18 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
 #endif
     if(initialization(data, threadData, init_initMethod, init_file, init_time))
     {
-      warningStreamPrint(LOG_STDOUT, 0, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.");
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.");
       simInfo->stopTime = simInfo->startTime;
       retValue = -1;
     }
     if (!retValue)
     {
       if (data->simulationInfo->homotopySteps == 0) {
-        infoStreamPrint(LOG_SUCCESS, 0, "The initialization finished successfully without homotopy method.");
+        infoStreamPrint(OMC_LOG_SUCCESS, 0, "The initialization finished successfully without homotopy method.");
       }
       else {
         usedLocal = data->callback->useHomotopy == 0 || data->callback->useHomotopy == 3;
-        infoStreamPrint(LOG_SUCCESS, 0, "The initialization finished successfully with %d %shomotopy steps.", data->simulationInfo->homotopySteps, usedLocal? "local ":"");
+        infoStreamPrint(OMC_LOG_SUCCESS, 0, "The initialization finished successfully with %d %shomotopy steps.", data->simulationInfo->homotopySteps, usedLocal? "local ":"");
       }
     }
 
@@ -518,13 +518,13 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
     if (!success)
     {
       retValue =  -1;
-      infoStreamPrint(LOG_ASSERT, 0, "simulation terminated by an assertion at initialization");
+      infoStreamPrint(OMC_LOG_ASSERT, 0, "simulation terminated by an assertion at initialization");
     }
   }
 
   /* adrpo: write the parameter data in the file once again after bound parameters and initialization! */
   sim_result.writeParameterData(&sim_result,data,threadData);
-  infoStreamPrint(LOG_SOLVER, 0, "Wrote parameters to the file after initialization (for output formats that support this)");
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "Wrote parameters to the file after initialization (for output formats that support this)");
 
   /* Initialization complete */
   if (measure_time_flag) {
@@ -556,7 +556,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
 
   /* Last step with terminal()=true */
   if (solverInfo->currentTime >= simInfo->stopTime && solverInfo->solverMethod != S_OPTIMIZATION) {
-    infoStreamPrint(LOG_EVENTS_V, 0, "terminal event at stop time %g", solverInfo->currentTime);
+    infoStreamPrint(OMC_LOG_EVENTS_V, 0, "terminal event at stop time %g", solverInfo->currentTime);
     data->simulationInfo->terminal = 1;
     updateDiscreteSystem(data, threadData);
 
@@ -582,35 +582,35 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     writeOutputVars(strdup(outputVariablesAtEnd), data);
   }
 
-  if(ACTIVE_STREAM(LOG_STATS))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_STATS))
   {
     rt_accumulate(SIM_TIMER_TOTAL);
 
-    infoStreamPrint(LOG_STATS, 1, "### STATISTICS ###");
+    infoStreamPrint(OMC_LOG_STATS, 1, "### STATISTICS ###");
 
     total100 = rt_accumulated(SIM_TIMER_TOTAL)/100.0;
 
-    infoStreamPrint(LOG_STATS, 1, "timer");
-    infoStreamPrint(LOG_STATS, 0, "%12gs          reading init.xml", rt_accumulated(SIM_TIMER_INIT_XML));
-    infoStreamPrint(LOG_STATS, 0, "%12gs          reading info.xml", rt_accumulated(SIM_TIMER_INFO_XML));
-    infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] pre-initialization", rt_accumulated(SIM_TIMER_PREINIT), rt_accumulated(SIM_TIMER_PREINIT)/total100);
-    infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] initialization", rt_accumulated(SIM_TIMER_INIT), rt_accumulated(SIM_TIMER_INIT)/total100);
-    infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] steps", rt_accumulated(SIM_TIMER_STEP), rt_accumulated(SIM_TIMER_STEP)/total100);
-    infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] solver (excl. callbacks)", rt_accumulated(SIM_TIMER_SOLVER), rt_accumulated(SIM_TIMER_SOLVER)/total100);
-    infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] creating output-file", rt_accumulated(SIM_TIMER_OUTPUT), rt_accumulated(SIM_TIMER_OUTPUT)/total100);
-    infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] event-handling", rt_accumulated(SIM_TIMER_EVENT), rt_accumulated(SIM_TIMER_EVENT)/total100);
-    infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] overhead", rt_accumulated(SIM_TIMER_OVERHEAD), rt_accumulated(SIM_TIMER_OVERHEAD)/total100);
+    infoStreamPrint(OMC_LOG_STATS, 1, "timer");
+    infoStreamPrint(OMC_LOG_STATS, 0, "%12gs          reading init.xml", rt_accumulated(SIM_TIMER_INIT_XML));
+    infoStreamPrint(OMC_LOG_STATS, 0, "%12gs          reading info.xml", rt_accumulated(SIM_TIMER_INFO_XML));
+    infoStreamPrint(OMC_LOG_STATS, 0, "%12gs [%5.1f%%] pre-initialization", rt_accumulated(SIM_TIMER_PREINIT), rt_accumulated(SIM_TIMER_PREINIT)/total100);
+    infoStreamPrint(OMC_LOG_STATS, 0, "%12gs [%5.1f%%] initialization", rt_accumulated(SIM_TIMER_INIT), rt_accumulated(SIM_TIMER_INIT)/total100);
+    infoStreamPrint(OMC_LOG_STATS, 0, "%12gs [%5.1f%%] steps", rt_accumulated(SIM_TIMER_STEP), rt_accumulated(SIM_TIMER_STEP)/total100);
+    infoStreamPrint(OMC_LOG_STATS, 0, "%12gs [%5.1f%%] solver (excl. callbacks)", rt_accumulated(SIM_TIMER_SOLVER), rt_accumulated(SIM_TIMER_SOLVER)/total100);
+    infoStreamPrint(OMC_LOG_STATS, 0, "%12gs [%5.1f%%] creating output-file", rt_accumulated(SIM_TIMER_OUTPUT), rt_accumulated(SIM_TIMER_OUTPUT)/total100);
+    infoStreamPrint(OMC_LOG_STATS, 0, "%12gs [%5.1f%%] event-handling", rt_accumulated(SIM_TIMER_EVENT), rt_accumulated(SIM_TIMER_EVENT)/total100);
+    infoStreamPrint(OMC_LOG_STATS, 0, "%12gs [%5.1f%%] overhead", rt_accumulated(SIM_TIMER_OVERHEAD), rt_accumulated(SIM_TIMER_OVERHEAD)/total100);
 
     t = rt_accumulated(SIM_TIMER_TOTAL)-rt_accumulated(SIM_TIMER_OVERHEAD)-rt_accumulated(SIM_TIMER_EVENT)-rt_accumulated(SIM_TIMER_OUTPUT)-rt_accumulated(SIM_TIMER_STEP)-rt_accumulated(SIM_TIMER_INIT)-rt_accumulated(SIM_TIMER_PREINIT)-rt_accumulated(SIM_TIMER_SOLVER);
-    infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] %s", t, t/total100, S_OPTIMIZATION == solverInfo->solverMethod ? "optimization" : "simulation");
+    infoStreamPrint(OMC_LOG_STATS, 0, "%12gs [%5.1f%%] %s", t, t/total100, S_OPTIMIZATION == solverInfo->solverMethod ? "optimization" : "simulation");
 
-    infoStreamPrint(LOG_STATS, 0, "%12gs [100.0%%] total", rt_accumulated(SIM_TIMER_TOTAL));
-    messageClose(LOG_STATS);
+    infoStreamPrint(OMC_LOG_STATS, 0, "%12gs [100.0%%] total", rt_accumulated(SIM_TIMER_TOTAL));
+    messageClose(OMC_LOG_STATS);
 
-    infoStreamPrint(LOG_STATS, 1, "events");
-    infoStreamPrint(LOG_STATS, 0, "%5ld state events", solverInfo->stateEvents);
-    infoStreamPrint(LOG_STATS, 0, "%5ld time events", solverInfo->sampleEvents);
-    messageClose(LOG_STATS);
+    infoStreamPrint(OMC_LOG_STATS, 1, "events");
+    infoStreamPrint(OMC_LOG_STATS, 0, "%5ld state events", solverInfo->stateEvents);
+    infoStreamPrint(OMC_LOG_STATS, 0, "%5ld time events", solverInfo->sampleEvents);
+    messageClose(OMC_LOG_STATS);
 
     if(S_OPTIMIZATION == solverInfo->solverMethod || /* skip solver statistics for optimization */
        S_QSS == solverInfo->solverMethod) /* skip also for qss, since not available*/
@@ -621,73 +621,73 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       /* save stats before print */
       addSolverStats(&(solverInfo->solverStats), &(solverInfo->solverStatsTmp));
 
-      infoStreamPrint(LOG_STATS, 1, "solver: %s", SOLVER_METHOD_NAME[solverInfo->solverMethod]);
-      infoStreamPrint(LOG_STATS, 0, "%5d steps taken", solverInfo->solverStats.nStepsTaken);
-      infoStreamPrint(LOG_STATS, 0, "%5d calls of functionODE", solverInfo->solverStats.nCallsODE);
-      infoStreamPrint(LOG_STATS, 0, "%5d evaluations of jacobian", solverInfo->solverStats.nCallsJacobian);
-      infoStreamPrint(LOG_STATS, 0, "%5d error test failures", solverInfo->solverStats.nErrorTestFailures);
-      infoStreamPrint(LOG_STATS, 0, "%5d convergence test failures", solverInfo->solverStats.nConvergenveTestFailures);
-      infoStreamPrint(LOG_STATS, 0, "%gs time of jacobian evaluation", rt_accumulated(SIM_TIMER_JACOBIAN));
+      infoStreamPrint(OMC_LOG_STATS, 1, "solver: %s", SOLVER_METHOD_NAME[solverInfo->solverMethod]);
+      infoStreamPrint(OMC_LOG_STATS, 0, "%5d steps taken", solverInfo->solverStats.nStepsTaken);
+      infoStreamPrint(OMC_LOG_STATS, 0, "%5d calls of functionODE", solverInfo->solverStats.nCallsODE);
+      infoStreamPrint(OMC_LOG_STATS, 0, "%5d evaluations of jacobian", solverInfo->solverStats.nCallsJacobian);
+      infoStreamPrint(OMC_LOG_STATS, 0, "%5d error test failures", solverInfo->solverStats.nErrorTestFailures);
+      infoStreamPrint(OMC_LOG_STATS, 0, "%5d convergence test failures", solverInfo->solverStats.nConvergenveTestFailures);
+      infoStreamPrint(OMC_LOG_STATS, 0, "%gs time of jacobian evaluation", rt_accumulated(SIM_TIMER_JACOBIAN));
 #ifdef USE_PARJAC
-      infoStreamPrint(LOG_STATS, 0, "%i OpenMP-threads used for jacobian evaluation", omc_get_max_threads());
+      infoStreamPrint(OMC_LOG_STATS, 0, "%i OpenMP-threads used for jacobian evaluation", omc_get_max_threads());
       int chunk_size;
       omp_sched_t kind;
       omp_get_schedule(&kind, &chunk_size);
-      infoStreamPrint(LOG_STATS, 0, "Schedule: %i Chunk Size: %i", kind, chunk_size);
+      infoStreamPrint(OMC_LOG_STATS, 0, "Schedule: %i Chunk Size: %i", kind, chunk_size);
 #endif
 
-      messageClose(LOG_STATS);
+      messageClose(OMC_LOG_STATS);
     }
 
-    infoStreamPrint(LOG_STATS_V, 1, "function calls");
+    infoStreamPrint(OMC_LOG_STATS_V, 1, "function calls");
     if (compiledInDAEMode)
     {
-      infoStreamPrint(LOG_STATS_V, 1, "%5u calls of functionDAE", rt_ncall(SIM_TIMER_DAE));
-      infoStreamPrint(LOG_STATS_V, 0, "%12gs [%5.1f%%]", rt_accumulated(SIM_TIMER_DAE), rt_accumulated(SIM_TIMER_DAE)/total100);
-      messageClose(LOG_STATS_V);
+      infoStreamPrint(OMC_LOG_STATS_V, 1, "%5u calls of functionDAE", rt_ncall(SIM_TIMER_DAE));
+      infoStreamPrint(OMC_LOG_STATS_V, 0, "%12gs [%5.1f%%]", rt_accumulated(SIM_TIMER_DAE), rt_accumulated(SIM_TIMER_DAE)/total100);
+      messageClose(OMC_LOG_STATS_V);
     }
     if (data->simulationInfo->callStatistics.functionODE) {
-      infoStreamPrint(LOG_STATS_V, 1, "%5ld calls of functionODE", data->simulationInfo->callStatistics.functionODE);
-      infoStreamPrint(LOG_STATS_V, 0, "%12gs [%5.1f%%]", rt_accumulated(SIM_TIMER_FUNCTION_ODE), rt_accumulated(SIM_TIMER_FUNCTION_ODE)/total100);
-      messageClose(LOG_STATS_V);
+      infoStreamPrint(OMC_LOG_STATS_V, 1, "%5ld calls of functionODE", data->simulationInfo->callStatistics.functionODE);
+      infoStreamPrint(OMC_LOG_STATS_V, 0, "%12gs [%5.1f%%]", rt_accumulated(SIM_TIMER_FUNCTION_ODE), rt_accumulated(SIM_TIMER_FUNCTION_ODE)/total100);
+      messageClose(OMC_LOG_STATS_V);
     }
 
     if (rt_ncall(SIM_TIMER_RESIDUALS)) {
-      infoStreamPrint(LOG_STATS_V, 1, "%5d calls of functionODE_residual", rt_ncall(SIM_TIMER_RESIDUALS));
-      infoStreamPrint(LOG_STATS_V, 0, "%12gs [%5.1f%%]", rt_accumulated(SIM_TIMER_RESIDUALS), rt_accumulated(SIM_TIMER_RESIDUALS)/total100);
-      messageClose(LOG_STATS_V);
+      infoStreamPrint(OMC_LOG_STATS_V, 1, "%5d calls of functionODE_residual", rt_ncall(SIM_TIMER_RESIDUALS));
+      infoStreamPrint(OMC_LOG_STATS_V, 0, "%12gs [%5.1f%%]", rt_accumulated(SIM_TIMER_RESIDUALS), rt_accumulated(SIM_TIMER_RESIDUALS)/total100);
+      messageClose(OMC_LOG_STATS_V);
     }
 
     if (data->simulationInfo->callStatistics.functionAlgebraics) {
-      infoStreamPrint(LOG_STATS_V, 1, "%5ld calls of functionAlgebraics", data->simulationInfo->callStatistics.functionAlgebraics);
-      infoStreamPrint(LOG_STATS_V, 0, "%12gs [%5.1f%%]", rt_accumulated(SIM_TIMER_ALGEBRAICS), rt_accumulated(SIM_TIMER_ALGEBRAICS)/total100);
-      messageClose(LOG_STATS_V);
+      infoStreamPrint(OMC_LOG_STATS_V, 1, "%5ld calls of functionAlgebraics", data->simulationInfo->callStatistics.functionAlgebraics);
+      infoStreamPrint(OMC_LOG_STATS_V, 0, "%12gs [%5.1f%%]", rt_accumulated(SIM_TIMER_ALGEBRAICS), rt_accumulated(SIM_TIMER_ALGEBRAICS)/total100);
+      messageClose(OMC_LOG_STATS_V);
     }
 
-    infoStreamPrint(LOG_STATS_V, 1, "%5d evaluations of jacobian", rt_ncall(SIM_TIMER_JACOBIAN));
-    infoStreamPrint(LOG_STATS_V, 0, "%12gs [%5.1f%%]", rt_accumulated(SIM_TIMER_JACOBIAN), rt_accumulated(SIM_TIMER_JACOBIAN)/total100);
-    messageClose(LOG_STATS_V);
+    infoStreamPrint(OMC_LOG_STATS_V, 1, "%5d evaluations of jacobian", rt_ncall(SIM_TIMER_JACOBIAN));
+    infoStreamPrint(OMC_LOG_STATS_V, 0, "%12gs [%5.1f%%]", rt_accumulated(SIM_TIMER_JACOBIAN), rt_accumulated(SIM_TIMER_JACOBIAN)/total100);
+    messageClose(OMC_LOG_STATS_V);
 
-    infoStreamPrint(LOG_STATS_V, 0, "%5ld calls of updateDiscreteSystem", data->simulationInfo->callStatistics.updateDiscreteSystem);
-    infoStreamPrint(LOG_STATS_V, 0, "%5ld calls of functionZeroCrossingsEquations", data->simulationInfo->callStatistics.functionZeroCrossingsEquations);
+    infoStreamPrint(OMC_LOG_STATS_V, 0, "%5ld calls of updateDiscreteSystem", data->simulationInfo->callStatistics.updateDiscreteSystem);
+    infoStreamPrint(OMC_LOG_STATS_V, 0, "%5ld calls of functionZeroCrossingsEquations", data->simulationInfo->callStatistics.functionZeroCrossingsEquations);
 
-    infoStreamPrint(LOG_STATS_V, 1, "%5ld calls of functionZeroCrossings", data->simulationInfo->callStatistics.functionZeroCrossings);
-    infoStreamPrint(LOG_STATS_V, 0, "%12gs [%5.1f%%]", rt_accumulated(SIM_TIMER_ZC), rt_accumulated(SIM_TIMER_ZC)/total100);
-    messageClose(LOG_STATS_V);
+    infoStreamPrint(OMC_LOG_STATS_V, 1, "%5ld calls of functionZeroCrossings", data->simulationInfo->callStatistics.functionZeroCrossings);
+    infoStreamPrint(OMC_LOG_STATS_V, 0, "%12gs [%5.1f%%]", rt_accumulated(SIM_TIMER_ZC), rt_accumulated(SIM_TIMER_ZC)/total100);
+    messageClose(OMC_LOG_STATS_V);
 
-    messageClose(LOG_STATS_V);
+    messageClose(OMC_LOG_STATS_V);
 
-    infoStreamPrint(LOG_STATS_V, 1, "linear systems");
+    infoStreamPrint(OMC_LOG_STATS_V, 1, "linear systems");
     for(ui=0; ui<data->modelData->nLinearSystems; ui++)
-      printLinearSystemSolvingStatistics(data, ui, LOG_STATS_V);
-    messageClose(LOG_STATS_V);
+      printLinearSystemSolvingStatistics(data, ui, OMC_LOG_STATS_V);
+    messageClose(OMC_LOG_STATS_V);
 
-    infoStreamPrint(LOG_STATS_V, 1, "non-linear systems");
+    infoStreamPrint(OMC_LOG_STATS_V, 1, "non-linear systems");
     for(ui=0; ui<data->modelData->nNonLinearSystems; ui++)
-      printNonLinearSystemSolvingStatistics(&data->simulationInfo->nonlinearSystemData[ui], LOG_STATS_V);
-    messageClose(LOG_STATS_V);
+      printNonLinearSystemSolvingStatistics(&data->simulationInfo->nonlinearSystemData[ui], OMC_LOG_STATS_V);
+    messageClose(OMC_LOG_STATS_V);
 
-    messageClose(LOG_STATS);
+    messageClose(OMC_LOG_STATS);
     rt_tick(SIM_TIMER_TOTAL);
   }
 
@@ -727,14 +727,14 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   case S_IMPEULER:
   case S_TRAPEZOID:
   case S_IMPRUNGEKUTTA:
-    warningStreamPrint(LOG_STDOUT, 0, "Sundial/kinsol is needed but not available. Please choose other solver.");
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Sundial/kinsol is needed but not available. Please choose other solver.");
     TRACE_POP
     return 1;
 #endif
 
 #ifndef OMC_HAVE_IPOPT
   case S_OPTIMIZATION:
-    warningStreamPrint(LOG_STDOUT, 0, "Ipopt is needed but not available.");
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Ipopt is needed but not available.");
     TRACE_POP
     return 1;
 #endif
@@ -751,16 +751,16 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
    * allow stepSize to be zero if startTime == stopTime.
    */
   if ((simInfo->stepSize < simInfo->minStepSize) && (simInfo->stopTime > simInfo->startTime)){
-    warningStreamPrint(LOG_STDOUT, 0, "The step-size %g is too small. Adjust the step-size to %g.", simInfo->stepSize, simInfo->minStepSize);
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "The step-size %g is too small. Adjust the step-size to %g.", simInfo->stepSize, simInfo->minStepSize);
     simInfo->stepSize = simInfo->minStepSize;
     simInfo->numSteps = round((simInfo->stopTime - simInfo->startTime)/simInfo->stepSize);
   }
   /* Check step size is not larger then stopTime-startTime, up to 6 decimals
    * Ignored when linearizing model */
   if (!data->modelData->create_linearmodel && simInfo->stepSize > (simInfo->stopTime - simInfo->startTime + 1e-7)) {
-    warningStreamPrint(LOG_STDOUT, 1, "Integrator step size greater than length of experiment");
-    infoStreamPrint(LOG_STDOUT, 0, "start time: %f, stop time: %f, integrator step size: %f",simInfo->startTime, simInfo->stopTime, simInfo->stepSize);
-    messageClose(LOG_STDOUT);
+    warningStreamPrint(OMC_LOG_STDOUT, 1, "Integrator step size greater than length of experiment");
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "start time: %f, stop time: %f, integrator step size: %f",simInfo->startTime, simInfo->stopTime, simInfo->stepSize);
+    messageClose(OMC_LOG_STDOUT);
   }
 #if !defined(OMC_EMCC)
     MMC_TRY_INTERNAL(simulationJumpBuffer)
@@ -802,7 +802,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   data->embeddedServerState = embedded_server_init(data, data->localData[0]->timeValue, solverInfo.currentStepSize, argv_0, omc_real_time_sync_update, port);
   /* If an embedded server is specified */
   if (dllHandle != NULL) {
-    infoStreamPrint(LOG_STDOUT, 0, "The embedded server is initialized.");
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "The embedded server is initialized.");
   }
   wait_for_step(data->embeddedServerState);
 #endif
@@ -818,7 +818,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
         sim_result.emit(&sim_result, data, threadData);
       }
 
-      infoStreamPrint(LOG_SOLVER, 0, "The model has no time changing variables, no integration will be performed.");
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "The model has no time changing variables, no integration will be performed.");
       solverInfo.currentTime = simInfo->stopTime;
       data->localData[0]->timeValue = simInfo->stopTime;
       overwriteOldSimulationData(data);
@@ -830,7 +830,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
       /* overwrite the whole ring-buffer with initialized values */
       overwriteOldSimulationData(data);
 
-      infoStreamPrint(LOG_SOLVER, 0, "Start numerical integration (startTime: %g, stopTime: %g)", simInfo->startTime, simInfo->stopTime);
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "Start numerical integration (startTime: %g, stopTime: %g)", simInfo->startTime, simInfo->stopTime);
       retVal = data->callback->performQSSSimulation(data, threadData, &solverInfo);
       omc_alloc_interface.collect_a_little();
 
@@ -851,7 +851,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
       /* store all values for non-dassl event search */
       storeOldValues(data);
 
-      infoStreamPrint(LOG_SOLVER, 0, "Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
       retVal = data->callback->performSimulation(data, threadData, &solverInfo);
       omc_alloc_interface.collect_a_little();
       /* terminate the simulation */
@@ -864,7 +864,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   if (data->real_time_sync.enabled) {
     int tMaxLate=0;
     const char *unit = prettyPrintNanoSec(data->real_time_sync.maxLate, &tMaxLate);
-    infoStreamPrint(LOG_RT, 0, "Maximum real-time latency was (positive=missed dealine, negative is slack): %d %s", tMaxLate, unit);
+    infoStreamPrint(OMC_LOG_RT, 0, "Maximum real-time latency was (positive=missed dealine, negative is slack): %d %s", tMaxLate, unit);
   }
 #if !defined(OMC_MINIMAL_RUNTIME)
   embedded_server_deinit(data->embeddedServerState);
@@ -885,7 +885,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   }
 
   if (!retVal)
-    infoStreamPrint(LOG_SUCCESS, 0, "The simulation finished successfully.");
+    infoStreamPrint(OMC_LOG_SUCCESS, 0, "The simulation finished successfully.");
 
   TRACE_POP
   return retVal;
@@ -1092,8 +1092,8 @@ static int sym_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* so
   else
   /* in case desired step size is too small */
   {
-    infoStreamPrint(LOG_SOLVER, 0, "Desired step to small try next one");
-    infoStreamPrint(LOG_SOLVER, 0, "Interpolate linear");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Desired step to small try next one");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Interpolate linear");
 
     /* explicit euler step*/
     for(i = 0; i < nStates; i++)

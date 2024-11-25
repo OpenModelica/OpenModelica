@@ -673,14 +673,6 @@ DeleteComponentCommand::DeleteComponentCommand(Element *pComponent, GraphicsView
   //   // save component modifiers before deleting if any
   //   mpComponent->getElementInfo()->getModifiersMap(MainWindow::instance()->getOMCProxy(), mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mpComponent);
   // }
-  //Save sub-model parameters for composite models
-  if (pGraphicsView->getModelWidget()->getLibraryTreeItem()->isCompositeModel()) {
-    CompositeModelEditor *pEditor = qobject_cast<CompositeModelEditor*>(pGraphicsView->getModelWidget()->getEditor());
-    mParameterNames = pEditor->getParameterNames(pComponent->getName());  //Assume submodel; otherwise returned list is empty
-    foreach(QString parName, mParameterNames) {
-      mParameterValues.append(pEditor->getParameterValue(pComponent->getName(), parName));
-    }
-  }
 }
 
 /*!
@@ -748,13 +740,6 @@ void DeleteComponentCommand::undo()
   // } else {
   //   UpdateElementAttributesCommand::updateComponentModifiers(mpComponent, *mpComponent->getElementInfo());
   // }
-  // Restore sub-model parameters for composite models
-  if (pModelWidget->getLibraryTreeItem()->isCompositeModel()) {
-    CompositeModelEditor *pEditor = qobject_cast<CompositeModelEditor*>(pModelWidget->getEditor());
-    for(int i=0; i<mParameterNames.size(); ++i) {
-      pEditor->setParameterValue(mpComponent->getName(),mParameterNames[i],mParameterValues[i]);
-    }
-  }
 }
 
 AddConnectionCommand::AddConnectionCommand(LineAnnotation *pConnectionLineAnnotation, bool addConnection, UndoCommand *pParent)
@@ -830,43 +815,6 @@ void UpdateConnectionCommand::redrawConnectionWithAnnotation(QString const& anno
 {
   auto updateFunction = std::bind(&LineAnnotation::updateConnectionAnnotation, mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->redraw(annotation, updateFunction);
-}
-
-UpdateCompositeModelConnection::UpdateCompositeModelConnection(LineAnnotation *pConnectionLineAnnotation, CompositeModelConnection oldCompositeModelConnection,
-                                                               CompositeModelConnection newCompositeModelConnection, UndoCommand *pParent)
-  : UndoCommand(pParent)
-{
-  mpConnectionLineAnnotation = pConnectionLineAnnotation;
-  mOldCompositeModelConnection = oldCompositeModelConnection;
-  mNewCompositeModelConnection = newCompositeModelConnection;
-  setText(QString("Update CompositeModel Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartElementName(),
-                                                                          mpConnectionLineAnnotation->getEndElementName()));
-}
-
-/*!
- * \brief UpdateCompositeModelConnection::redoInternal
- * redoInternal the UpdateCompositeModelConnection.
- */
-void UpdateCompositeModelConnection::redoInternal()
-{
-  mpConnectionLineAnnotation->setDelay(mNewCompositeModelConnection.mDelay);
-  mpConnectionLineAnnotation->setZf(mNewCompositeModelConnection.mZf);
-  mpConnectionLineAnnotation->setZfr(mNewCompositeModelConnection.mZfr);
-  mpConnectionLineAnnotation->setAlpha(mNewCompositeModelConnection.mAlpha);
-  mpConnectionLineAnnotation->getGraphicsView()->updateConnectionInClass(mpConnectionLineAnnotation);
-}
-
-/*!
- * \brief UpdateCompositeModelConnection::undo
- * Undo the UpdateCompositeModelConnection.
- */
-void UpdateCompositeModelConnection::undo()
-{
-  mpConnectionLineAnnotation->setDelay(mOldCompositeModelConnection.mDelay);
-  mpConnectionLineAnnotation->setZf(mOldCompositeModelConnection.mZf);
-  mpConnectionLineAnnotation->setZfr(mOldCompositeModelConnection.mZfr);
-  mpConnectionLineAnnotation->setAlpha(mOldCompositeModelConnection.mAlpha);
-  mpConnectionLineAnnotation->getGraphicsView()->updateConnectionInClass(mpConnectionLineAnnotation);
 }
 
 DeleteConnectionCommand::DeleteConnectionCommand(LineAnnotation *pConnectionLineAnnotation, UndoCommand *pParent)
@@ -1294,176 +1242,6 @@ void UpdateClassSimulationFlagsAnnotationCommand::redoInternal()
 void UpdateClassSimulationFlagsAnnotationCommand::undo()
 {
   MainWindow::instance()->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mOldSimulationFlags);
-}
-
-UpdateSubModelAttributesCommand::UpdateSubModelAttributesCommand(Element *pComponent, const ElementInfo &oldComponentInfo,
-                                                                 const ElementInfo &newComponentInfo,
-                                                                 QStringList &parameterNames, QStringList &oldParameterValues,
-                                                                 QStringList &newParameterValues, UndoCommand *pParent)
-  : UndoCommand(pParent)
-{
-  mpComponent = pComponent;
-  mOldComponentInfo.updateElementInfo(&oldComponentInfo);
-  mNewComponentInfo.updateElementInfo(&newComponentInfo);
-  setText(QString("Update SubModel %1 Attributes").arg(mpComponent->getName()));
-
-  //Save sub-model parameters for composite models
-  mParameterNames = parameterNames;
-  mOldParameterValues = oldParameterValues;
-  mNewParameterValues = newParameterValues;
-}
-
-/*!
- * \brief UpdateSubModelAttributesCommand::redoInternal
- * redoInternal the UpdateSubModelAttributesCommand.
- */
-void UpdateSubModelAttributesCommand::redoInternal()
-{
-  CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
-  pCompositeModelEditor->updateSubModelParameters(mpComponent->getName(), mNewComponentInfo.getStartCommand(),
-                                                  mNewComponentInfo.getExactStep() ? "true" : "false", mNewComponentInfo.getGeometryFile());
-  mpComponent->getElementInfo()->setStartCommand(mNewComponentInfo.getStartCommand());
-  mpComponent->getElementInfo()->setExactStep(mNewComponentInfo.getExactStep());
-  mpComponent->getElementInfo()->setGeometryFile(mNewComponentInfo.getGeometryFile());
-
-  if(mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isCompositeModel()) {
-    for(int i=0; i<mParameterNames.size(); ++i) {
-      pCompositeModelEditor->setParameterValue(mpComponent->getName(), mParameterNames[i], mNewParameterValues[i]);
-    }
-  }
-}
-
-/*!
- * \brief UpdateSubModelAttributesCommand::undo
- * Undo the UpdateSubModelAttributesCommand.
- */
-void UpdateSubModelAttributesCommand::undo()
-{
-  CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
-  pCompositeModelEditor->updateSubModelParameters(mpComponent->getName(), mOldComponentInfo.getStartCommand(),
-                                                  mOldComponentInfo.getExactStep() ? "true" : "false", mOldComponentInfo.getGeometryFile());
-  mpComponent->getElementInfo()->setStartCommand(mOldComponentInfo.getStartCommand());
-  mpComponent->getElementInfo()->setExactStep(mOldComponentInfo.getExactStep());
-  mpComponent->getElementInfo()->setGeometryFile(mOldComponentInfo.getGeometryFile());
-
-  if(mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isCompositeModel()) {
-    for(int i=0; i<mParameterNames.size(); ++i) {
-      pCompositeModelEditor->setParameterValue(mpComponent->getName(), mParameterNames[i], mOldParameterValues[i]);
-    }
-  }
-}
-
-UpdateSimulationParamsCommand::UpdateSimulationParamsCommand(LibraryTreeItem *pLibraryTreeItem, QString oldStartTime, QString newStartTime, QString oldStopTime,
-                                                             QString newStopTime, UndoCommand *pParent )
-  : UndoCommand(pParent)
-{
-  mpLibraryTreeItem = pLibraryTreeItem;
-  mOldStartTime = oldStartTime;
-  mNewStartTime = newStartTime;
-  mOldStopTime = oldStopTime;
-  mNewStopTime = newStopTime;
-  setText(QString("Update %1 simulation parameter").arg(mpLibraryTreeItem->getNameStructure()));
-}
-
-/*!
- * \brief UpdateSimulationParamsCommand::redoInternal
- * redoInternal the UpdateSimulationParamsCommand.
- */
-void UpdateSimulationParamsCommand::redoInternal()
-{
-  CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpLibraryTreeItem->getModelWidget()->getEditor());
-  pCompositeModelEditor->updateSimulationParams(mNewStartTime, mNewStopTime);
-}
-
-/*!
- * \brief UpdateSimulationParamsCommand::undo
- * Undo the UpdateSimulationParamsCommand.
- */
-void UpdateSimulationParamsCommand::undo()
-{
-  CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpLibraryTreeItem->getModelWidget()->getEditor());
-  pCompositeModelEditor->updateSimulationParams(mOldStartTime, mOldStopTime);
-}
-
-/*!
- * \brief AlignInterfacesCommand::AlignInterfacesCommand
- * \param pEditor
- * \param oldText
- * \param newText
- * \param pParent
- */
-AlignInterfacesCommand::AlignInterfacesCommand(CompositeModelEditor *pCompositeModelEditor, QString fromInterface, QString toInterface,
-                                               QGenericMatrix<3,1,double> oldPos, QGenericMatrix<3,1,double> oldRot,
-                                               QGenericMatrix<3,1,double> newPos, QGenericMatrix<3,1,double> newRot,
-                                               LineAnnotation *pConnectionLineAnnotation, UndoCommand *pParent)
-  : UndoCommand(pParent)
-{
-  mpCompositeModelEditor = pCompositeModelEditor;
-  mFromInterface = fromInterface;
-  mToInterface = toInterface;
-  mOldPos = oldPos;
-  mOldRot = oldRot;
-  mNewPos = newPos;
-  mNewRot = newRot;
-  mpConnectionLineAnnotation = pConnectionLineAnnotation;
-}
-
-/*!
- * \brief AlignInterfacesCommand::redoInternal
- * redoInternal the align interfaces command
- */
-void AlignInterfacesCommand::redoInternal()
-{
-  mpCompositeModelEditor->updateSubModelOrientation(mFromInterface.split(".").first(), mNewPos, mNewRot);
-  //qDebug() << mpCompositeModelEditor->interfacesAligned(mFromInterface, mToInterface);
-  if (mpConnectionLineAnnotation) {
-    mpConnectionLineAnnotation->setAligned(mpCompositeModelEditor->interfacesAligned(mFromInterface, mToInterface));
-  }
-}
-
-/*!
- * \brief AlignInterfacesCommand::undo
- * Undo the align interfaces command
- */
-void AlignInterfacesCommand::undo()
-{
-  mpCompositeModelEditor->updateSubModelOrientation(mFromInterface.split(".").first(), mOldPos, mOldRot);
-  //qDebug() << mpCompositeModelEditor->interfacesAligned(mFromInterface, mToInterface);
-  if (mpConnectionLineAnnotation) {
-    mpConnectionLineAnnotation->setAligned(mpCompositeModelEditor->interfacesAligned(mFromInterface, mToInterface));
-  }
-}
-
-RenameCompositeModelCommand::RenameCompositeModelCommand(CompositeModelEditor *pCompositeModelEditor, QString oldCompositeModelName,
-                                                         QString newCompositeModelName, UndoCommand *pParent)
-  : UndoCommand(pParent)
-{
-  mpCompositeModelEditor = pCompositeModelEditor;
-  mOldCompositeModelName = oldCompositeModelName;
-  mNewCompositeModelName = newCompositeModelName;
-  setText(QString("Rename CompositeModel %1").arg(mpCompositeModelEditor->getModelWidget()->getLibraryTreeItem()->getName()));
-}
-
-/*!
- * \brief RenameCompositeModelCommand::redoInternal
- * redoInternal the rename CompositeModel command
- */
-void RenameCompositeModelCommand::redoInternal()
-{
-  mpCompositeModelEditor->setCompositeModelName(mNewCompositeModelName);
-  mpCompositeModelEditor->getModelWidget()->getLibraryTreeItem()->setName(mNewCompositeModelName);
-  mpCompositeModelEditor->getModelWidget()->setWindowTitle(mNewCompositeModelName);
-}
-
-/*!
- * \brief RenameCompositeModelCommand::undo
- * Undo the rename CompositeModel command
- */
-void RenameCompositeModelCommand::undo()
-{
-  mpCompositeModelEditor->setCompositeModelName(mOldCompositeModelName);
-  mpCompositeModelEditor->getModelWidget()->getLibraryTreeItem()->setName(mOldCompositeModelName);
-  mpCompositeModelEditor->getModelWidget()->setWindowTitle(mOldCompositeModelName);
 }
 
 /*!

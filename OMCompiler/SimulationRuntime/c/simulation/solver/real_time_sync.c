@@ -47,11 +47,11 @@ void omc_real_time_sync_init(threadData_t *threadData, DATA *data)
 
 #if defined(__linux__) || defined(__FreeBSD__)
   if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1) {
-    warningStreamPrint(LOG_RT, 0, __FILE__ ": mlockall failed (recommended to run as root to lock memory into RAM while doing real-time simulation): %s\n", strerror(errno));
+    warningStreamPrint(OMC_LOG_RT, 0, __FILE__ ": mlockall failed (recommended to run as root to lock memory into RAM while doing real-time simulation): %s\n", strerror(errno));
   }
   struct sched_param param = {.sched_priority = 49 /* 50=interrupt handler */ };
   if(sched_setscheduler(0, SCHED_FIFO, &param) == -1) {
-    warningStreamPrint(LOG_RT, 0, __FILE__ ": sched_setscheduler failed: %s\n", strerror(errno));
+    warningStreamPrint(OMC_LOG_RT, 0, __FILE__ ": sched_setscheduler failed: %s\n", strerror(errno));
   }
 #endif
 }

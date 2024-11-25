@@ -68,15 +68,7 @@ public:
     Debug,
     OMEditInfo  /* used internally by OMEdit to mark message blue. */
   };
-  enum TLMCausality { TLMBidirectional, TLMInput, TLMOutput };
   enum ResultType {String, Integer};
-  static QString getTLMCausality(int causality);
-  enum TLMDomain { Mechanical, Electric, Hydraulic, Pneumatic, Magnetic, Signal };
-  static QString getTLMDomain(int domain);
-  enum SimulationTools {Adams, Beast, Dymola, OpenModelica, Simulink, WolframSystemModeler, Other};
-  static QString getSimulationTool(int tool);
-  static QString getSimulationToolStartCommand(QString tool, QString simulationToolStartCommand);
-  static StringHandler::SimulationTools getSimulationTool(QString simulationToolStartCommand);
   static QString getModelicaClassType(int type);
   static StringHandler::ModelicaClasses getModelicaClassType(QString type);
   static QString getViewType(int type);

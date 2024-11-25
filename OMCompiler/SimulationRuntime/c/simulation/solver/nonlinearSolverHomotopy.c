@@ -293,7 +293,7 @@ void printUnknowns(int logName, DATA_HOMOTOPY *solverData)
   int eqSystemNumber = solverData->eqSystemNumber;
   DATA *data = solverData->userData->data;
 
-  if (!ACTIVE_STREAM(logName)) return;
+  if (!OMC_ACTIVE_STREAM(logName)) return;
   infoStreamPrint(logName, 1, "nls status");
   infoStreamPrint(logName, 1, "variables");
   messageClose(logName);
@@ -311,7 +311,7 @@ void printNewtonStep(int logName, DATA_HOMOTOPY *solverData)
   int eqSystemNumber = solverData->eqSystemNumber;
   DATA *data = solverData->userData->data;
 
-  if (!ACTIVE_STREAM(logName)) return;
+  if (!OMC_ACTIVE_STREAM(logName)) return;
   infoStreamPrint(logName, 1, "newton step");
   infoStreamPrint(logName, 1, "variables");
   messageClose(logName);
@@ -329,7 +329,7 @@ void printHomotopyUnknowns(int logName, DATA_HOMOTOPY *solverData)
   int eqSystemNumber = solverData->eqSystemNumber;
   DATA *data = solverData->userData->data;
 
-  if (!ACTIVE_STREAM(logName)) return;
+  if (!OMC_ACTIVE_STREAM(logName)) return;
   infoStreamPrint(logName, 1, "homotopy status");
   infoStreamPrint(logName, 1, "variables");
   messageClose(logName);
@@ -357,7 +357,7 @@ void printHomotopyPredictorStep(int logName, DATA_HOMOTOPY *solverData)
   int eqSystemNumber = solverData->eqSystemNumber;
   DATA *data = solverData->userData->data;
 
-  if (!ACTIVE_STREAM(logName)) return;
+  if (!OMC_ACTIVE_STREAM(logName)) return;
   infoStreamPrint(logName, 1, "predictor status");
   infoStreamPrint(logName, 1, "variables");
   messageClose(logName);
@@ -384,7 +384,7 @@ void printHomotopyCorrectorStep(int logName, DATA_HOMOTOPY *solverData)
   int eqSystemNumber = solverData->eqSystemNumber;
   DATA *data = solverData->userData->data;
 
-  if (!ACTIVE_STREAM(logName)) return;
+  if (!OMC_ACTIVE_STREAM(logName)) return;
   infoStreamPrint(logName, 1, "corrector status");
   infoStreamPrint(logName, 1, "variables");
   messageClose(logName);
@@ -407,7 +407,7 @@ void printHomotopyCorrectorStep(int logName, DATA_HOMOTOPY *solverData)
 
 void debugMatrixPermutedDouble(int logName, char* matrixName, double* matrix, int n, int m, int* indRow, int* indCol)
 {
-  if(ACTIVE_STREAM(logName))
+  if(OMC_ACTIVE_STREAM(logName))
   {
     int i, j;
     int sparsity = 0;
@@ -440,7 +440,7 @@ void debugMatrixPermutedDouble(int logName, char* matrixName, double* matrix, in
 
 void debugMatrixDouble(int logName, char* matrixName, double* matrix, int n, int m)
 {
-  if(ACTIVE_STREAM(logName))
+  if(OMC_ACTIVE_STREAM(logName))
   {
     int i, j;
     int sparsity = 0;
@@ -473,7 +473,7 @@ void debugMatrixDouble(int logName, char* matrixName, double* matrix, int n, int
 
 void debugVectorDouble(int logName, char* vectorName, double* vector, int n)
 {
-  if(ACTIVE_STREAM(logName))
+  if(OMC_ACTIVE_STREAM(logName))
   {
     int i;
     char *buffer = (char*)malloc(sizeof(char)*n*20);
@@ -503,7 +503,7 @@ void debugVectorDouble(int logName, char* vectorName, double* vector, int n)
 
 void debugVectorBool(int logName, char* vectorName, modelica_boolean* vector, int n)
 {
-   if(ACTIVE_STREAM(logName))
+   if(OMC_ACTIVE_STREAM(logName))
   {
     int i;
     char *buffer = (char*)malloc(sizeof(char)*n*20);
@@ -533,7 +533,7 @@ void debugVectorBool(int logName, char* vectorName, modelica_boolean* vector, in
 
 void debugVectorInt(int logName, char* vectorName, int* vector, int n)
 {
-  if(ACTIVE_STREAM(logName))
+  if(OMC_ACTIVE_STREAM(logName))
   {
     int i;
     char *buffer = (char*)malloc(sizeof(char)*n*20);
@@ -992,18 +992,18 @@ static int wrapper_fvec_der(DATA_HOMOTOPY* solverData, double* x, double* fJac)
     getNumericalJacobianHomotopy(solverData, x, fJac);
   }
 
-  if(ACTIVE_STREAM(LOG_NLS_JAC_TEST))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_JAC_TEST))
   {
     int n = solverData->n;
-    /* debugMatrixDouble(LOG_NLS_JAC_TEST,"analytical jacobian:",fJac, n, n+1); */
+    /* debugMatrixDouble(OMC_LOG_NLS_JAC_TEST,"analytical jacobian:",fJac, n, n+1); */
     getNumericalJacobianHomotopy(solverData, x, solverData->debug_fJac);
-    /* debugMatrixDouble(LOG_NLS_JAC_TEST,"numerical jacobian:",solverData->debug_fJac, n, n+1); */
+    /* debugMatrixDouble(OMC_LOG_NLS_JAC_TEST,"numerical jacobian:",solverData->debug_fJac, n, n+1); */
     matDiffBB(n, fJac, solverData->debug_fJac, solverData->debug_fJac);
-    /* debugMatrixDouble(LOG_NLS_JAC_TEST,"Difference of jacobians:",solverData->debug_fJac, n, n+1); */
-    debugDouble(LOG_NLS_JAC_TEST,"error between analytical and numerical jacobian = ", vecMaxNorm(n*n, solverData->debug_fJac));
+    /* debugMatrixDouble(OMC_LOG_NLS_JAC_TEST,"Difference of jacobians:",solverData->debug_fJac, n, n+1); */
+    debugDouble(OMC_LOG_NLS_JAC_TEST,"error between analytical and numerical jacobian = ", vecMaxNorm(n*n, solverData->debug_fJac));
     vecDivScaling(n*(n+1), solverData->debug_fJac , fJac, solverData->debug_fJac);
-    debugDouble(LOG_NLS_JAC_TEST,"relative error between analytical and numerical jacobian = ", vecMaxNorm(n*n, solverData->debug_fJac));
-    messageClose(LOG_NLS_JAC_TEST);
+    debugDouble(OMC_LOG_NLS_JAC_TEST,"relative error between analytical and numerical jacobian = ", vecMaxNorm(n*n, solverData->debug_fJac));
+    messageClose(OMC_LOG_NLS_JAC_TEST);
   }
   /* performance measurement and statistics */
   nlsData->jacobianTime += rt_ext_tp_tock(&(nlsData->jacobianTimeClock));
@@ -1129,8 +1129,8 @@ int solveSystemWithTotalPivotSearch(DATA *data, int n, double* x, double* A, int
    double absMax, detJac;
    int returnValue = 0;
 
-   debugMatrixDouble(LOG_NLS_JAC,"Linear System Matrix [Jac res]:",A, n, m);
-   debugVectorDouble(LOG_NLS_JAC,"vector b:", A+n*n, n);
+   debugMatrixDouble(OMC_LOG_NLS_JAC,"Linear System Matrix [Jac res]:",A, n, m);
+   debugVectorDouble(OMC_LOG_NLS_JAC,"vector b:", A+n*n, n);
 
    /* assume full rank of matrix [n x (n+1)] */
    *rank = n;
@@ -1153,14 +1153,14 @@ int solveSystemWithTotalPivotSearch(DATA *data, int n, double* x, double* A, int
     if (absMax<DBL_EPSILON) {
       *rank = i;
       if (data->simulationInfo->initial) {
-        warningStreamPrint(LOG_NLS_V, 1, "Homotopy solver total pivot: Matrix (nearly) singular at initialization.");
+        warningStreamPrint(OMC_LOG_NLS_V, 1, "Homotopy solver total pivot: Matrix (nearly) singular at initialization.");
       } else {
-        warningStreamPrint(LOG_NLS_V, 1, "Homotopy solver total pivot: Matrix (nearly) singular at time %f.", data->localData[0]->timeValue);
+        warningStreamPrint(OMC_LOG_NLS_V, 1, "Homotopy solver total pivot: Matrix (nearly) singular at time %f.", data->localData[0]->timeValue);
       }
-      warningStreamPrint(LOG_NLS_V, 0, "Continuing anyway. For more information please use -lv %s.", LOG_STREAM_NAME[LOG_NLS_V]);
-      messageCloseWarning(LOG_NLS_V);
-      debugInt(LOG_NLS_V,"rank = ", *rank);
-      debugInt(LOG_NLS_V,"position = ", *pos);
+      warningStreamPrint(OMC_LOG_NLS_V, 0, "Continuing anyway. For more information please use -lv %s.", OMC_LOG_STREAM_NAME[OMC_LOG_NLS_V]);
+      messageCloseWarning(OMC_LOG_NLS_V);
+      debugInt(OMC_LOG_NLS_V,"rank = ", *rank);
+      debugInt(OMC_LOG_NLS_V,"position = ", *pos);
       break;
     }
     /* swap row indices */
@@ -1188,15 +1188,15 @@ int solveSystemWithTotalPivotSearch(DATA *data, int n, double* x, double* A, int
 
   for (detJac=1.0,k=0; k<n; k++) detJac *= A[indRow[k] + indCol[k]*n];
 
-  debugMatrixPermutedDouble(LOG_NLS_JAC,"Linear System Matrix [Jac res] after decomposition",A, n, m, indRow, indCol);
-  debugDouble(LOG_NLS_JAC,"Determinant = ", detJac);
+  debugMatrixPermutedDouble(OMC_LOG_NLS_JAC,"Linear System Matrix [Jac res] after decomposition",A, n, m, indRow, indCol);
+  debugDouble(OMC_LOG_NLS_JAC,"Determinant = ", detJac);
   if (isnan(detJac)){
-    warningStreamPrint(LOG_NLS_V, 0, "Jacobian determinant is NaN.");
+    warningStreamPrint(OMC_LOG_NLS_V, 0, "Jacobian determinant is NaN.");
     return -1;
   }
   else if (fabs(detJac) < 1e-9 && casualTearingSet)
   {
-    debugString(LOG_DT, "The determinant of the casual tearing set is vanishing, let's fail if this is not the solution...");
+    debugString(OMC_LOG_DT, "The determinant of the casual tearing set is vanishing, let's fail if this is not the solution...");
     returnValue = 1;
   }
 
@@ -1205,7 +1205,7 @@ int solveSystemWithTotalPivotSearch(DATA *data, int n, double* x, double* A, int
     if (i>=*rank) {
       /* this criteria should be evaluated and may be improved in future */
       if (fabs(A[indRow[i] + indCol[n]*n])>1e-6) {
-        warningStreamPrint(LOG_NLS_V, 0, "under-determined linear system not solvable!");
+        warningStreamPrint(OMC_LOG_NLS_V, 0, "under-determined linear system not solvable!");
         return -1;
       } else {
         x[indCol[i]] = 0.0;
@@ -1219,14 +1219,14 @@ int solveSystemWithTotalPivotSearch(DATA *data, int n, double* x, double* A, int
     }
   }
   x[indCol[n]]=1.0;
-  debugVectorInt(LOG_NLS_V,"indRow:", indRow, n);
-  debugVectorInt(LOG_NLS_V,"indCol:", indCol, n+1);
-  debugVectorDouble(LOG_NLS_V,"vector x (solution):", x, n+1);
+  debugVectorInt(OMC_LOG_NLS_V,"indRow:", indRow, n);
+  debugVectorInt(OMC_LOG_NLS_V,"indCol:", indCol, n+1);
+  debugVectorDouble(OMC_LOG_NLS_V,"vector x (solution):", x, n+1);
 
   /* Return position of largest value (1.0) */
   if (*pos<0) {
     *pos=indCol[n];
-    debugInt(LOG_NLS_V,"position of largest value = ", *pos);
+    debugInt(OMC_LOG_NLS_V,"position of largest value = ", *pos);
   }
 
   return returnValue;
@@ -1246,8 +1246,8 @@ int linearSolverWrapper(DATA *data, int n, double* x, double* A, int* indRow, in
   int k;
   double detJac;
 
-  debugMatrixDouble(LOG_NLS_JAC,"Linear System Matrix [Jac res]:", A, n, n+1);
-  debugVectorDouble(LOG_NLS_JAC,"vector b:", x, n);
+  debugMatrixDouble(OMC_LOG_NLS_JAC,"Linear System Matrix [Jac res]:", A, n, n+1);
+  debugVectorDouble(OMC_LOG_NLS_JAC,"vector b:", x, n);
 
   switch(method){
     case NLS_LS_TOTALPIVOT:
@@ -1257,8 +1257,8 @@ int linearSolverWrapper(DATA *data, int n, double* x, double* A, int* indRow, in
       if (solverinfo == -1)
       {
         /* debug information */
-        debugString(LOG_NLS_V, "Linear total pivot solver failed!!!");
-        debugString(LOG_NLS_V, "******************************************************");
+        debugString(OMC_LOG_NLS_V, "Linear total pivot solver failed!!!");
+        debugString(OMC_LOG_NLS_V, "******************************************************");
       }
       else if (solverinfo == 1)
       {
@@ -1282,19 +1282,19 @@ int linearSolverWrapper(DATA *data, int n, double* x, double* A, int* indRow, in
 
       for (detJac=1.0, k=0; k<n; k++) detJac *= A[k + k*n];
 
-      debugMatrixDouble(LOG_NLS_JAC,"Linear system matrix [Jac res] after decomposition:", A, n, n+1);
-      debugDouble(LOG_NLS_JAC,"Determinant = ", detJac);
+      debugMatrixDouble(OMC_LOG_NLS_JAC,"Linear system matrix [Jac res] after decomposition:", A, n, n+1);
+      debugDouble(OMC_LOG_NLS_JAC,"Determinant = ", detJac);
 
       /* in case of failing */
       if (solverinfo != 0)
       {
         /* debug information */
-        debugString(LOG_NLS_V, "Linear lapack solver failed!!!");
-        debugString(LOG_NLS_V, "******************************************************");
+        debugString(OMC_LOG_NLS_V, "Linear lapack solver failed!!!");
+        debugString(OMC_LOG_NLS_V, "******************************************************");
       }
       else if (fabs(detJac) < 1e-9 && casualTearingSet)
       {
-        debugString(LOG_DT, "The determinant of the casual tearing set is vanishing, let's fail if this is not the solution...");
+        debugString(OMC_LOG_DT, "The determinant of the casual tearing set is vanishing, let's fail if this is not the solution...");
         returnValue = 1;
       }
       else
@@ -1308,15 +1308,15 @@ int linearSolverWrapper(DATA *data, int n, double* x, double* A, int* indRow, in
   }
 
   /* Debugging error of linear system */
-  if(ACTIVE_STREAM(LOG_NLS_JAC))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_NLS_JAC))
   {
     double* res = (double*) calloc(n,sizeof(double));
-    debugVectorDouble(LOG_NLS_JAC,"solution:", x, n);
+    debugVectorDouble(OMC_LOG_NLS_JAC,"solution:", x, n);
     matVecMult(n, n, A, x, res);
-    debugVectorDouble(LOG_NLS_JAC,"test solution:", res, n);
-    debugDouble(LOG_NLS_JAC,"error of linear system = ", vec2Norm(n, res));
+    debugVectorDouble(OMC_LOG_NLS_JAC,"test solution:", res, n);
+    debugDouble(OMC_LOG_NLS_JAC,"error of linear system = ", vec2Norm(n, res));
     free(res);
-    messageClose(LOG_NLS_JAC);
+    messageClose(OMC_LOG_NLS_JAC);
   }
 
   return returnValue;
@@ -1354,10 +1354,10 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
   int linearSolverMethod = data->simulationInfo->nlsLinearSolver;
 
   /* debug information */
-  debugString(LOG_NLS_V, "******************************************************");
-  debugInt(LOG_NLS_V, "NEWTON SOLVER STARTED! equation number: ",solverData->eqSystemNumber);
-  debugInt(LOG_NLS_V, "maximum number of function evaluation: ", solverData->maxNumberOfIterations);
-  printUnknowns(LOG_NLS_V, solverData);
+  debugString(OMC_LOG_NLS_V, "******************************************************");
+  debugInt(OMC_LOG_NLS_V, "NEWTON SOLVER STARTED! equation number: ",solverData->eqSystemNumber);
+  debugInt(OMC_LOG_NLS_V, "maximum number of function evaluation: ", solverData->maxNumberOfIterations);
+  printUnknowns(OMC_LOG_NLS_V, solverData);
 
   /* set default solver message */
   solverData->info = 0;
@@ -1371,7 +1371,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
   {
     numberOfIterations++;
     /* debug information */
-    debugInt(LOG_NLS_V, "Iteration:", numberOfIterations);
+    debugInt(OMC_LOG_NLS_V, "Iteration:", numberOfIterations);
 
     /* solve jacobian and function value (both stored in hJac, last column is fvec), side effects: jacobian matrix is changed */
     if (numberOfIterations>1)
@@ -1382,8 +1382,8 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       /* report solver abortion */
       solverData->info=-1;
       /* debug information */
-      debugString(LOG_NLS_V, "NEWTON SOLVER DID ---NOT--- CONVERGE TO A SOLUTION!!!");
-      debugString(LOG_NLS_V, "******************************************************");
+      debugString(OMC_LOG_NLS_V, "NEWTON SOLVER DID ---NOT--- CONVERGE TO A SOLUTION!!!");
+      debugString(OMC_LOG_NLS_V, "******************************************************");
       assert = 0;
       break;
     }
@@ -1393,7 +1393,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       vecMultScaling(solverData->m, solverData->dy0, solverData->xScaling, solverData->dy0);
       /* try full Newton step */
       vecAdd(solverData->n, x, solverData->dy0, solverData->x1);
-      printNewtonStep(LOG_NLS_V, solverData);
+      printNewtonStep(OMC_LOG_NLS_V, solverData);
 
       /* Damping strategy, performance is very sensitive on the value of lambda */
       lambda1 = 1.0;
@@ -1425,13 +1425,13 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 #endif
         firstrun = 0;
         if (assert) {
-          debugDouble(LOG_NLS_V, "Assert of Newton step: lambda1 =", lambda1);
+          debugDouble(OMC_LOG_NLS_V, "Assert of Newton step: lambda1 =", lambda1);
         }
       }
 
       if (lambda1 < lambdaMin)
       {
-        debugDouble(LOG_NLS_V, "UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
+        debugDouble(OMC_LOG_NLS_V, "UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
         solverData->info = -1;
         break;
       }
@@ -1443,17 +1443,17 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       error_f1_sqrd = vec2NormSqrd(solverData->n, solverData->f1);
       vecDivScaling(solverData->n, solverData->f1, solverData->resScaling, solverData->f2);
       error_f1_sqrd_scaled = vec2NormSqrd(solverData->n, solverData->f2);
-      debugDouble(LOG_NLS_V, "Need to damp, grad_f = ", grad_f);
-      debugDouble(LOG_NLS_V, "Need to damp, error_f = ", sqrt(error_f_sqrd));
-      debugDouble(LOG_NLS_V, "Need to damp this!! lambda1 = ", lambda1);
-      debugDouble(LOG_NLS_V, "Need to damp, error_f1 = ", sqrt(error_f1_sqrd));
-      debugDouble(LOG_NLS_V, "Need to damp, forced error = ", error_f_sqrd + alpha*lambda1*grad_f);
+      debugDouble(OMC_LOG_NLS_V, "Need to damp, grad_f = ", grad_f);
+      debugDouble(OMC_LOG_NLS_V, "Need to damp, error_f = ", sqrt(error_f_sqrd));
+      debugDouble(OMC_LOG_NLS_V, "Need to damp this!! lambda1 = ", lambda1);
+      debugDouble(OMC_LOG_NLS_V, "Need to damp, error_f1 = ", sqrt(error_f1_sqrd));
+      debugDouble(OMC_LOG_NLS_V, "Need to damp, forced error = ", error_f_sqrd + alpha*lambda1*grad_f);
       if ((error_f1_sqrd > error_f_sqrd + alpha*lambda1*grad_f)
         && (error_f1_sqrd_scaled > error_f_sqrd_scaled + alpha*lambda1*grad_f_scaled)
         && (error_f_sqrd > 1e-12) && (error_f_sqrd_scaled > 1e-12))
       {
         lambda2 = fmax(-lambda1*lambda1*grad_f/(2*(error_f1_sqrd-error_f_sqrd-lambda1*grad_f)),lambdaMin);
-        debugDouble(LOG_NLS_V, "Need to damp this!! lambda2 = ", lambda2);
+        debugDouble(OMC_LOG_NLS_V, "Need to damp this!! lambda2 = ", lambda2);
         vecAddScal(solverData->n, x, solverData->dy0, lambda2, solverData->x1);
         assert= 1;
 #ifndef OMC_EMCC
@@ -1470,14 +1470,14 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
           solverData->f(solverData, solverData->x1, solverData->f1);
 
         error_f2_sqrd = vec2NormSqrd(solverData->n, solverData->f1);
-        debugDouble(LOG_NLS_V, "Need to damp, error_f2 = ", sqrt(error_f2_sqrd));
+        debugDouble(OMC_LOG_NLS_V, "Need to damp, error_f2 = ", sqrt(error_f2_sqrd));
         assert = 0;
 #ifndef OMC_EMCC
         MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
         if (assert)
         {
-          debugDouble(LOG_NLS_V, "UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
+          debugDouble(OMC_LOG_NLS_V, "UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
           solverData->info = -1;
           break;
         }
@@ -1501,7 +1501,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
                 lambda = -grad_f/(a2+sqrt(D));
           }
           lambda = fmax(lambda, lambdaMin);
-          debugDouble(LOG_NLS_V, "Need to damp this!! lambda = ", lambda);
+          debugDouble(OMC_LOG_NLS_V, "Need to damp this!! lambda = ", lambda);
           vecAddScal(solverData->n, x, solverData->dy0, lambda, solverData->x1);
           assert= 1;
 #ifndef OMC_EMCC
@@ -1518,14 +1518,14 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
             solverData->f(solverData, solverData->x1, solverData->f1);
 
           error_f1_sqrd = vec2NormSqrd(solverData->n, solverData->f1);
-          debugDouble(LOG_NLS_V, "Need to damp, error_f1 = ", sqrt(error_f1_sqrd));
+          debugDouble(OMC_LOG_NLS_V, "Need to damp, error_f1 = ", sqrt(error_f1_sqrd));
           assert = 0;
 #ifndef OMC_EMCC
           MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
           if (assert)
           {
-            debugDouble(LOG_NLS_V, "UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
+            debugDouble(OMC_LOG_NLS_V, "UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
             solverData->info = -1;
             break;
           }
@@ -1537,8 +1537,8 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 
     /* Calculate different error measurements */
     vecDivScaling(solverData->n, solverData->f1, solverData->resScaling, solverData->fvecScaled);
-    debugVectorDouble(LOG_NLS_V, "function values:",solverData->f1, n);
-    debugVectorDouble(LOG_NLS_V, "scaled function values:",solverData->fvecScaled, n);
+    debugVectorDouble(OMC_LOG_NLS_V, "function values:",solverData->f1, n);
+    debugVectorDouble(OMC_LOG_NLS_V, "scaled function values:",solverData->fvecScaled, n);
 
     /* update delta_x_sqrd, error_f_sqrd */
     vecDivScaling(solverData->n, solverData->dy0, solverData->xScaling, solverData->dxScaled);
@@ -1554,14 +1554,14 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 
 
     /* debug information */
-    if (useStream[LOG_NLS_V]) {
-      debugString(LOG_NLS_V, "error measurements:");
-      debugDouble(LOG_NLS_V, "delta_x        =", sqrt(delta_x_sqrd));
-      debugDouble(LOG_NLS_V, "delta_x_scaled =", sqrt(delta_x_sqrd_scaled));
-      debugDouble(LOG_NLS_V, "newtonXTol          =", sqrt(solverData->xtol_sqrd));
-      debugDouble(LOG_NLS_V, "error_f        =", sqrt(error_f_sqrd));
-      debugDouble(LOG_NLS_V, "error_f_scaled =", sqrt(error_f_sqrd_scaled));
-      debugDouble(LOG_NLS_V, "newtonFTol          =", sqrt(solverData->ftol_sqrd));
+    if (omc_useStream[OMC_LOG_NLS_V]) {
+      debugString(OMC_LOG_NLS_V, "error measurements:");
+      debugDouble(OMC_LOG_NLS_V, "delta_x        =", sqrt(delta_x_sqrd));
+      debugDouble(OMC_LOG_NLS_V, "delta_x_scaled =", sqrt(delta_x_sqrd_scaled));
+      debugDouble(OMC_LOG_NLS_V, "newtonXTol          =", sqrt(solverData->xtol_sqrd));
+      debugDouble(OMC_LOG_NLS_V, "error_f        =", sqrt(error_f_sqrd));
+      debugDouble(OMC_LOG_NLS_V, "error_f_scaled =", sqrt(error_f_sqrd_scaled));
+      debugDouble(OMC_LOG_NLS_V, "newtonFTol          =", sqrt(solverData->ftol_sqrd));
     }
 
 #if !defined(OMC_MINIMAL_RUNTIME)
@@ -1582,7 +1582,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 #endif
     if (countNegativeSteps > 20)
     {
-      debugInt(LOG_NLS_V, "UPS! Something happened, NegativeSteps = ", countNegativeSteps);
+      debugInt(OMC_LOG_NLS_V, "UPS! Something happened, NegativeSteps = ", countNegativeSteps);
       solverData->info = -1;
       break;
     }
@@ -1595,7 +1595,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
       /* reject new x if old x is as good, for stability (see issue #6419) */
       if (lastWasGood)
       {
-        debugString(LOG_NLS_V, "Note: newton solver rejected last x because previous was as good");
+        debugString(OMC_LOG_NLS_V, "Note: newton solver rejected last x because previous was as good");
       }
       else
       {
@@ -1610,7 +1610,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     }
     else if (solverinfo == 1){
       solverData->info = -1;
-      debugString(LOG_DT, "It is not the solution.");
+      debugString(OMC_LOG_DT, "It is not the solution.");
       break;
     }
 
@@ -1619,13 +1619,13 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     {
       solverData->info = -1;
       if (data->simulationInfo->initial) {
-        warningStreamPrint(LOG_NLS_V, 0, "Homotopy solver Newton iteration: Maximum number of iterations reached at initialization, but no root found.");
+        warningStreamPrint(OMC_LOG_NLS_V, 0, "Homotopy solver Newton iteration: Maximum number of iterations reached at initialization, but no root found.");
       } else {
-        warningStreamPrint(LOG_NLS_V, 0, "Homotopy solver Newton iteration: Maximum number of iterations reached at time %f, but no root found.", data->localData[0]->timeValue);
+        warningStreamPrint(OMC_LOG_NLS_V, 0, "Homotopy solver Newton iteration: Maximum number of iterations reached at time %f, but no root found.", data->localData[0]->timeValue);
       }
       /* debug information */
-      debugString(LOG_NLS_V, "NEWTON SOLVER DID ---NOT--- CONVERGE TO A SOLUTION!!!");
-      debugString(LOG_NLS_V, "******************************************************");
+      debugString(OMC_LOG_NLS_V, "NEWTON SOLVER DID ---NOT--- CONVERGE TO A SOLUTION!!!");
+      debugString(OMC_LOG_NLS_V, "******************************************************");
 
       /* update statistics */
       solverData->numberOfIterations += numberOfIterations;
@@ -1641,18 +1641,18 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
         solverData->info = 1;
 
         /* debug information */
-        debugString(LOG_NLS_V, "NEWTON SOLVER DID CONVERGE TO A SOLUTION WITH LESS ACCURACY!!!");
-        printUnknowns(LOG_NLS_V, solverData);
-        debugString(LOG_NLS_V, "******************************************************");
+        debugString(OMC_LOG_NLS_V, "NEWTON SOLVER DID CONVERGE TO A SOLUTION WITH LESS ACCURACY!!!");
+        printUnknowns(OMC_LOG_NLS_V, solverData);
+        debugString(OMC_LOG_NLS_V, "******************************************************");
         solverData->error_f_sqrd = 0;
 
       } else
       {
         solverData->info = -1;
-        debugString(LOG_NLS_V, "Warning: newton solver gets stuck!!!");
+        debugString(OMC_LOG_NLS_V, "Warning: newton solver gets stuck!!!");
         /* debug information */
-        debugString(LOG_NLS_V, "NEWTON SOLVER DID ---NOT--- CONVERGE TO A SOLUTION!!!");
-        debugString(LOG_NLS_V, "******************************************************");
+        debugString(OMC_LOG_NLS_V, "NEWTON SOLVER DID ---NOT--- CONVERGE TO A SOLUTION!!!");
+        debugString(OMC_LOG_NLS_V, "******************************************************");
       }
       /* update statistics */
       solverData->numberOfIterations += numberOfIterations;
@@ -1675,13 +1675,13 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     {
       /* report solver abortion */
       solverData->info=-1;
-      debugString(LOG_NLS_V,"UPS! assert when calculating Jacobian!!!");
+      debugString(OMC_LOG_NLS_V,"UPS! assert when calculating Jacobian!!!");
       break;
     }
     vecCopy(n, solverData->f1, solverData->fJac + n*n);
     /* calculate scaling factor of residuals */
     matVecMultAbsBB(solverData->n, solverData->fJac, solverData->ones, solverData->resScaling);
-    debugVectorDouble(LOG_NLS_JAC, "residuum scaling:", solverData->resScaling, solverData->n);
+    debugVectorDouble(OMC_LOG_NLS_JAC, "residuum scaling:", solverData->resScaling, solverData->n);
     scaleMatrixRows(solverData->n, solverData->m, solverData->fJac);
     vecCopy(n, solverData->fJac + n*n, solverData->dy0);
   }
@@ -1726,7 +1726,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
 
 #if !defined(OMC_NO_FILESYSTEM)
     const char sep[] = ",";
-    if(solverData->initHomotopy && ACTIVE_STREAM(LOG_INIT_HOMOTOPY))
+    if(solverData->initHomotopy && OMC_ACTIVE_STREAM(OMC_LOG_INIT_HOMOTOPY))
     {
       if (omc_flag[FLAG_OUTPUT_PATH]) { /* Add output path to file name */
         sprintf(buffer, "%s/%s_nonlinsys%d_adaptive_%s_homotopy_%s.csv", omc_flagValue[FLAG_OUTPUT_PATH], data->modelData->modelFilePrefix, sysNumber, data->callback->useHomotopy == 2 ? "global" : "local", solverData->startDirection > 0 ? "pos" : "neg");
@@ -1735,7 +1735,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       {
         sprintf(buffer, "%s_nonlinsys%d_adaptive_%s_homotopy_%s.csv", data->modelData->modelFilePrefix, sysNumber, data->callback->useHomotopy == 2 ? "global" : "local", solverData->startDirection > 0 ? "pos" : "neg");
       }
-      infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "The homotopy path will be exported to %s.", buffer);
+      infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "The homotopy path will be exported to %s.", buffer);
       pFile = omc_fopen(buffer, "wt");
       fprintf(pFile, "\"sep=%s\"\n%s", sep, "\"lambda\"");
       for(i=0; i<n; ++i)
@@ -1755,7 +1755,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
 
   vecConst(solverData->n, 0.0, solverData->dy2);
   solverData->dy2[solverData->n]= solverData->startDirection;
-  printHomotopyUnknowns(LOG_NLS_V, solverData);
+  printHomotopyUnknowns(OMC_LOG_NLS_V, solverData);
   assert = 1;
 #ifndef OMC_EMCC
     MMC_TRY_INTERNAL(simulationJumpBuffer)
@@ -1769,39 +1769,39 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
   while (solverData->y0[solverData->n]<1)
   {
     if (solverData->initHomotopy)
-      infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "homotopy parameter lambda = %g", solverData->y0[solverData->n]);
+      infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "homotopy parameter lambda = %g", solverData->y0[solverData->n]);
     else
-      infoStreamPrint(LOG_NLS_HOMOTOPY, 0, "homotopy parameter lambda = %g", solverData->y0[solverData->n]);
+      infoStreamPrint(OMC_LOG_NLS_HOMOTOPY, 0, "homotopy parameter lambda = %g", solverData->y0[solverData->n]);
     /* Break loop, iff algorithm gets stuck or lambda accelerates to the wrong direction */
     if (iter>=maxTries)
     {
       if (solverData->initHomotopy) {
         if (preTau == tau)
-          warningStreamPrint(LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nNo solution for current step size tau found and tau cannot be decreased any further.\nYou can set the minimum step size tau with:\n\t-homTauMin=<value>\nYou can also try to allow more newton steps in the corrector step with:\n\t-homMaxNewtonSteps=<value>\nor change the tolerance for the solution with:\n\t-homHEps=<value>\nYou can also try to use another backtrace stategy in the corrector step with:\n\t-homBacktraceStrategy=<fix|orthogonal>\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.");
+          warningStreamPrint(OMC_LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nNo solution for current step size tau found and tau cannot be decreased any further.\nYou can set the minimum step size tau with:\n\t-homTauMin=<value>\nYou can also try to allow more newton steps in the corrector step with:\n\t-homMaxNewtonSteps=<value>\nor change the tolerance for the solution with:\n\t-homHEps=<value>\nYou can also try to use another backtrace stategy in the corrector step with:\n\t-homBacktraceStrategy=<fix|orthogonal>\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.");
         else
-          warningStreamPrint(LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nThe maximum number of tries for one lambda is reached (%d).\nYou can change the number of tries with:\n\t-homMaxTries=<value>\nYou can also try to allow more newton steps in the corrector step with:\n\t-homMaxNewtonSteps=<value>\nor change the tolerance for the solution with:\n\t-homHEps=<value>\nYou can also try to use another backtrace stategy in the corrector step with:\n\t-homBacktraceStrategy=<fix|orthogonal>\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.", iter);
+          warningStreamPrint(OMC_LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nThe maximum number of tries for one lambda is reached (%d).\nYou can change the number of tries with:\n\t-homMaxTries=<value>\nYou can also try to allow more newton steps in the corrector step with:\n\t-homMaxNewtonSteps=<value>\nor change the tolerance for the solution with:\n\t-homHEps=<value>\nYou can also try to use another backtrace stategy in the corrector step with:\n\t-homBacktraceStrategy=<fix|orthogonal>\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.", iter);
       }
       else
-        debugInt(LOG_NLS_HOMOTOPY, "Homotopy algorithm did not converge: iter = ", iter);
-      debugString(LOG_NLS_HOMOTOPY, "======================================================");
+        debugInt(OMC_LOG_NLS_HOMOTOPY, "Homotopy algorithm did not converge: iter = ", iter);
+      debugString(OMC_LOG_NLS_HOMOTOPY, "======================================================");
       return -1;
     }
     if (solverData->y0[solverData->n]<(-1))
     {
       if (solverData->initHomotopy)
-        warningStreamPrint(LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nlambda is smaller than -1: lambda=%g\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.", solverData->y0[solverData->n]);
+        warningStreamPrint(OMC_LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nlambda is smaller than -1: lambda=%g\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.", solverData->y0[solverData->n]);
       else
-        debugDouble(LOG_NLS_HOMOTOPY, "Homotopy algorithm did not converge: lambda = ", solverData->y0[solverData->n]);
-      debugString(LOG_NLS_HOMOTOPY, "======================================================");
+        debugDouble(OMC_LOG_NLS_HOMOTOPY, "Homotopy algorithm did not converge: lambda = ", solverData->y0[solverData->n]);
+      debugString(OMC_LOG_NLS_HOMOTOPY, "======================================================");
       return -1;
     }
     if (numSteps >= maxLambdaSteps)
     {
       if (solverData->initHomotopy)
-        warningStreamPrint(LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nThe maximum number of lambda steps is reached (%d).\nYou can change the maximum number of lambda steps with:\n\t-homMaxLambdaSteps=<value>\nYou can also try to influence the step size tau with the following flags:\n\t-homTauDecFac=<value>\n\t-homTauDecFacPredictor=<value>\n\t-homTauIncFac=<value>\n\t-homTauIncThreshold=<value>\n\t-homTauMax=<value>\n\t-homTauMin=<value>\n\t-homTauStart=<value>\nor you can also set the threshold for accepting the current bending with:\n\t-homAdaptBend=<value>\nYou can also try to use another backtrace stategy in the corrector step with:\n\t-homBacktraceStrategy=<fix|orthogonal>\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.", maxLambdaSteps);
+        warningStreamPrint(OMC_LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nThe maximum number of lambda steps is reached (%d).\nYou can change the maximum number of lambda steps with:\n\t-homMaxLambdaSteps=<value>\nYou can also try to influence the step size tau with the following flags:\n\t-homTauDecFac=<value>\n\t-homTauDecFacPredictor=<value>\n\t-homTauIncFac=<value>\n\t-homTauIncThreshold=<value>\n\t-homTauMax=<value>\n\t-homTauMin=<value>\n\t-homTauStart=<value>\nor you can also set the threshold for accepting the current bending with:\n\t-homAdaptBend=<value>\nYou can also try to use another backtrace stategy in the corrector step with:\n\t-homBacktraceStrategy=<fix|orthogonal>\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.", maxLambdaSteps);
       else
-        debugInt(LOG_NLS_HOMOTOPY, "Homotopy algorithm did not converge: numSteps = ", numSteps);
-      debugString(LOG_NLS_HOMOTOPY, "======================================================");
+        debugInt(OMC_LOG_NLS_HOMOTOPY, "Homotopy algorithm did not converge: numSteps = ", numSteps);
+      debugString(OMC_LOG_NLS_HOMOTOPY, "======================================================");
       return -1;
     }
 
@@ -1819,9 +1819,9 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
       solverData->hJac_dh(solverData, solverData->y0, solverData->hJac);
-      debugMatrixDouble(LOG_NLS_JAC,"Jacobian hJac:",solverData->hJac, solverData->n, solverData->n+1);
+      debugMatrixDouble(OMC_LOG_NLS_JAC,"Jacobian hJac:",solverData->hJac, solverData->n, solverData->n+1);
       scaleMatrixRows(solverData->n, solverData->m, solverData->hJac);
-      debugMatrixDouble(LOG_NLS_JAC,"Jacobian hJac after scaling:",solverData->hJac, solverData->n, solverData->n+1);
+      debugMatrixDouble(OMC_LOG_NLS_JAC,"Jacobian hJac after scaling:",solverData->hJac, solverData->n, solverData->n+1);
       assert = 0;
       pos = -1; /* stable solution algorithm for solving a generalized over-determined linear system */
 #ifndef OMC_EMCC
@@ -1835,41 +1835,41 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
         /* debug information */
         if (assert) {
           if (solverData->initHomotopy)
-            warningStreamPrint(LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nIt was not possible to calculate the jacobian.\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.");
+            warningStreamPrint(OMC_LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nIt was not possible to calculate the jacobian.\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.");
           else {
-            debugString(LOG_NLS_HOMOTOPY, "Assert, when calculating Jacobian!");
-            debugString(LOG_NLS_HOMOTOPY, "Homotopy algorithm did not converge");
+            debugString(OMC_LOG_NLS_HOMOTOPY, "Assert, when calculating Jacobian!");
+            debugString(OMC_LOG_NLS_HOMOTOPY, "Homotopy algorithm did not converge");
           }
         } else {
           if (solverData->initHomotopy)
-            warningStreamPrint(LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nThe system is singular and not solvable.\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.");
+            warningStreamPrint(OMC_LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nThe system is singular and not solvable.\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.");
           else {
-            debugString(LOG_NLS_HOMOTOPY, "System singular and not solvable!");
-            debugString(LOG_NLS_HOMOTOPY, "Homotopy algorithm did not converge");
+            debugString(OMC_LOG_NLS_HOMOTOPY, "System singular and not solvable!");
+            debugString(OMC_LOG_NLS_HOMOTOPY, "Homotopy algorithm did not converge");
           }
         }
-        debugString(LOG_NLS_HOMOTOPY, "======================================================");
+        debugString(OMC_LOG_NLS_HOMOTOPY, "======================================================");
         /* update statistics */
         return -1;
       }
       /* Scaling back to original variables */
       vecMultScaling(solverData->m, solverData->dy0, solverData->xScaling, solverData->dy0);
-      debugVectorDouble(LOG_NLS_HOMOTOPY, "tangent vector with original scaling:", solverData->dy0, solverData->m);
-      debugDouble(LOG_NLS_HOMOTOPY,"length of tangent vector with original scaling: ", vec2Norm(solverData->m, solverData->dy0));
+      debugVectorDouble(OMC_LOG_NLS_HOMOTOPY, "tangent vector with original scaling:", solverData->dy0, solverData->m);
+      debugDouble(OMC_LOG_NLS_HOMOTOPY,"length of tangent vector with original scaling: ", vec2Norm(solverData->m, solverData->dy0));
       // vecNormalize(solverData->m, solverData->dy0, solverData->dy0);
-      // debugVectorDouble(LOG_NLS_HOMOTOPY, "normalized tangent vector:", solverData->dy0, solverData->m);
-      // debugDouble(LOG_NLS_HOMOTOPY,"length of normalized tangent vector: ", vec2Norm(solverData->m, solverData->dy0));
+      // debugVectorDouble(OMC_LOG_NLS_HOMOTOPY, "normalized tangent vector:", solverData->dy0, solverData->m);
+      // debugDouble(OMC_LOG_NLS_HOMOTOPY,"length of normalized tangent vector: ", vec2Norm(solverData->m, solverData->dy0));
 
       /* Correct search direction, depending on the last direction (angle < 90 degree) */
       vecScalarProduct = vecScalarProd(solverData->m,solverData->dy0,solverData->dy2);
-      debugDouble(LOG_NLS_HOMOTOPY,"scalar product ", vecScalarProduct);
+      debugDouble(OMC_LOG_NLS_HOMOTOPY,"scalar product ", vecScalarProduct);
       if (vecScalarProduct<0 || ((fabs(vecScalarProduct)<DBL_EPSILON) && (solverData->startDirection == -1) && initialStep))
       {
-        debugInt(LOG_NLS_HOMOTOPY,"initialStep = ", initialStep);
-        debugInt(LOG_NLS_HOMOTOPY,"solverData->startDirection = ", solverData->startDirection);
-        debugVectorDouble(LOG_NLS_HOMOTOPY,"step:",solverData->dy0, m);
+        debugInt(OMC_LOG_NLS_HOMOTOPY,"initialStep = ", initialStep);
+        debugInt(OMC_LOG_NLS_HOMOTOPY,"solverData->startDirection = ", solverData->startDirection);
+        debugVectorDouble(OMC_LOG_NLS_HOMOTOPY,"step:",solverData->dy0, m);
         vecAddInv(solverData->m, solverData->dy0, solverData->dy0);
-        debugVectorDouble(LOG_NLS_HOMOTOPY,"corrected step:",solverData->dy0, m);
+        debugVectorDouble(OMC_LOG_NLS_HOMOTOPY,"corrected step:",solverData->dy0, m);
       }
       /* adapt tau, if lambda + tau*delta_lambda > 1 */
       if (fabs(solverData->dy0[solverData->n])>1e-8)
@@ -1887,19 +1887,19 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
 #ifndef OMC_EMCC
       MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
-      debugVectorDouble(LOG_NLS_HOMOTOPY,"y1 (predictor step):",solverData->y1, m);
+      debugVectorDouble(OMC_LOG_NLS_HOMOTOPY,"y1 (predictor step):",solverData->y1, m);
       solverData->h_function(solverData, solverData->y1, solverData->hvec);
-      debugVectorDouble(LOG_NLS_HOMOTOPY,"hvec (predictor step):",solverData->hvec, n);
+      debugVectorDouble(OMC_LOG_NLS_HOMOTOPY,"hvec (predictor step):",solverData->hvec, n);
       assert = 0;
 #ifndef OMC_EMCC
       MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
       if (assert){
-        debugString(LOG_NLS_HOMOTOPY, "Assert, when calculating function value!");
-        debugString(LOG_NLS_HOMOTOPY, "--- decreasing step size tau in predictor step!");
-        debugDouble(LOG_NLS_HOMOTOPY, "old tau =", tau);
+        debugString(OMC_LOG_NLS_HOMOTOPY, "Assert, when calculating function value!");
+        debugString(OMC_LOG_NLS_HOMOTOPY, "--- decreasing step size tau in predictor step!");
+        debugDouble(OMC_LOG_NLS_HOMOTOPY, "old tau =", tau);
         tau = tau/tauDecreasingFactorPredictor;
-        debugDouble(LOG_NLS_HOMOTOPY, "new tau =", tau);
+        debugDouble(OMC_LOG_NLS_HOMOTOPY, "new tau =", tau);
       }
     } while (assert && (tau > tauMin));
 
@@ -1909,12 +1909,12 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
         solverData->info=-1;
         /* debug information */
         if (solverData->initHomotopy)
-            warningStreamPrint(LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nThe step size tau cannot be decreased anymore and current tau=%g already failed.\nYou can influence the calculation of tau with the following flags:\n\t-homTauDecFac=<value>\n\t-homTauDecFacPredictor=<value>\n\t-homTauIncFac=<value>\n\t-homTauIncThreshold=<value>\n\t-homTauMax=<value>\n\t-homTauMin=<value>\n\t-homTauStart=<value>\nYou can also set the threshold for accepting the current bending with:\n\t-homAdaptBend=<value>\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.", tau);
+            warningStreamPrint(OMC_LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nThe step size tau cannot be decreased anymore and current tau=%g already failed.\nYou can influence the calculation of tau with the following flags:\n\t-homTauDecFac=<value>\n\t-homTauDecFacPredictor=<value>\n\t-homTauIncFac=<value>\n\t-homTauIncThreshold=<value>\n\t-homTauMax=<value>\n\t-homTauMin=<value>\n\t-homTauStart=<value>\nYou can also set the threshold for accepting the current bending with:\n\t-homAdaptBend=<value>\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.", tau);
         else {
-          debugString(LOG_NLS_HOMOTOPY, "Assert, because tau cannot be decreased anymore and current tau already failed!");
-          debugString(LOG_NLS_HOMOTOPY, "Homotopy algorithm did not converge");
+          debugString(OMC_LOG_NLS_HOMOTOPY, "Assert, because tau cannot be decreased anymore and current tau already failed!");
+          debugString(OMC_LOG_NLS_HOMOTOPY, "Homotopy algorithm did not converge");
         }
-        debugString(LOG_NLS_HOMOTOPY, "======================================================");
+        debugString(OMC_LOG_NLS_HOMOTOPY, "======================================================");
         /* update statistics */
         return -1;
     }
@@ -1923,35 +1923,35 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     vecCopy(solverData->n, solverData->hvec, solverData->hvecScaled);
 
     solverData->tau = tau;
-    printHomotopyPredictorStep(LOG_NLS_HOMOTOPY, solverData);
+    printHomotopyPredictorStep(OMC_LOG_NLS_HOMOTOPY, solverData);
 
     /****************************************************************************
      * Corrector step: Newton iteration!                                        *
      ****************************************************************************/
-    debugString(LOG_NLS_HOMOTOPY, "Newton iteration for corrector step begins!");
+    debugString(OMC_LOG_NLS_HOMOTOPY, "Newton iteration for corrector step begins!");
 
     /* If this is the last step, use backtrace strategy with one fixed coordinate and fix lambda */
     if (solverData->yt[solverData->n] == 1)
     {
-      debugString(LOG_NLS_HOMOTOPY, "Force '-homBacktraceStrategy=fix' and fix lambda, because this is the last step!");
-      debugDouble(LOG_NLS_HOMOTOPY, "Set tolerance homHEps to newtonFTol =", newtonFTol);
+      debugString(OMC_LOG_NLS_HOMOTOPY, "Force '-homBacktraceStrategy=fix' and fix lambda, because this is the last step!");
+      debugDouble(OMC_LOG_NLS_HOMOTOPY, "Set tolerance homHEps to newtonFTol =", newtonFTol);
       correctorStrategy = 1;
       pos = solverData->n;
       hEps = newtonFTol;
     }
 
     if (correctorStrategy==1)
-      debugString(LOG_NLS_HOMOTOPY, "Using backtrace strategy with one fixed coordinate! To change this use: '-homBacktraceStrategy=orthogonal'");
+      debugString(OMC_LOG_NLS_HOMOTOPY, "Using backtrace strategy with one fixed coordinate! To change this use: '-homBacktraceStrategy=orthogonal'");
     else
-      debugString(LOG_NLS_HOMOTOPY, "Using backtrace strategy orthogonal to the tangent vector! To change this use: '-homBacktraceStrategy=fix'");
+      debugString(OMC_LOG_NLS_HOMOTOPY, "Using backtrace strategy orthogonal to the tangent vector! To change this use: '-homBacktraceStrategy=fix'");
 
 
     for(j=0;j<maxiter;j++)
     {
-      debugInt(LOG_NLS_HOMOTOPY, "Iteration: ", j+1);
+      debugInt(OMC_LOG_NLS_HOMOTOPY, "Iteration: ", j+1);
       if (vec2Norm(solverData->n, solverData->hvec)<hEps || vec2Norm(solverData->n, solverData->hvecScaled)<hEps)
       {
-        debugString(LOG_NLS_HOMOTOPY, "step accepted!");
+        debugString(OMC_LOG_NLS_HOMOTOPY, "step accepted!");
         stepAccept = 1;
         break;
       }
@@ -1961,13 +1961,13 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
 #endif
       /* calculate homotopy jacobian */
       solverData->hJac_dh(solverData, solverData->y1, solverData->hJac);
-      debugMatrixDouble(LOG_NLS_JAC,"Jacobian hJac:",solverData->hJac, solverData->n, solverData->n+1);
+      debugMatrixDouble(OMC_LOG_NLS_JAC,"Jacobian hJac:",solverData->hJac, solverData->n, solverData->n+1);
 
       if (correctorStrategy==2)
       {
         /* calculate the newton matrix hJac2 for the orthogonal backtrace strategy */
         orthogonalBacktraceMatrix(solverData, solverData->hJac, solverData->hvec, solverData->dy0, solverData->hJac2, solverData->n, solverData->m);
-        debugMatrixDouble(LOG_NLS_JAC,"Enhanced Jacobian hJac2 (orthogonal backtrace strategy):",solverData->hJac2, solverData->n+1, solverData->m+1);
+        debugMatrixDouble(OMC_LOG_NLS_JAC,"Enhanced Jacobian hJac2 (orthogonal backtrace strategy):",solverData->hJac2, solverData->n+1, solverData->m+1);
       }
 
       assert = 0;
@@ -1976,22 +1976,22 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
 #endif
       if (assert)
       {
-        debugString(LOG_NLS_HOMOTOPY, "step NOT accepted, because hJac_dh could not be calculated!");
+        debugString(OMC_LOG_NLS_HOMOTOPY, "step NOT accepted, because hJac_dh could not be calculated!");
         stepAccept = 0;
         break;
       }
       matVecMultAbs(solverData->n, solverData->m, solverData->hJac, solverData->ones, solverData->resScaling);
-      debugVectorDouble(LOG_NLS_HOMOTOPY, "residuum scaling of function h:", solverData->resScaling, solverData->n);
+      debugVectorDouble(OMC_LOG_NLS_HOMOTOPY, "residuum scaling of function h:", solverData->resScaling, solverData->n);
 
       if (correctorStrategy==1) // fix one coordinate
       {
         /* copy vector h to column "pos" of the jacobian */
-        debugVectorDouble(LOG_NLS_HOMOTOPY, "copy vector hvec to column 'pos' of the jacobian:", solverData->hvec, solverData->n);
+        debugVectorDouble(OMC_LOG_NLS_HOMOTOPY, "copy vector hvec to column 'pos' of the jacobian:", solverData->hvec, solverData->n);
         vecCopy(solverData->n, solverData->hvec, solverData->hJac + pos*solverData->n);
         scaleMatrixRows(solverData->n, solverData->m, solverData->hJac);
         if (solveSystemWithTotalPivotSearch(data, solverData->n, solverData->dy1, solverData->hJac, solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet) == -1)
         {
-          debugString(LOG_NLS_HOMOTOPY, "step NOT accepted, because solveSystemWithTotalPivotSearch failed!");
+          debugString(OMC_LOG_NLS_HOMOTOPY, "step NOT accepted, because solveSystemWithTotalPivotSearch failed!");
           stepAccept = 0;
           break;
         }
@@ -2003,7 +2003,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
         pos = solverData->n+1;
         if (solveSystemWithTotalPivotSearch(data, solverData->n+1, solverData->dy1, solverData->hJac2, solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet) == -1)
         {
-          debugString(LOG_NLS_HOMOTOPY, "step NOT accepted, because solveSystemWithTotalPivotSearch failed!");
+          debugString(OMC_LOG_NLS_HOMOTOPY, "step NOT accepted, because solveSystemWithTotalPivotSearch failed!");
           stepAccept = 0;
           break;
         }
@@ -2011,11 +2011,11 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
 
       /* Scaling back to original variables */
       vecMultScaling(solverData->m, solverData->dy1, solverData->xScaling, solverData->dy1);
-      debugVectorDouble(LOG_NLS_HOMOTOPY, "solution (original scaling):", solverData->dy1, solverData->m);
+      debugVectorDouble(OMC_LOG_NLS_HOMOTOPY, "solution (original scaling):", solverData->dy1, solverData->m);
 
       vecAdd(solverData->m, solverData->y1, solverData->dy1, solverData->y2);
       vecCopy(solverData->m, solverData->y2, solverData->y1);
-      debugVectorDouble(LOG_NLS_HOMOTOPY, "new y in newton:", solverData->y1, solverData->m);
+      debugVectorDouble(OMC_LOG_NLS_HOMOTOPY, "new y in newton:", solverData->y1, solverData->m);
       assert = 1;
 #ifndef OMC_EMCC
     MMC_TRY_INTERNAL(simulationJumpBuffer)
@@ -2028,7 +2028,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
 #endif
       if (assert)
       {
-        debugString(LOG_NLS_HOMOTOPY, "step NOT accepted, because h_function could not be calculated!");
+        debugString(OMC_LOG_NLS_HOMOTOPY, "step NOT accepted, because h_function could not be calculated!");
         stepAccept = 0;
         break;
       }
@@ -2041,29 +2041,29 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
 
 
       /* debug information */
-      debugVectorDouble(LOG_NLS_HOMOTOPY,"function values:",solverData->hvec, n);
-      debugVectorDouble(LOG_NLS_HOMOTOPY,"scaled function values:",solverData->hvecScaled, n);
+      debugVectorDouble(OMC_LOG_NLS_HOMOTOPY,"function values:",solverData->hvec, n);
+      debugVectorDouble(OMC_LOG_NLS_HOMOTOPY,"scaled function values:",solverData->hvecScaled, n);
 
-      debugString(LOG_NLS_HOMOTOPY, "error measurements:");
-      debugDouble(LOG_NLS_HOMOTOPY, "delta_x        =", delta_x);
-      debugDouble(LOG_NLS_HOMOTOPY, "error_h        =", error_h);
-      debugDouble(LOG_NLS_HOMOTOPY, "error_h_scaled =", error_h_scaled);
-      debugDouble(LOG_NLS_HOMOTOPY, "hEps           =", hEps);
+      debugString(OMC_LOG_NLS_HOMOTOPY, "error measurements:");
+      debugDouble(OMC_LOG_NLS_HOMOTOPY, "delta_x        =", delta_x);
+      debugDouble(OMC_LOG_NLS_HOMOTOPY, "error_h        =", error_h);
+      debugDouble(OMC_LOG_NLS_HOMOTOPY, "error_h_scaled =", error_h_scaled);
+      debugDouble(OMC_LOG_NLS_HOMOTOPY, "hEps           =", hEps);
 
     }
-    debugString(LOG_NLS_HOMOTOPY, "Newton iteration for corrector step finished!");
+    debugString(OMC_LOG_NLS_HOMOTOPY, "Newton iteration for corrector step finished!");
 
     if (!assert)
     {
       vecDiff(solverData->m, solverData->y1, solverData->yt, solverData->dy1);
       vecDiff(solverData->m, solverData->yt, solverData->y0, solverData->dy2);
-      printHomotopyCorrectorStep(LOG_NLS_HOMOTOPY, solverData);
+      printHomotopyCorrectorStep(OMC_LOG_NLS_HOMOTOPY, solverData);
       bend = vec2Norm(solverData->m,solverData->dy1)/vec2Norm(solverData->m,solverData->dy2);
 
-      debugDouble(LOG_NLS_HOMOTOPY, "vector length of predictor step =", vec2Norm(solverData->m,solverData->dy2));
-      debugDouble(LOG_NLS_HOMOTOPY, "vector length of corrector step =", vec2Norm(solverData->m,solverData->dy1));
-      debugDouble(LOG_NLS_HOMOTOPY, "bend  =", bend);
-      debugDouble(LOG_NLS_HOMOTOPY, "adaptBend  =", adaptBend);
+      debugDouble(OMC_LOG_NLS_HOMOTOPY, "vector length of predictor step =", vec2Norm(solverData->m,solverData->dy2));
+      debugDouble(OMC_LOG_NLS_HOMOTOPY, "vector length of corrector step =", vec2Norm(solverData->m,solverData->dy1));
+      debugDouble(OMC_LOG_NLS_HOMOTOPY, "bend  =", bend);
+      debugDouble(OMC_LOG_NLS_HOMOTOPY, "adaptBend  =", adaptBend);
     }
     if ((bend > adaptBend) || !stepAccept)
     {
@@ -2071,20 +2071,20 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       {
         /* debug information */
         if (solverData->initHomotopy)
-          warningStreamPrint(LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nThe value specifying the bending of the homotopy curve is smaller than DBL_EPSILON (increment zero).\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.");
+          warningStreamPrint(OMC_LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nThe value specifying the bending of the homotopy curve is smaller than DBL_EPSILON (increment zero).\nYou can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.");
         else
-          debugString(LOG_NLS_HOMOTOPY, "\nINCREMENT ZERO: Homotopy algorithm did not converge\n");
-        debugString(LOG_NLS_HOMOTOPY, "======================================================");
+          debugString(OMC_LOG_NLS_HOMOTOPY, "\nINCREMENT ZERO: Homotopy algorithm did not converge\n");
+        debugString(OMC_LOG_NLS_HOMOTOPY, "======================================================");
         /* update statistics */
         return -1;
       }
-      debugString(LOG_NLS_HOMOTOPY, "The relation between the vector length of corrector step and predictor step is too big:");
-      debugDouble(LOG_NLS_HOMOTOPY, "bend/adaptBend  =", bend/adaptBend);
-      debugString(LOG_NLS_HOMOTOPY, "--- decreasing step size tau in corrector step!");
+      debugString(OMC_LOG_NLS_HOMOTOPY, "The relation between the vector length of corrector step and predictor step is too big:");
+      debugDouble(OMC_LOG_NLS_HOMOTOPY, "bend/adaptBend  =", bend/adaptBend);
+      debugString(OMC_LOG_NLS_HOMOTOPY, "--- decreasing step size tau in corrector step!");
       preTau = tau;
-      debugDouble(LOG_NLS_HOMOTOPY, "old tau =", preTau);
+      debugDouble(OMC_LOG_NLS_HOMOTOPY, "old tau =", preTau);
       tau = fmax(tauMin,tau/tauDecreasingFactor);
-      debugDouble(LOG_NLS_HOMOTOPY, "new tau =", tau);
+      debugDouble(OMC_LOG_NLS_HOMOTOPY, "new tau =", tau);
       if (tau==preTau)
         iter = maxTries;
       else
@@ -2096,18 +2096,18 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       numSteps++;
       if (bend < adaptBend/tauIncreasingThreshold)
       {
-        debugString(LOG_NLS_HOMOTOPY, "--- increasing step size tau in corrector step!");
-        debugDouble(LOG_NLS_HOMOTOPY, "old tau =", tau);
+        debugString(OMC_LOG_NLS_HOMOTOPY, "--- increasing step size tau in corrector step!");
+        debugDouble(OMC_LOG_NLS_HOMOTOPY, "old tau =", tau);
         tau = fmin(tauMax, tau*tauIncreasingFactor);
-        debugDouble(LOG_NLS_HOMOTOPY, "new tau =", tau);
+        debugDouble(OMC_LOG_NLS_HOMOTOPY, "new tau =", tau);
       }
       vecCopy(solverData->m, solverData->y1, solverData->y0);
       vecCopy(solverData->m, solverData->dy0, solverData->dy2);
-      debugString(LOG_NLS_HOMOTOPY, "Successfull homotopy step!\n======================================================");
-      printHomotopyUnknowns(LOG_NLS_HOMOTOPY, solverData);
+      debugString(OMC_LOG_NLS_HOMOTOPY, "Successfull homotopy step!\n======================================================");
+      printHomotopyUnknowns(OMC_LOG_NLS_HOMOTOPY, solverData);
 
 #if !defined(OMC_NO_FILESYSTEM)
-      if(solverData->initHomotopy && ACTIVE_STREAM(LOG_INIT_HOMOTOPY))
+      if(solverData->initHomotopy && OMC_ACTIVE_STREAM(OMC_LOG_INIT_HOMOTOPY))
       {
         fprintf(pFile, "%.16g", solverData->y0[n]);
         for(i=0; i<n; ++i)
@@ -2118,22 +2118,22 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     }
   }
   if (solverData->initHomotopy)
-      infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "homotopy parameter lambda = %g", solverData->y0[solverData->n]);
+      infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "homotopy parameter lambda = %g", solverData->y0[solverData->n]);
   else
-      infoStreamPrint(LOG_NLS_HOMOTOPY, 0, "homotopy parameter lambda = %g", solverData->y0[solverData->n]);
+      infoStreamPrint(OMC_LOG_NLS_HOMOTOPY, 0, "homotopy parameter lambda = %g", solverData->y0[solverData->n]);
   /* copy solution back to vector x */
   vecCopy(solverData->n, solverData->y1, x);
 
-  debugString(LOG_NLS_HOMOTOPY, "HOMOTOPY ALGORITHM SUCCEEDED");
+  debugString(OMC_LOG_NLS_HOMOTOPY, "HOMOTOPY ALGORITHM SUCCEEDED");
   if (solverData->initHomotopy) {
     data->simulationInfo->homotopySteps += numSteps;
-    debugInt(LOG_INIT_HOMOTOPY, "Total number of lambda steps for this homotopy loop:", numSteps);
+    debugInt(OMC_LOG_INIT_HOMOTOPY, "Total number of lambda steps for this homotopy loop:", numSteps);
   }
-  debugString(LOG_NLS_HOMOTOPY, "======================================================");
+  debugString(OMC_LOG_NLS_HOMOTOPY, "======================================================");
   solverData->info = 1;
 
 #if !defined(OMC_NO_FILESYSTEM)
-  if(solverData->initHomotopy && ACTIVE_STREAM(LOG_INIT_HOMOTOPY))
+  if(solverData->initHomotopy && OMC_ACTIVE_STREAM(OMC_LOG_INIT_HOMOTOPY))
     fclose(pFile);
 #endif
 
@@ -2193,25 +2193,25 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
 
   if (!homotopyData->initHomotopy) {
     int indexes[2] = {1,eqSystemNumber};
-    infoStreamPrintWithEquationIndexes(LOG_NLS_V, omc_dummyFileInfo, 1, indexes,
+    infoStreamPrintWithEquationIndexes(OMC_LOG_NLS_V, omc_dummyFileInfo, 1, indexes,
       "Start solving Non-Linear System %d (size %d) at time %g with Mixed (Newton/Homotopy) Solver",
       eqSystemNumber, (int) nlsData->size, data->localData[0]->timeValue);
   } else {
-    debugString(LOG_NLS_V, "------------------------------------------------------");
-    debugString(LOG_NLS_V, "SOLVING HOMOTOPY INITIALIZATION PROBLEM WITH THE HOMOTOPY SOLVER");
-    debugInt(LOG_NLS_V, "EQUATION NUMBER:", eqSystemNumber);
-    debugDouble(LOG_NLS_V, "TIME:", homotopyData->timeValue);
+    debugString(OMC_LOG_NLS_V, "------------------------------------------------------");
+    debugString(OMC_LOG_NLS_V, "SOLVING HOMOTOPY INITIALIZATION PROBLEM WITH THE HOMOTOPY SOLVER");
+    debugInt(OMC_LOG_NLS_V, "EQUATION NUMBER:", eqSystemNumber);
+    debugDouble(OMC_LOG_NLS_V, "TIME:", homotopyData->timeValue);
   }
 
   /* set x vector */
   if(data->simulationInfo->discreteCall)
   {
     vecCopy(homotopyData->n, nlsData->nlsx, homotopyData->xStart);
-    debugVectorDouble(LOG_NLS_V,"System values", homotopyData->xStart, homotopyData->n);
+    debugVectorDouble(OMC_LOG_NLS_V,"System values", homotopyData->xStart, homotopyData->n);
   } else
   {
     vecCopy(homotopyData->n, nlsData->nlsxExtrapolation, homotopyData->xStart);
-    debugVectorDouble(LOG_NLS_V,"System extrapolation", homotopyData->xStart, homotopyData->n);
+    debugVectorDouble(OMC_LOG_NLS_V,"System extrapolation", homotopyData->xStart, homotopyData->n);
   }
   vecCopy(homotopyData->n, homotopyData->xStart, homotopyData->x0);
   // Initialize lambda variable
@@ -2230,8 +2230,8 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
   }
   homotopyData->xScaling[homotopyData->n] = 1.0;
 
-  debugVectorDouble(LOG_NLS_V,"Nominal values", nlsData->nominal, homotopyData->n);
-  debugVectorDouble(LOG_NLS_V,"Scaling values", homotopyData->xScaling, homotopyData->m);
+  debugVectorDouble(OMC_LOG_NLS_V,"Nominal values", nlsData->nominal, homotopyData->n);
+  debugVectorDouble(OMC_LOG_NLS_V,"Scaling values", homotopyData->xScaling, homotopyData->m);
 
 
   if (!homotopyData->initHomotopy) {
@@ -2240,7 +2240,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
     giveUp = 1;
     while (tries<=2)
     {
-      debugVectorDouble(LOG_NLS_V,"x0", homotopyData->x0, homotopyData->n);
+      debugVectorDouble(OMC_LOG_NLS_V,"x0", homotopyData->x0, homotopyData->n);
       /* evaluate with discontinuities */
       if(data->simulationInfo->discreteCall)
       {
@@ -2273,13 +2273,13 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
         memcpy(relationsPreBackup, data->simulationInfo->relations, sizeof(modelica_boolean)*data->modelData->nRelations);
       /* calculate scaling factor of residuals */
       matVecMultAbsBB(homotopyData->n, homotopyData->fJac, homotopyData->ones, homotopyData->resScaling);
-      debugVectorDouble(LOG_NLS_JAC, "residuum scaling:", homotopyData->resScaling, homotopyData->n);
+      debugVectorDouble(OMC_LOG_NLS_JAC, "residuum scaling:", homotopyData->resScaling, homotopyData->n);
       scaleMatrixRows(homotopyData->n, homotopyData->m, homotopyData->fJac);
 
       pos = homotopyData->n;
       assert = (solveSystemWithTotalPivotSearch(data, homotopyData->n, homotopyData->dy0, homotopyData->fJac, homotopyData->indRow, homotopyData->indCol, &pos, &rank, homotopyData->casualTearingSet) == -1);
       if (!assert)
-        debugString(LOG_NLS_V, "regular initial point!!!");
+        debugString(OMC_LOG_NLS_V, "regular initial point!!!");
       giveUp = 0;
 #ifndef OMC_EMCC
       MMC_CATCH_INTERNAL(simulationJumpBuffer)
@@ -2299,13 +2299,13 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
       /* try to find regular initial point, if necessary */
       if (tries == 1)
       {
-        debugString(LOG_NLS_V, "assert handling:\t vary initial guess by +1%.");
+        debugString(OMC_LOG_NLS_V, "assert handling:\t vary initial guess by +1%.");
         for(i = 0; i < homotopyData->n; i++)
           homotopyData->x0[i] = homotopyData->xStart[i] + homotopyData->xScaling[i]*i/homotopyData->n*0.01;
       }
       if (tries == 2)
       {
-        debugString(LOG_NLS_V,"assert handling:\t vary initial guess by +10%.");
+        debugString(OMC_LOG_NLS_V,"assert handling:\t vary initial guess by +10%.");
         for(i = 0; i < homotopyData->n; i++)
           homotopyData->x0[i] = homotopyData->xStart[i] + homotopyData->xScaling[i]*i/homotopyData->n*0.1;
       }
@@ -2334,7 +2334,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
 
       // If this is the casual tearing set (only exists for dynamic tearing), break after first try
       if (homotopyData->info == -1 && homotopyData->casualTearingSet){
-        infoStreamPrint(LOG_NLS_V, 0, "### No Solution for the casual tearing set at the first try! ###");
+        infoStreamPrint(OMC_LOG_NLS_V, 0, "### No Solution for the casual tearing set at the first try! ###");
         break;
       }
 
@@ -2356,8 +2356,8 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
       /* This case may be switched off, because of event chattering!!!*/
       if(mixedSystem && data->simulationInfo->discreteCall && (alreadyTested<1))
       {
-        debugVectorBool(LOG_NLS_V,"Relations Pre vector", ((DATA*)data)->simulationInfo->relationsPre, ((DATA*)data)->modelData->nRelations);
-        debugVectorBool(LOG_NLS_V,"Relations Backup vector", relationsPreBackup, ((DATA*)data)->modelData->nRelations);
+        debugVectorBool(OMC_LOG_NLS_V,"Relations Pre vector", ((DATA*)data)->simulationInfo->relationsPre, ((DATA*)data)->modelData->nRelations);
+        debugVectorBool(OMC_LOG_NLS_V,"Relations Backup vector", relationsPreBackup, ((DATA*)data)->modelData->nRelations);
         ((DATA*)data)->simulationInfo->solveContinuous = 0;
 
         if (homotopyData->casualTearingSet){
@@ -2370,7 +2370,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
         else
           homotopyData->f(homotopyData, homotopyData->x, homotopyData->f1);
 
-        debugVectorBool(LOG_NLS_V,"Relations vector", ((DATA*)data)->simulationInfo->relations, ((DATA*)data)->modelData->nRelations);
+        debugVectorBool(OMC_LOG_NLS_V,"Relations vector", ((DATA*)data)->simulationInfo->relations, ((DATA*)data)->modelData->nRelations);
         if (isNotEqualVectorInt(((DATA*)data)->modelData->nRelations, ((DATA*)data)->simulationInfo->relations, relationsPreBackup)>0)
         {
           /* re-run the solution process, since relations in the system have changed */
@@ -2388,7 +2388,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
 
           pos = homotopyData->n;
           solveSystemWithTotalPivotSearch(data, homotopyData->n, homotopyData->dy0, homotopyData->fJac,   homotopyData->indRow, homotopyData->indCol, &pos, &rank, homotopyData->casualTearingSet);
-          debugDouble(LOG_NLS_V,"solve mixed system at time : ", homotopyData->timeValue);
+          debugDouble(OMC_LOG_NLS_V,"solve mixed system at time : ", homotopyData->timeValue);
           continue;
         }
       }
@@ -2406,24 +2406,24 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
     vecCopy(homotopyData->n, homotopyData->x0, homotopyData->x);
     runHomotopy++;
     /* debug output */
-    debugString(LOG_NLS_HOMOTOPY, "======================================================");
+    debugString(OMC_LOG_NLS_HOMOTOPY, "======================================================");
 
     if (homotopyData->initHomotopy) {
       if (runHomotopy == 1) {
         homotopyData->h_function = wrapper_fvec;
         homotopyData->hJac_dh = wrapper_fvec_der;
         homotopyData->startDirection = omc_flag[FLAG_HOMOTOPY_NEG_START_DIR] ? -1.0 : 1.0;
-        debugInt(LOG_INIT_HOMOTOPY, "Homotopy run: ", runHomotopy);
-        debugDouble(LOG_INIT_HOMOTOPY,"startDirection = ", homotopyData->startDirection);
+        debugInt(OMC_LOG_INIT_HOMOTOPY, "Homotopy run: ", runHomotopy);
+        debugDouble(OMC_LOG_INIT_HOMOTOPY,"startDirection = ", homotopyData->startDirection);
       }
 
       if (runHomotopy == 2) {
         homotopyData->h_function = wrapper_fvec;
         homotopyData->hJac_dh = wrapper_fvec_der;
         homotopyData->startDirection = omc_flag[FLAG_HOMOTOPY_NEG_START_DIR] ? 1.0 : -1.0;
-        infoStreamPrint(LOG_ASSERT, 0, "The homotopy algorithm is started again with opposing start direction.");
-        debugInt(LOG_INIT_HOMOTOPY, "Homotopy run: ", runHomotopy);
-        debugDouble(LOG_INIT_HOMOTOPY,"Try again with startDirection = ", homotopyData->startDirection);
+        infoStreamPrint(OMC_LOG_ASSERT, 0, "The homotopy algorithm is started again with opposing start direction.");
+        debugInt(OMC_LOG_INIT_HOMOTOPY, "Homotopy run: ", runHomotopy);
+        debugDouble(OMC_LOG_INIT_HOMOTOPY,"Try again with startDirection = ", homotopyData->startDirection);
       }
 
       if (runHomotopy == 3) {
@@ -2432,14 +2432,14 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
       }
     }
     else {
-      debugInt(LOG_NLS_HOMOTOPY, "Homotopy run: ", runHomotopy);
+      debugInt(OMC_LOG_NLS_HOMOTOPY, "Homotopy run: ", runHomotopy);
       if (runHomotopy == 1)
       {
         /* store x0 and calculate f(x0) -> newton homotopy, fJac(x0) -> taylor, affin homotopy */
         homotopyData->h_function = wrapper_fvec_homotopy_newton;
         homotopyData->hJac_dh = wrapper_fvec_homotopy_newton_der;
         homotopyData->startDirection = 1.0;
-        debugDouble(LOG_NLS_HOMOTOPY,"STARTING NEWTON HOMOTOPY METHOD; startDirection = ", homotopyData->startDirection);
+        debugDouble(OMC_LOG_NLS_HOMOTOPY,"STARTING NEWTON HOMOTOPY METHOD; startDirection = ", homotopyData->startDirection);
       }
       if (runHomotopy == 2)
       {
@@ -2447,14 +2447,14 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
         homotopyData->h_function = wrapper_fvec_homotopy_newton;
         homotopyData->hJac_dh = wrapper_fvec_homotopy_newton_der;
         homotopyData->startDirection = -1.0;
-        debugDouble(LOG_NLS_HOMOTOPY,"STARTING NEWTON HOMOTOPY METHOD; startDirection = ", homotopyData->startDirection);
+        debugDouble(OMC_LOG_NLS_HOMOTOPY,"STARTING NEWTON HOMOTOPY METHOD; startDirection = ", homotopyData->startDirection);
       }
       if (runHomotopy == 3)
       {
         homotopyData->h_function = wrapper_fvec_homotopy_fixpoint;
         homotopyData->hJac_dh = wrapper_fvec_homotopy_fixpoint_der;
         homotopyData->startDirection = 1.0;
-        debugDouble(LOG_NLS_HOMOTOPY,"STARTING FIXPOINT HOMOTOPY METHOD = ", homotopyData->startDirection);
+        debugDouble(OMC_LOG_NLS_HOMOTOPY,"STARTING FIXPOINT HOMOTOPY METHOD = ", homotopyData->startDirection);
       }
     }
 
@@ -2468,7 +2468,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
     } else if (homotopyData->initHomotopy && homotopyData->info==1) {
       /* take the solution */
       vecCopy(homotopyData->n, homotopyData->x, nlsData->nlsx);
-      debugVectorDouble(LOG_NLS_V,"Solution", homotopyData->x, homotopyData->n);
+      debugVectorDouble(OMC_LOG_NLS_V,"Solution", homotopyData->x, homotopyData->n);
       success = NLS_SOLVED;
     }
 
@@ -2491,13 +2491,13 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
       vecCopy(homotopyData->n, homotopyData->f1, homotopyData->fJac + homotopyData->n*homotopyData->n);
       /* calculate scaling factor of residuals */
       matVecMultAbsBB(homotopyData->n, homotopyData->fJac, homotopyData->ones, homotopyData->resScaling);
-      debugVectorDouble(LOG_NLS_JAC, "residuum scaling:", homotopyData->resScaling, homotopyData->n);
+      debugVectorDouble(OMC_LOG_NLS_JAC, "residuum scaling:", homotopyData->resScaling, homotopyData->n);
       scaleMatrixRows(homotopyData->n, homotopyData->m, homotopyData->fJac);
 
       pos = homotopyData->n;
       assert = (solveSystemWithTotalPivotSearch(data, homotopyData->n, homotopyData->dy0, homotopyData->fJac,   homotopyData->indRow, homotopyData->indCol, &pos, &rank, homotopyData->casualTearingSet) == -1);
       if (!assert)
-        debugString(LOG_NLS_V, "regular initial point!!!");
+        debugString(OMC_LOG_NLS_V, "regular initial point!!!");
 #ifndef OMC_EMCC
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
  #endif
@@ -2513,11 +2513,11 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
   }
   if (success != NLS_SOLVED)
   {
-    debugString(LOG_NLS_V,"Homotopy solver did not converge!");
+    debugString(OMC_LOG_NLS_V,"Homotopy solver did not converge!");
   }
   free(relationsPreBackup);
 
-  messageClose(LOG_NLS_V);
+  messageClose(OMC_LOG_NLS_V);
 
   /* write statistics */
   nlsData->numberOfFEval = homotopyData->numberOfFunctionEvaluations;

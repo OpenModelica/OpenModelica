@@ -58,7 +58,6 @@ public:
   enum LibraryType {
     Modelica,         /* Used to represent Modelica models. */
     Text,             /* Used to represent text based files. */
-    CompositeModel,   /* Used to represent CompositeModel files. */
     OMS               /* Used to represent OMSimulator models. */
   };
   enum Access {
@@ -87,7 +86,6 @@ public:
   void setLibraryType(LibraryType libraryType) {mLibraryType = libraryType;}
   bool isModelica() const {return mLibraryType == LibraryTreeItem::Modelica;}
   bool isText() const {return mLibraryType == LibraryTreeItem::Text;}
-  bool isCompositeModel() const {return mLibraryType == LibraryTreeItem::CompositeModel;}
   bool isSSP() const {return mLibraryType == LibraryTreeItem::OMS;}
   void setSystemLibrary(bool systemLibrary) {mSystemLibrary = systemLibrary;}
   bool isSystemLibrary() {return mSystemLibrary;}
@@ -307,7 +305,7 @@ public:
   void createLibraryTreeItems(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem);
   LibraryTreeItem* createLibraryTreeItem(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved,
                                          LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
-  LibraryTreeItem* createLibraryTreeItem(QString name, QString nameStructure, QString path, bool isSaved,
+  LibraryTreeItem* createLibraryTreeItem(QString name, QString nameStructursre, QString path, bool isSaved,
                                          LibraryTreeItem *pParentLibraryTreeItem, oms_element_t *pOMSElement = 0,
                                          oms_connector_t *pOMSConnector = 0, oms_busconnector_t *pOMSBusConnector = 0,
                                          oms_tlmbusconnector_t *pOMSTLMBusConnector = 0, int row = -1);
@@ -327,7 +325,7 @@ public:
   void showHideProtectedClasses();
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true, bool doDeleteClass = true);
   bool reloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
-  bool unloadCompositeModelOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
+  bool unloadTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadOMSModel(LibraryTreeItem *pLibraryTreeItem, bool doDelete = true, bool askQuestion = true);
   void getExpandedLibraryTreeItemsList(LibraryTreeItem *pLibraryTreeItem, QStringList *pExpandedLibraryTreeItemsList);
   void expandLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem, QStringList expandedLibraryTreeItemsList);
@@ -414,7 +412,7 @@ private:
   QAction *mpDuplicateClassAction;
   QAction *mpUnloadClassAction;
   QAction *mpReloadClassAction;
-  QAction *mpUnloadCompositeModelFileAction;
+  QAction *mpUnloadTextFileAction;
   QAction *mpNewFileAction;
   QAction *mpNewFileEmptyAction;
   QAction *mpNewFolderAction;
@@ -429,8 +427,6 @@ private:
   QAction *mpExportFigaroAction;
   QAction *mpUpdateBindingsAction;
   QAction *mpGenerateVerificationScenariosAction;
-  QAction *mpFetchInterfaceDataAction;
-  QAction *mpTLMCoSimulationAction;
   QAction *mpOMSRenameAction;
   QAction *mpUnloadOMSModelAction;
   void createActions();
@@ -464,7 +460,7 @@ public slots:
   void duplicateClass();
   void unloadClass();
   void reloadClass();
-  void unloadCompositeModelOrTextFile();
+  void unloadTextFile();
   void createNewFile();
   void createNewFileEmpty();
   void createNewFolder();
@@ -479,8 +475,6 @@ public slots:
   void exportModelFigaro();
   void updateBindings();
   void generateVerificationScenarios();
-  void fetchInterfaceData();
-  void TLMSimulate();
   void OMSRename();
   void unloadOMSModel();
 protected:
@@ -500,10 +494,9 @@ public:
   void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false, bool loadExternalModel = false);
   void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool secondAttempt = false, int row = -1);
   void openEncrytpedModelicaLibrary(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
-  void openCompositeModelOrTextFile(QFileInfo fileInfo, bool showProgress = true);
+  void openTextFile(QFileInfo fileInfo, bool showProgress = true);
   void openDirectory(QFileInfo fileInfo, bool showProgress = true);
   void openOMSModelFile(QFileInfo fileInfo, bool showProgress = true);
-  bool parseCompositeModelFile(QFileInfo fileInfo, QString *pCompositeModelName);
   void parseAndLoadModelicaText(QString modelText);
   bool saveFile(QString fileName, QString contents);
   bool saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
@@ -531,10 +524,7 @@ private:
   bool saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool saveAs);
   bool saveOMSLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void saveOMSLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem, QString fileName);
-  bool saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
-  bool saveAsCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool saveAsOMSLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
-  bool saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, QString fileName);
   void saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
   bool resolveConflictWithLoadedLibraries(const QString &library, const QStringList classes);
   static void cancelLoadingLibraries(const QStringList classes);

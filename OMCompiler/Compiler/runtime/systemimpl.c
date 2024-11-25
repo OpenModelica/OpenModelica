@@ -2779,9 +2779,9 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
 
       case FLAG_LV:
         firstExtraFlag=firstOMCErrorStream;
-        numExtraFlags = SIM_LOG_MAX;
-        flagName = LOG_STREAM_NAME;
-        flagDesc = LOG_STREAM_DESC;
+        numExtraFlags = OMC_SIM_LOG_MAX;
+        flagName = OMC_LOG_STREAM_NAME;
+        flagDesc = OMC_LOG_STREAM_DESC;
         break;
 
       case FLAG_NEWTON_STRATEGY:
