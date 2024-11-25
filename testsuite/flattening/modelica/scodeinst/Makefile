@@ -1004,6 +1004,7 @@ RecordBinding11.mo \
 RecordBinding12.mo \
 RecordBinding13.mo \
 RecordBinding14.mo \
+RecordBinding15.mo \
 RecordConstructor1.mo \
 RecordConstructor2.mo \
 RecordConstructor3.mo \

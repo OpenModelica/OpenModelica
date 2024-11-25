@@ -168,7 +168,7 @@ public
     InstNode cr_node = ComponentRef.node(cref);
   algorithm
     Typing.typeComponentBinding(cr_node, NFInstContext.CLASS);
-    binding := Component.getImplicitBinding(InstNode.component(cr_node));
+    binding := Component.getImplicitBinding(InstNode.component(cr_node), InstNode.instanceParent(cr_node));
 
     if Binding.isUnbound(binding) then
       binding := getPackageConstantBinding2(cr_node, ComponentRef.rest(cref));

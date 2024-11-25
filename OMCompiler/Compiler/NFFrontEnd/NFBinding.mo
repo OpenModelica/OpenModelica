@@ -832,6 +832,17 @@ public
     end match;
   end source;
 
+  function makeUntyped
+    input Expression exp;
+    input InstNode scope;
+    input EachType eachType;
+    input Source source;
+    input SourceInfo info;
+    output Binding binding;
+  algorithm
+    binding := UNTYPED_BINDING(exp, false, scope, eachType, source, info);
+  end makeUntyped;
+
   function makeTyped
     input Expression exp;
     input EachType eachType;
