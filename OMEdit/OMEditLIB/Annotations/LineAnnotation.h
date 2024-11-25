@@ -95,7 +95,6 @@ public:
   QString getOMCShapeAnnotation() override;
   QString getOMCShapeAnnotationWithShapeName() override;
   QString getShapeAnnotation() override;
-  QString getCompositeModelShapeAnnotation();
   void addPoint(QPointF point) override;
   void addGeometry();
   void removePoint(int index);
@@ -161,9 +160,6 @@ private:
   ModelInstance::Line *mpLine;
 
   PointArrayAnnotation adjustPointsForDrawing() const;
-protected:
-  QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
-
   private:
   LineType mLineType;
   Element *mpStartElement;
@@ -177,7 +173,6 @@ protected:
   bool mSynchronize;
   int mPriority;
   TextAnnotation *mpTextAnnotation;
-  // MetaModel attributes
   QString mOldAnnotation;
   // CompositeModel attributes
   QString mDelay;

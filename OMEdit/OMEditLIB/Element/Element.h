@@ -119,25 +119,6 @@ public:
   void setParameterValue(const QString &parameterValue) {mParameterValue = parameterValue;}
   QString getParameterValueWithoutFetching() const {return mParameterValue;}
   QString getParameterValue(OMCProxy *pOMCProxy, const QString &className);
-  // CompositeModel attributes
-  void setStartCommand(const QString &startCommand) {mStartCommand = startCommand;}
-  QString getStartCommand() const {return mStartCommand;}
-  void setExactStep(bool exactStep) {mExactStep = exactStep;}
-  bool getExactStep() const {return mExactStep;}
-  void setModelFile(const QString &modelFile) {mModelFile = modelFile;}
-  QString getModelFile() const {return mModelFile;}
-  void setGeometryFile(const QString &geometryFile) {mGeometryFile = geometryFile;}
-  QString getGeometryFile() const {return mGeometryFile;}
-  void setPosition(const QString &position) {mPosition = position;}
-  QString getPosition() const {return mPosition;}
-  void setAngle321(const QString &angle321) {mAngle321 = angle321;}
-  QString getAngle321() const {return mAngle321;}
-  void setDimensions(int dimensions) {mDimensions = dimensions;}
-  int getDimensions() const {return mDimensions;}
-  void setTLMCausality(const QString &causality) {mTLMCausality = causality;}
-  QString getTLMCausality() const {return mTLMCausality;}
-  void setDomain(const QString &domain) {mDomain = domain;}
-  QString getDomain() const {return mDomain;}
   // operator overloading
   bool operator==(const ElementInfo &componentInfo) const;
   bool operator!=(const ElementInfo &componentInfo) const;
@@ -169,16 +150,6 @@ private:
   QMap<QString, QString> mModifiersMap;
   bool mParameterValueLoaded;
   QString mParameterValue;
-  // CompositeModel attributes
-  QString mStartCommand;
-  bool mExactStep;
-  QString mModelFile;
-  QString mGeometryFile;
-  QString mPosition;
-  QString mAngle321;
-  int mDimensions;
-  QString mTLMCausality;
-  QString mDomain;
 
   void fetchModifiers(OMCProxy *pOMCProxy, QString className, Element *pElement);
   bool isModiferClassRecord(QString modifierName, Element *pElement);
@@ -203,8 +174,6 @@ public:
   Element(LibraryTreeItem *pLibraryTreeItem, Element *pParentElement);
   Element(Element *pElement, Element *pParentElement, Element *pRootParentElement);
   Element(Element *pElement, GraphicsView *pGraphicsView);
-  // used for interface point
-  Element(ElementInfo *pElementInfo, Element *pParentElement);
   bool isRoot() const {return mElementType == Element::Root;}
   bool isExtend() const {return mElementType == Element::Extend;}
   bool isPort() const {return mElementType == Element::Port;}
@@ -247,10 +216,8 @@ public:
   OriginItem* getOriginItem() {return mpOriginItem;}
   QAction* getShowElementAction() {return mpShowElementAction;}
   QAction* getParametersAction() {return mpParametersAction;}
-  QAction* getFetchInterfaceDataAction() {return mpFetchInterfaceDataAction;}
   QAction* getAttributesAction() {return mpAttributesAction;}
   QAction* getOpenClassAction() {return mpOpenClassAction;}
-  QAction* getSubModelAttributesAction() {return mpSubModelAttributesAction;}
   QAction* getElementPropertiesAction() {return mpElementPropertiesAction;}
   QAction* getReplaceSubModelAction() {return mpReplaceSubModelAction;}
   ElementInfo* getElementInfo() {return mpElementInfo;}
@@ -306,9 +273,6 @@ public:
   void shapeUpdated();
   void shapeDeleted();
   void renameComponentInConnections(QString newName);
-  void insertInterfacePoint(QString interfaceName, QString position, QString angle321, int dimensions, QString causality, QString domain);
-  void removeInterfacePoint(QString interfaceName);
-  void adjustInterfacePoints();
   void updateElementTransformations(const Transformation &oldTransformation, const bool positionChanged);
   void handleOMSElementDoubleClick();
   bool isInBus() {return mpBusComponent != 0;}
@@ -344,10 +308,8 @@ private:
   RectangleAnnotation *mpStateElementRectangle;
   QAction *mpShowElementAction;
   QAction *mpParametersAction;
-  QAction *mpFetchInterfaceDataAction;
   QAction *mpAttributesAction;
   QAction *mpOpenClassAction;
-  QAction *mpSubModelAttributesAction;
   QAction *mpElementPropertiesAction;
   QAction *mpReplaceSubModelAction;
   ResizerItem *mpBottomLeftResizerItem;
@@ -374,7 +336,6 @@ private:
   void createDefaultElement();
   void deleteDefaultElement();
   void createStateElement();
-  void drawInterfacePoints();
   void drawElement();
   void reDrawElement(bool coOrdinateSystemUpdated = false);
   void drawModelicaElement();
@@ -445,9 +406,7 @@ public slots:
   void showElement();
   void showParameters();
   void showAttributes();
-  void fetchInterfaceData();
   void openClass();
-  void showSubModelAttributes();
   void showElementPropertiesDialog();
   void showReplaceSubModelDialog();
   void updateDynamicSelect(double time);

@@ -394,13 +394,6 @@ private:
 };
 #endif
 
-typedef struct {
-  QString mDelay;
-  QString mZf;
-  QString mZfr;
-  QString mAlpha;
-} CompositeModelConnection;
-
 class PreviewPlainTextEdit : public QPlainTextEdit
 {
   Q_OBJECT
@@ -511,7 +504,6 @@ namespace Utilities {
   QString& tempDirectory();
   QSettings* getApplicationSettings();
   QString generateHash(const QString &input);
-  void parseCompositeModelText(MessageHandler *pMessageHandler, QString contents);
   qreal convertUnit(qreal value, qreal offset, qreal scaleFactor);
   bool isValueLiteralConstant(QString value);
   QString arrayExpressionUnitConversion(OMCProxy *pOMCProxy, QString modifierValue, QString fromUnit, QString toUnit);

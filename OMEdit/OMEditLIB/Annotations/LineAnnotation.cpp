@@ -228,29 +228,6 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Element *pStar
   // set the graphics view
   mpGraphicsView->addItem(this);
   setOldAnnotation("");
-
-  ElementInfo *pInfo = getStartElement()->getElementInfo();
-  if (pInfo) {
-    bool tlm = (pInfo->getTLMCausality() == "Bidirectional");
-    int dimensions = pInfo->getDimensions();
-
-    setDelay("1e-4");
-    if(tlm && dimensions>1) {         //3D connection, use Zf and Zfr
-      setZf("10000");
-      setZfr("100");
-      setAlpha("0.2");
-    }
-    else if(tlm && dimensions == 1) { //1D connection, only Zf
-      setZf("10000");
-      setZfr("");
-      setAlpha("0.2");
-    }
-    else {                            //Signal connection, no TLM parameters
-      setZf("");
-      setZfr("");
-      setAlpha("");
-    }
-  }
 }
 
 LineAnnotation::LineAnnotation(QString annotation, Element *pStartComponent, Element *pEndComponent, GraphicsView *pGraphicsView)
@@ -1092,33 +1069,6 @@ QString LineAnnotation::getShapeAnnotation()
   return QString("Line(").append(annotationString.join(",")).append(")");
 }
 
-/*!
- * \brief LineAnnotation::getCompositeModelShapeAnnotation
- * \return
- */
-QString LineAnnotation::getCompositeModelShapeAnnotation()
-{
-  QStringList annotationString;
-  annotationString.append(GraphicItem::getShapeAnnotation());
-  // get points
-  QString pointsString;
-  if (mPoints.size() > 0) {
-    pointsString.append("{");
-  }
-  for (int i = 0 ; i < mPoints.size() ; i++) {
-    pointsString.append("{").append(QString::number(mPoints[i].x())).append(",");
-    pointsString.append(QString::number(mPoints[i].y())).append("}");
-    if (i < mPoints.size() - 1) {
-      pointsString.append(",");
-    }
-  }
-  if (mPoints.size() > 0) {
-    pointsString.append("}");
-    annotationString.append(pointsString);
-  }
-  return annotationString.join(",");
-}
-
 void LineAnnotation::addPoint(QPointF point)
 {
   prepareGeometryChange();
@@ -1504,21 +1454,6 @@ PointArrayAnnotation LineAnnotation::adjustPointsForDrawing() const
   return points;
 }
 
-QVariant LineAnnotation::itemChange(GraphicsItemChange change, const QVariant &value)
-{
-  ShapeAnnotation::itemChange(change, value);
-#if !defined(WITHOUT_OSG)
-  if (change == QGraphicsItem::ItemSelectedHasChanged) {
-
-    // if connection selection is changed in CompositeModel
-    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isCompositeModel()) {
-      MainWindow::instance()->getModelWidgetContainer()->updateThreeDViewer(mpGraphicsView->getModelWidget());
-    }
-  }
-#endif
-  return value;
-}
-
 /*!
  * \brief LineAnnotation::handleComponentMoved
  * If the component associated with the connection is moved then update the connection accordingly.
@@ -1586,16 +1521,11 @@ void LineAnnotation::handleComponentMoved(bool positionChanged)
  */
 void LineAnnotation::updateConnectionAnnotation()
 {
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isCompositeModel()) {
-    CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
-    pCompositeModelEditor->updateConnection(this);
-  } else {
-    // get the connection line annotation.
-    QString annotationString = QString("annotate=$annotation(%1)").arg(getShapeAnnotation());
-    // update the connection
-    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-    pOMCProxy->updateConnection(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), getStartElementName(), getEndElementName(), annotationString);
-  }
+  // get the connection line annotation.
+  QString annotationString = QString("annotate=$annotation(%1)").arg(getShapeAnnotation());
+  // update the connection
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+  pOMCProxy->updateConnection(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), getStartElementName(), getEndElementName(), annotationString);
 }
 
 /*!

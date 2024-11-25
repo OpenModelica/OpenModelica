@@ -228,7 +228,7 @@ QString Helper::unloadClass;
 QString Helper::unloadClassTip;
 QString Helper::reloadClass;
 QString Helper::reloadClassTip;
-QString Helper::unloadCompositeModelOrTextTip;
+QString Helper::unloadTextFileTip;
 QString Helper::unloadOMSModelTip;
 QString Helper::refresh;
 QString Helper::simulate;
@@ -368,13 +368,6 @@ QString Helper::version;
 QString Helper::unlimited;
 QString Helper::simulationOutput;
 QString Helper::cancelSimulation;
-QString Helper::fetchInterfaceData;
-QString Helper::fetchInterfaceDataTip;
-QString Helper::alignInterfaces;
-QString Helper::alignInterfacesTip;
-QString Helper::tlmCoSimulationSetup;
-QString Helper::tlmCoSimulationSetupTip;
-QString Helper::tlmCoSimulation;
 QString Helper::animationChooseFile;
 QString Helper::animationChooseFileTip;
 QString Helper::animationInitialize;
@@ -542,7 +535,7 @@ void Helper::initHelperVariables()
   Helper::unloadClassTip = tr("Unload the Modelica class");
   Helper::reloadClass = tr("Reload");
   Helper::reloadClassTip = tr("Reload the Modelica class");
-  Helper::unloadCompositeModelOrTextTip = tr("Unloads the CompositeModel/Text file");
+  Helper::unloadTextFileTip = tr("Unloads the text file");
   Helper::unloadOMSModelTip = tr("Unloads the model");
   Helper::refresh = tr("Refresh");
   Helper::simulate = tr("Simulate");
@@ -682,13 +675,6 @@ void Helper::initHelperVariables()
   Helper::unlimited = tr("unlimited");
   Helper::simulationOutput = tr("Simulation Output");
   Helper::cancelSimulation = tr("Cancel Simulation");
-  Helper::fetchInterfaceData = tr("Fetch Interface Data");
-  Helper::fetchInterfaceDataTip = tr("Fetches the interface data");
-  Helper::alignInterfaces = tr("Align Interfaces");
-  Helper::alignInterfacesTip = tr("Aligns the interfaces");
-  Helper::tlmCoSimulationSetup = tr("TLM Co-Simulation Setup");
-  Helper::tlmCoSimulationSetupTip = tr("Opens the TLM co-simulation setup");
-  Helper::tlmCoSimulation = tr("TLM Co-Simulation");
   Helper::animationChooseFile = tr("Animation File");
   Helper::animationChooseFileTip = tr("Open an animation.");
   Helper::animationInitialize = tr("Initialize");
@@ -879,12 +865,6 @@ QString GUIMessages::getMessage(int type)
       return tr("The class <b>%1</b> is not saved. Breakpoints are only allowed on saved classes.");
     case BREAKPOINT_INSERT_NOT_MODELICA_CLASS:
       return tr("The class <b>%1</b> is not a modelica class. Breakpoints are only allowed on modelica classes.");
-    case TLMMANAGER_NOT_SET:
-      return tr("TLM Manager executable path is not set. Set it via <b>%1->TLM</b>");
-    case COMPOSITEMODEL_UNSAVED:
-      return tr("CompositeModel <b>%1</b> has unsaved changes. Do you want to save?");
-    case TLMCOSIMULATION_ALREADY_RUNNING:
-      return tr("TLM co-simulation session is already running. Only one session is allowed.");
     case TERMINAL_COMMAND_NOT_SET:
       return tr("Terminal command is not set. You can define a new terminal command in <b>%1->General->Terminal Command</b>.");
     case UNABLE_FIND_COMPONENT_IN_CONNECTION:

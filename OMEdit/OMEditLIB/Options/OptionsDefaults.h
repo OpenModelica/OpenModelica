@@ -107,13 +107,6 @@ namespace OptionsDefaults
     QColor commentRuleColor = QColor(0, 150, 0);
   }
 
-  namespace CompositeModelEditor {
-    QColor tagRuleColor = QColor(0, 0, 255);
-    QColor elementRuleColor = QColor(0, 0, 255);
-    QColor quotesRuleColor = QColor(139, 0, 0);
-    QColor commentRuleColor = QColor(0, 150, 0);
-  }
-
   namespace OMSimulatorEditor {
     QColor tagRuleColor = QColor(0, 0, 255);
     QColor elementRuleColor = QColor(0, 0, 255);
@@ -247,12 +240,6 @@ namespace OptionsDefaults
     bool includeSourceCode = true;
     bool generateDebugSymbols = false;
     bool deleteFMUDirectoyAndModel = false;
-  }
-
-  namespace TLM {
-    QString pluginPath; // this value is set in TLMPage constructor.
-    QString managerProcess; // this value is set in TLMPage constructor.
-    QString monitorProcess; // this value is set in TLMPage constructor.
   }
 
   namespace OMSimulator {

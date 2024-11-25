@@ -99,7 +99,7 @@ bool OMSimulatorEditor::validateText()
 }
 
 /*!
- * \brief OMSCompositeModelEditor::popUpCompleter()
+ * \brief OMSimulatorEditor::popUpCompleter()
  * \we do not have completer for this
  */
 void OMSimulatorEditor::popUpCompleter()
@@ -219,21 +219,21 @@ void OMSimulatorHighlighter::initializeSettings()
   rule.mFormat = mTextFormat;
   mHighlightingRules.append(rule);
 
-  // CompositeModel Tags
-  QStringList compositeModelTags;
-  compositeModelTags << "<\\?"
-                << "<"
-                << "</"
-                << "\\?>"
-                << ">"
-                << "/>";
-  foreach (const QString &compositeModelTag, compositeModelTags) {
-    rule.mPattern = QRegExp(compositeModelTag);
+  // Tags
+  QStringList tags;
+  tags << "<\\?"
+       << "<"
+       << "</"
+       << "\\?>"
+       << ">"
+       << "/>";
+  foreach (const QString &tag, tags) {
+    rule.mPattern = QRegExp(tag);
     rule.mFormat = mTagFormat;
     mHighlightingRules.append(rule);
   }
 
-  // CompositeModel Elements
+  // Elements
   QStringList elementPatterns;
   elementPatterns << "\\bxml\\b"
                   << "\\bssd:SystemStructureDescription\\b"
@@ -265,7 +265,7 @@ void OMSimulatorHighlighter::initializeSettings()
     mHighlightingRules.append(rule);
   }
 
-  // CompositeModel Comments
+  // Comments
   mCommentStartExpression = QRegExp("<!--");
   mCommentEndExpression = QRegExp("-->");
 }

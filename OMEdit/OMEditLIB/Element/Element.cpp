@@ -90,15 +90,6 @@ ElementInfo::ElementInfo(QObject *pParent)
   mModifiersMap.clear();
   mParameterValueLoaded = false;
   mParameterValue = "";
-  mStartCommand = "";
-  mExactStep = false;
-  mModelFile = "";
-  mGeometryFile = "";
-  mPosition = "0,0,0";
-  mAngle321 = "0,0,0";
-  mDimensions = 3;
-  mTLMCausality = StringHandler::getTLMCausality(StringHandler::TLMBidirectional);
-  mDomain = StringHandler::getTLMDomain(StringHandler::Mechanical);
 }
 
 /*!
@@ -146,15 +137,6 @@ void ElementInfo::updateElementInfo(const ElementInfo *pElementInfo)
   mModifiersMap = pElementInfo->getModifiersMapWithoutFetching();
   mParameterValueLoaded = pElementInfo->isParameterValueLoaded();
   mParameterValue = pElementInfo->getParameterValueWithoutFetching();
-  mStartCommand = pElementInfo->getStartCommand();
-  mExactStep = pElementInfo->getExactStep();
-  mModelFile = pElementInfo->getModelFile();
-  mGeometryFile = pElementInfo->getGeometryFile();
-  mPosition = pElementInfo->getPosition();
-  mAngle321 = pElementInfo->getAngle321();
-  mDimensions = pElementInfo->getDimensions();
-  mTLMCausality = pElementInfo->getTLMCausality();
-  mDomain = pElementInfo->getDomain();
 }
 
 /*!
@@ -408,12 +390,7 @@ bool ElementInfo::operator==(const ElementInfo &componentInfo) const
       (componentInfo.getOuter() == this->getOuter()) && (componentInfo.getCausality() == this->getCausality()) &&
       (componentInfo.getConstrainedByClassName() == this->getConstrainedByClassName()) && (componentInfo.getArrayIndex() == this->getArrayIndex()) &&
       (componentInfo.getModifiersMapWithoutFetching() == this->getModifiersMapWithoutFetching()) &&
-      (componentInfo.getParameterValueWithoutFetching() == this->getParameterValueWithoutFetching()) &&
-      (componentInfo.getStartCommand() == this->getStartCommand()) && (componentInfo.getExactStep() == this->getExactStep()) &&
-      (componentInfo.getModelFile() == this->getModelFile()) && (componentInfo.getGeometryFile() == this->getGeometryFile()) &&
-      (componentInfo.getPosition() == this->getPosition()) && (componentInfo.getAngle321() == this->getAngle321()) &&
-      (componentInfo.getDimensions() == this->getDimensions()) && (componentInfo.getTLMCausality() == this->getTLMCausality()) &&
-      (componentInfo.getDomain() == this->getDomain());
+      (componentInfo.getParameterValueWithoutFetching() == this->getParameterValueWithoutFetching());
 }
 
 /*!
@@ -685,12 +662,7 @@ Element::Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annota
   mIsInitialState = false;
   mActiveState = false;
   mpBusComponent = 0;
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isCompositeModel()) {
-    createDefaultElement();
-    drawInterfacePoints();
-  } else {
-    drawElement();
-  }
+  drawElement();
   // transformation
   mTransformation = Transformation(mpGraphicsView->isIconView() ? StringHandler::Icon : StringHandler::Diagram, this);
   mTransformation.parseTransformationString(mTransformationString, boundingRect().width(), boundingRect().height());
@@ -707,10 +679,6 @@ Element::Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annota
     extent.append(QPointF(xExtent, yExtent));
     mTransformation.setExtent(extent);
     mTransformation.setRotateAngle(0.0);
-  }
-  // dynamically adjust the interface points.
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isCompositeModel()) {
-    adjustInterfacePoints();
   }
   setTransform(mTransformation.getTransformationMatrix());
   setDialogAnnotation(StringHandler::getAnnotation(annotation, "Dialog"));
@@ -892,67 +860,6 @@ Element::Element(Element *pElement, GraphicsView *pGraphicsView)
    * since when the base class is created the child class doesn't exist.
    */
   displayTextChangedRecursive();
-}
-
-Element::Element(ElementInfo *pElementInfo, Element *pParentElement)
-  : QGraphicsItem(pParentElement), mpReferenceElement(0), mpParentElement(pParentElement)
-{
-  mpLibraryTreeItem = 0;
-  mpElementInfo = pElementInfo;
-  mIsInheritedElement = false;
-  mElementType = Element::Port;
-  mpGraphicsView = mpParentElement->getGraphicsView();
-  mTransformationString = "";
-  mDialogAnnotation.clear();
-  mChoicesAnnotation.clear();
-  mChoicesAllMatchingAnnotation.clear();
-  mChoices.clear();
-  mpNonExistingElementLine = 0;
-  createDefaultElement();
-  mpStateElementRectangle = 0;
-  mHasTransition = false;
-  mIsInitialState = false;
-  mActiveState = false;
-  mpBusComponent = 0;
-
-  if (mpElementInfo->getTLMCausality() == StringHandler::getTLMCausality(StringHandler::TLMBidirectional)) {
-    if (mpElementInfo->getDomain() == StringHandler::getTLMDomain(StringHandler::Mechanical)) {
-      mpDefaultElementRectangle->setFillColor(QColor(100, 100, 255));   //Mechanical = blue
-    } else if (mpElementInfo->getDomain() == StringHandler::getTLMDomain(StringHandler::Electric)) {
-      mpDefaultElementRectangle->setFillColor(QColor(255, 255, 100));   //Hydraulic = yellow
-    } else if (mpElementInfo->getDomain() == StringHandler::getTLMDomain(StringHandler::Hydraulic)) {
-      mpDefaultElementRectangle->setFillColor(QColor(100, 255, 100));   //Hydraulic = green
-    } else if (mpElementInfo->getDomain() == StringHandler::getTLMDomain(StringHandler::Pneumatic)) {
-      mpDefaultElementRectangle->setFillColor(QColor(100, 255, 255));   //Pneumatic = turquoise
-    } else if (mpElementInfo->getDomain() == StringHandler::getTLMDomain(StringHandler::Magnetic)) {
-      mpDefaultElementRectangle->setFillColor(QColor(255, 100, 255));   //Magnetic = purple
-    }
-    mpDefaultElementText->setTextString(QString::number(mpElementInfo->getDimensions())+ "D");
-  } else if ((mpElementInfo->getTLMCausality() == StringHandler::getTLMCausality(StringHandler::TLMInput)) ||
-             (mpElementInfo->getTLMCausality() == StringHandler::getTLMCausality(StringHandler::TLMOutput))) {
-    mpDefaultElementRectangle->setFillColor(QColor(255, 100, 100));       //Signal = red
-    if (mpElementInfo->getTLMCausality() == StringHandler::getTLMCausality(StringHandler::TLMInput)) {
-      mpDefaultElementText->setTextString("in");
-    } else {
-      mpDefaultElementText->setTextString("out");
-    }
-  }
-  mpDefaultElementRectangle->setLineColor(QColor(0, 0, 0));
-  mpDefaultElementRectangle->setFillPattern(StringHandler::FillSolid);
-  mpDefaultElementRectangle->setVisible(true);
-  mpDefaultElementText->setFontSize(5);
-  mpDefaultElementText->setVisible(true);
-  // Transformation. Doesn't matter what we set here since it will be overwritten in adjustInterfacePoints();
-  QString transformation = QString("Placement(true,100.0,100.0,-15.0,-15.0,15.0,15.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)");
-  mTransformation = Transformation(mpGraphicsView->isIconView() ? StringHandler::Icon : StringHandler::Diagram, this);
-  mTransformation.parseTransformationString(transformation, boundingRect().width(), boundingRect().height());
-  setTransform(mTransformation.getTransformationMatrix());
-  mpOriginItem = 0;
-  mpBottomLeftResizerItem = 0;
-  mpTopLeftResizerItem = 0;
-  mpTopRightResizerItem = 0;
-  mpBottomRightResizerItem = 0;
-  updateToolTip();
 }
 
 /*!
@@ -2166,71 +2073,6 @@ void Element::renameComponentInConnections(QString newName)
 }
 
 /*!
- * \brief Element::insertInterfacePoint
- * Inserts a new interface point.
- * \param interfaceName
- */
-void Element::insertInterfacePoint(QString interfaceName, QString position, QString angle321, int dimensions, QString causality, QString domain)
-{
-  ElementInfo *pElementInfo = new ElementInfo;
-  pElementInfo->setName(interfaceName);
-  pElementInfo->setPosition(position);
-  pElementInfo->setAngle321(angle321);
-  pElementInfo->setDimensions(dimensions);
-  pElementInfo->setTLMCausality(causality);
-  pElementInfo->setDomain(domain);
-  mElementsList.append(new Element(pElementInfo, this));
-  adjustInterfacePoints();
-}
-
-void Element::removeInterfacePoint(QString interfaceName)
-{
-  foreach (Element *pElement, mElementsList) {
-    if (pElement->getName().compare(interfaceName) == 0) {
-      mElementsList.removeOne(pElement);
-      pElement->deleteLater();
-      break;
-    }
-  }
-  adjustInterfacePoints();
-}
-
-/*!
- * \brief Element::adjustInterfacePoints
- * Dynamically adjusts the size of interface points.
- */
-void Element::adjustInterfacePoints()
-{
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isCompositeModel()) {
-    if (!mElementsList.isEmpty()) {
-      // we start with default size of 30
-      int interfacePointSize = 30;
-      // keep the separator size to 1/3.
-      int interfacePointSeparatorSize = (interfacePointSize / 3);
-      // 200 is the maximum height of submodel
-      while (200 <= mElementsList.size() * (interfacePointSize + interfacePointSeparatorSize)) {
-        interfacePointSize -= 1;
-        if (interfacePointSize <= 0) {
-          interfacePointSize = 1;
-          break;
-        }
-        interfacePointSeparatorSize = (interfacePointSize / 3);
-      }
-      // set the new transformation for each interface point.
-      qreal yPosition = 100 - (interfacePointSize / 2);
-      foreach (Element *pElement, mElementsList) {
-        qreal xPosition = 100 + interfacePointSeparatorSize;
-        QString transformation = QString("Placement(true,%1,%2,-%3,-%3,%3,%3,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)").arg(xPosition).arg(yPosition)
-            .arg(interfacePointSize / 2);
-        yPosition -= (interfacePointSize + interfacePointSeparatorSize);
-        pElement->mTransformation.parseTransformationString(transformation, boundingRect().width(), boundingRect().height());
-        pElement->setTransform(pElement->mTransformation.getTransformationMatrix());
-      }
-    }
-  }
-}
-
-/*!
  * \brief Element::updateElementTransformations
  * Creates a UpdateElementTransformationsCommand and emits the Element::transformChanging() SIGNAL.
  * \param oldTransformation
@@ -2456,31 +2298,6 @@ void Element::createStateElement()
     mpStateElementRectangle->setExtents(extents);
   } else {
     mpStateElementRectangle = 0;
-  }
-}
-
-/*!
- * \brief Element::drawInterfacePoints
- * Draws the interface points of the submodel component.
- */
-void Element::drawInterfacePoints()
-{
-  CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
-  if (pCompositeModelEditor) {
-    QDomNodeList subModels = pCompositeModelEditor->getSubModels();
-    for (int i = 0; i < subModels.size(); i++) {
-      QDomElement subModel = subModels.at(i).toElement();
-      if (subModel.attribute("Name").compare(mpElementInfo->getName()) == 0) {
-        QDomNodeList interfacePoints = subModel.elementsByTagName("InterfacePoint");
-        for (int j = 0; j < interfacePoints.size(); j++) {
-          QDomElement interfacePoint = interfacePoints.at(j).toElement();
-          insertInterfacePoint(interfacePoint.attribute("Name"), interfacePoint.attribute("Position", "0,0,0"),
-                               interfacePoint.attribute("Angle321", "0,0,0"), interfacePoint.attribute("Dimensions", "3").toInt(),
-                               interfacePoint.attribute("Causality", StringHandler::getTLMCausality(StringHandler::TLMBidirectional)),
-                               interfacePoint.attribute("Domain", StringHandler::getTLMDomain(StringHandler::Mechanical)));
-        }
-      }
-    }
   }
 }
 
@@ -2869,10 +2686,6 @@ void Element::createActions()
   mpParametersAction = new QAction(Helper::parameters, mpGraphicsView);
   mpParametersAction->setStatusTip(tr("Shows the component parameters"));
   connect(mpParametersAction, SIGNAL(triggered()), SLOT(showParameters()));
-  // Fetch interfaces action
-  mpFetchInterfaceDataAction = new QAction(ResourceCache::getIcon(":/Resources/icons/interface-data.svg"), Helper::fetchInterfaceData, mpGraphicsView);
-  mpFetchInterfaceDataAction->setStatusTip(tr("Fetch interface data for this external model"));
-  connect(mpFetchInterfaceDataAction, SIGNAL(triggered()), SLOT(fetchInterfaceData()));
   // Todo: Connect /robbr
   // Attributes Action
   mpAttributesAction = new QAction(Helper::attributes, mpGraphicsView);
@@ -2882,10 +2695,6 @@ void Element::createActions()
   mpOpenClassAction = new QAction(ResourceCache::getIcon(":/Resources/icons/model.svg"), Helper::openClass, mpGraphicsView);
   mpOpenClassAction->setStatusTip(Helper::openClassTip);
   connect(mpOpenClassAction, SIGNAL(triggered()), SLOT(openClass()));
-  // SubModel attributes Action
-  mpSubModelAttributesAction = new QAction(Helper::attributes, mpGraphicsView);
-  mpSubModelAttributesAction->setStatusTip(tr("Shows the submodel attributes"));
-  connect(mpSubModelAttributesAction, SIGNAL(triggered()), SLOT(showSubModelAttributes()));
   // FMU Properties Action
   mpElementPropertiesAction = new QAction(Helper::properties, mpGraphicsView);
   mpElementPropertiesAction->setStatusTip(tr("Shows the Properties dialog"));
@@ -3269,12 +3078,7 @@ void Element::updatePlacementAnnotation()
 {
   // Add component annotation.
   LibraryTreeItem *pLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
-  if (pLibraryTreeItem->isCompositeModel()) {
-    CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
-    pCompositeModelEditor->updateSubModelPlacementAnnotation(mpElementInfo->getName(), mTransformation.getVisible()? "true" : "false",
-                                                        getTransformationOrigin(), getTransformationExtent(),
-                                                        QString::number(mTransformation.getRotateAngle()));
-  } else if (pLibraryTreeItem->isSSP()) {
+  if (pLibraryTreeItem->isSSP()) {
     if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSElement()) {
       ssd_element_geometry_t elementGeometry = mpLibraryTreeItem->getOMSElementGeometry();
       ExtentAnnotation extent = mTransformation.getExtent();
@@ -4035,11 +3839,6 @@ void Element::showAttributes()
   pElementAttributes->exec();
 }
 
-void Element::fetchInterfaceData()
-{
-  MainWindow::instance()->fetchInterfaceData(mpGraphicsView->getModelWidget()->getLibraryTreeItem(), this->getName());
-}
-
 /*!
  * \brief Element::openClass
  * Slot that opens up the element Modelica class in a new tab/window.
@@ -4047,16 +3846,6 @@ void Element::fetchInterfaceData()
 void Element::openClass()
 {
   MainWindow::instance()->getLibraryWidget()->openLibraryTreeItem(getClassName());
-}
-
-/*!
- * \brief Element::showSubModelAttributes
- * Slot that opens up the CompositeModelSubModelAttributes Dialog.
- */
-void Element::showSubModelAttributes()
-{
-  CompositeModelSubModelAttributes *pCompositeModelSubModelAttributes = new CompositeModelSubModelAttributes(this, MainWindow::instance());
-  pCompositeModelSubModelAttributes->exec();
 }
 
 /*!
@@ -4190,12 +3979,6 @@ QVariant Element::itemChange(GraphicsItemChange change, const QVariant &value)
         MainWindow::instance()->getElementWidget()->selectDeselectElementItem(name, false);
       }
     }
-#if !defined(WITHOUT_OSG)
-    // if subModel selection is changed in CompositeModel
-    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isCompositeModel()) {
-      MainWindow::instance()->getModelWidgetContainer()->updateThreeDViewer(mpGraphicsView->getModelWidget());
-    }
-#endif
   } else if (change == QGraphicsItem::ItemPositionHasChanged) {
     emit transformChange(true);
   }

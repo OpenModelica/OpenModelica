@@ -2383,13 +2383,6 @@ void RenameItemDialog::renameItem()
         updateChildrenPath(mpLibraryTreeItem);
       }
     }
-  } else if (mpLibraryTreeItem->isCompositeModel()) {
-    if (mpLibraryTreeItem->getModelWidget()) {
-      CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpLibraryTreeItem->getModelWidget()->getEditor());
-      RenameCompositeModelCommand *pRenameCompositeModelCommand = new RenameCompositeModelCommand(pCompositeModelEditor, mpLibraryTreeItem->getName(), mpNameTextBox->text());
-      mpLibraryTreeItem->getModelWidget()->getUndoStack()->push(pRenameCompositeModelCommand);
-      mpLibraryTreeItem->getModelWidget()->updateModelText();
-    }
   } else if (mpLibraryTreeItem->isSSP()) {
     if (!mpLibraryTreeItem->getModelWidget()) {
       MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);

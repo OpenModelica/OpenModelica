@@ -42,7 +42,6 @@
 #include "Model.h"
 #include "Editors/BaseEditor.h"
 #include "Editors/ModelicaEditor.h"
-#include "Editors/CompositeModelEditor.h"
 #include "Editors/OMSimulatorEditor.h"
 #include "Editors/CEditor.h"
 #include "Editors/TextEditor.h"
@@ -279,7 +278,6 @@ public:
   void addConnectionToView(LineAnnotation *pConnectionLineAnnotation, bool inherited);
   bool addConnectionToClass(LineAnnotation *pConnectionLineAnnotation, bool deleteUndo = false);
   void deleteConnectionFromClass(LineAnnotation *pConnectionLineAnnotation);
-  void updateConnectionInClass(LineAnnotation *pConnectionLineAnnotation);
   void addConnectionToList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.append(pConnectionLineAnnotation);}
   void addConnectionToOutOfSceneList(LineAnnotation *pConnectionLineAnnotation) {mOutOfSceneConnectionsList.append(pConnectionLineAnnotation);}
   void addInheritedConnectionToList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.append(pConnectionLineAnnotation);}
@@ -397,10 +395,6 @@ private:
   void modelicaOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation, QMenu *pMenu);
   void modelicaOneComponentContextMenu(Element *pComponent, QMenu *pMenu);
   void modelicaMultipleItemsContextMenu(QMenu *pMenu);
-  void compositeModelGraphicsViewContextMenu(QMenu *pMenu);
-  void compositeModelOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation, QMenu *pMenu);
-  void compositeModelOneComponentContextMenu(Element *pComponent, QMenu *pMenu);
-  void compositeModelMultipleItemsContextMenu(QMenu *pMenu);
   void omsGraphicsViewContextMenu(QMenu *pMenu);
   void omsOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation, QMenu *pMenu);
   void omsOneComponentContextMenu(Element *pComponent, QMenu *pMenu);
@@ -452,7 +446,6 @@ public slots:
   void showParameters();
   void showGraphicsViewProperties();
   void showRenameDialog();
-  void showSimulationParamsDialog();
   void manhattanizeItems();
   void deleteItems();
   void duplicateItems();
@@ -550,7 +543,6 @@ public:
 
 class ModelWidgetContainer;
 class ModelicaHighlighter;
-class CompositeModelHighlighter;
 class Label;
 class ModelWidget : public QWidget
 {
@@ -637,8 +629,6 @@ public:
   void updateModelText();
   void callHandleCollidingConnectionsIfNeeded();
   void updateUndoRedoActions();
-  bool writeCoSimulationResultFile(QString fileName);
-  bool writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFile = false);
   void beginMacro(const QString &text);
   void endMacro();
   void updateViewButtonsBasedOnAccess();
@@ -727,9 +717,6 @@ private:
   void getModelInitialStates();
   void getMetaModelSubModels();
   void getMetaModelConnections();
-  QString getCompositeModelName();
-  void getCompositeModelSubModels();
-  void getCompositeModelConnections();
   void drawOMSModelIconElements();
   void drawOMSModelDiagramElements();
   void drawOMSElement(LibraryTreeItem *pLibraryTreeItem, const QString &annotation);
@@ -751,7 +738,6 @@ private slots:
 public slots:
   void makeFileWritAble();
   void showDocumentationView();
-  bool compositeModelEditorTextChanged();
   void handleCanUndoChanged(bool canUndo);
   void handleCanRedoChanged(bool canRedo);
   void updateModelIfDependsOn(const QString &modelName);
@@ -777,9 +763,6 @@ public:
   bool isShowGridLines() {return mShowGridLines;}
   bool eventFilter(QObject *object, QEvent *event);
   void changeRecentModelsListSelection(bool moveDown);
-#if !defined(WITHOUT_OSG)
-  void updateThreeDViewer(ModelWidget *pModelWidget);
-#endif
   bool validateText();
   void getOpenedModelWidgetsAndSelectedElementsOfClass(const QString &modelName, QHash<QString, QPair<QStringList, QStringList> > *pOpenedModelWidgetsAndSelectedElements);
   void openModelWidgetsAndSelectElement(QHash<QString, QPair<QStringList, QStringList> > closedModelWidgetsAndSelectedElements, bool skipSelection = false);
@@ -793,14 +776,11 @@ private:
 public slots:
   bool openRecentModelWidget(QListWidgetItem *pListWidgetItem);
   void currentModelWidgetChanged(QMdiSubWindow *pSubWindow);
-  void updateThreeDViewer(QMdiSubWindow *pSubWindow);
   void saveModelWidget();
   void saveAsModelWidget();
   void saveTotalModelWidget();
   void printModel();
   void fitToDiagram();
-  void showSimulationParams();
-  void alignInterfaces();
   void addSystem();
   void addOrEditIcon();
   void deleteIcon();
