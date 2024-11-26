@@ -93,6 +93,7 @@ Obfuscation4.mos \
 Obfuscation5.mos \
 ProtectedHandlingBug2917.mos \
 ReadOnlyPkg.mos \
+readSimulationResult1.mos \
 refactorGraphAnn1.mos \
 refactorGraphAnn2.mos \
 regex.mos \
