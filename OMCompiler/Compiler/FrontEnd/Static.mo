@@ -6779,6 +6779,23 @@ algorithm
   end matchcontinue;
 end hasBuiltInHandler;
 
+protected function isValidDerVariableName
+  "Used to check if a der() expression is a valid VariableName.
+   Valid forms are der(x), der(der(x)), etc."
+  input Absyn.Exp exp;
+  input Boolean nested = false;
+  output Boolean isValid;
+protected
+  Absyn.Exp arg;
+algorithm
+  isValid := match exp
+    case Absyn.CREF() then nested;
+    case Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "der"), functionArgs = Absyn.FUNCTIONARGS({arg}, {}))
+      then isValidDerVariableName(arg, true);
+    else false;
+  end match;
+end isValidDerVariableName;
+
 public function elabVariablenames "This function elaborates variablenames to DAE.Expression. A variablename can
   be used in e.g. plot(model,{v1{3},v2.t}) It should only be used in interactive
   functions that uses variablenames as componentreferences.
@@ -6791,8 +6808,7 @@ protected
 algorithm
   outExpl := list(match e
     case Absyn.CREF() then DAE.CODE(Absyn.C_VARIABLENAME(e.componentRef), DAE.T_UNKNOWN_DEFAULT);
-    case Absyn.CALL(Absyn.CREF_IDENT(name = "der"), Absyn.FUNCTIONARGS({Absyn.CREF()}, {}))
-      then DAE.CODE(Absyn.C_EXPRESSION(e), DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.CALL() guard isValidDerVariableName(e) then DAE.CODE(Absyn.C_EXPRESSION(e), DAE.T_UNKNOWN_DEFAULT);
   end match for e in inExpl);
 end elabVariablenames;
 
@@ -12293,7 +12309,9 @@ algorithm
     case (Absyn.CREF(componentRef=cr),DAE.C_VARIABLENAME())
       then DAE.CODE(Absyn.C_VARIABLENAME(cr),DAE.T_UNKNOWN_DEFAULT);
 
-    case (Absyn.CALL(function_ = Absyn.CREF_IDENT("der",{}), functionArgs = Absyn.FUNCTIONARGS(args={Absyn.CREF()},argNames={})),DAE.C_VARIABLENAME())
+    // der() expression
+    case (Absyn.CALL(), DAE.C_VARIABLENAME())
+      guard isValidDerVariableName(exp)
       then DAE.CODE(Absyn.C_EXPRESSION(exp),DAE.T_UNKNOWN_DEFAULT);
 
     // failure
