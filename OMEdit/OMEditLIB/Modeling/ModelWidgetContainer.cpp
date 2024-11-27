@@ -6750,7 +6750,13 @@ void ModelWidget::processPendingModelUpdate()
 void ModelWidget::updateModelIfDependsOn(const QString &modelName)
 {
   if (mDiagramViewLoaded && dependsOnModel(modelName)) {
-    setRequiresUpdate(true);
+    // if this is the current ModelWidget then update it directly otherwise mark it for update
+    if (this == mpModelWidgetContainer->getCurrentModelWidget()) {
+      setRequiresUpdate(false);
+      reDrawModelWidget(createModelInfo());
+    } else {
+      setRequiresUpdate(true);
+    }
   }
 }
 
