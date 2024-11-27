@@ -1607,7 +1607,6 @@ void LineAnnotation::duplicate()
   pLineAnnotation->applyTransformation();
   pLineAnnotation->update();
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pLineAnnotation));
-  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pLineAnnotation, mpGraphicsView);
   setSelected(false);
   pLineAnnotation->setSelected(true);
 }

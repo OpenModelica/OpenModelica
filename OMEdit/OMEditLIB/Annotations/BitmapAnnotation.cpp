@@ -297,7 +297,6 @@ void BitmapAnnotation::duplicate()
   pBitmapAnnotation->applyTransformation();
   pBitmapAnnotation->update();
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pBitmapAnnotation));
-  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pBitmapAnnotation, mpGraphicsView);
   setSelected(false);
   pBitmapAnnotation->setSelected(true);
 }

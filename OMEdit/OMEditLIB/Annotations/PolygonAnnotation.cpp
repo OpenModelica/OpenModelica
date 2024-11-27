@@ -346,7 +346,6 @@ void PolygonAnnotation::duplicate()
   pPolygonAnnotation->applyTransformation();
   pPolygonAnnotation->update();
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pPolygonAnnotation));
-  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pPolygonAnnotation, mpGraphicsView);
   setSelected(false);
   pPolygonAnnotation->setSelected(true);
 }

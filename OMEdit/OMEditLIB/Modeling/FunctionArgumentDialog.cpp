@@ -54,25 +54,24 @@ FunctionArgumentDialog::FunctionArgumentDialog(LibraryTreeItem *pLibraryTreeItem
   pMainLayout->addWidget(pDescriptionGroupBox);
 
   // Function arguments
-  QList<ElementInfo*> components = mpLibraryTreeItem->getModelWidget()->getComponentsList();
+  QList<ElementInfo> components = mpLibraryTreeItem->getComponentsList();
   QGroupBox *pInputsGroupBox = new QGroupBox(Helper::inputs);
   QGridLayout *pInputsGridLayout = new QGridLayout;
   pInputsGridLayout->setAlignment(Qt::AlignTop);
   int row = 0;
   for (int i = 0; i < components.size(); ++i) {
-    ElementInfo *pComponent = components[i];
-    if (!isInput(pComponent)) {
+    ElementInfo elementInfo = components[i];
+    if (!isInput(elementInfo)) {
       continue;
     }
     // input name
-    pInputsGridLayout->addWidget(new Label(pComponent->getName()), row, 0);
+    pInputsGridLayout->addWidget(new Label(elementInfo.getName()), row, 0);
     // input textbox
     QLineEdit *pEditor = new QLineEdit();
     mEditors.append(pEditor);
     pInputsGridLayout->addWidget(pEditor, row, 1);
     // input comment
-    pInputsGridLayout->addWidget(new Label(pComponent->getComment()), row, 2);
-
+    pInputsGridLayout->addWidget(new Label(elementInfo.getComment()), row, 2);
     ++row;
   }
 
@@ -93,10 +92,10 @@ QString FunctionArgumentDialog::getFunctionCallCommand()
 {
   QString result = mpLibraryTreeItem->getNameStructure() + "(";
   int inputArgIndex = 0;
-  QList<ElementInfo*> components = mpLibraryTreeItem->getModelWidget()->getComponentsList();
+  QList<ElementInfo> components = mpLibraryTreeItem->getComponentsList();
   for (int i = 0; i < components.size(); ++i) {
-    ElementInfo *pComponent = components[i];
-    if (!isInput(pComponent)) {
+    ElementInfo elementInfo = components[i];
+    if (!isInput(elementInfo)) {
       continue;
     }
 
@@ -106,7 +105,7 @@ QString FunctionArgumentDialog::getFunctionCallCommand()
       result += ", ";
     }
 
-    if (pComponent->getClassName() == "String") {
+    if (elementInfo.getClassName() == "String") {
       result += "\"" + value + "\"";
     } else {
       result += value;
@@ -118,7 +117,7 @@ QString FunctionArgumentDialog::getFunctionCallCommand()
   return result;
 }
 
-bool FunctionArgumentDialog::isInput(ElementInfo *pComponentInfo)
+bool FunctionArgumentDialog::isInput(const ElementInfo &elementInfo)
 {
-  return pComponentInfo->getCausality() == "input";
+  return elementInfo.getCausality() == "input";
 }

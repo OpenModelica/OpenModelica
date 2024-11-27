@@ -1478,22 +1478,21 @@ QString OMCProxy::getNthInheritedClassDiagramMapAnnotation(QString className, in
  * \param className - is the name of the model.
  * \return the list of components
  */
-QList<ElementInfo*> OMCProxy::getElements(QString className)
+QList<ElementInfo> OMCProxy::getElements(QString className)
 {
   QString expression = "getElements(" + className + ", useQuotes = true)";
   sendCommand(expression);
   QString result = getResult();
-  QList<ElementInfo*> elementInfoList;
+  QList<ElementInfo> elementInfoList;
   QStringList list = StringHandler::unparseArrays(result);
 
   for (int i = 0 ; i < list.size() ; i++) {
     if (list.at(i) == "Error") {
       continue;
     }
-    ElementInfo *pElementInfo = new ElementInfo();
-    pElementInfo->setParentClassName(className);
-    pElementInfo->parseElementInfoString(list.at(i));
-    elementInfoList.append(pElementInfo);
+    ElementInfo elementInfo;
+    elementInfo.parseElementInfoString(list.at(i));
+    elementInfoList.append(elementInfo);
   }
 
   return elementInfoList;
@@ -2973,29 +2972,6 @@ QStringList OMCProxy::getAvailableLibraries()
 QStringList OMCProxy::getAvailableLibraryVersions(QString libraryName)
 {
   return mpOMCInterface->getAvailableLibraryVersions(libraryName);
-}
-
-/*!
- * \brief OMCProxy::getDerivedClassModifierNames
- * Gets the derived class modifier names.
- * \param className
- * \return
- */
-QStringList OMCProxy::getDerivedClassModifierNames(QString className)
-{
-  return mpOMCInterface->getDerivedClassModifierNames(className);
-}
-
-/*!
- * \brief OMCProxy::getDerivedClassModifierValue
- * Gets the derived class modifier value.
- * \param className - the name of the derived class.
- * \param modifierName - the modifier name.
- * \return the value of the modifier.
- */
-QString OMCProxy::getDerivedClassModifierValue(QString className, QString modifierName)
-{
-  return mpOMCInterface->getDerivedClassModifierValue(className, modifierName);
 }
 
 /*!

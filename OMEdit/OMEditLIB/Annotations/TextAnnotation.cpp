@@ -692,7 +692,6 @@ void TextAnnotation::duplicate()
   pTextAnnotation->applyTransformation();
   pTextAnnotation->update();
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pTextAnnotation));
-  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pTextAnnotation, mpGraphicsView);
   setSelected(false);
   pTextAnnotation->setSelected(true);
 }

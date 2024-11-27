@@ -99,20 +99,6 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
     setReadOnly(!StringHandler::isFileWritAble(fileName));
   }
   setIsSaved(isSaved);
-//  setClassTextBefore("");
-//  setClassText("");
-//  setClassTextAfter("");
-//  setExpanded(false);
-//  setNonExisting(false);
-//  setOMSElement(0);
-//  setSystemType(oms_system_none);
-//  setComponentType(oms_component_none);
-//  setOMSConnector(0);
-//  setOMSBusConnector(0);
-//  setOMSTLMBusConnector(0);
-//  setFMUInfo(0);
-//  setExternalTLMModelInfo(0);
-//  setSubModelPath("");
 }
 
 /*!
@@ -140,7 +126,7 @@ QString LibraryTreeItem::getWhereToMoveFMU()
 
 void LibraryTreeItem::updateClassInformation()
 {
-  if (mLibraryType == LibraryTreeItem::Modelica) {
+  if (isModelica()) {
     mClassInformation = MainWindow::instance()->getOMCProxy()->getClassInformation(mNameStructure);
     setFileName(mClassInformation.fileName);
     mVersionDate = mClassInformation.versionDate;
@@ -397,14 +383,14 @@ ssd_element_geometry_t LibraryTreeItem::getOMSElementGeometry()
  */
 QString LibraryTreeItem::getTooltip() const {
   QString tooltip = "";
-  if (mLibraryType == LibraryTreeItem::Modelica) {
+  if (isModelica()) {
     tooltip = QString("%1: %2<br />%3 %4<br />%5: %6<br />%7: %8<br />%9: %10")
               .arg(Helper::type).arg(mClassInformation.restriction)
               .arg(Helper::name).arg(mName)
               .arg(Helper::description).arg(mClassInformation.comment)
               .arg(Helper::fileLocation).arg(mFileName)
               .arg(QObject::tr("Path")).arg(mNameStructure);
-  } else if (mLibraryType == LibraryTreeItem::OMS) {
+  } else if (isSSP()) {
     if (isTopLevel()) {
       tooltip = QString("%1 %2<br />%3: %4<br />%5: %6")
                 .arg(Helper::name).arg(mName)
@@ -570,7 +556,7 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
  */
 bool LibraryTreeItem::inRange(int lineNumber)
 {
-  if (mLibraryType == LibraryTreeItem::Modelica) {
+  if (isModelica()) {
     return (lineNumber >= mClassInformation.lineNumberStart) && (lineNumber <= mClassInformation.lineNumberEnd);
   } else {
     return true;
@@ -640,24 +626,6 @@ void LibraryTreeItem::moveChild(int from, int to)
   mChildren.move(from, to);
 }
 
-/*!
- * \brief LibraryTreeItem::removeAllInheritedClasses
- * Removes the inherited classes and its signals.
- */
-void LibraryTreeItem::removeInheritedClasses()
-{
-  foreach (LibraryTreeItem *pLibraryTreeItem, mInheritedClasses) {
-    disconnect(pLibraryTreeItem, SIGNAL(loaded(LibraryTreeItem*)), this, SLOT(handleLoaded(LibraryTreeItem*)));
-    disconnect(pLibraryTreeItem, SIGNAL(unLoaded()), this, SLOT(handleUnloaded()));
-    disconnect(pLibraryTreeItem, SIGNAL(shapeAdded(ShapeAnnotation*,GraphicsView*)), this, SLOT(handleShapeAdded(ShapeAnnotation*,GraphicsView*)));
-    disconnect(pLibraryTreeItem, SIGNAL(componentAdded(Element*)), this, SLOT(handleComponentAdded(Element*)));
-    disconnect(pLibraryTreeItem, SIGNAL(connectionAdded(LineAnnotation*)), this, SLOT(handleConnectionAdded(LineAnnotation*)));
-    disconnect(pLibraryTreeItem, SIGNAL(iconUpdated()), this, SLOT(handleIconUpdated()));
-    disconnect(pLibraryTreeItem, SIGNAL(coOrdinateSystemUpdated(GraphicsView*)), this, SLOT(handleCoOrdinateSystemUpdated(GraphicsView*)));
-  }
-  mInheritedClasses.clear();
-}
-
 const QList<LibraryTreeItem*> &LibraryTreeItem::getInheritedClasses()
 {
   if (mpModelWidget && mpModelWidget->isDiagramViewLoaded()) {
@@ -721,7 +689,7 @@ void LibraryTreeItem::setModelWidget(ModelWidget *pModelWidget)
     mComponentsLoaded = true; \
   }
 
-const QList<ElementInfo*> &LibraryTreeItem::getComponentsList()
+const QList<ElementInfo> &LibraryTreeItem::getComponentsList()
 {
   if (mpModelWidget) {
     if (mpModelWidget->isDiagramViewLoaded()) {
@@ -731,14 +699,13 @@ const QList<ElementInfo*> &LibraryTreeItem::getComponentsList()
       foreach (auto pElement, elements) {
         if (pElement->isComponent()) {
           /* construct the ElementInfo from the new instance API Element
-             * We only need the name, type and comment.
-             */
-          ElementInfo *pElementInfo = new ElementInfo();
-          pElementInfo->setParentClassName(getNameStructure());
-          pElementInfo->setName(pElement->getName());
-          pElementInfo->setClassName(pElement->getType());
-          pElementInfo->setComment(pElement->getComment());
-          mComponents.append(pElementInfo);
+           * We only need the name, type and comment.
+           */
+          ElementInfo elementInfo;
+          elementInfo.setName(pElement->getName());
+          elementInfo.setClassName(pElement->getType());
+          elementInfo.setComment(pElement->getComment());
+          mComponents.append(elementInfo);
         }
       }
       return mComponents;
@@ -760,11 +727,11 @@ LibraryTreeItem *LibraryTreeItem::getDirectComponentsClass(const QString &name)
       return children[i];
     }
   }
-  const QList<ElementInfo*> &components = getComponentsList();
+  const QList<ElementInfo> &components = getComponentsList();
   for (int i = 0; i < components.size(); ++i) {
-    if (components[i]->getName() == name) {
+    if (components[i].getName() == name) {
       LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-      return pLibraryTreeModel->findLibraryTreeItem(components[i]->getClassName());
+      return pLibraryTreeModel->findLibraryTreeItem(components[i].getClassName());
     }
   }
 
@@ -796,10 +763,10 @@ void LibraryTreeItem::tryToComplete(QList<CompleterItem> &completionClasses, QLi
     }
 
     if (!baseClasses[bc]->isRootItem() && baseClasses[bc]->isModelica()) {
-      const QList<ElementInfo*> &components = baseClasses[bc]->getComponentsList();
+      const QList<ElementInfo> &components = baseClasses[bc]->getComponentsList();
       for (int i = 0; i < components.size(); ++i) {
-        if (components[i]->getName().startsWith(lastPart, Qt::CaseInsensitive))
-          completionComponents << CompleterItem(components[i]->getName(), components[i]->getHTMLDescription() + QString("<br/>// Inside %1").arg(baseClasses[bc]->mNameStructure));
+        if (components[i].getName().startsWith(lastPart, Qt::CaseInsensitive))
+          completionComponents << CompleterItem(components[i].getName(), components[i].getHTMLDescription() + QString("<br/>// Inside %1").arg(baseClasses[bc]->mNameStructure));
       }
     }
   }
@@ -830,7 +797,7 @@ QVariant LibraryTreeItem::data(int column, int role) const
         case Qt::DisplayRole:
           return mName;
         case Qt::DecorationRole: {
-          if (mLibraryType == LibraryTreeItem::Text) {
+          if (isText()) {
             QFileInfo fileInfo(getFileName());
             return Utilities::FileIconProvider::icon(fileInfo);
           } else {
@@ -910,39 +877,6 @@ bool LibraryTreeItem::isSimulationAllowed()
 }
 
 /*!
- * \brief LibraryTreeItem::emitUnLoaded
- * Emits the unLoaded and unLoadedForComponent signals.
- */
-void LibraryTreeItem::emitUnLoaded()
-{
-  emit unLoaded();
-  emit unLoadedForComponent();
-}
-
-/*!
- * \brief LibraryTreeItem::emitShapeAdded
- * Emits the shapeAdded and shapeAddedForComponent signals.
- * \param pShapeAnnotation
- * \param pGraphicsView
- */
-void LibraryTreeItem::emitShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
-{
-  emit shapeAdded(pShapeAnnotation, pGraphicsView);
-  emit shapeAddedForComponent();
-}
-
-/*!
- * \brief LibraryTreeItem::emitComponentAdded
- * Emits the componentAdded and componentAddedForComponent signals.
- * \param pComponent
- */
-void LibraryTreeItem::emitComponentAdded(Element *pComponent)
-{
-  emit componentAdded(pComponent);
-  emit componentAddedForComponent();
-}
-
-/*!
  * \brief LibraryTreeItem::updateChildrenNameStructure
  * Updates the children name structure recursively.
  */
@@ -957,81 +891,10 @@ void LibraryTreeItem::updateChildrenNameStructure()
   }
 }
 
-/*!
- * \brief LibraryTreeItem::emitCoOrdinateSystemUpdated
- * Emits the coOrdinateSystemUpdated and coOrdinateSystemUpdatedForComponent signals.
- * \param pGraphicsView
- */
-void LibraryTreeItem::emitCoOrdinateSystemUpdated(GraphicsView *pGraphicsView)
-{
-  emit coOrdinateSystemUpdated(pGraphicsView);
-  emit coOrdinateSystemUpdatedForComponent();
-}
-
 QString LibraryTreeItem::getHTMLDescription() const
 {
   return QString("<b>%1</b> %2<br/>&nbsp;&nbsp;&nbsp;&nbsp;<i>\"%3\"</i><br/>...")
       .arg(mClassInformation.restriction, mName, Utilities::escapeForHtmlNonSecure(mClassInformation.comment));
-}
-
-/*!
- * \brief LibraryTreeItem::handleShapeAdded
- * Handles a case when inherited class has created a new shape.
- * \param pShapeAnnotation
- * \param pGraphicsView
- */
-void LibraryTreeItem::handleShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
-{
-  if (mpModelWidget) {
-    bool primitivesVisible = true;
-    int index = mpModelWidget->getInheritedClassesList().indexOf(pGraphicsView->getModelWidget()->getLibraryTreeItem()) + 1;
-    GraphicsView *pCurrentGraphicsView = 0;
-    if (pGraphicsView->isIconView()) {
-      if (index > 0) {
-        primitivesVisible = mpModelWidget->getInheritedClassIconMap().value(index).mPrimitivesVisible;
-      }
-      pCurrentGraphicsView = mpModelWidget->getIconGraphicsView();
-    } else {
-      if (index > 0) {
-        primitivesVisible = mpModelWidget->getInheritedClassDiagramMap().value(index).mPrimitivesVisible;
-      }
-      pCurrentGraphicsView = mpModelWidget->getDiagramGraphicsView();
-    }
-    if (primitivesVisible) {
-      pCurrentGraphicsView->addInheritedShapeToList(mpModelWidget->createInheritedShape(pShapeAnnotation, pCurrentGraphicsView));
-      pCurrentGraphicsView->reOrderShapes();
-    }
-  }
-  emit shapeAdded(pShapeAnnotation, pGraphicsView);
-}
-
-/*!
- * \brief LibraryTreeItem::handleComponentAdded
- * Handles a case when inherited class has created a new component.
- * \param pComponent
- */
-void LibraryTreeItem::handleComponentAdded(Element *pComponent)
-{
-  if (mpModelWidget) {
-    if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector()) {
-      mpModelWidget->getIconGraphicsView()->addInheritedElementToList(mpModelWidget->createInheritedComponent(pComponent, mpModelWidget->getIconGraphicsView()));
-    }
-    mpModelWidget->getDiagramGraphicsView()->addInheritedElementToList(mpModelWidget->createInheritedComponent(pComponent, mpModelWidget->getDiagramGraphicsView()));
-  }
-  emit componentAdded(pComponent);
-}
-
-/*!
- * \brief LibraryTreeItem::handleConnectionAdded
- * Handles a case when inherited class has created a new connection.
- * \param pConnectionLineAnnotation
- */
-void LibraryTreeItem::handleConnectionAdded(LineAnnotation *pConnectionLineAnnotation)
-{
-  if (mpModelWidget) {
-    mpModelWidget->getDiagramGraphicsView()->addInheritedConnectionToList(mpModelWidget->createInheritedConnection(pConnectionLineAnnotation));
-  }
-  emit connectionAdded(pConnectionLineAnnotation);
 }
 
 /*!
@@ -1061,7 +924,6 @@ void LibraryTreeItem::handleCoOrdinateSystemUpdated(GraphicsView *pGraphicsView)
       mpModelWidget->drawModelCoOrdinateSystem(mpModelWidget->getDiagramGraphicsView());
     }
   }
-  emit coOrdinateSystemUpdated(pGraphicsView);
 }
 
 /*!
@@ -1440,17 +1302,13 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, LibraryTr
 
   // check if is in non-existing classes.
   LibraryTreeItem *pLibraryTreeItem = findNonExistingLibraryTreeItem(nameStructure);
-  if (pLibraryTreeItem && pLibraryTreeItem->isNonExisting()) {
-    pLibraryTreeItem = createLibraryTreeItemImpl(name, pParentLibraryTreeItem, isSaved, isSystemLibrary, load, row, activateAccessAnnotations);
-  } else {
-    if (row == -1) {
-      row = pParentLibraryTreeItem->childrenSize();
-    }
-    QModelIndex index = libraryTreeItemIndex(pParentLibraryTreeItem);
-    beginInsertRows(index, row, row);
-    pLibraryTreeItem = createLibraryTreeItemImpl(name, pParentLibraryTreeItem, isSaved, isSystemLibrary, load, row, activateAccessAnnotations);
-    endInsertRows();
+  if (row == -1) {
+    row = pParentLibraryTreeItem->childrenSize();
   }
+  QModelIndex index = libraryTreeItemIndex(pParentLibraryTreeItem);
+  beginInsertRows(index, row, row);
+  pLibraryTreeItem = createLibraryTreeItemImpl(name, pParentLibraryTreeItem, isSaved, isSystemLibrary, load, row, activateAccessAnnotations);
+  endInsertRows();
   return pLibraryTreeItem;
 }
 
@@ -2591,33 +2449,21 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(QString name, Libra
   QString nameStructure = pParentLibraryTreeItem->getNameStructure().isEmpty() ? name : pParentLibraryTreeItem->getNameStructure() + "." + name;
   // check if is in non-existing classes.
   LibraryTreeItem *pLibraryTreeItem = findNonExistingLibraryTreeItem(nameStructure);
-  if (pLibraryTreeItem && pLibraryTreeItem->isNonExisting()) {
-    pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem == mpRootLibraryTreeItem ? isSystemLibrary : pParentLibraryTreeItem->isSystemLibrary());
-    pLibraryTreeItem->setAccessAnnotations(activateAccessAnnotations);
-    if (load) {
-      // create library tree items
-      createLibraryTreeItems(pLibraryTreeItem);
-      // load the LibraryTreeItem pixmap
-      loadLibraryTreeItemPixmap(pLibraryTreeItem);
-    }
-    updateLibraryTreeItem(pLibraryTreeItem);
-  } else {
-    pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::Modelica, name, nameStructure, "", isSaved, pParentLibraryTreeItem);
-    pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem == mpRootLibraryTreeItem ? isSystemLibrary : pParentLibraryTreeItem->isSystemLibrary());
-    pLibraryTreeItem->setAccessAnnotations(activateAccessAnnotations);
-    if (row == -1) {
-      row = pParentLibraryTreeItem->childrenSize();
-    }
-    pParentLibraryTreeItem->insertChild(row, pLibraryTreeItem);
-    if (load) {
-      // create library tree items
-      createLibraryTreeItems(pLibraryTreeItem);
-      // load the LibraryTreeItem pixmap
-      loadLibraryTreeItemPixmap(pLibraryTreeItem);
-    }
-    if (!isCreatingAutoLoadedLibrary()) {
-      emit modelStateChanged(nameStructure);
-    }
+  pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::Modelica, name, nameStructure, "", isSaved, pParentLibraryTreeItem);
+  pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem == mpRootLibraryTreeItem ? isSystemLibrary : pParentLibraryTreeItem->isSystemLibrary());
+  pLibraryTreeItem->setAccessAnnotations(activateAccessAnnotations);
+  if (row == -1) {
+    row = pParentLibraryTreeItem->childrenSize();
+  }
+  pParentLibraryTreeItem->insertChild(row, pLibraryTreeItem);
+  if (load) {
+    // create library tree items
+    createLibraryTreeItems(pLibraryTreeItem);
+    // load the LibraryTreeItem pixmap
+    loadLibraryTreeItemPixmap(pLibraryTreeItem);
+  }
+  if (!isCreatingAutoLoadedLibrary()) {
+    emit modelStateChanged(nameStructure);
   }
   return pLibraryTreeItem;
 }

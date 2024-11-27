@@ -276,7 +276,6 @@ void EllipseAnnotation::duplicate()
   pEllipseAnnotation->applyTransformation();
   pEllipseAnnotation->update();
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pEllipseAnnotation));
-  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pEllipseAnnotation, mpGraphicsView);
   setSelected(false);
   pEllipseAnnotation->setSelected(true);
 }

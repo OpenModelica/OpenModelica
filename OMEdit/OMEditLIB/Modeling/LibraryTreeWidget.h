@@ -132,8 +132,6 @@ public:
   QString getClassTextAfter() {return mClassTextAfter;}
   void setExpanded(bool expanded) {mExpanded = expanded;}
   bool isExpanded() const {return mExpanded;}
-  void setNonExisting(bool nonExisting) {mNonExisting = nonExisting;}
-  bool isNonExisting() const {return mNonExisting;}
   bool isEncryptedClass() const {return mFileName.endsWith(".moc");}
   bool isAccessAnnotationsEnabled() const {return mAccessAnnotations;}
   void setAccessAnnotations(bool accessAnnotations) {mAccessAnnotations = accessAnnotations;}
@@ -172,7 +170,6 @@ public:
   void insertChild(int position, LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* child(int row);
   void moveChild(int from, int to);
-  void removeInheritedClasses();
   const QList<LibraryTreeItem*> &getInheritedClasses();
   QList<LibraryTreeItem*> getInheritedClassesDeepList();
   LibraryTreeItem *getDirectComponentsClass(const QString &name);
@@ -185,26 +182,19 @@ public:
   LibraryTreeItem* parent() const {return mpParentLibraryTreeItem;}
   bool isTopLevel() const;
   bool isSimulationAllowed();
-  void emitUnLoaded();
-  void emitShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
-  void emitComponentAdded(Element *pComponent);
-  void emitComponentAddedForComponent() {emit componentAddedForComponent();}
-  void emitNameChanged() {emit nameChanged();}
   void updateChildrenNameStructure();
-  void emitConnectionAdded(LineAnnotation *pConnectionLineAnnotation) {emit connectionAdded(pConnectionLineAnnotation);}
-  void emitCoOrdinateSystemUpdated(GraphicsView *pGraphicsView);
   QString getHTMLDescription() const;
 
   OMCInterface::getClassInformation_res mClassInformation;
   SimulationOptions mSimulationOptions;
-  const QList<ElementInfo*> &getComponentsList();
+  const QList<ElementInfo> &getComponentsList();
 private:
   bool mIsRootItem;
   LibraryTreeItem *mpParentLibraryTreeItem = 0;
   QList<LibraryTreeItem*> mChildren;
   bool mInheritedClassesLoaded = false;
   QList<LibraryTreeItem*> mInheritedClasses;
-  QList<ElementInfo*> mComponents;
+  QList<ElementInfo> mComponents;
   bool mComponentsLoaded = false;
   LibraryType mLibraryType = LibraryTreeItem::Modelica;
   bool mSystemLibrary = false;
@@ -238,23 +228,8 @@ private:
   const oms_external_tlm_model_info_t *mpExternalTLMModelInfo = 0;
   QString mSubModelPath;
 signals:
-  void loaded(LibraryTreeItem *pLibraryTreeItem);
-  void loadedForComponent();
-  void unLoaded();
-  void unLoadedForComponent();
-  void shapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
-  void shapeAddedForComponent();
-  void componentAdded(Element *pComponent);
-  void componentAddedForComponent();
-  void nameChanged();
-  void connectionAdded(LineAnnotation *pConnectionLineAnnotation);
   void iconUpdated();
-  void coOrdinateSystemUpdated(GraphicsView *pGraphicsView);
-  void coOrdinateSystemUpdatedForComponent();
 public slots:
-  void handleShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
-  void handleComponentAdded(Element *pComponent);
-  void handleConnectionAdded(LineAnnotation *pConnectionLineAnnotation);
   void handleIconUpdated();
   void handleCoOrdinateSystemUpdated(GraphicsView *pGraphicsView);
 };

@@ -283,7 +283,7 @@ bool Parameter::isParameter() const
   if (mpModelInstanceElement) {
     return mpModelInstanceElement->getVariability().compare(QStringLiteral("parameter")) == 0;
   } else {
-    return mpElement->getElementInfo()->getVariablity().compare("parameter") == 0;
+    return false;
   }
 }
 
@@ -297,7 +297,7 @@ bool Parameter::isInput() const
   if (mpModelInstanceElement) {
     return mpModelInstanceElement->getDirectionPrefix().compare(QStringLiteral("input")) == 0;
   } else {
-    return mpElement->getElementInfo()->getCausality().compare("input") == 0;
+    return false;
   }
 }
 

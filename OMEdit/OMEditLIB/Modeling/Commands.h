@@ -119,36 +119,6 @@ private:
   bool mMoveConnectorsTogether;
 };
 
-class UpdateElementAttributesCommand : public UndoCommand
-{
-public:
-  UpdateElementAttributesCommand(Element *pComponent, const ElementInfo &oldComponentInfo, const ElementInfo &newComponentInfo, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-  static void updateComponentAttributes(Element *pComponent, const ElementInfo &componentInfo);
-  static void updateComponentModifiers(Element *pComponent, const ElementInfo &componentInfo);
-private:
-  Element *mpComponent;
-  ElementInfo mOldComponentInfo;
-  ElementInfo mNewComponentInfo;
-};
-
-class UpdateElementParametersCommand : public UndoCommand
-{
-public:
-  UpdateElementParametersCommand(Element *pComponent, QMap<QString, QString> oldComponentModifiersMap,
-                                   QMap<QString, QString> oldComponentExtendsModifiersMap, QMap<QString, QString> newComponentModifiersMap,
-                                   QMap<QString, QString> newComponentExtendsModifiersMap, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-private:
-  Element *mpComponent;
-  QMap<QString, QString> mOldComponentModifiersMap;
-  QMap<QString, QString> mOldComponentExtendsModifiersMap;
-  QMap<QString, QString> mNewComponentModifiersMap;
-  QMap<QString, QString> mNewComponentExtendsModifiersMap;
-};
-
 class DeleteComponentCommand : public UndoCommand
 {
 public:

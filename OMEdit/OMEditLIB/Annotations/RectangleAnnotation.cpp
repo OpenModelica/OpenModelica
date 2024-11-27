@@ -302,7 +302,6 @@ void RectangleAnnotation::duplicate()
   pRectangleAnnotation->applyTransformation();
   pRectangleAnnotation->update();
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pRectangleAnnotation));
-  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pRectangleAnnotation, mpGraphicsView);
   setSelected(false);
   pRectangleAnnotation->setSelected(true);
 }
