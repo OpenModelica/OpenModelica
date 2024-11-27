@@ -338,7 +338,7 @@ protected
 
         // apply on for-equation. assumed to be split up
         case Equation.FOR_EQUATION(body = {body}) algorithm
-          new_eqn := inlineRecordTupleArrayEquation(body, eqn.iter, variables, new_eqns, index, inlineSimple);
+          new_eqn := inlineRecordTupleArrayEquation(body, eqn.iter, variables, new_eqns, index, true);
           new_eqn := if Equation.isDummy(new_eqn) then new_eqn else eqn;
         then new_eqn;
 
