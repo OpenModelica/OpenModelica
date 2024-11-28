@@ -1,0 +1,33 @@
+// name: getElements1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+
+loadString("
+  package ReplaceableComment
+    model ClassWithElements
+
+    replaceable ReplaceableComment.BaseModel replInstance \"Comment of replaceable instance\";
+
+    replaceable model replModel = ReplaceableComment.BaseModel \"Comment of replaceable type\";
+
+    replaceable model replModel2 = ReplaceableComment.BaseModel
+    constrainedby ReplaceableComment.BaseModel \"Comment of replaceable type with constrainedby\";
+
+    end ClassWithElements;
+
+    model BaseModel
+    end BaseModel;
+  end ReplaceableComment;
+");
+getErrorString();
+
+getElements(ReplaceableComment.ClassWithElements);
+getErrorString();
+
+// Result:
+// true
+// ""
+// {{"co", "-", ReplaceableComment.BaseModel, replInstance, "Comment of replaceable instance", "public", false, false, false, true, "unspecified", "none", "unspecified", $Any, {}}, {"cl", "model", ReplaceableComment.BaseModel, replModel, "Comment of replaceable type", "public", false, false, false, true, "unspecified", "none", "unspecified", $Any, {}}, {"cl", "model", ReplaceableComment.BaseModel, replModel2, "Comment of replaceable type with constrainedby", "public", false, false, false, true, "unspecified", "none", "unspecified", ReplaceableComment.BaseModel, {}}}
+// ""
+// endResult
