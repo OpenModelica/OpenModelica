@@ -246,25 +246,25 @@ private:
   LineAnnotation *mpInitialStateLineAnnotation;
 };
 
-class UpdateCoOrdinateSystemCommand : public UndoCommand
+class UpdateCoordinateSystemCommand : public UndoCommand
 {
 public:
-  UpdateCoOrdinateSystemCommand(GraphicsView *pGraphicsView, const CoOrdinateSystem oldCoOrdinateSystem, const CoOrdinateSystem newCoOrdinateSystem,
-                                const bool copyProperties, const QString &oldVersion, const QString &newVersion, const QString &oldUsesAnnotationString,
-                                const QString &newUsesAnnotationString, UndoCommand *pParent = 0);
+  UpdateCoordinateSystemCommand(GraphicsView *pGraphicsView, const ModelInstance::CoordinateSystem oldCoordinateSystem,
+                                const ModelInstance::CoordinateSystem newCoordinateSystem, const bool copyProperties, const QString &oldVersion,
+                                const QString &newVersion, const QString &oldUsesAnnotationString, const QString &newUsesAnnotationString, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
 private:
   GraphicsView *mpGraphicsView;
-  CoOrdinateSystem mOldCoOrdinateSystem;
-  CoOrdinateSystem mNewCoOrdinateSystem;
+  ModelInstance::CoordinateSystem mOldCoordinateSystem;
+  ModelInstance::CoordinateSystem mNewCoordinateSystem;
   bool mCopyProperties;
   QString mOldVersion;
   QString mNewVersion;
   QString mOldUsesAnnotationString;
   QString mNewUsesAnnotationString;
 
-  void updateReferencedShapes(GraphicsView *pGraphicsView);
+  void updateCoordinateSystem(const ModelInstance::CoordinateSystem coordinateSystem);
 };
 
 class UpdateClassAnnotationCommand : public UndoCommand

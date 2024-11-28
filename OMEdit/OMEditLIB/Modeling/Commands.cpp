@@ -92,7 +92,6 @@ void AddShapeCommand::redoInternal()
   }
   mpShapeAnnotation->getGraphicsView()->addItem(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->addItem(mpShapeAnnotation->getOriginItem());
-  mpShapeAnnotation->emitAdded();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
   mpShapeAnnotation->getGraphicsView()->reOrderShapes();
 }
@@ -107,7 +106,6 @@ void AddShapeCommand::undo()
   mpShapeAnnotation->getGraphicsView()->addShapeToOutOfSceneList(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->removeItem(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->removeItem(mpShapeAnnotation->getOriginItem());
-  mpShapeAnnotation->emitDeleted();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
   mpShapeAnnotation->getGraphicsView()->reOrderShapes();
 }
@@ -154,7 +152,6 @@ void UpdateShapeCommand::redoInternal()
   }
   mpShapeAnnotation->setCornerItemsActiveOrPassive();
   mpShapeAnnotation->applyTransformation();
-  mpShapeAnnotation->emitChanged();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
 }
 
@@ -179,7 +176,6 @@ void UpdateShapeCommand::undo()
   }
   mpShapeAnnotation->setCornerItemsActiveOrPassive();
   mpShapeAnnotation->applyTransformation();
-  mpShapeAnnotation->emitChanged();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
 }
 
@@ -200,7 +196,6 @@ void DeleteShapeCommand::redoInternal()
   mpShapeAnnotation->getGraphicsView()->addShapeToOutOfSceneList(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->removeItem(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->removeItem(mpShapeAnnotation->getOriginItem());
-  mpShapeAnnotation->emitDeleted();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
   mpShapeAnnotation->getGraphicsView()->reOrderShapes();
 }
@@ -215,7 +210,6 @@ void DeleteShapeCommand::undo()
   mpShapeAnnotation->getGraphicsView()->deleteShapeFromOutOfSceneList(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->addItem(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->addItem(mpShapeAnnotation->getOriginItem());
-  mpShapeAnnotation->emitAdded();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
   mpShapeAnnotation->getGraphicsView()->reOrderShapes();
 }
@@ -692,15 +686,15 @@ void DeleteInitialStateCommand::undo()
   mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToClass(mpInitialStateLineAnnotation);
 }
 
-UpdateCoOrdinateSystemCommand::UpdateCoOrdinateSystemCommand(GraphicsView *pGraphicsView, CoOrdinateSystem oldCoOrdinateSystem,
-                                                             CoOrdinateSystem newCoOrdinateSystem, bool copyProperties, const QString &oldVersion,
+UpdateCoordinateSystemCommand::UpdateCoordinateSystemCommand(GraphicsView *pGraphicsView, const ModelInstance::CoordinateSystem oldCoordinateSystem,
+                                                             const ModelInstance::CoordinateSystem newCoordinateSystem, bool copyProperties, const QString &oldVersion,
                                                              const QString &newVersion, const QString &oldUsesAnnotationString,
                                                              const QString &newUsesAnnotationString, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpGraphicsView = pGraphicsView;
-  mOldCoOrdinateSystem = oldCoOrdinateSystem;
-  mNewCoOrdinateSystem = newCoOrdinateSystem;
+  mOldCoordinateSystem = oldCoordinateSystem;
+  mNewCoordinateSystem = newCoordinateSystem;
   mCopyProperties = copyProperties;
   mOldVersion = oldVersion;
   mNewVersion = newVersion;
@@ -710,30 +704,12 @@ UpdateCoOrdinateSystemCommand::UpdateCoOrdinateSystemCommand(GraphicsView *pGrap
 }
 
 /*!
- * \brief UpdateClassCoOrdinateSystemCommand::redoInternal
- * redoInternal the UpdateClassCoOrdinateSystemCommand.
+ * \brief UpdateClassCoordinateSystemCommand::redoInternal
+ * redoInternal the UpdateClassCoordinateSystemCommand.
  */
-void UpdateCoOrdinateSystemCommand::redoInternal()
+void UpdateCoordinateSystemCommand::redoInternal()
 {
-  mpGraphicsView->setCoOrdinateSystem(mNewCoOrdinateSystem);
-  mpGraphicsView->getModelWidget()->drawModelCoOrdinateSystem(mpGraphicsView);
-  mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->fitInViewInternal();
-  updateReferencedShapes(mpGraphicsView);
-  // if copy properties is true
-  if (mCopyProperties) {
-    GraphicsView *pGraphicsView;
-    if (mpGraphicsView->isIconView()) {
-      pGraphicsView = mpGraphicsView->getModelWidget()->getDiagramGraphicsView();
-    } else {
-      pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
-    }
-    pGraphicsView->setCoOrdinateSystem(mNewCoOrdinateSystem);
-    pGraphicsView->getModelWidget()->drawModelCoOrdinateSystem(pGraphicsView);
-    pGraphicsView->addClassAnnotation();
-    pGraphicsView->fitInViewInternal();
-    updateReferencedShapes(pGraphicsView);
-  }
+  updateCoordinateSystem(mNewCoordinateSystem);
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   // only add version and uses annotation to top level class.
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTopLevel()) {
@@ -752,30 +728,12 @@ void UpdateCoOrdinateSystemCommand::redoInternal()
 }
 
 /*!
- * \brief UpdateClassCoOrdinateSystemCommand::undo
- * Undo the UpdateClassCoOrdinateSystemCommand.
+ * \brief UpdateClassCoordinateSystemCommand::undo
+ * Undo the UpdateClassCoordinateSystemCommand.
  */
-void UpdateCoOrdinateSystemCommand::undo()
+void UpdateCoordinateSystemCommand::undo()
 {
-  mpGraphicsView->setCoOrdinateSystem(mOldCoOrdinateSystem);
-  mpGraphicsView->getModelWidget()->drawModelCoOrdinateSystem(mpGraphicsView);
-  mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->fitInViewInternal();
-  updateReferencedShapes(mpGraphicsView);
-  // if copy properties is true
-  if (mCopyProperties) {
-    GraphicsView *pGraphicsView;
-    if (mpGraphicsView->isIconView()) {
-      pGraphicsView = mpGraphicsView->getModelWidget()->getDiagramGraphicsView();
-    } else {
-      pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
-    }
-    pGraphicsView->setCoOrdinateSystem(mOldCoOrdinateSystem);
-    pGraphicsView->getModelWidget()->drawModelCoOrdinateSystem(pGraphicsView);
-    pGraphicsView->addClassAnnotation();
-    pGraphicsView->fitInViewInternal();
-    updateReferencedShapes(pGraphicsView);
-  }
+  updateCoordinateSystem(mOldCoordinateSystem);
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   // only add version and uses annotation to top level class.
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTopLevel()) {
@@ -794,18 +752,41 @@ void UpdateCoOrdinateSystemCommand::undo()
 }
 
 /*!
- * \brief UpdateCoOrdinateSystemCommand::updateReferencedShapes
- * \param pGraphicsView
+ * \brief UpdateCoordinateSystemCommand::updateCoordinateSystem
+ * Updates the coordinatesystem
+ * \param coordinateSystem
  */
-void UpdateCoOrdinateSystemCommand::updateReferencedShapes(GraphicsView *pGraphicsView)
+void UpdateCoordinateSystemCommand::updateCoordinateSystem(const ModelInstance::CoordinateSystem coordinateSystem)
 {
-  /* If preserveAspectRatio is changed emit changed signal of all the shapes so that
-   * the inherited items gets updated accordingly using the iconmap/diagrammap
-   */
-  if (mNewCoOrdinateSystem.getPreserveAspectRatio() != mOldCoOrdinateSystem.getPreserveAspectRatio()) {
-    foreach (ShapeAnnotation *pShapeAnnotation, pGraphicsView->getShapesList()) {
-      pShapeAnnotation->emitChanged();
+  if (mCopyProperties) {
+    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getIconAnnotation()->mCoordinateSystem = coordinateSystem;
+    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem = coordinateSystem;
+
+    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mCoordinateSystem = coordinateSystem;
+    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem = coordinateSystem;
+  } else if (mpGraphicsView->isIconView()) {
+    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getIconAnnotation()->mCoordinateSystem = coordinateSystem;
+    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem = coordinateSystem;
+  } else {
+    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mCoordinateSystem = coordinateSystem;
+    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem = coordinateSystem;
+  }
+  mpGraphicsView->getModelWidget()->getModelInstance()->updateMergedCoordinateSystem();
+
+  mpGraphicsView->drawCoordinateSystem();
+  mpGraphicsView->addClassAnnotation();
+  mpGraphicsView->fitInViewInternal();
+  // if copy properties is true
+  if (mCopyProperties) {
+    GraphicsView *pGraphicsView;
+    if (mpGraphicsView->isIconView()) {
+      pGraphicsView = mpGraphicsView->getModelWidget()->getDiagramGraphicsView();
+    } else {
+      pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
     }
+    pGraphicsView->drawCoordinateSystem();
+    pGraphicsView->addClassAnnotation();
+    pGraphicsView->fitInViewInternal();
   }
 }
 

@@ -35,7 +35,6 @@
 #ifndef MODELWIDGETCONTAINER_H
 #define MODELWIDGETCONTAINER_H
 
-#include "CoOrdinateSystem.h"
 #include "Element/Element.h"
 #include "Util/StringHandler.h"
 #include "Util/Helper.h"
@@ -106,12 +105,6 @@ class GraphicsView : public QGraphicsView
 private:
   StringHandler::ViewType mViewType;
   ModelWidget *mpModelWidget;
-  CoOrdinateSystem mCoOrdinateSystem;
-public:
-  CoOrdinateSystem mMergedCoOrdinateSystem;
-  CoOrdinateSystem getCoOrdinateSystem() const {return mCoOrdinateSystem;}
-  void setCoOrdinateSystem(CoOrdinateSystem coOrdinateSystem) {mCoOrdinateSystem = std::move(coOrdinateSystem);}
-private:
   bool mVisualizationView;
   bool mIsCustomScale;
   bool mAddClassAnnotationNeeded;
@@ -180,9 +173,13 @@ private:
 public:
   GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModelWidget);
   ~GraphicsView();
+  ModelInstance::CoordinateSystem mCoordinateSystem;
+  ModelInstance::CoordinateSystem mMergedCoordinateSystem;
   bool mSkipBackground; /* Do not draw the background rectangle */
   QPointF mContextMenuStartPosition;
   bool mContextMenuStartPositionValid;
+  void initializeCoordinateSystem();
+  void resetCoordinateSystem();
   bool isIconView() const {return mViewType == StringHandler::Icon;}
   bool isDiagramView() const {return mViewType == StringHandler::Diagram;}
   ModelWidget* getModelWidget() {return mpModelWidget;}
@@ -397,7 +394,7 @@ private:
   void omsOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation, QMenu *pMenu);
   void omsOneComponentContextMenu(Element *pComponent, QMenu *pMenu);
   void omsMultipleItemsContextMenu(QMenu *pMenu);
-  void getCoOrdinateSystemAndGraphics(QStringList &coOrdinateSystemList, QStringList &graphicsList);
+  void getCoordinateSystemAndGraphics(QStringList &coOrdinateSystemList, QStringList &graphicsList);
 signals:
   void manhattanize();
   void deleteSignal();
@@ -567,7 +564,6 @@ public:
   void setRestoringModel(bool restoring) {mRestoringModel = restoring;}
   bool isRestoringModel() const {return mRestoringModel;}
 
-  void drawModelCoOrdinateSystem(GraphicsView *pGraphicsView);
   void drawModelIconDiagramShapes(QStringList shapes, GraphicsView *pGraphicsView, bool select);
 
   void drawModel(const ModelInfo &modelInfo);
@@ -650,9 +646,6 @@ private:
 
   void createUndoStack();
   void handleCanUndoRedoChanged();
-  void readCoOrdinateSystemFromInheritedClass(ModelWidget *pModelWidget, GraphicsView *pGraphicsView);
-  void getMetaModelSubModels();
-  void getMetaModelConnections();
   void drawOMSModelIconElements();
   void drawOMSModelDiagramElements();
   void drawOMSElement(LibraryTreeItem *pLibraryTreeItem, const QString &annotation);

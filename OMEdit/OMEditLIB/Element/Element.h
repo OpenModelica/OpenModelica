@@ -37,7 +37,6 @@
 
 #include "Annotations/ShapeAnnotation.h"
 #include "Element/CornerItem.h"
-#include "Modeling/CoOrdinateSystem.h"
 #include "Modeling/ModelWidgetContainer.h"
 #include "OMC/OMCProxy.h"
 #include "Annotations/LineAnnotation.h"

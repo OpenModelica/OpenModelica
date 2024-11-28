@@ -545,7 +545,7 @@ namespace Utilities {
   float mini(float arr[], int n);
   QList<QPointF> liangBarskyClipper(float xmin, float ymin, float xmax, float ymax, float x1, float y1, float x2, float y2);
   void removeDirectoryRecursively(QString path);
-  qreal mapToCoOrdinateSystem(qreal value, qreal startA, qreal endA, qreal startB, qreal endB);
+  qreal mapToCoordinateSystem(qreal value, qreal startA, qreal endA, qreal startB, qreal endB);
   QStringList variantListToStringList(const QVariantList lst);
   void addDefaultDisplayUnit(const QString &unit, QStringList &displayUnit);
   QString convertUnitToSymbol(const QString &displayUnit);

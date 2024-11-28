@@ -312,11 +312,6 @@ ShapeAnnotation::ShapeAnnotation(ShapeAnnotation *pShapeAnnotation, QGraphicsIte
   setOldScenePosition(QPointF(0, 0));
   mIsCornerItemClicked = false;
   mOldAnnotation = "";
-  if (pShapeAnnotation) {
-    connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
-    connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
-    connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
-  }
 }
 
 /*!
@@ -578,7 +573,7 @@ void ShapeAnnotation::applyFillPattern(QPainter *painter)
 
 QList<QPointF> ShapeAnnotation::getExtentsForInheritedShapeFromIconDiagramMap(GraphicsView *pGraphicsView)
 {
-  ExtentAnnotation extent = pGraphicsView->mMergedCoOrdinateSystem.getExtent();
+  ExtentAnnotation extent = pGraphicsView->mMergedCoordinateSystem.getExtent();
   QPointF defaultPoint1 = QPointF(extent.at(0).x(), extent.at(0).y());
   QPointF defaultPoint2 = QPointF(extent.at(1).x(), extent.at(1).y());
   QPointF point1 = defaultPoint1;
@@ -589,10 +584,10 @@ QList<QPointF> ShapeAnnotation::getExtentsForInheritedShapeFromIconDiagramMap(Gr
   if (pExtend) {
     if (pGraphicsView->isIconView()) {
       extent = pExtend->getIconDiagramMapExtent(true);
-      preserveAspectRatio = pExtend->getModel()->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
+      preserveAspectRatio = pExtend->getModel()->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem.getPreserveAspectRatio();
     } else {
       extent = pExtend->getIconDiagramMapExtent(false);
-      preserveAspectRatio = pExtend->getModel()->getAnnotation()->getDiagramAnnotation()->mMergedCoOrdinateSystem.getPreserveAspectRatio();
+      preserveAspectRatio = pExtend->getModel()->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem.getPreserveAspectRatio();
     }
   }
 
@@ -653,15 +648,15 @@ void ShapeAnnotation::applyTransformation()
 
   if (!mpParentComponent && pGraphicsView && (!pLineAnnotation || pLineAnnotation->isLineShape()) && mIsInheritedShape) {
     QList<QPointF> extendsCoOrdinateExtents = getExtentsForInheritedShapeFromIconDiagramMap(pGraphicsView);
-    ExtentAnnotation extent = pGraphicsView->mMergedCoOrdinateSystem.getExtent();
+    ExtentAnnotation extent = pGraphicsView->mMergedCoordinateSystem.getExtent();
     qreal left = extent.at(0).x();
     qreal bottom = extent.at(0).y();
     qreal right = extent.at(1).x();
     qreal top = extent.at(1).y();
-    // map the origin to extends CoOrdinateSystem
-    origin.setX(Utilities::mapToCoOrdinateSystem(mOrigin.x(), left, right, extendsCoOrdinateExtents.at(0).x(), extendsCoOrdinateExtents.at(1).x()));
-    origin.setY(Utilities::mapToCoOrdinateSystem(mOrigin.y(), bottom, top, extendsCoOrdinateExtents.at(0).y(), extendsCoOrdinateExtents.at(1).y()));
-    // scale the shape to new CoOrdinateSystem
+    // map the origin to extends CoordinateSystem
+    origin.setX(Utilities::mapToCoordinateSystem(mOrigin.x(), left, right, extendsCoOrdinateExtents.at(0).x(), extendsCoOrdinateExtents.at(1).x()));
+    origin.setY(Utilities::mapToCoordinateSystem(mOrigin.y(), bottom, top, extendsCoOrdinateExtents.at(0).y(), extendsCoOrdinateExtents.at(1).y()));
+    // scale the shape to new CoordinateSystem
     const qreal coOrdinateWidth = qFabs(left - right);
     const qreal extendsCoOrdinateWidth = qFabs(extendsCoOrdinateExtents.at(0).x() - extendsCoOrdinateExtents.at(1).x());
     const qreal sx = extendsCoOrdinateWidth / coOrdinateWidth;
@@ -669,9 +664,9 @@ void ShapeAnnotation::applyTransformation()
     const qreal extendsCoOrdinateHeight = qFabs(extendsCoOrdinateExtents.at(0).y() - extendsCoOrdinateExtents.at(1).y());
     const qreal sy = extendsCoOrdinateHeight / coOrdinateHeight;
     const QTransform scaledTransform = transform() * QTransform::fromScale(sx, sy);
-    // map the position of shape to new CoOrdinateSystem
-    const qreal x = Utilities::mapToCoOrdinateSystem(scenePos().x(), left, right, extendsCoOrdinateExtents.at(0).x(), extendsCoOrdinateExtents.at(1).x());
-    const qreal y = Utilities::mapToCoOrdinateSystem(scenePos().y(), bottom, top, extendsCoOrdinateExtents.at(0).y(), extendsCoOrdinateExtents.at(1).y());
+    // map the position of shape to new CoordinateSystem
+    const qreal x = Utilities::mapToCoordinateSystem(scenePos().x(), left, right, extendsCoOrdinateExtents.at(0).x(), extendsCoOrdinateExtents.at(1).x());
+    const qreal y = Utilities::mapToCoordinateSystem(scenePos().y(), bottom, top, extendsCoOrdinateExtents.at(0).y(), extendsCoOrdinateExtents.at(1).y());
     QTransform finalTransform(scaledTransform.m11(), scaledTransform.m12(), scaledTransform.m13(),
                               scaledTransform.m21(), scaledTransform.m22(), scaledTransform.m23(),
                               x, y, 1.0);
@@ -1205,70 +1200,6 @@ void ShapeAnnotation::manhattanizeShape(bool addToStack)
 }
 
 /*!
- * \brief ShapeAnnotation::referenceShapeAdded
- */
-void ShapeAnnotation::referenceShapeAdded()
-{
-  ShapeAnnotation *pShapeAnnotation = qobject_cast<ShapeAnnotation*>(sender());
-  if (pShapeAnnotation) {
-    if (mpGraphicsView) {
-      mpGraphicsView->addItem(this);
-      mpGraphicsView->addItem(mpOriginItem);
-    } else if (mpParentComponent) {
-      setVisible(true);
-      mpParentComponent->shapeAdded();
-    }
-  }
-}
-
-/*!
- * \brief ShapeAnnotation::referenceShapeChanged
- */
-void ShapeAnnotation::referenceShapeChanged()
-{
-  ShapeAnnotation *pShapeAnnotation = qobject_cast<ShapeAnnotation*>(sender());
-  if (pShapeAnnotation) {
-    if (mpGraphicsView) {
-      prepareGeometryChange();
-      updateShape(pShapeAnnotation);
-      removeCornerItems();
-      drawCornerItems();
-      setCornerItemsActiveOrPassive();
-      applyTransformation();
-      update();
-      mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
-    } else if (mpParentComponent) {
-      prepareGeometryChange();
-      updateShape(pShapeAnnotation);
-      applyTransformation();
-      if (dynamic_cast<TextAnnotation*>(this)) {
-        TextAnnotation *pTextAnnotation = dynamic_cast<TextAnnotation*>(this);
-        pTextAnnotation->updateTextString();
-      }
-      update();
-      mpParentComponent->shapeUpdated();
-    }
-  }
-}
-
-/*!
- * \brief ShapeAnnotation::referenceShapeDeleted
- */
-void ShapeAnnotation::referenceShapeDeleted()
-{
-  ShapeAnnotation *pShapeAnnotation = qobject_cast<ShapeAnnotation*>(sender());
-  if (pShapeAnnotation) {
-    if (mpGraphicsView) {
-      mpGraphicsView->removeItem(this);
-      mpGraphicsView->removeItem(mpOriginItem);
-    } else if (mpParentComponent) {
-      setVisible(false);
-      mpParentComponent->shapeDeleted();
-    }
-  }
-}
-
-/*!
  * \brief ShapeAnnotation::deleteMe
  * Deletes the shape. Slot activated when Del key is pressed while the shape is selected.\n
  * Slot activated when Delete option is chosen from context menu of the shape.\n
@@ -1358,7 +1289,7 @@ void ShapeAnnotation::rotateAntiClockwise()
  */
 void ShapeAnnotation::moveUp()
 {
-  moveShape(0, mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep());
+  moveShape(0, mpGraphicsView->mMergedCoordinateSystem.getVerticalGridStep());
 }
 
 /*!
@@ -1369,7 +1300,7 @@ void ShapeAnnotation::moveUp()
  */
 void ShapeAnnotation::moveShiftUp()
 {
-  moveShape(0, mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
+  moveShape(0, mpGraphicsView->mMergedCoordinateSystem.getVerticalGridStep() * 5);
 }
 
 /*!
@@ -1391,7 +1322,7 @@ void ShapeAnnotation::moveCtrlUp()
  */
 void ShapeAnnotation::moveDown()
 {
-  moveShape(0, -mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep());
+  moveShape(0, -mpGraphicsView->mMergedCoordinateSystem.getVerticalGridStep());
 }
 
 /*!
@@ -1402,7 +1333,7 @@ void ShapeAnnotation::moveDown()
  */
 void ShapeAnnotation::moveShiftDown()
 {
-  moveShape(0, -(mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5));
+  moveShape(0, -(mpGraphicsView->mMergedCoordinateSystem.getVerticalGridStep() * 5));
 }
 
 /*!
@@ -1424,7 +1355,7 @@ void ShapeAnnotation::moveCtrlDown()
  */
 void ShapeAnnotation::moveLeft()
 {
-  moveShape(-mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep(), 0);
+  moveShape(-mpGraphicsView->mMergedCoordinateSystem.getHorizontalGridStep(), 0);
 }
 
 /*!
@@ -1435,7 +1366,7 @@ void ShapeAnnotation::moveLeft()
  */
 void ShapeAnnotation::moveShiftLeft()
 {
-  moveShape(-(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5), 0);
+  moveShape(-(mpGraphicsView->mMergedCoordinateSystem.getHorizontalGridStep() * 5), 0);
 }
 
 /*!
@@ -1457,7 +1388,7 @@ void ShapeAnnotation::moveCtrlLeft()
  */
 void ShapeAnnotation::moveRight()
 {
-  moveShape(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep(), 0);
+  moveShape(mpGraphicsView->mMergedCoordinateSystem.getHorizontalGridStep(), 0);
 }
 
 /*!
@@ -1468,7 +1399,7 @@ void ShapeAnnotation::moveRight()
  */
 void ShapeAnnotation::moveShiftRight()
 {
-  moveShape(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5, 0);
+  moveShape(mpGraphicsView->mMergedCoordinateSystem.getHorizontalGridStep() * 5, 0);
 }
 
 /*!

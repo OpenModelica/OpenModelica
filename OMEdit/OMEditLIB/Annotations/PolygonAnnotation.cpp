@@ -66,14 +66,6 @@ PolygonAnnotation::PolygonAnnotation(ModelInstance::Polygon *pPolygon, bool inhe
   setShapeFlags(true);
 }
 
-PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
-  : ShapeAnnotation(pShapeAnnotation, pParent)
-{
-  mpOriginItem = 0;
-  updateShape(pShapeAnnotation);
-  applyTransformation();
-}
-
 PolygonAnnotation::PolygonAnnotation(ModelInstance::Polygon *pPolygon, Element *pParent)
   : ShapeAnnotation(pParent)
 {
@@ -87,17 +79,6 @@ PolygonAnnotation::PolygonAnnotation(ModelInstance::Polygon *pPolygon, Element *
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation();
   applyTransformation();
-}
-
-PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
-{
-  mpOriginItem = new OriginItem(this);
-  mpOriginItem->setPassive();
-  updateShape(pShapeAnnotation);
-  setShapeFlags(true);
-  mpGraphicsView->addItem(this);
-  mpGraphicsView->addItem(mpOriginItem);
 }
 
 PolygonAnnotation::PolygonAnnotation(Element *pParent)
@@ -338,8 +319,8 @@ void PolygonAnnotation::duplicate()
 {
   PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation("", mpGraphicsView);
   pPolygonAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5,
-                   mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
+  QPointF gridStep(mpGraphicsView->mMergedCoordinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mMergedCoordinateSystem.getVerticalGridStep() * 5);
   pPolygonAnnotation->setOrigin(mOrigin + gridStep);
   pPolygonAnnotation->drawCornerItems();
   pPolygonAnnotation->setCornerItemsActiveOrPassive();

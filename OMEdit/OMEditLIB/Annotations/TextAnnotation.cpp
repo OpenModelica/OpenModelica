@@ -80,15 +80,6 @@ TextAnnotation::TextAnnotation(ModelInstance::Text *pText, bool inherited, Graph
   setShapeFlags(true);
 }
 
-TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
-  : ShapeAnnotation(pShapeAnnotation, pParent), mpElement(pParent)
-{
-  mpOriginItem = 0;
-  updateShape(pShapeAnnotation);
-  initUpdateTextString();
-  applyTransformation();
-}
-
 TextAnnotation::TextAnnotation(ModelInstance::Text *pText, Element *pParent)
   : ShapeAnnotation(pParent), mpElement(pParent)
 {
@@ -102,18 +93,6 @@ TextAnnotation::TextAnnotation(ModelInstance::Text *pText, Element *pParent)
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation();
   applyTransformation();
-}
-
-TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
-{
-  mpElement = 0;
-  mpOriginItem = new OriginItem(this);
-  mpOriginItem->setPassive();
-  updateShape(pShapeAnnotation);
-  setShapeFlags(true);
-  mpGraphicsView->addItem(this);
-  mpGraphicsView->addItem(mpOriginItem);
 }
 
 TextAnnotation::TextAnnotation(Element *pParent)
@@ -684,8 +663,8 @@ void TextAnnotation::duplicate()
 {
   TextAnnotation *pTextAnnotation = new TextAnnotation("", mpGraphicsView);
   pTextAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5,
-                   mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
+  QPointF gridStep(mpGraphicsView->mMergedCoordinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mMergedCoordinateSystem.getVerticalGridStep() * 5);
   pTextAnnotation->setOrigin(mOrigin + gridStep);
   pTextAnnotation->drawCornerItems();
   pTextAnnotation->setCornerItemsActiveOrPassive();

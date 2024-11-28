@@ -915,17 +915,6 @@ void LibraryTreeItem::handleIconUpdated()
   emit iconUpdated();
 }
 
-void LibraryTreeItem::handleCoOrdinateSystemUpdated(GraphicsView *pGraphicsView)
-{
-  if (mpModelWidget) {
-    if (pGraphicsView->isIconView()) {
-      mpModelWidget->drawModelCoOrdinateSystem(mpModelWidget->getIconGraphicsView());
-    } else {
-      mpModelWidget->drawModelCoOrdinateSystem(mpModelWidget->getDiagramGraphicsView());
-    }
-  }
-}
-
 /*!
  * \class LibraryTreeProxyModel
  * \brief A sort filter proxy model for Library Browser.
@@ -1535,7 +1524,7 @@ void LibraryTreeModel::loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeIt
   }
   GraphicsView *pGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
   if (pGraphicsView && pGraphicsView->hasAnnotation()) {
-    QRectF source = Utilities::adjustSceneRectangle(pGraphicsView->mMergedCoOrdinateSystem.getExtentRectangle(), 0.125);
+    QRectF source = Utilities::adjustSceneRectangle(pGraphicsView->mMergedCoordinateSystem.getExtentRectangle(), 0.125);
     /* Ticket #5554
      * Create an equal size square for rendering the scene.
      * Don't stretch to fit a square.

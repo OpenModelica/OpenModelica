@@ -599,22 +599,6 @@ private:
   QRadioButton *mpTextViewRadioButton;
   QRadioButton *mpDocumentationViewRadioButton;
   QCheckBox *mpMoveConnectorsTogetherCheckBox;
-  DoubleSpinBox *mpIconViewLeftSpinBox;
-  DoubleSpinBox *mpIconViewBottomSpinBox;
-  DoubleSpinBox *mpIconViewRightSpinBox;
-  DoubleSpinBox *mpIconViewTopSpinBox;
-  DoubleSpinBox *mpIconViewGridHorizontalSpinBox;
-  DoubleSpinBox *mpIconViewGridVerticalSpinBox;
-  DoubleSpinBox *mpIconViewScaleFactorSpinBox;
-  QCheckBox *mpIconViewPreserveAspectRatioCheckBox;
-  DoubleSpinBox *mpDiagramViewLeftSpinBox;
-  DoubleSpinBox *mpDiagramViewBottomSpinBox;
-  DoubleSpinBox *mpDiagramViewRightSpinBox;
-  DoubleSpinBox *mpDiagramViewTopSpinBox;
-  DoubleSpinBox *mpDiagramViewGridHorizontalSpinBox;
-  DoubleSpinBox *mpDiagramViewGridVerticalSpinBox;
-  DoubleSpinBox *mpDiagramViewScaleFactorSpinBox;
-  QCheckBox *mpDiagramViewPreserveAspectRatioCheckBox;
 };
 
 class SimulationPage : public QWidget

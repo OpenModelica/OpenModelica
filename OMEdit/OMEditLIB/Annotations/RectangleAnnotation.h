@@ -46,10 +46,7 @@ public:
   RectangleAnnotation(QString annotation, GraphicsView *pGraphicsView);
   RectangleAnnotation(ModelInstance::Rectangle *pRectangle, bool inherited, GraphicsView *pGraphicsView);
   // Used for shape inside a component
-  RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   RectangleAnnotation(ModelInstance::Rectangle *pRectangle, Element *pParent);
-  // Used for icon/diagram inherited shape
-  RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   // Used for default component
   RectangleAnnotation(Element *pParent);
   // Used for OMSimulator FMU

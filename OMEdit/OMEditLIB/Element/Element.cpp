@@ -574,9 +574,9 @@ ModelInstance::CoordinateSystem Element::getCoordinateSystem() const
   ModelInstance::CoordinateSystem coordinateSystem;
   if (mpModelComponent && mpModel) {
     if (mpModelComponent->getModel()->isConnector() && (mpGraphicsView->isDiagramView()) && canUseDiagramAnnotation()) {
-      coordinateSystem = mpModel->getAnnotation()->getDiagramAnnotation()->mMergedCoOrdinateSystem;
+      coordinateSystem = mpModel->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem;
     } else {
-      coordinateSystem = mpModel->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem;
+      coordinateSystem = mpModel->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem;
     }
   }
   return coordinateSystem;
@@ -2080,8 +2080,8 @@ void Element::updatePlacementAnnotation()
                                      || mpLibraryTreeItem->getOMSBusConnector()
                                      || mpLibraryTreeItem->getOMSTLMBusConnector())) {
       ssd_connector_geometry_t connectorGeometry;
-      connectorGeometry.x = Utilities::mapToCoOrdinateSystem(mTransformation.getOrigin().x(), -100, 100, 0, 1);
-      connectorGeometry.y = Utilities::mapToCoOrdinateSystem(mTransformation.getOrigin().y(), -100, 100, 0, 1);
+      connectorGeometry.x = Utilities::mapToCoordinateSystem(mTransformation.getOrigin().x(), -100, 100, 0, 1);
+      connectorGeometry.y = Utilities::mapToCoordinateSystem(mTransformation.getOrigin().y(), -100, 100, 0, 1);
       if (mpLibraryTreeItem->getOMSConnector()) {
         OMSProxy::instance()->setConnectorGeometry(mpLibraryTreeItem->getNameStructure(), &connectorGeometry);
       } else if (mpLibraryTreeItem->getOMSBusConnector()) {
@@ -2321,7 +2321,7 @@ void Element::duplicate()
       return;
     }
   }
-  QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5, mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
+  QPointF gridStep(mpGraphicsView->mMergedCoordinateSystem.getHorizontalGridStep() * 5, mpGraphicsView->mMergedCoordinateSystem.getVerticalGridStep() * 5);
   // add component
   ModelInstance::Component *pModelInstanceComponent = GraphicsView::createModelInstanceComponent(mpGraphicsView->getModelWidget()->getModelInstance(), name,
                                                                                                  getClassName(), mpModelComponent->getModel()->isConnector());
@@ -2416,7 +2416,7 @@ void Element::flipVertical()
 void Element::moveUp()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(0, mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep());
+  mTransformation.adjustPosition(0, mpGraphicsView->mMergedCoordinateSystem.getVerticalGridStep());
   updateElementTransformations(oldTransformation, true);
 }
 
@@ -2429,7 +2429,7 @@ void Element::moveUp()
 void Element::moveShiftUp()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(0, mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
+  mTransformation.adjustPosition(0, mpGraphicsView->mMergedCoordinateSystem.getVerticalGridStep() * 5);
   updateElementTransformations(oldTransformation, true);
 }
 
@@ -2455,7 +2455,7 @@ void Element::moveCtrlUp()
 void Element::moveDown()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(0, -mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep());
+  mTransformation.adjustPosition(0, -mpGraphicsView->mMergedCoordinateSystem.getVerticalGridStep());
   updateElementTransformations(oldTransformation, true);
 }
 
@@ -2468,7 +2468,7 @@ void Element::moveDown()
 void Element::moveShiftDown()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(0, -(mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5));
+  mTransformation.adjustPosition(0, -(mpGraphicsView->mMergedCoordinateSystem.getVerticalGridStep() * 5));
   updateElementTransformations(oldTransformation, true);
 }
 
@@ -2494,7 +2494,7 @@ void Element::moveCtrlDown()
 void Element::moveLeft()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(-mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep(), 0);
+  mTransformation.adjustPosition(-mpGraphicsView->mMergedCoordinateSystem.getHorizontalGridStep(), 0);
   updateElementTransformations(oldTransformation, true);
 }
 
@@ -2507,7 +2507,7 @@ void Element::moveLeft()
 void Element::moveShiftLeft()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(-(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5), 0);
+  mTransformation.adjustPosition(-(mpGraphicsView->mMergedCoordinateSystem.getHorizontalGridStep() * 5), 0);
   updateElementTransformations(oldTransformation, true);
 }
 
@@ -2533,7 +2533,7 @@ void Element::moveCtrlLeft()
 void Element::moveRight()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep(), 0);
+  mTransformation.adjustPosition(mpGraphicsView->mMergedCoordinateSystem.getHorizontalGridStep(), 0);
   updateElementTransformations(oldTransformation, true);
 }
 
@@ -2546,7 +2546,7 @@ void Element::moveRight()
 void Element::moveShiftRight()
 {
   Transformation oldTransformation = mTransformation;
-  mTransformation.adjustPosition(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5, 0);
+  mTransformation.adjustPosition(mpGraphicsView->mMergedCoordinateSystem.getHorizontalGridStep() * 5, 0);
   updateElementTransformations(oldTransformation, true);
 }
 

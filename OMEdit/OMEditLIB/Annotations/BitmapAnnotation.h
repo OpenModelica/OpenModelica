@@ -46,11 +46,7 @@ public:
   // Used for icon/diagram shape
   BitmapAnnotation(QString classFileName, QString annotation, GraphicsView *pGraphicsView);
   BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString &classFileName, bool inherited, GraphicsView *pGraphicsView);
-  // Used for shape inside a component
-  BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString &classFileName, Element *pParent);
-  // Used for icon/diagram inherited shape
-  BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   // Used for OMSimulator FMU
   BitmapAnnotation(QString classFileName, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation) override;

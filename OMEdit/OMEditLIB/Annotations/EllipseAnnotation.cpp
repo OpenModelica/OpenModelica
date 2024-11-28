@@ -66,14 +66,6 @@ EllipseAnnotation::EllipseAnnotation(ModelInstance::Ellipse *pEllipse, bool inhe
   setShapeFlags(true);
 }
 
-EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
-  : ShapeAnnotation(pShapeAnnotation, pParent)
-{
-  mpOriginItem = 0;
-  updateShape(pShapeAnnotation);
-  applyTransformation();
-}
-
 EllipseAnnotation::EllipseAnnotation(ModelInstance::Ellipse *pEllipse, Element *pParent)
   : ShapeAnnotation(pParent)
 {
@@ -87,17 +79,6 @@ EllipseAnnotation::EllipseAnnotation(ModelInstance::Ellipse *pEllipse, Element *
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation();
   applyTransformation();
-}
-
-EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
-{
-  mpOriginItem = new OriginItem(this);
-  mpOriginItem->setPassive();
-  updateShape(pShapeAnnotation);
-  setShapeFlags(true);
-  mpGraphicsView->addItem(this);
-  mpGraphicsView->addItem(mpOriginItem);
 }
 
 void EllipseAnnotation::parseShapeAnnotation(QString annotation)
@@ -268,8 +249,8 @@ void EllipseAnnotation::duplicate()
 {
   EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation("", mpGraphicsView);
   pEllipseAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5,
-                   mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
+  QPointF gridStep(mpGraphicsView->mMergedCoordinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mMergedCoordinateSystem.getVerticalGridStep() * 5);
   pEllipseAnnotation->setOrigin(mOrigin + gridStep);
   pEllipseAnnotation->drawCornerItems();
   pEllipseAnnotation->setCornerItemsActiveOrPassive();

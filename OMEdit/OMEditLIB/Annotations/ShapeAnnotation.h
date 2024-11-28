@@ -214,14 +214,7 @@ public:
   virtual void setShapeFlags(bool enable);
   virtual void updateShape(ShapeAnnotation *pShapeAnnotation) = 0;
   virtual ModelInstance::Extend* getExtend() const = 0;
-  void emitAdded() {emit added();}
-  void emitChanged() {emit changed();}
-  void emitDeleted() {emit deleted();}
   void emitPrepareGeometryChange() {prepareGeometryChange();}
-signals:
-  void added();
-  void changed();
-  void deleted();
 public slots:
   void deleteMe();
   virtual void duplicate() = 0;
@@ -251,9 +244,6 @@ public slots:
   void showShapeProperties();
   void editTransition();
   void manhattanizeShape(bool addToStack = true);
-  void referenceShapeAdded();
-  void referenceShapeChanged();
-  void referenceShapeDeleted();
   void updateDynamicSelect(double time);
   void resetDynamicSelect();
 protected:

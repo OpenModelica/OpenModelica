@@ -129,22 +129,6 @@ namespace OptionsDefaults
 
   namespace GraphicalViewsPage {
     bool moveConnectorsTogether = false;
-    double iconExtentLeft = -100;
-    double iconExtentBottom = -100;
-    double iconExtentRight = 100;
-    double iconExtentTop = 100;
-    double iconGridHorizontal = 2;
-    double iconGridVertical = 2;
-    double iconInitialScale = 0.1;
-    bool iconPreserveAspectRatio = true;
-    double diagramExtentLeft = -100;
-    double diagramExtentBottom = -100;
-    double diagramExtentRight = 100;
-    double diagramExtentTop = 100;
-    double diagramGridHorizontal = 2;
-    double diagramGridVertical = 2;
-    double diagramInitialScale = 0.1;
-    bool diagramPreserveAspectRatio = true;
   }
 
   namespace Simulation {

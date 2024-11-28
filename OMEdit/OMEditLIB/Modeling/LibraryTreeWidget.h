@@ -231,7 +231,6 @@ signals:
   void iconUpdated();
 public slots:
   void handleIconUpdated();
-  void handleCoOrdinateSystemUpdated(GraphicsView *pGraphicsView);
 };
 
 class LibraryWidget;
