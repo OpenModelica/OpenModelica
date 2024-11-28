@@ -55,6 +55,7 @@ getConnectorCount.mos \
 getDefinitions.mos \
 getDialogAnnotation.mos \
 getElementAnnotation.mos \
+getElements1.mos \
 getExtendsModifierNames.mos \
 getIconAnnotation.mos \
 getInheritedClasses1.mos \

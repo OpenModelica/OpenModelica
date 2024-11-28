@@ -2311,7 +2311,12 @@ algorithm
       guard not onlyComponents
       algorithm
         ty := qualifyPath(env, ty);
-        cmt := getClassCommentInCommentOpt(opt_cmt);
+
+        cmt := getConstrainingClassComment(opt_cc);
+
+        if stringEmpty(cmt) then
+          cmt := getClassCommentInCommentOpt(opt_cmt);
+        end if;
 
         dims := if isSome(opt_adim) then make_dim_vals(Util.getOption(opt_adim)) else {};
         dims := listAppend(make_dim_vals(attr.arrayDim), dims);
@@ -2324,7 +2329,7 @@ algorithm
         info := {dims_val};
         info := ValuesUtil.makeCodeTypeName(getConstrainClassPath(env, opt_cc)) :: info;
         info := getElementAttributeValues(element, isPublic, quoteNames, info);
-        info := ValuesUtil.makeString("") :: info; // dims
+        info := ValuesUtil.makeString(cmt) :: info;
         info := ValuesUtil.makeCodeTypeName(Absyn.Path.IDENT(name)) :: info;
         info := ValuesUtil.makeCodeTypeName(ty) :: info;
         info := ValuesUtil.makeString(Dump.unparseRestrictionStr(restriction)) :: info;
