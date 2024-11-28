@@ -4133,6 +4133,7 @@ protected function getAllSubtypeOfCandidates
   input Absyn.Path path;
   input Absyn.Path parentClass;
   input Absyn.Program program;
+  input Boolean includePartial;
   input output list<Absyn.Path> candidates;
 protected
   Absyn.Class cdef;
@@ -4146,8 +4147,8 @@ algorithm
     return;
   end try;
 
-  // Only add non-partial classes.
-  if AbsynUtil.isNotPartial(cdef) then
+  // Only add non-partial classes if includePartial = false.
+  if includePartial or AbsynUtil.isNotPartial(cdef) then
     candidates := path :: candidates;
 
     // Only recurse into packages, unless it's the parent class in which case we
@@ -4157,7 +4158,7 @@ algorithm
       names := getClassnamesInClassListNoPartial(path, program, cdef, is_parent, false);
       paths := list(AbsynUtil.suffixPath(path, n) for n in names);
       candidates := List.fold(paths,
-        function getAllSubtypeOfCandidates(program = program, parentClass = parentClass), candidates);
+        function getAllSubtypeOfCandidates(program = program, parentClass = parentClass, includePartial = includePartial), candidates);
     end if;
   end if;
 end getAllSubtypeOfCandidates;
@@ -4169,6 +4170,7 @@ public function getAllSubtypeOf
   input Absyn.Program inProgram;
   input Boolean qualified;
   input Boolean includePartial;
+  input Boolean sort;
   output list<Absyn.Path> paths;
 protected
   list<String> strlst;
@@ -4181,10 +4183,15 @@ protected
   Option<Absyn.Path> opt_path;
 algorithm
   Absyn.PROGRAM(classes=classes) := inProgram;
-  strlst := List.map(List.filterOnTrue(classes, AbsynUtil.isNotPartial), AbsynUtil.getClassName);
+
+  if not includePartial then
+    classes := list(c for c guard AbsynUtil.isNotPartial(c) in classes);
+  end if;
+
+  strlst := List.map(classes, AbsynUtil.getClassName);
   result_path_lst := list(AbsynUtil.makeIdentPathFromString(str) for str in strlst);
   acc := List.fold(result_path_lst,
-    function getAllSubtypeOfCandidates(parentClass = inParentClass, program = inProgram), {});
+    function getAllSubtypeOfCandidates(parentClass = inParentClass, program = inProgram, includePartial = includePartial), {});
 
   try
     genv := createEnvironment(inProgram, NONE(), inParentClass);
@@ -4220,6 +4227,10 @@ algorithm
   end if;
 
   paths := List.unique(listAppend(local_paths, paths));
+
+  if sort then
+    paths := List.sort(paths, AbsynUtil.pathLt);
+  end if;
 end getAllSubtypeOf;
 
 public function updateConnectionAnnotation

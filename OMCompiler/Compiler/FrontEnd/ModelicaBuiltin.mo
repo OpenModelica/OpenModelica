@@ -2929,7 +2929,7 @@ function getAllSubtypeOf
   "Returns the list of all classes that extend from className given a parentClass where the lookup for className should start"
   input TypeName className;
   input TypeName parentClass = $TypeName(AllLoadedClasses);
-  input Boolean qualified = false;
+  input Boolean qualified = false "Not implemented";
   input Boolean includePartial = false;
   input Boolean sort = false;
   output TypeName classNames[:];
