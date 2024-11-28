@@ -1,0 +1,29 @@
+// name:     CopyClass6
+// keywords:
+// status:   correct
+// cflags:   -d=newInst
+//
+//
+
+loadString("
+  model M
+    Real x annotation(
+      // comment
+      Placement(visible = true));
+  end M;
+");
+
+copyClass(M, "M2");
+getErrorString();
+list(M2);
+
+// Result:
+// true
+// true
+// ""
+// "model M2
+//   Real x annotation(
+//  // comment
+//     Placement(visible = true));
+// end M2;"
+// endResult
