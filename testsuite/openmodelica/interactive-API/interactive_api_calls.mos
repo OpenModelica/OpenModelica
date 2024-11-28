@@ -460,15 +460,15 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getShortDefinitionBaseClassInformation(RealInput)
-// {Real,"","","unspecified","input",{}}
+// {Real, "", "", "unspecified", "input", {}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getShortDefinitionBaseClassInformation(RealInput3)
-// {Real,"flow","","constant","input",{3}}
+// {Real, "flow", "", "constant", "input", {3}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getShortDefinitionBaseClassInformation(RealConnect)
-// {Real,"","stream","unspecified","unspecified",{}}
+// {Real, "", "stream", "unspecified", "unspecified", {}}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getExternalFunctionSpecification(TestPack.Ext)

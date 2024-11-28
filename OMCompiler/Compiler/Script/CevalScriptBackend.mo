@@ -3284,6 +3284,9 @@ algorithm
         {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
       then Interactive.getNamedAnnotation(classpath, path, SymbolTable.getAbsyn());
 
+    case ("getShortDefinitionBaseClassInformation", {Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then Interactive.getShortDefinitionBaseClassInformation(classpath, SymbolTable.getAbsyn());
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 

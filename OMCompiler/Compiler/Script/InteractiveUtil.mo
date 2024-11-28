@@ -2220,6 +2220,13 @@ algorithm
   outAbsynElementLst := Dangerous.listReverseInPlace(outAbsynElementLst);
 end getElementsInElementitems;
 
+public function dimensionListValues
+  input list<Absyn.Subscript> dims;
+  output list<Values.Value> vals;
+algorithm
+  vals := list(ValuesUtil.makeCodeTypeName(Absyn.Path.IDENT(Dump.printSubscriptStr(d))) for d in dims);
+end dimensionListValues;
+
 protected function getElementInfo
 " This function takes an Element and returns a list of strings
    of comma separated values of the type and name and comment,
@@ -2246,12 +2253,6 @@ protected
   Option<Absyn.ArrayDim> opt_adim;
   list<Values.Value> common_dims, dims;
   Values.Value dims_val;
-
-  function make_dim_vals
-    input list<Absyn.Subscript> dims;
-    output list<Values.Value> vals =
-      list(ValuesUtil.makeCodeTypeName(Absyn.Path.IDENT(Dump.printSubscriptStr(d))) for d in dims);
-  end make_dim_vals;
 algorithm
   infos := match element
     case Absyn.ELEMENT(specification = Absyn.COMPONENTS(
@@ -2260,7 +2261,7 @@ algorithm
       algorithm
         common_info := {};
         ty := qualifyPath(env, ty);
-        common_dims := make_dim_vals(attr.arrayDim);
+        common_dims := dimensionListValues(attr.arrayDim);
 
         if not onlyComponents then
           cc_path := getConstrainClassPath(env, opt_cc);
@@ -2272,12 +2273,12 @@ algorithm
           end if;
         end if;
 
-        common_info := InteractiveUtil.getElementAttributeValues(element, isPublic, quoteNames, common_info);
+        common_info := getElementAttributeValues(element, isPublic, quoteNames, common_info);
 
         for comp in listReverse(comps) loop
           name := comp.component.name;
           cmt := getComponentComment(comp, element);
-          dims := make_dim_vals(comp.component.arrayDim);
+          dims := dimensionListValues(comp.component.arrayDim);
           dims_val := ValuesUtil.makeArray(listAppend(dims, common_dims));
 
           if quoteNames then
@@ -2318,8 +2319,8 @@ algorithm
           cmt := getClassCommentInCommentOpt(opt_cmt);
         end if;
 
-        dims := if isSome(opt_adim) then make_dim_vals(Util.getOption(opt_adim)) else {};
-        dims := listAppend(make_dim_vals(attr.arrayDim), dims);
+        dims := if isSome(opt_adim) then dimensionListValues(Util.getOption(opt_adim)) else {};
+        dims := listAppend(dimensionListValues(attr.arrayDim), dims);
         dims_val := ValuesUtil.makeArray(dims);
 
         if quoteNames then
