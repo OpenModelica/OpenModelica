@@ -901,12 +901,6 @@ algorithm
   args := getApiFunctionArgs(inStatement);
 
   outResult := match(fn_name)
-    case "getShortDefinitionBaseClassInformation"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        getShortDefinitionBaseClassInformation(cr, p);
-
     case "getExternalFunctionSpecification"
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
@@ -5501,47 +5495,29 @@ algorithm
   end match;
 end setClassCommentInCommentOpt;
 
-protected function getShortDefinitionBaseClassInformation
-"author: adrpo
-  Returns all the prefixes of the base class and the base class array dimensions.
-  {{bool,bool,bool}}"
-  input Absyn.ComponentRef cr;
-  input Absyn.Program p;
-  output String res_1;
+public function getShortDefinitionBaseClassInformation
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  Absyn.TypeSpec ty;
+  Absyn.ElementAttributes attr;
+  list<Values.Value> vals = {};
 algorithm
-  res_1 := matchcontinue(cr, p)
-    local
-      Absyn.Path path, baseClassPath;
-      String name,strFlow,strStream,strVariability,strDirection,str,dim_str,strBaseClassPath;
-      Boolean flowPrefix,streamPrefix;
-      Absyn.Variability variability;
-      Absyn.Direction direction;
-      Absyn.ArrayDim arrayDim;
-      Absyn.ClassDef cdef;
-      Absyn.ElementAttributes attr;
-      Absyn.Parallelism parallelism;
+  try
+    Absyn.CLASS(body = Absyn.DERIVED(typeSpec = ty, attributes = attr as Absyn.ATTR())) :=
+      InteractiveUtil.getPathedClassInProgram(classPath, program);
+    vals := ValuesUtil.makeArray(InteractiveUtil.dimensionListValues(AbsynUtil.typeSpecDimensions(ty))) :: vals;
+    vals := ValuesUtil.makeString(InteractiveUtil.attrDirectionStr(attr)) :: vals;
+    vals := ValuesUtil.makeString(InteractiveUtil.attrVariabilityStr(attr)) :: vals;
+    vals := ValuesUtil.makeString(if attr.streamPrefix then "stream" else "") :: vals;
+    vals := ValuesUtil.makeString(if attr.flowPrefix then "flow" else "") :: vals;
+    vals := ValuesUtil.makeCodeTypeName(AbsynUtil.typeSpecPath(ty)) :: vals;
+  else
+    vals := {};
+  end try;
 
-    case (_, _)
-      equation
-        path = AbsynUtil.crefToPath(cr);
-        Absyn.CLASS(
-
-          body = cdef as Absyn.DERIVED(typeSpec = Absyn.TPATH(baseClassPath, _),
-                                       attributes = attr as Absyn.ATTR(flowPrefix, streamPrefix, _, _, _, _)) )
-        = InteractiveUtil.getPathedClassInProgram(path, p);
-        dim_str = getClassDimensions(cdef);
-        strBaseClassPath = AbsynUtil.pathString(baseClassPath);
-        strFlow = if flowPrefix then "\"flow\"" else "\"\"";
-        strStream = if streamPrefix then "\"stream\"" else "\"\"";
-        strVariability = "\"" + InteractiveUtil.attrVariabilityStr(attr) + "\"";
-        strDirection = "\"" + InteractiveUtil.attrDirectionStr(attr) + "\"";
-        str = stringAppendList({"{",strBaseClassPath, ",", strFlow,",", strStream, ",", strVariability, ",", strDirection, ",", dim_str,"}"});
-      then
-        str;
-
-    else "{}";
-
-  end matchcontinue;
+  result := ValuesUtil.makeArray(vals);
 end getShortDefinitionBaseClassInformation;
 
 protected function getExternalFunctionSpecification

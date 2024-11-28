@@ -5193,6 +5193,17 @@ annotation(
 </html>"), preferredView="text");
 end getClassInformation;
 
+function getShortDefinitionBaseClassInformation
+  input TypeName className;
+  output Expression result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Returns information about a short class definition: the base class, flow prefix, stream prefix, variability, input/output prefix, and array dimensions.</p>
+</html>"),
+  preferredView="text");
+end getShortDefinitionBaseClassInformation;
+
 function getTransitions
   input TypeName cl;
   output String[:,:] transitions;
