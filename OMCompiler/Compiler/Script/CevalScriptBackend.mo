@@ -5566,14 +5566,7 @@ protected function moveAnnotationInfo
   input String dstPath;
   output Absyn.Annotation outAnnotation = inAnnotation;
 algorithm
-  _ := match outAnnotation
-    case Absyn.ANNOTATION()
-      algorithm
-        outAnnotation.elementArgs := list(moveElementArgInfo(e, dstPath)
-          for e in outAnnotation.elementArgs);
-      then
-        ();
-  end match;
+  outAnnotation.elementArgs := list(moveElementArgInfo(e, dstPath) for e in outAnnotation.elementArgs);
 end moveAnnotationInfo;
 
 protected function moveElementItemInfo
@@ -5633,6 +5626,7 @@ algorithm
       then
         ();
 
+    else ();
   end match;
 end moveElementArgInfo;
 
@@ -5788,6 +5782,7 @@ algorithm
       then
         ();
 
+    else ();
   end match;
 end moveElementSpecInfo;
 
@@ -5811,14 +5806,7 @@ protected function moveComponentInfo
   input String dstPath;
   output Absyn.Component outComponent = inComponent;
 algorithm
-  _ := match outComponent
-    case Absyn.COMPONENT()
-      algorithm
-        outComponent.modification :=
-          moveModificationInfo(outComponent.modification, dstPath);
-      then
-        ();
-  end match;
+  outComponent.modification := moveModificationInfo(outComponent.modification, dstPath);
 end moveComponentInfo;
 
 protected function moveExternalDeclInfo
@@ -5826,14 +5814,7 @@ protected function moveExternalDeclInfo
   input String dstPath;
   output Absyn.ExternalDecl outExtDecl = inExtDecl;
 algorithm
-  _ := match outExtDecl
-    case Absyn.EXTERNALDECL()
-      algorithm
-        outExtDecl.annotation_ :=
-          moveAnnotationOptInfo(outExtDecl.annotation_, dstPath);
-      then
-        ();
-  end match;
+  outExtDecl.annotation_ := moveAnnotationOptInfo(outExtDecl.annotation_, dstPath);
 end moveExternalDeclInfo;
 
 protected function buildModel "translates and builds the model by running compiler script on the generated makefile"
