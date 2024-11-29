@@ -20,7 +20,7 @@ end IfEquation10;
 //   Real y;
 // equation
 //   if time > 1.0 then
-//     y = 1.0 + x[2];
+//     y = 1.0 + {1.0}[2];
 //   else
 //     y = 1.0;
 //   end if;

@@ -208,6 +208,7 @@ CevalRecordArray7.mo \
 CevalRecordArray8.mo \
 CevalRecordArray9.mo \
 CevalRecordArray10.mo \
+CevalRecordArray11.mo \
 CevalRelation1.mo \
 CevalRem1.mo \
 CevalScalar1.mo \
