@@ -126,6 +126,7 @@ public:
   ElementTreeModel* getElementTreeModel() {return mpElementTreeModel;}
   ElementTreeProxyModel* getElementTreeProxyModel() {return mpElementTreeProxyModel;}
   ElementTreeView* getElementTreeView() {return mpElementTreeView;}
+  void setIgnoreSelectionChange(bool ignoreSelectionChange) {mIgnoreSelectionChange = ignoreSelectionChange;}
   void selectDeselectElementItem(const QString &name, bool selected);
 private:
   TreeSearchFilters *mpTreeSearchFilters;

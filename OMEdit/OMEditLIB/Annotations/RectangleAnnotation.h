@@ -47,6 +47,8 @@ public:
   RectangleAnnotation(ModelInstance::Rectangle *pRectangle, bool inherited, GraphicsView *pGraphicsView);
   // Used for shape inside a component
   RectangleAnnotation(ModelInstance::Rectangle *pRectangle, Element *pParent);
+  // Used for OMS Element shape
+  RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   // Used for default component
   RectangleAnnotation(Element *pParent);
   // Used for OMSimulator FMU

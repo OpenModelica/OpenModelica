@@ -95,6 +95,15 @@ TextAnnotation::TextAnnotation(ModelInstance::Text *pText, Element *pParent)
   applyTransformation();
 }
 
+TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
+    : ShapeAnnotation(pShapeAnnotation, pParent), mpElement(pParent)
+{
+  mpOriginItem = 0;
+  updateShape(pShapeAnnotation);
+  initUpdateTextString();
+  applyTransformation();
+}
+
 TextAnnotation::TextAnnotation(Element *pParent)
   : ShapeAnnotation(0, pParent), mpElement(pParent)
 {
@@ -529,7 +538,6 @@ void TextAnnotation::initUpdateTextString()
   if (mpElement) {
     if (mOriginalTextString.contains("%")) {
       updateTextString();
-      connect(mpElement, SIGNAL(displayTextChanged()), SLOT(updateTextString()), Qt::UniqueConnection);
     }
   }
 }

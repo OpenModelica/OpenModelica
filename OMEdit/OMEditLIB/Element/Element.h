@@ -184,15 +184,8 @@ public:
   void reDrawElement();
   void emitTransformChange(bool positionChanged) {emit transformChange(positionChanged);}
   void emitTransformHasChanged();
-  void emitChanged();
-  void emitDeleted();
-  void componentParameterHasChanged();
   QPair<QString, bool> getParameterDisplayString(QString parameterName);
   QPair<QString, bool> getParameterModifierValue(const QString &parameterName, const QString &modifier);
-  void shapeAdded();
-  void shapeUpdated();
-  void shapeDeleted();
-  void renameComponentInConnections(QString newName);
   void updateElementTransformations(const Transformation &oldTransformation, const bool positionChanged);
   void handleOMSElementDoubleClick();
   bool isInBus() {return mpBusComponent != 0;}
@@ -271,13 +264,9 @@ private:
   void updateToolTip();
   bool canUseDiagramAnnotation() const;
 signals:
-  void added();
   void transformChange(bool positionChanged);
   void transformHasChanged();
   void transformChanging();
-  void displayTextChanged();
-  void changed();
-  void deleted();
 public slots:
   void updatePlacementAnnotation();
   void updateOriginItem();
@@ -285,9 +274,6 @@ public slots:
   void resizeElement(QPointF newPosition);
   void finishResizeElement();
   void resizedElement();
-  void componentCommentHasChanged();
-  void componentNameHasChanged();
-  void displayTextChangedRecursive();
   void deleteMe();
   void duplicate();
   void rotateClockwise();

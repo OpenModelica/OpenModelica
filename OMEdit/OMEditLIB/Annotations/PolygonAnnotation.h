@@ -47,6 +47,8 @@ public:
   PolygonAnnotation(ModelInstance::Polygon *pPolygon, bool inherited, GraphicsView *pGraphicsView);
   // Used for shape inside a component
   PolygonAnnotation(ModelInstance::Polygon *pPolygon, Element *pParent);
+  // Used for OMS Element shape
+  PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   // Used for default input/output component
   PolygonAnnotation(Element *pParent);
   void parseShapeAnnotation(QString annotation) override;

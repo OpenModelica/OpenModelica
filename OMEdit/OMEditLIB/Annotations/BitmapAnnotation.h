@@ -47,6 +47,8 @@ public:
   BitmapAnnotation(QString classFileName, QString annotation, GraphicsView *pGraphicsView);
   BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString &classFileName, bool inherited, GraphicsView *pGraphicsView);
   BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString &classFileName, Element *pParent);
+  // Used for OMS Element shape
+  BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   // Used for OMSimulator FMU
   BitmapAnnotation(QString classFileName, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation) override;

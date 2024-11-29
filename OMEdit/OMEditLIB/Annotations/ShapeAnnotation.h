@@ -110,7 +110,6 @@ class ShapeAnnotation : public QObject, public QGraphicsItem, public GraphicItem
   Q_OBJECT
   Q_INTERFACES(QGraphicsItem)
 private:
-  ShapeAnnotation *mpReferenceShapeAnnotation;
   bool mIsInheritedShape;
   QPointF mOldScenePosition;
   bool mIsCornerItemClicked;

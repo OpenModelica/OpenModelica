@@ -158,6 +158,7 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
   setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
   setMouseTracking(true);
   mpModelWidget = pModelWidget;
+  setExtentRectangle(mCoordinateSystem.getExtentRectangle(), true);
   scale(1.0, -1.0);     // invert the drawing area.
   setIsCustomScale(false);
   setAddClassAnnotationNeeded(false);
@@ -1121,7 +1122,6 @@ void GraphicsView::deleteElement(Element *pElement)
   pElement->setSelected(false);
   if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
     OMSProxy::instance()->omsDelete(pElement->getLibraryTreeItem()->getNameStructure());
-    pElement->emitDeleted();
   } else {
     if (pElement->getModel() && pElement->getModel()->isConnector()) {
       GraphicsView *pGraphicsView;
@@ -2060,7 +2060,6 @@ void GraphicsView::removeClassComponents()
     delete pElement->getTopLeftResizerItem();
     delete pElement->getTopRightResizerItem();
     delete pElement->getBottomRightResizerItem();
-    pElement->emitDeleted();
     delete pElement;
   }
 }
@@ -2105,7 +2104,6 @@ void GraphicsView::removeOutOfSceneClassComponents()
     delete pComponent->getTopLeftResizerItem();
     delete pComponent->getTopRightResizerItem();
     delete pComponent->getBottomRightResizerItem();
-    pComponent->emitDeleted();
     delete pComponent;
   }
 }
@@ -2139,7 +2137,6 @@ void GraphicsView::removeInheritedClassElements()
     delete pElement->getTopLeftResizerItem();
     delete pElement->getTopRightResizerItem();
     delete pElement->getBottomRightResizerItem();
-    pElement->emitDeleted();
     delete pElement;
   }
 }
@@ -4652,7 +4649,7 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
   /* If is visualization view.
    * Issue #12049. Stop double click event when the getModelInstance API fails.
    */
-  if (isVisualizationView() || (mpModelWidget->getModelInstance()->isModelJsonEmpty())) {
+  if (isVisualizationView() || (mpModelWidget->getLibraryTreeItem()->isModelica() && mpModelWidget->getModelInstance()->isModelJsonEmpty())) {
     return;
   }
   const bool removeLastAddedPoint = true;
@@ -4909,7 +4906,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
   /* If we are creating the connection OR creating any shape OR is visualization view then don't show context menu
    * Issue #12049. Stop context menu event when the getModelInstance API fails.
    */
-  if (isCreatingShape() || isVisualizationView() || (mpModelWidget->getModelInstance()->isModelJsonEmpty())) {
+  if (isCreatingShape() || isVisualizationView() || (mpModelWidget->getLibraryTreeItem()->isModelica() && mpModelWidget->getModelInstance()->isModelJsonEmpty())) {
     return;
   }
   // if creating a connection
@@ -6428,6 +6425,7 @@ void ModelWidget::updateModelText()
     MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(mpLibraryTreeItem->getNameStructure());
     // Update Element Browser
     MainWindow::instance()->getElementWidget()->getElementTreeModel()->addElements(mpModelInstance);
+    MainWindow::instance()->getElementWidget()->selectDeselectElementItem("", false);
   }
 }
 
@@ -8100,6 +8098,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   // Update Element Browser
   if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
     MainWindow::instance()->getElementWidget()->getElementTreeModel()->addElements(pModelWidget->getModelInstance());
+    MainWindow::instance()->getElementWidget()->selectDeselectElementItem("", false);
   }
 }
 

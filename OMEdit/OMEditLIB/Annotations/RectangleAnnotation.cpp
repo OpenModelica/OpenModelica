@@ -81,6 +81,14 @@ RectangleAnnotation::RectangleAnnotation(ModelInstance::Rectangle *pRectangle, E
   applyTransformation();
 }
 
+RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
+    : ShapeAnnotation(pShapeAnnotation, pParent)
+{
+  mpOriginItem = 0;
+  updateShape(pShapeAnnotation);
+  applyTransformation();
+}
+
 RectangleAnnotation::RectangleAnnotation(Element *pParent)
   : ShapeAnnotation(0, pParent)
 {

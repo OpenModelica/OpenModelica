@@ -321,13 +321,6 @@ Element::Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annota
   connect(this, SIGNAL(transformHasChanged()), SLOT(updatePlacementAnnotation()));
   connect(this, SIGNAL(transformChange(bool)), SLOT(updateOriginItem()));
   connect(this, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
-  connect(mpGraphicsView, SIGNAL(updateDynamicSelect(double)), this, SLOT(updateDynamicSelect(double)));
-  connect(mpGraphicsView, SIGNAL(resetDynamicSelect()), this, SLOT(resetDynamicSelect()));
-  /* Ticket:4204
-   * If the child class use text annotation from base class then we need to call this
-   * since when the base class is created the child class doesn't exist.
-   */
-  displayTextChangedRecursive();
 }
 
 Element::Element(Element *pElement, Element *pParentElement, Element *pRootParentElement)
@@ -349,18 +342,6 @@ Element::Element(Element *pElement, Element *pParentElement, Element *pRootParen
   mpBottomRightResizerItem = 0;
   updateToolTip();
   setVisible(!mpReferenceElement->isInBus());
-  if (mpLibraryTreeItem) {
-    connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
-    connect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), SLOT(handleUnloaded()));
-    connect(mpLibraryTreeItem, SIGNAL(shapeAddedForComponent()), SLOT(handleShapeAdded()));
-    connect(mpLibraryTreeItem, SIGNAL(componentAddedForComponent()), SLOT(handleElementAdded()));
-  }
-  connect(mpReferenceElement, SIGNAL(added()), SLOT(referenceElementAdded()));
-  connect(mpReferenceElement, SIGNAL(transformHasChanged()), SLOT(referenceElementTransformHasChanged()));
-  connect(mpReferenceElement, SIGNAL(displayTextChanged()), SLOT(componentNameHasChanged()));
-  connect(mpReferenceElement, SIGNAL(deleted()), SLOT(referenceElementDeleted()));
-  connect(mpGraphicsView, SIGNAL(updateDynamicSelect(double)), this, SLOT(updateDynamicSelect(double)));
-  connect(mpGraphicsView, SIGNAL(resetDynamicSelect()), this, SLOT(resetDynamicSelect()));
 }
 
 /*!
@@ -1079,28 +1060,6 @@ void Element::emitTransformHasChanged()
   emit transformHasChanged();
 }
 
-void Element::emitChanged()
-{
-  if (mpGraphicsView->isIconView()) {
-    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
-  }
-  emit changed();
-}
-
-void Element::emitDeleted()
-{
-  if (mpGraphicsView->isIconView()) {
-    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
-  }
-  emit deleted();
-}
-
-void Element::componentParameterHasChanged()
-{
-  displayTextChangedRecursive();
-  update();
-}
-
 /*!
  * \brief Element::getParameterDisplayString
  * Reads the parameters of the component.\n
@@ -1215,79 +1174,6 @@ QPair<QString, bool> Element::getParameterModifierValue(const QString &parameter
     modifierValue = mpModelComponent->getModifierValueFromType(QStringList() << parameterName << modifier);
   }
   return qMakePair(StringHandler::removeFirstLastQuotes(modifierValue.first), modifierValue.second);
-}
-
-/*!
- * \brief Element::shapeAdded
- * Called when a reference shape is added in its actual class.
- */
-void Element::shapeAdded()
-{
-  deleteNonExistingElement();
-  if (isRoot()) {
-    deleteDefaultElement();
-  }
-  if (mpGraphicsView->isIconView()) {
-    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
-  }
-}
-
-/*!
- * \brief Element::shapeUpdated
- * Called when a reference shape is updated in its actual class.
- */
-void Element::shapeUpdated()
-{
-  if (mpGraphicsView->isIconView()) {
-    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
-  }
-}
-
-/*!
- * \brief Element::shapeDeleted
- * Called when a reference shape is deleted in its actual class.
- */
-void Element::shapeDeleted()
-{
-  deleteNonExistingElement();
-  if (isRoot()) {
-    deleteDefaultElement();
-  }
-  showNonExistingOrDefaultElementIfNeeded();
-  if (mpGraphicsView->isIconView()) {
-    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
-  }
-}
-
-/*!
- * \brief Element::renameComponentInConnections
- * Called when OMCProxy::renameElementInClass() is used. Updates the components name in connections list.\n
- * So that next OMCProxy::updateConnection() uses the new name. Ticket #3683.
- * \param newName
- */
-void Element::renameComponentInConnections(QString newName)
-{
-  if (mpGraphicsView->isIconView()) {
-    return;
-  }
-  foreach (LineAnnotation *pConnectionLineAnnotation, mpGraphicsView->getConnectionsList()) {
-    // update start component name
-    Element *pStartElement = pConnectionLineAnnotation->getStartElement();
-    if (pStartElement->getRootParentElement() == this) {
-      QString startElementName = pConnectionLineAnnotation->getStartElementName();
-      startElementName.replace(getName(), newName);
-      pConnectionLineAnnotation->setStartElementName(startElementName);
-      pConnectionLineAnnotation->updateToolTip();
-    }
-    // update end component name
-    Element *pEndElement = pConnectionLineAnnotation->getEndElement();
-    if (pEndElement->getRootParentElement() == this) {
-      QString endElementName = pConnectionLineAnnotation->getEndElementName();
-      endElementName.replace(getName(), newName);
-      pConnectionLineAnnotation->setEndElementName(endElementName);
-      pConnectionLineAnnotation->updateToolTip();
-    }
-  }
 }
 
 /*!
@@ -1647,8 +1533,20 @@ void Element::drawOMSElement()
  */
 void Element::drawInheritedElementsAndShapes()
 {
-  createClassInheritedElements();
-  createClassShapes();
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSSP()) {
+    if (mpReferenceElement) {
+      foreach (ShapeAnnotation *pShapeAnnotation, mpReferenceElement->getShapesList()) {
+        if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
+          mShapesList.append(new PolygonAnnotation(pShapeAnnotation, this));
+        } else if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
+          mShapesList.append(new RectangleAnnotation(pShapeAnnotation, this));
+        }
+      }
+    }
+  } else {
+    createClassInheritedElements();
+    createClassShapes();
+  }
 }
 
 /*!
@@ -1690,45 +1588,57 @@ void Element::createClassInheritedElements()
  */
 void Element::createClassShapes()
 {
-  mpGraphicsView->getModelWidget()->addDependsOnModel(mpModel->getName());
-  ModelInstance::Extend *pExtendModel = 0;
-  if (isExtend()) {
-    pExtendModel = mpModel->getParentExtend();
-  }
-  /* issue #9557
-   * For connectors, the icon layer is used to represent a connector when it is shown in the icon layer of the enclosing model.
-   * The diagram layer of the connector is used to represent it when shown in the diagram layer of the enclosing model.
-   *
-   * Always use the icon annotation when element type is port.
-   */
-  QList<ModelInstance::Shape*> shapes;
-  // Always use the IconMap here. Only IconMap makes sense for drawing icons of Element.
-  if (!(pExtendModel && !pExtendModel->getIconDiagramMapPrimitivesVisible(true))) {
-    /* issue #12074
-     * Use mpModelComponent->getModel()->isConnector() here instead of mpModel->isConnector()
-     * So when called for extends we use the top level element restriction.
-     * We use the same mpModelComponent for top level and extends elements. See Element constructor above for extends element type.
-     */
-    if (mpModelComponent && mpModelComponent->getModel()->isConnector() && mpGraphicsView->isDiagramView() && canUseDiagramAnnotation()) {
-      shapes = mpModel->getAnnotation()->getDiagramAnnotation()->getGraphics();
-    } else {
-      shapes = mpModel->getAnnotation()->getIconAnnotation()->getGraphics();
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSSP()) {
+    foreach (ShapeAnnotation *pShapeAnnotation, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getShapesList()) {
+      if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
+        mShapesList.append(new RectangleAnnotation(pShapeAnnotation, this));
+      } else if (dynamic_cast<TextAnnotation*>(pShapeAnnotation)) {
+        mShapesList.append(new TextAnnotation(pShapeAnnotation, this));
+      } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
+        mShapesList.append(new BitmapAnnotation(pShapeAnnotation, this));
+      }
     }
-  }
+  } else {
+    mpGraphicsView->getModelWidget()->addDependsOnModel(mpModel->getName());
+    ModelInstance::Extend *pExtendModel = 0;
+    if (isExtend()) {
+      pExtendModel = mpModel->getParentExtend();
+    }
+    /* issue #9557
+     * For connectors, the icon layer is used to represent a connector when it is shown in the icon layer of the enclosing model.
+     * The diagram layer of the connector is used to represent it when shown in the diagram layer of the enclosing model.
+     *
+     * Always use the icon annotation when element type is port.
+     */
+    QList<ModelInstance::Shape*> shapes;
+    // Always use the IconMap here. Only IconMap makes sense for drawing icons of Element.
+    if (!(pExtendModel && !pExtendModel->getIconDiagramMapPrimitivesVisible(true))) {
+      /* issue #12074
+       * Use mpModelComponent->getModel()->isConnector() here instead of mpModel->isConnector()
+       * So when called for extends we use the top level element restriction.
+       * We use the same mpModelComponent for top level and extends elements. See Element constructor above for extends element type.
+       */
+      if (mpModelComponent && mpModelComponent->getModel()->isConnector() && mpGraphicsView->isDiagramView() && canUseDiagramAnnotation()) {
+        shapes = mpModel->getAnnotation()->getDiagramAnnotation()->getGraphics();
+      } else {
+        shapes = mpModel->getAnnotation()->getIconAnnotation()->getGraphics();
+      }
+    }
 
-  foreach (auto shape, shapes) {
-    if (ModelInstance::Line *pLine = dynamic_cast<ModelInstance::Line*>(shape)) {
-      mShapesList.append(new LineAnnotation(pLine, this));
-    } else if (ModelInstance::Polygon *pPolygon = dynamic_cast<ModelInstance::Polygon*>(shape)) {
-      mShapesList.append(new PolygonAnnotation(pPolygon, this));
-    } else if (ModelInstance::Rectangle *pRectangle = dynamic_cast<ModelInstance::Rectangle*>(shape)) {
-      mShapesList.append(new RectangleAnnotation(pRectangle, this));
-    } else if (ModelInstance::Ellipse *pEllipse = dynamic_cast<ModelInstance::Ellipse*>(shape)) {
-      mShapesList.append(new EllipseAnnotation(pEllipse, this));
-    } else if (ModelInstance::Text *pText = dynamic_cast<ModelInstance::Text*>(shape)) {
-      mShapesList.append(new TextAnnotation(pText, this));
-    } else if (ModelInstance::Bitmap *pBitmap = dynamic_cast<ModelInstance::Bitmap*>(shape)) {
-      mShapesList.append(new BitmapAnnotation(pBitmap, mpModel->getSource().getFileName(), this));
+    foreach (auto shape, shapes) {
+      if (ModelInstance::Line *pLine = dynamic_cast<ModelInstance::Line*>(shape)) {
+        mShapesList.append(new LineAnnotation(pLine, this));
+      } else if (ModelInstance::Polygon *pPolygon = dynamic_cast<ModelInstance::Polygon*>(shape)) {
+        mShapesList.append(new PolygonAnnotation(pPolygon, this));
+      } else if (ModelInstance::Rectangle *pRectangle = dynamic_cast<ModelInstance::Rectangle*>(shape)) {
+        mShapesList.append(new RectangleAnnotation(pRectangle, this));
+      } else if (ModelInstance::Ellipse *pEllipse = dynamic_cast<ModelInstance::Ellipse*>(shape)) {
+        mShapesList.append(new EllipseAnnotation(pEllipse, this));
+      } else if (ModelInstance::Text *pText = dynamic_cast<ModelInstance::Text*>(shape)) {
+        mShapesList.append(new TextAnnotation(pText, this));
+      } else if (ModelInstance::Bitmap *pBitmap = dynamic_cast<ModelInstance::Bitmap*>(shape)) {
+        mShapesList.append(new BitmapAnnotation(pBitmap, mpModel->getSource().getFileName(), this));
+      }
     }
   }
 }
@@ -2010,27 +1920,33 @@ bool Element::checkEnumerationDisplayString(QString &displayString, const QStrin
  */
 void Element::updateToolTip()
 {
-  QString comment = mpModelComponent->getComment();
-  comment.replace("\\\"", "\"");
-  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-  comment = pOMCProxy->makeDocumentationUriToFileName(comment);
-  // since tooltips can't handle file:// scheme so we have to remove it in order to display images and make links work.
-#if defined(_WIN32)
-  comment.replace("src=\"file:///", "src=\"");
-#else
-  comment.replace("src=\"file://", "src=\"");
-#endif
-
-  QString name = mpModelComponent->getName();
-  if (mpModelComponent && mpModelComponent->getDimensions().isArray()) {
-    name.append("[" % mpModelComponent->getDimensions().getTypedDimensionsString() % "]");
-  }
-  if ((mIsInheritedElement || isPort()) && mpParentElement && !mpGraphicsView->isVisualizationView()) {
-    setToolTip(tr("<b>%1</b> %2<br/>%3<br /><br />Element declared in %4").arg(mpModel->getName())
-                   .arg(name).arg(comment)
-                   .arg(mpParentElement->getModel()->getName()));
+  if (mpLibraryTreeItem && mpLibraryTreeItem->isSSP()) {
+    setToolTip(mpLibraryTreeItem->getTooltip());
   } else {
-    setToolTip(tr("<b>%1</b> %2<br/>%3").arg(mpModel->getName()).arg(name).arg(comment));
+    if (mpModelComponent) {
+      QString comment = mpModelComponent->getComment();
+      comment.replace("\\\"", "\"");
+      OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+      comment = pOMCProxy->makeDocumentationUriToFileName(comment);
+      // since tooltips can't handle file:// scheme so we have to remove it in order to display images and make links work.
+    #if defined(_WIN32)
+      comment.replace("src=\"file:///", "src=\"");
+    #else
+      comment.replace("src=\"file://", "src=\"");
+    #endif
+
+      QString name = mpModelComponent->getName();
+      if (mpModelComponent && mpModelComponent->getDimensions().isArray()) {
+        name.append("[" % mpModelComponent->getDimensions().getTypedDimensionsString() % "]");
+      }
+      if ((mIsInheritedElement || isPort()) && mpParentElement && !mpGraphicsView->isVisualizationView()) {
+        setToolTip(tr("<b>%1</b> %2<br/>%3<br /><br />Element declared in %4").arg(mpModel->getName())
+                       .arg(name).arg(comment)
+                       .arg(mpParentElement->getModel()->getName()));
+      } else {
+        setToolTip(tr("<b>%1</b> %2<br/>%3").arg(mpModel->getName()).arg(name).arg(comment));
+      }
+    }
   }
 }
 
@@ -2259,39 +2175,6 @@ void Element::resizedElement()
     pModelWidget->createOMSimulatorUndoCommand(QStringLiteral("Update element transformations"));
   }
   pModelWidget->updateModelText();
-}
-
-/*!
- * \brief Element::componentCommentHasChanged
- * Updates the Element's tooltip when the component comment has changed.
- */
-void Element::componentCommentHasChanged()
-{
-  updateToolTip();
-  update();
-}
-
-/*!
- * \brief Element::componentNameHasChanged
- * Updates the Element's tooltip when the component name has changed. Emits displayTextChanged signal.
- */
-void Element::componentNameHasChanged()
-{
-  updateToolTip();
-  displayTextChangedRecursive();
-  update();
-}
-
-/*!
- * \brief Element::displayTextChangedRecursive
- * Notifies all the TextAnnotation's about the name change.
- */
-void Element::displayTextChangedRecursive()
-{
-  emit displayTextChanged();
-  foreach (Element *pInheritedElement, mInheritedElementsList) {
-    pInheritedElement->displayTextChangedRecursive();
-  }
 }
 
 /*!

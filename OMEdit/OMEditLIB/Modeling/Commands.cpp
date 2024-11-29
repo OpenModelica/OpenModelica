@@ -338,13 +338,11 @@ void DeleteComponentCommand::redoInternal()
       pGraphicsView->removeElementItem(pComponent);
       pGraphicsView->deleteElementFromList(pComponent);
       pGraphicsView->addElementToOutOfSceneList(pComponent);
-      pComponent->emitDeleted();
     }
   }
   mpGraphicsView->removeElementItem(mpComponent);
   mpGraphicsView->deleteElementFromList(mpComponent);
   mpGraphicsView->addElementToOutOfSceneList(mpComponent);
-  mpComponent->emitDeleted();
   mpGraphicsView->deleteElementFromClass(mpComponent);
 }
 

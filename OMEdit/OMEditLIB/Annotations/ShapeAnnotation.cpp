@@ -289,16 +289,10 @@ ShapeAnnotation::ShapeAnnotation(QGraphicsItem *pParent)
   mpGraphicsView = 0;
   mpParentComponent = dynamic_cast<Element*>(pParent);
   //mTransformation = 0;
-  mpReferenceShapeAnnotation = 0;
   mIsInheritedShape = false;
   setOldScenePosition(QPointF(0, 0));
   mIsCornerItemClicked = false;
   mOldAnnotation = "";
-//  if (pShapeAnnotation) {
-//    connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
-//    connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
-//    connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
-//  }
 }
 
 ShapeAnnotation::ShapeAnnotation(ShapeAnnotation *pShapeAnnotation, QGraphicsItem *pParent)
@@ -307,7 +301,6 @@ ShapeAnnotation::ShapeAnnotation(ShapeAnnotation *pShapeAnnotation, QGraphicsIte
   mpGraphicsView = 0;
   mpParentComponent = dynamic_cast<Element*>(pParent);
   //mTransformation = 0;
-  mpReferenceShapeAnnotation = pShapeAnnotation;
   mIsInheritedShape = false;
   setOldScenePosition(QPointF(0, 0));
   mIsCornerItemClicked = false;
@@ -327,17 +320,11 @@ ShapeAnnotation::ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsVie
   mpGraphicsView = pGraphicsView;
   mpParentComponent = 0;
   mTransformation = Transformation(StringHandler::Diagram);
-  mpReferenceShapeAnnotation = pShapeAnnotation;
   mIsInheritedShape = inheritedShape;
   setOldScenePosition(QPointF(0, 0));
   mIsCornerItemClicked = false;
   mOldAnnotation = "";
   createActions();
-  if (pShapeAnnotation) {
-    connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
-    connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
-    connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
-  }
   connect(mpGraphicsView, SIGNAL(updateDynamicSelect(double)), this, SLOT(updateDynamicSelect(double)));
   connect(mpGraphicsView, SIGNAL(resetDynamicSelect()), this, SLOT(resetDynamicSelect()));
 }
@@ -646,7 +633,9 @@ void ShapeAnnotation::applyTransformation()
     pGraphicsView = mpGraphicsView;
   }
 
-  if (!mpParentComponent && pGraphicsView && (!pLineAnnotation || pLineAnnotation->isLineShape()) && mIsInheritedShape) {
+  if (!mpParentComponent && pGraphicsView && pGraphicsView->getModelWidget()
+      && pGraphicsView->getModelWidget()->getLibraryTreeItem() && pGraphicsView->getModelWidget()->getLibraryTreeItem()->isModelica()
+      && (!pLineAnnotation || pLineAnnotation->isLineShape()) && mIsInheritedShape) {
     QList<QPointF> extendsCoOrdinateExtents = getExtentsForInheritedShapeFromIconDiagramMap(pGraphicsView);
     ExtentAnnotation extent = pGraphicsView->mMergedCoordinateSystem.getExtent();
     qreal left = extent.at(0).x();

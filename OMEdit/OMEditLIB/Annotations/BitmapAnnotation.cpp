@@ -86,6 +86,14 @@ BitmapAnnotation::BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString
   applyTransformation();
 }
 
+BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
+    : ShapeAnnotation(pShapeAnnotation, pParent)
+{
+  mpOriginItem = 0;
+  updateShape(pShapeAnnotation);
+  applyTransformation();
+}
+
 /*!
  * \brief BitmapAnnotation::BitmapAnnotation
  * Used by OMSimulator FMU ModelWidget\n

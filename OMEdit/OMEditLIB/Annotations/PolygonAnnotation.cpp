@@ -81,6 +81,14 @@ PolygonAnnotation::PolygonAnnotation(ModelInstance::Polygon *pPolygon, Element *
   applyTransformation();
 }
 
+PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
+    : ShapeAnnotation(pShapeAnnotation, pParent)
+{
+  mpOriginItem = 0;
+  updateShape(pShapeAnnotation);
+  applyTransformation();
+}
+
 PolygonAnnotation::PolygonAnnotation(Element *pParent)
   : ShapeAnnotation(0, pParent)
 {

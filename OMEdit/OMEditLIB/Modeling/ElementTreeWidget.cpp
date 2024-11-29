@@ -389,6 +389,7 @@ QModelIndex ElementTreeModel::elementTreeItemIndex(const ElementTreeItem *pEleme
  */
 void ElementTreeModel::addElements(ModelInstance::Model *pModel)
 {
+  mpElementWidget->setIgnoreSelectionChange(true);
   // remove the existing elements if there are any
   if (mpRootElementTreeItem->childrenSize() > 0) {
     beginRemoveRows(elementTreeItemIndex(mpRootElementTreeItem->parent()), 0, mpRootElementTreeItem->childrenSize() - 1);
@@ -397,6 +398,7 @@ void ElementTreeModel::addElements(ModelInstance::Model *pModel)
   }
   // add model elements recursively
   addElementsHelper(pModel, mpRootElementTreeItem);
+  mpElementWidget->setIgnoreSelectionChange(false);
 }
 
 /*!
