@@ -3277,6 +3277,11 @@ algorithm
     case ("getShortDefinitionBaseClassInformation", {Values.CODE(Absyn.C_TYPENAME(classpath))})
       then Interactive.getShortDefinitionBaseClassInformation(classpath, SymbolTable.getAbsyn());
 
+    case ("getExternalFunctionSpecification", {Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then Interactive.getExternalFunctionSpecification(classpath, SymbolTable.getAbsyn());
+
+    case ("getEnumerationLiterals", {Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then Interactive.getEnumerationLiterals(classpath, SymbolTable.getAbsyn());
  end matchcontinue;
 end cevalInteractiveFunctions4;
 
