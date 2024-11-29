@@ -691,9 +691,9 @@ void Parameter::createValueWidget()
         if (isReplaceableComponent() || isReplaceableClass()) {
           QString str = (pOMCProxy->getClassInformation(replaceableChoice)).comment;
           if (!str.isEmpty()) {
-            str = " - " + str;
+            str = " \"" + str + "\"";
           }
-          replaceableText = replaceableChoice + str;
+          replaceableText = "redeclare " + replaceableChoice + str;
           // if replaceableChoices points to a class in this scope, remove scope
           if (replaceableChoice.startsWith(parentClassName + ".")) {
             replaceableChoice.remove(0, parentClassName.size() + 1);
