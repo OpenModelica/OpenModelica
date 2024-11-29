@@ -824,11 +824,12 @@ void fmi2FreeInstance(fmi2Component c)
   if (comp->instanceName) freeMemory((void*)comp->instanceName);
   if (comp->GUID) freeMemory((void*)comp->GUID);
   if (comp->functions) freeMemory((void*)comp->functions);
+
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2FreeInstance: succeeded");
+  
   /* free comp */
   freeMemory(comp);
   free_memory_pool();
-
-  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2FreeInstance: succeeded");
 }
 
 fmi2Status fmi2SetupExperiment(fmi2Component c, fmi2Boolean toleranceDefined, fmi2Real tolerance, fmi2Real startTime, fmi2Boolean stopTimeDefined, fmi2Real stopTime)
@@ -938,7 +939,7 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
 
   comp->state = isCoSimulation(comp) ? model_state_cs_step_complete : model_state_me_event_mode;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2ExitInitializationMode: succeeded")
-
+  
   resetThreadData(comp);
 
   return res;
