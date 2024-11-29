@@ -733,8 +733,9 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
     comp->solverInfo = NULL;
   }
 
-  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Instantiate: GUID=%s", fmuGUID)
   resetThreadData(comp);
+
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Instantiate: GUID=%s", fmuGUID)
   return comp;
 }
 
@@ -748,11 +749,11 @@ void fmi2FreeInstance(fmi2Component c)
 
   if (invalidState(comp, "fmi2FreeInstance", meStates, csStates))
     return;
-
-  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2FreeInstance")
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2FreeInstance...")
 
   /* call external objects destructors */
   comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData, comp->threadData);
+
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
   /* free nonlinear system data */
   freeNonlinearSystems(comp->fmuData, comp->threadData);
@@ -826,6 +827,8 @@ void fmi2FreeInstance(fmi2Component c)
   /* free comp */
   freeMemory(comp);
   free_memory_pool();
+
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2FreeInstance: succeeded");
 }
 
 fmi2Status fmi2SetupExperiment(fmi2Component c, fmi2Boolean toleranceDefined, fmi2Real tolerance, fmi2Real startTime, fmi2Boolean stopTimeDefined, fmi2Real stopTime)
@@ -863,6 +866,7 @@ fmi2Status fmi2EnterInitializationMode(fmi2Component c)
   copyStartValuestoInitValues(comp->fmuData);
   comp->state = model_state_initialization_mode;
 
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EnterInitializationMode: succeeded")
   return fmi2OK;
 }
 
@@ -893,7 +897,7 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
     {
       comp->state = model_state_error;
       resetThreadData(comp);
-      FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2EnterInitializationMode: failed")
+      FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2ExitInitializationMode: failed")
       return fmi2Error;
     }
   }
@@ -920,7 +924,6 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
   {
     comp->eventInfo.nextEventTimeDefined = fmi2False;
   }
-  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EnterInitializationMode: succeed")
   res = fmi2OK;
 
   done = 1;
@@ -930,13 +933,13 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
 
   if (!done)
   {
-    FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2EnterInitializationMode: terminated by an assertion.")
+    FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2ExitInitializationMode: terminated by an assertion.")
   }
 
   comp->state = isCoSimulation(comp) ? model_state_cs_step_complete : model_state_me_event_mode;
   resetThreadData(comp);
 
-  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2ExitInitializationMode: succeed")
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2ExitInitializationMode: succeeded")
   return res;
 }
 
