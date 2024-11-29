@@ -280,7 +280,6 @@ public:
   void setWelcomePageView(int view);
   QCheckBox* getShowLatestNewsCheckBox() {return mpShowLatestNewsCheckBox;}
   QSpinBox* getRecentFilesAndLatestNewsSizeSpinBox() {return mpRecentFilesAndLatestNewsSizeSpinBox;}
-  QCheckBox* getDisableInstanceAPICheckBox() {return mpDisableInstanceAPICheckBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralSettingsGroupBox;
@@ -319,8 +318,6 @@ private:
   QRadioButton *mpVerticalViewRadioButton;
   QCheckBox *mpShowLatestNewsCheckBox;
   QSpinBox *mpRecentFilesAndLatestNewsSizeSpinBox;
-  QGroupBox *mpOptionalFeaturesGroupBox;
-  QCheckBox *mpDisableInstanceAPICheckBox;
 public slots:
   void selectWorkingDirectory();
   void selectTerminalCommand();
@@ -602,22 +599,6 @@ private:
   QRadioButton *mpTextViewRadioButton;
   QRadioButton *mpDocumentationViewRadioButton;
   QCheckBox *mpMoveConnectorsTogetherCheckBox;
-  DoubleSpinBox *mpIconViewLeftSpinBox;
-  DoubleSpinBox *mpIconViewBottomSpinBox;
-  DoubleSpinBox *mpIconViewRightSpinBox;
-  DoubleSpinBox *mpIconViewTopSpinBox;
-  DoubleSpinBox *mpIconViewGridHorizontalSpinBox;
-  DoubleSpinBox *mpIconViewGridVerticalSpinBox;
-  DoubleSpinBox *mpIconViewScaleFactorSpinBox;
-  QCheckBox *mpIconViewPreserveAspectRatioCheckBox;
-  DoubleSpinBox *mpDiagramViewLeftSpinBox;
-  DoubleSpinBox *mpDiagramViewBottomSpinBox;
-  DoubleSpinBox *mpDiagramViewRightSpinBox;
-  DoubleSpinBox *mpDiagramViewTopSpinBox;
-  DoubleSpinBox *mpDiagramViewGridHorizontalSpinBox;
-  DoubleSpinBox *mpDiagramViewGridVerticalSpinBox;
-  DoubleSpinBox *mpDiagramViewScaleFactorSpinBox;
-  QCheckBox *mpDiagramViewPreserveAspectRatioCheckBox;
 };
 
 class SimulationPage : public QWidget

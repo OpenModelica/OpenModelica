@@ -119,36 +119,6 @@ private:
   bool mMoveConnectorsTogether;
 };
 
-class UpdateElementAttributesCommand : public UndoCommand
-{
-public:
-  UpdateElementAttributesCommand(Element *pComponent, const ElementInfo &oldComponentInfo, const ElementInfo &newComponentInfo, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-  static void updateComponentAttributes(Element *pComponent, const ElementInfo &componentInfo);
-  static void updateComponentModifiers(Element *pComponent, const ElementInfo &componentInfo);
-private:
-  Element *mpComponent;
-  ElementInfo mOldComponentInfo;
-  ElementInfo mNewComponentInfo;
-};
-
-class UpdateElementParametersCommand : public UndoCommand
-{
-public:
-  UpdateElementParametersCommand(Element *pComponent, QMap<QString, QString> oldComponentModifiersMap,
-                                   QMap<QString, QString> oldComponentExtendsModifiersMap, QMap<QString, QString> newComponentModifiersMap,
-                                   QMap<QString, QString> newComponentExtendsModifiersMap, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-private:
-  Element *mpComponent;
-  QMap<QString, QString> mOldComponentModifiersMap;
-  QMap<QString, QString> mOldComponentExtendsModifiersMap;
-  QMap<QString, QString> mNewComponentModifiersMap;
-  QMap<QString, QString> mNewComponentExtendsModifiersMap;
-};
-
 class DeleteComponentCommand : public UndoCommand
 {
 public:
@@ -276,25 +246,25 @@ private:
   LineAnnotation *mpInitialStateLineAnnotation;
 };
 
-class UpdateCoOrdinateSystemCommand : public UndoCommand
+class UpdateCoordinateSystemCommand : public UndoCommand
 {
 public:
-  UpdateCoOrdinateSystemCommand(GraphicsView *pGraphicsView, const CoOrdinateSystem oldCoOrdinateSystem, const CoOrdinateSystem newCoOrdinateSystem,
-                                const bool copyProperties, const QString &oldVersion, const QString &newVersion, const QString &oldUsesAnnotationString,
-                                const QString &newUsesAnnotationString, UndoCommand *pParent = 0);
+  UpdateCoordinateSystemCommand(GraphicsView *pGraphicsView, const ModelInstance::CoordinateSystem oldCoordinateSystem,
+                                const ModelInstance::CoordinateSystem newCoordinateSystem, const bool copyProperties, const QString &oldVersion,
+                                const QString &newVersion, const QString &oldUsesAnnotationString, const QString &newUsesAnnotationString, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
 private:
   GraphicsView *mpGraphicsView;
-  CoOrdinateSystem mOldCoOrdinateSystem;
-  CoOrdinateSystem mNewCoOrdinateSystem;
+  ModelInstance::CoordinateSystem mOldCoordinateSystem;
+  ModelInstance::CoordinateSystem mNewCoordinateSystem;
   bool mCopyProperties;
   QString mOldVersion;
   QString mNewVersion;
   QString mOldUsesAnnotationString;
   QString mNewUsesAnnotationString;
 
-  void updateReferencedShapes(GraphicsView *pGraphicsView);
+  void updateCoordinateSystem(const ModelInstance::CoordinateSystem coordinateSystem);
 };
 
 class UpdateClassAnnotationCommand : public UndoCommand

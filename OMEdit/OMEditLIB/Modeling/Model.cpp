@@ -59,18 +59,18 @@ namespace ModelInstance
 
   /*!
    * \brief CoordinateSystem::CoordinateSystem
-   * \param coOrdinateSystem
+   * \param CoordinateSystem
    */
-  CoordinateSystem::CoordinateSystem(const CoordinateSystem &coOrdinateSystem)
+  CoordinateSystem::CoordinateSystem(const CoordinateSystem &coordinateSystem)
   {
-    setExtent(coOrdinateSystem.getExtent());
-    setHasExtent(coOrdinateSystem.hasExtent());
-    setPreserveAspectRatio(coOrdinateSystem.getPreserveAspectRatio());
-    setHasPreserveAspectRatio(coOrdinateSystem.hasPreserveAspectRatio());
-    setInitialScale(coOrdinateSystem.getInitialScale());
-    setHasInitialScale(coOrdinateSystem.hasInitialScale());
-    setGrid(coOrdinateSystem.getGrid());
-    setHasGrid(coOrdinateSystem.hasGrid());
+    setExtent(coordinateSystem.getExtent());
+    setHasExtent(coordinateSystem.hasExtent());
+    setPreserveAspectRatio(coordinateSystem.getPreserveAspectRatio());
+    setHasPreserveAspectRatio(coordinateSystem.hasPreserveAspectRatio());
+    setInitialScale(coordinateSystem.getInitialScale());
+    setHasInitialScale(coordinateSystem.hasInitialScale());
+    setGrid(coordinateSystem.getGrid());
+    setHasGrid(coordinateSystem.hasGrid());
   }
 
   void CoordinateSystem::setExtent(const QVector<QPointF> extent)
@@ -665,7 +665,7 @@ namespace ModelInstance
   {
     if (jsonObject.contains("coordinateSystem")) {
       mCoordinateSystem.deserialize(jsonObject.value("coordinateSystem").toObject());
-      mMergedCoOrdinateSystem = mCoordinateSystem;
+      mMergedCoordinateSystem = mCoordinateSystem;
     }
 
     if (jsonObject.contains("graphics")) {
@@ -1121,22 +1121,7 @@ namespace ModelInstance
       mpAnnotation->deserialize(mModelJson.value("annotation").toObject());
     }
 
-    /* From Modelica Specification Version 3.5-dev
-     * The coordinate system (including preserveAspectRatio) of a class is defined by the following priority:
-     * 1. The coordinate system annotation given in the class (if specified).
-     * 2. The coordinate systems of the first base-class where the extent on the extends-clause specifies a
-     *    null-region (if any). Note that null-region is the default for base-classes, see section 18.6.3.
-     * 3. The default coordinate system CoordinateSystem(extent={{-100, -100}, {100, 100}}).
-     *
-     * Following is the second case. First case is covered when we read the annotation of the class. Third case is handled by default values of IconDiagramAnnotation class.
-     */
-    if (!getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem.isComplete()) {
-      readCoordinateSystemFromExtendsClass(&getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem, true);
-    }
-
-    if (!getAnnotation()->getDiagramAnnotation()->mMergedCoOrdinateSystem.isComplete()) {
-      readCoordinateSystemFromExtendsClass(&getAnnotation()->getDiagramAnnotation()->mMergedCoOrdinateSystem, false);
-    }
+    updateMergedCoordinateSystem();
 
     if (mModelJson.contains("connections")) {
       for (const QJsonValue &connection: mModelJson.value("connections").toArray()) {
@@ -1196,6 +1181,26 @@ namespace ModelInstance
       } else {
         qDebug() << "Model::deserialize() unhandled kind of element" << kind;
       }
+    }
+  }
+
+  void Model::updateMergedCoordinateSystem()
+  {
+    /* From Modelica Specification Version 3.5-dev
+     * The coordinate system (including preserveAspectRatio) of a class is defined by the following priority:
+     * 1. The coordinate system annotation given in the class (if specified).
+     * 2. The coordinate systems of the first base-class where the extent on the extends-clause specifies a
+     *    null-region (if any). Note that null-region is the default for base-classes, see section 18.6.3.
+     * 3. The default coordinate system CoordinateSystem(extent={{-100, -100}, {100, 100}}).
+     *
+     * Following is the second case. First case is covered when we read the annotation of the class. Third case is handled by default values of IconDiagramAnnotation class.
+     */
+    if (!getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem.isComplete()) {
+      readCoordinateSystemFromExtendsClass(&getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem, true);
+    }
+
+    if (!getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem.isComplete()) {
+      readCoordinateSystemFromExtendsClass(&getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem, false);
     }
   }
 

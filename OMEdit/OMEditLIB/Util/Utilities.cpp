@@ -1194,7 +1194,7 @@ void Utilities::removeDirectoryRecursively(QString path)
 }
 
 /*!
- * \brief Utilities::mapToCoOrdinateSystem
+ * \brief Utilities::mapToCoordinateSystem
  * If you have numbers x in the range [a,b] and you want to transform them to numbers y in the range [c,d].\n
  * y = ((x−a) * ((d−c)/(b−a))) + c
  * \param value
@@ -1204,7 +1204,7 @@ void Utilities::removeDirectoryRecursively(QString path)
  * \param endB
  * \return
  */
-qreal Utilities::mapToCoOrdinateSystem(qreal value, qreal startA, qreal endA, qreal startB, qreal endB)
+qreal Utilities::mapToCoordinateSystem(qreal value, qreal startA, qreal endA, qreal startB, qreal endB)
 {
   return ((value - startA) * ((endB - startB) / (endA - startA))) + startB;
 }

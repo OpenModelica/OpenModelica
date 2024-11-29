@@ -157,7 +157,7 @@ public:
   QList<QString> getInheritedClasses(QString className);
   QString getNthInheritedClassIconMapAnnotation(QString className, int num);
   QString getNthInheritedClassDiagramMapAnnotation(QString className, int num);
-  QList<ElementInfo*> getElements(QString className);
+  QList<ElementInfo> getElements(QString className);
   QStringList getElementAnnotations(QString className);
   QString getDocumentationAnnotationInfoHeader(LibraryTreeItem *pLibraryTreeItem, QString infoHeader);
   QString getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem);
@@ -242,8 +242,6 @@ public:
   QString getHomeDirectoryPath();
   QStringList getAvailableLibraries();
   QStringList getAvailableLibraryVersions(QString libraryName);
-  QStringList getDerivedClassModifierNames(QString className);
-  QString getDerivedClassModifierValue(QString className, QString modifierName);
   OMCInterface::convertUnits_res convertUnits(QString from, QString to);
   QList<QString> getDerivedUnits(QString baseUnit);
   QString getNamedAnnotation(const QString &className, const QString &annotation, StringHandler::ResultType type = StringHandler::String);

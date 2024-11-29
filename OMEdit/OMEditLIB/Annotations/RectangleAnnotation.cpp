@@ -66,14 +66,6 @@ RectangleAnnotation::RectangleAnnotation(ModelInstance::Rectangle *pRectangle, b
   setShapeFlags(true);
 }
 
-RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
-  : ShapeAnnotation(pShapeAnnotation, pParent)
-{
-  mpOriginItem = 0;
-  updateShape(pShapeAnnotation);
-  applyTransformation();
-}
-
 RectangleAnnotation::RectangleAnnotation(ModelInstance::Rectangle *pRectangle, Element *pParent)
   : ShapeAnnotation(pParent)
 {
@@ -89,15 +81,12 @@ RectangleAnnotation::RectangleAnnotation(ModelInstance::Rectangle *pRectangle, E
   applyTransformation();
 }
 
-RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
+RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
+    : ShapeAnnotation(pShapeAnnotation, pParent)
 {
-  mpOriginItem = new OriginItem(this);
-  mpOriginItem->setPassive();
+  mpOriginItem = 0;
   updateShape(pShapeAnnotation);
-  setShapeFlags(true);
-  mpGraphicsView->addItem(this);
-  mpGraphicsView->addItem(mpOriginItem);
+  applyTransformation();
 }
 
 RectangleAnnotation::RectangleAnnotation(Element *pParent)
@@ -195,7 +184,7 @@ void RectangleAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsIte
   if (mVisible) {
     // state machine visualization
     if (mpParentComponent && mpParentComponent->getGraphicsView()->isVisualizationView()
-        && ((mpParentComponent->getGraphicsView()->getModelWidget()->isNewApi() && mpParentComponent->getModel() && mpParentComponent->getModel()->getAnnotation()->isState())
+        && ((mpParentComponent->getModel() && mpParentComponent->getModel()->getAnnotation()->isState())
             || (mpParentComponent->getLibraryTreeItem() && mpParentComponent->getLibraryTreeItem()->isState()))) {
       if (mpParentComponent->isActiveState()) {
         painter->setOpacity(1.0);
@@ -294,15 +283,14 @@ void RectangleAnnotation::duplicate()
 {
   RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation("", mpGraphicsView);
   pRectangleAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5,
-                   mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
+  QPointF gridStep(mpGraphicsView->mMergedCoordinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mMergedCoordinateSystem.getVerticalGridStep() * 5);
   pRectangleAnnotation->setOrigin(mOrigin + gridStep);
   pRectangleAnnotation->drawCornerItems();
   pRectangleAnnotation->setCornerItemsActiveOrPassive();
   pRectangleAnnotation->applyTransformation();
   pRectangleAnnotation->update();
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pRectangleAnnotation));
-  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pRectangleAnnotation, mpGraphicsView);
   setSelected(false);
   pRectangleAnnotation->setSelected(true);
 }

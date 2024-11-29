@@ -70,14 +70,6 @@ BitmapAnnotation::BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString
   setShapeFlags(true);
 }
 
-BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
-  : ShapeAnnotation(pShapeAnnotation, pParent)
-{
-  mpOriginItem = 0;
-  updateShape(pShapeAnnotation);
-  applyTransformation();
-}
-
 BitmapAnnotation::BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString &classFileName, Element *pParent)
   : ShapeAnnotation(pParent)
 {
@@ -94,15 +86,12 @@ BitmapAnnotation::BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString
   applyTransformation();
 }
 
-BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
+BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
+    : ShapeAnnotation(pShapeAnnotation, pParent)
 {
-  mpOriginItem = new OriginItem(this);
-  mpOriginItem->setPassive();
+  mpOriginItem = 0;
   updateShape(pShapeAnnotation);
-  setShapeFlags(true);
-  mpGraphicsView->addItem(this);
-  mpGraphicsView->addItem(mpOriginItem);
+  applyTransformation();
 }
 
 /*!
@@ -289,15 +278,14 @@ void BitmapAnnotation::duplicate()
 {
   BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(mClassFileName, "", mpGraphicsView);
   pBitmapAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5,
-                   mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
+  QPointF gridStep(mpGraphicsView->mMergedCoordinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mMergedCoordinateSystem.getVerticalGridStep() * 5);
   pBitmapAnnotation->setOrigin(mOrigin + gridStep);
   pBitmapAnnotation->drawCornerItems();
   pBitmapAnnotation->setCornerItemsActiveOrPassive();
   pBitmapAnnotation->applyTransformation();
   pBitmapAnnotation->update();
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pBitmapAnnotation));
-  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pBitmapAnnotation, mpGraphicsView);
   setSelected(false);
   pBitmapAnnotation->setSelected(true);
 }

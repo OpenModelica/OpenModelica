@@ -47,10 +47,9 @@ public:
   TextAnnotation(QString annotation, GraphicsView *pGraphicsView);
   TextAnnotation(ModelInstance::Text *pText, bool inherited, GraphicsView *pGraphicsView);
   // Used for shape inside a component
-  TextAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   TextAnnotation(ModelInstance::Text *pText, Element *pParent);
-  // Used for icon/diagram inherited shape
-  TextAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  // Used for OMS Element shape
+  TextAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   // Used for default component
   TextAnnotation(Element *pParent);
   // Used for transition text

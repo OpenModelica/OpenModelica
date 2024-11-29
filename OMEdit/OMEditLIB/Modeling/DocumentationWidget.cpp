@@ -786,7 +786,7 @@ void DocumentationWidget::editInfoDocumentation()
 {
   if (mDocumentationHistoryPos >= 0) {
     LibraryTreeItem *pLibraryTreeItem = mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem;
-    if (pLibraryTreeItem && !pLibraryTreeItem->isNonExisting()) {
+    if (pLibraryTreeItem) {
       // get the info documentation
       QList<QString> info = MainWindow::instance()->getOMCProxy()->getDocumentationAnnotationInClass(pLibraryTreeItem);
       writeDocumentationFile(info.at(0));
@@ -821,7 +821,7 @@ void DocumentationWidget::editRevisionsDocumentation()
 {
   if (mDocumentationHistoryPos >= 0) {
     LibraryTreeItem *pLibraryTreeItem = mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem;
-    if (pLibraryTreeItem && !pLibraryTreeItem->isNonExisting()) {
+    if (pLibraryTreeItem) {
       // get the revision documentation
       QList<QString> revisions = MainWindow::instance()->getOMCProxy()->getDocumentationAnnotationInClass(pLibraryTreeItem);
       writeDocumentationFile(revisions.at(1));
@@ -856,7 +856,7 @@ void DocumentationWidget::editInfoHeaderDocumentation()
 {
   if (mDocumentationHistoryPos >= 0) {
     LibraryTreeItem *pLibraryTreeItem = mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem;
-    if (pLibraryTreeItem && !pLibraryTreeItem->isNonExisting()) {
+    if (pLibraryTreeItem) {
       // get the __OpenModelica_infoHeader documentation annotation
       QList<QString> infoHeader = MainWindow::instance()->getOMCProxy()->getDocumentationAnnotationInClass(pLibraryTreeItem);
       writeDocumentationFile(infoHeader.at(2));
@@ -893,7 +893,7 @@ void DocumentationWidget::saveDocumentation(LibraryTreeItem *pNextLibraryTreeIte
 {
   if (mDocumentationHistoryPos >= 0) {
     LibraryTreeItem *pLibraryTreeItem = mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem;
-    if (pLibraryTreeItem && !pLibraryTreeItem->isNonExisting()) {
+    if (pLibraryTreeItem) {
       QList<QString> documentation = MainWindow::instance()->getOMCProxy()->getDocumentationAnnotationInClass(pLibraryTreeItem);
       // old documentation annotation
       QList<QString> oldDocAnnotationList;

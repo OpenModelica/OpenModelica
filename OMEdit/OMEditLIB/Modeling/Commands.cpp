@@ -92,7 +92,6 @@ void AddShapeCommand::redoInternal()
   }
   mpShapeAnnotation->getGraphicsView()->addItem(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->addItem(mpShapeAnnotation->getOriginItem());
-  mpShapeAnnotation->emitAdded();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
   mpShapeAnnotation->getGraphicsView()->reOrderShapes();
 }
@@ -107,7 +106,6 @@ void AddShapeCommand::undo()
   mpShapeAnnotation->getGraphicsView()->addShapeToOutOfSceneList(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->removeItem(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->removeItem(mpShapeAnnotation->getOriginItem());
-  mpShapeAnnotation->emitDeleted();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
   mpShapeAnnotation->getGraphicsView()->reOrderShapes();
 }
@@ -154,7 +152,6 @@ void UpdateShapeCommand::redoInternal()
   }
   mpShapeAnnotation->setCornerItemsActiveOrPassive();
   mpShapeAnnotation->applyTransformation();
-  mpShapeAnnotation->emitChanged();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
 }
 
@@ -179,7 +176,6 @@ void UpdateShapeCommand::undo()
   }
   mpShapeAnnotation->setCornerItemsActiveOrPassive();
   mpShapeAnnotation->applyTransformation();
-  mpShapeAnnotation->emitChanged();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
 }
 
@@ -200,7 +196,6 @@ void DeleteShapeCommand::redoInternal()
   mpShapeAnnotation->getGraphicsView()->addShapeToOutOfSceneList(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->removeItem(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->removeItem(mpShapeAnnotation->getOriginItem());
-  mpShapeAnnotation->emitDeleted();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
   mpShapeAnnotation->getGraphicsView()->reOrderShapes();
 }
@@ -215,103 +210,8 @@ void DeleteShapeCommand::undo()
   mpShapeAnnotation->getGraphicsView()->deleteShapeFromOutOfSceneList(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->addItem(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->addItem(mpShapeAnnotation->getOriginItem());
-  mpShapeAnnotation->emitAdded();
   mpShapeAnnotation->getGraphicsView()->setAddClassAnnotationNeeded(true);
   mpShapeAnnotation->getGraphicsView()->reOrderShapes();
-}
-
-AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
-                                         ElementInfo *pComponentInfo, bool addObject, bool openingClass, GraphicsView *pGraphicsView, UndoCommand *pParent)
-  : UndoCommand(pParent)
-{
-  mpLibraryTreeItem = pLibraryTreeItem;
-  mAddObject = addObject;
-  mpComponentInfo = pComponentInfo;
-  mpIconComponent = 0;
-  mpDiagramComponent = 0;
-  mpIconGraphicsView = pGraphicsView->getModelWidget()->getIconGraphicsView();
-  mpDiagramGraphicsView = pGraphicsView->getModelWidget()->getDiagramGraphicsView();
-  mpGraphicsView = pGraphicsView;
-  setText(QString("Add Component %1").arg(name));
-
-  ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
-  // if component is of connector type && containing class is Modelica type.
-  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() && pModelWidget->getLibraryTreeItem()->isModelica()) {
-    // Connector type components exists on icon view as well
-    mpIconComponent = new Element(name, pLibraryTreeItem, annotation, position, pComponentInfo, mpIconGraphicsView);
-  }
-  mpDiagramComponent = new Element(name, pLibraryTreeItem, annotation, position, pComponentInfo, mpDiagramGraphicsView);
-  // only select the component of the active Icon/Diagram View
-  if (!openingClass) {
-    if (mpGraphicsView->isIconView()) {
-      mpGraphicsView->clearSelection(mpIconComponent);
-    } else {
-      mpGraphicsView->clearSelection(mpDiagramComponent);
-    }
-  }
-}
-
-/*!
- * \brief AddComponentCommand::redoInternal
- * redoInternal the AddComponentCommand.
- */
-void AddComponentCommand::redoInternal()
-{
-  ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
-  // if component is of connector type && containing class is Modelica type.
-  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() && pModelWidget->getLibraryTreeItem()->isModelica()) {
-    // Connector type components exists on icon view as well
-    if (mpIconComponent->mTransformation.isValid() && mpIconComponent->mTransformation.getVisible()) {
-      mpIconGraphicsView->addElementItem(mpIconComponent);
-    }
-    mpIconGraphicsView->addElementToList(mpIconComponent);
-    mpIconGraphicsView->deleteElementFromOutOfSceneList(mpIconComponent);
-    mpIconComponent->emitAdded();
-    // hide the component if it is connector and is protected
-    mpIconComponent->setVisible(!mpComponentInfo->getProtected());
-  }
-  if (mpDiagramComponent->mTransformation.isValid() && mpDiagramComponent->mTransformation.getVisible()) {
-    mpDiagramGraphicsView->addElementItem(mpDiagramComponent);
-  }
-  mpDiagramGraphicsView->addElementToList(mpDiagramComponent);
-  mpDiagramGraphicsView->deleteElementFromOutOfSceneList(mpDiagramComponent);
-  mpDiagramComponent->emitAdded();
-  if (mAddObject) {
-    mpDiagramGraphicsView->addElementToClass(mpDiagramComponent);
-    UpdateElementAttributesCommand::updateComponentModifiers(mpDiagramComponent, *mpDiagramComponent->getElementInfo());
-    if (mpDiagramComponent->getElementInfo()->isArray()) {
-      QString modelName = pModelWidget->getLibraryTreeItem()->getNameStructure();
-      OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-      const QString arrayIndex = QString("{%1}").arg(mpDiagramComponent->getElementInfo()->getArrayIndex());
-      if (!pOMCProxy->setComponentDimensions(modelName, mpDiagramComponent->getElementInfo()->getName(), arrayIndex)) {
-        QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), QMessageBox::Ok);
-        pOMCProxy->printMessagesStringInternal();
-      }
-    }
-
-  }
-}
-
-/*!
- * \brief AddComponentCommand::undo
- * Undo the AddComponentCommand.
- */
-void AddComponentCommand::undo()
-{
-  ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
-  // if component is of connector type && containing class is Modelica type.
-  if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() && pModelWidget->getLibraryTreeItem()->isModelica()) {
-    // Connector type components exists on icon view as well
-    mpIconGraphicsView->removeElementItem(mpIconComponent);
-    mpIconGraphicsView->deleteElementFromList(mpIconComponent);
-    mpIconGraphicsView->addElementToOutOfSceneList(mpIconComponent);
-    mpIconComponent->emitDeleted();
-  }
-  mpDiagramGraphicsView->removeElementItem(mpDiagramComponent);
-  mpDiagramGraphicsView->deleteElementFromList(mpDiagramComponent);
-  mpDiagramGraphicsView->addElementToOutOfSceneList(mpDiagramComponent);
-  mpDiagramComponent->emitDeleted();
-  mpDiagramGraphicsView->deleteElementFromClass(mpDiagramComponent);
 }
 
 UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommand(Element *pComponent, Transformation oldTransformation, Transformation newTransformation,
@@ -335,7 +235,7 @@ void UpdateComponentTransformationsCommand::redoInternal()
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   if (mMoveConnectorsTogether && pModelWidget->getLibraryTreeItem()->isModelica()
       && ((mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector())
-          || (pModelWidget->isNewApi() && mpComponent->getModel() && mpComponent->getModel()->isConnector()))) {
+          || (mpComponent->getModel() && mpComponent->getModel()->isConnector()))) {
     GraphicsView *pGraphicsView;
     if (mpComponent->getGraphicsView()->isIconView()) {
       pGraphicsView = pModelWidget->getDiagramGraphicsView();
@@ -363,7 +263,7 @@ void UpdateComponentTransformationsCommand::redoInternal()
   mpComponent->mTransformation = mNewTransformation;
   mpComponent->emitTransformChange(mPositionChanged);
   mpComponent->emitTransformHasChanged();
-  if (mpComponent->getGraphicsView()->isDiagramView() && pModelWidget->isNewApi()) {
+  if (mpComponent->getGraphicsView()->isDiagramView()) {
     pModelWidget->setHandleCollidingConnectionsNeeded(true);
   }
 }
@@ -377,7 +277,7 @@ void UpdateComponentTransformationsCommand::undo()
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   if (mMoveConnectorsTogether && pModelWidget->getLibraryTreeItem()->isModelica()
       && ((mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector())
-          || (pModelWidget->isNewApi() && mpComponent->getModel() && mpComponent->getModel()->isConnector()))) {
+          || (mpComponent->getModel() && mpComponent->getModel()->isConnector()))) {
     GraphicsView *pGraphicsView;
     if (mpComponent->getGraphicsView()->isIconView()) {
       pGraphicsView = pModelWidget->getDiagramGraphicsView();
@@ -405,261 +305,9 @@ void UpdateComponentTransformationsCommand::undo()
   mpComponent->mTransformation = mOldTransformation;
   mpComponent->emitTransformChange(mPositionChanged);
   mpComponent->emitTransformHasChanged();
-  if (mpComponent->getGraphicsView()->isDiagramView() && pModelWidget->isNewApi()) {
+  if (mpComponent->getGraphicsView()->isDiagramView()/* && pModelWidget->isNewApi()*/) {
     pModelWidget->setHandleCollidingConnectionsNeeded(true);
   }
-}
-
-UpdateElementAttributesCommand::UpdateElementAttributesCommand(Element *pComponent, const ElementInfo &oldComponentInfo, const ElementInfo &newComponentInfo, UndoCommand *pParent)
-  : UndoCommand(pParent)
-{
-  mpComponent = pComponent;
-  mOldComponentInfo.updateElementInfo(&oldComponentInfo);
-  mNewComponentInfo.updateElementInfo(&newComponentInfo);
-  setText(QString("Update Component %1 Attributes").arg(mpComponent->getName()));
-}
-
-/*!
- * \brief UpdateElementAttributesCommand::redoInternal
- * redoInternal the UpdateElementAttributesCommand.
- */
-void UpdateElementAttributesCommand::redoInternal()
-{
-  updateComponentAttributes(mpComponent, mNewComponentInfo);
-}
-
-/*!
- * \brief UpdateElementAttributesCommand::undo
- * Undo the UpdateElementAttributesCommand.
- */
-void UpdateElementAttributesCommand::undo()
-{
-  updateComponentAttributes(mpComponent, mOldComponentInfo);
-}
-
-/*!
- * \brief UpdateComponentAttributesCommand::updateComponentAttributes
- * Updates the component attributes based on the ElementInfo
- * \param pComponent
- * \param componentInfo
- */
-void UpdateElementAttributesCommand::updateComponentAttributes(Element *pComponent, const ElementInfo &componentInfo)
-{
-  QString modelName = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-  QString isFinal = componentInfo.getFinal() ? "true" : "false";
-  QString flow = componentInfo.getFlow() ? "true" : "false";
-  QString isProtected = componentInfo.getProtected() ? "true" : "false";
-  QString isReplaceAble = componentInfo.getReplaceable() ? "true" : "false";
-  QString variability = componentInfo.getVariablity();
-  QString isInner = componentInfo.getInner() ? "true" : "false";
-  QString isOuter = componentInfo.getOuter() ? "true" : "false";
-  QString causality = componentInfo.getCausality();
-
-  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-  // update component attributes
-  if (pOMCProxy->setComponentProperties(modelName, pComponent->getElementInfo()->getName(), isFinal, flow, isProtected, isReplaceAble, variability, isInner, isOuter, causality)) {
-    pComponent->getElementInfo()->setFinal(componentInfo.getFinal());
-    pComponent->getElementInfo()->setProtected(componentInfo.getProtected());
-    pComponent->getElementInfo()->setReplaceable(componentInfo.getReplaceable());
-    pComponent->getElementInfo()->setVariablity(variability);
-    pComponent->getElementInfo()->setInner(componentInfo.getInner());
-    pComponent->getElementInfo()->setOuter(componentInfo.getOuter());
-    pComponent->getElementInfo()->setCausality(causality);
-    if (pComponent->getGraphicsView()->isIconView()) {
-      if (pComponent->getElementInfo()->getProtected()) {
-        pComponent->setVisible(false);
-        pComponent->emitDeleted();
-      } else {
-        pComponent->setVisible(true);
-        pComponent->emitAdded();
-      }
-    } else {
-      Element *pIconComponent = 0;
-      pIconComponent = pComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getElementObject(pComponent->getName());
-      if (pIconComponent) {
-        if (pIconComponent->getElementInfo()->getProtected()) {
-          pIconComponent->setVisible(false);
-          pIconComponent->emitDeleted();
-        } else {
-          pIconComponent->setVisible(true);
-          pIconComponent->emitAdded();
-        }
-      }
-    }
-  } else {
-    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), QMessageBox::Ok);
-    pOMCProxy->printMessagesStringInternal();
-  }
-  // update the component comment only if its changed.
-  if (pComponent->getElementInfo()->getComment().compare(componentInfo.getComment()) != 0) {
-    QString comment = StringHandler::escapeString(componentInfo.getComment());
-    if (pOMCProxy->setComponentComment(modelName, pComponent->getElementInfo()->getName(), comment)) {
-      pComponent->getElementInfo()->setComment(comment);
-      pComponent->componentCommentHasChanged();
-      if (pComponent->getLibraryTreeItem()->isConnector()) {
-        if (pComponent->getGraphicsView()->isIconView()) {
-          Element *pDiagramComponent = pComponent->getGraphicsView()->getModelWidget()->getDiagramGraphicsView()->getElementObject(pComponent->getName());
-          if (pDiagramComponent) {
-            pDiagramComponent->componentCommentHasChanged();
-          }
-        } else {
-          Element *pIconComponent = pComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getElementObject(pComponent->getName());
-          if (pIconComponent) {
-            pIconComponent->componentCommentHasChanged();
-          }
-        }
-      }
-    } else {
-      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), QMessageBox::Ok);
-      pOMCProxy->printMessagesStringInternal();
-    }
-  }
-  // update the component name only if its changed.
-  if (pComponent->getElementInfo()->getName().compare(componentInfo.getName()) != 0) {
-    // if renameComponentInClass command is successful update the component with new name
-    if (pOMCProxy->renameComponentInClass(modelName, pComponent->getElementInfo()->getName(), componentInfo.getName())) {
-      pComponent->renameComponentInConnections(componentInfo.getName());
-      pComponent->getElementInfo()->setName(componentInfo.getName());
-      pComponent->componentNameHasChanged();
-      if (pComponent->getLibraryTreeItem()->isConnector()) {
-        if (pComponent->getGraphicsView()->isIconView()) {
-          Element *pDiagramComponent = pComponent->getGraphicsView()->getModelWidget()->getDiagramGraphicsView()->getElementObject(pComponent->getName());
-          if (pDiagramComponent) {
-            pDiagramComponent->componentNameHasChanged();
-          }
-        } else {
-          Element *pIconComponent = pComponent->getGraphicsView()->getModelWidget()->getIconGraphicsView()->getElementObject(pComponent->getName());
-          if (pIconComponent) {
-            pIconComponent->componentNameHasChanged();
-          }
-        }
-      }
-    } else {
-      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), QMessageBox::Ok);
-      pOMCProxy->printMessagesStringInternal();
-    }
-  }
-  // update the component dimensions
-  if (pComponent->getElementInfo()->getArrayIndex().compare(componentInfo.getArrayIndex()) != 0) {
-    const QString arrayIndex = QString("{%1}").arg(componentInfo.getArrayIndex());
-    if (pOMCProxy->setComponentDimensions(modelName, pComponent->getElementInfo()->getName(), arrayIndex)) {
-      pComponent->getElementInfo()->setArrayIndex(arrayIndex);
-    } else {
-      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), pOMCProxy->getResult(), QMessageBox::Ok);
-      pOMCProxy->printMessagesStringInternal();
-    }
-  }
-}
-
-/*!
- * \brief UpdateComponentAttributesCommand::updateComponentModifiers
- * Applies Component modifiers
- * \param pComponent
- * \param componentInfo
- */
-void UpdateElementAttributesCommand::updateComponentModifiers(Element *pComponent, const ElementInfo &componentInfo)
-{
-  QString modelName = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-  bool modifierValueChanged = false;
-  QMap<QString, QString> modifiers = componentInfo.getModifiersMapWithoutFetching();
-  QMap<QString, QString>::iterator modifiersIterator;
-  for (modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
-    QString modifierName = QString(pComponent->getName()).append(".").append(modifiersIterator.key());
-    QString modifierValue = modifiersIterator.value();
-    if (MainWindow::instance()->getOMCProxy()->setElementModifierValueOld(modelName, modifierName, modifierValue)) {
-      modifierValueChanged = true;
-    }
-  }
-  if (modifierValueChanged) {
-    pComponent->componentParameterHasChanged();
-  }
-}
-
-UpdateElementParametersCommand::UpdateElementParametersCommand(Element *pComponent, QMap<QString, QString> oldComponentModifiersMap,
-                                                                   QMap<QString, QString> oldComponentExtendsModifiersMap,
-                                                                   QMap<QString, QString> newComponentModifiersMap,
-                                                                   QMap<QString, QString> newComponentExtendsModifiersMap,
-                                                                   UndoCommand *pParent)
-  : UndoCommand(pParent)
-{
-  mpComponent = pComponent;
-  mOldComponentModifiersMap = oldComponentModifiersMap;
-  mOldComponentExtendsModifiersMap = oldComponentExtendsModifiersMap;
-  mNewComponentModifiersMap = newComponentModifiersMap;
-  mNewComponentExtendsModifiersMap = newComponentExtendsModifiersMap;
-  setText(QString("Update Component %1 Parameters").arg(mpComponent->getName()));
-}
-
-/*!
- * \brief UpdateComponentParametersCommand::redoInternal
- * redoInternal the UpdateComponentParametersCommand.
- */
-void UpdateElementParametersCommand::redoInternal()
-{
-  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-  QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-  if (!mpComponent->getReferenceElement()) {
-    // remove all the modifiers of a component.
-    pOMCProxy->removeElementModifiers(className, mpComponent->getName());
-    // apply the new Component modifiers if any
-    QMap<QString, QString>::iterator componentModifier;
-    for (componentModifier = mNewComponentModifiersMap.begin(); componentModifier != mNewComponentModifiersMap.end(); ++componentModifier) {
-      QString modifierValue = componentModifier.value();
-      QString modifierKey = QString(mpComponent->getName()).append(".").append(componentModifier.key());
-      pOMCProxy->setElementModifierValueOld(className, modifierKey, modifierValue);
-    }
-    // we want to load modifiers even if they are loaded already
-    mpComponent->getElementInfo()->setModifiersLoaded(false);
-    mpComponent->getElementInfo()->getModifiersMap(pOMCProxy, className, mpComponent);
-  } else {
-    QString inheritedClassName;
-    inheritedClassName = mpComponent->getReferenceElement()->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-    // apply the new Component extends modifiers if any
-    QMap<QString, QString>::iterator componentExtendsModifier;
-    for (componentExtendsModifier = mNewComponentExtendsModifiersMap.begin(); componentExtendsModifier != mNewComponentExtendsModifiersMap.end(); ++componentExtendsModifier) {
-      QString modifierValue = componentExtendsModifier.value();
-      pOMCProxy->setExtendsModifierValueOld(className, inheritedClassName, componentExtendsModifier.key(), modifierValue);
-    }
-    mpComponent->getGraphicsView()->getModelWidget()->fetchExtendsModifiers(inheritedClassName);
-  }
-  mpComponent->componentParameterHasChanged();
-}
-
-/*!
- * \brief UpdateComponentParametersCommand::undo
- * Undo the UpdateComponentParametersCommand.
- */
-void UpdateElementParametersCommand::undo()
-{
-  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-  QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-  if (!mpComponent->getReferenceElement()) {
-    // remove all the modifiers of a component.
-    pOMCProxy->removeElementModifiers(className, mpComponent->getName());
-    // apply the old Component modifiers if any
-    QMap<QString, QString>::iterator componentModifier;
-    for (componentModifier = mOldComponentModifiersMap.begin(); componentModifier != mOldComponentModifiersMap.end(); ++componentModifier) {
-      QString modifierValue = componentModifier.value();
-      QString modifierKey = QString(mpComponent->getName()).append(".").append(componentModifier.key());
-      pOMCProxy->setElementModifierValueOld(className, modifierKey, modifierValue);
-    }
-    // we want to load modifiers even if they are loaded already
-    mpComponent->getElementInfo()->setModifiersLoaded(false);
-    mpComponent->getElementInfo()->getModifiersMap(pOMCProxy, className, mpComponent);
-  } else {
-    QString inheritedClassName;
-    inheritedClassName = mpComponent->getReferenceElement()->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-    // remove all the extends modifiers.
-    pOMCProxy->removeExtendsModifiers(className, inheritedClassName);
-    // apply the new Component extends modifiers if any
-    QMap<QString, QString>::iterator componentExtendsModifier;
-    for (componentExtendsModifier = mOldComponentExtendsModifiersMap.begin(); componentExtendsModifier != mOldComponentExtendsModifiersMap.end(); ++componentExtendsModifier) {
-      QString modifierValue = componentExtendsModifier.value();
-      pOMCProxy->setExtendsModifierValueOld(className, inheritedClassName, componentExtendsModifier.key(), modifierValue);
-    }
-    mpComponent->getGraphicsView()->getModelWidget()->fetchExtendsModifiers(inheritedClassName);
-  }
-  mpComponent->componentParameterHasChanged();
 }
 
 DeleteComponentCommand::DeleteComponentCommand(Element *pComponent, GraphicsView *pGraphicsView, UndoCommand *pParent)
@@ -667,12 +315,6 @@ DeleteComponentCommand::DeleteComponentCommand(Element *pComponent, GraphicsView
 {
   mpComponent = pComponent;
   mpGraphicsView = pGraphicsView;
-  if (pGraphicsView->getModelWidget()->isNewApi()) {
-
-  } else {
-    // save component modifiers before deleting if any
-    mpComponent->getElementInfo()->getModifiersMap(MainWindow::instance()->getOMCProxy(), mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mpComponent);
-  }
 }
 
 /*!
@@ -696,13 +338,11 @@ void DeleteComponentCommand::redoInternal()
       pGraphicsView->removeElementItem(pComponent);
       pGraphicsView->deleteElementFromList(pComponent);
       pGraphicsView->addElementToOutOfSceneList(pComponent);
-      pComponent->emitDeleted();
     }
   }
   mpGraphicsView->removeElementItem(mpComponent);
   mpGraphicsView->deleteElementFromList(mpComponent);
   mpGraphicsView->addElementToOutOfSceneList(mpComponent);
-  mpComponent->emitDeleted();
   mpGraphicsView->deleteElementFromClass(mpComponent);
 }
 
@@ -727,19 +367,12 @@ void DeleteComponentCommand::undo()
       pGraphicsView->addElementItem(pComponent);
       pGraphicsView->addElementToList(pComponent);
       pGraphicsView->deleteElementFromOutOfSceneList(pComponent);
-      pComponent->emitAdded();
     }
   }
   mpGraphicsView->addElementItem(mpComponent);
   mpGraphicsView->addElementToList(mpComponent);
   mpGraphicsView->deleteElementFromOutOfSceneList(mpComponent);
-  mpComponent->emitAdded();
   mpGraphicsView->addElementToClass(mpComponent);
-  if (pModelWidget->isNewApi()) {
-
-  } else {
-    UpdateElementAttributesCommand::updateComponentModifiers(mpComponent, *mpComponent->getElementInfo());
-  }
 }
 
 AddConnectionCommand::AddConnectionCommand(LineAnnotation *pConnectionLineAnnotation, bool addConnection, UndoCommand *pParent)
@@ -766,9 +399,7 @@ void AddConnectionCommand::redoInternal()
       return;
     }
   }
-  if (mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->isNewApi()) {
-    mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->setHandleCollidingConnectionsNeeded(true);
-  }
+  mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->setHandleCollidingConnectionsNeeded(true);
 }
 
 /*!
@@ -779,9 +410,7 @@ void AddConnectionCommand::undo()
 {
   mpConnectionLineAnnotation->getGraphicsView()->removeConnectionFromView(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->getGraphicsView()->deleteConnectionFromClass(mpConnectionLineAnnotation);
-  if (mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->isNewApi()) {
-    mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->setHandleCollidingConnectionsNeeded(true);
-  }
+  mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->setHandleCollidingConnectionsNeeded(true);
 }
 
 UpdateConnectionCommand::UpdateConnectionCommand(LineAnnotation *pConnectionLineAnnotation, QString oldAnnotaton, QString newAnnotation, UndoCommand *pParent)
@@ -1055,15 +684,15 @@ void DeleteInitialStateCommand::undo()
   mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToClass(mpInitialStateLineAnnotation);
 }
 
-UpdateCoOrdinateSystemCommand::UpdateCoOrdinateSystemCommand(GraphicsView *pGraphicsView, CoOrdinateSystem oldCoOrdinateSystem,
-                                                             CoOrdinateSystem newCoOrdinateSystem, bool copyProperties, const QString &oldVersion,
+UpdateCoordinateSystemCommand::UpdateCoordinateSystemCommand(GraphicsView *pGraphicsView, const ModelInstance::CoordinateSystem oldCoordinateSystem,
+                                                             const ModelInstance::CoordinateSystem newCoordinateSystem, bool copyProperties, const QString &oldVersion,
                                                              const QString &newVersion, const QString &oldUsesAnnotationString,
                                                              const QString &newUsesAnnotationString, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpGraphicsView = pGraphicsView;
-  mOldCoOrdinateSystem = oldCoOrdinateSystem;
-  mNewCoOrdinateSystem = newCoOrdinateSystem;
+  mOldCoordinateSystem = oldCoordinateSystem;
+  mNewCoordinateSystem = newCoordinateSystem;
   mCopyProperties = copyProperties;
   mOldVersion = oldVersion;
   mNewVersion = newVersion;
@@ -1073,32 +702,12 @@ UpdateCoOrdinateSystemCommand::UpdateCoOrdinateSystemCommand(GraphicsView *pGrap
 }
 
 /*!
- * \brief UpdateClassCoOrdinateSystemCommand::redoInternal
- * redoInternal the UpdateClassCoOrdinateSystemCommand.
+ * \brief UpdateClassCoordinateSystemCommand::redoInternal
+ * redoInternal the UpdateClassCoordinateSystemCommand.
  */
-void UpdateCoOrdinateSystemCommand::redoInternal()
+void UpdateCoordinateSystemCommand::redoInternal()
 {
-  mpGraphicsView->setCoOrdinateSystem(mNewCoOrdinateSystem);
-  mpGraphicsView->getModelWidget()->drawModelCoOrdinateSystem(mpGraphicsView);
-  mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->fitInViewInternal();
-  updateReferencedShapes(mpGraphicsView);
-  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitCoOrdinateSystemUpdated(mpGraphicsView);
-  // if copy properties is true
-  if (mCopyProperties) {
-    GraphicsView *pGraphicsView;
-    if (mpGraphicsView->isIconView()) {
-      pGraphicsView = mpGraphicsView->getModelWidget()->getDiagramGraphicsView();
-    } else {
-      pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
-    }
-    pGraphicsView->setCoOrdinateSystem(mNewCoOrdinateSystem);
-    pGraphicsView->getModelWidget()->drawModelCoOrdinateSystem(pGraphicsView);
-    pGraphicsView->addClassAnnotation();
-    pGraphicsView->fitInViewInternal();
-    updateReferencedShapes(pGraphicsView);
-    pGraphicsView->getModelWidget()->getLibraryTreeItem()->emitCoOrdinateSystemUpdated(pGraphicsView);
-  }
+  updateCoordinateSystem(mNewCoordinateSystem);
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   // only add version and uses annotation to top level class.
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTopLevel()) {
@@ -1117,32 +726,12 @@ void UpdateCoOrdinateSystemCommand::redoInternal()
 }
 
 /*!
- * \brief UpdateClassCoOrdinateSystemCommand::undo
- * Undo the UpdateClassCoOrdinateSystemCommand.
+ * \brief UpdateClassCoordinateSystemCommand::undo
+ * Undo the UpdateClassCoordinateSystemCommand.
  */
-void UpdateCoOrdinateSystemCommand::undo()
+void UpdateCoordinateSystemCommand::undo()
 {
-  mpGraphicsView->setCoOrdinateSystem(mOldCoOrdinateSystem);
-  mpGraphicsView->getModelWidget()->drawModelCoOrdinateSystem(mpGraphicsView);
-  mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->fitInViewInternal();
-  updateReferencedShapes(mpGraphicsView);
-  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitCoOrdinateSystemUpdated(mpGraphicsView);
-  // if copy properties is true
-  if (mCopyProperties) {
-    GraphicsView *pGraphicsView;
-    if (mpGraphicsView->isIconView()) {
-      pGraphicsView = mpGraphicsView->getModelWidget()->getDiagramGraphicsView();
-    } else {
-      pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
-    }
-    pGraphicsView->setCoOrdinateSystem(mOldCoOrdinateSystem);
-    pGraphicsView->getModelWidget()->drawModelCoOrdinateSystem(pGraphicsView);
-    pGraphicsView->addClassAnnotation();
-    pGraphicsView->fitInViewInternal();
-    updateReferencedShapes(pGraphicsView);
-    pGraphicsView->getModelWidget()->getLibraryTreeItem()->emitCoOrdinateSystemUpdated(pGraphicsView);
-  }
+  updateCoordinateSystem(mOldCoordinateSystem);
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   // only add version and uses annotation to top level class.
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTopLevel()) {
@@ -1161,18 +750,41 @@ void UpdateCoOrdinateSystemCommand::undo()
 }
 
 /*!
- * \brief UpdateCoOrdinateSystemCommand::updateReferencedShapes
- * \param pGraphicsView
+ * \brief UpdateCoordinateSystemCommand::updateCoordinateSystem
+ * Updates the coordinatesystem
+ * \param coordinateSystem
  */
-void UpdateCoOrdinateSystemCommand::updateReferencedShapes(GraphicsView *pGraphicsView)
+void UpdateCoordinateSystemCommand::updateCoordinateSystem(const ModelInstance::CoordinateSystem coordinateSystem)
 {
-  /* If preserveAspectRatio is changed emit changed signal of all the shapes so that
-   * the inherited items gets updated accordingly using the iconmap/diagrammap
-   */
-  if (mNewCoOrdinateSystem.getPreserveAspectRatio() != mOldCoOrdinateSystem.getPreserveAspectRatio()) {
-    foreach (ShapeAnnotation *pShapeAnnotation, pGraphicsView->getShapesList()) {
-      pShapeAnnotation->emitChanged();
+  if (mCopyProperties) {
+    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getIconAnnotation()->mCoordinateSystem = coordinateSystem;
+    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem = coordinateSystem;
+
+    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mCoordinateSystem = coordinateSystem;
+    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem = coordinateSystem;
+  } else if (mpGraphicsView->isIconView()) {
+    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getIconAnnotation()->mCoordinateSystem = coordinateSystem;
+    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem = coordinateSystem;
+  } else {
+    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mCoordinateSystem = coordinateSystem;
+    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem = coordinateSystem;
+  }
+  mpGraphicsView->getModelWidget()->getModelInstance()->updateMergedCoordinateSystem();
+
+  mpGraphicsView->drawCoordinateSystem();
+  mpGraphicsView->addClassAnnotation();
+  mpGraphicsView->fitInViewInternal();
+  // if copy properties is true
+  if (mCopyProperties) {
+    GraphicsView *pGraphicsView;
+    if (mpGraphicsView->isIconView()) {
+      pGraphicsView = mpGraphicsView->getModelWidget()->getDiagramGraphicsView();
+    } else {
+      pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
     }
+    pGraphicsView->drawCoordinateSystem();
+    pGraphicsView->addClassAnnotation();
+    pGraphicsView->fitInViewInternal();
   }
 }
 

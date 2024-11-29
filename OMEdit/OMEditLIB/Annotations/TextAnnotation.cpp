@@ -80,15 +80,6 @@ TextAnnotation::TextAnnotation(ModelInstance::Text *pText, bool inherited, Graph
   setShapeFlags(true);
 }
 
-TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
-  : ShapeAnnotation(pShapeAnnotation, pParent), mpElement(pParent)
-{
-  mpOriginItem = 0;
-  updateShape(pShapeAnnotation);
-  initUpdateTextString();
-  applyTransformation();
-}
-
 TextAnnotation::TextAnnotation(ModelInstance::Text *pText, Element *pParent)
   : ShapeAnnotation(pParent), mpElement(pParent)
 {
@@ -104,16 +95,13 @@ TextAnnotation::TextAnnotation(ModelInstance::Text *pText, Element *pParent)
   applyTransformation();
 }
 
-TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
+TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
+    : ShapeAnnotation(pShapeAnnotation, pParent), mpElement(pParent)
 {
-  mpElement = 0;
-  mpOriginItem = new OriginItem(this);
-  mpOriginItem->setPassive();
+  mpOriginItem = 0;
   updateShape(pShapeAnnotation);
-  setShapeFlags(true);
-  mpGraphicsView->addItem(this);
-  mpGraphicsView->addItem(mpOriginItem);
+  initUpdateTextString();
+  applyTransformation();
 }
 
 TextAnnotation::TextAnnotation(Element *pParent)
@@ -334,7 +322,7 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     // state machine visualization
     // text annotation on a element
     if (mpElement && mpElement->getGraphicsView()->isVisualizationView()
-        && ((mpElement->getGraphicsView()->getModelWidget()->isNewApi() && mpElement->getModel() && mpElement->getModel()->getAnnotation()->isState())
+        && ((mpElement->getModel() && mpElement->getModel()->getAnnotation()->isState())
             || (mpElement->getLibraryTreeItem() && mpElement->getLibraryTreeItem()->isState()))) {
       if (mpElement->isActiveState()) {
         painter->setOpacity(1.0);
@@ -550,7 +538,6 @@ void TextAnnotation::initUpdateTextString()
   if (mpElement) {
     if (mOriginalTextString.contains("%")) {
       updateTextString();
-      connect(mpElement, SIGNAL(displayTextChanged()), SLOT(updateTextString()), Qt::UniqueConnection);
     }
   }
 }
@@ -577,25 +564,13 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
           QString textValue = parameterValue.first;
           QPair<QString, bool> unit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "unit");
           QPair<QString, bool> displayUnit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "displayUnit");
-          if (MainWindow::instance()->isNewApi()) {
-            ModelInstance::Component* pModelComponent = Element::getModelComponentByName(mpElement->getRootParentElement()->getModel(), variable);
-            if (pModelComponent) {
-              if (!displayUnit.second) {
-                displayUnit = pModelComponent->getModifierValueFromType(QStringList() << "displayUnit");
-              }
-              if (!unit.second) {
-                unit = pModelComponent->getModifierValueFromType(QStringList() << "unit");
-              }
+          ModelInstance::Component* pModelComponent = Element::getModelComponentByName(mpElement->getRootParentElement()->getModel(), variable);
+          if (pModelComponent) {
+            if (!displayUnit.second) {
+              displayUnit = pModelComponent->getModifierValueFromType(QStringList() << "displayUnit");
             }
-          } else {
-            Element *pElement = mpElement->getRootParentElement()->getElementByName(variable);
-            if (pElement) {
-              if (displayUnit.first.isEmpty()) {
-                displayUnit.first = pElement->getDerivedClassModifierValue("displayUnit");
-              }
-              if (unit.first.isEmpty()) {
-                unit.first = pElement->getDerivedClassModifierValue("unit");
-              }
+            if (!unit.second) {
+              unit = pModelComponent->getModifierValueFromType(QStringList() << "unit");
             }
           }
           // if display unit is still empty then use unit
@@ -665,15 +640,11 @@ void TextAnnotation::updateTextString()
       return;
     }
     if (mTextString.toLower().contains("%name")) {
-      if (mpElement->getGraphicsView()->getModelWidget()->isNewApi()) {
-        QString name = mpElement->getName();
-        if (mpElement->getModelComponent() && mpElement->getModelComponent()->getDimensions().isArray()) {
-          name.append("[" % mpElement->getModelComponent()->getDimensions().getTypedDimensionsString() % "]");
-        }
-        mTextString.replace(QRegExp("%name"), name);
-      } else {
-        mTextString.replace(QRegExp("%name"), mpElement->getName());
+      QString name = mpElement->getName();
+      if (mpElement->getModelComponent() && mpElement->getModelComponent()->getDimensions().isArray()) {
+        name.append("[" % mpElement->getModelComponent()->getDimensions().getTypedDimensionsString() % "]");
       }
+      mTextString.replace(QRegExp("%name"), name);
     }
     if (mTextString.toLower().contains("%class")) {
       mTextString.replace(QRegExp("%class"), mpElement->getClassName());
@@ -700,15 +671,14 @@ void TextAnnotation::duplicate()
 {
   TextAnnotation *pTextAnnotation = new TextAnnotation("", mpGraphicsView);
   pTextAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5,
-                   mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
+  QPointF gridStep(mpGraphicsView->mMergedCoordinateSystem.getHorizontalGridStep() * 5,
+                   mpGraphicsView->mMergedCoordinateSystem.getVerticalGridStep() * 5);
   pTextAnnotation->setOrigin(mOrigin + gridStep);
   pTextAnnotation->drawCornerItems();
   pTextAnnotation->setCornerItemsActiveOrPassive();
   pTextAnnotation->applyTransformation();
   pTextAnnotation->update();
   mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pTextAnnotation));
-  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pTextAnnotation, mpGraphicsView);
   setSelected(false);
   pTextAnnotation->setSelected(true);
 }

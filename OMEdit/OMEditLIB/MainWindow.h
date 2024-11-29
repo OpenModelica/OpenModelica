@@ -108,10 +108,6 @@ public:
   void setUpMainWindow(threadData_t *threadData);
   bool isDebug() const {return mDebug;}
   void setDebug(bool debug) {mDebug = debug;}
-  bool isNewApi() const {return mNewApi;}
-  void setNewApi(bool newApi) {mNewApi = newApi;}
-  bool isNewApiCommandLine() const {return mNewApiCommandLine;}
-  void setNewApiCommandLine(bool newApiCommandLine) {mNewApiCommandLine = newApiCommandLine;}
   bool isNewApiProfiling() const {return mNewApiProfiling;}
   void setNewApiProfiling(bool newApiProfiling);
   bool isTestsuiteRunning() const {return mTestsuiteRunning;}
@@ -263,8 +259,6 @@ public:
   QList<QString> mMOLDirectoriesList;
 private:
   bool mDebug;
-  bool mNewApi;
-  bool mNewApiCommandLine;
   bool mNewApiProfiling;
   FILE *mpNewApiProfilingFile = nullptr;
   bool mTestsuiteRunning;

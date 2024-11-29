@@ -749,8 +749,8 @@ void AddConnectorDialog::addConnector()
   if (OMSProxy::instance()->addConnector(nameStructure, causality, signalType)) {
     if (mpGraphicsView->mContextMenuStartPositionValid) {
       ssd_connector_geometry_t connectorGeometry;
-      connectorGeometry.x = Utilities::mapToCoOrdinateSystem(mpGraphicsView->mContextMenuStartPosition.x(), -100, 100, 0, 1);
-      connectorGeometry.y = Utilities::mapToCoOrdinateSystem(mpGraphicsView->mContextMenuStartPosition.y(), -100, 100, 0, 1);
+      connectorGeometry.x = Utilities::mapToCoordinateSystem(mpGraphicsView->mContextMenuStartPosition.x(), -100, 100, 0, 1);
+      connectorGeometry.y = Utilities::mapToCoordinateSystem(mpGraphicsView->mContextMenuStartPosition.y(), -100, 100, 0, 1);
       OMSProxy::instance()->setConnectorGeometry(nameStructure, &connectorGeometry);
     }
     mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Add connector %1").arg(nameStructure));

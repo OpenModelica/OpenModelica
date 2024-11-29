@@ -44,7 +44,7 @@ public:
   explicit FunctionArgumentDialog(LibraryTreeItem *pLibraryTreeItem, QWidget *parent = 0);
   QString getFunctionCallCommand();
 private:
-  bool isInput(ElementInfo *pComponentInfo);
+  bool isInput(const ElementInfo &elementInfo);
 
   LibraryTreeItem *mpLibraryTreeItem;
   QList<ElementInfo*> mComponents;

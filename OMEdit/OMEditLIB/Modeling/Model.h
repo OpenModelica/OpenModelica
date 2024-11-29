@@ -276,7 +276,7 @@ private:
     bool isGraphicsEmpty() const {return mGraphics.isEmpty();}
 
     CoordinateSystem mCoordinateSystem;
-    CoordinateSystem mMergedCoOrdinateSystem;
+    CoordinateSystem mMergedCoordinateSystem;
   private:
     Model *mpParentModel;
     QList<Shape*> mGraphics;
@@ -593,6 +593,7 @@ private:
     virtual ~Model();
     void deserialize();
     void deserializeElements(const QJsonArray elements);
+    void updateMergedCoordinateSystem();
 
     Element *getParentElement() const {return mpParentElement;}
     Element *getRootParentElement() const;

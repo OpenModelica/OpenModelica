@@ -748,7 +748,6 @@ void ShapePropertiesDialog::removePoint()
 void ShapePropertiesDialog::saveShapeProperties()
 {
   if (applyShapeProperties()) {
-    mpShapeAnnotation->emitChanged();
     accept();
   }
 }

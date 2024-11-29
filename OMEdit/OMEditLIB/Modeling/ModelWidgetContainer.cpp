@@ -158,43 +158,7 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
   setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
   setMouseTracking(true);
   mpModelWidget = pModelWidget;
-  // set the coOrdinate System
-  mCoOrdinateSystem = CoOrdinateSystem();
-  // if it is a new model then use the values from options
-  if (!mpModelWidget->getLibraryTreeItem()->isSaved()) {
-    GraphicalViewsPage *pGraphicalViewsPage;
-    pGraphicalViewsPage = OptionsDialog::instance()->getGraphicalViewsPage();
-    const qreal left = isIconView() ? pGraphicalViewsPage->getIconViewExtentLeft() : pGraphicalViewsPage->getDiagramViewExtentLeft();
-    const qreal bottom = isIconView() ? pGraphicalViewsPage->getIconViewExtentBottom() : pGraphicalViewsPage->getDiagramViewExtentBottom();
-    const qreal right = isIconView() ? pGraphicalViewsPage->getIconViewExtentRight() : pGraphicalViewsPage->getDiagramViewExtentRight();
-    const qreal top = isIconView() ? pGraphicalViewsPage->getIconViewExtentTop() : pGraphicalViewsPage->getDiagramViewExtentTop();
-    if (!qFuzzyCompare(left, -100) || !qFuzzyCompare(bottom, -100) || !qFuzzyCompare(right, 100) || !qFuzzyCompare(top, 100)) {
-      QVector<QPointF> extent;
-      extent.append(QPointF(left, bottom));
-      extent.append(QPointF(right, top));
-      mCoOrdinateSystem.setExtent(extent);
-    }
-
-    const bool preserveAspectRatio = isIconView() ? pGraphicalViewsPage->getIconViewPreserveAspectRation() : pGraphicalViewsPage->getDiagramViewPreserveAspectRation();
-    if (!preserveAspectRatio) {
-      mCoOrdinateSystem.setPreserveAspectRatio(preserveAspectRatio);
-    }
-
-    const qreal initialScale = isIconView() ? pGraphicalViewsPage->getIconViewScaleFactor() : pGraphicalViewsPage->getDiagramViewScaleFactor();
-    if (!qFuzzyCompare(initialScale, 0.1)) {
-      mCoOrdinateSystem.setInitialScale(initialScale);
-    }
-
-    const qreal horizontal = isIconView() ? pGraphicalViewsPage->getIconViewGridHorizontal() : pGraphicalViewsPage->getDiagramViewGridHorizontal();
-    const qreal vertical = isIconView() ? pGraphicalViewsPage->getIconViewGridVertical() : pGraphicalViewsPage->getDiagramViewGridVertical();
-    if (!qFuzzyCompare(horizontal, 2) || !qFuzzyCompare(vertical, 2)) {
-      mCoOrdinateSystem.setGrid(QPointF(horizontal, vertical));
-    }
-    setExtentRectangle(mCoOrdinateSystem.getExtentRectangle(), true);
-  } else { // when opening a model use the default Modelica specification values
-    setExtentRectangle(mCoOrdinateSystem.getExtentRectangle(), true);
-  }
-  mMergedCoOrdinateSystem = mCoOrdinateSystem;
+  setExtentRectangle(mCoordinateSystem.getExtentRectangle(), true);
   scale(1.0, -1.0);     // invert the drawing area.
   setIsCustomScale(false);
   setAddClassAnnotationNeeded(false);
@@ -271,6 +235,16 @@ GraphicsView::~GraphicsView()
   }
 }
 
+/*!
+ * \brief GraphicsView::resetCoordinateSystem
+ * Resets the coordinate system
+ */
+void GraphicsView::resetCoordinateSystem()
+{
+  mCoordinateSystem = ModelInstance::CoordinateSystem();
+  mMergedCoordinateSystem = mCoordinateSystem;
+}
+
 void GraphicsView::setIsVisualizationView(bool visualizationView)
 {
   setItemsFlags(!visualizationView);
@@ -283,50 +257,15 @@ void GraphicsView::setIsVisualizationView(bool visualizationView)
  */
 void GraphicsView::drawCoordinateSystem()
 {
-  ModelInstance::CoordinateSystem coordinateSystem;
   if (isIconView() && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
-    coordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getIconAnnotation()->mCoordinateSystem;
+    mCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getIconAnnotation()->mCoordinateSystem;
+    mMergedCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem;
+    setExtentRectangle(mMergedCoordinateSystem.getExtentRectangle(), false);
   } else if (isDiagramView() && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-    coordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mCoordinateSystem;
+    mCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mCoordinateSystem;
+    mMergedCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem;
+    setExtentRectangle(mMergedCoordinateSystem.getExtentRectangle(), false);
   }
-
-  if (coordinateSystem.hasExtent()) {
-    mCoOrdinateSystem.setExtent(coordinateSystem.getExtent());
-  }
-  if (coordinateSystem.hasPreserveAspectRatio()) {
-    mCoOrdinateSystem.setPreserveAspectRatio(coordinateSystem.getPreserveAspectRatio());
-  }
-  if (coordinateSystem.hasInitialScale()) {
-    mCoOrdinateSystem.setInitialScale(coordinateSystem.getInitialScale());
-  }
-  if (coordinateSystem.hasGrid()) {
-    mCoOrdinateSystem.setGrid(coordinateSystem.getGrid());
-  }
-  mMergedCoOrdinateSystem = mCoOrdinateSystem;
-  // if local CoOrdinateSystem is not complete then try to complete the merged CoOrdinateSystem.
-  if (!mCoOrdinateSystem.isComplete()) {
-    ModelInstance::CoordinateSystem mergedCoordinateSystem;
-    if (isIconView() && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
-      mergedCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem;
-    } else if (isDiagramView() && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
-      mergedCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mMergedCoOrdinateSystem;
-    }
-
-    if (mergedCoordinateSystem.hasExtent()) {
-      mMergedCoOrdinateSystem.setExtent(mergedCoordinateSystem.getExtent());
-    }
-    if (mergedCoordinateSystem.hasPreserveAspectRatio()) {
-      mMergedCoOrdinateSystem.setPreserveAspectRatio(mergedCoordinateSystem.getPreserveAspectRatio());
-    }
-    if (mergedCoordinateSystem.hasInitialScale()) {
-      mMergedCoOrdinateSystem.setInitialScale(mergedCoordinateSystem.getInitialScale());
-    }
-    if (mergedCoordinateSystem.hasGrid()) {
-      mMergedCoOrdinateSystem.setGrid(mergedCoordinateSystem.getGrid());
-    }
-  }
-
-  setExtentRectangle(mMergedCoOrdinateSystem.getExtentRectangle(), false);
   resize(size());
 }
 
@@ -442,7 +381,7 @@ void GraphicsView::drawElements(ModelInstance::Model *pModelInstance, bool inher
             Element *pDiagramElement = modelInfo.mDiagramElementsList.at(elementIndex);
             if (pDiagramElement) {
               pDiagramElement->setModelComponent(pModelInstanceComponent);
-              pDiagramElement->reDrawElementNew();
+              pDiagramElement->reDrawElement();
               pDiagramGraphicsView->addElementItem(pDiagramElement);
               pDiagramGraphicsView->addElementToList(pDiagramElement);
               pDiagramGraphicsView->deleteElementFromOutOfSceneList(pDiagramElement);
@@ -450,7 +389,7 @@ void GraphicsView::drawElements(ModelInstance::Model *pModelInstance, bool inher
                 Element *pIconElement = modelInfo.mIconElementsList.at(connectorIndex);
                 if (pIconElement) {
                   pIconElement->setModelComponent(pModelInstanceComponent);
-                  pIconElement->reDrawElementNew();
+                  pIconElement->reDrawElement();
                   pIconGraphicsView->addElementItem(pIconElement);
                   pIconGraphicsView->addElementToList(pIconElement);
                   pIconGraphicsView->deleteElementFromOutOfSceneList(pIconElement);
@@ -937,7 +876,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
   // Only allow drag & drop of Modelica LibraryTreeItem on a Modelica LibraryTreeItem
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType() != pLibraryTreeItem->getLibraryType()) {
     QMessageBox::information(pMainWindow, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
-                              tr("You can only drag & drop Modelica models."), QMessageBox::Ok);
+                             tr("You can only drag & drop Modelica models."), QMessageBox::Ok);
     return false;
   }
   StringHandler::ModelicaClasses type = pLibraryTreeItem->getRestriction();
@@ -950,71 +889,35 @@ bool GraphicsView::addComponent(QString className, QPointF position)
     if (!performElementCreationChecks(pLibraryTreeItem->getNameStructure(), pLibraryTreeItem->isPartial(), &name, &defaultPrefix)) {
       return false;
     }
-    ElementInfo *pElementInfo;
-    if (!mpModelWidget->isNewApi()) {
-      pElementInfo = new ElementInfo;
-      pElementInfo->applyDefaultPrefixes(defaultPrefix);
-    }
     // If dropping an item on the diagram layer. If item is a class, model, block, connector or record. then we can drop it to the graphicsview
     // If dropping an item on the icon layer. If item is a connector. then we can drop it to the graphicsview
     if ((isDiagramView() && ((type == StringHandler::Class) || (type == StringHandler::Model) || (type == StringHandler::Block) ||
-                                                  (type == StringHandler::ExpandableConnector) || (type == StringHandler::Connector) || (type == StringHandler::Record)))
+                             (type == StringHandler::ExpandableConnector) || (type == StringHandler::Connector) || (type == StringHandler::Record)))
         || (isIconView() && (type == StringHandler::Connector || type == StringHandler::ExpandableConnector))) {
-      if (mpModelWidget->isNewApi()) {
-        ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
-        ModelInstance::Component *pComponent = GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), name, pLibraryTreeItem->getNameStructure());
-        if (pComponent) {
-          addElementToView(pComponent, false, true, true, position, "", true);
-          ModelInfo newModelInfo = mpModelWidget->createModelInfo();
-          mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Element", true));
-          mpModelWidget->updateModelText();
-        } else {
-          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Failed to add component <b>%1</b>.").arg(name),
-                                                                Helper::scriptingKind, Helper::errorLevel));
-        }
+      ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
+      ModelInstance::Component *pComponent = GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), name, pLibraryTreeItem->getNameStructure());
+      if (pComponent) {
+        addElementToView(pComponent, false, true, true, position, "", true);
+        ModelInfo newModelInfo = mpModelWidget->createModelInfo();
+        mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Element", true));
+        mpModelWidget->updateModelText();
       } else {
-        addComponentToView(name, pLibraryTreeItem, "", position, pElementInfo, true, false, true);
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Failed to add component <b>%1</b>.").arg(name),
+                                                              Helper::scriptingKind, Helper::errorLevel));
       }
       return true;
     } else {
       if (isDiagramView()) {
         QMessageBox::information(pMainWindow, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
-                                  GUIMessages::getMessage(GUIMessages::DIAGRAM_VIEW_DROP_MSG).arg(pLibraryTreeItem->getNameStructure())
-                                  .arg(StringHandler::getModelicaClassType(type)), QMessageBox::Ok);
+                                 GUIMessages::getMessage(GUIMessages::DIAGRAM_VIEW_DROP_MSG).arg(pLibraryTreeItem->getNameStructure())
+                                 .arg(StringHandler::getModelicaClassType(type)), QMessageBox::Ok);
       } else {
         QMessageBox::information(pMainWindow, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
-                                  GUIMessages::getMessage(GUIMessages::ICON_VIEW_DROP_MSG).arg(pLibraryTreeItem->getNameStructure())
-                                  .arg(StringHandler::getModelicaClassType(type)), QMessageBox::Ok);
+                                 GUIMessages::getMessage(GUIMessages::ICON_VIEW_DROP_MSG).arg(pLibraryTreeItem->getNameStructure())
+                                 .arg(StringHandler::getModelicaClassType(type)), QMessageBox::Ok);
       }
       return false;
     }
-  }
-  return false;
-}
-
-/*!
- * \brief GraphicsView::addComponentToView
- * Adds the Component to the Graphical Views.
- * \param name
- * \param pLibraryTreeItem
- * \param annotation
- * \param position
- * \param pComponentInfo
- * \param addObject
- * \param openingClass
- * \param emitComponentAdded
- */
-void GraphicsView::addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
-                                      ElementInfo *pComponentInfo, bool addObject, bool openingClass, bool emitComponentAdded)
-{
-  AddComponentCommand *pAddComponentCommand;
-  pAddComponentCommand = new AddComponentCommand(name, pLibraryTreeItem, annotation, position, pComponentInfo, addObject, openingClass, this);
-  mpModelWidget->getUndoStack()->push(pAddComponentCommand);
-  if (emitComponentAdded) {
-    mpModelWidget->getLibraryTreeItem()->emitComponentAdded(pAddComponentCommand->getComponent());
-  }
-  if (!openingClass) {
-    mpModelWidget->updateModelText();
   }
 }
 
@@ -1029,7 +932,8 @@ void GraphicsView::addComponentToView(QString name, LibraryTreeItem *pLibraryTre
  * \param placementAnnotation
  * \param clearSelection
  */
-void GraphicsView::addElementToView(ModelInstance::Component *pComponent, bool inherited, bool addElementToOMC, bool createTransformation, QPointF position, const QString &placementAnnotation, bool clearSelection)
+void GraphicsView::addElementToView(ModelInstance::Component *pComponent, bool inherited, bool addElementToOMC, bool createTransformation, QPointF position,
+                                    const QString &placementAnnotation, bool clearSelection)
 {
   Element *pIconElement = 0;
   Element *pDiagramElement = 0;
@@ -1218,8 +1122,7 @@ void GraphicsView::deleteElement(Element *pElement)
   pElement->setSelected(false);
   if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
     OMSProxy::instance()->omsDelete(pElement->getLibraryTreeItem()->getNameStructure());
-    pElement->emitDeleted();
-  } else if (mpModelWidget->isNewApi()) {
+  } else {
     if (pElement->getModel() && pElement->getModel()->isConnector()) {
       GraphicsView *pGraphicsView;
       if (isIconView()) {
@@ -1244,8 +1147,6 @@ void GraphicsView::deleteElement(Element *pElement)
     pElement->removeChildrenNew();
     pElement->setModelComponent(nullptr);
     pElement->setModel(nullptr);
-  } else {
-    mpModelWidget->getUndoStack()->push(new DeleteComponentCommand(pElement, this));
   }
 }
 
@@ -1504,9 +1405,6 @@ void GraphicsView::addConnectionToView(LineAnnotation *pConnectionLineAnnotation
   }
   addItem(pConnectionLineAnnotation);
   deleteConnectionFromOutOfSceneList(pConnectionLineAnnotation);
-  if (!mpModelWidget->isNewApi()) {
-    pConnectionLineAnnotation->emitAdded();
-  }
 }
 
 /*!
@@ -1735,9 +1633,6 @@ void GraphicsView::removeConnectionFromView(LineAnnotation *pConnectionLineAnnot
   deleteConnectionFromList(pConnectionLineAnnotation);
   addConnectionToOutOfSceneList(pConnectionLineAnnotation);
   removeItem(pConnectionLineAnnotation);
-  if (!mpModelWidget->isNewApi()) {
-    pConnectionLineAnnotation->emitDeleted();
-  }
 }
 
 /*!
@@ -1828,10 +1723,6 @@ void GraphicsView::addTransitionToView(LineAnnotation *pTransitionLineAnnotation
   }
 
   addItem(pTransitionLineAnnotation);
-  if (!mpModelWidget->isNewApi()) {
-    deleteTransitionFromOutOfSceneList(pTransitionLineAnnotation);
-    pTransitionLineAnnotation->emitAdded();
-  }
 }
 
 /*!
@@ -1867,9 +1758,6 @@ void GraphicsView::removeTransitionFromView(LineAnnotation *pTransitionLineAnnot
     pTransitionLineAnnotation->updateTransitionTextPosition();
   }
   removeItem(pTransitionLineAnnotation);
-  if (!mpModelWidget->isNewApi()) {
-    pTransitionLineAnnotation->emitDeleted();
-  }
 }
 
 /*!
@@ -1914,10 +1802,6 @@ void GraphicsView::addInitialStateToView(LineAnnotation *pInitialStateLineAnnota
   }
 
   addItem(pInitialStateLineAnnotation);
-  if (!mpModelWidget->isNewApi()) {
-    deleteInitialStateFromOutOfSceneList(pInitialStateLineAnnotation);
-    pInitialStateLineAnnotation->emitAdded();
-  }
 }
 
 /*!
@@ -1945,7 +1829,6 @@ void GraphicsView::removeInitialStateFromView(LineAnnotation *pInitialStateLineA
   deleteInitialStateFromList(pInitialStateLineAnnotation);
   addInitialStateToOutOfSceneList(pInitialStateLineAnnotation);
   removeItem(pInitialStateLineAnnotation);
-  pInitialStateLineAnnotation->emitDeleted();
 }
 
 /*!
@@ -2177,7 +2060,6 @@ void GraphicsView::removeClassComponents()
     delete pElement->getTopLeftResizerItem();
     delete pElement->getTopRightResizerItem();
     delete pElement->getBottomRightResizerItem();
-    pElement->emitDeleted();
     delete pElement;
   }
 }
@@ -2222,7 +2104,6 @@ void GraphicsView::removeOutOfSceneClassComponents()
     delete pComponent->getTopLeftResizerItem();
     delete pComponent->getTopRightResizerItem();
     delete pComponent->getBottomRightResizerItem();
-    pComponent->emitDeleted();
     delete pComponent;
   }
 }
@@ -2256,7 +2137,6 @@ void GraphicsView::removeInheritedClassElements()
     delete pElement->getTopLeftResizerItem();
     delete pElement->getTopRightResizerItem();
     delete pElement->getBottomRightResizerItem();
-    pElement->emitDeleted();
     delete pElement;
   }
 }
@@ -2585,7 +2465,6 @@ void GraphicsView::checkEmitUpdateSelect(const bool showPropertiesAndSelect, Sha
 {
   MainWindow *pMainWindow = MainWindow::instance();
   pMainWindow->getConnectModeAction()->setChecked(true);
-  mpModelWidget->getLibraryTreeItem()->emitShapeAdded(shapeAnnotation, this);
   if (showPropertiesAndSelect) {
     shapeAnnotation->showShapeProperties();
     // set the focus back on GraphicsView once the shape properties dialog is closed.
@@ -2667,8 +2546,8 @@ QRectF GraphicsView::itemsBoundingRect()
 
 QPointF GraphicsView::snapPointToGrid(QPointF point)
 {
-  qreal stepX = mMergedCoOrdinateSystem.getHorizontalGridStep();
-  qreal stepY = mMergedCoOrdinateSystem.getVerticalGridStep();
+  qreal stepX = mMergedCoordinateSystem.getHorizontalGridStep();
+  qreal stepY = mMergedCoordinateSystem.getVerticalGridStep();
   point.setX(stepX * qFloor((point.x() / stepX) + 0.5));
   point.setY(stepY * qFloor((point.y() / stepY) + 0.5));
   return point;
@@ -2676,8 +2555,8 @@ QPointF GraphicsView::snapPointToGrid(QPointF point)
 
 QPointF GraphicsView::movePointByGrid(QPointF point, QPointF origin, bool useShiftModifier)
 {
-  qreal stepX = mMergedCoOrdinateSystem.getHorizontalGridStep() * ((useShiftModifier && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) ? 5 : 1);
-  qreal stepY = mMergedCoOrdinateSystem.getVerticalGridStep() * ((useShiftModifier && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) ? 5 : 1);
+  qreal stepX = mMergedCoordinateSystem.getHorizontalGridStep() * ((useShiftModifier && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) ? 5 : 1);
+  qreal stepY = mMergedCoordinateSystem.getVerticalGridStep() * ((useShiftModifier && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) ? 5 : 1);
   if (useShiftModifier && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
     int modX = (int)qFabs(origin.x()) % (int)stepX;
     int modY = (int)qFabs(origin.y()) % (int)stepY;
@@ -2772,7 +2651,7 @@ void GraphicsView::fitInViewInternal()
   // only resize the view if user has not set any custom scaling like zoom in and zoom out.
   if (!isCustomScale()) {
     // make the fitInView rectangle bigger so that the scene rectangle will show up properly on the screen.
-    QRectF extentRectangle = mMergedCoOrdinateSystem.getExtentRectangle();
+    QRectF extentRectangle = mMergedCoordinateSystem.getExtentRectangle();
     qreal x1, y1, x2, y2;
     extentRectangle.getCoords(&x1, &y1, &x2, &y2);
     extentRectangle.setCoords(x1 -5, y1 -5, x2 + 5, y2 + 5);
@@ -2989,15 +2868,10 @@ bool GraphicsView::isAnyItemSelectedAndEditable(int key)
 void GraphicsView::duplicateItems(const QString &action)
 {
   mpModelWidget->beginMacro(action);
-  ModelInfo oldModelInfo;
-  if (mpModelWidget->isNewApi()) {
-    oldModelInfo = mpModelWidget->createModelInfo();
-  }
+  ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
   emit duplicate();
-  if (mpModelWidget->isNewApi()) {
-    ModelInfo newModelInfo = mpModelWidget->createModelInfo();
-    mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, action));
-  }
+  ModelInfo newModelInfo = mpModelWidget->createModelInfo();
+  mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, action));
   mpModelWidget->updateClassAnnotationIfNeeded();
   mpModelWidget->updateModelText();
   mpModelWidget->endMacro();
@@ -3039,10 +2913,7 @@ Element* GraphicsView::elementAtPosition(QPoint position)
   foreach (QGraphicsItem *pGraphicsItem, graphicsItems) {
     Element *pElement = getElementFromQGraphicsItem(pGraphicsItem);
     if (pElement) {
-      Element *pRootElement = pElement->getRootParentElement();
-      if (pRootElement && ((pRootElement->getLibraryTreeItem() && !pRootElement->getLibraryTreeItem()->isNonExisting()) || (mpModelWidget->isNewApi()))) {
-        return pRootElement;
-      }
+      return pElement->getRootParentElement();
     }
   }
   return 0;
@@ -3070,13 +2941,13 @@ Element* GraphicsView::connectorElementAtPosition(QPoint position)
         return 0;
       } else if (pRootElement && !pRootElement->isSelected()) {
         // Issue #11310. If both root and element are connectors then use the root.
-        if ((mpModelWidget->isNewApi() && pRootElement->getModel() && pRootElement->getModel()->isConnector() && pElement && pElement->getModel() && pElement->getModel()->isConnector())
+        if ((pRootElement->getModel() && pRootElement->getModel()->isConnector() && pElement && pElement->getModel() && pElement->getModel()->isConnector())
             || (pRootElement->getLibraryTreeItem() && pRootElement->getLibraryTreeItem()->isConnector() && pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isConnector())) {
           pElement = pRootElement;
         }
         if (MainWindow::instance()->getConnectModeAction()->isChecked() && isDiagramView() &&
             !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) &&
-            ((mpModelWidget->isNewApi() && pElement->getModel() && pElement->getModel()->isConnector()) ||
+            ((pElement->getModel() && pElement->getModel()->isConnector()) ||
              (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isConnector()) ||
              (mpModelWidget->getLibraryTreeItem()->isSSP() &&
               (pElement->getLibraryTreeItem()->getOMSConnector() || pElement->getLibraryTreeItem()->getOMSBusConnector()
@@ -3104,15 +2975,14 @@ Element* GraphicsView::stateElementAtPosition(QPoint position)
       Element *pRootElement = pElement->getRootParentElement();
       if (pRootElement && !pRootElement->isSelected()) {
         // Issue #11310. If both root and element are connectors then use the root.
-        if ((mpModelWidget->isNewApi() && pRootElement->getModel() && pRootElement->getModel()->getAnnotation()->isState() && pElement && pElement->getModel() && pElement->getModel()->getAnnotation()->isState())
+        if ((pRootElement->getModel() && pRootElement->getModel()->getAnnotation()->isState() && pElement && pElement->getModel() && pElement->getModel()->getAnnotation()->isState())
             || (pRootElement->getLibraryTreeItem() && pRootElement->getLibraryTreeItem()->isState() && pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isState())) {
           pElement = pRootElement;
         }
         if (MainWindow::instance()->getTransitionModeAction()->isChecked() && isDiagramView() &&
             !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) &&
-            ((mpModelWidget->isNewApi() && pElement->getModel() && pElement->getModel()->getAnnotation()->isState()) ||
-             (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isModelica() &&
-              !pElement->getLibraryTreeItem()->isNonExisting() && pElement->getLibraryTreeItem()->isState()))) {
+            ((pElement->getModel() && pElement->getModel()->getAnnotation()->isState()) ||
+             (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isModelica() && pElement->getLibraryTreeItem()->isState()))) {
           return pElement;
         }
       }
@@ -3138,7 +3008,7 @@ bool GraphicsView::updateElementConnectorSizingParameter(GraphicsView *pGraphics
       QString parameter = parameters.at(0);
       int numberOfElementConnections = pGraphicsView->numberOfElementConnections(pElement);
       // if the connectorSizing parameter is in this class
-      if (pGraphicsView->getModelWidget()->isNewApi() && pGraphicsView->getModelWidget()->getModelInstance()->isParameterConnectorSizing(parameter)) {
+      if (pGraphicsView->getModelWidget()->getModelInstance()->isParameterConnectorSizing(parameter)) {
         MainWindow::instance()->getOMCProxy()->setParameterValue(className, parameter, QString::number(numberOfElementConnections));
         return true;
       } else {
@@ -3259,23 +3129,10 @@ void GraphicsView::addConnection(Element *pElement, bool createConnector)
              || (pStartRootParentElement && (pStartRootParentElement->isExpandableConnector() || pStartRootParentElement->isArray())))
             && (!(pElement->isExpandableConnector() || pElement->isArray()
                 || (pRootParentElement && (pRootParentElement->isExpandableConnector() || pRootParentElement->isArray()))))) {
-          if (mpModelWidget->isNewApi() && pElement->getModel()) {
+          if (pElement->getModel()) {
             QList<ModelInstance::Shape*> shapes = pElement->getModel()->getAnnotation()->getIconAnnotation()->getGraphics();
             if (!shapes.isEmpty()) {
               mpConnectionLineAnnotation->setLineColor(shapes.at(0)->getLineColor());
-            } else if (pElement->getShapesList().size() > 0) {
-              ShapeAnnotation *pShapeAnnotation = pElement->getShapesList().at(0);
-              mpConnectionLineAnnotation->setLineColor(pShapeAnnotation->getLineColor());
-            }
-          } else if (pElement->getLibraryTreeItem()) {
-            if (!pElement->getLibraryTreeItem()->getModelWidget()) {
-              MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pElement->getLibraryTreeItem(), false);
-            }
-            ShapeAnnotation *pShapeAnnotation;
-            if (pElement->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()
-                && pElement->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()->getShapesList().size() > 0) {
-              pShapeAnnotation = pElement->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()->getShapesList().at(0);
-              mpConnectionLineAnnotation->setLineColor(pShapeAnnotation->getLineColor());
             } else if (pElement->getShapesList().size() > 0) {
               ShapeAnnotation *pShapeAnnotation = pElement->getShapesList().at(0);
               mpConnectionLineAnnotation->setLineColor(pShapeAnnotation->getLineColor());
@@ -3335,32 +3192,26 @@ void GraphicsView::addConnection(Element *pElement, bool createConnector)
             removeCurrentConnection();
           }
         } else {
-          if (mpModelWidget->isNewApi()) {
-            if (!connectionExists(startElementName, endElementName, false)) {
-              /* Issue #12163. Do not check connection validity when called from GraphicsView::createConnector
-               * GraphicsView::createConnector creates an incomplete connector. We do this for performance reasons. Avoid calling getModelInstance API.
-               * We know for sure that both connectors are compatible in this case so its okay not to check for validity.
-               */
-              if (createConnector) {
-                mpConnectionLineAnnotation->drawCornerItems();
-                mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
-                addConnectionToView(mpConnectionLineAnnotation, false);
-                addConnectionToClass(mpConnectionLineAnnotation);
-              } else if (mpModelWidget->getModelInstance()->isValidConnection(startElementName, endElementName)) {
-                mpModelWidget->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
-                mpModelWidget->updateModelText();
-              } else {
-                QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                                      GUIMessages::getMessage(GUIMessages::MISMATCHED_CONNECTORS_IN_CONNECT).arg(startElementName, endElementName), QMessageBox::Ok);
-                removeCurrentConnection();
-              }
+          if (!connectionExists(startElementName, endElementName, false)) {
+            /* Issue #12163. Do not check connection validity when called from GraphicsView::createConnector
+             * GraphicsView::createConnector creates an incomplete connector. We do this for performance reasons. Avoid calling getModelInstance API.
+             * We know for sure that both connectors are compatible in this case so its okay not to check for validity.
+             */
+            if (createConnector) {
+              mpConnectionLineAnnotation->drawCornerItems();
+              mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
+              addConnectionToView(mpConnectionLineAnnotation, false);
+              addConnectionToClass(mpConnectionLineAnnotation);
+            } else if (mpModelWidget->getModelInstance()->isValidConnection(startElementName, endElementName)) {
+              mpModelWidget->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
+              mpModelWidget->updateModelText();
             } else {
+              QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                                    GUIMessages::getMessage(GUIMessages::MISMATCHED_CONNECTORS_IN_CONNECT).arg(startElementName, endElementName), QMessageBox::Ok);
               removeCurrentConnection();
             }
           } else {
-            mpModelWidget->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
-            mpModelWidget->getLibraryTreeItem()->emitConnectionAdded(mpConnectionLineAnnotation);
-            mpModelWidget->updateModelText();
+            removeCurrentConnection();
           }
         }
       }
@@ -3509,11 +3360,9 @@ void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
     }
     removeConnectionFromView(pConnectionLineAnnotation);
     deleteConnectionFromClass(pConnectionLineAnnotation);
-  } else if (mpModelWidget->isNewApi()) {
+  } else {
     removeConnectionFromView(pConnectionLineAnnotation);
     deleteConnectionFromClass(pConnectionLineAnnotation);
-  } else {
-    mpModelWidget->getUndoStack()->push(new DeleteConnectionCommand(pConnectionLineAnnotation));
   }
 }
 
@@ -3525,12 +3374,8 @@ void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
 void GraphicsView::deleteTransition(LineAnnotation *pTransitionLineAnnotation)
 {
   pTransitionLineAnnotation->setSelected(false);
-  if (mpModelWidget->isNewApi()) {
-    removeTransitionFromView(pTransitionLineAnnotation);
-    deleteTransitionFromClass(pTransitionLineAnnotation);
-  } else {
-    mpModelWidget->getUndoStack()->push(new DeleteTransitionCommand(pTransitionLineAnnotation));
-  }
+  removeTransitionFromView(pTransitionLineAnnotation);
+  deleteTransitionFromClass(pTransitionLineAnnotation);
 }
 
 /*!
@@ -3541,12 +3386,8 @@ void GraphicsView::deleteTransition(LineAnnotation *pTransitionLineAnnotation)
 void GraphicsView::deleteInitialState(LineAnnotation *pInitialLineAnnotation)
 {
   pInitialLineAnnotation->setSelected(false);
-  if (mpModelWidget->isNewApi()) {
-    removeInitialStateFromView(pInitialLineAnnotation);
-    deleteInitialStateFromClass(pInitialLineAnnotation);
-  } else {
-    mpModelWidget->getUndoStack()->push(new DeleteInitialStateCommand(pInitialLineAnnotation));
-  }
+  removeInitialStateFromView(pInitialLineAnnotation);
+  deleteInitialStateFromClass(pInitialLineAnnotation);
 }
 
 //! Resets zoom factor to 100%.
@@ -3620,13 +3461,6 @@ void GraphicsView::copyItems()
  */
 void GraphicsView::copyItems(bool cut)
 {
-  //! @todo Remove this check once the old API is completely removed.
-  if (!mpModelWidget->isNewApi()) {
-    QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
-                             tr("Cut, copy and paste is only available when instance-api is enabled. Uncheck \"Disable new instance-based graphical editing of models\"."),
-                             QMessageBox::Ok);
-    return;
-  }
   /* Issue #9515
    * scene()->selectedItems() returns a list of all currently selected items. The items are returned in no particular order.
    * So use items() instead and then check which items are selected.
@@ -3742,10 +3576,8 @@ void GraphicsView::modelicaGraphicsViewContextMenu(QMenu *pMenu)
     pMenu->addAction(MainWindow::instance()->getPrintModelAction());
     pMenu->addSeparator();
   }
-  if (mpModelWidget->isNewApi()) {
-    pMenu->addAction(mpParametersAction);
-    pMenu->addSeparator();
-  }
+  pMenu->addAction(mpParametersAction);
+  pMenu->addSeparator();
   pMenu->addAction(mpPropertiesAction);
 }
 
@@ -3923,16 +3755,16 @@ void GraphicsView::omsMultipleItemsContextMenu(QMenu *pMenu)
 }
 
 /*!
- * \brief GraphicsView::getCoOrdinateSystemAndGraphics
+ * \brief GraphicsView::getCoordinateSystemAndGraphics
  * Makes a list of coordinateSystem values and a list of graphical shapes.
  * \param coOrdinateSystemList
  * \param graphicsList
  */
-void GraphicsView::getCoOrdinateSystemAndGraphics(QStringList &coOrdinateSystemList, QStringList &graphicsList)
+void GraphicsView::getCoordinateSystemAndGraphics(QStringList &coOrdinateSystemList, QStringList &graphicsList)
 {
   // coordinate system
-  if (mCoOrdinateSystem.hasExtent()) {
-    ExtentAnnotation extent = mCoOrdinateSystem.getExtent();
+  if (mCoordinateSystem.hasExtent()) {
+    ExtentAnnotation extent = mCoordinateSystem.getExtent();
     qreal x1 = extent.at(0).x();
     qreal y1 = extent.at(0).y();
     qreal x2 = extent.at(1).x();
@@ -3940,16 +3772,16 @@ void GraphicsView::getCoOrdinateSystemAndGraphics(QStringList &coOrdinateSystemL
     coOrdinateSystemList.append(QString("extent={{%1, %2}, {%3, %4}}").arg(x1).arg(y1).arg(x2).arg(y2));
   }
   // add the preserveAspectRatio
-  if (mCoOrdinateSystem.hasPreserveAspectRatio()) {
-    coOrdinateSystemList.append(QString("preserveAspectRatio=%1").arg(mCoOrdinateSystem.getPreserveAspectRatio() ? "true" : "false"));
+  if (mCoordinateSystem.hasPreserveAspectRatio()) {
+    coOrdinateSystemList.append(QString("preserveAspectRatio=%1").arg(mCoordinateSystem.getPreserveAspectRatio() ? "true" : "false"));
   }
   // add the initial scale
-  if (mCoOrdinateSystem.hasInitialScale()) {
-    coOrdinateSystemList.append(QString("initialScale=%1").arg(mCoOrdinateSystem.getInitialScale()));
+  if (mCoordinateSystem.hasInitialScale()) {
+    coOrdinateSystemList.append(QString("initialScale=%1").arg(mCoordinateSystem.getInitialScale()));
   }
   // add the grid
-  if (mCoOrdinateSystem.hasGrid()) {
-    PointAnnotation grid = mCoOrdinateSystem.getGrid();
+  if (mCoordinateSystem.hasGrid()) {
+    PointAnnotation grid = mCoordinateSystem.getGrid();
     coOrdinateSystemList.append(QString("grid={%1, %2}").arg(grid.x()).arg(grid.y()));
   }
   // graphics annotations
@@ -3970,13 +3802,6 @@ void GraphicsView::getCoOrdinateSystemAndGraphics(QStringList &coOrdinateSystemL
  */
 void GraphicsView::pasteItems()
 {
-  //! @todo Remove this check once the old API is completely removed.
-  if (!mpModelWidget->isNewApi()) {
-    QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
-                             tr("Cut, copy and paste is only available when instance-api is enabled. Uncheck \"Disable new instance-based graphical editing of models\"."),
-                             QMessageBox::Ok);
-    return;
-  }
   QClipboard *pClipboard = QApplication::clipboard();
   if (pClipboard && pClipboard->mimeData() && pClipboard->mimeData()->hasFormat(Helper::cutCopyPasteFormat)) {
     ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
@@ -4019,7 +3844,7 @@ void GraphicsView::pasteItems()
     if (!shapes.isEmpty()) {
       QStringList coOrdinateSystemList;
       QStringList graphicsList;
-      getCoOrdinateSystemAndGraphics(coOrdinateSystemList, graphicsList);
+      getCoordinateSystemAndGraphics(coOrdinateSystemList, graphicsList);
       graphicsList.append(shapes);
 
       if (coOrdinateSystemList.size() > 0) {
@@ -4119,17 +3944,17 @@ void GraphicsView::addClassAnnotation()
   if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) {
     return;
   }
-  QStringList coOrdinateSystemList;
+  QStringList coordinateSystemList;
   QStringList graphicsList;
-  getCoOrdinateSystemAndGraphics(coOrdinateSystemList, graphicsList);
+  getCoordinateSystemAndGraphics(coordinateSystemList, graphicsList);
   // build the annotation string
   QString annotationString;
   QString viewType = isIconView() ? "Icon" : "Diagram";
-  if (coOrdinateSystemList.size() > 0 && graphicsList.size() > 0) {
+  if (coordinateSystemList.size() > 0 && graphicsList.size() > 0) {
     annotationString = QString("annotate=%1(coordinateSystem=CoordinateSystem(%2), graphics={%3})").arg(viewType)
-                       .arg(coOrdinateSystemList.join(",")).arg(graphicsList.join(","));
-  } else if (coOrdinateSystemList.size() > 0) {
-    annotationString = QString("annotate=%1(coordinateSystem=CoordinateSystem(%2))").arg(viewType).arg(coOrdinateSystemList.join(","));
+                       .arg(coordinateSystemList.join(",")).arg(graphicsList.join(","));
+  } else if (coordinateSystemList.size() > 0) {
+    annotationString = QString("annotate=%1(coordinateSystem=CoordinateSystem(%2))").arg(viewType).arg(coordinateSystemList.join(","));
   } else if (graphicsList.size() > 0) {
     annotationString = QString("annotate=%1(graphics={%2})").arg(viewType).arg(graphicsList.join(","));
   } else {
@@ -4234,14 +4059,10 @@ void GraphicsView::manhattanizeItems()
 void GraphicsView::deleteItems()
 {
   mpModelWidget->beginMacro("Delete items");
-  if (mpModelWidget->isNewApi()) {
-    ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
-    emit deleteSignal();
-    ModelInfo newModelInfo = mpModelWidget->createModelInfo();
-    mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, QString("Delete items"), true));
-  } else {
-    emit deleteSignal();
-  }
+  ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
+  emit deleteSignal();
+  ModelInfo newModelInfo = mpModelWidget->createModelInfo();
+  mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, QString("Delete items"), true));
   mpModelWidget->updateClassAnnotationIfNeeded();
   mpModelWidget->updateModelText();
   mpModelWidget->endMacro();
@@ -4360,27 +4181,15 @@ void GraphicsView::createConnector()
 {
   if (mpConnectionLineAnnotation && mpConnectionLineAnnotation->getStartElement()) {
     Element *pConnectorElement = mpConnectionLineAnnotation->getStartElement();
-    if (mpModelWidget->isNewApi()) {
-      QString defaultName;
-      QString name = getUniqueElementName(pConnectorElement->getClassName(), pConnectorElement->getName(), &defaultName);
-      ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
-      ModelInstance::Component *pComponent = GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), name, pConnectorElement->getClassName());
-      addElementToView(pComponent, false, true, true, mapToScene(mapFromGlobal(QCursor::pos())), "", true);
-      addConnection(mElementsList.last(), true);
-      ModelInfo newModelInfo = mpModelWidget->createModelInfo();
-      mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add connector"));
-      mpModelWidget->updateModelText();
-    } else if (pConnectorElement->getLibraryTreeItem()) {
-      mpModelWidget->beginMacro("Add connector");
-      QString defaultName;
-      QString name = getUniqueElementName(pConnectorElement->getLibraryTreeItem()->getNameStructure(), pConnectorElement->getLibraryTreeItem()->getName(), &defaultName);
-      ElementInfo *pElementInfo = new ElementInfo;
-      addComponentToView(name, pConnectorElement->getLibraryTreeItem(), "", mapToScene(mapFromGlobal(QCursor::pos())), pElementInfo, true, true, true);
-      addConnection(mElementsList.last());
-      mpModelWidget->endMacro();
-    } else {
-      qDebug() << "GraphicsView::createConnector() should never be reached.";
-    }
+    QString defaultName;
+    QString name = getUniqueElementName(pConnectorElement->getClassName(), pConnectorElement->getName(), &defaultName);
+    ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
+    ModelInstance::Component *pComponent = GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), name, pConnectorElement->getClassName());
+    addElementToView(pComponent, false, true, true, mapToScene(mapFromGlobal(QCursor::pos())), "", true);
+    addConnection(mElementsList.last(), true);
+    ModelInfo newModelInfo = mpModelWidget->createModelInfo();
+    mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add connector"));
+    mpModelWidget->updateModelText();
   }
 }
 
@@ -4510,14 +4319,14 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   painter->setPen(Qt::NoPen);
   painter->drawRect(rect);
   painter->setBrush(QBrush(Qt::white, Qt::SolidPattern));
-  QRectF extentRectangle = mMergedCoOrdinateSystem.getExtentRectangle();
+  QRectF extentRectangle = mMergedCoordinateSystem.getExtentRectangle();
   painter->drawRect(extentRectangle);
   if (mpModelWidget->getModelWidgetContainer()->isShowGridLines()
       && !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView())) {
     painter->setBrush(Qt::NoBrush);
     painter->setPen(lightGrayPen);
     /* Draw left half vertical lines */
-    int horizontalGridStep = mMergedCoOrdinateSystem.getHorizontalGridStep() * 10;
+    int horizontalGridStep = mMergedCoordinateSystem.getHorizontalGridStep() * 10;
     qreal xAxisStep = 0;
     qreal yAxisStep = rect.y();
     xAxisStep -= horizontalGridStep;
@@ -4532,7 +4341,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
       xAxisStep += horizontalGridStep;
     }
     /* Draw left half horizontal lines */
-    int verticalGridStep = mMergedCoOrdinateSystem.getVerticalGridStep() * 10;
+    int verticalGridStep = mMergedCoordinateSystem.getVerticalGridStep() * 10;
     xAxisStep = rect.x();
     yAxisStep = 0;
     yAxisStep += verticalGridStep;
@@ -4840,7 +4649,7 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
   /* If is visualization view.
    * Issue #12049. Stop double click event when the getModelInstance API fails.
    */
-  if (isVisualizationView() || (mpModelWidget->isNewApi() && mpModelWidget->getModelInstance()->isModelJsonEmpty())) {
+  if (isVisualizationView() || (mpModelWidget->getLibraryTreeItem()->isModelica() && mpModelWidget->getModelInstance()->isModelJsonEmpty())) {
     return;
   }
   const bool removeLastAddedPoint = true;
@@ -5097,7 +4906,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
   /* If we are creating the connection OR creating any shape OR is visualization view then don't show context menu
    * Issue #12049. Stop context menu event when the getModelInstance API fails.
    */
-  if (isCreatingShape() || isVisualizationView() || (mpModelWidget->isNewApi() && mpModelWidget->getModelInstance()->isModelJsonEmpty())) {
+  if (isCreatingShape() || isVisualizationView() || (mpModelWidget->getLibraryTreeItem()->isModelica() && mpModelWidget->getModelInstance()->isModelJsonEmpty())) {
     return;
   }
   // if creating a connection
@@ -5633,8 +5442,7 @@ void UndoStack::push(UndoCommand *cmd)
 
 ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer)
   : QWidget(pModelWidgetContainer), mpModelWidgetContainer(pModelWidgetContainer), mpModelInstance(0), mpLibraryTreeItem(pLibraryTreeItem),
-    mpUndoStack(0), mpUndoView(0), mpEditor(0), mElementsLoaded(false), mDiagramViewLoaded(false), mConnectionsLoaded(false),
-    mCreateModelWidgetComponents(false), mExtendsModifiersLoaded(false), mDerivedClassModifiersLoaded(false)
+    mpUndoStack(0), mpUndoView(0), mpEditor(0), mDiagramViewLoaded(false), mCreateModelWidgetComponents(false)
 {
   // create widgets based on library type
   if (mpLibraryTreeItem->isModelica()) {
@@ -5649,25 +5457,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mpDiagramGraphicsView->setScene(mpDiagramGraphicsScene);
     mpDiagramGraphicsView->hide();
     createUndoStack();
-
-    if (isNewApi()) {
-      loadModelInstance(true, ModelInfo());
-    } else {
-      getModelInheritedClasses();
-      drawModelInheritedClassShapes(this, StringHandler::Icon);
-      getModelIconDiagramShapes(StringHandler::Icon);
-      /* Ticket:2960
-     * Just a workaround to make browsing faster.
-     * We don't get the components here i.e items are shown without connectors in the Library Browser.
-     * Fetch the components when we really need to draw them.
-     */
-      /*! @todo Uncomment the following code once we have new faster frontend and remove the flag mComponentsLoaded. */
-      //    drawModelInheritedClassComponents(this, StringHandler::Icon);
-      //    getModelComponents();
-      //    drawModelIconComponents();
-    }
-
-
+    loadModelInstance(true, ModelInfo());
     /* Ticket:5620
      * Hack to make the operations like moving objects with keys faster.
      * We don't update the model directly instead we start a timer.
@@ -5727,110 +5517,11 @@ ModelWidget::~ModelWidget()
   }
 }
 
-/*!
- * \brief ModelWidget::getExtendsModifiersMap
- * Returns a extends modifier map for extends class
- * \param extendsClass
- * \return
- */
-QMap<QString, QString> ModelWidget::getExtendsModifiersMap(QString extendsClass)
-{
-  if (!mExtendsModifiersLoaded) {
-    foreach (LibraryTreeItem *pLibraryTreeItem, mInheritedClassesList) {
-      fetchExtendsModifiers(pLibraryTreeItem->getNameStructure());
-    }
-    mExtendsModifiersLoaded = true;
-  }
-  return mExtendsModifiersMap.value(extendsClass);
-}
-
-/*!
- * \brief ModelWidget::getDerivedClassModifiersMap
- * Returns a derived class modifiers map
- * \param derivedClass
- * \return
- */
-QMap<QString, QString> ModelWidget::getDerivedClassModifiersMap()
-{
-  if (!mDerivedClassModifiersLoaded) {
-    mDerivedClassModifiersMap.clear();
-    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-    QStringList derivedClassModifierNames = pOMCProxy->getDerivedClassModifierNames(mpLibraryTreeItem->getNameStructure());
-    foreach (QString derivedClassModifierName, derivedClassModifierNames) {
-      // if we have already read the record modifier then continue
-      if (mDerivedClassModifiersMap.contains(derivedClassModifierName)) {
-        continue;
-      }
-      mDerivedClassModifiersMap.insert(derivedClassModifierName, pOMCProxy->getDerivedClassModifierValue(mpLibraryTreeItem->getNameStructure(), derivedClassModifierName));
-    }
-    mDerivedClassModifiersLoaded = true;
-  }
-  return mDerivedClassModifiersMap;
-}
-
-/*!
- * \brief ModelWidget::isNewApi
- * Returns true if we are using new api.
- * \return
- */
-bool ModelWidget::isNewApi()
-{
-  if (MainWindow::instance()->isNewApi() && mpLibraryTreeItem->isModelica()) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
 void ModelWidget::addDependsOnModel(const QString &dependsOnModel)
 {
   if (!mDependsOnModelsList.contains(dependsOnModel)) {
     mDependsOnModelsList.append(dependsOnModel);
     connect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString)), SLOT(updateModelIfDependsOn(QString)), Qt::UniqueConnection);
-  }
-}
-
-/*!
- * \brief ModelWidget::fetchExtendsModifiers
- * Gets the extends modifiers and their values.
- * \param extendsClass
- */
-void ModelWidget::fetchExtendsModifiers(QString extendsClass)
-{
-  mExtendsModifiersMap.clear();
-  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-  QStringList extendsModifiersList = pOMCProxy->getExtendsModifierNames(mpLibraryTreeItem->getNameStructure(), extendsClass);
-  QMap<QString, QString> extendsModifiersMap;
-  foreach (QString extendsModifier, extendsModifiersList) {
-    QString extendsModifierValue = pOMCProxy->getExtendsModifierValue(mpLibraryTreeItem->getNameStructure(), extendsClass, extendsModifier);
-    extendsModifiersMap.insert(extendsModifier, extendsModifierValue);
-  }
-  mExtendsModifiersMap.insert(extendsClass, extendsModifiersMap);
-}
-
-/*!
- * \brief ModelWidget::reDrawModelWidgetInheritedClasses
- * Redraws the class inherited classes shapes, components and connections.
- */
-void ModelWidget::reDrawModelWidgetInheritedClasses()
-{
-  mpIconGraphicsView->removeInheritedClassShapes();
-  drawModelInheritedClassShapes(this, StringHandler::Icon);
-  mpIconGraphicsView->reOrderShapes();
-  if (mElementsLoaded) {
-    mpIconGraphicsView->removeInheritedClassElements();
-    drawModelInheritedClassComponents(this, StringHandler::Icon);
-  }
-  if (mDiagramViewLoaded) {
-    mpDiagramGraphicsView->removeInheritedClassShapes();
-    drawModelInheritedClassShapes(this, StringHandler::Diagram);
-    mpDiagramGraphicsView->reOrderShapes();
-    mpDiagramGraphicsView->removeInheritedClassElements();
-    drawModelInheritedClassComponents(this, StringHandler::Diagram);
-  }
-  if (mConnectionsLoaded) {
-    mpDiagramGraphicsView->removeInheritedClassConnections();
-    drawModelInheritedClassConnections(this);
   }
 }
 
@@ -5879,135 +5570,6 @@ void ModelWidget::drawModelIconDiagramShapes(QStringList shapes, GraphicsView *p
         pShapeAnnotation->setSelected(true);
       }
     }
-  }
-}
-
-/*!
- * \brief ModelWidget::createNonExistingInheritedShape
- * Creates a red cross for non-existing inherited class shape.
- * \param pGraphicsView
- * \return
- */
-ShapeAnnotation* ModelWidget::createNonExistingInheritedShape(GraphicsView *pGraphicsView)
-{
-  LineAnnotation *pLineAnnotation = new LineAnnotation(pGraphicsView);
-  pLineAnnotation->drawCornerItems();
-  pLineAnnotation->setCornerItemsActiveOrPassive();
-  pLineAnnotation->applyTransformation();
-  return pLineAnnotation;
-}
-
-/*!
- * \brief ModelWidget::createInheritedShape
- * Creates the inherited class shape.
- * \param pShapeAnnotation
- * \param pGraphicsView
- * \return
- */
-ShapeAnnotation* ModelWidget::createInheritedShape(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
-{
-  if (dynamic_cast<LineAnnotation*>(pShapeAnnotation)) {
-    LineAnnotation *pLineAnnotation = new LineAnnotation(pShapeAnnotation, pGraphicsView);
-    pLineAnnotation->drawCornerItems();
-    pLineAnnotation->setCornerItemsActiveOrPassive();
-    pLineAnnotation->applyTransformation();
-    return pLineAnnotation;
-  } else if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
-    PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation(pShapeAnnotation, pGraphicsView);
-    pPolygonAnnotation->drawCornerItems();
-    pPolygonAnnotation->setCornerItemsActiveOrPassive();
-    pPolygonAnnotation->applyTransformation();
-    return pPolygonAnnotation;
-  } else if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
-    RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(pShapeAnnotation, pGraphicsView);
-    pRectangleAnnotation->drawCornerItems();
-    pRectangleAnnotation->setCornerItemsActiveOrPassive();
-    pRectangleAnnotation->applyTransformation();
-    return pRectangleAnnotation;
-  } else if (dynamic_cast<EllipseAnnotation*>(pShapeAnnotation)) {
-    EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation(pShapeAnnotation, pGraphicsView);
-    pEllipseAnnotation->drawCornerItems();
-    pEllipseAnnotation->setCornerItemsActiveOrPassive();
-    pEllipseAnnotation->applyTransformation();
-    return pEllipseAnnotation;
-  } else if (dynamic_cast<TextAnnotation*>(pShapeAnnotation)) {
-    TextAnnotation *pTextAnnotation = new TextAnnotation(pShapeAnnotation, pGraphicsView);
-    pTextAnnotation->drawCornerItems();
-    pTextAnnotation->setCornerItemsActiveOrPassive();
-    pTextAnnotation->applyTransformation();
-    return pTextAnnotation;
-  } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
-    BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(pShapeAnnotation, pGraphicsView);
-    pBitmapAnnotation->drawCornerItems();
-    pBitmapAnnotation->setCornerItemsActiveOrPassive();
-    pBitmapAnnotation->applyTransformation();
-    return pBitmapAnnotation;
-  }
-  return 0;
-}
-
-/*!
- * \brief ModelWidget::createInheritedComponent
- * Creates the inherited component.
- * \param pComponent
- * \param pGraphicsView
- * \return
- */
-Element* ModelWidget::createInheritedComponent(Element *pComponent, GraphicsView *pGraphicsView)
-{
-  return new Element(pComponent, pGraphicsView);
-}
-
-/*!
- * \brief ModelWidget::createInheritedConnection
- * Creates the inherited connection.
- * \param pConnectionLineAnnotation
- * \return
- */
-LineAnnotation* ModelWidget::createInheritedConnection(LineAnnotation *pConnectionLineAnnotation)
-{
-  LineAnnotation *pInheritedConnectionLineAnnotation = new LineAnnotation(pConnectionLineAnnotation, mpDiagramGraphicsView);
-  pInheritedConnectionLineAnnotation->setToolTip(QString("<b>connect</b>(%1, %2)<br /><br />%3 %4")
-                                                 .arg(pInheritedConnectionLineAnnotation->getStartElementName())
-                                                 .arg(pInheritedConnectionLineAnnotation->getEndElementName())
-                                                 .arg(tr("Connection declared in"))
-                                                 .arg(pConnectionLineAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
-  pInheritedConnectionLineAnnotation->drawCornerItems();
-  pInheritedConnectionLineAnnotation->setCornerItemsActiveOrPassive();
-  pInheritedConnectionLineAnnotation->applyTransformation();
-  // Add the start component connection details.
-  Element *pStartComponent = pInheritedConnectionLineAnnotation->getStartElement();
-  if (pStartComponent->getRootParentElement()) {
-    pStartComponent->getRootParentElement()->addConnectionDetails(pInheritedConnectionLineAnnotation);
-  } else {
-    pStartComponent->addConnectionDetails(pInheritedConnectionLineAnnotation);
-  }
-  // Add the end component connection details.
-  Element *pEndComponent = pInheritedConnectionLineAnnotation->getEndElement();
-  if (pEndComponent->getParentElement()) {
-    pEndComponent->getParentElement()->addConnectionDetails(pInheritedConnectionLineAnnotation);
-  } else {
-    pEndComponent->addConnectionDetails(pInheritedConnectionLineAnnotation);
-  }
-  return pInheritedConnectionLineAnnotation;
-}
-
-/*!
- * \brief ModelWidget::loadElements
- * Loads the model elements if they are not loaded before.
- */
-void ModelWidget::loadElements()
-{
-  if (!mElementsLoaded) {
-    drawModelInheritedClassComponents(this, StringHandler::Icon);
-    /* We use access.icon here since getComponents will return public components in that case
-     * and we want to display them.
-     */
-    if (mpLibraryTreeItem->getAccess() >= LibraryTreeItem::icon) {
-      getModelElements();
-      drawModelIconElements();
-    }
-    mElementsLoaded = true;
   }
 }
 
@@ -6100,12 +5662,12 @@ void ModelWidget::loadDiagramViewNAPI()
     mDiagramViewLoaded = true;
     // clear graphical views
     clearGraphicsViews();
-    // reset the CoOrdinateSystem
+    // reset the CoordinateSystem
     if (mpIconGraphicsView) {
-      mpIconGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
+      mpIconGraphicsView->resetCoordinateSystem();
     }
     if (mpDiagramGraphicsView) {
-      mpDiagramGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
+      mpDiagramGraphicsView->resetCoordinateSystem();
     }
     loadModelInstance(false, ModelInfo());
     mpLibraryTreeItem->handleIconUpdated();
@@ -6113,215 +5675,30 @@ void ModelWidget::loadDiagramViewNAPI()
 }
 
 /*!
- * \brief ModelWidget::loadDiagramView
- * Loads the diagram view components if they are not loaded before.
- */
-void ModelWidget::loadDiagramView()
-{
-  loadElements();
-  if (!mDiagramViewLoaded) {
-    drawModelInheritedClassShapes(this, StringHandler::Diagram);
-    getModelIconDiagramShapes(StringHandler::Diagram);
-    drawModelInheritedClassComponents(this, StringHandler::Diagram);
-    /* We use access.icon here since getComponents will return public components in that case
-     * and we add them to diagram layer so that we can see and set the parameters in the parameters window.
-     */
-    if (mpLibraryTreeItem->getAccess() >= LibraryTreeItem::icon) {
-      drawModelDiagramElements();
-    }
-    mDiagramViewLoaded = true;
-    /*! @note The following is not needed if we load the connectors alongwith the icon/diagram annotation.
-       * We have disabled loading the connectors so user gets fast browsing of libraries.
-       */
-    mpLibraryTreeItem->handleIconUpdated();
-  }
-}
-
-/*!
- * \brief ModelWidget::loadConnections
- * Loads the model connections if they are not loaded before.
- */
-void ModelWidget::loadConnections()
-{
-  if (!mConnectionsLoaded) {
-    drawModelInheritedClassConnections(this);
-    if (mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
-      getModelConnections();
-      getModelTransitions();
-      getModelInitialStates();
-    }
-    mConnectionsLoaded = true;
-    mpDiagramGraphicsView->handleCollidingConnections();
-  }
-}
-
-/*!
- * \brief ModelWidget::getModelConnections
- * Gets the connections of the model and place them in the diagram GraphicsView.
- */
-void ModelWidget::getModelConnections()
-{
-  // detect multiple declarations of a component instance
-  detectMultipleDeclarations();
-  // get the connections
-  MainWindow *pMainWindow = MainWindow::instance();
-  int connectionCount = pMainWindow->getOMCProxy()->getConnectionCount(mpLibraryTreeItem->getNameStructure());
-  for (int i = 1 ; i <= connectionCount ; i++) {
-    // get the connection from OMC
-    QStringList connectionList = pMainWindow->getOMCProxy()->getNthConnection(mpLibraryTreeItem->getNameStructure(), i);
-    QString connectionAnnotationString = pMainWindow->getOMCProxy()->getNthConnectionAnnotation(mpLibraryTreeItem->getNameStructure(), i);
-    addConnection(connectionList, connectionAnnotationString, false, false);
-  }
-}
-
-/*!
- * \brief ModelWidget::getMetaModelSubModels
  * \brief ModelWidget::detectMultipleDeclarations
  * detect multiple declarations of a element instance
  */
 void ModelWidget::detectMultipleDeclarations()
 {
-  if (isNewApi()) {
-    QList<ModelInstance::Element*> elements = mpModelInstance->getElements();
-    for (int i = 0 ; i < elements.size() ; i++) {
-      for (int j = 0 ; j < elements.size() ; j++) {
-        if (i == j) {
-          j++;
-          continue;
-        }
-        if (elements[i]->isComponent() && elements[j]->isComponent()) {
-          auto pComponent1 = dynamic_cast<ModelInstance::Component*>(elements[i]);
-          auto pComponent2 = dynamic_cast<ModelInstance::Component*>(elements[j]);
-          if (pComponent1->getName().compare(pComponent2->getName()) == 0) {
-            MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                                  GUIMessages::getMessage(GUIMessages::MULTIPLE_DECLARATIONS_COMPONENT).arg(pComponent1->getName()),
-                                                                  Helper::scriptingKind, Helper::errorLevel));
-            return;
-          }
-        }
+  QList<ModelInstance::Element*> elements = mpModelInstance->getElements();
+  for (int i = 0 ; i < elements.size() ; i++) {
+    for (int j = 0 ; j < elements.size() ; j++) {
+      if (i == j) {
+        j++;
+        continue;
       }
-    }
-  } else {
-    for (int i = 0 ; i < mElementsList.size() ; i++) {
-      for (int j = 0 ; j < mElementsList.size() ; j++) {
-        if (i == j) {
-          j++;
-          continue;
-        }
-        if (mElementsList[i]->getName().compare(mElementsList[j]->getName()) == 0) {
+      if (elements[i]->isComponent() && elements[j]->isComponent()) {
+        auto pComponent1 = dynamic_cast<ModelInstance::Component*>(elements[i]);
+        auto pComponent2 = dynamic_cast<ModelInstance::Component*>(elements[j]);
+        if (pComponent1->getName().compare(pComponent2->getName()) == 0) {
           MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                                GUIMessages::getMessage(GUIMessages::MULTIPLE_DECLARATIONS_COMPONENT).arg(mElementsList[i]->getName()),
+                                                                GUIMessages::getMessage(GUIMessages::MULTIPLE_DECLARATIONS_COMPONENT).arg(pComponent1->getName()),
                                                                 Helper::scriptingKind, Helper::errorLevel));
           return;
         }
       }
     }
   }
-}
-
-void ModelWidget::addConnection(QStringList connectionList, QString connectionAnnotationString, bool addToOMC, bool select)
-{
-  MainWindow *pMainWindow = MainWindow::instance();
-  LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
-  QString connectionString = QString("{%1}").arg(connectionList.join(","));
-  connectionAnnotationString = StringHandler::removeFirstLastCurlBrackets(connectionAnnotationString);
-  // if the connectionString only contains two items or if there is no connection annotation then continue the loop,
-  // because connection is not valid then
-  if (connectionList.size() < 3 || connectionAnnotationString.isEmpty()) {
-    return;
-  }
-  // get start and end components
-  QStringList startComponentList = StringHandler::makeVariableParts(connectionList.at(0));
-  QStringList endComponentList = StringHandler::makeVariableParts(connectionList.at(1));
-  // get start component
-  Element *pStartComponent = 0;
-  if (startComponentList.size() > 0) {
-    QString startComponentName = startComponentList.at(0);
-    if (startComponentName.contains("[")) {
-      startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
-    }
-    pStartComponent = mpDiagramGraphicsView->getElementObject(startComponentName);
-  }
-  // get start connector
-  Element *pStartConnectorComponent = 0;
-  Element *pEndConnectorComponent = 0;
-  if (pStartComponent) {
-    // if a component type is connector then we only get one item in startComponentList
-    // check the startcomponentlist
-    if (startComponentList.size() < 2
-        || (pStartComponent->getLibraryTreeItem()
-            && pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector)) {
-      pStartConnectorComponent = pStartComponent;
-    } else if (pStartComponent->getLibraryTreeItem()
-               && !pLibraryTreeModel->findLibraryTreeItem(pStartComponent->getLibraryTreeItem()->getNameStructure())) {
-      /* if class doesn't exist then connect with the red cross box */
-      pStartConnectorComponent = pStartComponent;
-    } else {
-      // look for port from the parent component
-      QString startComponentName = startComponentList.at(1);
-      if (startComponentName.contains("[")) {
-        startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
-      }
-      pStartConnectorComponent = getConnectorElement(pStartComponent, startComponentName);
-    }
-  }
-  // show error message if start component is not found.
-  if (!pStartConnectorComponent) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
-                                                          .arg(connectionList.at(0), connectionString), Helper::scriptingKind, Helper::errorLevel));
-    return;
-  }
-  // get end component
-  Element *pEndComponent = 0;
-  if (endComponentList.size() > 0) {
-    QString endComponentName = endComponentList.at(0);
-    if (endComponentName.contains("[")) {
-      endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
-    }
-    pEndComponent = mpDiagramGraphicsView->getElementObject(endComponentName);
-  }
-  // get the end connector
-  if (pEndComponent) {
-    // if a component type is connector then we only get one item in endComponentList
-    // check the endcomponentlist
-    if (endComponentList.size() < 2 || (pEndComponent->getLibraryTreeItem() && pEndComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector)) {
-      pEndConnectorComponent = pEndComponent;
-    } else if (pEndComponent->getLibraryTreeItem() && !pLibraryTreeModel->findLibraryTreeItem(pEndComponent->getLibraryTreeItem()->getNameStructure())) {
-      /* if class doesn't exist then connect with the red cross box */
-      pEndConnectorComponent = pEndComponent;
-    } else {
-      QString endComponentName = endComponentList.at(1);
-      if (endComponentName.contains("[")) {
-        endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
-      }
-      pEndConnectorComponent = getConnectorElement(pEndComponent, endComponentName);
-    }
-  }
-  // show error message if end component is not found.
-  if (!pEndConnectorComponent) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
-                                                          .arg(connectionList.at(1), connectionString), Helper::scriptingKind, Helper::errorLevel));
-    return;
-  }
-  // connection annotation
-  QStringList shapesList = StringHandler::getStrings(connectionAnnotationString);
-  // Now parse the shapes available in list
-  QString lineShape = "";
-  foreach (QString shape, shapesList) {
-    if (shape.startsWith("Line")) {
-      lineShape = shape.mid(QString("Line").length());
-      lineShape = StringHandler::removeFirstLastParentheses(lineShape);
-      break;  // break the loop once we have got the line annotation.
-    }
-  }
-  LineAnnotation *pConnectionLineAnnotation;
-  pConnectionLineAnnotation = new LineAnnotation(lineShape, pStartConnectorComponent, pEndConnectorComponent, mpDiagramGraphicsView);
-  pConnectionLineAnnotation->setStartElementName(connectionList.at(0));
-  pConnectionLineAnnotation->setEndElementName(connectionList.at(1));
-  if (select) {
-    pConnectionLineAnnotation->setSelected(true);
-  }
-  mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, addToOMC));
 }
 
 /*!
@@ -6730,45 +6107,17 @@ void ModelWidget::reDrawModelWidget()
     drawOMSModelDiagramElements();
     drawOMSModelConnections();
   } else {
-    // reset the CoOrdinateSystem
+    // reset the CoordinateSystem
     if (mpIconGraphicsView) {
-      mpIconGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
+      mpIconGraphicsView->resetCoordinateSystem();
     }
     if (mpDiagramGraphicsView) {
-      mpDiagramGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
+      mpDiagramGraphicsView->resetCoordinateSystem();
     }
-    if (isNewApi()) {
-      if (mDiagramViewLoaded) {
-        loadModelInstance(false, ModelInfo());
-      } else {
-        loadModelInstance(true, ModelInfo());
-      }
+    if (mDiagramViewLoaded) {
+      loadModelInstance(false, ModelInfo());
     } else {
-      // Draw icon view
-      mExtendsModifiersLoaded = false;
-      mDerivedClassModifiersLoaded = false;
-      // remove saved inherited classes
-      mpLibraryTreeItem->removeInheritedClasses();
-      clearInheritedClasses();
-      // get inherited classes
-      getModelInheritedClasses();
-      // Draw Icon shapes and inherited shapes
-      drawModelInheritedClassShapes(this, StringHandler::Icon);
-      getModelIconDiagramShapes(StringHandler::Icon);
-      // clear the components and their annotations
-      mElementsList.clear();
-      mElementsAnnotationsList.clear();
-      mElementsLoaded = false;
-      // get the model elements
-      loadElements();
-      // Draw diagram view
-      if (mDiagramViewLoaded) {
-        // reset flags
-        mDiagramViewLoaded = false;
-        loadDiagramView();
-        mConnectionsLoaded = false;
-        loadConnections();
-      }
+      loadModelInstance(true, ModelInfo());
     }
     // invalidate the simulation options
     mpLibraryTreeItem->mSimulationOptions.setIsValid(false);
@@ -6786,8 +6135,6 @@ void ModelWidget::reDrawModelWidget()
 //      mpEditor->getPlainTextEdit()->document()->clearUndoRedoStacks();
 //    }
     updateViewButtonsBasedOnAccess();
-    // announce the change.
-    mpLibraryTreeItem->emitLoaded();
   }
   QApplication::restoreOverrideCursor();
 }
@@ -6814,12 +6161,12 @@ void ModelWidget::reDrawModelWidget(const ModelInfo &modelInfo)
   mpDiagramGraphicsView->removeInheritedClassElements();
   /* get model components, connection and shapes. */
   // Draw icon view
-  // reset the CoOrdinateSystem
+  // reset the CoordinateSystem
   if (mpIconGraphicsView) {
-    mpIconGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
+    mpIconGraphicsView->resetCoordinateSystem();
   }
   if (mpDiagramGraphicsView) {
-    mpDiagramGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
+    mpDiagramGraphicsView->resetCoordinateSystem();
   }
   loadModelInstance(false, modelInfo);
   // update the icon
@@ -6900,17 +6247,13 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
   }
   /* if user has changed the class contents then refresh it. */
   if (className.compare(mpLibraryTreeItem->getNameStructure()) == 0) {
-    /* before calling the updateChildClasses() which calls reDrawModelWidget()
-     * we need to remove the inherited classes connect signal/slot of all classes.
-     */
-    ModelWidget::removeInheritedClasses(mpLibraryTreeItem);
     mpLibraryTreeItem->updateClassInformation();
     reDrawModelWidget();
     mpLibraryTreeItem->setClassText(modelicaText);
     if (mpLibraryTreeItem->isInPackageOneFile()) {
       pParentLibraryTreeItem->setClassText(stringToLoad);
       updateModelText();
-    } else if (isNewApi()) {
+    } else {
       MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(mpLibraryTreeItem->getNameStructure());
     }
     // update child classes
@@ -6924,18 +6267,14 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
      * so we tell unloadLibraryTreeItem to don't try deleteClass since it will only produce error
      */
     pLibraryTreeModel->unloadLibraryTreeItem(mpLibraryTreeItem, !mpLibraryTreeItem->isInPackageOneFile());
-    // If isNewApi() then update the depending model.
-    if (isNewApi()) {
-      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(mpLibraryTreeItem->getNameStructure());
-      disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString)), this, SLOT(updateModelIfDependsOn(QString)));
-    }
+    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(mpLibraryTreeItem->getNameStructure());
+    disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString)), this, SLOT(updateModelIfDependsOn(QString)));
     mpLibraryTreeItem->setModelWidget(0);
     QString name = StringHandler::getLastWordAfterDot(className);
     LibraryTreeItem *pNewLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(name, mpLibraryTreeItem->parent(), false, false, true, row);
     setWindowTitle(pNewLibraryTreeItem->getName() + (pNewLibraryTreeItem->isSaved() ? "" : "*"));
     setModelClassPathLabel(pNewLibraryTreeItem->getNameStructure());
     pNewLibraryTreeItem->setSaveContentsType(mpLibraryTreeItem->getSaveContentsType());
-    pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
     // make the new created LibraryTreeItem selected
     QModelIndex modelIndex = pLibraryTreeModel->libraryTreeItemIndex(pNewLibraryTreeItem);
     LibraryTreeProxyModel *pLibraryTreeProxyModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeProxyModel();
@@ -6946,10 +6285,7 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
     // update class text
     pNewLibraryTreeItem->setModelWidget(this);
     pNewLibraryTreeItem->setClassText(modelicaText);
-    // delete the LibraryTreeItem when using NAPI its only needed for Old API
-    if (isNewApi()) {
-      mpLibraryTreeItem->deleteLater();
-    }
+    mpLibraryTreeItem->deleteLater();
     setLibraryTreeItem(pNewLibraryTreeItem);
     setModelFilePathLabel(pNewLibraryTreeItem->getFileName());
     reDrawModelWidget();
@@ -6998,7 +6334,6 @@ void ModelWidget::updateChildClasses(LibraryTreeItem *pLibraryTreeItem)
       }
     } else if (!pChildLibraryTreeItem) {  // if the class doesn't exists then create one.
       pLibraryTreeModel->createLibraryTreeItem(className, pLibraryTreeItem, false, false, true, index);
-      pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
     }
     index++;
   }
@@ -7085,13 +6420,12 @@ void ModelWidget::updateModelText()
   } else {
     setWindowTitle(QString("%1*").arg(mpLibraryTreeItem->getName()));
     mUpdateModelTimer.start();
-    if (isNewApi()) {
-      callHandleCollidingConnectionsIfNeeded();
-      // announce the change.
-      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(mpLibraryTreeItem->getNameStructure());
-      // Update Element Browser
-      MainWindow::instance()->getElementWidget()->getElementTreeModel()->addElements(mpModelInstance);
-    }
+    callHandleCollidingConnectionsIfNeeded();
+    // announce the change.
+    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(mpLibraryTreeItem->getNameStructure());
+    // Update Element Browser
+    MainWindow::instance()->getElementWidget()->getElementTreeModel()->addElements(mpModelInstance);
+    MainWindow::instance()->getElementWidget()->selectDeselectElementItem("", false);
   }
 }
 
@@ -7212,40 +6546,6 @@ void ModelWidget::updateViewButtonsBasedOnAccess()
 }
 
 /*!
- * \brief ModelWidget::associateBusWithConnector
- * Associates the bus component with the connector component.
- * \param busName
- * \param connectorName
- */
-void ModelWidget::associateBusWithConnector(QString busName, QString connectorName)
-{
-  associateBusWithConnector(busName, connectorName, mpIconGraphicsView);
-  associateBusWithConnector(busName, connectorName, mpDiagramGraphicsView);
-  // get the connector component
-  Element *pConnectorComponent = mpIconGraphicsView->getElementObject(connectorName);
-  if (pConnectorComponent) {
-    pConnectorComponent->emitDeleted();
-  }
-}
-
-/*!
- * \brief ModelWidget::dissociateBusWithConnector
- * Dissociate the bus component with the connector component.
- * \param busName
- * \param connectorName
- */
-void ModelWidget::dissociateBusWithConnector(QString busName, QString connectorName)
-{
-  dissociateBusWithConnector(busName, connectorName, mpIconGraphicsView);
-  dissociateBusWithConnector(busName, connectorName, mpDiagramGraphicsView);
-  // get the connector component
-  Element *pConnectorComponent = mpIconGraphicsView->getElementObject(connectorName);
-  if (pConnectorComponent) {
-    pConnectorComponent->emitAdded();
-  }
-}
-
-/*!
  * \brief ModelWidget::associateBusWithConnectors
  * Associates the bus component with each of its connector component.
  * \param busName
@@ -7311,35 +6611,7 @@ QList<QVariant> ModelWidget::toOMSensData()
   QStringList parameters;
   QStringList auxVariables;
 
-  if (isNewApi()) {
-    walkMe(getModelInstance(), inputVariables, outputVariables, parameters, auxVariables);
-  } else {
-    QList<Element*> pInheritedAndComposedComponents;
-    QList<Element*> pTopMostComponents = mpDiagramGraphicsView->getElementsList() + mpDiagramGraphicsView->getInheritedElementsList();
-    for (Element *pComponent : pTopMostComponents) {
-      pInheritedAndComposedComponents = pComponent->getElementsList() + pComponent->getInheritedElementsList();
-      pInheritedAndComposedComponents.append(pComponent);
-      for (auto element : pInheritedAndComposedComponents) {
-        QString causality, variability;
-        causality = element->getElementInfo()->getCausality();
-        variability = element->getElementInfo()->getVariablity();
-        const bool classNameIsReal = element->getClassName().compare(QStringLiteral("Real")) == 0;
-        if (causality.compare(QStringLiteral("input")) == 0) {
-          if (classNameIsReal || element->getClassName().compare(modelicaBlocksInterfacesRealInput) == 0) {
-            inputVariables.append(element->getName());
-          }
-        } else if (causality.compare(QStringLiteral("output")) == 0) {
-          if (classNameIsReal || element->getClassName().compare(modelicaBlocksInterfacesRealOutput) == 0) {
-            outputVariables.append(element->getName());
-          }
-        } else if(classNameIsReal && variability.compare(QStringLiteral("parameter")) == 0) {
-          parameters.append(element->getName());
-        } /* Otherwise we are dealing with an auxiliarly variable */else if (classNameIsReal) {
-          auxVariables.append(element->getName());
-        }
-      }
-    }
-  }
+  walkMe(getModelInstance(), inputVariables, outputVariables, parameters, auxVariables);
   omSensData << inputVariables << outputVariables << auxVariables << parameters << mpLibraryTreeItem->getFileName() << mpLibraryTreeItem->getNameStructure();
   return omSensData;
 }
@@ -7412,7 +6684,13 @@ void ModelWidget::processPendingModelUpdate()
 void ModelWidget::updateModelIfDependsOn(const QString &modelName)
 {
   if (mDiagramViewLoaded && dependsOnModel(modelName)) {
-    setRequiresUpdate(true);
+    // if this is the current ModelWidget then update it directly otherwise mark it for update
+    if (this == mpModelWidgetContainer->getCurrentModelWidget()) {
+      setRequiresUpdate(false);
+      reDrawModelWidget(createModelInfo());
+    } else {
+      setRequiresUpdate(true);
+    }
   }
 }
 
@@ -7473,9 +6751,9 @@ void ModelWidget::showElement(ModelInstance::Model *pModelInstance, bool addToLi
   mpDiagramGraphicsView->removeInheritedClassTransitions();
   mpDiagramGraphicsView->removeInheritedClassInitialStates();
   mpDiagramGraphicsView->removeInheritedClassElements();
-  // reset the CoOrdinateSystem
-  mpIconGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
-  mpDiagramGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
+  // reset the CoordinateSystem
+  mpIconGraphicsView->resetCoordinateSystem();
+  mpDiagramGraphicsView->resetCoordinateSystem();
 
   if (addToList) {
     while (mModelInstanceList.count() > (mModelInstancesPos+1)) {
@@ -7568,452 +6846,6 @@ void ModelWidget::handleCanUndoRedoChanged()
 }
 
 /*!
- * \brief ModelWidget::getIconDiagramMap
- * Parses the IconMap/DiagramMap annotation and returns the IconDiagramMap object.
- * \param mapAnnotation
- * \return
- */
-IconDiagramMap ModelWidget::getIconDiagramMap(QString mapAnnotation)
-{
-  IconDiagramMap map;
-  QStringList mapAnnotationValues = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(mapAnnotation));
-  if (mapAnnotationValues.length() == 6) {
-    QPointF point1, point2;
-    point1.setX(mapAnnotationValues.at(1).toDouble());
-    point1.setY(mapAnnotationValues.at(2).toDouble());
-    point2.setX(mapAnnotationValues.at(3).toDouble());
-    point2.setY(mapAnnotationValues.at(4).toDouble());
-    map.mExtent.clear();
-    map.mExtent.append(point1);
-    map.mExtent.append(point2);
-    map.mPrimitivesVisible = mapAnnotationValues.at(5).compare("true") == 0;
-  }
-  return map;
-}
-
-/*!
- * \brief ModelWidget::getModelInheritedClasses
- * Gets the class inherited classes.
- */
-void ModelWidget::getModelInheritedClasses()
-{
-  MainWindow *pMainWindow = MainWindow::instance();
-  LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
-  // get the inherited classes of the class
-  QList<QString> inheritedClasses = pMainWindow->getOMCProxy()->getInheritedClasses(mpLibraryTreeItem->getNameStructure());
-  int index = 1;
-  foreach (QString inheritedClass, inheritedClasses) {
-    /* If the inherited class is one of the builtin type such as Real we can
-     * stop here, because the class cannot contain any classes, etc.
-     * Also check for cyclic loops.
-     */
-    if (!(pMainWindow->getOMCProxy()->isBuiltinType(inheritedClass) || inheritedClass.compare(mpLibraryTreeItem->getNameStructure()) == 0)) {
-      LibraryTreeItem *pInheritedLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(inheritedClass);
-      if (!pInheritedLibraryTreeItem) {
-        pInheritedLibraryTreeItem = pLibraryTreeModel->createNonExistingLibraryTreeItem(inheritedClass);
-      }
-      if (!pInheritedLibraryTreeItem->isNonExisting() && !pInheritedLibraryTreeItem->getModelWidget()) {
-        pLibraryTreeModel->showModelWidget(pInheritedLibraryTreeItem, false);
-      }
-      mpLibraryTreeItem->addInheritedClass(pInheritedLibraryTreeItem);
-      addInheritedClass(pInheritedLibraryTreeItem);
-      // get the icon and diagram map of inherited class
-      IconDiagramMap iconMap = getIconDiagramMap(pMainWindow->getOMCProxy()->getNthInheritedClassIconMapAnnotation(mpLibraryTreeItem->getNameStructure(), index));
-      mInheritedClassesIconMap.insert(index, iconMap);
-      IconDiagramMap diagramMap = getIconDiagramMap(pMainWindow->getOMCProxy()->getNthInheritedClassDiagramMapAnnotation(mpLibraryTreeItem->getNameStructure(), index));
-      mInheritedClassesDiagramMap.insert(index, diagramMap);
-    }
-    index++;
-  }
-}
-
-/*!
- * \brief ModelWidget::parseModelInheritedClass
- * Parses the inherited class shape and draws its items on the appropriate view.
- * \param pModelWidget
- * \param viewType
- */
-void ModelWidget::drawModelInheritedClassShapes(ModelWidget *pModelWidget, StringHandler::ViewType viewType)
-{
-  int index = 1;
-  foreach (LibraryTreeItem *pLibraryTreeItem, pModelWidget->getInheritedClassesList()) {
-    if (!pLibraryTreeItem->isNonExisting()) {
-      if (!pLibraryTreeItem->getModelWidget()) {
-        MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem, false);
-      }
-      drawModelInheritedClassShapes(pLibraryTreeItem->getModelWidget(), viewType);
-    }
-    GraphicsView *pInheritedGraphicsView, *pGraphicsView;
-    if (pLibraryTreeItem->isNonExisting()) {
-      if (viewType == StringHandler::Icon) {
-        mpIconGraphicsView->addInheritedShapeToList(createNonExistingInheritedShape(mpIconGraphicsView));
-      } else {
-        mpDiagramGraphicsView->addInheritedShapeToList(createNonExistingInheritedShape(mpDiagramGraphicsView));
-      }
-    } else {
-      bool primitivesVisible = true;
-      if (viewType == StringHandler::Icon) {
-        pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
-        pGraphicsView = mpIconGraphicsView;
-        primitivesVisible = pModelWidget->getInheritedClassIconMap().value(index).mPrimitivesVisible;
-      } else {
-        pLibraryTreeItem->getModelWidget()->loadDiagramView();
-        pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
-        pGraphicsView = mpDiagramGraphicsView;
-        primitivesVisible = pModelWidget->getInheritedClassDiagramMap().value(index).mPrimitivesVisible;
-      }
-      // loop through the inherited class shapes
-      foreach (ShapeAnnotation *pShapeAnnotation, pInheritedGraphicsView->getShapesList()) {
-        if (primitivesVisible) {
-          pGraphicsView->addInheritedShapeToList(createInheritedShape(pShapeAnnotation, pGraphicsView));
-        }
-      }
-    }
-    index++;
-  }
-}
-
-/*!
- * \brief ModelWidget::getModelIconDiagramShapes
- * Gets the Modelica model icon & diagram shapes.
- * Parses the Modelica icon/diagram annotation and creates shapes for it on appropriate GraphicsView.
- * \param viewType
- */
-void ModelWidget::getModelIconDiagramShapes(StringHandler::ViewType viewType)
-{
-  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-  GraphicsView *pGraphicsView = 0;
-  QString annotationString;
-  if (viewType == StringHandler::Icon) {
-    pGraphicsView = mpIconGraphicsView;
-    if (mpLibraryTreeItem->getAccess() >= LibraryTreeItem::icon) {
-      annotationString = pOMCProxy->getIconAnnotation(mpLibraryTreeItem->getNameStructure());
-    }
-  } else {
-    pGraphicsView = mpDiagramGraphicsView;
-    if (mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
-      annotationString = pOMCProxy->getDiagramAnnotation(mpLibraryTreeItem->getNameStructure());
-    }
-  }
-  annotationString = StringHandler::removeFirstLastCurlBrackets(annotationString);
-  QStringList list = StringHandler::getStrings(annotationString);
-
-  /* From Modelica Specification Version 3.5-dev
-   * The coordinate system (including preserveAspectRatio) of a class is defined by the following priority:
-   * 1. The coordinate system annotation given in the class (if specified).
-   * 2. The coordinate systems of the first base-class where the extent on the extends-clause specifies a
-   *    null-region (if any). Note that null-region is the default for base-classes, see section 18.6.3.
-   * 3. The default coordinate system CoordinateSystem(extent={{-100, -100}, {100, 100}}).
-   *
-   * Following is the first case.
-   */
-  if (list.size() >= 8) {
-    CoOrdinateSystem coOrdinateSystem = pGraphicsView->getCoOrdinateSystem();
-    ExtentAnnotation extent;
-    if (list.at(0) != '-' && list.at(1) != '-' && list.at(2) != '-' && list.at(3) != '-' &&
-        extent.parse(QString("{{%1, %2}, {%3, %4}}").arg(list.at(0), list.at(1), list.at(2), list.at(3)))) {
-      coOrdinateSystem.setExtent(extent);
-    }
-    BooleanAnnotation preserveAspectRatio;
-    if (list.at(4) != '-' && preserveAspectRatio.parse(list.at(4))) {
-      coOrdinateSystem.setPreserveAspectRatio(preserveAspectRatio);
-    }
-    RealAnnotation initialScale;
-    if (list.at(5) != '-' && initialScale.parse(list.at(5))) {
-      coOrdinateSystem.setInitialScale(initialScale);
-    }
-    PointAnnotation grid;
-    if (list.at(6) != '-' && list.at(7) != '-' && grid.parse(QString("{%1, %2}").arg(list.at(6), list.at(7)))) {
-      coOrdinateSystem.setGrid(grid);
-    }
-    pGraphicsView->setCoOrdinateSystem(coOrdinateSystem);
-  }
-  // draw the CoOrdinateSystem
-  drawModelCoOrdinateSystem(pGraphicsView);
-  // read the shapes
-  if (list.size() < 9)
-    return;
-  QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(8)));
-  drawModelIconDiagramShapes(shapesList, pGraphicsView, false);
-}
-
-void ModelWidget::drawModelCoOrdinateSystem(GraphicsView *pGraphicsView)
-{
-  // start with the local CoOrdinateSystem
-  pGraphicsView->mMergedCoOrdinateSystem = pGraphicsView->getCoOrdinateSystem();
-  // if local CoOrdinateSystem is not complete then try to complete the merged CoOrdinateSystem.
-  if (!pGraphicsView->getCoOrdinateSystem().isComplete()) {
-    readCoOrdinateSystemFromInheritedClass(this, pGraphicsView);
-  }
-
-  pGraphicsView->setExtentRectangle(pGraphicsView->mMergedCoOrdinateSystem.getExtentRectangle(), false);
-  pGraphicsView->resize(pGraphicsView->size());
-}
-
-void ModelWidget::readCoOrdinateSystemFromInheritedClass(ModelWidget *pModelWidget, GraphicsView *pGraphicsView)
-{
-  /* From Modelica Specification Version 3.5-dev
-   * The coordinate system (including preserveAspectRatio) of a class is defined by the following priority:
-   * 1. The coordinate system annotation given in the class (if specified).
-   * 2. The coordinate systems of the first base-class where the extent on the extends-clause specifies a
-   *    null-region (if any). Note that null-region is the default for base-classes, see section 18.6.3.
-   * 3. The default coordinate system CoordinateSystem(extent={{-100, -100}, {100, 100}}).
-   *
-   * Following is the second case.
-   */
-  foreach (LibraryTreeItem *pLibraryTreeItem, pModelWidget->getInheritedClassesList()) {
-    if (!pLibraryTreeItem->isNonExisting()) {
-      GraphicsView *pInheritedGraphicsView;
-      if (pGraphicsView->isIconView()) {
-        pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
-      } else {
-        pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
-      }
-
-      if (!pGraphicsView->mMergedCoOrdinateSystem.hasExtent() && pInheritedGraphicsView->mMergedCoOrdinateSystem.hasExtent()) {
-        pGraphicsView->mMergedCoOrdinateSystem.setExtent(pInheritedGraphicsView->mMergedCoOrdinateSystem.getExtent());
-      }
-      if (!pGraphicsView->mMergedCoOrdinateSystem.hasPreserveAspectRatio() && pInheritedGraphicsView->mMergedCoOrdinateSystem.hasPreserveAspectRatio()) {
-        pGraphicsView->mMergedCoOrdinateSystem.setPreserveAspectRatio(pInheritedGraphicsView->mMergedCoOrdinateSystem.getPreserveAspectRatio());
-      }
-      if (!pGraphicsView->mMergedCoOrdinateSystem.hasInitialScale() && pInheritedGraphicsView->mMergedCoOrdinateSystem.hasInitialScale()) {
-        pGraphicsView->mMergedCoOrdinateSystem.setInitialScale(pInheritedGraphicsView->mMergedCoOrdinateSystem.getInitialScale());
-      }
-      if (!pGraphicsView->mMergedCoOrdinateSystem.hasGrid() && pInheritedGraphicsView->mMergedCoOrdinateSystem.hasGrid()) {
-        pGraphicsView->mMergedCoOrdinateSystem.setGrid(pInheritedGraphicsView->mMergedCoOrdinateSystem.getGrid());
-      }
-    }
-    break; // we only check the coordinate system of the first inherited class. See the comment in the start of the function i.e., "The coordinate systems of the first base-class ..."
-  }
-}
-
-/*!
- * \brief ModelWidget::drawModelInheritedClassComponents
- * Loops through the class inhertited classes and draws the components for all.
- * \param pModelWidget
- * \param viewType
- */
-void ModelWidget::drawModelInheritedClassComponents(ModelWidget *pModelWidget, StringHandler::ViewType viewType)
-{
-  foreach (LibraryTreeItem *pLibraryTreeItem, pModelWidget->getInheritedClassesList()) {
-    if (!pLibraryTreeItem->isNonExisting()) {
-      drawModelInheritedClassComponents(pLibraryTreeItem->getModelWidget(), viewType);
-      GraphicsView *pInheritedGraphicsView, *pGraphicsView;
-      if (viewType == StringHandler::Icon) {
-        pLibraryTreeItem->getModelWidget()->loadElements();
-        pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
-        pGraphicsView = mpIconGraphicsView;
-      } else {
-        pLibraryTreeItem->getModelWidget()->loadDiagramView();
-        pInheritedGraphicsView = pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
-        pGraphicsView = mpDiagramGraphicsView;
-      }
-      foreach (Element *pInheritedComponent, pInheritedGraphicsView->getElementsList()) {
-        pGraphicsView->addInheritedElementToList(createInheritedComponent(pInheritedComponent, pGraphicsView));
-      }
-    }
-  }
-}
-
-/*!
- * \brief ModelWidget::getModelElements
- * Gets the elements of the model and their annotations.
- */
-void ModelWidget::getModelElements()
-{
-  MainWindow *pMainWindow = MainWindow::instance();
-  // get the components
-  mElementsList = pMainWindow->getOMCProxy()->getElements(mpLibraryTreeItem->getNameStructure());
-  // get the components annotations
-  if (!mElementsList.isEmpty()) {
-    mElementsAnnotationsList = pMainWindow->getOMCProxy()->getElementAnnotations(mpLibraryTreeItem->getNameStructure());
-  }
-}
-
-/*!
- * \brief ModelWidget::drawModelIconElements
- * Draw the elements for icon view and place them in the icon GraphicsView.
- */
-void ModelWidget::drawModelIconElements()
-{
-  MainWindow *pMainWindow = MainWindow::instance();
-  int i = 0;
-  foreach (ElementInfo *pComponentInfo, mElementsList) {
-    // if the component type is one of the builtin type then don't try to load it here. we load it when loading diagram view.
-    if (pMainWindow->getOMCProxy()->isBuiltinType(pComponentInfo->getClassName())) {
-      i++;
-      continue;
-    }
-    LibraryTreeItem *pLibraryTreeItem = 0;
-    LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
-    pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(pComponentInfo->getClassName());
-    if (!pLibraryTreeItem) {
-      pLibraryTreeItem = pLibraryTreeModel->createNonExistingLibraryTreeItem(pComponentInfo->getClassName());
-    }
-    // we only load and draw connectors here. Other components are drawn when loading diagram view.
-    if (pLibraryTreeItem->isConnector()) {
-      if (!pLibraryTreeItem->isNonExisting() && !pLibraryTreeItem->getModelWidget()) {
-        pLibraryTreeModel->showModelWidget(pLibraryTreeItem, false);
-      }
-      QString annotation = mElementsAnnotationsList.size() > i ? mElementsAnnotationsList.at(i) : "";
-      if (StringHandler::getPlacementAnnotation(annotation).isEmpty()) {
-        annotation = StringHandler::removeFirstLastCurlBrackets(annotation);
-        annotation = QString("{%1, Placement(false,0.0,0.0,-10.0,-10.0,10.0,10.0,0.0,-,-,-,-,-,-,)}").arg(annotation);
-      } else {
-        /* Quick and ugly fix for #8172 until #2081 is fixed properly.
-         * Remove this else block once #2081 is fixed.
-         */
-        annotation.replace("Placement(false", "Placement(true");
-      }
-      mpIconGraphicsView->addComponentToView(pComponentInfo->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo, false, true, false);
-    }
-    i++;
-  }
-}
-
-/*!
- * \brief ModelWidget::drawModelDiagramComponents
- * Draw the components for diagram view and place them in the diagram GraphicsView.
- */
-void ModelWidget::drawModelDiagramElements()
-{
-  MainWindow *pMainWindow = MainWindow::instance();
-  int i = 0;
-  foreach (ElementInfo *pComponentInfo, mElementsList) {
-    LibraryTreeItem *pLibraryTreeItem = 0;
-    // if the component type is one of the builtin type then don't try to load it.
-    if (!pMainWindow->getOMCProxy()->isBuiltinType(pComponentInfo->getClassName())) {
-      LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
-      pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(pComponentInfo->getClassName());
-      if (!pLibraryTreeItem) {
-        pLibraryTreeItem = pLibraryTreeModel->createNonExistingLibraryTreeItem(pComponentInfo->getClassName());
-      }
-      // we only load and draw non-connectors here. Connector components are drawn in drawModelIconComponents().
-      if (pLibraryTreeItem->isConnector()) {
-        i++;
-        continue;
-      }
-      if (!pLibraryTreeItem->isNonExisting() && !pLibraryTreeItem->getModelWidget()) {
-        pLibraryTreeModel->showModelWidget(pLibraryTreeItem, false);
-      }
-    }
-    QString annotation = mElementsAnnotationsList.size() > i ? mElementsAnnotationsList.at(i) : "";
-    if (StringHandler::getPlacementAnnotation(annotation).isEmpty()) {
-      annotation = StringHandler::removeFirstLastCurlBrackets(annotation);
-      annotation = QString("{%1, Placement(false,0.0,0.0,-10.0,-10.0,10.0,10.0,0.0,-,-,-,-,-,-,)}").arg(annotation);
-    }
-    mpDiagramGraphicsView->addComponentToView(pComponentInfo->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo, false, true, false);
-    i++;
-  }
-}
-
-/*!
- * \brief ModelWidget::drawModelInheritedClassConnections
- * Loops through the class inhertited classes and draws the connections for all.
- * \param pModelWidget
- */
-void ModelWidget::drawModelInheritedClassConnections(ModelWidget *pModelWidget)
-{
-  foreach (LibraryTreeItem *pLibraryTreeItem, pModelWidget->getInheritedClassesList()) {
-    if (!pLibraryTreeItem->isNonExisting()) {
-      drawModelInheritedClassConnections(pLibraryTreeItem->getModelWidget());
-      pLibraryTreeItem->getModelWidget()->loadConnections();
-      foreach (LineAnnotation *pConnectionLineAnnotation, pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getConnectionsList()) {
-        mpDiagramGraphicsView->addInheritedConnectionToList(createInheritedConnection(pConnectionLineAnnotation));
-      }
-    }
-  }
-}
-
-/*!
- * \brief ModelWidget::getModelTransitions
- * Gets the transitions of the model and place them in the diagram GraphicsView.
- */
-void ModelWidget::getModelTransitions()
-{
-  QList<QList<QString>> transitions = MainWindow::instance()->getOMCProxy()->getTransitions(mpLibraryTreeItem->getNameStructure());
-  for (int i = 0 ; i < transitions.size() ; i++) {
-    QStringList transition = transitions.at(i);
-    // get start component
-    Element *pStartComponent = mpDiagramGraphicsView->getElementObject(transition.at(0));
-    // show error message if start component is not found.
-    if (!pStartComponent) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                            GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_TRANSITION)
-                                                            .arg(transition.at(0)).arg(transition.join(",")),
-                                                            Helper::scriptingKind, Helper::errorLevel));
-      continue;
-    }
-    // get end component
-    Element *pEndComponent = mpDiagramGraphicsView->getElementObject(transition.at(1));
-    // show error message if end component is not found.
-    if (!pEndComponent) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                            GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_TRANSITION)
-                                                            .arg(transition.at(1)).arg(transition.join(",")),
-                                                            Helper::scriptingKind, Helper::errorLevel));
-      continue;
-    }
-    // get the transition annotations
-    QStringList shapesList = StringHandler::getStrings(transition.at(7));
-    // Now parse the shapes available in list
-    QString lineShape, textShape = "";
-    foreach (QString shape, shapesList) {
-      if (shape.startsWith("Line")) {
-        lineShape = shape.mid(QString("Line").length());
-        lineShape = StringHandler::removeFirstLastParentheses(lineShape);
-      } else if (shape.startsWith("Text")) {
-        textShape = shape.mid(QString("Text").length());
-        textShape = StringHandler::removeFirstLastParentheses(textShape);
-      }
-    }
-    LineAnnotation *pTransitionLineAnnotation;
-    pTransitionLineAnnotation = new LineAnnotation(lineShape, textShape, pStartComponent, pEndComponent, transition.at(2), transition.at(3),
-                                                   transition.at(4), transition.at(5), transition.at(6), mpDiagramGraphicsView);
-    pTransitionLineAnnotation->setStartElementName(transition.at(0));
-    pTransitionLineAnnotation->setEndElementName(transition.at(1));
-    mpUndoStack->push(new AddTransitionCommand(pTransitionLineAnnotation, false));
-  }
-}
-
-/*!
- * \brief ModelWidget::getModelInitialStates
- * Gets the initial states of the model and place them in the diagram GraphicsView.
- */
-void ModelWidget::getModelInitialStates()
-{
-  QList<QList<QString>> initialStates = MainWindow::instance()->getOMCProxy()->getInitialStates(mpLibraryTreeItem->getNameStructure());
-  for (int i = 0 ; i < initialStates.size() ; i++) {
-    QStringList initialState = initialStates.at(i);
-    // get initial state component
-    Element *pInitialStateComponent = mpDiagramGraphicsView->getElementObject(initialState.at(0));
-    // show error message if initial state component is not found.
-    if (!pInitialStateComponent) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                            GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_INITIALSTATE)
-                                                            .arg(initialState.at(0)).arg(initialState.join(",")),
-                                                            Helper::scriptingKind, Helper::errorLevel));
-      continue;
-    }
-    // get the transition annotations
-    QStringList shapesList = StringHandler::getStrings(initialState.at(1));
-    // Now parse the shapes available in list
-    QString lineShape = "";
-    foreach (QString shape, shapesList) {
-      if (shape.startsWith("Line")) {
-        lineShape = shape.mid(QString("Line").length());
-        lineShape = StringHandler::removeFirstLastParentheses(lineShape);
-      }
-    }
-    LineAnnotation *pInitialStateLineAnnotation;
-    pInitialStateLineAnnotation = new LineAnnotation(lineShape, pInitialStateComponent, mpDiagramGraphicsView);
-    pInitialStateLineAnnotation->setStartElementName(initialState.at(0));
-    pInitialStateLineAnnotation->setEndElementName("");
-    mpUndoStack->push(new AddInitialStateCommand(pInitialStateLineAnnotation, false));
-  }
-}
-
-/*!
  * \brief ModelWidget::drawOMSModelIconElements
  * Draws the OMSimulator elements for icon view.
  */
@@ -8044,8 +6876,8 @@ void ModelWidget::drawOMSModelIconElements()
           y = pChildLibraryTreeItem->getOMSTLMBusConnector()->geometry->y;
         }
         QString annotation = QString("Placement(true,%1,%2,-10.0,-10.0,10.0,10.0,0,%1,%2,-10.0,-10.0,10.0,10.0,)")
-                             .arg(Utilities::mapToCoOrdinateSystem(x, 0, 1, -100, 100))
-                             .arg(Utilities::mapToCoOrdinateSystem(y, 0, 1, -100, 100));
+                             .arg(Utilities::mapToCoordinateSystem(x, 0, 1, -100, 100))
+                             .arg(Utilities::mapToCoordinateSystem(y, 0, 1, -100, 100));
         drawOMSElement(pChildLibraryTreeItem, annotation);
         // assoicated the bus component with each of its connector component
         if ((pChildLibraryTreeItem->getOMSBusConnector()) || (pChildLibraryTreeItem->getOMSTLMBusConnector())) {
@@ -8123,21 +6955,18 @@ void ModelWidget::drawOMSModelDiagramElements()
  */
 void ModelWidget::drawOMSElement(LibraryTreeItem *pLibraryTreeItem, const QString &annotation)
 {
-  ElementInfo *pComponentInfo = new ElementInfo;
-  pComponentInfo->setName(pLibraryTreeItem->getName());
-  pComponentInfo->setClassName(pLibraryTreeItem->getNameStructure());
   // add the connector element to icon view
   if ((pLibraryTreeItem->getOMSConnector()
       && (pLibraryTreeItem->getOMSConnector()->causality == oms_causality_input
           || pLibraryTreeItem->getOMSConnector()->causality == oms_causality_output))
       || (pLibraryTreeItem->getOMSBusConnector())
       || (pLibraryTreeItem->getOMSTLMBusConnector())) {
-    Element *pIconComponent = new Element(pLibraryTreeItem->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo, mpIconGraphicsView);
+    Element *pIconComponent = new Element(pLibraryTreeItem->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), mpIconGraphicsView);
     mpIconGraphicsView->addElementItem(pIconComponent);
     mpIconGraphicsView->addElementToList(pIconComponent);
   }
   // add the element to diagram view
-  Element *pDiagramComponent = new Element(pLibraryTreeItem->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo, mpDiagramGraphicsView);
+  Element *pDiagramComponent = new Element(pLibraryTreeItem->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), mpDiagramGraphicsView);
   mpDiagramGraphicsView->addElementItem(pDiagramComponent);
   mpDiagramGraphicsView->addElementToList(pDiagramComponent);
 }
@@ -8257,41 +7086,6 @@ void ModelWidget::drawOMSModelConnections()
 }
 
 /*!
- * \brief ModelWidget::associateBusWithConnector
- * Helper function for ModelWidget::associateBusWithConnector(busName, connectorName)
- * \param busName
- * \param connectorName
- * \param pGraphicsView
- */
-void ModelWidget::associateBusWithConnector(QString busName, QString connectorName, GraphicsView *pGraphicsView)
-{
-  // get the bus component
-  Element *pBusComponent = pGraphicsView->getElementObject(busName);
-  // get the connector component
-  Element *pConnectorComponent = pGraphicsView->getElementObject(connectorName);
-  if (pBusComponent && pConnectorComponent) {
-    pConnectorComponent->setBusComponent(pBusComponent);
-  }
-}
-
-/*!
- * \brief ModelWidget::dissociateBusWithConnector
- * Helper function for ModelWidget::dissociateBusWithConnector(busName, connectorName)
- * \param busName
- * \param connectorName
- * \param pGraphicsView
- */
-void ModelWidget::dissociateBusWithConnector(QString busName, QString connectorName, GraphicsView *pGraphicsView)
-{
-  // get the bus component
-  Element *pBusComponent = pGraphicsView->getElementObject(busName);
-  Element *pConnectorComponent = pGraphicsView->getElementObject(connectorName);
-  if (pBusComponent && pConnectorComponent) {
-    pConnectorComponent->setBusComponent(0);
-  }
-}
-
-/*!
  * \brief ModelWidget::associateBusWithConnectors
  * Helper function for ModelWidget::associateBusWithConnectors(busName)
  * \param pBusComponent
@@ -8318,24 +7112,6 @@ void ModelWidget::associateBusWithConnectors(Element *pBusComponent, GraphicsVie
           pConnectorComponent->setBusComponent(pBusComponent);
         }
       }
-    }
-  }
-}
-
-/*!
- * \brief ModelWidget::removeInheritedClasses
- * \param pLibraryTreeItem
- * Removes the connect signal/slot of all LibraryTreeItem's recursively.
- */
-void ModelWidget::removeInheritedClasses(LibraryTreeItem *pLibraryTreeItem)
-{
-  pLibraryTreeItem->removeInheritedClasses();
-  if (pLibraryTreeItem->getModelWidget()) {
-    pLibraryTreeItem->getModelWidget()->clearInheritedClasses();
-  }
-  foreach (LibraryTreeItem *pChildLibraryTreeItem, pLibraryTreeItem->childrenItems()) {
-    if (pChildLibraryTreeItem && pChildLibraryTreeItem->isInPackageOneFile()) {
-      ModelWidget::removeInheritedClasses(pChildLibraryTreeItem);
     }
   }
 }
@@ -8526,9 +7302,9 @@ void ModelWidget::exitElement()
   mModelInstanceList.clear();
   mModelInstancesPos = -1;
   mpElementModeLabel->setText("");
-  // reset the CoOrdinateSystem
-  mpIconGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
-  mpDiagramGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
+  // reset the CoordinateSystem
+  mpIconGraphicsView->resetCoordinateSystem();
+  mpDiagramGraphicsView->resetCoordinateSystem();
   mpModelInstance = mpRootModelInstance;
   mpIconGraphicsView->setShapesList(mPreservedIconShapesList);
   mPreservedIconShapesList.clear();
@@ -8688,12 +7464,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     ModelWidget *pSubModelWidget = qobject_cast<ModelWidget*>(subWindowsList.at(i)->widget());
     if (pSubModelWidget == pModelWidget) {
       if (pModelWidget->getLibraryTreeItem()->isModelica()) {
-        if (pModelWidget->isNewApi()) {
-          pModelWidget->loadDiagramViewNAPI();
-        } else {
-          pModelWidget->loadDiagramView();
-          pModelWidget->loadConnections();
-        }
+        pModelWidget->loadDiagramViewNAPI();
       }
       pModelWidget->createModelWidgetComponents();
       pModelWidget->show();
@@ -8708,12 +7479,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     addCloseActionsToSubWindowSystemMenu(pSubWindow);
     pSubWindow->setWindowIcon(ResourceCache::getIcon(":/Resources/icons/modeling.png"));
     if (pModelWidget->getLibraryTreeItem()->isModelica()) {
-      if (pModelWidget->isNewApi()) {
-        pModelWidget->loadDiagramViewNAPI();
-      } else {
-        pModelWidget->loadDiagramView();
-        pModelWidget->loadConnections();
-      }
+      pModelWidget->loadDiagramViewNAPI();
     }
     pModelWidget->createModelWidgetComponents();
     pModelWidget->show();
@@ -9332,6 +8098,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   // Update Element Browser
   if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
     MainWindow::instance()->getElementWidget()->getElementTreeModel()->addElements(pModelWidget->getModelInstance());
+    MainWindow::instance()->getElementWidget()->selectDeselectElementItem("", false);
   }
 }
 
@@ -9463,8 +8230,8 @@ void ModelWidgetContainer::fitToDiagram()
     diagramRect.setTop(diagramRect.bottom());
     diagramRect.setBottom(top);
     // Make the extent values interval of 10 based on grid size
-    const int xInterval = qRound(pGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep()) * 10;
-    const int yInterval = qRound(pGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep()) * 10;
+    const int xInterval = qRound(pGraphicsView->mMergedCoordinateSystem.getHorizontalGridStep()) * 10;
+    const int yInterval = qRound(pGraphicsView->mMergedCoordinateSystem.getVerticalGridStep()) * 10;
     const int left = qRound((double)diagramRect.left() / xInterval) * xInterval;
     const int bottom = qRound((double)diagramRect.bottom() / yInterval) * yInterval;
     const int right = qRound((double)diagramRect.right() / xInterval) * xInterval;
@@ -9476,9 +8243,9 @@ void ModelWidgetContainer::fitToDiagram()
       pGraphicsView->fitInView(diagramRect, Qt::KeepAspectRatio);
     } else {
       // avoid putting unnecessary commands on the stack
-      if (adaptedRect.width() != 0 && adaptedRect.height() != 0 && adaptedRect != pGraphicsView->mMergedCoOrdinateSystem.getExtentRectangle()) {
-        // CoOrdinateSystem
-        CoOrdinateSystem oldCoOrdinateSystem = pGraphicsView->getCoOrdinateSystem();
+      if (adaptedRect.width() != 0 && adaptedRect.height() != 0 && adaptedRect != pGraphicsView->mMergedCoordinateSystem.getExtentRectangle()) {
+        // CoordinateSystem
+        ModelInstance::CoordinateSystem oldCoordinateSystem = pGraphicsView->mCoordinateSystem;
         // version
         QString oldVersion = pModelWidget->getLibraryTreeItem()->mClassInformation.version;
         // uses annotation
@@ -9489,16 +8256,17 @@ void ModelWidgetContainer::fitToDiagram()
           oldUsesAnnotation.append(QString("%1(version=\"%2\")").arg(usesAnnotation.at(i).at(0)).arg(usesAnnotation.at(i).at(1)));
         }
         QString oldUsesAnnotationString = QString("annotate=$annotation(uses(%1))").arg(oldUsesAnnotation.join(","));
-        // construct a new CoOrdinateSystem
-        CoOrdinateSystem newCoOrdinateSystem = oldCoOrdinateSystem;
+        // construct a new CoordinateSystem
+        ModelInstance::CoordinateSystem newCoordinateSystem = oldCoordinateSystem;
         QVector<QPointF> extent;
         extent.append(QPointF(adaptedRect.left(), adaptedRect.bottom()));
         extent.append(QPointF(adaptedRect.right(), adaptedRect.top()));
-        newCoOrdinateSystem.setExtent(extent);
-        // push the CoOrdinateSystem change to undo stack
-        UpdateCoOrdinateSystemCommand *pUpdateCoOrdinateSystemCommand = new UpdateCoOrdinateSystemCommand(pGraphicsView, oldCoOrdinateSystem, newCoOrdinateSystem, false,
-                                                                                                          oldVersion, oldVersion, oldUsesAnnotationString, oldUsesAnnotationString);
-        pModelWidget->getUndoStack()->push(pUpdateCoOrdinateSystemCommand);
+        newCoordinateSystem.setExtent(extent);
+        // push the CoordinateSystem change to undo stack
+        UpdateCoordinateSystemCommand *pUpdateCoordinateSystemCommand = new UpdateCoordinateSystemCommand(pGraphicsView, oldCoordinateSystem, newCoordinateSystem, false,
+                                                                                                          oldVersion, oldVersion, oldUsesAnnotationString,
+                                                                                                          oldUsesAnnotationString);
+        pModelWidget->getUndoStack()->push(pUpdateCoordinateSystemCommand);
         pModelWidget->updateModelText();
       }
     }

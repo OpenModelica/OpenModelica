@@ -63,10 +63,7 @@ public:
   LineAnnotation(QString annotation, GraphicsView *pGraphicsView);
   LineAnnotation(ModelInstance::Line *pLine, bool inherited, GraphicsView *pGraphicsView);
   // Used for shape inside a component
-  LineAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   LineAnnotation(ModelInstance::Line *pLine, Element *pParent);
-  // Used for icon/diagram inherited shape
-  LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   // Used for creating connection/transition
   LineAnnotation(LineAnnotation::LineType lineType, Element *pStartElement, GraphicsView *pGraphicsView);
   // Used for reading a connection

@@ -102,7 +102,6 @@ SOURCES += Util/Helper.cpp \
   Modeling/LibraryTreeWidget.cpp \
   Modeling/ElementTreeWidget.cpp \
   Modeling/Commands.cpp \
-  Modeling/CoOrdinateSystem.cpp \
   Modeling/ModelWidgetContainer.cpp \
   Modeling/ModelicaClassDialog.cpp \
   Modeling/FunctionArgumentDialog.cpp \
@@ -210,7 +209,6 @@ HEADERS  += Util/Helper.h \
   Modeling/LibraryTreeWidget.h \
   Modeling/ElementTreeWidget.h \
   Modeling/Commands.h \
-  Modeling/CoOrdinateSystem.h \
   Modeling/ModelWidgetContainer.h \
   Modeling/ModelicaClassDialog.h \
   Modeling/FunctionArgumentDialog.h \

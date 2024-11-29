@@ -140,7 +140,6 @@ void printOMEditUsage()
 {
   printf("Usage: OMEdit --Debug=true|false] [files]\n");
   printf("    --Debug=[true|false]            Enables the debugging features like QUndoView, diffModelicaFileListings view. Default is false.\n");
-  printf("    --NAPI=[true|false]             Enables the use of new json based api.\n");
   printf("    --NAPIProfiling=[true|false]    Enables the profiling of new json based api.\n");
   printf("    files                       List of Modelica files(*.mo) to open.\n");
 }
