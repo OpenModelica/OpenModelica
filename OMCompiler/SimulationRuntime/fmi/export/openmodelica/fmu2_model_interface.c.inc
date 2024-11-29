@@ -733,9 +733,9 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
     comp->solverInfo = NULL;
   }
 
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Instantiate: GUID=%s", fmuGUID)
   resetThreadData(comp);
 
-  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Instantiate: GUID=%s", fmuGUID)
   return comp;
 }
 
@@ -896,8 +896,8 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
     if (initialization(comp->fmuData, comp->threadData, "fmi", "", 0.0))
     {
       comp->state = model_state_error;
-      resetThreadData(comp);
       FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2ExitInitializationMode: failed")
+      resetThreadData(comp);
       return fmi2Error;
     }
   }
@@ -937,9 +937,10 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
   }
 
   comp->state = isCoSimulation(comp) ? model_state_cs_step_complete : model_state_me_event_mode;
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2ExitInitializationMode: succeeded")
+
   resetThreadData(comp);
 
-  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2ExitInitializationMode: succeeded")
   return res;
 }
 
@@ -956,11 +957,14 @@ fmi2Status fmi2Terminate(fmi2Component c)
   ModelInstance *comp = (ModelInstance *)c;
   if (invalidState(comp, "fmi2Terminate", model_state_me_event_mode|model_state_me_continuous_time_mode, model_state_cs_step_complete|model_state_cs_step_failed))
     return fmi2Error;
-  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Terminate")
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Terminate...")
 
   setThreadData(comp);
   comp->state = model_state_terminated;
+
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Terminate: succeeded")
   resetThreadData(comp);
+
   return fmi2OK;
 }
 
