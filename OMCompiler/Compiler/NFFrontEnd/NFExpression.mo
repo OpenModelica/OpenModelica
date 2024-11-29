@@ -1414,13 +1414,23 @@ public
     output Expression outExp;
   protected
     array<Expression> expl;
+    Integer idx;
   algorithm
+    // Try to subscript the array if the index is known.
     if isScalarLiteral(index) then
       ARRAY(elements = expl) := exp;
-      outExp := applySubscripts(restSubscripts, arrayGet(expl, toInteger(index)));
-    else
-      outExp := makeSubscriptedExp(Subscript.INDEX(index) :: restSubscripts, exp);
+      idx := toInteger(index);
+
+      // Check that the index is in bounds. We don't want to fail here if it's
+      // out of bounds, that's someone else's problem and might be fine.
+      if idx > 0 and idx <= arrayLength(expl) then
+        outExp := applySubscripts(restSubscripts, expl[idx]);
+        return;
+      end if;
     end if;
+
+    // Otherwise create a subscript expression.
+    outExp := makeSubscriptedExp(Subscript.INDEX(index) :: restSubscripts, exp);
   end applyIndexExpArray;
 
   function applySubscriptRange
