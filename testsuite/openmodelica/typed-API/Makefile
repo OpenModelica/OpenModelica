@@ -4,7 +4,8 @@ TESTFILES = \
 GetBooleanClassAnnotation.mos \
 listFile.mos \
 StringVariableName.mos \
-UriLookup.mos
+UriLookup.mos \
+copyText.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

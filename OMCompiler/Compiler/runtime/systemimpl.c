@@ -972,14 +972,16 @@ extern int SystemImpl__createDirectory(const char *str)
   }
 }
 
+#define OMC_MAX_FREAD_BUF_SIZE 8192
+
 extern int SystemImpl__copyFile(const char *str_1, const char *str_2)
 {
   int rv = 1;
   size_t n;
-  char buf[8192];
+  char buf[OMC_MAX_FREAD_BUF_SIZE+1];
   FILE *source, *target;
 
-  source = omc_fopen(str_1, "r");
+  source = omc_fopen(str_1, "rb");
   if (source==0) {
     const char *msg[2] = {strerror(errno), str_1};
     c_add_message(NULL,85,
@@ -990,7 +992,7 @@ extern int SystemImpl__copyFile(const char *str_1, const char *str_2)
       2);
     return 0;
   }
-  target = omc_fopen(str_2, "w");
+  target = omc_fopen(str_2, "wb");
   if (target==0) {
     const char *msg[2] = {strerror(errno), str_2};
     c_add_message(NULL,85,
@@ -1003,7 +1005,7 @@ extern int SystemImpl__copyFile(const char *str_1, const char *str_2)
     return 0;
   }
 
-  while (( n = omc_fread(buf, 1, 8192, source, 1) )) {
+  while (( n = omc_fread(buf, 1, OMC_MAX_FREAD_BUF_SIZE, source, 1) )) {
     if (n != fwrite(buf, 1, n, target)) {
       rv = 0;
       break;
@@ -2950,7 +2952,7 @@ void SystemImpl__initGarbageCollector(void)
 
 int SystemImpl__fileContentsEqual(const char *file1, const char *file2)
 {
-  char buf1[8192],buf2[8192];
+  char buf1[OMC_MAX_FREAD_BUF_SIZE+1],buf2[OMC_MAX_FREAD_BUF_SIZE+1];
   FILE *f1,*f2;
   int i1,i2,totalread=0,error=0;
   omc_stat_t stbuf1;
@@ -2969,8 +2971,8 @@ int SystemImpl__fileContentsEqual(const char *file1, const char *file2)
     return 0;
   }
   do {
-    i1 = omc_fread(buf1,1,8192,f1, 1);
-    i2 = omc_fread(buf2,1,8192,f2, 1);
+    i1 = omc_fread(buf1,1,OMC_MAX_FREAD_BUF_SIZE,f1, 1);
+    i2 = omc_fread(buf2,1,OMC_MAX_FREAD_BUF_SIZE,f2, 1);
     if (i1 != i2 || strncmp(buf1,buf2,i1)) {
       error = 1;
     }
@@ -3107,8 +3109,8 @@ int SystemImpl__covertTextFileToCLiteral(const char *textFile, const char *outFi
   FILE *fin;
   FILE *fout = NULL;
   int result = 0, n, i, j, k, isMSVC = !strcmp(target, "msvc");
-  char buffer[512];
-  char obuffer[1024];
+  char buffer[BUFSIZ+1];
+  char obuffer[BUFSIZ*2+1];
   fin = omc_fopen(textFile, "r");
   if (!fin) {
     goto done;
@@ -3134,7 +3136,7 @@ int SystemImpl__covertTextFileToCLiteral(const char *textFile, const char *outFi
     fputc('{', fout);
     fputc('\n', fout);
     do {
-      n = omc_fread(buffer,1,511,fin, 1);
+      n = omc_fread(buffer,1,BUFSIZ,fin, 1);
       j = 0;
       /* adrpo: encode each char */
       for (i=0; i<n; i++) {
@@ -3177,7 +3179,7 @@ int SystemImpl__covertTextFileToCLiteral(const char *textFile, const char *outFi
   {
     fputc('\"', fout);
     do {
-      n = omc_fread(buffer,1,511,fin, 1);
+      n = omc_fread(buffer,1,BUFSIZ,fin, 1);
       j = 0;
       for (i=0; i<n; i++) {
         switch (buffer[i]) {

@@ -483,11 +483,11 @@ void read_input_xml(MODEL_DATA* modelData,
   if(NULL == modelData->initXMLData)
   {
     int done;
-    char buf[BUFSIZ] = {0};
+    char buf[BUFSIZ+1] = {0};
     do
     {
-      size_t len = omc_fread(buf, 1, sizeof(buf), file, 1);
-      done = len < sizeof(buf);
+      size_t len = omc_fread(buf, 1, BUFSIZ, file, 1);
+      done = len < BUFSIZ;
       if(XML_STATUS_ERROR == XML_Parse(parser, buf, len, done))
       {
         fclose(file);
