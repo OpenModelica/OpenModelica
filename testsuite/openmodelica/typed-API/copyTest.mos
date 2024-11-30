@@ -1,4 +1,5 @@
 // status: correct
+// depends: PumpingSystem.fmu
 // teardown_command: rm -f newfmu.fmu
 
 echo(false);
