@@ -5,7 +5,7 @@ GetBooleanClassAnnotation.mos \
 listFile.mos \
 StringVariableName.mos \
 UriLookup.mos \
-copyText.mos
+copyTest.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
