@@ -783,8 +783,8 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
 
    unsigned* printedIdx = (unsigned*)malloc(2 * n_gt_eps * sizeof(unsigned));
    unsigned nPrinted = 0;
-   printf("      Variables    Initial guess         |max(Gamma,Sigma)|\n");
-   printf("      ---------    ------------------    ------------------");
+   printf("      Var number    Var name                  Initial guess         |max(Gamma,Sigma)|\n");
+   printf("      ----------    ------------------------  ------------------    ------------------");
    for( l = 0; l < n_gt_eps; l++)
    {
       printedIdx[nPrinted] = -1;
@@ -798,7 +798,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
          if (!alreadyPrinted)
          {
             // Print variable referenced l by Sigma, its init value and the value of Sigma_ll
-            printf("\n      var_%d  %10s = %7.7g     %8.3f",
+            printf("\n      %10d    %24s  %7.7g     %8.3f",
                    w_idx[index_Sigma[l]]+1,
                    data->modelData->realVarsData[var_id(w_idx[index_Sigma[l]], data, systemData)].info.name,
                    x0[w_idx[index_Sigma[l]]],
@@ -822,7 +822,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
          if  (!alreadyPrinted_j)
          {
             // Print variable referenced l by Gamma, its init value and the value of Gamma_ilk
-            printf("\n      var_%d  %10s = %7.7g     %8.3f",
+            printf("\n      %10d    %24s  %7.7g     %8.3f",
                    w_idx[index_Gamma_j[l]]+1,
                    data->modelData->realVarsData[var_id(w_idx[index_Gamma_j[l]], data, systemData)].info.name,
                    x0[w_idx[index_Gamma_j[l]]],
@@ -832,7 +832,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
          if  (!alreadyPrinted_k)
          {
             // Print variable referenced l by Gamma, its init value and the value of Gamma_ijl
-            printf("\n      var_%d  %10s = %7.7g     %8.3f",
+            printf("\n      %10d    %24s  %7.7g     %8.3f",
                    w_idx[index_Gamma_k[l]]+1,
                    data->modelData->realVarsData[var_id(w_idx[index_Gamma_k[l]], data, systemData)].info.name,
                    x0[w_idx[index_Gamma_k[l]]],
