@@ -925,8 +925,6 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
 
    printedIdx = (unsigned*)realloc(printedIdx, n_gt_eps * sizeof(unsigned));
    nPrinted = 0;
-   printf("      Equations    max(alpha,Gamma)\n");
-   printf("      ---------    ------------------");
    printf("      Eq number    Eq index     max(alpha,Gamma)\n");
    printf("      ---------    ---------    ----------------");
    for( l = 0; l < n_gt_eps; l++)
