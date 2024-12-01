@@ -90,6 +90,7 @@ protected
   import Inline = NBInline;
   import NBJacobian.JacobianType;
   import Module = NBModule;
+  import Resizable = NBResizable;
   import Solve = NBSolve;
   import Tearing = NBTearing;
 
@@ -772,6 +773,8 @@ protected
 
     (simulation_lst, continuous_lst, clocked_lst, discretes_lst, initials_lst, auxiliaries_lst, removed_lst) := BEquation.typeList(EquationPointers.toList(equations));
 
+    equations := Resizable.main(equations);
+
     eqData := BEquation.EQ_DATA_SIM(
       uniqueIndex = idx,
       equations   = EquationPointers.removeList(clocked_lst, equations),
@@ -783,6 +786,7 @@ protected
       auxiliaries = EquationPointers.fromList(auxiliaries_lst),
       removed     = EquationPointers.fromList(removed_lst)
     );
+
   end lowerEquationData;
 
   function lowerEquationsAndAlgorithms

@@ -310,6 +310,7 @@ if true then /* Suppress output */
     "../NBackEnd/Util/NBBackendUtil.mo",
     "../NBackEnd/Util/NBDifferentiate.mo",
     "../NBackEnd/Util/NBReplacements.mo",
+    "../NBackEnd/Util/NBResizable.mo",
     "../NBackEnd/Util/NBSlice.mo",
 
   // "NSimCode"

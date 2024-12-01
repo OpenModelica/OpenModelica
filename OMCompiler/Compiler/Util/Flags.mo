@@ -549,6 +549,8 @@ constant DebugFlag VECTORIZE_BINDINGS = DEBUG_FLAG(192, "vectorizeBindings", fal
   Gettext.gettext("Turns on vectorization of bindings when scalarization is turned off."));
 constant DebugFlag DUMP_EVENTS = DEBUG_FLAG(193, "dumpEvents", false,
   Gettext.gettext("Dumps information about the detected event functions."));
+constant DebugFlag DUMP_RESIZABLE = DEBUG_FLAG(194, "dumpResizable", false,
+  Gettext.gettext("Dumps information about resizable paremeter handling."));
 
 public
 // CONFIGURATION FLAGS

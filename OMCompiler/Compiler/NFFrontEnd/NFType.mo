@@ -783,6 +783,29 @@ public
     end if;
   end copyDims;
 
+  function applyToDims
+    input output Type ty;
+    input dimFunc func;
+    partial function dimFunc
+      input output Dimension dim;
+    end dimFunc;
+  algorithm
+    ty := match ty
+      local
+        Function fn;
+      case ARRAY()              algorithm ty.dimensions := list(func(d) for d in ty.dimensions); then ty;
+      case FUNCTION(fn = fn)    algorithm fn.returnType := applyToDims(fn.returnType, func); ty.fn := fn; then ty;
+      case METABOXED()          algorithm ty.ty := applyToDims(ty.ty, func); then ty;
+      case CONDITIONAL_ARRAY()  algorithm ty.trueType := applyToDims(ty.trueType, func); then ty;
+      case UNTYPED() algorithm
+        for i in 1:arrayLength(ty.dimensions) loop
+          arrayUpdate(ty.dimensions, i, func(ty.dimensions[i]));
+        end for;
+      then ty;
+      else ty;
+    end match;
+  end applyToDims;
+
   function nthDimension
     input Type ty;
     input Integer index;

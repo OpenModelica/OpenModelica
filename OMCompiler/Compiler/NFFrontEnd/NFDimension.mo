@@ -80,8 +80,9 @@ public
   record RESIZABLE
     "for all symbolic purposes this is INTEGER() for codegeneration it is EXP()
     invoked by using annotation(__OpenModelica_resizable=true) on a parameter"
-    Integer size;
-    Expression exp;
+    Integer size              "the actual size defined by the user";
+    Option<Integer> opt_size  "the optimal size determined by the backend";
+    Expression exp            "the full expression (parameter)";
     Variability var;
   end RESIZABLE;
 
@@ -110,7 +111,7 @@ public
             Error.assertion(false, getInstanceName() + " got invalid non structural parameter: " + Expression.toString(exp), sourceInfo());
           then fail();
         end match;
-      then RESIZABLE(value, exp, var);
+      then RESIZABLE(value, NONE(), exp, var);
 
       case (Expression.INTEGER(), _) then INTEGER(exp.value, var);
 
@@ -211,6 +212,18 @@ public
       input Expression e2;
       output Expression res = Expression.BINARY(e1, Operator.OPERATOR(Type.INTEGER(), NFOperator.Op.ADD), e2);
     end addExp;
+    function addOpt
+      input Option<Integer> s1;
+      input Option<Integer> s2;
+      output Option<Integer> res;
+    algorithm
+      res := match (s1, s2)
+        local
+          Integer i1, i2;
+        case (SOME(i1), SOME(i2)) then SOME(i1+i2);
+        else NONE();
+      end match;
+    end addOpt;
   algorithm
     c := match (a, b)
       case (UNKNOWN(),_)              then UNKNOWN();
@@ -219,11 +232,11 @@ public
       case (INTEGER(),EXP())          then EXP(addExp(b.exp, Expression.INTEGER(a.size)), b.var);
       case (EXP(),INTEGER())          then EXP(addExp(a.exp, Expression.INTEGER(b.size)), a.var);
       case (EXP(),EXP())              then EXP(addExp(a.exp, b.exp), Prefixes.variabilityMax(a.var, b.var));
-      case (INTEGER(),RESIZABLE())    then RESIZABLE(a.size+b.size, addExp(b.exp, Expression.INTEGER(a.size)), b.var);
-      case (RESIZABLE(),INTEGER())    then RESIZABLE(a.size+b.size, addExp(a.exp, Expression.INTEGER(b.size)), a.var);
+      case (INTEGER(),RESIZABLE())    then RESIZABLE(a.size+b.size, addOpt(SOME(a.size), b.opt_size), addExp(b.exp, Expression.INTEGER(a.size)), b.var);
+      case (RESIZABLE(),INTEGER())    then RESIZABLE(a.size+b.size, addOpt(a.opt_size, SOME(b.size)), addExp(a.exp, Expression.INTEGER(b.size)), a.var);
       case (EXP(),RESIZABLE())        then EXP(addExp(a.exp, b.exp), Prefixes.variabilityMax(a.var, b.var));
       case (RESIZABLE(),EXP())        then EXP(addExp(a.exp, b.exp), Prefixes.variabilityMax(a.var, b.var));
-      case (RESIZABLE(),RESIZABLE())  then RESIZABLE(a.size+b.size, addExp(a.exp, b.exp), Prefixes.variabilityMax(a.var, b.var));
+      case (RESIZABLE(),RESIZABLE())  then RESIZABLE(a.size+b.size, addOpt(a.opt_size, b.opt_size), addExp(a.exp, b.exp), Prefixes.variabilityMax(a.var, b.var));
       else UNKNOWN();
     end match;
   end add;
@@ -335,6 +348,16 @@ public
       else false;
     end match;
   end isSizeOf;
+
+  function isResizable
+    input Dimension dim;
+    output Boolean b;
+  algorithm
+    b := match dim
+      case RESIZABLE() then true;
+      else false;
+    end match;
+  end isResizable;
 
   function allEqualKnown
     input list<Dimension> dims1;
