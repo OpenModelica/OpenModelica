@@ -927,6 +927,8 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
    nPrinted = 0;
    printf("      Equations    max(alpha,Gamma)\n");
    printf("      ---------    ------------------");
+   printf("      Eq number    Eq index     max(alpha,Gamma)\n");
+   printf("      ---------    ---------    ----------------");
    for( l = 0; l < n_gt_eps; l++)
    {
       printedIdx[nPrinted] = -1;
@@ -940,8 +942,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
          if (!alreadyPrinted)
          {
             // Print equation l referenced by alpha and the value of alpha_i
-            printf("\n      eqn_%d     %8.3f", n_idx[index_alpha[l]]+1, alpha[index_alpha[l]]);
-            printf("\n      sim_%d     %8.3f", systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
+            printf("\n      %9d    %9d    %8.3f", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
             printedIdx[nPrinted++] = index_alpha[l];
          }
       }
@@ -957,9 +958,8 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
          if  (!alreadyPrinted)
          {
             // Print equation l referenced by Gamma and the value of Gamma_ljk
-            printf("\n      eqn_%d     %8.3f", n_idx[index_Gamma_i[l]]+1,
-                   Gamma_ijk[index_Gamma_i[l]][index_Gamma_j[l]][index_Gamma_k[l]]);
-            printf("\n      sim_%d     %8.3f", systemData->eqn_simcode_indices[n_idx[index_Gamma_i[l]]],
+            printf("\n      %9d    %9d    %8.3f", n_idx[index_Gamma_i[l]]+1,
+			       systemData->eqn_simcode_indices[n_idx[index_Gamma_i[l]]],
                    Gamma_ijk[index_Gamma_i[l]][index_Gamma_j[l]][index_Gamma_k[l]]);
             printedIdx[nPrinted++] = index_Gamma_i[l];
          }
