@@ -511,39 +511,9 @@ protected
     input VariablePointers variables;
   algorithm
     exp := Expression.nthRecordElement(index, exp);
-   // lower indexed record constructor elements
-    exp := Expression.map(exp, inlineRecordConstructorElements);
     // lower the new component references of record attributes
     exp := Expression.map(exp, function BackendDAE.lowerComponentReferenceExp(variables = variables));
   end inlineRecordConstructorExp;
-
-  function inlineRecordConstructorElements
-    "removes indexed constructor element calls
-    Constructor(a,b,c)[2] --> b"
-    input output Expression exp;
-  algorithm
-    exp := match exp
-      local
-        Expression new_exp;
-        Call call;
-        Function fn;
-
-      case Expression.RECORD_ELEMENT(recordExp = Expression.CALL(call = call as Call.TYPED_CALL(fn = fn))) algorithm
-        if Function.isDefaultRecordConstructor(fn) then
-          new_exp := listGet(call.arguments, exp.index);
-        elseif Function.isNonDefaultRecordConstructor(fn) then
-          // ToDo: this has to be mapped correctly with the body.
-          //   for non default record constructors its not always the
-          //   case that inputs map 1:1 to attributes
-          new_exp := listGet(call.arguments, exp.index);
-        else
-          new_exp := exp;
-        end if;
-      then new_exp;
-
-      else exp;
-    end match;
-  end inlineRecordConstructorElements;
 
   function getElementList
     "used for inlining tuple equations
