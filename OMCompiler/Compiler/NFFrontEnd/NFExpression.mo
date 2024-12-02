@@ -5039,7 +5039,7 @@ public
         Integer slice_start, slice_step, slice_stop;
 
       case (RANGE(), (slice_start, slice_step, slice_stop)) algorithm
-        step := if Util.isSome(range.step) then integerValue(Util.getOption(range.step)) else 1;
+        step := Util.applyOptionOrDefault(range.step, integerValue, 1);
         start := integerValue(range.start);
         // shift start and stop accordingly, multiply step
         stop  := start + slice_stop * step;

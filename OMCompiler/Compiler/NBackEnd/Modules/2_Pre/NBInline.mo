@@ -59,7 +59,7 @@ protected
   import Module = NBModule;
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, Iterator};
+  import NBEquation.{Equation, IfEquationBody, EquationPointers, EqData, EquationAttributes, Iterator};
   import Replacements = NBReplacements;
   import BVariable = NBVariable;
   import NBVariable.{VariablePointer, VariablePointers, VarData};
@@ -342,6 +342,12 @@ protected
           new_eqn := if Equation.isDummy(new_eqn) then new_eqn else eqn;
         then new_eqn;
 
+        // apply on if-equation body equations
+        case Equation.IF_EQUATION() algorithm
+          new_eqn := inlineRecordTupleArrayIfEquation(eqn, eqn.body, iter, variables, new_eqns, index, inlineSimple);
+          new_eqn := if Equation.isDummy(new_eqn) then new_eqn else eqn;
+        then new_eqn;
+
         // nothing happens
         else eqn;
       end match;
@@ -351,6 +357,49 @@ protected
       end if;
     end try;
   end inlineRecordTupleArrayEquation;
+
+  function inlineRecordTupleArrayIfEquation
+    "Documentation"
+    input output Equation eqn;
+    input IfEquationBody body;
+    input Iterator iter;
+    input VariablePointers variables;
+    input Pointer<list<Pointer<Equation>>> new_eqns;
+    input Pointer<Integer> index;
+    input Boolean inlineSimple;
+  protected
+    list<Pointer<Equation>> eqns;
+    IfEquationBody new_body;
+    Pointer<Equation> new_eqn;
+  algorithm
+    eqns := Pointer.access(new_eqns);
+    new_body := inlineRecordTupleArrayIfBody(body, iter, variables, index, inlineSimple);
+    for b in IfEquationBody.split(new_body) loop
+      new_eqn := Pointer.create(Equation.IF_EQUATION(IfEquationBody.size(b), b, Equation.getSource(eqn), Equation.getAttributes(eqn)));
+      Equation.createName(new_eqn, index, NBEquation.SIMULATION_STR);
+      eqns := new_eqn :: eqns;
+    end for;
+    Pointer.update(new_eqns, eqns);
+    eqn := Equation.DUMMY_EQUATION();
+  end inlineRecordTupleArrayIfEquation;
+
+  function inlineRecordTupleArrayIfBody
+    "Documentation"
+    input output IfEquationBody body;
+    input Iterator iter;
+    input VariablePointers variables;
+    input Pointer<Integer> index;
+    input Boolean inlineSimple;
+  protected
+    Pointer<list<Pointer<Equation>>> new_eqns = Pointer.create({});
+  algorithm
+    body.then_eqns := List.flatten(list(
+      match inlineRecordTupleArrayEquation(Pointer.access(e), iter, variables, new_eqns, index, inlineSimple)
+        case Equation.DUMMY_EQUATION() then Pointer.access(new_eqns);
+        else {e};
+      end match for e in body.then_eqns));
+    body.else_if := Util.applyOption(body.else_if, function inlineRecordTupleArrayIfBody(iter = iter, variables = variables, index = index, inlineSimple = inlineSimple));
+  end inlineRecordTupleArrayIfBody;
 
   function inlineRecordEquation
     "tries to inline a record equation. Removes the old equation by making it a dummy
@@ -419,7 +468,7 @@ protected
   end inlineTupleEquation;
 
   function inlineArrayEquation
-    "inlines array equations of the form {a, b, c , ...} = {d, e, f, ...}
+    "inlines array equations of the form {a, b, c, ...} = {d, e, f, ...}
     to a = d; and so on. Also inlines them if inside for-equation or nested arrays.
     ToDo: inside When/If"
     input output Equation eqn;

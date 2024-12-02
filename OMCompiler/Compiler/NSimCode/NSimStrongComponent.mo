@@ -285,7 +285,7 @@ public
     algorithm
       (condition, blcks) := tpl;
       str := "if " + Expression.toString(condition) + " then\n  "
-         + List.toString(blcks, function toString(str = str + "  "), "", "", "\n" ,"");
+         + List.toString(blcks, function toString(str = str + "  "), "", "", "\n", "");
     end ifTplStr;
 
     function getIndex
