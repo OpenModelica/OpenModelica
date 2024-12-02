@@ -1578,6 +1578,7 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
   if (updateVariables) {
     variablesUpdated();
   }
+  initializeVisualization();
   mpVariablesTreeView->setSortingEnabled(true);
   mpVariablesTreeView->sortByColumn(0, Qt::AscendingOrder);
   // since we cleared the filter above so we need to apply it back.
@@ -1870,13 +1871,14 @@ void VariablesWidget::initializeVisualization()
       mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
       mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
       enableVisualizationControls(true);
+      updateVisualization();
     }
   }
 
   if (!pVariablesTreeItem) {
     mpTimeControlsDescriptionLabel->setText("");
-    enableVisualizationControls(false);
     rewindVisualization();
+    enableVisualizationControls(false);
   }
 }
 
