@@ -5689,10 +5689,9 @@ public
       case RECORD_ELEMENT(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
         algorithm
           node := Class.nthComponent(index, InstNode.getClass(node));
-          ty := Type.liftArrayLeftList(InstNode.getType(node), Type.arrayDims(recordExp.ty));
-          outExp := RECORD_ELEMENT(recordExp, index, InstNode.name(node), ty);
         then
-          inlineRecordConstructorElements(outExp);
+          RECORD_ELEMENT(recordExp, index, InstNode.name(node),
+                         Type.liftArrayLeftList(InstNode.getType(node), Type.arrayDims(recordExp.ty)));
 
       case SUBSCRIPTED_EXP()
         algorithm
@@ -5712,40 +5711,11 @@ public
         algorithm
           Type.COMPLEX(cls = node) := typeOf(recordExp);
           node := Class.nthComponent(index, InstNode.getClass(node));
-          outExp := RECORD_ELEMENT(recordExp, index, InstNode.name(node), InstNode.getType(node));
         then
-          inlineRecordConstructorElements(outExp);
+          RECORD_ELEMENT(recordExp, index, InstNode.name(node), InstNode.getType(node));
 
     end match;
   end nthRecordElement;
-
-  function inlineRecordConstructorElements
-    "removes indexed constructor element calls
-    Constructor(a,b,c)[2] --> b"
-    input output Expression exp;
-  algorithm
-    exp := match exp
-      local
-        Expression new_exp;
-        Call call;
-        Function.Function fn;
-
-      case RECORD_ELEMENT(recordExp = CALL(call = call as Call.TYPED_CALL(fn = fn))) algorithm
-        if Function.Function.isDefaultRecordConstructor(fn) then
-          new_exp := listGet(call.arguments, exp.index);
-        elseif Function.Function.isNonDefaultRecordConstructor(fn) then
-          // ToDo: this has to be mapped correctly with the body.
-          //   for non default record constructors its not always the
-          //   case that inputs map 1:1 to attributes
-          new_exp := listGet(call.arguments, exp.index);
-        else
-          new_exp := exp;
-        end if;
-      then new_exp;
-
-      else exp;
-    end match;
-  end inlineRecordConstructorElements;
 
   function retype
     input output Expression exp;
