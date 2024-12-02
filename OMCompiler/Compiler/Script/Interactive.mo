@@ -8958,9 +8958,6 @@ algorithm
   paths := List.map(usesStr,Util.tuple41);
   fromVersions := List.map(usesStr,Util.tuple42);
   strs := List.map(usesStr,Util.tuple43);
-  if not requireExactVersion then
-    strs := List.map1(strs,listAppend,{"default"});
-  end if;
   usesStr := list((p,f,s,false) threaded for p in paths, f in fromVersions, s in strs);
 end getUsesAnnotationOrDefault;
 
