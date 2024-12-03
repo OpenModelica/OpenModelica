@@ -537,7 +537,7 @@ public
       (elem1, diffArguments) := differentiateExpression(exp.exp, diffArguments);
     then (Expression.SUBSCRIPTED_EXP(elem1, exp.subscripts, exp.ty, exp.split), diffArguments);
 
-    // (..., a_i ,...)' = (..., a'_i, ...)
+    // (..., a_i,...)' = (..., a'_i, ...)
     case Expression.TUPLE_ELEMENT() algorithm
       (elem1, diffArguments) := differentiateExpression(exp.tupleExp, diffArguments);
     then (Expression.TUPLE_ELEMENT(elem1, exp.index, exp.ty), diffArguments);

@@ -105,15 +105,15 @@ public
 
       case Equation.FOR_EQUATION(body = {body as Equation.IF_EQUATION()})
       then IF_GENERIC_CALL(
-          index = index,
-          iters = SimIterator.fromIterator(eqn.iter),
-          branches = SimBranch.fromIfBody(body.body));
+          index     = index,
+          iters     = SimIterator.fromIterator(eqn.iter),
+          branches  = SimBranch.fromIfBody(body.body));
 
       case Equation.FOR_EQUATION(body = {body as Equation.WHEN_EQUATION()})
       then WHEN_GENERIC_CALL(
-          index = index,
-          iters = SimIterator.fromIterator(eqn.iter),
-          branches = SimBranch.fromWhenBody(body.body));
+          index     = index,
+          iters     = SimIterator.fromIterator(eqn.iter),
+          branches  = SimBranch.fromWhenBody(body.body));
 
       case Equation.FOR_EQUATION(body = {body})
       then SINGLE_GENERIC_CALL(
@@ -192,7 +192,7 @@ public
         sim_iter := match range
           case Expression.RANGE() algorithm
             start := Expression.integerValue(range.start);
-            step  := Expression.integerValue(Util.getOptionOrDefault(range.step, Expression.INTEGER(1)));
+            step  := Util.applyOptionOrDefault(range.step, Expression.integerValue, 1);
             stop  := Expression.integerValue(range.stop);
           then SIM_ITERATOR_RANGE(name, start, step, intDiv(stop-start,step)+1) :: sim_iter;
 
@@ -262,7 +262,7 @@ public
         // ToDo: what if there are more complex things inside?
         body := (Equation.getLHS(Pointer.access(eqn)), Equation.getRHS(Pointer.access(eqn))) :: body;
       end for;
-      branch := SIM_BRANCH(if_body.condition, body) ;
+      branch := SIM_BRANCH(if_body.condition, body);
       if Util.isSome(if_body.else_if) then
         branches := branch :: fromIfBody(Util.getOption(if_body.else_if));
       else

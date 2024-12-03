@@ -313,7 +313,7 @@ public
         end match;
 
         for marked_eqns in msss loop
-          (constraints, states,_ , _) := getConstraintsAndCandidates(equations, marked_eqns, mapping_opt);
+          (constraints, states, _, _) := getConstraintsAndCandidates(equations, marked_eqns, mapping_opt);
           err_str := err_str + StringUtil.headline_2("MSSS " + intString(msss_idx) + "") + "\n"
             + EquationPointers.toString(constraints, "Constraint")
             + VariablePointers.toString(states, "State");

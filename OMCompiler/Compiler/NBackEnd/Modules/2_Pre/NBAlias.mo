@@ -1265,7 +1265,7 @@ protected
 
   uniontype AttributeCollector
     record ATTRIBUTE_COLLECTOR
-      UnorderedMap<ComponentRef,Expression> min_val_map             "set containing all minimum values" ;
+      UnorderedMap<ComponentRef,Expression> min_val_map             "set containing all minimum values";
       UnorderedMap<ComponentRef,Expression> max_val_map             "set containing all maximum values";
       UnorderedMap<ComponentRef,Expression> start_map               "set containing all start values";
       UnorderedMap<ComponentRef,Expression> fixed_map               "set containing all fixed values";
