@@ -343,7 +343,7 @@ protected
         then new_eqn;
 
         // apply on if-equation body equations
-        case Equation.IF_EQUATION() algorithm
+        case Equation.IF_EQUATION() guard IfEquationBody.isRecordOrTupleEquation(eqn.body) algorithm
           new_eqn := inlineRecordTupleArrayIfEquation(eqn, eqn.body, iter, variables, new_eqns, index, inlineSimple);
           new_eqn := if Equation.isDummy(new_eqn) then new_eqn else eqn;
         then new_eqn;
@@ -375,8 +375,7 @@ protected
     eqns := Pointer.access(new_eqns);
     new_body := inlineRecordTupleArrayIfBody(body, iter, variables, index, inlineSimple);
     for b in IfEquationBody.split(new_body) loop
-      new_eqn := Pointer.create(Equation.IF_EQUATION(IfEquationBody.size(b), b, Equation.getSource(eqn), Equation.getAttributes(eqn)));
-      Equation.createName(new_eqn, index, NBEquation.SIMULATION_STR);
+      new_eqn := IfEquationBody.makeIfEquation(b, index, NBEquation.SIMULATION_STR, iter, Equation.getSource(eqn), Equation.getAttributes(eqn));
       eqns := new_eqn :: eqns;
     end for;
     Pointer.update(new_eqns, eqns);
