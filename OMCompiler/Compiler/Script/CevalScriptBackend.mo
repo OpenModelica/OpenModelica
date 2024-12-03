@@ -2133,20 +2133,10 @@ algorithm
         Values.TUPLE({Values.REAL(startTime), Values.REAL(stopTime), Values.REAL(tolerance), Values.INTEGER(numberOfIntervals), Values.REAL(interval)});
 
     case ("getAnnotationNamedModifiers",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(annotationname)})
-      equation
-        Absyn.CLASS(body=cdef,info=info) =InteractiveUtil.getPathedClassInProgram(classpath,SymbolTable.getAbsyn());
-        annlst= getAnnotationList(cdef);
-        strings=getElementArgsModifiers(annlst,annotationname,AbsynUtil.pathString(classpath),info);
-      then
-        ValuesUtil.makeArray(List.map(strings, ValuesUtil.makeString));
+      then getAnnotationNamedModifiers(classpath, annotationname, SymbolTable.getAbsyn());
 
      case ("getAnnotationModifierValue",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(annotationname),Values.STRING(modifiername)})
-      equation
-        Absyn.CLASS(body = cdef) =InteractiveUtil.getPathedClassInProgram(classpath,SymbolTable.getAbsyn());
-        annlst= getAnnotationList(cdef);
-        s1=getElementArgsModifiersValue(annlst,annotationname,modifiername);
-      then
-        Values.STRING(s1);
+       then getAnnotationModifierValue(classpath, annotationname, modifiername, SymbolTable.getAbsyn());
 
     case ("searchClassNames",{Values.STRING(str), Values.BOOL(b)})
       equation
@@ -8642,180 +8632,62 @@ algorithm
   end match;
 end getComponentitemsName;
 
+function getAnnotationNamedModifiers
+  input Absyn.Path classPath;
+  input String annotationName;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  Absyn.Class cls;
+  list<String> names;
 
-// new functions added for getting vendorannotation modifiers names and their values
-function getAnnotationList
-   "@author arun Helper function which returns the list of annotation items as elementargs "
-   input Absyn.ClassDef inclassdef;
-   output list<Absyn.ElementArg> anninfo;
-algorithm
-   anninfo:=matchcontinue(inclassdef)
-   local
-     list<Absyn.Annotation> ann;
-     list<Absyn.ElementArg> annlst;
-
-   case(Absyn.PARTS(_,_,_,ann,_))
-     equation
-       annlst = List.flatten(List.map(ann,AbsynUtil.annotationToElementArgs));
-     then
-      annlst;
-
-   case (Absyn.CLASS_EXTENDS(ann=ann))
-      equation
-        annlst = List.flatten(List.map(ann,AbsynUtil.annotationToElementArgs));
-      then
-        annlst;
-
-    case (Absyn.DERIVED(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_))))
-      then
-        annlst;
-
-    case (Absyn.ENUMERATION(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_))))
-      then
-        annlst;
-
-    case (Absyn.OVERLOAD(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_))))
-      then
-        annlst;
-
-    case(_)then {};
-
-  end matchcontinue;
-end getAnnotationList;
-
-
-function getElementArgsModifiers
- "@author arun Helper function which parses list of elementargs,annotationname returns the list of modifiers name in the annotation"
-    input list<Absyn.ElementArg> inargs;
-    input String instring;
-    input String inClass;
-    input SourceInfo info;
-    output list<String> outstring;
-algorithm
-    outstring:=match(inargs,instring)
-    local
-    list<Absyn.ElementArg> elt,eltarglst;
-    Option<Absyn.Modification> modification;
-    String name,name1, s;
-    list<String> modfiernamelist;
-    Absyn.ElementArg eltarg;
-  case (Absyn.MODIFICATION(_,_, Absyn.IDENT(name),modification,_)::_,name1)
-    guard stringEq(name, name1)
-    equation
-       elt=getElementArgsList(modification);
-       modfiernamelist =getModifiersNameList(elt);
-    then
-        modfiernamelist;
-
-  case((_::eltarglst),name1)
-    then
-        getElementArgsModifiers(eltarglst,name1,inClass,info);
-
-  case ({},_)
-    algorithm
-      Error.addSourceMessage(Error.CLASS_ANNOTATION_DOES_NOT_EXIST, {instring, inClass}, info);
-    then {};
- end match;
-end getElementArgsModifiers;
-
-
-function getElementArgsModifiersValue
-   "@author arun Helper function which parses list of elementargs,annotationname and modifiername and returns the value"
-    input list<Absyn.ElementArg> inargs;
-    input String instring;
-    input String instring1;
-    output String outstring;
-algorithm
-   outstring:=match(inargs,instring,instring1)
-    local
-      list<Absyn.ElementArg> elt,eltarglst;
-      Option<Absyn.Modification> modification;
-      String name,name1,name2,s;
-      String modfiername_value;
-      Absyn.ElementArg eltarg;
-
-    case (Absyn.MODIFICATION(_,_, Absyn.IDENT(name),modification,_)::_,name1,name2)
-      guard stringEq(name1, name)
-      equation
-        elt=getElementArgsList(modification);
-        modfiername_value =getModifierNamedValue(elt,name2);
-      then
-        modfiername_value;
-
-    case((_::eltarglst),name1,name2)
-      equation
-        modfiername_value=getElementArgsModifiersValue(eltarglst,name1,name2);
-      then
-        modfiername_value;
-
-    case({},_,_) then "The Searched value not Found";
-  end match;
-
- end getElementArgsModifiersValue;
-
-function getElementArgsList
-  "@author arun Helper function which gives list of elementargs from modification"
-  input Option<Absyn.Modification> inmod;
-  output list<Absyn.ElementArg> outargs;
-algorithm
-  outargs:=match(inmod)
-   local
-   list<Absyn.ElementArg> elementargs;
-   case(SOME(Absyn.CLASSMOD(elementargs,_))) then elementargs;
-  end match;
-end getElementArgsList;
-
-
-function getModifiersNameList
-"@author arun Function which retrives vendor annotation modifiers name list"
-  input list<Absyn.ElementArg> eltArgs;
-  output list<String> strs;
+  function get_names
+    input Option<Absyn.Modification> mod;
+    output list<String> names;
   protected
-  String name;
-algorithm
-  strs := list(match mod case (Absyn.MODIFICATION(_,_, Absyn.IDENT(name),_)) then name; end match for mod in eltArgs);
-end getModifiersNameList;
-
-function checkModifierName
-" @author arun Function which retrives vendor annotation modifiername value"
-  input Absyn.ElementArg eltArg;
-  input String inString;
-  output Boolean b;
+    Absyn.Modification m;
+    list<Absyn.Path> paths;
   algorithm
-    b:=match(eltArg,inString)
-    local
-      String name,name1;
-      case (Absyn.MODIFICATION(path=Absyn.IDENT(name)),name1) then stringEq(name,name1);
-      else false;
-     end match;
-end checkModifierName;
-
-function getModifierNamedValue
-" @author arun Function which retrives vendor annotation modifiername value"
-  input list<Absyn.ElementArg> eltArgs;
-  input String instring;
-  output String strs;
-  protected
-  Absyn.Exp e;
-  Boolean b;
+    names := match mod
+      case SOME(m)
+        algorithm
+          paths := list(AbsynUtil.elementArgName(a) for a in m.elementArgLst);
+        then
+          list(AbsynUtil.pathString(p) for p guard AbsynUtil.pathIsIdent(p) in paths);
+      else {};
+    end match;
+  end get_names;
 algorithm
-   strs:= match List.find1(eltArgs,checkModifierName, instring)
-    case (Absyn.MODIFICATION(modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(e)))))
-      then getExpValue(e);
-  end match;
-end getModifierNamedValue;
+  cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+  SOME(names) := AbsynUtil.getNamedAnnotationInClass(cls, Absyn.Path.IDENT(annotationName), get_names);
+  result := ValuesUtil.makeStringArray(names);
+end getAnnotationNamedModifiers;
 
-function getExpValue
-  input Absyn.Exp inexp;
-  output String outstring;
+function getOptModifierValue
+  input Option<Absyn.Modification> modifier;
+  output Values.Value value;
+protected
+  Absyn.Modification mod;
+  Absyn.Exp exp;
 algorithm
-  outstring:=match(inexp)
-    local
-      String s;
-    case(Absyn.STRING(s)) then System.unescapedString(s);
-    case(_) then "";
-  end match;
-end getExpValue;
+  SOME(mod) := modifier;
+  Absyn.EqMod.EQMOD(exp = exp) := mod.eqMod;
+  value := ValuesUtil.absynExpValue(exp);
+end getOptModifierValue;
+
+function getAnnotationModifierValue
+  input Absyn.Path classPath;
+  input String annotationName;
+  input String modifierName;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  Absyn.Class cls;
+algorithm
+  cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+  SOME(result) := AbsynUtil.getNamedAnnotationInClass(cls,
+    Absyn.Path.QUALIFIED(annotationName, Absyn.Path.IDENT(modifierName)), getOptModifierValue);
+end getAnnotationModifierValue;
 
 function makeLoadLibrariesEntryAbsyn "Needed to be able to resolve modelica:// during runtime, etc.
 Should not be part of CevalScript since ModelicaServices needs this feature and the frontend needs to take care of it."
