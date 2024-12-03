@@ -4770,25 +4770,39 @@ annotation(Documentation(info="<html>
 end getSimulationOptions;
 
 function getAnnotationNamedModifiers
-   input TypeName name;
-   input String vendorannotation;
-   output String[:] modifiernamelist;
+   input TypeName className;
+   input String annotationName;
+   output String[:] modifierNames;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Returns the Modifiers name in the vendor annotation example annotation(__OpenModelica_simulationFlags(solver=\"dassl\"))
-calling sequence should be getAnnotationNamedModifiers(className,\"__OpenModelica_simulationFlags\") which returns {solver}.</p>
+<p>Returns the names of the modifiers in the given annotation, for example:
+<pre>
+  model M
+    annotation(experiment(StartTime = 1.0, StopTime = 2.0));
+  end M;
+
+  getAnnotationNamedModifiers(M, \"experiment\") => {\"StartTime\", \"StopTime\"}
+</pre>
+</p>
 </html>"));
 end getAnnotationNamedModifiers;
 
 function getAnnotationModifierValue
-  input TypeName name;
-  input String vendorannotation;
-  input String modifiername;
-  output String modifiernamevalue;
+  input TypeName className;
+  input String annotationName;
+  input String modifierName;
+  output String modifierValue;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Returns the Modifiers value in the vendor annotation example annotation(__OpenModelica_simulationFlags(solver=\"dassl\"))
-calling sequence should be getAnnotationNamedModifiersValue(className,\"__OpenModelica_simulationFlags\",\"modifiername\") which returns \"dassl\".</p>
+<p>Returns the value for a modifier in the given annotation, for example:
+<pre>
+  model M
+    annotation(experiment(StartTime = 1.0, StopTime = 2.0));
+  end M;
+
+  getAnnotationModifierValue(M, \"experiment\", \"StopTime\") => 2.0
+</pre>
+</p>
 </html>"));
 end getAnnotationModifierValue;
 
