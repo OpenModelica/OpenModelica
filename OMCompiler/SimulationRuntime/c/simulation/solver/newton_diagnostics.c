@@ -783,8 +783,8 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
 
    unsigned* printedIdx = (unsigned*)malloc(2 * n_gt_eps * sizeof(unsigned));
    unsigned nPrinted = 0;
-   printf("      Var number    Var name                  Initial guess         |max(Gamma,Sigma)|\n");
-   printf("      ----------    ------------------------  ------------------    ------------------");
+   printf("      Var number    Var name                      Initial guess  max(Gamma,Sigma)\n");
+   printf("      ----------  ------------------------------  -------------  ----------------");
    for( l = 0; l < n_gt_eps; l++)
    {
       printedIdx[nPrinted] = -1;
@@ -797,8 +797,8 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
 
          if (!alreadyPrinted)
          {
-            // Print variable referenced l by Sigma, its init value and the value of Sigma_ll
-            printf("\n      %10d    %24s  %7.7g     %8.3f",
+            // Print variable referenced l by Sigma, its init value and the max value between Gamma and Sigma
+            printf("\n      %10d  %30s  %13.7g  %7.2f",
                    w_idx[index_Sigma[l]]+1,
                    data->modelData->realVarsData[var_id(w_idx[index_Sigma[l]], data, systemData)].info.name,
                    x0[w_idx[index_Sigma[l]]],
@@ -822,7 +822,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
          if  (!alreadyPrinted_j)
          {
             // Print variable referenced l by Gamma, its init value and the value of Gamma_ilk
-            printf("\n      %10d    %24s  %7.7g     %8.3f",
+            printf("\n      %10d  %30s  %13.7g  %7.2f",
                    w_idx[index_Gamma_j[l]]+1,
                    data->modelData->realVarsData[var_id(w_idx[index_Gamma_j[l]], data, systemData)].info.name,
                    x0[w_idx[index_Gamma_j[l]]],
@@ -832,7 +832,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
          if  (!alreadyPrinted_k)
          {
             // Print variable referenced l by Gamma, its init value and the value of Gamma_ijl
-            printf("\n      %10d    %24s  %7.7g     %8.3f",
+            printf("\n      %10d  %30s  %13.7g  %7.2f",
                    w_idx[index_Gamma_k[l]]+1,
                    data->modelData->realVarsData[var_id(w_idx[index_Gamma_k[l]], data, systemData)].info.name,
                    x0[w_idx[index_Gamma_k[l]]],
@@ -940,7 +940,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
          if (!alreadyPrinted)
          {
             // Print equation l referenced by alpha and the value of alpha_i
-            printf("\n      %9d    %9d    %8.3f", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
+            printf("\n      %9d    %9d    %7.2f", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
             printedIdx[nPrinted++] = index_alpha[l];
          }
       }
@@ -956,7 +956,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
          if  (!alreadyPrinted)
          {
             // Print equation l referenced by Gamma and the value of Gamma_ljk
-            printf("\n      %9d    %9d    %8.3f", n_idx[index_Gamma_i[l]]+1,
+            printf("\n      %9d    %9d    %7.2f", n_idx[index_Gamma_i[l]]+1,
 			       systemData->eqn_simcode_indices[n_idx[index_Gamma_i[l]]],
                    Gamma_ijk[index_Gamma_i[l]][index_Gamma_j[l]][index_Gamma_k[l]]);
             printedIdx[nPrinted++] = index_Gamma_i[l];
