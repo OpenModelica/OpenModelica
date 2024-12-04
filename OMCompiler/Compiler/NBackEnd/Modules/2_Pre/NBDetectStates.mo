@@ -226,18 +226,9 @@ protected
           state_var := BVariable.getVarPointer(state_cref);
           if BVariable.hasDerVar(state_var) then
             // this derivative was already created -> the variable should already have a pointer to its derivative
-            der_cref := BVariable.getPartnerCref(state_cref, BVariable.getVarDer);
-            if not scalarized then
-              der_cref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(state_cref)), der_cref);
-            end if;
+            der_cref := BVariable.getPartnerCref(state_cref, BVariable.getVarDer, scalarized);
           else
-            if not scalarized then
-              // prevent the variable from having the subscripts, but add it to the der_cref
-              (der_cref, der_var) := BVariable.makeDerVar(ComponentRef.stripSubscriptsAll(state_cref));
-              der_cref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(state_cref)), der_cref);
-            else
-              (der_cref, der_var) := BVariable.makeDerVar(state_cref);
-            end if;
+            (der_cref, der_var) := BVariable.makeDerVar(state_cref, scalarized);
             state_var := BVariable.getVarPointer(state_cref);
             BVariable.setStateDerivativeVar(state_var, der_var);
             Pointer.update(acc_states, state_var :: Pointer.access(acc_states));

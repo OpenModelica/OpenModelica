@@ -22,7 +22,6 @@ res := OpenModelica.Scripting.compareSimulationResults("ScalableTestSuite.Power.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: NSimJacobian.SimJacobian.create could not generate sparsity pattern.
-// "
+// ""
 // {"Files Equal!"}
 // endResult
