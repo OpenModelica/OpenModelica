@@ -1652,7 +1652,7 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
   bool shiftModifier = pEvent->modifiers().testFlag(Qt::ShiftModifier);
   bool controlModifier = pEvent->modifiers().testFlag(Qt::ControlModifier);
   bool isCompleterShortcut = controlModifier && (pEvent->key() == Qt::Key_Space); // CTRL+space
-  bool isCompleterChar = mCompletionCharacters.indexOf(QChar(pEvent->key())) != -1;
+  bool isCompleterChar = !pEvent->text().isEmpty() && mCompletionCharacters.indexOf(pEvent->text().front()) != -1;
   /* Ticket #4404. hide the completer on Esc and enter text based on Tab */
   if (mpCompleter && mpCompleter->popup()->isVisible()) {
     // The following keys are forwarded by the completer to the widget
