@@ -504,7 +504,6 @@ void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
     /* append new url */
     mpDocumentationHistoryList->append(DocumentationHistory(pLibraryTreeItem));
     mDocumentationHistoryPos++;
-    connect(pLibraryTreeItem, SIGNAL(unLoaded()), SLOT(updateDocumentationHistory()));
   }
 
   updatePreviousNextButtons();
