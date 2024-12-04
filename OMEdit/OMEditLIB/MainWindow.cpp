@@ -46,8 +46,6 @@
 #include "CRML/CRMLProxy.h"
 #include "CRML/CRMLModelDialog.h"
 #include "CRML/CRMLTranslateAsDialog.h"
-#include "MOS/MOSProxy.h"
-#include "MOS/MOSDialog.h"
 #include "Debugger/GDB/GDBAdapter.h"
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Debugger/Locals/LocalsWidget.h"
@@ -211,8 +209,6 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   OMSProxy::create();
   // create an object of CRMLProxy
   CRMLProxy::create();
-  // create an object of MOSProxy
-  MOSProxy::create();
   // Create an object of OptionsDialog
   mpLibrariesMenu = 0;
   OptionsDialog::create();
@@ -1930,6 +1926,16 @@ void MainWindow::createNewModelicaClass()
 }
 
 /*!
+ * \brief MainWindow::createNewMOSFile
+ * Opens the new Modelica Scripting dialog.
+ */
+void MainWindow::createNewMOSFile()
+{
+  CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog("", true, ".mos", this);
+  pCreateNewItemDialog->exec();
+}
+
+/*!
  * \brief MainWindow::createNewSSPModel
  * Opens the new SSP model dialog.
  */
@@ -2128,54 +2134,6 @@ void MainWindow::openCRMLFile()
   QStringList fileNames;
   fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles), NULL,
                                               Helper::crmlFileTypes, NULL);
-  if (fileNames.isEmpty()) {
-    return;
-  }
-  int progressValue = 0;
-  mpProgressBar->setRange(0, fileNames.size());
-  showProgressBar();
-  foreach (QString file, fileNames) {
-    file = file.replace("\\", "/");
-    mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(file));
-    mpProgressBar->setValue(++progressValue);
-    // if file doesn't exists
-    if (!QFile::exists(file)) {
-      QMessageBox *pMessageBox = new QMessageBox(this);
-      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
-      pMessageBox->setIcon(QMessageBox::Critical);
-      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file)));
-      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(file)));
-      pMessageBox->setStandardButtons(QMessageBox::Ok);
-      pMessageBox->exec();
-    } else {
-      mpLibraryWidget->openFile(file, Helper::utf8, false);
-    }
-  }
-  mpStatusBar->clearMessage();
-  hideProgressBar();
-}
-
-/*!
- * \brief MainWindow::createNewMOSFile
- * Opens the new Modelica Scripting dialog.
- */
-void MainWindow::createNewMOSFile()
-{
-  CreateMOSDialog *pCreateMOSDialog = new CreateMOSDialog(this);
-  pCreateMOSDialog->exec();
-}
-
-/*!
- * \brief MainWindow::openMOSFile
- * Opens the Modelica Scripting .mos file(s).\n
- * Slot activated when mpOpenMOSFileAction triggered signal is raised.
- */
-void MainWindow::openMOSFile()
-{
-  QStringList fileNames;
-  fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles), NULL,
-                                              Helper::omScriptFileTypes, NULL);
   if (fileNames.isEmpty()) {
     return;
   }
@@ -3783,6 +3741,10 @@ void MainWindow::createActions()
   mpNewModelicaClassAction->setStatusTip(Helper::createNewModelicaClass);
   mpNewModelicaClassAction->setShortcut(QKeySequence("Ctrl+n"));
   connect(mpNewModelicaClassAction, SIGNAL(triggered()), SLOT(createNewModelicaClass()));
+  // create new MOS action
+  mpNewMOSFileAction = new QAction(Helper::newMOSScript, this);
+  mpNewMOSFileAction->setStatusTip(Helper::newMOSScriptTip);
+  connect(mpNewMOSFileAction, SIGNAL(triggered()), SLOT(createNewMOSFile()));
   // create new SSP Model action
   mpNewSSPModelAction = new QAction(Helper::newOMSimulatorModel, this);
   mpNewSSPModelAction->setStatusTip(Helper::newOMSimulatorModelTip);
@@ -3825,14 +3787,6 @@ void MainWindow::createActions()
   mpOpenCRMLFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open CRML Model(s)"), this);
   mpOpenCRMLFileAction->setStatusTip(tr("Opens the CRML file(s)"));
   connect(mpOpenCRMLFileAction, SIGNAL(triggered()), SLOT(openCRMLFile()));
-  // create new MOS action
-  mpNewMOSFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newMOSScript, this);
-  mpNewMOSFileAction->setStatusTip(Helper::newMOSScriptTip);
-  connect(mpNewMOSFileAction, SIGNAL(triggered()), SLOT(createNewMOSFile()));
-  // open MOS file action
-  mpOpenMOSFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open Modelica Script(s)"), this);
-  mpOpenMOSFileAction->setStatusTip(tr("Opens the Modelica Scripting file(s)"));
-  connect(mpOpenMOSFileAction, SIGNAL(triggered()), SLOT(openMOSFile()));
   // open the directory action
   mpOpenDirectoryAction = new QAction(tr("Open Directory"), this);
   mpOpenDirectoryAction->setStatusTip(tr("Opens the directory"));
@@ -4316,9 +4270,6 @@ void MainWindow::createMenus()
   mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpNewCRMLFileAction);
   mpFileMenu->addAction(mpOpenCRMLFileAction);
-  mpFileMenu->addSeparator();
-  mpFileMenu->addAction(mpNewMOSFileAction);
-  mpFileMenu->addAction(mpOpenMOSFileAction);
   mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpOpenDirectoryAction);
   mpFileMenu->addSeparator();
@@ -4816,7 +4767,11 @@ void MainWindow::createToolbars()
   mpNewModelMenu->setTitle(tr("&New"));
   mpNewModelMenu->setIcon(QIcon(":/Resources/icons/new.svg"));
   mpNewModelMenu->addAction(mpNewModelicaClassAction);
+  mpNewModelMenu->addAction(mpNewMOSFileAction);
+  mpNewModelMenu->addSeparator();
   mpNewModelMenu->addAction(mpNewSSPModelAction);
+  mpNewModelMenu->addSeparator();
+  mpNewModelMenu->addAction(mpNewCRMLFileAction);
   // new ToolButton
   QToolButton *pNewToolButton = new QToolButton;
   pNewToolButton->setMenu(mpNewModelMenu);

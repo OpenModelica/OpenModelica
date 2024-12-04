@@ -47,8 +47,8 @@ QString Helper::OpenModelicaHome = "";
 QString Helper::ModelicaPath = "";
 QString Helper::userHomeDirectory = "";
 QString Helper::OMCServerName = "OMEdit";
-QString Helper::omFileTypes = "All Files (*.mo *.mol *.ssp *.bmo);;Modelica Files (*.mo);;Encrypted Modelica Libraries (*.mol);;System Structure and Parameterization Files (*.ssp)"
-                              ";;Base Modelica Files (*.bmo)";
+QString Helper::omFileTypes = "All Files (*.mo *.mol *.bmo *.mos *.ssp);;Modelica Files (*.mo);;Encrypted Modelica Libraries (*.mol);;Base Modelica Files (*.bmo)"
+                              ";;Modelica Script Files (*.mos);;System Structure and Parameterization Files (*.ssp)";
 QString Helper::omEncryptedFileTypes = "Encrypted Modelica Libraries (*.mol)";
 QString Helper::crmlFileTypes = "CRML Files (*.crml)";
 QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
@@ -62,7 +62,6 @@ QString Helper::matFileTypes = "MAT Files (*.mat)";
 QString Helper::csvFileTypes = "CSV Files (*.csv)";
 QString Helper::omResultFileTypes = "OpenModelica Result Files (*.mat *.plt *.csv)";
 QString Helper::omResultFileTypesRegExp = "\\b(mat|plt|csv)\\b";
-QString Helper::omScriptFileTypes = "Script Files (*.mos)";
 #if defined(_WIN32)
 QString Helper::exeFileTypes = "EXE Files (*.exe)";
 #else
@@ -137,6 +136,7 @@ QString Helper::systemWC = QString("Weakly Coupled - Connected Co-Simulation FMU
 QString Helper::systemSC = QString("Strongly Coupled - Connected Model-Exchange FMUs System");
 /* Global translated variables */
 QString Helper::newModelicaClass;
+QString Helper::newModelicaClassLibraryBrowser;
 QString Helper::createNewModelicaClass;
 QString Helper::openModelicaFiles;
 QString Helper::openConvertModelicaFiles;
@@ -465,13 +465,14 @@ QString Helper::itemsListTip;
 void Helper::initHelperVariables()
 {
   /* Global translated variables */
-  Helper::newModelicaClass = tr("New Modelica Class");
+  Helper::newModelicaClass = tr("Modelica Class");
+  Helper::newModelicaClassLibraryBrowser = tr("New Modelica Class");
   Helper::createNewModelicaClass = tr("Create New Modelica Class");
   Helper::openModelicaFiles = tr("Open Model/Library File(s)");
   Helper::openConvertModelicaFiles = tr("Open/Convert Modelica File(s) With Encoding");
-  Helper::newCRMLModel = tr("New CRML Model");
+  Helper::newCRMLModel = tr("CRML Model");
   Helper::newCRMLModelTip = tr("Creates a new CRML Model");
-  Helper::newMOSScript = tr("New Modelica Script file");
+  Helper::newMOSScript = tr("Modelica Script");
   Helper::newMOSScriptTip = tr("Creates a new Modelca Script");
   Helper::libraries = tr("Libraries");
   Helper::elements = tr("Elements");
@@ -568,7 +569,7 @@ void Helper::initHelperVariables()
   Helper::unloadClassTip = tr("Unload the Modelica class");
   Helper::reloadClass = tr("Reload");
   Helper::reloadClassTip = tr("Reload the Modelica class");
-  Helper::unloadTextFileTip = tr("Unloads the text file");
+  Helper::unloadTextFileTip = tr("Unloads the text file without deleting it from the file system");
   Helper::unloadCRMLTip = tr("Unload the CRML file");
   Helper::unloadMOSTip = tr("Unload the Modelica Script file");
   Helper::unloadOMSModelTip = tr("Unloads the model");
@@ -732,7 +733,7 @@ void Helper::initHelperVariables()
   Helper::animationPauseTip = tr("Pause the animation");
   Helper::simulationParams = tr("Simulation Parameters");
   Helper::simulationParamsTip = tr("Shows the Simulation Parameters dialog");
-  Helper::newOMSimulatorModel = tr("New SSP Model");
+  Helper::newOMSimulatorModel = tr("SSP Model");
   Helper::newOMSimulatorModelTip = tr("Creates a new SSP Model");
   Helper::addSystem = tr("Add System");
   Helper::addSystemTip = tr("Adds the System i.e., FMI or TLM");

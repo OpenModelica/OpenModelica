@@ -184,9 +184,6 @@ SOURCES += Util/Helper.cpp \
   CRML/CRMLModelDialog.cpp \
   CRML/CRMLTranslateAsDialog.cpp \
   CRML/CRMLTranslatorOutputWidget.cpp \
-  MOS/MOSFile.cpp \
-  MOS/MOSProxy.cpp \
-  MOS/MOSDialog.cpp \
   Git/GitCommands.cpp \
   Git/CommitChangesDialog.cpp \
   Git/RevertCommitsDialog.cpp \
@@ -307,9 +304,6 @@ HEADERS  += Util/Helper.h \
   CRML/CRMLTranslateAsDialog.h \
   CRML/CRMLTranslatorOptions.h \
   CRML/CRMLTranslatorOutputWidget.h \
-  MOS/MOSFile.h \
-  MOS/MOSProxy.h \
-  MOS/MOSDialog.h \
   Git/GitCommands.h \
   Git/CommitChangesDialog.h \
   Git/RevertCommitsDialog.h \

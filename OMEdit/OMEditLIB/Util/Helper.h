@@ -77,7 +77,6 @@ public:
   static QString jarFileTypes;
   static QString visualizationFileTypes;
   static QString subModelFileTypes;
-  static QString omScriptFileTypes;
   static int treeIndentation;
   static QSize iconSize;
   static int tabWidth;
@@ -138,6 +137,7 @@ public:
   static QString systemSC;
   /* Global translated variables */
   static QString newModelicaClass;
+  static QString newModelicaClassLibraryBrowser;
   static QString createNewModelicaClass;
   static QString openModelicaFiles;
   static QString openConvertModelicaFiles;

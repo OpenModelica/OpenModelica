@@ -51,8 +51,6 @@
 #endif
 #include "CRML/CRMLProxy.h"
 #include "CRML/CRMLModelDialog.h"
-#include "MOS/MOSProxy.h"
-#include "MOS/MOSDialog.h"
 #include "OMS/OMSProxy.h"
 #include "OMS/ModelDialog.h"
 #include "OMS/BusDialog.h"
@@ -5861,8 +5859,7 @@ void ModelWidget::createModelWidgetComponents()
       } else if (mpLibraryTreeItem->isCRMLFile()) {
         mpEditor = new CRMLEditor(this);
         CRMLHighlighter *pCRMLHighlighter;
-        pCRMLHighlighter = new CRMLHighlighter(OptionsDialog::instance()->getCRMLEditorPage(),
-                                                               mpEditor->getPlainTextEdit());
+        pCRMLHighlighter = new CRMLHighlighter(OptionsDialog::instance()->getCRMLEditorPage(), mpEditor->getPlainTextEdit());
         CRMLEditor *pCRMLEditor = dynamic_cast<CRMLEditor*>(mpEditor);
         pCRMLEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
         mpEditor->hide();
@@ -5870,8 +5867,7 @@ void ModelWidget::createModelWidgetComponents()
       } else if (mpLibraryTreeItem->isMOSFile()) {
         mpEditor = new MOSEditor(this);
         MOSHighlighter *pMOSHighlighter;
-        pMOSHighlighter = new MOSHighlighter(OptionsDialog::instance()->getMOSEditorPage(),
-                                                               mpEditor->getPlainTextEdit());
+        pMOSHighlighter = new MOSHighlighter(OptionsDialog::instance()->getMOSEditorPage(), mpEditor->getPlainTextEdit());
         MOSEditor *pMOSEditor = dynamic_cast<MOSEditor*>(mpEditor);
         pMOSEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
         mpEditor->hide();

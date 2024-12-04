@@ -112,9 +112,6 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       CRML/CRMLTranslateAsDialog.cpp
                       CRML/CRMLTranslatorOutputWidget.cpp
                       CRML/CRMLProxy.cpp
-                      MOS/MOSFile.cpp
-                      MOS/MOSDialog.cpp
-                      MOS/MOSProxy.cpp
                       Git/GitCommands.cpp
                       Git/CommitChangesDialog.cpp
                       Git/RevertCommitsDialog.cpp
@@ -251,9 +248,6 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       CRML/CRMLTranslateAsDialog.h
                       CRML/CRMLTranslatorOptions.h
                       CRML/CRMLTranslatorOutputWidget.h
-                      MOS/MOSFile.h
-                      MOS/MOSProxy.h
-                      MOS/MOSDialog.h
                       Git/GitCommands.h
                       Git/CommitChangesDialog.h
                       Git/RevertCommitsDialog.h

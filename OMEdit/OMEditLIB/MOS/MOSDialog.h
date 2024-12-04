@@ -42,9 +42,7 @@
 #include <QDialogButtonBox>
 #include <QScrollArea>
 
-class LibraryTreeItem;
 class Label;
-
 class CreateMOSDialog : public QDialog
 {
   Q_OBJECT
@@ -61,6 +59,5 @@ private:
 private slots:
   void createNewScript();
 };
-
 
 #endif // MOSDIALOG_H

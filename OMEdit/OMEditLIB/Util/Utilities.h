@@ -521,8 +521,6 @@ namespace Utilities {
 #endif
   bool isCFile(QString extension);
   bool isModelicaFile(QString extension);
-  bool isCRMLFile(QString extension);
-  bool isMOSFile(QString extension);
   QGenericMatrix<3,3, double> getRotationMatrix(QGenericMatrix<3,1,double> rotation);
   QString getGDBPath();
 

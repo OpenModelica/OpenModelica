@@ -313,7 +313,9 @@ private:
   // File Menu
   // Modelica File Actions
   QAction *mpNewModelicaClassAction;
+  QAction *mpNewMOSFileAction;
   QAction *mpNewSSPModelAction;
+  QAction *mpNewCRMLFileAction;
   QAction *mpOpenModelicaFileAction;
   QAction *mpOpenModelicaFileWithEncodingAction;
   QAction *mpLoadModelicaLibraryAction;
@@ -322,11 +324,7 @@ private:
   QAction *mpOpenTransformationFileAction;
   QAction *mpUnloadAllAction;
   // CRML File Actions
-  QAction *mpNewCRMLFileAction;
   QAction *mpOpenCRMLFileAction;
-  // MOS File Actions
-  QAction *mpNewMOSFileAction;
-  QAction *mpOpenMOSFileAction;
   // Directory actions
   QAction *mpOpenDirectoryAction;
   QAction *mpSaveAction;
@@ -483,6 +481,7 @@ public slots:
   void switchToAlgorithmicDebuggingPerspectiveSlot();
   void showSearchBrowser();
   void createNewModelicaClass();
+  void createNewMOSFile();
   void createNewSSPModel();
   void openModelicaFile();
   void showOpenModelicaFileDialog();
@@ -493,8 +492,7 @@ public slots:
   void unloadAll(bool onlyModelicaClasses = false);
   void createNewCRMLFile();
   void openCRMLFile();
-  void createNewMOSFile();
-  void openMOSFile();
+
   void openDirectory();
   void writeOutputFileData(QString data);
   void writeErrorFileData(QString data);

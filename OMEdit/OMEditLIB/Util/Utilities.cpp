@@ -958,36 +958,6 @@ bool Utilities::isModelicaFile(QString extension)
 }
 
 /*!
- * \brief Utilities::isCRMLFile
- * Returns true if extension is of CRML file.
- * \param extension
- * \return
- */
-bool Utilities::isCRMLFile(QString extension)
-{
-  if (extension.compare("crml") == 0) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-/*!
- * \brief Utilities::isCFile
- * Returns true if extension is of C file.
- * \param extension
- * \return
- */
-bool Utilities::isMOSFile(QString extension)
-{
-  if (extension.compare("mos") == 0) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-/*!
  * \brief Utilities::getRotationMatrix
  * Computes the corresponding rotation matrix for specified rotation vector
  * \param rotation Rotation vector with Euler angles

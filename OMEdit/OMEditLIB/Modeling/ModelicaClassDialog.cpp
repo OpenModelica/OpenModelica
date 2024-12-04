@@ -2153,11 +2153,11 @@ void ExportFigaroDialog::exportModelFigaro()
  * \param isCreateFile
  * \param pParent
  */
-CreateNewItemDialog::CreateNewItemDialog(QString path, bool isCreateFile, QWidget *pParent)
-  : QDialog(pParent), mPath(path), mIsCreateFile(isCreateFile)
+CreateNewItemDialog::CreateNewItemDialog(QString path, bool isCreateFile, QString extension, QWidget *pParent)
+  : QDialog(pParent), mPath(path), mIsCreateFile(isCreateFile), mExtension(extension)
 {
   setAttribute(Qt::WA_DeleteOnClose);
-  setWindowTitle(QString("%1 - Create New %2").arg(Helper::applicationName).arg(mIsCreateFile ? Helper::file : Helper::folder));
+  setWindowTitle(QString("%1 - Create New %2").arg(Helper::applicationName).arg(mIsCreateFile ? getHeading() : Helper::folder));
   setMinimumWidth(400);
   // Create the name label and text box
   mpNameLabel = new Label(Helper::name);
@@ -2192,9 +2192,28 @@ CreateNewItemDialog::CreateNewItemDialog(QString path, bool isCreateFile, QWidge
 }
 
 /*!
+ * \brief CreateNewItemDialog::getHeading
+ * Returns the heading text.
+ * \return
+ */
+QString CreateNewItemDialog::getHeading() const
+{
+  QString heading;
+  if (mIsCreateFile) {
+    if (mExtension.compare(QStringLiteral(".mos")) == 0) {
+      heading = "Modelica Script";
+    } else if (mExtension.compare(QStringLiteral(".crml")) == 0) {
+      heading = "CRML Model";
+    } else {
+      heading = Helper::file;
+    }
+  }
+  return heading;
+}
+
+/*!
  * \brief CreateNewItemDialog::browsePath
- * Creates a new file/folder.\n
- * Slot activated when mpOkButton clicked signal is raised.
+ * Browse for path location.
  */
 void CreateNewItemDialog::browsePath()
 {
@@ -2207,12 +2226,17 @@ void CreateNewItemDialog::browsePath()
   mpPathTextBox->setText(path);
 }
 
+/*!
+ * \brief CreateNewItemDialog::createNewFileOrFolder
+ * Creates new file or folder and a corresponding LibraryTreeItem.\n
+ * Slot activated when mpOkButton clicked signal is raised.
+ */
 void CreateNewItemDialog::createNewFileOrFolder()
 {
   // check name
   if (mpNameTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error), GUIMessages::getMessage(
-                            GUIMessages::ENTER_NAME).arg(mIsCreateFile ? Helper::file : Helper::folder), QMessageBox::Ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(mIsCreateFile ? getHeading() : Helper::folder), QMessageBox::Ok);
     return;
   }
   // check path
@@ -2229,10 +2253,13 @@ void CreateNewItemDialog::createNewFileOrFolder()
   }
   // check if file/folder already exists
   QString fileOrFolderPath = QString("%1/%2").arg(mpPathTextBox->text()).arg(mpNameTextBox->text());
+  if (mIsCreateFile && !mExtension.isEmpty()) {
+    fileOrFolderPath.append(mExtension);
+  }
   QFileInfo fileInfo(fileOrFolderPath);
   if (fileInfo.exists()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg(mIsCreateFile ? Helper::file : Helper::folder)
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg(mIsCreateFile ? getHeading() : Helper::folder)
                           .arg(mpNameTextBox->text()).arg(mpPathTextBox->text()), QMessageBox::Ok);
     return;
   }
@@ -2252,21 +2279,9 @@ void CreateNewItemDialog::createNewFileOrFolder()
   }
   // if file or folder creation is successful.
   if (success) {
-    // find insertion index for new file or folder
-    int row = -1;
-    QDir directory(mpPathTextBox->text());
-    QFileInfoList files = directory.entryInfoList(QDir::Dirs | QDir::Files | QDir::NoSymLinks | QDir::NoDotAndDotDot,
-                                                  QDir::Name | QDir::DirsFirst | QDir::IgnoreCase);
-    foreach (QFileInfo file, files) {
-      row += 1;
-      if (file.fileName().compare(mpNameTextBox->text()) == 0) {
-        break;
-      }
-    }
-    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileInfo.fileName(),
-                                                                                 fileInfo.absoluteFilePath(), fileInfo.absoluteFilePath(),
-                                                                                 true, pParentLibraryTreeItem, row);
-    if (pLibraryTreeItem && mIsCreateFile) {
+    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileInfo.fileName(), fileInfo.absoluteFilePath(),
+                                                                                 fileInfo.absoluteFilePath(), true, pParentLibraryTreeItem);
+    if (mIsCreateFile) {
       pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
     }
   }

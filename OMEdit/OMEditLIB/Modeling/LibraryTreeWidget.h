@@ -106,8 +106,8 @@ public:
   const QString& getVersionBuild() const;
   const QString& getDateModified() const;
   const QString& getRevisionId() const;
-  bool isCRMLFile() const {return mFileName.endsWith(".crml") || getName().endsWith(".crml");}
-  bool isMOSFile() const {return mFileName.endsWith(".mos") || getName().endsWith(".mos");}
+  bool isCRMLFile() const {return mFileName.endsWith(".crml");}
+  bool isMOSFile() const {return mFileName.endsWith(".mos");}
   bool isFilePathValid();
   void setReadOnly(bool readOnly) {mReadOnly = readOnly;}
   bool isReadOnly() {return mReadOnly;}
@@ -298,7 +298,6 @@ public:
   bool reloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadCRMLFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
-  bool unloadMOSFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadOMSModel(LibraryTreeItem *pLibraryTreeItem, bool doDelete = true, bool askQuestion = true);
   void getExpandedLibraryTreeItemsList(LibraryTreeItem *pLibraryTreeItem, QStringList *pExpandedLibraryTreeItemsList);
   void expandLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem, QStringList expandedLibraryTreeItemsList);
@@ -389,7 +388,6 @@ private:
   QAction *mpReloadClassAction;
   QAction *mpUnloadTextFileAction;
   QAction *mpUnloadCRMLFileAction;
-  QAction *mpUnloadMOSFileAction;
   QAction *mpNewFileAction;
   QAction *mpNewFileEmptyAction;
   QAction *mpNewFolderAction;
@@ -442,7 +440,6 @@ public slots:
   void reloadClass();
   void unloadTextFile();
   void unloadCRMLFile();
-  void unloadMOSFile();
   void createNewFile();
   void createNewFileEmpty();
   void createNewFolder();
@@ -478,7 +475,6 @@ public:
   void openEncryptedModelicaLibrary(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
   void openTextFile(QFileInfo fileInfo, bool showProgress = true);
   void openCRMLFile(QFileInfo fileInfo, QString encoding = Helper::utf8, bool showProgress = true);
-  void openMOSFile(QFileInfo fileInfo, QString encoding = Helper::utf8, bool showProgress = true);
 
   void openDirectory(QFileInfo fileInfo, bool showProgress = true);
   void openOMSModelFile(QFileInfo fileInfo, bool showProgress = true);

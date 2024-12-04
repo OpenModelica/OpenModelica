@@ -1193,12 +1193,9 @@ QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, 
   QString dir_str;
   QString fileName;
 
-  if (dir)
-  {
+  if (dir) {
     dir_str = *dir;
-  }
-  else
-  {
+  } else {
     dir_str = StringHandler::getLastOpenDirectory();
   }
 

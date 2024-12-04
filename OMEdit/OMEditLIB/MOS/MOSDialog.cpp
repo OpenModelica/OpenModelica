@@ -94,21 +94,27 @@ void CreateMOSDialog::createNewScript()
     return;
   }
 
-    // create new script
-  if (MOSProxy::instance()->newScript(mpNameTextBox->text())) {
-    QString fileName = QString("%1.%2").arg(mpNameTextBox->text(),"mos");
-    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-    LibraryTreeItem *pLibraryTreeItem =
-      pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileName, "",
-                                                                 "", false,
-                                                                 pLibraryTreeModel->getRootLibraryTreeItem());
-    if (pLibraryTreeItem) {
-      pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
-      accept();
-    } else {
-      // if creating the mos script failed then delete the model created.
-      MOSProxy::instance()->mosDelete(fileName);
-    }
-  }
+  // create new modelica script
+  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  QString fileName = QString("%1.%2").arg(mpNameTextBox->text(), "mos");
+  LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, mpNameTextBox->text(), mpNameTextBox->text(), fileName, false, pLibraryTreeModel->getRootLibraryTreeItem());
+  pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
+  accept();
+
+  // if (MOSProxy::instance()->newScript(mpNameTextBox->text())) {
+  //   QString fileName = QString("%1.%2").arg(mpNameTextBox->text(),"mos");
+  //   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  //   LibraryTreeItem *pLibraryTreeItem =
+  //     pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileName, "",
+  //                                                                "", false,
+  //                                                                pLibraryTreeModel->getRootLibraryTreeItem());
+  //   if (pLibraryTreeItem) {
+  //     pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
+  //     accept();
+  //   } else {
+  //     // if creating the mos script failed then delete the model created.
+  //     MOSProxy::instance()->mosDelete(fileName);
+  //   }
+  // }
 }
 

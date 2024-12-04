@@ -40,9 +40,6 @@
 MOSEditor::MOSEditor(QWidget *pParent)
   : BaseEditor(pParent)
 {
-  mpPlainTextEdit->setCanHaveBreakpoints(true);
-  /* set the document marker */
-  mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
   QStringList keywords = MOSHighlighter::getKeywords();
   mpPlainTextEdit->insertCompleterKeywords(keywords);
   QStringList types = MOSHighlighter::getTypes();
