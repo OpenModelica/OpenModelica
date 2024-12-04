@@ -843,19 +843,26 @@ uniontype Function
 
   function typeString
     "Constructs a string representing the type of the function, on the form
-     function_name<function>(input types) => output type"
+     function_name<function>(inputs) => outputs"
     input Function fn;
     output String str;
-  algorithm
-    str := List.toString(fn.inputs, paramTypeString,
-      AbsynUtil.pathString(name(fn)) + "<function>",
-      "(", ", ", ") => " + Type.toString(fn.returnType), true);
-  end typeString;
+  protected
+    String inputs, outputs;
 
-  function paramTypeString
-    input InstNode param;
-    output String str = Type.toString(InstNode.getType(param));
-  end paramTypeString;
+    function param_str
+      input InstNode p;
+      output String s = Type.toString(InstNode.getType(p)) + " " + InstNode.name(p);
+    end param_str;
+  algorithm
+    inputs := List.toString(fn.inputs, param_str, "", "", ", ", "");
+    outputs := List.toString(fn.outputs, param_str, "", "", ", ", "");
+
+    if listEmpty(fn.outputs) or listLength(fn.outputs) > 1 then
+      outputs := "(" + outputs + ")";
+    end if;
+
+    str := AbsynUtil.pathString(name(fn)) + "<function>(" + inputs + ") => " + outputs;
+  end typeString;
 
   function toFlatStream
     input Function fn;
