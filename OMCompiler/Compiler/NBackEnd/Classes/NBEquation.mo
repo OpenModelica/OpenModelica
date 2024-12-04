@@ -2306,6 +2306,52 @@ public
       eqn := Pointer.create(Equation.IF_EQUATION(IfEquationBody.size(body), body, source, attr));
     end toEquation;
 
+    function makeIfEquation
+      "similar to makeAssignment but for if-equations"
+      input IfEquationBody body;
+      input Pointer<Integer> idx;
+      input String str;
+      input Iterator iter;
+      input DAE.ElementSource source;
+      input EquationAttributes attr;
+      output Pointer<Equation> eq;
+    protected
+      Equation e;
+    algorithm
+      e := makeIfEquationEqn(body, iter, source, attr);
+      eq := Pointer.create(e);
+      Equation.createName(eq, idx, str);
+    end makeIfEquation;
+
+    protected function makeIfEquationEqn
+      "similar to makeAssignmentEqn but for if-equations"
+      input IfEquationBody body;
+      input Iterator iter;
+      input DAE.ElementSource source;
+      input EquationAttributes attr;
+      output Equation e;
+    algorithm
+      e := Equation.IF_EQUATION(
+        size    = IfEquationBody.size(body),
+        body    = body,
+        source  = source,
+        attr    = attr
+      );
+      // create for-loop around it if there is an iterator
+      if not Iterator.isEmpty(iter) then
+        e := FOR_EQUATION(
+          size    = IfEquationBody.size(body) * Iterator.size(iter),
+          iter    = iter,
+          body    = {e},
+          source  = source,
+          attr    = attr
+        );
+        // inline if it has size 1
+        e := Inline.inlineForEquation(e);
+      end if;
+    end makeIfEquationEqn;
+
+  public
     function toString
       input IfEquationBody body;
       input String indent = "";

@@ -2276,10 +2276,21 @@ namespace ModelInstance
     if (!dims.isEmpty()) {
       value.append("[" % dims % "]");
     }
+    // modifiers
     if (mpModifier) {
       value.append(mpModifier->toString());
     }
-    if (!mComment.isEmpty()) {
+    // constrainedby issue #13300
+    if (mpPrefixes && mpPrefixes->getReplaceable() && !mpPrefixes->getReplaceable()->getConstrainedby().isEmpty()) {
+      value.append("constrainedby " % mpPrefixes->getReplaceable()->getConstrainedby());
+      if (mpPrefixes->getReplaceable()->getModifier()) {
+        value.append(mpPrefixes->getReplaceable()->getModifier()->toString());
+      }
+    }
+    // comment
+    if (mpPrefixes && mpPrefixes->getReplaceable() && !mpPrefixes->getReplaceable()->getComment().isEmpty()) {
+      value.append("\"" % mpPrefixes->getReplaceable()->getComment() % "\"");
+    } else if (!mComment.isEmpty()) {
       value.append("\"" % mComment % "\"");
     }
 

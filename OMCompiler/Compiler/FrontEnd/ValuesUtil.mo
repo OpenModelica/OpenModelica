@@ -818,6 +818,23 @@ algorithm
   end match;
 end powElementwiseArrayelt;
 
+public function absynExpValue
+  input Absyn.Exp exp;
+  output Values.Value value;
+algorithm
+  value := match exp
+    case Absyn.Exp.INTEGER() then Values.Value.INTEGER(exp.value);
+    case Absyn.Exp.REAL() then Values.Value.REAL(stringReal(exp.value));
+    case Absyn.Exp.CREF() then Values.Value.CODE(Absyn.CodeNode.C_VARIABLENAME(exp.componentRef));
+    case Absyn.Exp.STRING() then Values.Value.STRING(exp.value);
+    case Absyn.Exp.BOOL() then Values.Value.BOOL(exp.value);
+    case Absyn.Exp.ARRAY() then makeArray(list(absynExpValue(e) for e in exp.arrayExp));
+    case Absyn.Exp.TUPLE() then makeTuple(list(absynExpValue(e) for e in exp.expressions));
+    case Absyn.Exp.CODE() then Values.Value.CODE(exp.code);
+    else Values.Value.CODE(Absyn.CodeNode.C_EXPRESSION(exp));
+  end match;
+end absynExpValue;
+
 public function expValue "Returns the value of constant expressions in DAE.Exp"
   input DAE.Exp inExp;
   output Values.Value outValue;

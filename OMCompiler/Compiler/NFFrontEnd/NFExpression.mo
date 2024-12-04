@@ -5039,7 +5039,7 @@ public
         Integer slice_start, slice_step, slice_stop;
 
       case (RANGE(), (slice_start, slice_step, slice_stop)) algorithm
-        step := if Util.isSome(range.step) then integerValue(Util.getOption(range.step)) else 1;
+        step := Util.applyOptionOrDefault(range.step, integerValue, 1);
         start := integerValue(range.start);
         // shift start and stop accordingly, multiply step
         stop  := start + slice_stop * step;
@@ -5664,6 +5664,7 @@ public
         list<Expression> expl;
         Type ty;
         array<Expression> arr;
+        Expression trueBranch, falseBranch;
 
       case RECORD() then listGet(recordExp.elements, index);
 
@@ -5698,6 +5699,13 @@ public
           ty := Type.subscript(typeOf(outExp), recordExp.subscripts);
         then
           SUBSCRIPTED_EXP(outExp, recordExp.subscripts, ty, recordExp.split);
+
+      case IF()
+        algorithm
+          trueBranch  := nthRecordElement(index, recordExp.trueBranch);
+          falseBranch := nthRecordElement(index, recordExp.falseBranch);
+        then
+          IF(typeOf(trueBranch), recordExp.condition, trueBranch, falseBranch);
 
       else
         algorithm

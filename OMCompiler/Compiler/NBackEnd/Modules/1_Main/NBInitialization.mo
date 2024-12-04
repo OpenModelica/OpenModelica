@@ -478,7 +478,7 @@ public
     iterator    := Iterator.fromFrames(frames);
 
     // create start variable name with subscripts and create start expression
-    (var_ptr, name, start_var , start_cref) := createStartVar(var_ptr, name, subscripts);
+    (var_ptr, name, start_var, start_cref) := createStartVar(var_ptr, name, subscripts);
   end createIteratedStartCref;
 
   public function createPreEquation

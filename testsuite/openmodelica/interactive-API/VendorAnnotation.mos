@@ -31,13 +31,12 @@ getErrorString();
 // ""
 // {"solver", "jacobian"}
 // ""
-// "
-// \\ndassl"
+// "dassl"
 // ""
 // "coloredNumerical"
 // ""
-// "1"
+// 1
 // ""
-// "2"
+// 2
 // ""
 // endResult

@@ -1,0 +1,19 @@
+// status: correct
+// depends: PumpingSystem.fmu
+// teardown_command: rm -f newfmu.fmu
+
+echo(false);
+if regularFileExists("newfmu.fmu") then
+  deleteFile("newfmu.fmu"); getErrorString();
+end if;
+echo(true);
+copy("PumpingSystem.fmu", "newfmu.fmu"); getErrorString();
+compareFiles("PumpingSystem.fmu", "newfmu.fmu"); getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// true
+// ""
+// endResult
