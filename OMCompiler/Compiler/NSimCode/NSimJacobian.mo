@@ -252,9 +252,9 @@ public
           VariablePointers.map(seed_scalar, function SimVar.traverseCreate(acc = seedVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType = VarType.SIMULATION));
           VariablePointers.map(res_scalar,  function SimVar.traverseCreate(acc = resVars_ptr,  indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType = VarType.SIMULATION));
           VariablePointers.map(tmp_scalar,  function SimVar.traverseCreate(acc = tmpVars_ptr,  indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType = VarType.SIMULATION));
-          seedVars := listReverse(Pointer.access(seedVars_ptr));
-          resVars := listReverse(Pointer.access(resVars_ptr));
-          tmpVars := listReverse(Pointer.access(tmpVars_ptr));
+          seedVars  := listReverse(Pointer.access(seedVars_ptr));
+          resVars   := listReverse(Pointer.access(resVars_ptr));
+          tmpVars   := listReverse(Pointer.access(tmpVars_ptr));
 
           jac_map := UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars) + listLength(tmpVars));
           SimCodeUtil.addListSimCodeMap(seedVars, jac_map);
@@ -266,11 +266,13 @@ public
             if Jacobian.isDynamic(jacobian.jacType) then
               for var in seedVars loop
                 cref := SimVar.getName(var);
+                if BVariable.checkCref(cref, BVariable.isSeed) then
+                  // FIXME this should not happen, fix it when collecting seedVars!
+                  cref := BVariable.getPartnerCref(cref, BVariable.getVarSeed);
+                end if;
                 UnorderedMap.add(cref, var.index, idx_map);
                 if BVariable.checkCref(cref, BVariable.isState) then
-                  subscripts := listReverse(ComponentRef.subscriptsAllFlat(cref));
                   cref := BVariable.getPartnerCref(cref, BVariable.getVarDer);
-                  cref := ComponentRef.mergeSubscripts(subscripts, cref, true, true);
                   UnorderedMap.add(cref, var.index, idx_map);
                 end if;
               end for;
@@ -278,17 +280,13 @@ public
               for var in seedVars loop
                 cref := SimVar.getName(var);
                 UnorderedMap.add(cref, var.index, idx_map);
-                subscripts := listReverse(ComponentRef.subscriptsAllFlat(cref));
                 cref := BVariable.getPartnerCref(cref, BVariable.getVarSeed);
-                cref := ComponentRef.mergeSubscripts(subscripts, cref, true, true);
                 UnorderedMap.add(cref, var.index, idx_map);
               end for;
               for var in resVars loop
                 cref := SimVar.getName(var);
                 UnorderedMap.add(cref, var.index, idx_map);
-                subscripts := listReverse(ComponentRef.subscriptsAllFlat(cref));
                 cref := BVariable.getPartnerCref(cref, BVariable.getVarPDer);
-                cref := ComponentRef.mergeSubscripts(subscripts, cref, true, true);
                 UnorderedMap.add(cref, var.index, idx_map);
               end for;
             end if;

@@ -57,6 +57,16 @@ public
     output Boolean equal;
   end KeyEq;
 
+  partial function KeyStringFn
+    input K key;
+    output String str;
+  end KeyStringFn;
+
+  partial function ValueStringFn
+    input V value;
+    output String str;
+  end ValueStringFn;
+
   record UNORDERED_MAP
     Vector<list<Integer>> buckets;
     Vector<K> keys;
@@ -690,16 +700,6 @@ public
     input ValueStringFn valueStringFn;
     input String delimiter = "\n";
     output String str;
-
-    partial function KeyStringFn
-      input K key;
-      output String str;
-    end KeyStringFn;
-
-    partial function ValueStringFn
-      input V value;
-      output String str;
-    end ValueStringFn;
   protected
     list<String> strl = {};
     Vector<K> keys = map.keys;
@@ -718,16 +718,6 @@ public
     input KeyStringFn keyStringFn;
     input ValueStringFn valueStringFn;
     output String str;
-
-    partial function KeyStringFn
-      input K key;
-      output String str;
-    end KeyStringFn;
-
-    partial function ValueStringFn
-      input V value;
-      output String str;
-    end ValueStringFn;
   protected
     IOStream.IOStream io;
     Vector<K> keys = map.keys;

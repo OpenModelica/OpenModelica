@@ -489,6 +489,7 @@ public
     "Like getVarPartner but for cref. Fails if there is no partner."
     input ComponentRef cref;
     input getVarPartner func;
+    input Boolean scalarized = false;
     output ComponentRef partner_cref;
   protected
     Option<Pointer<Variable>> partner;
@@ -497,6 +498,9 @@ public
     (partner, partnerName) := func(getVarPointer(cref));
     if isSome(partner) then
       partner_cref := getVarName(Util.getOption(partner));
+      if not scalarized then
+        partner_cref := ComponentRef.mergeSubscripts(listReverse(ComponentRef.subscriptsAllFlat(cref)), partner_cref, true, true);
+      end if;
     else
       Error.addMessage(Error.INTERNAL_ERROR,
         {getInstanceName() + " failed because " + ComponentRef.toString(cref)
@@ -830,24 +834,30 @@ public
     "Creates a derivative variable pointer from the state cref.
     e.g. height -> $DER.height"
     input ComponentRef cref           "old component reference";
+    input Boolean scalarized = false;
     output ComponentRef der_cref      "new component reference";
     output Pointer<Variable> var_ptr  "pointer to new variable";
+  protected
+    ComponentRef state_cref = if scalarized then cref else ComponentRef.stripSubscriptsAll(cref);
   algorithm
-    () := match ComponentRef.node(cref)
+    () := match ComponentRef.node(state_cref)
       local
         InstNode derNode;
         Pointer<Variable> state, dummy_ptr = Pointer.create(DUMMY_VARIABLE);
         Variable var;
       case InstNode.VAR_NODE()
         algorithm
-          state := getVarPointer(cref);
+          state := getVarPointer(state_cref);
           // append the $DER to the name
           derNode := InstNode.VAR_NODE(DERIVATIVE_STR, dummy_ptr);
-          der_cref := ComponentRef.append(cref, ComponentRef.fromNode(derNode, ComponentRef.scalarType(cref)));
+          der_cref := ComponentRef.append(state_cref, ComponentRef.fromNode(derNode, ComponentRef.scalarType(state_cref)));
           // make the actual derivative variable and make cref and the variable cyclic
           var := fromCref(ComponentRef.stripSubscriptsAll(der_cref), Variable.attributes(Pointer.access(state)));
           var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.STATE_DER(state, NONE()));
           (var_ptr, der_cref) := makeVarPtrCyclic(var, der_cref);
+          if not scalarized then
+            der_cref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(cref)), der_cref);
+          end if;
       then ();
 
       else algorithm
