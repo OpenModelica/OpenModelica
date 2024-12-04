@@ -653,9 +653,9 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
       if (alpha[i] > eps)
       {
          if (alpha[i] < 1.e5)
-            printf("\n      alpha_%d =  %8.3f", n_idx[i]+1, alpha[i]);
+            printf("\n      alpha_%d =  %7.2f", n_idx[i]+1, alpha[i]);
          else
-            printf("\n      alpha_%d =  %8.2e", n_idx[i]+1, alpha[i]);
+            printf("\n      alpha_%d =  %7.2e", n_idx[i]+1, alpha[i]);
       }
    }
    printf("\n\n");
@@ -668,7 +668,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
       for( j = 0; j < q; j++)
           for( k = j; k < q; k++)
              if (Gamma_ijk[i][j][k] > eps)
-                printf("\n      Gamma_%1d_%1d_%1d =  %8.3f", n_idx[i]+1, w_idx[j]+1, w_idx[k]+1, Gamma_ijk[i][j][k]);
+                printf("\n      Gamma_%1d_%1d_%1d =  %7.2f", n_idx[i]+1, w_idx[j]+1, w_idx[k]+1, Gamma_ijk[i][j][k]);
    }
    printf("\n\n");
 
@@ -677,7 +677,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
    for( i = 0; i < q; i++)
    {
       if (fabs(Sigma_ij[i][i]) > eps)
-         printf("\n      Sigma_%d_%d =  %8.3f", w_idx[i]+1, w_idx[i]+1, fabs(Sigma_ij[i][i]));
+         printf("\n      Sigma_%d_%d =  %7.2f", w_idx[i]+1, w_idx[i]+1, fabs(Sigma_ij[i][i]));
    }
    printf("\n\n");
 
