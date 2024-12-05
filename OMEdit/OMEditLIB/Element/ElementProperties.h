@@ -128,6 +128,10 @@ public:
   QComboBox* getUnitComboBox() {return mpUnitComboBox;}
   FinalEachToolButton *getDisplayUnitFinalEachMenu() const {return mpDisplayUnitFinalEachMenuButton;}
   Label* getCommentLabel() {return mpCommentLabel;}
+  bool isStartFinalInHierarchy() const {return mStartFinalInHierarchy;}
+  void setStartFinalInHierarchy(bool startFinalInHierarchy) {mStartFinalInHierarchy = startFinalInHierarchy;}
+  bool isFixedFinalInHierarchy() const {return mFixedFinalInHierarchy;}
+  void setFixedFinalInHierarchy(bool fixedFinalInHierarchy) {mFixedFinalInHierarchy = fixedFinalInHierarchy;}
   void setFixedState(QString fixed, bool defaultValue);
   QString getFixedState() const;
   void setEnabled(bool enable);
@@ -174,6 +178,8 @@ private:
   QComboBox *mpUnitComboBox;
   FinalEachToolButton *mpDisplayUnitFinalEachMenuButton = 0;
   Label *mpCommentLabel;
+  bool mStartFinalInHierarchy = false;
+  bool mFixedFinalInHierarchy = false;
 
   void createEditClassButton();
   void createValueWidget();
