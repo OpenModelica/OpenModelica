@@ -1,0 +1,37 @@
+// name: addComponent2
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+// Tests the addComponent API.
+//
+
+loadString("
+  model M
+  end M;
+");
+
+// Usual way to define the annotation.
+addComponent(x, Real, M, annotate=Placement(transformation(extent = {{-10, 10}, {-10, 10}})));
+// Unusual way, but still ok probably.
+addComponent(y, Real, M, annotate=Placement(transformation = Transformation(extent = {{-10, 10}, {-10, 10}})));
+// Wrong way, but still allowed for legacy reasons.
+addComponent(z, Real, M, annotate=Placement(transformation = transformation(extent = {{-10, 10}, {-10, 10}})));
+list(M);
+getErrorString();
+
+// Result:
+// true
+// true
+// true
+// true
+// "model M
+//   Real x annotation(
+//     Placement(transformation(extent = {{-10, 10}, {-10, 10}})));
+//   Real y annotation(
+//     Placement(transformation(extent = {{-10, 10}, {-10, 10}})));
+//   Real z annotation(
+//     Placement(transformation(extent = {{-10, 10}, {-10, 10}})));
+// end M;"
+// ""
+// endResult
