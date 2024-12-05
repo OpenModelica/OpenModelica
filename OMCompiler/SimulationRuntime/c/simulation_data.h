@@ -286,6 +286,7 @@ typedef struct STATIC_STRING_DATA
 } STATIC_STRING_DATA;
 
 typedef int (*analyticalJacobianColumn_func_ptr)(DATA* data, threadData_t* threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
+typedef int (*initialAnalyticalJacobian_func_ptr)(DATA* data, threadData_t* threadData, ANALYTIC_JACOBIAN* jacobian);
 
 /**
  * @brief User data provided to residual functions.
@@ -328,7 +329,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
    * if analyticalJacobianColumn == NULL no analyticalJacobian is available
    */
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
-  int (*initialAnalyticalJacobian)(DATA* data, threadData_t* threadData, ANALYTIC_JACOBIAN* jacobian);
+  initialAnalyticalJacobian_func_ptr initialAnalyticalJacobian;
   modelica_integer jacobianIndex;
 
   SPARSE_PATTERN *sparsePattern;       /* sparse pattern if no jacobian is available */
@@ -408,7 +409,7 @@ typedef struct LINEAR_SYSTEM_DATA
   void (*setBElement)(int row, double value, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t* threadData);
 
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
-  int (*initialAnalyticalJacobian)(DATA* data, threadData_t* threadData, ANALYTIC_JACOBIAN* jacobian);
+  initialAnalyticalJacobian_func_ptr initialAnalyticalJacobian;
 
   void (*residualFunc)(RESIDUAL_USERDATA* userData, const double* x, double* res, const int* flag);
   void (*initializeStaticLSData)(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern);
@@ -499,7 +500,7 @@ typedef struct STATE_SET_DATA
    * if analyticalJacobianColumn == NULL no analyticalJacobian is available
    */
   analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
-  int (*initialAnalyticalJacobian)(DATA* data, threadData_t* threadData, ANALYTIC_JACOBIAN* jacobian);
+  initialAnalyticalJacobian_func_ptr initialAnalyticalJacobian;
   modelica_integer jacobianIndex;
 } STATE_SET_DATA;
 #else

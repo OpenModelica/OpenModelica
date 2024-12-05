@@ -261,12 +261,12 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   * Return-value 0: jac is present
   * Return-value 1: jac is not present
   */
-  int (*initialAnalyticJacobianA)(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
-  int (*initialAnalyticJacobianB)(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
-  int (*initialAnalyticJacobianC)(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
-  int (*initialAnalyticJacobianD)(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
-  int (*initialAnalyticJacobianF)(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
-  int (*initialAnalyticJacobianH)(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
+  initialAnalyticalJacobian_func_ptr initialAnalyticJacobianA;
+  initialAnalyticalJacobian_func_ptr initialAnalyticJacobianB;
+  initialAnalyticalJacobian_func_ptr initialAnalyticJacobianC;
+  initialAnalyticalJacobian_func_ptr initialAnalyticJacobianD;
+  initialAnalyticalJacobian_func_ptr initialAnalyticJacobianF;
+  initialAnalyticalJacobian_func_ptr initialAnalyticJacobianH;
 
   /*
   * These functions calculate specific jacobian column.
@@ -369,14 +369,14 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   /*
   * FMU continuous partial derivative functions
   */
-  int (*initialPartialFMIDER)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
+  initialAnalyticalJacobian_func_ptr initialPartialFMIDER;
   analyticalJacobianColumn_func_ptr functionJacFMIDER_column;
   const int INDEX_JAC_FMIDER;
 
   /*
   * FMU partial derivative functions for initilization DAE
   */
-  int (*initialPartialFMIDERINIT)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
+  initialAnalyticalJacobian_func_ptr initialPartialFMIDERINIT;
   analyticalJacobianColumn_func_ptr functionJacFMIDERINIT_column;
   const int INDEX_JAC_FMIDERINIT;
 };
