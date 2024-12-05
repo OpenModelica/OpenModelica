@@ -569,7 +569,7 @@ void Helper::initHelperVariables()
   Helper::unloadClassTip = tr("Unload the Modelica class");
   Helper::reloadClass = tr("Reload");
   Helper::reloadClassTip = tr("Reload the Modelica class");
-  Helper::unloadTextFileTip = tr("Unloads the text file without deleting it from the file system");
+  Helper::unloadTextFileTip = tr("Unloads the file without deleting it from the file system");
   Helper::unloadCRMLTip = tr("Unload the CRML file");
   Helper::unloadMOSTip = tr("Unload the Modelica Script file");
   Helper::unloadOMSModelTip = tr("Unloads the model");

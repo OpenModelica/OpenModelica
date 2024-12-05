@@ -35,7 +35,6 @@
 #define CRMLTRANSLATOROPTIONS_H
 
 #include "MainWindow.h"
-#include "CRML/CRMLProxy.h"
 
 #include <QString>
 #include <QVariant>

@@ -179,9 +179,6 @@ SOURCES += Util/Helper.cpp \
   CrashReport/backtrace.c \
   CrashReport/GDBBacktrace.cpp \
   CrashReport/CrashReportDialog.cpp \
-  CRML/CRMLFile.cpp \
-  CRML/CRMLProxy.cpp \
-  CRML/CRMLModelDialog.cpp \
   CRML/CRMLTranslateAsDialog.cpp \
   CRML/CRMLTranslatorOutputWidget.cpp \
   Git/GitCommands.cpp \
@@ -298,9 +295,6 @@ HEADERS  += Util/Helper.h \
   CrashReport/backtrace.h \
   CrashReport/GDBBacktrace.h \
   CrashReport/CrashReportDialog.h \
-  CRML/CRMLFile.h \
-  CRML/CRMLProxy.h \
-  CRML/CRMLModelDialog.h \
   CRML/CRMLTranslateAsDialog.h \
   CRML/CRMLTranslatorOptions.h \
   CRML/CRMLTranslatorOutputWidget.h \

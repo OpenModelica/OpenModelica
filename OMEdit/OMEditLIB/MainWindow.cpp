@@ -43,8 +43,6 @@
 #include "Modeling/ElementTreeWidget.h"
 #include "Modeling/ModelicaClassDialog.h"
 #include "OMS/ModelDialog.h"
-#include "CRML/CRMLProxy.h"
-#include "CRML/CRMLModelDialog.h"
 #include "CRML/CRMLTranslateAsDialog.h"
 #include "Debugger/GDB/GDBAdapter.h"
 #include "Debugger/StackFrames/StackFramesWidget.h"
@@ -207,8 +205,6 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mNumberOfProcessors = mpOMCProxy->numProcessors();
   // create an object of OMSProxy
   OMSProxy::create();
-  // create an object of CRMLProxy
-  CRMLProxy::create();
   // Create an object of OptionsDialog
   mpLibrariesMenu = 0;
   OptionsDialog::create();
@@ -1945,6 +1941,15 @@ void MainWindow::createNewSSPModel()
   pCreateModelDialog->exec();
 }
 
+/*!
+ * \brief MainWindow::createNewCRMLFile
+ * Opens the new CRML Model dialog.
+ */
+void MainWindow::createNewCRMLFile()
+{
+  CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog("", true, ".crml", this);
+  pCreateNewItemDialog->exec();
+}
 
 void MainWindow::openModelicaFile()
 {
@@ -2112,16 +2117,6 @@ void MainWindow::unloadAll(bool onlyModelicaClasses)
   }
   // clear everything from OMC
   MainWindow::instance()->getOMCProxy()->clear();
-}
-
-/*!
- * \brief MainWindow::createNewCRMLFile
- * Opens the new CRML Model dialog.
- */
-void MainWindow::createNewCRMLFile()
-{
-  CreateCRMLModelDialog *pCreateCRMLModelDialog = new CreateCRMLModelDialog(this);
-  pCreateCRMLModelDialog->exec();
 }
 
 /*!
@@ -3749,6 +3744,10 @@ void MainWindow::createActions()
   mpNewSSPModelAction = new QAction(Helper::newOMSimulatorModel, this);
   mpNewSSPModelAction->setStatusTip(Helper::newOMSimulatorModelTip);
   connect(mpNewSSPModelAction, SIGNAL(triggered()), SLOT(createNewSSPModel()));
+  // create new CRML action
+  mpNewCRMLFileAction = new QAction(Helper::newCRMLModel, this);
+  mpNewCRMLFileAction->setStatusTip(Helper::newCRMLModelTip);
+  connect(mpNewCRMLFileAction, SIGNAL(triggered()), SLOT(createNewCRMLFile()));
   // open Modelica file action
   mpOpenModelicaFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), Helper::openModelicaFiles, this);
   mpOpenModelicaFileAction->setShortcut(QKeySequence("Ctrl+o"));
@@ -3779,10 +3778,7 @@ void MainWindow::createActions()
   mpUnloadAllAction = new QAction(tr("Unload All"), this);
   mpUnloadAllAction->setStatusTip(tr("Unloads all loaded classes"));
   connect(mpUnloadAllAction, SIGNAL(triggered()), SLOT(unloadAll()));
-  // create new CRML action
-  mpNewCRMLFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newCRMLModel, this);
-  mpNewCRMLFileAction->setStatusTip(Helper::newCRMLModelTip);
-  connect(mpNewCRMLFileAction, SIGNAL(triggered()), SLOT(createNewCRMLFile()));
+
   // open CRML file action
   mpOpenCRMLFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open CRML Model(s)"), this);
   mpOpenCRMLFileAction->setStatusTip(tr("Opens the CRML file(s)"));
@@ -4268,7 +4264,6 @@ void MainWindow::createMenus()
   mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpUnloadAllAction);
   mpFileMenu->addSeparator();
-  mpFileMenu->addAction(mpNewCRMLFileAction);
   mpFileMenu->addAction(mpOpenCRMLFileAction);
   mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpOpenDirectoryAction);

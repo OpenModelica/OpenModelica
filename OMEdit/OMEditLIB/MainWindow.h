@@ -483,6 +483,7 @@ public slots:
   void createNewModelicaClass();
   void createNewMOSFile();
   void createNewSSPModel();
+  void createNewCRMLFile();
   void openModelicaFile();
   void showOpenModelicaFileDialog();
   void loadModelicaLibrary();
@@ -490,7 +491,7 @@ public slots:
   void showOpenResultFileDialog();
   void showOpenTransformationFileDialog();
   void unloadAll(bool onlyModelicaClasses = false);
-  void createNewCRMLFile();
+
   void openCRMLFile();
 
   void openDirectory();

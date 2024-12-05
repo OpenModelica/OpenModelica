@@ -1819,41 +1819,6 @@ bool LibraryTreeModel::unloadTextFile(LibraryTreeItem *pLibraryTreeItem, bool as
 }
 
 /*!
- * \brief LibraryTreeModel::unloadCRMLFile
- * Unloads/deletes the CRML class.
- * \param pLibraryTreeItem
- * \param askQuestion
- * \return
- */
-bool LibraryTreeModel::unloadCRMLFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion)
-{
-  if (askQuestion) {
-    QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
-    pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
-    pMessageBox->setIcon(QMessageBox::Question);
-    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-    pMessageBox->setText(GUIMessages::getMessage(GUIMessages::UNLOAD_TEXT_FILE_MSG).arg(pLibraryTreeItem->getNameStructure()));
-    pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    pMessageBox->setDefaultButton(QMessageBox::Yes);
-    int answer = pMessageBox->exec();
-    switch (answer) {
-      case QMessageBox::Yes:
-        // Yes was clicked. Don't return.
-        break;
-      case QMessageBox::No:
-        // No was clicked. Return
-        return false;
-      default:
-        // should never be reached
-        return false;
-    }
-  }
-  removeLibraryTreeItem(pLibraryTreeItem);
-  pLibraryTreeItem->deleteLater();
-  return true;
-}
-
-/*!
  * \brief LibraryTreeModel::unloadOMSModel
  * Unloads/deletes the OMSimulator model.
  * \param pLibraryTreeItem
@@ -2941,11 +2906,6 @@ void LibraryTreeView::createActions()
   mpUnloadTextFileAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
   mpUnloadTextFileAction->setStatusTip(Helper::unloadTextFileTip);
   connect(mpUnloadTextFileAction, SIGNAL(triggered()), SLOT(unloadTextFile()));
-  // unload CRML file Action
-  mpUnloadCRMLFileAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
-  mpUnloadCRMLFileAction->setShortcut(QKeySequence::Delete);
-  mpUnloadCRMLFileAction->setStatusTip(Helper::unloadCRMLTip);
-  connect(mpUnloadCRMLFileAction, SIGNAL(triggered()), SLOT(unloadCRMLFile()));
   // new file Action
   mpNewFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New File"), this);
   mpNewFileAction->setStatusTip(tr("Creates a new file"));
@@ -3262,7 +3222,6 @@ void LibraryTreeView::showContextMenu(QPoint point)
           if (pLibraryTreeItem->isCRMLFile()) {
             menu.addAction(mpTranslateCRMLAction);
             menu.addAction(mpTranslateAsCRMLAction);
-            menu.addAction(mpUnloadCRMLFileAction);
             menu.addSeparator();
           } else if (pLibraryTreeItem->isMOSFile()) {
             menu.addAction(mpRunScriptAction);
@@ -3279,11 +3238,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
           menu.addAction(mpDeleteAction);
           if (pLibraryTreeItem->isTopLevel()) {
             menu.addSeparator();
-            if (pLibraryTreeItem->isCRMLFile()) {
-              menu.addAction(mpUnloadCRMLFileAction);
-            } else {
-              menu.addAction(mpUnloadTextFileAction);
-            }
+            menu.addAction(mpUnloadTextFileAction);
           }
           break;
         case LibraryTreeItem::OMS:
@@ -3677,19 +3632,6 @@ void LibraryTreeView::unloadTextFile()
     mpLibraryWidget->getLibraryTreeModel()->unloadTextFile(pLibraryTreeItem);
   }
 }
-
-/*!
- * \brief LibraryTreeView::unloadCRMLFile
- * Unloads the CRML LibraryTreeItem.
- */
-void LibraryTreeView::unloadCRMLFile()
-{
-  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
-  if (pLibraryTreeItem) {
-    mpLibraryWidget->getLibraryTreeModel()->unloadCRMLFile(pLibraryTreeItem);
-  }
-}
-
 
 /*!
  * \brief LibraryTreeView::createNewFile

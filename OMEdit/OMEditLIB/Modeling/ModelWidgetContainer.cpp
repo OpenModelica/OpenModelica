@@ -49,8 +49,6 @@
 #if !defined(WITHOUT_OSG)
 #include "Animation/ThreeDViewer.h"
 #endif
-#include "CRML/CRMLProxy.h"
-#include "CRML/CRMLModelDialog.h"
 #include "OMS/OMSProxy.h"
 #include "OMS/ModelDialog.h"
 #include "OMS/BusDialog.h"

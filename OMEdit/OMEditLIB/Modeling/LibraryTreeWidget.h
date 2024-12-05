@@ -297,7 +297,6 @@ public:
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true, bool doDeleteClass = true);
   bool reloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
-  bool unloadCRMLFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadOMSModel(LibraryTreeItem *pLibraryTreeItem, bool doDelete = true, bool askQuestion = true);
   void getExpandedLibraryTreeItemsList(LibraryTreeItem *pLibraryTreeItem, QStringList *pExpandedLibraryTreeItemsList);
   void expandLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem, QStringList expandedLibraryTreeItemsList);
@@ -387,7 +386,6 @@ private:
   QAction *mpUnloadClassAction;
   QAction *mpReloadClassAction;
   QAction *mpUnloadTextFileAction;
-  QAction *mpUnloadCRMLFileAction;
   QAction *mpNewFileAction;
   QAction *mpNewFileEmptyAction;
   QAction *mpNewFolderAction;
@@ -439,7 +437,6 @@ public slots:
   void unloadClass();
   void reloadClass();
   void unloadTextFile();
-  void unloadCRMLFile();
   void createNewFile();
   void createNewFileEmpty();
   void createNewFolder();

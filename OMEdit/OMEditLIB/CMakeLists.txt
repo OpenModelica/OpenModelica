@@ -107,11 +107,8 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       CrashReport/backtrace.c
                       CrashReport/GDBBacktrace.cpp
                       CrashReport/CrashReportDialog.cpp
-                      CRML/CRMLFile.cpp
-                      CRML/CRMLModelDialog.cpp
                       CRML/CRMLTranslateAsDialog.cpp
                       CRML/CRMLTranslatorOutputWidget.cpp
-                      CRML/CRMLProxy.cpp
                       Git/GitCommands.cpp
                       Git/CommitChangesDialog.cpp
                       Git/RevertCommitsDialog.cpp
@@ -242,9 +239,6 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       CrashReport/backtrace.h
                       CrashReport/GDBBacktrace.h
                       CrashReport/CrashReportDialog.h
-                      CRML/CRMLFile.h
-                      CRML/CRMLProxy.h
-                      CRML/CRMLModelDialog.h
                       CRML/CRMLTranslateAsDialog.h
                       CRML/CRMLTranslatorOptions.h
                       CRML/CRMLTranslatorOutputWidget.h
