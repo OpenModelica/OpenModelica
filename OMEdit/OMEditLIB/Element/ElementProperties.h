@@ -78,7 +78,6 @@ public:
     ChoicesAllMatching
   };
   Parameter(ModelInstance::Element *pElement, bool defaultValue, ElementParameters *pElementParameters);
-  Element* getElement() {return mpElement;}
   ModelInstance::Element* getModelInstanceElement() {return mpModelInstanceElement;}
   bool isParameter() const;
   bool isInput() const;
@@ -131,12 +130,15 @@ public:
   QComboBox* getUnitComboBox() {return mpUnitComboBox;}
   FinalEachToolButton *getDisplayUnitFinalEachMenu() const {return mpDisplayUnitFinalEachMenuButton;}
   Label* getCommentLabel() {return mpCommentLabel;}
+  bool isStartFinalInHierarchy() const {return mStartFinalInHierarchy;}
+  void setStartFinalInHierarchy(bool startFinalInHierarchy) {mStartFinalInHierarchy = startFinalInHierarchy;}
+  bool isFixedFinalInHierarchy() const {return mFixedFinalInHierarchy;}
+  void setFixedFinalInHierarchy(bool fixedFinalInHierarchy) {mFixedFinalInHierarchy = fixedFinalInHierarchy;}
   void setFixedState(QString fixed, bool defaultValue);
   QString getFixedState() const;
   void setEnabled(bool enable);
   void update();
 private:
-  Element *mpElement;
   ModelInstance::Element *mpModelInstanceElement;
   ElementParameters *mpElementParameters = 0;
   StringAnnotation mTab;
@@ -176,6 +178,8 @@ private:
   QComboBox *mpUnitComboBox;
   FinalEachToolButton *mpDisplayUnitFinalEachMenuButton = 0;
   Label *mpCommentLabel;
+  bool mStartFinalInHierarchy = false;
+  bool mFixedFinalInHierarchy = false;
 
   void createEditClassButton();
   void createValueWidget();
@@ -284,7 +288,6 @@ private:
   void fetchClassExtendsModifiers(ModelInstance::Element *pModelElement);
   void fetchRootClassExtendsModifiers(ModelInstance::Element *pModelElement);
   void applyModifier(ModelInstance::Modifier *pModifier, bool defaultValue);
-  Parameter* findParameter(LibraryTreeItem *pLibraryTreeItem, const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
 public slots:
   void commentLinkClicked(QString link);

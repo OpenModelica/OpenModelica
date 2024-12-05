@@ -36,7 +36,7 @@
 #include "Modeling/Commands.h"
 
 RectangleAnnotation::RectangleAnnotation(QString annotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0, 0)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
@@ -51,7 +51,7 @@ RectangleAnnotation::RectangleAnnotation(QString annotation, GraphicsView *pGrap
 }
 
 RectangleAnnotation::RectangleAnnotation(ModelInstance::Rectangle *pRectangle, bool inherited, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
+  : ShapeAnnotation(inherited, pGraphicsView, 0)
 {
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
@@ -82,7 +82,7 @@ RectangleAnnotation::RectangleAnnotation(ModelInstance::Rectangle *pRectangle, E
 }
 
 RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
-    : ShapeAnnotation(pShapeAnnotation, pParent)
+  : ShapeAnnotation(pParent)
 {
   mpOriginItem = 0;
   updateShape(pShapeAnnotation);
@@ -90,7 +90,7 @@ RectangleAnnotation::RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Elem
 }
 
 RectangleAnnotation::RectangleAnnotation(Element *pParent)
-  : ShapeAnnotation(0, pParent)
+  : ShapeAnnotation(pParent)
 {
   mpOriginItem = 0;
   // set the default values
@@ -115,7 +115,7 @@ RectangleAnnotation::RectangleAnnotation(Element *pParent)
  * \param pGraphicsView
  */
 RectangleAnnotation::RectangleAnnotation(GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, 0, 0)
+  : ShapeAnnotation(true, pGraphicsView, 0)
 {
   mpOriginItem = 0;
   // set the default values

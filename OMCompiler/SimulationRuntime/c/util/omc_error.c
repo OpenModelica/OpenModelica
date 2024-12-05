@@ -142,7 +142,7 @@ const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX] = {
   "logging of homotopy solver for nonlinear systems",                           /* OMC_LOG_NLS_HOMOTOPY */
   "outputs the jacobian of nonlinear systems",                                  /* OMC_LOG_NLS_JAC */
   "tests the analytical jacobian of nonlinear systems",                         /* OMC_LOG_NLS_JAC_TEST */
-  "Log Newton diagnostic",                                                      /* OMC_LOG_NLS_NEWTON_DIAG */
+  "Log Newton diagnostics",                                                     /* OMC_LOG_NLS_NEWTON_DIAGNOSTICS */
   "outputs every evaluation of the residual function",                          /* OMC_LOG_NLS_RES */
   "outputs debug information about extrapolate process",                        /* OMC_LOG_NLS_EXTRAPOLATE */
   "outputs residuals of the initialization",                                    /* OMC_LOG_RES_INIT */
@@ -154,7 +154,7 @@ const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX] = {
   "final solution of the initialization",                                       /* OMC_LOG_SOTI */
   "logging of internal operations for spatialDistribution",                     /* OMC_LOG_SPATIALDISTR */
   "additional statistics about timer/events/solver",                            /* OMC_LOG_STATS */
-  "additional statistics for OMC_LOG_STATS",                                        /* OMC_LOG_STATS_V */
+  "additional statistics for OMC_LOG_STATS",                                    /* OMC_LOG_STATS_V */
   "this stream is always active, unless deactivated with -lv=-LOG_SUCCESS",     /* OMC_LOG_SUCCESS */
   "log clocks and sub-clocks for synchronous features",                         /* OMC_LOG_SYNCHRONOUS */
 #ifdef USE_DEBUG_TRACE

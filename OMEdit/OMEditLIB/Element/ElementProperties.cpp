@@ -117,7 +117,6 @@ void FinalEachToolButton::showParameterMenu()
 
 Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, ElementParameters *pElementParameters)
 {
-  mpElement = 0;
   mpModelInstanceElement = pElement;
   mExtendName = mpModelInstanceElement->getTopLevelExtendName();
   mInherited = defaultValue;
@@ -1322,26 +1321,31 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
               pParameter->getFixedFinalEachMenu()->setEach(pFixedModifier->isEach());
             }
           }
-          /* Ticket #12898
+          /* Issue #12898
            * If start is final then hide the value box.
            * If fixed is final then hide the fixed checkbox.
            * If both are final then delete the parameter.
-           * They can be set final at different levels e.g., start can be set final at delaration and fixed set final via modifier
-           * so we check visibility and hide based on it.
+           * They can be set final at different levels e.g., start can be set final at declaration and fixed set final via extends modifier in parent.
+           * so we set start and fixed final in the hierarchy flags and then check them when removing the parameter.
+           * We do these checks only for the defaultValue i.e., when it comes from declaration and not from component or extends modification. See issue #13333.
            */
-          if (isStartFinal) {
-            pParameter->hideValueWidget();
-            pParameter->getFinalEachMenu()->setVisible(false);
-          }
-          if (isFixedFinal) {
-            pParameter->getFixedCheckBox()->setVisible(false);
-            pParameter->getFixedFinalEachMenu()->setVisible(false);
-          }
-          if (!pParameter->getFinalEachMenu()->isVisible() && !pParameter->getFixedFinalEachMenu()->isVisible()) {
-            if (mParametersList.removeOne(pParameter)) {
-              delete pParameter;
+          if (defaultValue) {
+            if (isStartFinal) {
+              pParameter->hideValueWidget();
+              pParameter->getFinalEachMenu()->setVisible(false);
+              pParameter->setStartFinalInHierarchy(true);
             }
-            return;
+            if (isFixedFinal) {
+              pParameter->getFixedCheckBox()->setVisible(false);
+              pParameter->getFixedFinalEachMenu()->setVisible(false);
+              pParameter->setFixedFinalInHierarchy(true);
+            }
+            if (pParameter->isStartFinalInHierarchy() && pParameter->isFixedFinalInHierarchy()) {
+              if (mParametersList.removeOne(pParameter)) {
+                delete pParameter;
+              }
+              return;
+            }
           }
         } else {
           pParameter->setValueWidget(value, defaultValue, pParameter->getUnit(), mNested);
@@ -1790,25 +1794,6 @@ void ElementParameters::applyModifier(ModelInstance::Modifier *pModifier, bool d
       }
     }
   }
-}
-
-/*!
- * \brief ElementParameters::findParameter
- * Finds the Parameter.
- * \param pLibraryTreeItem
- * \param parameter
- * \param caseSensitivity
- * \return
- */
-Parameter* ElementParameters::findParameter(LibraryTreeItem *pLibraryTreeItem, const QString &parameter, Qt::CaseSensitivity caseSensitivity) const
-{
-  foreach (Parameter *pParameter, mParametersList) {
-    if ((pParameter->getElement()->getGraphicsView()->getModelWidget()->getLibraryTreeItem() == pLibraryTreeItem) &&
-        (pParameter->getElement()->getName().compare(parameter, caseSensitivity) == 0)) {
-      return pParameter;
-    }
-  }
-  return 0;
 }
 
 /*!
