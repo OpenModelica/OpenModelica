@@ -62,7 +62,7 @@ static int rml_execution_failed()
   return 1;
 }
 
-DLLExport int __omc_main(int argc, char **argv)
+DLLDirection int __omc_main(int argc, char **argv)
 {
   MMC_INIT(0);
   {
@@ -366,7 +366,7 @@ template functionHeader(Function fn, Boolean inFunc, Boolean isSimulation, Text 
     case RECORD_CONSTRUCTOR(__) then
       let fname = underscorePath(name)
       let funArgsStr = (funArgs |> var as VARIABLE(__) => ', <%varType(var)%> omc_<%crefStr(name)%>')
-      let vis = (match visibility case PUBLIC() then "DLLExport")
+      let vis = (match visibility case PUBLIC() then "DLLDirection")
       <<
       <% if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS)
         then
@@ -963,7 +963,7 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
   let prototype = functionPrototype(fname, fargs, outVars, boxed, visibility, isSimulation, true, dummy)
   let inFnStr = if boolAnd(boxed,inFunc) then
     <<
-    DLLExport
+    DLLDirection
     int in_<%fname%>(threadData_t *threadData, type_description * inArgs, type_description * outVar);
     >>
   match visibility
@@ -976,7 +976,7 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
     else
       <<
       <%inFnStr%>
-      <%if dynamicLoad then '' else 'DLLExport<%\n%><%prototype%>;'%>
+      <%if dynamicLoad then '' else 'DLLDirection<%\n%><%prototype%>;'%>
       >>
 end functionHeaderImpl;
 
@@ -1482,7 +1482,7 @@ case FUNCTION(__) then
   let prototype = functionPrototype(fname, functionArguments, outVars, false, visibility, isSimulation, false, afterBody)
   <<
   <%auxFunction%>
-  <% match visibility case PUBLIC(__) then "DLLExport" %>
+  <% match visibility case PUBLIC(__) then "DLLDirection" %>
   <%prototype%>
   {
     <%varDecls%>
@@ -1508,7 +1508,7 @@ end functionBodyRegularFunction;
 template generateInFunc(Text fname, list<Variable> functionArguments, list<Variable> outVars)
 ::=
   <<
-  DLLExport
+  DLLDirection
   int in_<%fname%>(threadData_t *threadData, type_description * inArgs, type_description * outVar)
   {
     //if (!mmc_GC_state) mmc_GC_init();
