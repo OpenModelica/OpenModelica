@@ -1905,8 +1905,10 @@ algorithm
         newVar := BackendVariable.setVarDirection(newVar, DAE.BIDIR());
         newVars := BackendVariable.addVar(newVar, newVars);
 
-        // update output to ordinary variable
-        v := BackendVariable.setVarKind(v, BackendDAE.VARIABLE());
+        /*fix issue https://github.com/OpenModelica/OpenModelica/issues/13342
+         *do not change the varkind of the output variable
+        */
+        //v := BackendVariable.setVarKind(v, BackendDAE.VARIABLE());
         v := BackendVariable.removeFixedAttribute(v);
         v := BackendVariable.removeStartAttribute(v);
         newVars := BackendVariable.addVar(v, newVars);
