@@ -141,6 +141,8 @@ template getQtInterfaceHeaders(list<DAE.Type> tys, String className)
 
   #include <QOpenGLContext> // must be first include to fix undefined GLDEBUGPROC
   #include <QtCore>
+  /* import the scripting here */
+  #define IMPORT_INTO
   #include "OpenModelicaScriptingAPI.h"
 
   class <%className%> : public QObject

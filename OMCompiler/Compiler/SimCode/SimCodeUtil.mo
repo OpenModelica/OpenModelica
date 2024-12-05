@@ -960,7 +960,7 @@ algorithm
         simVar.name := ComponentReference.crefPrefixPrevious(cr);
         clockedVars := simVar::clockedVars;
         simEq := SimCode.SES_SIMPLE_ASSIGN(ouniqueEqIndex, simVar.name, DAE.CREF(cr, simVar.type_), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-         equations := simEq::equations;
+        equations := simEq::equations;
         ouniqueEqIndex := ouniqueEqIndex + 1;
       end if;
     end for;
@@ -992,6 +992,7 @@ algorithm
       simSubPartitions := List.map(Array.getRange(off, off + basePartition.nSubClocks - 1, subPartitions), Util.getOption);
       simSubPartitions := listReverse(simSubPartitions);
     else
+      // we should skip it and remove the base clock but that is quite complicated
       simSubPartitions := {};
     end if;
     off := off + basePartition.nSubClocks;

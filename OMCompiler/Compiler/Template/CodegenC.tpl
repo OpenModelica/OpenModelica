@@ -508,27 +508,27 @@ template functionSystemsSynchronousSubClocks(list<SubPartition> subPartitions, I
 ::=
   let subCases = subPartitions |> subPartition hasindex sub_idx =>
     match subPartition
-      case SUBPARTITION(__) then
-        let name = 'functionEquationsSynchronous_system_<%base_idx%>_<%sub_idx%>'
-        <<
-        case <%sub_idx%>:
-          ret = <%symbolName(modelNamePrefix, name)%>(data, threadData);
-          break;
-        >>
-      else ""
-    ; separator = "\n"
-
-  <<
-  case <%base_idx%>:
-    switch (sub_idx) {
-      <%subCases%>
-      default:
-        throwStreamPrint(NULL, "Internal Error: unknown sub-clock partition %ld", sub_idx);
-        ret = 1;
+    case SUBPARTITION(__) then
+      let name = 'functionEquationsSynchronous_system_<%base_idx%>_<%sub_idx%>'
+      <<
+      case <%sub_idx%>:
+        ret = <%symbolName(modelNamePrefix, name)%>(data, threadData);
         break;
-    }
-    break;
-  >>
+      >>
+    else ""
+  ; separator = "\n"
+
+<<
+case <%base_idx%>:
+  switch (sub_idx) {
+    <%subCases%>
+    default:
+      throwStreamPrint(NULL, "Internal Error: unknown sub-clock partition %ld", sub_idx);
+      ret = 1;
+      break;
+  }
+  break;
+>>
 end functionSystemsSynchronousSubClocks;
 
 
@@ -536,24 +536,40 @@ template functionSystemsSynchronous(list<ClockedPartition> clockedPartitions, St
 ::=
   let baseCases = clockedPartitions |> partition hasindex base_idx =>
     match partition
-      case CLOCKED_PARTITION(__) then
+      case CLOCKED_PARTITION(subPartitions = (sub as _::_)) then
         functionSystemsSynchronousSubClocks(subPartitions, base_idx, modelNamePrefix)
-      else ""
+      else // adrpo: generate a fake call if the subPartitions = {}
+        let name = 'functionEquationsSynchronous_system_<%base_idx%>_0'
+        <<
+        case 0: // this is a fake function call for CLOCKED_PARTITION(subPartitions = {})
+          ret = <%symbolName(modelNamePrefix, name)%>(data, threadData);
+          break;
+        >>
     ; separator = "\n"
 
   let systs = clockedPartitions |> partition hasindex base_idx =>
     match partition
-      case CLOCKED_PARTITION(__) then
+      case CLOCKED_PARTITION(subPartitions = (sub as _::_)) then
         let funcCall = subPartitions |> subPart hasindex sub_idx =>
           match subPart
             case SUBPARTITION(__) then
-            functionEquationsSynchronous(base_idx, sub_idx, vars, listAppend(equations, removedEquations), modelNamePrefix)
+              functionEquationsSynchronous(base_idx, sub_idx, vars, listAppend(equations, removedEquations), modelNamePrefix)
             else ""
         ; separator = "\n"
         <<
         <%funcCall%>
         >>
-      else ""
+      else // adrpo: generate a fake function for subPartitions = {}
+        <<
+        int <%symbolName(modelNamePrefix, 'functionEquationsSynchronous_system_<%base_idx%>_0')%>(DATA *data, threadData_t *threadData)
+        {
+          TRACE_PUSH
+          int i;
+          // do nothing, this is a fake function for CLOCKED_PARTITION(subPartitions = {})
+          TRACE_POP
+          return 0;
+        }
+        >>
     ; separator = "\n"
 
   <<
