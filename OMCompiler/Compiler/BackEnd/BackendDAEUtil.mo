@@ -1906,9 +1906,11 @@ algorithm
         newVars := BackendVariable.addVar(newVar, newVars);
 
         /*fix issue https://github.com/OpenModelica/OpenModelica/issues/13342
-         *do not change the varkind of the output variable
+         *do not change the varkind of the output variable, except if var = BackendDAE.STATE()
         */
-        //v := BackendVariable.setVarKind(v, BackendDAE.VARIABLE());
+        if BackendVariable.isStateVar(v) then
+          v := BackendVariable.setVarKind(v, BackendDAE.VARIABLE());
+        end if;
         v := BackendVariable.removeFixedAttribute(v);
         v := BackendVariable.removeStartAttribute(v);
         newVars := BackendVariable.addVar(v, newVars);

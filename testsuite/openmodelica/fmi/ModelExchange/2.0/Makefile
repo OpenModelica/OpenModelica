@@ -29,6 +29,7 @@ fmi_attributes_25.mos \
 fmiFilterTest.mos \
 FMUResourceTest.mos \
 QuotedIdentifierExport.mos \
+RealFFT1.mos \
 testBug2764.mos \
 testBug2765.mos \
 testBug3049.mos \
