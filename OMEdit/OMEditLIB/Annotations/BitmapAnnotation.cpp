@@ -39,7 +39,7 @@
 #include <QMessageBox>
 
 BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0, 0)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
@@ -54,7 +54,7 @@ BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, Gr
 }
 
 BitmapAnnotation::BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString &classFileName, bool inherited, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
+  : ShapeAnnotation(inherited, pGraphicsView, 0)
 {
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
@@ -87,7 +87,7 @@ BitmapAnnotation::BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString
 }
 
 BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
-    : ShapeAnnotation(pShapeAnnotation, pParent)
+  : ShapeAnnotation(pParent)
 {
   mpOriginItem = 0;
   updateShape(pShapeAnnotation);
@@ -102,7 +102,7 @@ BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Element *p
  * \param pGraphicsView
  */
 BitmapAnnotation::BitmapAnnotation(QString classFileName, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, 0, 0)
+  : ShapeAnnotation(true, pGraphicsView, 0)
 {
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
