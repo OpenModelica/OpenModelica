@@ -3654,11 +3654,13 @@ algorithm
       Absyn.Exp e;
       Absyn.Path p;
 
-    /* Covers the case annotate=Diagram(1) */
-    case (Absyn.CALL(function_ = cr,functionArgs = Absyn.FUNCTIONARGS(args = {e}, argNames = {})))
+    /* Covers the case annotate=Diagram(SOMETHING(x=1,y=2)) */
+    case (Absyn.CALL(function_ = cr,functionArgs = Absyn.FUNCTIONARGS(args = {(e as Absyn.CALL())},argNames = nargs)))
       equation
+        eltarglst = List.map(nargs, namedargToModification);
+        emod = recordConstructorToModification(e);
         p = AbsynUtil.crefToPath(cr);
-        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),p,SOME(Absyn.CLASSMOD({},Absyn.EQMOD(e,AbsynUtil.dummyInfo))),NONE(),AbsynUtil.dummyInfo);
+        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),p,SOME(Absyn.CLASSMOD((emod :: eltarglst),Absyn.NOMOD())),NONE(),AbsynUtil.dummyInfo);
       then
         res;
     /* Covers the case annotate=Diagram(x=1,y=2) */
@@ -3669,13 +3671,11 @@ algorithm
         res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),p,SOME(Absyn.CLASSMOD(eltarglst,Absyn.NOMOD())),NONE(),AbsynUtil.dummyInfo);
       then
         res;
-    /* Covers the case annotate=Diagram(SOMETHING(x=1,y=2)) */
-    case (Absyn.CALL(function_ = cr,functionArgs = Absyn.FUNCTIONARGS(args = {(e as Absyn.CALL())},argNames = nargs)))
+    /* Covers the case annotate=Diagram(1) */
+    case (Absyn.CALL(function_ = cr,functionArgs = Absyn.FUNCTIONARGS(args = {e}, argNames = {})))
       equation
-        eltarglst = List.map(nargs, namedargToModification);
-        emod = recordConstructorToModification(e);
         p = AbsynUtil.crefToPath(cr);
-        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),p,SOME(Absyn.CLASSMOD((emod :: eltarglst),Absyn.NOMOD())),NONE(),AbsynUtil.dummyInfo);
+        res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),p,SOME(Absyn.CLASSMOD({},Absyn.EQMOD(e,AbsynUtil.dummyInfo))),NONE(),AbsynUtil.dummyInfo);
       then
         res;
     else
