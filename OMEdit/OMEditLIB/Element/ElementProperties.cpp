@@ -117,7 +117,6 @@ void FinalEachToolButton::showParameterMenu()
 
 Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, ElementParameters *pElementParameters)
 {
-  mpElement = 0;
   mpModelInstanceElement = pElement;
   mExtendName = mpModelInstanceElement->getTopLevelExtendName();
   mInherited = defaultValue;
@@ -1795,25 +1794,6 @@ void ElementParameters::applyModifier(ModelInstance::Modifier *pModifier, bool d
       }
     }
   }
-}
-
-/*!
- * \brief ElementParameters::findParameter
- * Finds the Parameter.
- * \param pLibraryTreeItem
- * \param parameter
- * \param caseSensitivity
- * \return
- */
-Parameter* ElementParameters::findParameter(LibraryTreeItem *pLibraryTreeItem, const QString &parameter, Qt::CaseSensitivity caseSensitivity) const
-{
-  foreach (Parameter *pParameter, mParametersList) {
-    if ((pParameter->getElement()->getGraphicsView()->getModelWidget()->getLibraryTreeItem() == pLibraryTreeItem) &&
-        (pParameter->getElement()->getName().compare(parameter, caseSensitivity) == 0)) {
-      return pParameter;
-    }
-  }
-  return 0;
 }
 
 /*!

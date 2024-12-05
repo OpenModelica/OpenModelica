@@ -295,26 +295,13 @@ ShapeAnnotation::ShapeAnnotation(QGraphicsItem *pParent)
   mOldAnnotation = "";
 }
 
-ShapeAnnotation::ShapeAnnotation(ShapeAnnotation *pShapeAnnotation, QGraphicsItem *pParent)
-  : QGraphicsItem(pParent)
-{
-  mpGraphicsView = 0;
-  mpParentComponent = dynamic_cast<Element*>(pParent);
-  //mTransformation = 0;
-  mIsInheritedShape = false;
-  setOldScenePosition(QPointF(0, 0));
-  mIsCornerItemClicked = false;
-  mOldAnnotation = "";
-}
-
 /*!
  * \brief ShapeAnnotation::ShapeAnnotation
  * \param inheritedShape
  * \param pGraphicsView - pointer to GraphicsView
- * \param pShapeAnnotation
  * \param pParent - pointer to QGraphicsItem
  */
-ShapeAnnotation::ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsView, ShapeAnnotation *pShapeAnnotation, QGraphicsItem *pParent)
+ShapeAnnotation::ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsView, QGraphicsItem *pParent)
   : QGraphicsItem(pParent)
 {
   mpGraphicsView = pGraphicsView;

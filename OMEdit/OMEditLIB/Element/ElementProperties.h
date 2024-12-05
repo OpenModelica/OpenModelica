@@ -78,7 +78,6 @@ public:
     ChoicesAllMatching
   };
   Parameter(ModelInstance::Element *pElement, bool defaultValue, ElementParameters *pElementParameters);
-  Element* getElement() {return mpElement;}
   ModelInstance::Element* getModelInstanceElement() {return mpModelInstanceElement;}
   bool isParameter() const;
   bool isInput() const;
@@ -140,7 +139,6 @@ public:
   void setEnabled(bool enable);
   void update();
 private:
-  Element *mpElement;
   ModelInstance::Element *mpModelInstanceElement;
   ElementParameters *mpElementParameters = 0;
   StringAnnotation mTab;
@@ -290,7 +288,6 @@ private:
   void fetchClassExtendsModifiers(ModelInstance::Element *pModelElement);
   void fetchRootClassExtendsModifiers(ModelInstance::Element *pModelElement);
   void applyModifier(ModelInstance::Modifier *pModifier, bool defaultValue);
-  Parameter* findParameter(LibraryTreeItem *pLibraryTreeItem, const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
 public slots:
   void commentLinkClicked(QString link);

@@ -36,7 +36,7 @@
 #include "Modeling/Commands.h"
 
 PolygonAnnotation::PolygonAnnotation(QString annotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0, 0)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
@@ -51,7 +51,7 @@ PolygonAnnotation::PolygonAnnotation(QString annotation, GraphicsView *pGraphics
 }
 
 PolygonAnnotation::PolygonAnnotation(ModelInstance::Polygon *pPolygon, bool inherited, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
+  : ShapeAnnotation(inherited, pGraphicsView, 0)
 {
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
@@ -82,7 +82,7 @@ PolygonAnnotation::PolygonAnnotation(ModelInstance::Polygon *pPolygon, Element *
 }
 
 PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
-    : ShapeAnnotation(pShapeAnnotation, pParent)
+  : ShapeAnnotation(pParent)
 {
   mpOriginItem = 0;
   updateShape(pShapeAnnotation);
@@ -90,7 +90,7 @@ PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Element 
 }
 
 PolygonAnnotation::PolygonAnnotation(Element *pParent)
-  : ShapeAnnotation(0, pParent)
+  : ShapeAnnotation(pParent)
 {
   mpOriginItem = 0;
   // set the default values

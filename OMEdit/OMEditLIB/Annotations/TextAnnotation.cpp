@@ -48,7 +48,7 @@
  * \param pGraphicsView - pointer to GraphicsView
  */
 TextAnnotation::TextAnnotation(QString annotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0, 0)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   mpElement = 0;
   mpOriginItem = new OriginItem(this);
@@ -64,7 +64,7 @@ TextAnnotation::TextAnnotation(QString annotation, GraphicsView *pGraphicsView)
 }
 
 TextAnnotation::TextAnnotation(ModelInstance::Text *pText, bool inherited, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
+  : ShapeAnnotation(inherited, pGraphicsView, 0)
 {
   mpElement = 0;
   mpOriginItem = new OriginItem(this);
@@ -96,7 +96,7 @@ TextAnnotation::TextAnnotation(ModelInstance::Text *pText, Element *pParent)
 }
 
 TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
-    : ShapeAnnotation(pShapeAnnotation, pParent), mpElement(pParent)
+  : ShapeAnnotation(pParent), mpElement(pParent)
 {
   mpOriginItem = 0;
   updateShape(pShapeAnnotation);
@@ -105,7 +105,7 @@ TextAnnotation::TextAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pPare
 }
 
 TextAnnotation::TextAnnotation(Element *pParent)
-  : ShapeAnnotation(0, pParent), mpElement(pParent)
+  : ShapeAnnotation(pParent), mpElement(pParent)
 {
   mpOriginItem = 0;
   // set the default values
@@ -122,7 +122,7 @@ TextAnnotation::TextAnnotation(Element *pParent)
 }
 
 TextAnnotation::TextAnnotation(QString annotation, LineAnnotation *pLineAnnotation)
-  : ShapeAnnotation(0, pLineAnnotation)
+  : ShapeAnnotation(pLineAnnotation)
 {
   mpElement = 0;
   mpOriginItem = 0;
@@ -177,7 +177,7 @@ TextAnnotation::TextAnnotation(ModelInstance::Text *pText, LineAnnotation *pLine
  * \param pGraphicsView
  */
 TextAnnotation::TextAnnotation(GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, 0, 0)
+  : ShapeAnnotation(true, pGraphicsView, 0)
 {
   mpElement = 0;
   mpOriginItem = 0;

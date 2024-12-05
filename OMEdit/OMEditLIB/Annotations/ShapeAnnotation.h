@@ -126,8 +126,7 @@ public:
   enum LineGeometryType {VerticalLine, HorizontalLine};
   Transformation mTransformation;
   ShapeAnnotation(QGraphicsItem *pParent);
-  ShapeAnnotation(ShapeAnnotation *pShapeAnnotation, QGraphicsItem *pParent);
-  ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsView, ShapeAnnotation *pShapeAnnotation, QGraphicsItem *pParent = 0);
+  ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsView, QGraphicsItem *pParent = 0);
   void setDefaults();
   void setDefaults(ShapeAnnotation *pShapeAnnotation);
   void setUserDefaults();

@@ -36,7 +36,7 @@
 #include "Modeling/Commands.h"
 
 EllipseAnnotation::EllipseAnnotation(QString annotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0, 0)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
@@ -51,7 +51,7 @@ EllipseAnnotation::EllipseAnnotation(QString annotation, GraphicsView *pGraphics
 }
 
 EllipseAnnotation::EllipseAnnotation(ModelInstance::Ellipse *pEllipse, bool inherited, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
+  : ShapeAnnotation(inherited, pGraphicsView, 0)
 {
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
