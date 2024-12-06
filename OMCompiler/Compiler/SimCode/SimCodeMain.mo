@@ -756,7 +756,7 @@ algorithm
       String fileprefix, fileNamePrefixHash;
       String install_include_omc_dir, install_include_omc_c_dir, install_share_buildproject_dir, install_fmu_sources_dir, fmu_tmp_sources_dir;
       String cmakelistsStr, needCvode, cvodeDirectory;
-      list<String> sourceFiles, model_desc_src_files;
+      list<String> sourceFiles, model_desc_src_files, fmi2HeaderFiles;
       list<String> dgesv_sources, cminpack_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources;
       list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
       SimCode.VarInfo varInfo;
@@ -901,6 +901,13 @@ algorithm
         // for these files should be made consistent. For now to avoid modifing things a lot they are left as they are and copied here.
         fmi_export_files := if FMUVersion == "1.0" then RuntimeSources.fmi1Files else RuntimeSources.fmi2Files;
         copyFiles(fmi_export_files, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+
+        /*
+         * fix issue https://github.com/OpenModelica/OpenModelica/issues/13213
+         * copy fmu reference headers directly to FMU sources, to support source code compilation
+        */
+        fmi2HeaderFiles := {"fmi/fmi2Functions.h","fmi/fmi2FunctionTypes.h", "fmi/fmi2TypesPlatform.h", "fmi/fmiModelFunctions.h", "fmi/fmiModelTypes.h"};
+        copyFiles(fmi2HeaderFiles, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
 
         System.writeFile(fmutmp+"/sources/isfmi" + (if FMUVersion=="1.0" then "1" else "2"), "");
 

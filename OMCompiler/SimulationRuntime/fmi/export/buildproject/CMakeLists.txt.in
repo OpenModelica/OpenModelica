@@ -13,7 +13,7 @@ set(BUILD_SHARED_LIBS
     CACHE BOOL
     "Compile DLL/Shared Object binary object if 'ON', compile static binary object if 'OFF'.")
 set(FMI_INTERFACE_HEADER_FILES_DIRECTORY
-    @FMI_INTERFACE_HEADER_FILES_DIRECTORY@
+    "${CMAKE_CURRENT_SOURCE_DIR}/fmi"
     CACHE STRING
     "Path to FMI header files containing fmi2Functions.h, fmi2FunctionTypes.h, fmi2TypesPlatforms.h")
 set(RUNTIME_DEPENDENCIES_LEVEL
