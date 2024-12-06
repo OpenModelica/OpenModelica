@@ -1,0 +1,21 @@
+// status: correct
+// teardown_command: rm -rf CRML_test.Spec_doc.ClockConstructors.ClockConstructors_verif*
+
+loadFile("Ticket12245.mo"); getErrorString();
+simulate(CRML_test.Spec_doc.ClockConstructors.ClockConstructors_verif); getErrorString();
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "CRML_test.Spec_doc.ClockConstructors.ClockConstructors_verif_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 14.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'CRML_test.Spec_doc.ClockConstructors.ClockConstructors_verif', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "[simulation/modelica/synchronous/Ticket12245.mo:5:9-5:37:writable] Warning: Connector b is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [simulation/modelica/synchronous/Ticket12245.mo:6:9-6:39:writable] Warning: Connector clock is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// "
+// endResult
