@@ -1168,6 +1168,7 @@ TypeDim4.mo \
 TypeDimNonType1.mo \
 TypeExtends1.mo \
 TypeExtends2.mo \
+TypeExtends3.mo \
 TypeMissingBaseType1.mo \
 TypenameInvalid1.mo \
 TypenameInvalid2.mo \
