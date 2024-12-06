@@ -483,9 +483,9 @@ ELSEIF(NOT FMU_TARGET)
 ENDIF(NOT(COMPILER_SUPPORTS_CXX11))
 
 IF(NOT FMU_TARGET)
-  FIND_PACKAGE(Boost REQUIRED COMPONENTS filesystem system serialization program_options)
+  FIND_PACKAGE(Boost REQUIRED COMPONENTS filesystem serialization program_options)
 ELSE(NOT FMU_TARGET)
-  FIND_PACKAGE(Boost COMPONENTS filesystem system serialization program_options)
+  FIND_PACKAGE(Boost COMPONENTS filesystem serialization program_options)
 ENDIF(NOT FMU_TARGET)
 
 # Use old C++ ABI for cross compilation of FMUs

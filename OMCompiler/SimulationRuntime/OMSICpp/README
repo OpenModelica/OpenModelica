@@ -78,8 +78,8 @@ The following section explains the arguments that can be passed in more detail.
   linked statically.
 
   Sometimes it's necessary to link boost against it's real path libraries.
-  This means for example, that instead of linking against “-lboost_system”, the
-  makefiles will link against “-lboost1.55_system”. Use the BOOST_REALPATHS
+  This means for example, that instead of linking against “-lboost_filesystem”, the
+  makefiles will link against “-lboost1.55_filesystem”. Use the BOOST_REALPATHS
   argument for this purpose.
 
   If profiling informations for the runtime are required, they can be turned on
