@@ -715,13 +715,14 @@ public
           Solve.Status status;
           Solvability sol;
           UnorderedSet<ComponentRef> linear_set, param_set, var_set;
-          Boolean eqnIsDiscrete;
+          Boolean eqnIsDiscrete, eqnIsIf;
 
         case FULL() algorithm
           for eqn_idx in UnorderedMap.valueArray(e) loop
             eqn_ptr := EquationPointers.getEqnAt(eqns, eqn_idx);
             eqnIsDiscrete := Equation.isDiscrete(eqn_ptr) or Equation.isWhenEquation(eqn_ptr);
-            if not eqnIsDiscrete then
+            eqnIsIf := Equation.isIfEquation(eqn_ptr);
+            if not (eqnIsDiscrete or eqnIsIf) then
               residual := Equation.getResidualExp(Pointer.access(eqn_ptr));
             end if;
             for var in UnorderedSet.toArray(full.occurences[eqn_idx]) loop
@@ -736,6 +737,9 @@ public
                     // Use solveSimple for this and check if status is EXPLICIT
                     (_, status, _) := Solve.solveSimple(Pointer.access(eqn_ptr), var);
                     sol := if status == NBSolve.Status.EXPLICIT then Solvability.EXPLICIT_LINEAR(NONE(), NONE()) else Solvability.UNSOLVABLE();
+                  elseif eqnIsIf then
+                    // TODO more thorough analysis
+                    sol := Solvability.IMPLICIT();
                   else
                     // get the residual expression, differentiate and simplify it
                     diffArgs.diffCref := var;
