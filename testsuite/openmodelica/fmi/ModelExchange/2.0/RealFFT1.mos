@@ -1,0 +1,21 @@
+// name:     RealFFT1
+// keywords: fmu export import
+// status: correct
+// teardown_command: rm -rf RealFFT1.fmu RealFFT1.log RealFFT1_info.json
+// https://github.com/OpenModelica/OpenModelica/issues/13342
+
+
+loadModel(Modelica);
+getErrorString();
+
+buildModelFMU(Modelica.Math.FastFourierTransform.Examples.RealFFT1);
+getErrorString();
+
+// Result:
+// true
+// ""
+// "RealFFT1.fmu"
+// "[Modelica 4.0.0+maint.om/Math/FastFourierTransform.mo:538:3-629:25:writable] Warning: Pure function 'Modelica.Math.FastFourierTransform.realFFTwriteToFile' contains a call to impure function 'Modelica.Utilities.Files.removeFile'.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// endResult
