@@ -464,6 +464,8 @@ protected
   Binding b;
 algorithm
   () := match cls
+    case Class.INSTANCED_CLASS(restriction = Restriction.TYPE()) then ();
+
     case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps))
       algorithm
         if isSome(binding) then
