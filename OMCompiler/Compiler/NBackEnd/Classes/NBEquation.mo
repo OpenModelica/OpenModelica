@@ -2647,8 +2647,18 @@ public
       input output IfEquationBody body;
     protected
       list<Pointer<Equation>> discretes, continuous;
+
+      function compareLHS
+        "Heuristic: often the lhs is a cref. If all branches are solved for the lhs,
+         sorting them in the same way makes the split nice without algebraic loops."
+        input Pointer<Equation> eqn1;
+        input Pointer<Equation> eqn2;
+        output Boolean b = Expression.compare(Equation.getLHS(Pointer.access(eqn1)), Equation.getLHS(Pointer.access(eqn2))) > 0;
+      end compareLHS;
     algorithm
       (discretes, continuous) := List.splitOnTrue(body.then_eqns, Equation.isDiscrete);
+      discretes               := List.sort(discretes, compareLHS);
+      continuous              := List.sort(continuous, compareLHS);
       body.then_eqns          := listAppend(discretes, continuous);
       body.else_if            := Util.applyOption(body.else_if, sortForSplit);
     end sortForSplit;
