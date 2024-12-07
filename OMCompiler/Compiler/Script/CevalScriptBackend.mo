@@ -1427,21 +1427,21 @@ algorithm
 
            result_file := selectResultFile(result_file, simflags);
 
-            executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
-            logFile := stringAppend(executable,".log");
-            // adrpo: log file is deleted by buildModel! do NOT DELETE IT AGAIN!
-            // we should really have different log files for simulation/compilation!
-            // as the buildModel log file will be deleted here and that gives less information to the user!
-            if System.regularFileExists(logFile) then
-              0 := System.removeFile(logFile);
-            end if;
-            sim_call := stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
-            System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
-            SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
+           executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
+           logFile := stringAppend(executable,".log");
+           // adrpo: log file is deleted by buildModel! do NOT DELETE IT AGAIN!
+           // we should really have different log files for simulation/compilation!
+           // as the buildModel log file will be deleted here and that gives less information to the user!
+           if System.regularFileExists(logFile) then
+             0 := System.removeFile(logFile);
+           end if;
+           sim_call := stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
+           System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
 
-            resI := System.systemCall(sim_call, logFile);
+           resI := System.systemCallRestrictedEnv(sim_call, logFile);
 
-            timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+           timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
 
          else
            result_file := "";
@@ -1547,7 +1547,7 @@ algorithm
           System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
 
-          if 0 == System.systemCall(sim_call, logFile) then
+          if 0 == System.systemCallRestrictedEnv(sim_call, logFile) then
             result_file = stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
             timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
             timeTotal = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
@@ -1611,7 +1611,7 @@ algorithm
           sim_call = stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
           System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
           SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
-          resI = System.systemCall(sim_call, logFile);
+          resI = System.systemCallRestrictedEnv(sim_call, logFile);
           timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
         else
           result_file = "";
@@ -3560,7 +3560,7 @@ algorithm
                cmakeCall + " && " +
                Autoconf.cmake + " --build . --parallel " + getProcsStr() + " --target install && " +
                "cd .. && rm -rf " + buildDir;
-        if 0 <> System.systemCall(cmd, outFile=logfile) then
+        if 0 <> System.systemCallRestrictedEnv(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"cmd: " + cmd + "\n" + System.readFile(logfile)});
           fail();
         end if;
@@ -3579,7 +3579,7 @@ algorithm
                cmakeCall + " && " +
                Autoconf.cmake + " --build . --parallel " + getProcsStr() + " --target install && " +
                "cd .. && rm -rf " + buildDir;
-        if 0 <> System.systemCall(cmd, outFile=logfile) then
+        if 0 <> System.systemCallRestrictedEnv(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"cmd: " + cmd + "\n" + System.readFile(logfile)});
           fail();
         end if;
@@ -3816,7 +3816,7 @@ algorithm
         cmd := "cd \"" +  fmutmp + "/sources\" && ./configure --host="+quote+platform+quote+
                " CFLAGS=" + quote + "-Os" + quote + " CPPFLAGS=" + quote + CPPFLAGS + quote+
                " LDFLAGS= && " + nozip;
-        if 0 <> System.systemCall(cmd, outFile=logfile) then
+        if 0 <> System.systemCallRestrictedEnv(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
           System.removeFile(logfile);
           fail();
@@ -3906,7 +3906,7 @@ algorithm
   ExecStat.execStat("buildModelFMU: configured platform " + platform + " using " + cmd);
   if not finishedBuild then
     if not isWindows then
-      if 0 <> System.systemCall("cd " + dir + " && "+ Autoconf.make + " clean > /dev/null 2>&1") then
+      if 0 <> System.systemCallRestrictedEnv("cd " + dir + " && "+ Autoconf.make + " clean > /dev/null 2>&1") then
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Failed to make clean"});
         fail();
       end if;
@@ -4061,7 +4061,7 @@ algorithm
       end if;
       ExecStat.execStat("buildModelFMU: Generate C++ for platform " + platform);
     end for;
-    if 0 <> System.systemCall(Autoconf.make + " -f " + filenameprefix + "_FMU.makefile clean", outFile=logfile) then
+    if 0 <> System.systemCallRestrictedEnv(Autoconf.make + " -f " + filenameprefix + "_FMU.makefile clean", outFile=logfile) then
       // do nothing
     end if;
     return;

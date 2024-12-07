@@ -15880,7 +15880,7 @@ protected
   Integer numMatches;
   String cmakeVersionString;
 algorithm
-  retVal := System.systemCall(pathToCMake + " --version", cmakeVersionLogFile);
+  retVal := System.systemCallRestrictedEnv(pathToCMake + " --version", cmakeVersionLogFile);
   if 0 <> retVal then
     System.removeFile(cmakeVersionLogFile);
     Error.addInternalError("Failed to get version from " + pathToCMake, sourceInfo());
