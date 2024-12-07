@@ -735,7 +735,6 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
 
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Instantiate: GUID=%s", fmuGUID)
   resetThreadData(comp);
-
   return comp;
 }
 
@@ -753,7 +752,6 @@ void fmi2FreeInstance(fmi2Component c)
 
   /* call external objects destructors */
   comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData, comp->threadData);
-
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
   /* free nonlinear system data */
   freeNonlinearSystems(comp->fmuData, comp->threadData);
@@ -824,9 +822,6 @@ void fmi2FreeInstance(fmi2Component c)
   if (comp->instanceName) freeMemory((void*)comp->instanceName);
   if (comp->GUID) freeMemory((void*)comp->GUID);
   if (comp->functions) freeMemory((void*)comp->functions);
-
-  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2FreeInstance: succeeded");
-  
   /* free comp */
   freeMemory(comp);
   free_memory_pool();
@@ -867,7 +862,6 @@ fmi2Status fmi2EnterInitializationMode(fmi2Component c)
   copyStartValuestoInitValues(comp->fmuData);
   comp->state = model_state_initialization_mode;
 
-  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EnterInitializationMode: succeeded")
   return fmi2OK;
 }
 
@@ -897,8 +891,8 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
     if (initialization(comp->fmuData, comp->threadData, "fmi", "", 0.0))
     {
       comp->state = model_state_error;
-      FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2ExitInitializationMode: failed")
       resetThreadData(comp);
+      FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2ExitInitializationMode: failed")
       return fmi2Error;
     }
   }
@@ -938,10 +932,9 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
   }
 
   comp->state = isCoSimulation(comp) ? model_state_cs_step_complete : model_state_me_event_mode;
-  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2ExitInitializationMode: succeeded")
-  
   resetThreadData(comp);
 
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2ExitInitializationMode: succeed")
   return res;
 }
 
@@ -962,10 +955,7 @@ fmi2Status fmi2Terminate(fmi2Component c)
 
   setThreadData(comp);
   comp->state = model_state_terminated;
-
-  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Terminate: succeeded")
   resetThreadData(comp);
-
   return fmi2OK;
 }
 
