@@ -41,6 +41,7 @@ encapsulated package System
 protected
 import Autoconf;
 import Error;
+import Settings;
 
 public function trim
 "removes chars in charsToRemove from begin and end of inString"
@@ -311,6 +312,77 @@ public function readFile
   output String outString;
   external "C" outString = System_readFile(inString) annotation(Library = "omcruntime");
 end readFile;
+
+public function systemCallRestrictedEnv
+"@author: adrpo
+ This function will call system with restricted environment to make sure we do not pick executables or dlls from the PATH.
+ Only keep the OM or OMDev directories and the Windows ones in the PATH for the system call.
+ After the execution the PATH will be set back."
+  input String command;
+  input String outFile = "" "empty file means no redirection unless it is part of the command";
+  output Integer outInteger;
+protected
+  String savedPATH = "", newPATH = "", windowsPath = "", omInstallPath = "", omDevPath = "", pfix = "";
+algorithm
+  if Autoconf.os == "Windows_NT" then
+    // save path
+    try
+      savedPATH := readEnv("PATH");
+    else
+      savedPATH := "";
+      Error.addInternalError(getInstanceName() + " failed for: " + command + "! Could not read PATH environment variable.", sourceInfo());
+      fail();
+    end try;
+    // construct restricted path
+    newPATH := "";
+    // keep the OM or OMDev directories and the Windows ones
+    windowsPath := System.stringReplace(winGetSystemDirectory(), "\\", "/");
+    omInstallPath := System.stringReplace(Settings.getInstallationDirectoryPath(), "\\", "/");
+    try
+      omDevPath := System.stringReplace(readEnv("OMDEV"), "\\", "/");
+    else
+      omDevPath := "";
+    end try;
+    for p in listReverse(strtok(savedPATH, ";")) loop
+      pfix := System.stringReplace(p, "\\", "/");
+      if (0 == stringFind(pfix, windowsPath)) or
+         (0 == stringFind(pfix, omInstallPath)) or
+         (0 == stringFind(pfix, omDevPath))
+      then
+        newPATH := p + ";" + newPATH;
+      end if;
+    end for;
+    if stringEqual(newPATH, "") then
+      Error.addInternalError(getInstanceName() + " failed for: " + command + "! Failed to filter the PATH: " + savedPATH, sourceInfo());
+      fail();
+    end if;
+    setEnv("PATH", newPATH, true);
+    try
+      outInteger := systemCall(command, outFile);
+    else
+      Error.addInternalError(getInstanceName() + " failed for: " + command + "! Failed in the system call with restricted PATH: " + newPATH, sourceInfo());
+      setEnv("PATH", savedPATH, true);
+      fail();
+    end try;
+    setEnv("PATH", savedPATH, true);
+  else
+    outInteger := systemCall(command, outFile);
+  end if;
+end systemCallRestrictedEnv;
+
+public function winGetSystemDirectory "returns the Windows system directory on Windows and empty string on Linux"
+  output String outDirectory = "";
+algorithm
+  outDirectory := "";
+  if Autoconf.os == "Windows_NT" then
+    outDirectory := winGetSystemDirectoryA();
+  end if;
+end winGetSystemDirectory;
+
+protected function winGetSystemDirectoryA
+  output String str;
+  external "C" str=SystemImpl__winGetSystemDirectoryA() annotation(Library = "omcruntime");
+end winGetSystemDirectoryA;
 
 public function systemCall
   input String command;
