@@ -838,6 +838,47 @@ public
     end match;
   end setType;
 
+  function applyToType
+    input output Expression exp;
+    input typeFunc func;
+    partial function typeFunc
+      input output Type ty;
+    end typeFunc;
+  algorithm
+    exp := match exp
+      local
+        Operator o;
+      case ENUM_LITERAL()         algorithm exp.ty := func(exp.ty); then exp;
+      case CREF()                 algorithm exp.ty := func(exp.ty); then exp;
+      case TYPENAME()             algorithm exp.ty := func(exp.ty); then exp;
+      case ARRAY()                algorithm exp.ty := func(exp.ty); then exp;
+      case RANGE()                algorithm exp.ty := func(exp.ty); then exp;
+      case TUPLE()                algorithm exp.ty := func(exp.ty); then exp;
+      case RECORD()               algorithm exp.ty := func(exp.ty); then exp;
+      case CALL()                 algorithm exp.call := Call.setType(exp.call, func(Call.typeOf(exp.call))); then exp;
+      case SIZE()                 algorithm exp.exp := applyToType(exp.exp, func); then exp;
+      case MULTARY(operator = o)  algorithm o.ty := func(o.ty); exp.operator := o; then exp;
+      case BINARY(operator = o)   algorithm o.ty := func(o.ty); exp.operator := o; then exp;
+      case UNARY(operator = o)    algorithm o.ty := func(o.ty); exp.operator := o; then exp;
+      case LBINARY(operator = o)  algorithm o.ty := func(o.ty); exp.operator := o; then exp;
+      case LUNARY(operator = o)   algorithm o.ty := func(o.ty); exp.operator := o; then exp;
+      case RELATION(operator = o) algorithm o.ty := func(o.ty); exp.operator := o; then exp;
+      case IF()                   algorithm exp.ty := func(exp.ty); then exp;
+      case CAST()                 algorithm exp.ty := func(exp.ty); then exp;
+      case BOX()                  algorithm exp.exp := applyToType(exp.exp, func); then exp;
+      case UNBOX()                algorithm exp.ty := func(exp.ty); then exp;
+      case SUBSCRIPTED_EXP()      algorithm exp.ty := func(exp.ty); then exp;
+      case TUPLE_ELEMENT()        algorithm exp.ty := func(exp.ty); then exp;
+      case RECORD_ELEMENT()       algorithm exp.ty := func(exp.ty); then exp;
+      case MUTABLE()              algorithm Mutable.update(exp.exp, applyToType(Mutable.access(exp.exp), func)); then exp;
+      case SHARED_LITERAL()       algorithm exp.exp := applyToType(exp.exp, func); then exp;
+      case EMPTY()                algorithm exp.ty := func(exp.ty); then exp;
+      case PARTIAL_FUNCTION_APPLICATION()  algorithm exp.ty := func(exp.ty); then exp;
+      else exp;
+    end match;
+  end applyToType;
+
+
   function typeCastOpt
     input Option<Expression> exp;
     input Type ty;
@@ -3906,7 +3947,7 @@ public
   function mapFoldShallow<ArgT>
     input Expression exp;
     input MapFunc func;
-          output Expression outExp;
+    output Expression outExp;
     input output ArgT arg;
 
     partial function MapFunc

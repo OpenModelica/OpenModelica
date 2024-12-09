@@ -638,6 +638,19 @@ public
     end if;
   end union_list;
 
+  function merge
+    "set1 U set2
+    like union, but always merges the second into the first list"
+    input output UnorderedSet<T> set1;
+    input UnorderedSet<T> set2;
+  algorithm
+    for b in Mutable.access(set2.buckets) loop
+      for k in b loop
+        add(k, set1);
+      end for;
+    end for;
+  end merge;
+
   function intersection
     "set1 n set2"
     input UnorderedSet<T> set1;

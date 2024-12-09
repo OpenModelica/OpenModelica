@@ -1485,6 +1485,7 @@ public
       "all annotations that are vendor specific
       note: doesn't include __OpenModelica_tearingSelect, this is considered a first class attribute"
       Boolean hideResult;
+      Boolean resizable;
     end ANNOTATIONS;
 
     function create
@@ -1500,6 +1501,9 @@ public
               case SCode.NAMEMOD(ident = "HideResult", mod = SCode.MOD(binding = SOME(Absyn.BOOL(true)))) algorithm
                 annotations.hideResult := true;
               then ();
+              case SCode.NAMEMOD(ident = "__OpenModelica_resizable", mod = SCode.MOD(binding = SOME(Absyn.BOOL(true)))) algorithm
+                annotations.resizable := true;
+              then ();
               else ();
             end match;
           end for;
@@ -1509,7 +1513,7 @@ public
     end create;
   end Annotations;
 
-  constant Annotations EMPTY_ANNOTATIONS = ANNOTATIONS(false);
+  constant Annotations EMPTY_ANNOTATIONS = ANNOTATIONS(false, false);
 
   annotation(__OpenModelica_Interface="frontend");
 end NFBackendExtension;

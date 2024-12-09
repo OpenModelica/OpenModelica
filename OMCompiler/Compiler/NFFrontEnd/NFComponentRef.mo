@@ -855,19 +855,20 @@ public
   function applySubscripts
     input ComponentRef cref;
     input FuncT func;
+    input Boolean applyToScope = false;
 
     partial function FuncT
       input Subscript subscript;
     end FuncT;
   algorithm
     () := match cref
-      case CREF(origin = Origin.CREF)
+      case CREF() guard applyToScope or cref.origin == Origin.CREF
         algorithm
           for sub in cref.subscripts loop
             func(sub);
           end for;
 
-          applySubscripts(cref.restCref, func);
+          applySubscripts(cref.restCref, func, applyToScope);
         then
           ();
 
@@ -879,6 +880,7 @@ public
     input ComponentRef cref;
     input FuncT func;
     input output ArgT arg;
+    input Boolean applyToScope = false;
 
     partial function FuncT
       input Subscript subscript;
@@ -886,13 +888,13 @@ public
     end FuncT;
   algorithm
     arg := match cref
-      case CREF(origin = Origin.CREF)
+      case CREF() guard applyToScope or cref.origin == Origin.CREF
         algorithm
           for sub in cref.subscripts loop
             arg := func(sub, arg);
           end for;
         then
-          foldSubscripts(cref.restCref, func, arg);
+          foldSubscripts(cref.restCref, func, arg, applyToScope);
 
       else arg;
     end match;
@@ -901,19 +903,20 @@ public
   function mapSubscripts
     input output ComponentRef cref;
     input FuncT func;
+    input Boolean applyToScope = false;
 
     partial function FuncT
       input output Subscript subscript;
     end FuncT;
   algorithm
     cref := match cref
-      case CREF(origin = Origin.CREF)
+      case CREF() guard applyToScope or cref.origin == Origin.CREF
         algorithm
           if not listEmpty(cref.subscripts) then
             cref.subscripts := list(func(s) for s in cref.subscripts);
           end if;
 
-          cref.restCref := mapSubscripts(cref.restCref, func);
+          cref.restCref := mapSubscripts(cref.restCref, func, applyToScope);
         then
           cref;
 

@@ -570,6 +570,18 @@ public
     end match;
   end isKnown;
 
+  function isResizableParameter
+    extends checkVar;
+  protected
+    InstNode node;
+  algorithm
+    b := match var.backendinfo
+      case BackendExtension.BACKEND_INFO(varKind = VariableKind.PARAMETER(), annotations = BackendExtension.ANNOTATIONS(resizable = true))
+      then true;
+      else false;
+    end match;
+  end isResizableParameter;
+
   function isResidual
     extends checkVar;
   algorithm

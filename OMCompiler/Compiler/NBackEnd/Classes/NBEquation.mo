@@ -932,7 +932,7 @@ public
       eq := Equation.setResidualVar(eq, res_var);
     end makeAssignmentUpdate;
 
-    protected function makeAssignmentEqn
+    function makeAssignmentEqn
       input Expression lhs;
       input Expression rhs;
       input Iterator iter;
@@ -988,7 +988,6 @@ public
       end if;
     end makeAssignmentEqn;
 
-  public
     function makeAlgorithm
       input list<Statement> stmts;
       input Boolean init;
