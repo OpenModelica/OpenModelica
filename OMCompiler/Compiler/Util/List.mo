@@ -734,6 +734,20 @@ algorithm
   outList := stripN(inList, len - inN);
 end lastN;
 
+public function trimToLength<T>
+  "Removes elements from the head of the list until it contains n elements or fewer."
+  input output list<T> lst;
+  input Integer n;
+protected
+  Integer len;
+algorithm
+  len := listLength(lst);
+
+  for i in 1:(len-n) loop
+    lst := listRest(lst);
+  end for;
+end trimToLength;
+
 public function rest<T>
   "Returns all elements except for the first in a list."
   input list<T> inList;

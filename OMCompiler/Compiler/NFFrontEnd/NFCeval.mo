@@ -460,6 +460,7 @@ algorithm
     subs := list(Subscript.eval(s) for s in subs);
   end if;
 
+  subs := List.trimToLength(subs, Expression.dimensionCount(exp));
   exp := Expression.applySubscripts(subs, exp);
   exp := subscriptBinding2(exp, cref, evalSubscripts, NONE());
 end subscriptBinding;
