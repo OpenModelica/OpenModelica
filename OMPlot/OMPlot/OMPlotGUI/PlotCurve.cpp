@@ -284,10 +284,9 @@ void PlotCurve::plotData(bool toggleSign)
 {
   if (!toggleSign) {
     if (mpParentPlot->getParentPlotWindow()->getPrefixUnits()) {
-      // Fixes ticket #5447 checks the lower and upper bound of variable and detect if we can add prefix automatically.
       bool canUseXPrefixUnits;
       if ((mpParentPlot->getParentPlotWindow()->isPlotParametric() || mpParentPlot->getParentPlotWindow()->isPlotArrayParametric())
-          && !Plot::prefixableUnit(getXDisplayUnit())) {
+          && Plot::prefixableUnit(getXDisplayUnit())) {
         canUseXPrefixUnits = true;
       } else {
         canUseXPrefixUnits = false;
