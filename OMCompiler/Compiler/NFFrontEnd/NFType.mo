@@ -993,7 +993,7 @@ public
       case Type.UNKNOWN() then "unknown()";
       case Type.COMPLEX() then Util.makeQuotedIdentifier(AbsynUtil.pathString(InstNode.scopePath(ty.cls)));
       case Type.FUNCTION() then Function.typeString(ty.fn);
-      case Type.METABOXED() then "#" + toFlatString(ty.ty, format);
+      case Type.METABOXED() then toFlatString(ty.ty, format);
       case Type.POLYMORPHIC() then "<" + ty.name + ">";
       case Type.ANY() then "$ANY$";
       case Type.CONDITIONAL_ARRAY() then toFlatString(ty.trueType, format) + "|" + toFlatString(ty.falseType, format);
