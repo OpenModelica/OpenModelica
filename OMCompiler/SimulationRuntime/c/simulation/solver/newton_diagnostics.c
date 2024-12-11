@@ -1109,7 +1109,7 @@ unsigned* getLinearVars( unsigned m, unsigned q, unsigned *w_idx )
 
 void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 {
-   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics (version Teus 10-12-2024) starting ....");
+   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics starting ....");
 
    printf("\n   ****** Model name: %s\n", data->modelData->modelName);
    printf("   ****** Initial                         : %d\n" , data->simulationInfo->initial);
@@ -1259,7 +1259,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
    free(w_idx);
    if (z_idx)
       free(z_idx);
-
+gi
    free(alpha);
 
    for( i = 0; i < p; i++)
@@ -1274,7 +1274,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
       free(Sigma[i]);
    free(Sigma);
 
-   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics (version Teus 10-12-2024) finished!!");
+   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics finished!!");
 
    return;
 }
