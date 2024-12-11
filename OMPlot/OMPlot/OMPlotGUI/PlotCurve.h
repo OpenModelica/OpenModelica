@@ -118,7 +118,7 @@ public:
 #if QWT_VERSION < 0x060000
   virtual void updateLegend(QwtLegend *legend) const;
 #endif
-  virtual int closestPoint(const QPoint &pos, double *dist = NULL) const;
+  virtual int closestPoint(const QPointF &pos, double *dist = NULL) const override;
 
   // QwtPlotItem interface
 public:
