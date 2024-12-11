@@ -2068,8 +2068,8 @@ public
       case IF() then "if " + toFlatString(exp.condition, format) + " then " + toFlatString(exp.trueBranch, format) + " else " + toFlatString(exp.falseBranch, format);
 
       case CAST() then toFlatString(exp.exp, format);
-      case UNBOX() then "UNBOX(" + toFlatString(exp.exp, format) + ")";
-      case BOX() then "BOX(" + toFlatString(exp.exp, format) + ")";
+      case UNBOX() then toFlatString(exp.exp, format);
+      case BOX() then toFlatString(exp.exp, format);
 
       case SUBSCRIPTED_EXP() then "(" + toFlatString(exp.exp, format) + ")" + Subscript.toFlatStringList(exp.subscripts, format);
       case TUPLE_ELEMENT() then toFlatString(exp.tupleExp, format);
