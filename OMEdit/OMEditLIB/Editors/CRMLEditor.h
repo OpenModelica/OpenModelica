@@ -28,7 +28,7 @@
  *
  */
 /*
- * @author Adrian.Pop@liu.se
+ * @author adrian.pop@liu.se
  */
 #ifndef CRMLEDITOR_H
 #define CRMLEDITOR_H

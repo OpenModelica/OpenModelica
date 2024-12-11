@@ -47,10 +47,9 @@ QString Helper::OpenModelicaHome = "";
 QString Helper::ModelicaPath = "";
 QString Helper::userHomeDirectory = "";
 QString Helper::OMCServerName = "OMEdit";
-QString Helper::omFileTypes = "All Files (*.mo *.mol *.bmo *.mos *.ssp);;Modelica Files (*.mo);;Encrypted Modelica Libraries (*.mol);;Base Modelica Files (*.bmo)"
-                              ";;Modelica Script Files (*.mos);;System Structure and Parameterization Files (*.ssp)";
+QString Helper::omFileTypes = "All Files (*.mo *.mol *.bmo *.mos *.ssp *.crml);;Modelica Files (*.mo);;Encrypted Modelica Libraries (*.mol);;Base Modelica Files (*.bmo)"
+                              ";;Modelica Script Files (*.mos);;System Structure and Parameterization Files (*.ssp);;CRML Files (*.crml)";
 QString Helper::omEncryptedFileTypes = "Encrypted Modelica Libraries (*.mol)";
-QString Helper::crmlFileTypes = "CRML Files (*.crml)";
 QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
 QString Helper::ngspiceNetlistFileTypes = "ngspice Netlist Files (*.cir *.sp *.spice)";
 QString Helper::imageFileTypes = "SVG (*.svg);;PNG image (*.png);;Windows BMP image (*.bmp);;TIFF (*.tiff)";
@@ -62,11 +61,6 @@ QString Helper::matFileTypes = "MAT Files (*.mat)";
 QString Helper::csvFileTypes = "CSV Files (*.csv)";
 QString Helper::omResultFileTypes = "OpenModelica Result Files (*.mat *.plt *.csv)";
 QString Helper::omResultFileTypesRegExp = "\\b(mat|plt|csv)\\b";
-#if defined(_WIN32)
-QString Helper::exeFileTypes = "EXE Files (*.exe)";
-#else
-QString Helper::exeFileTypes = "Executable files (*)";
-#endif
 QString Helper::txtFileTypes = "TXT Files (*.txt)";
 QString Helper::figaroFileTypes = "Figaro Files (*.fi)";
 QString Helper::jarFileTypes = "Jar Files (*.jar)";
@@ -267,8 +261,6 @@ QString Helper::translateCRML;
 QString Helper::translateCRMLTip;
 QString Helper::translateAsCRML;
 QString Helper::translateAsCRMLTip;
-QString Helper::runningCRMLTestsuite;
-QString Helper::runningCRMLTestsuiteTip;
 QString Helper::runScript;
 QString Helper::runScriptTip;
 QString Helper::options;
@@ -310,7 +302,6 @@ QString Helper::endAngle;
 QString Helper::curveStyle;
 QString Helper::figaro;
 QString Helper::crml;
-QString Helper::mos;
 QString Helper::remove;
 QString Helper::fileLocation;
 QString Helper::errorLocation;
@@ -459,8 +450,7 @@ QString Helper::updateLibraryIndex;
 QString Helper::dataReconciliation;
 QString Helper::replaceSubModel;
 QString Helper::modelicaPathTip;
-QString Helper::pathsListTip;
-QString Helper::itemsListTip;
+QString Helper::selectParentClassName;
 
 void Helper::initHelperVariables()
 {
@@ -595,11 +585,9 @@ void Helper::initHelperVariables()
   Helper::reSimulation = tr("Re-simulation");
   Helper::interactiveSimulation = tr("Interactive Simulation");
   Helper::translateCRML = tr("Translate");
-  Helper::translateCRMLTip = tr("Translates the CRML Model to Modelica");
+  Helper::translateCRMLTip = tr("Translates the CRML model to Modelica");
   Helper::translateAsCRML = tr("Translate As");
-  Helper::translateAsCRMLTip = tr("Translates As the CRML Model to Modelica");
-  Helper::runningCRMLTestsuite = tr("CRML Testsuite");
-  Helper::runningCRMLTestsuiteTip = tr("Running the CRML Testsuite");
+  Helper::translateAsCRMLTip = tr("Translates As the CRML model to Modelica");
   Helper::runScript = tr("Run");
   Helper::runScriptTip = tr("Runs the Modelica Script");
   Helper::options = tr("Options");
@@ -641,7 +629,6 @@ void Helper::initHelperVariables()
   Helper::curveStyle = tr("Curve Style");
   Helper::figaro = tr("Figaro");
   Helper::crml = tr("CRML");
-  Helper::mos = tr("Modelica Scripting");
   Helper::remove = tr("Remove");
   Helper::fileLocation = tr("Location", "For files");
   Helper::errorLocation = tr("Location", "For errors");
@@ -790,8 +777,7 @@ void Helper::initHelperVariables()
   Helper::dataReconciliation = tr("Data Reconciliation");
   Helper::replaceSubModel = tr("Replace SubModel");
   Helper::modelicaPathTip = tr("List of paths searched while loading a library. Paths are separated by ; on Windows and : on Linux and macOS.");
-  Helper::pathsListTip = tr("List of paths separated by ; on Windows and : on Linux and macOS.");
-  Helper::itemsListTip = tr("List of items");
+  Helper::selectParentClassName = tr("Select Parent Class");
 }
 
 QString GUIMessages::getMessage(int type)

@@ -28,7 +28,7 @@
  *
  */
 /*
- * @author Adrian.Pop@liu.se
+ * @author adrian.pop@liu.se
  */
 
 #include "MOSEditor.h"

@@ -94,7 +94,6 @@ class StatusBar;
 class TraceabilityGraphViewWidget;
 class SearchWidget;
 class MessageTab;
-class CRMLTranslateAsDialog;
 
 class MainWindow : public QMainWindow
 {
@@ -300,7 +299,6 @@ private:
   QObject *mpOMSensPlugin;
   GitCommands *mpGitCommands;
   CommitChangesDialog *mpCommitChangesDialog;
-  CRMLTranslateAsDialog* mpCRMLTranslateAsDialog;
   TraceabilityInformationURI *mpTraceabilityInformationURI;
   QStackedWidget *mpCentralStackedWidget;
   QTabWidget *mpMessagesTabWidget;
@@ -323,8 +321,6 @@ private:
   QAction *mpOpenResultFileAction;
   QAction *mpOpenTransformationFileAction;
   QAction *mpUnloadAllAction;
-  // CRML File Actions
-  QAction *mpOpenCRMLFileAction;
   // Directory actions
   QAction *mpOpenDirectoryAction;
   QAction *mpSaveAction;
@@ -491,9 +487,6 @@ public slots:
   void showOpenResultFileDialog();
   void showOpenTransformationFileDialog();
   void unloadAll(bool onlyModelicaClasses = false);
-
-  void openCRMLFile();
-
   void openDirectory();
   void writeOutputFileData(QString data);
   void writeErrorFileData(QString data);
@@ -571,7 +564,6 @@ public slots:
   void updateDebuggerToolBarMenu();
   void toggleAutoSave();
   void enableReSimulationToolbar(bool visible);
-  void runCRMLTranslateAs(int result);
 private slots:
   void perspectiveTabChanged(int tabIndex);
   void documentationDockWidgetVisibilityChanged(bool visible);
@@ -581,7 +573,7 @@ private slots:
   void messageTabClosed(int index);
   void autoSave();
   void showDataReconciliationDialog();
-  void showRunCRMLTestsuiteDialog();
+  void runCRMLTestsuite();
   void showDebugConfigurationsDialog();
   void showAttachToProcessDialog();
   void createGitRepository();

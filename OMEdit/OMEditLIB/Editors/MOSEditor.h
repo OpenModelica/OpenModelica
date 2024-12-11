@@ -28,7 +28,7 @@
  *
  */
 /*
- * @author Adrian.Pop@liu.se
+ * @author adrian.pop@liu.se
  */
 #ifndef MOSEDITOR_H
 #define MOSEDITOR_H

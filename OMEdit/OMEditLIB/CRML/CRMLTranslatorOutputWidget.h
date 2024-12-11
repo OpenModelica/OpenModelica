@@ -35,16 +35,11 @@
 #define CRMLTRANSLATOROUTPUTWIDGET_H
 
 #include "CRMLTranslatorOptions.h"
-#include "Util/StringHandler.h"
 
-#include <QTreeView>
-#include <QPlainTextEdit>
 #include <QProgressBar>
 #include <QPushButton>
-#include <QTextBrowser>
+#include <QTabWidget>
 #include <QProcess>
-#include <QDateTime>
-#include <QTcpServer>
 
 class Label;
 class OutputPlainTextEdit;
@@ -55,15 +50,14 @@ class CRMLTranslatorOutputWidget : public QWidget
 {
   Q_OBJECT
 public:
-  CRMLTranslatorOutputWidget(CRMLTranslatorOptions simulationOptions, QWidget *pParent = 0);
+  CRMLTranslatorOutputWidget(CRMLTranslatorOptions crmlTranslatorOptions, QWidget *pParent = 0);
   ~CRMLTranslatorOutputWidget();
   void start();
   CRMLTranslatorOptions getCRMLTranslatorOptions() {return mCRMLTranslatorOptions;}
   QProgressBar* getProgressBar() {return mpProgressBar;}
-  QProcess* getCompilationProcess() {return mpCompilationProcess;}
-  void setCompilationProcessKilled(bool killed) {mIsCompilationProcessKilled = killed;}
-  bool isCompilationProcessKilled() {return mIsCompilationProcessKilled;}
-  bool isCompilationProcessRunning() {return mIsCompilationProcessRunning;}
+  void setTranslationProcessKilled(bool killed) {mIsTranslationProcessKilled = killed;}
+  bool isTranslationProcessKilled() {return mIsTranslationProcessKilled;}
+  bool isTranslationProcessRunning() {return mIsTranslationProcessRunning;}
   void updateMessageTab(const QString &text);
   void updateMessageTabProgress();
 private:
@@ -72,26 +66,22 @@ private:
   QProgressBar *mpProgressBar;
   QPushButton *mpCancelButton;
   QTabWidget *mpGeneratedFilesTabWidget;
-  QList<QString> mGeneratedFilesList;
-  OutputPlainTextEdit *mpCompilationOutputTextBox;
-  QString mSimulationStandardOutput;
-  QString mSimulationStandardError;
-  QProcess *mpCompilationProcess;
-  bool mIsCompilationProcessKilled;
-  bool mIsCompilationProcessRunning;
+  OutputPlainTextEdit *mpTranslationOutputTextBox;
+  QProcess *mpTranslationProcess = nullptr;
+  bool mIsTranslationProcessKilled = false;
+  bool mIsTranslationProcessRunning = false;
 
-  void compileModel();
-  void postCompilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
-  void writeCompilationOutput(QString output, QColor color);
-  void compilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
+  void translateModel();
+  void writeTranslationOutput(QString output, QColor color);
+  void translationProcessFinishedHelper();
 private slots:
-  void compilationProcessStarted();
-  void readCompilationStandardOutput();
-  void readCompilationStandardError();
-  void compilationProcessError(QProcess::ProcessError error);
-  void compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
+  void translationProcessStarted();
+  void readTranslationStandardOutput();
+  void readTranslationStandardError();
+  void translationProcessError(QProcess::ProcessError error);
+  void translationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
 public slots:
-  void cancelCompilation();
+  void cancelTranslation();
 signals:
   void updateText(const QString &text);
   void updateProgressBar(QProgressBar *pProgressBar);

@@ -22,8 +22,7 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Util/Utilities.cpp
                       Util/StringHandler.cpp
                       Util/OutputPlainTextEdit.cpp
-                      Util/PathSelector.cpp
-                      Util/ListSelector.cpp
+                      Util/DirectoryOrFileSelector.cpp
                       MainWindow.cpp
                       OMC/OMCProxy.cpp
                       Modeling/Model.cpp
@@ -152,8 +151,7 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Util/Utilities.h
                       Util/StringHandler.h
                       Util/OutputPlainTextEdit.h
-                      Util/ListSelector.h
-                      Util/PathSelector.h
+                      Util/DirectoryOrFileSelector.h
                       MainWindow.h
                       OMC/OMCProxy.h
                       Modeling/Model.h

@@ -59,7 +59,6 @@ public:
   static QString OMCServerName;
   static QString omFileTypes;
   static QString omEncryptedFileTypes;
-  static QString crmlFileTypes;
   static QString omnotebookFileTypes;
   static QString ngspiceNetlistFileTypes;
   static QString imageFileTypes;
@@ -268,8 +267,6 @@ public:
   static QString translateCRMLTip;
   static QString translateAsCRML;
   static QString translateAsCRMLTip;
-  static QString runningCRMLTestsuite;
-  static QString runningCRMLTestsuiteTip;
   static QString runScript;
   static QString runScriptTip;
   static QString options;
@@ -311,7 +308,6 @@ public:
   static QString curveStyle;
   static QString figaro;
   static QString crml;
-  static QString mos;
   static QString remove;
   static QString errorLocation;
   static QString fileLocation;
@@ -461,8 +457,7 @@ public:
   static QString dataReconciliation;
   static QString replaceSubModel;
   static QString modelicaPathTip;
-  static QString pathsListTip;
-  static QString itemsListTip;
+  static QString selectParentClassName;
 };
 
 class GUIMessages : public QObject

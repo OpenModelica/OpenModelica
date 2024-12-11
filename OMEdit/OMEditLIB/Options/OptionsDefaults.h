@@ -218,19 +218,7 @@ namespace OptionsDefaults
   }
 
   namespace CRML {
-    QString modelicaLibraryPaths = "";
-    QStringList modelicaLibraries = {"CRML.mo", "CRMLtoModelica.mo", "CRML_test/package.mo"};
-    QString crmlLibraryPaths = "";
-    QString repositoryDirectory = "";
     QString compilerJar = "crml-compiler-all.jar";
-    QString commandLineOptions = "";
-    QString process = "java";
-  }
-
-  namespace MOS {
-    QString libraryPaths = "";
-    QString compilerJar = "crml-compiler-all.jar";
-    QString commandLineOptions = "";
     QString process = "java";
   }
 

@@ -29,7 +29,7 @@
  *
  */
 /*
- * @author Adrian.Pop@liu.se
+ * @author adrian.pop@liu.se
  */
 
 #ifndef GITHUBARTIFACTDOWNLOADER_H

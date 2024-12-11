@@ -38,8 +38,7 @@
 #include "Util/Helper.h"
 #include "Util/Utilities.h"
 #include "Util/StringHandler.h"
-#include "Util/PathSelector.h"
-#include "Util/ListSelector.h"
+#include "Util/DirectoryOrFileSelector.h"
 
 #include <QFontComboBox>
 #include <QStackedWidget>
@@ -68,7 +67,6 @@ class FillStylePage;
 class PlottingPage;
 class FigaroPage;
 class CRMLPage;
-class MOSPage;
 class DebuggerPage;
 class FMIPage;
 class OMSimulatorPage;
@@ -101,10 +99,10 @@ public:
   void readLibrariesSettings();
   void readTextEditorSettings();
   void readModelicaEditorSettings();
-  void readMetaModelicaEditorSettings();
-  void readCRMLEditorSettings();
   void readMOSEditorSettings();
+  void readMetaModelicaEditorSettings();
   void readOMSimulatorEditorSettings();
+  void readCRMLEditorSettings();
   void readCEditorSettings();
   void readHTMLEditorSettings();
   void readGraphicalViewsSettings();
@@ -116,7 +114,6 @@ public:
   void readPlottingSettings();
   void readFigaroSettings();
   void readCRMLSettings();
-  void readMOSSettings();
   void readDebuggerSettings();
   void readFMISettings();
   void readOMSimulatorSettings();
@@ -126,10 +123,10 @@ public:
   void saveLibrariesSettings();
   void saveTextEditorSettings();
   void saveModelicaEditorSettings();
-  void saveMetaModelicaEditorSettings();
-  void saveCRMLEditorSettings();
   void saveMOSEditorSettings();
+  void saveMetaModelicaEditorSettings();
   void saveOMSimulatorEditorSettings();
+  void saveCRMLEditorSettings();
   void saveCEditorSettings();
   void saveHTMLEditorSettings();
   void saveOMSimulatorSettings();
@@ -144,7 +141,6 @@ public:
   void savePlottingSettings();
   void saveFigaroSettings();
   void saveCRMLSettings();
-  void saveMOSSettings();
   void saveDebuggerSettings();
   void saveFMISettings();
   void setUpDialog();
@@ -170,7 +166,6 @@ public:
   PlottingPage* getPlottingPage() {return mpPlottingPage;}
   FigaroPage* getFigaroPage() {return mpFigaroPage;}
   CRMLPage* getCRMLPage() {return mpCRMLPage;}
-  MOSPage* getMOSPage() {return mpMOSPage;}
   DebuggerPage* getDebuggerPage() {return mpDebuggerPage;}
   FMIPage* getFMIPage() {return mpFMIPage;}
   OMSimulatorPage* getOMSimulatorPage() {return mpOMSimulatorPage;}
@@ -200,10 +195,10 @@ private:
   LibrariesPage *mpLibrariesPage;
   TextEditorPage *mpTextEditorPage;
   ModelicaEditorPage *mpModelicaEditorPage;
-  MetaModelicaEditorPage *mpMetaModelicaEditorPage;
-  CRMLEditorPage *mpCRMLEditorPage;
   MOSEditorPage *mpMOSEditorPage;
+  MetaModelicaEditorPage *mpMetaModelicaEditorPage;
   OMSimulatorEditorPage *mpOMSimulatorEditorPage;
+  CRMLEditorPage *mpCRMLEditorPage;
   CEditorPage *mpCEditorPage;
   HTMLEditorPage *mpHTMLEditorPage;
   GraphicalViewsPage *mpGraphicalViewsPage;
@@ -224,7 +219,6 @@ private:
   PlottingPage *mpPlottingPage;
   FigaroPage *mpFigaroPage;
   CRMLPage *mpCRMLPage;
-  MOSPage *mpMOSPage;
   DebuggerPage *mpDebuggerPage;
   FMIPage *mpFMIPage;
   OMSimulatorPage *mpOMSimulatorPage;
@@ -1114,65 +1108,28 @@ class CRMLPage : public QWidget
 public:
   CRMLPage(OptionsDialog *pOptionsDialog);
   QLineEdit* getCompilerJarTextBox() {return mpCompilerJarTextBox;}
-  QLineEdit* getRepositoryDirectoryTextBox() {return mpRepositoryDirectoryTextBox;}
   QLineEdit* getCompilerCommandLineOptionsTextBox() {return mpCompilerCommandLineOptionsTextBox;}
   QLineEdit* getCompilerProcessTextBox() {return mpCompilerProcessTextBox;}
-  PathSelector* getCRMLLibraryPaths() {return mpCRMLLibraryPaths;}
-  ListSelector* getModelicaLibraries() {return mpModelicaLibraries;}
-  PathSelector* getModelicaLibraryPaths() {return mpModelicaLibraryPaths;}
+  DirectoryOrFileSelector* getModelicaLibraries() {return mpModelicaLibraries;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGroupBox;
   Label *mpCompilerJarLabel;
   QLineEdit *mpCompilerJarTextBox;
   QPushButton *mpBrowseCompilerJarButton;
-  Label *mpRepositoryDirectoryLabel;
   QLineEdit *mpRepositoryDirectoryTextBox;
-  QPushButton *mpBrowseRepositoryDirectoryButton;
   Label *mpCompilerCommandLineOptionsLabel;
   QLineEdit *mpCompilerCommandLineOptionsTextBox;
   Label *mpCompilerProcessLabel;
   QLineEdit *mpCompilerProcessTextBox;
   QPushButton *mpBrowseCompilerProcessButton;
   QPushButton *mpResetCompilerProcessButton;
-  PathSelector *mpCRMLLibraryPaths;
-  ListSelector *mpModelicaLibraries;
-  PathSelector *mpModelicaLibraryPaths;
-
+  DirectoryOrFileSelector *mpModelicaLibraries;
+  DirectoryOrFileSelector *mpModelicaLibraryPaths;
 private slots:
   void browseCompilerJar();
-  void browseRepositoryDirectory();
   void browseCompilerProcessFile();
   void resetCompilerProcessPath();
-};
-
-class MOSPage : public QWidget
-{
-  Q_OBJECT
-public:
-  MOSPage(OptionsDialog *pOptionsDialog);
-  QLineEdit* getMOSCompilerJarTextBox() {return mpMOSCompilerJarTextBox;}
-  QLineEdit* getMOSCompilerCommandLineOptionsTextBox() {return mpMOSCompilerCommandLineOptionsTextBox;}
-  QLineEdit* getMOSCompilerProcessTextBox() {return mpMOSCompilerProcessTextBox;}
-  PathSelector* getMOSLibraryPaths() {return mpMOSLibraryPaths;}
-private:
-  OptionsDialog *mpOptionsDialog;
-  QGroupBox *mpMOSGroupBox;
-  Label *mpMOSCompilerJarFileLabel;
-  QLineEdit *mpMOSCompilerJarTextBox;
-  QPushButton *mpBrowseMOSCompilerJarFileButton;
-  Label *mpMOSCompilerCommandLineOptionsLabel;
-  QLineEdit *mpMOSCompilerCommandLineOptionsTextBox;
-  Label *mpMOSCompilerProcessLabel;
-  QLineEdit *mpMOSCompilerProcessTextBox;
-  QPushButton *mpBrowseMOSCompilerProcessButton;
-  QPushButton *mpResetMOSCompilerProcessButton;
-  PathSelector *mpMOSLibraryPaths;
-
-private slots:
-  void browseMOSCompilerJarFile();
-  void browseMOSCompilerProcessFile();
-  void resetMOSCompilerProcessPath();
 };
 
 #endif // OPTIONSDIALOG_H

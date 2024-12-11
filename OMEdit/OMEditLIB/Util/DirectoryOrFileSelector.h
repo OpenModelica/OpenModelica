@@ -29,41 +29,38 @@
  *
  */
 /*
- * @author Adrian.Pop@liu.se
+ * @author adrian.pop@liu.se
  */
 
-#ifndef LISTSELECTOR_H
-#define LISTSELECTOR_H
+#ifndef DIRECTORYORFILESELECTOR_H
+#define DIRECTORYORFILESELECTOR_H
 
 #include <QWidget>
 #include <QListWidget>
-#include <QTextEdit>
-#include "Utilities.h"
+#include <QPushButton>
 
-class ListSelector : public QWidget {
-    Q_OBJECT
-
-public:
-    ListSelector(QWidget *parent = nullptr, QString labelText = tr("List"));
+class Label;
+class DirectoryOrFileSelector : public QWidget
+{
+  Q_OBJECT
 
 public:
-    void setItems(QStringList items);
-    void setText(QString text);
-    void setSeparator (QChar chr) {separator = chr;}
-    QStringList list();
-    QString text();
-    QChar getSeparator() { return separator; }
+  DirectoryOrFileSelector(bool isDir, QString labelText = tr("List"), QWidget *parent = nullptr);
+
+public:
+  void setItems(const QStringList &items);
+  QStringList items() const;
 
 private slots:
-    void addItem();
-    void removeItem();
+  void addItem();
+  void removeItem();
 
 private:
-    QChar separator = '|';
-    Label *itemLabel;
-    QPushButton *addButton;
-    QPushButton *removeButton;
-    QListWidget *itemList;
+  bool mIsDir;
+  Label *mpItemLabel;
+  QListWidget *mpItemListWidget;
+  QPushButton *mpAddButton;
+  QPushButton *mpRemoveButton;
 };
 
-#endif // LISTSELECTOR_H
+#endif // DIRECTORYORFILESELECTOR_H

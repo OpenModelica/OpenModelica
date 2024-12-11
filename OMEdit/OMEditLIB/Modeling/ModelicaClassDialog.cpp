@@ -312,7 +312,7 @@ void ModelicaClassDialog::browseExtendsClass()
 
 void ModelicaClassDialog::browseParentClass()
 {
-  LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Parent Class"), mpParentClassTextBox, MainWindow::instance()->getLibraryWidget());
+  LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(Helper::selectParentClassName, mpParentClassTextBox, MainWindow::instance()->getLibraryWidget());
   pLibraryBrowseDialog->exec();
 }
 

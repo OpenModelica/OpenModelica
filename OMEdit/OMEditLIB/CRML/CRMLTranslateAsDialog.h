@@ -35,34 +35,20 @@
 #ifndef CRMLTRANSLATEASDIALOGDIALOG_H
 #define CRMLTRANSLATEASDIALOGDIALOG_H
 
+#include "CRMLTranslatorOptions.h"
+
 #include <QDialog>
 #include <QLineEdit>
-#include <QTreeView>
-#include <QPushButton>
 #include <QDialogButtonBox>
-#include <QComboBox>
-#include <QCheckBox>
-#include <QGroupBox>
-#include <QTableWidget>
-#include <QPlainTextEdit>
-#include <QListWidget>
-#include <QToolButton>
-#include <QTreeWidget>
-#include "Modeling/ModelicaClassDialog.h"
 
 class Label;
-class LibraryTreeItem;
-
 class CRMLTranslateAsDialog : public QDialog
 {
   Q_OBJECT
 public:
-  CRMLTranslateAsDialog(QWidget *pParent = 0);
-  QLineEdit* getParentClassTextBox() {return mpParentClassTextBox;}
-  QLineEdit* getOutputDirectoryTextBox() {return mpOutputDirectoryTextBox;}
-  void setLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mpLibraryTreeItem = pLibraryTreeItem;};
-  LibraryTreeItem *getLibraryTreeItem() {return mpLibraryTreeItem;};
+  CRMLTranslateAsDialog(CRMLTranslatorOptions *pCRMLTranslatorOptions, QWidget *pParent = 0);
 private:
+  CRMLTranslatorOptions *mpCRMLTranslatorOptions;
   Label *mpOutputDirectoryLabel;
   QLineEdit *mpOutputDirectoryTextBox;
   QPushButton *mpOutputDirectoryBrowseButton;
@@ -72,10 +58,10 @@ private:
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
-  LibraryTreeItem *mpLibraryTreeItem;
 private slots:
   void browseOutputDirectory();
   void browseParentClass();
+  void translateAsCRML();
 };
 
 #endif // CRMLTRANSLATEASDIALOGDIALOG_H

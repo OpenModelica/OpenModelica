@@ -38,26 +38,17 @@
 #include "Options/OptionsDialog.h"
 #include "Util/OutputPlainTextEdit.h"
 #include "Editors/TextEditor.h"
-#include <QApplication>
-#include <QObject>
-#include <QHeaderView>
-#include <QAction>
-#include <QMenu>
-#include <QDesktopWidget>
-#include <QTcpSocket>
-#include <QMessageBox>
-#include <QTextDocumentFragment>
-#include <QClipboard>
+
 #include <QDesktopServices>
 #include <QGridLayout>
 
 /*!
  * \brief CRMLTranslatorOutputWidget::CRMLTranslatorOutputWidget
- * \param simulationOptions
+ * \param crmlTranslatorOptions
  * \param pParent
  */
-CRMLTranslatorOutputWidget::CRMLTranslatorOutputWidget(CRMLTranslatorOptions simulationOptions, QWidget *pParent)
-  : QWidget(pParent), mCRMLTranslatorOptions(simulationOptions)
+CRMLTranslatorOutputWidget::CRMLTranslatorOutputWidget(CRMLTranslatorOptions crmlTranslatorOptions, QWidget *pParent)
+  : QWidget(pParent), mCRMLTranslatorOptions(crmlTranslatorOptions)
 {
   // progress label
   mpProgressLabel = new Label;
@@ -65,31 +56,26 @@ CRMLTranslatorOutputWidget::CRMLTranslatorOutputWidget(CRMLTranslatorOptions sim
   mpProgressLabel->setElideMode(Qt::ElideMiddle);
   mpCancelButton = new QPushButton(tr("Cancel"));
   mpCancelButton->setEnabled(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(cancelCompilation()));
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(cancelTranslation()));
   mpProgressBar = new QProgressBar;
   mpProgressBar->setAlignment(Qt::AlignHCenter);
-
   // Generated Files tab widget
   mpGeneratedFilesTabWidget = new QTabWidget;
   mpGeneratedFilesTabWidget->setDocumentMode(true);
   mpGeneratedFilesTabWidget->setMovable(true);
-  // Compilation Output TextBox
-  mpCompilationOutputTextBox = new OutputPlainTextEdit;
-  mpCompilationOutputTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
-  mpGeneratedFilesTabWidget->addTab(mpCompilationOutputTextBox, Helper::output);
+  // Translation Output TextBox
+  mpTranslationOutputTextBox = new OutputPlainTextEdit;
+  mpTranslationOutputTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
+  mpGeneratedFilesTabWidget->addTab(mpTranslationOutputTextBox, Helper::output);
   mpGeneratedFilesTabWidget->setTabEnabled(1, false);
-  mGeneratedFilesList << "%1.mo";
   // layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(5, 5, 5, 5);
   pMainLayout->addWidget(mpProgressLabel, 0, 0);
-  pMainLayout->addWidget(mpProgressBar, 2, 0);
-  pMainLayout->addWidget(mpCancelButton, 2, 1);
-  pMainLayout->addWidget(mpGeneratedFilesTabWidget, 3, 0, 1, 5);
+  pMainLayout->addWidget(mpProgressBar, 1, 0);
+  pMainLayout->addWidget(mpCancelButton, 1, 1);
+  pMainLayout->addWidget(mpGeneratedFilesTabWidget, 2, 0, 1, 2);
   setLayout(pMainLayout);
-  mpCompilationProcess = 0;
-  setCompilationProcessKilled(false);
-  mIsCompilationProcessRunning = false;
 }
 
 /*!
@@ -97,10 +83,10 @@ CRMLTranslatorOutputWidget::CRMLTranslatorOutputWidget(CRMLTranslatorOptions sim
  */
 CRMLTranslatorOutputWidget::~CRMLTranslatorOutputWidget()
 {
-  // compilation process
-  if (mpCompilationProcess && isCompilationProcessRunning()) {
-    mpCompilationProcess->kill();
-    mpCompilationProcess->deleteLater();
+  // translation process
+  if (mpTranslationProcess && isTranslationProcessRunning()) {
+    mpTranslationProcess->kill();
+    mpTranslationProcess->deleteLater();
   }
 }
 
@@ -110,56 +96,52 @@ CRMLTranslatorOutputWidget::~CRMLTranslatorOutputWidget()
  */
 void CRMLTranslatorOutputWidget::start()
 {
-  compileModel();
+  translateModel();
 }
 
 /*!
- * \brief CRMLTranslatorOutputWidget::compileModel
- * Compiles the simulation model.
+ * \brief CRMLTranslatorOutputWidget::translateModel
+ * Translates the CRML model.
  */
-void CRMLTranslatorOutputWidget::compileModel()
+void CRMLTranslatorOutputWidget::translateModel()
 {
-  mpCompilationProcess = new QProcess;
-  mpCompilationProcess->setWorkingDirectory(mCRMLTranslatorOptions.getRepositoryDirectory());
-  connect(mpCompilationProcess, SIGNAL(started()), SLOT(compilationProcessStarted()));
-  connect(mpCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readCompilationStandardOutput()));
-  connect(mpCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readCompilationStandardError()));
+  mpTranslationProcess = new QProcess;
+  mpTranslationProcess->setWorkingDirectory(mCRMLTranslatorOptions.getWorkingDirectory());
+  connect(mpTranslationProcess, SIGNAL(started()), SLOT(translationProcessStarted()));
+  connect(mpTranslationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readTranslationStandardOutput()));
+  connect(mpTranslationProcess, SIGNAL(readyReadStandardError()), SLOT(readTranslationStandardError()));
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
-  connect(mpCompilationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(compilationProcessError(QProcess::ProcessError)));
+  connect(mpTranslationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(translationProcessError(QProcess::ProcessError)));
 #else
-  connect(mpCompilationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(compilationProcessError(QProcess::ProcessError)));
+  connect(mpTranslationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(translationProcessError(QProcess::ProcessError)));
 #endif
-  connect(mpCompilationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(compilationProcessFinished(int,QProcess::ExitStatus)));
-  QStringList args =
-    {"-jar",
-     mCRMLTranslatorOptions.getCompilerJar(),
-     mCRMLTranslatorOptions.getCompilerCommandLineOptions()};
+  connect(mpTranslationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(translationProcessFinished(int,QProcess::ExitStatus)));
+  QStringList args = {"-jar",
+                      mCRMLTranslatorOptions.getCompilerJar(),
+                      mCRMLTranslatorOptions.getCompilerCommandLineOptions()};
   // testsuite
-  if (mCRMLTranslatorOptions.getMode().compare("testsuite") == 0) {
-     args << "--testsuite";
-  } else if (mCRMLTranslatorOptions.getMode().compare("translate") == 0) {
-     args << "\"" + mCRMLTranslatorOptions.getCRMLFile() + "\"";
-     QFileInfo fileInfo(mCRMLTranslatorOptions.getCRMLFile());
-     mpCompilationProcess->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
-  } else if (mCRMLTranslatorOptions.getMode().compare("translateAs") == 0) {
-     if (!mCRMLTranslatorOptions.getOutputDirectory().isEmpty()) {
-       args << "-o";
-       args << "\"" + mCRMLTranslatorOptions.getOutputDirectory() + "\"";
-       mpCompilationProcess->setWorkingDirectory(mCRMLTranslatorOptions.getOutputDirectory());
-     }
-     if (!mCRMLTranslatorOptions.getModelicaWithin().isEmpty()) {
-       args << "--within";
-       args << mCRMLTranslatorOptions.getModelicaWithin();
-     }
-     args << "\"" + mCRMLTranslatorOptions.getCRMLFile() + "\"";
+  if (mCRMLTranslatorOptions.getMode().compare(QStringLiteral("testsuite")) == 0) {
+    args << "--testsuite";
+  } else if ((mCRMLTranslatorOptions.getMode().compare(QStringLiteral("translate")) == 0)
+             || (mCRMLTranslatorOptions.getMode().compare(QStringLiteral("translateAs")) == 0)) {
+    if (!mCRMLTranslatorOptions.getOutputDirectory().isEmpty()) {
+      args << "-o";
+      args << "\"" + mCRMLTranslatorOptions.getOutputDirectory() + "\"";
+    }
+
+    if (!mCRMLTranslatorOptions.getModelicaWithin().isEmpty()) {
+      args << "--within";
+      args << mCRMLTranslatorOptions.getModelicaWithin();
+    }
+
+    args << "\"" + mCRMLTranslatorOptions.getCRMLFile() + "\"";
   } else {
-     // TODO fixme, error!
+    qDebug() << "Unknown CRML mode type.";
   }
   args.removeAll(QString(""));
-  writeCompilationOutput(QString("%1 %2\n").arg(mCRMLTranslatorOptions.getCompilerProcess()).arg(args.join(" ")), Qt::blue);
-  mpCompilationProcess->start(mCRMLTranslatorOptions.getCompilerProcess(), args);
+  writeTranslationOutput(QString("%1 %2\n").arg(mCRMLTranslatorOptions.getCompilerProcess()).arg(args.join(" ")), Qt::blue);
+  mpTranslationProcess->start(mCRMLTranslatorOptions.getCompilerProcess(), args);
 }
-
 
 /*!
  * \brief CRMLTranslatorOutputWidget::updateMessageTab
@@ -181,148 +163,109 @@ void CRMLTranslatorOutputWidget::updateMessageTabProgress()
 }
 
 /*!
- * \brief CRMLTranslatorOutputWidget::writeCompilationOutput
+ * \brief CRMLTranslatorOutputWidget::writeTranslationOutput
  * Writes the compilation standard output to the compilation output text box.
  * \param output
  * \param color
  */
-void CRMLTranslatorOutputWidget::writeCompilationOutput(QString output, QColor color)
+void CRMLTranslatorOutputWidget::writeTranslationOutput(QString output, QColor color)
 {
   QTextCharFormat format;
   format.setForeground(color);
-  mpCompilationOutputTextBox->appendOutput(output, format);
-}
-
-void loadModelicaLibs(LibraryWidget *pLibraryWidget) {
-  CRMLPage *ep = OptionsDialog::instance()->getCRMLPage();
-  QStringList libs = ep->getModelicaLibraries()->list();
-  for (const auto& l : libs) {
-    QStringList paths = ep->getModelicaLibraryPaths()->text().split(QDir::listSeparator());
-    for (const auto& p : paths) {
-      QString fn(p + QDir::separator() + l);
-      QFile f(fn);
-      fn = fn.replace("\\", "/");
-      if (f.exists()) {
-        // do not load it again if it exists already
-        if (!pLibraryWidget->getLibraryTreeModel()->getLibraryTreeItemFromFile(fn, 1))
-          pLibraryWidget->openFile(fn, Helper::utf8, false, true);
-      }
-    }
-  }
-}
-
-void CRMLTranslatorOutputWidget::compilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus)
-{
-  QString progressStr;
-  mpProgressBar->setRange(0, 2);
-  mpCancelButton->setEnabled(false);
-  if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    LibraryWidget *pLibraryWidget = MainWindow::instance()->getLibraryWidget();
-    mpProgressBar->setValue(1);
-    if (mCRMLTranslatorOptions.getMode().compare("testsuite") == 0) {
-      progressStr = tr("Testsuite run in directory %1 finished.").arg(mCRMLTranslatorOptions.getRepositoryDirectory());
-      // here we need to find out the html file and open it in the QtBrowser
-      QString file = mCRMLTranslatorOptions.getRepositoryDirectory() + QDir::separator() + "build" + QDir::separator() + "test_report.html";
-      QFileInfo fi(file);
-      if (fi.exists()) {
-        QUrl testsuiteUrl = QUrl::fromLocalFile(file);
-        if (!QDesktopServices::openUrl(testsuiteUrl)) {
-          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(testsuiteUrl.toString()),
-                                                            Helper::scriptingKind, Helper::errorLevel));
-        }
-      } else {
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(file),
-                                                Helper::scriptingKind, Helper::errorLevel));
-      }
-      mpProgressBar->setValue(2);
-    } else if (mCRMLTranslatorOptions.getMode().compare("translate") == 0) {
-      progressStr = tr("Translation of CRML file %1 finished. Now loading specified CRML Modelica libraries...").arg(mCRMLTranslatorOptions.getCRMLFile());
-      mpProgressLabel->setText(progressStr);
-      updateMessageTab(progressStr);
-
-      QFileInfo fi = QFileInfo(mCRMLTranslatorOptions.getCRMLFile());
-
-      loadModelicaLibs(pLibraryWidget);
-
-      QString fileName = fi.absoluteDir().absolutePath() + QDir::separator() + "generated" +
-                         QDir::separator() + fi.baseName() + QDir::separator() + fi.baseName() + ".mo";
-      fileName = fileName.replace("\\", "/");
-      pLibraryWidget->openFile(fileName, Helper::utf8, false, true);
-      // now open it if we can find it in the tree!
-      LibraryTreeItem *pMOLibraryTreeItem = pLibraryWidget->getLibraryTreeModel()->getLibraryTreeItemFromFile(fileName, 1);
-      if (pMOLibraryTreeItem) {
-        pLibraryWidget->getLibraryTreeModel()->showModelWidget(pMOLibraryTreeItem);
-      }
-      mpProgressBar->setValue(2);
-    } else if (mCRMLTranslatorOptions.getMode().compare("translateAs") == 0) {
-      progressStr = tr("Translation of CRML file [%1] with output directory [%2] and within [%3] finished. Now loading specified CRML Modelica libraries...").
-        arg(mCRMLTranslatorOptions.getCRMLFile(),
-            mCRMLTranslatorOptions.getOutputDirectory(),
-            mCRMLTranslatorOptions.getModelicaWithin());
-      mpProgressLabel->setText(progressStr);
-      updateMessageTab(progressStr);
-
-      loadModelicaLibs(pLibraryWidget);
-
-      QFileInfo fi = QFileInfo(mCRMLTranslatorOptions.getCRMLFile());
-      QString outputDirectory = mCRMLTranslatorOptions.getOutputDirectory();
-
-      QString fileName = outputDirectory + QDir::separator() +  fi.baseName() + QDir::separator() + fi.baseName() + ".mo";
-      fileName = fileName.replace("\\", "/");
-      pLibraryWidget->openFile(fileName, Helper::utf8, false, true);
-      // now open it if we can find it in the tree!
-      LibraryTreeItem *pMOLibraryTreeItem = pLibraryWidget->getLibraryTreeModel()->getLibraryTreeItemFromFile(fileName, 1);
-      if (pMOLibraryTreeItem) {
-        pLibraryWidget->getLibraryTreeModel()->showModelWidget(pMOLibraryTreeItem);
-      }
-      mpProgressBar->setValue(2);
-    } else {
-      // TODO fixme, error!
-    }
-  } else {
-    mpProgressBar->setValue(0);
-    if (mCRMLTranslatorOptions.getMode().compare("testsuite") == 0) {
-      progressStr = tr("Testsuite run in directory %1 failed.").arg(mCRMLTranslatorOptions.getRepositoryDirectory());
-    } else if (mCRMLTranslatorOptions.getMode().compare("translate") == 0) {
-      progressStr = tr("Translation of the CRML %1 file failed.").arg(mCRMLTranslatorOptions.getCRMLFile());
-    } else if (mCRMLTranslatorOptions.getMode().compare("translateAs") == 0) {
-      progressStr = tr("Translation of the CRML file %1 with output directory %2 and within %3 finished.").
-        arg(mCRMLTranslatorOptions.getCRMLFile(),
-            mCRMLTranslatorOptions.getOutputDirectory(),
-            mCRMLTranslatorOptions.getModelicaWithin()
-            );
-    } else {
-      // TODO fixme, error!
-    }
-  }
-  mpProgressLabel->setText(progressStr);
-  updateMessageTab(progressStr);
+  mpTranslationOutputTextBox->appendOutput(output, format);
 }
 
 /*!
- * \brief CRMLTranslatorOutputWidget::cancelCompilation
+ * \brief CRMLTranslatorOutputWidget::translationProcessFinishedHelper
+ * Helper function for CRMLTranslatorOutputWidget::translationProcessFinished\n
+ * Writes the output after the translation process is finished.
+ */
+void CRMLTranslatorOutputWidget::translationProcessFinishedHelper()
+{
+  LibraryWidget *pLibraryWidget = MainWindow::instance()->getLibraryWidget();
+  mpProgressBar->setValue(1);
+  if (mCRMLTranslatorOptions.getMode().compare(QStringLiteral("testsuite")) == 0) {
+    // here we need to find out the html file and open it in the QtBrowser
+    QString file = mCRMLTranslatorOptions.getWorkingDirectory() + QDir::separator() + "build" + QDir::separator() + "test_report.html";
+    QFileInfo fi(file);
+    if (fi.exists()) {
+      QUrl testsuiteUrl = QUrl::fromLocalFile(file);
+      if (!QDesktopServices::openUrl(testsuiteUrl)) {
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(testsuiteUrl.toString()),
+                                                              Helper::scriptingKind, Helper::errorLevel));
+      }
+    } else {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(file),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+    }
+    mpProgressBar->setValue(2);
+  } else if ((mCRMLTranslatorOptions.getMode().compare(QStringLiteral("translate")) == 0)
+             || (mCRMLTranslatorOptions.getMode().compare(QStringLiteral("translateAs")) == 0)) {
+    QStringList paths = mCRMLTranslatorOptions.getModelicaLibraries();
+    foreach (QString path, paths) {
+      path = path.replace("\\", "/");
+      if (QFile::exists(path)) {
+        // do not load it again if it exists already
+        if (!pLibraryWidget->getLibraryTreeModel()->getLibraryTreeItemFromFile(path, 1)) {
+          pLibraryWidget->openFile(path, Helper::utf8, false, true);
+        }
+      }
+    }
+
+    QString outputDirectory;
+    if (mCRMLTranslatorOptions.getOutputDirectory().isEmpty()) {
+      outputDirectory = mCRMLTranslatorOptions.getWorkingDirectory() + QDir::separator() + "generated";
+    } else {
+      outputDirectory = mCRMLTranslatorOptions.getOutputDirectory();
+    }
+
+    QFileInfo fi = QFileInfo(mCRMLTranslatorOptions.getCRMLFile());
+    QString fileName = outputDirectory + QDir::separator() +  fi.baseName() + QDir::separator() + fi.baseName() + ".mo";
+    fileName = fileName.replace("\\", "/");
+    pLibraryWidget->openFile(fileName, Helper::utf8, false, true);
+    // now open it if we can find it in the tree!
+    LibraryTreeItem *pMOLibraryTreeItem = pLibraryWidget->getLibraryTreeModel()->getLibraryTreeItemFromFile(fileName, 1);
+    if (pMOLibraryTreeItem) {
+      pLibraryWidget->getLibraryTreeModel()->showModelWidget(pMOLibraryTreeItem);
+    }
+    mpProgressBar->setValue(2);
+  } else {
+    qDebug() << "Unknown CRML mode type.";
+  }
+}
+
+/*!
+ * \brief CRMLTranslatorOutputWidget::cancelTranslation
  * Slot activated when mpCancelButton clicked signal is raised.\n
  * Cancels a running compilaiton/simulation by killing the compilation/simulation process.
  */
-void CRMLTranslatorOutputWidget::cancelCompilation()
+void CRMLTranslatorOutputWidget::cancelTranslation()
 {
   QString progressStr;
-  if (isCompilationProcessRunning()) {
-    setCompilationProcessKilled(true);
-    mpCompilationProcess->kill();
-    mIsCompilationProcessRunning = false;
-    if (mCRMLTranslatorOptions.getMode().compare("testsuite") == 0) {
-      progressStr = tr("Testsuite run in directory %1 failed.").arg(mCRMLTranslatorOptions.getRepositoryDirectory());
-    } else if (mCRMLTranslatorOptions.getMode().compare("translate") == 0) {
-      progressStr = tr("Translation of the CRML %1 file failed.").arg(mCRMLTranslatorOptions.getCRMLFile());
-    } else if (mCRMLTranslatorOptions.getMode().compare("translateAs") == 0) {
-      progressStr = tr("Translation of the CRML file %1 with output directory %2 and within %3 failed.").
-        arg(mCRMLTranslatorOptions.getCRMLFile(),
-            mCRMLTranslatorOptions.getOutputDirectory(),
-            mCRMLTranslatorOptions.getModelicaWithin()
-            );
+  QString msg = tr("Translation of the CRML file %1 is cancelled.").arg(mCRMLTranslatorOptions.getCRMLFile());
+  if (isTranslationProcessRunning()) {
+    setTranslationProcessKilled(true);
+    mpTranslationProcess->kill();
+    mIsTranslationProcessRunning = false;
+    if (mCRMLTranslatorOptions.getMode().compare(QStringLiteral("testsuite")) == 0) {
+      progressStr = tr("Testsuite run in directory %1 is cancelled.").arg(mCRMLTranslatorOptions.getWorkingDirectory());
+    } else if (mCRMLTranslatorOptions.getMode().compare(QStringLiteral("translate")) == 0) {
+      progressStr = msg;
+    } else if (mCRMLTranslatorOptions.getMode().compare(QStringLiteral("translateAs")) == 0) {
+      if (!mCRMLTranslatorOptions.getOutputDirectory().isEmpty() && !mCRMLTranslatorOptions.getModelicaWithin().isEmpty()) {
+        progressStr = tr("Translation of the CRML file %1 with output directory %2 and within %3 is cancelled.").
+                      arg(mCRMLTranslatorOptions.getCRMLFile(), mCRMLTranslatorOptions.getOutputDirectory(), mCRMLTranslatorOptions.getModelicaWithin());
+      } else if (!mCRMLTranslatorOptions.getOutputDirectory().isEmpty() && mCRMLTranslatorOptions.getModelicaWithin().isEmpty()) {
+        progressStr = tr("Translation of the CRML file %1 with output directory %2 is cancelled.").
+                      arg(mCRMLTranslatorOptions.getCRMLFile(), mCRMLTranslatorOptions.getOutputDirectory());
+      } else if (mCRMLTranslatorOptions.getOutputDirectory().isEmpty() && !mCRMLTranslatorOptions.getModelicaWithin().isEmpty()) {
+        progressStr = tr("Translation of the CRML file %1 with within %2 is cancelled.").
+                      arg(mCRMLTranslatorOptions.getCRMLFile(), mCRMLTranslatorOptions.getModelicaWithin());
+      } else {
+        progressStr = msg;
+      }
     } else {
-      progressStr = tr("CRML tool run failed.");
+      qDebug() << "Unknown CRML mode type.";
     }
     mpProgressBar->setRange(0, 2);
     mpProgressBar->setValue(0);
@@ -333,101 +276,114 @@ void CRMLTranslatorOutputWidget::cancelCompilation()
 }
 
 /*!
- * \brief CRMLTranslatorOutputWidget::compilationProcessStarted
- * Slot activated when mpCompilationProcess started signal is raised.\n
+ * \brief CRMLTranslatorOutputWidget::translationProcessStarted
+ * Slot activated when mpTranslationProcess started signal is raised.\n
  * Updates the progress label, bar and button controls.
  */
-void CRMLTranslatorOutputWidget::compilationProcessStarted()
+void CRMLTranslatorOutputWidget::translationProcessStarted()
 {
-  mIsCompilationProcessRunning = true;
-  const QString progressStr = tr("CRML compiler is running. Please wait for a while.");
+  mIsTranslationProcessRunning = true;
+  const QString progressStr = tr("CRML translator is running. Please wait for a while.");
   mpProgressLabel->setText(progressStr);
   mpProgressBar->setRange(0, 2);
   mpProgressBar->setTextVisible(false);
   updateMessageTab(progressStr);
-  mpCancelButton->setText(tr("Cancel"));
+  mpCancelButton->setText(Helper::cancel);
   mpCancelButton->setEnabled(true);
 }
 
 /*!
- * \brief CRMLTranslatorOutputWidget::readCompilationStandardOutput
- * Slot activated when mpCompilationProcess readyReadStandardOutput signal is raised.\n
+ * \brief CRMLTranslatorOutputWidget::readTranslationStandardOutput
+ * Slot activated when mpTranslationProcess readyReadStandardOutput signal is raised.\n
  */
-void CRMLTranslatorOutputWidget::readCompilationStandardOutput()
+void CRMLTranslatorOutputWidget::readTranslationStandardOutput()
 {
-  writeCompilationOutput(QString(mpCompilationProcess->readAllStandardOutput()), Qt::black);
+  writeTranslationOutput(QString(mpTranslationProcess->readAllStandardOutput()), Qt::black);
 }
 
 /*!
- * \brief CRMLTranslatorOutputWidget::readCompilationStandardError
- * Slot activated when mpCompilationProcess readyReadStandardError signal is raised.\n
+ * \brief CRMLTranslatorOutputWidget::readTranslationStandardError
+ * Slot activated when mpTranslationProcess readyReadStandardError signal is raised.\n
  */
-void CRMLTranslatorOutputWidget::readCompilationStandardError()
+void CRMLTranslatorOutputWidget::readTranslationStandardError()
 {
-  writeCompilationOutput(QString(mpCompilationProcess->readAllStandardError()), Qt::red);
+  writeTranslationOutput(QString(mpTranslationProcess->readAllStandardError()), Qt::red);
 }
 
 /*!
- * \brief CRMLTranslatorOutputWidget::compilationProcessError
- * Slot activated when mpCompilationProcess errorOccurred signal is raised.\n
+ * \brief CRMLTranslatorOutputWidget::translationProcessError
+ * Slot activated when mpTranslationProcess errorOccurred signal is raised.\n
  * \param error
  */
-void CRMLTranslatorOutputWidget::compilationProcessError(QProcess::ProcessError error)
+void CRMLTranslatorOutputWidget::translationProcessError(QProcess::ProcessError error)
 {
   Q_UNUSED(error);
-  mIsCompilationProcessRunning = false;
+  mIsTranslationProcessRunning = false;
   /* this signal is raised when we kill the compilation process forcefully. */
-  if (isCompilationProcessKilled()) {
+  if (isTranslationProcessKilled()) {
     return;
   }
-  writeCompilationOutput(mpCompilationProcess->errorString(), Qt::red);
+  writeTranslationOutput(mpTranslationProcess->errorString(), Qt::red);
 }
 
 /*!
- * \brief CRMLTranslatorOutputWidget::compilationProcessFinished
- * Slot activated when mpCompilationProcess finished signal is raised.\n
- * If the mpCompilationProcess finished normally then run the simulation executable.\n
- * Calls the Transformational Debugger or Algorithmic Debugger depending on the user selections.
+ * \brief CRMLTranslatorOutputWidget::translationProcessFinished
+ * Slot activated when mpTranslationProcess finished signal is raised.\n
  * \param exitCode
  * \param exitStatus
  */
-void CRMLTranslatorOutputWidget::compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
+void CRMLTranslatorOutputWidget::translationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
-  mIsCompilationProcessRunning = false;
-  QString messageFailed = "";
-  QString messageSuccess = "";
-  if (mCRMLTranslatorOptions.getMode().compare("testsuite") == 0) {
-    messageFailed = tr("Testsuite run in directory %1 failed. Exit code %2.").
-      arg(mCRMLTranslatorOptions.getRepositoryDirectory(), Utilities::formatExitCode(exitCode));
-    messageSuccess = tr("Testsuite run in directory %1 finished.").
-      arg(mCRMLTranslatorOptions.getRepositoryDirectory());;
-  } else if (mCRMLTranslatorOptions.getMode().compare("translate") == 0) {
-    messageFailed = tr("Translation of the CRML %1 file failed. Exit code %2").
-      arg(mCRMLTranslatorOptions.getCRMLFile(), Utilities::formatExitCode(exitCode));
-    messageSuccess = tr("Translation of CRML file %1 finished. Now loading specified CRML Modelica libraries...").arg(mCRMLTranslatorOptions.getCRMLFile());
-  } else if (mCRMLTranslatorOptions.getMode().compare("translateAs") == 0) {
-    messageFailed = tr("Translation of the CRML file %1 with output directory %2 and within %3 failed. Exit code %4.").
-      arg(mCRMLTranslatorOptions.getCRMLFile(),
-          mCRMLTranslatorOptions.getOutputDirectory(),
-          mCRMLTranslatorOptions.getModelicaWithin(),
-          Utilities::formatExitCode(exitCode)
-          );
-      messageSuccess = tr("Translation of CRML file [%1] with output directory [%2] and within [%3] finished. Now loading specified CRML Modelica libraries...").
-        arg(mCRMLTranslatorOptions.getCRMLFile(),
-            mCRMLTranslatorOptions.getOutputDirectory(),
-            mCRMLTranslatorOptions.getModelicaWithin());
+  mIsTranslationProcessRunning = false;
+  mpCancelButton->setEnabled(false);
+
+  QString messageFailed;
+  QString msgFailed = tr("Translation of the CRML file %1 failed. Exit code %2").arg(mCRMLTranslatorOptions.getCRMLFile(), Utilities::formatExitCode(exitCode));
+  QString messageSuccess;
+  QString msgSuccess = tr("Translation of CRML file %1 finished. Now loading specified CRML Modelica libraries...").arg(mCRMLTranslatorOptions.getCRMLFile());
+  if (mCRMLTranslatorOptions.getMode().compare(QStringLiteral("testsuite")) == 0) {
+    messageFailed = tr("Testsuite run in directory %1 failed. Exit code %2.").arg(mCRMLTranslatorOptions.getWorkingDirectory(), Utilities::formatExitCode(exitCode));
+    messageSuccess = tr("Testsuite run in directory %1 finished.").arg(mCRMLTranslatorOptions.getWorkingDirectory());
+  } else if (mCRMLTranslatorOptions.getMode().compare(QStringLiteral("translate")) == 0) {
+    messageFailed = msgFailed;
+    messageSuccess = msgSuccess;
+  } else if (mCRMLTranslatorOptions.getMode().compare(QStringLiteral("translateAs")) == 0) {
+    if (!mCRMLTranslatorOptions.getOutputDirectory().isEmpty() && !mCRMLTranslatorOptions.getModelicaWithin().isEmpty()) {
+      messageFailed = tr("Translation of the CRML file %1 with output directory %2 and within %3 failed. Exit code %4.").
+                      arg(mCRMLTranslatorOptions.getCRMLFile(), mCRMLTranslatorOptions.getOutputDirectory(), mCRMLTranslatorOptions.getModelicaWithin(),
+                          Utilities::formatExitCode(exitCode));
+      messageSuccess = tr("Translation of CRML file %1 with output directory %2 and within %3 finished. Now loading specified CRML Modelica libraries...").
+                       arg(mCRMLTranslatorOptions.getCRMLFile(), mCRMLTranslatorOptions.getOutputDirectory(), mCRMLTranslatorOptions.getModelicaWithin());
+    } else if (!mCRMLTranslatorOptions.getOutputDirectory().isEmpty() && mCRMLTranslatorOptions.getModelicaWithin().isEmpty()) {
+      messageFailed = tr("Translation of the CRML file %1 with output directory %2 failed. Exit code %3.").
+                      arg(mCRMLTranslatorOptions.getCRMLFile(), mCRMLTranslatorOptions.getOutputDirectory(), Utilities::formatExitCode(exitCode));
+      messageSuccess = tr("Translation of CRML file %1 with output directory %2 finished. Now loading specified CRML Modelica libraries...").
+                       arg(mCRMLTranslatorOptions.getCRMLFile(), mCRMLTranslatorOptions.getOutputDirectory());
+    } else if (mCRMLTranslatorOptions.getOutputDirectory().isEmpty() && !mCRMLTranslatorOptions.getModelicaWithin().isEmpty()) {
+      messageFailed = tr("Translation of the CRML file %1 with within %2 failed. Exit code %3.").
+                      arg(mCRMLTranslatorOptions.getCRMLFile(), mCRMLTranslatorOptions.getModelicaWithin(), Utilities::formatExitCode(exitCode));
+      messageSuccess = tr("Translation of CRML file %1 with within %2 finished. Now loading specified CRML Modelica libraries...").
+                       arg(mCRMLTranslatorOptions.getCRMLFile(), mCRMLTranslatorOptions.getModelicaWithin());
+    } else {
+      messageFailed = msgFailed;
+      messageSuccess = msgSuccess;
+    }
   } else {
-    messageFailed = tr("CRML tool run failed.");
+    qDebug() << "Unknown CRML mode type.";
   }
+
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    writeCompilationOutput(messageSuccess, Qt::blue);
-    compilationProcessFinishedHelper(exitCode, exitStatus);
-  } else if (mpCompilationProcess->error() == QProcess::UnknownError) {
-    writeCompilationOutput(messageFailed, Qt::red);
-    compilationProcessFinishedHelper(exitCode, exitStatus);
+    writeTranslationOutput(messageSuccess, Qt::blue);
+    translationProcessFinishedHelper();
+    mpProgressLabel->setText(messageSuccess);
+    updateMessageTab(messageSuccess);
+  } else if (mpTranslationProcess->error() == QProcess::UnknownError) {
+    writeTranslationOutput(messageFailed, Qt::red);
+    mpProgressLabel->setText(messageFailed);
+    updateMessageTab(messageFailed);
   } else {
-    writeCompilationOutput(mpCompilationProcess->errorString() + "\n" + messageFailed, Qt::red);
-    compilationProcessFinishedHelper(exitCode, exitStatus);
+    writeTranslationOutput(mpTranslationProcess->errorString() + "\n" + messageFailed, Qt::red);
+    mpProgressLabel->setText(messageFailed);
+    updateMessageTab(messageFailed);
   }
 }
-

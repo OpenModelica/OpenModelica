@@ -471,7 +471,6 @@ public:
   void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool secondAttempt = false, int row = -1);
   void openEncryptedModelicaLibrary(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
   void openTextFile(QFileInfo fileInfo, bool showProgress = true);
-  void openCRMLFile(QFileInfo fileInfo, QString encoding = Helper::utf8, bool showProgress = true);
 
   void openDirectory(QFileInfo fileInfo, bool showProgress = true);
   void openOMSModelFile(QFileInfo fileInfo, bool showProgress = true);
