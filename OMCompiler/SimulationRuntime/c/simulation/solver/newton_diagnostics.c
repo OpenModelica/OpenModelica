@@ -213,14 +213,15 @@ double maxNonLinearResiduals( unsigned m, unsigned l, unsigned* z_idx,
    // z_idx    : index of linear dependable in f, fx, dx
 
    double r_x0, fz_dz;
-   double maxRes = 1.e-88;
+   double maxRes = 0; // Initialize to 0 for maximum search
    unsigned i, j;
 
    for( i = 0; i < m; i++)
    {
       fz_dz = 0;
-      for( j = 0; j < l; j++)  // iteration point x0 ==> j = 1 as r_x(j-1) = f_x(j-1) + fz * (z(j) - z(j-1)) = f_x(j-1) + fz * dz(j-1)  ????
-         fz_dz += fx[i][z_idx[j]] * dx[z_idx[j]];
+      if (z_idx)
+         for( j = 0; j < l; j++)  			// iteration point x0 ==> j = 1 as r_x(j-1) = f_x(j-1) + fz * (z(j) - z(j-1)) = f_x(j-1) + fz * dz(j-1)  ????
+            fz_dz += fx[i][z_idx[j]] * dx[z_idx[j]];
 
       r_x0 = fabs(f[i] + fz_dz);
       if (r_x0 > maxRes)
@@ -1108,7 +1109,7 @@ unsigned* getLinearVars( unsigned m, unsigned q, unsigned *w_idx )
 
 void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 {
-   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics (version Teus 17-02-2023) starting ....");
+   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics (version Teus 10-12-2024) starting ....");
 
    printf("\n   ****** Model name: %s\n", data->modelData->modelName);
    printf("   ****** Initial                         : %d\n" , data->simulationInfo->initial);
@@ -1166,13 +1167,13 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
    // Get Hessian fxx from numerical differentiation of fx
    double*** fxx = getHessian( data, threadData, sysNumber, m);
 
-   // Obtain function values of non-linear functions "n", i.e. residuals as function of w0
+   // Obtain indices of non-linear functions "n", i.e. residuals as function of w0
    unsigned* n_idx = getNonlinearEqns(data, threadData, sysNumber, m, x0, dx, &p);
 
-   // Obtain vector "w0": initial guesses of vars where Jacobian matrix J(w) of f(x) only depends on
+   // Obtain indices of vector "w0": initial guesses of vars where Jacobian matrix J(w) of f(x) only depends on
    unsigned* w_idx = getNonlinearVars( m, fxx, &q);
 
-   // Obtain vector "z": linear dependents
+   // Obtain indices of vector "z": linear dependents
    unsigned* z_idx = getLinearVars( m, q, w_idx);
 
 // --------------------------------------------------------------------------------------------------------------------------------
@@ -1256,7 +1257,8 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 
    free(n_idx);
    free(w_idx);
-   free(z_idx);
+   if (z_idx)
+      free(z_idx);
 
    free(alpha);
 
@@ -1272,7 +1274,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
       free(Sigma[i]);
    free(Sigma);
 
-   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics (version Teus 17-02-2023) finished!!");
+   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics (version Teus 10-12-2024) finished!!");
 
    return;
 }
