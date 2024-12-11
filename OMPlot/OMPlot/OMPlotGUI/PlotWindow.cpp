@@ -67,11 +67,7 @@ PlotWindow::PlotWindow(QStringList arguments, QWidget *parent, bool isInteractiv
 {
   /* set the widget background white. so that the plot is more useable in books and publications. */
   QPalette p(palette());
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
   p.setColor(QPalette::Window, Qt::white);
-#else
-  p.setColor(QPalette::Background, Qt::white);
-#endif
   setAutoFillBackground(true);
   setPalette(p);
   // setup the main window widget

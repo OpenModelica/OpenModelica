@@ -358,7 +358,7 @@ void PlotCurve::updateLegend(QwtLegend *legend) const
  * \param dist
  * \return
  */
-int PlotCurve::closestPoint(const QPoint &pos, double *dist) const
+int PlotCurve::closestPoint(const QPointF &pos, double *dist) const
 {
   const size_t numSamples = dataSize();
   if (plot() == NULL || numSamples <= 0) {
