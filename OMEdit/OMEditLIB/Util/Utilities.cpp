@@ -1227,22 +1227,28 @@ void Utilities::addDefaultDisplayUnit(const QString &unit, QStringList &displayU
 {
   /* Issue #5447
    * For angular speeds always add in the menu in the unit column, in addition to the standard "rad/s" also "rpm"
-   * For energies always add in the menu in the Display Unit column, in addition to standard "J", also "Wh" (prefixes such as kWh, MWh, GWh will be obtained automatically)
-   */
-  /* Issue #8758
-   * Whenever unit = "K", we also add "degC" even if it is not defined as displayUnits.
-   */
-  /* Issue #12340
-   * Whenever unit = "m/s", we also add "km/h" even if it is not defined as displayUnits.
+   * For energies always add in the menu in the Unit column, in addition to standard "J", also "Wh" (prefixes such as kWh, MWh, GWh will be obtained automatically)
    */
   if (unit.compare(QStringLiteral("rad/s")) == 0) {
     displayUnit << "rpm";
   } else if (unit.compare(QStringLiteral("J")) == 0) {
     displayUnit << "Wh";
   } else if (unit.compare(QStringLiteral("K")) == 0) {
+    /* Issue #8758
+     * Whenever unit = "K", we also add "degC" even if it is not defined as displayUnits.
+     */
     displayUnit << "degC";
   } else if (unit.compare(QStringLiteral("m/s")) == 0) {
+    /* Issue #12340
+     * Whenever unit = "m/s", we also add "km/h" even if it is not defined as displayUnits.
+     */
     displayUnit << "km/h";
+  } else if (unit.compare(QStringLiteral("m3/s")) == 0) {
+    /* Issue #13379
+     * For volume flow rate it would be good to have extra display units l/s, which is 0.001 m3/s, and maybe also m3/h, which is 1/3600 m3/s.
+     * Whenever unit = "m3/s", we also add "l/s" and "m3/h" even if it is not defined as displayUnits.
+     */
+    displayUnit << "l/s" << "m3/h";
   }
 }
 
