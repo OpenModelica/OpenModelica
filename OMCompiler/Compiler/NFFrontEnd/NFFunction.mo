@@ -896,6 +896,11 @@ uniontype Function
       fn_name := if stringEmpty(overrideName) then Util.makeQuotedIdentifier(AbsynUtil.pathString(fn.path)) else overrideName;
 
       s := IOStream.append(s, indent);
+
+      if InstNode.isPartial(fn.node) then
+        s := IOStream.append(s, "partial ");
+      end if;
+
       s := IOStream.append(s, "function ");
       s := IOStream.append(s, fn_name);
       s := FlatModelicaUtil.appendCommentString(SOME(cmt), s);

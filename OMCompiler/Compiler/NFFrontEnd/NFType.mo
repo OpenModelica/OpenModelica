@@ -992,7 +992,7 @@ public
       case Type.NORETCALL() then "()";
       case Type.UNKNOWN() then "unknown()";
       case Type.COMPLEX() then Util.makeQuotedIdentifier(AbsynUtil.pathString(InstNode.scopePath(ty.cls)));
-      case Type.FUNCTION() then Function.typeString(ty.fn);
+      case Type.FUNCTION() then Util.makeQuotedIdentifier(AbsynUtil.pathString(InstNode.scopePath(ty.fn.node)));
       case Type.METABOXED() then toFlatString(ty.ty, format);
       case Type.POLYMORPHIC() then "<" + ty.name + ">";
       case Type.ANY() then "$ANY$";
@@ -1078,6 +1078,10 @@ public
           s := IOStream.append(s, ";\n\nend ");
           s := IOStream.append(s, name);
         then s;
+
+      case FUNCTION()
+        then Function.toFlatStream(ty.fn, format, indent, s,
+          overrideName = Util.makeQuotedIdentifier(AbsynUtil.pathString(InstNode.scopePath(ty.fn.node))));
 
       else s;
     end match;

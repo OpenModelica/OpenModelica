@@ -377,6 +377,12 @@ public
         then
           ();
 
+      case Type.FUNCTION(fnType = NFType.FunctionType.FUNCTIONAL_PARAMETER)
+        algorithm
+          UnorderedMap.tryAdd(InstNode.scopePath(ty.fn.node), ty, types);
+        then
+          ();
+
       else ();
     end match;
   end collectFlatType;
