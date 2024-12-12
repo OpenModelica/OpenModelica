@@ -963,24 +963,6 @@ algorithm
       then
         getDefaultComponentPrefixes(AbsynUtil.crefToPath(class_), p);
 
-    case "getComponentComment"
-      algorithm
-        {Absyn.CREF(componentRef = class_),Absyn.CREF(componentRef = cr)} := args;
-        outResult := getComponentComment(class_, cr, p);
-        outResult := stringAppendList({"\"", outResult, "\""});
-      then
-        outResult;
-
-    case "setComponentComment"
-      algorithm
-        {Absyn.CREF(componentRef = class_),
-         Absyn.CREF(componentRef = cr),
-         Absyn.STRING(value = cmt)} := args;
-        (outResult, p) := setComponentComment(class_, cr, cmt, p);
-        SymbolTable.setAbsyn(p);
-      then
-        outResult;
-
     case "setComponentProperties"
       algorithm
         {Absyn.CREF(componentRef = class_),
@@ -3014,19 +2996,6 @@ algorithm
   end match;
 end restComponents;
 
-protected function lengthComponents
-"author: x02lucpo
-  return the number of the components"
-  input GlobalScript.Components inComponents;
-  output Integer outInteger;
-algorithm
-  outInteger:=
-  match (inComponents)
-    local Integer len;
-    case (GlobalScript.COMPONENTS(the = len)) then len;
-  end match;
-end lengthComponents;
-
 protected function addComponentToComponents
 "author: x02lucpo
   add a component to components"
@@ -3740,23 +3709,6 @@ algorithm
   end match;
 end setElementIsField;
 
-protected function selectString
-" author: adrpo@ida
-   date  : 2006-02-05
-   if bool is true select first string, otherwise the second one"
-  input Boolean inSelector;
-  input String inString2;
-  input String inString3;
-  output String outString;
-algorithm
-  outString:=
-  match (inSelector,inString2,inString3)
-    local String s1,s2;
-    case (true,s1,_) then s1;
-    case (false,_,s2) then s2;
-  end match;
-end selectString;
-
 protected function getCrefInfo
 " author: adrpo@ida
    date  : 2005-11-03, changed 2006-02-05 to match new SOURCEINFO
@@ -3792,7 +3744,7 @@ algorithm
         str_scol = intString(scol);
         str_eline = intString(eline);
         str_ecol = intString(ecol);
-        str_readonly = selectString(isReadOnly, "readonly", "writable");
+        str_readonly = if isReadOnly then "readonly" else "writable";
         s = stringAppendList({
                "{",
                filename, ",",
@@ -3922,7 +3874,7 @@ algorithm
         scol_str = intString(scol);
         eline_str = intString(eline);
         ecol_str = intString(ecol);
-        readonly_str = selectString(isReadOnly, "readonly", "writable");
+        readonly_str = if isReadOnly then "readonly" else "writable";
         str = stringAppendList(
           {"elementfile=\"",file,"\", elementreadonly=\"",
           readonly_str,"\", elementStartLine=",sline_str,", elementStartColumn=",scol_str,
@@ -3941,7 +3893,7 @@ algorithm
         scol_str = intString(scol);
         eline_str = intString(eline);
         ecol_str = intString(ecol);
-        readonly_str = selectString(isReadOnly, "readonly", "writable");
+        readonly_str = if isReadOnly then "readonly" else "writable";
         file = Testsuite.friendly(file);
         str = stringAppendList(
           {"elementfile=\"",file,"\", elementreadonly=\"",
@@ -5307,42 +5259,17 @@ algorithm
       then
         (true, outProgram);
     case _
-      equation
+      algorithm
         // Top level class
-        cdef = InteractiveUtil.getPathedClassInProgram(classPath, inProgram);
-        outProgram.classes = deleteClassFromList(cdef, inProgram.classes);
+        cdef := InteractiveUtil.getPathedClassInProgram(classPath, inProgram);
+        outProgram.classes := List.deleteMemberOnTrue(AbsynUtil.className(cdef),
+          outProgram.classes, AbsynUtil.isClassNamed);
       then
         (true, outProgram);
 
     else (false,inProgram);
   end matchcontinue;
 end deleteClass;
-
-protected function deleteClassFromList
-"Helper function to deleteClass."
-  input Absyn.Class inClass;
-  input list<Absyn.Class> inAbsynClassLst;
-  output list<Absyn.Class> outAbsynClassLst;
-algorithm
-  outAbsynClassLst := match (inClass,inAbsynClassLst)
-    local
-      String name1,name2;
-      list<Absyn.Class> xs,res;
-      Absyn.Class cdef,x;
-
-    case (_,{}) then {};  /* Empty list */
-
-    case (Absyn.CLASS(name = name1),(Absyn.CLASS(name = name2) :: xs)) guard stringEq(name1, name2)
-      then
-        xs;
-
-    case ((cdef as Absyn.CLASS()),(x :: xs))
-      equation
-        res = deleteClassFromList(cdef, xs);
-      then
-        (x :: res);
-  end match;
-end deleteClassFromList;
 
 public function setClassComment
 "author: PA
@@ -5375,92 +5302,62 @@ algorithm
 end setClassComment;
 
 protected function setClassCommentInClass
-"author: PA
-  Helper function to setClassComment"
-  input Absyn.Class inClass;
-  input String inString;
-  output Absyn.Class outClass;
+  "Helper function to setClassComment"
+  input output Absyn.Class cls;
+  input String commentString;
 algorithm
-  outClass := match (inClass,inString)
-    local
-      Absyn.ClassDef cdef_1,cdef;
-      String id,cmt;
-      Boolean p,f,e;
-      Absyn.Restriction r;
-      SourceInfo info;
-
-    case (outClass as Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = cdef,info = info),cmt)
-      equation
-        cdef_1 = setClassCommentInClassdef(cdef, cmt);
-        outClass.body = cdef_1;
-      then outClass;
-  end match;
+  cls.body := setClassCommentInClassdef(cls.body, commentString);
 end setClassCommentInClass;
 
 protected function setClassCommentInClassdef
-"author: PA
-  Helper function to setClassCommentInClass"
-  input Absyn.ClassDef inClassDef;
-  input String inString;
-  output Absyn.ClassDef outClassDef;
+  "Helper function to setClassCommentInClass"
+  input output Absyn.ClassDef classDef;
+  input String commentString;
+protected
+  Option<String> cmt_str;
 algorithm
-  outClassDef:=
-  matchcontinue (inClassDef,inString)
-    local
-      list<Absyn.ClassPart> p;
-      String strcmt,id;
-      Option<Absyn.Comment> cmt_1;
-      Option<list<Absyn.Subscript>> ad;
-      Absyn.ElementAttributes attr;
-      list<Absyn.ElementArg> arg,args;
-      Absyn.EnumDef edef;
-      list<Absyn.Path> plst;
-      Absyn.ClassDef c;
-      Absyn.Path path;
-      Option<Absyn.Comment> cmt;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-      list<Absyn.Annotation> ann;
-    case (Absyn.PARTS(typeVars=typeVars,classAttrs=classAttrs,classParts = p,ann=ann),"") then Absyn.PARTS(typeVars,classAttrs,p,ann,NONE());
-    case (Absyn.PARTS(typeVars=typeVars,classAttrs=classAttrs,classParts = p,ann=ann),strcmt) then Absyn.PARTS(typeVars,classAttrs,p,ann,SOME(strcmt));
-    case (Absyn.DERIVED(typeSpec = Absyn.TPATH(path,ad),attributes = attr,arguments = arg,comment = cmt),strcmt)
-      equation
-        cmt_1 = setClassCommentInCommentOpt(cmt, strcmt);
-      then
-        Absyn.DERIVED(Absyn.TPATH(path,ad),attr,arg,cmt_1);
-    case (Absyn.ENUMERATION(enumLiterals = edef,comment = cmt),strcmt)
-      equation
-        cmt_1 = setClassCommentInCommentOpt(cmt, strcmt);
-      then
-        Absyn.ENUMERATION(edef,cmt_1);
-    case (Absyn.OVERLOAD(functionNames = plst,comment = cmt),strcmt)
-      equation
-        cmt_1 = setClassCommentInCommentOpt(cmt, strcmt);
-      then
-        Absyn.OVERLOAD(plst,cmt_1);
-    case (Absyn.CLASS_EXTENDS(baseClassName = id,modifications = args,ann = ann,parts = p),"") then Absyn.CLASS_EXTENDS(id,args,NONE(),p,ann);
-    case (Absyn.CLASS_EXTENDS(baseClassName = id,modifications = args,ann = ann,parts = p),strcmt) then Absyn.CLASS_EXTENDS(id,args,SOME(strcmt),p,ann);
-    else inClassDef;
-  end matchcontinue;
-end setClassCommentInClassdef;
+  cmt_str := if stringEmpty(commentString) then NONE() else SOME(commentString);
 
-protected function setClassCommentInCommentOpt
-"author: PA
-  Sets the string comment in an Comment option."
-  input Option<Absyn.Comment> inAbsynCommentOption;
-  input String inString;
-  output Option<Absyn.Comment> outAbsynCommentOption;
-algorithm
-  outAbsynCommentOption:=
-  match (inAbsynCommentOption,inString)
-    local
-      Option<Absyn.Annotation> ann;
-      String cmt;
-    case (SOME(Absyn.COMMENT(ann,_)),"") then SOME(Absyn.COMMENT(ann,NONE()));
-    case (SOME(Absyn.COMMENT(ann,_)),cmt) then SOME(Absyn.COMMENT(ann,SOME(cmt)));
-    case (NONE(),cmt) then SOME(Absyn.COMMENT(NONE(),SOME(cmt)));
+  () := match classDef
+    case Absyn.ClassDef.PARTS()
+      algorithm
+        classDef.comment := cmt_str;
+      then
+        ();
+
+    case Absyn.ClassDef.DERIVED()
+      algorithm
+        classDef.comment := AbsynUtil.setCommentString(classDef.comment, cmt_str);
+      then
+        ();
+
+    case Absyn.ClassDef.ENUMERATION()
+      algorithm
+        classDef.comment := AbsynUtil.setCommentString(classDef.comment, cmt_str);
+      then
+        ();
+
+    case Absyn.ClassDef.OVERLOAD()
+      algorithm
+        classDef.comment := AbsynUtil.setCommentString(classDef.comment, cmt_str);
+      then
+        ();
+
+    case Absyn.ClassDef.CLASS_EXTENDS()
+      algorithm
+        classDef.comment := cmt_str;
+      then
+        ();
+
+    case Absyn.ClassDef.PDER()
+      algorithm
+        classDef.comment := AbsynUtil.setCommentString(classDef.comment, cmt_str);
+      then
+        ();
+
+    else ();
   end match;
-end setClassCommentInCommentOpt;
+end setClassCommentInClassdef;
 
 public function getShortDefinitionBaseClassInformation
   input Absyn.Path classPath;
@@ -8017,401 +7914,75 @@ algorithm
   end matchcontinue;
 end compareTransitionFuncArgs;
 
-protected function getComponentComment
-"Get the component commment."
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.Program inProgram4;
-  output String outString;
+public function getComponentComment
+  "Get the component commment."
+  input Absyn.Path classPath;
+  input Absyn.Path componentName;
+  input Absyn.Program program;
+  output Values.Value comment;
+protected
+  Absyn.Path path;
+  Absyn.Element elem;
+  list<Absyn.ComponentItem> comps;
+  Absyn.ComponentItem comp;
+  String cmt, comp_name;
 algorithm
-  (outString) :=  match (inComponentRef1,inComponentRef2,inProgram4)
-    local
-      Absyn.Path p_class;
-      Absyn.Class cdef;
-      Absyn.Program p;
-      Absyn.ComponentRef class_,cr1;
-      String cmt;
-    case (class_,cr1,p as Absyn.PROGRAM())
-      equation
-        p_class = AbsynUtil.crefToPath(class_);
-        cdef = InteractiveUtil.getPathedClassInProgram(p_class, p);
-        cmt = getComponentCommentInClass(cdef, cr1);
-      then
-        cmt;
-  end match;
+  path := AbsynUtil.joinPaths(classPath, componentName);
+  comp_name := AbsynUtil.pathLastIdent(componentName);
+  elem := InteractiveUtil.getPathedElementInProgram(path, program);
+  comps := AbsynUtil.getComponentItemsFromElement(elem);
+  comp := List.find(comps, function AbsynUtil.isComponentItemNamed(name = comp_name));
+  cmt := InteractiveUtil.getClassCommentInCommentOpt(comp.comment);
+  comment := ValuesUtil.makeString(cmt);
 end getComponentComment;
 
-protected function getComponentCommentInClass
-"Helper function to getComponentComment."
-  input Absyn.Class inClass;
-  input Absyn.ComponentRef inComponentRef;
-  output String outString;
+public function setComponentComment
+  input Absyn.Path classPath;
+  input Absyn.Path componentName;
+  input String comment;
+  input output Absyn.Program program;
+        output Boolean success;
+protected
+  Absyn.Path path;
+  String comp_name;
 algorithm
-  outString := match (inClass,inComponentRef)
-    local
-      list<Absyn.ClassPart> parts;
-      String cmt;
-      Absyn.ComponentRef cr1;
-    /* a class with parts */
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),cr1)
-      equation
-        cmt = getComponentCommentInParts(parts, cr1);
-      then
-        cmt;
-    /* an extended class with parts: model extends M end M; */
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)),cr1)
-      equation
-        cmt = getComponentCommentInParts(parts, cr1);
-      then
-        cmt;
-  end match;
-end getComponentCommentInClass;
-
-protected function getComponentCommentInParts
-"Helper function to getComponentComment."
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  input Absyn.ComponentRef inComponentRef;
-  output String outString;
-algorithm
-  outString := matchcontinue (inAbsynClassPartLst,inComponentRef)
-    local
-      list<Absyn.ElementItem> elts,e;
-      list<Absyn.ClassPart> xs;
-      Absyn.ComponentRef cr1;
-      String cmt;
-      Absyn.ClassPart p;
-
-    case ((Absyn.PUBLIC(contents = elts) :: _),cr1)
-      equation
-        cmt = getComponentCommentInElementitems(elts, cr1);
-      then
-        cmt;
-
-    // rule above failed
-    case ((Absyn.PUBLIC() :: xs),cr1)
-      equation
-        cmt = getComponentCommentInParts(xs, cr1);
-      then
-        cmt;
-
-    case ((Absyn.PROTECTED(contents = elts) :: _),cr1)
-      equation
-        cmt = getComponentCommentInElementitems(elts, cr1);
-      then
-        cmt;
-
-    // rule above failed
-    case ((Absyn.PROTECTED() :: xs),cr1)
-      equation
-        cmt = getComponentCommentInParts(xs, cr1);
-      then
-        cmt;
-
-    case ((_ :: xs),cr1)
-      equation
-        cmt = getComponentCommentInParts(xs, cr1);
-      then
-        cmt;
-  end matchcontinue;
-end getComponentCommentInParts;
-
-protected function getComponentCommentInElementitems
-"Helper function to getComponentComment."
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input Absyn.ComponentRef inComponentRef;
-  output String outString;
-algorithm
-  outString := matchcontinue (inAbsynElementItemLst,inComponentRef)
-    local
-      Absyn.ElementSpec spec;
-      Boolean f;
-      Option<Absyn.RedeclareKeywords> r;
-      Absyn.InnerOuter inout;
-      String cmt;
-      SourceInfo info;
-      Option<Absyn.ConstrainClass> constr;
-      list<Absyn.ElementItem> es;
-      Absyn.ComponentRef cr1;
-      Absyn.ElementItem e;
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = spec)) :: _),cr1)
-      equation
-        cmt = getComponentCommentInElementspec(spec, cr1);
-      then
-        cmt;
-    case ((_ :: es),cr1)
-      equation
-        cmt = getComponentCommentInElementitems(es, cr1);
-      then
-        cmt;
-  end matchcontinue;
-end getComponentCommentInElementitems;
-
-protected function getComponentCommentInElementspec
-"Helper function to getComponentComment."
-  input Absyn.ElementSpec inElementSpec;
-  input Absyn.ComponentRef inComponentRef;
-  output String outString;
-algorithm
-  outString := match (inElementSpec,inComponentRef)
-    local
-      list<Absyn.ComponentItem> citems;
-      Absyn.ElementAttributes attr;
-      Absyn.TypeSpec tp;
-      Absyn.ComponentRef cr;
-      String cmt;
-    case (Absyn.COMPONENTS(components = citems),cr)
-      equation
-        cmt = getComponentCommentInCompitems(citems, cr);
-      then
-        cmt;
-  end match;
-end getComponentCommentInElementspec;
-
-protected function getComponentCommentInCompitems
-"Helper function to getComponentComment."
-  input list<Absyn.ComponentItem> inAbsynComponentItemLst;
-  input Absyn.ComponentRef inComponentRef;
-  output String outString;
-algorithm
-  outString := matchcontinue (inAbsynComponentItemLst,inComponentRef)
-    local
-      Option<Absyn.Comment> compcmt;
-      String id,cmt;
-      list<Absyn.Subscript> ad;
-      Option<Absyn.Modification> mod;
-      Option<Absyn.Exp> cond;
-      list<Absyn.ComponentItem> cs;
-      Absyn.ComponentRef cr;
-      Absyn.ComponentItem c;
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = ad),comment = compcmt) :: _),cr)
-      equation
-        true = AbsynUtil.crefEqual(Absyn.CREF_IDENT(id,ad), cr);
-        cmt = InteractiveUtil.getClassCommentInCommentOpt(compcmt);
-      then
-        cmt;
-    case ((_ :: cs),cr)
-      equation
-        cmt = getComponentCommentInCompitems(cs, cr);
-      then
-        cmt;
-  end matchcontinue;
-end getComponentCommentInCompitems;
-
-protected function setComponentComment
-"author :PA
-  Sets the component commment given by class name and ComponentRef."
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
-  input String inString3;
-  input Absyn.Program inProgram4;
-  output String outString;
-  output Absyn.Program outProgram;
-algorithm
-  (outString,outProgram):=
-  matchcontinue (inComponentRef1,inComponentRef2,inString3,inProgram4)
-    local
-      Absyn.Path p_class;
-      Absyn.Within within_;
-      Absyn.Class cdef,cdef_1;
-      Absyn.Program newp,p;
-      Absyn.ComponentRef class_,cr1;
-      String cmt;
-
-    case (class_,cr1,cmt,p as Absyn.PROGRAM())
-      equation
-        p_class = AbsynUtil.crefToPath(class_);
-        within_ = InteractiveUtil.buildWithin(p_class);
-        cdef = InteractiveUtil.getPathedClassInProgram(p_class, p);
-        cdef_1 = setComponentCommentInClass(cdef, cr1, cmt);
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
-      then
-        ("Ok",newp);
-
-    else ("Error",inProgram4);
-  end matchcontinue;
+  try
+    path := AbsynUtil.joinPaths(classPath, componentName);
+    comp_name := AbsynUtil.pathLastIdent(componentName);
+    (program, _, success) := InteractiveUtil.transformPathedElementInProgram(path,
+      function setComponentCommentInElement(componentName = comp_name, comment = comment), program);
+  else
+    success := false;
+  end try;
 end setComponentComment;
 
-protected function setComponentCommentInClass
-"author: PA
-  Helper function to setComponentComment."
-  input Absyn.Class inClass;
-  input Absyn.ComponentRef inComponentRef;
-  input String inString;
-  output Absyn.Class outClass;
+protected function setComponentCommentInElement
+  input output Absyn.Element element;
+  input String componentName;
+  input String comment;
+protected
+  Absyn.ElementSpec spec;
+  list<Absyn.ComponentItem> comps;
+
+  function set_comment
+    input output Absyn.ComponentItem item;
+    input String comment;
+  algorithm
+    item.comment := AbsynUtil.setCommentString(item.comment, if stringEmpty(comment) then NONE() else SOME(comment));
+  end set_comment;
 algorithm
-  outClass := match (inClass,inComponentRef,inString)
-    local
-      list<Absyn.ClassPart> parts_1,parts;
-      String name,cmt,bcname;
-      Boolean p,f,e;
-      Absyn.Restriction restr;
-      Option<String> pcmt;
-      SourceInfo info;
-      Absyn.ComponentRef cr1;
-      list<Absyn.ElementArg> modif;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-      list<Absyn.Annotation> ann;
-    /* a class with parts */
-    case (outClass as Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = restr,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = pcmt),info = info),cr1,cmt)
-      equation
-        parts_1 = setComponentCommentInParts(parts, cr1, cmt);
-        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts_1,ann,pcmt);
+  () := match element
+    case Absyn.Element.ELEMENT(specification = spec as Absyn.ElementSpec.COMPONENTS())
+      algorithm
+        (comps, true) := List.findAndMap(spec.components,
+          function AbsynUtil.isComponentItemNamed(name = componentName),
+          function set_comment(comment = comment));
+        spec.components := comps;
+        element.specification := spec;
       then
-        outClass;
-    /* an extended class with parts: model extends M end M; */
-    case (outClass as Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = restr,
-                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,ann=ann,comment = pcmt),info = info),cr1,cmt)
-      equation
-        parts_1 = setComponentCommentInParts(parts, cr1, cmt);
-        outClass.body = Absyn.CLASS_EXTENDS(bcname,modif,pcmt,parts_1,ann);
-      then
-        outClass;
+        ();
   end match;
-end setComponentCommentInClass;
-
-protected function setComponentCommentInParts
-"author: PA
-  Helper function to setComponentCommentInClass."
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  input Absyn.ComponentRef inComponentRef;
-  input String inString;
-  output list<Absyn.ClassPart> outAbsynClassPartLst;
-algorithm
-  outAbsynClassPartLst:=
-  matchcontinue (inAbsynClassPartLst,inComponentRef,inString)
-    local
-      list<Absyn.ElementItem> elts_1,elts,e;
-      list<Absyn.ClassPart> xs,xs_1;
-      Absyn.ComponentRef cr1;
-      String cmt;
-      Absyn.ClassPart p;
-
-    case ((Absyn.PUBLIC(contents = elts) :: xs),cr1,cmt)
-      equation
-        elts_1 = setComponentCommentInElementitems(elts, cr1, cmt);
-      then
-        (Absyn.PUBLIC(elts_1) :: xs);
-
-    // rule above failed
-    case ((Absyn.PUBLIC(contents = e) :: xs),cr1,cmt)
-      equation
-        xs_1 = setComponentCommentInParts(xs, cr1, cmt);
-      then
-        (Absyn.PUBLIC(e) :: xs_1);
-
-    case ((Absyn.PROTECTED(contents = elts) :: xs),cr1,cmt)
-      equation
-        elts_1 = setComponentCommentInElementitems(elts, cr1, cmt);
-      then
-        (Absyn.PROTECTED(elts_1) :: xs);
-
-    // rule above failed
-    case ((Absyn.PROTECTED(contents = e) :: xs),cr1,cmt)
-      equation
-        xs_1 = setComponentCommentInParts(xs, cr1, cmt);
-      then
-        (Absyn.PROTECTED(e) :: xs_1);
-
-    case ((p :: xs),cr1,cmt)
-      equation
-        xs_1 = setComponentCommentInParts(xs, cr1, cmt);
-      then
-        (p :: xs_1);
-  end matchcontinue;
-end setComponentCommentInParts;
-
-protected function setComponentCommentInElementitems
-"author: PA
-  Helper function to setComponentParts. "
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input Absyn.ComponentRef inComponentRef;
-  input String inString;
-  output list<Absyn.ElementItem> outAbsynElementItemLst;
-algorithm
-  outAbsynElementItemLst:=
-  matchcontinue (inAbsynElementItemLst,inComponentRef,inString)
-    local
-      Absyn.ElementSpec spec_1,spec;
-      Boolean f;
-      Option<Absyn.RedeclareKeywords> r;
-      Absyn.InnerOuter inout;
-      String cmt;
-      SourceInfo info;
-      Option<Absyn.ConstrainClass> constr;
-      list<Absyn.ElementItem> es,es_1;
-      Absyn.ComponentRef cr1;
-      Absyn.ElementItem e;
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,specification = spec,info = info,constrainClass = constr)) :: es),cr1,cmt)
-      equation
-        spec_1 = setComponentCommentInElementspec(spec, cr1, cmt);
-      then
-        (Absyn.ELEMENTITEM(Absyn.ELEMENT(f,r,inout,spec_1,info,constr)) :: es);
-    case ((e :: es),cr1,cmt)
-      equation
-        es_1 = setComponentCommentInElementitems(es, cr1, cmt);
-      then
-        (e :: es_1);
-  end matchcontinue;
-end setComponentCommentInElementitems;
-
-protected function setComponentCommentInElementspec
-"author: PA
-  Helper function to setComponentElementitems."
-  input Absyn.ElementSpec inElementSpec;
-  input Absyn.ComponentRef inComponentRef;
-  input String inString;
-  output Absyn.ElementSpec outElementSpec;
-algorithm
-  outElementSpec:=
-  match (inElementSpec,inComponentRef,inString)
-    local
-      list<Absyn.ComponentItem> citems_1,citems;
-      Absyn.ElementAttributes attr;
-      Absyn.TypeSpec tp;
-      Absyn.ComponentRef cr;
-      String cmt;
-    case (Absyn.COMPONENTS(attributes = attr,typeSpec=tp,components = citems),cr,cmt)
-      equation
-        citems_1 = setComponentCommentInCompitems(citems, cr, cmt);
-      then
-        Absyn.COMPONENTS(attr,tp,citems_1);
-  end match;
-end setComponentCommentInElementspec;
-
-protected function setComponentCommentInCompitems
-"author: PA
-  Helper function to set_component_elementspec."
-  input list<Absyn.ComponentItem> inAbsynComponentItemLst;
-  input Absyn.ComponentRef inComponentRef;
-  input String inString;
-  output list<Absyn.ComponentItem> outAbsynComponentItemLst;
-algorithm
-  outAbsynComponentItemLst:=
-  matchcontinue (inAbsynComponentItemLst,inComponentRef,inString)
-    local
-      Option<Absyn.Comment> compcmt_1,compcmt;
-      String id,cmt;
-      list<Absyn.Subscript> ad;
-      Option<Absyn.Modification> mod;
-      Option<Absyn.Exp> cond;
-      list<Absyn.ComponentItem> cs,cs_1;
-      Absyn.ComponentRef cr;
-      Absyn.ComponentItem c;
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = ad,modification = mod),condition = cond,comment = compcmt) :: cs),cr,cmt)
-      equation
-        true = AbsynUtil.crefEqual(Absyn.CREF_IDENT(id,{}), cr);
-        compcmt_1 = setClassCommentInCommentOpt(compcmt, cmt);
-      then
-        (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,ad,mod),cond,compcmt_1) :: cs);
-    case ((c :: cs),cr,cmt)
-      equation
-        cs_1 = setComponentCommentInCompitems(cs, cr, cmt);
-      then
-        (c :: cs_1);
-  end matchcontinue;
-end setComponentCommentInCompitems;
+end setComponentCommentInElement;
 
 public function setConnectionComment
   input Absyn.Path classPath;
@@ -8525,7 +8096,7 @@ algorithm
     case Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = c1, connector2 = c2))
       guard AbsynUtil.crefEqual(connector1, c1) and AbsynUtil.crefEqual(connector2, c2)
       algorithm
-        eq.comment := setClassCommentInCommentOpt(eq.comment, comment);
+        eq.comment := AbsynUtil.setCommentString(eq.comment, if stringEmpty(comment) then NONE() else SOME(comment));
       then
         true;
 
