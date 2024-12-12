@@ -570,6 +570,12 @@ public
     end match;
   end isKnown;
 
+  function isResizable
+    extends checkVar;
+  algorithm
+    b := List.any(Type.arrayDims(var.ty), Dimension.isResizable);
+  end isResizable;
+
   function isResizableParameter
     extends checkVar;
   protected

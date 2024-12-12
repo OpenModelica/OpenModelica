@@ -1272,7 +1272,7 @@ protected
         call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables)) for tpl in call.iters);
         exp.call := call;
       then exp;
-    else exp;
+      else exp;
     end match;
   end lowerComponentReferenceExp;
 

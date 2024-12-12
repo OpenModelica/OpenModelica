@@ -474,6 +474,8 @@ public
       (Util.tuple21(a), Binding.mapExp(Util.tuple22(a), fn)) for a in var.typeAttributes);
     var.children := list(mapExp(v, fn) for v in var.children);
     var.backendinfo := BackendInfo.map(var.backendinfo, fn);
+    var.ty := Type.applyToDims(var.ty, func = function Dimension.mapExp(func = fn));
+    var.name := ComponentRef.mapTypes(var.name, function Type.applyToDims(func = function Dimension.mapExp(func = fn)));
   end mapExp;
 
   function mapExpShallow
