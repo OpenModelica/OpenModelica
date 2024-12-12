@@ -570,6 +570,12 @@ public
     end match;
   end isKnown;
 
+  function isResizable
+    extends checkVar;
+  algorithm
+    b := List.any(Type.arrayDims(var.ty), Dimension.isResizable);
+  end isResizable;
+
   function isResizableParameter
     extends checkVar;
   protected
@@ -1954,6 +1960,7 @@ public
       /* subset of knowns */
       VariablePointers states             "States";
       VariablePointers top_level_inputs   "Top level inputs";
+      VariablePointers resizables         "Resizable Parameters";
       VariablePointers parameters         "Parameters";
       VariablePointers constants          "Constants";
       VariablePointers records            "Records";
@@ -2088,6 +2095,7 @@ public
               VariablePointers.toString(varData.previous, "Previous", NONE(), false) +
               VariablePointers.toString(varData.clocks, "Clock", NONE(), false) +
               VariablePointers.toString(varData.top_level_inputs, "Top Level Input", NONE(), false) +
+              VariablePointers.toString(varData.resizables, "Resizable Parameters", NONE(), false) +
               VariablePointers.toString(varData.parameters, "Parameter", NONE(), false) +
               VariablePointers.toString(varData.constants, "Constant", NONE(), false) +
               VariablePointers.toString(varData.records, "Record", NONE(), false) +

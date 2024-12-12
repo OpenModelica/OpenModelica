@@ -475,10 +475,10 @@ protected
     Pointer<Variable> lowVar_ptr, time_ptr, dummy_ptr;
     list<Pointer<Variable>> unknowns_lst = {}, knowns_lst = {}, initials_lst = {}, auxiliaries_lst = {}, aliasVars_lst = {}, nonTrivialAlias_lst = {};
     list<Pointer<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, discrete_states_lst = {}, clocked_states_lst = {}, previous_lst = {}, clocks_lst = {};
-    list<Pointer<Variable>> inputs_lst = {}, parameters_lst = {}, constants_lst = {}, records_lst = {}, external_objects_lst = {}, artificials_lst = {};
+    list<Pointer<Variable>> inputs_lst = {}, resizables_lst = {}, parameters_lst = {}, constants_lst = {}, records_lst = {}, external_objects_lst = {}, artificials_lst = {};
     VariablePointers variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias;
     VariablePointers states, derivatives, algebraics, discretes, discrete_states, clocked_states, previous, clocks;
-    VariablePointers inputs, parameters, constants, records, external_objects, artificials;
+    VariablePointers inputs, resizables, parameters, constants, records, external_objects, artificials;
     UnorderedSet<VariablePointer> binding_iter_set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
     list<Pointer<Variable>> binding_iter_lst;
     Boolean scalarized = Flags.isSet(Flags.NF_SCALARIZE);
@@ -506,9 +506,9 @@ protected
         // do nothing for size 0 variables, they get removed
         // Note: record elements need to exist in the full
         //   variable array even if they are of size 0
-        case _ guard(Variable.size(var) == 0) then ();
+        case _ guard(Variable.size(lowVar) == 0) then ();
 
-        case _ guard(Variable.isTopLevelInput(var)) algorithm
+        case _ guard(Variable.isTopLevelInput(lowVar)) algorithm
           inputs_lst := lowVar_ptr :: inputs_lst;
           knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
@@ -544,7 +544,11 @@ protected
         then ();
 
         case VariableKind.PARAMETER() algorithm
-          parameters_lst := lowVar_ptr :: parameters_lst;
+          if BVariable.isResizable(lowVar_ptr) then
+            resizables_lst := lowVar_ptr :: resizables_lst;
+          else
+            parameters_lst := lowVar_ptr :: parameters_lst;
+          end if;
           knowns_lst := lowVar_ptr :: knowns_lst;
         then ();
 
@@ -595,6 +599,7 @@ protected
     clocks          := VariablePointers.fromList(clocks_lst, scalarized);
 
     inputs          := VariablePointers.fromList(inputs_lst, scalarized);
+    resizables      := VariablePointers.fromList(resizables_lst, scalarized);
     parameters      := VariablePointers.fromList(parameters_lst, scalarized);
     constants       := VariablePointers.fromList(constants_lst, scalarized);
     records         := VariablePointers.fromList(records_lst, scalarized);
@@ -615,7 +620,7 @@ protected
     /* create variable data */
     variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias,
                       derivatives, algebraics, discretes, discrete_states, clocked_states, previous, clocks,
-                      states, inputs, parameters, constants, records, external_objects, artificials);
+                      states, inputs, resizables, parameters, constants, records, external_objects, artificials);
   end lowerVariableData;
 
   function lowerVariable
@@ -773,7 +778,7 @@ protected
 
     (simulation_lst, continuous_lst, clocked_lst, discretes_lst, initials_lst, auxiliaries_lst, removed_lst) := BEquation.typeList(EquationPointers.toList(equations));
 
-    equations := Resizable.main(equations);
+    equations := Resizable.main(equations, varData);
 
     eqData := BEquation.EQ_DATA_SIM(
       uniqueIndex = idx,
@@ -1272,7 +1277,7 @@ protected
         call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables)) for tpl in call.iters);
         exp.call := call;
       then exp;
-    else exp;
+      else exp;
     end match;
   end lowerComponentReferenceExp;
 
