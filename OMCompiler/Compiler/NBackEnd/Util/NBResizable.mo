@@ -51,6 +51,7 @@ protected
 
   // backend imports
   import NBEquation.{Equation, Iterator, EquationPointers, EquationAttributes, EquationKind};
+  import NBVariable.{VarData, VariablePointers};
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
   import NBDifferentiate.DifferentiationArguments;
@@ -61,6 +62,7 @@ public
 
   function main
     input output EquationPointers equations;
+    input VarData varData;
   protected
     UnorderedSet<ComponentRef> parameters, min_parameters;
     UnorderedMap<ComponentRef, Expression> optimal_values;
@@ -71,39 +73,50 @@ public
     UnorderedMap<Expression, ParameterList> c2pi, c2pe;
     UnorderedMap<ComponentRef, ConstraintList> p2ci, p2ce;
   algorithm
-    // prepare sets and maps
-    parameters        := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-    min_parameters    := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-    optimal_values    := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
-    c2pi              := UnorderedMap.new<ParameterList>(Expression.hash, Expression.isEqual);
-    c2pe              := UnorderedMap.new<ParameterList>(Expression.hash, Expression.isEqual);
+    _ := match varData
+      // only do something if there are resizable variables
+      case VarData.VAR_DATA_SIM() guard(VariablePointers.size(varData.resizables) > 0) algorithm
+        // prepare sets and maps
+        parameters        := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+        min_parameters    := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+        optimal_values    := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+        c2pi              := UnorderedMap.new<ParameterList>(Expression.hash, Expression.isEqual);
+        c2pe              := UnorderedMap.new<ParameterList>(Expression.hash, Expression.isEqual);
 
-    // find the optimal values for iterators
-    EquationPointers.map(equations, function findOptimalResizableValues(parameters = parameters, min_parameters = min_parameters, optimal_values = optimal_values, c2pi = c2pi, c2pe = c2pe));
+        // find the optimal values for iterators
+        EquationPointers.map(equations, function findOptimalResizableValues(parameters = parameters, min_parameters = min_parameters, optimal_values = optimal_values, c2pi = c2pi, c2pe = c2pe));
 
-    // initialize the optimal values for parameters with their min or max attribute (or 0 if none available)
-    UnorderedSet.apply(parameters, function setInitialValues(min_parameters = min_parameters, optimal_values = optimal_values));
+        // initialize the optimal values for parameters with their min or max attribute (or 0 if none available)
+        UnorderedSet.apply(parameters, function setInitialValues(min_parameters = min_parameters, optimal_values = optimal_values));
 
-    if debug then
-      print(optimalValuesToString(optimal_values, StringUtil.headline_2("[debug] Initial Resizable Parameter Values:") + "\n"));
-      print(List.toString(UnorderedMap.keyList(c2pi), Expression.toString, StringUtil.headline_2("[debug] Final Inequality Constraints:"), "  0 >= ", "\n  0 >= ", "\n") + "\n");
-      print(List.toString(UnorderedMap.keyList(c2pe), Expression.toString, StringUtil.headline_2("[debug] Final Equality Constraints:"), "  0 = ", "\n  0 = ", "\n") + "\n");
-    end if;
+        if debug then
+          print(optimalValuesToString(optimal_values, StringUtil.headline_2("[debug] Initial Resizable Parameter Values:") + "\n"));
+          print(List.toString(UnorderedMap.keyList(c2pi), Expression.toString, StringUtil.headline_2("[debug] Final Inequality Constraints:"), "  0 >= ", "\n  0 >= ", "\n") + "\n");
+          print(List.toString(UnorderedMap.keyList(c2pe), Expression.toString, StringUtil.headline_2("[debug] Final Equality Constraints:"), "  0 = ", "\n  0 = ", "\n") + "\n");
+        end if;
 
-    // compute the optimal values by checking constraints
-    p2ci := invertConstraintParameterMap(c2pi, parameters);
-    p2ce := invertConstraintParameterMap(c2pe, parameters);
-    computeOptimalValues(optimal_values, c2pi, p2ci, c2pe, p2ce);
+        // compute the optimal values by checking constraints
+        p2ci := invertConstraintParameterMap(c2pi, parameters);
+        p2ce := invertConstraintParameterMap(c2pe, parameters);
+        computeOptimalValues(optimal_values, c2pi, p2ci, c2pe, p2ce);
 
-    // traverse the model and update all values depending on these resizable parameters
-    equations := EquationPointers.mapExp(equations,
-      function Expression.applyToType(func =
-      function Type.applyToDims(func =
-      function updateDimension(optimal_values = optimal_values))));
+        // traverse the model and update all values depending on these resizable parameters
+        equations := EquationPointers.mapExp(equations,
+          function Expression.applyToType(func =
+          function Type.applyToDims(func =
+          function updateDimension(optimal_values = optimal_values))));
 
-    if Flags.isSet(Flags.DUMP_RESIZABLE) or debug then
-      print(optimalValuesToString(optimal_values));
-    end if;
+        if Flags.isSet(Flags.DUMP_RESIZABLE) or debug then
+          print(optimalValuesToString(optimal_values));
+        end if;
+      then ();
+
+      else algorithm
+        if Flags.isSet(Flags.DUMP_RESIZABLE) or debug then
+          print(StringUtil.headline_2("[dumpResizable] No resizable parameters were detected in the model."));
+        end if;
+      then ();
+    end match;
   end main;
 
 protected
