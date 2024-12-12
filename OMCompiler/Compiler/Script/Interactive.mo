@@ -901,20 +901,6 @@ algorithm
   args := getApiFunctionArgs(inStatement);
 
   outResult := match(fn_name)
-    case "getExternalFunctionSpecification"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        getExternalFunctionSpecification(cr, p);
-
-    case "getEnumerationLiterals"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        path := AbsynUtil.crefToPath(cr);
-        cls := InteractiveUtil.getPathedClassInProgram(path, p);
-      then
-        getEnumLiterals(cls);
-
     case "existClass"
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
@@ -5520,45 +5506,31 @@ algorithm
   result := ValuesUtil.makeArray(vals);
 end getShortDefinitionBaseClassInformation;
 
-protected function getExternalFunctionSpecification
-"author: adrpo
-  Returns the external declaration from the function definition"
-  input Absyn.ComponentRef cr;
-  input Absyn.Program p;
-  output String res_1;
+public function getExternalFunctionSpecification
+  input Absyn.Path functionName;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  Absyn.Class cls;
+  Absyn.ExternalDecl ext_decl;
+  Option<Absyn.Annotation> ann;
+  list<Values.Value> vals = {};
 algorithm
-  res_1 := matchcontinue(cr, p)
-    local
-      Absyn.Path path;
-      String strLanguage,strFuncName,strOutput,strArguments,strAnn1,strAnn2,str;
-      Absyn.Class cls;
-      Option<Absyn.Ident> funcName "The name of the external function" ;
-      Option<String>      lang     "Language of the external function" ;
-      Option<Absyn.ComponentRef> output_  "output parameter as return value" ;
-      list<Absyn.Exp>            args     "only positional arguments, i.e. expression list" ;
-      Option<Absyn.Annotation>   ann1, ann2;
+  try
+    cls := InteractiveUtil.getPathedClassInProgram(functionName, program);
+    Absyn.EXTERNAL(ext_decl, ann) := AbsynUtil.getExternalDecl(cls);
 
-    case (_, _)
-      equation
-        path = AbsynUtil.crefToPath(cr);
-        cls = InteractiveUtil.getPathedClassInProgram(path, p);
-        Absyn.EXTERNAL(Absyn.EXTERNALDECL(funcName, lang, output_, args, ann1), ann2) = AbsynUtil.getExternalDecl(cls);
-        strLanguage  = "\"" + Util.getOptionOrDefault(lang, "") + "\"";
-        strOutput  = "\"" + Dump.printComponentRefStr(
-                                Util.getOptionOrDefault(
-                                  output_,
-                                  Absyn.CREF_IDENT("", {}))) + "\"";
-        strFuncName  = "\"" + Util.getOptionOrDefault(funcName, "") + "\"";
-        strArguments = "\"" + Dump.printExpLstStr(args) + "\"";
-        strAnn1 = "\"" + Dump.unparseAnnotationOption(ann1) + "\"";
-        strAnn2 = "\"" + Dump.unparseAnnotationOption(ann2) + "\"";
-        str = stringAppendList({"{", strLanguage, ",", strOutput, ",", strFuncName, ",", strArguments, ",", strAnn1, ",", strAnn2, "}"});
-      then
-        str;
+    vals := ValuesUtil.makeString(Dump.unparseAnnotationOption(ann)) :: vals;
+    vals := ValuesUtil.makeString(Dump.unparseAnnotationOption(ext_decl.annotation_)) :: vals;
+    vals := ValuesUtil.makeString(Dump.printExpLstStr(ext_decl.args)) :: vals;
+    vals := ValuesUtil.makeString(Util.getOptionOrDefault(ext_decl.funcName, "")) :: vals;
+    vals := ValuesUtil.makeString(Util.applyOptionOrDefault(ext_decl.output_, Dump.printComponentRefStr, "")) :: vals;
+    vals := ValuesUtil.makeString(Util.getOptionOrDefault(ext_decl.lang, "")) :: vals;
+  else
+    vals := {};
+  end try;
 
-    else "{}";
-
-  end matchcontinue;
+  result := ValuesUtil.makeArray(vals);
 end getExternalFunctionSpecification;
 
 protected function getClassDimensions
@@ -5898,26 +5870,24 @@ algorithm
   end for;
 end isProtectedClassInElements;
 
-protected function getEnumLiterals
-"Returns the enum literals as a list of string."
-  input Absyn.Class inClass;
-  output String outString;
+public function getEnumerationLiterals
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  list<Absyn.EnumLiteral> literals;
+  list<String> names;
 algorithm
-  outString:= match (inClass)
-    local
-      list<Absyn.EnumLiteral> literals;
-      String str;
-      list<String> enumList;
-    case (Absyn.CLASS(restriction = Absyn.R_TYPE(), body = Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(enumLiterals = literals))))
-      equation
-        enumList = List.map(literals, getEnumerationLiterals);
-        str = stringDelimitList(enumList, ",");
-        str = stringAppendList({"{",str,"}"});
-      then
-        str;
-    case (_) then "{}";
-  end match;
-end getEnumLiterals;
+  try
+    Absyn.CLASS(body = Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(enumLiterals = literals))) :=
+      InteractiveUtil.getPathedClassInProgram(classPath, program);
+    names := list(AbsynUtil.enumLiteralName(l) for l in literals);
+  else
+    names := {};
+  end try;
+
+  result := ValuesUtil.makeStringArray(names);
+end getEnumerationLiterals;
 
 public function getDerivedClassModifierNames
   "Returns the derived class modifier names."
@@ -11914,19 +11884,6 @@ algorithm
     then "(replaceable type " + ident + ")";
   end match;
 end getDefinitionsReplaceableClass;
-
-protected function getEnumerationLiterals
-  input Absyn.EnumLiteral el;
-  output String out;
-algorithm
-  out := match el
-    case Absyn.ENUMLITERAL(literal = out)
-      equation
-        out = stringAppendList({"\"",out,"\""});
-      then
-        out;
-  end match;
-end getEnumerationLiterals;
 
 protected function getDefinitionPathString
   input Absyn.Path path;

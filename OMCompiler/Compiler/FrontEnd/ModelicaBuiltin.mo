@@ -4964,6 +4964,28 @@ annotation(
   preferredView="text");
 end getShortDefinitionBaseClassInformation;
 
+function getExternalFunctionSpecification
+  input TypeName functionName;
+  output Expression result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Returns information about the given function's external specification: language, output variable, external function name, arguments, annotations on the external declaration, and annotations on the function.</p>
+</html>"),
+  preferredView="text");
+end getExternalFunctionSpecification;
+
+function getEnumerationLiterals
+  input TypeName className;
+  output String[:] result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Returns the literals for a given enumeration type.</p>
+</html>"),
+  preferredView="text");
+end getEnumerationLiterals;
+
 function getTransitions
   input TypeName cl;
   output String[:,:] transitions;

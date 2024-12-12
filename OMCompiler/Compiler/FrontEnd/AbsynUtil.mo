@@ -6681,5 +6681,10 @@ algorithm
   end match;
 end isLiteralExp;
 
+function enumLiteralName
+  input Absyn.EnumLiteral literal;
+  output String name = literal.literal;
+end enumLiteralName;
+
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;
