@@ -4119,6 +4119,20 @@ annotation(
   preferredView="text");
 end basename;
 
+function existClass
+  input TypeName cl;
+  output Boolean exists;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns whether the given class exists or not.
+</html>"),
+  preferredView="text");
+end existClass;
+
+function existModel = isModel;
+function existPackage = isPackage;
+
 function getClassRestriction
   input TypeName cl;
   output String restriction;
