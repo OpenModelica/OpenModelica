@@ -670,7 +670,7 @@ int SystemImpl__systemCall(const char* str, const char* outFile)
   if (pID == 0) { // child
     if (*outFile) {
       /* redirect stdout, stderr in the fork'ed process */
-      int fd = open(outFile, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+      int fd = open(outFile, O_RDWR | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
       if (fd < 0) {
         _exit(1);
       }
