@@ -73,9 +73,9 @@ public:
   static QString exeFileTypes;
   static QString txtFileTypes;
   static QString figaroFileTypes;
+  static QString jarFileTypes;
   static QString visualizationFileTypes;
   static QString subModelFileTypes;
-  static QString omScriptTypes;
   static int treeIndentation;
   static QSize iconSize;
   static int tabWidth;
@@ -136,9 +136,14 @@ public:
   static QString systemSC;
   /* Global translated variables */
   static QString newModelicaClass;
+  static QString newModelicaClassLibraryBrowser;
   static QString createNewModelicaClass;
   static QString openModelicaFiles;
   static QString openConvertModelicaFiles;
+  static QString newCRMLModel;
+  static QString newCRMLModelTip;
+  static QString newMOSScript;
+  static QString newMOSScriptTip;
   static QString libraries;
   static QString elements;
   static QString clearRecentFiles;
@@ -171,6 +176,10 @@ public:
   static QString saveTotalTip;
   static QString apply;
   static QString chooseDirectory;
+  static QString addPath;
+  static QString removePath;
+  static QString addItem;
+  static QString removeItem;
   static QString general;
   static QString output;
   static QString parameters;
@@ -230,6 +239,8 @@ public:
   static QString reloadClass;
   static QString reloadClassTip;
   static QString unloadTextFileTip;
+  static QString unloadCRMLTip;
+  static QString unloadMOSTip;
   static QString unloadOMSModelTip;
   static QString refresh;
   static QString simulate;
@@ -252,6 +263,12 @@ public:
   static QString simulation;
   static QString reSimulation;
   static QString interactiveSimulation;
+  static QString translateCRML;
+  static QString translateCRMLTip;
+  static QString translateAsCRML;
+  static QString translateAsCRMLTip;
+  static QString runScript;
+  static QString runScriptTip;
   static QString options;
   static QString extent;
   static QString bottom;
@@ -290,6 +307,7 @@ public:
   static QString endAngle;
   static QString curveStyle;
   static QString figaro;
+  static QString crml;
   static QString remove;
   static QString errorLocation;
   static QString fileLocation;
@@ -438,6 +456,8 @@ public:
   static QString updateLibraryIndex;
   static QString dataReconciliation;
   static QString replaceSubModel;
+  static QString modelicaPathTip;
+  static QString selectParentClassName;
 };
 
 class GUIMessages : public QObject

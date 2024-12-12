@@ -543,6 +543,13 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
       default:
         return ResourceCache::getIcon(":/Resources/icons/type-icon.svg");
     }
+  } else if (isText()) {
+    if (isCRMLFile()) {
+      return ResourceCache::getIcon(":/Resources/icons/crml-icon.svg");
+    }
+    if (isMOSFile()) {
+      return ResourceCache::getIcon(":/Resources/icons/mos-icon.svg");
+    }
   }
   return QIcon();
 }
@@ -798,8 +805,12 @@ QVariant LibraryTreeItem::data(int column, int role) const
           return mName;
         case Qt::DecorationRole: {
           if (isText()) {
-            QFileInfo fileInfo(getFileName());
-            return Utilities::FileIconProvider::icon(fileInfo);
+            if (isCRMLFile() || isMOSFile()) {
+              return mPixmap.isNull() ? getLibraryTreeItemIcon() : mPixmap;
+            } else {
+              QFileInfo fileInfo(getFileName());
+              return Utilities::FileIconProvider::icon(fileInfo);
+            }
           } else {
             return mPixmap.isNull() ? getLibraryTreeItemIcon() : mPixmap;
           }
@@ -2018,7 +2029,7 @@ bool LibraryTreeModel::deleteTextFile(LibraryTreeItem *pLibraryTreeItem, bool as
 {
   if (askQuestion) {
     QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
-    pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
+    pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::question));
     pMessageBox->setIcon(QMessageBox::Question);
     pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
     pMessageBox->setText(GUIMessages::getMessage(GUIMessages::DELETE_TEXT_FILE_MSG).arg(pLibraryTreeItem->getNameStructure()));
@@ -2780,7 +2791,7 @@ void LibraryTreeView::createActions()
   mpInformationAction->setStatusTip(tr("Opens the class information dialog"));
   connect(mpInformationAction, SIGNAL(triggered()), SLOT(openInformationDialog()));
   // new Modelica Class Action
-  mpNewModelicaClassAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newModelicaClass, this);
+  mpNewModelicaClassAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newModelicaClassLibraryBrowser, this);
   mpNewModelicaClassAction->setStatusTip(Helper::createNewModelicaClass);
   connect(mpNewModelicaClassAction, SIGNAL(triggered()), SLOT(createNewModelicaClass()));
   // save Action
@@ -2845,6 +2856,18 @@ void LibraryTreeView::createActions()
   mpSimulateAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::simulate, this);
   mpSimulateAction->setStatusTip(Helper::simulateTip);
   connect(mpSimulateAction, SIGNAL(triggered()), SLOT(simulate()));
+  // translate CRML Action
+  mpTranslateCRMLAction = new QAction(QIcon(":/Resources/icons/translate.svg"), Helper::translateCRML, this);
+  mpTranslateCRMLAction->setStatusTip(Helper::translateCRMLTip);
+  connect(mpTranslateCRMLAction, SIGNAL(triggered()), SLOT(translateCRML()));
+  // translateAs CRML Action
+  mpTranslateAsCRMLAction = new QAction(QIcon(":/Resources/icons/translateAs.svg"), Helper::translateAsCRML, this);
+  mpTranslateAsCRMLAction->setStatusTip(Helper::translateAsCRMLTip);
+  connect(mpTranslateAsCRMLAction, SIGNAL(triggered()), SLOT(translateAsCRML()));
+  // run Script Action
+  mpRunScriptAction = new QAction(QIcon(":/Resources/icons/runScript.svg"), Helper::runScript, this);
+  mpRunScriptAction->setStatusTip(Helper::runScriptTip);
+  connect(mpRunScriptAction, SIGNAL(triggered()), SLOT(runScript()));
   // call function Action
   mpCallFunctionAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::callFunction, this);
   mpCallFunctionAction->setStatusTip(Helper::callFunctionTip);
@@ -2885,7 +2908,6 @@ void LibraryTreeView::createActions()
   connect(mpReloadClassAction, SIGNAL(triggered()), SLOT(reloadClass()));
   // unload Text file Action
   mpUnloadTextFileAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
-  mpUnloadTextFileAction->setShortcut(QKeySequence::Delete);
   mpUnloadTextFileAction->setStatusTip(Helper::unloadTextFileTip);
   connect(mpUnloadTextFileAction, SIGNAL(triggered()), SLOT(unloadTextFile()));
   // new file Action
@@ -2910,6 +2932,7 @@ void LibraryTreeView::createActions()
   connect(mpRenameAction, SIGNAL(triggered()), SLOT(renameLibraryTreeItem()));
   // Delete Action
   mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::deleteStr, this);
+  mpDeleteAction->setShortcut(QKeySequence::Delete);
   mpDeleteAction->setStatusTip(tr("Deletes the file"));
   connect(mpDeleteAction, SIGNAL(triggered()), SLOT(deleteTextFile()));
   // convert class to use newer uses libraries
@@ -3198,6 +3221,14 @@ void LibraryTreeView::showContextMenu(QPoint point)
           }
           break;
         case LibraryTreeItem::Text:
+          if (pLibraryTreeItem->isCRMLFile()) {
+            menu.addAction(mpTranslateCRMLAction);
+            menu.addAction(mpTranslateAsCRMLAction);
+            menu.addSeparator();
+          } else if (pLibraryTreeItem->isMOSFile()) {
+            menu.addAction(mpRunScriptAction);
+            menu.addSeparator();
+          }
           if (fileInfo.isDir()) {
             menu.addAction(mpNewFileAction);
             menu.addAction(mpNewFolderAction);
@@ -3519,6 +3550,43 @@ void LibraryTreeView::simulationSetup()
 }
 
 /*!
+ * \brief LibraryTreeView::translateCRML
+ * Translates the selected LibraryTreeItem CRML model to Modelica.
+ */
+void LibraryTreeView::translateCRML()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    MainWindow::instance()->translateCRML(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::translateAsCRML
+ * Translates the selected LibraryTreeItem CRML model to Modelica with different options.
+ */
+void LibraryTreeView::translateAsCRML()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    MainWindow::instance()->translateAsCRML(pLibraryTreeItem);
+  }
+}
+
+
+/*!
+ * \brief LibraryTreeView::runScript
+ * Runs the the selected LibraryTreeItem Modelica Script.
+ */
+void LibraryTreeView::runScript()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    MainWindow::instance()->runScript(pLibraryTreeItem);
+  }
+}
+
+/*!
  * \brief LibraryTreeView::duplicateClass
  * Opens the DuplicateClassDialog.
  */
@@ -3577,7 +3645,7 @@ void LibraryTreeView::createNewFile()
   if (!pLibraryTreeItem) {
     return;
   }
-  CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog(pLibraryTreeItem->getFileName(), true, MainWindow::instance());
+  CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog(pLibraryTreeItem->getFileName(), true, "", MainWindow::instance());
   pCreateNewItemDialog->exec();
 }
 
@@ -3587,7 +3655,7 @@ void LibraryTreeView::createNewFile()
  */
 void LibraryTreeView::createNewFileEmpty()
 {
-  CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog("", true, MainWindow::instance());
+  CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog("", true, "", MainWindow::instance());
   pCreateNewItemDialog->exec();
 }
 
@@ -3601,7 +3669,7 @@ void LibraryTreeView::createNewFolder()
   if (!pLibraryTreeItem) {
     return;
   }
-  CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog(pLibraryTreeItem->getFileName(), false, MainWindow::instance());
+  CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog(pLibraryTreeItem->getFileName(), false, "", MainWindow::instance());
   pCreateNewItemDialog->exec();
 }
 /*!
@@ -3610,7 +3678,7 @@ void LibraryTreeView::createNewFolder()
  */
 void LibraryTreeView::createNewFolderEmpty()
 {
-  CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog("", false, MainWindow::instance());
+  CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog("", false, "", MainWindow::instance());
   pCreateNewItemDialog->exec();
 }
 
@@ -3826,7 +3894,7 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
       } else if (isTopLevel && isOMSimulatorLibraryType) {
         unloadOMSModel();
       } else if (isTopLevel) {
-        unloadTextFile();
+        deleteTextFile();
       }
     } else if (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return) {
       if (pLibraryTreeItem->isText()) {
@@ -3947,13 +4015,13 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
   if ((fileInfo.suffix().compare("mo") == 0 || fileInfo.suffix().compare("bmo") == 0) && !loadExternalModel) {
     openModelicaFile(fileInfo.absoluteFilePath(), encoding, showProgress);
   } else if (fileInfo.suffix().compare("mol") == 0 && !loadExternalModel) {
-    openEncrytpedModelicaLibrary(fileInfo.absoluteFilePath(), encoding, showProgress);
+    openEncryptedModelicaLibrary(fileInfo.absoluteFilePath(), encoding, showProgress);
   } else if (fileInfo.suffix().compare("ssp") == 0 && !loadExternalModel) {
     openOMSModelFile(fileInfo, showProgress);
   } else if (fileInfo.isDir()) {
     openDirectory(fileInfo, showProgress);
   } else {
-    qDebug() << "LibraryWidget::openFile should never be reached.";
+    openTextFile(fileInfo, showProgress);
   }
 }
 
@@ -4012,8 +4080,9 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
             // cancel loading the library
             LibraryWidget::cancelLoadingLibraries(classes);
             // show error message
-            MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Unable to load %1. See messages above for more details.").arg(classesList.join(",")), Helper::scriptingKind,
-                                                                  Helper::errorLevel));
+            MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                                  tr("Unable to load %1. See messages above for more details.").arg(classesList.join(",")),
+                                                                  Helper::scriptingKind, Helper::errorLevel));
           } else {
             if (resolveConflictWithLoadedLibraries(classesList.join(","), classes)) {
               openModelicaFile(fileName, encoding, showProgress, true);
@@ -4047,13 +4116,13 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
 }
 
 /*!
- * \brief LibraryWidget::openEncrytpedModelicaLibrary
+ * \brief LibraryWidget::openEncryptedModelicaLibrary
  * Opens the encrypted library package.
  * \param fileName
  * \param encoding
  * \param showProgress
  */
-void LibraryWidget::openEncrytpedModelicaLibrary(QString fileName, QString encoding, bool showProgress)
+void LibraryWidget::openEncryptedModelicaLibrary(QString fileName, QString encoding, bool showProgress)
 {
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileName));
@@ -4144,7 +4213,7 @@ void LibraryWidget::openTextFile(QFileInfo fileInfo, bool showProgress)
     LibraryTreeItem *pLibraryTreeItem = mpLibraryTreeModel->getRootLibraryTreeItem()->child(i);
     if (pLibraryTreeItem && pLibraryTreeItem->getFileName().compare(fileInfo.absoluteFilePath()) == 0) {
       QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
-      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
+      pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::information));
       pMessageBox->setIcon(QMessageBox::Information);
       pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
       pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileInfo.absoluteFilePath())));
@@ -4817,8 +4886,9 @@ bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, b
 {
   QString fileName;
   if (pLibraryTreeItem->getFileName().isEmpty() || saveAs) {
-    QString name = pLibraryTreeItem->getName();
-    fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::saveFile), NULL, Helper::txtFileTypes, NULL, "txt", &name);
+    QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+    QString name = fileInfo.completeBaseName();
+    fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::saveFile), NULL, "", NULL, fileInfo.suffix(), &name);
     if (fileName.isEmpty()) { // if user press ESC
       return false;
     }
@@ -4827,9 +4897,19 @@ bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, b
   }
 
   if (saveFile(fileName, pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText())) {
+    // if saveAs and the new file location already exists then unload it
+    if (saveAs) {
+      LibraryTreeItem *pExistingLibraryTreeItem = mpLibraryTreeModel->findLibraryTreeItem(fileName);
+      if (pExistingLibraryTreeItem) {
+        mpLibraryTreeModel->unloadTextFile(pExistingLibraryTreeItem, false);
+      }
+    }
     /* mark the file as saved and update the labels. */
     pLibraryTreeItem->setIsSaved(true);
     pLibraryTreeItem->setFileName(fileName);
+    QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+    pLibraryTreeItem->setName(fileInfo.fileName());
+    pLibraryTreeItem->setNameStructure(fileName);
     if (pLibraryTreeItem->getModelWidget()) {
       pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName());
       pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);

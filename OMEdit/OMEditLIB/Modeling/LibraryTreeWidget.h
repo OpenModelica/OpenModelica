@@ -58,7 +58,8 @@ public:
   enum LibraryType {
     Modelica,         /* Used to represent Modelica models. */
     Text,             /* Used to represent text based files. */
-    OMS               /* Used to represent OMSimulator models. */
+    OMS,              /* Used to represent OMSimulator models. */
+    CRML              /* Used to represent CRML models. */
   };
   enum Access {
     hide,
@@ -86,6 +87,7 @@ public:
   void setLibraryType(LibraryType libraryType) {mLibraryType = libraryType;}
   bool isModelica() const {return mLibraryType == LibraryTreeItem::Modelica;}
   bool isText() const {return mLibraryType == LibraryTreeItem::Text;}
+  bool isCRML() const {return mLibraryType == LibraryTreeItem::CRML;}
   bool isSSP() const {return mLibraryType == LibraryTreeItem::OMS;}
   void setSystemLibrary(bool systemLibrary) {mSystemLibrary = systemLibrary;}
   bool isSystemLibrary() {return mSystemLibrary;}
@@ -104,6 +106,8 @@ public:
   const QString& getVersionBuild() const;
   const QString& getDateModified() const;
   const QString& getRevisionId() const;
+  bool isCRMLFile() const {return mFileName.endsWith(".crml");}
+  bool isMOSFile() const {return mFileName.endsWith(".mos");}
   bool isFilePathValid();
   void setReadOnly(bool readOnly) {mReadOnly = readOnly;}
   bool isReadOnly() {return mReadOnly;}
@@ -371,6 +375,9 @@ private:
   QAction *mpCallFunctionAction;
   QAction *mpSimulateWithTransformationalDebuggerAction;
   QAction *mpSimulateWithAlgorithmicDebuggerAction;
+  QAction *mpTranslateCRMLAction;
+  QAction *mpTranslateAsCRMLAction;
+  QAction *mpRunScriptAction;
 #if !defined(WITHOUT_OSG)
   QAction *mpSimulateWithAnimationAction;
 #endif
@@ -423,6 +430,9 @@ public slots:
   void simulateWithAlgorithmicDebugger();
   void simulateWithAnimation();
   void simulationSetup();
+  void translateCRML();
+  void translateAsCRML();
+  void runScript();
   void duplicateClass();
   void unloadClass();
   void reloadClass();
@@ -459,8 +469,9 @@ public:
   LibraryTreeView* getLibraryTreeView() {return mpLibraryTreeView;}
   void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false, bool loadExternalModel = false);
   void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool secondAttempt = false, int row = -1);
-  void openEncrytpedModelicaLibrary(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
+  void openEncryptedModelicaLibrary(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
   void openTextFile(QFileInfo fileInfo, bool showProgress = true);
+
   void openDirectory(QFileInfo fileInfo, bool showProgress = true);
   void openOMSModelFile(QFileInfo fileInfo, bool showProgress = true);
   void parseAndLoadModelicaText(QString modelText);

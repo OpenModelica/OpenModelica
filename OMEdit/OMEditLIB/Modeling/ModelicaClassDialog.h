@@ -351,10 +351,11 @@ class CreateNewItemDialog : public QDialog
 {
   Q_OBJECT
 public:
-  CreateNewItemDialog(QString path, bool isCreateFile, QWidget *pParent = 0);
+  CreateNewItemDialog(QString path, bool isCreateFile, QString extension, QWidget *pParent = 0);
 private:
   QString mPath;
   bool mIsCreateFile;
+  QString mExtension;
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
   Label *mpPathLabel;
@@ -363,6 +364,8 @@ private:
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+
+  QString getHeading() const;
 private slots:
   void browsePath();
   void createNewFileOrFolder();

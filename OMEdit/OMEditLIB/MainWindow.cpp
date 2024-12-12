@@ -43,6 +43,7 @@
 #include "Modeling/ElementTreeWidget.h"
 #include "Modeling/ModelicaClassDialog.h"
 #include "OMS/ModelDialog.h"
+#include "CRML/CRMLTranslateAsDialog.h"
 #include "Debugger/GDB/GDBAdapter.h"
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Debugger/Locals/LocalsWidget.h"
@@ -55,6 +56,7 @@
 #include "Util/Helper.h"
 #include "Simulation/ArchivedSimulationsWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
+#include "CRML/CRMLTranslatorOutputWidget.h"
 #include "OMS/OMSSimulationOutputWidget.h"
 #include "OMS/OMSSimulationDialog.h"
 #include "Debugger/DebuggerConfigurationsDialog.h"
@@ -551,6 +553,18 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
     mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
+  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isCRML()) {
+    pSettings->beginGroup(ToolBars::modelingTextPerspective);
+    SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpShapesToolBar, ToolBars::shapesToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpModelSwitcherToolBar, ToolBars::modelSwitcherToolBar, true);
+    SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
+    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
+    SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
+    SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
   } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isSSP()) {
     pSettings->beginGroup(ToolBars::modelingOMSPerspective);
@@ -992,6 +1006,87 @@ void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
       mpOMSSimulationDialog->exec(pTopLevelLibraryTreeItem->getNameStructure(), pLibraryTreeItem);
     }
   }
+}
+
+/*!
+ * \brief MainWindow::translateCRML
+ * Translates the CRML model.
+ * \param pLibraryTreeItem
+ */
+void MainWindow::translateCRML(LibraryTreeItem *pLibraryTreeItem)
+{
+  /* if CRML text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeItem->getModelWidget()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+      return;
+    }
+  }
+
+  CRMLTranslatorOptions crmlTranslatorOptions;
+  crmlTranslatorOptions.setMode("translate");
+  crmlTranslatorOptions.setCRMLFile(pLibraryTreeItem->getFileName());
+  crmlTranslatorOptions.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
+  CRMLPage *pCRMLPage = OptionsDialog::instance()->getCRMLPage();
+  crmlTranslatorOptions.setCompilerJar(pCRMLPage->getCompilerJarTextBox()->text());
+  crmlTranslatorOptions.setCompilerCommandLineOptions(pCRMLPage->getCompilerCommandLineOptionsTextBox()->text());
+  crmlTranslatorOptions.setCompilerProcess(pCRMLPage->getCompilerProcessTextBox()->text());
+  crmlTranslatorOptions.setModelicaLibraries(pCRMLPage->getModelicaLibraries()->items());
+
+  CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = new CRMLTranslatorOutputWidget(crmlTranslatorOptions);
+  MessagesWidget::instance()->addSimulationOutputTab(pCRMLTranslatorOutputWidget, pLibraryTreeItem->getName());
+  pCRMLTranslatorOutputWidget->start();
+}
+
+void MainWindow::translateAsCRML(LibraryTreeItem *pLibraryTreeItem)
+{
+  /* if the CRML text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeItem->getModelWidget()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+      return;
+    }
+  }
+
+  CRMLTranslatorOptions crmlTranslatorOptions;
+  crmlTranslatorOptions.setMode("translateAs");
+  crmlTranslatorOptions.setCRMLFile(pLibraryTreeItem->getFileName());
+  crmlTranslatorOptions.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
+  CRMLPage *pCRMLPage = OptionsDialog::instance()->getCRMLPage();
+  crmlTranslatorOptions.setCompilerJar(pCRMLPage->getCompilerJarTextBox()->text());
+  crmlTranslatorOptions.setCompilerCommandLineOptions(pCRMLPage->getCompilerCommandLineOptionsTextBox()->text());
+  crmlTranslatorOptions.setCompilerProcess(pCRMLPage->getCompilerProcessTextBox()->text());
+  crmlTranslatorOptions.setModelicaLibraries(pCRMLPage->getModelicaLibraries()->items());
+  // output directory and within will be set from the CRMLTranslateAsDialog
+  CRMLTranslateAsDialog *pCRMLTranslateAsDialog = new CRMLTranslateAsDialog(&crmlTranslatorOptions, this);
+  if (pCRMLTranslateAsDialog->exec()) {
+    CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = new CRMLTranslatorOutputWidget(crmlTranslatorOptions);
+    MessagesWidget::instance()->addSimulationOutputTab(pCRMLTranslatorOutputWidget, pLibraryTreeItem->getName());
+    pCRMLTranslatorOutputWidget->start();
+  }
+}
+
+void MainWindow::runScript(LibraryTreeItem *pLibraryTreeItem)
+{
+  /* if Modelica text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeItem->getModelWidget()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+      return;
+    }
+  }
+  // set the status message.
+  mpStatusBar->showMessage(QString("%1 %2").arg(Helper::runScript, pLibraryTreeItem->getNameStructure()));
+  // show the progress bar
+  mpProgressBar->setRange(0, 0);
+  showProgressBar();
+  QString result = mpOMCProxy->runScript(pLibraryTreeItem->getFileName());
+  if (!result.isEmpty()) {
+    QString windowTitle = QString("%1 - %2").arg(Helper::runScript, pLibraryTreeItem->getNameStructure());
+    InformationDialog *pInformationDialog = new InformationDialog(windowTitle, result, true, this);
+    pInformationDialog->show();
+  }
+  // hide progress bar
+  hideProgressBar();
+  // clear the status bar message
+  mpStatusBar->clearMessage();
 }
 
 void MainWindow::instantiateModel(LibraryTreeItem *pLibraryTreeItem)
@@ -1794,6 +1889,16 @@ void MainWindow::createNewModelicaClass()
 }
 
 /*!
+ * \brief MainWindow::createNewMOSFile
+ * Opens the new Modelica Scripting dialog.
+ */
+void MainWindow::createNewMOSFile()
+{
+  CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog("", true, ".mos", this);
+  pCreateNewItemDialog->exec();
+}
+
+/*!
  * \brief MainWindow::createNewSSPModel
  * Opens the new SSP model dialog.
  */
@@ -1803,6 +1908,15 @@ void MainWindow::createNewSSPModel()
   pCreateModelDialog->exec();
 }
 
+/*!
+ * \brief MainWindow::createNewCRMLFile
+ * Opens the new CRML Model dialog.
+ */
+void MainWindow::createNewCRMLFile()
+{
+  CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog("", true, ".crml", this);
+  pCreateNewItemDialog->exec();
+}
 
 void MainWindow::openModelicaFile()
 {
@@ -3348,6 +3462,12 @@ void MainWindow::messageTabAdded(QWidget *pSimulationOutputTab, const QString &n
     if (pOMSSimulationOutputWidget) {
       connect(pOMSSimulationOutputWidget, SIGNAL(updateText(QString)), pMessageTab, SLOT(updateText(QString)));
       connect(pOMSSimulationOutputWidget, SIGNAL(updateProgressBar(QProgressBar*)), pMessageTab, SLOT(updateProgress(QProgressBar*)));
+    } else {
+      CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = qobject_cast<CRMLTranslatorOutputWidget*>(pSimulationOutputTab);
+      if (pCRMLTranslatorOutputWidget) {
+        connect(pCRMLTranslatorOutputWidget, SIGNAL(updateText(QString)), pMessageTab, SLOT(updateText(QString)));
+        connect(pCRMLTranslatorOutputWidget, SIGNAL(updateProgressBar(QProgressBar*)), pMessageTab, SLOT(updateProgress(QProgressBar*)));
+      }
     }
   }
 }
@@ -3394,6 +3514,26 @@ void MainWindow::showDataReconciliationDialog()
       mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false, false, true);
     }
   }
+}
+
+/*!
+ * \brief MainWindow::runCRMLTestsuite
+ * Slot activated when mpRunCRMLTestsuiteAction triggered signal is raised.\n
+ * Runs the CRML testsuite and opens the result as html.
+ */
+void MainWindow::runCRMLTestsuite()
+{
+  CRMLTranslatorOptions crmlTranslatorOptions;
+  crmlTranslatorOptions.setMode("testsuite");
+  crmlTranslatorOptions.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
+  CRMLPage *pCRMLPage = OptionsDialog::instance()->getCRMLPage();
+  crmlTranslatorOptions.setCompilerJar(pCRMLPage->getCompilerJarTextBox()->text());
+  crmlTranslatorOptions.setCompilerCommandLineOptions(pCRMLPage->getCompilerCommandLineOptionsTextBox()->text());
+  crmlTranslatorOptions.setCompilerProcess(pCRMLPage->getCompilerProcessTextBox()->text());
+
+  CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = new CRMLTranslatorOutputWidget(crmlTranslatorOptions);
+  MessagesWidget::instance()->addSimulationOutputTab(pCRMLTranslatorOutputWidget, tr("CRML Testsuite"));
+  pCRMLTranslatorOutputWidget->start();
 }
 
 /*!
@@ -3520,10 +3660,18 @@ void MainWindow::createActions()
   mpNewModelicaClassAction->setStatusTip(Helper::createNewModelicaClass);
   mpNewModelicaClassAction->setShortcut(QKeySequence("Ctrl+n"));
   connect(mpNewModelicaClassAction, SIGNAL(triggered()), SLOT(createNewModelicaClass()));
+  // create new MOS action
+  mpNewMOSFileAction = new QAction(Helper::newMOSScript, this);
+  mpNewMOSFileAction->setStatusTip(Helper::newMOSScriptTip);
+  connect(mpNewMOSFileAction, SIGNAL(triggered()), SLOT(createNewMOSFile()));
   // create new SSP Model action
   mpNewSSPModelAction = new QAction(Helper::newOMSimulatorModel, this);
   mpNewSSPModelAction->setStatusTip(Helper::newOMSimulatorModelTip);
   connect(mpNewSSPModelAction, SIGNAL(triggered()), SLOT(createNewSSPModel()));
+  // create new CRML action
+  mpNewCRMLFileAction = new QAction(Helper::newCRMLModel, this);
+  mpNewCRMLFileAction->setStatusTip(Helper::newCRMLModelTip);
+  connect(mpNewCRMLFileAction, SIGNAL(triggered()), SLOT(createNewCRMLFile()));
   // open Modelica file action
   mpOpenModelicaFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), Helper::openModelicaFiles, this);
   mpOpenModelicaFileAction->setShortcut(QKeySequence("Ctrl+o"));
@@ -3782,6 +3930,11 @@ void MainWindow::createActions()
   mpCalculateDataReconciliationAction = new QAction(tr("Calculate Data Reconciliation"), this);
   mpCalculateDataReconciliationAction->setStatusTip(tr("Calculates the data reconciliation"));
   connect(mpCalculateDataReconciliationAction, SIGNAL(triggered()), SLOT(showDataReconciliationDialog()));
+  // CRML menu
+  // run testsuite
+  mpRunCRMLTestsuiteAction = new QAction(tr("Run CRML Testsuite"), this);
+  mpRunCRMLTestsuiteAction->setStatusTip(tr("Runs the CRML Testsuite and display report"));
+  connect(mpRunCRMLTestsuiteAction, SIGNAL(triggered()), SLOT(runCRMLTestsuite()));
   // Debug Menu
   // Debug configurations
   mpDebugConfigurationsAction = new QAction(Helper::debugConfigurations, this);
@@ -4198,6 +4351,13 @@ void MainWindow::createMenus()
   pDataReconciliationMenu->addAction(mpCalculateDataReconciliationAction);
   // add data reconciliation menu to menu bar
   menuBar()->addAction(pDataReconciliationMenu->menuAction());
+  // CRML menu
+  QMenu *pCRMLMenu = new QMenu(menuBar());
+  pCRMLMenu->setTitle(tr("&CRML"));
+  // add actions to CRML menu
+  pCRMLMenu->addAction(mpRunCRMLTestsuiteAction);
+  // add data CRML menu to menu bar
+  menuBar()->addAction(pCRMLMenu->menuAction());
 #ifndef Q_OS_MAC
   // Sensitivity Optimization menu
   QMenu *pSensitivityOptimizationMenu = new QMenu(menuBar());
@@ -4519,7 +4679,11 @@ void MainWindow::createToolbars()
   mpNewModelMenu->setTitle(tr("&New"));
   mpNewModelMenu->setIcon(QIcon(":/Resources/icons/new.svg"));
   mpNewModelMenu->addAction(mpNewModelicaClassAction);
+  mpNewModelMenu->addAction(mpNewMOSFileAction);
+  mpNewModelMenu->addSeparator();
   mpNewModelMenu->addAction(mpNewSSPModelAction);
+  mpNewModelMenu->addSeparator();
+  mpNewModelMenu->addAction(mpNewCRMLFileAction);
   // new ToolButton
   QToolButton *pNewToolButton = new QToolButton;
   pNewToolButton->setMenu(mpNewModelMenu);

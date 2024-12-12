@@ -5854,6 +5854,22 @@ void ModelWidget::createModelWidgetComponents()
         pCEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
         mpEditor->hide();
         connect(OptionsDialog::instance(), SIGNAL(cEditorSettingsChanged()), pCHighlighter, SLOT(settingsChanged()));
+      } else if (mpLibraryTreeItem->isCRMLFile()) {
+        mpEditor = new CRMLEditor(this);
+        CRMLHighlighter *pCRMLHighlighter;
+        pCRMLHighlighter = new CRMLHighlighter(OptionsDialog::instance()->getCRMLEditorPage(), mpEditor->getPlainTextEdit());
+        CRMLEditor *pCRMLEditor = dynamic_cast<CRMLEditor*>(mpEditor);
+        pCRMLEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
+        mpEditor->hide();
+        connect(OptionsDialog::instance(), SIGNAL(crmlEditorSettingsChanged()), pCRMLHighlighter, SLOT(settingsChanged()));
+      } else if (mpLibraryTreeItem->isMOSFile()) {
+        mpEditor = new MOSEditor(this);
+        MOSHighlighter *pMOSHighlighter;
+        pMOSHighlighter = new MOSHighlighter(OptionsDialog::instance()->getMOSEditorPage(), mpEditor->getPlainTextEdit());
+        MOSEditor *pMOSEditor = dynamic_cast<MOSEditor*>(mpEditor);
+        pMOSEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
+        mpEditor->hide();
+        connect(OptionsDialog::instance(), SIGNAL(mosEditorSettingsChanged()), pMOSHighlighter, SLOT(settingsChanged()));
       } else if (Utilities::isModelicaFile(fileInfo.suffix())) {
         mpEditor = new MetaModelicaEditor(this);
         MetaModelicaHighlighter *pMetaModelicaHighlighter;

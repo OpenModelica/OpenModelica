@@ -352,7 +352,7 @@ protected:
   QAction *mpToggleCommentSelectionAction;
   QAction *mpFoldAllAction;
   QAction *mpUnFoldAllAction;
-  DocumentMarker *mpDocumentMarker;
+  DocumentMarker *mpDocumentMarker = nullptr;
   bool mForceSetPlainText;
 
   QMenu* createStandardContextMenu();

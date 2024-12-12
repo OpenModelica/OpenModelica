@@ -231,6 +231,9 @@ public:
   void simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem);
 #endif
   void simulationSetup(LibraryTreeItem *pLibraryTreeItem);
+  void translateCRML(LibraryTreeItem *pLibraryTreeItem);
+  void translateAsCRML(LibraryTreeItem *pLibraryTreeItem);
+  void runScript(LibraryTreeItem *pLibraryTreeItem);
   void instantiateModel(LibraryTreeItem *pLibraryTreeItem);
   void checkModel(LibraryTreeItem *pLibraryTreeItem);
   void checkAllModels(LibraryTreeItem *pLibraryTreeItem);
@@ -308,7 +311,9 @@ private:
   // File Menu
   // Modelica File Actions
   QAction *mpNewModelicaClassAction;
+  QAction *mpNewMOSFileAction;
   QAction *mpNewSSPModelAction;
+  QAction *mpNewCRMLFileAction;
   QAction *mpOpenModelicaFileAction;
   QAction *mpOpenModelicaFileWithEncodingAction;
   QAction *mpLoadModelicaLibraryAction;
@@ -316,11 +321,13 @@ private:
   QAction *mpOpenResultFileAction;
   QAction *mpOpenTransformationFileAction;
   QAction *mpUnloadAllAction;
+  // Directory actions
   QAction *mpOpenDirectoryAction;
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
   QAction *mpSaveAllAction;
   QAction *mpSaveTotalAction;
+  // FMU
   QAction *mpImportFMUAction;
   QAction *mpImportFMUModelDescriptionAction;
   QAction *mpImportFromOMNotebookAction;
@@ -371,6 +378,8 @@ private:
   QAction *mpArchivedSimulationsAction;
   // Data reconciliation action
   QAction *mpCalculateDataReconciliationAction;
+  // CRML run testsuite action
+  QAction *mpRunCRMLTestsuiteAction;
   // Debug Menu
   QAction *mpDebugConfigurationsAction;
   QAction *mpAttachDebuggerToRunningProcessAction;
@@ -468,7 +477,9 @@ public slots:
   void switchToAlgorithmicDebuggingPerspectiveSlot();
   void showSearchBrowser();
   void createNewModelicaClass();
+  void createNewMOSFile();
   void createNewSSPModel();
+  void createNewCRMLFile();
   void openModelicaFile();
   void showOpenModelicaFileDialog();
   void loadModelicaLibrary();
@@ -562,6 +573,7 @@ private slots:
   void messageTabClosed(int index);
   void autoSave();
   void showDataReconciliationDialog();
+  void runCRMLTestsuite();
   void showDebugConfigurationsDialog();
   void showAttachToProcessDialog();
   void createGitRepository();

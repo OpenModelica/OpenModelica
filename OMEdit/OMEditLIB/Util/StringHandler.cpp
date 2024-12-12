@@ -1193,12 +1193,9 @@ QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, 
   QString dir_str;
   QString fileName;
 
-  if (dir)
-  {
+  if (dir) {
     dir_str = *dir;
-  }
-  else
-  {
+  } else {
     dir_str = StringHandler::getLastOpenDirectory();
   }
 
@@ -1756,6 +1753,8 @@ int StringHandler::getLeadingSpacesSize(QString str)
  */
 bool StringHandler::isFileWritAble(QString filePath)
 {
+  if (filePath.isEmpty())
+    return true;
   QFile file(filePath);
   if (file.exists()) {
     return file.permissions().testFlag(QFile::WriteUser);
