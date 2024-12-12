@@ -768,8 +768,7 @@ algorithm
 
     case ("getTransitions",{Values.CODE(Absyn.C_TYPENAME(className))})
       equation
-        cr = AbsynUtil.pathToCref(className);
-        false = Interactive.existClass(cr, SymbolTable.getAbsyn());
+        false = Interactive.existClass(className, SymbolTable.getAbsyn());
         str = AbsynUtil.pathString(className);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then ValuesUtil.makeArray({});
@@ -783,8 +782,7 @@ algorithm
     case ("addTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_), Values.STRING(_), Values.STRING(_),
                            Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_), Values.CODE(Absyn.C_EXPRESSION(_))})
       equation
-        cr = AbsynUtil.pathToCref(classpath);
-        false = Interactive.existClass(cr, SymbolTable.getAbsyn());
+        false = Interactive.existClass(classpath, SymbolTable.getAbsyn());
         str = AbsynUtil.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
@@ -794,8 +792,7 @@ algorithm
                            Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_),
                            Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(eqMod=Absyn.NOMOD())))})
       equation
-        cr = AbsynUtil.pathToCref(classpath);
-        false = Interactive.existClass(cr, SymbolTable.getAbsyn());
+        false = Interactive.existClass(classpath, SymbolTable.getAbsyn());
         str = AbsynUtil.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
@@ -824,8 +821,7 @@ algorithm
     case ("deleteTransition",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_), Values.STRING(_), Values.STRING(_),
                               Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_)})
       equation
-        cr = AbsynUtil.pathToCref(classpath);
-        false = Interactive.existClass(cr, SymbolTable.getAbsyn());
+        false = Interactive.existClass(classpath, SymbolTable.getAbsyn());
         str = AbsynUtil.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
@@ -847,8 +843,7 @@ algorithm
                               Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_), Values.STRING(_),
                               Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_), Values.CODE(Absyn.C_EXPRESSION(_))})
       equation
-        cr = AbsynUtil.pathToCref(classpath);
-        false = Interactive.existClass(cr, SymbolTable.getAbsyn());
+        false = Interactive.existClass(classpath, SymbolTable.getAbsyn());
         str = AbsynUtil.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
@@ -859,8 +854,7 @@ algorithm
                               Values.BOOL(_), Values.BOOL(_), Values.BOOL(_), Values.INTEGER(_),
                               Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(eqMod=Absyn.NOMOD())))})
       equation
-        cr = AbsynUtil.pathToCref(classpath);
-        false = Interactive.existClass(cr, SymbolTable.getAbsyn());
+        false = Interactive.existClass(classpath, SymbolTable.getAbsyn());
         str = AbsynUtil.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
@@ -893,8 +887,7 @@ algorithm
 
     case ("getInitialStates",{Values.CODE(Absyn.C_TYPENAME(className))})
       equation
-        cr = AbsynUtil.pathToCref(className);
-        false = Interactive.existClass(cr, SymbolTable.getAbsyn());
+        false = Interactive.existClass(className, SymbolTable.getAbsyn());
         str = AbsynUtil.pathString(className);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
@@ -908,8 +901,7 @@ algorithm
 
     case ("addInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_), Values.CODE(Absyn.C_EXPRESSION(_))})
       equation
-        cr = AbsynUtil.pathToCref(classpath);
-        false = Interactive.existClass(cr, SymbolTable.getAbsyn());
+        false = Interactive.existClass(classpath, SymbolTable.getAbsyn());
         str = AbsynUtil.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
@@ -918,8 +910,7 @@ algorithm
     case ("addInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_),
                              Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(eqMod=Absyn.NOMOD())))})
       equation
-        cr = AbsynUtil.pathToCref(classpath);
-        false = Interactive.existClass(cr, SymbolTable.getAbsyn());
+        false = Interactive.existClass(classpath, SymbolTable.getAbsyn());
         str = AbsynUtil.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
@@ -945,8 +936,7 @@ algorithm
 
     case ("deleteInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_)})
       equation
-        cr = AbsynUtil.pathToCref(classpath);
-        false = Interactive.existClass(cr, SymbolTable.getAbsyn());
+        false = Interactive.existClass(classpath, SymbolTable.getAbsyn());
         str = AbsynUtil.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
@@ -965,8 +955,7 @@ algorithm
 
     case ("updateInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_), Values.CODE(Absyn.C_EXPRESSION(_))})
       equation
-        cr = AbsynUtil.pathToCref(classpath);
-        false = Interactive.existClass(cr, SymbolTable.getAbsyn());
+        false = Interactive.existClass(classpath, SymbolTable.getAbsyn());
         str = AbsynUtil.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
@@ -975,8 +964,7 @@ algorithm
     case ("updateInitialState",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(_),
                                 Values.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(eqMod=Absyn.NOMOD())))})
       equation
-        cr = AbsynUtil.pathToCref(classpath);
-        false = Interactive.existClass(cr, SymbolTable.getAbsyn());
+        false = Interactive.existClass(classpath, SymbolTable.getAbsyn());
         str = AbsynUtil.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
@@ -1382,8 +1370,7 @@ algorithm
     // adrpo: see if the model exists before simulation!
     case ("simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
       equation
-        crefCName = AbsynUtil.pathToCref(className);
-        false = Interactive.existClass(crefCName, SymbolTable.getAbsyn());
+        false = Interactive.existClass(className, SymbolTable.getAbsyn());
         errMsg = "Simulation Failed. Model: " + AbsynUtil.pathString(className) + " does not exist! Please load it first before simulation.";
       then
         createSimulationResultFailure(errMsg, simOptionsAsString(vals));
@@ -1514,8 +1501,7 @@ algorithm
     // see if the model exists before linearization!
     case ("linearize",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
       equation
-        crefCName = AbsynUtil.pathToCref(className);
-        false = Interactive.existClass(crefCName, SymbolTable.getAbsyn());
+        false = Interactive.existClass(className, SymbolTable.getAbsyn());
         errMsg = "Linearization Failed. Model: " + AbsynUtil.pathString(className) + " does not exist! Please load it first before linearization.";
       then
         createSimulationResultFailure(errMsg, simOptionsAsString(vals));
@@ -3282,6 +3268,10 @@ algorithm
 
     case ("getEnumerationLiterals", {Values.CODE(Absyn.C_TYPENAME(classpath))})
       then Interactive.getEnumerationLiterals(classpath, SymbolTable.getAbsyn());
+
+    case ("existClass", {Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then ValuesUtil.makeBoolean(Interactive.existClass(classpath, SymbolTable.getAbsyn()));
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 
@@ -6102,9 +6092,8 @@ algorithm
 
     case (_,_,_)
       equation
-        classNameStr = AbsynUtil.pathString(className);
-        false = Interactive.existClass(AbsynUtil.pathToCref(className), SymbolTable.getAbsyn());
-        Error.addMessage(Error.LOOKUP_ERROR, {classNameStr,"<TOP>"});
+        false = Interactive.existClass(className, SymbolTable.getAbsyn());
+        Error.addMessage(Error.LOOKUP_ERROR, {AbsynUtil.pathString(className), "<TOP>"});
       then Values.STRING("");
 
     // errors
@@ -8810,7 +8799,7 @@ algorithm
 
     case ()
       algorithm
-        false := Interactive.existClass(AbsynUtil.pathToCref(path), SymbolTable.getAbsyn());
+        false := Interactive.existClass(path, SymbolTable.getAbsyn());
         Error.addMessage(Error.LOOKUP_ERROR, {AbsynUtil.pathString(path), "<TOP>"});
       then
         "";

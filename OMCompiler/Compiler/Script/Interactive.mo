@@ -901,25 +901,6 @@ algorithm
   args := getApiFunctionArgs(inStatement);
 
   outResult := match(fn_name)
-    case "existClass"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        boolString(existClass(cr, p));
-
-    case "existModel"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        path := AbsynUtil.crefToPath(cr);
-      then
-        boolString(existClass(cr, p) and isModel(path, p));
-
-    case "existPackage"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        boolString(existClass(cr, p) and isPackage(AbsynUtil.crefToPath(cr), p));
-
     case "renameClass"
       algorithm
         {Absyn.CREF(componentRef = old_cname), Absyn.CREF(componentRef = new_cname)} := args;
@@ -6028,28 +6009,17 @@ algorithm
 end getCompitemNamed;
 
 public function existClass
-" This function takes a component reference and a program.
-   It returns true if the refrenced class exists in the
-   symbol table, otherwise it returns false."
-  input Absyn.ComponentRef inComponentRef;
-  input Absyn.Program inProgram;
-  output Boolean outBoolean;
+  "Returns true if the referenced class exists in the program, otherwise false."
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Boolean res;
 algorithm
-  outBoolean := matchcontinue (inComponentRef,inProgram)
-    local
-      Absyn.Path path;
-      Absyn.ComponentRef cr;
-      Absyn.Program p;
-
-    case (cr,p)
-      equation
-        path = AbsynUtil.crefToPath(cr);
-        InteractiveUtil.getPathedClassInProgram(path, p);
-      then
-        true;
-
-    else false;
-  end matchcontinue;
+  try
+    InteractiveUtil.getPathedClassInProgram(classPath, program);
+    res := true;
+  else
+    res := false;
+  end try;
 end existClass;
 
 public function isPrimitiveClass
