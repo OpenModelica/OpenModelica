@@ -15895,6 +15895,7 @@ protected
   end addDockerVol;
 algorithm
   (locations, libraries) := getDirectoriesForDLLsFromLinkLibs(libs);
+  locations := listAppend({Settings.getInstallationDirectoryPath() + "/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc"}, locations); // zlib
   locations := listAppend({Settings.getInstallationDirectoryPath() + "/bin"}, locations);   // pthread located in OpenModelica/bin/ on Windows
   locations := List.map(locations, addDockerVol);
   // Use target_link_directories when CMake 3.13 is available and skip the find_library part
@@ -15907,7 +15908,7 @@ algorithm
   for lib in libraries loop
     cmakecode := cmakecode + "find_library(" + lib + "\n" +
                  "             NAMES " + lib + "\n" +
-                 "             PATHS ${EXTERNAL_LIBDIRECTORIES})\n" +
+                 "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH)\n" +
                  "message(STATUS \"Linking ${" + lib + "}\")" + "\n" +
                  "target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})" + "\n" +
                  "list(APPEND RUNTIME_DEPENDS ${" + lib + "})" + "\n";
