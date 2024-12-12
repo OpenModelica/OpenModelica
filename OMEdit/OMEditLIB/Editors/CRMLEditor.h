@@ -34,7 +34,7 @@
 #define CRMLEDITOR_H
 
 #include "Editors/BaseEditor.h"
-
+#include <QRegExp>
 #include <QSyntaxHighlighter>
 
 class CRMLEditorPage;
