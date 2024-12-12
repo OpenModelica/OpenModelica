@@ -3272,6 +3272,16 @@ algorithm
     case ("existClass", {Values.CODE(Absyn.C_TYPENAME(classpath))})
       then ValuesUtil.makeBoolean(Interactive.existClass(classpath, SymbolTable.getAbsyn()));
 
+    case ("getComponentComment", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
+      then Interactive.getComponentComment(classpath, path, SymbolTable.getAbsyn());
+
+    case ("setComponentComment", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str)})
+      algorithm
+        (p, b) := Interactive.setComponentComment(classpath, path, str, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        ValuesUtil.makeBoolean(b);
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 

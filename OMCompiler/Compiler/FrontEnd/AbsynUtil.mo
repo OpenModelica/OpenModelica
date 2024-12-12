@@ -5722,6 +5722,16 @@ algorithm
   end match;
 end getElementSpecificationFromElementItemOpt;
 
+public function getComponentItemsFromElement
+  input Absyn.Element element;
+  output list<Absyn.ComponentItem> items;
+algorithm
+  items := match element
+    case Absyn.Element.ELEMENT(specification = Absyn.ElementSpec.COMPONENTS(components = items)) then items;
+    else {};
+  end match;
+end getComponentItemsFromElement;
+
 public function getComponentItemsFromElementSpec
 "@auhtor: johti
  Get the componentItems from a given elemSpec otherwise returns an empty list"
@@ -6079,22 +6089,36 @@ algorithm
   end match;
 end setClassDefAnnotation;
 
+function setCommentString
+  "Overwrites the comment string in an optional comment."
+  input output Option<Absyn.Comment> comment;
+  input Option<String> commentString;
+protected
+  Option<Absyn.Annotation> ann;
+  Option<String> str, new_str;
+algorithm
+  if isSome(comment) then
+    SOME(Absyn.COMMENT(ann, str)) := comment;
+    comment := if isSome(ann) or isSome(str) then SOME(Absyn.COMMENT(ann, commentString)) else NONE();
+  elseif isSome(commentString) then
+    comment := SOME(Absyn.COMMENT(NONE(), commentString));
+  end if;
+end setCommentString;
+
 function setCommentAnnotation
   "Overwrites the annotation in an optional comment."
   input output Option<Absyn.Comment> comment;
   input Option<Absyn.Annotation> ann;
 protected
-  Option<String> cmt;
+  Option<Absyn.Annotation> old_ann;
+  Option<String> str;
 algorithm
-  comment := match (comment, ann)
-    // No comment, no annotation => no comment
-    case (NONE(), NONE()) then comment;
-    // No comment, some annotation => new comment
-    case (NONE(), _) then SOME(Absyn.Comment.COMMENT(ann, NONE()));
-    // Some comment => overwrite annotation in comment
-    case (SOME(Absyn.Comment.COMMENT(_, cmt)), _)
-      then SOME(Absyn.Comment.COMMENT(ann, cmt));
-  end match;
+  if isSome(comment) then
+    SOME(Absyn.COMMENT(old_ann, str)) := comment;
+    comment := if isSome(ann) or isSome(str) then SOME(Absyn.COMMENT(ann, str)) else NONE();
+  elseif isSome(ann) then
+    comment := SOME(Absyn.COMMENT(ann, NONE()));
+  end if;
 end setCommentAnnotation;
 
 function mapAnnotationBinding

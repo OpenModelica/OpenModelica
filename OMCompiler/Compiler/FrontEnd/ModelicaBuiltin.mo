@@ -3685,6 +3685,31 @@ annotation(
   preferredView="text");
 end removeExtendsModifiers;
 
+function getComponentComment
+  input TypeName className;
+  input TypeName componentName;
+  output String comment;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the comment on a component.
+</html>"),
+  preferredView="text");
+end getComponentComment;
+
+function setComponentComment
+  input TypeName className;
+  input TypeName componentName;
+  input String comment;
+  output Boolean success;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Sets the comment on a component.
+</html>"),
+  preferredView="text");
+end setComponentComment;
+
 function setComponentDimensions
   input TypeName className;
   input TypeName componentName;

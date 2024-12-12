@@ -149,7 +149,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentComment(A, x, "comment for x")
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: addConnection(a, b, A)
@@ -303,7 +303,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentComment(A, x, "comment for x")
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: addConnection(a, b, A)
