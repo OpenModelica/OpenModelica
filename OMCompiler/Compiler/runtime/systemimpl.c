@@ -160,6 +160,8 @@ static char *linker = (char *)def_linker;
 static char *cflags = (char *)def_cflags;
 static char *ldflags= (char *)def_ldflags;
 
+static char *winDirectory = NULL;
+
 /* TODO! FIXME!
  * we need to move these to threadData if we are to run things in parallel in OMC!
  */
@@ -653,6 +655,36 @@ int runProcess(const char* cmd, const char* outFile)
 }
 #endif
 
+char* SystemImpl__winGetSystemDirectoryA()
+{
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  if (winDirectory) {
+    return winDirectory;
+  }
+  char* winDirectory = (char*) omc_alloc_interface.malloc(MAXPATHLEN * sizeof(char*));
+  if (!GetSystemDirectoryA(winDirectory, MAXPATHLEN-1)) {
+    LPVOID lpMsgBuf;
+    const char* ctokens[2];
+    FormatMessage(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER |
+            FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_IGNORE_INSERTS,
+            NULL,
+            GetLastError(),
+            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+            (LPTSTR) &lpMsgBuf,
+            0, NULL );
+    ctokens[0] = lpMsgBuf;
+    ctokens[1] = "";
+    c_add_message(NULL,-1, ErrorType_runtime,ErrorLevel_error, gettext("OMC unable to get the Windows system directory %s%s.\n"), ctokens, 2);
+    LocalFree(lpMsgBuf);
+  }
+  return winDirectory;
+#else
+  return "";
+#endif
+}
+
 int SystemImpl__systemCall(const char* str, const char* outFile)
 {
   int status = -1,ret_val = -1;
@@ -670,7 +702,7 @@ int SystemImpl__systemCall(const char* str, const char* outFile)
   if (pID == 0) { // child
     if (*outFile) {
       /* redirect stdout, stderr in the fork'ed process */
-      int fd = open(outFile, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+      int fd = open(outFile, O_RDWR | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
       if (fd < 0) {
         _exit(1);
       }

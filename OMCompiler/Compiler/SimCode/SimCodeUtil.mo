@@ -957,7 +957,7 @@ algorithm
         simVar.name := ComponentReference.crefPrefixPrevious(cr);
         clockedVars := simVar::clockedVars;
         simEq := SimCode.SES_SIMPLE_ASSIGN(ouniqueEqIndex, simVar.name, DAE.CREF(cr, simVar.type_), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-         equations := simEq::equations;
+        equations := simEq::equations;
         ouniqueEqIndex := ouniqueEqIndex + 1;
       end if;
     end for;
@@ -989,6 +989,7 @@ algorithm
       simSubPartitions := List.map(Array.getRange(off, off + basePartition.nSubClocks - 1, subPartitions), Util.getOption);
       simSubPartitions := listReverse(simSubPartitions);
     else
+      // we should skip it and remove the base clock but that is quite complicated
       simSubPartitions := {};
     end if;
     off := off + basePartition.nSubClocks;
@@ -15796,6 +15797,7 @@ protected
   end addDockerVol;
 algorithm
   (locations, libraries) := getDirectoriesForDLLsFromLinkLibs(libs);
+  locations := listAppend({Settings.getInstallationDirectoryPath() + "/lib/${CMAKE_LIBRARY_ARCHITECTURE}/omc"}, locations); // zlib
   locations := listAppend({Settings.getInstallationDirectoryPath() + "/bin"}, locations);   // pthread located in OpenModelica/bin/ on Windows
   locations := List.map(locations, addDockerVol);
   // Use target_link_directories when CMake 3.13 is available and skip the find_library part
@@ -15803,7 +15805,7 @@ algorithm
   for lib in libraries loop
     cmakecode := cmakecode + "find_library(" + lib + "\n" +
                  "             NAMES " + lib + "\n" +
-                 "             PATHS ${EXTERNAL_LIBDIRECTORIES})\n" +
+                 "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH)\n" +
                  "message(STATUS \"Linking ${" + lib + "}\")" + "\n" +
                  "target_link_libraries(${FMU_NAME} PRIVATE ${" + lib + "})" + "\n" +
                  "list(APPEND RUNTIME_DEPENDS ${" + lib + "})" + "\n";
@@ -15879,7 +15881,7 @@ protected
   Integer numMatches;
   String cmakeVersionString;
 algorithm
-  retVal := System.systemCall(pathToCMake + " --version", cmakeVersionLogFile);
+  retVal := System.systemCallRestrictedEnv(pathToCMake + " --version", cmakeVersionLogFile);
   if 0 <> retVal then
     System.removeFile(cmakeVersionLogFile);
     Error.addInternalError("Failed to get version from " + pathToCMake, sourceInfo());
