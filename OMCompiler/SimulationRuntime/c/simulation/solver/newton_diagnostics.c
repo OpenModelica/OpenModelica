@@ -213,14 +213,15 @@ double maxNonLinearResiduals( unsigned m, unsigned l, unsigned* z_idx,
    // z_idx    : index of linear dependable in f, fx, dx
 
    double r_x0, fz_dz;
-   double maxRes = 1.e-88;
+   double maxRes = 0; // Initialize to 0 for maximum search
    unsigned i, j;
 
    for( i = 0; i < m; i++)
    {
       fz_dz = 0;
-      for( j = 0; j < l; j++)  // iteration point x0 ==> j = 1 as r_x(j-1) = f_x(j-1) + fz * (z(j) - z(j-1)) = f_x(j-1) + fz * dz(j-1)  ????
-         fz_dz += fx[i][z_idx[j]] * dx[z_idx[j]];
+      if (z_idx)
+         for( j = 0; j < l; j++)  			// iteration point x0 ==> j = 1 as r_x(j-1) = f_x(j-1) + fz * (z(j) - z(j-1)) = f_x(j-1) + fz * dz(j-1)  ????
+            fz_dz += fx[i][z_idx[j]] * dx[z_idx[j]];
 
       r_x0 = fabs(f[i] + fz_dz);
       if (r_x0 > maxRes)
@@ -783,7 +784,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
 
    unsigned* printedIdx = (unsigned*)malloc(2 * n_gt_eps * sizeof(unsigned));
    unsigned nPrinted = 0;
-   printf("      Var number    Var name                      Initial guess  max(Gamma,Sigma)\n");
+   printf("      Var number  Var name                        Initial guess  max(Gamma,Sigma)\n");
    printf("      ----------  ------------------------------  -------------  ----------------");
    for( l = 0; l < n_gt_eps; l++)
    {
@@ -925,8 +926,8 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
 
    printedIdx = (unsigned*)realloc(printedIdx, n_gt_eps * sizeof(unsigned));
    nPrinted = 0;
-   printf("      Eq number    Eq index     max(alpha,Gamma)\n");
-   printf("      ---------    ---------    ----------------");
+   printf("      Eq number   Eq index        max(alpha,Gamma)\n");
+   printf("      ----------  ------------    ----------------");
    for( l = 0; l < n_gt_eps; l++)
    {
       printedIdx[nPrinted] = -1;
@@ -940,7 +941,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
          if (!alreadyPrinted)
          {
             // Print equation l referenced by alpha and the value of alpha_i
-            printf("\n      %9d    %9d    %7.2f", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
+            printf("\n      %10d    %10d    %7.2f", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
             printedIdx[nPrinted++] = index_alpha[l];
          }
       }
@@ -956,7 +957,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
          if  (!alreadyPrinted)
          {
             // Print equation l referenced by Gamma and the value of Gamma_ljk
-            printf("\n      %9d    %9d    %7.2f", n_idx[index_Gamma_i[l]]+1,
+            printf("\n      %10d    %10d    %7.2f", n_idx[index_Gamma_i[l]]+1,
 			       systemData->eqn_simcode_indices[n_idx[index_Gamma_i[l]]],
                    Gamma_ijk[index_Gamma_i[l]][index_Gamma_j[l]][index_Gamma_k[l]]);
             printedIdx[nPrinted++] = index_Gamma_i[l];
@@ -987,7 +988,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
 // --------------------------------------------------------------------------------------------------------------------------------
 
 unsigned* getNonlinearEqns( DATA* data, threadData_t* threadData, unsigned sysNumber,
-                            unsigned m, double* x0, double* dx, unsigned* p)
+                            unsigned m, double* x0, double* dx, double* lambda, unsigned* p)
 {
    // If |f^i(x1)| > 0, then f^i is a nonlinear function
 
@@ -1000,11 +1001,50 @@ unsigned* getNonlinearEqns( DATA* data, threadData_t* threadData, unsigned sysNu
    // Calculate x1 from NewtonFirstStep data dx
    double* x1 = (double*)malloc(m * sizeof(double));
    for( i = 0; i < m; ++i)
-      x1[i] = x0[i] + dx[i];
+      x1[i] = x0[i] + *lambda * dx[i];
 
-   // Calculate residuals f_x1 for x1
+	modelica_boolean failed = TRUE;
    double* f_x1 = (double*)malloc(m * sizeof(double));
-   (systemData->residualFunc)(&resUserData, x1, f_x1, (int*)&systemData->size);
+	
+	// Try
+	#if !defined(OMC_EMCC)
+		 MMC_TRY_INTERNAL(simulationJumpBuffer)
+	#endif
+	
+	// Calculate residuals f_x1 for x1
+	(systemData->residualFunc)(&resUserData, x1, f_x1, (int*)&systemData->size);
+	
+	failed = FALSE;
+	// Catch
+	#if !defined(OMC_EMCC)
+		 MMC_CATCH_INTERNAL(simulationJumpBuffer)
+	#endif
+	
+	// Lower the dampening factor until the function call succeeds
+	while (failed) 
+	{
+  	   double d_lambda = 0.5;
+  	   printf("                              Dampening factor lowered from %7.3f to %7.3f\n", *lambda, *lambda * d_lambda);
+
+		// Handle failure
+		*lambda *= d_lambda;
+	
+		// Update x1 based on new lambda
+		for (i = 0; i < m; ++i)
+		   x1[i] = x0[i] + *lambda * dx[i];
+	
+		// Retry the function call
+		#if !defined(OMC_EMCC)
+			 MMC_TRY_INTERNAL(simulationJumpBuffer)
+		#endif
+	
+		(systemData->residualFunc)(&resUserData, x1, f_x1, (int*)&systemData->size);
+	
+		failed = FALSE;
+		#if !defined(OMC_EMCC)
+			 MMC_CATCH_INTERNAL(simulationJumpBuffer)
+		#endif
+	}
 
    // Count number of nonlinear functions, i.e. all functions satifying: |f(x1)| > eps
    *p = 0;
@@ -1108,7 +1148,7 @@ unsigned* getLinearVars( unsigned m, unsigned q, unsigned *w_idx )
 
 void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 {
-   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics (version Teus 17-02-2023) starting ....");
+   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics starting ....");
 
    printf("\n   ****** Model name: %s\n", data->modelData->modelName);
    printf("   ****** Initial                         : %d\n" , data->simulationInfo->initial);
@@ -1140,6 +1180,9 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 
  // --------------------------------------------------------------------------------------------------------------------------------
 
+   // Damping factor
+   double lambda = 1.0;
+
    // m: total number of equations f(x)
    // p: number of non-linear equations n(x)
    // q: number of variables on which non-linear equations n(x) just depend
@@ -1166,8 +1209,8 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
    // Get Hessian fxx from numerical differentiation of fx
    double*** fxx = getHessian( data, threadData, sysNumber, m);
 
-   // Obtain function values of non-linear functions "n", i.e. residuals as function of w0
-   unsigned* n_idx = getNonlinearEqns(data, threadData, sysNumber, m, x0, dx, &p);
+   // Obtain indices of non-linear functions "n" (p is the number of non-linear functions)
+   unsigned* n_idx = getNonlinearEqns(data, threadData, sysNumber, m, x0, dx, &lambda, &p);
 
    // Obtain vector "w0": initial guesses of vars where Jacobian matrix J(w) of f(x) only depends on
    unsigned* w_idx = getNonlinearVars( m, fxx, &q);
@@ -1218,9 +1261,10 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
       printf("\n");
    }
 
-   double lambda = 1.0; // 0.49; //
+   // Reset damping factor lambda by hand in order to reproduce/obtain the values in the paper
+   // lambda = 0.49;
+   
    printf("\n   Damping factor lambda = %6.3g\n", lambda);
-
    printf("\n\n");
 
 // --------------------------------------------------------------------------------------------------------------------------------
@@ -1256,7 +1300,8 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 
    free(n_idx);
    free(w_idx);
-   free(z_idx);
+   if (z_idx) 
+      free(z_idx);
 
    free(alpha);
 
@@ -1272,7 +1317,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
       free(Sigma[i]);
    free(Sigma);
 
-   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics (version Teus 17-02-2023) finished!!");
+   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics finished!!");
 
    return;
 }
