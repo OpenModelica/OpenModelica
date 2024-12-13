@@ -296,7 +296,11 @@ find_package(Qt${OM_QT_MAJOR_VERSION} REQUIRED COMPONENTS LinguistTools)
 # Create the output folder, lrelease doesn't do it automatically.
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Resources/nls)
 set_source_files_properties(${TS_FILES} PROPERTIES OUTPUT_LOCATION "Resources/nls")
-qt_add_translation(OMEDITLIB_TRANSLATIONS ${TS_FILES})
+if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
+  qt_add_translation(OMEDITLIB_TRANSLATIONS ${TS_FILES})
+else()
+  qt5_add_translation(OMEDITLIB_TRANSLATIONS ${TS_FILES})
+endif()
 
 # Add the OpenModelica generated files to sources
 set(OMEDITLIB_HEADERS ${OMEDITLIB_HEADERS} ${OMCompiler_SOURCE_DIR}/Compiler/Script/OpenModelicaScriptingAPIQt.h)
