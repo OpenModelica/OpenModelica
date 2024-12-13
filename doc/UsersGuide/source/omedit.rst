@@ -790,7 +790,7 @@ Simulation Flags
 
   -  *LOG_NLS_JAC_TEST* - tests the analytical jacobian of nonlinear systems.
 
-  -  *LOG_NLS_NEWTON_DIAG* - Log Newton diagnostics. A Diagnostic method to figure out
+  -  *LOG_NLS_NEWTON_DIAGNOSTICS* - Log Newton diagnostics. A Diagnostic method to figure out
      which individual initial guess values are more likely to be causing the convergence
      failure of Newton-type iterative nonlinear solvers.
 
