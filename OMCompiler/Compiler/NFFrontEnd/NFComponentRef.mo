@@ -1240,7 +1240,7 @@ public
     if format.scalarizeMode == BaseModelica.ScalarizeMode.NOT_SCALARIZED then
       while not listEmpty(crefs) loop
         cr :: crefs := crefs;
-        strl := firstName(cr, baseModelica = true) :: strl;
+        strl := Util.escapeQuotes(firstName(cr, baseModelica = true)) :: strl;
         subs := listAppend(getSubscripts(cr), subs);
 
         if format.recordMode == BaseModelica.RecordMode.WITH_RECORDS and isCref(cr) and
@@ -1262,7 +1262,7 @@ public
     else
       while not listEmpty(crefs) loop
         cr :: crefs := crefs;
-        strl := firstName(cr, baseModelica = true) :: strl;
+        strl := Util.escapeQuotes(firstName(cr, baseModelica = true)) :: strl;
         subs := getSubscripts(cr);
 
         if not listEmpty(subs) and

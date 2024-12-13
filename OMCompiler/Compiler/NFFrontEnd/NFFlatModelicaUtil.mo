@@ -233,7 +233,7 @@ encapsulated package NFFlatModelicaUtil
           str := Dump.printComponentRefStr(exp.componentRef);
 
           if str <> "time" then
-            str := "'" + str + "'";
+            str := Util.makeQuotedIdentifier(str);
             exp.componentRef := Absyn.ComponentRef.CREF_IDENT(str, {});
           end if;
         then

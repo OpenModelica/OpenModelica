@@ -2003,7 +2003,7 @@ public
         then if Type.isBuiltinEnumeration(t) then
             AbsynUtil.pathString(t.typePath) + "." + exp.name
           else
-            "'" + AbsynUtil.pathString(t.typePath) + "'.'" + exp.name + "'";
+            Util.makeQuotedIdentifier(AbsynUtil.pathString(t.typePath)) + "." + Util.makeQuotedIdentifier(exp.name);
 
       case CLKCONST(clk) then ClockKind.toFlatString(clk, format);
 
