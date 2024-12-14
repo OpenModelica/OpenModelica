@@ -11,7 +11,6 @@ if(MINGW)
   find_package(binutils REQUIRED)
 endif()
 
-
 omc_add_subdirectory(Debugger/Parser)
 
 set(CMAKE_AUTOMOC ON)
@@ -342,13 +341,6 @@ if (OM_OMEDIT_ENABLE_QTWEBENGINE OR OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
   target_compile_definitions(OMEditLib PUBLIC OM_OMEDIT_ENABLE_QTWEBENGINE)
 else ()
   target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::WebKitWidgets)
-endif ()
-
-if (OM_OMEDIT_ENABLE_LIBXML2 OR OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
-  target_link_libraries(OMEditLib PUBLIC LibXml2::LibXml2)
-  target_compile_definitions(OMEditLib PUBLIC OM_OMEDIT_ENABLE_LIBXML2)
-else ()
-  target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::XmlPatterns)
 endif ()
 
 target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::OpenGL)

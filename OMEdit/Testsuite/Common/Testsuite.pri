@@ -39,12 +39,7 @@ equals(QT_MAJOR_VERSION, 6) {
     }
   }
 } else {
-  QT += xmlpatterns webkit webkitwidgets
-}
-
-_OM_OMEDIT_ENABLE_LIBXML2 = $$(OM_OMEDIT_ENABLE_LIBXML2)
-equals(_OM_OMEDIT_ENABLE_LIBXML2, ON) {
-  QMAKE_CXXFLAGS += -DOM_OMEDIT_ENABLE_LIBXML2
+  QT += webkit webkitwidgets
 }
 
 OMEDIT_ROOT = ../../

@@ -44,7 +44,7 @@ equals(QT_MAJOR_VERSION, 6) {
     }
   }
 } else {
-  QT += xmlpatterns webkit webkitwidgets
+  QT += webkit webkitwidgets
 }
 
 # Set the C++ standard.
@@ -53,11 +53,6 @@ CONFIG += c++17
 CONFIG += warn_on
 
 DEFINES += OM_HAVE_PTHREADS
-
-_OM_OMEDIT_ENABLE_LIBXML2 = $$(OM_OMEDIT_ENABLE_LIBXML2)
-equals(_OM_OMEDIT_ENABLE_LIBXML2, ON) {
-  QMAKE_CXXFLAGS += -DOM_OMEDIT_ENABLE_LIBXML2
-}
 
 win32 {
   _cxx = $$(CXX)
