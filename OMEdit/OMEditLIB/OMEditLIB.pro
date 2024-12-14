@@ -85,10 +85,6 @@ INCLUDEPATH += . ../ \
   $$OPENMODELICAHOME/../OMParser/ \
   $$OPENMODELICAHOME/../OMParser/3rdParty/antlr4/runtime/Cpp/runtime/src
 
-contains(QMAKE_CXXFLAGS, -DOM_OMEDIT_ENABLE_LIBXML2) {
-  INCLUDEPATH += $$(MSYSTEM_PREFIX)/include/libxml2
-}
-
 SOURCES += Util/Helper.cpp \
   Util/Utilities.cpp \
   Util/StringHandler.cpp \

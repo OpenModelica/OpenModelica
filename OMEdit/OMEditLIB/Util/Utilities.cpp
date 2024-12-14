@@ -48,14 +48,6 @@
 #include <QColorDialog>
 #include <QDir>
 #include <QRegExp>
-#ifdef OM_OMEDIT_ENABLE_LIBXML2
-#include <libxml/parser.h>
-#include <libxml/valid.h>
-#else
-#include <QXmlSchema>
-#include <QXmlSchemaValidator>
-#endif
-
 
 extern "C" {
 extern const char* System_openModelicaPlatform();
@@ -955,31 +947,6 @@ bool Utilities::isModelicaFile(QString extension)
   } else {
     return false;
   }
-}
-
-/*!
- * \brief Utilities::getRotationMatrix
- * Computes the corresponding rotation matrix for specified rotation vector
- * \param rotation Rotation vector with Euler angles
- * \return
- */
-QGenericMatrix<3,3, double> Utilities::getRotationMatrix(QGenericMatrix<3,1,double> rotation)
-{
-  double c1 = cos(rotation(0,0));
-  double s1 = sin(rotation(0,0));
-  double c2 = cos(rotation(0,1));
-  double s2 = sin(rotation(0,1));
-  double c3 = cos(rotation(0,2));
-  double s3 = sin(rotation(0,2));
-
-  double R_data[9];
-  R_data[0] = c2*c3;             R_data[1] = c2*s3;              R_data[2] = -s2;
-  R_data[3] = -c1*s3+s1*s2*c3;   R_data[4] = c1*c3+s1*s2*s3;     R_data[5] = s1*c2;
-  R_data[6] = s1*s3+c1*s2*c3;    R_data[7] = -s1*c3+c1*s2*s3;    R_data[8] = c1*c2;
-
-  QGenericMatrix<3,3,double> R(R_data);
-
-  return R;
 }
 
 QString Utilities::getGDBPath()
