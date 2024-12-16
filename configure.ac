@@ -62,4 +62,4 @@ if test ! -z "$USE_CORBA"; then
   AC_CONFIG_SUBDIRS([OMOptim])
 fi
 
-AC_OUTPUT([Makefile])
+AC_OUTPUT(Makefile)
