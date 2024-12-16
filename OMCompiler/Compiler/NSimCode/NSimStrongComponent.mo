@@ -739,13 +739,9 @@ public
     algorithm
       blck := match (eqn, slice.indices)
         local
-          Type ty;
-          Operator operator;
-          Expression lhs, rhs;
           Block tmp;
           list<ComponentRef> names;
           list<Expression> ranges;
-          Pointer<list<Pointer<Equation>>> record_residuals;
 
         case (BEquation.SCALAR_EQUATION(), {}) algorithm
           tmp := RESIDUAL(simCodeIndices.equationIndex, res_idx, eqn.rhs, eqn.source, eqn.attr);
@@ -766,18 +762,16 @@ public
         // for equations have to be split up before. Since they are not causalized
         // they can be executed in any order
         case (BEquation.FOR_EQUATION(body = {_}), {}) algorithm
-          rhs := Equation.getRHS(eqn);
           (names, ranges) := Iterator.getFrames(eqn.iter);
-          tmp := FOR_RESIDUAL(simCodeIndices.equationIndex, res_idx, List.zip(names, ranges), rhs, eqn.source, eqn.attr);
+          tmp := FOR_RESIDUAL(simCodeIndices.equationIndex, res_idx, List.zip(names, ranges), Equation.getRHS(eqn), eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
           res_idx := res_idx + Equation.size(Slice.getT(slice));
         then tmp;
 
         // generic residual, for loop could not be fully recovered
         case (BEquation.FOR_EQUATION(body = {_}), _) algorithm
-          rhs := Equation.getRHS(eqn);
           (names, ranges) := Iterator.getFrames(eqn.iter);
-          tmp := GENERIC_RESIDUAL(simCodeIndices.equationIndex, res_idx, slice.indices, List.zip(names, ranges), rhs, eqn.source, eqn.attr);
+          tmp := GENERIC_RESIDUAL(simCodeIndices.equationIndex, res_idx, slice.indices, List.zip(names, ranges), Equation.getRHS(eqn), eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
           res_idx := res_idx + listLength(slice.indices);
         then tmp;
