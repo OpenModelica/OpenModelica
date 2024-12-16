@@ -35,13 +35,7 @@ equals(QT_MAJOR_VERSION, 6) {
     # disable documentation since we don't have webkit on qt6 and webengine is not yet supported.
     QMAKE_CXXFLAGS += -DOM_DISABLE_DOCUMENTATION
   } else {
-    _OM_OMEDIT_ENABLE_QTWEBENGINE = $$(OM_OMEDIT_ENABLE_QTWEBENGINE)
-    equals(_OM_OMEDIT_ENABLE_QTWEBENGINE, ON) {
-      QMAKE_CXXFLAGS += -DOM_OMEDIT_ENABLE_QTWEBENGINE
-      QT += WebEngineWidgets
-    } else {
-      QMAKE_CXXFLAGS += -DOM_DISABLE_DOCUMENTATION
-    }
+    QT += webenginewidgets
   }
 } else {
   QT += webkit webkitwidgets

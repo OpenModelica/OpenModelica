@@ -28,6 +28,11 @@
  #
  #/
 
+# Unix libraries and includes
+!win32 {
+  include(OMEditLIB.unix.config.pri)
+}
+
 include(../OMEdit.config.pre.pri)
 
 DESTDIR = ../bin
@@ -67,8 +72,6 @@ win32 {
   host_short =
 
   CONFIG += osg
-} else { # Unix libraries and includes
-  include(OMEditLIB.unix.config.pri)
 }
 
 INCLUDEPATH += . ../ \

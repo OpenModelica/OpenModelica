@@ -384,7 +384,11 @@ void buildGUI(stash, qtVersion) {
   if (stash) {
     patchConfigStatus()
   }
-  sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
+  if (qtVersion.equals('qt6')) {
+    sh 'echo ./configure --with-qt6 `./config.status --config` > config.status.2 && bash ./config.status.2'
+  } else {
+    sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
+  }
   // compile OMSens_Qt for Qt5 and Qt6
   if (qtVersion.equals('qt6') || qtVersion.equals('qt5')) {
     sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt" // Pretend we already built omc since we already did so

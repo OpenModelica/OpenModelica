@@ -517,7 +517,24 @@ pipeline {
             script {
               common.buildGUI('omc-clang', 'qt5')
             }
-            stash name: 'omedit-testsuite-clang', includes: 'build/**, **/config.status, OMEdit/**'
+            stash name: 'omedit-testsuite-clang-qt5', includes: 'build/**, **/config.status, OMEdit/**'
+          }
+        }
+
+        stage('11 build-gui-clang-qt6') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              label 'linux'
+              alwaysPull true
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+            }
+          }
+          steps {
+            script {
+              common.buildGUI('omc-clang', 'qt6')
+            }
+            stash name: 'omedit-testsuite-clang-qt6', includes: 'build/**, **/config.status, OMEdit/**'
           }
         }
 
@@ -561,7 +578,7 @@ pipeline {
           }
         }
 
-        stage('11 testsuite-clang-parmod') {
+        stage('12 testsuite-clang-parmod') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:v1.22.2'
@@ -583,7 +600,7 @@ pipeline {
           }
         }
 
-        stage('12 testsuite-clang-metamodelica') {
+        stage('13 testsuite-clang-metamodelica') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:v1.22.2'
@@ -601,7 +618,7 @@ pipeline {
           }
         }
 
-        stage('13 testsuite-matlab-translator') {
+        stage('14 testsuite-matlab-translator') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:v1.22.2'
@@ -623,7 +640,7 @@ pipeline {
           }
         }
 
-        stage('14 test-clang-icon-generator') {
+        stage('15 test-clang-icon-generator') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:v1.22.2'
@@ -774,7 +791,26 @@ pipeline {
           }
           steps {
             script {
-              common.buildAndRunOMEditTestsuite('omedit-testsuite-clang', 'qt5')
+              common.buildAndRunOMEditTestsuite('omedit-testsuite-clang-qt5', 'qt5')
+            }
+          }
+        }
+        stage('clang-qt6-omedit-testsuite') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              label 'linux'
+              alwaysPull true
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+            }
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
+          steps {
+            script {
+              common.buildAndRunOMEditTestsuite('omedit-testsuite-clang-qt6', 'qt6')
             }
           }
         }
