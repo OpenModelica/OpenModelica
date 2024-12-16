@@ -941,7 +941,11 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
          if (!alreadyPrinted)
          {
             // Print equation l referenced by alpha and the value of alpha_i
-            printf("\n      %10d    %10d    %7.2f", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
+            if (alpha[index_alpha[l]] < 1.e5)
+               printf("\n      %10d    %10d    %7.2f", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
+            else
+               printf("\n      %10d    %10d    %7.2e", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
+
             printedIdx[nPrinted++] = index_alpha[l];
          }
       }
@@ -1023,7 +1027,7 @@ unsigned* getNonlinearEqns( DATA* data, threadData_t* threadData, unsigned sysNu
 	// Lower the dampening factor until the function call succeeds
 	while (failed) 
 	{
-  	   double d_lambda = 0.5;
+  	   double d_lambda = 0.7;
   	   printf("                              Dampening factor lowered from %7.3f to %7.3f\n", *lambda, *lambda * d_lambda);
 
 		// Handle failure
@@ -1261,9 +1265,6 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
       printf("\n");
    }
 
-   // Reset damping factor lambda by hand in order to reproduce/obtain the values in the paper
-   // lambda = 0.49;
-   
    printf("\n   Damping factor lambda = %6.3g\n", lambda);
    printf("\n\n");
 
