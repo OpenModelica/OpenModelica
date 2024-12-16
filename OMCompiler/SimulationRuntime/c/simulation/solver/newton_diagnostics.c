@@ -623,9 +623,9 @@ double** calcSigma( unsigned m, unsigned q, unsigned* w_idx,
 void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsigned q, unsigned* n_idx, unsigned* w_idx,
                    double* x0, double* alpha, double*** Gamma_ijk, double** Sigma_ij)
 {
-   printf("  \n   ========================================================");
-   printf("  \n   Final results ");
-   printf("  \n   ========================================================\n\n");
+   printf("   ========================================================\n");
+   printf("   Final results\n");
+   printf("   ========================================================\n\n");
 
    NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
 
@@ -1005,41 +1005,41 @@ unsigned* getNonlinearEqns( DATA* data, threadData_t* threadData, unsigned sysNu
 
 	modelica_boolean failed = TRUE;
    double* f_x1 = (double*)malloc(m * sizeof(double));
-	
+
 	// Try
 	#if !defined(OMC_EMCC)
 		 MMC_TRY_INTERNAL(simulationJumpBuffer)
 	#endif
-	
+
 	// Calculate residuals f_x1 for x1
 	(systemData->residualFunc)(&resUserData, x1, f_x1, (int*)&systemData->size);
-	
+
 	failed = FALSE;
 	// Catch
 	#if !defined(OMC_EMCC)
 		 MMC_CATCH_INTERNAL(simulationJumpBuffer)
 	#endif
-	
+
 	// Lower the dampening factor until the function call succeeds
-	while (failed) 
+	while (failed)
 	{
   	   double d_lambda = 0.5;
   	   printf("                              Dampening factor lowered from %7.3f to %7.3f\n", *lambda, *lambda * d_lambda);
 
 		// Handle failure
 		*lambda *= d_lambda;
-	
+
 		// Update x1 based on new lambda
 		for (i = 0; i < m; ++i)
 		   x1[i] = x0[i] + *lambda * dx[i];
-	
+
 		// Retry the function call
 		#if !defined(OMC_EMCC)
 			 MMC_TRY_INTERNAL(simulationJumpBuffer)
 		#endif
-	
+
 		(systemData->residualFunc)(&resUserData, x1, f_x1, (int*)&systemData->size);
-	
+
 		failed = FALSE;
 		#if !defined(OMC_EMCC)
 			 MMC_CATCH_INTERNAL(simulationJumpBuffer)
@@ -1245,7 +1245,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
    printf("\n");
 
    // Prints vector w0
-   printf("\n   Vector w0: non-linear dependents .... \n");
+   printf("\n   Vector w0: non-linear dependents ....\n");
    for( i = 0; i < q; i++)
       printf("\n               w0[%d] = x0[%d] = %14.10f  (%s)", i, w_idx[i], x0[w_idx[i]],
               data->modelData->realVarsData[var_id(w_idx[i], data, systemData)].info.name);
@@ -1263,7 +1263,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 
    // Reset damping factor lambda by hand in order to reproduce/obtain the values in the paper
    // lambda = 0.49;
-   
+
    printf("\n   Damping factor lambda = %6.3g\n", lambda);
    printf("\n\n");
 
@@ -1300,7 +1300,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 
    free(n_idx);
    free(w_idx);
-   if (z_idx) 
+   if (z_idx)
       free(z_idx);
 
    free(alpha);

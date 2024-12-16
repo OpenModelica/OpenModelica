@@ -1225,8 +1225,8 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* Improve start values with newton diagnostics method */
-  if(omc_flag[FLAG_NEWTON_DIAGNOSTICS] && data->simulationInfo->initial && sysNumber == 0) {
-    infoStreamPrint(OMC_LOG_NLS, 0, "Running newton diagnostics");
+  if(omc_flag[FLAG_NEWTON_DIAGNOSTICS] && data->simulationInfo->initial) {
+    infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Running newton diagnostics for system %ld", nonlinsys->equationIndex);
     newtonDiagnostics(data, threadData, sysNumber);
   }
 #endif
