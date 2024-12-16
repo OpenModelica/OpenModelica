@@ -1413,8 +1413,19 @@ public
             local
               IfEquationBody body;
             case SOME(body) algorithm
-              eq.body := body;
-            then eq;
+              if isNone(body.else_if) and not List.hasSeveralElements(body.then_eqns) then
+                // first if-branch is true and has only one equation
+                // just replace if-equation with body
+                new_eq := Pointer.access(List.first(body.then_eqns));
+              else
+                eq.body := body;
+                try
+                  new_eq := IfEquationBody.inline(body, eq);
+                else
+                  new_eq := eq;
+                end try;
+              end if;
+            then new_eq;
             else Equation.DUMMY_EQUATION();
           end match;
         then new_eq;
@@ -2494,7 +2505,7 @@ public
       Expression lhs, rhs;
     algorithm
       lhs := getLHS(body);
-      rhs := getRHS(body);
+      rhs := SimplifyExp.simplify(getRHS(body));
       eqn := Equation.makeAssignmentUpdate(eqn, lhs, rhs, Equation.getForIterator(eqn), Equation.getAttributes(eqn));
     end inline;
 
@@ -2568,36 +2579,23 @@ public
     end split;
 
     function simplify
+      "removes unreachable branches by looking at literal conditions"
       input output Option<IfEquationBody> body;
-      input Integer depth = 1;
-      input Boolean done = false;
     algorithm
       body := match body
         local
           IfEquationBody b;
-          Expression condition;
-          list<Expression> conditions;
 
         case SOME(b) algorithm
-          if done then
-            b.condition := Expression.END();
-            b.else_if := NONE();
-          end if;
           // if the condition is True -> cut later unreachable branches
           if Expression.isTrue(b.condition) then
-            // FIXME can't yet handle removing the IF altogether so at least two branches have to remain.
-            if depth >= 2 then
-              b.condition := Expression.END();
-              b.else_if := NONE();
-            else
-              b.else_if := simplify(b.else_if, depth + 1, true);
-            end if;
+            b.condition := Expression.END();
+            b.else_if := NONE();
           else
-            b.else_if := simplify(b.else_if, depth + 1);
+            b.else_if := simplify(b.else_if);
           end if;
           // if the condition is False -> skip this unreachable branch
-          // FIXME can't yet handle removing the IF altogether so at least two branches have to remain.
-          if Expression.isFalse(b.condition) and depth - 1 + numberOfBranches(b.else_if) >= 2 then
+          if Expression.isFalse(b.condition) then
             body := b.else_if;
           else
             body := SOME(b);
@@ -2608,18 +2606,6 @@ public
         else body;
       end match;
     end simplify;
-
-    function numberOfBranches
-      input Option<IfEquationBody> body;
-      output Integer numBranches;
-    algorithm
-      numBranches := match body
-        local
-          IfEquationBody b;
-        case SOME(b) then 1 + numberOfBranches(b.else_if);
-        else 0;
-      end match;
-    end numberOfBranches;
 
     function isRecordOrTupleEquation
       "only checks first layer body if it returns multiple variables"
