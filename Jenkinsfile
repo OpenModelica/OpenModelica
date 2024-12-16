@@ -149,7 +149,7 @@ pipeline {
         stage('cmake-jammy-gcc') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.3-qttools'
+              image 'docker.openmodelica.org/build-deps:v1.22.2-qttools'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
