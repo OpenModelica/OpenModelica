@@ -433,17 +433,25 @@ void buildAndRunOMEditTestsuite(stash, qtVersion) {
   if (stash) {
     patchConfigStatus()
   }
-  sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
+  if (qtVersion.equals('qt6')) {
+    sh 'echo ./configure --with-qt6 `./config.status --config` > config.status.2 && bash ./config.status.2'
+  } else {
+    sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
+  }
   if (stash) {
     makeLibsAndCache()
   }
   sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omedit omplot omparser" // Pretend we already built omc since we already did so
   sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync=recurse omedit-testsuite" // Builds the OMEdit testsuite
-  sh label: 'RunOMEditTestsuite', script: '''
-  HOME="\$PWD/libraries"
-  cd build/bin
-  xvfb-run ./RunOMEditTestsuite.sh
-  '''
+  if (qtVersion.equals('qt6')) {
+    // OMEdit compiled with Qt6 crashes in webengine libs on ubuntu
+  } else {
+    sh label: 'RunOMEditTestsuite', script: '''
+    HOME="\$PWD/libraries"
+    cd build/bin
+    xvfb-run ./RunOMEditTestsuite.sh
+    '''
+    }
   }
 }
 
