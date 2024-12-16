@@ -46,9 +46,6 @@
 #include "Options/NotificationsDialog.h"
 #include "ModelicaClassDialog.h"
 #include "Git/GitCommands.h"
-#if !defined(WITHOUT_OSG)
-#include "Animation/ThreeDViewer.h"
-#endif
 #include "OMS/OMSProxy.h"
 #include "OMS/ModelDialog.h"
 #include "OMS/BusDialog.h"

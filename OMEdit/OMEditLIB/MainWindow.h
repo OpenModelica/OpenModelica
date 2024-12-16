@@ -74,9 +74,6 @@ class GDBLoggerWidget;
 class DocumentationWidget;
 class PlotWindowContainer;
 class VariablesWidget;
-#if !defined(WITHOUT_OSG)
-class ThreeDViewer;
-#endif
 class BreakpointsWidget;
 class SimulationDialog;
 class OMSSimulationDialog;
