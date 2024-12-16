@@ -588,8 +588,13 @@ void SimulationOutputWidget::compileModel()
     args << "-j" + numProcs;
   }
   args << "-f" << mSimulationOptions.getOutputFileName() + ".makefile";
+#  if !defined(__FreeBSD__)
   writeCompilationOutput(QString("%1 %2\n").arg("make").arg(args.join(" ")), Qt::blue);
   mpCompilationProcess->start("make", args);
+#  else
+  writeCompilationOutput(QString("%1 %2\n").arg("gmake").arg(args.join(" ")), Qt::blue);
+  mpCompilationProcess->start("gmake", args);
+#  endif
 #endif
 }
 
