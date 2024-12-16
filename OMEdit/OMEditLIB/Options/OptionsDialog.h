@@ -298,7 +298,10 @@ public:
   void setWelcomePageView(int view);
   QCheckBox* getShowLatestNewsCheckBox() {return mpShowLatestNewsCheckBox;}
   QSpinBox* getRecentFilesAndLatestNewsSizeSpinBox() {return mpRecentFilesAndLatestNewsSizeSpinBox;}
+protected:
+  QCheckBox* getEnableCRMLSupportCheckBox() {return mpEnableCRMLSupportCheckBox;}
 private:
+  friend class OptionsDialog;
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralSettingsGroupBox;
   Label *mpLanguageLabel;
@@ -319,6 +322,7 @@ private:
   QComboBox *mpActivateAccessAnnotationsComboBox;
   QCheckBox *mpCreateBackupFileCheckbox;
   QCheckBox *mpDisplayNFAPIErrorsWarningsCheckBox;
+  QCheckBox *mpEnableCRMLSupportCheckBox;
   QGroupBox *mpLibraryBrowserGroupBox;
   Label *mpLibraryIconSizeLabel;
   QSpinBox *mpLibraryIconSizeSpinBox;
@@ -1113,7 +1117,7 @@ public:
   DirectoryOrFileSelector* getModelicaLibraries() {return mpModelicaLibraries;}
 private:
   OptionsDialog *mpOptionsDialog;
-  QGroupBox *mpGroupBox;
+  QGroupBox *mpCRMLGroupBox;
   Label *mpCompilerJarLabel;
   QLineEdit *mpCompilerJarTextBox;
   QPushButton *mpBrowseCompilerJarButton;
