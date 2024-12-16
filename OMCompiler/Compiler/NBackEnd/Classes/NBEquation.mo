@@ -1588,7 +1588,7 @@ public
       eqn := match eqn
         case IF_EQUATION() algorithm
           eqn.body := IfEquationBody.createResidual(eqn.body, residualCref);
-        then eqn;
+        then IfEquationBody.inline(eqn.body, eqn);
         else algorithm
           // update RHS and LHS
           lhs := Expression.fromCref(residualCref);
@@ -2546,9 +2546,7 @@ public
     end getRHS;
 
     function split
-      "splits an if equation body with multiple equations into multiple bodies of each one equation
-      NOTE: does not care for branch matching, it combines first equation of each branch to one
-      new body and does the same for second, third, etc."
+      "splits an if equation body with multiple equations into multiple bodies of each one equation."
       input IfEquationBody body;
       output list<IfEquationBody> bodies = {};
     protected
