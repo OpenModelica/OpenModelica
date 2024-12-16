@@ -32,8 +32,7 @@ QT += network core gui xml svg opengl printsupport widgets concurrent testlib
 equals(QT_MAJOR_VERSION, 6) {
   QT += core5compat openglwidgets
   !win32 {
-      QT += webenginewidgets
-    }
+    QT += webenginewidgets
   }
 } else {
   QT += webkit webkitwidgets
