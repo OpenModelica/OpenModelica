@@ -132,7 +132,6 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Animation/AbstractAnimationWindow.cpp
                       Animation/ViewerWidget.cpp
                       Animation/AnimationWindow.cpp
-                      Animation/ThreeDViewer.cpp
                       Animation/ExtraShapes.cpp
                       Animation/Visualization.cpp
                       Animation/VisualizationMAT.cpp
@@ -144,7 +143,6 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Animation/Shape.cpp
                       Animation/Vector.cpp
                       resource_omedit.qrc)
-
 
 set(OMEDITLIB_HEADERS Util/Helper.h
                       Util/Utilities.h
@@ -266,7 +264,6 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Animation/AbstractAnimationWindow.h
                       Animation/ViewerWidget.h
                       Animation/AnimationWindow.h
-                      Animation/ThreeDViewer.h
                       Animation/AnimationUtil.h
                       Animation/ExtraShapes.h
                       Animation/Visualization.h

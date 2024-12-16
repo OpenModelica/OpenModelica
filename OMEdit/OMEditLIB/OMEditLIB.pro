@@ -326,7 +326,6 @@ CONFIG(osg) {
   SOURCES += Animation/AbstractAnimationWindow.cpp \
     Animation/ViewerWidget.cpp \
     Animation/AnimationWindow.cpp \
-    Animation/ThreeDViewer.cpp \
     Animation/ExtraShapes.cpp \
     Animation/Visualization.cpp \
     Animation/VisualizationMAT.cpp \
