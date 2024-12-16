@@ -107,6 +107,8 @@ public:
   void setDebug(bool debug) {mDebug = debug;}
   bool isNewApiProfiling() const {return mNewApiProfiling;}
   void setNewApiProfiling(bool newApiProfiling);
+  bool isCRMLEnabled() const {return mCRMLEnabled;}
+  void setCRMLEnabled(bool crmlEnabled) {mCRMLEnabled = crmlEnabled;}
   bool isTestsuiteRunning() const {return mTestsuiteRunning;}
   void setTestsuiteRunning(bool testsuiteRunning) {mTestsuiteRunning = testsuiteRunning;}
   OMCProxy* getOMCProxy() {return mpOMCProxy;}
@@ -259,9 +261,10 @@ public:
   QList<QString> mMOLDirectoriesList;
 private:
   bool mDebug;
-  bool mNewApiProfiling;
+  bool mNewApiProfiling = false;
   FILE *mpNewApiProfilingFile = nullptr;
-  bool mTestsuiteRunning;
+  bool mCRMLEnabled = false;
+  bool mTestsuiteRunning = false;
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
   int mNumberOfProcessors;

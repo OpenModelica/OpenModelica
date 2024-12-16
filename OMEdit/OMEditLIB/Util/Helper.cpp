@@ -935,6 +935,8 @@ QString GUIMessages::getMessage(int type)
     case VISUALIZATION_VECTORS_SCALING_ZOOMED_OUT_SCENE_TOO_MUCH:
       return tr("Automatically-adjusted vector length scales zoomed out the scene too much. "
                 "Home position will be reset as if adjustable-length vectors were not drawn.");
+    case CRML_SUPPORT:
+      return tr("CRML support is not enabled. Please enable it in <b>%1->General->Enable CRML Support</b> and restart OMEdit.").arg(Helper::toolsOptionsPath);
     default:
       return "";
   }

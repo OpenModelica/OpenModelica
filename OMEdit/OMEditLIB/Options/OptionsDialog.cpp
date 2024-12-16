@@ -253,6 +253,13 @@ void OptionsDialog::readGeneralSettings()
   } else {
     mpGeneralSettingsPage->getDisplayNFAPIErrorsWarningsCheckBox()->setChecked(OptionsDefaults::GeneralSettings::displayNFAPIErrorsWarnings);
   }
+  // read enable CRML support
+  if (mpSettings->contains("enableCRMLSupport")) {
+    mpGeneralSettingsPage->getEnableCRMLSupportCheckBox()->setChecked(mpSettings->value("enableCRMLSupport").toBool());
+  } else {
+    mpGeneralSettingsPage->getEnableCRMLSupportCheckBox()->setChecked(OptionsDefaults::GeneralSettings::enableCRMLSupport);
+  }
+  MainWindow::instance()->setCRMLEnabled(mpGeneralSettingsPage->getEnableCRMLSupportCheckBox()->isChecked());
   // read library icon size
   if (mpSettings->contains("libraryIconSize")) {
     mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->setValue(mpSettings->value("libraryIconSize").toInt());
@@ -1567,6 +1574,13 @@ void OptionsDialog::saveGeneralSettings()
     mpSettings->remove("createBackupFile");
   } else {
     mpSettings->setValue("createBackupFile", createBackupFile);
+  }
+  // save enable CRML support
+  bool enableCRMLSupport = mpGeneralSettingsPage->getEnableCRMLSupportCheckBox()->isChecked();
+  if (enableCRMLSupport == OptionsDefaults::GeneralSettings::enableCRMLSupport) {
+    mpSettings->remove("enableCRMLSupport");
+  } else {
+    mpSettings->setValue("enableCRMLSupport", enableCRMLSupport);
   }
   // save library icon size
   int libraryIconSize = mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->value();
@@ -3513,6 +3527,9 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpCreateBackupFileCheckbox->setChecked(OptionsDefaults::GeneralSettings::createBackupFile);
   /* Display errors/warnings when new instantiation fails in evaluating graphical annotations */
   mpDisplayNFAPIErrorsWarningsCheckBox = new QCheckBox(tr("Display errors/warnings when instantiating the graphical annotations"));
+  // Enable CRML support
+  mpEnableCRMLSupportCheckBox = new QCheckBox(tr("Enable CRML Support *"));
+  mpEnableCRMLSupportCheckBox->setChecked(OptionsDefaults::GeneralSettings::enableCRMLSupport);
   // set the layout of general settings group
   QGridLayout *pGeneralSettingsLayout = new QGridLayout;
   pGeneralSettingsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -3534,6 +3551,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pGeneralSettingsLayout->addWidget(mpActivateAccessAnnotationsComboBox, 7, 1, 1, 2);
   pGeneralSettingsLayout->addWidget(mpCreateBackupFileCheckbox, 8, 0, 1, 3);
   pGeneralSettingsLayout->addWidget(mpDisplayNFAPIErrorsWarningsCheckBox, 9, 0, 1, 3);
+  pGeneralSettingsLayout->addWidget(mpEnableCRMLSupportCheckBox, 10, 0, 1, 3);
   mpGeneralSettingsGroupBox->setLayout(pGeneralSettingsLayout);
   // Library Browser group box
   mpLibraryBrowserGroupBox = new QGroupBox(tr("Library Browser"));
@@ -6771,7 +6789,7 @@ CRMLPage::CRMLPage(OptionsDialog *pOptionsDialog)
   : QWidget(pOptionsDialog)
 {
   mpOptionsDialog = pOptionsDialog;
-  mpGroupBox = new QGroupBox(Helper::crml);
+  mpCRMLGroupBox = new QGroupBox(Helper::crml);
   // CRML compiler jar file
   mpCompilerJarLabel = new Label(tr("Compiler Jar:"));
   mpCompilerJarTextBox = new QLineEdit(OptionsDefaults::CRML::compilerJar);
@@ -6804,10 +6822,10 @@ CRMLPage::CRMLPage(OptionsDialog *pOptionsDialog)
   pCRMLLayout->addWidget(mpBrowseCompilerProcessButton, 2, 2);
   pCRMLLayout->addWidget(mpResetCompilerProcessButton, 2, 3);
   pCRMLLayout->addWidget(mpModelicaLibraries, 3, 0, 1, 4);
-  mpGroupBox->setLayout(pCRMLLayout);
+  mpCRMLGroupBox->setLayout(pCRMLLayout);
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setAlignment(Qt::AlignTop);
-  pMainLayout->addWidget(mpGroupBox);
+  pMainLayout->addWidget(mpCRMLGroupBox);
   setLayout(pMainLayout);
 }
 
