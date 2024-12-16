@@ -149,7 +149,7 @@ pipeline {
         stage('cmake-jammy-gcc') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.2-qttools'
+              image 'docker.openmodelica.org/build-deps:v1.22.3-qttools'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -524,7 +524,7 @@ pipeline {
         stage('11 build-gui-clang-qt6') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.2-qttools'
+              image 'docker.openmodelica.org/build-deps:v1.22.3-qttools'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
@@ -798,7 +798,7 @@ pipeline {
         stage('clang-qt6-omedit-testsuite') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.2-qttools'
+              image 'docker.openmodelica.org/build-deps:v1.22.3-qttools'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
