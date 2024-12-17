@@ -2,22 +2,33 @@ dnl Check for Qt
 
 AC_SUBST(QMAKE)
 AC_SUBST(LRELEASE)
+AC_SUBST(WITH_QT6)
+AC_ARG_WITH(qt6,  [  --with-qt6       (build with qt6)],[WITH_QT6="$withval"],[WITH_QT6="no"])
 
-AC_MSG_CHECKING([for qmake in env.vars QMAKE and QTDIR])
-if test ! -z "$QMAKE"; then
-  AC_MSG_RESULT([$QMAKE])
-elif test -f $QTDIR/bin/qmake; then
-  QMAKE=$QTDIR/bin/qmake
-  AC_MSG_RESULT([$QMAKE])
+AC_MSG_CHECKING([if qt6 is requested])
+if test "$WITH_QT6" = "yes"; then
+  QMAKE=qmake6
+  AC_MSG_RESULT([yes])
 else
   AC_MSG_RESULT([no])
-  AC_CHECK_PROGS(QMAKE,qmake qmake-mac qmake-qt4,"")
+  AC_MSG_CHECKING([for qmake in env.vars QMAKE and QTDIR])
+  if test ! -z "$QMAKE"; then
+    AC_MSG_RESULT([$QMAKE])
+  elif test -f $QTDIR/bin/qmake; then
+    QMAKE=$QTDIR/bin/qmake
+    AC_MSG_RESULT([$QMAKE])
+  else
+    AC_MSG_RESULT([no])
+    AC_CHECK_PROGS(QMAKE,qmake qmake-mac qmake-qt4,"")
+  fi
 fi
 
 if test -n "$QMAKE"; then
   AC_MSG_CHECKING([for qmake arguments])
 
-  if "$QMAKE" -qt5 -v > /dev/null 2>&1; then
+  if test "$WITH_QT6" = "yes"; then
+    QT4BUILD="-DQT4_BUILD:Boolean=OFF"
+  elif "$QMAKE" -qt5 -v > /dev/null 2>&1; then
     QMAKE="$QMAKE -qt5"
     QT4BUILD="-DQT4_BUILD:Boolean=OFF"
   elif "$QMAKE" -qt4 -v > /dev/null 2>&1; then

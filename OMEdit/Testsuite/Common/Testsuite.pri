@@ -32,11 +32,7 @@ QT += network core gui xml svg opengl printsupport widgets concurrent testlib
 equals(QT_MAJOR_VERSION, 6) {
   QT += core5compat openglwidgets
   !win32 {
-    _OM_OMEDIT_ENABLE_QTWEBENGINE = $$(OM_OMEDIT_ENABLE_QTWEBENGINE)
-    equals(_OM_OMEDIT_ENABLE_QTWEBENGINE, ON) {
-      QMAKE_CXXFLAGS += -DOM_OMEDIT_ENABLE_QTWEBENGINE
-      QT += WebEngineWidgets
-    }
+    QT += webenginewidgets
   }
 } else {
   QT += webkit webkitwidgets

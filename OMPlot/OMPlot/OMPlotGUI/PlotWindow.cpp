@@ -644,7 +644,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
       mFile.open(QIODevice::ReadOnly);
       mpTextStream = new QTextStream(&mFile);
       // read the interval size from the file
-      int intervalSize;
+      int intervalSize = 0;
       while (!mpTextStream->atEnd())
       {
         currentLine = mpTextStream->readLine();

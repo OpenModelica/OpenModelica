@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([OMCompiler],[dev],[https://trac.openmodelica.org/OpenModelica],[openmodelica],[https://openmodelica.org])
+AC_INIT([OMCompiler],[dev],[https://github.com/OpenModelica/OpenModelica/issues],[openmodelica],[https://openmodelica.org])
 AC_SUBST(date)
 AC_SUBST(host_short)
 AC_SUBST(omc_antlr_jar)
