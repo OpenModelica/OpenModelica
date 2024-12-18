@@ -196,13 +196,16 @@ static void* getStackBase() {
   pthread_attr_init(&sattr);
 #if defined(__FreeBSD__)
   pthread_attr_get_np(self, &sattr);
-  void* addr = pthread_get_stackaddr_np(self);
-  size_t size = pthread_get_stacksize_np(self);
-  stackBottom = (void*) (((long)addr) - size);
 #elif defined(OS_LINUX)
   pthread_getattr_np(self, &sattr);
-  assert(0==pthread_attr_getstack(&sattr, &stackBottom, &size));
 #endif
+  assert(0==pthread_attr_getstack(&sattr, &stackBottom, &size));
+  // if we get a 0 stackBottom, try a different strategy
+  if (!stackBottom) {
+    void* addr = pthread_get_stackaddr_np(self);
+    size_t size = pthread_get_stacksize_np(self);
+    stackBottom = (void*) (((long)addr) - size);
+  }
   assert(stackBottom);
   pthread_attr_destroy(&sattr);
 #else
