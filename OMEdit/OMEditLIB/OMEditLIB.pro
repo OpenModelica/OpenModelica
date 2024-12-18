@@ -28,11 +28,6 @@
  #
  #/
 
-# Unix libraries and includes
-!win32 {
-  include(OMEditLIB.unix.config.pri)
-}
-
 include(../OMEdit.config.pre.pri)
 
 DESTDIR = ../bin
@@ -58,7 +53,6 @@ evil_hack_to_fool_lupdate {
 
 # Windows libraries and includes
 win32 {
-
   CONFIG(release, debug|release) { # release
     # required for backtrace
     # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
@@ -72,6 +66,8 @@ win32 {
   host_short =
 
   CONFIG += osg
+} else { # Unix libraries and includes
+  include(OMEditLIB.unix.config.pri)
 }
 
 INCLUDEPATH += . ../ \
