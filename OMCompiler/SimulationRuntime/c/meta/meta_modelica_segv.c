@@ -196,7 +196,7 @@ static void* getStackBase() {
   pthread_attr_init(&sattr);
 #if defined(__FreeBSD__)
   assert(0==pthread_attr_get_np(self, &sattr));
-#elif defined(OS_LINUX)
+#else // normal Linux
   assert(0==pthread_getattr_np(self, &sattr));
 #endif
   assert(0==pthread_attr_getstack(&sattr, &stackBottom, &size));
