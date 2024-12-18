@@ -202,8 +202,9 @@ static void* getStackBase() {
   assert(0==pthread_attr_getstack(&sattr, &stackBottom, &size));
   // if we get a 0 stackBottom, try a different strategy
   if (!stackBottom) {
-    void* addr = pthread_get_stackaddr_np(self);
-    size_t size = pthread_get_stacksize_np(self);
+    void* addr;
+    pthread_attr_getstackaddr(&sattr, &addr);
+    pthread_attr_getstacksize(&sattr, &size);
     stackBottom = (void*) (((long)addr) - size);
   }
   assert(stackBottom);
