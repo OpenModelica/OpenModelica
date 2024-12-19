@@ -3,6 +3,8 @@ name: Build FreeBSD
 
 on:
   push:
+    branches:
+      - master
   pull_request:
     paths-ignore:
       - 'doc/**'
@@ -16,7 +18,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        submodules: recursive
+          submodules: recursive
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
 
     - uses: vmactions/freebsd-vm@v1
       with:

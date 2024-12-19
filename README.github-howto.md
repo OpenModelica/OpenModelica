@@ -12,8 +12,12 @@ First you clone the repo and set your remote:
 # clone the original repo
 git clone https://github.com/OpenModelica/OpenModelica.git --recursive
 cd OpenModelica
-# add your repository on github (I named it YOUR_REMOTE) as a new remote (besides origin)
+# add your repository on github (I named it YOUR_REMOTE) as a new remote (besides origin) - one of the 2 options below
+# 1. for a https URL as below you need to use a github token, if you do not have one see the ssh keys below
 git remote add YOUR_REMOTE https://github.com/YOUR_GITHUB_ACCOUNT/OpenModelica.git
+# 2. if you instead have ssh keys setup for github use the git@ scheme instead:
+git remote add YOUR_REMOTE git@github.com:YOUR_GITHUB_ACCOUNT/OpenModelica.git
+
 ```
 
 ## Update your local repo before each change
