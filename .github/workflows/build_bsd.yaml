@@ -1,0 +1,34 @@
+
+name: Build FreeBSD
+
+on:
+  pull_request:
+    paths-ignore:
+      - 'doc/**'
+
+jobs:
+  build_bsd:
+    name: FreeBSD
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: vmactions/freebsd-vm@v1
+      with:
+        usesh: true
+        prepare: |
+          pkg install -y cmake git gcc clang devel/qt5 openjdk21 boost
+
+        run: |
+          pwd
+          ls -lah
+          whoami
+          env
+          freebsd-version
+
+          cmake -S . -B build_cmake
+          cmake --build build_cmake --target install --parallel 2
+          ./build_cmake/install_cmake/bin/omc --help
+
