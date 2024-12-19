@@ -941,7 +941,11 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
          if (!alreadyPrinted)
          {
             // Print equation l referenced by alpha and the value of alpha_i
-            printf("\n      %10d    %10d    %7.2f", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
+            if (alpha[index_alpha[l]] < 1.e5)
+               printf("\n      %10d    %10d    %7.2f", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
+            else
+               printf("\n      %10d    %10d    %7.2e", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
+
             printedIdx[nPrinted++] = index_alpha[l];
          }
       }
@@ -1023,7 +1027,7 @@ unsigned* getNonlinearEqns( DATA* data, threadData_t* threadData, unsigned sysNu
 	// Lower the dampening factor until the function call succeeds
 	while (failed)
 	{
-  	   double d_lambda = 0.5;
+  	   double d_lambda = 0.7;
   	   printf("                              Dampening factor lowered from %7.3f to %7.3f\n", *lambda, *lambda * d_lambda);
 
 		// Handle failure
@@ -1212,6 +1216,13 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
    // Obtain indices of non-linear functions "n" (p is the number of non-linear functions)
    unsigned* n_idx = getNonlinearEqns(data, threadData, sysNumber, m, x0, dx, &lambda, &p);
 
+   if ( p == 0)
+   {
+      printf("\n");
+      infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics terminated: no non-linear equations!!");
+      return;
+   }
+
    // Obtain vector "w0": initial guesses of vars where Jacobian matrix J(w) of f(x) only depends on
    unsigned* w_idx = getNonlinearVars( m, fxx, &q);
 
@@ -1260,9 +1271,6 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
                  data->modelData->realVarsData[var_id(z_idx[i], data, systemData)].info.name);
       printf("\n");
    }
-
-   // Reset damping factor lambda by hand in order to reproduce/obtain the values in the paper
-   // lambda = 0.49;
 
    printf("\n   Damping factor lambda = %6.3g\n", lambda);
    printf("\n\n");
