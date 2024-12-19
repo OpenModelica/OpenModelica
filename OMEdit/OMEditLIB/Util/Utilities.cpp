@@ -998,7 +998,7 @@ QIcon Utilities::FileIconProvider::FileIconProviderImplementation::icon(const QF
   // Get icon from OS.
   QIcon icon;
   // File icons are unknown on linux systems.
-#if defined(Q_OS_LINUX)
+#if defined(Q_OS_UNIX)
   icon = isDir ? QFileIconProvider::icon(fileInfo) : mUnknownFileIcon;
 #else
   icon = QFileIconProvider::icon(fileInfo);

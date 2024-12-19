@@ -35,6 +35,10 @@
 /* for pthread_getattr_np */
 #endif
 
+#if defined(__FreeBSD__)
+#include <pthread_np.h>
+#endif
+
 #include "meta_modelica.h"
 
 void* mmc_getStacktraceMessages_threadData(threadData_t *threadData)
@@ -190,21 +194,36 @@ static void* getStackBase() {
   size_t size = 0;
   pthread_attr_t sattr;
   pthread_attr_init(&sattr);
-  pthread_getattr_np(self, &sattr);
+#if defined(__FreeBSD__)
+  assert(0==pthread_attr_get_np(self, &sattr));
+#else // normal Linux
+  assert(0==pthread_getattr_np(self, &sattr));
+#endif
   assert(0==pthread_attr_getstack(&sattr, &stackBottom, &size));
+#if defined(__FreeBSD__)
+  // if we get a 0 stackBottom, try a different strategy
+  if (!stackBottom) {
+    void* stack_addr = NULL;
+    assert(0==pthread_attr_getstackaddr(&sattr, &stack_addr));
+    // if we get a 0 as stack address, all bets are off
+    assert(stack_addr);
+    assert(0==pthread_attr_getstacksize(&sattr, &size));
+    stackBottom = (void*) (((long)stack_addr) - size);
+  }
+#endif
   assert(stackBottom);
   pthread_attr_destroy(&sattr);
 #else
-  void* addr = pthread_get_stackaddr_np(self);
+  void* stack_addr = pthread_get_stackaddr_np(self);
   size_t size = pthread_get_stacksize_np(self);
-  stackBottom = (void*) (((long)addr) - size);
+  stackBottom = (void*) (((long)stack_addr) - size);
   if (pthread_main_np()) {
     char str[256];
     size_t size = sizeof(str);
     int ret = sysctlbyname("kern.osrelease", str, &size, NULL, 0);
     if (0==ret && str[0]=='1' && str[1]=='3' && str[2]=='.') {
       /* OSX Mavericks returns a wrong stack size... Assume default 8MB */
-      stackBottom = (void*) (((long)addr) - 8 * 1024 * 1024);
+      stackBottom = (void*) (((long)stack_addr) - 8 * 1024 * 1024);
     }
   }
 #endif

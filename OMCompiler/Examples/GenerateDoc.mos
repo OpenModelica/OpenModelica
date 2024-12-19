@@ -367,7 +367,7 @@ for filepath in sorted(glob.glob('*.html')):
     print('Tidy failed with %s, skipping link-replacement for %s!'  % (pid,filepath))
 ");
 
-writeFile("FindFiles.sh","#!/bin/bash
+writeFile("FindFiles.sh","#!/usr/bin/env bash
 rm -f *.png *.pdf FindFiles.log*
 touch FindFiles.log.tmp
 OMLIBRARY=\""+getInstallationDirectoryPath()+"/lib/omlibrary\"
