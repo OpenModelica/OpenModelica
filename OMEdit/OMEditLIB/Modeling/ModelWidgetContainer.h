@@ -602,6 +602,7 @@ public:
   ModelInfo createModelInfo() const;
   void showElement(ModelInstance::Model *pModelInstance, bool addToList);
   void selectDeselectElement(const QString &name, bool selected);
+  void navigateToClass(const QString &className);
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   ModelInstance::Model *mpModelInstance;

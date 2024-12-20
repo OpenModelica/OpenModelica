@@ -186,6 +186,40 @@ QString ModelicaEditor::wordUnderCursor()
 }
 
 /*!
+ * \brief ModelicaEditor::symbolAtPosition
+ * Navigate to the Modelica class at position.
+ * \param pos
+ */
+void ModelicaEditor::symbolAtPosition(const QPoint &pos)
+{
+  if (mpModelWidget) {
+    QTextCursor cursor = mpPlainTextEdit->cursorForPosition(pos);
+    cursor.select(QTextCursor::WordUnderCursor);
+
+    int mid = cursor.position();
+    int end = mid;
+
+    while (end < cursor.block().length()) {
+      QChar ch = mpPlainTextEdit->document()->characterAt(end);
+      if (!(ch.isLetterOrNumber() || ch == '.' || ch == '_'))
+        break;
+      end++;
+    }
+
+    int begin = mid - 1;
+    while (begin >= 0) {
+      QChar ch = mpPlainTextEdit->document()->characterAt(begin);
+      if (!(ch.isLetterOrNumber() || ch == '.' || ch == '_'))
+        break;
+      begin--;
+    }
+    begin++;
+
+    mpModelWidget->navigateToClass(mpPlainTextEdit->document()->toPlainText().mid(begin, end - begin));
+  }
+}
+
+/*!
  * \brief Returns the substring from the last occurrence of `word` to the cursor position
  * \param word Starting word of the substring
  * \return Resulting substring or Null QString if no `word` occurrence found up to the cursor position
@@ -510,11 +544,16 @@ void ModelicaEditor::showContextMenu(QPoint point)
 {
   QMenu *pMenu = BaseEditor::createStandardContextMenu();
   pMenu->addSeparator();
+  pMenu->addAction(mpOpenClassAction);
+  pMenu->addSeparator();
   pMenu->addAction(mpToggleCommentSelectionAction);
   pMenu->addSeparator();
   pMenu->addAction(mpFoldAllAction);
   pMenu->addAction(mpUnFoldAllAction);
+  mContextMenuStartPosition = point;
+  mContextMenuStartPositionValid = true;
   pMenu->exec(mapToGlobal(point));
+  mContextMenuStartPositionValid = false;
   delete pMenu;
 }
 

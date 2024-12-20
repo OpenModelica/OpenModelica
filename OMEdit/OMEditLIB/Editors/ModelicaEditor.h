@@ -59,6 +59,7 @@ public:
   bool isTextChanged() {return mTextChanged;}
   virtual void popUpCompleter() override;
   virtual QString wordUnderCursor() override;
+  virtual void symbolAtPosition(const QPoint &pos) override;
   QString stringAfterWord(const QString &word);
   static LibraryTreeItem *deepResolve(LibraryTreeItem *pItem, QStringList nameComponents);
   QList<LibraryTreeItem *> getCandidateContexts(QStringList nameComponents);

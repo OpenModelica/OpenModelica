@@ -6810,6 +6810,29 @@ void ModelWidget::selectDeselectElement(const QString &name, bool selected)
 }
 
 /*!
+ * \brief ModelWidget::navigateToClass
+ * Lookup the class and open it.
+ * \param className
+ */
+void ModelWidget::navigateToClass(const QString &className)
+{
+  LibraryWidget *pLibraryWidget = MainWindow::instance()->getLibraryWidget();
+  LibraryTreeItem *pLibraryTreeItem = nullptr;
+  // first see if we find any relative class
+  const QString parentClassName = StringHandler::removeLastWordAfterDot(mpLibraryTreeItem->getNameStructure());
+  pLibraryTreeItem = pLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(parentClassName % "." % className);
+  if (pLibraryTreeItem) {
+    pLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+  } else {
+    // relative class not found.
+    pLibraryTreeItem = pLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(className);
+    if (pLibraryTreeItem) {
+      pLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+    }
+  }
+}
+
+/*!
  * \brief ModelWidget::createUndoStack
  * Creates the undo stack.
  */

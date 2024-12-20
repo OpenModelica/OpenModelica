@@ -664,6 +664,7 @@ PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   : QPlainTextEdit(pBaseEditor), mpBaseEditor(pBaseEditor)
 {
   setObjectName("BaseEditor");
+  setMouseTracking(true);
   QTextDocument *pTextDocument = document();
   pTextDocument->setDocumentMargin(2);
   BaseEditorDocumentLayout *pModelicaTextDocumentLayout = new BaseEditorDocumentLayout(pTextDocument);
@@ -1375,7 +1376,6 @@ void PlainTextEdit::toggleBlockVisible(const QTextBlock &block)
   pBaseEditorDocumentLayout->emitDocumentSizeChanged();
 }
 
-
 /*!
  * \brief BaseEditor::updateLineNumberAreaWidth
  * Updates the width of LineNumberArea.
@@ -2054,6 +2054,38 @@ void PlainTextEdit::wheelEvent(QWheelEvent *event)
 }
 
 /*!
+ * \brief PlainTextEdit::mousePressEvent
+ * Reimplementation of QPlainTextEdit::mousePressEvent
+ * \param event
+ */
+void PlainTextEdit::mousePressEvent(QMouseEvent *event)
+{
+  bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
+  if (controlModifier) {
+    mpBaseEditor->symbolAtPosition(event->pos());
+    viewport()->unsetCursor();
+  }
+  QPlainTextEdit::mousePressEvent(event);
+}
+
+/*!
+ * \brief PlainTextEdit::mouseMoveEvent
+ * Reimplementation of QPlainTextEdit::mouseMoveEvent
+ * \param event
+ */
+void PlainTextEdit::mouseMoveEvent(QMouseEvent *event)
+{
+  bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
+  if (controlModifier) {
+    viewport()->setCursor(Qt::PointingHandCursor);
+  } else {
+    viewport()->unsetCursor();
+  }
+
+  QPlainTextEdit::mouseMoveEvent(event);
+}
+
+/*!
  * \class BaseEditor
  * Base class for all editors.
  */
@@ -2074,12 +2106,26 @@ BaseEditor::BaseEditor(QWidget *pParent)
 
 /*!
  * \brief BaseEditor::wordUnderCursor
+ * Returns the word under cursor.
  */
 QString BaseEditor::wordUnderCursor()
 {
   QTextCursor cursor = mpPlainTextEdit->textCursor();
   cursor.select(QTextCursor::WordUnderCursor);
   return cursor.selectedText();
+}
+
+/*!
+ * \brief BaseEditor::symbolAtPosition
+ * Navigates to the symbol at position.\n
+ * The default implementation does nothing.\n
+ * Reimplement in the child class to navigate to the correct symbol based on the language.
+ * \param pos
+ */
+void BaseEditor::symbolAtPosition(const QPoint &pos)
+{
+  Q_UNUSED(pos);
+  // Do nothing. Reimplement in the child class.
 }
 
 bool BaseEditor::isModelicaModelInPackageOneFile()
@@ -2161,6 +2207,10 @@ void BaseEditor::createActions()
     connect(mpZoomOutAction, SIGNAL(triggered()), mpPlainTextEdit, SLOT(zoomOut()));
     mpPlainTextEdit->addAction(mpZoomOutAction);
   }
+  // open class action
+  mpOpenClassAction = new QAction(Helper::openClass, this);
+  mpOpenClassAction->setStatusTip(Helper::openClassTip);
+  connect(mpOpenClassAction, SIGNAL(triggered()), SLOT(openClass()));
   // toggle comment action
   mpToggleCommentSelectionAction = new QAction(tr("Toggle Comment Selection"), this);
   mpToggleCommentSelectionAction->setShortcut(QKeySequence("Ctrl+k"));
@@ -2323,6 +2373,17 @@ void BaseEditor::showGotoLineNumberDialog()
 {
   GotoLineDialog *pGotoLineWidget = new GotoLineDialog(this);
   pGotoLineWidget->exec();
+}
+
+/*!
+ * \brief BaseEditor::openClass
+ * Slot activated when open class is seleteted from context menu.
+ */
+void BaseEditor::openClass()
+{
+  if (mContextMenuStartPositionValid) {
+    symbolAtPosition(mContextMenuStartPosition);
+  }
 }
 
 /*!
