@@ -112,56 +112,7 @@ simulate(problem4, simflags="-newtonDiagnostics -lv=LOG_NLS_NEWTON_DIAGNOSTICS")
 //    ******  3: id=1002, name=        x1, value=10000.000000
 //    ******  4: id=1003, name=        x2, value= -5.000000
 //
-//    Information about equations from non-linear pattern ....
-//
-//                Total number of equations    = 2
-//                Number of independents       = 2
-//                Number of non-linear entries = 4
-//
-//    Vector x0: all dependents ....
-//
-//                x0[0] =   0.0000109816  (x2)
-//                x0[1] =   9.1061467399  (x1)
-//
-//    Function values of all equations f(x0) ....
-//
-//
-//    Function values of non-linear equations n(w0) ....
-//
-//
-//    Vector w0: non-linear dependents ....
-//
-//                w0[0] = x0[0] =   0.0000109816  (x2)
-//                w0[1] = x0[1] =   9.1061467399  (x1)
-//
-//    Damping factor lambda =      1
-//
-//
-// getInvJacobian: LU factorization could not be computed; the info satus is : 1
-// getInvJacobian: inverse Jacobian could not be computed; the info satus is : 1
-//    ========================================================
-//    Final results
-//    ========================================================
-//
-//       alpha_i > 1e-02
-//       ------------------------
-//
-//       Gamma_ijk > 1e-02
-//       ------------------------
-//
-//       |Sigma_jj| > 1e-02
-//       ------------------------
-//
-//       Var number  Var name                        Initial guess  max(Gamma,Sigma)
-//       ----------  ------------------------------  -------------  ----------------
-//
-//       Eq number   Eq index        max(alpha,Gamma)
-//       ----------  ------------    ----------------
-//
-//    ========================================================
-//
-//
-// LOG_NLS_NEWTON_DIAGNOSTICS | info    | Newton diagnostics finished!!
+// LOG_NLS_NEWTON_DIAGNOSTICS | info    | Newton diagnostics terminated: no non-linear equations!!
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
