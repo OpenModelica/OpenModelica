@@ -34,6 +34,9 @@ encapsulated uniontype NBStrongComponent
  description: This file contains the data-types used save the strong Component
               data after causalization.
 "
+public
+  import NBResizable.EvalOrder;
+
 protected
   // selfimport
   import StrongComponent = NBStrongComponent;
@@ -55,6 +58,7 @@ protected
   import NBEquation.{Equation, EquationPointer, EquationPointers, EquationAttributes, Iterator};
   import NBJacobian.JacobianType;
   import Matching = NBMatching;
+  import Resizable = NBResizable;
   import Solve = NBSolve;
   import Sorting = NBSorting;
   import NBSorting.SuperNode;
@@ -94,8 +98,6 @@ public
       output Boolean b = (info1.componentIndex == info2.componentIndex) and (info1.partitionIndex == info2.partitionIndex) and (info1.kind == info2.kind);
     end isEqual;
   end AliasInfo;
-
-  type EvalOrder = enumeration(INDEPENDENT, FORWARD, BACKWARD) "used only for RESIZABLE_COMPONENT";
 
   record SINGLE_COMPONENT
     "component for all equations that solve for a single (possibly multidimensional) variable
@@ -348,7 +350,6 @@ public
     Slice<VariablePointer>var_slice;
     Slice<EquationPointer>eqn_slice;
     list<Integer> var_scal_indices;
-    list<ComponentRef> iterators;
     UnorderedMap<ComponentRef, EvalOrder> order;
   algorithm
     // get and save sliced variable and equation
@@ -366,10 +367,9 @@ public
       eqn_slice := Slice.SLICE(eqn_ptr, list(idx - first_eqn for idx in listReverse(eqn_scal_indices)));
     end if;
 
-    // check if it is an independent resizable component
-    if independent and Equation.isForEquation(eqn_ptr) and listLength(eqn_scal_indices) == eqn_size then
-      (iterators, _)  := Iterator.getFrames(Equation.getForIterator(Pointer.access(eqn_ptr)));
-      order           := UnorderedMap.fromLists(iterators, list(EvalOrder.INDEPENDENT for i in iterators), ComponentRef.hash, ComponentRef.isEqual);
+    // check if it is a resizable component
+    order := Resizable.detect(Pointer.access(eqn_ptr), cref_to_solve);
+    if not List.any(UnorderedMap.valueList(order), Resizable.orderFailed) and listLength(eqn_scal_indices) == eqn_size then
       comp := RESIZABLE_COMPONENT(
         var_cref  = cref_to_solve,
         var       = var_slice,
