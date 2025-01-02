@@ -235,7 +235,7 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getEnumerationLiterals(sizeE)
-// {"Small","Medium","Large"}
+// {"Small", "Medium", "Large"}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: isReplaceable(ReplaceableClass.M1)
@@ -472,7 +472,7 @@ getMessagesStringInternal(unique = false); // not unique
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getExternalFunctionSpecification(TestPack.Ext)
-// {"C","u","externFunc","x, y, z","",""}
+// {"C", "u", "externFunc", "x, y, z", "", ""}
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getExternalFunctionSpecification(TestPack.NoExt)

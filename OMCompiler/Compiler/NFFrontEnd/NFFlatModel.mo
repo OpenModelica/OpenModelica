@@ -233,7 +233,7 @@ public
     input output IOStream.IOStream s;
   protected
     FlatModel flat_model = flatModel;
-    String name = className(flatModel);
+    String name = Util.makeQuotedIdentifier(className(flatModel));
     BaseModelica.OutputFormat format;
     Boolean scalarize;
   algorithm
@@ -262,7 +262,7 @@ public
     end if;
 
     s := IOStream.append(s, "//! base 0.1.0\n");
-    s := IOStream.append(s, "package '" + name + "'\n");
+    s := IOStream.append(s, "package " + name + "\n");
 
     for fn in functions loop
       if not (Function.isDefaultRecordConstructor(fn) or Function.isExternalObjectConstructorOrDestructor(fn)) then
@@ -277,7 +277,7 @@ public
       s := IOStream.append(s, ";\n\n");
     end for;
 
-    s := IOStream.append(s, "  model '" + name + "'");
+    s := IOStream.append(s, "  model " + name);
     s := FlatModelicaUtil.appendElementSourceCommentString(flat_model.source, s);
     s := IOStream.append(s, "\n");
 
@@ -312,8 +312,8 @@ public
 
     s := FlatModelicaUtil.appendElementSourceCommentAnnotation(flat_model.source,
       NFFlatModelicaUtil.ElementType.ROOT_CLASS, "    ", ";\n", s);
-    s := IOStream.append(s, "  end '" + name + "';\n");
-    s := IOStream.append(s, "end '" + name + "';\n");
+    s := IOStream.append(s, "  end " + name + ";\n");
+    s := IOStream.append(s, "end " + name + ";\n");
   end appendFlatStream;
 
   function collectFlatTypes

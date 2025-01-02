@@ -756,9 +756,8 @@ public
           s := IOStream.append(s, indent);
           s := Attributes.toFlatStream(component.attributes, component.ty, s);
           s := IOStream.append(s, Type.toFlatString(component.ty, format));
-          s := IOStream.append(s, " '");
-          s := IOStream.append(s, name);
-          s := IOStream.append(s, "'");
+          s := IOStream.append(s, " ");
+          s := IOStream.append(s, Util.makeQuotedIdentifier(name));
 
           ty_attrs := list((Modifier.name(a), Modifier.binding(a)) for a in
             Class.getTypeAttributes(InstNode.getClass(component.classInst)));

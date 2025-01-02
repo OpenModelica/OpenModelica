@@ -1026,35 +1026,22 @@ public
     input BaseModelica.OutputFormat format;
     input String indent;
     input output IOStream.IOStream s;
+  protected
+    Integer index;
+    String name;
+    ComplexType complexTy;
+    Absyn.Path path;
+    InstNode constructor, destructor;
+    Function f;
   algorithm
     s := match ty
-      local
-        Integer index;
-        String name;
-        ComplexType complexTy;
-        Absyn.Path path;
-        InstNode constructor, destructor;
-        Function f;
-
       case ENUMERATION()
         algorithm
           s := IOStream.append(s, indent);
           s := IOStream.append(s, "type ");
           s := IOStream.append(s, Util.makeQuotedIdentifier(AbsynUtil.pathString(ty.typePath)));
           s := IOStream.append(s, " = enumeration(");
-
-          if not listEmpty(ty.literals) then
-            s := IOStream.append(s, "'");
-            s := IOStream.append(s, listHead(ty.literals));
-
-            for l in listRest(ty.literals) loop
-              s := IOStream.append(s, "', '");
-              s := IOStream.append(s, l);
-            end for;
-
-            s := IOStream.append(s, "'");
-          end if;
-
+          s := IOStream.append(s, stringDelimitList(list(Util.makeQuotedIdentifier(l) for l in ty.literals), ", "));
           s := IOStream.append(s, ")");
         then
           s;

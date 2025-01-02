@@ -106,7 +106,7 @@ public:
   const QString& getVersionBuild() const;
   const QString& getDateModified() const;
   const QString& getRevisionId() const;
-  bool isCRMLFile() const {return mFileName.endsWith(".crml");}
+  bool isCRMLFile() const;
   bool isMOSFile() const {return mFileName.endsWith(".mos");}
   bool isFilePathValid();
   void setReadOnly(bool readOnly) {mReadOnly = readOnly;}

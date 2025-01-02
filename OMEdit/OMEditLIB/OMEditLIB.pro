@@ -53,7 +53,6 @@ evil_hack_to_fool_lupdate {
 
 # Windows libraries and includes
 win32 {
-
   CONFIG(release, debug|release) { # release
     # required for backtrace
     # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
@@ -84,10 +83,6 @@ INCLUDEPATH += . ../ \
   $$OPENMODELICAHOME/../OMSimulator/include/ \
   $$OPENMODELICAHOME/../OMParser/ \
   $$OPENMODELICAHOME/../OMParser/3rdParty/antlr4/runtime/Cpp/runtime/src
-
-contains(QMAKE_CXXFLAGS, -DOM_OMEDIT_ENABLE_LIBXML2) {
-  INCLUDEPATH += $$(MSYSTEM_PREFIX)/include/libxml2
-}
 
 SOURCES += Util/Helper.cpp \
   Util/Utilities.cpp \
@@ -330,7 +325,6 @@ CONFIG(osg) {
   SOURCES += Animation/AbstractAnimationWindow.cpp \
     Animation/ViewerWidget.cpp \
     Animation/AnimationWindow.cpp \
-    Animation/ThreeDViewer.cpp \
     Animation/ExtraShapes.cpp \
     Animation/Visualization.cpp \
     Animation/VisualizationMAT.cpp \

@@ -36,13 +36,17 @@ if(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MINGW)
   endif()
   string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
 
-  # Install the Qt plugins directories
-  message(STATUS "Installing QT5 plugins from ${MSYSTEM_PREFIX_ESCAPED}/share/qt5/plugins/")
-  install(DIRECTORY ${MSYSTEM_PREFIX_ESCAPED}/share/qt5/plugins/    # Note the slash at the end!
+  # Install the Qt5/Qt6 plugins directories
+  message(STATUS "Installing QT${OM_QT_MAJOR_VERSION} plugins from ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/plugins/")
+  install(DIRECTORY ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/plugins/    # Note the slash at the end!
+          TYPE BIN)
+  # Install the Qt5/Qt6 translation directories
+  message(STATUS "Installing QT${OM_QT_MAJOR_VERSION} translation from ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/translations/")
+  install(DIRECTORY ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/translations/    # Note the slash at the end!
           TYPE BIN)
 
   # TODO: This is stupid, but I can't get install with RUNTIME_DEPENDENCIES to run.
-  # It needs to link to libs that are isntalled to ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR},
+  # It needs to link to libs that are installed to ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR},
   # but if I add that to DIRECTORIES it will throw errors on the second run.
   set(OMPLOT_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMPlot/OMPlot/OMPlotGUI ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMPlot/qwt/src)
   set(OMSIMULATOR_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMSimulator/src/OMSimulatorLib)

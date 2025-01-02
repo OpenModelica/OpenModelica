@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([OMEdit],[dev],[https://trac.openmodelica.org/OpenModelica],[openmodelica],[https://openmodelica.org])
+AC_INIT([OMEdit],[dev],[https://github.com/OpenModelica/OpenModelica/issues],[openmodelica],[https://openmodelica.org])
 
 AC_SUBST(APP)
 AC_SUBST(EXE)
@@ -119,6 +119,10 @@ else
   QMAKE_CONFIG_OSG="CONFIG += osg"
   LIBOSG="-losg -losgViewer -losgUtil -losgDB -losgGA -lOpenThreads -lGL"
   AC_MSG_RESULT("OSG is enabled")
+fi
+
+if test "$WITH_QT6" = "yes"; then
+  CPPFLAGS="$CPPFLAGS -DOM_OMEDIT_ENABLE_QTWEBENGINE"
 fi
 
 AC_MSG_CHECKING([check if -lboost_regex is needed for OMSimulator])

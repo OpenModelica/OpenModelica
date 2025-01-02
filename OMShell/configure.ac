@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([OMShell],[dev],[https://trac.openmodelica.org/OpenModelica],[openmodelica],[https://openmodelica.org])
+AC_INIT([OMShell],[dev],[https://github.com/OpenModelica/OpenModelica/issues],[openmodelica],[https://openmodelica.org])
 
 AC_SUBST(APP)
 AC_SUBST(EXE)
@@ -24,7 +24,7 @@ test -z "$CXXFLAGS" && CXXFLAGS="$CFLAGS"
 AC_LANG([C++])
 AC_PROG_CXX
 AC_PROG_CC
-AX_CXX_COMPILE_STDCXX(14,[noext],[mandatory])
+AX_CXX_COMPILE_STDCXX(17, [noext],[mandatory])
 
 host_short=$host_cpu-$host_os
 

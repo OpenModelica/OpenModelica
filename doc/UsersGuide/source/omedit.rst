@@ -790,7 +790,7 @@ Simulation Flags
 
   -  *LOG_NLS_JAC_TEST* - tests the analytical jacobian of nonlinear systems.
 
-  -  *LOG_NLS_NEWTON_DIAG* - Log Newton diagnostics. A Diagnostic method to figure out
+  -  *LOG_NLS_NEWTON_DIAGNOSTICS* - Log Newton diagnostics. A Diagnostic method to figure out
      which individual initial guess values are more likely to be causing the convergence
      failure of Newton-type iterative nonlinear solvers.
 
@@ -1424,6 +1424,9 @@ General Options
   -  *Display errors/warnings when instantiating the graphical annotations* - if true then the errors/warnings
      are shown when using OMC API for graphical annotations.
 
+  -  *Enable CRML Support* - Enables the CRML support.
+     The user can create/open .crml files and translate them to Modelica.
+
 -  Libraries Browser
 
   -  *Library Icon Size* - Sets the size for library icons.
@@ -1535,6 +1538,17 @@ Modelica Editor Options
 
   -  *Preview* - Shows the demo of the syntax highlighting.
 
+Modelica Script Editor Options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Colors
+
+  -  *Items* - List of categories used of syntax highlighting the code.
+
+  -  *Item Color* - Sets the color for the selected item.
+
+  -  *Preview* - Shows the demo of the syntax highlighting.
+
 MetaModelica Editor Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1548,6 +1562,17 @@ MetaModelica Editor Options
 
 SSP Editor Options
 ~~~~~~~~~~~~~~~~~~
+
+-  Colors
+
+  -  *Items* - List of categories used of syntax highlighting the code.
+
+  -  *Item Color* - Sets the color for the selected item.
+
+  -  *Preview* - Shows the demo of the syntax highlighting.
+
+CRML Editor Options
+~~~~~~~~~~~~~~~~~~~
 
 -  Colors
 
@@ -1596,34 +1621,6 @@ Graphical Views Options
        Libraries Browser.
 
   -  *Move connectors together on both icon and diagram layers*
-
-- Graphics
-
-  - Icon/Diagram View
-
-    -  Extent
-
-      -  *Left* - Defines the left extent point for the view.
-
-      -  *Bottom* - Defines the bottom extent point for the view.
-
-      -  *Right* - Defines the right extent point for the view.
-
-      -  *Top* - Defines the top extent point for the view.
-
-    -  Grid
-
-      -  *Horizontal* - Defines the horizontal size of the view grid.
-
-      -  *Vertical* - Defines the vertical size of the view grid.
-
-    -  Component
-
-      -  *Scale factor* - Defines the initial scale factor for the component
-         dragged on the view.
-
-      -  *Preserve aspect ratio* - If true then the component's aspect ratio
-         is preserved while scaling.
 
 .. _omedit-options-simulation :
 
@@ -1852,6 +1849,19 @@ Figaro Options
   -  *Tree generation options* - the Figaro tree generation options file path.
 
   -  *Figaro Processor* - the Figaro processor location.
+
+CRML Options
+~~~~~~~~~~~~
+
+-  CRML
+
+  -  *Compiler Jar* - the compiler jar file of CRML.
+
+  -  *Compiler Arguments* - arugments to the compiler process.
+
+  -  *Processor* - the CRML translator.
+
+  -  *Modelica Library Paths* - list of Modelica library paths that are needed to run the translated model.
 
 .. _omedit-options-debugger :
 

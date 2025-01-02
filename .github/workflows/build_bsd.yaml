@@ -1,0 +1,42 @@
+
+name: Build FreeBSD
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    paths-ignore:
+      - 'doc/**'
+
+jobs:
+  build_bsd:
+    if: contains(github.event.pull_request.labels.*.name, 'CI/GitHub/BuildFreeBSD')
+    name: FreeBSD
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v4
+      with:
+          submodules: recursive
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+
+    - uses: vmactions/freebsd-vm@v1
+      with:
+        usesh: true
+        prepare: |
+          pkg install -y cmake git lang/gcc devel/llvm devel/qt5 openjdk21 devel/boost-all
+
+        run: |
+          pwd
+          ls -lah
+          whoami
+          env
+          freebsd-version
+
+          cmake -S . -B build_cmake
+          cmake --build build_cmake --target install --parallel 2
+          ./build_cmake/install_cmake/bin/omc --help
+

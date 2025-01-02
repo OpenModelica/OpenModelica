@@ -54,6 +54,7 @@ namespace OptionsDefaults
     int activateAccessAnnotationsIndex = 1;
     bool createBackupFile = true;
     bool displayNFAPIErrorsWarnings = false;
+    bool enableCRMLSupport = false;
     int libraryIconSize = 24;
     int libraryIconMaximumTextLength = 3;
     bool showProtectedClasses = false;

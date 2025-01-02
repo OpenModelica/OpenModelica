@@ -3669,9 +3669,11 @@ void MainWindow::createActions()
   mpNewSSPModelAction->setStatusTip(Helper::newOMSimulatorModelTip);
   connect(mpNewSSPModelAction, SIGNAL(triggered()), SLOT(createNewSSPModel()));
   // create new CRML action
-  mpNewCRMLFileAction = new QAction(Helper::newCRMLModel, this);
-  mpNewCRMLFileAction->setStatusTip(Helper::newCRMLModelTip);
-  connect(mpNewCRMLFileAction, SIGNAL(triggered()), SLOT(createNewCRMLFile()));
+  if (isCRMLEnabled()) {
+    mpNewCRMLFileAction = new QAction(Helper::newCRMLModel, this);
+    mpNewCRMLFileAction->setStatusTip(Helper::newCRMLModelTip);
+    connect(mpNewCRMLFileAction, SIGNAL(triggered()), SLOT(createNewCRMLFile()));
+  }
   // open Modelica file action
   mpOpenModelicaFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), Helper::openModelicaFiles, this);
   mpOpenModelicaFileAction->setShortcut(QKeySequence("Ctrl+o"));
@@ -3931,10 +3933,12 @@ void MainWindow::createActions()
   mpCalculateDataReconciliationAction->setStatusTip(tr("Calculates the data reconciliation"));
   connect(mpCalculateDataReconciliationAction, SIGNAL(triggered()), SLOT(showDataReconciliationDialog()));
   // CRML menu
-  // run testsuite
-  mpRunCRMLTestsuiteAction = new QAction(tr("Run CRML Testsuite"), this);
-  mpRunCRMLTestsuiteAction->setStatusTip(tr("Runs the CRML Testsuite and display report"));
-  connect(mpRunCRMLTestsuiteAction, SIGNAL(triggered()), SLOT(runCRMLTestsuite()));
+  if (isCRMLEnabled()) {
+    // run testsuite
+    mpRunCRMLTestsuiteAction = new QAction(tr("Run CRML Testsuite"), this);
+    mpRunCRMLTestsuiteAction->setStatusTip(tr("Runs the CRML Testsuite and display report"));
+    connect(mpRunCRMLTestsuiteAction, SIGNAL(triggered()), SLOT(runCRMLTestsuite()));
+  }
   // Debug Menu
   // Debug configurations
   mpDebugConfigurationsAction = new QAction(Helper::debugConfigurations, this);
@@ -4352,12 +4356,14 @@ void MainWindow::createMenus()
   // add data reconciliation menu to menu bar
   menuBar()->addAction(pDataReconciliationMenu->menuAction());
   // CRML menu
-  QMenu *pCRMLMenu = new QMenu(menuBar());
-  pCRMLMenu->setTitle(tr("&CRML"));
-  // add actions to CRML menu
-  pCRMLMenu->addAction(mpRunCRMLTestsuiteAction);
-  // add data CRML menu to menu bar
-  menuBar()->addAction(pCRMLMenu->menuAction());
+  if (isCRMLEnabled()) {
+    QMenu *pCRMLMenu = new QMenu(menuBar());
+    pCRMLMenu->setTitle(tr("&CRML"));
+    // add actions to CRML menu
+    pCRMLMenu->addAction(mpRunCRMLTestsuiteAction);
+    // add data CRML menu to menu bar
+    menuBar()->addAction(pCRMLMenu->menuAction());
+  }
 #ifndef Q_OS_MAC
   // Sensitivity Optimization menu
   QMenu *pSensitivityOptimizationMenu = new QMenu(menuBar());
@@ -4682,8 +4688,10 @@ void MainWindow::createToolbars()
   mpNewModelMenu->addAction(mpNewMOSFileAction);
   mpNewModelMenu->addSeparator();
   mpNewModelMenu->addAction(mpNewSSPModelAction);
-  mpNewModelMenu->addSeparator();
-  mpNewModelMenu->addAction(mpNewCRMLFileAction);
+  if (isCRMLEnabled()) {
+    mpNewModelMenu->addSeparator();
+    mpNewModelMenu->addAction(mpNewCRMLFileAction);
+  }
   // new ToolButton
   QToolButton *pNewToolButton = new QToolButton;
   pNewToolButton->setMenu(mpNewModelMenu);

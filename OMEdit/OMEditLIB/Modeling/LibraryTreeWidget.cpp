@@ -232,6 +232,16 @@ const QString &LibraryTreeItem::getRevisionId() const
 }
 
 /*!
+ * \brief LibraryTreeItem::isCRMLFile
+ * Returns true of CRML file and CRML support is enabled.
+ * \return
+ */
+bool LibraryTreeItem::isCRMLFile() const
+{
+  return mFileName.endsWith(".crml") && MainWindow::instance()->isCRMLEnabled();
+}
+
+/*!
  * \brief LibraryTreeItem::isFilePathValid
  * Returns true if file path is valid file location and not modelica class name.
  * \return
@@ -2856,14 +2866,16 @@ void LibraryTreeView::createActions()
   mpSimulateAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::simulate, this);
   mpSimulateAction->setStatusTip(Helper::simulateTip);
   connect(mpSimulateAction, SIGNAL(triggered()), SLOT(simulate()));
-  // translate CRML Action
-  mpTranslateCRMLAction = new QAction(QIcon(":/Resources/icons/translate.svg"), Helper::translateCRML, this);
-  mpTranslateCRMLAction->setStatusTip(Helper::translateCRMLTip);
-  connect(mpTranslateCRMLAction, SIGNAL(triggered()), SLOT(translateCRML()));
-  // translateAs CRML Action
-  mpTranslateAsCRMLAction = new QAction(QIcon(":/Resources/icons/translateAs.svg"), Helper::translateAsCRML, this);
-  mpTranslateAsCRMLAction->setStatusTip(Helper::translateAsCRMLTip);
-  connect(mpTranslateAsCRMLAction, SIGNAL(triggered()), SLOT(translateAsCRML()));
+  if (MainWindow::instance()->isCRMLEnabled()) {
+    // translate CRML Action
+    mpTranslateCRMLAction = new QAction(QIcon(":/Resources/icons/translate.svg"), Helper::translateCRML, this);
+    mpTranslateCRMLAction->setStatusTip(Helper::translateCRMLTip);
+    connect(mpTranslateCRMLAction, SIGNAL(triggered()), SLOT(translateCRML()));
+    // translateAs CRML Action
+    mpTranslateAsCRMLAction = new QAction(QIcon(":/Resources/icons/translateAs.svg"), Helper::translateAsCRML, this);
+    mpTranslateAsCRMLAction->setStatusTip(Helper::translateAsCRMLTip);
+    connect(mpTranslateAsCRMLAction, SIGNAL(triggered()), SLOT(translateAsCRML()));
+  }
   // run Script Action
   mpRunScriptAction = new QAction(QIcon(":/Resources/icons/runScript.svg"), Helper::runScript, this);
   mpRunScriptAction->setStatusTip(Helper::runScriptTip);
@@ -4228,13 +4240,19 @@ void LibraryWidget::openTextFile(QFileInfo fileInfo, bool showProgress)
       return;
     }
   }
-  // create a LibraryTreeItem for new loaded file.
-  LibraryTreeItem *pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileInfo.fileName(), fileInfo.absoluteFilePath(),
-                                                                                fileInfo.absoluteFilePath(), true,
-                                                                                mpLibraryTreeModel->getRootLibraryTreeItem());
-  if (pLibraryTreeItem) {
-    mpLibraryTreeModel->readLibraryTreeItemClassText(pLibraryTreeItem);
-    MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
+
+  if (fileInfo.suffix().compare(QStringLiteral("crml")) == 0 && !MainWindow::instance()->isCRMLEnabled()) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::CRML_SUPPORT),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+  } else {
+    // create a LibraryTreeItem for new loaded file.
+    LibraryTreeItem *pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileInfo.fileName(), fileInfo.absoluteFilePath(),
+                                                                                  fileInfo.absoluteFilePath(), true,
+                                                                                  mpLibraryTreeModel->getRootLibraryTreeItem());
+    if (pLibraryTreeItem) {
+      mpLibraryTreeModel->readLibraryTreeItemClassText(pLibraryTreeItem);
+      MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
+    }
   }
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->clearMessage();

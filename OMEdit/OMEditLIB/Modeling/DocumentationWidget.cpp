@@ -1020,6 +1020,14 @@ void DocumentationWidget::updateActions()
   QString fontName = queryCommandValue("fontName");
   // font name has extra single quote around it so remove it.
   fontName = StringHandler::removeFirstLastSingleQuotes(fontName);
+  /* Issue #13038
+   * We get the current font name by calling `document.queryCommandValue("fontName")` via JavaScript on current cursor position.
+   * The webkit returns `-webkit-standard` for default font name instead of the actual font name.
+   * When we get `-webkit-standard` convert it to default system font name.
+   */
+  if (fontName.compare(QStringLiteral("-webkit-standard")) == 0) {
+    fontName = Helper::systemFontInfo.family();
+  }
   currentIndex = mpFontComboBox->findText(fontName, Qt::MatchExactly);
   if (currentIndex > -1) {
     mpFontComboBox->setCurrentIndex(currentIndex);

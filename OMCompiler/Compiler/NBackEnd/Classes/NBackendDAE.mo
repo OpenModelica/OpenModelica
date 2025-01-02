@@ -780,6 +780,7 @@ protected
 
     equations := EquationPointers.removeList(clocked_lst, equations);
     equations := Resizable.resize(equations, varData);
+    equations := Resizable.main(equations, varData);
 
     eqData := BEquation.EQ_DATA_SIM(
       uniqueIndex = idx,

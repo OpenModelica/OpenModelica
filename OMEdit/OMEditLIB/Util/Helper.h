@@ -537,6 +537,7 @@ public:
     ENTER_SCRIPT,
     LIBRARY_INDEX_FILE_NOT_FOUND,
     VISUALIZATION_VECTORS_SCALING_ZOOMED_OUT_SCENE_TOO_MUCH,
+    CRML_SUPPORT
   };
 
   static QString getMessage(int type);

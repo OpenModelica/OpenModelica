@@ -46,9 +46,6 @@
 #include "Options/NotificationsDialog.h"
 #include "ModelicaClassDialog.h"
 #include "Git/GitCommands.h"
-#if !defined(WITHOUT_OSG)
-#include "Animation/ThreeDViewer.h"
-#endif
 #include "OMS/OMSProxy.h"
 #include "OMS/ModelDialog.h"
 #include "OMS/BusDialog.h"
@@ -6808,6 +6805,29 @@ void ModelWidget::selectDeselectElement(const QString &name, bool selected)
         pIconElement->setSelected(selected);
         pIconElement->setIgnoreSelection(false);
       }
+    }
+  }
+}
+
+/*!
+ * \brief ModelWidget::navigateToClass
+ * Lookup the class and open it.
+ * \param className
+ */
+void ModelWidget::navigateToClass(const QString &className)
+{
+  LibraryWidget *pLibraryWidget = MainWindow::instance()->getLibraryWidget();
+  LibraryTreeItem *pLibraryTreeItem = nullptr;
+  // first see if we find any relative class
+  const QString parentClassName = StringHandler::removeLastWordAfterDot(mpLibraryTreeItem->getNameStructure());
+  pLibraryTreeItem = pLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(parentClassName % "." % className);
+  if (pLibraryTreeItem) {
+    pLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+  } else {
+    // relative class not found.
+    pLibraryTreeItem = pLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(className);
+    if (pLibraryTreeItem) {
+      pLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
     }
   }
 }

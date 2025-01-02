@@ -35,16 +35,10 @@ equals(QT_MAJOR_VERSION, 6) {
     # disable documentation since we don't have webkit on qt6 and webengine is not yet supported.
     QMAKE_CXXFLAGS += -DOM_DISABLE_DOCUMENTATION
   } else {
-    _OM_OMEDIT_ENABLE_QTWEBENGINE = $$(OM_OMEDIT_ENABLE_QTWEBENGINE)
-    equals(_OM_OMEDIT_ENABLE_QTWEBENGINE, ON) {
-      QMAKE_CXXFLAGS += -DOM_OMEDIT_ENABLE_QTWEBENGINE
-      QT += WebEngineWidgets
-    } else {
-      QMAKE_CXXFLAGS += -DOM_DISABLE_DOCUMENTATION
-    }
+    QT += webenginewidgets
   }
 } else {
-  QT += xmlpatterns webkit webkitwidgets
+  QT += webkit webkitwidgets
 }
 
 # Set the C++ standard.
@@ -53,11 +47,6 @@ CONFIG += c++17
 CONFIG += warn_on
 
 DEFINES += OM_HAVE_PTHREADS
-
-_OM_OMEDIT_ENABLE_LIBXML2 = $$(OM_OMEDIT_ENABLE_LIBXML2)
-equals(_OM_OMEDIT_ENABLE_LIBXML2, ON) {
-  QMAKE_CXXFLAGS += -DOM_OMEDIT_ENABLE_LIBXML2
-}
 
 win32 {
   _cxx = $$(CXX)

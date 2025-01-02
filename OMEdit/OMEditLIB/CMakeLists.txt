@@ -11,7 +11,6 @@ if(MINGW)
   find_package(binutils REQUIRED)
 endif()
 
-
 omc_add_subdirectory(Debugger/Parser)
 
 set(CMAKE_AUTOMOC ON)
@@ -133,7 +132,6 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Animation/AbstractAnimationWindow.cpp
                       Animation/ViewerWidget.cpp
                       Animation/AnimationWindow.cpp
-                      Animation/ThreeDViewer.cpp
                       Animation/ExtraShapes.cpp
                       Animation/Visualization.cpp
                       Animation/VisualizationMAT.cpp
@@ -145,7 +143,6 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Animation/Shape.cpp
                       Animation/Vector.cpp
                       resource_omedit.qrc)
-
 
 set(OMEDITLIB_HEADERS Util/Helper.h
                       Util/Utilities.h
@@ -267,7 +264,6 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Animation/AbstractAnimationWindow.h
                       Animation/ViewerWidget.h
                       Animation/AnimationWindow.h
-                      Animation/ThreeDViewer.h
                       Animation/AnimationUtil.h
                       Animation/ExtraShapes.h
                       Animation/Visualization.h
@@ -281,6 +277,26 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Animation/Vector.h
                       Animation/rapidxml.hpp)
 
+set(TS_FILES Resources/nls/OMEdit_de.ts
+             Resources/nls/OMEdit_es.ts
+             Resources/nls/OMEdit_fr.ts
+             Resources/nls/OMEdit_it.ts
+             Resources/nls/OMEdit_ja.ts
+             Resources/nls/OMEdit_ro.ts
+             Resources/nls/OMEdit_ru.ts
+             Resources/nls/OMEdit_sv.ts
+             Resources/nls/OMEdit_zh_CN.ts)
+
+# Add the translation files.
+find_package(Qt${OM_QT_MAJOR_VERSION} REQUIRED COMPONENTS LinguistTools)
+# Create the output folder, lrelease doesn't do it automatically.
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Resources/nls)
+set_source_files_properties(${TS_FILES} PROPERTIES OUTPUT_LOCATION "Resources/nls")
+if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
+  qt_add_translation(OMEDITLIB_TRANSLATIONS ${TS_FILES})
+else()
+  qt5_add_translation(OMEDITLIB_TRANSLATIONS ${TS_FILES})
+endif()
 
 # Add the OpenModelica generated files to sources
 set(OMEDITLIB_HEADERS ${OMEDITLIB_HEADERS} ${OMCompiler_SOURCE_DIR}/Compiler/Script/OpenModelicaScriptingAPIQt.h)
@@ -290,7 +306,7 @@ set(OMEDITLIB_SOURCES ${OMEDITLIB_SOURCES} ${OMCompiler_SOURCE_DIR}/Compiler/Scr
 set_source_files_properties(${OMCompiler_SOURCE_DIR}/Compiler/Script/OpenModelicaScriptingAPIQt.cpp GENERATED)
 set_source_files_properties(${OMCompiler_SOURCE_DIR}/Compiler/Script/OpenModelicaScriptingAPIQt.h GENERATED)
 
-add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS})
+add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS} ${OMEDITLIB_TRANSLATIONS})
 
 target_include_directories(OMEditLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # OpenSceneGraph does not provide imported targets yet. Add includes manually.
@@ -324,13 +340,6 @@ else ()
   target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::WebKitWidgets)
 endif ()
 
-if (OM_OMEDIT_ENABLE_LIBXML2 OR OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
-  target_link_libraries(OMEditLib PUBLIC LibXml2::LibXml2)
-  target_compile_definitions(OMEditLib PUBLIC OM_OMEDIT_ENABLE_LIBXML2)
-else ()
-  target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::XmlPatterns)
-endif ()
-
 target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::OpenGL)
 if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
   target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::OpenGLWidgets)
@@ -361,6 +370,6 @@ endif()
 target_include_directories(OMEditLib PUBLIC ${OMCompiler_SOURCE_DIR}/Compiler/Script)
 
 # Install the translation files
-install(DIRECTORY Resources/nls
-        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omedit/
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Resources/nls
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omedit
         FILES_MATCHING PATTERN "*.qm")

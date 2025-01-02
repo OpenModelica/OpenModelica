@@ -3939,6 +3939,31 @@ annotation(
   preferredView="text");
 end removeExtendsModifiers;
 
+function getComponentComment
+  input TypeName className;
+  input TypeName componentName;
+  output String comment;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the comment on a component.
+</html>"),
+  preferredView="text");
+end getComponentComment;
+
+function setComponentComment
+  input TypeName className;
+  input TypeName componentName;
+  input String comment;
+  output Boolean success;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Sets the comment on a component.
+</html>"),
+  preferredView="text");
+end setComponentComment;
+
 function setComponentDimensions
   input TypeName className;
   input TypeName componentName;
@@ -4372,6 +4397,20 @@ annotation(
 </html>"),
   preferredView="text");
 end basename;
+
+function existClass
+  input TypeName cl;
+  output Boolean exists;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns whether the given class exists or not.
+</html>"),
+  preferredView="text");
+end existClass;
+
+function existModel = isModel;
+function existPackage = isPackage;
 
 function getClassRestriction
   input TypeName cl;
@@ -5217,6 +5256,28 @@ annotation(
 </html>"),
   preferredView="text");
 end getShortDefinitionBaseClassInformation;
+
+function getExternalFunctionSpecification
+  input TypeName functionName;
+  output Expression result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Returns information about the given function's external specification: language, output variable, external function name, arguments, annotations on the external declaration, and annotations on the function.</p>
+</html>"),
+  preferredView="text");
+end getExternalFunctionSpecification;
+
+function getEnumerationLiterals
+  input TypeName className;
+  output String[:] result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Returns the literals for a given enumeration type.</p>
+</html>"),
+  preferredView="text");
+end getEnumerationLiterals;
 
 function getTransitions
   input TypeName cl;

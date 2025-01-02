@@ -5920,10 +5920,10 @@ case BINARY(__) then
                         case T_ARRAY(ty = T_ENUMERATION(__)) then "integer_array"
                         else "real_array"
     'pow_alloc_<%type%>_scalar(<%e1%>, <%e2%>)'
-  case POW_ARRAY_SCALAR(__) then 'daeExpBinary:ERR for POW_ARRAY_SCALAR'
-  case POW_SCALAR_ARRAY(__) then 'daeExpBinary:ERR for POW_SCALAR_ARRAY'
-  case POW_ARR(__) then 'daeExpBinary:ERR for POW_ARR'
-  case POW_ARR2(__) then 'daeExpBinary:ERR for POW_ARR2'
+  case POW_ARRAY_SCALAR(__) then error(sourceInfo(),"daeExpBinary:ERR for POW_ARRAY_SCALAR not implemented")
+  case POW_SCALAR_ARRAY(__) then error(sourceInfo(),"daeExpBinary:ERR for POW_SCALAR_ARRAY not implemented")
+  case POW_ARR(__)          then error(sourceInfo(),"daeExpBinary:ERR for POW_ARR not implemented")
+  case POW_ARR2(__)         then error(sourceInfo(),"daeExpBinary:ERR for POW_ARR2 not implemented")
   else error(sourceInfo(), 'daeExpBinary:ERR')
 end daeExpBinary;
 
