@@ -147,11 +147,9 @@ public
         for body in eqn.body loop
           Equation.map(body, function collectVars(func = function BVariable.equalName(var_ptr2 = var_ptr), collector = var_occurences));
           occ_lst := UnorderedSet.toList(var_occurences);
-          if listLength(occ_lst) == 1 then
-            (iterators, _)  := Iterator.getFrames(Equation.getForIterator(eqn));
-            order := UnorderedMap.fromLists(iterators, list(EvalOrder.INDEPENDENT for i in iterators), ComponentRef.hash, ComponentRef.isEqual);
-          else
-            order := UnorderedMap.new<EvalOrder>(ComponentRef.hash, ComponentRef.isEqual);
+          (iterators, _)  := Iterator.getFrames(Equation.getForIterator(eqn));
+          order := UnorderedMap.fromLists(iterators, list(EvalOrder.INDEPENDENT for i in iterators), ComponentRef.hash, ComponentRef.isEqual);
+          if listLength(occ_lst) <> 1 then
             subs  := list(ComponentRef.subscriptsAllWithWholeFlat(cref) for cref in occ_lst);
             subs  := List.transposeList(subs);
             subs_to_solve := ComponentRef.subscriptsAllWithWholeFlat(cref_to_solve);
