@@ -149,9 +149,14 @@ protected
         (variables, disc_eqns, knowns, initials, discretes, discrete_states, clocked_states, previous)
           := discreteFunc(variables, eqData.clocked, knowns, initials, discretes, discrete_states, clocked_states, previous, "clocked equations");
 
+        // collect clocked states from continuous equations
+        (variables, disc_eqns, knowns, initials, discretes, discrete_states, clocked_states, previous)
+          := discreteFunc(variables, eqData.continuous, knowns, initials, discretes, discrete_states, clocked_states, previous, "continuous equations");
+
         // collect discrete states from initial equations
         (variables, init_eqns, knowns, initials, discretes, discrete_states, clocked_states, previous)
           := discreteFunc(variables, eqData.initials, knowns, initials, discretes, discrete_states, clocked_states, previous, "initial equations");
+
 
         // update variable arrays
         varData.variables         := variables;
@@ -462,25 +467,19 @@ protected
     discrete_states := VariablePointers.removeList(acc_clocked_states, discrete_states);
 
     if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
-      print(StringUtil.headline_4("[stateselection] Natural discrete states from " + context + ":"));
-      if listEmpty(acc_discrete_states) then
-        print("\t<no discrete states>\n\n");
-      else
+      if not listEmpty(acc_discrete_states) then
+        print(StringUtil.headline_4("[stateselection] Natural discrete states from " + context + ":"));
         print(List.toString(acc_discrete_states, BVariable.pointerToString, "", "\t", "\n\t", "\n") + "\n");
       end if;
-      print(StringUtil.headline_4("[stateselection] Natural clocked states from " + context + ":"));
-      if listEmpty(acc_clocked_states) then
-        print("\t<no clocked states>\n\n");
-      else
+      if not listEmpty(acc_clocked_states) then
+        print(StringUtil.headline_4("[stateselection] Natural clocked states from " + context + ":"));
         print(List.toString(acc_clocked_states, BVariable.pointerToString, "", "\t", "\n\t", "\n") + "\n");
       end if;
     end if;
 
     if Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO) then
-      print(StringUtil.headline_4("[discreteinfo] pre() and previous() variables from " + context + ":"));
-      if listEmpty(acc_previous) then
-        print("\t<no pre/previous variables>\n\n");
-      else
+      if not listEmpty(acc_previous) then
+        print(StringUtil.headline_4("[discreteinfo] pre() and previous() variables from " + context + ":"));
         print(List.toString(acc_previous, BVariable.pointerToString, "", "\t", "\n\t", "\n") + "\n");
       end if;
     end if;
