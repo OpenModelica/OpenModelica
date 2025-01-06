@@ -415,6 +415,15 @@ public
     end match;
   end isClocked;
 
+  function isIterator
+    extends checkVar;
+  algorithm
+    b := match var.backendinfo.varKind
+      case VariableKind.ITERATOR() then true;
+      else false;
+    end match;
+  end isIterator;
+
   partial function getVarPartner
     input Pointer<Variable> var_ptr;
     output Option<Pointer<Variable>> partner;

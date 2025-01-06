@@ -496,8 +496,8 @@ val(x[3],1);
 // 	[----] end for;
 // 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
-// BLOCK 4: Sliced Component (status = Solve.UNPROCESSED)
-// --------------------------------------------------------
+// BLOCK 4: Resizable Component (status = Solve.UNPROCESSED)
+// -----------------------------------------------------------
 // ### Variable:
 // 	x[1 + $i1]
 // ### Equation:
@@ -542,8 +542,8 @@ val(x[3],1);
 // 	[----] end for;
 // 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
-// BLOCK 4: Sliced Component (status = Solve.UNPROCESSED)
-// --------------------------------------------------------
+// BLOCK 4: Resizable Component (status = Solve.UNPROCESSED)
+// -----------------------------------------------------------
 // ### Variable:
 // 	x[1 + $i1]
 // ### Equation:
@@ -588,8 +588,8 @@ val(x[3],1);
 // 	[----] end for;
 // 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
-// BLOCK 4: Sliced Component (status = Solve.UNPROCESSED)
-// --------------------------------------------------------
+// BLOCK 4: Resizable Component (status = Solve.UNPROCESSED)
+// -----------------------------------------------------------
 // ### Variable:
 // 	x[1 + $i1]
 // ### Equation:
@@ -638,8 +638,8 @@ val(x[3],1);
 // 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
 // --- Alias of INI[1 | 4] ---
-// BLOCK 4: Generic Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
+// BLOCK 4: Resizable Component (status = Solve.EXPLICIT)
+// --------------------------------------------------------
 // ### Variable:
 // 	x[1 + $i1]
 // ### Equation:
@@ -684,8 +684,8 @@ val(x[3],1);
 // 	[----] end for;
 // 	slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
 //
-// BLOCK 4: Generic Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
+// BLOCK 4: Resizable Component (status = Solve.EXPLICIT)
+// --------------------------------------------------------
 // ### Variable:
 // 	x[1 + $i1]
 // ### Equation:

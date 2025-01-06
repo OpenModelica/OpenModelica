@@ -778,11 +778,12 @@ protected
 
     (simulation_lst, continuous_lst, clocked_lst, discretes_lst, initials_lst, auxiliaries_lst, removed_lst) := BEquation.typeList(EquationPointers.toList(equations));
 
-    equations := Resizable.main(equations, varData);
+    equations := EquationPointers.removeList(clocked_lst, equations);
+    equations := Resizable.resize(equations, varData);
 
     eqData := BEquation.EQ_DATA_SIM(
       uniqueIndex = idx,
-      equations   = EquationPointers.removeList(clocked_lst, equations),
+      equations   = equations,
       simulation  = EquationPointers.fromList(simulation_lst),
       continuous  = EquationPointers.fromList(continuous_lst),
       clocked     = EquationPointers.fromList(clocked_lst),

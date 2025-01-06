@@ -59,8 +59,10 @@ protected
   import Solve = NBSolve;
 public
   constant Boolean debug = false; // SET TO TRUE FOR DEBUGGING
+  type EvalOrder = enumeration(INDEPENDENT, FORWARD, BACKWARD, FAILED);
 
-  function main
+  function resize
+    "this resizes the resizable parameters to the optimal value to get the smallest possible system"
     input output EquationPointers equations;
     input VarData varData;
   protected
@@ -117,7 +119,105 @@ public
         end if;
       then ();
     end match;
-  end main;
+  end resize;
+
+  function detect
+    "this function detects if an equation is resizable"
+    input Equation eqn;
+    input ComponentRef cref_to_solve;
+    output UnorderedMap<ComponentRef, EvalOrder> order;
+  protected
+    Pointer<Variable> var_ptr = BVariable.getVarPointer(cref_to_solve);
+    UnorderedSet<ComponentRef> var_occurences = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedSet<ComponentRef> ite_occurences;
+    list<ComponentRef> occ_lst, iterators;
+    list<list<Subscript>> subs;
+    list<Subscript> subs_to_solve, local_subs;
+    Subscript sub_to_solve;
+    ComponentRef iter;
+    DifferentiationArguments args;
+    Option<Integer> opt_factor;
+    Integer factor;
+    Expression shift;
+    Integer shift_value, v2;
+    EvalOrder eval;
+  algorithm
+    order := match eqn
+      case Equation.FOR_EQUATION() algorithm
+        for body in eqn.body loop
+          Equation.map(body, function collectVars(func = function BVariable.equalName(var_ptr2 = var_ptr), collector = var_occurences));
+          occ_lst := UnorderedSet.toList(var_occurences);
+          (iterators, _)  := Iterator.getFrames(Equation.getForIterator(eqn));
+          order := UnorderedMap.fromLists(iterators, list(EvalOrder.INDEPENDENT for i in iterators), ComponentRef.hash, ComponentRef.isEqual);
+          if listLength(occ_lst) <> 1 then
+            subs  := list(ComponentRef.subscriptsAllWithWholeFlat(cref) for cref in occ_lst);
+            subs  := List.transposeList(subs);
+            subs_to_solve := ComponentRef.subscriptsAllWithWholeFlat(cref_to_solve);
+            for dim in List.zip(subs, subs_to_solve) loop
+              (local_subs, sub_to_solve) := dim;
+              ite_occurences := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+              for sub in local_subs loop
+                Subscript.mapExp(sub, function collectVars(func = BVariable.isIterator, collector = ite_occurences));
+              end for;
+              iterators := UnorderedSet.toList(ite_occurences);
+              _ := match iterators
+                case {iter} algorithm
+                  eval := UnorderedMap.getSafe(iter, order, sourceInfo());
+                  if eval < EvalOrder.FAILED then
+                    args := DifferentiationArguments.simpleCref(iter);
+                    opt_factor := NONE();
+                    for sub in local_subs loop
+                      factor := getFactor(Subscript.toExp(sub), args, opt_factor);
+                      opt_factor := SOME(factor);
+                    end for;
+
+                    _ := match opt_factor
+                      case SOME(factor) guard(factor <> 0) algorithm
+                        try
+                          Expression.INTEGER(shift_value) := getShift(Subscript.toExp(sub_to_solve), iter);
+                          for sub in local_subs loop
+                            Expression.INTEGER(v2) := getShift(Subscript.toExp(sub), iter);
+                            eval := match eval
+                              case EvalOrder.INDEPENDENT  guard(shift_value == v2)  then EvalOrder.INDEPENDENT;
+                              case EvalOrder.INDEPENDENT  guard(shift_value > v2)   then EvalOrder.FORWARD;
+                              case EvalOrder.INDEPENDENT  guard(shift_value < v2)   then EvalOrder.BACKWARD;
+                              case EvalOrder.FORWARD      guard(shift_value >= v2)  then EvalOrder.FORWARD;
+                              case EvalOrder.BACKWARD     guard(shift_value <= v2)  then EvalOrder.BACKWARD;
+                              else EvalOrder.FAILED;
+                            end match;
+                          end for;
+                          if eval == EvalOrder.FAILED then break; end if;
+                        else
+                          eval := EvalOrder.FAILED;
+                        end try;
+                        UnorderedMap.add(iter, eval, order);
+                      then ();
+                      else ();
+                    end match;
+                  end if;
+                then ();
+
+                else algorithm
+                  for it in iterators loop
+                    UnorderedMap.add(it, EvalOrder.FAILED, order);
+                  end for;
+                  break;
+                then ();
+              end match;
+            end for;
+          end if;
+        end for;
+      then order;
+      else algorithm
+        order := UnorderedMap.fromLists({ComponentRef.EMPTY()}, {EvalOrder.FAILED}, ComponentRef.hash, ComponentRef.isEqual);
+      then order;
+    end match;
+  end detect;
+
+  function orderFailed
+    input EvalOrder eo;
+    output Boolean b = eo == EvalOrder.FAILED;
+  end orderFailed;
 
 protected
   type ParameterList = list<ComponentRef>;
@@ -159,7 +259,7 @@ protected
         // fill the occurence sets traversing the body of the equation
         for body in eqn.body loop
           Equation.map(body, function collectOccurences(occs = occs));
-          Equation.map(body, function collectVars(func = BVariable.isArray, constrained_vars = constrained_vars));
+          Equation.map(body, function collectVars(func = BVariable.isArray, collector = constrained_vars));
         end for;
         findOptimalValue(eqn, occs, resizables, parameters, min_parameters, optimal_values, c2pi);
         UnorderedSet.fold(constrained_vars, function addVariableConstraint(eqn = eqn, replacements = SOME(replacements)), c2pi);
@@ -183,7 +283,7 @@ protected
 
       else algorithm
         // create dummy replacements (no iterators to replace)
-        Equation.map(eqn, function collectVars(func = BVariable.isResizable, constrained_vars = constrained_vars));
+        Equation.map(eqn, function collectVars(func = BVariable.isResizable, collector = constrained_vars));
         // subs: [n] dim [m] --> m >= n --> implication on split?
         // subs: [10] dim [m] --> m >= 10 also implication on split values
         UnorderedSet.fold(constrained_vars, function addVariableConstraint(eqn = eqn, replacements = NONE()), c2pi);
@@ -325,11 +425,11 @@ protected
   function collectVars
     input output Expression exp;
     input BVariable.checkVar func;
-    input UnorderedSet<ComponentRef> constrained_vars;
+    input UnorderedSet<ComponentRef> collector;
   algorithm
     _ := match exp
       case Expression.CREF() guard(func(BVariable.getVarPointer(exp.cref))) algorithm
-        UnorderedSet.add(exp.cref, constrained_vars);
+        UnorderedSet.add(exp.cref, collector);
       then ();
       else();
     end match;
@@ -405,6 +505,32 @@ protected
     end for;
   end findOptimalValue;
 
+  function getFactor
+    input Expression exp;
+    input DifferentiationArguments args;
+    input Option<Integer> opt_factor;
+    output Integer factor;
+  protected
+    Expression diff;
+  algorithm
+    diff := Differentiate.differentiateExpression(exp, args);
+    diff := SimplifyExp.simplify(diff);
+    factor := Expression.integerValueOrDefault(diff, 0);
+
+    if Util.isSome(opt_factor) and factor <> Util.getOption(opt_factor) then
+      factor := 0;
+    end if;
+  end getFactor;
+
+  function getShift
+    input Expression exp;
+    input ComponentRef cref;
+    output Expression shift;
+  algorithm
+    shift := Replacements.single(exp, Expression.CREF(Type.INTEGER(), cref), Expression.INTEGER(0));
+    shift := SimplifyExp.simplify(shift);
+  end getShift;
+
   function getDistance
     input ComponentRef cref;
     input Expression exp;
@@ -413,23 +539,15 @@ protected
     input output Integer min_distance;
     input output Integer max_distance;
   protected
-    Expression diff, shift;
+    Expression shift;
     Integer factor, distance;
   algorithm
     if Util.isNone(opt_factor) or Util.getOption(opt_factor) <> 0 then
-      // get the factor
-      diff := Differentiate.differentiateExpression(exp, args);
-      diff := SimplifyExp.simplify(diff);
-      factor := Expression.integerValueOrDefault(diff, 0);
-
-      if Util.isSome(opt_factor) and factor <> Util.getOption(opt_factor) then
-        factor := 0;
-      end if;
+      factor := getFactor(exp, args, opt_factor);
 
       if factor <> 0 then
         // if the factor checks out, get shift and update min and max
-        shift := Replacements.single(exp, Expression.CREF(Type.INTEGER(), cref), Expression.INTEGER(0));
-        shift := SimplifyExp.simplify(shift);
+        shift := getShift(exp, cref);
         try
           // the shift has to be a single integer value
           Expression.INTEGER(distance) := shift;

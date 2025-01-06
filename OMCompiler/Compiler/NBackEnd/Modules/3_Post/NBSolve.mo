@@ -385,23 +385,45 @@ public
       local
         Slice<VariablePointer> var_slice;
         Slice<EquationPointer> eqn_slice;
-        Equation eqn;
 
-      case StrongComponent.SLICED_COMPONENT(var= var_slice, eqn = eqn_slice) guard(Equation.isForEquation(Slice.getT(eqn_slice))) algorithm
-        (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(Pointer.access(Slice.getT(eqn_slice)), comp.var_cref, funcTree, kind, implicit_index, slicing_map);
-        if solve_status < Status.UNSOLVABLE then
-          eqn_slice := Slice.SLICE(Pointer.create(eqn), eqn_slice.indices);
-        else
-          (eqn_slice, funcTree, implicit_index, solve_status) := solveForVarSlice(eqn_slice, var_slice, funcTree, kind, implicit_index, slicing_map);
-        end if;
-        // ToDo: if solve_status not explicit -> algebraic loop with residual and Status.IMPLICIT
-      then (StrongComponent.GENERIC_COMPONENT(comp.var_cref, eqn_slice), Status.EXPLICIT);
+      case StrongComponent.SLICED_COMPONENT(var = var_slice, eqn = eqn_slice) guard(Equation.isForEquation(Slice.getT(eqn_slice))) algorithm
+        (comp, solve_status, funcTree, implicit_index) := solveGenericEquationSlice(var_slice, eqn_slice, comp.var_cref, funcTree, kind, implicit_index, slicing_map);
+      then (comp, solve_status);
+
+      // ToDo: make these actually resizable inside entwined equations (?)
+      case StrongComponent.RESIZABLE_COMPONENT(var = var_slice, eqn = eqn_slice) guard(Equation.isForEquation(Slice.getT(eqn_slice))) algorithm
+        (comp, solve_status, funcTree, implicit_index) := solveGenericEquationSlice(var_slice, eqn_slice, comp.var_cref,  funcTree, kind, implicit_index, slicing_map);
+      then (comp, solve_status);
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + StrongComponent.toString(comp) + "\n"});
       then fail();
     end match;
   end solveGenericEquation;
+
+  function solveGenericEquationSlice
+    input Slice<VariablePointer> var_slice;
+    input Slice<EquationPointer> eqn_slice;
+    input ComponentRef cref;
+    output StrongComponent comp;
+    output Status solve_status;
+    input output FunctionTree funcTree;
+    input BPartition.Kind kind;
+    input output Integer implicit_index;
+    input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
+  protected
+    Equation eqn;
+    Slice<EquationPointer> solved_slice;
+  algorithm
+   (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(Pointer.access(Slice.getT(eqn_slice)), cref, funcTree, kind, implicit_index, slicing_map);
+    if solve_status < Status.UNSOLVABLE then
+      solved_slice := Slice.SLICE(Pointer.create(eqn), eqn_slice.indices);
+    else
+      (solved_slice, funcTree, implicit_index, solve_status) := solveForVarSlice(eqn_slice, var_slice, funcTree, kind, implicit_index, slicing_map);
+    end if;
+    // ToDo: if solve_status not explicit -> algebraic loop with residual and Status.IMPLICIT
+    comp := StrongComponent.GENERIC_COMPONENT(cref, solved_slice);
+  end solveGenericEquationSlice;
 
   function solveSingleStrongComponent
     input output Equation eqn;
