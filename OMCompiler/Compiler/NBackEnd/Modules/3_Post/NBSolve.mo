@@ -57,6 +57,7 @@ public
   import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, IfEquationBody, WhenEquationBody, WhenStatement, SlicingStatus};
   import NBVariable.{VariablePointer, VariablePointers, VarData};
   import BVariable = NBVariable;
+  import Inline = NBInline;
   import Replacements = NBReplacements;
   import Slice = NBSlice;
   import StrongComponent = NBStrongComponent;
@@ -412,10 +413,17 @@ public
     input output Integer implicit_index;
     input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
   protected
+    Pointer<Equation> eqn_ptr = Slice.getT(eqn_slice);
     Equation eqn;
     Slice<EquationPointer> solved_slice;
+    UnorderedMap<ComponentRef, Expression> replacements;
   algorithm
-   (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(Pointer.access(Slice.getT(eqn_slice)), cref, funcTree, kind, implicit_index, slicing_map);
+    if listLength(eqn_slice.indices) == 1 then
+      replacements    := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+      (eqn, funcTree) := Equation.singleSlice(eqn_ptr, List.first(eqn_slice.indices), Equation.sizes(eqn_ptr), cref, replacements, funcTree);
+    else
+      (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(Pointer.access(eqn_ptr), cref, funcTree, kind, implicit_index, slicing_map);
+    end if;
     if solve_status < Status.UNSOLVABLE then
       solved_slice := Slice.SLICE(Pointer.create(eqn), eqn_slice.indices);
     else
