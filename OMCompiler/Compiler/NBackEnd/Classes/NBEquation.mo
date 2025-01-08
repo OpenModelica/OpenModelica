@@ -384,7 +384,8 @@ public
     end dimensions;
 
     function createLocationReplacements
-      "adds replacements rules for a single frame location"
+      "adds replacements rules for a single frame location
+      Note: does not take body sizes > 1 into account"
       input Iterator iter                                         "iterator to replace";
       input array<Integer> location                               "zero based location";
       input UnorderedMap<ComponentRef, Expression> replacements   "replacement rules";
@@ -2187,16 +2188,16 @@ public
 
         // slice the equation
         case FOR_EQUATION() algorithm
-          // solve the body if necessary
-          if not ComponentRef.isEmpty(cref_to_solve) then
-            (sliced_eqn, funcTree, _, _) := Solve.solveBody(List.first(eqn.body), cref_to_solve, funcTree);
-          end if;
           // get the frame location indices from single index
           location := Slice.indexToLocation(scal_idx, sizes);
           // create the replacement rules for this location
           Iterator.createLocationReplacements(eqn.iter, listArray(location), replacements);
           // replace iterators
-          sliced_eqn := map(sliced_eqn, function Replacements.applySimpleExp(replacements = replacements));
+          sliced_eqn := map(List.first(eqn.body), function Replacements.applySimpleExp(replacements = replacements));
+          // solve the body if necessary
+          if not ComponentRef.isEmpty(cref_to_solve) then
+            (sliced_eqn, funcTree, _, _) := Solve.solveBody(sliced_eqn, cref_to_solve, funcTree);
+          end if;
         then sliced_eqn;
 
         // ToDo: arrays 'n stuff
