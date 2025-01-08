@@ -336,7 +336,7 @@ public
       (func, name) := module;
       if  Flags.isSet(Flags.FAILTRACE) then
         debugStr := "[failtrace] ........ [" + ClockIndexes.toString(clock_idx) + "] " + name;
-        debugStr := debugStr + StringUtil.repeat(".", 50 - stringLength(debugStr));
+        debugStr := debugStr + StringUtil.repeat(".", intMax(60 - stringLength(debugStr), 0));
       end if;
       if clock_idx <> -1 then
         System.realtimeClear(clock_idx);
@@ -360,7 +360,7 @@ public
           if Util.tuple21(varSizes) <> Util.tuple21(eqnSizes) then
             debugStr := debugStr + "XX ";
           end if;
-          debugStr := debugStr + StringUtil.repeat(".", 100 - stringLength(debugStr));
+          debugStr := debugStr + StringUtil.repeat(".", intMax(100 - stringLength(debugStr), 0));
           debugStr := debugStr + " " + realString(clock_time) + "s\n";
           print(debugStr);
         end if;
