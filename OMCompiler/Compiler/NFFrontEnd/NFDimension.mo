@@ -199,6 +199,7 @@ public
       case ENUM(enumType = ty as Type.ENUMERATION())
         then DAE.DIM_ENUM(ty.typePath, ty.literals, listLength(ty.literals));
       case EXP() then DAE.DIM_EXP(Expression.toDAE(dim.exp));
+      case RESIZABLE() then DAE.DIM_INTEGER(dim.size); //ToDo: have resizable here
       case UNKNOWN() then DAE.DIM_UNKNOWN();
     end match;
   end toDAE;
