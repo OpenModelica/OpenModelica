@@ -183,7 +183,7 @@ double* getFirstNewtonStep( unsigned m, double* f, double** fx)
   dgesv_(&N, &NRHS, a, &LDA, ipiv, b, &LDB, &info);
 
   if (info > 0)
-    printf( "getFirstNewtonStep: the first Newton step could not be computed; the info satus is : %d\n", info);
+    infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "getFirstNewtonStep: the first Newton step could not be computed; the info satus is : %d", info);
   else
   {
     // Store Newton steps in dx
@@ -302,8 +302,8 @@ double*** getHessian( DATA* data, threadData_t *threadData, unsigned sysNumber, 
         fxx[i][k][j] = (fxPls[i][j] - fxMin[i][j]) / (2 * delta_x);
         if (isnan(fxx[i][k][j]))
         {
-          printf("NaN detected: fxx[%d][%d][%d]: fxPls[%d][%d] = %f, fxMin[%d][%d] = %f, delta_x = %f\n",
-            i,j,k, i,j,fxPls[i][j], i,j,fxMin[i][j], delta_x);
+          infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "NaN detected: fxx[%d][%d][%d]: fxPls[%d][%d] = %f, fxMin[%d][%d] = %f, delta_x = %f\n",
+            i+1,j+1,k+1, i+1,j+1,fxPls[i][j], i+1,j+1,fxMin[i][j], delta_x);
           return fxx;
         }
       }
@@ -485,12 +485,12 @@ double** getInvJacobian( unsigned m, double** fx)
   // Call Lapack function dgetrf to compute the LU factorization of fx
   dgetrf_(&N, &N, a, &N, ipiv, &info);
   if (info > 0)
-    printf( "getInvJacobian: LU factorization could not be computed; the info satus is : %d\n", info);
+    infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "getInvJacobian: LU factorization could not be computed; the info status is : %d", info);
 
   // Call Lapack function dgetri to compute the inverse of fx
   dgetri_(&N, a, &N, ipiv, WORK, &LWORK, &info);
   if (info > 0)
-    printf( "getInvJacobian: inverse Jacobian could not be computed; the info satus is : %d\n", info);
+    infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "getInvJacobian: inverse Jacobian could not be computed; the info satus is : %d", info);
 
   // Return two dimensional array
   double** inv_fx = (double**)malloc(m * sizeof(double*));
@@ -525,7 +525,6 @@ double** calcSigma( unsigned m, unsigned q, unsigned* w_idx,
   unsigned i, j, k;
 
   // Calculate inverse Jacobian, i.e. inverse matrix of fx
-  ///printf("Calculate inverse Jac of fx\n");
   double** inv_fx = getInvJacobian( m, fx);
 
   // Get matrix H[i] = (x1 - x0)' * fxx = dx' * fxx (1 x m * m x m matrix --> m vector)
@@ -619,9 +618,7 @@ double** calcSigma( unsigned m, unsigned q, unsigned* w_idx,
 void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsigned q, unsigned* n_idx, unsigned* w_idx,
                    double* x0, double* alpha, double*** Gamma_ijk, double** Sigma_ij)
 {
-  printf("   ========================================================\n");
-  printf("   Final results\n");
-  printf("   ========================================================\n\n");
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "Values of relevant indicators");
 
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
 
@@ -643,40 +640,28 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
   // Print alpha, Gamma, and Sigma if value > eps
   // --------------------------------------------
 
-  printf("      alpha_i > %4.0e\n", eps);
-  printf("      ------------------------");
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "alpha_i > %5.3f", eps);
   for (i = 0; i < p; ++i)
-  {
     if (alpha[i] > eps)
-    {
-      if (alpha[i] < 1.e5)
-        printf("\n      alpha_%d =  %7.2f", n_idx[i]+1, alpha[i]);
-      else
-        printf("\n      alpha_%d =  %7.2e", n_idx[i]+1, alpha[i]);
-    }
-  }
-  printf("\n\n");
+      infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "alpha_%-3d =  %5.2f", n_idx[i]+1, alpha[i]);
+  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS);
 
-  printf("      Gamma_ijk > %4.0e\n", eps);
-  printf("      ------------------------");
-
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "Gamma_ijk > %5.3f", eps);
   for (i = 0; i < p; i++)
-  {
     for (j = 0; j < q; j++)
       for (k = j; k < q; k++)
         if (Gamma_ijk[i][j][k] > eps)
-          printf("\n      Gamma_%1d_%1d_%1d =  %7.2f", n_idx[i]+1, w_idx[j]+1, w_idx[k]+1, Gamma_ijk[i][j][k]);
-  }
-  printf("\n\n");
+          infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Gamma_%-4d_%-4d_%-4d =  %5.2f", n_idx[i]+1, w_idx[j]+1, w_idx[k]+1, Gamma_ijk[i][j][k]);
+  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS);
 
-  printf("      |Sigma_jj| > %4.0e\n", eps);
-  printf("      ------------------------");
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "|Sigma_jj| > %5.3f", eps);
   for (i = 0; i < q; i++)
-  {
     if (fabs(Sigma_ij[i][i]) > eps)
-      printf("\n      Sigma_%d_%d =  %7.2f", w_idx[i]+1, w_idx[i]+1, fabs(Sigma_ij[i][i]));
-  }
-  printf("\n\n");
+       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "|sigma_%-4d_%-4d_%-4d| = %5.2f", w_idx[i]+1, w_idx[i]+1, fabs(Sigma_ij[i][i]));
+  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS);
+
+  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS);  // This closes the "Values of relevant indicators" section
+
 
   // Select values of Gamma and Sigma > eps and store them in descending order
   // -------------------------------------------------------------------------
@@ -773,15 +758,19 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
     // Increment number of values found
     n_gt_eps++;
   }
-  //printf("\n\n");
+
+  // Print ranked indicators
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "Ranked indicators");
+
 
   // Print variables referenced by Sigma and Gamma values > eps and concerned Sigma or Gamma value
   // ---------------------------------------------------------------------------------------------
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "By variable");
 
   unsigned* printedIdx = (unsigned*)malloc(2 * n_gt_eps * sizeof(unsigned));
   unsigned nPrinted = 0;
-  printf("      Var number  Var name                        Initial guess  max(Gamma,Sigma)\n");
-  printf("      ----------  ------------------------------  -------------  ----------------");
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Var number  Var name                        Initial guess  max(Gamma,Sigma)");
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "----------  ------------------------------  -------------  ----------------");
   for (l = 0; l < n_gt_eps; l++)
   {
     printedIdx[nPrinted] = -1;
@@ -795,7 +784,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
       if (!alreadyPrinted)
       {
         // Print variable referenced l by Sigma, its init value and the max value between Gamma and Sigma
-        printf("\n      %10d  %30s  %13.7g  %7.2f",
+        infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%10d  %30s  %13.7g    %5.2f",
           w_idx[index_Sigma[l]]+1,
           modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[w_idx[index_Sigma[l]]],
           x0[w_idx[index_Sigma[l]]],
@@ -804,8 +793,8 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
       }
     }
     else if (0 <= index_Gamma_i[l] && index_Gamma_i[l] < p &&
-              0 <= index_Gamma_j[l] && index_Gamma_j[l] < q &&
-              0 <= index_Gamma_k[l] && index_Gamma_k[l] < q)
+             0 <= index_Gamma_j[l] && index_Gamma_j[l] < q &&
+             0 <= index_Gamma_k[l] && index_Gamma_k[l] < q)
     {
       // Check if variable l referenced by Gamma has already been printed for Sigma
       unsigned alreadyPrinted_j = 0;
@@ -819,7 +808,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
       if (!alreadyPrinted_j)
       {
         // Print variable referenced l by Gamma, its init value and the value of Gamma_ilk
-        printf("\n      %10d  %30s  %13.7g  %7.2f",
+        infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%10d  %30s  %13.7g  %7.2f",
           w_idx[index_Gamma_j[l]]+1,
           modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[w_idx[index_Gamma_j[l]]],
           x0[w_idx[index_Gamma_j[l]]],
@@ -829,7 +818,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
       if (!alreadyPrinted_k)
       {
         // Print variable referenced l by Gamma, its init value and the value of Gamma_ijl
-        printf("\n      %10d  %30s  %13.7g  %7.2f",
+        infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%10d  %30s  %13.7g  %7.2f",
           w_idx[index_Gamma_k[l]]+1,
           modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[w_idx[index_Gamma_k[l]]],
           x0[w_idx[index_Gamma_k[l]]],
@@ -838,7 +827,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
       }
     }
   }
-  printf("\n\n");
+  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS);
 
   // Select values of alpha and Gamma > eps and store them in descending order
   // -------------------------------------------------------------------------
@@ -920,10 +909,12 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
   // Print equations referenced by alpha and Gamma values > eps and concerned alpha or Gamma value
   // ---------------------------------------------------------------------------------------------
 
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "By equation");
+
   printedIdx = (unsigned*)realloc(printedIdx, n_gt_eps * sizeof(unsigned));
   nPrinted = 0;
-  printf("      Eq number   Eq index        max(alpha,Gamma)\n");
-  printf("      ----------  ------------    ----------------");
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Eq number   Eq index        max(alpha,Gamma)\n");
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "----------  ------------    ----------------");
   for (l = 0; l < n_gt_eps; l++)
   {
     printedIdx[nPrinted] = -1;
@@ -938,16 +929,15 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
       {
         // Print equation l referenced by alpha and the value of alpha_i
         if (alpha[index_alpha[l]] < 1.e5)
-          printf("\n      %10d    %10d    %7.2f", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
+          infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%10d    %10d    %7.2f", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
         else
-          printf("\n      %10d    %10d    %7.2e", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
-
+          infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%10d    %10d    %7.2e", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
         printedIdx[nPrinted++] = index_alpha[l];
       }
     }
     else if (0 <= index_Gamma_i[l] && index_Gamma_i[l] < p &&
-              0 <= index_Gamma_j[l] && index_Gamma_j[l] < q &&
-              0 <= index_Gamma_k[l] && index_Gamma_k[l] < q)
+             0 <= index_Gamma_j[l] && index_Gamma_j[l] < q &&
+             0 <= index_Gamma_k[l] && index_Gamma_k[l] < q)
     {
       // Check if equation l referenced by Gamma has already been printed for alpha
       unsigned alreadyPrinted = 0;
@@ -957,14 +947,14 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
       if (!alreadyPrinted)
       {
         // Print equation l referenced by Gamma and the value of Gamma_ljk
-        printf("\n      %10d    %10d    %7.2f", n_idx[index_Gamma_i[l]]+1,
+        infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%10d    %10d    %7.2f", n_idx[index_Gamma_i[l]]+1,
           systemData->eqn_simcode_indices[n_idx[index_Gamma_i[l]]],
           Gamma_ijk[index_Gamma_i[l]][index_Gamma_j[l]][index_Gamma_k[l]]);
         printedIdx[nPrinted++] = index_Gamma_i[l];
       }
     }
   }
-  printf("\n\n");
+  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS);
 
   printf("   ========================================================\n\n\n");
 
@@ -1024,7 +1014,7 @@ unsigned* getNonlinearEqns( DATA* data, threadData_t* threadData, unsigned sysNu
   while (failed)
   {
     double d_lambda = 0.7;
-    printf("                              Dampening factor lowered from %7.3f to %7.3f\n", *lambda, *lambda * d_lambda);
+    infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Dampening factor lowered from %7.3f to %7.3f", *lambda, *lambda * d_lambda");
 
     // Handle failure
     *lambda *= d_lambda;
@@ -1148,7 +1138,11 @@ unsigned* getLinearVars( unsigned m, unsigned q, unsigned *w_idx )
 
 void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 {
-  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics starting ....");
+  // infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics starting ....");  THIS IS NOT REALLY NECESSARY
+
+  /**** This section is not really required for the Newton diagnostics. It could be useful if only parameters and variables 
+   **** relevant for the specific system being analyzed were printed out. Otherwise, for large systems this section would be
+   **** huge and just annoying
 
   printf("\n   ****** Model name: %s\n", data->modelData->modelName);
   printf("   ****** Initial                         : %d\n" , data->simulationInfo->initial);
@@ -1177,6 +1171,8 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
     printf("   ****** %2d: id=%d, name=%10s, value=%10f\n", i+1, (data->modelData->realVarsData[i].info.id),
       (data->modelData->realVarsData[i].info.name),
       (data->modelData->realVarsData[i].attribute.start));
+
+  */
 
   // --------------------------------------------------------------------------------------------------------------------------------
 
@@ -1214,8 +1210,8 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 
   if (p == 0)
   {
-    printf("\n");
-    infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics terminated: no non-linear equations!!");
+    infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "");
+    infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics terminated: no non-linear equations!");
     return;
   }
 
@@ -1227,50 +1223,114 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 
   // --------------------------------------------------------------------------------------------------------------------------------
 
-  printf("\n   Information about equations from non-linear pattern ....\n\n");
-  printf("               Total number of equations    = %d\n", systemData->nonlinearPattern->numberOfEqns);
-  printf("               Number of independents       = %d\n", systemData->nonlinearPattern->numberOfVars);
-  printf("               Number of non-linear entries = %d\n", systemData->nonlinearPattern->numberOfNonlinear);
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "Information about the system from non-linear pattern");
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Total number of equations    = %d", systemData->nonlinearPattern->numberOfEqns);
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Number of unknowns           = %d", systemData->nonlinearPattern->numberOfVars);
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Number of non-linear entries = %d", systemData->nonlinearPattern->numberOfNonlinear);
+  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS) ;
 
-  // Prints values of vector x0
-  printf("\n   Vector x0: all dependents ....\n");
+  // --------------------------------------------------------------------------------------------------------------------------------
+
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "Information about the initial guess");
+
+  // Prints values of unknown vector x0 - printed indeces range from 1 to m (as in mathematics, not in C)
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "Vector x0 of unknowns");
   for (i = 0; i < m; i++)
-    printf("\n               x0[%d] = %14.10f  (%s)", i, x0[i],
-      modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[i]);
-  printf("\n");
+	if(m < 10)
+      infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "x0[%1d] = %14.10f  (%s)", i+1, x0[i],
+        modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[i]);
+	else if(m < 100)
+      infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "x0[%2d] = %14.10f  (%s)", i+1, x0[i],
+        modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[i]);
+	else if(m < 1000)
+      infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "x0[%3d] = %14.10f  (%s)", i+1, x0[i],
+        modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[i]);
+	else if(m < 100)
+      infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "x0[%4d] = %14.10f  (%s)", i+1, x0[i],
+        modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[i]);
+	else
+      infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "x0[%5d] = %14.10f  (%s)", i+1, x0[i],
+        modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[i]);
+  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS) ;
 
-  // Prints function values "f", i.e. residuals as function of x0
-  printf("\n   Function values of all equations f(x0) ....\n");
+  // Prints residual function values at x0: vector f(x0)
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "Residual function values of all equations f(x0)");
   for (i = 0; i < m; i++)
     if (fabs(f[i]) > 1.e-9)
-      printf("\n               f^%d = %14.10f", i+1, f[i]);
-  printf("\n");
+	  if (m < 10)
+        infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "f[%1d] = %14.10f", i+1, f[i]);
+	  else if (m < 100)
+        infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "f[%2d] = %14.10f", i+1, f[i]);
+	  else if (m < 1000)
+        infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "f[%3d] = %14.10f", i+1, f[i]);
+	  else if (m < 10000)
+        infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "f[%4d] = %14.10f", i+1, f[i]);
+	  else
+        infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "f[%5d] = %14.10f", i+1, f[i]);
+  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS) ;
 
-  // Prints vector n
-  printf("\n   Function values of non-linear equations n(w0) ....\n");
-  for (i = 0; i < p; ++i)
-    printf("\n               n^%d = f^%d = %14.10f", i+1, n_idx[i]+1, f[n_idx[i]]);
-  printf("\n");
-
-  // Prints vector w0
-  printf("\n   Vector w0: non-linear dependents ....\n");
+  // Prints values of nonlinear unknown vector w0 - printed indeces range from 1 to m (as in mathematics, not in C)
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "Vector w0 of nonlinear unknowns");
   for (i = 0; i < q; i++)
-    printf("\n               w0[%d] = x0[%d] = %14.10f  (%s)", i, w_idx[i], x0[w_idx[i]],
-      modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[w_idx[i]]);
-  printf("\n");
+    if (m < 10)
+      infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "w0[%1d] = x0[%1d] = %14.10f  (%s)", i+1, w_idx[i] + 1, x0[w_idx[i]],
+        modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[w_idx[i]]);
+    else if (m < 100)
+      infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "w0[%2d] = x0[%2d] = %14.10f  (%s)", i+1, w_idx[i] + 1, x0[w_idx[i]],
+        modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[w_idx[i]]);
+    else if (m < 1000)
+      infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "w0[%3d] = x0[%3d] = %14.10f  (%s)", i+1, w_idx[i] + 1, x0[w_idx[i]],
+        modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[w_idx[i]]);
+    else if (m < 10000)
+      infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "w0[%4d] = x0[%4d] = %14.10f  (%s)", i+q+1, w_idx[i] + 1, x0[w_idx[i]],
+        modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[w_idx[i]]);
+    else
+      infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "w0[%5d] = x0[%5d] = %14.10f  (%s)", i+q+1, w_idx[i] + 1, x0[w_idx[i]],
+        modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[w_idx[i]]);
+  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS) ;
 
-  // Prints vector z0
+  // Prints valuse of linear unknown vector z0 - printed indeces range from 1 to m (as in mathematics, not in C)
   if (m != q)
   {
-    printf("\n   Vector z0: linear dependents .... %d\n", m-q);
+    infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "Vector z0 of nonlinear unknowns");
     for (i = 0; i < m-q; i++)
-      printf("\n               z0[%d] = %14.10f  (%s)", i, x0[z_idx[i]],
-        modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[z_idx[i]]);
-    printf("\n");
+      if (m - q < 10)
+        infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "z0[%1d] = %14.10f  (%s)", i + 1, x0[z_idx[i]],
+          modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[z_idx[i]]);
+      else if (m - q < 100)
+        infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "z0[%2d] = %14.10f  (%s)", i + 1, x0[z_idx[i]],
+          modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[z_idx[i]]);
+      else if (m - q < 1000)
+        infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "z0[%3d] = %14.10f  (%s)", i + 1, x0[z_idx[i]],
+          modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[z_idx[i]]);
+      else if (m - q < 10000)
+        infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "z0[%4d] = %14.10f  (%s)", i + 1, x0[z_idx[i]],
+          modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[z_idx[i]]);
+      else
+        infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "z0[%5d] = %14.10f  (%s)", i + 1, x0[z_idx[i]],
+          modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[z_idx[i]]);
+    messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS) ;
   }
 
-  printf("\n   Damping factor lambda = %6.3g\n", lambda);
-  printf("\n\n");
+  // Prints nonlinear residual function values at x0: vector n(x0)
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "Residual function values of all nonlinear equations n(w0)");
+  for (i = 0; i < p; ++i)
+	if (m < 10)
+      infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "n[%1d] = f[%1d] = %14.10f", i+1, n_idx[i]+1, f[n_idx[i]]);
+	else if (m < 100)
+      infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "n[%2d] = f[%2d] = %14.10f", i+1, n_idx[i]+1, f[n_idx[i]]);
+	else if (m < 1000)
+      infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "n[%3d] = f[%3d] = %14.10f", i+1, n_idx[i]+1, f[n_idx[i]]);
+	else if (m < 10000)
+      infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "n[%4d] = f[%4d] = %14.10f", i+1, n_idx[i]+1, f[n_idx[i]]);
+	else
+      infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "n[%5d] = f[%5d] = %14.10f", i+1, n_idx[i]+1, f[n_idx[i]]);
+  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS) ;
+
+
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Final damping factor lambda = %.3g", lambda);
+
+  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS); // End of information about the initial guess
 
   // --------------------------------------------------------------------------------------------------------------------------------
 
@@ -1322,7 +1382,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
     free(Sigma[i]);
   free(Sigma);
 
-  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics finished!!");
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics complete!");
 
   return;
 }
