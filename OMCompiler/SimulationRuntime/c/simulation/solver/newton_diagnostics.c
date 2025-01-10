@@ -1014,7 +1014,7 @@ unsigned* getNonlinearEqns( DATA* data, threadData_t* threadData, unsigned sysNu
   while (failed)
   {
     double d_lambda = 0.7;
-    infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Dampening factor lowered from %7.3f to %7.3f", *lambda, *lambda * d_lambda");
+    infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Dampening factor lowered from %7.3f to %7.3f", *lambda, *lambda * d_lambda);
 
     // Handle failure
     *lambda *= d_lambda;
