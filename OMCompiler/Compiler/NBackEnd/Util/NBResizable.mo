@@ -623,6 +623,8 @@ protected
   algorithm
     if Util.isSome(replacements) then
       const := Expression.map(old_const, function Replacements.applySimpleExp(replacements = Util.getOption(replacements)));
+    else
+      const := old_const;
     end if;
     parameters := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     Expression.map(const, function collectResizables(collector = parameters));

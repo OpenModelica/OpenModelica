@@ -544,7 +544,7 @@ protected
         then ();
 
         case VariableKind.PARAMETER() algorithm
-          if BVariable.isResizable(lowVar_ptr) then
+          if BVariable.isResizableParameter(lowVar_ptr) then
             resizables_lst := lowVar_ptr :: resizables_lst;
           else
             parameters_lst := lowVar_ptr :: parameters_lst;
