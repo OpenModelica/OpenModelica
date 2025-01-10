@@ -654,10 +654,10 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
           infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Gamma_%-4d_%-4d_%-4d =  %5.2f", n_idx[i]+1, w_idx[j]+1, w_idx[k]+1, Gamma_ijk[i][j][k]);
   messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS);
 
-  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "|Sigma_jj| > %5.3f", eps);
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "sigma_jj > %5.3f", eps);
   for (i = 0; i < q; i++)
     if (fabs(Sigma_ij[i][i]) > eps)
-       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "|sigma_%-4d_%-4d_%-4d| = %5.2f", w_idx[i]+1, w_idx[i]+1, fabs(Sigma_ij[i][i]));
+       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "sigma_%-4d_%-4d = %5.2f", w_idx[i]+1, w_idx[i]+1, fabs(Sigma_ij[i][i]));
   messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS);
 
   messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS);  // This closes the "Values of relevant indicators" section
@@ -769,8 +769,8 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
 
   unsigned* printedIdx = (unsigned*)malloc(2 * n_gt_eps * sizeof(unsigned));
   unsigned nPrinted = 0;
-  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Var number  Var name                        Initial guess  max(Gamma,Sigma)");
-  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "----------  ------------------------------  -------------  ----------------");
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Var no.  Var name                                  Initial guess  max(Gamma,sigma)");
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "-------  ----------------------------------------  -------------  ----------------");
   for (l = 0; l < n_gt_eps; l++)
   {
     printedIdx[nPrinted] = -1;
@@ -784,7 +784,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
       if (!alreadyPrinted)
       {
         // Print variable referenced l by Sigma, its init value and the max value between Gamma and Sigma
-        infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%10d  %30s  %13.7g    %5.2f",
+        infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%7d  %40s  %13.7g    %5.2f",
           w_idx[index_Sigma[l]]+1,
           modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[w_idx[index_Sigma[l]]],
           x0[w_idx[index_Sigma[l]]],
@@ -808,7 +808,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
       if (!alreadyPrinted_j)
       {
         // Print variable referenced l by Gamma, its init value and the value of Gamma_ilk
-        infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%10d  %30s  %13.7g  %7.2f",
+        infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%7d  %40s  %13.7g  %5.2f",
           w_idx[index_Gamma_j[l]]+1,
           modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[w_idx[index_Gamma_j[l]]],
           x0[w_idx[index_Gamma_j[l]]],
@@ -818,7 +818,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
       if (!alreadyPrinted_k)
       {
         // Print variable referenced l by Gamma, its init value and the value of Gamma_ijl
-        infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%10d  %30s  %13.7g  %7.2f",
+        infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%7d  %40s  %13.7g  %5.2f",
           w_idx[index_Gamma_k[l]]+1,
           modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[w_idx[index_Gamma_k[l]]],
           x0[w_idx[index_Gamma_k[l]]],
@@ -913,8 +913,8 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
 
   printedIdx = (unsigned*)realloc(printedIdx, n_gt_eps * sizeof(unsigned));
   nPrinted = 0;
-  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Eq number   Eq index        max(alpha,Gamma)\n");
-  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "----------  ------------    ----------------");
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Eq no.  Eq idx    max(alpha,Gamma)\n");
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "------  ------    ----------------");
   for (l = 0; l < n_gt_eps; l++)
   {
     printedIdx[nPrinted] = -1;
@@ -928,10 +928,10 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
       if (!alreadyPrinted)
       {
         // Print equation l referenced by alpha and the value of alpha_i
-        if (alpha[index_alpha[l]] < 1.e5)
-          infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%10d    %10d    %7.2f", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
+        if (alpha[index_alpha[l]] < 1.e3)
+          infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%6d  %6d  %5.2f", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
         else
-          infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%10d    %10d    %7.2e", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
+          infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%6d  %6d  %5.2e", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
         printedIdx[nPrinted++] = index_alpha[l];
       }
     }
@@ -947,7 +947,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
       if (!alreadyPrinted)
       {
         // Print equation l referenced by Gamma and the value of Gamma_ljk
-        infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%10d    %10d    %7.2f", n_idx[index_Gamma_i[l]]+1,
+        infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%6d  %6d  %5.2f", n_idx[index_Gamma_i[l]]+1,
           systemData->eqn_simcode_indices[n_idx[index_Gamma_i[l]]],
           Gamma_ijk[index_Gamma_i[l]][index_Gamma_j[l]][index_Gamma_k[l]]);
         printedIdx[nPrinted++] = index_Gamma_i[l];
@@ -956,7 +956,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
   }
   messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS);
 
-  printf("   ========================================================\n\n\n");
+  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS);
 
   free(printedIdx);
   free(alpha_checked);
@@ -1210,7 +1210,6 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 
   if (p == 0)
   {
-    infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "");
     infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics terminated: no non-linear equations!");
     return;
   }
