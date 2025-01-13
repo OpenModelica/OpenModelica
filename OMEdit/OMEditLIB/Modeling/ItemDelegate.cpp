@@ -62,8 +62,28 @@ QString ItemDelegate::formatDisplayText(QVariant variant) const
     text = variant.toString();
     /* if rich text flag is set */
     if (mDrawRichText) {
+      text = Qt::convertFromPlainText(variant.toString(), Qt::WhiteSpaceNormal);
       text.replace("\n", "<br />");
       text.replace("\t", "&#9;");
+
+      /* Issue #13453.
+       * QTextDocument eats the multiple whitespaces.
+       * This is default behavoir of html. We can use white-space: pre-wrap; css but it causes other issues like word wrap.
+       * So we detect multiple spaces and convert them to no break space.
+       */
+      QString newText;
+      int len = text.length();
+      bool convert = false;
+      for (int i = 0; i < len; i++) {
+        if (text.at(i).isSpace() && (convert || (i + 1 < len && text.at(i + 1).isSpace()))) {
+          convert = true;
+          newText.append("&nbsp;");
+        } else {
+          newText.append(text.at(i));
+          convert = false;
+        }
+      }
+      text = newText;
     }
   }
   return text;

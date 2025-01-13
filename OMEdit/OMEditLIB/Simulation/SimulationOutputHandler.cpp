@@ -341,11 +341,7 @@ void SimulationOutputHandler::parseSimulationOutput(const QString &output)
           if (attributes.value("text") == QString("The embedded server is initialized.") ){
             mpSimulationOutputWidget->embeddedServerInitialized();
           }
-          if (mpSimulationOutputWidget->isOutputStructured()) {
-            mpSimulationMessage->mText = Qt::convertFromPlainText(attributes.value("text").toString(), Qt::WhiteSpaceNormal);
-          } else {
-            mpSimulationMessage->mText = attributes.value("text").toString();
-          }
+          mpSimulationMessage->mText = attributes.value("text").toString();
           mpSimulationMessage->mLevel = mLevel;
           mSimulationMessagesLevelMap.insert(mLevel, mpSimulationMessage);
           if (mLevel > 0) {
