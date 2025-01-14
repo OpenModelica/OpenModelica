@@ -1506,16 +1506,22 @@ ConvertClassUsesAnnotationDialog::ConvertClassUsesAnnotationDialog(LibraryTreeIt
 }
 
 /*!
- * \brief ConvertClassUsesAnnotationDialog::saveLibraryTreeItem
+ * \brief ConvertClassUsesAnnotationDialog::updateClassTextRecursive
+ * Updates the class and saves it.
  * \param pLibraryTreeItem
  */
-void ConvertClassUsesAnnotationDialog::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
+void ConvertClassUsesAnnotationDialog::updateClassTextRecursive(LibraryTreeItem *pLibraryTreeItem)
 {
-  MainWindow::instance()->getOMCProxy()->save(pLibraryTreeItem->getNameStructure());
-  for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
-    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
-    if (pChildLibraryTreeItem) {
-      saveLibraryTreeItem(pChildLibraryTreeItem);
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItemClassText(pLibraryTreeItem);
+  /* If the class is saved as folder strucuture then we need to update the child classes as well
+   * otherwise the first call to updateLibraryTreeItemClassText is enough for classes saved in one file.
+   */
+  if (pLibraryTreeItem->isSaveFolderStructure()) {
+    for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
+      LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
+      if (pChildLibraryTreeItem) {
+        updateClassTextRecursive(pChildLibraryTreeItem);
+      }
     }
   }
 }
@@ -1541,24 +1547,20 @@ void ConvertClassUsesAnnotationDialog::convert()
       if (MainWindow::instance()->getOMCProxy()->convertPackageToLibrary(nameStructure, libraryName, libraryVersion)) {
         LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(libraryName);
         if (pLibraryTreeItem) {
-          MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false, false);
+          MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pLibraryTreeItem, false);
         }
         reloadClass |= true;
       }
     }
     ++usesLibrariesIterator;
   }
-  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-  // if reloadClass is set then unload the class and create a LibraryTreeItem for it again.
+
+  // if reloadClass is set then update the class text, save it and reload.
   if (reloadClass) {
-    if (mpLibraryTreeItem->isFilePathValid()) {
-      saveLibraryTreeItem(mpLibraryTreeItem);
-    }
-    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(mpLibraryTreeItem, false, false);
-    pLibraryTreeModel->createLibraryTreeItem(nameStructure, pLibraryTreeModel->getRootLibraryTreeItem(), true, false, true);
+    updateClassTextRecursive(mpLibraryTreeItem);
+    MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(mpLibraryTreeItem);
+    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->reloadClass(mpLibraryTreeItem, false);
   }
-  // load any dependent libraries
-  pLibraryTreeModel->loadDependentLibraries(MainWindow::instance()->getOMCProxy()->getClassNames());
   accept();
 }
 
