@@ -1736,6 +1736,11 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
  */
 bool LibraryTreeModel::reloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion)
 {
+  // Makesure we save before doing reload
+  if (!mpLibraryWidget->saveLibraryTreeItem(pLibraryTreeItem)) {
+    return false;
+  }
+
   if (askQuestion) {
     QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
     pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::question));
@@ -3728,8 +3733,11 @@ void LibraryTreeView::convertClassUsesLibraries()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    ConvertClassUsesAnnotationDialog *pConvertClassUsesAnnotationDialog = new ConvertClassUsesAnnotationDialog(pLibraryTreeItem);
-    pConvertClassUsesAnnotationDialog->exec();
+    // Makesure we save before calling conversions
+    if (mpLibraryWidget->saveLibraryTreeItem(pLibraryTreeItem)) {
+      ConvertClassUsesAnnotationDialog *pConvertClassUsesAnnotationDialog = new ConvertClassUsesAnnotationDialog(pLibraryTreeItem);
+      pConvertClassUsesAnnotationDialog->exec();
+    }
   }
 }
 

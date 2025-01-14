@@ -251,7 +251,7 @@ private:
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
-  void saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  void updateClassTextRecursive(LibraryTreeItem *pLibraryTreeItem);
 private slots:
   void convert();
 };
