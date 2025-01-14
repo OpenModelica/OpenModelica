@@ -884,7 +884,9 @@ public
       Option<WhenEquationBody> else_when;
       Block tmp;
       Option<Block> else_when_block;
+      Integer index = simCodeIndices.equationIndex;
     algorithm
+      simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
       (conditions, when_stmts, else_when) := WhenEquationBody.getBodyAttributes(body);
       if Util.isSome(else_when) then
         (tmp, simCodeIndices) := createWhenBody(Util.getOption(else_when), source, attr, simCodeIndices);
@@ -892,8 +894,7 @@ public
       else
         else_when_block := NONE();
       end if;
-      blck := WHEN(simCodeIndices.equationIndex, false, conditions, when_stmts, else_when_block, source, attr);
-      simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+      blck := WHEN(index, false, conditions, when_stmts, else_when_block, source, attr);
     end createWhenBody;
 
     function createIfBody
