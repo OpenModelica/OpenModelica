@@ -134,6 +134,8 @@ public:
   static QString systemTLM;
   static QString systemWC;
   static QString systemSC;
+  static QString displayLimit;
+  static QString displayLimitMsg;
   /* Global translated variables */
   static QString newModelicaClass;
   static QString newModelicaClassLibraryBrowser;

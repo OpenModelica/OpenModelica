@@ -128,6 +128,8 @@ QString Helper::REAL = QString("Real");
 QString Helper::systemTLM = QString("TLM - Transmission Line Modeling System");
 QString Helper::systemWC = QString("Weakly Coupled - Connected Co-Simulation FMUs System");
 QString Helper::systemSC = QString("Strongly Coupled - Connected Model-Exchange FMUs System");
+QString Helper::displayLimit = QString("Reached display limit");
+QString Helper::displayLimitMsg = QString("Reached display limit. To read the full log open the file <a href=\"file:///%1\">%1</a>");
 /* Global translated variables */
 QString Helper::newModelicaClass;
 QString Helper::newModelicaClassLibraryBrowser;

@@ -62,7 +62,6 @@ QString ItemDelegate::formatDisplayText(QVariant variant) const
     text = variant.toString();
     /* if rich text flag is set */
     if (mDrawRichText) {
-      text = Qt::convertFromPlainText(variant.toString(), Qt::WhiteSpaceNormal);
       text.replace("\n", "<br />");
       text.replace("\t", "&#9;");
 

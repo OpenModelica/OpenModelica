@@ -488,50 +488,33 @@ void SimulationOutputWidget::addGeneratedFileTab(QString fileName)
 /*!
  * \brief SimulationOutputWidget::writeSimulationMessage
  * Writes the simulation output in a formatted text form.\n
- * \param pSimulationMessage - the simulation output message.
+ * \param type
+ * \param text
+ * \param index
  */
-void SimulationOutputWidget::writeSimulationMessage(SimulationMessage *pSimulationMessage)
+void SimulationOutputWidget::writeSimulationMessage(StringHandler::SimulationMessageType type, QString text, QString index)
 {
-  static QString lastSream;
-  static QString lastType;
-  /* format the error message */
-  QString type = StringHandler::getSimulationMessageTypeString(pSimulationMessage->mType);
-  QString text;
-  if (pSimulationMessage->mType != StringHandler::OMEditInfo) {
-    text = ((lastSream == pSimulationMessage->mStream && pSimulationMessage->mLevel > 0) ? "|" : pSimulationMessage->mStream) + "\t\t| ";
-    text += ((lastSream == pSimulationMessage->mStream && lastType == type && pSimulationMessage->mLevel > 0) ? "|" : type) + "\t | ";
-    for (int i = 0 ; i < pSimulationMessage->mLevel ; ++i)
-      text += "| ";
-  }
-  text += pSimulationMessage->mText;
   /* move the cursor down before adding to the logger. */
   QTextCursor textCursor = mpSimulationOutputTextBrowser->textCursor();
   textCursor.movePosition(QTextCursor::End);
   mpSimulationOutputTextBrowser->setTextCursor(textCursor);
   /* set the text color */
   QTextCharFormat charFormat = mpSimulationOutputTextBrowser->currentCharFormat();
-  charFormat.setForeground(OptionsDialog::instance()->getMessagesPage()->getColor(pSimulationMessage->mType));
+  charFormat.setForeground(OptionsDialog::instance()->getMessagesPage()->getColor(type));
   mpSimulationOutputTextBrowser->setCurrentCharFormat(charFormat);
   /* append the output */
   /* write the error message */
-  if (pSimulationMessage->mText.compare("Reached display limit") == 0) {
+  if (text.compare(Helper::displayLimit) == 0) {
     QString simulationLogFilePath = QString("%1/%2.log").arg(mSimulationOptions.getWorkingDirectory()).arg(mSimulationOptions.getOutputFileName());
-    mpSimulationOutputTextBrowser->insertHtml(QString("Reached display limit. To read the full log open the file <a href=\"file:///%1\">%1</a>\n").arg(simulationLogFilePath));
+    mpSimulationOutputTextBrowser->insertHtml(Helper::displayLimitMsg.arg(simulationLogFilePath));
   } else {
     mpSimulationOutputTextBrowser->insertPlainText(text);
   }
   /* write the error link */
-  if (!pSimulationMessage->mIndex.isEmpty()) {
-    mpSimulationOutputTextBrowser->insertHtml("&nbsp;<a href=\"omedittransformationsbrowser://" + QUrl::fromLocalFile(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json").path() + "?index=" + pSimulationMessage->mIndex + "\">Debug more</a><br />");
+  if (!index.isEmpty()) {
+    mpSimulationOutputTextBrowser->insertHtml("&nbsp;<a href=\"omedittransformationsbrowser://" + QUrl::fromLocalFile(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json").path() + "?index=" + index + "\">Debug more</a><br />");
   } else {
     mpSimulationOutputTextBrowser->insertPlainText("\n");
-  }
-  /* save the current stream & type as last */
-  lastSream = pSimulationMessage->mStream;
-  lastType = type;
-  /* write the child messages */
-  foreach (SimulationMessage* pSimulationMessage, pSimulationMessage->mChildren) {
-    writeSimulationMessage(pSimulationMessage);
   }
 }
 

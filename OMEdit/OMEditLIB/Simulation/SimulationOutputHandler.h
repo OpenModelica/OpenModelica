@@ -105,12 +105,12 @@ private:
 
   bool isMaximumDisplayLimitReached() const;
   void endElement();
+  void writeSimulationMessage(SimulationMessage *pSimulationMessage, SimulationOutputWidget *pSimulationOutputWidget = nullptr);
 public:
   SimulationOutputHandler(SimulationOutputWidget *pSimulationOutputWidget, QString simulationOutput);
   ~SimulationOutputHandler();
   SimulationMessageModel* getSimulationMessageModel() {return mpSimulationMessageModel;}
   void parseSimulationOutput(const QString &output);
-  void writeSimulationLog(const QString &text);
   void addSimulationMessage(SimulationMessage *pSimulationMessage);
   void simulationProcessFinished();
 };
