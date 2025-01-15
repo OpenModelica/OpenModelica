@@ -51,6 +51,7 @@ public
 
   record RESOLVED_IMPORT
     InstNode node;
+    String shortName;
     SourceInfo info;
   end RESOLVED_IMPORT;
 
@@ -104,12 +105,31 @@ public
     end match;
   end resolve;
 
+  function resolveList
+    input array<Import> imps;
+    output list<Import> resolvedImps = {};
+  algorithm
+    for imp in imps loop
+      try
+        (_, _, imp) := resolve(imp);
+
+        resolvedImps := match imp
+          case UNRESOLVED_IMPORT(imp = Absyn.Import.UNQUAL_IMPORT()) then instUnqualified(imp, resolvedImps);
+          else imp :: resolvedImps;
+        end match;
+      else
+      end try;
+    end for;
+  end resolveList;
+
   function instQualified
     input Absyn.Import imp;
     input InstNode scope;
     input SourceInfo info;
     output Import outImport;
     output InstNode node;
+  protected
+    String short_name;
   algorithm
     node := match imp
       case Absyn.Import.NAMED_IMPORT()
@@ -119,21 +139,25 @@ public
         then Lookup.lookupImport(imp.path, scope, info);
     end match;
 
-    outImport := RESOLVED_IMPORT(node, info);
+    short_name := match imp
+      case Absyn.Import.NAMED_IMPORT() then imp.name;
+      else "";
+    end match;
+
+    outImport := RESOLVED_IMPORT(node, short_name, info);
   end instQualified;
 
   function instUnqualified
-    input Absyn.Import imp;
-    input InstNode scope;
-    input SourceInfo info;
+    input Import imp;
     input output list<Import> imps = {};
   protected
     Absyn.Path path;
-    InstNode node;
+    InstNode node, scope;
     ClassTree tree;
     list<InstNode> elements;
+    SourceInfo info;
   algorithm
-    Absyn.Import.UNQUAL_IMPORT(path = path) := imp;
+    UNRESOLVED_IMPORT(imp = Absyn.Import.UNQUAL_IMPORT(path = path), scope = scope, info = info) := imp;
 
     node := Lookup.lookupImport(path, scope, info);
     node := Inst.instPackage(node, NFInstContext.NO_CONTEXT);
@@ -143,11 +167,11 @@ public
       case ClassTree.FLAT_TREE()
         algorithm
           for cls in tree.classes loop
-            imps := RESOLVED_IMPORT(cls, info) :: imps;
+            imps := RESOLVED_IMPORT(cls, "", info) :: imps;
           end for;
 
           for comp in tree.components loop
-            imps := RESOLVED_IMPORT(comp, info) :: imps;
+            imps := RESOLVED_IMPORT(comp, "", info) :: imps;
           end for;
         then
           ();

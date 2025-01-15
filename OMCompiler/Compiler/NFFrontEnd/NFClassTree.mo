@@ -246,7 +246,7 @@ public
             for imp in imports loop
               init_imports := match imp
                 case Import.UNRESOLVED_IMPORT(imp = Absyn.Import.UNQUAL_IMPORT())
-                  then Import.instUnqualified(imp.imp, parent, imp.info, init_imports);
+                  then Import.instUnqualified(imp, init_imports);
                 else imp :: init_imports;
               end match;
             end for;
@@ -1438,6 +1438,18 @@ public
         case FLAT_TREE() then tree.components;
       end match;
     end getComponents;
+
+    function getImports
+      input ClassTree tree;
+      output array<Import> imps;
+    algorithm
+      imps := match tree
+        case PARTIAL_TREE() then tree.imports;
+        case EXPANDED_TREE() then tree.imports;
+        case INSTANTIATED_TREE() then tree.imports;
+        case FLAT_TREE() then tree.imports;
+      end match;
+    end getImports;
 
     function isEmptyTree
       input ClassTree tree;

@@ -40,6 +40,24 @@
         ]
       }
     },
+    "imports": {
+      "description": "The elements imported by the class",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "description": "The full path to the imported element.",
+            "type": "string"
+          },
+          "shortName": {
+            "description": "The short name for a named import (import shortName = ...)",
+            "type": "string"
+          }
+        },
+        "required": ["path"]
+      }
+    },
     "connections": {
       "description": "The top-level connect equations of the class instance",
       "type": "array",

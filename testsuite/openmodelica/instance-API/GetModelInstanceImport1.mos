@@ -1,0 +1,92 @@
+// name: GetModelInstanceImport1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  package A
+    package B
+      model C1 end C1;
+      model C2 end C2;
+      model C3 end C3;
+    end B;
+  end A;
+
+  model M
+    import A.B.C1;
+    import D = A.B.C2;
+    import A.B.*;
+
+    C1 c;
+    D d;
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"c\",
+//       \"type\": {
+//         \"name\": \"A.B.C1\",
+//         \"restriction\": \"model\",
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 4,
+//           \"columnStart\": 7,
+//           \"lineEnd\": 4,
+//           \"columnEnd\": 22
+//         }
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"d\",
+//       \"type\": {
+//         \"name\": \"A.B.C2\",
+//         \"restriction\": \"model\",
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 5,
+//           \"columnStart\": 7,
+//           \"lineEnd\": 5,
+//           \"columnEnd\": 22
+//         }
+//       }
+//     }
+//   ],
+//   \"imports\": [
+//     {
+//       \"path\": \"A.B.C1\"
+//     },
+//     {
+//       \"path\": \"A.B.C2\",
+//       \"shortName\": \"D\"
+//     },
+//     {
+//       \"path\": \"A.B.C3\"
+//     },
+//     {
+//       \"path\": \"A.B.C2\"
+//     },
+//     {
+//       \"path\": \"A.B.C1\"
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 10,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 17,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult

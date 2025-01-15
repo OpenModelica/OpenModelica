@@ -45,6 +45,7 @@ import NFComponent.Component;
 import ComponentRef = NFComponentRef;
 import Dimension = NFDimension;
 import Expression = NFExpression;
+import Import = NFImport;
 import NFClass.Class;
 import NFInstNode.InstNode;
 import NFInstNode.InstNodeType;
@@ -1013,6 +1014,7 @@ function dumpJSONInstanceTree
   output JSON json = JSON.makeNull();
 protected
   InstNode node;
+  Class cls;
   list<InstanceTree> elems;
   Sections sections;
   Option<SCode.Comment> cmt;
@@ -1037,7 +1039,9 @@ algorithm
   json := JSON.addPairNotNull("elements", dumpJSONElements(elems, node, isDeleted), json);
 
   if not isDeleted then
-    sections := Class.getSections(InstNode.getClass(node));
+    cls := InstNode.getClass(node);
+    json := dumpJSONImports(cls, json);
+    sections := Class.getSections(cls);
     json := dumpJSONEquations(sections, node, json);
   end if;
 
@@ -1879,6 +1883,46 @@ algorithm
     else ();
   end match;
 end dumpJSONAbsynFunctionArgs;
+
+function dumpJSONImports
+  input Class cls;
+  input output JSON json;
+protected
+  array<Import> imps;
+  list<Import> resolved_imps;
+  JSON json_imp, json_imp_array;
+algorithm
+  imps := ClassTree.getImports(Class.classTree(cls));
+
+  if arrayEmpty(imps) then
+    return;
+  end if;
+
+  resolved_imps := Import.resolveList(imps);
+  resolved_imps := listReverseInPlace(resolved_imps);
+  json_imp_array := JSON.emptyArray(listLength(resolved_imps));
+
+  for imp in resolved_imps loop
+    () := match imp
+      case Import.RESOLVED_IMPORT()
+        algorithm
+          json_imp := JSON.makeNull();
+          json_imp := JSON.addPair("path", dumpJSONPath(InstNode.fullPath(imp.node)), json_imp);
+
+          if not stringEmpty(imp.shortName) then
+            json_imp := JSON.addPair("shortName", JSON.makeString(imp.shortName), json_imp);
+          end if;
+
+          json_imp_array := JSON.addElement(json_imp, json_imp_array);
+        then
+          ();
+
+      else ();
+    end match;
+  end for;
+
+  json := JSON.addPairNotNull("imports", json_imp_array, json);
+end dumpJSONImports;
 
 function dumpJSONEquations
   input Sections sections;
