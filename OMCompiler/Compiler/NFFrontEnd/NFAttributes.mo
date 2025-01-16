@@ -55,7 +55,8 @@ public
       InnerOuter.NOT_INNER_OUTER,
       false,
       false,
-      Replaceable.NOT_REPLACEABLE()
+      Replaceable.NOT_REPLACEABLE(),
+      false
     );
 
   constant Attributes INPUT_ATTR =
@@ -67,7 +68,8 @@ public
       InnerOuter.NOT_INNER_OUTER,
       false,
       false,
-      Replaceable.NOT_REPLACEABLE()
+      Replaceable.NOT_REPLACEABLE(),
+      false
     );
 
   constant Attributes OUTPUT_ATTR =
@@ -79,7 +81,8 @@ public
       InnerOuter.NOT_INNER_OUTER,
       false,
       false,
-      Replaceable.NOT_REPLACEABLE()
+      Replaceable.NOT_REPLACEABLE(),
+      false
     );
 
   constant Attributes CONSTANT_ATTR =
@@ -91,7 +94,8 @@ public
       InnerOuter.NOT_INNER_OUTER,
       false,
       false,
-      Replaceable.NOT_REPLACEABLE()
+      Replaceable.NOT_REPLACEABLE(),
+      false
     );
 
   constant Attributes IMPL_DISCRETE_ATTR =
@@ -103,7 +107,8 @@ public
       InnerOuter.NOT_INNER_OUTER,
       false,
       false,
-      Replaceable.NOT_REPLACEABLE()
+      Replaceable.NOT_REPLACEABLE(),
+      false
     );
 
   constant Attributes AUGMENTED_ATTR =
@@ -115,7 +120,8 @@ public
       InnerOuter.NOT_INNER_OUTER,
       false,
       false,
-      Replaceable.NOT_REPLACEABLE()
+      Replaceable.NOT_REPLACEABLE(),
+      false
     );
 
 
@@ -128,6 +134,7 @@ public
     Boolean isFinal;
     Boolean isRedeclare;
     Replaceable isReplaceable;
+    Boolean isResizable;
   end ATTRIBUTES;
 
   function fromSCode
@@ -167,7 +174,7 @@ public
           redecl := SCodeUtil.redeclareBool(compPrefs.redeclarePrefix);
           repl := Replaceable.NOT_REPLACEABLE();
         then
-          Attributes.ATTRIBUTES(cty, par, var, dir, io, fin, redecl, repl);
+          Attributes.ATTRIBUTES(cty, par, var, dir, io, fin, redecl, repl, false);
     end match;
   end fromSCode;
 
@@ -193,7 +200,7 @@ public
           dir := Prefixes.directionFromSCode(scodeAttr.direction);
         then
           ATTRIBUTES(cty, Parallelism.NON_PARALLEL,
-            var, dir, InnerOuter.NOT_INNER_OUTER, false, false, Replaceable.NOT_REPLACEABLE());
+            var, dir, InnerOuter.NOT_INNER_OUTER, false, false, Replaceable.NOT_REPLACEABLE(), false);
 
     end match;
   end fromDerivedSCode;
@@ -209,7 +216,7 @@ public
     Parallelism par;
     Variability var;
     Direction dir;
-    Boolean fin, redecl;
+    Boolean fin, redecl, resize;
     Replaceable repl;
   algorithm
     if referenceEq(outerAttr, DEFAULT_ATTR) and innerAttr.connectorType == 0 then
@@ -218,7 +225,7 @@ public
       cty := ConnectorType.merge(outerAttr.connectorType, innerAttr.connectorType, node);
       attr := Attributes.ATTRIBUTES(cty, outerAttr.parallelism,
         outerAttr.variability, outerAttr.direction, innerAttr.innerOuter, outerAttr.isFinal,
-        innerAttr.isRedeclare, innerAttr.isReplaceable);
+        innerAttr.isRedeclare, innerAttr.isReplaceable, innerAttr.isResizable);
     else
       cty := ConnectorType.merge(outerAttr.connectorType, innerAttr.connectorType, node);
       par := Prefixes.mergeParallelism(outerAttr.parallelism, innerAttr.parallelism, node);
@@ -233,7 +240,8 @@ public
       fin := outerAttr.isFinal or innerAttr.isFinal;
       redecl := innerAttr.isRedeclare;
       repl := innerAttr.isReplaceable;
-      attr := Attributes.ATTRIBUTES(cty, par, var, dir, innerAttr.innerOuter, fin, redecl, repl);
+      resize := innerAttr.isResizable;
+      attr := Attributes.ATTRIBUTES(cty, par, var, dir, innerAttr.innerOuter, fin, redecl, repl, resize);
     end if;
   end mergeComponentAttributes;
 
@@ -248,7 +256,7 @@ public
     Variability var;
     Direction dir;
     InnerOuter io;
-    Boolean fin, redecl;
+    Boolean fin, redecl, resize;
     Replaceable repl;
   algorithm
     if referenceEq(innerAttr, DEFAULT_ATTR) and outerAttr.connectorType == 0 then
@@ -256,11 +264,11 @@ public
     elseif referenceEq(outerAttr, DEFAULT_ATTR) and innerAttr.connectorType == 0 then
       attr := innerAttr;
     else
-      Attributes.ATTRIBUTES(cty, par, var, dir, io, fin, redecl, repl) := outerAttr;
+      Attributes.ATTRIBUTES(cty, par, var, dir, io, fin, redecl, repl, resize) := outerAttr;
       cty := ConnectorType.merge(cty, innerAttr.connectorType, node, isClass = true);
       var := Prefixes.variabilityMin(var, innerAttr.variability);
       dir := Prefixes.mergeDirection(dir, innerAttr.direction, node, allowSame = true);
-      attr := Attributes.ATTRIBUTES(cty, par, var, dir, innerAttr.innerOuter, fin, redecl, repl);
+      attr := Attributes.ATTRIBUTES(cty, par, var, dir, innerAttr.innerOuter, fin, redecl, repl, resize);
     end if;
   end mergeDerivedAttributes;
 
@@ -275,8 +283,7 @@ public
     Variability var, rvar;
     Direction dir, rdir;
     InnerOuter io, rio;
-    Boolean fin;
-    Boolean redecl;
+    Boolean fin, redecl, resize;
     Replaceable repl;
   algorithm
     if referenceEq(origAttr, DEFAULT_ATTR) then
@@ -284,8 +291,8 @@ public
     elseif referenceEq(redeclAttr, DEFAULT_ATTR) then
       attr := origAttr;
     else
-      Attributes.ATTRIBUTES(cty, par, var, dir, io, _, _, _) := origAttr;
-      Attributes.ATTRIBUTES(rcty, rpar, rvar, rdir, rio, fin, redecl, repl) := redeclAttr;
+      Attributes.ATTRIBUTES(cty, par, var, dir, io, _, _, _, _) := origAttr;
+      Attributes.ATTRIBUTES(rcty, rpar, rvar, rdir, rio, fin, redecl, repl, resize) := redeclAttr;
 
       // If no prefix is given for one of these attributes in the redeclaration,
       // then the one from the original declaration is used. The redeclare is not
@@ -336,7 +343,7 @@ public
         io := rio;
       end if;
 
-      attr := Attributes.ATTRIBUTES(cty, par, var, dir, io, fin, redecl, repl);
+      attr := Attributes.ATTRIBUTES(cty, par, var, dir, io, fin, redecl, repl, resize);
     end if;
   end mergeRedeclaredComponentAttributes;
 
@@ -541,6 +548,7 @@ public
     elseif var == Variability.PARAMETER and not Flags.isSet(Flags.NF_SCALARIZE)
       and Util.getOptionOrDefault(SCodeUtil.lookupBooleanAnnotationMod(InstNode.getAnnotation("__OpenModelica_resizable", compNode)), false) then
       attr.variability := Variability.NON_STRUCTURAL_PARAMETER;
+      attr.isResizable := true;
     end if;
   end updateVariability;
 

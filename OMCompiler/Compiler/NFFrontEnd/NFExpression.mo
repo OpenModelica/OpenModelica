@@ -6586,19 +6586,18 @@ public
         Integer v;
 
       // backend replacement
-      case Expression.CREF(cref= ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = var)))
+      case Expression.CREF(cref= ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = var))) guard(ComponentRef.isResizable(exp.cref))
       then match Pointer.access(var)
+          // optimal value has already been determined
           case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER(resize_value = SOME(v))))
           then Expression.INTEGER(v);
 
-          case _ guard(Expression.variability(exp) == Variability.NON_STRUCTURAL_PARAMETER)
-          then replaceWithBinding(exp.cref, exp);
-
-          else exp;
+          // optimal value not yet computed
+          else replaceWithBinding(exp.cref, exp);
         end match;
 
       // frontend replacement
-      case Expression.CREF() guard(Expression.variability(exp) == Variability.NON_STRUCTURAL_PARAMETER)
+      case Expression.CREF() guard(ComponentRef.isResizable(exp.cref))
       then replaceWithBinding(exp.cref, exp);
 
       else exp;
