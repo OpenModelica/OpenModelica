@@ -52,6 +52,7 @@ protected
   import StringUtil;
   import Variable = NFVariable;
   import Binding = NFBinding;
+  import NFBackendExtension.{BackendInfo, Annotations};
 
   import ComponentRef = NFComponentRef;
 
@@ -511,6 +512,30 @@ public
       else Variability.CONTINUOUS;
     end match;
   end nodeVariability;
+
+  function isResizable
+    "Returns true if the cref refers to a resizable component (frontend) or variable (backend)."
+    input ComponentRef cref;
+    output Boolean b;
+  algorithm
+    b := match cref
+      local
+        Pointer<Variable> v;
+
+      // frontend check
+      case CREF(node = InstNode.COMPONENT_NODE())
+        then Component.isResizable(InstNode.component(cref.node));
+
+      // backend check
+      case CREF(node = InstNode.VAR_NODE(varPointer = v)) then match Pointer.access(v)
+          case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(annotations = Annotations.ANNOTATIONS(resizable = b))) then b;
+          else false;
+        end match;
+
+      // default
+      else false;
+    end match;
+  end isResizable;
 
   function subscriptsVariability
     input ComponentRef cref;

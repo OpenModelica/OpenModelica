@@ -94,7 +94,7 @@ public
     input Variability var;
     output Dimension dim;
   algorithm
-    dim := match (exp, var)
+    dim := match exp
       local
         Expression e;
         Integer value;
@@ -102,20 +102,9 @@ public
         ComponentRef cref;
         Type ty;
 
-      case (_, Variability.NON_STRUCTURAL_PARAMETER) algorithm
-        e := Expression.map(exp, Expression.replaceResizableParameter);
-        e := SimplifyExp.simplify(e);
-        value := match e
-          case Expression.INTEGER(value) then value;
-          else algorithm
-            Error.assertion(false, getInstanceName() + " got invalid non structural parameter: " + Expression.toString(exp), sourceInfo());
-          then fail();
-        end match;
-      then RESIZABLE(value, NONE(), exp, var);
+      case Expression.INTEGER() then INTEGER(exp.value, var);
 
-      case (Expression.INTEGER(), _) then INTEGER(exp.value, var);
-
-      case (Expression.TYPENAME(ty = Type.ARRAY(elementType = ty)), _)
+      case Expression.TYPENAME(ty = Type.ARRAY(elementType = ty))
         then
           match ty
             case Type.BOOLEAN() then BOOLEAN();
@@ -127,15 +116,29 @@ public
                 fail();
           end match;
 
-      case (Expression.ARRAY(), _)
+      case Expression.ARRAY()
         guard Expression.arrayAllEqual(exp)
         then fromExp(Expression.arrayFirstScalar(exp), var);
 
-      case (Expression.SUBSCRIPTED_EXP(split = true), _)
+      case Expression.SUBSCRIPTED_EXP(split = true)
         guard Expression.isArray(exp.exp) and Expression.arrayAllEqual(exp.exp)
         then fromExp(Expression.arrayFirstScalar(exp.exp), var);
 
-      else EXP(exp, var);
+      else algorithm
+        e := SimplifyExp.simplify(exp);
+      then match e
+        // if it can be simplified to an integer its just an integer
+        case Expression.INTEGER(value) then INTEGER(value, var);
+        // if it can be simplified to an integer after replacing resizables its resizable
+        else algorithm
+          e := Expression.map(e, Expression.replaceResizableParameter);
+          e := SimplifyExp.simplify(e);
+        then match e
+          case Expression.INTEGER(value) then RESIZABLE(value, NONE(), exp, var);
+        // otherwise it is just an expression
+          else EXP(exp, var);
+        end match;
+      end match;
     end match;
   end fromExp;
 

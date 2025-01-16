@@ -3,6 +3,7 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 emptyModel.mos \
 helloWorld.mos \
+evaluateFalse.mos \
 parameterSystem.mos \
 simpleNonlinearLoop.mos \
 implicitEquation.mos \

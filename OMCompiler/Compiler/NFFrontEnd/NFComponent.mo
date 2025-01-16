@@ -594,6 +594,16 @@ public
     end match;
   end isFinal;
 
+  function isResizable
+    input Component component;
+    output Boolean b;
+  algorithm
+    b := match component
+      case COMPONENT(attributes = Attributes.ATTRIBUTES(isResizable = b)) then b;
+      else false;
+    end match;
+  end isResizable;
+
   function innerOuter
     input Component component;
     output InnerOuter io;
