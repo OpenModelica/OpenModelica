@@ -693,9 +693,9 @@ protected
       case (NFPrefixes.Variability.DISCRETE, _, _)                    then VariableKind.DISCRETE();
       case (NFPrefixes.Variability.IMPLICITLY_DISCRETE, _, _)         then VariableKind.DISCRETE();
 
-      case (NFPrefixes.Variability.PARAMETER, _, _)                   then VariableKind.PARAMETER();
-      case (NFPrefixes.Variability.STRUCTURAL_PARAMETER, _, _)        then VariableKind.PARAMETER(); // CONSTANT ?
-      case (NFPrefixes.Variability.NON_STRUCTURAL_PARAMETER, _, _)    then VariableKind.PARAMETER();
+      case (NFPrefixes.Variability.PARAMETER, _, _)                   then VariableKind.PARAMETER(NONE());
+      case (NFPrefixes.Variability.STRUCTURAL_PARAMETER, _, _)        then VariableKind.PARAMETER(NONE()); // CONSTANT ?
+      case (NFPrefixes.Variability.NON_STRUCTURAL_PARAMETER, _, _)    then VariableKind.PARAMETER(NONE());
       case (NFPrefixes.Variability.CONSTANT, _, _)                    then VariableKind.CONSTANT();
 
       else algorithm
@@ -1225,7 +1225,7 @@ protected
     list<ComponentRef> inputs, outputs;
     EquationAttributes attr;
   algorithm
-    size := sum(ComponentRef.size(out, true) for out in alg.outputs);
+    size := sum(ComponentRef.size(out, false) for out in alg.outputs);
 
     if listEmpty(alg.outputs) then
       attr := EquationAttributes.default(EquationKind.EMPTY, init);

@@ -39,6 +39,7 @@ protected
   import System;
   import Flags;
 
+  import NFBackendExtension.{BackendInfo, VariableKind};
   import Builtin = NFBuiltin;
   import BuiltinCall = NFBuiltinCall;
   import Ceval = NFCeval;
@@ -849,7 +850,7 @@ public
       local
         Operator o;
       case ENUM_LITERAL()         algorithm exp.ty := func(exp.ty); then exp;
-      case CREF()                 algorithm exp.ty := func(exp.ty); then exp;
+      case CREF()                 algorithm exp.ty := func(exp.ty); exp.cref := ComponentRef.applyToType(exp.cref, func); then exp;
       case TYPENAME()             algorithm exp.ty := func(exp.ty); then exp;
       case ARRAY()                algorithm exp.ty := func(exp.ty); then exp;
       case RANGE()                algorithm exp.ty := func(exp.ty); then exp;
@@ -1233,7 +1234,8 @@ public
 
   function rangeSize
     input Expression range  "has to be RANGE()!";
-    output Integer size = Dimension.size(Type.nthDimension(typeOf(range), 1));
+    input Boolean resize = false;
+    output Integer size = Dimension.size(Type.nthDimension(typeOf(range), 1), resize);
   end rangeSize;
 
   function applySubscripts
@@ -6564,18 +6566,41 @@ public
 
   function replaceResizableParameter
     input output Expression exp;
+  protected
+    function replaceWithBinding
+      input ComponentRef cref;
+      input output Expression exp;
+    protected
+      Expression e;
+    algorithm
+      exp := match InstNode.getBindingExpOpt(ComponentRef.node(cref))
+        case SOME(e as Expression.INTEGER()) then e;
+        case SOME(Expression.SUBSCRIPTED_EXP(exp = e as Expression.INTEGER())) then e;
+        else exp;
+      end match;
+    end replaceWithBinding;
   algorithm
     exp := match exp
       local
-        Expression e;
+        Pointer<Variable> var;
         Integer v;
-        Option<Integer> value;
-      case Expression.CREF() guard(Expression.variability(exp) == Variability.NON_STRUCTURAL_PARAMETER)
-      then match InstNode.getBindingExpOpt(ComponentRef.node(exp.cref))
-          case SOME(e as Expression.INTEGER()) then e;
-          case SOME(Expression.SUBSCRIPTED_EXP(exp = e as Expression.INTEGER())) then e;
+
+      // backend replacement
+      case Expression.CREF(cref= ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = var)))
+      then match Pointer.access(var)
+          case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER(resize_value = SOME(v))))
+          then Expression.INTEGER(v);
+
+          case _ guard(Expression.variability(exp) == Variability.NON_STRUCTURAL_PARAMETER)
+          then replaceWithBinding(exp.cref, exp);
+
           else exp;
         end match;
+
+      // frontend replacement
+      case Expression.CREF() guard(Expression.variability(exp) == Variability.NON_STRUCTURAL_PARAMETER)
+      then replaceWithBinding(exp.cref, exp);
+
       else exp;
     end match;
   end replaceResizableParameter;

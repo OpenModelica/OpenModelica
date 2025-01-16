@@ -259,7 +259,7 @@ protected
           // otherwise they would not show in the result file
           (const_vars, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasConstOrParamAliasBinding);
           for var in const_vars loop
-            BVariable.setVarKind(var, VariableKind.PARAMETER());
+            BVariable.setVarKind(var, VariableKind.PARAMETER(NONE()));
             BVariable.setBindingAsStartAndFix(var);
           end for;
           varData.parameters := VariablePointers.addList(const_vars, varData.parameters);

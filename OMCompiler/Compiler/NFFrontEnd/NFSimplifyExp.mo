@@ -164,8 +164,12 @@ algorithm
      referenceEq(ty, ty2) then
     exp := range;
   else
-    ty := TypeCheck.getRangeType(start_exp2, step_exp2, stop_exp2,
-      Type.arrayElementType(ty), AbsynUtil.dummyInfo);
+    if not Type.isResizable(ty) then
+      ty := TypeCheck.getRangeType(start_exp2, step_exp2, stop_exp2,
+        Type.arrayElementType(ty), AbsynUtil.dummyInfo);
+    else
+      ty := ty2;
+    end if;
     exp := Expression.RANGE(ty, start_exp2, step_exp2, stop_exp2);
   end if;
 end simplifyRange;

@@ -64,7 +64,7 @@ public
   function resize
     "this resizes the resizable parameters to the optimal value to get the smallest possible system"
     input output EquationPointers equations;
-    input VarData varData;
+    input output VarData varData;
   protected
     UnorderedSet<ComponentRef> parameters, min_parameters;
     UnorderedMap<ComponentRef, Expression> optimal_values;
@@ -74,8 +74,12 @@ public
     // e: equality constraints
     UnorderedMap<Expression, ParameterList> c2pi, c2pe;
     UnorderedMap<ComponentRef, ConstraintList> p2ci, p2ce;
+    partial function applyFunc
+      input output Type ty;
+    end applyFunc;
+    applyFunc func;
   algorithm
-    _ := match varData
+    varData := match varData
       // only do something if there are resizable variables
       case VarData.VAR_DATA_SIM() guard(VariablePointers.size(varData.resizables) > 0) algorithm
         // prepare sets and maps
@@ -103,21 +107,22 @@ public
         computeOptimalValues(optimal_values, c2pi, p2ci, c2pe, p2ce);
 
         // traverse the model and update all values depending on these resizable parameters
-        equations := EquationPointers.mapExp(equations,
-          function Expression.applyToType(func =
-          function Type.applyToDims(func =
-          function updateDimension(optimal_values = optimal_values))));
+        func := function Type.applyToDims(func = function updateDimension(optimal_values = optimal_values));
+        varData.variables := VariablePointers.map(varData.variables, function Variable.applyToType(func = func));
+        varData.variables := VariablePointers.mapPtr(varData.variables, function BVariable.updateResizableParameter(optimal_values = optimal_values));
+        equations := EquationPointers.mapExp(equations, function Expression.applyToType(func = func));
+        EquationPointers.mapRes(equations, function BVariable.applyToType(func = func));
 
         if Flags.isSet(Flags.DUMP_RESIZABLE) or debug then
           print(optimalValuesToString(optimal_values));
         end if;
-      then ();
+      then varData;
 
       else algorithm
         if Flags.isSet(Flags.DUMP_RESIZABLE) or debug then
           print(StringUtil.headline_2("[dumpResizable] No resizable parameters were detected in the model."));
         end if;
-      then ();
+      then varData;
     end match;
   end resize;
 

@@ -199,7 +199,9 @@ public
     record PREVIOUS end PREVIOUS;
     record CLOCK end CLOCK;
     record CLOCKED end CLOCKED;
-    record PARAMETER end PARAMETER;
+    record PARAMETER
+      Option<Integer> resize_value          "if the parameter is resizable, this is the computed optimal size";
+    end PARAMETER;
     record CONSTANT end CONSTANT;
     record ITERATOR end ITERATOR;
     record RECORD
@@ -296,7 +298,7 @@ public
       if Type.isRecord(ty) then
         varKind := RECORD({}, makeParam); // ToDo: children!
       elseif makeParam then
-        varKind := PARAMETER();
+        varKind := PARAMETER(NONE());
       elseif Type.isDiscrete(ty) then
         varKind := DISCRETE();
       else

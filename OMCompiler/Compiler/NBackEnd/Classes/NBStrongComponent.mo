@@ -194,7 +194,7 @@ public
       case RESIZABLE_COMPONENT() algorithm
         str := StringUtil.headline_3("BLOCK" + indexStr + ": Resizable Component (status = " + Solve.statusString(comp.status) + ")");
         str := str + "### Variable:\n\t" + ComponentRef.toString(comp.var_cref) + "\n";
-        str := str + "### Equation:\n" + Slice.toString(comp.eqn, function Equation.pointerToString(str = "\t")) + "\n";
+        str := str + "### Equation:\n\t" + Equation.pointerToString(Slice.getT(comp.eqn)) + "\n";
       then str;
 
       case ENTWINED_COMPONENT() algorithm

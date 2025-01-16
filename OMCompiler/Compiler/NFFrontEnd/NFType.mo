@@ -337,6 +337,11 @@ public
     end match;
   end isConditionalArray;
 
+  function isResizable
+    input Type ty;
+    output Boolean b = List.any(arrayDims(ty), Dimension.isResizable);
+  end isResizable;
+
   function setConditionalArrayTypes
     input Type condType;
     input Type trueType;
@@ -1410,6 +1415,7 @@ public
 
   function sizeOf
     input Type ty;
+    input Boolean resize = false;
     output Integer sz;
     function fold_comp_size
       input InstNode comp;
@@ -1424,7 +1430,7 @@ public
       case BOOLEAN() then 1;
       case CLOCK() then 1;
       case ENUMERATION() then 1;
-      case ARRAY() then sizeOf(ty.elementType) * Dimension.sizesProduct(ty.dimensions);
+      case ARRAY() then sizeOf(ty.elementType) * Dimension.sizesProduct(ty.dimensions, resize);
       case TUPLE() then List.fold(list(sizeOf(t) for t in ty.types), intAdd, 0);
       case COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()) then 1;
       case COMPLEX(complexTy = ComplexType.RECORD())
@@ -1439,13 +1445,14 @@ public
     Arrays of complex will only return the size of the contained complex type.
     Non-complex types will return NONE()."
     input Type ty;
+    input Boolean resize = false;
     output Option<Integer> sz;
   protected
     Class cls;
   algorithm
     sz := match ty
-      case ARRAY()                                    then complexSize(ty.elementType);
-      case COMPLEX(complexTy = ComplexType.RECORD())  then SOME(sizeOf(ty));
+      case ARRAY()                                    then complexSize(ty.elementType, resize);
+      case COMPLEX(complexTy = ComplexType.RECORD())  then SOME(sizeOf(ty, resize));
                                                       else NONE();
     end match;
   end complexSize;

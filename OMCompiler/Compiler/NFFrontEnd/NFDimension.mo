@@ -244,6 +244,7 @@ public
 
   function size
     input Dimension dim;
+    input Boolean resize = false;
     output Integer size;
   algorithm
     size := match dim
@@ -251,7 +252,7 @@ public
         Type ty;
 
       case INTEGER()    then dim.size;
-      case RESIZABLE()  then dim.size;
+      case RESIZABLE()  then if resize then Util.getOptionOrDefault(dim.opt_size, dim.size) else dim.size;
       case BOOLEAN()    then 2;
       case ENUM(enumType = ty as Type.ENUMERATION()) then listLength(ty.literals);
       else algorithm
@@ -265,10 +266,11 @@ public
   function sizesProduct
     "Returns the product of the given dimension sizes."
     input list<Dimension> dims;
+    input Boolean resize = false;
     output Integer outSize = 1;
   algorithm
     for dim in dims loop
-      outSize := outSize * Dimension.size(dim);
+      outSize := outSize * Dimension.size(dim, resize);
     end for;
   end sizesProduct;
 
@@ -670,7 +672,9 @@ public
   algorithm
     outDim := match dim
       case EXP() then fromExp(Ceval.evalExp(dim.exp, target), dim.var);
-      case RESIZABLE() then fromExp(Ceval.evalExp(dim.exp, target), dim.var);
+      case RESIZABLE() algorithm
+        dim.exp := Ceval.evalExp(dim.exp, target);
+      then dim;
       else dim;
     end match;
   end eval;
