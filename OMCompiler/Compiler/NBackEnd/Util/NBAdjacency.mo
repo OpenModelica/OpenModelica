@@ -125,8 +125,8 @@ public
       Integer eqn_idx_scal = 1, eqn_idx_arr = 1, var_idx_scal = 1, var_idx_arr = 1;
     algorithm
       // prepare the mappings
-      eqn_scalar_size := sum(Equation.size(eqn) for eqn in eqn_lst);
-      var_scalar_size := sum(BVariable.size(var) for var in var_lst);
+      eqn_scalar_size := sum(Equation.size(eqn, true) for eqn in eqn_lst);
+      var_scalar_size := sum(BVariable.size(var, true) for var in var_lst);
       eqn_StA := arrayCreate(eqn_scalar_size, -1);
       var_StA := arrayCreate(var_scalar_size, -1);
       eqn_AtS := arrayCreate(EquationPointers.size(eqns), (-1, -1));
@@ -147,8 +147,8 @@ public
       array<Integer> eqn_StA, var_StA;
       array<tuple<Integer,Integer>> eqn_AtS, var_AtS;
       Integer eqn_scalar_size, var_scalar_size;
-      Integer neqn_scal = sum(Equation.size(eqn) for eqn in eqn_lst);
-      Integer nvar_scal = sum(BVariable.size(var) for var in var_lst);
+      Integer neqn_scal = sum(Equation.size(eqn, true) for eqn in eqn_lst);
+      Integer nvar_scal = sum(BVariable.size(var, true) for var in var_lst);
       Integer neqn_arr = listLength(eqn_lst);
       Integer nvar_arr = listLength(var_lst);
       Integer eqn_idx_scal = arrayLength(mapping.eqn_StA) + 1, eqn_idx_arr = arrayLength(mapping.eqn_AtS) + 1;
@@ -264,7 +264,7 @@ public
     algorithm
       // fill equation mapping
       for eqn_ptr in eqn_lst loop
-        size := Equation.size(eqn_ptr);
+        size := Equation.size(eqn_ptr, true);
         eqn_AtS[eqn_idx_arr] := (eqn_idx_scal, size);
         for i in eqn_idx_scal:eqn_idx_scal+size-1 loop
           eqn_StA[i] := eqn_idx_arr;
@@ -274,7 +274,7 @@ public
       end for;
       // fill variable mapping
       for var_ptr in var_lst loop
-        size := BVariable.size(var_ptr);
+        size := BVariable.size(var_ptr, true);
         var_AtS[var_idx_arr] := (var_idx_scal, size);
         for i in var_idx_scal:var_idx_scal+size-1 loop
           var_StA[i] := var_idx_arr;
@@ -582,7 +582,7 @@ public
         // default case
         case (FINAL(), FULL()) algorithm
           // 0. expand the integer matrix
-          adj.m := expandMatrix(adj.m, EquationPointers.scalarSize(eqns) - arrayLength(adj.m));
+          adj.m := expandMatrix(adj.m, EquationPointers.scalarSize(eqns, true) - arrayLength(adj.m));
           adj.mapping := full.mapping;
 
           // get the strictness ranking
@@ -614,7 +614,7 @@ public
           else
             max_index_var := intMax(max(i for i in UnorderedMap.valueList(vo)), max(i for i in UnorderedMap.valueList(vn)));
           end if;
-          adj.mT := transposeScalar(adj.m, VariablePointers.scalarSize(vars));
+          adj.mT := transposeScalar(adj.m, VariablePointers.scalarSize(vars, true));
         then adj;
 
         // fail cases
@@ -835,7 +835,7 @@ public
             repetitions[index_new]    := full.repetitions[index_old];
           end for;
 
-          new_adj  := FINAL(m, transposeScalar(m, VariablePointers.scalarSize(vars)), mapping, adj.modes, adj.st);
+          new_adj  := FINAL(m, transposeScalar(m, VariablePointers.scalarSize(vars, true)), mapping, adj.modes, adj.st);
           new_full := FULL(equation_names, occurences, dependencies, solvabilities, repetitions, mapping);
         then (new_adj, new_full);
 
@@ -876,7 +876,7 @@ public
 
         case FULL() algorithm
           types := list(ComponentRef.getSubscriptedType(name) for name in adj.equation_names);
-          complex_sizes := listArray(list(complexSizeStr(Type.complexSize(ty)) for ty in types));
+          complex_sizes := listArray(list(complexSizeStr(Type.complexSize(ty, true)) for ty in types));
           types_str := listArray(list(dimsString(Type.arrayDims(ty)) for ty in types));
           names := listArray(list(ComponentRef.toString(name) for name in adj.equation_names));
           length0 := max(stringLength(sz) for sz in complex_sizes);
@@ -885,7 +885,7 @@ public
           for i in 1:arrayLength(names) loop
             str := str
               + arrayGet(complex_sizes, i) + " " + StringUtil.repeat(" ", length0 - stringLength(arrayGet(complex_sizes, i))) + " | "
-              + arrayGet(types_str, i) + " " + StringUtil.repeat(".", length1 - stringLength(arrayGet(types_str, i))) + " "
+              + arrayGet(types_str, i) + " " + StringUtil.repeat(".", length1 - stringLength(arrayGet(types_str, i))) + " test "
               + arrayGet(names, i) + " " + StringUtil.repeat(".", length2 - stringLength(arrayGet(names, i)))
               + " " + List.toString(UnorderedSet.toList(adj.occurences[i]), function fullString(dep_map = adj.dependencies[i],
               sol_map = adj.solvabilities[i], rep_set = adj.repetitions[i])) + "\n";
@@ -925,7 +925,7 @@ public
 
         case FULL() algorithm
           str := StringUtil.headline_2(str + " Solvability Adjacency Matrix") + "\n";
-          types := listArray(list(intString(Type.sizeOf(ComponentRef.getSubscriptedType(name))) for name in adj.equation_names));
+          types := listArray(list(intString(Type.sizeOf(ComponentRef.getSubscriptedType(name), true)) for name in adj.equation_names));
           names := listArray(list(ComponentRef.toString(name) for name in adj.equation_names));
           for i in arrayLength(names):-1:1 loop
             (XX, II, NM, NP, LV, LP, LC, QQ) := Solvability.categorize(UnorderedSet.toList(adj.occurences[i]), adj.solvabilities[i]);
@@ -986,7 +986,7 @@ public
 
         case FULL() algorithm
           str := StringUtil.headline_2(str + " Dependency Adjacency Matrix") + "\n";
-          types := listArray(list(intString(Type.sizeOf(ComponentRef.getSubscriptedType(name))) for name in adj.equation_names));
+          types := listArray(list(intString(Type.sizeOf(ComponentRef.getSubscriptedType(name), true)) for name in adj.equation_names));
           names := listArray(list(ComponentRef.toString(name) for name in adj.equation_names));
           for i in arrayLength(names):-1:1 loop
             (F, R, E, A, S, K) := Dependency.categorize(UnorderedSet.toList(adj.occurences[i]), adj.dependencies[i], adj.repetitions[i]);
@@ -1142,7 +1142,7 @@ public
     algorithm
       str := match dims
         case {} then "{1}";
-        else List.toString(dims, Dimension.toString);
+        else List.toString(list(Dimension.size(d, true) for d in dims), intString);
       end match;
     end dimsString;
 
@@ -1983,7 +1983,7 @@ public
     updateConditionCrefs(UnorderedSet.toList(set), dep_map, sol_map);
 
     // make condition repeat if the body is larger than 1
-    if sum(WhenStatement.size(stmt) for stmt in body.when_stmts) > 1 then
+    if sum(WhenStatement.size(stmt, true) for stmt in body.when_stmts) > 1 then
       addRepetitions(set, rep_set);
     end if;
 

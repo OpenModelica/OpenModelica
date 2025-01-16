@@ -996,7 +996,7 @@ public
       if isRoot then
         comp_size := 1;
       elseif Type.hasKnownSize(ty) then
-        comp_size := Dimension.sizesProduct(Type.arrayDims(ty));
+        comp_size := Dimension.sizesProduct(Type.arrayDims(ty), false);
       else
         comp_size := 0;
         knownSize := false;

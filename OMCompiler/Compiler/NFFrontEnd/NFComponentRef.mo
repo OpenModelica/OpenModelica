@@ -319,6 +319,22 @@ public
     ty := Type.arrayElementType(ty);
   end scalarType;
 
+  function applyToType
+    input output ComponentRef cref;
+    input typeFunc func;
+    partial function typeFunc
+      input output Type ty;
+    end typeFunc;
+  algorithm
+    cref := match cref
+      case CREF() algorithm
+        cref.ty := func(cref.ty);
+        cref.restCref := applyToType(cref.restCref, func);
+      then cref;
+      else cref;
+    end match;
+  end applyToType;
+
   function firstName
     input ComponentRef cref;
     input Boolean baseModelica = false;
@@ -1732,12 +1748,14 @@ public
   function size
     input ComponentRef cref;
     input Boolean withComplex;
-    output Integer s = product(i for i in sizes(cref, withComplex));
+    input Boolean resize = false;
+    output Integer s = product(i for i in sizes(cref, withComplex, resize));
   end size;
 
   function sizes
     input ComponentRef cref;
     input Boolean withComplex;
+    input Boolean resize = false;
     input output list<Integer> s_lst = {};
   algorithm
     s_lst := match cref
@@ -1745,15 +1763,16 @@ public
         list<Integer> local_lst = {};
       case EMPTY() then listReverse(s_lst);
       case CREF() algorithm
-        local_lst := sizes_local(cref, withComplex);
+        local_lst := sizes_local(cref, withComplex, resize);
         s_lst := listAppend(local_lst, s_lst);
-      then sizes(cref.restCref, withComplex, s_lst);
+      then sizes(cref.restCref, withComplex, resize, s_lst);
     end match;
   end sizes;
 
   function sizes_local
     input ComponentRef cref;
     input Boolean withComplex;
+    input Boolean resize = false;
     output list<Integer> s_lst = {};
   protected
     Option<Integer> complex_size;
@@ -1762,7 +1781,7 @@ public
       case EMPTY() then {};
       case CREF() algorithm
         complex_size := Type.complexSize(cref.ty);
-        s_lst := list(Dimension.size(dim) for dim in Type.arrayDims(cref.ty));
+        s_lst := list(Dimension.size(dim, resize) for dim in Type.arrayDims(cref.ty));
         if withComplex and Util.isSome(complex_size) then
           s_lst := Util.getOption(complex_size) :: s_lst;
         end if;

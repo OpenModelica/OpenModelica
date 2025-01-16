@@ -125,7 +125,8 @@ public
 
   function size
     input Variable var;
-    output Integer s = Type.sizeOf(var.ty);
+    input Boolean resize = false;
+    output Integer s = Type.sizeOf(var.ty, resize);
   end size;
 
   function hash
@@ -379,6 +380,17 @@ public
 
     binding := NFBinding.EMPTY_BINDING;
   end lookupTypeAttribute;
+
+  function applyToType
+    input output Variable var;
+    input typeFunc func;
+    partial function typeFunc
+      input output Type ty;
+    end typeFunc;
+  algorithm
+    var.ty := func(var.ty);
+    var.name := ComponentRef.applyToType(var.name, func);
+  end applyToType;
 
   function propagateAnnotation
     input String name;

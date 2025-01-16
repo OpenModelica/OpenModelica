@@ -359,13 +359,28 @@ public
       rest := (rest_left, rest_right);
     end intersectRest;
 
+    function types
+      input Iterator iter;
+      output list<Type> t "outermost first!";
+    algorithm
+      t := match iter
+        case SINGLE() then {Expression.typeOf(iter.range)};
+        case NESTED() then list(Expression.typeOf(iter.ranges[i]) for i in 1:arrayLength(iter.ranges));
+        case EMPTY()  then {};
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " could not get types for: " + toString(iter) + "\n"});
+        then fail();
+      end match;
+    end types;
+
     function sizes
       input Iterator iter;
+      input Boolean resize = false;
       output list<Integer> sizes "outermost first!";
     algorithm
       sizes := match iter
-        case SINGLE() then {Expression.rangeSize(iter.range)};
-        case NESTED() then list(Expression.rangeSize(iter.ranges[i]) for i in 1:arrayLength(iter.ranges));
+        case SINGLE() then {Expression.rangeSize(iter.range, resize)};
+        case NESTED() then list(Expression.rangeSize(iter.ranges[i], resize) for i in 1:arrayLength(iter.ranges));
         case EMPTY()  then {};
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " could not get sizes for: " + toString(iter) + "\n"});
@@ -375,12 +390,13 @@ public
 
     function size
       input Iterator iter;
-      output Integer size = product(i for i in 1 :: sizes(iter));
+      input Boolean resize = false;
+      output Integer size = product(i for i in 1 :: sizes(iter, resize));
     end size;
 
     function dimensions
       input Iterator iter;
-      output list<Dimension> dims = list(Dimension.fromInteger(s) for s in sizes(iter));
+      output list<Dimension> dims = List.flatten(list(Type.arrayDims(t) for t in types(iter)));
     end dimensions;
 
     function createLocationReplacements
@@ -710,7 +726,7 @@ public
       input Equation eq;
       input output String str = "";
     protected
-      String s = "(" + intString(Equation.size(Pointer.create(eq))) + ")";
+      String s = "(" + intString(Equation.size(Pointer.create(eq), true)) + ")";
       String tupl_recd_str;
     algorithm
       str := match eq
@@ -761,6 +777,7 @@ public
 
     function size
       input Pointer<Equation> eqn_ptr;
+      input Boolean resize = false;
       output Integer s;
     protected
       Equation eqn;
@@ -770,13 +787,13 @@ public
         local
           Equation body;
         case SCALAR_EQUATION()            then 1;
-        case ARRAY_EQUATION()             then Type.sizeOf(eqn.ty);
-        case RECORD_EQUATION()            then Type.sizeOf(eqn.ty);
+        case ARRAY_EQUATION()             then Type.sizeOf(eqn.ty, resize);
+        case RECORD_EQUATION()            then Type.sizeOf(eqn.ty, resize);
         case ALGORITHM()                  then eqn.size;
-        case IF_EQUATION()                then eqn.size;
-        case FOR_EQUATION(body = {body})  then eqn.size;
-        case WHEN_EQUATION()              then eqn.size;
-        case AUX_EQUATION()               then Variable.size(Pointer.access(eqn.auxiliary));
+        case IF_EQUATION()                then if resize then IfEquationBody.size(eqn.body, resize) else eqn.size;
+        case FOR_EQUATION(body = {body})  then if resize then Iterator.size(eqn.iter, resize) * Equation.size(Pointer.create(body), resize) else eqn.size;
+        case WHEN_EQUATION()              then if resize then WhenEquationBody.size(eqn.body, resize) else eqn.size;
+        case AUX_EQUATION()               then Variable.size(Pointer.access(eqn.auxiliary), resize);
         case DUMMY_EQUATION()             then 0;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(eqn)});
@@ -786,6 +803,7 @@ public
 
     function sizes
       input Pointer<Equation> eqn_ptr;
+      input Boolean resize = false;
       output list<Integer> size_lst;
     protected
       Equation eqn;
@@ -793,13 +811,13 @@ public
       eqn := Pointer.access(eqn_ptr);
       size_lst := match eqn
         case SCALAR_EQUATION() then {1};
-        case ARRAY_EQUATION()  then {Type.sizeOf(eqn.ty)}; //needs to be updated to represent the dimensions
-        case RECORD_EQUATION() then {Type.sizeOf(eqn.ty)};
+        case ARRAY_EQUATION()  then {Type.sizeOf(eqn.ty, resize)}; //needs to be updated to represent the dimensions
+        case RECORD_EQUATION() then {Type.sizeOf(eqn.ty, resize)};
         case ALGORITHM()       then {eqn.size};
         case IF_EQUATION()     then {eqn.size};
-        case FOR_EQUATION()    then listReverse(Iterator.sizes(eqn.iter)); // does only consider frames and not conditions
+        case FOR_EQUATION()    then listReverse(Iterator.sizes(eqn.iter, resize)); // does only consider frames and not conditions
         case WHEN_EQUATION()   then {eqn.size};
-        case AUX_EQUATION()    then {Variable.size(Pointer.access(eqn.auxiliary))};
+        case AUX_EQUATION()    then {Variable.size(Pointer.access(eqn.auxiliary), resize)};
         case DUMMY_EQUATION()  then {};
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(eqn)});
@@ -2434,7 +2452,8 @@ public
     function size
       "only considers first branch"
       input IfEquationBody body;
-      output Integer size = sum(Equation.size(eqn) for eqn in body.then_eqns);
+      input Boolean resize = false;
+      output Integer size = sum(Equation.size(eqn, resize) for eqn in body.then_eqns);
     end size;
 
     function isEqual
@@ -2713,7 +2732,8 @@ public
     function size
       "returns the size only considering first when branch."
       input WhenEquationBody body;
-      output Integer s = sum(WhenStatement.size(stmt) for stmt in body.when_stmts);
+      input Boolean resize = false;
+      output Integer s = sum(WhenStatement.size(stmt, resize) for stmt in body.when_stmts);
     end size;
 
     function getType
@@ -3233,10 +3253,11 @@ public
 
     function size
       input WhenStatement stmt;
+      input Boolean resize = false;
       output Integer s;
     algorithm
       s := match stmt
-        case ASSIGN() then Type.sizeOf(Expression.typeOf(stmt.lhs));
+        case ASSIGN() then Type.sizeOf(Expression.typeOf(stmt.lhs), resize);
                       else 0;
       end match;
     end size;
@@ -3543,7 +3564,7 @@ public
       end if;
 
       if printEmpty or luI > 0 then
-        str := StringUtil.headline_4(str + " Equations (" + intString(EquationPointers.size(equations)) + "/" + intString(scalarSize(equations)) + ")");
+        str := StringUtil.headline_4(str + " Equations (" + intString(EquationPointers.size(equations)) + "/" + intString(scalarSize(equations, true)) + ")");
         for i in 1:luI loop
           if ExpandableArray.occupied(i, equations.eqArr) then
             eqn := ExpandableArray.get(i, equations.eqArr);
@@ -3599,10 +3620,11 @@ public
     function scalarSize
       "returns the scalar size."
       input EquationPointers equations;
+      input Boolean resize = false;
       output Integer sz = 0;
     algorithm
       for eqn_ptr in toList(equations) loop
-        sz := sz + Equation.size(eqn_ptr);
+        sz := sz + Equation.size(eqn_ptr, resize);
       end for;
     end scalarSize;
 
@@ -4017,12 +4039,13 @@ public
 
     function scalarSize
       input EqData eqData;
+      input Boolean resize = false;
       output Integer s;
     algorithm
       s := match eqData
-        case EQ_DATA_SIM() then EquationPointers.scalarSize(eqData.simulation);
-        case EQ_DATA_JAC() then EquationPointers.scalarSize(eqData.equations);
-        case EQ_DATA_HES() then EquationPointers.scalarSize(eqData.equations);
+        case EQ_DATA_SIM() then EquationPointers.scalarSize(eqData.simulation, resize);
+        case EQ_DATA_JAC() then EquationPointers.scalarSize(eqData.equations, resize);
+        case EQ_DATA_HES() then EquationPointers.scalarSize(eqData.equations, resize);
       end match;
     end scalarSize;
 
@@ -4096,7 +4119,7 @@ public
 
         case EQ_DATA_SIM()
           algorithm
-            tmp := "Equation Data Simulation (scalar simulation equations: " + intString(EquationPointers.scalarSize(eqData.simulation)) + ")";
+            tmp := "Equation Data Simulation (scalar simulation equations: " + intString(EquationPointers.scalarSize(eqData.simulation, true)) + ")";
             tmp := StringUtil.headline_2(tmp) + "\n";
             if level == 0 then
               tmp :=  tmp + EquationPointers.toString(eqData.equations, "Simulation", NONE(), false, filter_opt);

@@ -52,10 +52,9 @@ val(x[3],1);
 // 	$FUN_1[integer(1.0 + 0.5 * ((-2.0) + $i1))]
 // ### Equation:
 // 	[FOR-] (9) ($RES_$AUX_4)
-// 	[----] for $i1 in 2:2:18 loop
-// 	[----]   [SCAL] (1) $FUN_1[integer(1.0 + 0.5 * ((-2.0) + $i1))] = sin((0.5 * $i1) * time) ($RES_$AUX_5)
-// 	[----] end for;
-// 	slice: {8, 7, 6, 5, 4, 3, 2, 1, 0}
+// [----] for $i1 in 2:2:18 loop
+// [----]   [SCAL] (1) $FUN_1[integer(1.0 + 0.5 * ((-2.0) + $i1))] = sin((0.5 * $i1) * time) ($RES_$AUX_5)
+// [----] end for;
 //
 // BLOCK 4: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
@@ -109,10 +108,9 @@ val(x[3],1);
 // 	$FUN_1[integer(1.0 + 0.5 * ((-2.0) + $i1))]
 // ### Equation:
 // 	[FOR-] (9) ($RES_$AUX_4)
-// 	[----] for $i1 in 2:2:18 loop
-// 	[----]   [SCAL] (1) $FUN_1[integer(1.0 + 0.5 * ((-2.0) + $i1))] = sin((0.5 * $i1) * time) ($RES_$AUX_5)
-// 	[----] end for;
-// 	slice: {8, 7, 6, 5, 4, 3, 2, 1, 0}
+// [----] for $i1 in 2:2:18 loop
+// [----]   [SCAL] (1) $FUN_1[integer(1.0 + 0.5 * ((-2.0) + $i1))] = sin((0.5 * $i1) * time) ($RES_$AUX_5)
+// [----] end for;
 //
 // BLOCK 4: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
@@ -166,10 +164,9 @@ val(x[3],1);
 // 	$FUN_1[integer(1.0 + 0.5 * ((-2.0) + $i1))]
 // ### Equation:
 // 	[FOR-] (9) ($RES_$AUX_4)
-// 	[----] for $i1 in 2:2:18 loop
-// 	[----]   [SCAL] (1) $FUN_1[integer(1.0 + 0.5 * ((-2.0) + $i1))] = sin((0.5 * $i1) * time) ($RES_$AUX_5)
-// 	[----] end for;
-// 	slice: {8, 7, 6, 5, 4, 3, 2, 1, 0}
+// [----] for $i1 in 2:2:18 loop
+// [----]   [SCAL] (1) $FUN_1[integer(1.0 + 0.5 * ((-2.0) + $i1))] = sin((0.5 * $i1) * time) ($RES_$AUX_5)
+// [----] end for;
 //
 // BLOCK 4: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
@@ -226,10 +223,9 @@ val(x[3],1);
 // 	$FUN_1[integer(1.0 + 0.5 * ((-2.0) + $i1))]
 // ### Equation:
 // 	[FOR-] (9) ($RES_$AUX_4)
-// 	[----] for $i1 in 2:2:18 loop
-// 	[----]   [SCAL] (1) $FUN_1[integer(1.0 + 0.5 * ((-2.0) + $i1))] = sin((0.5 * $i1) * time) ($RES_$AUX_5)
-// 	[----] end for;
-// 	slice: {8, 7, 6, 5, 4, 3, 2, 1, 0}
+// [----] for $i1 in 2:2:18 loop
+// [----]   [SCAL] (1) $FUN_1[integer(1.0 + 0.5 * ((-2.0) + $i1))] = sin((0.5 * $i1) * time) ($RES_$AUX_5)
+// [----] end for;
 //
 // --- Alias of INI[1 | 4] ---
 // BLOCK 4: Generic Component (status = Solve.EXPLICIT)
@@ -285,10 +281,9 @@ val(x[3],1);
 // 	$FUN_1[integer(1.0 + 0.5 * ((-2.0) + $i1))]
 // ### Equation:
 // 	[FOR-] (9) ($RES_$AUX_4)
-// 	[----] for $i1 in 2:2:18 loop
-// 	[----]   [SCAL] (1) $FUN_1[integer(1.0 + 0.5 * ((-2.0) + $i1))] = sin((0.5 * $i1) * time) ($RES_$AUX_5)
-// 	[----] end for;
-// 	slice: {8, 7, 6, 5, 4, 3, 2, 1, 0}
+// [----] for $i1 in 2:2:18 loop
+// [----]   [SCAL] (1) $FUN_1[integer(1.0 + 0.5 * ((-2.0) + $i1))] = sin((0.5 * $i1) * time) ($RES_$AUX_5)
+// [----] end for;
 //
 // BLOCK 4: Generic Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------

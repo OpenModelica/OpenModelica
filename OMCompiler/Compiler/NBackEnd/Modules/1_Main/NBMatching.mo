@@ -257,10 +257,10 @@ public
       end for;
 
       // get the slice lists while sorting indices and simplifying whole slices to {}
-      matched_vars    := list(Slice.simplify(slice, BVariable.size) for slice in Slice.fromMap(var_map_matched));
-      unmatched_vars  := list(Slice.simplify(slice, BVariable.size) for slice in Slice.fromMap(var_map_unmatched));
-      matched_eqns    := list(Slice.simplify(slice, Equation.size) for slice in Slice.fromMap(eqn_map_matched));
-      unmatched_eqns  := list(Slice.simplify(slice, Equation.size) for slice in Slice.fromMap(eqn_map_unmatched));
+      matched_vars    := list(Slice.simplify(slice, function BVariable.size(resize = true)) for slice in Slice.fromMap(var_map_matched));
+      unmatched_vars  := list(Slice.simplify(slice, function BVariable.size(resize = true)) for slice in Slice.fromMap(var_map_unmatched));
+      matched_eqns    := list(Slice.simplify(slice, function Equation.size(resize = true)) for slice in Slice.fromMap(eqn_map_matched));
+      unmatched_eqns  := list(Slice.simplify(slice, function Equation.size(resize = true)) for slice in Slice.fromMap(eqn_map_unmatched));
     else
       // check if variables are matched and sort them accordingly
       for var in 1:arrayLength(matching.var_to_eqn) loop

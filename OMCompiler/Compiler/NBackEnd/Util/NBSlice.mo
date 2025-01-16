@@ -1141,7 +1141,7 @@ protected
       // skip to an array element
       case (Type.ARRAY(), rest) guard List.compareLength(rest, ty.dimensions) >= 0 algorithm
         (rest, tail) := List.split(rest, listLength(ty.dimensions));
-        index := locationToIndex(List.zip(list(Dimension.size(dim) for dim in ty.dimensions), rest), index);
+        index := locationToIndex(List.zip(list(Dimension.size(dim, true) for dim in ty.dimensions), rest), index);
       then resolveSkips(index, ty.elementType, tail, cref, fullmap);
 
       // skip for tuple or array, but the skip is too large
@@ -1242,8 +1242,8 @@ protected
       for tpl in skip_lst loop
         (skip_idx, skip_ty) := tpl;
         // get equation and iterator sizes and frames
-        body_size       := Type.sizeOf(skip_ty);
-        iter_size       := Iterator.size(iter);
+        body_size       := Type.sizeOf(skip_ty, true);
+        iter_size       := Iterator.size(iter, true);
         size            := body_size * iter_size;
         (names, ranges) := Iterator.getFrames(iter);
         frames          := List.zip(names, ranges);
@@ -1377,7 +1377,7 @@ protected
 
       case (dim, false)::rest algorithm
         // reduced dimension, keep key index at 0 and go deeper with next dimension
-        for i in 1:Dimension.size(dim) loop
+        for i in 1:Dimension.size(dim, true) loop
           resolveEquationDimensions(rest, map, key, m, modes, mode, eqn_idx_ptr, index+1);
         end for;
       then ();
@@ -1385,7 +1385,7 @@ protected
       case (dim, true)::rest algorithm
         // regular dimension, update key index to corresponding dimension index
         // and go deeper with next dimension
-        for i in 1:Dimension.size(dim) loop
+        for i in 1:Dimension.size(dim, true) loop
           arrayUpdate(key, index, i);
           resolveEquationDimensions(rest, map, key, m, modes, mode, eqn_idx_ptr, index+1);
         end for;
