@@ -346,9 +346,7 @@ protected
   Type cref_ty, exp_ty;
   Integer dim_diff;
 algorithm
-  exp_context := if InstNode.isFunction(InstNode.explicitParent(node))
-    then NFInstContext.FUNCTION else NFInstContext.CLASS;
-
+  exp_context := InstContext.nodeContext(node, target.context);
   Typing.typeComponentBinding(node, exp_context, typeChildren = false);
   comp := InstNode.component(node);
   binding := Component.getBinding(comp);
@@ -696,8 +694,7 @@ protected
 algorithm
   parent_cr := ComponentRef.rest(cref);
   parent := ComponentRef.node(parent_cr);
-  exp_context := if InstNode.isFunction(InstNode.explicitParent(parent))
-    then NFInstContext.FUNCTION else NFInstContext.CLASS;
+  exp_context := InstContext.nodeContext(parent, target.context);
 
   comp := InstNode.component(parent);
   binding := Component.getBinding(comp);
