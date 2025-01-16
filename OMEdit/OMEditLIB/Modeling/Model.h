@@ -477,10 +477,13 @@ private:
   {
   public:
     Modifier(const QString &name, const QJsonValue &jsonValue, Model *pParentModel);
+    Modifier(const Modifier *pModifier);
     ~Modifier();
     void deserialize(const QJsonValue &jsonValue);
 
+    Model* getParentModel() const {return mpParentModel;}
     const QString &getName() const {return mName;}
+    void setName(const QString &newName) {mName = newName;}
     const QString &getType() const {return mType;}
     QString getValueWithoutQuotes() const {return StringHandler::removeFirstLastQuotes(getValue());}
     bool isValueDefined() const {return mValueDefined;}
@@ -489,11 +492,13 @@ private:
     QPair<QString, bool> getModifierValue(const QString &modifier) const;
     bool hasModifier(const QString &modifier) const;
     const QList<Modifier*> &getModifiers() const {return mModifiers;}
+    void addModifier(const Modifier *pModifier);
     bool isFinal() const {return mFinal;}
     bool isEach() const {return mEach;}
     bool isRedeclare() const;
     bool isReplaceable() const;
     const QString &getValue() const {return mValue;}
+    const QString &getComment() const {return mComment;}
     QPair<QString, bool> getModifierValue(QStringList qualifiedModifierName) const;
   private:
     Model *mpParentModel;
@@ -700,7 +705,7 @@ private:
     virtual bool isComponent() const = 0;
     virtual bool isExtend() const = 0;
     virtual bool isClass() const = 0;
-    virtual QString toString(bool skipTopLevel = false) const;
+    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false) const;
 
     QString getDirection() const;
   private:
@@ -738,7 +743,7 @@ private:
     virtual bool isComponent() const override {return false;}
     virtual bool isExtend() const override {return true;}
     virtual bool isClass() const override {return false;}
-    virtual QString toString(bool skipTopLevel = false) const override;
+    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false) const override;
   };
 
   class Component : public Element
@@ -752,6 +757,9 @@ private:
     void setType(const QString &type) {mType = type;}
   private:
     void deserialize_impl(const QJsonObject &jsonObject) override;
+    QList<Modifier*> getExtendsModifiers(const Modifier *pModifier) const;
+    static void mergeModifiers(Modifier *pModifier1, Modifier *pModifier2);
+    static Modifier *mergeModifiersIntoOne(QList<Modifier*> extendsModifiers);
   private:
     QString mName;
     bool mCondition = true;
@@ -767,7 +775,7 @@ private:
     virtual bool isComponent() const override {return true;}
     virtual bool isExtend() const override {return false;}
     virtual bool isClass() const override {return false;}
-    virtual QString toString(bool skipTopLevel = false) const override;
+    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false) const override;
   };
 
   class ReplaceableClass : public Element
@@ -795,7 +803,7 @@ private:
     virtual bool isComponent() const override {return false;}
     virtual bool isExtend() const override {return false;}
     virtual bool isClass() const override {return true;}
-    virtual QString toString(bool skipTopLevel = false) const override;
+    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false) const override;
   };
 
   class Part

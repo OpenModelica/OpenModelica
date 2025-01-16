@@ -736,6 +736,22 @@ namespace ModelInstance
     deserialize(jsonValue);
   }
 
+  Modifier::Modifier(const Modifier *pModifier)
+  {
+    mName = pModifier->getName();
+    mpParentModel = pModifier->getParentModel();
+    mType = pModifier->getType();
+    mFinal = pModifier->isFinal();
+    mEach = pModifier->isEach();
+    mComment = pModifier->getComment();
+    mpElement = 0; // perhaps not needed for deep copy. This constructor is used only during copy/paste of elements.
+    mValue = pModifier->getValue();
+    mValueDefined = pModifier->isValueDefined();
+    foreach (auto pSubModifier, pModifier->getModifiers()) {
+      mModifiers.append(new Modifier(pSubModifier));
+    }
+  }
+
   Modifier::~Modifier()
   {
     if (mpElement) {
@@ -840,6 +856,11 @@ namespace ModelInstance
   {
     Modifier *pModifier = getModifier(modifier);
     return pModifier && pModifier->getName().compare(modifier) == 0;
+  }
+
+  void Modifier::addModifier(const Modifier *pModifier)
+  {
+    mModifiers.append(new Modifier(pModifier));
   }
 
   bool Modifier::isRedeclare() const
@@ -2050,8 +2071,9 @@ namespace ModelInstance
     }
   }
 
-  QString Element::toString(bool skipTopLevel) const
+  QString Element::toString(bool skipTopLevel, bool mergeExtendsModifiers) const
   {
+    Q_UNUSED(mergeExtendsModifiers);
     if (mpPrefixes) {
       return mpPrefixes->toString(skipTopLevel);
     }
@@ -2158,9 +2180,9 @@ namespace ModelInstance
     return mBaseClass;
   }
 
-  QString Extend::toString(bool skipTopLevel) const
+  QString Extend::toString(bool skipTopLevel, bool mergeExtendsModifiers) const
   {
-    return Element::toString(skipTopLevel);
+    return Element::toString(skipTopLevel, mergeExtendsModifiers);
   }
 
   Component::Component(Model *pParentModel)
@@ -2232,6 +2254,73 @@ namespace ModelInstance
   }
 
   /*!
+   * \brief Component::getExtendsModifiers
+   * Makes a list of all extends modifiers.
+   * \param pModifier
+   * \return
+   */
+  QList<Modifier*> Component::getExtendsModifiers(const Modifier *pModifier) const
+  {
+    QList<Modifier*> modifiers;
+    if (pModifier && pModifier->getParentModel() && pModifier->getParentModel()->getParentElement() && pModifier->getParentModel()->getParentElement()->getModifier()) {
+      Modifier *pExtentElementModifier = pModifier->getParentModel()->getParentElement()->getModifier();
+      foreach (auto *pSubModifier, pExtentElementModifier->getModifiers()) {
+        if (pSubModifier->getName().compare(mName) == 0) {
+          modifiers.append(pSubModifier);
+        }
+      }
+      modifiers.append(getExtendsModifiers(pExtentElementModifier));
+    }
+    return modifiers;
+  }
+
+  /*!
+   * \brief Component::mergeModifiers
+   * Merges pModifier2 into pModifier1
+   * \param pModifier1
+   * \param pModifier2
+   */
+  void Component::mergeModifiers(Modifier *pModifier1, Modifier *pModifier2)
+  {
+    foreach (auto pSubModifier2, pModifier2->getModifiers()) {
+      bool subModifierFound = false;
+      foreach (auto pSubModifier1, pModifier1->getModifiers()) {
+        /* if modifier exists then check if its value is defined
+         * if the value is not defined then merge sub modifiers
+         */
+        if (pSubModifier2->getName().compare(pSubModifier1->getName()) == 0) {
+          subModifierFound = true;
+          if (!pSubModifier1->isValueDefined()) {
+            Component::mergeModifiers(pSubModifier1, pSubModifier2);
+          }
+        }
+      }
+      // if modifier doesn't exist then add it
+      if (!subModifierFound) {
+        pModifier1->addModifier(pSubModifier2);
+      }
+    }
+  }
+
+  /*!
+   * \brief Component::mergeModifiersIntoOne
+   * Merges the list of all extends modifiers into one modifier.
+   * \param extendsModifiers
+   * \return
+   */
+  Modifier* Component::mergeModifiersIntoOne(QList<Modifier *> extendsModifiers)
+  {
+    Modifier *pModifier = nullptr;
+    if (!extendsModifiers.isEmpty()) {
+      pModifier = new Modifier(extendsModifiers.last());
+      for (int i = extendsModifiers.size() - 2 ; i >= 0 ; i--) {
+        Component::mergeModifiers(pModifier, extendsModifiers.at(i));
+      }
+    }
+    return pModifier;
+  }
+
+  /*!
    * \brief Component::getQualifiedName
    * Returns the qualified name of the component.
    * \param includeBaseName
@@ -2259,11 +2348,11 @@ namespace ModelInstance
     return mType;
   }
 
-  QString Component::toString(bool skipTopLevel) const
+  QString Component::toString(bool skipTopLevel, bool mergeExtendsModifiers) const
   {
     QStringList value;
 
-    value.append(Element::toString(skipTopLevel));
+    value.append(Element::toString(skipTopLevel, mergeExtendsModifiers));
 
     if (mpPrefixes) {
       auto prefixes = mpPrefixes->typePrefixes();
@@ -2278,7 +2367,22 @@ namespace ModelInstance
     }
     // modifiers
     if (mpModifier) {
-      value.append(mpModifier->toString());
+      Modifier *pModifier = nullptr;
+      if (mergeExtendsModifiers) {
+        // Merge extends modifiers. See issue #13301
+        QList<Modifier *> extendsModifiers = getExtendsModifiers(mpModifier);
+        pModifier = Component::mergeModifiersIntoOne(extendsModifiers);
+      }
+
+      if (pModifier) {
+        mergeModifiers(pModifier, mpModifier);
+        // we don't need the name coming from the extend modification
+        pModifier->setName("");
+        value.append(pModifier->toString());
+        delete pModifier;
+      } else {
+        value.append(mpModifier->toString());
+      }
     }
     // constrainedby issue #13300
     if (mpPrefixes && mpPrefixes->getReplaceable() && !mpPrefixes->getReplaceable()->getConstrainedby().isEmpty()) {
@@ -2359,11 +2463,11 @@ namespace ModelInstance
     }
   }
 
-  QString ReplaceableClass::toString(bool skipTopLevel) const
+  QString ReplaceableClass::toString(bool skipTopLevel, bool mergeExtendsModifiers) const
   {
     QStringList value;
 
-    value.append(Element::toString(skipTopLevel));
+    value.append(Element::toString(skipTopLevel, mergeExtendsModifiers));
     value.append(mType);
     value.append(mName);
     if (!mBaseClass.isEmpty()) {
