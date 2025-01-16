@@ -218,6 +218,7 @@ algorithm
       outRemovedInitialEquations := listAppend(removedEqns, outRemovedInitialEquations);
       outInitDAE_lambda0 := SOME(initdae0);
       initdae := BackendDAEUtil.setFunctionTree(initdae, BackendDAEUtil.getFunctions(initdae0.shared)); // PH: why?
+      outGlobalKnownVars := BackendVariable.mergeVariables(outGlobalKnownVars, initdae0.shared.globalKnownVars);
     else
       outInitDAE_lambda0 := NONE();
     end if;
@@ -239,7 +240,6 @@ algorithm
     Error.addCompilerError("No system for the symbolic initialization was generated");
     fail();
   end try;
-  outGlobalKnownVars := BackendVariable.mergeVariables(outGlobalKnownVars, initdae0.shared.globalKnownVars);
 end solveInitialSystem;
 
 function createInitialDAEFromSystem
