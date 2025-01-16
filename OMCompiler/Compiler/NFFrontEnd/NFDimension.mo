@@ -125,12 +125,20 @@ public
         then fromExp(Expression.arrayFirstScalar(exp.exp), var);
 
       else algorithm
-        e := Expression.map(exp, Expression.replaceResizableParameter);
-        e := SimplifyExp.simplify(e);
+        e := SimplifyExp.simplify(exp);
       then match e
+        // if it can be simplified to an integer its just an integer
+        case Expression.INTEGER(value) then INTEGER(value, var);
+        // if it can be simplified to an integer after replacing resizables its resizable
+        else algorithm
+          e := Expression.map(e, Expression.replaceResizableParameter);
+          e := SimplifyExp.simplify(e);
+        then match e
           case Expression.INTEGER(value) then RESIZABLE(value, NONE(), exp, var);
+        // otherwise it is just an expression
           else EXP(exp, var);
         end match;
+      end match;
     end match;
   end fromExp;
 
