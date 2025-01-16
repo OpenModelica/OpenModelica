@@ -3470,7 +3470,7 @@ void GraphicsView::copyItems(bool cut)
     for (int i = itemsList.size() - 1 ; i >= 0 ; i--) {
       if (itemsList.at(i)->isSelected()) {
         if (Element *pElement = dynamic_cast<Element*>(itemsList.at(i))) {
-          components << pElement->getModelComponent()->toString() % " " % "annotation(" % pElement->getPlacementAnnotation(true) % ");";
+          components << pElement->getModelComponent()->toString(false, true) % " " % "annotation(" % pElement->getPlacementAnnotation(true) % ");";
           // component JSON
           QJsonObject componentJsonObject;
           componentJsonObject.insert(QLatin1String("classname"), pElement->getClassName());
