@@ -211,7 +211,7 @@ algorithm
           // Instantiate expressions (i.e. anything that can contains crefs, like
           // bindings, dimensions, etc). This is done as a separate step after
           // instantiation to make sure that lookup is able to find the correct nodes.
-          NFInst.instExpressions(inst_anncls, context = ANNOTATION_CONTEXT);
+          NFInst.instExpressions(inst_anncls, context = ANNOTATION_CONTEXT, settings = NFInst.DEFAULT_SETTINGS);
 
           // Mark structural parameters.
           NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM), ANNOTATION_CONTEXT);
@@ -252,7 +252,7 @@ algorithm
           // Instantiate expressions (i.e. anything that can contains crefs, like
           // bindings, dimensions, etc). This is done as a separate step after
           // instantiation to make sure that lookup is able to find the correct nodes.
-          NFInst.instExpressions(inst_anncls, context = ANNOTATION_CONTEXT);
+          NFInst.instExpressions(inst_anncls, context = ANNOTATION_CONTEXT, settings = NFInst.DEFAULT_SETTINGS);
 
           // Mark structural parameters.
           NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM), ANNOTATION_CONTEXT);
@@ -579,7 +579,7 @@ algorithm
   // Instantiate expressions (i.e. anything that can contains crefs, like
   // bindings, dimensions, etc). This is done as a separate step after
   // instantiation to make sure that lookup is able to find the correct nodes.
-  NFInst.instExpressions(inst_cls, context = NFInstContext.RELAXED);
+  NFInst.instExpressions(inst_cls, context = NFInstContext.RELAXED, settings = NFInst.DEFAULT_SETTINGS);
 
   // Mark structural parameters.
   NFInst.updateImplicitVariability(inst_cls, Flags.isSet(Flags.EVAL_PARAM), NFInstContext.RELAXED);
@@ -792,7 +792,7 @@ protected
 algorithm
   context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
   context := InstContext.set(context, NFInstContext.INSTANCE_API);
-  inst_settings := InstSettings.SETTINGS(mergeExtendsSections = false);
+  inst_settings := InstSettings.SETTINGS(mergeExtendsSections = false, resizableArrays = false);
 
   (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
   mod := parseModifier(modifier, top);
@@ -1107,7 +1107,7 @@ algorithm
       scope := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), scope);
       scope := Inst.instantiate(scope, context = context, instPartial = true);
       Inst.insertGeneratedInners(scope, InstNode.topScope(scope), context);
-      Inst.instExpressions(scope, context = context);
+      Inst.instExpressions(scope, context = context, settings = NFInst.DEFAULT_SETTINGS);
     else
     end try;
     ErrorExt.rollBack(getInstanceName());

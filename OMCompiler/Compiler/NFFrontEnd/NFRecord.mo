@@ -55,6 +55,7 @@ import IOStream;
 
 protected
 import Inst = NFInst;
+import NFInst.InstSettings;
 import Lookup = NFLookup;
 import TypeCheck = NFTypeCheck;
 import Typing = NFTyping;
@@ -130,7 +131,7 @@ algorithm
   next_context := InstContext.set(next_context, NFInstContext.FUNCTION);
   recordNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(InstNode.parent(node)), recordNode);
   recordNode := Inst.instantiate(recordNode, context = next_context);
-  Inst.instExpressions(recordNode, context = next_context);
+  Inst.instExpressions(recordNode, context = next_context, settings = InstSettings.create());
 end instRecord;
 
 function instDefaultConstructor

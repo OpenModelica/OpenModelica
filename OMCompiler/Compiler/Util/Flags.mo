@@ -1360,6 +1360,9 @@ constant ConfigFlag DEBUG_FOLLOW_EQUATIONS = CONFIG_FLAG(155, "debugFollowEquati
 constant ConfigFlag MAX_SIZE_LINEARIZATION = CONFIG_FLAG(156, "maxSizeLinearization",
   NONE(), EXTERNAL(), INT_FLAG(1000), NONE(),
   Gettext.gettext("Sets the maximum system size for which linearization code is generated."));
+constant ConfigFlag RESIZABLE_ARRAYS = CONFIG_FLAG(157, "resizableArrays",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Gettext.gettext("Assumes all arrays are resizable. Only works with the new backend --newBackend."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
