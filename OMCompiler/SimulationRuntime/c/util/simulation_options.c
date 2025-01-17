@@ -109,7 +109,6 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_MAX_ORDER */                    "maxIntegrationOrder",
   /* FLAG_MAX_STEP_SIZE */                "maxStepSize",
   /* FLAG_MEASURETIMEPLOTFORMAT */        "measureTimePlotFormat",
-  /* FLAG_NEWTON_DIAGNOSTICS */           "newtonDiagnostics",
   /* FLAG_NEWTON_FTOL */                  "newtonFTol",
   /* FLAG_NEWTON_MAX_STEP_FACTOR */       "newtonMaxStepFactor",
   /* FLAG_NEWTON_XTOL */                  "newtonXTol",
@@ -244,7 +243,6 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_MAX_ORDER */                    "value specifies maximum integration order for supported solver",
   /* FLAG_MAX_STEP_SIZE */                "value specifies maximum absolute step size for supported solver",
   /* FLAG_MEASURETIMEPLOTFORMAT */        "value specifies the output format of the measure time functionality",
-  /* FLAG_NEWTON_DIAGNOSTICS */           "Run newton diagnostics to improve start values for non-linear systems",
   /* FLAG_NEWTON_FTOL */                  "[double (default 1e-12)] tolerance respecting residuals for updating solution vector in Newton solver",
   /* FLAG_NEWTON_MAX_STEP_FACTOR */       "[double (default 1e12)] maximum newton step factor mxnewtstep = maxStepFactor * norm2(xScaling). Used currently only by KINSOL.",
   /* FLAG_NEWTON_XTOL */                  "[double (default 1e-12)] tolerance respecting newton correction (delta_x) for updating solution vector in Newton solver",
@@ -498,9 +496,6 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  * ps\n"
   "  * gif\n"
   "  * ...",
-  /* FLAG_NEWTON_DIAGNOSTICS */
-  "  Implementation of \"On the choice of initial guesses for the Newton-Raphson algorithm.\"\n"
-  "  See: https://doi.org/10.1016/j.amc.2021.125991",
   /* FLAG_NEWTON_FTOL */
   "  Tolerance respecting residuals for updating solution vector in Newton solver.\n"
   "  Solution is accepted if the (scaled) 2-norm of the residuals is smaller than the tolerance newtonFTol and the (scaled) newton correction (delta_x) is smaller than the tolerance newtonXTol.\n"
@@ -718,7 +713,6 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_MAX_ORDER */                    FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MAX_STEP_SIZE */                FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MEASURETIMEPLOTFORMAT */        FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_NEWTON_DIAGNOSTICS */           FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NEWTON_FTOL */                  FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NEWTON_MAX_STEP_FACTOR */       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NEWTON_XTOL */                  FLAG_REPEAT_POLICY_FORBID,
@@ -852,7 +846,6 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_MAX_ORDER */                    FLAG_TYPE_OPTION,
   /* FLAG_MAX_STEP_SIZE */                FLAG_TYPE_OPTION,
   /* FLAG_MEASURETIMEPLOTFORMAT */        FLAG_TYPE_OPTION,
-  /* FLAG_NEWTON_DIAGNOSTICS */           FLAG_TYPE_FLAG,
   /* FLAG_NEWTON_FTOL */                  FLAG_TYPE_OPTION,
   /* FLAG_NEWTON_MAX_STEP_FACTOR */       FLAG_TYPE_OPTION,
   /* FLAG_NEWTON_XTOL */                  FLAG_TYPE_OPTION,
