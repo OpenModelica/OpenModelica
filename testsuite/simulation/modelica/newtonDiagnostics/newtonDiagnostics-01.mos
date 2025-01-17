@@ -2,7 +2,7 @@
 // keywords: nonlinear system start values newton diagnostics
 // status: correct
 //
-// Testing if flag LOG_NEWTON_DIAGNOSTICS is working
+// Testing if flag LOG_NLS_NEWTON_DIAGNOSTICS is working
 
 loadString("
   model problem4
@@ -15,7 +15,7 @@ loadString("
   end problem4;
 "); getErrorString();
 
-simulate(problem4, simflags="-newtonDiagnostics -lv=LOG_NLS_NEWTON_DIAGNOSTICS"); getErrorString();
+simulate(problem4, simflags="-lv=LOG_NLS_NEWTON_DIAGNOSTICS"); getErrorString();
 
 
 // Result:
@@ -23,7 +23,7 @@ simulate(problem4, simflags="-newtonDiagnostics -lv=LOG_NLS_NEWTON_DIAGNOSTICS")
 // ""
 // record SimulationResult
 //     resultFile = "problem4_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'problem4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-newtonDiagnostics -lv=LOG_NLS_NEWTON_DIAGNOSTICS'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'problem4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_NLS_NEWTON_DIAGNOSTICS'",
 //     messages = "LOG_NLS_NEWTON_DIAGNOSTICS | info    | Running newton diagnostics for system 7
 // LOG_NLS_NEWTON_DIAGNOSTICS | info    | Information about the system from non-linear pattern
 // |                 | |       | | Total number of equations    = 2
