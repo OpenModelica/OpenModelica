@@ -1099,6 +1099,8 @@ namespace ModelInstance
     qDeleteAll(mElements);
     mElements.clear();
 
+    mImports.clear();
+
     qDeleteAll(mConnections);
     mConnections.clear();
 
@@ -1143,6 +1145,15 @@ namespace ModelInstance
     }
 
     updateMergedCoordinateSystem();
+
+    if (mModelJson.contains("imports")) {
+      for (const QJsonValue &import: mModelJson.value("imports").toArray()) {
+        QJsonObject importObject = import.toObject();
+        if (!importObject.isEmpty()) {
+          mImports.append(Import(importObject));
+        }
+      }
+    }
 
     if (mModelJson.contains("connections")) {
       for (const QJsonValue &connection: mModelJson.value("connections").toArray()) {
@@ -2595,6 +2606,17 @@ namespace ModelInstance
   QStringList Connector::getNameParts() const
   {
     return mName.getNameParts();
+  }
+
+  Import::Import(const QJsonObject &jsonObject)
+  {
+    if (jsonObject.contains("path")) {
+      mPath = jsonObject.value("path").toString();
+    }
+
+    if (jsonObject.contains("shortName")) {
+      mShortName = jsonObject.value("shortName").toString();
+    }
   }
 
   Connection::Connection(Model *pParentModel)
