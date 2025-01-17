@@ -587,6 +587,7 @@ private:
   };
 
   class Component;
+  class Import;
   class Connection;
   class Transition;
   class InitialState;
@@ -626,6 +627,7 @@ private:
     const QList<Element *> &getElements() const {return mElements;}
     QList<Element *> getComponents() const;
     size_t componentCount() const;
+    const QList<Import> &getImports() const {return mImports;}
     const QList<Connection *> &getConnections() const {return mConnections;}
     const QList<Transition *> &getTransitions() const {return mTransitions;}
     const QList<InitialState *> &getInitialStates() const {return mInitialStates;}
@@ -656,6 +658,7 @@ private:
     QString mComment;
     std::unique_ptr<Annotation> mpAnnotation;
     QList<Element*> mElements;
+    QList<Import> mImports;
     QList<Connection*> mConnections;
     QList<Transition*> mTransitions;
     QList<InitialState*> mInitialStates;
@@ -848,6 +851,18 @@ private:
   private:
     QString mKind;
     Name mName;
+  };
+
+  class Import
+  {
+  public:
+    Import(const QJsonObject &jsonObject);
+
+    QString getPath() const {return mPath;}
+    QString getShortName() const {return mShortName;}
+  private:
+    QString mPath;
+    QString mShortName;
   };
 
   class Connection

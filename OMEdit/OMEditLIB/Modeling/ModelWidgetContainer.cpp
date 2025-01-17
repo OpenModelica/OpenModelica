@@ -6825,7 +6825,28 @@ void ModelWidget::navigateToClass(const QString &className)
     pLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
   } else {
     // relative class not found.
-    pLibraryTreeItem = pLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(className);
+    bool classFound = false;
+    if (mpModelInstance) {
+      auto imports = mpModelInstance->getImports();
+      foreach (auto import, imports) {
+        if (className.compare(import.getShortName()) == 0) {
+          pLibraryTreeItem = pLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(import.getPath());
+        } else {
+          const QString importPath = StringHandler::removeLastWordAfterDot(import.getPath());
+          pLibraryTreeItem = pLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(importPath % "." % className);
+        }
+        // check if we found the class in imports
+        if (pLibraryTreeItem) {
+          classFound = true;
+          break;
+        }
+      }
+    }
+    // if class is not found in imports then see if the class is fully qualified path.
+    if (!classFound) {
+      pLibraryTreeItem = pLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(className);
+    }
+    // if class is found then open it.
     if (pLibraryTreeItem) {
       pLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
     }
