@@ -1014,7 +1014,6 @@ function dumpJSONInstanceTree
   output JSON json = JSON.makeNull();
 protected
   InstNode node;
-  Class cls;
   list<InstanceTree> elems;
   Sections sections;
   Option<SCode.Comment> cmt;
@@ -1039,9 +1038,8 @@ algorithm
   json := JSON.addPairNotNull("elements", dumpJSONElements(elems, node, isDeleted), json);
 
   if not isDeleted then
-    cls := InstNode.getClass(node);
-    json := dumpJSONImports(cls, json);
-    sections := Class.getSections(cls);
+    json := dumpJSONImports(node, json);
+    sections := Class.getSections(InstNode.getClass(node));
     json := dumpJSONEquations(sections, node, json);
   end if;
 
@@ -1885,41 +1883,45 @@ algorithm
 end dumpJSONAbsynFunctionArgs;
 
 function dumpJSONImports
-  input Class cls;
+  input InstNode node;
   input output JSON json;
 protected
+  InstNode n = node;
   array<Import> imps;
   list<Import> resolved_imps;
   JSON json_imp, json_imp_array;
 algorithm
-  imps := ClassTree.getImports(Class.classTree(cls));
+  json_imp_array := JSON.makeNull();
 
-  if arrayEmpty(imps) then
-    return;
-  end if;
+  while not InstNode.isEmpty(n) loop
+    imps := ClassTree.getImports(Class.classTree(InstNode.getClass(n)));
 
-  resolved_imps := Import.resolveList(imps);
-  resolved_imps := listReverseInPlace(resolved_imps);
-  json_imp_array := JSON.emptyArray(listLength(resolved_imps));
+    if not arrayEmpty(imps) then
+      resolved_imps := Import.resolveList(imps);
+      resolved_imps := listReverseInPlace(resolved_imps);
 
-  for imp in resolved_imps loop
-    () := match imp
-      case Import.RESOLVED_IMPORT()
-        algorithm
-          json_imp := JSON.makeNull();
-          json_imp := JSON.addPair("path", dumpJSONPath(InstNode.fullPath(imp.node)), json_imp);
+      for imp in resolved_imps loop
+        () := match imp
+          case Import.RESOLVED_IMPORT()
+            algorithm
+              json_imp := JSON.makeNull();
+              json_imp := JSON.addPair("path", dumpJSONPath(InstNode.fullPath(imp.node)), json_imp);
 
-          if not stringEmpty(imp.shortName) then
-            json_imp := JSON.addPair("shortName", JSON.makeString(imp.shortName), json_imp);
-          end if;
+              if not stringEmpty(imp.shortName) then
+                json_imp := JSON.addPair("shortName", JSON.makeString(imp.shortName), json_imp);
+              end if;
 
-          json_imp_array := JSON.addElement(json_imp, json_imp_array);
-        then
-          ();
+              json_imp_array := JSON.addElement(json_imp, json_imp_array);
+            then
+              ();
 
-      else ();
-    end match;
-  end for;
+          else ();
+        end match;
+      end for;
+    end if;
+
+    n := InstNode.parent(n);
+  end while;
 
   json := JSON.addPairNotNull("imports", json_imp_array, json);
 end dumpJSONImports;
