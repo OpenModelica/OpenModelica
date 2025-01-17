@@ -1379,6 +1379,22 @@ namespace ModelInstance
   }
 
   /*!
+   * \brief Model::removeElement
+   * Removes the element.
+   * \param name
+   */
+  void Model::removeElement(const QString &name)
+  {
+    foreach (auto pElement, mElements) {
+      if (pElement->getName().compare(name) == 0) {
+        mElements.removeOne(pElement);
+        delete pElement;
+        break;
+      }
+    }
+  }
+
+  /*!
    * \brief Model::getComponents
    * Returns all components of the model, including inherited ones.
    */
