@@ -61,8 +61,6 @@ simulate(problem4, simflags="-lv=LOG_NLS_NEWTON_DIAGNOSTICS"); getErrorString();
 // |                 | |       | | | ------  ------    ----------------
 // |                 | |       | | |      2       1   0.08
 // LOG_NLS_NEWTON_DIAGNOSTICS | info    | Newton diagnostics complete!
-// LOG_NLS_NEWTON_DIAGNOSTICS | info    | Running newton diagnostics for system 18
-// LOG_NLS_NEWTON_DIAGNOSTICS | info    | Newton diagnostics terminated: no non-linear equations!
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
