@@ -1154,9 +1154,15 @@ void GraphicsView::deleteElement(Element *pElement)
  */
 void GraphicsView::deleteElementFromClass(Element *pElement)
 {
-  if (mpModelWidget->getLibraryTreeItem()->isModelica()) {
+  if (mpModelWidget && mpModelWidget->getLibraryTreeItem() && mpModelWidget->getLibraryTreeItem()->isModelica()) {
     // delete the component from OMC
     MainWindow::instance()->getOMCProxy()->deleteComponent(pElement->getName(), mpModelWidget->getLibraryTreeItem()->getNameStructure());
+    /* Since we don't call getModelInstance on deleting a component so we need to update instance JSON manually by removing the component from it.
+     * This is needed so the Element Browser shows the correct list of components.
+     */
+    if (mpModelWidget->getModelInstance()) {
+      mpModelWidget->getModelInstance()->removeElement(pElement->getName());
+    }
   }
 }
 
