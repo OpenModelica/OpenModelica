@@ -792,7 +792,7 @@ protected
 algorithm
   context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
   context := InstContext.set(context, NFInstContext.INSTANCE_API);
-  inst_settings := NFInst.DEFAULT_SETTINGS;
+  inst_settings := InstSettings.SETTINGS(mergeExtendsSections = false, resizableArrays = false);
 
   (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
   mod := parseModifier(modifier, top);
