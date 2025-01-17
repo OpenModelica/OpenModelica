@@ -206,7 +206,7 @@ algorithm
     (initdae, dumpVars, outRemovedInitialEquations) := createInitialDAEFromSystem(initsyst, shared, initVars, enabledModules, disabledModules, outGlobalKnownVars, false);
 
     // get cse variables and remove the globalKnownVars for the initialization set again
-    outGlobalKnownVars := BackendVariable.addVars(list(v for v guard(BackendVariable.isCSEVar(v)) in BackendVariable.varList(initdae.shared.globalKnownVars)), outGlobalKnownVars);
+    //outGlobalKnownVars := BackendVariable.addVars(list(v for v guard(BackendVariable.isCSEVar(v)) in BackendVariable.varList(initdae.shared.globalKnownVars)), outGlobalKnownVars);
     initdae.shared := BackendDAEUtil.setSharedGlobalKnownVars(initdae.shared, BackendVariable.emptyVars());
 
     // update the fixed attribute in the simulation DAE
@@ -215,12 +215,12 @@ algorithm
     if useHomotopy and Config.globalHomotopy() then
       initsyst0 := replaceHomotopyWithSimplifiedEqs(initsyst0);
       initdae0 := BackendDAE.DAE({initsyst0}, shared);
-      initdae0 := BackendDAEUtil.setFunctionTree(initdae0, BackendDAEUtil.getFunctions(shared));
+      initdae0 := BackendDAEUtil.setFunctionTree(initdae0, BackendDAEUtil.getFunctions(initdae.shared));
       (initdae0, _, removedEqns) := createInitialDAEFromSystem(initsyst0, shared, initVars, {}, {"inlineHomotopy", "generateHomotopyComponents"}, outGlobalKnownVars, true);
       outRemovedInitialEquations := listAppend(removedEqns, outRemovedInitialEquations);
 
       // get cse variables and remove the globalKnownVars for the lambda=0 initialization set again
-      outGlobalKnownVars := BackendVariable.addVars(list(v for v guard(BackendVariable.isCSEVar(v)) in BackendVariable.varList(initdae0.shared.globalKnownVars)), outGlobalKnownVars);
+      //outGlobalKnownVars := BackendVariable.addVars(list(v for v guard(BackendVariable.isCSEVar(v)) in BackendVariable.varList(initdae0.shared.globalKnownVars)), outGlobalKnownVars);
       initdae0.shared := BackendDAEUtil.setSharedGlobalKnownVars(initdae0.shared, BackendVariable.emptyVars());
 
       outInitDAE_lambda0 := SOME(initdae0);
