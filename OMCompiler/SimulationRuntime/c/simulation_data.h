@@ -77,9 +77,18 @@ typedef struct VAR_INFO
   FILE_INFO info;
 } VAR_INFO;
 
+typedef enum
+{
+  EQUATION_SECTION_UNKNOWN,
+  EQUATION_SECTION_INIT_LAMBDA0,
+  EQUATION_SECTION_INITIAL,
+  EQUATION_SECTION_REGULAR
+} EQUATION_SECTION;
+
 typedef struct EQUATION_INFO
 {
   int id;
+  EQUATION_SECTION section;
   int profileBlockIndex;
   int parent;
   int numVar;

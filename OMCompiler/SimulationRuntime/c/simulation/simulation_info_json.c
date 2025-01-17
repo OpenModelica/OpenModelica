@@ -316,7 +316,19 @@ static const char* readEquation(const char *str, EQUATION_INFO *xml, int i, cons
   str=skipSpace(str);
   xml->id = i;
   str = skipFieldIfExist(str, "parent", fileName);
-  str = skipFieldIfExist(str, "section", fileName);
+  if (0 == strncmp(",\"section\":\"initial-lambda0\"", str, 28)) {
+    xml->section = EQUATION_SECTION_INIT_LAMBDA0;
+    str += 28;
+  } else if (0 == strncmp(",\"section\":\"initial\"", str, 20)) {
+    xml->section = EQUATION_SECTION_INITIAL;
+    str += 20;
+  } else if (0 == strncmp(",\"section\":\"regular\"", str, 20)) {
+    xml->section = EQUATION_SECTION_REGULAR;
+    str += 20;
+  } else {
+    xml->section = EQUATION_SECTION_UNKNOWN;
+  }
+  str=skipSpace(str);
   if ((measure_time_flag & 1) && 0==strncmp(",\"tag\":\"system\"", str, 15)) {
     xml->profileBlockIndex = -1;
     str += 15;
@@ -529,6 +541,7 @@ void modelInfoInit(MODEL_DATA_XML* xml)
   assert(xml->equationInfo == NULL);
   xml->equationInfo = (EQUATION_INFO*) calloc(1+xml->nEquations, sizeof(EQUATION_INFO));
   xml->equationInfo[0].id = 0;
+  xml->equationInfo[0].section = EQUATION_SECTION_UNKNOWN;
   xml->equationInfo[0].profileBlockIndex = -1;
   xml->equationInfo[0].numVar = 0;
   xml->equationInfo[0].vars = NULL;
@@ -580,7 +593,7 @@ FUNCTION_INFO modelInfoGetDummyFunction(MODEL_DATA_XML* xml)
 EQUATION_INFO modelInfoGetDummyEquation(MODEL_DATA_XML* xml)
 {
   const char * var = "";
-  EQUATION_INFO equationInfo = {-1, 0, 0, -1, &var}; // omc_dummyEquationInfo is not working in mingw
+  EQUATION_INFO equationInfo = {-1, EQUATION_SECTION_UNKNOWN, 0, 0, -1, &var}; // omc_dummyEquationInfo is not working in mingw
   return equationInfo;
 }
 
