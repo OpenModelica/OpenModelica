@@ -116,12 +116,21 @@ public
 
 uniontype InstSettings
   record SETTINGS
-    Boolean mergeExtendsSections "Merge sections from extends clauses if true";
+    Boolean mergeExtendsSections  "Merge sections from extends clauses if true";
+    Boolean resizableArrays       "Consider all arrays resizable if true";
   end SETTINGS;
+
+  function create
+    output InstSettings settings = SETTINGS(
+      mergeExtendsSections  = true,
+      resizableArrays       = Flags.getConfigBool(Flags.RESIZABLE_ARRAYS)
+    );
+  end create;
 end InstSettings;
 
 constant InstSettings DEFAULT_SETTINGS = InstSettings.SETTINGS(
-    mergeExtendsSections = true
+    mergeExtendsSections = true,
+    resizableArrays = false
   );
 
 function Inst_makeTopNode
@@ -147,6 +156,7 @@ protected
   InstContext.Type context;
   Integer var_count, eq_count, expose_local_ios;
   SCode.Program prog = program;
+  InstSettings settings;
 algorithm
   resetGlobalFlags();
   context := if relaxedFrontend or Flags.getConfigBool(Flags.CHECK_MODEL) or Flags.isSet(Flags.NF_API) then
@@ -170,10 +180,13 @@ algorithm
   inst_cls := instantiateRootClass(cls, context);
   execStat("NFInst.instantiate(" + AbsynUtil.pathString(classPath) + ")");
 
+  // create the settings from flags
+  settings := InstSettings.create();
+
   // Instantiate expressions (i.e. anything that can contains crefs, like
   // bindings, dimensions, etc). This is done as a separate step after
   // instantiation to make sure that lookup is able to find the correct nodes.
-  instExpressions(inst_cls, context = context);
+  instExpressions(inst_cls, context = context, settings = settings);
   execStat("NFInst.instExpressions");
 
   // Mark structural parameters.
@@ -292,7 +305,7 @@ algorithm
   // Instantiate expressions (i.e. anything that can contains crefs, like
   // bindings, dimensions, etc). This is done as a separate step after
   // instantiation to make sure that lookup is able to find the correct nodes.
-  instExpressions(inst_cls, context = context);
+  instExpressions(inst_cls, context = context, settings = DEFAULT_SETTINGS);
 
   // Type the class.
   Typing.typeClass(inst_cls, context);
@@ -1352,7 +1365,7 @@ algorithm
   if state < PackageCacheState.INSTANTIATED and
      (not InstNode.isPartial(inst) or InstContext.inRelaxed(context)) then
     InstNode.setPackageCache(node, inst, PackageCacheState.INSTANTIATED);
-    instExpressions(inst, context = context);
+    instExpressions(inst, context = context, settings = DEFAULT_SETTINGS);
   end if;
 
   node := inst;
@@ -2376,6 +2389,7 @@ end updateParameterBinding;
 function instDimension
   input output Dimension dimension;
   input InstContext.Type context;
+  input InstSettings settings;
   input SourceInfo info;
 algorithm
   dimension := match dimension
@@ -2390,7 +2404,7 @@ algorithm
           case Absyn.SUBSCRIPT()
             algorithm
               exp := instExp(dim.subscript, dimension.scope, context, info);
-              if Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
+              if settings.resizableArrays then
                 exp := Expression.map(exp, instResizable);
               end if;
             then
@@ -2438,7 +2452,7 @@ function instExpressions
   input InstNode scope = node;
   input output Sections sections = Sections.EMPTY();
   input InstContext.Type context;
-  input InstSettings settings = DEFAULT_SETTINGS;
+  input InstSettings settings;
 protected
   Class cls = InstNode.getClass(node), inst_cls;
   array<InstNode> local_comps, exts;
@@ -2517,7 +2531,7 @@ algorithm
         info := InstNode.info(node);
 
         for i in 1:arrayLength(dims) loop
-          dims[i] := instDimension(dims[i], context, info);
+          dims[i] := instDimension(dims[i], context, settings, info);
         end for;
 
         if Restriction.isRecord(cls.restriction) then
@@ -2677,7 +2691,7 @@ algorithm
         end if;
 
         for i in 1:arrayLength(dims) loop
-          dims[i] := instDimension(dims[i], context, c.info);
+          dims[i] := instDimension(dims[i], context, settings, c.info);
         end for;
 
         InstNode.updateComponent(c, node);

@@ -46,6 +46,7 @@ import NFModifier.Modifier;
 protected
 import ErrorExt;
 import Inst = NFInst;
+import NFInst.InstSettings;
 import Binding = NFBinding;
 import Config;
 import DAE;
@@ -512,7 +513,7 @@ uniontype Function
     // Set up an empty function cache to signal that this function is
     // currently being instantiated, so recursive functions can be handled.
     InstNode.cacheInitFunc(fnNode);
-    Inst.instExpressions(fnNode, context = context);
+    Inst.instExpressions(fnNode, context = context, settings = InstSettings.create());
   end instFunction3;
 
   function makeEnumConversionOp
