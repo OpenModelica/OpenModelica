@@ -1492,10 +1492,17 @@ public
 
     function create
       input Option<SCode.Comment> comment;
+      input Attributes attributes;
       output Annotations annotations = EMPTY_ANNOTATIONS;
     protected
       SCode.Mod mod;
+      Boolean b;
     algorithm
+      // set if it was set globally
+      if attributes.isResizable then
+        annotations.resizable := true;
+      end if;
+
       _ := match comment
         case SOME(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(modification=mod as SCode.MOD())))) algorithm
           for submod in mod.subModLst loop
@@ -1503,8 +1510,8 @@ public
               case SCode.NAMEMOD(ident = "HideResult", mod = SCode.MOD(binding = SOME(Absyn.BOOL(true)))) algorithm
                 annotations.hideResult := true;
               then ();
-              case SCode.NAMEMOD(ident = "__OpenModelica_resizable", mod = SCode.MOD(binding = SOME(Absyn.BOOL(true)))) algorithm
-                annotations.resizable := true;
+              case SCode.NAMEMOD(ident = "__OpenModelica_resizable", mod = SCode.MOD(binding = SOME(Absyn.BOOL(b)))) algorithm
+                annotations.resizable := b;
               then ();
               else ();
             end match;

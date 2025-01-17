@@ -2390,6 +2390,9 @@ algorithm
           case Absyn.SUBSCRIPT()
             algorithm
               exp := instExp(dim.subscript, dimension.scope, context, info);
+              if Flags.getConfigBool(Flags.RESIZABLE_ARRAYS) then
+                exp := Expression.map(exp, instResizable);
+              end if;
             then
               Dimension.UNTYPED(exp, false);
 
@@ -2402,6 +2405,33 @@ algorithm
     else dimension;
   end match;
 end instDimension;
+
+function instResizable
+  "only updates component pointers"
+  input output Expression exp;
+algorithm
+  _ := match exp
+    local
+      InstNode node;
+      Component comp;
+      Attributes attr;
+
+    case Expression.CREF(cref = ComponentRef.CREF(node = node as InstNode.COMPONENT_NODE()))
+      guard(Component.variability(Pointer.access(node.component)) == Variability.PARAMETER) algorithm
+        comp := Pointer.access(node.component);
+        _ :=match comp
+          case Component.COMPONENT(attributes = attr) algorithm
+            attr.variability := Variability.NON_STRUCTURAL_PARAMETER;
+            attr.isResizable := true;
+            comp.attributes := attr;
+            Pointer.update(node.component, comp);
+          then ();
+          else ();
+        end match;
+    then ();
+    else ();
+  end match;
+end instResizable;
 
 function instExpressions
   input InstNode node;

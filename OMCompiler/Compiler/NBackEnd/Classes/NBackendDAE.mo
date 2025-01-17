@@ -633,7 +633,7 @@ protected
   algorithm
     try
       attributes := VariableAttributes.create(var.typeAttributes, var.ty, var.attributes, var.children, var.comment);
-      annotations := Annotations.create(var.comment);
+      annotations := Annotations.create(var.comment, var.attributes);
 
       // only change varKind if unset (Iterators are set before)
       var.backendinfo := match var.backendinfo
