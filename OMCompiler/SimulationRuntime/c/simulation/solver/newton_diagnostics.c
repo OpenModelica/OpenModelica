@@ -978,7 +978,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
 // --------------------------------------------------------------------------------------------------------------------------------
 
 unsigned* getNonlinearEqns( DATA* data, threadData_t* threadData, unsigned sysNumber,
-                            unsigned m, double* x0, double* dx, double* lambda, unsigned* p)
+                            unsigned m, double* f_x0, double* x0, double* dx, double* lambda, unsigned* p)
 {
   // If |f^i(x1)| > 0, then f^i is a nonlinear function
 
@@ -1039,7 +1039,7 @@ unsigned* getNonlinearEqns( DATA* data, threadData_t* threadData, unsigned sysNu
   // Count number of nonlinear functions, i.e. all functions satifying: |f(x1)| > eps
   *p = 0;
   for (i = 0; i < m; ++i)
-    if (fabs(f_x1[i]) > eps)
+    if (fabs(f_x1[i] + ((*lambda) - 1)*f_x0[i]) > eps)
       (*p)++;
 
   // Get indices of nonlinear functions of f^i
@@ -1049,7 +1049,7 @@ unsigned* getNonlinearEqns( DATA* data, threadData_t* threadData, unsigned sysNu
     n_idx = (unsigned*)malloc(*p * sizeof(unsigned));
     unsigned n = 0;
     for (i = 0; i < m; ++i)
-      if (fabs(f_x1[i]) > eps)
+      if (fabs(f_x1[i] + ((*lambda) - 1)*f_x0[i]) > eps)
         n_idx[n++] = i;
   }
 
@@ -1206,7 +1206,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
   double*** fxx = getHessian(data, threadData, sysNumber, m);
 
   // Obtain indices of non-linear functions "n" (p is the number of non-linear functions)
-  unsigned* n_idx = getNonlinearEqns(data, threadData, sysNumber, m, x0, dx, &lambda, &p);
+  unsigned* n_idx = getNonlinearEqns(data, threadData, sysNumber, m, f, x0, dx, &lambda, &p);
 
   if (p == 0)
   {
