@@ -1595,7 +1595,7 @@ public
 
     function createResidual
       "Creates a residual equation from a regular equation.
-      Expample (for DAEMode): $RES_DAE_idx := rhs."
+      Example (for DAEMode): $RES_DAE_idx := rhs."
       input output Pointer<Equation> eqn_ptr;
       input Boolean new = false               "set to true if the resulting pointer should be a new one";
     protected
@@ -1603,6 +1603,7 @@ public
       ComponentRef residualCref;
       Expression lhs, rhs;
     algorithm
+      // TODO: future improvement - save the residual in [INI] -> re-use for [ODE] tearing
       // get name cref which is the residual
       residualCref := match eqn
         local
@@ -2495,22 +2496,23 @@ public
 
     function createResidual
       "needs the if equation to be split"
-      input output IfEquationBody body;
+      input IfEquationBody body;
       input ComponentRef res;
+      output IfEquationBody body_res;
     protected
       Pointer<Equation> eqn_ptr;
       Equation eqn;
       Expression exp;
     algorithm
-      body := match body.then_eqns
+      body_res := IF_EQUATION_BODY(body.condition, {}, Util.applyOption(body.else_if, function createResidual(res = res)));
+      body_res := match body.then_eqns
         case {eqn_ptr} algorithm
           eqn := Pointer.access(eqn_ptr);
           exp := Equation.getResidualExp(eqn);
           eqn := Equation.setLHS(eqn, Expression.fromCref(res));
           eqn := Equation.setRHS(eqn, exp);
-          Pointer.update(eqn_ptr, eqn);
-          body.else_if := Util.applyOption(body.else_if, function createResidual(res = res));
-        then body;
+          body_res.then_eqns := Pointer.create(eqn) :: body_res.then_eqns;
+        then body_res;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(body)});
         then fail();
