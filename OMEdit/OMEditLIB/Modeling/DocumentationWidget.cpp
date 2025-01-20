@@ -501,6 +501,8 @@ void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
     while (mpDocumentationHistoryList->count() > (mDocumentationHistoryPos+1)) {
       mpDocumentationHistoryList->removeLast();
     }
+    /* remove if url exists */
+    removeDocumentationHistory(pLibraryTreeItem);
     /* append new url */
     mpDocumentationHistoryList->append(DocumentationHistory(pLibraryTreeItem));
     mDocumentationHistoryPos++;
@@ -617,6 +619,35 @@ void DocumentationWidget::saveScrollPosition()
 }
 
 /*!
+ * \brief DocumentationWidget::updateDocumentationHistory
+ * \param pLibraryTreeItem
+ * Removes the corresponding LibraryTreeItem from the DocumentationHistory.
+ */
+void DocumentationWidget::updateDocumentationHistory(LibraryTreeItem *pLibraryTreeItem)
+{
+  if (pLibraryTreeItem) {
+    if (removeDocumentationHistory(pLibraryTreeItem)) {
+      updatePreviousNextButtons();
+      if (mDocumentationHistoryPos > -1) {
+        cancelDocumentation();
+        LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+        pLibraryTreeModel->showModelWidget(mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem);
+      } else {
+        mpEditInfoAction->setDisabled(true);
+        mpEditRevisionsAction->setDisabled(true);
+        mpEditInfoHeaderAction->setDisabled(true);
+        mpSaveAction->setDisabled(true);
+        mpCancelAction->setDisabled(true);
+        mpDocumentationViewer->setHtml(""); // clear if we don't have any documentation to show
+        mpDocumentationViewerFrame->show();
+        mpEditorsWidget->hide();
+        mEditType = EditType::None;
+      }
+    }
+  }
+}
+
+/*!
  * \brief DocumentationWidget::createPixmapForToolButton
  * Creates a new pixmap which contains the QIcon and the QColor in the bottom.
  * \param color
@@ -703,16 +734,20 @@ bool DocumentationWidget::isLinkSelected()
 }
 
 /*!
- * \brief DocumentationWidget::updateDocumentationHistory
+ * \brief DocumentationWidget::removeDocumentationHistory
+ * Removes the LibraryTreeItem from the documentation history.
  * \param pLibraryTreeItem
- * Removes the corresponding LibraryTreeItem from the DocumentationHistory.
+ * \return true if removed
  */
-void DocumentationWidget::updateDocumentationHistory(LibraryTreeItem *pLibraryTreeItem)
+bool DocumentationWidget::removeDocumentationHistory(LibraryTreeItem *pLibraryTreeItem)
 {
-  if (pLibraryTreeItem) {
-    int index = mpDocumentationHistoryList->indexOf(DocumentationHistory(pLibraryTreeItem));
+  int index = -1;
+  bool removed = false;
+  do {
+    index = mpDocumentationHistoryList->indexOf(DocumentationHistory(pLibraryTreeItem));
     if (index > -1) {
       mpDocumentationHistoryList->removeOne(DocumentationHistory(pLibraryTreeItem));
+      removed = true;
       if (index == mDocumentationHistoryPos) {
         if (!(index == 0 && !mpDocumentationHistoryList->isEmpty())) {
           mDocumentationHistoryPos--;
@@ -722,24 +757,10 @@ void DocumentationWidget::updateDocumentationHistory(LibraryTreeItem *pLibraryTr
       } else if (index > mDocumentationHistoryPos) {
         // do nothing
       }
-      updatePreviousNextButtons();
-      if (mDocumentationHistoryPos > -1) {
-        cancelDocumentation();
-        LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-        pLibraryTreeModel->showModelWidget(mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem);
-      } else {
-        mpEditInfoAction->setDisabled(true);
-        mpEditRevisionsAction->setDisabled(true);
-        mpEditInfoHeaderAction->setDisabled(true);
-        mpSaveAction->setDisabled(true);
-        mpCancelAction->setDisabled(true);
-        mpDocumentationViewer->setHtml(""); // clear if we don't have any documentation to show
-        mpDocumentationViewerFrame->show();
-        mpEditorsWidget->hide();
-        mEditType = EditType::None;
-      }
     }
-  }
+  } while (index > -1);
+
+  return removed;
 }
 
 /*!
@@ -1248,15 +1269,6 @@ void DocumentationWidget::updateHTMLSourceEditor()
 #else
   mpHTMLSourceEditor->getPlainTextEdit()->setPlainText(mpHTMLEditor->page()->mainFrame()->toHtml());
 #endif
-}
-
-/*!
- * \brief DocumentationWidget::updateDocumentationHistory
- * Slot activated when LibraryTreeItem unloaded SIGNAL is raised.
- */
-void DocumentationWidget::updateDocumentationHistory()
-{
-  updateDocumentationHistory(qobject_cast<LibraryTreeItem*>(sender()));
 }
 #endif // #ifndef OM_DISABLE_DOCUMENTATION
 
