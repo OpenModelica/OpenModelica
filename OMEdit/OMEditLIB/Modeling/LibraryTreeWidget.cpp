@@ -2644,12 +2644,13 @@ void LibraryTreeModel::createOMSTLMBusConnectorLibraryTreeItems(LibraryTreeItem 
 void unloadHelper(LibraryTreeItem *pLibraryTreeItem)
 {
   MainWindow *pMainWindow = MainWindow::instance();
+  pMainWindow->getDocumentationWidget()->updateDocumentationHistory(pLibraryTreeItem);
   /* close the ModelWidget of LibraryTreeItem. */
   if (pLibraryTreeItem->getModelWidget()) {
     // if ModelWidget is used by DiagramWindow
-    if (MainWindow::instance()->getPlotWindowContainer()->getDiagramSubWindowFromMdi()
-        && MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->getModelWidget() == pLibraryTreeItem->getModelWidget()) {
-      MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->removeVisualizationDiagram();
+    if (pMainWindow->getPlotWindowContainer()->getDiagramSubWindowFromMdi()
+        && pMainWindow->getPlotWindowContainer()->getDiagramWindow()->getModelWidget() == pLibraryTreeItem->getModelWidget()) {
+      pMainWindow->getPlotWindowContainer()->getDiagramWindow()->removeVisualizationDiagram();
     }
     QMdiSubWindow *pMdiSubWindow = pMainWindow->getModelWidgetContainer()->getMdiSubWindow(pLibraryTreeItem->getModelWidget());
     if (pMdiSubWindow) {

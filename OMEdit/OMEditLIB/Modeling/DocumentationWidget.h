@@ -100,6 +100,7 @@ public:
   QPoint getScrollPosition() const {return mScrollPosition;}
   void setScrollPosition(const QPoint &scrollPosition) {mScrollPosition = scrollPosition;}
   bool isEditingDocumentation() const {return mEditType != EditType::None;}
+  void updateDocumentationHistory(LibraryTreeItem *pLibraryTreeItem);
 private:
   QFile mDocumentationFile;
   QAction *mpPreviousAction;
@@ -157,7 +158,7 @@ private:
   void updatePreviousNextButtons();
   void writeDocumentationFile(QString documentation);
   bool isLinkSelected();
-  void updateDocumentationHistory(LibraryTreeItem *pLibraryTreeItem);
+  bool removeDocumentationHistory(LibraryTreeItem *pLibraryTreeItem);
 public slots:
   void previousDocumentation();
   void nextDocumentation();
@@ -184,7 +185,6 @@ public slots:
   void createLink();
   void removeLink();
   void updateHTMLSourceEditor();
-  void updateDocumentationHistory();
 #endif // #ifndef OM_DISABLE_DOCUMENTATION
 };
 
