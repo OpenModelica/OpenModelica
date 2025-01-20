@@ -3950,6 +3950,18 @@ algorithm
   end match;
 end importPath;
 
+public function setImportPath
+  input output Absyn.Import imp;
+  input Absyn.Path path;
+algorithm
+  () := match imp
+    case Absyn.NAMED_IMPORT()  algorithm imp.path := path;   then ();
+    case Absyn.QUAL_IMPORT()   algorithm imp.path := path;   then ();
+    case Absyn.UNQUAL_IMPORT() algorithm imp.path := path;   then ();
+    case Absyn.GROUP_IMPORT()  algorithm imp.prefix := path; then ();
+  end match;
+end setImportPath;
+
 public function importName
   "Returns the import name of a named or qualified import."
   input Absyn.Import inImport;
