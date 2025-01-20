@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2024, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2025, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -43,7 +43,7 @@
  * 3) sigma_ij  : solution sensitivities
  *
  * According to
- *    F.Casella and B.Bachman
+ *    F. Casella and B. Bachman
  *    On the choice of initial guesses for the Newton-Raphson algorithm
  *    Applied Mathematics and Computation 398 (2021) 125991
  *
@@ -114,6 +114,7 @@ double** getJacobian( DATA* data, threadData_t *threadData, unsigned sysNumber, 
 {
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
+  assertStreamPrint(threadData, jac->availability != JACOBIAN_UNKNOWN, "NEWTON_DIAGNOSTICS: Jacobian availablity status is unknown.");
 
   unsigned i, j;
 
@@ -1140,7 +1141,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 {
   // infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics starting ....");  THIS IS NOT REALLY NECESSARY
 
-  /**** This section is not really required for the Newton diagnostics. It could be useful if only parameters and variables 
+  /**** This section is not really required for the Newton diagnostics. It could be useful if only parameters and variables
    **** relevant for the specific system being analyzed were printed out. Otherwise, for large systems this section would be
    **** huge and just annoying
 
@@ -1186,6 +1187,8 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   unsigned m = systemData->size;
   unsigned i, j, k, p, q;
+
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Running newton diagnostics for system %ld", systemData->equationIndex);
 
   // Store all dependents in "x0" and function values as function of x0 in f
   double* x0 = (double*)malloc(m * sizeof(double));
@@ -1383,5 +1386,4 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 
   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics complete!");
 
-  return;
 }

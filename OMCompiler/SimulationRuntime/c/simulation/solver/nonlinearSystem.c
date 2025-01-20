@@ -1224,14 +1224,25 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   printNonLinearInitialInfo(OMC_LOG_NLS, data, nonlinsys);
 
 #if !defined(OMC_MINIMAL_RUNTIME)
+
+  /* try */
+#ifndef OMC_EMCC
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
+
   /* Improve start values with newton diagnostics method */
   if(omc_useStream[OMC_LOG_NLS_NEWTON_DIAGNOSTICS] && data->simulationInfo->initial) {
     EQUATION_INFO eqInfo = modelInfoGetEquation(&data->modelData->modelDataXml, nonlinsys->equationIndex);
     if (eqInfo.section == EQUATION_SECTION_INIT_LAMBDA0 || (eqInfo.section == EQUATION_SECTION_INITIAL && data->callback->functionInitialEquations_lambda0 == NULL)) {
-      infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Running newton diagnostics for system %ld", nonlinsys->equationIndex);
       newtonDiagnostics(data, threadData, sysNumber);
     }
   }
+
+  /*catch */
+#ifndef OMC_EMCC
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
+
 #endif
 
 
