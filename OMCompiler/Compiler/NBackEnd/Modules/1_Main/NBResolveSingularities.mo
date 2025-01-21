@@ -497,7 +497,6 @@ protected
     input array<list<Integer>> m              "eqn -> list<var>";
     input array<list<Integer>> mT             "var -> list<eqn>";
   algorithm
-    print("updating var " + intString(var) + " with color " + intString(color) + "\n");
     arrayUpdate(var_coloring, var, color);
     for eqn in mT[var] loop
       if eqn_coloring[eqn] == -1 then
@@ -610,7 +609,7 @@ protected
       input Pointer<Variable> var;
       input UnorderedSet<ComponentRef> acc    "accumulator for relevant crefs";
     algorithm
-      if (BVariable.isContinuous(var, false) and not BVariable.isTime(var)) then
+      if (BVariable.isContinuous(var, false) and not (BVariable.isTime(var) or BVariable.isDummyVariable(var))) then
         UnorderedSet.add(BVariable.getVarName(var), acc);
       end if;
     end getStateCandidateVar;
