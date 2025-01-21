@@ -2864,7 +2864,7 @@ algorithm
         e2 := instExp(absynExp.exp2, scope, context, info);
         op := Operator.fromAbsyn(absynExp.op);
       then
-        Expression.RELATION(e1, op, e2);
+        Expression.RELATION(e1, op, e2, -1);
 
     case Absyn.Exp.IFEXP()
       algorithm

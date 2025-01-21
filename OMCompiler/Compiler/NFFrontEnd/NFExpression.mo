@@ -182,6 +182,7 @@ public
     Expression exp1;
     Operator operator;
     Expression exp2;
+    Integer index  "index for event codegen"; // TODO: remove me :)
   end RELATION;
 
   record MULTARY
@@ -624,12 +625,15 @@ public
 
       case RELATION()
         algorithm
-          RELATION(exp1 = e1, operator = op, exp2 = e2) := exp2;
+          RELATION(exp1 = e1, operator = op, exp2 = e2, index = i) := exp2;
           comp := Operator.compare(exp1.operator, op);
           if comp == 0 then
             comp := compare(exp1.exp1, e1);
             if comp == 0 then
               comp := compare(exp1.exp2, e2);
+              if comp == 0 then
+                comp := exp1.index - i;
+              end if;
             end if;
           end if;
         then
@@ -2444,7 +2448,7 @@ public
       case UNARY() then DAE.UNARY(Operator.toDAE(exp.operator), toDAE(exp.exp));
       case LBINARY() then DAE.LBINARY(toDAE(exp.exp1), Operator.toDAE(exp.operator), toDAE(exp.exp2));
       case LUNARY() then DAE.LUNARY(Operator.toDAE(exp.operator), toDAE(exp.exp));
-      case RELATION() then DAE.RELATION(toDAE(exp.exp1), Operator.toDAE(exp.operator), toDAE(exp.exp2), -1, NONE());
+      case RELATION() then DAE.RELATION(toDAE(exp.exp1), Operator.toDAE(exp.operator), toDAE(exp.exp2), exp.index, NONE());
       case IF() then DAE.IFEXP(toDAE(exp.condition), toDAE(exp.trueBranch), toDAE(exp.falseBranch));
       case CAST() then DAE.CAST(Type.toDAE(exp.ty), toDAE(exp.exp));
       case BOX() then DAE.BOX(toDAE(exp.exp));
@@ -2778,7 +2782,7 @@ public
           e2 := map(exp.exp2, func);
         then
           if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
-            then exp else RELATION(e1, exp.operator, e2);
+            then exp else RELATION(e1, exp.operator, e2, exp.index);
 
       case IF()
         algorithm
@@ -2964,7 +2968,7 @@ public
           e2 := mapReverse(exp.exp2, func);
         then
           if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
-            then exp else RELATION(e1, exp.operator, e2);
+            then exp else RELATION(e1, exp.operator, e2, exp.index);
 
       case IF()
         algorithm
@@ -3131,7 +3135,7 @@ public
           e2 := func(exp.exp2);
         then
           if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
-            then exp else RELATION(e1, exp.operator, e2);
+            then exp else RELATION(e1, exp.operator, e2, exp.index);
 
       case IF()
         algorithm
@@ -3847,7 +3851,7 @@ public
           (e2, arg) := mapFold(exp.exp2, func, arg);
         then
           if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
-            then exp else RELATION(e1, exp.operator, e2);
+            then exp else RELATION(e1, exp.operator, e2, exp.index);
 
       case IF()
         algorithm
@@ -4080,7 +4084,7 @@ public
           (e2, arg) := func(exp.exp2, arg);
         then
           if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
-            then exp else RELATION(e1, exp.operator, e2);
+            then exp else RELATION(e1, exp.operator, e2, exp.index);
 
       case IF()
         algorithm

@@ -2237,7 +2237,8 @@ public
       equality_exp  := Expression.RELATION(
         exp1      = Expression.fromCref(cref),
         operator  = Operator.OPERATOR(ComponentRef.nodeType(cref), NFOperator.Op.NEQUAL),
-        exp2      = SimplifyExp.simplifyDump(exp, true, getInstanceName())
+        exp2      = SimplifyExp.simplifyDump(exp, true, getInstanceName()),
+        index     = -1
       );
     end makeInequality;
 

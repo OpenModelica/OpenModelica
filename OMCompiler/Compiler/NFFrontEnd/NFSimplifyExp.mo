@@ -1280,15 +1280,16 @@ function simplifyRelation
 protected
   Expression e1, e2, se1, se2;
   Operator op;
+  Integer index;
 algorithm
-  Expression.RELATION(e1, op, e2) := relationExp;
+  Expression.RELATION(e1, op, e2, index) := relationExp;
   se1 := simplify(e1);
   se2 := simplify(e2);
 
   if Expression.isLiteral(se1) and Expression.isLiteral(se2) then
     relationExp := Ceval.evalRelationOp(se1, op, se2);
   elseif not (referenceEq(e1, se1) and referenceEq(e2, se2)) then
-    relationExp := Expression.RELATION(se1, op, se2);
+    relationExp := Expression.RELATION(se1, op, se2, index);
   end if;
 end simplifyRelation;
 
