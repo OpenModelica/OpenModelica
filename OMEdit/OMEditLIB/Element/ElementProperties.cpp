@@ -150,7 +150,7 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
    */
   if (mShowStartAndFixed && mGroup.isEmpty()) {
     mGroup = "Initialization";
-  } else if (mGroup.isEmpty() || (isParameter() || mpModelInstanceElement->getAnnotation()->hasDialogAnnotation() || mpModelInstanceElement->getReplaceable())) {
+  } else if (mGroup.isEmpty() && (isParameter() || mpModelInstanceElement->getAnnotation()->hasDialogAnnotation() || mpModelInstanceElement->getReplaceable())) {
     mGroup = "Parameters";
   }
 
