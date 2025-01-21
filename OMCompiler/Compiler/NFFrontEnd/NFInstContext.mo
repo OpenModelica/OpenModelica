@@ -32,6 +32,12 @@
 encapsulated package NFInstContext
   "Used by the instantation to keep track of in which context the instantiation is done."
 
+  import NFInstNode.InstNode;
+
+protected
+  import Restriction = NFRestriction;
+
+public
   type Type = Integer;
 
   // Flag values:
@@ -279,6 +285,33 @@ encapsulated package NFInstContext
     input Type context;
     output Boolean isSingle = context < ITERATION_RANGE - 1;
   end isSingleExpression;
+
+  function nodeContext
+    "Constructs a context for a node based on where the element that the node
+     represents is declared rather than where it is used."
+    input InstNode node;
+    input Type currentContext;
+    output Type nodeContext;
+  protected
+    InstNode parent;
+    Restriction parent_res;
+  algorithm
+    // Copy the global flags from the current context.
+    nodeContext := clearScopeFlags(currentContext);
+    parent := InstNode.explicitParent(node);
+
+    // Records might be record constructors that should count as functions here,
+    // such record constructors are always root classes.
+    if not InstNode.isRootClass(parent) then
+      nodeContext := set(nodeContext, CLASS);
+      return;
+    end if;
+
+    // Try to determine whether we're in a function or a class.
+    parent_res := InstNode.restriction(parent);
+    nodeContext := if Restriction.isFunction(parent_res) or Restriction.isRecord(parent_res) then
+      set(nodeContext, FUNCTION) else set(nodeContext, CLASS);
+  end nodeContext;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFInstContext;
