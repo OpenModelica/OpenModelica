@@ -58,10 +58,6 @@
 #include "../simulation_info_json.h"
 #include "../jacobian_util.h"
 
-#ifndef max
-#define max(a,b) ((a)>(b)?(a):(b))
-#endif
-
 extern int dgesv_(int *n, int *nrhs, double *a, int *lda,
                   int *ipiv, double *b, int *ldb, int *info);
 
@@ -92,13 +88,14 @@ double** MatMult( unsigned rA, unsigned cArB, unsigned cB, double** A, double** 
   // Matrix multiplication A[rA][cArB] * B[cArB][cB] = C[rA][cB]
 
   double** C = (double**)malloc(rA * sizeof(double*));
-  for (unsigned i = 0; i < rA; i++)
+  assertStreamPrint(NULL, NULL != C, "out of memory");
+  for (unsigned i = 0; i < rA; i++) {
     C[i] = (double*)malloc(cB * sizeof(double));
+    assertStreamPrint(NULL, NULL != C[i], "out of memory");
+  }
 
-  for (unsigned i = 0; i < rA; i++)
-  {
-    for (unsigned j = 0; j < cB; j++)
-    {
+  for (unsigned i = 0; i < rA; i++) {
+    for (unsigned j = 0; j < cB; j++) {
       C[i][j] = 0;
       for (unsigned k = 0; k < cArB; k++)
         C[i][j] += A[i][k] * B[k][j];
@@ -114,14 +111,21 @@ double** getJacobian( DATA* data, threadData_t *threadData, unsigned sysNumber, 
 {
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
+  assertStreamPrint(threadData, NULL != jac, "NEWTON_DIAGNOSTICS: invalid jac-pointer.");
   assertStreamPrint(threadData, jac->availability != JACOBIAN_UNKNOWN, "NEWTON_DIAGNOSTICS: Jacobian availablity status is unknown.");
+  assertStreamPrint(threadData, NULL != jac->seedVars, "NEWTON_DIAGNOSTICS: invalid seedVars-pointer.");
+  assertStreamPrint(threadData, NULL != systemData, "NEWTON_DIAGNOSTICS: invalid systemData-pointer.");
+  assertStreamPrint(threadData, NULL != systemData->analyticalJacobianColumn, "NEWTON_DIAGNOSTICS: invalid analyticJacobianColumn-pointer.");
 
   unsigned i, j;
 
   // Allocate memory for fx (m * m matrix)
   double** fx = (double**)malloc(m * sizeof(double*));
-  for (i = 0; i < m; i++)
+  assertStreamPrint(threadData, NULL != fx, "out of memory");
+  for (i = 0; i < m; i++) {
     fx[i] = (double*)malloc(m * sizeof(double));
+    assertStreamPrint(threadData, NULL != fx[i], "out of memory");
+  }
 
   // Order of Jacobian elements:
   // variable 1:   df_1/dv_1, df_1/dv_2, .... df_1/dv_n
@@ -130,8 +134,7 @@ double** getJacobian( DATA* data, threadData_t *threadData, unsigned sysNumber, 
   // ...
   // variable n:   df_n/dv_1, df_2/dv_2, .... df_n/dv_n
 
-  for (j = 0; j < m; j++)
-  {
+  for (j = 0; j < m; j++) {
     jac->seedVars[j] = 1.0;
 
     // Calculate values for one column of the Jacobian, output: df_1/dv_j, df_2/dv_j, .... df_n/dv_j
@@ -157,6 +160,7 @@ double* getFirstNewtonStep( unsigned m, double* f, double** fx)
 
   // Allocate memory for Newton steps
   double* dx = (double*)malloc(m * sizeof(double));
+  assertStreamPrint(NULL, NULL != dx, "out of memory");
 
   // Variables for Lapack routines
   int N = m;                           // number of rows and columns of Jacobian
@@ -164,10 +168,13 @@ double* getFirstNewtonStep( unsigned m, double* f, double** fx)
   int LDA = N;
   int LDB = N;
   int* ipiv = (int*)malloc(N* sizeof(int));
+  assertStreamPrint(NULL, NULL != ipiv, "out of memory");
   int info;
 
   double* a = (double*)malloc( LDA * N * sizeof(double));
+  assertStreamPrint(NULL, NULL != a, "out of memory");
   double* b = (double*)malloc( LDB * NRHS * sizeof(double));
+  assertStreamPrint(NULL, NULL != b, "out of memory");
 
   unsigned i, j;
 
@@ -185,8 +192,7 @@ double* getFirstNewtonStep( unsigned m, double* f, double** fx)
 
   if (info > 0)
     infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "getFirstNewtonStep: the first Newton step could not be computed; the info satus is : %d", info);
-  else
-  {
+  else {
     // Store Newton steps in dx
     for (j = 0; j < m; j++)
       dx[j] = -b[j];
@@ -214,8 +220,7 @@ double maxNonLinearResiduals( unsigned m, unsigned l, unsigned* z_idx,
   double maxRes = 0; // Initialize to 0 for maximum search
   unsigned i, j;
 
-  for (i = 0; i < m; i++)
-  {
+  for (i = 0; i < m; i++) {
     fz_dz = 0;
     if (z_idx)
       for (j = 0; j < l; j++)  			// iteration point x0 ==> j = 1 as r_x(j-1) = f_x(j-1) + fz * (z(j) - z(j-1)) = f_x(j-1) + fz * dz(j-1)  ????
@@ -243,41 +248,44 @@ double*** getHessian( DATA* data, threadData_t *threadData, unsigned sysNumber, 
 
   // Allocate memory for Hessian fxx (m * m * m doubles)
   double*** fxx = (double***)malloc(m * sizeof(double**));
-  for (i = 0; i < m; i++)
-  {
+  assertStreamPrint(threadData, NULL != fxx, "out of memory");
+  for (i = 0; i < m; i++) {
     fxx[i] = (double**)malloc(m * sizeof(double*));
-    for (j = 0; j < m; j++)
+    assertStreamPrint(threadData, NULL != fxx[i], "out of memory");
+    for (j = 0; j < m; j++) {
       fxx[i][j] = (double*)malloc(m * sizeof(double));
+      assertStreamPrint(threadData, NULL != fxx[i][j], "out of memory");
+    }
   }
 
   // Allocate memory for Jacobians
   double** fxPls = (double**)malloc(m * sizeof(double*));
+  assertStreamPrint(threadData, NULL != fxPls, "out of memory");
   double** fxMin = (double**)malloc(m * sizeof(double*));
-  for (i = 0; i < m; i++)
-  {
+  assertStreamPrint(threadData, NULL != fxMin, "out of memory");
+  for (i = 0; i < m; i++) {
     fxPls[i] = (double*)malloc(m * sizeof(double));
+    assertStreamPrint(threadData, NULL != fxPls[i], "out of memory");
     fxMin[i] = (double*)malloc(m * sizeof(double));
+    assertStreamPrint(threadData, NULL != fxMin[i], "out of memory");
   }
 
   // ----------------------------------------------- Debug -------------------------------------------------
   /*printf( "\n");
-  for ( k = 0; k < m; k++)
-  {
+  for ( k = 0; k < m; k++) {
     unsigned id = var_id(k, data, systemData);
     printf( "               k = %d: id = %d (%s)\n", k, id, data->modelData->realVarsData[id].info.name);
   }*/
   // -------------------------------------------- end of Debug ---------------------------------------------
 
-  for (k = 0; k < m; k++)
-  {
+  for (k = 0; k < m; k++) {
     unsigned id = var_id(k, data, systemData);
 
     double tmp_x = sData->realVars[id];
-    const modelica_real delta_x = eps * max( fabs(tmp_x), nominal_x);
+    const modelica_real delta_x = eps * fmax( fabs(tmp_x), nominal_x);
 
     sData->realVars[id] = tmp_x + delta_x;
-    for (j = 0; j < m; j++)
-    {
+    for (j = 0; j < m; j++) {
       jac->seedVars[j] = 1.0;
       systemData->analyticalJacobianColumn(data, threadData, jac, NULL);
       for (i = 0; i < m; i++)
@@ -286,8 +294,7 @@ double*** getHessian( DATA* data, threadData_t *threadData, unsigned sysNumber, 
     }
 
     sData->realVars[id] = tmp_x - delta_x;
-    for (j = 0; j < m; j++)
-    {
+    for (j = 0; j < m; j++) {
       jac->seedVars[j] = 1.0;
       systemData->analyticalJacobianColumn(data, threadData, jac, NULL);
       for (i = 0; i < m; i++)
@@ -298,11 +305,9 @@ double*** getHessian( DATA* data, threadData_t *threadData, unsigned sysNumber, 
     sData->realVars[id] = tmp_x;
 
     for (j = 0; j < m; j++)
-      for (i = 0; i < m; i++)
-      {
+      for (i = 0; i < m; i++) {
         fxx[i][k][j] = (fxPls[i][j] - fxMin[i][j]) / (2 * delta_x);
-        if (isnan(fxx[i][k][j]))
-        {
+        if (isnan(fxx[i][k][j])) {
           infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "NaN detected: fxx[%d][%d][%d]: fxPls[%d][%d] = %f, fxMin[%d][%d] = %f, delta_x = %f\n",
             i+1,j+1,k+1, i+1,j+1,fxPls[i][j], i+1,j+1,fxMin[i][j], delta_x);
           return fxx;
@@ -310,8 +315,7 @@ double*** getHessian( DATA* data, threadData_t *threadData, unsigned sysNumber, 
       }
   }
 
-  for (i = 0; i < m; i++)
-  {
+  for (i = 0; i < m; i++) {
     free(fxPls[i]);
     free(fxMin[i]);
   }
@@ -320,11 +324,9 @@ double*** getHessian( DATA* data, threadData_t *threadData, unsigned sysNumber, 
 
   // ----------------------------------------------- Debug -------------------------------------------------
   /*printf( "\n");
-  for (k = 0; k < m; k++)
-  {
+  for (k = 0; k < m; k++) {
     // For each eqn. k print m x m matrix
-    for (i = 0; i < m; i++)
-    {
+    for (i = 0; i < m; i++) {
       if (i == 0)
         printf( "\n\neqn k = %2d: ", k);
       else
@@ -361,11 +363,14 @@ double*** calcGamma( unsigned m, unsigned p, unsigned q, unsigned* n_idx,
 
   // Allocate memory for Gamma_ijk (p * q * q doubles)
   double*** Gamma_ijk = (double***)malloc(p * sizeof(double**));
-  for (i = 0; i < p; i++)
-  {
+  assertStreamPrint(NULL, NULL != Gamma_ijk, "out of memory");
+  for (i = 0; i < p; i++) {
     Gamma_ijk[i] = (double**)malloc(q * sizeof(double*));
-    for (j = 0; j < q; j++)
+    assertStreamPrint(NULL, NULL != Gamma_ijk[i], "out of memory");
+    for (j = 0; j < q; j++) {
       Gamma_ijk[i][j] = (double*)malloc(q * sizeof(double));
+      assertStreamPrint(NULL, NULL != Gamma_ijk[i][j], "out of memory");
+    }
   }
 
   // Calculate Gamma_ijk
@@ -408,33 +413,35 @@ double* calcAlpha( DATA* data, threadData_t* threadData, unsigned sysNumber, uns
 
   // Allocate memory for alpha (p doubles)
   double* alpha = (double*)malloc(p * sizeof(double));
+  assertStreamPrint(threadData, NULL != alpha, "out of memory");
 
   // Get damped guess x1_star for second iteration step
   double* x1_star = (double*)malloc(m * sizeof(double));
+  assertStreamPrint(threadData, NULL != x1_star, "out of memory");
   for (j = 0; j < m; j++)
     x1_star[j] = x[j] + lambda * dx[j];
 
   // Calculate residuals f_x1_star for damped guess x1_star
   double* f_x1_star = (double*)malloc(m * sizeof(double));
+  assertStreamPrint(threadData, NULL != f_x1_star, "out of memory");
   systemData->residualFunc(&resUserData, x1_star, f_x1_star, (int*)&systemData->size);
 
   // For each non-linear independent get w1_star - w0
   double* w1_star_w0 = (double*)malloc(q * sizeof(double));
+  assertStreamPrint(threadData, NULL != w1_star_w0, "out of memory");
   for (j = 0; j < q; j++)
     w1_star_w0[j] = lambda * dx[w_idx[j]];
 
   // Calculate alpha for each non-linear equation i
   double* w_times_fww_w0 = (double*)malloc(q * sizeof(double));
+  assertStreamPrint(threadData, NULL != w_times_fww_w0, "out of memory");
 
-  for (i = 0; i < p; i++)
-  {
+  for (i = 0; i < p; i++) {
     // Vector w_times_fww_w0 = (w1_star - w0)' * fww_w0  (1 x q * q x q --> 1 x q vector)
-    for (j = 0; j < q; j++)
-    {
+    for (j = 0; j < q; j++) {
       // For each independent
       w_times_fww_w0[j] = 0;
-      for (k = 0; k < q; k++)
-      {
+      for (k = 0; k < q; k++) {
         if (!isnan(fxx[n_idx[i]][w_idx[k]][w_idx[j]]) && fabs(fxx[n_idx[i]][w_idx[k]][w_idx[j]]) != 0)
           w_times_fww_w0[j] += w1_star_w0[k] * fxx[n_idx[i]][w_idx[k]][w_idx[j]];
       }
@@ -472,6 +479,7 @@ double** getInvJacobian( unsigned m, double** fx)
 
   // Intialize inverse a with fx
   double* a = (double*)malloc(m * m * sizeof(double));
+  assertStreamPrint(NULL, NULL != a, "out of memory");
   for (i = 0; i < m; i++)
     for (j = 0; j < m; j++)
       a[m*i+j] = fx[j][i];
@@ -480,8 +488,10 @@ double** getInvJacobian( unsigned m, double** fx)
   int N = m;
   int LWORK = N * N;
   int* ipiv = (int*)malloc(N * sizeof(int));
+  assertStreamPrint(NULL, NULL != ipiv, "out of memory");
   int info;
   double* WORK = (double*)malloc(LWORK * sizeof(double));
+  assertStreamPrint(NULL, NULL != WORK, "out of memory");
 
   // Call Lapack function dgetrf to compute the LU factorization of fx
   dgetrf_(&N, &N, a, &N, ipiv, &info);
@@ -495,8 +505,11 @@ double** getInvJacobian( unsigned m, double** fx)
 
   // Return two dimensional array
   double** inv_fx = (double**)malloc(m * sizeof(double*));
-  for (i = 0; i < m; i++)
+  assertStreamPrint(NULL, NULL != inv_fx, "out of memory");
+  for (i = 0; i < m; i++) {
     inv_fx[i] = (double*)malloc(m * sizeof(double));
+    assertStreamPrint(NULL, NULL != inv_fx[i], "out of memory");
+  }
   for (i = 0; i < m; i++)
     for (j = 0; j < m; j++)
       inv_fx[j][i] = a[m*i+j];
@@ -530,12 +543,13 @@ double** calcSigma( unsigned m, unsigned q, unsigned* w_idx,
 
   // Get matrix H[i] = (x1 - x0)' * fxx = dx' * fxx (1 x m * m x m matrix --> m vector)
   double** H_i = (double**)malloc(m * sizeof(double*)); // m functions * m vectors --> m x m matrix
-  for (i = 0; i < m; i++)
+  assertStreamPrint(NULL, NULL != H_i, "out of memory");
+  for (i = 0; i < m; i++) {
     H_i[i] = (double*)malloc(m * sizeof(double));
-  for (i = 0; i < m; i++)
-  {
-    for (j = 0; j < m; j++)
-    {
+    assertStreamPrint(NULL, NULL != H_i[i], "out of memory");
+  }
+  for (i = 0; i < m; i++) {
+    for (j = 0; j < m; j++) {
       H_i[i][j] = 0;
       for (k = 0; k < m; k++)
         H_i[i][j] += dx[k] * fxx[i][k][j];
@@ -545,28 +559,31 @@ double** calcSigma( unsigned m, unsigned q, unsigned* w_idx,
   // Calculate tmp1 = -inv_fx * H_i
   // (m x m matrix) * (m x m matrix) --> m x m matrix
   for (i = 0; i < m; i++)
-  {
     for (j = 0; j < m; j++)
       inv_fx[i][j] = -inv_fx[i][j];
-  }
+
   double** tmp1 = MatMult( m, m, m, inv_fx, H_i);
 
   // Extract matrix tmp2 from tmp1 for only non-linears (q x q matrix)
   double** tmp2 = (double**)malloc(q * sizeof(double*));
-  for (i = 0; i < q; i++)
+  assertStreamPrint(NULL, NULL != tmp2, "out of memory");
+  for (i = 0; i < q; i++) {
     tmp2[i] = (double*)malloc(q * sizeof(double));
+    assertStreamPrint(NULL, NULL != tmp2[i], "out of memory");
+  }
   for (i = 0; i < q; i++)
-  {
     for (j = 0; j < q; j++)
       tmp2[i][j] = tmp1[w_idx[i]][w_idx[j]];
-  }
+
 
   // Create a q x q matrix wDiag with w1 - w0 = dx[w_idx] on diagonal
   double** wDiag = (double**)malloc(q * sizeof(double*));
-  for (i = 0; i < q; i++)
+  assertStreamPrint(NULL, NULL != wDiag, "out of memory");
+  for (i = 0; i < q; i++) {
     wDiag[i] = (double*)malloc(q * sizeof(double));
-  for (i = 0; i < q; i++)
-  {
+    assertStreamPrint(NULL, NULL != wDiag[i], "out of memory");
+  }
+  for (i = 0; i < q; i++) {
     for (j = 0; j < q; j++)
       if (i == j)
         wDiag[i][j] = dx[w_idx[i]];
@@ -589,8 +606,7 @@ double** calcSigma( unsigned m, unsigned q, unsigned* w_idx,
   double** Sigma = MatMult( q, q, q, tmp3, wDiag);
 
   // Free dynamically allocated memory
-  for (i = 0; i < m; i++)
-  {
+  for (i = 0; i < m; i++) {
     free(inv_fx[i]);
     free(H_i[i]);
     free(tmp1[i]);
@@ -599,8 +615,7 @@ double** calcSigma( unsigned m, unsigned q, unsigned* w_idx,
   free(H_i);
   free(tmp1);
 
-  for (i = 0; i < q; i++)
-  {
+  for (i = 0; i < q; i++) {
     free(wDiag[i]);
     free(inv_wDiag[i]);
     free(tmp2[i]);
@@ -673,23 +688,32 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
           idx_largest_G_i, idx_largest_G_j, idx_largest_G_k;
 
   unsigned* alpha_checked = (unsigned*)malloc(p * sizeof(unsigned));
+  assertStreamPrint(NULL, NULL != alpha_checked, "out of memory");
   unsigned* Sigma_checked = (unsigned*)malloc(q * sizeof(unsigned));
+  assertStreamPrint(NULL, NULL != Sigma_checked, "out of memory");
   unsigned*** Gamma_checked = (unsigned***)malloc(p * sizeof(unsigned**));
-  for (i = 0; i < p; i++)
-  {
+  assertStreamPrint(NULL, NULL != Gamma_checked, "out of memory");
+  for (i = 0; i < p; i++) {
     Gamma_checked[i] = (unsigned**)malloc(q * sizeof(unsigned*));
-    for (j = 0; j < q; j++)
+    assertStreamPrint(NULL, NULL != Gamma_checked[i], "out of memory");
+    for (j = 0; j < q; j++) {
       Gamma_checked[i][j] = (unsigned*)malloc(q * sizeof(unsigned));
+      assertStreamPrint(NULL, NULL != Gamma_checked[i][j], "out of memory");
+    }
   }
   unsigned* index_alpha = (unsigned*)malloc((p * q * q + m) * sizeof(unsigned));
+  assertStreamPrint(NULL, NULL != index_alpha, "out of memory");
   unsigned* index_Sigma = (unsigned*)malloc((p * q * q + m) * sizeof(unsigned));
+  assertStreamPrint(NULL, NULL != index_Sigma, "out of memory");
   unsigned* index_Gamma_i = (unsigned*)malloc((p * q * q + m) * sizeof(unsigned));
+  assertStreamPrint(NULL, NULL != index_Gamma_i, "out of memory");
   unsigned* index_Gamma_j = (unsigned*)malloc((p * q * q + m) * sizeof(unsigned));
+  assertStreamPrint(NULL, NULL != index_Gamma_j, "out of memory");
   unsigned* index_Gamma_k = (unsigned*)malloc((p * q * q + m) * sizeof(unsigned));
+  assertStreamPrint(NULL, NULL != index_Gamma_k, "out of memory");
 
   // Initialize tmp arrays for sorting
-  for (i = 0; i < p; i++)
-  {
+  for (i = 0; i < p; i++) {
     for (j = 0; j < q; j++)
       for (k = 0; k < q; k++)
         Gamma_checked[i][j][k] = 0;
@@ -697,8 +721,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
   for (j = 0; j < q; j++)
     Sigma_checked[j] = 0;
 
-  for (l = 0; l < p * q * q + m; l++)
-  {
+  for (l = 0; l < p * q * q + m; l++) {
     // Select largest Gamma variable and its value
     val_largest_Gamma = -1.e10;
     idx_largest_G_i = 0;
@@ -707,8 +730,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
     for (i = 0; i < p; i++)
       for (j = 0; j < q; j++)
         for (k = j; k < q; k++)
-          if (Gamma_ijk[i][j][k] > val_largest_Gamma && !Gamma_checked[i][j][k])
-          {
+          if (Gamma_ijk[i][j][k] > val_largest_Gamma && !Gamma_checked[i][j][k]) {
             val_largest_Gamma = Gamma_ijk[i][j][k];
             idx_largest_G_i = i;
             idx_largest_G_j = j;
@@ -719,8 +741,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
     val_largest_Sigma = -1.e10;
     idx_largest_Sigma = 0;
     for (i = 0; i < q; i++)
-      if (fabs(Sigma_ij[i][i]) > val_largest_Sigma && !Sigma_checked[i])
-      {
+      if (fabs(Sigma_ij[i][i]) > val_largest_Sigma && !Sigma_checked[i]) {
         val_largest_Sigma = fabs(Sigma_ij[i][i]);
         idx_largest_Sigma = i;
       }
@@ -729,8 +750,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
     if (val_largest_Gamma < eps && val_largest_Sigma < eps) break;
 
     // Checkmark and store indices of largest value
-    if (val_largest_Gamma > val_largest_Sigma)
-    {
+    if (val_largest_Gamma > val_largest_Sigma) {
       index_Gamma_i[n_gt_eps] = idx_largest_G_i;
       index_Gamma_j[n_gt_eps] = idx_largest_G_j;
       index_Gamma_k[n_gt_eps] = idx_largest_G_k;
@@ -741,9 +761,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
       //printf("\n      Gamma_%d_%d_%d =  %8.3f", n_idx[idx_largest_G_i]+1, w_idx[idx_largest_G_j]+1,
       //                                          w_idx[idx_largest_G_k]+1, val_largest_Gamma);
       // ---------------------------------------- end of Debug -------------------------------------------
-    }
-    else
-    {
+    } else {
       index_Sigma[n_gt_eps] = idx_largest_Sigma;
       index_Gamma_i[n_gt_eps] = -1;
       index_Gamma_j[n_gt_eps] = -1;
@@ -769,21 +787,19 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "By variable");
 
   unsigned* printedIdx = (unsigned*)malloc(2 * n_gt_eps * sizeof(unsigned));
+  assertStreamPrint(NULL, NULL != printedIdx, "out of memory");
   unsigned nPrinted = 0;
   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Var no.  Var name                                  Initial guess  max(Gamma,sigma)");
   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "-------  ----------------------------------------  -------------  ----------------");
-  for (l = 0; l < n_gt_eps; l++)
-  {
+  for (l = 0; l < n_gt_eps; l++) {
     printedIdx[nPrinted] = -1;
-    if (0 <= index_Sigma[l] && index_Sigma[l] < q)
-    {
+    if (0 <= index_Sigma[l] && index_Sigma[l] < q) {
       // Check if variable l referenced by Sigma has already been printed for Gamma
       unsigned alreadyPrinted = 0;
       for (unsigned nP = 0; nP < nPrinted && !alreadyPrinted; nP++)
         alreadyPrinted = index_Sigma[l] == printedIdx[nP];
 
-      if (!alreadyPrinted)
-      {
+      if (!alreadyPrinted) {
         // Print variable referenced l by Sigma, its init value and the max value between Gamma and Sigma
         infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%7d  %40s  %13.7g    %5.2f",
           w_idx[index_Sigma[l]]+1,
@@ -792,22 +808,19 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
           fabs(Sigma_ij[index_Sigma[l]][index_Sigma[l]]));
         printedIdx[nPrinted++] = index_Sigma[l];
       }
-    }
-    else if (0 <= index_Gamma_i[l] && index_Gamma_i[l] < p &&
+    } else if (0 <= index_Gamma_i[l] && index_Gamma_i[l] < p &&
              0 <= index_Gamma_j[l] && index_Gamma_j[l] < q &&
              0 <= index_Gamma_k[l] && index_Gamma_k[l] < q)
     {
       // Check if variable l referenced by Gamma has already been printed for Sigma
       unsigned alreadyPrinted_j = 0;
       unsigned alreadyPrinted_k = 0;
-      for (unsigned nP = 0; nP < nPrinted; nP++)
-      {
+      for (unsigned nP = 0; nP < nPrinted; nP++) {
         alreadyPrinted_j = alreadyPrinted_j || index_Gamma_j[l] == printedIdx[nP];
         alreadyPrinted_k = alreadyPrinted_k || index_Gamma_k[l] == printedIdx[nP];
       }
 
-      if (!alreadyPrinted_j)
-      {
+      if (!alreadyPrinted_j) {
         // Print variable referenced l by Gamma, its init value and the value of Gamma_ilk
         infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%7d  %40s  %13.7g  %5.2f",
           w_idx[index_Gamma_j[l]]+1,
@@ -816,8 +829,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
           Gamma_ijk[index_Gamma_i[l]][index_Gamma_j[l]][index_Gamma_k[l]]);
         printedIdx[nPrinted++] = index_Gamma_j[l];
       }
-      if (!alreadyPrinted_k)
-      {
+      if (!alreadyPrinted_k) {
         // Print variable referenced l by Gamma, its init value and the value of Gamma_ijl
         infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%7d  %40s  %13.7g  %5.2f",
           w_idx[index_Gamma_k[l]]+1,
@@ -836,16 +848,14 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
   n_gt_eps = 0;
 
   // Initialize tmp arrays for sorting
-  for (i = 0; i < p; i++)
-  {
+  for (i = 0; i < p; i++) {
     for (j = 0; j < q; j++)
       for (k = 0; k < q; k++)
         Gamma_checked[i][j][k] = 0;
     alpha_checked[i] = 0;
   }
 
-  for (l = 0; l < p * q * q + m; l++)
-  {
+  for (l = 0; l < p * q * q + m; l++) {
     // Select largest Gamma variable and its value
     val_largest_Gamma = -1.e10;
     idx_largest_G_i = 0;
@@ -854,8 +864,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
     for (i = 0; i < p; i++)
       for (j = 0; j < q; j++)
         for (k = j; k < q; k++)
-          if ( Gamma_ijk[i][j][k] > val_largest_Gamma && !Gamma_checked[i][j][k])
-          {
+          if ( Gamma_ijk[i][j][k] > val_largest_Gamma && !Gamma_checked[i][j][k]) {
             val_largest_Gamma = Gamma_ijk[i][j][k];
             idx_largest_G_i = i;
             idx_largest_G_j = j;
@@ -866,8 +875,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
     val_largest_alpha = -1.e10;
     idx_largest_alpha = 0;
     for (i = 0; i < p; i++)
-      if (alpha[i] > val_largest_alpha && !alpha_checked[i])
-      {
+      if (alpha[i] > val_largest_alpha && !alpha_checked[i]) {
         val_largest_alpha = alpha[i];
         idx_largest_alpha = i;
       }
@@ -876,8 +884,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
     if (val_largest_Gamma < eps && val_largest_alpha < eps) break;
 
     // Checkmark and store indices of largest value
-    if (val_largest_Gamma > val_largest_alpha)
-    {
+    if (val_largest_Gamma > val_largest_alpha) {
       index_Gamma_i[n_gt_eps] = idx_largest_G_i;
       index_Gamma_j[n_gt_eps] = idx_largest_G_j;
       index_Gamma_k[n_gt_eps] = idx_largest_G_k;
@@ -888,9 +895,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
       //printf("\n      Gamma_%d_%d_%d =  %8.3f", n_idx[idx_largest_G_i]+1, w_idx[idx_largest_G_j]+1,
       //                                          w_idx[idx_largest_G_k]+1, val_largest_Gamma);
       // ---------------------------------------- end of Debug -------------------------------------------
-    }
-    else
-    {
+    } else {
       index_alpha[n_gt_eps] = idx_largest_alpha;
       index_Gamma_i[n_gt_eps] = -1;
       index_Gamma_j[n_gt_eps] = -1;
@@ -916,18 +921,15 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
   nPrinted = 0;
   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Eq no.  Eq idx    max(alpha,Gamma)\n");
   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "------  ------    ----------------");
-  for (l = 0; l < n_gt_eps; l++)
-  {
+  for (l = 0; l < n_gt_eps; l++) {
     printedIdx[nPrinted] = -1;
-    if (0 <= index_alpha[l] && index_alpha[l] < p)
-    {
+    if (0 <= index_alpha[l] && index_alpha[l] < p) {
       // Check if equation l referenced by alpha has already been printed for Gamma
       unsigned alreadyPrinted = 0;
       for (unsigned nP = 0; nP < nPrinted && !alreadyPrinted; nP++)
         alreadyPrinted = index_alpha[l] == printedIdx[nP];
 
-      if (!alreadyPrinted)
-      {
+      if (!alreadyPrinted) {
         // Print equation l referenced by alpha and the value of alpha_i
         if (alpha[index_alpha[l]] < 1.e3)
           infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%6d  %6d  %5.2f", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
@@ -935,8 +937,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
           infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%6d  %6d  %5.2e", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
         printedIdx[nPrinted++] = index_alpha[l];
       }
-    }
-    else if (0 <= index_Gamma_i[l] && index_Gamma_i[l] < p &&
+    } else if (0 <= index_Gamma_i[l] && index_Gamma_i[l] < p &&
              0 <= index_Gamma_j[l] && index_Gamma_j[l] < q &&
              0 <= index_Gamma_k[l] && index_Gamma_k[l] < q)
     {
@@ -945,8 +946,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
       for (unsigned nP = 0; nP < nPrinted && !alreadyPrinted; nP++)
         alreadyPrinted = index_Gamma_i[l] == printedIdx[nP];
 
-      if (!alreadyPrinted)
-      {
+      if (!alreadyPrinted) {
         // Print equation l referenced by Gamma and the value of Gamma_ljk
         infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%6d  %6d  %5.2f", n_idx[index_Gamma_i[l]]+1,
           systemData->eqn_simcode_indices[n_idx[index_Gamma_i[l]]],
@@ -962,8 +962,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
   free(printedIdx);
   free(alpha_checked);
   free(Sigma_checked);
-  for (i = 0; i < p; i++)
-  {
+  for (i = 0; i < p; i++) {
     for (j = 0; j < q; j++)
       free(Gamma_checked[i][j]);
     free(Gamma_checked[i]);
@@ -991,11 +990,13 @@ unsigned* getNonlinearEqns( DATA* data, threadData_t* threadData, unsigned sysNu
 
   // Calculate x1 from NewtonFirstStep data dx
   double* x1 = (double*)malloc(m * sizeof(double));
+  assertStreamPrint(threadData, NULL != x1, "out of memory");
   for (i = 0; i < m; ++i)
     x1[i] = x0[i] + *lambda * dx[i];
 
   modelica_boolean failed = TRUE;
   double* f_x1 = (double*)malloc(m * sizeof(double));
+  assertStreamPrint(threadData, NULL != f_x1, "out of memory");
 
   // Try
 #if !defined(OMC_EMCC)
@@ -1012,8 +1013,7 @@ unsigned* getNonlinearEqns( DATA* data, threadData_t* threadData, unsigned sysNu
 #endif
 
   // Lower the dampening factor until the function call succeeds
-  while (failed)
-  {
+  while (failed) {
     double d_lambda = 0.7;
     infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Dampening factor lowered from %7.3f to %7.3f", *lambda, *lambda * d_lambda);
 
@@ -1045,9 +1045,9 @@ unsigned* getNonlinearEqns( DATA* data, threadData_t* threadData, unsigned sysNu
 
   // Get indices of nonlinear functions of f^i
   unsigned* n_idx = NULL;
-  if (*p > 0)
-  {
+  if (*p > 0) {
     n_idx = (unsigned*)malloc(*p * sizeof(unsigned));
+    assertStreamPrint(threadData, NULL != n_idx, "out of memory");
     unsigned n = 0;
     for (i = 0; i < m; ++i)
       if (fabs(f_x1[i] + ((*lambda) - 1)*f_x0[i]) > eps)
@@ -1070,6 +1070,7 @@ unsigned* getNonlinearVars( unsigned m, double*** fxx, unsigned* q)
 
   // Allocate memory for indicator of value of column j != 0
   unsigned* aValueOfColumn_gt_0 = (unsigned*)malloc(m * sizeof(unsigned));
+  assertStreamPrint(NULL, NULL != aValueOfColumn_gt_0, "out of memory");
 
   // Initialize indicator of value of column j != 0
   for (j = 0; j < m; j++)
@@ -1089,9 +1090,9 @@ unsigned* getNonlinearVars( unsigned m, double*** fxx, unsigned* q)
 
   // Get indices of nonlinear variables of x[j]
   unsigned *w_idx = NULL;
-  if (*q > 0)
-  {
+  if (*q > 0) {
     w_idx = (unsigned*)malloc(*q * sizeof(unsigned));
+    assertStreamPrint(NULL, NULL != w_idx, "out of memory");
     unsigned n = 0;
     for (j = 0; j < m; j++)
       if (aValueOfColumn_gt_0[j] == 1)
@@ -1110,23 +1111,19 @@ unsigned* getLinearVars( unsigned m, unsigned q, unsigned *w_idx )
   unsigned i, j, k, i_in_w;
   unsigned* z_idx = NULL;
 
-  if (m > q)
-  {
+  if (m > q) {
     z_idx = (unsigned*)malloc((m - q) * sizeof(unsigned));
+    assertStreamPrint(NULL, NULL != z_idx, "out of memory");
     j = 0;
-    for (i = 0; i < m; i++)
-    {
+    for (i = 0; i < m; i++) {
       i_in_w = 0;
-      for (k = 0; k < q; k++)
-      {
-        if (w_idx[k] == i)
-        {
+      for (k = 0; k < q; k++) {
+        if (w_idx[k] == i) {
           i_in_w = 1;
           break;
         }
       }
-      if (!i_in_w)
-      {
+      if (!i_in_w) {
         z_idx[j] = i;
         j++;
       }
@@ -1192,9 +1189,10 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 
   // Store all dependents in "x0" and function values as function of x0 in f
   double* x0 = (double*)malloc(m * sizeof(double));
+  assertStreamPrint(threadData, NULL != x0, "out of memory");
   double* f  = (double*)malloc(m * sizeof(double));
-  for( i = 0; i < m; i++)
-  {
+  assertStreamPrint(threadData, NULL != f, "out of memory");
+  for( i = 0; i < m; i++) {
     x0[i] = systemData->nlsx[i];
     f[i]  = systemData->resValues[i];
   }
@@ -1211,8 +1209,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
   // Obtain indices of non-linear functions "n" (p is the number of non-linear functions)
   unsigned* n_idx = getNonlinearEqns(data, threadData, sysNumber, m, f, x0, dx, &lambda, &p);
 
-  if (p == 0)
-  {
+  if (p == 0) {
     infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Newton diagnostics terminated: no non-linear equations!");
     return;
   }
@@ -1292,8 +1289,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
   messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS) ;
 
   // Prints valuse of linear unknown vector z0 - printed indeces range from 1 to m (as in mathematics, not in C)
-  if (m != q)
-  {
+  if (m > q) {
     infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "Vector z0 of nonlinear unknowns");
     for (i = 0; i < m-q; i++)
       if (m - q < 10)
@@ -1357,8 +1353,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
     free(fx[i]);
   free(fx);
 
-  for (i = 0; i < m; i++)
-  {
+  for (i = 0; i < m; i++) {
     for (j = 0; j < m; j++)
       free(fxx[i][j]);
     free(fxx[i]);
@@ -1372,8 +1367,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 
   free(alpha);
 
-  for (i = 0; i < p; i++)
-  {
+  for (i = 0; i < p; i++) {
     for (j = 0; j < q; j++)
       free(Gamma_ijk[i][j]);
     free(Gamma_ijk[i]);
