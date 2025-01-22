@@ -1271,13 +1271,15 @@ public
       to a list of crefs. needs cref filter function."
       input Equation eq;
       input Slice.filterCref filter;
+      input MapFuncExpWrapper mapFunc = Expression.map;
       output list<ComponentRef> cref_lst;
     protected
       UnorderedSet<ComponentRef> acc = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     algorithm
       // map with the expression and cref filter functions
       _ := map(eq, function Slice.filterExp(filter = filter, acc = acc),
-              SOME(function filter(acc = acc)));
+              SOME(function filter(acc = acc)),
+              mapFunc = mapFunc);
       cref_lst := UnorderedSet.toList(acc);
     end collectCrefs;
 

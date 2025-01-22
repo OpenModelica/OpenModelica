@@ -549,24 +549,20 @@ public
 
       // sliced array equations - create all the single entries
       case SINGLE_COMPONENT() guard(Equation.isArrayEquation(comp.eqn)) algorithm
-        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function Slice.getDependentCrefCausalized(set = set));
+        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function Slice.getDependentCrefCausalized(set = set), Expression.mapShallow);
         scalarized_dependencies := Slice.getDependentCrefsPseudoArrayCausalized(BVariable.getVarName(comp.var), dependencies);
-        for tpl in scalarized_dependencies loop
-          (cref, dependencies) := tpl;
-          deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
-          updateDependencyMap(cref, deps_set, map);
-        end for;
+        addScalarizedDependencies(scalarized_dependencies, map, jacType);
       then ();
 
       case SINGLE_COMPONENT() algorithm
-        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function Slice.getDependentCrefCausalized(set = set));
+        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function Slice.getDependentCrefCausalized(set = set), Expression.mapShallow);
         dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
         deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
         updateDependencyMap(BVariable.getVarName(comp.var), deps_set, map);
       then ();
 
       case MULTI_COMPONENT() algorithm
-        dependencies := Equation.collectCrefs(Pointer.access(Slice.getT(comp.eqn)), function Slice.getDependentCrefCausalized(set = set));
+        dependencies := Equation.collectCrefs(Pointer.access(Slice.getT(comp.eqn)), function Slice.getDependentCrefCausalized(set = set), Expression.mapShallow);
         dependencies := list(ComponentRef.stripIteratorSubscripts(dep) for dep in dependencies);
         dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
         deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
@@ -579,58 +575,26 @@ public
 
       // resizable for equations - create all the single entries
       case RESIZABLE_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
-        eqn as Equation.FOR_EQUATION(iter = iter, body = {body}) := Pointer.access(Slice.getT(comp.eqn));
-        dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set));
-        if ComponentRef.isEmpty(comp.var_cref) then
-          Expression.CREF(cref = cref) := Equation.getLHS(body);
-        else
-          cref := comp.var_cref;
-        end if;
-        scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(
-          cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping,
-          iter, Equation.size(Slice.getT(comp.eqn)), comp.eqn.indices, false);
-        for tpl in listReverse(scalarized_dependencies) loop
-          (cref, dependencies) := tpl;
-          deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
-          updateDependencyMap(cref, deps_set, map);
-        end for;
+        addForLoopDependencies(Pointer.access(Slice.getT(comp.eqn)), comp.eqn.indices, comp.var_cref, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, map, set, jacType);
       then ();
 
       // sliced for equations - create all the single entries
       case SLICED_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
-        eqn as Equation.FOR_EQUATION(iter = iter, body = {body}) := Pointer.access(Slice.getT(comp.eqn));
-        dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set));
-        if ComponentRef.isEmpty(comp.var_cref) then
-          Expression.CREF(cref = cref) := Equation.getLHS(body);
-        else
-          cref := comp.var_cref;
-        end if;
-        scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(
-          cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping,
-          iter, Equation.size(Slice.getT(comp.eqn)), comp.eqn.indices, false);
-        for tpl in listReverse(scalarized_dependencies) loop
-          (cref, dependencies) := tpl;
-          deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
-          updateDependencyMap(cref, deps_set, map);
-        end for;
+        addForLoopDependencies(Pointer.access(Slice.getT(comp.eqn)), comp.eqn.indices, comp.var_cref, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, map, set, jacType);
       then ();
 
       // sliced array equations - create all the single entries
       case SLICED_COMPONENT() guard(Equation.isArrayEquation(Slice.getT(comp.eqn))) algorithm
         eqn := Pointer.access(Slice.getT(comp.eqn));
-        dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set));
+        dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set), Expression.mapShallow);
         scalarized_dependencies := Slice.getDependentCrefsPseudoArrayCausalized(comp.var_cref, dependencies, comp.eqn.indices);
-        for tpl in scalarized_dependencies loop
-          (cref, dependencies) := tpl;
-          deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
-          updateDependencyMap(cref, deps_set, map);
-        end for;
+        addScalarizedDependencies(scalarized_dependencies, map, jacType);
       then ();
 
       // sliced regular equation.
       case SLICED_COMPONENT() algorithm
         eqn := Pointer.access(Slice.getT(comp.eqn));
-        dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set));
+        dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set), Expression.mapShallow);
         dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
         deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
         updateDependencyMap(comp.var_cref, deps_set, map);
@@ -638,21 +602,7 @@ public
 
       // sliced for equations - create all the single entries
       case GENERIC_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
-        eqn as Equation.FOR_EQUATION(iter = iter, body = {body}) := Pointer.access(Slice.getT(comp.eqn));
-        dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set));
-        if ComponentRef.isEmpty(comp.var_cref) then
-          Expression.CREF(cref = cref) := Equation.getLHS(body);
-        else
-          cref := comp.var_cref;
-        end if;
-        scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(
-          cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping,
-          iter, Equation.size(Slice.getT(comp.eqn)), comp.eqn.indices, false);
-        for tpl in listReverse(scalarized_dependencies) loop
-          (cref, dependencies) := tpl;
-          deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
-          updateDependencyMap(cref, deps_set, map);
-        end for;
+        addForLoopDependencies(Pointer.access(Slice.getT(comp.eqn)), comp.eqn.indices, comp.var_cref, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping, map, set, jacType);
       then ();
 
       case ALGEBRAIC_LOOP(strict = strict) algorithm
@@ -660,7 +610,7 @@ public
         deps_set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
         for slice in strict.residual_eqns loop
           // ToDo: does this work properly for arrays?
-          tmp := Equation.collectCrefs(Pointer.access(Slice.getT(slice)), function Slice.getDependentCrefCausalized(set = set));
+          tmp := Equation.collectCrefs(Pointer.access(Slice.getT(slice)), function Slice.getDependentCrefCausalized(set = set), Expression.mapShallow);
           eqn_ptr := Slice.getT(slice);
           if Equation.isForEquation(eqn_ptr) then
             // if its a for equation get all dependencies corresponding to their residual.
@@ -708,6 +658,53 @@ public
       else ();
     end match;
   end collectCrefs;
+
+  function addScalarizedDependencies
+    input list<tuple<ComponentRef, list<ComponentRef>>> scalarized_dependencies;
+    input UnorderedMap<ComponentRef, list<ComponentRef>> map  "unordered map to save the dependencies";
+    input JacobianType jacType                                "sets the context";
+  protected
+    ComponentRef cref;
+    list<ComponentRef> dependencies;
+    UnorderedSet<ComponentRef> deps_set;
+  algorithm
+    for tpl in listReverse(scalarized_dependencies) loop
+      (cref, dependencies) := tpl;
+      deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
+      updateDependencyMap(cref, deps_set, map);
+    end for;
+  end addScalarizedDependencies;
+
+  function addForLoopDependencies
+    input Equation eqn;
+    input list<Integer> indices;
+    input ComponentRef var_cref;
+    input VariablePointers var_rep                            "scalarized variable representatives";
+    input VariablePointers eqn_rep                            "scalarized equation representatives";
+    input Mapping var_rep_mapping                             "index mapping for variable representatives";
+    input Mapping eqn_rep_mapping                             "index mapping for equation representatives";
+    input UnorderedMap<ComponentRef, list<ComponentRef>> map  "unordered map to save the dependencies";
+    input UnorderedSet<ComponentRef> set                      "unordered set of array crefs to check for relevance (index lookup)";
+    input JacobianType jacType                                "sets the context";
+  protected
+    Iterator iter;
+    Equation body;
+    list<ComponentRef> dependencies;
+    ComponentRef cref;
+    list<tuple<ComponentRef, list<ComponentRef>>> scalarized_dependencies;
+  algorithm
+    Equation.FOR_EQUATION(iter = iter, body = {body}) := eqn;
+    dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set), Expression.mapShallow);
+    if ComponentRef.isEmpty(var_cref) then
+      Expression.CREF(cref = cref) := Equation.getLHS(body);
+    else
+      cref := var_cref;
+    end if;
+    scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(
+      cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping,
+      iter, Equation.size(Pointer.create(eqn)), indices, false);
+    addScalarizedDependencies(scalarized_dependencies, map, jacType);
+  end addForLoopDependencies;
 
   function addLoopJacobian
     input output StrongComponent comp;

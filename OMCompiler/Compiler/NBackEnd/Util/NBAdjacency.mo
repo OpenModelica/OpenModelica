@@ -1645,7 +1645,7 @@ public
         occ2 := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
         filter := function Slice.getDependentCref(map = map, pseudo = true);
         _ := Iterator.map(eqn.iter, function Slice.Slice.filterExp(filter = filter, acc = occ2),
-          SOME(function filter(acc = occ2)), Expression.map);
+          SOME(function filter(acc = occ2)), Expression.mapShallow);
         // update unsolvables
         Solvability.updateList(UnorderedSet.toList(occ2), Solvability.UNSOLVABLE(), sol_map);
       then UnorderedSet.union(occ1, occ2);
