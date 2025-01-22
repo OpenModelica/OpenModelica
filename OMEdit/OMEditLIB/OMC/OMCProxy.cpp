@@ -774,7 +774,16 @@ void OMCProxy::loadSystemLibraries(const QVector<QPair<QString, QString> > libra
         MessageItem messageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::notificationLevel);
         MessagesWidget::instance()->addGUIMessage(messageItem);
       } else {
-        loadModel(lib, version);
+        if (lib.compare(QStringLiteral("OpenModelica")) == 0) {
+          LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+          LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(lib);
+          if (!pLibraryTreeItem) {
+            SplashScreen::instance()->showMessage(QString("%1 %2").arg(Helper::loading, lib), Qt::AlignRight, Qt::white);
+            pLibraryTreeModel->createLibraryTreeItem(lib, pLibraryTreeModel->getRootLibraryTreeItem(), true, true, true);
+          }
+        } else {
+          loadModel(lib, version);
+        }
       }
     }
     OptionsDialog::instance()->readLibrariesSettings();
@@ -1688,8 +1697,13 @@ bool OMCProxy::loadModel(QString className, QString priorityVersion, bool notify
   bool result = false;
   QList<QString> priorityVersionList;
   priorityVersionList << priorityVersion;
-  result = mpOMCInterface->loadModel(className, priorityVersionList, notify, languageStandard, requireExactVersion);
-  printMessagesStringInternal();
+  // Skip calling loadModel for OpenModelica.
+  if (className.compare(QStringLiteral("OpenModelica")) == 0) {
+    result = true;
+  } else {
+    result = mpOMCInterface->loadModel(className, priorityVersionList, notify, languageStandard, requireExactVersion);
+    printMessagesStringInternal();
+  }
   return result;
 }
 
@@ -2970,12 +2984,16 @@ QString OMCProxy::getHomeDirectoryPath()
 
 /*!
  * \brief OMCProxy::getAvailableLibraries
- * Gets the available OpenModelica libraries.
+ * Gets the available libraries.
  * \return the list of libaries.
  */
 QStringList OMCProxy::getAvailableLibraries()
 {
-  return mpOMCInterface->getAvailableLibraries();
+  QStringList libraries = mpOMCInterface->getAvailableLibraries();
+  // Add OpenModelica to the list.
+  libraries.append("OpenModelica");
+  libraries.sort();
+  return libraries;
 }
 
 /*!

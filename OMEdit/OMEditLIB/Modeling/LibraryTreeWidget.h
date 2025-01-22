@@ -137,6 +137,8 @@ public:
   void setExpanded(bool expanded) {mExpanded = expanded;}
   bool isExpanded() const {return mExpanded;}
   bool isEncryptedClass() const {return mFileName.endsWith(".moc");}
+  bool isInternal() const {return mInternal;}
+  void setInternal(bool internal) {mInternal = internal;}
   bool isAccessAnnotationsEnabled() const {return mAccessAnnotations;}
   void setAccessAnnotations(bool accessAnnotations) {mAccessAnnotations = accessAnnotations;}
   void setOMSElement(oms_element_t *pOMSComponent) {mpOMSElement = pOMSComponent;}
@@ -221,6 +223,7 @@ private:
   QString mClassTextAfter;
   bool mExpanded = false;
   bool mNonExisting = false;
+  bool mInternal = false;
   bool mAccessAnnotations = false;
   oms_element_t *mpOMSElement = 0;
   oms_system_enu_t mSystemType = oms_system_none;
