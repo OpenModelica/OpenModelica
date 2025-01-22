@@ -317,11 +317,12 @@ protected
     Tearing strict;
   protected
     list<list<Slice<EquationPointer>>> acc;
+    UnorderedSet<VariablePointer> dummy_set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
   algorithm
     comp := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
         // inline potential records
-        acc := list(Inline.inlineRecordSliceEquation(eqn, variables, eq_index, true) for eqn in strict.residual_eqns);
+        acc := list(Inline.inlineRecordSliceEquation(eqn, variables, dummy_set, eq_index, true) for eqn in strict.residual_eqns);
 
         // create residual equations
         strict.residual_eqns := list(Slice.apply(eqn, function Equation.createResidual(new = true)) for eqn in List.flatten(acc));

@@ -895,7 +895,7 @@ protected
             body_elem := Pointer.access(body_elem_ptr);
             body_elem := BEquation.FOR_EQUATION(
               size    = Expression.rangeSize(range) * Equation.size(body_elem_ptr),
-              iter    = Iterator.SINGLE(iterator, range),
+              iter    = Iterator.SINGLE(iterator, range, NONE()),
               body    = {body_elem},
               source  = frontend_equation.source,
               attr    = Equation.getAttributes(body_elem)
