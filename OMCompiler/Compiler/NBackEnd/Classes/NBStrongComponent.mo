@@ -589,11 +589,7 @@ public
         scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(
           cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping,
           iter, Equation.size(Slice.getT(comp.eqn)), comp.eqn.indices, false);
-        for tpl in listReverse(scalarized_dependencies) loop
-          (cref, dependencies) := tpl;
-          deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
-          updateDependencyMap(cref, deps_set, map);
-        end for;
+        addScalarizedDependencies(scalarized_dependencies, map, jacType);
       then ();
 
       // sliced for equations - create all the single entries
@@ -608,11 +604,7 @@ public
         scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(
           cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping,
           iter, Equation.size(Slice.getT(comp.eqn)), comp.eqn.indices, false);
-        for tpl in listReverse(scalarized_dependencies) loop
-          (cref, dependencies) := tpl;
-          deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
-          updateDependencyMap(cref, deps_set, map);
-        end for;
+        addScalarizedDependencies(scalarized_dependencies, map, jacType);
       then ();
 
       // sliced array equations - create all the single entries
@@ -620,11 +612,7 @@ public
         eqn := Pointer.access(Slice.getT(comp.eqn));
         dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set));
         scalarized_dependencies := Slice.getDependentCrefsPseudoArrayCausalized(comp.var_cref, dependencies, comp.eqn.indices);
-        for tpl in scalarized_dependencies loop
-          (cref, dependencies) := tpl;
-          deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
-          updateDependencyMap(cref, deps_set, map);
-        end for;
+        addScalarizedDependencies(scalarized_dependencies, map, jacType);
       then ();
 
       // sliced regular equation.
@@ -648,11 +636,7 @@ public
         scalarized_dependencies := Slice.getDependentCrefsPseudoForCausalized(
           cref, dependencies, var_rep, eqn_rep, var_rep_mapping, eqn_rep_mapping,
           iter, Equation.size(Slice.getT(comp.eqn)), comp.eqn.indices, false);
-        for tpl in listReverse(scalarized_dependencies) loop
-          (cref, dependencies) := tpl;
-          deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
-          updateDependencyMap(cref, deps_set, map);
-        end for;
+        addScalarizedDependencies(scalarized_dependencies, map, jacType);
       then ();
 
       case ALGEBRAIC_LOOP(strict = strict) algorithm
@@ -708,6 +692,22 @@ public
       else ();
     end match;
   end collectCrefs;
+
+  function addScalarizedDependencies
+    input list<tuple<ComponentRef, list<ComponentRef>>> scalarized_dependencies;
+    input UnorderedMap<ComponentRef, list<ComponentRef>> map  "unordered map to save the dependencies";
+    input JacobianType jacType                                "sets the context";
+  protected
+    ComponentRef cref;
+    list<ComponentRef> dependencies;
+    UnorderedSet<ComponentRef> deps_set;
+  algorithm
+    for tpl in listReverse(scalarized_dependencies) loop
+      (cref, dependencies) := tpl;
+      deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
+      updateDependencyMap(cref, deps_set, map);
+    end for;
+  end addScalarizedDependencies;
 
   function addLoopJacobian
     input output StrongComponent comp;
