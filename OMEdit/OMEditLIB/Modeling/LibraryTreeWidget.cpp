@@ -86,10 +86,9 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
 {
   mIsRootItem = false;
   mpParentLibraryTreeItem = pParent;
-//  setPixmap(QPixmap());
-//  setDragPixmap(QPixmap());
   setName(text);
   setNameStructure(nameStructure);
+  setInternal(pParent->isInternal());
   setAccessAnnotations(false);
   setSaveContentsType(LibraryTreeItem::SaveInOneFile);
   if (type == LibraryTreeItem::Modelica) {
@@ -774,8 +773,7 @@ void LibraryTreeItem::tryToComplete(QList<CompleterItem> &completionClasses, QLi
   for (int bc = 0; bc < baseClasses.size(); ++bc) {
     QList<LibraryTreeItem*> classes = baseClasses[bc]->childrenItems();
     for (int i = 0; i < classes.size(); ++i) {
-      if (classes[i]->getName().startsWith(lastPart, Qt::CaseInsensitive) &&
-              classes[i]->getNameStructure().compare("OMEdit.Search.Feature") != 0)
+      if (classes[i]->getName().startsWith(lastPart, Qt::CaseInsensitive) && classes[i]->getNameStructure().compare(Helper::OMEditInternal) != 0)
         completionClasses << (CompleterItem(classes[i]->getName(), classes[i]->getHTMLDescription()));
     }
 
@@ -968,8 +966,8 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
     if (mShowOnlyModelica && !pLibraryTreeItem->isModelica()) {
       return false;
     }
-    // filter the dummy tree item "All" created for search functionality to be at the top
-    if (pLibraryTreeItem->getNameStructure().compare("OMEdit.Search.Feature") == 0) {
+    // filter the internal LibraryTreeItem
+    if (pLibraryTreeItem->isInternal()) {
       return false;
     }
 
@@ -1274,8 +1272,19 @@ void LibraryTreeModel::addModelicaLibraries(const QVector<QPair<QString, QString
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   pOMCProxy->loadSystemLibraries(libraries);
   QStringList systemLibs = pOMCProxy->getClassNames();
-  /*! @note OpenModelica is needed for the auto completion to work. Do not remove/move the following line. */
-  systemLibs.prepend("OpenModelica");
+
+  /*! @note OpenModelica is needed for the auto completion to work.
+   *  Create OpenModelica inside OMEditInternal. This allows loading OpenModelica if needed.
+   *  Do not remove/move the following code.
+   */
+  LibraryTreeItem *pLibraryTreeItem = findLibraryTreeItemOneLevel(Helper::OMEditInternal);
+  // reset name structure so nested OpenModelica gets correct name structure
+  pLibraryTreeItem->setNameStructure("");
+  pLibraryTreeItem->setInternal(true);
+  createLibraryTreeItem("OpenModelica", pLibraryTreeItem, true, true, true);
+  // restore name structure
+  pLibraryTreeItem->setNameStructure(Helper::OMEditInternal);
+
   foreach (QString systemLib, systemLibs) {
     LibraryTreeItem *pLibraryTreeItem = findLibraryTreeItem(systemLib);
     if (!pLibraryTreeItem) {
@@ -3184,7 +3193,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
           if (pLibraryTreeItem->getRestriction() == StringHandler::ModelicaClasses::Function) {
             menu.addAction(mpCallFunctionAction);
           }
-          /* If item is OpenModelica or part of it then don't show the duplicate and unload/delete menu item for it. */
+          /* If item is OpenModelica or part of it then don't show the duplicate menu item for it. */
           if (!(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()).compare("OpenModelica") == 0)) {
             menu.addSeparator();
             menu.addAction(mpDuplicateClassAction);
@@ -3195,26 +3204,26 @@ void LibraryTreeView::showContextMenu(QPoint point)
             } else {
               mpDuplicateClassAction->setEnabled(false);
             }
-            /* Add unload/delete menu item for top level libraries
-             * Add reload menu item for top level non system libraries
-             * Add unload/delete menu item for non top level and non system libraries
-             */
-            if (pLibraryTreeItem->isTopLevel()) {
-              mpUnloadClassAction->setText(Helper::unloadClass);
-              mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
-              menu.addAction(mpUnloadClassAction);
-              if (!pLibraryTreeItem->isSystemLibrary()) {
-                menu.addAction(mpReloadClassAction);
-              }
-            } else {
-              if (!pLibraryTreeItem->isSystemLibrary()) {
-                mpUnloadClassAction->setText(Helper::deleteStr);
-                mpUnloadClassAction->setStatusTip(tr("Deletes the Modelica class"));
-                menu.addAction(mpUnloadClassAction);
-              }
-            }
-            menu.addSeparator();
           }
+          /* Add unload/delete menu item for top level libraries
+           * Add reload menu item for top level non system libraries
+           * Add unload/delete menu item for non top level and non system libraries
+           */
+          if (pLibraryTreeItem->isTopLevel()) {
+            mpUnloadClassAction->setText(Helper::unloadClass);
+            mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
+            menu.addAction(mpUnloadClassAction);
+            if (!pLibraryTreeItem->isSystemLibrary()) {
+              menu.addAction(mpReloadClassAction);
+            }
+          } else {
+            if (!pLibraryTreeItem->isSystemLibrary()) {
+              mpUnloadClassAction->setText(Helper::deleteStr);
+              mpUnloadClassAction->setStatusTip(tr("Deletes the Modelica class"));
+              menu.addAction(mpUnloadClassAction);
+            }
+          }
+          menu.addSeparator();
           // add actions to Export menu
           exportMenu.addAction(mpExportFMUAction);
           if (pLibraryTreeItem->isTopLevel() && pLibraryTreeItem->getRestriction() == StringHandler::Package
@@ -3979,8 +3988,8 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
   mpTreeSearchFilters->getExpandAllButton()->setEnabled(false);
   mpTreeSearchFilters->getExpandAllButton()->setToolTip(tr("Expanding the Library Browser is a time consuming and non-responsive operation so this button is disabled intentionally."));
   connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpLibraryTreeView, SLOT(collapseAll()));
-  // create a dummy librarytreeItem
-  mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, "All", "OMEdit.Search.Feature", "", true, mpLibraryTreeModel->getRootLibraryTreeItem());
+  // create a LibraryTreeItem for internal usage e.g., annotation auto complete and search scope.
+  mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, "All", Helper::OMEditInternal, "", true, mpLibraryTreeModel->getRootLibraryTreeItem());
   // create the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);

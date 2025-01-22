@@ -258,12 +258,13 @@ void ModelicaEditor::getCompletionSymbols(QString word, QList<CompleterItem> &cl
  */
 LibraryTreeItem *ModelicaEditor::getAnnotationCompletionRoot()
 {
-  LibraryTreeItem *pLibraryRoot = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem();
+  LibraryTreeItem *pLibraryRoot = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(Helper::OMEditInternal);
   LibraryTreeItem *pModelicaReference = 0;
 
   for (int i = 0; i < pLibraryRoot->childrenSize(); ++i) {
-    if (pLibraryRoot->childAt(i)->getName() == "OpenModelica")
+    if (pLibraryRoot->childAt(i)->getName() == "OpenModelica") {
       pModelicaReference = pLibraryRoot->childAt(i);
+    }
   }
 
   if (pModelicaReference) {

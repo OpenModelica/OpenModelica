@@ -1727,7 +1727,6 @@ void MainWindow::addSystemLibraries()
     mpLibrariesMenu->clear();
     // get the available libraries and versions.
     QStringList libraries = MainWindow::instance()->getOMCProxy()->getAvailableLibraries();
-    libraries.sort();
     foreach (QString library, libraries) {
       QStringList versions = MainWindow::instance()->getOMCProxy()->getAvailableLibraryVersions(library);
       if (versions.isEmpty()) {
@@ -2070,8 +2069,7 @@ void MainWindow::unloadAll(bool onlyModelicaClasses)
   for (int i = pLibraryTreeItem->childrenSize(); --i >= 0; ) {
     LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
     if (pChildLibraryTreeItem) {
-      if ((pChildLibraryTreeItem->getNameStructure().compare(QStringLiteral("OpenModelica")) == 0)
-          || (pChildLibraryTreeItem->getNameStructure().compare(QStringLiteral("OMEdit.Search.Feature")) == 0)) {
+      if ((pChildLibraryTreeItem->getNameStructure().compare(Helper::OMEditInternal) == 0)) {
         continue;
       } else if (pChildLibraryTreeItem->isModelica()) {
         MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pChildLibraryTreeItem, false, false);
