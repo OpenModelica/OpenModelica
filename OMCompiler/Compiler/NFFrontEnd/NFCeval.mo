@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2025, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -171,6 +171,9 @@ algorithm
         exp2 := evalExp(exp.exp2, target);
       then
         evalBinaryOp(exp1, exp.operator, exp2, target);
+
+    // TODO
+    // case Expression.MULTARY()
 
     case Expression.UNARY()
       algorithm

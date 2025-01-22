@@ -572,7 +572,6 @@ algorithm
   outOption := match(inOption)
     local
       TI ival;
-      TO oval;
 
     case SOME(ival) then SOME(inFunc(ival));
     else NONE();
@@ -595,7 +594,6 @@ algorithm
   outOption := match(inOption)
     local
       TI ival;
-      TO oval;
 
     case SOME(ival) then SOME(inFunc(ival, inArg));
     else NONE();
