@@ -1,11 +1,11 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+allTheBuildins.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
-allTheBuildins.mos \
 
 
 # Dependency files that are not .mo .mos or Makefile
