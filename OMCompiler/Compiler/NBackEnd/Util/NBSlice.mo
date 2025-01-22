@@ -38,6 +38,7 @@ protected
   import Slice = NBSlice;
 
   // NF imports
+  import Call = NFCall;
   import ComplexType = NFComplexType;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
@@ -232,8 +233,16 @@ public
     input UnorderedSet<ComponentRef> acc;
   algorithm
     () := match exp
+      local
+        Expression call_exp;
+        Call call;
+
       case Expression.CREF() algorithm filter(exp.cref, acc); then ();
-      case Expression.CALL(call = Call.TYPED_REDUCTION) algorithm
+      case Expression.CALL(call = call as Call.TYPED_REDUCTION(exp = call_exp)) algorithm
+        for iter in call.iters loop
+          call_exp := Expression.replaceIterator(call_exp, Util.tuple21(iter), Util.tuple22(iter));
+        end for;
+        _ := Expression.mapShallow(call_exp, function filterExp(filter = filter, acc = acc));
       then ();
 
       else algorithm
@@ -318,9 +327,9 @@ public
   algorithm
     // put all unsolvable logic here!
     exp := match exp
-      case Expression.RANGE()     then Expression.map(exp, function filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
-      case Expression.LBINARY()   then Expression.map(exp, function filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
-      case Expression.RELATION()  then Expression.map(exp, function filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
+      case Expression.RANGE()     then Expression.mapShallow(exp, function filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
+      case Expression.LBINARY()   then Expression.mapShallow(exp, function filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
+      case Expression.RELATION()  then Expression.mapShallow(exp, function filterExp(filter = function getDependentCref(map = map, pseudo = pseudo), acc = acc));
       else exp;
     end match;
   end getUnsolvableExpCrefs;

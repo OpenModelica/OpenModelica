@@ -1277,7 +1277,8 @@ public
     algorithm
       // map with the expression and cref filter functions
       _ := map(eq, function Slice.filterExp(filter = filter, acc = acc),
-              SOME(function filter(acc = acc)));
+              SOME(function filter(acc = acc)),
+              mapFunc = Expression.mapShallow);
       cref_lst := UnorderedSet.toList(acc);
     end collectCrefs;
 
