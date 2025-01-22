@@ -233,7 +233,12 @@ public
   algorithm
     () := match exp
       case Expression.CREF() algorithm filter(exp.cref, acc); then ();
-      else ();
+      case Expression.CALL(call = Call.TYPED_REDUCTION) algorithm
+      then ();
+
+      else algorithm
+        _ := Expression.mapShallow(exp, function filterExp(filter = filter, acc = acc));
+      then ();
     end match;
   end filterExp;
 
