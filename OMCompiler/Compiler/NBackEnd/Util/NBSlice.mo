@@ -761,7 +761,7 @@ public
           Expression linMap;
 
         // equal inertia, combine the frames
-        case ((inertia1, (loc1, (name1, _))), (inertia2, (loc2, (name2, _)))) guard(inertia1 == inertia2) algorithm
+        case ((inertia1, (loc1, (name1, _, _))), (inertia2, (loc2, (name2, _, _)))) guard(inertia1 == inertia2) algorithm
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, NFOperator.SizeClassification.SCALAR), Type.INTEGER());
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.SCALAR), Type.INTEGER());
           if arrayLength(loc1) <> arrayLength(loc2) then
@@ -1568,10 +1568,11 @@ protected
       local
         ComponentRef name;
         Expression exp;
+        Option<Iterator> map;
 
-      case (name, exp as Expression.RANGE()) then (name, Expression.sliceRange(exp, range));
+      case (name, exp as Expression.RANGE(), map) then (name, Expression.sliceRange(exp, range), map);
 
-      case (_, exp) algorithm
+      case (_, exp, _) algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
           + " failed because frame expression was not Expression.RANGE(): " + Expression.toString(exp)});
       then fail();

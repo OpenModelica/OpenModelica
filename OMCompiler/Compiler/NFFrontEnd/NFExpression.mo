@@ -1178,21 +1178,6 @@ public
     output Integer start;
     output Integer step;
     output Integer stop;
-  protected
-    function getInteger
-      input Expression exp;
-      output Integer i;
-    protected
-      Expression e;
-    algorithm
-      e := Expression.map(exp, Expression.replaceResizableParameter);
-      i := match SimplifyExp.simplify(e)
-        case INTEGER(i) then i;
-        else algorithm
-          Error.assertion(false, getInstanceName() + " cannot be parsed to an integer: " + toString(exp), sourceInfo());
-        then fail();
-      end match;
-    end getInteger;
   algorithm
     (start, step, stop) := match range
       local
@@ -1217,6 +1202,21 @@ public
       then fail();
     end match;
   end getIntegerRange;
+
+  function getInteger
+    input Expression exp;
+    output Integer i;
+  protected
+    Expression e;
+  algorithm
+    e := Expression.map(exp, Expression.replaceResizableParameter);
+    i := match SimplifyExp.simplify(e)
+      case INTEGER(i) then i;
+      else algorithm
+        Error.assertion(false, getInstanceName() + " cannot be parsed to an integer: " + toString(exp), sourceInfo());
+      then fail();
+    end match;
+  end getInteger;
 
   function makeTuple
     input list<Expression> expl;
