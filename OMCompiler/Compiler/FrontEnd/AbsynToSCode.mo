@@ -976,7 +976,8 @@ algorithm
 
     case Absyn.ANNOTATION(elementArgs = args)
       equation
-        m = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), AbsynUtil.dummyInfo);
+        // Keep empty modifiers since they might have meaning in annotations, e.g. annotation(Dialog()).
+        m = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), AbsynUtil.dummyInfo, keepEmpty = true);
 
       then
         if SCodeUtil.isEmptyMod(m) then NONE() else SOME(SCode.ANNOTATION(m));
@@ -1689,6 +1690,7 @@ public function translateMod
   input SCode.Each eachPrefix;
   input Option<String> comment;
   input SourceInfo info;
+  input Boolean keepEmpty = false; // Keep empty modifiers, e.g. (x).
   output SCode.Mod outMod;
 protected
   list<Absyn.ElementArg> args;
@@ -1701,7 +1703,7 @@ algorithm
     else ({}, Absyn.NOMOD());
   end match;
 
-  subs := if listEmpty(args) then {} else translateArgs(args);
+  subs := if listEmpty(args) then {} else translateArgs(args, keepEmpty);
 
   binding := match eqmod
     case Absyn.EQMOD() then SOME(eqmod.exp);
@@ -1716,6 +1718,7 @@ end translateMod;
 
 protected function translateArgs
   input list<Absyn.ElementArg> args;
+  input Boolean keepEmpty;
   output list<SCode.SubMod> subMods = {};
 protected
   SCode.Mod smod;
@@ -1729,7 +1732,7 @@ algorithm
           smod := translateMod(arg.modification, SCodeUtil.boolFinal(arg.finalPrefix),
             translateEach(arg.eachPrefix), arg.comment, arg.info);
 
-          if not SCodeUtil.isEmptyMod(smod) then
+          if not SCodeUtil.isEmptyMod(smod) or keepEmpty then
             sub := translateSub(arg.path, smod, arg.info);
             subMods := sub :: subMods;
           end if;
