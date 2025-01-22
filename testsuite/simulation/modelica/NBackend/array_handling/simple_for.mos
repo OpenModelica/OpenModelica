@@ -62,9 +62,9 @@ val(x[3],1);
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
-// 	[FOR-] (10) ($RES_$AUX_2)
+// 	[FOR-] (10) ($RES_AUX_2)
 // [----] for $i1 in 1:10 loop
-// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_3)
+// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_AUX_3)
 // [----] end for;
 //
 // BLOCK 2: Resizable Component (status = Solve.UNPROCESSED)
@@ -92,9 +92,9 @@ val(x[3],1);
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
-// 	[FOR-] (10) ($RES_$AUX_2)
+// 	[FOR-] (10) ($RES_AUX_2)
 // [----] for $i1 in 1:10 loop
-// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_3)
+// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_AUX_3)
 // [----] end for;
 //
 // BLOCK 2: Resizable Component (status = Solve.UNPROCESSED)
@@ -122,9 +122,9 @@ val(x[3],1);
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
-// 	[FOR-] (10) ($RES_$AUX_2)
+// 	[FOR-] (10) ($RES_AUX_2)
 // [----] for $i1 in 1:10 loop
-// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_3)
+// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_AUX_3)
 // [----] end for;
 //
 // BLOCK 2: Resizable Component (status = Solve.UNPROCESSED)
@@ -153,9 +153,9 @@ val(x[3],1);
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
-// 	[FOR-] (10) ($RES_$AUX_2)
+// 	[FOR-] (10) ($RES_AUX_2)
 // [----] for $i1 in 1:10 loop
-// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_3)
+// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_AUX_3)
 // [----] end for;
 //
 // --- Alias of INI[1 | 2] ---
@@ -184,9 +184,9 @@ val(x[3],1);
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
-// 	[FOR-] (10) ($RES_$AUX_2)
+// 	[FOR-] (10) ($RES_AUX_2)
 // [----] for $i1 in 1:10 loop
-// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_3)
+// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_AUX_3)
 // [----] end for;
 //
 // BLOCK 2: Resizable Component (status = Solve.EXPLICIT)
@@ -223,7 +223,7 @@ val(x[3],1);
 // ### Variable:
 // 	Real $FUN_2
 // ### Equation:
-// 	[SCAL] (1) $FUN_2 = cos(time) ($RES_$AUX_3)
+// 	[SCAL] (1) $FUN_2 = cos(time) ($RES_AUX_3)
 //
 // BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
@@ -237,9 +237,9 @@ val(x[3],1);
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
-// 	[FOR-] (10) ($RES_$AUX_4)
+// 	[FOR-] (10) ($RES_AUX_4)
 // [----] for $i1 in 1:10 loop
-// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
+// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_AUX_5)
 // [----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.UNPROCESSED)
@@ -267,7 +267,7 @@ val(x[3],1);
 // ### Variable:
 // 	Real $FUN_2
 // ### Equation:
-// 	[SCAL] (1) $FUN_2 = cos(time) ($RES_$AUX_3)
+// 	[SCAL] (1) $FUN_2 = cos(time) ($RES_AUX_3)
 //
 // BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
@@ -281,9 +281,9 @@ val(x[3],1);
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
-// 	[FOR-] (10) ($RES_$AUX_4)
+// 	[FOR-] (10) ($RES_AUX_4)
 // [----] for $i1 in 1:10 loop
-// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
+// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_AUX_5)
 // [----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.UNPROCESSED)
@@ -311,7 +311,7 @@ val(x[3],1);
 // ### Variable:
 // 	Real $FUN_2
 // ### Equation:
-// 	[SCAL] (1) $FUN_2 = cos(time) ($RES_$AUX_3)
+// 	[SCAL] (1) $FUN_2 = cos(time) ($RES_AUX_3)
 //
 // BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
@@ -325,9 +325,9 @@ val(x[3],1);
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
-// 	[FOR-] (10) ($RES_$AUX_4)
+// 	[FOR-] (10) ($RES_AUX_4)
 // [----] for $i1 in 1:10 loop
-// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
+// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_AUX_5)
 // [----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.UNPROCESSED)
@@ -356,7 +356,7 @@ val(x[3],1);
 // ### Variable:
 // 	Real $FUN_2
 // ### Equation:
-// 	[SCAL] (1) $FUN_2 = cos(time) ($RES_$AUX_3)
+// 	[SCAL] (1) $FUN_2 = cos(time) ($RES_AUX_3)
 //
 // --- Alias of INI[1 | 2] ---
 // BLOCK 2: Sliced Component (status = Solve.EXPLICIT)
@@ -372,9 +372,9 @@ val(x[3],1);
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
-// 	[FOR-] (10) ($RES_$AUX_4)
+// 	[FOR-] (10) ($RES_AUX_4)
 // [----] for $i1 in 1:10 loop
-// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
+// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_AUX_5)
 // [----] end for;
 //
 // --- Alias of INI[1 | 4] ---
@@ -403,7 +403,7 @@ val(x[3],1);
 // ### Variable:
 // 	Real $FUN_2
 // ### Equation:
-// 	[SCAL] (1) $FUN_2 = cos(time) ($RES_$AUX_3)
+// 	[SCAL] (1) $FUN_2 = cos(time) ($RES_AUX_3)
 //
 // BLOCK 2: Sliced Component (status = Solve.EXPLICIT)
 // -----------------------------------------------------
@@ -417,9 +417,9 @@ val(x[3],1);
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
-// 	[FOR-] (10) ($RES_$AUX_4)
+// 	[FOR-] (10) ($RES_AUX_4)
 // [----] for $i1 in 1:10 loop
-// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
+// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_AUX_5)
 // [----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.EXPLICIT)
@@ -456,7 +456,7 @@ val(x[3],1);
 // ### Variable:
 // 	Real $FUN_2
 // ### Equation:
-// 	[SCAL] (1) $FUN_2 = cos(time) ($RES_$AUX_3)
+// 	[SCAL] (1) $FUN_2 = cos(time) ($RES_AUX_3)
 //
 // BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
@@ -470,9 +470,9 @@ val(x[3],1);
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
-// 	[FOR-] (10) ($RES_$AUX_4)
+// 	[FOR-] (10) ($RES_AUX_4)
 // [----] for $i1 in 1:10 loop
-// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
+// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_AUX_5)
 // [----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.UNPROCESSED)
@@ -500,7 +500,7 @@ val(x[3],1);
 // ### Variable:
 // 	Real $FUN_2
 // ### Equation:
-// 	[SCAL] (1) $FUN_2 = cos(time) ($RES_$AUX_3)
+// 	[SCAL] (1) $FUN_2 = cos(time) ($RES_AUX_3)
 //
 // BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
@@ -514,9 +514,9 @@ val(x[3],1);
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
-// 	[FOR-] (10) ($RES_$AUX_4)
+// 	[FOR-] (10) ($RES_AUX_4)
 // [----] for $i1 in 1:10 loop
-// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
+// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_AUX_5)
 // [----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.UNPROCESSED)
@@ -544,7 +544,7 @@ val(x[3],1);
 // ### Variable:
 // 	Real $FUN_2
 // ### Equation:
-// 	[SCAL] (1) $FUN_2 = cos(time) ($RES_$AUX_3)
+// 	[SCAL] (1) $FUN_2 = cos(time) ($RES_AUX_3)
 //
 // BLOCK 2: Sliced Component (status = Solve.UNPROCESSED)
 // --------------------------------------------------------
@@ -558,9 +558,9 @@ val(x[3],1);
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
-// 	[FOR-] (10) ($RES_$AUX_4)
+// 	[FOR-] (10) ($RES_AUX_4)
 // [----] for $i1 in 1:10 loop
-// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
+// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_AUX_5)
 // [----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.UNPROCESSED)
@@ -589,7 +589,7 @@ val(x[3],1);
 // ### Variable:
 // 	Real $FUN_2
 // ### Equation:
-// 	[SCAL] (1) $FUN_2 = cos(time) ($RES_$AUX_3)
+// 	[SCAL] (1) $FUN_2 = cos(time) ($RES_AUX_3)
 //
 // --- Alias of INI[1 | 2] ---
 // BLOCK 2: Sliced Component (status = Solve.EXPLICIT)
@@ -605,9 +605,9 @@ val(x[3],1);
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
-// 	[FOR-] (10) ($RES_$AUX_4)
+// 	[FOR-] (10) ($RES_AUX_4)
 // [----] for $i1 in 1:10 loop
-// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
+// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_AUX_5)
 // [----] end for;
 //
 // --- Alias of INI[1 | 4] ---
@@ -636,7 +636,7 @@ val(x[3],1);
 // ### Variable:
 // 	Real $FUN_2
 // ### Equation:
-// 	[SCAL] (1) $FUN_2 = cos(time) ($RES_$AUX_3)
+// 	[SCAL] (1) $FUN_2 = cos(time) ($RES_AUX_3)
 //
 // BLOCK 2: Sliced Component (status = Solve.EXPLICIT)
 // -----------------------------------------------------
@@ -650,9 +650,9 @@ val(x[3],1);
 // ### Variable:
 // 	$FUN_1[$i1]
 // ### Equation:
-// 	[FOR-] (10) ($RES_$AUX_4)
+// 	[FOR-] (10) ($RES_AUX_4)
 // [----] for $i1 in 1:10 loop
-// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
+// [----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_AUX_5)
 // [----] end for;
 //
 // BLOCK 4: Resizable Component (status = Solve.EXPLICIT)
