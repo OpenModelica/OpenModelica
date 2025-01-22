@@ -654,8 +654,12 @@ public
   algorithm
     row_cref_scal := ComponentRef.scalarizeSlice(row_cref, slice);
     dependencies_scal := list(ComponentRef.scalarizeSlice(dep, slice) for dep in dependencies);
-    dependencies_scal := List.transposeList(dependencies_scal);
-    tpl_lst := List.zip(row_cref_scal, dependencies_scal);
+    if not listEmpty(dependencies_scal) then
+      dependencies_scal := List.transposeList(dependencies_scal);
+      tpl_lst := List.zip(row_cref_scal, dependencies_scal);
+    else
+      tpl_lst := list((cref, {}) for cref in row_cref_scal);
+    end if;
   end getDependentCrefsPseudoArrayCausalized;
 
   function locationToIndex
