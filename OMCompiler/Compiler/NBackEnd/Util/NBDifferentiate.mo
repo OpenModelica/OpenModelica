@@ -804,9 +804,14 @@ public
         // (it is possible that a variable has a zero derivative, but still appears in the interface)
         UnorderedMap<String, Boolean> interface_map = UnorderedMap.new<Boolean>(stringHashDjb2, stringEqual);
 
+      // for reductions only differentiate the argument
+      case ret as Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
+        (ret, diffArguments) := differentiateReduction(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)), exp, diffArguments);
+      then (ret, diffArguments);
+
       // builtin functions
       case Expression.CALL(call = call as Call.TYPED_CALL()) guard(Function.isBuiltin(call.fn)) algorithm
-        ret := differentiateBuiltinCall(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)), exp, diffArguments);
+        (ret, diffArguments) := differentiateBuiltinCall(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)), exp, diffArguments);
       then (ret, diffArguments);
 
       // user defined functions
@@ -870,8 +875,33 @@ public
     if debug then
       print("Differentiate-ExpCall-result: " + Expression.toString(exp) + "\n");
     end if;
-
   end differentiateCall;
+
+  function differentiateReduction
+    "This function differentiates reduction expressions with respect to a given variable.
+    Also creates and multiplies inner derivatives."
+    input String name;
+    input output Expression exp;
+    input output DifferentiationArguments diffArguments;
+  algorithm
+    exp := match exp
+      local
+        Call call;
+        Expression arg;
+
+      case Expression.CALL(call = call as Call.TYPED_REDUCTION()) guard(name == "sum") algorithm
+        (arg, diffArguments) := differentiateExpression(call.exp, diffArguments);
+        call.exp := arg;
+        exp.call := call;
+      then exp;
+
+      // ToDo: product, min, max
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of non-call expression: " + Expression.toString(exp)});
+      then fail();
+    end match;
+  end differentiateReduction;
 
   function differentiateBuiltinCall
     "This function differentiates built-in call expressions with respect to a given variable.

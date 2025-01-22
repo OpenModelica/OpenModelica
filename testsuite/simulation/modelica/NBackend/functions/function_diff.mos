@@ -35,11 +35,11 @@ simulate(function_diff); getErrorString();
 // true
 // ""
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
-// [BEFORE] [SCAL] (1) y = sin(x) ($RES_$AUX_5)
-// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.y = cos(x) * $SEED_ODE_JAC.x ($RES_$AUX_5)
+// [BEFORE] [SCAL] (1) y = sin(x) ($RES_AUX_5)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.y = cos(x) * $SEED_ODE_JAC.x ($RES_AUX_5)
 //
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
-// [BEFORE] [SCAL] (1) $FUN_2 = f(y) ($RES_$AUX_4)
+// [BEFORE] [SCAL] (1) $FUN_2 = f(y) ($RES_AUX_4)
 //
 // [BEFORE] function 'f'
 //   input Real 'a';
@@ -69,15 +69,15 @@ simulate(function_diff); getErrorString();
 //   annotation(Inline = false);
 // end '$fDER0.f'
 //
-// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_2 = $fDER0.f(y, $pDER_ODE_JAC.y) ($RES_$AUX_4)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_2 = $fDER0.f(y, $pDER_ODE_JAC.y) ($RES_AUX_4)
 //
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
 // [BEFORE] [SCAL] (1) $DER.x = $FUN_2 ($RES_SIM_1)
 // [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.x = $pDER_ODE_JAC.$FUN_2 ($RES_SIM_1)
 //
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
-// [BEFORE] [SCAL] (1) $FUN_3 = f(x) ($RES_$AUX_3)
-// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_3 = $fDER0.f(x, $SEED_ODE_JAC.x) ($RES_$AUX_3)
+// [BEFORE] [SCAL] (1) $FUN_3 = f(x) ($RES_AUX_3)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_3 = $fDER0.f(x, $SEED_ODE_JAC.x) ($RES_AUX_3)
 //
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
 // [BEFORE] [SCAL] (1) $DER.z = $FUN_3 ($RES_SIM_0)

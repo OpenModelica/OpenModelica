@@ -255,7 +255,7 @@ protected
           end for;
 
           // if any of the created variables is continuous, so is the equation
-          new_eqn := Equation.makeAssignment(aux.replacer, id.call, eqData.uniqueIndex, NBVariable.AUXILIARY_STR, id.iter, EquationAttributes.default(aux.kind, false));
+          new_eqn := Equation.makeAssignment(aux.replacer, id.call, eqData.uniqueIndex, "AUX", id.iter, EquationAttributes.default(aux.kind, false));
           if disc then
             new_eqns_disc := new_eqn :: new_eqns_disc;
           else
@@ -287,7 +287,7 @@ protected
               (disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd) := addAuxVar(new_var, disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, true);
             end for;
 
-            new_eqn := Equation.makeAssignment(aux.replacer, id.call, eqData.uniqueIndex, NBVariable.AUXILIARY_STR, id.iter, EquationAttributes.default(aux.kind, false));
+            new_eqn := Equation.makeAssignment(aux.replacer, id.call, eqData.uniqueIndex, "AUX", id.iter, EquationAttributes.default(aux.kind, false));
             new_eqns_init := new_eqn :: new_eqns_init;
           end if;
         end for;
@@ -570,7 +570,7 @@ protected
     clock_vars := Pointer.access(new_clocks);
     for tpl in UnorderedMap.toList(collector) loop
       (clock, clock_name) := tpl;
-      clock_eqns := Equation.makeAssignment(Expression.fromCref(clock_name), BClock.toExp(clock), eqn_idx, NBVariable.AUXILIARY_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.CLOCKED, false)) :: clock_eqns;
+      clock_eqns := Equation.makeAssignment(Expression.fromCref(clock_name), BClock.toExp(clock), eqn_idx, "AUX", Iterator.EMPTY(), EquationAttributes.default(EquationKind.CLOCKED, false)) :: clock_eqns;
     end for;
   end addClockedAlias;
 
