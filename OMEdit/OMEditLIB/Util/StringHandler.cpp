@@ -1494,18 +1494,17 @@ QStringList StringHandler::makeVariablePartsWithInd(QString variable)
   //if the last part is array with index, split it into the name and index parts:
 
   if (!varParts.isEmpty()) {
-	  QString* lastStr = &(varParts.last());
-	  int i = lastStr->lastIndexOf(QRegularExpression("\\[\\d+\\]"));
-	  if(i>=0){
-		  QString indexPart = *lastStr;
-		  indexPart.remove(0,i);
-		  lastStr->truncate(i);
-		  varParts.append(indexPart);
-	  }
+    QString* lastStr = &(varParts.last());
+    int i = lastStr->lastIndexOf(QRegularExpression(Helper::arrayIndexRegularExpression));
+    if(i>=0){
+      QString indexPart = *lastStr;
+      indexPart.remove(0,i);
+      lastStr->truncate(i);
+      varParts.append(indexPart);
+    }
   }
   return varParts;
 }
-
 
 bool StringHandler::naturalSort(const QString &s1, const QString &s2) {
   int i1 = 0; // index in string

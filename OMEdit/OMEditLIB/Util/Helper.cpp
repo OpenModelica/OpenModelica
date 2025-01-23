@@ -131,6 +131,7 @@ QString Helper::systemWC = QString("Weakly Coupled - Connected Co-Simulation FMU
 QString Helper::systemSC = QString("Strongly Coupled - Connected Model-Exchange FMUs System");
 QString Helper::displayLimit = QString("Reached display limit");
 QString Helper::displayLimitMsg = QString("Reached display limit. To read the full log open the file <a href=\"file:///%1\">%1</a>");
+QString Helper::arrayIndexRegularExpression = QString(R"(\[(\d+)(?:,(\d+))?\])");
 /* Global translated variables */
 QString Helper::newModelicaClass;
 QString Helper::newModelicaClassLibraryBrowser;
