@@ -2847,6 +2847,18 @@ public
     outExp := func(outExp);
   end map;
 
+  function fakeMap
+    "has an interface like map but just applies the function directly.
+    used for functions that map itself but need to use mapping interfaces"
+    input Expression exp;
+    input MapFunc func;
+    output Expression outExp = func(exp);
+
+    partial function MapFunc
+      input output Expression e;
+    end MapFunc;
+  end fakeMap;
+
   function mapOpt
     input Option<Expression> exp;
     input MapFunc func;
