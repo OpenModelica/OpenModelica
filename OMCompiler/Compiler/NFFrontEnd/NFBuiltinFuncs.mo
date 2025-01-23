@@ -293,9 +293,9 @@ constant Function ABS_REAL = Function.FUNCTION(Path.IDENT("abs"),
     Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
-constant Function SIGN_REAL = Function.FUNCTION(Path.IDENT("sign"),
+constant Function SIGN = Function.FUNCTION(Path.IDENT("sign"),
   InstNode.EMPTY_NODE(), {REAL_PARAM}, {REAL_PARAM}, {}, {},
-    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Type.INTEGER(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
 constant Function MAX_INT = Function.FUNCTION(Path.IDENT("max"),

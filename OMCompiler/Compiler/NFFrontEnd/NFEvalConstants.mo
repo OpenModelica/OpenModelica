@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2025, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -171,20 +171,6 @@ function evaluateExp
 algorithm
   outExp := evaluateExpTraverser(exp, info, ignoreFailure = ignoreFailure);
 end evaluateExp;
-
-function evaluateExpOpt
-  input Option<Expression> exp;
-  input SourceInfo info;
-  input Boolean ignoreFailure = false;
-  output Option<Expression> outExp;
-protected
-  Expression e;
-algorithm
-  outExp := match exp
-    case SOME(e) then SOME(evaluateExp(e, info, ignoreFailure));
-    else exp;
-  end match;
-end evaluateExpOpt;
 
 function evaluateExpTraverser
   input Expression exp;
@@ -394,7 +380,7 @@ algorithm
 
     case Equation.FOR()
       algorithm
-        eq.range := evaluateExpOpt(eq.range, info, ignoreFailure);
+        eq.range := Util.applyOption(eq.range, function evaluateExp(info = info, ignoreFailure = ignoreFailure));
         eq.body := evaluateEquations(eq.body, ignoreFailure);
       then
         eq;
@@ -505,7 +491,7 @@ algorithm
 
     case Statement.FOR()
       algorithm
-        stmt.range := evaluateExpOpt(stmt.range, info, ignoreFailure);
+        stmt.range := Util.applyOption(stmt.range, function evaluateExp(info = info, ignoreFailure = ignoreFailure));
         stmt.body := evaluateStatements(stmt.body, ignoreFailure);
       then
         stmt;
