@@ -28,23 +28,11 @@
  #
  #/
 
-TEMPLATE = subdirs
+include(../Common/Testsuite.pri)
+include(../Common/Util.pri)
 
-SUBDIRS = Util \
-  BrowseMSL \
-  Diagram \
-  Transformation \
-  Homotopy \
-  Expression \
-  ModelInstance \
-  Utilities \
-  StringHandler
+TARGET = StringHandler
 
-BrowseMSL.depends = Util
-Diagram.depends = Util
-Transformation.depends = Util
-Homotopy.depends = Util
-Expression.depends = Util
-ModelInstance.depends = Util
-Utilities.depends = Util
-StringHandler.depends = Util
+SOURCES += StringHandlerTest.cpp
+
+HEADERS += StringHandlerTest.h

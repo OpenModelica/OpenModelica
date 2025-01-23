@@ -369,7 +369,7 @@ void TVariablesTreeModel::insertTVariablesItems(QHashIterator<QString, OMVariabl
         tVariableData << variable.name << StringHandler::joinDerivativeAndPreviousVariable(variable.name, tVariable, "der(");
       } else if ((tVariables.size() == count) && (variable.name.startsWith("previous("))) { /* if last item of previous */
         tVariableData << variable.name << StringHandler::joinDerivativeAndPreviousVariable(variable.name, tVariable, "previous(");
-      } else if (tVariables.size() == count && QRegExp("\\[\\d+\\]").exactMatch(tVariable)) { /* if last item of array derivative*/
+      } else if (tVariables.size() == count && QRegularExpression(QRegularExpression::anchoredPattern(Helper::arrayIndexRegularExpression)).match(tVariable).hasMatch()) { /* if last item of array derivative*/
         tVariableData << variable.name << tVariable;
       } else {
         tVariableData << QString("%1%2").arg(parentVarName, tVariable) << tVariable;

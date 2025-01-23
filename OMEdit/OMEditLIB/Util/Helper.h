@@ -137,6 +137,7 @@ public:
   static QString systemSC;
   static QString displayLimit;
   static QString displayLimitMsg;
+  static QString arrayIndexRegularExpression;
   /* Global translated variables */
   static QString newModelicaClass;
   static QString newModelicaClassLibraryBrowser;
