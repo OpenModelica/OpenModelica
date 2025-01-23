@@ -4026,13 +4026,15 @@ void AddSystemLibraryDialog::addSystemLibrary()
 {
   // if name text box is empty show error and return
   if (mpNameComboBox->currentText().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("a")), QMessageBox::Ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::library), QMessageBox::Ok);
     return;
   }
   // if value text box is empty show error and return
+  QString version;
   if (mpVersionsComboBox->lineEdit()->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("the value for a")), QMessageBox::Ok);
-    return;
+    version = "default";
+  } else {
+    version = mpVersionsComboBox->lineEdit()->text();
   }
   // if user is adding a new library
   if (!mEditFlag) {
@@ -4041,7 +4043,7 @@ void AddSystemLibraryDialog::addSystemLibrary()
       return;
     }
     QStringList values;
-    values << mpNameComboBox->currentText() << mpVersionsComboBox->lineEdit()->text();
+    values << mpNameComboBox->currentText() << version;
     mpLibrariesPage->getSystemLibrariesTree()->addTopLevelItem(new QTreeWidgetItem(values));
   } else if (mEditFlag) { // if user is editing old library
     QTreeWidgetItem *pItem = mpLibrariesPage->getSystemLibrariesTree()->selectedItems().at(0);
@@ -4050,7 +4052,7 @@ void AddSystemLibraryDialog::addSystemLibrary()
       return;
     }
     pItem->setText(0, mpNameComboBox->currentText());
-    pItem->setText(1, mpVersionsComboBox->lineEdit()->text());
+    pItem->setText(1, version);
   }
   accept();
 }

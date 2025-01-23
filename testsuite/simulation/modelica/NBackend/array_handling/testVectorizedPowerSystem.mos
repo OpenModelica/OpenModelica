@@ -67,7 +67,7 @@ val(fixedVoltageSource1.p[1], 1.0);
 // ### Variable:
 // 	Real $FUN_1
 // ### Equation:
-// 	[SCAL] (1) $FUN_1 = sum(busBar1.terminal_n[:].i[1]) ($RES_$AUX_31)
+// 	[SCAL] (1) $FUN_1 = sum(busBar1.terminal_n[:].i[1]) ($RES_AUX_31)
 //
 // BLOCK 6: Single Strong Component (status = Solve.UNPROCESSED)
 // ---------------------------------------------------------------
@@ -205,7 +205,7 @@ val(fixedVoltageSource1.p[1], 1.0);
 // ### Variable:
 // 	Real $FUN_1
 // ### Equation:
-// 	[SCAL] (1) $FUN_1 = sum(busBar1.terminal_n[:].i[1]) ($RES_$AUX_31)
+// 	[SCAL] (1) $FUN_1 = sum(busBar1.terminal_n[:].i[1]) ($RES_AUX_31)
 //
 // BLOCK 6: Single Strong Component (status = Solve.UNPROCESSED)
 // ---------------------------------------------------------------
@@ -340,7 +340,7 @@ val(fixedVoltageSource1.p[1], 1.0);
 // ### Variable:
 // 	Real $FUN_1
 // ### Equation:
-// 	[SCAL] (1) $FUN_1 = sum(busBar1.terminal_n[:].i[1]) ($RES_$AUX_31)
+// 	[SCAL] (1) $FUN_1 = sum(busBar1.terminal_n[:].i[1]) ($RES_AUX_31)
 //
 // BLOCK 6: Single Strong Component (status = Solve.UNPROCESSED)
 // ---------------------------------------------------------------
@@ -481,7 +481,7 @@ val(fixedVoltageSource1.p[1], 1.0);
 // ### Variable:
 // 	Real $FUN_1
 // ### Equation:
-// 	[SCAL] (1) $FUN_1 = sum(busBar1.terminal_n[:].i[1]) ($RES_$AUX_31)
+// 	[SCAL] (1) $FUN_1 = sum(busBar1.terminal_n[:].i[1]) ($RES_AUX_31)
 //
 // --- Alias of INI[1 | 6] ---
 // BLOCK 6: Single Strong Component (status = Solve.EXPLICIT)
@@ -618,7 +618,7 @@ val(fixedVoltageSource1.p[1], 1.0);
 // ### Variable:
 // 	Real $FUN_1
 // ### Equation:
-// 	[SCAL] (1) $FUN_1 = sum(busBar1.terminal_n[:].i[1]) ($RES_$AUX_31)
+// 	[SCAL] (1) $FUN_1 = sum(busBar1.terminal_n[:].i[1]) ($RES_AUX_31)
 //
 // BLOCK 6: Single Strong Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------------

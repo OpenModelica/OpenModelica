@@ -1288,7 +1288,7 @@ algorithm
         ();
 
     case (Component.COMPONENT(), SCode.Element.COMPONENT())
-algorithm
+      algorithm
         json := JSON.addPair("$kind", JSON.makeString("component"), json);
         json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
         json := JSON.addPair("type", dumpJSONComponentType(cls, node, comp.ty), json);
@@ -1722,6 +1722,12 @@ algorithm
     case (_, SCode.Mod.MOD())
       algorithm
         json := JSON.addPair(name, dumpJSONAnnotationSubMods(mod.subModLst, scope, {}, failOnError), json);
+      then
+        ();
+
+    case (_, SCode.Mod.NOMOD())
+      algorithm
+        json := JSON.addPair(name, JSON.emptyObject(), json);
       then
         ();
 

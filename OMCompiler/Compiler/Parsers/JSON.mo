@@ -431,13 +431,10 @@ function toStringPP_object
 protected
   String next_indent = indent + "  ";
 algorithm
-  Print.printBuf("{\n");
+  Print.printBuf("{");
 
   for i in 1:UnorderedMap.size(map) loop
-    if i <> 1 then
-      Print.printBuf(",\n");
-    end if;
-
+    Print.printBuf(if i == 1 then "\n" else ",\n");
     Print.printBuf(next_indent);
     Print.printBuf("\"");
     Print.printBuf(UnorderedMap.keyAt(map, i));

@@ -362,7 +362,6 @@ public
         eo          := UnorderedMap.copy(equations.map);
         // get all unmatched equations and remove them from the system and overall equations
         sliced_eqns := list(Slice.getT(eqn) for eqn in unmatched_eqns);
-        eqData      := EqData.removeList(sliced_eqns, eqData);
         equations   := EquationPointers.removeList(sliced_eqns, equations);
         // also update adjacency matrices
         (adj, full) := Adjacency.Matrix.compress(adj, full, equations, variables, eo);

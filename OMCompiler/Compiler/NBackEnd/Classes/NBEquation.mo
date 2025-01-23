@@ -91,7 +91,7 @@ public
 
   // used to process different outcomes of slicing from Util/Slice.mo
   // have to be defined here and not in Util/Slice.mo because it is a uniontype and not a package
-  type Frame                = tuple<ComponentRef, Expression>                       "iterator-like tuple for array handling";
+  type Frame                = tuple<ComponentRef, Expression, Option<Iterator>>     "iterator-like tuple for array handling";
   type FrameLocation        = tuple<array<Integer>, Frame>                          "sliced frame at specific sub locations";
   type SlicingStatus        = enumeration(UNCHANGED, TRIVIAL, NONTRIVIAL, FAILURE)  "final result of slicing";
   type RecollectStatus      = enumeration(SUCCESS, FAILURE)                         "result of sub-routine recollect";
@@ -127,11 +127,13 @@ public
     record SINGLE
       ComponentRef name           "the name of the iterator";
       Expression range            "range as <start, step, stop>";
+      Option<Iterator> map        "maps to a second iterator if derived from a for-expression";
     end SINGLE;
 
     record NESTED
       array<ComponentRef> names   "sorted iterator names";
       array<Expression> ranges    "sorted ranges as <start, step, stop>";
+      array<Option<Iterator>> maps"maps to a second iterator if derived from a for-expression";
     end NESTED;
 
     record EMPTY
@@ -143,16 +145,18 @@ public
     protected
       list<ComponentRef> names;
       list<Expression> ranges;
+      list<Option<Iterator>> maps;
       ComponentRef name;
       Expression range;
+      Option<Iterator> map;
     algorithm
       if listEmpty(frames) then
         iter := EMPTY();
       else
-        (names, ranges) := List.unzip(frames);
-        iter := match (names, ranges)
-          case ({name}, {range})  then SINGLE(name, range);
-                                  else NESTED(listArray(names), listArray(ranges));
+        (names, ranges, maps) := List.unzip3(frames);
+        iter := match (names, ranges, maps)
+          case ({name}, {range}, {map})  then SINGLE(name, range, map);
+                                  else NESTED(listArray(names), listArray(ranges), listArray(maps));
         end match;
       end if;
     end fromFrames;
@@ -163,11 +167,12 @@ public
     protected
       list<ComponentRef> names1, names2;
       list<Expression> ranges1, ranges2;
+      list<Option<Iterator>> maps1, maps2;
     algorithm
       if not listEmpty(frames) then
-        (names1, ranges1) := getFrames(iter);
-        (names2, ranges2) := List.unzip(frames);
-        iter := fromFrames(List.zip(listAppend(names1, names2), listAppend(ranges1, ranges2)));
+        (names1, ranges1, maps1) := getFrames(iter);
+        (names2, ranges2, maps2) := List.unzip3(frames);
+        iter := fromFrames(List.zip3(listAppend(names1, names2), listAppend(ranges1, ranges2), listAppend(maps1, maps2)));
       end if;
     end addFrames;
 
@@ -175,11 +180,12 @@ public
       input Iterator iter;
       output list<ComponentRef> names;
       output list<Expression> ranges;
+      output list<Option<Iterator>> maps;
     algorithm
-      (names, ranges) := match iter
-        case SINGLE() then ({iter.name}, {iter.range});
-        case NESTED() then (arrayList(iter.names), arrayList(iter.ranges));
-        case EMPTY()  then ({}, {});
+      (names, ranges, maps) := match iter
+        case SINGLE() then ({iter.name}, {iter.range}, {iter.map});
+        case NESTED() then (arrayList(iter.names), arrayList(iter.ranges), arrayList(iter.maps));
+        case EMPTY()  then ({}, {}, {});
       end match;
     end getFrames;
 
@@ -190,16 +196,18 @@ public
     protected
       list<ComponentRef> tmp_names, names = {};
       list<Expression> tmp_ranges, ranges = {};
+      list<Option<Iterator>> tmp_maps, maps = {};
     algorithm
       if List.hasOneElement(iterators) then
         result := List.first(iterators);
       else
         for iter in listReverse(iterators) loop
-          (tmp_names, tmp_ranges) := getFrames(iter);
-          names := listAppend(tmp_names, names);
-          ranges := listAppend(tmp_ranges, ranges);
+          (tmp_names, tmp_ranges, tmp_maps) := getFrames(iter);
+          names   := listAppend(tmp_names, names);
+          ranges  := listAppend(tmp_ranges, ranges);
+          maps    := listAppend(tmp_maps, maps);
         end for;
-        result := NESTED(listArray(names), listArray(ranges));
+        result := NESTED(listArray(names), listArray(ranges), listArray(maps));
       end if;
     end merge;
 
@@ -211,9 +219,10 @@ public
     protected
       list<ComponentRef> names;
       list<Expression> ranges;
+      list<Option<Iterator>> maps;
     algorithm
-      (names, ranges) := getFrames(iterator);
-      for tpl in List.zip(names, ranges) loop
+      (names, ranges, maps) := getFrames(iterator);
+      for tpl in List.zip3(names, ranges, maps) loop
         result := Iterator.fromFrames({tpl}) :: result;
       end for;
     end split;
@@ -251,11 +260,15 @@ public
     algorithm
       b := match (iter1, iter2)
         case (EMPTY(), EMPTY()) then true;
-        case (SINGLE(), SINGLE()) then Expression.isEqual(iter1.range, iter2.range);
+        case (SINGLE(), SINGLE()) then Expression.isEqual(iter1.range, iter2.range) and Util.optionEqual(iter1.map, iter2.map, isEqual);
         case (NESTED(), NESTED()) algorithm
-          if arrayLength(iter1.ranges) == arrayLength(iter2.ranges) then
+          if arrayLength(iter1.ranges) == arrayLength(iter2.ranges) and arrayLength(iter1.maps) == arrayLength(iter2.maps) then
             for i in 1:arrayLength(iter1.ranges) loop
               b := Expression.isEqual(iter1.ranges[i], iter2.ranges[i]);
+              if not b then break; end if;
+            end for;
+            for i in 1:arrayLength(iter1.maps) loop
+              b := Util.optionEqual(iter1.maps[i], iter2.maps[i], isEqual);
               if not b then break; end if;
             end for;
           else
@@ -305,14 +318,13 @@ public
                   ty    = Expression.typeOf(iter1.range),
                   start = Expression.INTEGER(start_max),
                   step  = SOME(Expression.INTEGER(step1)),
-                  stop  = Expression.INTEGER(stop_min)
-                )
-              );
+                  stop  = Expression.INTEGER(stop_min)),
+                map  = iter1.map);
             end if;
 
             // create rest
-            rest1 := intersectRest(iter1.name, start1, step1, stop1, start_max-step1, stop_min+step1);
-            rest2 := intersectRest(iter2.name, start2, step2, stop2, start_max-step2, stop_min+step2);
+            rest1 := intersectRest(iter1.name, start1, step1, stop1, start_max-step1, stop_min+step1, iter1.map);
+            rest2 := intersectRest(iter2.name, start2, step2, stop2, start_max-step2, stop_min+step2, iter2.map);
         then (intersection, rest1, rest2);
 
         // cannot intersect
@@ -327,6 +339,7 @@ public
       input Integer stop;
       input Integer start_max;
       input Integer stop_min;
+      input Option<Iterator> map;
       output tuple<Iterator, Iterator> rest;
     protected
       Iterator rest_left, rest_right;
@@ -339,9 +352,8 @@ public
           range = Expression.makeRange(
             start = Expression.INTEGER(start),
             step  = SOME(Expression.INTEGER(step)),
-            stop  = Expression.INTEGER(start_max)
-          )
-        );
+            stop  = Expression.INTEGER(start_max)),
+          map   = map);
       end if;
 
       if stop_min > stop  then
@@ -352,9 +364,8 @@ public
           range = Expression.makeRange(
             start = Expression.INTEGER(stop_min),
             step  = SOME(Expression.INTEGER(step)),
-            stop  = Expression.INTEGER(stop)
-          )
-        );
+            stop  = Expression.INTEGER(stop)),
+          map   = map);
       end if;
       rest := (rest_left, rest_right);
     end intersectRest;
@@ -413,12 +424,14 @@ public
         case SINGLE() guard(arrayLength(location) == 1) algorithm
           (start, step, _) := Expression.getIntegerRange(iter.range);
           UnorderedMap.add(iter.name, Expression.INTEGER(start + location[1]*step), replacements);
+          createMappedLocationReplacement(iter.map, location[1], replacements);
         then ();
 
         case NESTED() guard(arrayLength(location) == arrayLength(iter.ranges)) algorithm
           for i in 1:arrayLength(location) loop
             (start, step, _) := Expression.getIntegerRange(iter.ranges[i]);
             UnorderedMap.add(iter.names[i], Expression.INTEGER(start + location[i]*step), replacements);
+            createMappedLocationReplacement(iter.maps[i], location[i], replacements);
           end for;
         then ();
 
@@ -428,6 +441,27 @@ public
         then fail();
       end match;
     end createLocationReplacements;
+
+    function createMappedLocationReplacement
+      input Option<Iterator> map;
+      input Integer location;
+      input UnorderedMap<ComponentRef, Expression> replacements   "replacement rules";
+    algorithm
+      _ := match map
+        local
+          ComponentRef name;
+          Expression arr;
+          Integer index;
+
+        // only does something if the option is filled with an array
+        // fail if there is something else?
+        case SOME(SINGLE(name = name, range = arr as Expression.ARRAY())) algorithm
+          index := Expression.getInteger(arr.elements[location]);
+          UnorderedMap.add(name, Expression.INTEGER(index), replacements);
+        then ();
+        else ();
+      end match;
+    end createMappedLocationReplacement;
 
     function createReplacement
       "adds a replacement rule for one iterator to another.
@@ -529,7 +563,7 @@ public
         case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
           for tpl in listReverse(call.iters) loop
             (node, range) := tpl;
-            frames := (ComponentRef.fromNode(node, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR), range) :: frames;
+            frames := (ComponentRef.fromNode(node, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR), range, NONE()) :: frames;
           end for;
           tmp := fromFrames(frames);
           if not isEmpty(iter) then
@@ -604,12 +638,20 @@ public
       function singleStr
         input ComponentRef name;
         input Expression range;
+        input Option<Iterator> map;
         output String str = ComponentRef.toString(name) + " in " + Expression.toString(range);
+      protected
+        list<ComponentRef> names;
+      algorithm
+        if Util.isSome(map) then
+          (names, _) := getFrames(Util.getOption(map));
+          str := str + " (" + ComponentRef.toString(List.first(names)) + ")";
+        end if;
       end singleStr;
     algorithm
       str := match iter
-        case SINGLE() then singleStr(iter.name, iter.range);
-        case NESTED() then "{" + stringDelimitList(list(singleStr(iter.names[i], iter.ranges[i]) for i in 1:arrayLength(iter.names)), ", ") + "}";
+        case SINGLE() then singleStr(iter.name, iter.range, iter.map);
+        case NESTED() then "{" + stringDelimitList(list(singleStr(iter.names[i], iter.ranges[i], iter.maps[i]) for i in 1:arrayLength(iter.names)), ", ") + "}";
         case EMPTY()  then "<EMPTY ITERATOR>";
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for an unknown reason."});
@@ -1229,13 +1271,15 @@ public
       to a list of crefs. needs cref filter function."
       input Equation eq;
       input Slice.filterCref filter;
+      input MapFuncExpWrapper mapFunc = Expression.map;
       output list<ComponentRef> cref_lst;
     protected
       UnorderedSet<ComponentRef> acc = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     algorithm
       // map with the expression and cref filter functions
       _ := map(eq, function Slice.filterExp(filter = filter, acc = acc),
-              SOME(function filter(acc = acc)));
+              SOME(function filter(acc = acc)),
+              mapFunc = mapFunc);
       cref_lst := UnorderedSet.toList(acc);
     end collectCrefs;
 
@@ -1715,10 +1759,11 @@ public
         local
           list<ComponentRef> names;
           list<Expression> ranges;
+          list<Option<Iterator>> maps;
 
         case FOR_EQUATION() algorithm
-          (names, ranges) := Iterator.getFrames(eqn.iter);
-        then List.zip(names, ranges);
+          (names, ranges, maps) := Iterator.getFrames(eqn.iter);
+        then List.zip3(names, ranges, maps);
 
         else {};
       end match;

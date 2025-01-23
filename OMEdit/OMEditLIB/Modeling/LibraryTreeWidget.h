@@ -137,6 +137,8 @@ public:
   void setExpanded(bool expanded) {mExpanded = expanded;}
   bool isExpanded() const {return mExpanded;}
   bool isEncryptedClass() const {return mFileName.endsWith(".moc");}
+  bool isInternal() const {return mInternal;}
+  void setInternal(bool internal) {mInternal = internal;}
   bool isAccessAnnotationsEnabled() const {return mAccessAnnotations;}
   void setAccessAnnotations(bool accessAnnotations) {mAccessAnnotations = accessAnnotations;}
   void setOMSElement(oms_element_t *pOMSComponent) {mpOMSElement = pOMSComponent;}
@@ -220,7 +222,7 @@ private:
   QString mClassText;
   QString mClassTextAfter;
   bool mExpanded = false;
-  bool mNonExisting = false;
+  bool mInternal = false;
   bool mAccessAnnotations = false;
   oms_element_t *mpOMSElement = 0;
   oms_system_enu_t mSystemType = oms_system_none;
@@ -269,9 +271,7 @@ public:
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   LibraryTreeItem* findLibraryTreeItem(const QRegularExpression &regExp, LibraryTreeItem *pLibraryTreeItem = 0) const;
 #endif
-  LibraryTreeItem* findLibraryTreeItemOneLevel(const QString &name, LibraryTreeItem *pLibraryTreeItem = 0,
-                                               Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
-  LibraryTreeItem* findNonExistingLibraryTreeItem(const QString &name, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
+  LibraryTreeItem* findLibraryTreeItemOneLevel(const QString &name, LibraryTreeItem *pLibraryTreeItem = 0, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   QModelIndex libraryTreeItemIndex(const LibraryTreeItem *pLibraryTreeItem) const;
   void addModelicaLibraries(const QVector<QPair<QString, QString> > libraries = QVector<QPair<QString, QString> >());
   LibraryTreeItem* createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
@@ -318,7 +318,6 @@ public:
 private:
   LibraryWidget *mpLibraryWidget;
   LibraryTreeItem *mpRootLibraryTreeItem;
-  QList<LibraryTreeItem*> mNonExistingLibraryTreeItemsList;
   bool mCreatingAutoLoadedLibrary = false;
 
   QModelIndex libraryTreeItemIndexHelper(const LibraryTreeItem *pLibraryTreeItem, const LibraryTreeItem *pParentLibraryTreeItem, const QModelIndex &parentIndex) const;

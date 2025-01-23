@@ -221,15 +221,16 @@ public
     protected
       list<ComponentRef> iter;
       list<Expression> range;
+      list<Option<Iterator>> maps;
       ComponentRef lhs_cref;
       Pointer<Equation> aux_eqn;
     algorithm
       // if it has a statement index, it already has been created as a statement inside an algorithm (0 implies no index)
       if cond.stmt_index == 0 then
-        (iter, range) := Equation.Iterator.getFrames(cond.iter);
+        (iter, range, maps) := Equation.Iterator.getFrames(cond.iter);
         // lower the subscripts (containing iterators)
         lhs_cref := ComponentRef.mapSubscripts(BVariable.getVarName(aux_var), function Subscript.mapExp(func = function BackendDAE.lowerComponentReferenceExp(variables = variables)));
-        aux_eqn := Equation.makeAssignment(Expression.fromCref(lhs_cref), cond.exp, idx, "EVT", Iterator.fromFrames(List.zip(iter, range)), EquationAttributes.default(EquationKind.DISCRETE, false));
+        aux_eqn := Equation.makeAssignment(Expression.fromCref(lhs_cref), cond.exp, idx, "EVT", Iterator.fromFrames(List.zip3(iter, range, maps)), EquationAttributes.default(EquationKind.DISCRETE, false));
         auxiliary_eqns := aux_eqn :: auxiliary_eqns;
       end if;
       // remove all subscripts from the variable name
@@ -636,7 +637,7 @@ public
         case Statement.FOR(range = SOME(range)) algorithm
           new_stmts := {};
           name := ComponentRef.fromNode(stmt.iterator, Type.INTEGER());
-          new_frames := (name, range) :: frames;
+          new_frames := (name, range, NONE()) :: frames;
           for elem in stmt.body loop
             new_stmt := fromStatement(elem, bucket_ptr, eqn, variables, funcTree, new_frames);
             new_stmts := new_stmt :: new_stmts;

@@ -1477,19 +1477,14 @@ algorithm
 end combineConstantNumbers;
 
 protected function getConstantValue
-  input Expression exp "REAL(), INTEGER(), CAST(), UNARY()";
+  input Expression exp;
   output Real value;
 algorithm
-  value := match exp
-    case Expression.REAL()                                                          then exp.value;
-    case Expression.INTEGER()                                                       then intReal(exp.value);
-    case Expression.CAST()                                                          then getConstantValue(exp.exp);
-    // negate r because it has a minus sign
-    case Expression.UNARY(operator = Operator.OPERATOR(op = NFOperator.Op.UMINUS))  then -getConstantValue(exp.exp);
-    else algorithm
-      Error.assertion(false, getInstanceName() + " expression is not known to be a constant number: " + Expression.toString(exp), sourceInfo());
-    then fail();
-  end match;
+  try
+    value := Expression.realValue(Ceval.evalExp(exp));
+  else
+    Error.addInternalError(getInstanceName() + " expression is not known to be a constant number: " + Expression.toString(exp), sourceInfo());
+  end try;
 end getConstantValue;
 
 public function combineBinaries

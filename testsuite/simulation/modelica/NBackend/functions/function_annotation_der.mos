@@ -57,8 +57,8 @@ simulate(function_annotation_der); getErrorString();
 // true
 // ""
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
-// [BEFORE] [SCAL] (1) a = sin(b) ($RES_$AUX_6)
-// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.a = cos(b) * $SEED_ODE_JAC.b ($RES_$AUX_6)
+// [BEFORE] [SCAL] (1) a = sin(b) ($RES_AUX_6)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.a = cos(b) * $SEED_ODE_JAC.b ($RES_AUX_6)
 //
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
 // [BEFORE] [SCAL] (1) $DER.b = f(a, 0, k, k) ($RES_SIM_2)

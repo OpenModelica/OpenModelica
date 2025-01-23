@@ -1013,7 +1013,7 @@ protected
     (zeroes, constants) := List.splitOnTrue(constants, Expression.isZero);
 
     // report non literal nominal values if failtrace is activated
-    if Flags.isSet(Flags.FAILTRACE) then
+    if Flags.isSet(Flags.FAILTRACE) and not listEmpty(rest) then
       str := getInstanceName() + ": There are non literal nominal values in following alias set:\n"
         + AliasSet.toString(set) + "\n\tNominal map after replacements (conflicting array index = "
         + intString(index) + "):\n\t" + UnorderedMap.toString(map, ComponentRef.toString, Expression.toString,"\n\t");
@@ -1038,7 +1038,7 @@ protected
       end if;
     end if;
 
-    // zero valued and non literal nominal values are not allowed
+    // zero valued nominal values are not allowed
     if not listEmpty(zeroes) then
       str := getInstanceName() + " failed because zero values are not allowed.";
       if Flags.isSet(Flags.DUMP_REPL) then

@@ -405,7 +405,7 @@ public
         Expression e;
         Call array_constructor;
         list<Subscript> subscripts;
-        list<tuple<ComponentRef, Expression>> frames;
+        list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
         UnorderedMap<ComponentRef, Expression> replacements;
         InstNode old_iter;
         ComponentRef new_iter;
@@ -415,7 +415,7 @@ public
         (var_ptr, name, _, _, _, frames, iterator) := createIteratedStartCref(var_ptr, name);
         replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
         for tpl in List.zip(array_constructor.iters, frames) loop
-          ((old_iter, _), (new_iter, _)) := tpl;
+          ((old_iter, _), (new_iter, _, _)) := tpl;
           UnorderedMap.add(ComponentRef.fromNode(old_iter, InstNode.getType(old_iter)), Expression.fromCref(new_iter), replacements);
         end for;
       then Expression.map(array_constructor.exp, function Replacements.applySimpleExp(replacements = replacements));
@@ -460,7 +460,7 @@ public
     output Pointer<Variable> start_var;
     output ComponentRef start_cref;
     output list<Subscript> subscripts;
-    output list<tuple<ComponentRef, Expression>> frames;
+    output list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
     output Iterator iterator;
   protected
     list<Dimension> dims;
@@ -474,7 +474,7 @@ public
     iter_crefs  := list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators);
     iter_crefs  := list(BackendDAE.lowerIteratorCref(iter) for iter in iter_crefs);
     subscripts  := list(Subscript.mapExp(sub, BackendDAE.lowerIteratorExp) for sub in subscripts);
-    frames      := List.zip(iter_crefs, ranges);
+    frames      := List.zip3(iter_crefs, ranges, List.fill(NONE(), listLength(iter_crefs)));
     iterator    := Iterator.fromFrames(frames);
 
     // create start variable name with subscripts and create start expression
@@ -515,7 +515,7 @@ public
     list<InstNode> iterators;
     list<Expression> ranges;
     list<Subscript> subscripts;
-    list<tuple<ComponentRef, Expression>> frames;
+    list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
     Pointer<Equation> pre_eq;
     EquationKind kind;
   algorithm
@@ -526,7 +526,7 @@ public
         name    := BVariable.getVarName(var_ptr);
         dims    := Type.arrayDims(ComponentRef.getSubscriptedType(name));
         (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
-        frames  := List.zip(list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators), ranges);
+        frames  := List.zip3(list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators), ranges, List.fill(NONE(), listLength(ranges)));
 
         pre_name := BVariable.getVarName(Util.getOption(pre));
         pre_name := ComponentRef.mergeSubscripts(subscripts, pre_name, true, true);

@@ -804,9 +804,14 @@ public
         // (it is possible that a variable has a zero derivative, but still appears in the interface)
         UnorderedMap<String, Boolean> interface_map = UnorderedMap.new<Boolean>(stringHashDjb2, stringEqual);
 
+      // for reductions only differentiate the argument
+      case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
+        (ret, diffArguments) := differentiateReduction(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)), exp, diffArguments);
+      then (ret, diffArguments);
+
       // builtin functions
       case Expression.CALL(call = call as Call.TYPED_CALL()) guard(Function.isBuiltin(call.fn)) algorithm
-        ret := differentiateBuiltinCall(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)), exp, diffArguments);
+        (ret, diffArguments) := differentiateBuiltinCall(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)), exp, diffArguments);
       then (ret, diffArguments);
 
       // user defined functions
@@ -870,8 +875,33 @@ public
     if debug then
       print("Differentiate-ExpCall-result: " + Expression.toString(exp) + "\n");
     end if;
-
   end differentiateCall;
+
+  function differentiateReduction
+    "This function differentiates reduction expressions with respect to a given variable.
+    Also creates and multiplies inner derivatives."
+    input String name;
+    input output Expression exp;
+    input output DifferentiationArguments diffArguments;
+  algorithm
+    exp := match exp
+      local
+        Call call;
+        Expression arg;
+
+      case Expression.CALL(call = call as Call.TYPED_REDUCTION()) guard(name == "sum") algorithm
+        (arg, diffArguments) := differentiateExpression(call.exp, diffArguments);
+        call.exp := arg;
+        exp.call := call;
+      then exp;
+
+      // ToDo: product, min, max
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of non-call expression: " + Expression.toString(exp)});
+      then fail();
+    end match;
+  end differentiateReduction;
 
   function differentiateBuiltinCall
     "This function differentiates built-in call expressions with respect to a given variable.
@@ -1116,18 +1146,20 @@ public
         Expression ret;
 
       // all these have integer values and therefore zero derivative
-      case ("sign")     then Expression.makeZero(Expression.typeOf(arg));
-      case ("ceil")     then Expression.makeZero(Type.REAL());
-      case ("floor")    then Expression.makeZero(Type.REAL());
-      case ("integer")  then Expression.makeZero(Type.INTEGER());
+      case ("sign")     then Expression.INTEGER(0);
+      case ("ceil")     then Expression.REAL(0.0);
+      case ("floor")    then Expression.REAL(0.0);
+      case ("integer")  then Expression.INTEGER(0);
 
       // abs(arg) -> sign(arg)
-      case ("abs") then Expression.CALL(Call.makeTypedCall(
-          fn          = NFBuiltinFuncs.SIGN_REAL,
+      case ("abs") then Expression.CAST(
+        Expression.typeOf(arg),
+        Expression.CALL(Call.makeTypedCall(
+          fn          = NFBuiltinFuncs.SIGN,
           args        = {arg},
           variability = Expression.variability(arg),
           purity      = NFPrefixes.Purity.PURE
-        ));
+        )));
 
       // sqrt(arg) -> 0.5/arg^(0.5)
       case ("sqrt") algorithm
@@ -1260,7 +1292,7 @@ public
 
       // div(arg1, arg2) truncates the fractional part of arg1/arg2 so it has discrete values
       // therefore it has zero derivative where it's defined
-      case ("div") then (Expression.makeZero(Type.INTEGER()), Expression.makeZero(Type.INTEGER()));
+      case ("div") then (Expression.INTEGER(0), Expression.INTEGER(0));
 
       // d/darg1 mod(arg1, arg2) -> 1
       // d/darg2 mod(arg1, arg2) -> -floor(arg1/arg2)
@@ -1272,7 +1304,7 @@ public
           purity      = NFPrefixes.Purity.PURE
         ));                                                                   // floor(arg1/arg2)
         ret2 := Expression.negate(exp2);                                      // -floor(arg1/arg2)
-      then (Expression.makeOne(Type.REAL()), ret2);
+      then (Expression.REAL(1), ret2);
 
       // d/darg1 rem(arg1, arg2) -> 1
       // d/darg2 rem(arg1, arg2) -> -div(arg1, arg2)
@@ -1284,7 +1316,7 @@ public
           purity      = NFPrefixes.Purity.PURE
         ));                                                                   // div(arg1, arg2)
         ret2 := Expression.negate(exp2);                                      // -div(arg1, arg2)
-      then (Expression.makeOne(Type.REAL()), ret2);
+      then (Expression.REAL(1), ret2);
 
       // d/darg1 atan2(arg1, arg2) -> -arg2/(arg1^2+arg2^2)
       // d/darg2 atan2(arg1, arg2) ->  arg1/(arg1^2+arg2^2)

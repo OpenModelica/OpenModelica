@@ -850,7 +850,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       // data
       QVector<QVariant> variableData;
       // if last item of array
-      if (variables.size() == count && QRegExp("\\[\\d+\\]").exactMatch(variable)) {
+      if (variables.size() == count && QRegularExpression(QRegularExpression::anchoredPattern(Helper::arrayIndexRegularExpression)).match(variable).hasMatch()) {
         variableData << filePath << fileName << fileName + "." + plotVariable << variable;
       }
       // if 2nd last item of derivative array
@@ -931,7 +931,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
         variableData << tr("File: %1/%2\nVariable: %3\nVariability: %4").arg(filePath).arg(fileName).arg(variableToFind).arg(variability);
       }
       /*is main array*/
-      if (variables.size() == count+1 && QRegExp("\\[\\d+\\]").exactMatch(variables.last())) {
+      if (variables.size() == count+1 && QRegularExpression(QRegularExpression::anchoredPattern(Helper::arrayIndexRegularExpression)).match(variables.last()).hasMatch()) {
         variableData << true;
       } else {
         variableData << false;
