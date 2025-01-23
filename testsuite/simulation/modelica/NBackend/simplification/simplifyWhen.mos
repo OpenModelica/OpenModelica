@@ -47,6 +47,6 @@ buildModel(SimplifyWhen); getErrorString();
 //   [----]   n := 1
 //   [----] end when;
 //
-// {"SimplifyWhen","SimplifyWhen_init.xml"}
+// {"SimplifyWhen", "SimplifyWhen_init.xml"}
 // ""
 // endResult

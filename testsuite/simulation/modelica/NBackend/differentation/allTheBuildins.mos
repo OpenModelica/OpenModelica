@@ -2,100 +2,170 @@
 // keywords: NewBackend
 // status: correct
 
-/*
+
 loadString("
 model oneArgBuiltins
-  Real var1, var2, var3, var4, var5;
-  Real var6, var7, var8, var9, var10;
-  Real var11, var12, var13, var14, var15;
-  Real var16, var17;
+  Real var1, var2, var3, var4, var5, var6, var7, var8, var9, var10, var11, var12, var13, var14, var15; // var16;
+  Real var17(start=1, fixed=true);
   Integer ivar1;
 equation
-  var1 = time;
 
   // Test reals
-  abs(var1) = var2;
-  acos(var2) = var3;          // -1 <= var <= 1
-  asin(var2) = var4;          // -1 <= var <= 1
-  atan(var4) = var5;          // -inf <= var <= inf
-  cos(var3) = var6;           // -inf <= var <= inf
-  cosh(var6) = var7;          // -inf <= var <= inf
-  exp(var7) = var8;           // -inf <= var <= inf
-  log(var2+0.1) = var9;       // 0 < var <= inf
-  log10(var2+0.1) = var10;    // 0 < var <= inf
-  sign(var6) = var11;
-  sin(var10) = var12;
-  sinh(var12) = var13;
-  sqrt(var2) = var14;
-  tan(var14) = var15;
-  tanh(var15) = var16;
+  der(var1) = var1;
+  der(var2) = abs(var2);
+  der(var3) = acos(var3);          // -1 <= var <= 1
+  der(var4) = asin(var4);          // -1 <= var <= 1
+  der(var5) = atan(var5);          // -inf <= var <= inf
+  der(var6) = cos(var6);           // -inf <= var <= inf
+  der(var7) = cosh(var7);          // -inf <= var <= inf
+  der(var8) = exp(var8);           // -inf <= var <= inf
+  der(var9) = log(var9+0.1);       // 0 < var <= inf
+  der(var10) = log10(var10+0.1);    // 0 < var <= inf
+  der(var11) = sin(var11);
+  der(var12) = sinh(var12);
+  der(var13) = sqrt(var13);
+  der(var14) = tan(var14);
+  der(var15) = tanh(var15);
+  //der(var16) = sign(var16);
 
   // Test integers
-  ivar1 = integer(100*time);
-  var17 = cos(ivar1);
-end oneArgBuiltins;
-"); getErrorString();
-*/
-loadString("
-model oneArgBuiltins
-  Real var1(start=0), var2(start=1), var3(start=0);
-equation
-  time = sin(var1);
-  time = cos(var2);
-  time = acos(var3);
+  ivar1 = integer(100*var17);
+  der(var17) = cos(ivar1);
 end oneArgBuiltins;
 "); getErrorString();
 
-/*
-loadString("
-model twoArgBuiltins
-  Real var1, var2;
-equation
-  // Builtin functions with two arguments
-  atan2(var1, var2) = var3;       // tan(y) = u1/u2, y != pi (0.5 + k), k integer
-  cross()
-  der(x) = 2;
-  y = delay(x, 1);
-end twoArguiltins;
-"); getErrorString();
-*/
+setCommandLineOptions("--newBackend --generateDynamicJacobian=symbolic -d=debugDifferentiation"); getErrorString();
 
-setCommandLineOptions("--newBackend"); getErrorString();
-
-simulate(oneArgBuiltins); getErrorString();
-
-val(var1,{0,1});
-val(var2,{0,1});
-val(var3,{0,1});
-/*
-val(var4,{0,1});
-val(var5,{0,1});
-val(var6,{0,1});
-val(var7,{0,1});
-val(var8,{0,1});
-val(var9,{0,1});
-val(var10,{0,1});
-val(var11,{0,1});
-val(var12,{0,1});
-val(var13,{0,1});
-val(var14,{0,1});
-val(var15,{0,1});
-val(var16,{0,1});
-val(var17,{0,1});
-*/
-
+buildModel(oneArgBuiltins); getErrorString();
 // Result:
 // true
 // ""
 // true
 // ""
-// record SimulationResult
-//     resultFile = "oneArgBuiltins_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'oneArgBuiltins', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $FUN_14 = tanh(var15) ($RES_AUX_18)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_14 = (1.0 - tanh(var15) ^ 2.0) * $SEED_ODE_JAC.var15 ($RES_AUX_18)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.var15 = $FUN_14 ($RES_SIM_2)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.var15 = $pDER_ODE_JAC.$FUN_14 ($RES_SIM_2)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $FUN_13 = tan(var14) ($RES_AUX_19)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_13 = (1/cos(var14) ^ 2.0) * $SEED_ODE_JAC.var14 ($RES_AUX_19)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.var14 = $FUN_13 ($RES_SIM_3)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.var14 = $pDER_ODE_JAC.$FUN_13 ($RES_SIM_3)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $FUN_12 = sqrt(var13) ($RES_AUX_20)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_12 = (0.5 / var13 ^ 0.5) * $SEED_ODE_JAC.var13 ($RES_AUX_20)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.var13 = $FUN_12 ($RES_SIM_4)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.var13 = $pDER_ODE_JAC.$FUN_12 ($RES_SIM_4)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $FUN_11 = sinh(var12) ($RES_AUX_21)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_11 = cosh(var12) * $SEED_ODE_JAC.var12 ($RES_AUX_21)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.var12 = $FUN_11 ($RES_SIM_5)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.var12 = $pDER_ODE_JAC.$FUN_11 ($RES_SIM_5)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $FUN_10 = sin(var11) ($RES_AUX_22)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_10 = cos(var11) * $SEED_ODE_JAC.var11 ($RES_AUX_22)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.var11 = $FUN_10 ($RES_SIM_6)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.var11 = $pDER_ODE_JAC.$FUN_10 ($RES_SIM_6)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $FUN_9 = log10(0.1 + var10) ($RES_AUX_23)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_9 = (0.43429448190325176 / (0.1 + var10)) * $SEED_ODE_JAC.var10 ($RES_AUX_23)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.var10 = $FUN_9 ($RES_SIM_7)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.var10 = $pDER_ODE_JAC.$FUN_9 ($RES_SIM_7)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $FUN_8 = log(0.1 + var9) ($RES_AUX_24)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_8 = (1/(0.1 + var9)) * $SEED_ODE_JAC.var9 ($RES_AUX_24)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.var9 = $FUN_8 ($RES_SIM_8)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.var9 = $pDER_ODE_JAC.$FUN_8 ($RES_SIM_8)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $FUN_7 = exp(var8) ($RES_AUX_25)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_7 = exp(var8) * $SEED_ODE_JAC.var8 ($RES_AUX_25)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.var8 = $FUN_7 ($RES_SIM_9)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.var8 = $pDER_ODE_JAC.$FUN_7 ($RES_SIM_9)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $FUN_6 = cosh(var7) ($RES_AUX_26)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_6 = sinh(var7) * $SEED_ODE_JAC.var7 ($RES_AUX_26)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.var7 = $FUN_6 ($RES_SIM_10)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.var7 = $pDER_ODE_JAC.$FUN_6 ($RES_SIM_10)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $FUN_5 = cos(var6) ($RES_AUX_27)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_5 = -sin(var6) * $SEED_ODE_JAC.var6 ($RES_AUX_27)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.var6 = $FUN_5 ($RES_SIM_11)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.var6 = $pDER_ODE_JAC.$FUN_5 ($RES_SIM_11)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $FUN_4 = atan(var5) ($RES_AUX_28)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_4 = (1/(1.0 + var5 ^ 2.0)) * $SEED_ODE_JAC.var5 ($RES_AUX_28)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.var5 = $FUN_4 ($RES_SIM_12)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.var5 = $pDER_ODE_JAC.$FUN_4 ($RES_SIM_12)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $FUN_3 = asin(var4) ($RES_AUX_29)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_3 = (1/(1.0 - var4 ^ 2.0) ^ 0.5) * $SEED_ODE_JAC.var4 ($RES_AUX_29)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.var4 = $FUN_3 ($RES_SIM_13)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.var4 = $pDER_ODE_JAC.$FUN_3 ($RES_SIM_13)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $FUN_2 = acos(var3) ($RES_AUX_30)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_2 = -(1/(1.0 - var3 ^ 2.0) ^ 0.5) * $SEED_ODE_JAC.var3 ($RES_AUX_30)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.var3 = $FUN_2 ($RES_SIM_14)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.var3 = $pDER_ODE_JAC.$FUN_2 ($RES_SIM_14)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $FUN_1 = abs(var2) ($RES_AUX_31)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_1 = sign(var2) * $SEED_ODE_JAC.var2 ($RES_AUX_31)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.var2 = $FUN_1 ($RES_SIM_15)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.var2 = $pDER_ODE_JAC.$FUN_1 ($RES_SIM_15)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.var1 = var1 ($RES_SIM_16)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.var1 = $SEED_ODE_JAC.var1 ($RES_SIM_16)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $FUN_15 = cos(ivar1) ($RES_AUX_17)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_15 = -0.0 ($RES_AUX_17)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.var17 = $FUN_15 ($RES_SIM_0)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.var17 = $pDER_ODE_JAC.$FUN_15 ($RES_SIM_0)
+//
+// {"oneArgBuiltins", "oneArgBuiltins_init.xml"}
 // ""
-// {0.0,1.570796337005974}
 // endResult
