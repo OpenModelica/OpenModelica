@@ -132,13 +132,14 @@ Optionally, You can also install `gfortran` if you plan to use OpenModelica for 
 > If you install and use `gfortran`, it is recommended that you also use `gcc` and `g++`
 > (instead of `clang` and `clang++`).
 
-If you cannot or do not want to use `gfortran`, then you should disable Fortran support by adding ```-DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF``` to the CMake configuration command.
+If you cannot (M1 Mac does not have libquadmath) or do not want to use `gfortran`, then you should disable Fortran support by adding ```-DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF``` to the CMake configuration command.
 
 You can now configure and compile OpenModelica as:
 
   ```sh
   # With MacPorts and Fortran available. This assumes MacPorts is installing packages to its default location /opt/local
   cmake -S . -B build_cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_Fortran_COMPILER=gfortran -DCMAKE_PREFIX_PATH=/opt/local
+  # (M1 Mac does not have libquadmath)
   # With MacPorts and Fortran NOT available. This assumes MacPorts is installing packages to its default location /opt/local
   cmake -S . -B build_cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF -DCMAKE_PREFIX_PATH=/opt/local
   # With homebrew, you also need to disable the graphical clients. This assumes homebrew is installing packages to its default location /usr/local/opt/
