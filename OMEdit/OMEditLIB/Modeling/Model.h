@@ -463,9 +463,9 @@ private:
     void deserialize(const QJsonObject &jsonObject);
 
     const QStringList &getAbsynDimensions() const {return mAbsynDims;}
-    QString getAbsynDimensionsString() const {return mAbsynDims.join(", ");}
+    QString getAbsynDimensionsString(const QString &separator = ", ") const {return mAbsynDims.join(separator);}
     const QStringList &getTypedDimensions() const {return mTypedDims;}
-    QString getTypedDimensionsString() const {return mTypedDims.join(", ");}
+    QString getTypedDimensionsString(const QString &separator = ", ") const {return mTypedDims.join(separator);}
     bool isArray() const {return !mTypedDims.isEmpty();}
   private:
     QStringList mAbsynDims;
