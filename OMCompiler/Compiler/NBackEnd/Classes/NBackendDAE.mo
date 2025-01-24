@@ -612,7 +612,10 @@ protected
     variables       := VariablePointers.addList(binding_iter_lst, variables);
     knowns          := VariablePointers.addList(binding_iter_lst, knowns);
     artificials     := VariablePointers.addList(binding_iter_lst, artificials);
+
+    // lower the component references properly
     variables       := VariablePointers.map(variables, function Variable.mapExp(fn = function lowerComponentReferenceExp(variables = variables)));
+    variables       := VariablePointers.map(variables, function Variable.applyToType(func = function Type.applyToDims(func = function lowerDimension(variables = variables))));
 
     /* lower the records to add children */
     records         := VariablePointers.mapPtr(records, function lowerRecordChildren(variables = variables));
@@ -1278,11 +1281,28 @@ protected
         call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables)) for tpl in call.iters);
         exp.call := call;
       then exp;
+
       else exp;
     end match;
+
+    // also lower dimensions in the case of resizable variables
+    exp := Expression.applyToType(exp, function Type.applyToDims(func = function lowerDimension(variables = variables)));
   end lowerComponentReferenceExp;
 
-  protected function lowerComponentReference
+  protected function lowerDimension
+    input output Dimension dim;
+    input VariablePointers variables;
+  algorithm
+    dim := match dim
+      case Dimension.RESIZABLE() algorithm
+        dim.exp := Expression.map(dim.exp, function lowerComponentReferenceExp(variables = variables));
+      then dim;
+
+      else dim;
+    end match;
+  end lowerDimension;
+
+  function lowerComponentReference
     input output ComponentRef cref;
     input VariablePointers variables;
   protected
