@@ -6148,6 +6148,11 @@ void ModelWidget::reDrawModelWidget()
     if (pModelWidget && pModelWidget == this && MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
       MainWindow::instance()->getDocumentationWidget()->showDocumentation(getLibraryTreeItem());
     }
+    // Update Element Browser
+    if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+      MainWindow::instance()->getElementWidget()->getElementTreeModel()->addElements(pModelWidget->getModelInstance());
+      MainWindow::instance()->getElementWidget()->selectDeselectElementItem("", false);
+    }
     // clear the undo stack
     mpUndoStack->clear();
 //    if (mpEditor) {
