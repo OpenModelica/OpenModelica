@@ -1319,7 +1319,7 @@ public
     Integer index;
     array<Expression> expl;
   algorithm
-    sub := Subscript.expandSlice(subscript);
+    sub := Subscript.expandSlice(subscript, false);
 
     outExp := match sub
       case Subscript.INDEX() then applyIndexSubscriptTypename(ty, sub);
@@ -1383,7 +1383,7 @@ public
       return;
     end if;
 
-    sub := Subscript.expandSlice(subscript);
+    sub := Subscript.expandSlice(subscript, false);
 
     outExp := match sub
       case Subscript.INDEX() then applyIndexSubscriptArray(exp, sub, restSubscripts);
@@ -1487,7 +1487,7 @@ public
     Type ty;
     array<Expression> expl;
   algorithm
-    sub := Subscript.expandSlice(subscript);
+    sub := Subscript.expandSlice(subscript, false);
 
     outExp := match sub
       case Subscript.INDEX() then applyIndexSubscriptRange(exp, sub);

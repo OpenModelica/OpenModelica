@@ -1105,7 +1105,7 @@ algorithm
   else
     dim :: rest_dims := dimensions;
     dim := flattenDimension(dim, prefix, info);
-    range_iter := RangeIterator.fromDim(dim);
+    range_iter := RangeIterator.fromDim(dim, false);
 
     while RangeIterator.hasNext(range_iter) loop
       (range_iter, sub_exp) := RangeIterator.next(range_iter);

@@ -556,7 +556,7 @@ public
 
       case SINGLE_COMPONENT() algorithm
         dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function Slice.getDependentCrefCausalized(set = set), Expression.fakeMap);
-        dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
+        dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep, true) for dep in dependencies));
         deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
         updateDependencyMap(BVariable.getVarName(comp.var), deps_set, map);
       then ();
@@ -564,10 +564,10 @@ public
       case MULTI_COMPONENT() algorithm
         dependencies := Equation.collectCrefs(Pointer.access(Slice.getT(comp.eqn)), function Slice.getDependentCrefCausalized(set = set), Expression.fakeMap);
         dependencies := list(ComponentRef.stripIteratorSubscripts(dep) for dep in dependencies);
-        dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
+        dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep, true) for dep in dependencies));
         deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
         for var in comp.vars loop
-          for cref in ComponentRef.scalarizeAll(BVariable.getVarName(Slice.getT(var))) loop
+          for cref in ComponentRef.scalarizeAll(BVariable.getVarName(Slice.getT(var)), true) loop
             updateDependencyMap(cref, deps_set, map);
           end for;
         end for;
@@ -595,7 +595,7 @@ public
       case SLICED_COMPONENT() algorithm
         eqn := Pointer.access(Slice.getT(comp.eqn));
         dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set), Expression.fakeMap);
-        dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
+        dependencies := List.flatten(list(ComponentRef.scalarizeAll(dep, true) for dep in dependencies));
         deps_set := prepareDependencies(UnorderedSet.fromList(dependencies, ComponentRef.hash, ComponentRef.isEqual), map, jacType);
         updateDependencyMap(comp.var_cref, deps_set, map);
       then ();
@@ -623,7 +623,7 @@ public
             tmp := List.flatten(list(Util.tuple22(tpl) for tpl in scalarized_dependencies));
           end if;
           for dep in tmp loop
-            for scal in ComponentRef.scalarizeAll(dep) loop
+            for scal in ComponentRef.scalarizeAll(dep, true) loop
               UnorderedSet.add(scal, deps_set);
             end for;
           end for;

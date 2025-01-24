@@ -108,9 +108,12 @@ public
 
         // traverse the model and update all values depending on these resizable parameters
         func := function Type.applyToDims(func = function updateDimension(optimal_values = optimal_values));
+        // update variables
         varData.variables := VariablePointers.map(varData.variables, function Variable.applyToType(func = func));
         varData.variables := VariablePointers.mapPtr(varData.variables, function BVariable.updateResizableParameter(optimal_values = optimal_values));
         varData.variables := VariablePointers.mapPtr(varData.variables, function BVariable.mapExp(funcExp = function Expression.applyToType(func = func), mapFunc = Expression.map));
+        // update equations
+        EquationPointers.mapPtr(equations, function Equation.applyToType(func = func));
         equations := EquationPointers.mapExp(equations, function Expression.applyToType(func = func));
         EquationPointers.mapRes(equations, function BVariable.applyToType(func = func));
 

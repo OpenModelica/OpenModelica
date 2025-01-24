@@ -115,7 +115,7 @@ algorithm
   if Type.isArray(var.ty) and Type.hasKnownSize(var.ty) then
     try
       Variable.VARIABLE(name, ty, binding, vis, attr, ty_attr, _, cmt, info, binfo) := var;
-      crefs := ComponentRef.scalarize(name);
+      crefs := ComponentRef.scalarize(name, false);
 
       if listEmpty(crefs) then
         return;
@@ -182,7 +182,7 @@ protected
 algorithm
   try
     vars := listReverse(vars);
-    crefs               := ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name));
+    crefs               := ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name), false);
     elem_ty             := Type.arrayElementType(var.ty);
     backend_attributes  := BackendInfo.scalarize(var.backendinfo, listLength(crefs));
     if Binding.isBound(var.binding) then

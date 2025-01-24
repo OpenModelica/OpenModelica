@@ -162,6 +162,7 @@ public
 
   function fromDim
     input Dimension dim;
+    input Boolean resizable;
     output RangeIterator iterator;
   algorithm
     iterator := match dim
@@ -179,7 +180,7 @@ public
 
       case Dimension.EXP() then fromExp(dim.exp);
 
-      case Dimension.RESIZABLE() then INT_RANGE(1, dim.size);
+      case Dimension.RESIZABLE() then INT_RANGE(1, if resizable then Util.getOptionOrDefault(dim.opt_size, dim.size) else dim.size);
 
       else
         algorithm

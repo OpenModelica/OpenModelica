@@ -342,7 +342,7 @@ public
     input Mapping mapping                         "array <-> scalar index mapping";
     output list<Integer> indices = {};
   protected
-    list<ComponentRef> scalarized_dependencies = List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
+    list<ComponentRef> scalarized_dependencies = List.flatten(list(ComponentRef.scalarizeAll(dep, true) for dep in dependencies));
     ComponentRef stripped;
     Integer var_arr_idx, var_start, var_scal_idx;
     list<Integer> sizes, int_subs;
@@ -367,7 +367,7 @@ public
     Turns cref dependencies into index lists, used for adjacency."
     extends getDependentCrefIndices;
   protected
-    list<ComponentRef> scalarized_dependencies = List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
+    list<ComponentRef> scalarized_dependencies = List.flatten(list(ComponentRef.scalarizeAll(dep, true) for dep in dependencies));
     ComponentRef stripped;
     Integer eqn_start, eqn_size, var_arr_idx, var_scal_idx, mode = 1;
     list<Integer> scal_lst;
@@ -517,9 +517,9 @@ public
 
     // get row cref lst
     if implicit then
-      row_crefs := ComponentRef.scalarizeSlice(row_cref, slice);
+      row_crefs := ComponentRef.scalarizeSlice(row_cref, slice, true);
     else
-      for cref in ComponentRef.scalarizeAll(row_cref) loop
+      for cref in ComponentRef.scalarizeAll(row_cref, true) loop
         row_scal_lst  := getCrefInFrameIndices(cref, frames, eqn_rep_mapping, eqn_rep.map);
         accum_row_lst := row_scal_lst :: accum_row_lst;
       end for;
@@ -564,7 +564,7 @@ public
     // get all dependencies for each scalarized cref
     // Note: scalarization does not remove the iterators, therefore it can still yield
     //   multiple scalar indices when evaluated along the iterator frames
-    for scal_cref in ComponentRef.scalarizeAll(dep) loop
+    for scal_cref in ComponentRef.scalarizeAll(dep, true) loop
       scal_lst := getCrefInFrameIndices(scal_cref, frames, mapping, map);
       scal_tpl_lst := (scal_cref, scal_lst) :: scal_tpl_lst;
     end for;
@@ -652,8 +652,8 @@ public
     list<ComponentRef> row_cref_scal;
     list<list<ComponentRef>> dependencies_scal;
   algorithm
-    row_cref_scal := ComponentRef.scalarizeSlice(row_cref, slice);
-    dependencies_scal := list(ComponentRef.scalarizeSlice(dep, slice) for dep in dependencies);
+    row_cref_scal := ComponentRef.scalarizeSlice(row_cref, slice, true);
+    dependencies_scal := list(ComponentRef.scalarizeSlice(dep, slice, true) for dep in dependencies);
     if not listEmpty(dependencies_scal) then
       dependencies_scal := List.transposeList(dependencies_scal);
       tpl_lst := List.zip(row_cref_scal, dependencies_scal);
@@ -1030,7 +1030,7 @@ public
     input Mapping mapping                         "array <-> scalar index mapping";
     output list<Integer> indices = {};
   protected
-    list<ComponentRef> scalarized_dependencies = List.flatten(list(ComponentRef.scalarizeAll(dep) for dep in dependencies));
+    list<ComponentRef> scalarized_dependencies = List.flatten(list(ComponentRef.scalarizeAll(dep, true) for dep in dependencies));
     ComponentRef stripped;
     Integer var_arr_idx, var_start, var_scal_idx;
     list<Integer> sizes, int_subs;
@@ -1271,7 +1271,7 @@ protected
         if List.all(regulars, Util.id) then
           // II.1 all regular - single dependency per row.
           mode := Mode.create(eqn_name, {cref}, false);
-          scalarized  := listReverse(ComponentRef.scalarizeAll(cref));
+          scalarized  := listReverse(ComponentRef.scalarizeAll(cref, true));
           map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
           for scal in scalarized loop
             UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map), map3);
@@ -1330,7 +1330,7 @@ protected
         else
           // II.3 all reduced - full dependency per row. scalarize and add to all rows of the equation
           repeated    := UnorderedSet.contains(cref, rep);
-          scalarized  := listReverse(ComponentRef.scalarizeAll(cref));
+          scalarized  := listReverse(ComponentRef.scalarizeAll(cref, true));
           map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
           for scal in scalarized loop
             UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map), map3);
@@ -1448,7 +1448,7 @@ protected
 
       case {} algorithm
         cref := ComponentRef.mergeSubscripts(listReverse(acc), stripped);
-        val := ComponentRef.scalarizeAll(cref);
+        val := ComponentRef.scalarizeAll(cref, true);
         UnorderedMap.add(arrayList(key), val, map);
       then ();
 
@@ -1458,7 +1458,7 @@ protected
 
       case (sub, dim, true)::rest algorithm
         sub_idx := 1;
-        for s in Subscript.scalarize(sub, dim) loop
+        for s in Subscript.scalarize(sub, dim, true) loop
           arrayUpdate(key, index, sub_idx);
           resolveReductions(rest, map, key, stripped, s::acc, index+1);
           sub_idx := sub_idx + 1;

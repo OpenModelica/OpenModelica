@@ -867,6 +867,25 @@ public
       end match;
     end sizes;
 
+    function applyToType
+      input output Pointer<Equation> eqn_ptr;
+      input typeFunc func;
+      partial function typeFunc
+        input output Type ty;
+      end typeFunc;
+    protected
+      Equation new, eqn = Pointer.access(eqn_ptr);
+    algorithm
+      new := match eqn
+        case new as ARRAY_EQUATION()  algorithm new.ty := func(new.ty); then new;
+        case new as RECORD_EQUATION() algorithm new.ty := func(new.ty); then new;
+        else eqn;
+      end match;
+      if not referenceEq(eqn, new) then
+        Pointer.update(eqn_ptr, new);
+      end if;
+    end applyToType;
+
     function hash
       "only hashes the name"
       input Pointer<Equation> eqn;

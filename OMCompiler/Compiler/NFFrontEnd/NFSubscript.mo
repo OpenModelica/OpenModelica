@@ -978,14 +978,15 @@ public
   function scalarize
     input Subscript subscript;
     input Dimension dimension;
+    input Boolean resize;
     output list<Subscript> subscripts;
   algorithm
     subscripts := match subscript
       case INDEX() then {subscript};
       case SLICE()
-        then list(INDEX(e) for e in Expression.arrayElements(ExpandExp.expand(subscript.slice)));
+        then list(INDEX(e) for e in Expression.arrayElements(ExpandExp.expand(subscript.slice, resize)));
       case WHOLE()
-        then RangeIterator.map(RangeIterator.fromDim(dimension), makeIndex);
+        then RangeIterator.map(RangeIterator.fromDim(dimension, resize), makeIndex);
       else {subscript};
     end match;
   end scalarize;
@@ -993,6 +994,7 @@ public
   function scalarizeList
     input list<Subscript> subscripts;
     input list<Dimension> dimensions;
+    input Boolean resize;
     output list<list<Subscript>> outSubscripts = {};
   protected
     Dimension dim;
@@ -1001,7 +1003,7 @@ public
   algorithm
     for s in subscripts loop
       dim :: rest_dims := rest_dims;
-      subs := scalarize(s, dim);
+      subs := scalarize(s, dim, resize);
 
       if listEmpty(subs) then
         outSubscripts := {};
@@ -1012,7 +1014,7 @@ public
     end for;
 
     for d in rest_dims loop
-      subs := RangeIterator.map(RangeIterator.fromDim(d), makeIndex);
+      subs := RangeIterator.map(RangeIterator.fromDim(d, resize), makeIndex);
 
       if listEmpty(subs) then
         outSubscripts := {};
@@ -1028,6 +1030,7 @@ public
   function expand
     input Subscript subscript;
     input Dimension dimension;
+    input Boolean resize;
     output Subscript outSubscript;
     output Boolean expanded;
   algorithm
@@ -1036,11 +1039,11 @@ public
         Expression exp;
         RangeIterator iter;
 
-      case SLICE() then expandSlice(subscript);
+      case SLICE() then expandSlice(subscript, resize);
 
       case WHOLE()
         algorithm
-          iter := RangeIterator.fromDim(dimension);
+          iter := RangeIterator.fromDim(dimension, resize);
 
           if RangeIterator.isValid(iter) then
             outSubscript := EXPANDED_SLICE(RangeIterator.map(iter, makeIndex));
@@ -1058,6 +1061,7 @@ public
 
   function expandSlice
     input Subscript subscript;
+    input Boolean resize;
     output Subscript outSubscript;
     output Boolean expanded;
   algorithm
@@ -1067,7 +1071,7 @@ public
 
       case SLICE()
         algorithm
-          exp := ExpandExp.expand(subscript.slice);
+          exp := ExpandExp.expand(subscript.slice, resize);
 
           if Expression.isArray(exp) then
             outSubscript := EXPANDED_SLICE(list(INDEX(e) for e in Expression.arrayElements(exp)));
@@ -1086,6 +1090,7 @@ public
   function expandList
     input list<Subscript> subscripts;
     input list<Dimension> dimensions;
+    input Boolean resize;
     output list<Subscript> outSubscripts = {};
   protected
     Dimension dim;
@@ -1094,12 +1099,12 @@ public
   algorithm
     for s in subscripts loop
       dim :: rest_dims := rest_dims;
-      sub := expand(s, dim);
+      sub := expand(s, dim, resize);
       outSubscripts := sub :: outSubscripts;
     end for;
 
     for d in rest_dims loop
-      sub := EXPANDED_SLICE(RangeIterator.map(RangeIterator.fromDim(d), makeIndex));
+      sub := EXPANDED_SLICE(RangeIterator.map(RangeIterator.fromDim(d, resize), makeIndex));
       outSubscripts := sub :: outSubscripts;
     end for;
 
