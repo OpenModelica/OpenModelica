@@ -3007,6 +3007,18 @@ external "builtin";
 annotation(preferredView="text");
 end copyClass;
 
+function renameClass
+  input TypeName oldName "The path of the class to rename.";
+  input TypeName newName "The new non-qualified name of the class.";
+  output TypeName[:] result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Renames a class and updates references to it in the loaded classes. Returns a list of classes that were changed.
+</html>"),
+  preferredView="text");
+end renameClass;
+
 function deleteClass
   input TypeName className;
   output Boolean success;
@@ -3506,6 +3518,32 @@ annotation(
 </html>"),
   preferredView="text");
 end deleteComponent;
+
+function renameComponent
+  input TypeName classPath;
+  input VariableName oldName;
+  input VariableName newName;
+  output TypeName[:] result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Renames a component and updates references to it in the loaded classes. Returns a list of classes that were changed.
+</html>"),
+  preferredView="text");
+end renameComponent;
+
+function renameComponentInClass
+  input TypeName classPath;
+  input VariableName oldName;
+  input VariableName newName;
+  output TypeName[:] result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Renames a component only in the given class. Returns the name of the class if successful.
+</html>"),
+  preferredView="text");
+end renameComponentInClass;
 
 function getParameterNames
   input TypeName class_;

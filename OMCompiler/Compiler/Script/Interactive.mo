@@ -70,7 +70,6 @@ import Config;
 import DAE.Connect;
 import DAEDump;
 import DAEUtil;
-import Debug;
 import Dump;
 import Error;
 import ErrorExt;
@@ -901,34 +900,6 @@ algorithm
   args := getApiFunctionArgs(inStatement);
 
   outResult := match(fn_name)
-    case "renameClass"
-      algorithm
-        {Absyn.CREF(componentRef = old_cname), Absyn.CREF(componentRef = new_cname)} := args;
-        // For now, renaming a class clears all caches...
-        // Substantial analysis required to find out what to keep in cache and what must be thrown out
-        (outResult, p) := renameClass(p, old_cname, new_cname);
-        SymbolTable.setAbsyn(p);
-      then
-        outResult;
-
-    case "renameComponent"
-      algorithm
-        {Absyn.CREF(componentRef = cr),
-         Absyn.CREF(componentRef = old_cname),
-         Absyn.CREF(componentRef = new_cname)} := args;
-        (outResult, p) := renameComponent(p, cr, old_cname, new_cname);
-        SymbolTable.setAbsyn(p);
-      then outResult;
-
-    case "renameComponentInClass"
-      algorithm
-        {Absyn.CREF(componentRef = cr),
-         Absyn.CREF(componentRef = old_cname),
-         Absyn.CREF(componentRef = new_cname)} := args;
-        (outResult, p) := renameComponentOnlyInClass(p, cr, old_cname, new_cname);
-        SymbolTable.setAbsyn(p);
-      then outResult;
-
     case "getCrefInfo"
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
@@ -1051,36 +1022,27 @@ protected function extractAllComponentreplacements
   This is done by extracting all the components and then
   extracting the rules"
   input Absyn.Program p;
-  input Absyn.ComponentRef class_;
-  input Absyn.ComponentRef cref1;
-  input Absyn.ComponentRef cref2;
+  input Absyn.Path classPath;
+  input Absyn.ComponentRef oldName;
+  input Absyn.ComponentRef newName;
   output GlobalScript.ComponentReplacementRules comp_reps;
+protected
+  GlobalScript.Components comps;
+  GlobalScript.ComponentReplacementRules comp_repsrules;
 algorithm
-  comp_reps := matchcontinue(p,class_,cref1,cref2)
-    local
-      GlobalScript.Components comps;
-      Absyn.Path class_path;
-      GlobalScript.ComponentReplacementRules comp_repsrules;
-
-    case(_,_,_,_)
-      equation
-        ErrorExt.setCheckpoint("Interactive.extractAllComponentreplacements");
-        comps = extractAllComponents(p, AbsynUtil.crefToPath(class_)) "class in package" ;
-        // rollback errors if we succeed
-        ErrorExt.rollBack("Interactive.extractAllComponentreplacements");
-        false = isClassReadOnly(InteractiveUtil.getPathedClassInProgram(AbsynUtil.crefToPath(class_),p));
-        class_path = AbsynUtil.crefToPath(class_);
-        comp_repsrules = GlobalScript.COMPONENTREPLACEMENTRULES({GlobalScript.COMPONENTREPLACEMENT(class_path,cref1,cref2)},1);
-        comp_reps = getComponentreplacementsrules(comps, comp_repsrules, 0);
-      then comp_reps;
-
-    else
-      equation
-        // keep errors if we fail!
-        ErrorExt.delCheckpoint("Interactive.extractAllComponentreplacements");
-      then
-        fail();
-  end matchcontinue;
+  try
+    ErrorExt.setCheckpoint("Interactive.extractAllComponentreplacements");
+    comps := extractAllComponents(p, classPath) "class in package" ;
+    // rollback errors if we succeed
+    ErrorExt.rollBack("Interactive.extractAllComponentreplacements");
+    false := isClassReadOnly(InteractiveUtil.getPathedClassInProgram(classPath,p));
+    comp_repsrules := GlobalScript.COMPONENTREPLACEMENTRULES({GlobalScript.COMPONENTREPLACEMENT(classPath,oldName,newName)},1);
+    comp_reps := getComponentreplacementsrules(comps, comp_repsrules, 0);
+  else
+    // keep errors if we fail!
+    ErrorExt.delCheckpoint("Interactive.extractAllComponentreplacements");
+    fail();
+  end try;
 end extractAllComponentreplacements;
 
 protected function isClassReadOnly
@@ -1093,180 +1055,75 @@ algorithm
   end match;
 end isClassReadOnly;
 
-protected function renameComponent
-"author: x02lucpo
-  This function renames a component in a class
-  inputs:  (Absyn.Program,
-              Absyn.ComponentRef, /* old class as qualified name */
-              Absyn.ComponentRef) /* new class, as identifier */
-  outputs:  Absyn.Program"
-  input Absyn.Program inProgram1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  input Absyn.ComponentRef inComponentRef4;
-  output String outString;
-  output Absyn.Program outProgram;
+public function renameComponent
+  "This function renames a component in a class."
+  input Absyn.Path classPath;
+  input Absyn.ComponentRef oldName;
+  input Absyn.ComponentRef newName;
+  input output Absyn.Program program;
+        output Values.Value result;
+protected
+  GlobalScript.ComponentReplacementRules comp_reps;
+  list<Absyn.Path> paths;
 algorithm
-  (outString,outProgram) := matchcontinue (inProgram1,inComponentRef2,inComponentRef3,inComponentRef4)
-    local
-      Absyn.Path class_path;
-      GlobalScript.ComponentReplacementRules comp_reps;
-      Absyn.Program p_1,p;
-      list<String> paths;
-      String paths_1,paths_2;
-      Absyn.ComponentRef class_,old_comp,new_comp;
-      Absyn.Path model_path;
-      String str;
+  try
+    if isClassReadOnly(InteractiveUtil.getPathedClassInProgram(classPath, program)) then
+      result := ValuesUtil.makeCodeTypeName(Absyn.IDENT("Error: class: " + AbsynUtil.pathString(classPath) + " is in a read only file!"));
+      return;
+    end if;
 
-    case (p,class_,_,_)
-      equation
-        model_path = AbsynUtil.crefToPath(class_);
-        true = isClassReadOnly(InteractiveUtil.getPathedClassInProgram(model_path,p));
-        str = AbsynUtil.pathString(model_path);
-        str = "Error: class: " + str + " is in a read only file!";
-      then
-        (str, p);
-
-    case (p,class_,old_comp,new_comp)
-      equation
-        comp_reps = extractAllComponentreplacements(p, class_, old_comp, new_comp);
-        p_1 = renameComponentFromComponentreplacements(p, comp_reps);
-        paths = extractRenamedClassesAsStringList(comp_reps);
-        paths_1 = stringDelimitList(paths, ",");
-        paths_2 = stringAppendList({"{",paths_1,"}"});
-      then
-        (paths_2,p_1);
-
-    else
-      equation
-        if Flags.isSet(Flags.FAILTRACE) then
-          Debug.trace("rename_component failed\n");
-        end if;
-      then
-        ("Error",inProgram1);
-  end matchcontinue;
+    comp_reps := extractAllComponentreplacements(program, classPath, oldName, newName);
+    program := renameComponentFromComponentreplacements(program, comp_reps);
+    paths := extractRenamedClassesAsStringList(comp_reps);
+    result := ValuesUtil.makeCodeTypeNameArray(paths);
+  else
+    result := ValuesUtil.makeBoolean(false);
+  end try;
 end renameComponent;
 
-protected function renameComponentOnlyInClass
-"@author: adrpo
-  This function renames a component ONLY in the given class"
-  input Absyn.Program inProgram1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  input Absyn.ComponentRef inComponentRef4;
-  output String outString;
-  output Absyn.Program outProgram;
+public function renameComponentOnlyInClass
+  "This function renames a component ONLY in the given class"
+  input Absyn.Path classPath;
+  input Absyn.ComponentRef oldName;
+  input Absyn.ComponentRef newName;
+  input output Absyn.Program program;
+        output Values.Value result;
+protected
+  Absyn.Class cl;
+  Absyn.Within w;
 algorithm
-  (outString,outProgram) := matchcontinue (inProgram1,inComponentRef2,inComponentRef3,inComponentRef4)
-    local
-      Absyn.Program p;
-      String paths_2;
-      Absyn.ComponentRef class_,old_comp,new_comp;
-      Absyn.Class cl;
-      Absyn.Path model_path;
-      String str;
-      Absyn.Within w;
+  try
+    if isClassReadOnly(InteractiveUtil.getPathedClassInProgram(classPath, program)) then
+      result := ValuesUtil.makeCodeTypeName(Absyn.IDENT("Error: class: " + AbsynUtil.pathString(classPath) + " is in a read only file!"));
+      return;
+    end if;
 
-    case (p,class_,_,_)
-      equation
-        model_path = AbsynUtil.crefToPath(class_);
-        true = isClassReadOnly(InteractiveUtil.getPathedClassInProgram(model_path,p));
-        str = AbsynUtil.pathString(model_path);
-        str = "Error: class: " + str + " is in a read only file!";
-      then
-        (str, p);
-
-    case (p,class_,old_comp,new_comp)
-      equation
-        model_path = AbsynUtil.crefToPath(class_) "class in package" ;
-        cl = InteractiveUtil.getPathedClassInProgram(model_path, p);
-        cl = renameComponentInClass(cl, old_comp, new_comp);
-        w = InteractiveUtil.buildWithin(AbsynUtil.makeFullyQualified(model_path));
-        p = InteractiveUtil.updateProgram(Absyn.PROGRAM({cl}, w), p);
-        str = AbsynUtil.pathString(model_path);
-        paths_2 = stringAppendList({"{",str,"}"});
-      then
-        (paths_2,p);
-
-    else
-      equation
-        if Flags.isSet(Flags.FAILTRACE) then
-          Debug.trace("renameComponentOnlyInClass failed\n");
-        end if;
-      then
-        ("Error",inProgram1);
-  end matchcontinue;
+    cl := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cl := renameComponentInClass(cl, oldName, newName);
+    w := InteractiveUtil.buildWithin(AbsynUtil.makeFullyQualified(classPath));
+    program := InteractiveUtil.updateProgram(Absyn.PROGRAM({cl}, w), program);
+    result := ValuesUtil.makeCodeTypeNameArray({classPath});
+  else
+    result := ValuesUtil.makeBoolean(false);
+  end try;
 end renameComponentOnlyInClass;
 
 protected function extractRenamedClassesAsStringList
-"author: x02lucpo
-  this iterates through the Componentreplacementrules and
-  returns the string list with all the changed classes"
-  input GlobalScript.ComponentReplacementRules inComponentReplacementRules;
-  output list<String> outStringLst;
+  "Returns the list of classes changed by the given component replacement rules."
+  input GlobalScript.ComponentReplacementRules rules;
+  output list<Absyn.Path> outPaths = {};
 algorithm
-  outStringLst:=
-  matchcontinue (inComponentReplacementRules)
-    local
-      GlobalScript.ComponentReplacementRules comp_reps,res;
-      Absyn.Path path;
-      String path_str;
-      list<String> res_1,res_2;
-    case (comp_reps)
-      equation
-        true = emptyComponentReplacementRules(comp_reps);
-      then
-        {};
-    case (comp_reps)
-      equation
-        GlobalScript.COMPONENTREPLACEMENT(path,_,_) = firstComponentReplacement(comp_reps);
-        path_str = AbsynUtil.pathString(path);
-        res = restComponentReplacementRules(comp_reps);
-        res_1 = extractRenamedClassesAsStringList(res);
-        res_2 = List.union({path_str}, res_1);
-      then
-        res_2;
-    else
-      equation
-        print("-extract_renamed_classes_as_string_list failed\n");
-      then
-        fail();
-  end matchcontinue;
+  outPaths := list(rule.which1 for rule in rules.componentReplacementLst);
+  outPaths := List.uniqueOnTrue(outPaths, AbsynUtil.pathEqual);
 end extractRenamedClassesAsStringList;
 
 protected function renameComponentFromComponentreplacements
-"author: x02lucpo
-  this iterates through the Componentreplacementrules and
-  renames the componentes by traversing all the classes"
-  input Absyn.Program inProgram;
-  input GlobalScript.ComponentReplacementRules inComponentReplacementRules;
-  output Absyn.Program outProgram;
+  input output Absyn.Program program;
+  input GlobalScript.ComponentReplacementRules rules;
 algorithm
-  outProgram:=
-  matchcontinue (inProgram,inComponentReplacementRules)
-    local
-      Absyn.Program p,p_1,p_2;
-      GlobalScript.ComponentReplacementRules comp_reps,res;
-      GlobalScript.ComponentReplacement comp_rep;
-    case (p,comp_reps)
-      equation
-        true = emptyComponentReplacementRules(comp_reps);
-      then
-        p;
-    case (p,comp_reps)
-      equation
-        comp_rep = firstComponentReplacement(comp_reps);
-        ((p_1,_,_)) = AbsynUtil.traverseClasses(p,NONE(), renameComponentVisitor, comp_rep, true) "traverse protected" ;
-        res = restComponentReplacementRules(comp_reps);
-        p_2 = renameComponentFromComponentreplacements(p_1, res);
-      then
-        p_2;
-    else
-      equation
-        print("-rename_component_from_componentreplacements failed\n");
-      then
-        fail();
-  end matchcontinue;
+  for rule in rules.componentReplacementLst loop
+    ((program, _, _)) := AbsynUtil.traverseClasses(program, NONE(), renameComponentVisitor, rule, true);
+  end for;
 end renameComponentFromComponentreplacements;
 
 protected function renameComponentVisitor
@@ -1309,48 +1166,29 @@ algorithm
 end renameComponentVisitor;
 
 protected function renameComponentInClass
-"author: x02lucpo
-  helper function to renameComponentVisitor"
-  input Absyn.Class inClass1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  output Absyn.Class outClass;
+  input output Absyn.Class cls;
+  input Absyn.ComponentRef oldName;
+  input Absyn.ComponentRef newName;
+protected
+  Absyn.ClassDef body;
 algorithm
-  outClass:=
-  matchcontinue (inClass1,inComponentRef2,inComponentRef3)
-    local
-      list<Absyn.ClassPart> parts_1,parts;
-      String name,baseClassName;
-      Boolean partialPrefix,finalPrefix,encapsulatedPrefix;
-      Absyn.Restriction restriction;
-      Option<String> a,c;
-      SourceInfo file_info;
-      Absyn.ComponentRef old_comp,new_comp;
-      list<Absyn.ElementArg> b;
-      Absyn.Class class_;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-      list<Absyn.Annotation> ann;
+  () := match cls
+    case Absyn.CLASS(body = body as Absyn.PARTS())
+      algorithm
+        body.classParts := renameComponentInParts(body.classParts, oldName, newName);
+        cls.body := body;
+      then
+        ();
 
-    /* the class with the component the old name for the component */
-    case (outClass as Absyn.CLASS(name = name,partialPrefix = partialPrefix,finalPrefix = finalPrefix,encapsulatedPrefix = encapsulatedPrefix,restriction = restriction,
-          body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = a),info = file_info),old_comp,new_comp)
-      equation
-        parts_1 = renameComponentInParts(parts, old_comp, new_comp);
-        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts_1,ann,a);
-      then outClass;
+    case Absyn.CLASS(body = body as Absyn.CLASS_EXTENDS())
+      algorithm
+        body.parts := renameComponentInParts(body.parts, oldName, newName);
+        cls.body := body;
+      then
+        ();
 
-    /* the class with the component the old name for the component for model extends X end X; */
-    case (outClass as Absyn.CLASS(name = name,partialPrefix = partialPrefix,finalPrefix = finalPrefix,encapsulatedPrefix = encapsulatedPrefix,restriction = restriction,
-                      body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,modifications = b,comment = c,parts = parts,ann=ann),
-                      info = file_info),old_comp,new_comp)
-      equation
-        parts_1 = renameComponentInParts(parts, old_comp, new_comp);
-        outClass.body = Absyn.CLASS_EXTENDS(baseClassName,b,c,parts_1,ann);
-      then outClass;
-
-    else inClass1;
-  end matchcontinue;
+    else ();
+  end match;
 end renameComponentInClass;
 
 protected function renameComponentInParts
@@ -4705,66 +4543,37 @@ algorithm
   end match;
 end getComponentitemName;
 
-protected function renameClass
-" This function renames a class (given as a qualified path name) to a
+public function renameClass
+  "This function renames a class (given as a qualified path name) to a
    new name -in the same scope-. All references to the class name in the
-   program is updated to the new name. Thefunction does not allow a
-   renaming that will move the class to antoher package. To do this, the
-   class must be copied.
-   inputs:  (Absyn.Program,
-               Absyn.ComponentRef, /* old class as qualified name A.B.C */
-               Absyn.ComponentRef) /* new class, as identifier D */
-   outputs:  Absyn.Program"
-  input Absyn.Program inProgram1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  output String outString;
-  output Absyn.Program outProgram;
+   program is updated to the new name. The function does not allow a
+   renaming that will move the class to another package. To do this, the
+   class must be copied."
+  input Absyn.Path oldName;
+  input Absyn.Path newName;
+  input output Absyn.Program program;
+        output Values.Value result;
+protected
+  FCore.Graph env;
+  Absyn.Path new_name;
+  list<Absyn.Path> paths;
 algorithm
-  (outString,outProgram) := matchcontinue (inProgram1,inComponentRef2,inComponentRef3)
-    local
-      Absyn.Path new_path,old_path,new_path_1,old_path_no_last;
-      String tmp_str,path_str_lst_no_empty,res;
-      Absyn.Program p,p_1;
-      Absyn.ComponentRef old_class,new_name;
-      list<SCode.Element> pa_1;
-      FCore.Graph env;
-      list<String> path_str_lst;
-    case (p,_,(new_name as Absyn.CREF_QUAL()))
-      equation
-        new_path = AbsynUtil.crefToPath(new_name) "class in package" ;
-        tmp_str = AbsynUtil.pathString(new_path);
-        print(tmp_str);
-        print("\n") "the path is qualified so it cannot be renamed" ;
-      then
-        ("error",p);
-    case (p,(old_class as Absyn.CREF_IDENT()),new_name)
-      equation
-        old_path = AbsynUtil.crefToPath(old_class) "class in package" ;
-        new_path = AbsynUtil.crefToPath(new_name);
-        pa_1 = AbsynToSCode.translateAbsyn2SCode(p);
-        (_,env) = Inst.makeEnvFromProgram(pa_1);
-        ((p_1,_,(_,_,_,path_str_lst,_))) = AbsynUtil.traverseClasses(p, NONE(), renameClassVisitor, (old_path,new_path,p,{},env),
-          true) "traverse protected" ;
-        path_str_lst_no_empty = Util.stringDelimitListNonEmptyElts(path_str_lst, ",");
-        res = stringAppendList({"{",path_str_lst_no_empty,"}"});
-      then
-        (res,p_1);
-    case (p,(old_class as Absyn.CREF_QUAL()),new_name)
-      equation
-        old_path = AbsynUtil.crefToPath(old_class) "class in package" ;
-        new_path_1 = AbsynUtil.crefToPath(new_name);
-        old_path_no_last = AbsynUtil.stripLast(old_path);
-        new_path = AbsynUtil.joinPaths(old_path_no_last, new_path_1);
-        pa_1 = AbsynToSCode.translateAbsyn2SCode(p);
-        (_,env) = Inst.makeEnvFromProgram(pa_1);
-        ((p_1,_,(_,_,_,path_str_lst,_))) = AbsynUtil.traverseClasses(p,NONE(), renameClassVisitor, (old_path,new_path,p,{},env),
-          true) "traverse protected" ;
-        path_str_lst_no_empty = Util.stringDelimitListNonEmptyElts(path_str_lst, ",");
-        res = stringAppendList({"{",path_str_lst_no_empty,"}"});
-      then
-        (res,p_1);
-  end matchcontinue;
+  if AbsynUtil.pathIsQual(newName) then
+    result := ValuesUtil.makeBoolean(false);
+  end if;
+
+  if AbsynUtil.pathIsQual(oldName) then
+    new_name := AbsynUtil.joinPaths(AbsynUtil.stripLast(oldName), newName);
+  else
+    new_name := newName;
+  end if;
+
+  // For now, renaming a class clears all caches...
+  // Substantial analysis required to find out what to keep in cache and what must be thrown out
+  (_, env) := Inst.makeEnvFromProgram(SymbolTable.getSCode());
+  ((program, _, (_, _, _, paths, _))) :=
+    AbsynUtil.traverseClasses(program, NONE(), renameClassVisitor, (oldName, new_name, program, {}, env), true);
+  result := ValuesUtil.makeCodeTypeNameArray(paths);
 end renameClass;
 
 protected function renameClassVisitor
@@ -4772,341 +4581,249 @@ protected function renameClassVisitor
    It returns a list of strings of renamed classes.
    The 'traversal-tuple' is therefore
    tuple<oldname, newname, program, string list, env>."
-  input tuple<Absyn.Class, Option<Absyn.Path>, tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<String>, FCore.Graph>> inTplAbsynClassAbsynPathOptionTplAbsynPathAbsynPathAbsynProgramStringLstEnvEnv;
-  output tuple<Absyn.Class, Option<Absyn.Path>, tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<String>, FCore.Graph>> outTplAbsynClassAbsynPathOptionTplAbsynPathAbsynPathAbsynProgramStringLstEnvEnv;
+  input output tuple<Absyn.Class, Option<Absyn.Path>, tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<Absyn.Path>, FCore.Graph>> tup;
 algorithm
-  outTplAbsynClassAbsynPathOptionTplAbsynPathAbsynPathAbsynProgramStringLstEnvEnv:=
-  matchcontinue (inTplAbsynClassAbsynPathOptionTplAbsynPathAbsynPathAbsynProgramStringLstEnvEnv)
+  tup := matchcontinue tup
     local
       Absyn.Path path_1,pa,old_class_path,new_class_path;
-      String new_name,path_str,id,path_str_1;
-      Boolean a,b,c,changed;
-      Absyn.Restriction d;
-      Absyn.ClassDef e;
+      String new_name,id;
+      Boolean changed;
       SourceInfo file_info;
       Absyn.Program p;
-      list<String> path_str_lst;
+      list<Absyn.Path> path_lst;
       FCore.Graph env,cenv;
       Absyn.Class class_1,class_;
-      tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<String>, FCore.Graph> args;
-      Option<Absyn.Path> opath;
+      tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<Absyn.Path>, FCore.Graph> args;
 
     // Skip readonly classes.
-    case ((class_ as Absyn.CLASS(info = file_info),opath,args))
-      equation
-        true = isReadOnly(file_info);
-      then
-        ((class_,opath,args));
+    case ((class_ as Absyn.CLASS(info = file_info), _, _))
+      guard isReadOnly(file_info)
+      then tup;
 
-    case ((class_ as Absyn.CLASS(name = id),SOME(pa),(old_class_path,new_class_path,p,path_str_lst,env)))
-      equation
-        path_1 = AbsynUtil.joinPaths(pa, Absyn.IDENT(id));
-        true = AbsynUtil.pathEqual(old_class_path, path_1);
-        new_name = AbsynUtil.pathLastIdent(new_class_path);
-        path_str = AbsynUtil.pathString(new_class_path);
-        class_.name = new_name;
+    case ((class_ as Absyn.CLASS(name = id), SOME(pa), (old_class_path,new_class_path,p,path_lst,env)))
+      algorithm
+        path_1 := AbsynUtil.joinPaths(pa, Absyn.IDENT(id));
+        true := AbsynUtil.pathEqual(old_class_path, path_1);
+        new_name := AbsynUtil.pathLastIdent(new_class_path);
+        class_.name := new_name;
       then
-        ((class_,SOME(pa),
-          (old_class_path,new_class_path,p,(path_str :: path_str_lst),
-          env)));
+        ((class_,SOME(pa), (old_class_path,new_class_path,p, new_class_path :: path_lst, env)));
 
-    case ((class_ as Absyn.CLASS(name = id),NONE(),(old_class_path,new_class_path,p,path_str_lst,env)))
-      equation
-        path_1 = Absyn.IDENT(id);
-        true = AbsynUtil.pathEqual(old_class_path, path_1);
-        new_name = AbsynUtil.pathLastIdent(new_class_path);
-        path_str = AbsynUtil.pathString(new_class_path);
-        class_.name = new_name;
+    case ((class_ as Absyn.CLASS(name = id), NONE(), (old_class_path,new_class_path,p,path_lst,env)))
+      algorithm
+        path_1 := Absyn.IDENT(id);
+        true := AbsynUtil.pathEqual(old_class_path, path_1);
+        new_name := AbsynUtil.pathLastIdent(new_class_path);
+        class_.name := new_name;
       then
-        ((class_,NONE(),
-          (old_class_path,new_class_path,p,(path_str :: path_str_lst),
-          env)));
+        ((class_,NONE(), (old_class_path,new_class_path,p, new_class_path :: path_lst, env)));
 
-    case (((class_ as Absyn.CLASS(name = id)),SOME(pa),(old_class_path,new_class_path,p,path_str_lst,env)))
-      equation
-        path_1 = AbsynUtil.joinPaths(pa, Absyn.IDENT(id));
-        cenv = getClassEnvNoElaboration(p, path_1, env) "get_class_env(p,path\') => cenv &" ;
-        (class_1,changed) = renameClassInClass(class_, old_class_path, new_class_path, cenv);
-        path_str = if changed then AbsynUtil.pathString(path_1) else "";
-      then
-        ((class_1,SOME(pa),
-          (old_class_path,new_class_path,p,(path_str :: path_str_lst),
-          env)));
+    case (((class_ as Absyn.CLASS(name = id)), SOME(pa), (old_class_path,new_class_path,p,path_lst,env)))
+      algorithm
+        path_1 := AbsynUtil.joinPaths(pa, Absyn.IDENT(id));
+        cenv := getClassEnvNoElaboration(p, path_1, env) "get_class_env(p,path\') => cenv &" ;
+        (class_1,changed) := renameClassInClass(class_, old_class_path, new_class_path, cenv);
 
-    case (((class_ as Absyn.CLASS(name = id)),NONE(),(old_class_path,new_class_path,p,path_str_lst,env)))
-      equation
-        path_1 = Absyn.IDENT(id);
-        cenv = getClassEnvNoElaboration(p, path_1, env) "get_class_env(p,path\') => cenv &" ;
-        (class_1,changed) = renameClassInClass(class_, old_class_path, new_class_path, cenv);
-        path_str = if changed then AbsynUtil.pathString(path_1) else "";
+        if changed then
+          path_lst := path_1 :: path_lst;
+        end if;
       then
-        ((class_1,NONE(),
-          (old_class_path,new_class_path,p,(path_str :: path_str_lst),
-          env)));
+        ((class_1,SOME(pa), (old_class_path,new_class_path,p, path_lst, env)));
 
-    case ((class_,opath,args))
+    case (((class_ as Absyn.CLASS(name = id)), NONE(), (old_class_path,new_class_path,p,path_lst,env)))
+      algorithm
+        path_1 := Absyn.IDENT(id);
+        cenv := getClassEnvNoElaboration(p, path_1, env) "get_class_env(p,path\') => cenv &" ;
+        (class_1,changed) := renameClassInClass(class_, old_class_path, new_class_path, cenv);
+
+        if changed then
+          path_lst := path_1 :: path_lst;
+        end if;
       then
-        ((class_,opath,args));
+        ((class_1,NONE(), (old_class_path,new_class_path,p, path_lst, env)));
+
+    else tup;
   end matchcontinue;
 end renameClassVisitor;
 
 protected function renameClassInClass
-"author: x02lucpo
-  helper function to renameClassVisitor
-  renames all the references to a class to another"
-  input Absyn.Class inClass1;
-  input Absyn.Path inPath2;
-  input Absyn.Path inPath3;
-  input FCore.Graph inEnv4;
-  output Absyn.Class outClass;
-  output Boolean outBoolean;
+  "helper function to renameClassVisitor
+   renames all the references to a class to another"
+  input output Absyn.Class cls;
+  input Absyn.Path oldName;
+  input Absyn.Path newName;
+  input FCore.Graph env;
+        output Boolean changed;
+protected
+  list<Absyn.ClassPart> parts;
+  String name;
+  Absyn.Path path;
+  FCore.Graph cenv;
+  FCore.Cache cache;
+  Absyn.ClassDef body;
+  Absyn.TypeSpec ty;
 algorithm
-  (outClass,outBoolean):=
-  matchcontinue (inClass1,inPath2,inPath3,inEnv4)
-    local
-      list<Absyn.ClassPart> parts_1,parts;
-      Boolean changed,partialPrefix,finalPrefix,encapsulatedPrefix;
-      String name, baseClassName;
-      Absyn.Restriction restriction;
-      Option<String> comment;
-      SourceInfo file_info;
-      Absyn.Path old_comp,new_comp,path_1,path,new_path;
-      FCore.Graph env,cenv;
-      list<Absyn.ElementArg> modifications,elementarg;
-      Option<Absyn.Comment> co;
-      Absyn.Class class_;
-      Option<list<Absyn.Subscript>> subscripts;
-      Absyn.ElementAttributes attrs;
-      FCore.Cache cache;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-      list<Absyn.Annotation> ann;
+  body := cls.body;
 
-    /* the class with the component the old name for the component signal if something in class have been changed */
-    case (outClass as Absyn.CLASS(name = name,partialPrefix = partialPrefix,finalPrefix = finalPrefix,encapsulatedPrefix = encapsulatedPrefix,restriction = restriction,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = comment),info = file_info),old_comp,new_comp,env)
-      equation
-        (parts_1,changed) = renameClassInParts(parts, old_comp, new_comp, env);
-        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts_1,ann,comment);
+  changed := matchcontinue body
+    case Absyn.PARTS(classParts = parts)
+      algorithm
+        (parts, changed) := renameClassInParts(parts, oldName, newName, env);
+        body.classParts := parts;
+        cls.body := body;
       then
-        (outClass,changed);
-    /* model extends M end M; */
-    case (outClass as Absyn.CLASS(name = name,partialPrefix = partialPrefix,finalPrefix = finalPrefix,encapsulatedPrefix = encapsulatedPrefix,restriction = restriction,
-                      body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,modifications = modifications,ann=ann,comment = comment,parts = parts),
-                      info = file_info),old_comp,new_comp,env)
-      equation
-        (parts_1,changed) = renameClassInParts(parts, old_comp, new_comp, env);
-        outClass.body = Absyn.CLASS_EXTENDS(baseClassName,modifications,comment,parts_1,ann);
-      then (outClass,changed);
-    /* a derived class */
-    case (outClass as Absyn.CLASS(name = name,partialPrefix = partialPrefix,finalPrefix = finalPrefix,encapsulatedPrefix = encapsulatedPrefix,restriction = restriction,
-                      body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path_1,subscripts),attributes = attrs,arguments = elementarg,comment = co),
-                      info = file_info),old_comp,new_comp,env)
-      equation
-        (cache,SCode.CLASS(name=name),cenv) = Lookup.lookupClass(FCore.emptyCache(), env, path_1);
-        path_1 = Absyn.IDENT(name);
-        (_,path) = Inst.makeFullyQualified(cache, cenv, path_1);
-        true = AbsynUtil.pathEqual(path, old_comp);
-        new_path = changeLastIdent(path_1, new_comp);
-        outClass.body = Absyn.DERIVED(Absyn.TPATH(new_path,subscripts),attrs,elementarg,co);
-      then
-        (outClass,true);
-    /* otherwise */
-    else (inClass1,false);
+        changed;
 
+    case Absyn.CLASS_EXTENDS(parts = parts)
+      algorithm
+        (parts, changed) := renameClassInParts(parts, oldName, newName, env);
+        body.parts := parts;
+        cls.body := body;
+      then
+        changed;
+
+    case Absyn.DERIVED(typeSpec = ty as Absyn.TPATH())
+      algorithm
+        (cache, SCode.CLASS(name=name),cenv) := Lookup.lookupClass(FCore.emptyCache(), env, ty.path);
+        path := Absyn.IDENT(name);
+        (_, path) := Inst.makeFullyQualified(cache, cenv, path);
+        true := AbsynUtil.pathEqual(path, oldName);
+        ty.path := changeLastIdent(path, newName);
+        body.typeSpec := ty;
+        cls.body := body;
+      then
+        true;
+
+    else false;
   end matchcontinue;
 end renameClassInClass;
 
 protected function renameClassInParts
 "author: x02lucpo
   helper function to renameClassVisitor"
-  input list<Absyn.ClassPart> inAbsynClassPartLst1;
-  input Absyn.Path inPath2;
-  input Absyn.Path inPath3;
-  input FCore.Graph inEnv4;
-  output list<Absyn.ClassPart> outAbsynClassPartLst;
-  output Boolean outBoolean;
+  input list<Absyn.ClassPart> parts;
+  input Absyn.Path oldName;
+  input Absyn.Path newName;
+  input FCore.Graph env;
+  output list<Absyn.ClassPart> outParts = {};
+  output Boolean changed = false;
+protected
+  Boolean c;
+  list<Absyn.ElementItem> elems;
 algorithm
-  (outAbsynClassPartLst,outBoolean):=
-  matchcontinue (inAbsynClassPartLst1,inPath2,inPath3,inEnv4)
-    local
-      FCore.Graph env;
-      list<Absyn.ClassPart> res_1,res;
-      Boolean changed1,changed2,changed;
-      list<Absyn.ElementItem> elements_1,elements;
-      Absyn.Path old_comp,new_comp;
-      Absyn.ClassPart a;
+  for part in parts loop
+    part := match part
+      case Absyn.ClassPart.PUBLIC()
+        algorithm
+          (elems, c) := renameClassInElements(part.contents, oldName, newName, env);
+          part.contents := elems;
+          changed := changed or c;
+        then
+          part;
 
-    case ({},_,_,_) then ({},false);  // the old name for the component signal if something in class have been changed rule
+      case Absyn.ClassPart.PROTECTED()
+        algorithm
+          (elems, c) := renameClassInElements(part.contents, oldName, newName, env);
+          part.contents := elems;
+          changed := changed or c;
+        then
+          part;
 
-    case ((Absyn.PUBLIC(contents = elements) :: res),old_comp,new_comp,env)
-      equation
-        (res_1,changed1) = renameClassInParts(res, old_comp, new_comp, env);
-        (elements_1,changed2) = renameClassInElements(elements, old_comp, new_comp, env);
-        changed = boolOr(changed1,changed2);
-      then
-        ((Absyn.PUBLIC(elements_1) :: res_1),changed);
+      else part;
+    end match;
 
-    case ((Absyn.PROTECTED(contents = elements) :: res),old_comp,new_comp,env)
-      equation
-        (res_1,changed1) = renameClassInParts(res, old_comp, new_comp, env);
-        (elements_1,changed2) = renameClassInElements(elements, old_comp, new_comp, env);
-        changed = boolOr(changed1,changed2);
-      then
-        ((Absyn.PROTECTED(elements_1) :: res_1),changed);
+    outParts := part :: outParts;
+  end for;
 
-    case ((a :: res),old_comp,new_comp,env)
-      equation
-        (res_1,changed) = renameClassInParts(res, old_comp, new_comp, env);
-      then
-        ((a :: res_1),changed);
-
-  end matchcontinue;
+  outParts := Dangerous.listReverseInPlace(outParts);
 end renameClassInParts;
 
 protected function renameClassInElements
-"author: x02lucpo
-  helper function to renameClassVisitor"
-  input list<Absyn.ElementItem> inAbsynElementItemLst1;
-  input Absyn.Path inPath2;
-  input Absyn.Path inPath3;
-  input FCore.Graph inEnv4;
-  output list<Absyn.ElementItem> outAbsynElementItemLst;
-  output Boolean outBoolean;
+  input list<Absyn.ElementItem> items;
+  input Absyn.Path oldName;
+  input Absyn.Path newName;
+  input FCore.Graph env;
+  output list<Absyn.ElementItem> outItems = {};
+  output Boolean changed = false;
+protected
+  Absyn.Element elem;
+  Absyn.ElementSpec spec;
+  Boolean c;
 algorithm
-  (outAbsynElementItemLst,outBoolean):=
-  matchcontinue (inAbsynElementItemLst1,inPath2,inPath3,inEnv4)
-    local
-      list<Absyn.ElementItem> res_1,res;
-      Boolean changed1,changed2,changed,finalPrefix;
-      Absyn.ElementSpec elementspec_1,elementspec;
-      Absyn.ElementItem element_1,element;
-      Option<Absyn.RedeclareKeywords> redeclare_;
-      Absyn.InnerOuter inner_outer;
-      SourceInfo info;
-      Option<Absyn.ConstrainClass> constrainClass;
-      Absyn.Path old_comp,new_comp;
-      FCore.Graph env;
-    case ({},_,_,_) then ({},false);  /* the old name for the component signal if something in class have been changed */
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = redeclare_,innerOuter = inner_outer,specification = elementspec,info = info,constrainClass = constrainClass)) :: res),old_comp,new_comp,env)
-      equation
-        (res_1,changed1) = renameClassInElements(res, old_comp, new_comp, env);
-        (elementspec_1,changed2) = renameClassInElementSpec(elementspec, old_comp, new_comp, env);
-        element_1 = Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(finalPrefix,redeclare_,inner_outer,elementspec_1,info,
-          constrainClass));
-        changed = boolOr(changed1,changed2);
-      then
-        ((element_1 :: res_1),changed);
-    case ((element :: res),old_comp,new_comp,env)
-      equation
-        (res_1,changed) = renameClassInElements(res, old_comp, new_comp, env);
-        element_1 = element;
-      then
-        ((element_1 :: res_1),changed);
-  end matchcontinue;
+  for item in items loop
+    (outItems, changed) := matchcontinue item
+      case Absyn.ElementItem.ELEMENTITEM(element = elem as Absyn.Element.ELEMENT())
+        algorithm
+          (spec, c) := renameClassInElementSpec(elem.specification, oldName, newName, env);
+          elem.specification := spec;
+          item.element := elem;
+        then
+          (item :: outItems, changed or c);
+
+      else (item :: outItems, changed);
+    end matchcontinue;
+  end for;
+
+  outItems := Dangerous.listReverseInPlace(outItems);
 end renameClassInElements;
 
 protected function renameClassInElementSpec
-"author: x02lucpo
-  helper function to renameClassVisitor"
-  input Absyn.ElementSpec inElementSpec1;
-  input Absyn.Path inPath2;
-  input Absyn.Path inPath3;
-  input FCore.Graph inEnv4;
-  output Absyn.ElementSpec outElementSpec;
-  output Boolean outBoolean;
+  input output Absyn.ElementSpec spec;
+  input Absyn.Path oldName;
+  input Absyn.Path newName;
+  input FCore.Graph env;
+        output Boolean changed = false;
+protected
+  Absyn.TypeSpec ty;
+  FCore.Cache cache;
+  String id;
+  FCore.Graph cenv;
+  Absyn.Path path, qpath;
+  Absyn.Import imp;
 algorithm
-  (outElementSpec,outBoolean):=
-  matchcontinue (inElementSpec1,inPath2,inPath3,inEnv4)
-    local
-      String id;
-      FCore.Graph cenv,env;
-      Absyn.Path path_1,path,new_path,old_comp,new_comp,comps;
-      Absyn.ElementAttributes a;
-      list<Absyn.ComponentItem> comp_items;
-      Absyn.Import import_1,import_;
-      Boolean changed;
-      Option<Absyn.ArrayDim> x;
-      Option<Absyn.Annotation> annOpt;
-      FCore.Cache cache;
-      Absyn.ElementSpec spec;
-      Option<Absyn.Comment> cmt;
-      list<Absyn.ElementArg> elargs;
-      SourceInfo info;
+  changed := matchcontinue spec
+    case Absyn.COMPONENTS(typeSpec = ty as Absyn.TPATH())
+      algorithm
+        (cache, SCode.CLASS(name = id), cenv) := Lookup.lookupClass(FCore.emptyCache(), env, ty.path);
+        (_, qpath) := Inst.makeFullyQualified(cache, cenv, Absyn.IDENT(id));
 
-    case (Absyn.COMPONENTS(attributes = a,typeSpec = Absyn.TPATH(path_1,x),components = comp_items),old_comp,new_comp,env) /* the old name for the component signal if something in class have been changed rule */
-      equation
-        (cache,SCode.CLASS(name=id),cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1);
-        path_1 = Absyn.IDENT(id);
-        (_,path) = Inst.makeFullyQualified(cache, cenv, path_1);
-        true = AbsynUtil.pathEqual(path, old_comp);
-        new_path = changeLastIdent(path, new_comp);
+        if AbsynUtil.pathEqual(qpath, oldName) then
+          ty.path := changeLastIdent(qpath, newName);
+          spec.typeSpec := ty;
+          changed := true;
+        end if;
       then
-        (Absyn.COMPONENTS(a,Absyn.TPATH(new_path,x),comp_items),true);
-    case (Absyn.EXTENDS(path = path_1,elementArg = elargs, annotationOpt=annOpt),old_comp,new_comp,env)
-      equation
-        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1) "print \"rename_class_in_element_spec Absyn.EXTENDS(path,_) not implemented yet\"" ;
-        (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
-        true = AbsynUtil.pathEqual(path, old_comp);
-        new_path = changeLastIdent(path_1, new_comp);
+        changed;
+
+    case Absyn.EXTENDS()
+      algorithm
+        (cache, _, cenv) := Lookup.lookupClass(FCore.emptyCache(), env, spec.path);
+        (_, qpath) := Inst.makeFullyQualified(cache, cenv, spec.path);
+
+        if AbsynUtil.pathEqual(qpath, oldName) then
+          spec.path := changeLastIdent(spec.path, newName);
+          changed := true;
+        end if;
       then
-        (Absyn.EXTENDS(new_path,elargs,annOpt),true);
-    case (Absyn.IMPORT(import_ = import_,comment = cmt, info = info),old_comp,new_comp,env)
-      equation
-        (import_1,changed) = renameClassInImport(import_, old_comp, new_comp, env);
+        changed;
+
+    case Absyn.IMPORT()
+      algorithm
+        path := AbsynUtil.importPath(spec.import_);
+        (cache, _, cenv) := Lookup.lookupClass(FCore.emptyCache(), env, path);
+        (_, qpath) := Inst.makeFullyQualified(cache, cenv, path);
+
+        if AbsynUtil.pathEqual(qpath, oldName) then
+          path := changeLastIdent(path, newName);
+          spec.import_ := AbsynUtil.setImportPath(spec.import_, path);
+          changed := true;
+        end if;
       then
-        (Absyn.IMPORT(import_1,cmt,info),changed);
-    else (inElementSpec1,false);
+        changed;
+
+    else false;
   end matchcontinue;
 end renameClassInElementSpec;
-
-protected function renameClassInImport
-"author: x02lucpo
-  helper function to renameClassVisitor"
-  input Absyn.Import inImport1;
-  input Absyn.Path inPath2;
-  input Absyn.Path inPath3;
-  input FCore.Graph inEnv4;
-  output Absyn.Import outImport;
-  output Boolean outBoolean;
-algorithm
-  (outImport,outBoolean):=
-  matchcontinue (inImport1,inPath2,inPath3,inEnv4)
-    local
-      FCore.Graph cenv,env;
-      Absyn.Path path,new_path,path_1,old_comp,new_comp;
-      String id;
-      Absyn.Import import_;
-      FCore.Cache cache;
-
-    case (Absyn.NAMED_IMPORT(name = id,path = path_1),old_comp,new_comp,env) /* the old name for the component signal if something in class have been changed */
-      equation
-        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1);
-        (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
-        true = AbsynUtil.pathEqual(path, old_comp);
-        new_path = changeLastIdent(path_1, new_comp);
-      then
-        (Absyn.NAMED_IMPORT(id,new_path),true);
-    case (Absyn.QUAL_IMPORT(path = path_1),old_comp,new_comp,env)
-      equation
-        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1);
-        (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
-        true = AbsynUtil.pathEqual(path, old_comp);
-        new_path = changeLastIdent(path_1, new_comp);
-      then
-        (Absyn.QUAL_IMPORT(new_path),true);
-    case (Absyn.NAMED_IMPORT(path = path_1),old_comp,new_comp,env)
-      equation
-        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1);
-        (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
-        true = AbsynUtil.pathEqual(path, old_comp);
-        new_path = changeLastIdent(path_1, new_comp);
-      then
-        (Absyn.UNQUAL_IMPORT(new_path),true);
-    else (inImport1,false);
-  end matchcontinue;
-end renameClassInImport;
 
 public function refactorClass
   input Absyn.Path classPath;
@@ -8171,10 +7888,7 @@ algorithm
   try
     cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
     (SOME((name, ty)), _) := getNthPublicConnectorStr(classPath, cls, program, n);
-    result := ValuesUtil.makeArray({
-      ValuesUtil.makeCodeTypeName(Absyn.Path.IDENT(name)),
-      ValuesUtil.makeCodeTypeName(ty)
-    });
+    result := ValuesUtil.makeCodeTypeNameArray({Absyn.Path.IDENT(name), ty});
   else
     result := ValuesUtil.makeBoolean(false);
   end try;

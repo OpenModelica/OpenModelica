@@ -2265,6 +2265,13 @@ algorithm
   val := Values.CODE(Absyn.C_TYPENAME(path));
 end makeCodeTypeName;
 
+public function makeCodeTypeNameArray
+  input list<Absyn.Path> paths;
+  output Values.Value val;
+algorithm
+  val := makeArray(list(makeCodeTypeName(p) for p in paths));
+end makeCodeTypeNameArray;
+
 public function getCode
   input Values.Value val;
   output Absyn.CodeNode code;

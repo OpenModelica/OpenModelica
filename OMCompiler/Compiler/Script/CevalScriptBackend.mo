@@ -695,9 +695,8 @@ algorithm
         sp = SCodeUtil.removeBuiltinsFromTopScope(sp);
         paths = Interactive.getSCodeClassNamesRecursive(sp);
         // paths = bcallret2(sort, List.sort, paths, AbsynUtil.pathGe, paths);
-        vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then
-        ValuesUtil.makeArray(vals);
+        ValuesUtil.makeCodeTypeNameArray(paths);
 
     case ("getUsedClassNames",_)
       then ValuesUtil.makeArray({});
@@ -716,16 +715,14 @@ algorithm
     case ("getPackages",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses")))})
       equation
         paths = Interactive.getTopPackages(SymbolTable.getAbsyn());
-        vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then
-        ValuesUtil.makeArray(vals);
+        ValuesUtil.makeCodeTypeNameArray(paths);
 
     case ("getPackages",{Values.CODE(Absyn.C_TYPENAME(path))})
       equation
         paths = Interactive.getPackagesInPath(path, SymbolTable.getAbsyn());
-        vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then
-        ValuesUtil.makeArray(vals);
+        ValuesUtil.makeCodeTypeNameArray(paths);
 
     case ("convertUnits",{Values.STRING(str1),Values.STRING(str2)})
       equation
@@ -2080,9 +2077,8 @@ algorithm
     case ("getInheritedClasses",{Values.CODE(Absyn.C_TYPENAME(classpath))})
       equation
         paths = Interactive.getInheritedClasses(classpath);
-        vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then
-        ValuesUtil.makeArray(vals);
+        ValuesUtil.makeCodeTypeNameArray(paths);
 
     case ("getInheritedClasses",_)
       then ValuesUtil.makeArray({});
@@ -3281,6 +3277,29 @@ algorithm
         SymbolTable.setAbsyn(p);
       then
         ValuesUtil.makeBoolean(b);
+
+    case ("renameClass", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))})
+      algorithm
+        (p, v) := Interactive.renameClass(classpath, path, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        v;
+
+    case ("renameComponent", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_VARIABLENAME(cr)),
+                              Values.CODE(Absyn.C_VARIABLENAME(cr2))})
+      algorithm
+        (p, v) := Interactive.renameComponent(classpath, cr, cr2, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        v;
+
+    case ("renameComponentInClass", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_VARIABLENAME(cr)),
+                              Values.CODE(Absyn.C_VARIABLENAME(cr2))})
+      algorithm
+        (p, v) := Interactive.renameComponentOnlyInClass(classpath, cr, cr2, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        v;
 
  end matchcontinue;
 end cevalInteractiveFunctions4;
