@@ -1287,13 +1287,21 @@ public
       "gets the left hand side expression of an equation."
       input Equation eq;
       output Expression lhs;
+    protected
+      Boolean success;
     algorithm
       lhs := match(eq)
         case SCALAR_EQUATION()        then eq.lhs;
         case ARRAY_EQUATION()         then eq.lhs;
         case RECORD_EQUATION()        then eq.lhs;
         case FOR_EQUATION(body = {_}) then getLHS(List.first(eq.body));
-        case IF_EQUATION()            then IfEquationBody.getLHS(eq.body);
+        case IF_EQUATION()            algorithm
+          (lhs, success) := IfEquationBody.getLHS(eq.body);
+          if not success then
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because LHS was ambiguous for: " + toString(eq)});
+            fail();
+          end if;
+        then lhs;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because LHS was ambiguous for: " + toString(eq)});
         then fail();
@@ -2570,16 +2578,20 @@ public
       input output Equation eqn;
     protected
       Expression lhs, rhs;
+      Boolean success;
     algorithm
-      lhs := getLHS(body);
-      rhs := SimplifyExp.simplify(getRHS(body));
-      eqn := Equation.makeAssignmentUpdate(eqn, lhs, rhs, Equation.getForIterator(eqn), Equation.getAttributes(eqn));
+      (lhs, success) := getLHS(body);
+      if success then
+        rhs := SimplifyExp.simplify(getRHS(body));
+        eqn := Equation.makeAssignmentUpdate(eqn, lhs, rhs, Equation.getForIterator(eqn), Equation.getAttributes(eqn));
+      end if;
     end inline;
 
     function getLHS
       "needs the if equation to be split and equal lhs"
       input IfEquationBody body;
       input output Expression exp = Expression.END();
+      output Boolean success = true;
     protected
       Pointer<Equation> eqn_ptr;
       Expression new_exp;
@@ -2589,11 +2601,13 @@ public
           new_exp := Equation.getLHS(Pointer.access(eqn_ptr));
           if Expression.isEnd(exp) or Expression.isEqual(exp, new_exp) then
             if Util.isSome(body.else_if) then
-              new_exp := getLHS(Util.getOption(body.else_if), new_exp);
+              (new_exp, success) := getLHS(Util.getOption(body.else_if), new_exp);
             end if;
           else
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of ambiguous LHS for:\n" + toString(body)});
-            fail();
+            if Flags.isSet(Flags.FAILTRACE) then
+              Error.addCompilerWarning(getInstanceName() + " failed because of ambiguous LHS for:\n" + toString(body));
+            end if;
+            success := false;
           end if;
         then new_exp;
         else algorithm
