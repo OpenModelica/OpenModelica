@@ -46,7 +46,6 @@ class ElementTreeItem : public QObject
   Q_OBJECT
 public:
   ElementTreeItem();
-  ElementTreeItem(ModelInstance::Model *pModel, ElementTreeItem *pParentElementTreeItem = 0);
   ElementTreeItem(ModelInstance::Element *pElement, ElementTreeItem *pParentElementTreeItem = 0);
   ~ElementTreeItem();
   bool isRootItem() const {return mIsRootItem;}
