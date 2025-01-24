@@ -59,32 +59,26 @@ ElementTreeItem::ElementTreeItem()
  * Makes a tooltip from restriction, name and comment.
  * \param restriction
  * \param name
+ * \param dimensions
  * \param comment
  * \return
  */
-QString makeTooltip(QString restriction, QString name, QString comment)
+QString makeTooltip(const QString &restriction, const QString &name, const QString &dimensions, const QString &comment)
 {
   QString tooltip = restriction % " <b>" % name % "</b>";
-  if (!comment.isEmpty()) {
-    return tooltip % "<br /><br />" % comment;
-  } else {
-    return tooltip;
-  }
-}
 
-/*!
- * \brief ElementTreeItem::ElementTreeItem
- * \param pModel
- * \param pParentElementTreeItem
- */
-ElementTreeItem::ElementTreeItem(ModelInstance::Model *pModel, ElementTreeItem *pParentElementTreeItem)
-  : QObject(pParentElementTreeItem)
-{
-  mpParentElementTreeItem = pParentElementTreeItem;
-  mName = pModel->getName();
-  mNameStructure = mpParentElementTreeItem->getNameStructure().isEmpty() ? mName : mpParentElementTreeItem->getNameStructure() + "." + mName;
-  mDisplayName = pModel->getName();
-  mTooltip = makeTooltip(pModel->getRestriction(), mName, pModel->getComment());
+  if (!dimensions.isEmpty()) {
+    tooltip = tooltip % "[" % dimensions % "]";
+  }
+
+  // avoid implicit word-wrap of tooltip.
+  tooltip = "<p style='white-space:pre'>" % tooltip % "</p>";
+
+  if (!comment.isEmpty()) {
+    tooltip = tooltip % comment;
+  }
+
+  return tooltip;
 }
 
 /*!
@@ -101,7 +95,7 @@ ElementTreeItem::ElementTreeItem(ModelInstance::Element *pElement, ElementTreeIt
     mNameStructure = mpParentElementTreeItem->getNameStructure().isEmpty() ? mName : mpParentElementTreeItem->getNameStructure() + "." + mName;
     mDisplayName = "extends " % pElement->getType();
     if (pElement->getModel()) {
-      mTooltip = makeTooltip(pElement->getModel()->getRestriction(), mName, pElement->getModel()->getComment());
+      mTooltip = makeTooltip(pElement->getModel()->getRestriction(), mName, "", pElement->getModel()->getComment());
     }
   } else if (pElement->isClass()) {
     auto pReplaceableClass = dynamic_cast<ModelInstance::ReplaceableClass*>(pElement);
@@ -111,7 +105,7 @@ ElementTreeItem::ElementTreeItem(ModelInstance::Element *pElement, ElementTreeIt
   } else {
     mName = pElement->getName();
     mDisplayName = pElement->getName();
-    mTooltip = makeTooltip(pElement->getType(), mName, pElement->getComment());
+    mTooltip = makeTooltip(pElement->getType(), mName, pElement->getDimensions().getAbsynDimensionsString(), pElement->getComment());
   }
   mNameStructure = mpParentElementTreeItem->getNameStructure().isEmpty() ? mName : mpParentElementTreeItem->getNameStructure() + "." + mName;
 }
