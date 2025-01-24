@@ -4479,6 +4479,16 @@ public
     end match;
   end extractCref;
 
+  function isResizableCref
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      case CREF() then ComponentRef.isResizable(exp.cref);
+      else false;
+    end match;
+  end isResizableCref;
+
   function isIterator
     input Expression exp;
     output Boolean isIterator;

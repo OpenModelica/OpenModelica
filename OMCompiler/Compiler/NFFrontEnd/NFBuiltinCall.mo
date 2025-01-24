@@ -956,7 +956,7 @@ protected
       (arg, arg_ty, arg_var, arg_pur) := Typing.typeExp(arg, context, info);
 
       if not (InstContext.inAlgorithm(context) or InstContext.inFunction(context)) then
-        if arg_var > Variability.PARAMETER and not InstContext.inInstanceAPI(context) then
+        if arg_var > Variability.PARAMETER and not (InstContext.inInstanceAPI(context) or Expression.contains(arg, Expression.isResizableCref)) then
           Error.addSourceMessageAndFail(Error.NON_PARAMETER_EXPRESSION_DIMENSION,
             {Expression.toString(arg), String(index),
              List.toString(fillArg :: dimensionArgs, Expression.toString,
