@@ -65,6 +65,7 @@ public
   import NBAdjacency.Mapping;
   import BackendDAE = NBackendDAE;
   import BackendUtil = NBBackendUtil;
+  import BEquation = NBEquation;
   import NBEquation.Iterator;
   import BVariable = NBVariable;
 
@@ -1346,6 +1347,41 @@ public
       b := false;
     end if;
   end hasEvaluableBinding;
+
+  function mapExp
+    input Pointer<Variable> var_ptr;
+    input BEquation.MapFuncExp funcExp;
+    input BEquation.MapFuncExpWrapper mapFunc = Expression.map;
+  protected
+    Variable var = Pointer.access(var_ptr);
+    Option<Expression> opt_start;
+    Expression binding, new_binding, start, new_start;
+    Boolean changed = false;
+  algorithm
+    // map binding
+    if isBound(var_ptr) then
+      binding     := Binding.getExp(var.binding);
+      new_binding := mapFunc(binding, funcExp);
+      if not referenceEq(binding, new_binding) then
+        var.binding := Binding.setExp(new_binding, var.binding);
+        changed     := true;
+      end if;
+    end if;
+
+    // map start exp
+    opt_start   := getStartAttribute(var_ptr);
+    if Util.isSome(opt_start) then
+      SOME(start) := opt_start;
+      new_start   := mapFunc(start, funcExp);
+
+      if not referenceEq(start, new_start) then
+        var         := setStartAttribute(var, new_start, true);
+        changed     := true;
+      end if;
+    end if;
+
+    if changed then Pointer.update(var_ptr, var); end if;
+  end mapExp;
 
   function setFixed
     input output Pointer<Variable> var_ptr;
