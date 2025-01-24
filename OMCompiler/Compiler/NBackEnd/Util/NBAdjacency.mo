@@ -225,7 +225,7 @@ public
 
         // multiple subscripts -> apply location to index mapping rules
         case _ algorithm
-          subs_lst  := Subscript.scalarizeList(subs, dims);
+          subs_lst  := Subscript.scalarizeList(subs, dims, true);
           subs_lst  := List.combination(subs_lst);
           dim_sizes := list(Dimension.size(dim) for dim in dims);
           for sub_lst in listReverse(subs_lst) loop

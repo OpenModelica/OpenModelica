@@ -260,7 +260,8 @@ algorithm
   exp := match AbsynUtil.pathFirstIdent(name)
     case "cat"
       algorithm
-        exp := ExpandExp.expandBuiltinCat(args, call);
+        // ToDo: prevent this for NB
+        exp := ExpandExp.expandBuiltinCat(args, call, false);
       then
         exp;
 

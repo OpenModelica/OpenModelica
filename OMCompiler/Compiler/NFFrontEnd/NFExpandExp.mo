@@ -81,9 +81,9 @@ public
 
       case Expression.TYPENAME() then (expandTypename(exp.ty), true);
       case Expression.RANGE()    then expandRange(exp);
-      case Expression.CALL()     then expandCall(exp.call, exp);
+      case Expression.CALL()     then expandCall(exp.call, exp, backend);
       case Expression.SIZE()     then expandSize(exp);
-      case Expression.BINARY()   then expandBinary(exp, exp.operator);
+      case Expression.BINARY()   then expandBinary(exp, exp.operator, backend);
       case Expression.MULTARY()  then expand(SimplifyExp.splitMultary(exp), backend);
       case Expression.UNARY()    then expandUnary(exp);
       case Expression.LBINARY()  then expandLogicalBinary(exp);
@@ -91,7 +91,7 @@ public
       case Expression.RELATION() then (exp, true);
       case Expression.CAST()     then expandCast(exp);
       case Expression.FILENAME() then (exp, true);
-      else expandGeneric(exp);
+      else expandGeneric(exp, backend);
     end match;
   end expand;
 
@@ -189,7 +189,7 @@ public
       case ComponentRef.CREF() guard(backend or cref.origin == Origin.CREF)
         algorithm
           dims := Type.arrayDims(cref.ty);
-          cr_subs := Subscript.expandList(cref.subscripts, dims);
+          cr_subs := Subscript.expandList(cref.subscripts, dims, backend);
         then
           if listEmpty(cr_subs) and not listEmpty(dims) then
             {} else expandCref2(cref.restCref, backend, cr_subs :: subs);
@@ -293,18 +293,19 @@ public
   function expandCall
     input Call call;
     input Expression exp;
+    input Boolean resize;
     output Expression outExp;
     output Boolean expanded;
   algorithm
     (outExp, expanded) := matchcontinue call
       case Call.TYPED_CALL()
         guard Function.isBuiltin(call.fn) and not Function.isImpure(call.fn)
-        then expandBuiltinCall(call.fn, call.arguments, call);
+        then expandBuiltinCall(call.fn, call.arguments, call, resize);
 
       case Call.TYPED_ARRAY_CONSTRUCTOR()
         then expandArrayConstructor(call.exp, call.ty, call.iters);
 
-      else expandGeneric(exp);
+      else expandGeneric(exp, resize);
     end matchcontinue;
   end expandCall;
 
@@ -312,13 +313,14 @@ public
     input Function fn;
     input list<Expression> args;
     input Call call;
+    input Boolean resize;
     output Expression outExp;
     output Boolean expanded;
   protected
     Absyn.Path fn_path = Function.nameConsiderBuiltin(fn);
   algorithm
     (outExp, expanded) := match AbsynUtil.pathFirstIdent(fn_path)
-      case "cat"        then expandBuiltinCat(args, call);
+      case "cat"        then expandBuiltinCat(args, call, resize);
       case "der"        then expandBuiltinGeneric(call);
       case "diagonal"   then expandBuiltinDiagonal(listHead(args));
       case "fill"       then expandBuiltinFill(args);
@@ -332,6 +334,7 @@ public
   function expandBuiltinCat
     input list<Expression> args;
     input Call call;
+    input Boolean resize;
     output Expression exp;
     output Boolean expanded;
   protected
@@ -345,7 +348,7 @@ public
       // as they're expanded.
       exp := Ceval.evalBuiltinCat(listHead(args), expl, NFCeval.noTarget);
     else
-      exp := expandGeneric(Expression.CALL(call));
+      exp := expandGeneric(Expression.CALL(call), resize);
     end if;
   end expandBuiltinCat;
 
@@ -531,6 +534,7 @@ public
   function expandBinary
     input Expression exp;
     input Operator op;
+    input Boolean resize;
     output Expression outExp;
     output Boolean expanded;
 
@@ -551,7 +555,7 @@ public
       case Op.DIV_ARRAY_SCALAR  then expandBinaryArrayScalar(exp, Op.DIV);
       case Op.POW_SCALAR_ARRAY  then expandBinaryScalarArray(exp, Op.POW);
       case Op.POW_ARRAY_SCALAR  then expandBinaryArrayScalar(exp, Op.POW);
-      case Op.POW_MATRIX        then expandBinaryPowMatrix(exp);
+      case Op.POW_MATRIX        then expandBinaryPowMatrix(exp, resize);
       else                           expandBinaryElementWise(exp);
     end match;
 
@@ -864,6 +868,7 @@ public
 
   function expandBinaryPowMatrix
     input Expression exp;
+    input Boolean resize;
     output Expression outExp;
     output Boolean expanded;
   protected
@@ -894,7 +899,7 @@ public
           (outExp, expanded);
 
       // a ^ n where n is unknown, subscript the whole expression.
-      else expandGeneric(exp);
+      else expandGeneric(exp, resize);
     end match;
   end expandBinaryPowMatrix;
 
@@ -1032,6 +1037,7 @@ public
 
   function expandGeneric
     input Expression exp;
+    input Boolean resize;
     output Expression outExp;
     output Boolean expanded;
   protected
@@ -1046,7 +1052,7 @@ public
 
       if expanded then
         dims := Type.arrayDims(ty);
-        subs := list(list(Subscript.INDEX(e) for e in RangeIterator.toList(RangeIterator.fromDim(d))) for d in dims);
+        subs := list(list(Subscript.INDEX(e) for e in RangeIterator.toList(RangeIterator.fromDim(d, resize))) for d in dims);
         outExp := expandGeneric2(subs, exp, ty);
       else
         outExp := exp;

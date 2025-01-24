@@ -256,7 +256,7 @@ public
     list<ComponentRef> names;
   algorithm
     CONNECTOR(name, ty, face, cty, source) := conn;
-    names := ComponentRef.scalarizeAll(name);
+    names := ComponentRef.scalarizeAll(name, false);
     ty := Type.arrayElementType(ty);
 
     for n in names loop
@@ -285,7 +285,7 @@ public
       return;
     end if;
 
-    prefixes := ComponentRef.scalarizeAll(prefix);
+    prefixes := ComponentRef.scalarizeAll(prefix, false);
     ty := ComponentRef.getSubscriptedType(ComponentRef.first(name));
 
     for p in prefixes loop

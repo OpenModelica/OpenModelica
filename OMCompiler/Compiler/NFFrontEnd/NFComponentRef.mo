@@ -1492,6 +1492,7 @@ public
 
   function scalarize
     input ComponentRef cref;
+    input Boolean resize;
     output list<ComponentRef> crefs;
   algorithm
     crefs := match cref
@@ -1502,7 +1503,7 @@ public
       case CREF(ty = Type.ARRAY())
         algorithm
           dims := Type.arrayDims(cref.ty);
-          subs := Subscript.scalarizeList(cref.subscripts, dims);
+          subs := Subscript.scalarizeList(cref.subscripts, dims, resize);
           subs := List.combination(subs);
         then
           list(setSubscripts(s, cref) for s in subs);
@@ -1513,13 +1514,14 @@ public
 
   function scalarizeAll
     input ComponentRef cref;
+    input Boolean resize;
     output list<ComponentRef> crefs;
   protected
     ComponentRef next = cref;
     list<list<ComponentRef>> nested_crefs = {};
   algorithm
     while not isEmpty(next) loop
-      nested_crefs := scalarize(next) :: nested_crefs;
+      nested_crefs := scalarize(next, resize) :: nested_crefs;
       CREF(restCref = next) := next;
     end while;
     crefs := scalarizeAll_Nesting(nested_crefs);
@@ -1557,13 +1559,14 @@ public
   function scalarizeSlice
     input ComponentRef cref;
     input list<Integer> slice = {}  "optional slice, empty list means all";
+    input Boolean resize;
     output list<ComponentRef> crefs;
   protected
     ComponentRef next = cref;
     list<list<ComponentRef>> nested_crefs = {};
   algorithm
     while not isEmpty(next) loop
-      nested_crefs := scalarize(next) :: nested_crefs;
+      nested_crefs := scalarize(next, resize) :: nested_crefs;
       CREF(restCref = next) := next;
     end while;
     crefs := scalarizeAll_Nesting(nested_crefs);
