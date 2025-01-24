@@ -1288,7 +1288,7 @@ protected
               end for;
             end for;
           else
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " (single dependency) failed because list of scalar variables("
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " (single dependency) failed because list of scalar variables ("
               + intString(scal_size) + ") " + List.toString(scalarized, ComponentRef.toString)
               + ", does not fit the equation size " + intString(size) + ".\n"});
             fail();
