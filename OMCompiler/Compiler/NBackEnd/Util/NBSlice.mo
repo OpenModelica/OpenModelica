@@ -1031,16 +1031,20 @@ public
     output list<Integer> indices = {};
   protected
     list<ComponentRef> scalarized_dependencies = List.flatten(list(ComponentRef.scalarizeAll(dep, true) for dep in dependencies));
-    ComponentRef stripped;
+    ComponentRef replaced, stripped;
     Integer var_arr_idx, var_start, var_scal_idx;
     list<Integer> sizes, int_subs;
   algorithm
     for cref in scalarized_dependencies loop
-      stripped := ComponentRef.stripSubscriptsAll(cref);
+      // remove all resizable parameters from cref
+      replaced := ComponentRef.mapExp(cref, Expression.replaceResizableParameter);
+      // remove all subscripts from cref
+      stripped := ComponentRef.stripSubscriptsAll(replaced);
+
       var_arr_idx := UnorderedMap.getSafe(stripped, map, sourceInfo());
       (var_start, _) := mapping.var_AtS[var_arr_idx];
       sizes := ComponentRef.sizes(stripped, false);
-      int_subs := ComponentRef.subscriptsToInteger(cref);
+      int_subs := ComponentRef.subscriptsToInteger(replaced);
       var_scal_idx := locationToIndex(List.zip(sizes, int_subs), var_start);
       indices := var_scal_idx :: indices;
     end for;
@@ -1214,7 +1218,7 @@ protected
     "resolves the dependency of a component reference in an equation.
     I.  Resolve skip dimensions (Tuples, Records, Array Constructors)
     II. Resolve regular vs. reduced dimensions"
-    input ComponentRef cref;
+    input ComponentRef original_cref;
     input ComponentRef eqn_name;
     input Integer eqn_arr_idx;
     input Iterator iter;
@@ -1235,7 +1239,7 @@ protected
     list<Expression> ranges;
     list<tuple<ComponentRef, Expression>> frames;
     list<Boolean> regulars;
-    ComponentRef stripped;
+    ComponentRef cref, stripped;
     list<Subscript> subs;
     list<Dimension> dims, eq_dims;
     array<Integer> key;
@@ -1248,8 +1252,11 @@ protected
     Mode mode;
   algorithm
     try
+      // remove resizable parameters for index lookup
+      cref := ComponentRef.mapExp(original_cref, Expression.replaceResizableParameter);
+
       // I. resolve the skips
-      d                   := UnorderedMap.getSafe(cref, dep, sourceInfo());
+      d                   := UnorderedMap.getSafe(original_cref, dep, sourceInfo());
       (start, _)          := mapping.eqn_AtS[eqn_arr_idx];
       if not UnorderedSet.contains(cref, rep) then
         skip_lst := resolveSkipsLst(start, ty, arrayList(d.skips), cref, fullmap);
@@ -1270,7 +1277,7 @@ protected
         regulars := Dependency.toBoolean(d);
         if List.all(regulars, Util.id) then
           // II.1 all regular - single dependency per row.
-          mode := Mode.create(eqn_name, {cref}, false);
+          mode        := Mode.create(eqn_name, {original_cref}, false);
           scalarized  := listReverse(ComponentRef.scalarizeAll(cref, true));
           map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
           for scal in scalarized loop
@@ -1317,7 +1324,7 @@ protected
 
             // 4. iterate over all equation dimensions and use the map to get the correct dependencies
             key := arrayCreate(listLength(subs), 0);
-            resolveEquationDimensions(List.zip(eq_dims, regulars), map2, key, m, modes, Mode.create(eqn_name, {cref}, false), Pointer.create(skip_idx));
+            resolveEquationDimensions(List.zip(eq_dims, regulars), map2, key, m, modes, Mode.create(eqn_name, {original_cref}, false), Pointer.create(skip_idx));
           else
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because subscripts, dimensions and dependencies were not of equal length.\n"
               + "variable subscripts(" + intString(listLength(subs)) + "): " + List.toString(subs, Subscript.toString) + "\n"
@@ -1338,7 +1345,7 @@ protected
 
           // if its repeated, use the same cref always
           if repeated then
-            mode := Mode.create(eqn_name, {cref}, false);
+            mode := Mode.create(eqn_name, {original_cref}, false);
           end if;
 
           for i in skip_idx:iter_size:skip_idx+size-iter_size loop
@@ -1346,7 +1353,7 @@ protected
             for scal in scalarized loop
               // if its not repeated use local cref
               if not repeated then
-                mode := Mode.create(eqn_name, {scal}, true);
+                mode := Mode.create(eqn_name, {original_cref}, true);
               end if;
               for scal_idx in UnorderedMap.getSafe(scal, map3, sourceInfo()) loop
                 if intMod(shift, iter_size) == 0 then shift := 0; end if;
@@ -1358,7 +1365,7 @@ protected
         end if;
       end for;
     else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + ComponentRef.toString(cref) + "."});
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + ComponentRef.toString(original_cref) + "."});
       fail();
     end try;
   end resolveDependency;
