@@ -130,11 +130,15 @@ public function topLevelInput "author: PA
   input DAE.ConnectorType connectorType;
   input DAE.VarVisibility visibility = DAE.PUBLIC();
   output Boolean isTopLevel;
+protected
+  // the new frontend only keeps top level inputs, obsoleting bogus check for DAE.CREF_IDENT
+  Boolean newInst = Flags.isSet(Flags.SCODE_INST);
 algorithm
-  isTopLevel := match (varDirection, componentRef, visibility)
-    case (          _,                _, DAE.PROTECTED()) then false;
-    case (DAE.INPUT(), DAE.CREF_IDENT(),               _) then true;
-    case (DAE.INPUT(),                _,               _)
+  isTopLevel := match (varDirection, componentRef, visibility, newInst)
+    case (          _,                _, DAE.PROTECTED(),    _) then false;
+    case (DAE.INPUT(),                _,               _, true) then true;
+    case (DAE.INPUT(), DAE.CREF_IDENT(),               _,    _) then true;
+    case (DAE.INPUT(),                _,               _,    _)
       guard(ConnectUtil.faceEqual(ConnectUtil.componentFaceType(componentRef), Connect.OUTSIDE()))
       then topLevelConnectorType(connectorType);
     else false;
