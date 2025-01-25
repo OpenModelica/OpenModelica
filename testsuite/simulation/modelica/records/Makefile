@@ -6,6 +6,7 @@ constVar1.mos \
 constVar2.mos \
 constVar4.mos \
 InOutRecord.mos \
+InputRecord.mos \
 RecordConstructor1.mos \
 TestComplexSum1.mos \
 TestComplexSum2.mos \
