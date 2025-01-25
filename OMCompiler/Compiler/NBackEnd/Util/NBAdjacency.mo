@@ -1663,15 +1663,13 @@ public
   function collectDependencies
     "collects all relevant component references from an expression
     furthermore it collects additional data about dependency and solvability."
-    input Expression _exp;
+    input Expression exp;
     input Integer depth;
     input UnorderedMap<ComponentRef, Integer> map "unknowns map to check for relevance";
     input UnorderedMap<ComponentRef, Dependency> dep_map;
     input UnorderedMap<ComponentRef, Solvability> sol_map;
     input UnorderedSet<ComponentRef> rep_set;
     output UnorderedSet<ComponentRef> set;
-  protected
-    Expression exp = Expression.map(_exp, Expression.replaceResizableParameter);
   algorithm
     set := match exp
       local
