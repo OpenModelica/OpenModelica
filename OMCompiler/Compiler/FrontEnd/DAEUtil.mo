@@ -6701,5 +6701,16 @@ algorithm
   end match;
 end getParameters;
 
+public function getInteger
+  input DAE.Exp exp;
+  output Integer i;
+algorithm
+  i := match exp
+    case DAE.ICONST(integer = i) then i;
+    else algorithm
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because expression is not an ICONST: " + ExpressionDump.printExpStr(exp) + ".\n"});
+    then fail();
+  end match;
+end getInteger;
 annotation(__OpenModelica_Interface="frontend");
 end DAEUtil;
