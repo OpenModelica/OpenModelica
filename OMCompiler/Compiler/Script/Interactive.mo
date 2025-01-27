@@ -900,12 +900,6 @@ algorithm
   args := getApiFunctionArgs(inStatement);
 
   outResult := match(fn_name)
-    case "getCrefInfo"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        getCrefInfo(cr, p);
-
     case "getExtendsModifierValue"
       algorithm
         {Absyn.CREF(componentRef = class_),
@@ -1068,7 +1062,7 @@ protected
 algorithm
   try
     if isClassReadOnly(InteractiveUtil.getPathedClassInProgram(classPath, program)) then
-      result := ValuesUtil.makeCodeTypeName(Absyn.IDENT("Error: class: " + AbsynUtil.pathString(classPath) + " is in a read only file!"));
+      result := ValuesUtil.makeCodeTypeNameStr("Error: class: " + AbsynUtil.pathString(classPath) + " is in a read only file!");
       return;
     end if;
 
@@ -1094,7 +1088,7 @@ protected
 algorithm
   try
     if isClassReadOnly(InteractiveUtil.getPathedClassInProgram(classPath, program)) then
-      result := ValuesUtil.makeCodeTypeName(Absyn.IDENT("Error: class: " + AbsynUtil.pathString(classPath) + " is in a read only file!"));
+      result := ValuesUtil.makeCodeTypeNameStr("Error: class: " + AbsynUtil.pathString(classPath) + " is in a read only file!");
       return;
     end if;
 
@@ -3547,55 +3541,35 @@ algorithm
   end match;
 end setElementIsField;
 
-protected function getCrefInfo
+public function getCrefInfo
 " author: adrpo@ida
    date  : 2005-11-03, changed 2006-02-05 to match new SOURCEINFO
    Retrieves the Info attribute of a Class.
    When parsing classes, the source:
    file name + isReadOnly + start lineno + start columnno + end lineno + end columnno is added to the Class
    definition and to all Elements, see SourceInfo. This function retrieves the
-   Info contents.
-   inputs:   (Absyn.ComponentRef, /* class */
-                Absyn.Program)
-   outputs:   string"
-  input Absyn.ComponentRef inComponentRef;
-  input Absyn.Program inProgram;
-  output String outString;
+   Info contents."
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  Absyn.Class cls;
+  SourceInfo info;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef,inProgram)
-    local
-      Absyn.Path p_class;
-      Absyn.Class cdef;
-      String id,filename,str_sline,str_scol,str_eline,str_ecol,s,str_readonly;
-      Boolean isReadOnly;
-      Integer sline,scol,eline,ecol;
-      Absyn.ComponentRef class_;
-      Absyn.Program p;
-    case (class_,p)
-      equation
-        p_class = AbsynUtil.crefToPath(class_);
-        cdef = InteractiveUtil.getPathedClassInProgram(p_class, p);
-        Absyn.CLASS(info = SOURCEINFO(fileName = filename,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol)) = cdef;
-        filename = Testsuite.friendly(filename);
-        str_sline = intString(sline);
-        str_scol = intString(scol);
-        str_eline = intString(eline);
-        str_ecol = intString(ecol);
-        str_readonly = if isReadOnly then "readonly" else "writable";
-        s = stringAppendList({
-               "{",
-               filename, ",",
-               str_readonly, ",",
-               str_sline, ",",
-               str_scol, ",",
-               str_eline, ",",
-               str_ecol,
-               "}"});
-      then
-        s;
-    else "Error";
-  end matchcontinue;
+  try
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    info := cls.info;
+    result := ValuesUtil.makeArray({
+      ValuesUtil.makeCodeTypeNameStr(Testsuite.friendly(info.fileName)),
+      ValuesUtil.makeCodeTypeNameStr(if info.isReadOnly then "readonly" else "writable"),
+      ValuesUtil.makeInteger(info.lineNumberStart),
+      ValuesUtil.makeInteger(info.columnNumberStart),
+      ValuesUtil.makeInteger(info.lineNumberEnd),
+      ValuesUtil.makeInteger(info.columnNumberEnd)
+    });
+  else
+    result := ValuesUtil.makeBoolean(false);
+  end try;
 end getCrefInfo;
 
 protected function getImportString
@@ -8024,7 +7998,7 @@ protected
     String str;
   algorithm
     str := getNamedAnnotationExp(classPath, program, annotationPath, SOME("{}"), getAnnotationValue);
-    result := ValuesUtil.makeCodeTypeName(Absyn.Path.IDENT(str));
+    result := ValuesUtil.makeCodeTypeNameStr(str);
   end impl;
 algorithm
   result := InteractiveUtil.accessClass(classPath, program,

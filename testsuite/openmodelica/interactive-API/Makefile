@@ -65,6 +65,7 @@ getInheritedClasses1.mos \
 getInheritedClasses2.mos \
 getNthComponentAnnotation.mos \
 getNthConnector.mos \
+getNthConnectorIconAnnotation.mos \
 getSimulationOptions1.mos \
 getSimulationOptions2.mos \
 getSimulationOptions3.mos \

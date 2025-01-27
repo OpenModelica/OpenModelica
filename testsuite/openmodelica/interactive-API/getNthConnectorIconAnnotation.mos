@@ -1,0 +1,24 @@
+// name: getNthConnectorIconAnnotation
+// keywords:
+// status: correct
+// cflags: -d=newInst
+
+loadString("
+  connector C
+    Real e;
+    flow Real f;
+    annotation(Icon(graphics = {Rectangle(origin = {0, 0}, extent = {{0, 0}, {100, 100}})}));
+  end C;
+
+  model M
+    C c1;
+    C c2;
+  end M;
+");
+
+getNthConnectorIconAnnotation(M, 1);
+
+// Result:
+// true
+// {-,-,-,-,-,-,-,,{Rectangle(true, {0.0, 0.0}, 0.0, {0, 0, 0}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, BorderPattern.None, {{0.0, 0.0}, {100.0, 100.0}}, 0.0)}}
+// endResult

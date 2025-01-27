@@ -1714,7 +1714,7 @@ protected
 algorithm
   annotations := listAppend(inAnnotations, ccAnnotations);
   (strl, outCache) := getElementitemsAnnotationsElArgs(annotations, inEnv, inClass, outCache);
-  result := list(ValuesUtil.makeCodeTypeName(Absyn.Path.IDENT(s)) for s in strl);
+  result := list(ValuesUtil.makeCodeTypeNameStr(s) for s in strl);
 end getElementitemsAnnotationsFromElArgs;
 
 protected function getAnnotationsFromConstraintClass
@@ -2224,7 +2224,7 @@ public function dimensionListValues
   input list<Absyn.Subscript> dims;
   output list<Values.Value> vals;
 algorithm
-  vals := list(ValuesUtil.makeCodeTypeName(Absyn.Path.IDENT(Dump.printSubscriptStr(d))) for d in dims);
+  vals := list(ValuesUtil.makeCodeTypeNameStr(Dump.printSubscriptStr(d)) for d in dims);
 end dimensionListValues;
 
 protected function getElementInfo
@@ -2292,7 +2292,7 @@ algorithm
             info := ValuesUtil.makeString(name) :: info;
             info := ValuesUtil.makeString(AbsynUtil.pathString(ty)) :: info;
           else
-            info := ValuesUtil.makeCodeTypeName(Absyn.Path.IDENT(name)) :: info;
+            info := ValuesUtil.makeCodeTypeNameStr(name) :: info;
             info := ValuesUtil.makeCodeTypeName(ty) :: info;
           end if;
 
@@ -2331,7 +2331,7 @@ algorithm
         info := ValuesUtil.makeCodeTypeName(getConstrainClassPath(env, opt_cc)) :: info;
         info := getElementAttributeValues(element, isPublic, quoteNames, info);
         info := ValuesUtil.makeString(cmt) :: info;
-        info := ValuesUtil.makeCodeTypeName(Absyn.Path.IDENT(name)) :: info;
+        info := ValuesUtil.makeCodeTypeNameStr(name) :: info;
         info := ValuesUtil.makeCodeTypeName(ty) :: info;
         info := ValuesUtil.makeString(Dump.unparseRestrictionStr(restriction)) :: info;
         info := ValuesUtil.makeString("cl") :: info;
@@ -6260,7 +6260,7 @@ function makeAnnotationArrayValue
   input list<String> annotations;
   output Values.Value arr;
 algorithm
-  arr := ValuesUtil.makeArray(list(ValuesUtil.makeCodeTypeName(Absyn.Path.IDENT(s)) for s in annotations));
+  arr := ValuesUtil.makeArray(list(ValuesUtil.makeCodeTypeNameStr(s) for s in annotations));
 end makeAnnotationArrayValue;
 
 function parseWithinPath

@@ -2265,6 +2265,13 @@ algorithm
   val := Values.CODE(Absyn.C_TYPENAME(path));
 end makeCodeTypeName;
 
+public function makeCodeTypeNameStr
+  input String str;
+  output Values.Value val;
+algorithm
+  val := Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str)));
+end makeCodeTypeNameStr;
+
 public function makeCodeTypeNameArray
   input list<Absyn.Path> paths;
   output Values.Value val;
