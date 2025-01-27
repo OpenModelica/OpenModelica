@@ -5030,6 +5030,16 @@ annotation(
 </html>"), preferredView="text");
 end getClassInformation;
 
+function getCrefInfo
+  input TypeName cl;
+  output Expression[:] result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Deprecated; use getClassInformation instead.</p>
+</html>"), preferredView="text");
+end getCrefInfo;
+
 function getShortDefinitionBaseClassInformation
   input TypeName className;
   output Expression result;

@@ -3301,6 +3301,9 @@ algorithm
       then
         v;
 
+    case ("getCrefInfo", {Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then Interactive.getCrefInfo(classpath, SymbolTable.getAbsyn());
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 
