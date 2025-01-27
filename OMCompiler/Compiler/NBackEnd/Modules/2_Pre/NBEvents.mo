@@ -219,18 +219,14 @@ public
       input output list<Pointer<Variable>> auxiliary_vars;
       input output list<Pointer<Equation>> auxiliary_eqns;
     protected
-      list<ComponentRef> iter;
-      list<Expression> range;
-      list<Option<Iterator>> maps;
       ComponentRef lhs_cref;
       Pointer<Equation> aux_eqn;
     algorithm
       // if it has a statement index, it already has been created as a statement inside an algorithm (0 implies no index)
       if cond.stmt_index == 0 then
-        (iter, range, maps) := Equation.Iterator.getFrames(cond.iter);
         // lower the subscripts (containing iterators)
         lhs_cref := ComponentRef.mapSubscripts(BVariable.getVarName(aux_var), function Subscript.mapExp(func = function BackendDAE.lowerComponentReferenceExp(variables = variables)));
-        aux_eqn := Equation.makeAssignment(Expression.fromCref(lhs_cref), cond.exp, idx, "EVT", Iterator.fromFrames(List.zip3(iter, range, maps)), EquationAttributes.default(EquationKind.DISCRETE, false));
+        aux_eqn := Equation.makeAssignment(Expression.fromCref(lhs_cref), cond.exp, idx, "EVT", cond.iter, EquationAttributes.default(EquationKind.DISCRETE, false));
         auxiliary_eqns := aux_eqn :: auxiliary_eqns;
       end if;
       // remove all subscripts from the variable name
@@ -1071,6 +1067,8 @@ protected
         Bucket bucket;
         ClockKind clk;
         Expression condition;
+        Call call;
+        list<Frame> new_frames;
 
       // logical unarys: e.g. not a
       // FIXME this is wrong for `not initial()`
@@ -1113,6 +1111,19 @@ protected
       case Expression.CREF() guard(BVariable.isPrevious(BVariable.getVarPointer(exp.cref))) algorithm
         (exp, bucket) := CompositeEvent.add(exp, iter, Pointer.access(bucket_ptr), createEqn);
         Pointer.update(bucket_ptr, bucket);
+      then exp;
+
+      // add the reduction iterators to the iterator used to build the condition
+      // ToDo: if they are not ranges we need to normalize them
+      case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
+        new_frames := list((ComponentRef.fromNode(Util.tuple21(tpl), Type.INTEGER()), Util.tuple22(tpl), NONE()) for tpl in call.iters);
+        call.exp := Expression.mapReverse(call.exp, function collectEventsTraverse(
+          bucket_ptr  = bucket_ptr,
+          iter        = Iterator.addFrames(iter, new_frames),
+          eqn         = eqn,
+          funcTree    = funcTree,
+          createEqn   = createEqn));
+        exp.call := call;
       then exp;
 
       // ToDo: math events (check the call name in a function and merge with sample case?)
