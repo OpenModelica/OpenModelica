@@ -36,6 +36,8 @@
 #include "Util/Helper.h"
 #include "MessagesWidget.h"
 #include "Options/OptionsDialog.h"
+#include "MainWindow.h"
+#include "OMC/OMCProxy.h"
 
 #include <QRectF>
 #include <QtMath>
@@ -736,22 +738,6 @@ namespace ModelInstance
     deserialize(jsonValue);
   }
 
-  Modifier::Modifier(const Modifier *pModifier)
-  {
-    mName = pModifier->getName();
-    mpParentModel = pModifier->getParentModel();
-    mType = pModifier->getType();
-    mFinal = pModifier->isFinal();
-    mEach = pModifier->isEach();
-    mComment = pModifier->getComment();
-    mpElement = 0; // perhaps not needed for deep copy. This constructor is used only during copy/paste of elements.
-    mValue = pModifier->getValue();
-    mValueDefined = pModifier->isValueDefined();
-    foreach (auto pSubModifier, pModifier->getModifiers()) {
-      mModifiers.append(new Modifier(pSubModifier));
-    }
-  }
-
   Modifier::~Modifier()
   {
     if (mpElement) {
@@ -858,9 +844,31 @@ namespace ModelInstance
     return pModifier && pModifier->getName().compare(modifier) == 0;
   }
 
+  /*!
+   * \brief createModifier
+   * Creates the Modifier from another Modifier.\n
+   * See issue #13301 and #13516.\n
+   * Dump the modifier as string and use OMCProxy::modifierToJSON to convert it to JSON.\n
+   * Contruct new Modifier instance with JSON.
+   * \param pModifier
+   * \return
+   */
+  Modifier *createModifier(const Modifier *pModifier, Model *pParentModel)
+  {
+    // If value is defined then we wrap within parenthesis otherwise its not needed.
+    if (pModifier->isValueDefined()) {
+      QJsonObject jsonObject = MainWindow::instance()->getOMCProxy()->modifierToJSON("(" % pModifier->toString() % ")");
+      return new Modifier(pModifier->getName(), jsonObject.value(pModifier->getName()), pParentModel);
+    } else {
+      QJsonObject jsonObject;
+      jsonObject.insert("modifiers", MainWindow::instance()->getOMCProxy()->modifierToJSON(pModifier->toString()));
+      return new Modifier(pModifier->getName(), jsonObject.value("modifiers"), pParentModel);
+    }
+  }
+
   void Modifier::addModifier(const Modifier *pModifier)
   {
-    mModifiers.append(new Modifier(pModifier));
+    mModifiers.append(createModifier(pModifier, mpParentModel));
   }
 
   bool Modifier::isRedeclare() const
@@ -2302,6 +2310,24 @@ namespace ModelInstance
   }
 
   /*!
+   * \brief Component::mergeModifiersIntoOne
+   * Merges the list of all extends modifiers into one modifier.
+   * \param extendsModifiers
+   * \return
+   */
+  Modifier *Component::mergeModifiersIntoOne(QList<Modifier *> extendsModifiers) const
+  {
+    Modifier *pModifier = nullptr;
+    if (!extendsModifiers.isEmpty()) {
+      pModifier = createModifier(extendsModifiers.last(), mpParentModel);
+      for (int i = extendsModifiers.size() - 2 ; i >= 0 ; i--) {
+        Component::mergeModifiers(pModifier, extendsModifiers.at(i));
+      }
+    }
+    return pModifier;
+  }
+
+  /*!
    * \brief Component::mergeModifiers
    * Merges pModifier2 into pModifier1
    * \param pModifier1
@@ -2327,24 +2353,6 @@ namespace ModelInstance
         pModifier1->addModifier(pSubModifier2);
       }
     }
-  }
-
-  /*!
-   * \brief Component::mergeModifiersIntoOne
-   * Merges the list of all extends modifiers into one modifier.
-   * \param extendsModifiers
-   * \return
-   */
-  Modifier* Component::mergeModifiersIntoOne(QList<Modifier *> extendsModifiers)
-  {
-    Modifier *pModifier = nullptr;
-    if (!extendsModifiers.isEmpty()) {
-      pModifier = new Modifier(extendsModifiers.last());
-      for (int i = extendsModifiers.size() - 2 ; i >= 0 ; i--) {
-        Component::mergeModifiers(pModifier, extendsModifiers.at(i));
-      }
-    }
-    return pModifier;
   }
 
   /*!
@@ -2396,13 +2404,13 @@ namespace ModelInstance
     if (mpModifier) {
       Modifier *pModifier = nullptr;
       if (mergeExtendsModifiers) {
-        // Merge extends modifiers. See issue #13301
+        // Merge extends modifiers. See issue #13301 and #13516.
         QList<Modifier *> extendsModifiers = getExtendsModifiers(mpModifier);
-        pModifier = Component::mergeModifiersIntoOne(extendsModifiers);
+        pModifier = mergeModifiersIntoOne(extendsModifiers);
       }
 
       if (pModifier) {
-        mergeModifiers(pModifier, mpModifier);
+        Component::mergeModifiers(pModifier, mpModifier);
         // we don't need the name coming from the extend modification
         pModifier->setName("");
         value.append(pModifier->toString());

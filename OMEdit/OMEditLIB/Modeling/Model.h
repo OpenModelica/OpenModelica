@@ -477,7 +477,6 @@ private:
   {
   public:
     Modifier(const QString &name, const QJsonValue &jsonValue, Model *pParentModel);
-    Modifier(const Modifier *pModifier);
     ~Modifier();
     void deserialize(const QJsonValue &jsonValue);
 
@@ -762,8 +761,8 @@ private:
   private:
     void deserialize_impl(const QJsonObject &jsonObject) override;
     QList<Modifier*> getExtendsModifiers(const Modifier *pModifier) const;
+    Modifier *mergeModifiersIntoOne(QList<Modifier*> extendsModifiers) const;
     static void mergeModifiers(Modifier *pModifier1, Modifier *pModifier2);
-    static Modifier *mergeModifiersIntoOne(QList<Modifier*> extendsModifiers);
   private:
     QString mName;
     bool mCondition = true;
