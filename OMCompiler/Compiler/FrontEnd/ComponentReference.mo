@@ -835,7 +835,7 @@ protected
 algorithm
   for i in inSubs1 loop
     res::rest := rest;
-    res := if i>res then 1 elseif i<res then -1 else 0;
+    res := if i>res then 1 elseif i < res then -1 else 0;
     if res <> 0 then
       return;
     end if;
