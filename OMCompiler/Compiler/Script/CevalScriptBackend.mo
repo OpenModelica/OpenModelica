@@ -2596,6 +2596,12 @@ algorithm
       then
         Values.BOOL(b);
 
+    case ("isExtendsModifierFinal",
+          {Values.CODE(Absyn.C_TYPENAME(classpath)),
+           Values.CODE(Absyn.C_TYPENAME(baseClassPath)),
+           Values.CODE(Absyn.C_TYPENAME(path))})
+      then Interactive.isExtendsModifierFinal(classpath, baseClassPath, path, SymbolTable.getAbsyn());
+
     case ("removeComponentModifiers",
         Values.CODE(Absyn.C_TYPENAME(path))::
       Values.STRING(str1)::

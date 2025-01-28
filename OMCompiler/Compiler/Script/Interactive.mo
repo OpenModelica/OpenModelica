@@ -900,14 +900,6 @@ algorithm
   args := getApiFunctionArgs(inStatement);
 
   outResult := match(fn_name)
-    case "isExtendsModifierFinal"
-      algorithm
-        {Absyn.CREF(componentRef = class_),
-         Absyn.CREF(componentRef = crident),
-         Absyn.CREF(componentRef = subident)} := args;
-      then
-        isExtendsModifierFinal(class_, crident, subident, p);
-
     case "getDefaultComponentName"
       algorithm
         {Absyn.CREF(componentRef = class_)} := args;
@@ -4091,75 +4083,37 @@ public function getExtendsModifierValue
   input Absyn.Program program;
   output Values.Value result;
 protected
-  Absyn.Path cls_path, name;
-  Absyn.Class cls;
-  list<Absyn.ElementArg> args;
-  GraphicEnvCache env;
-  list<Absyn.ElementSpec> exts;
+  list<Absyn.ElementArg> ext_mod;
 algorithm
   try
-    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
-    env := getClassEnv(program, classPath);
-    exts := list(makeExtendsFullyQualified(e, env) for e in InteractiveUtil.getExtendsElementspecInClass(cls));
-    {Absyn.EXTENDS(elementArg = args)} := List.select1(exts, extendsElementspecNamed, extendsPath);
-    result := ValuesUtil.makeCodeTypeNameStr(Dump.printExpStr(getModificationValue(args, modifierPath)));
+    SOME(Absyn.EXTENDS(elementArg = ext_mod)) :=
+      InteractiveUtil.getPathedExtendsInProgram(classPath, extendsPath, program);
+    result := ValuesUtil.makeCodeTypeNameStr(Dump.printExpStr(getModificationValue(ext_mod, modifierPath)));
   else
     result := ValuesUtil.makeCodeTypeNameStr("");
   end try;
 end getExtendsModifierValue;
 
-protected function isExtendsModifierFinal
-" Return true if the modifier of an extends clause has final prefix.
-   for instance,
-   model test extends A(final p1=3);end test;
-   isExtendsModifierFinal(test,A,p1) => true
-   inputs:  (Absyn.ComponentRef, /* class */
-               Absyn.ComponentRef, /* ident */
-               Absyn.ComponentRef, /* subident */
-               Absyn.Program)
-   outputs:  boolean"
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  input Absyn.Program inProgram4;
-  output String outString;
+public function isExtendsModifierFinal
+  "Returns true if the given modifier on an extends clause is final, for instance:
+     model test extends A(final p1 = 3); end test;
+     isExtendsModifierFinal(test, A, p1) => true"
+  input Absyn.Path classPath;
+  input Absyn.Path extendsPath;
+  input Absyn.Path modifierPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  list<Absyn.ElementArg> ext_mod;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef1,inComponentRef2,inComponentRef3,inProgram4)
-    local
-      Absyn.Path p_class,name,extpath;
-      Absyn.Class cdef;
-      GraphicEnvCache env;
-      list<Absyn.ElementSpec> exts,exts_1;
-      list<Absyn.ElementArg> extmod;
-      Absyn.Modification mod;
-      String res;
-      Boolean finalPrefix;
-      Absyn.ComponentRef class_,inherit_name,subident;
-      Absyn.Program p;
-    case (class_,inherit_name,subident,p)
-      equation
-        p_class = AbsynUtil.crefToPath(class_);
-        name = AbsynUtil.crefToPath(inherit_name);
-        cdef = InteractiveUtil.getPathedClassInProgram(p_class, p);
-        env = getClassEnv(p, p_class);
-        exts = InteractiveUtil.getExtendsElementspecInClass(cdef);
-        exts_1 = List.map1(exts, makeExtendsFullyQualified, env);
-        {Absyn.EXTENDS(_,extmod,_)} = List.select1(exts_1, extendsElementspecNamed, name);
-        finalPrefix = isModifierfinal(extmod, AbsynUtil.crefToPath(subident));
-        res = boolString(finalPrefix);
-      then
-        res;
-    else "Error";
-  end matchcontinue;
+  try
+    SOME(Absyn.EXTENDS(elementArg = ext_mod)) :=
+      InteractiveUtil.getPathedExtendsInProgram(classPath, extendsPath, program);
+    result := ValuesUtil.makeBoolean(isModifierfinal(ext_mod, modifierPath));
+  else
+    result := ValuesUtil.makeBoolean(false);
+  end try;
 end isExtendsModifierFinal;
-
-public function extendsElementspecNamed
-"the name given as path, false otherwise."
-  input Absyn.ElementSpec inElementSpec;
-  input Absyn.Path inPath;
-  output Boolean res = AbsynUtil.pathEqual(inPath, AbsynUtil.elementSpecToPath(inElementSpec));
-end extendsElementspecNamed;
 
 public function isModifierfinal
 " Helper function to isExtendsModifierFinal."
