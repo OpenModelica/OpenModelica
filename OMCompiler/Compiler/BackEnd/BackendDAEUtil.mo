@@ -1375,7 +1375,7 @@ algorithm
     if oMark[eqn] == 0 then // "Mark an unmarked node/equation"
       arrayUpdate(oMark, eqn, 1);
       for i in m[eqn] loop
-        if i>0 and i<=len then
+        if i>0 and i <= len then
           // We already did bounds checking above
           j := Dangerous.arrayGetNoBoundsChecking(ass1, i);
           positiveAndUnmarked := (if j>0 then arrayGet(oMark, j) == 0 else false);

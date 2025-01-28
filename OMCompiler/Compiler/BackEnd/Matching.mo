@@ -127,7 +127,7 @@ algorithm
   eMarkIx := arrayCreate(nEqns, 0);
 
   i := 1;
-  while i<=nEqns loop
+  while i <= nEqns loop
     j := ass2[i];
     if not (j>0 and ass1[j] == i) then
       clearArrayWithKnownSetIndexes(eMark, eMarkIx, eMarkN);
@@ -184,7 +184,7 @@ algorithm
   vMarkIx := arrayCreate(nVars, 0);
   eMarkIx := arrayCreate(nEqns, 0);
   i := 1;
-  while i<=nEqns and success loop
+  while i <= nEqns and success loop
     j := ass2[i];
     if ((j>0) and ass1[j] == i) then
       success :=true;
