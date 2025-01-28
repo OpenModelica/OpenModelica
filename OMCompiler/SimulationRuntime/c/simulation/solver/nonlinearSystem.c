@@ -1167,6 +1167,9 @@ NLS_SOLVER_STATUS solveWithInitHomotopy(DATA *data, threadData_t *threadData, NO
  */
 int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 {
+  assertStreamPrint(NULL, NULL != threadData, "threadData is NULL. Something went horribly wrong!");
+  assertStreamPrint(threadData, NULL != data, "data is NULL. Something went horribly wrong!");
+
   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=NULL};
   int saveJumpState, constraintsSatisfied;
   NONLINEAR_SYSTEM_DATA* nonlinsys = &(data->simulationInfo->nonlinearSystemData[sysNumber]);

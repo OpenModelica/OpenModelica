@@ -208,7 +208,7 @@ void deactivateLogging()
 
   if (streamsActive == 0)
   {
-    return;   /* Do nothing if allready actinactiveive */
+    return;   /* Do nothing if already inactive */
   }
 
   for(i=0; i<OMC_SIM_LOG_MAX; ++i)
@@ -240,7 +240,7 @@ void reactivateLogging()
 
   if (streamsActive == 1)
   {
-    return;   /* Do nothing if allready active */
+    return;   /* Do nothing if already active */
   }
 
   for(i=0; i<OMC_SIM_LOG_MAX; ++i)
