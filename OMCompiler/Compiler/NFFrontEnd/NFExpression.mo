@@ -631,9 +631,6 @@ public
             comp := compare(exp1.exp1, e1);
             if comp == 0 then
               comp := compare(exp1.exp2, e2);
-              if comp == 0 then
-                comp := exp1.index - i;
-              end if;
             end if;
           end if;
         then
