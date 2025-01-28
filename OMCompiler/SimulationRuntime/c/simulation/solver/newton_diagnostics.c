@@ -111,20 +111,20 @@ double** getJacobian( DATA* data, threadData_t *threadData, unsigned sysNumber, 
 {
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
-  assertStreamPrint(threadData, NULL != jac, "NEWTON_DIAGNOSTICS: invalid jac-pointer.");
-  assertStreamPrint(threadData, jac->availability != JACOBIAN_UNKNOWN, "NEWTON_DIAGNOSTICS: Jacobian availablity status is unknown.");
-  assertStreamPrint(threadData, NULL != jac->seedVars, "NEWTON_DIAGNOSTICS: invalid seedVars-pointer.");
-  assertStreamPrint(threadData, NULL != systemData, "NEWTON_DIAGNOSTICS: invalid systemData-pointer.");
-  assertStreamPrint(threadData, NULL != systemData->analyticalJacobianColumn, "NEWTON_DIAGNOSTICS: invalid analyticJacobianColumn-pointer.");
+  assertStreamPrint(NULL, NULL != jac, "NEWTON_DIAGNOSTICS: invalid jac-pointer.");
+  assertStreamPrint(NULL, jac->availability != JACOBIAN_UNKNOWN, "NEWTON_DIAGNOSTICS: Jacobian availablity status is unknown.");
+  assertStreamPrint(NULL, NULL != jac->seedVars, "NEWTON_DIAGNOSTICS: invalid seedVars-pointer.");
+  assertStreamPrint(NULL, NULL != systemData, "NEWTON_DIAGNOSTICS: invalid systemData-pointer.");
+  assertStreamPrint(NULL, NULL != systemData->analyticalJacobianColumn, "NEWTON_DIAGNOSTICS: invalid analyticJacobianColumn-pointer.");
 
   unsigned i, j;
 
   // Allocate memory for fx (m * m matrix)
   double** fx = (double**)malloc(m * sizeof(double*));
-  assertStreamPrint(threadData, NULL != fx, "out of memory");
+  assertStreamPrint(NULL, NULL != fx, "out of memory");
   for (i = 0; i < m; i++) {
     fx[i] = (double*)malloc(m * sizeof(double));
-    assertStreamPrint(threadData, NULL != fx[i], "out of memory");
+    assertStreamPrint(NULL, NULL != fx[i], "out of memory");
   }
 
   // Order of Jacobian elements:
@@ -248,26 +248,26 @@ double*** getHessian( DATA* data, threadData_t *threadData, unsigned sysNumber, 
 
   // Allocate memory for Hessian fxx (m * m * m doubles)
   double*** fxx = (double***)malloc(m * sizeof(double**));
-  assertStreamPrint(threadData, NULL != fxx, "out of memory");
+  assertStreamPrint(NULL, NULL != fxx, "out of memory");
   for (i = 0; i < m; i++) {
     fxx[i] = (double**)malloc(m * sizeof(double*));
-    assertStreamPrint(threadData, NULL != fxx[i], "out of memory");
+    assertStreamPrint(NULL, NULL != fxx[i], "out of memory");
     for (j = 0; j < m; j++) {
       fxx[i][j] = (double*)malloc(m * sizeof(double));
-      assertStreamPrint(threadData, NULL != fxx[i][j], "out of memory");
+      assertStreamPrint(NULL, NULL != fxx[i][j], "out of memory");
     }
   }
 
   // Allocate memory for Jacobians
   double** fxPls = (double**)malloc(m * sizeof(double*));
-  assertStreamPrint(threadData, NULL != fxPls, "out of memory");
+  assertStreamPrint(NULL, NULL != fxPls, "out of memory");
   double** fxMin = (double**)malloc(m * sizeof(double*));
-  assertStreamPrint(threadData, NULL != fxMin, "out of memory");
+  assertStreamPrint(NULL, NULL != fxMin, "out of memory");
   for (i = 0; i < m; i++) {
     fxPls[i] = (double*)malloc(m * sizeof(double));
-    assertStreamPrint(threadData, NULL != fxPls[i], "out of memory");
+    assertStreamPrint(NULL, NULL != fxPls[i], "out of memory");
     fxMin[i] = (double*)malloc(m * sizeof(double));
-    assertStreamPrint(threadData, NULL != fxMin[i], "out of memory");
+    assertStreamPrint(NULL, NULL != fxMin[i], "out of memory");
   }
 
   // ----------------------------------------------- Debug -------------------------------------------------
@@ -413,28 +413,28 @@ double* calcAlpha( DATA* data, threadData_t* threadData, unsigned sysNumber, uns
 
   // Allocate memory for alpha (p doubles)
   double* alpha = (double*)malloc(p * sizeof(double));
-  assertStreamPrint(threadData, NULL != alpha, "out of memory");
+  assertStreamPrint(NULL, NULL != alpha, "out of memory");
 
   // Get damped guess x1_star for second iteration step
   double* x1_star = (double*)malloc(m * sizeof(double));
-  assertStreamPrint(threadData, NULL != x1_star, "out of memory");
+  assertStreamPrint(NULL, NULL != x1_star, "out of memory");
   for (j = 0; j < m; j++)
     x1_star[j] = x[j] + lambda * dx[j];
 
   // Calculate residuals f_x1_star for damped guess x1_star
   double* f_x1_star = (double*)malloc(m * sizeof(double));
-  assertStreamPrint(threadData, NULL != f_x1_star, "out of memory");
+  assertStreamPrint(NULL, NULL != f_x1_star, "out of memory");
   systemData->residualFunc(&resUserData, x1_star, f_x1_star, (int*)&systemData->size);
 
   // For each non-linear independent get w1_star - w0
   double* w1_star_w0 = (double*)malloc(q * sizeof(double));
-  assertStreamPrint(threadData, NULL != w1_star_w0, "out of memory");
+  assertStreamPrint(NULL, NULL != w1_star_w0, "out of memory");
   for (j = 0; j < q; j++)
     w1_star_w0[j] = lambda * dx[w_idx[j]];
 
   // Calculate alpha for each non-linear equation i
   double* w_times_fww_w0 = (double*)malloc(q * sizeof(double));
-  assertStreamPrint(threadData, NULL != w_times_fww_w0, "out of memory");
+  assertStreamPrint(NULL, NULL != w_times_fww_w0, "out of memory");
 
   for (i = 0; i < p; i++) {
     // Vector w_times_fww_w0 = (w1_star - w0)' * fww_w0  (1 x q * q x q --> 1 x q vector)
@@ -990,13 +990,13 @@ unsigned* getNonlinearEqns( DATA* data, threadData_t* threadData, unsigned sysNu
 
   // Calculate x1 from NewtonFirstStep data dx
   double* x1 = (double*)malloc(m * sizeof(double));
-  assertStreamPrint(threadData, NULL != x1, "out of memory");
+  assertStreamPrint(NULL, NULL != x1, "out of memory");
   for (i = 0; i < m; ++i)
     x1[i] = x0[i] + *lambda * dx[i];
 
   modelica_boolean failed = TRUE;
   double* f_x1 = (double*)malloc(m * sizeof(double));
-  assertStreamPrint(threadData, NULL != f_x1, "out of memory");
+  assertStreamPrint(NULL, NULL != f_x1, "out of memory");
 
   // Try
 #if !defined(OMC_EMCC)
@@ -1047,7 +1047,7 @@ unsigned* getNonlinearEqns( DATA* data, threadData_t* threadData, unsigned sysNu
   unsigned* n_idx = NULL;
   if (*p > 0) {
     n_idx = (unsigned*)malloc(*p * sizeof(unsigned));
-    assertStreamPrint(threadData, NULL != n_idx, "out of memory");
+    assertStreamPrint(NULL, NULL != n_idx, "out of memory");
     unsigned n = 0;
     for (i = 0; i < m; ++i)
       if (fabs(f_x1[i] + ((*lambda) - 1)*f_x0[i]) > eps)
@@ -1189,9 +1189,9 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 
   // Store all dependents in "x0" and function values as function of x0 in f
   double* x0 = (double*)malloc(m * sizeof(double));
-  assertStreamPrint(threadData, NULL != x0, "out of memory");
+  assertStreamPrint(NULL, NULL != x0, "out of memory");
   double* f  = (double*)malloc(m * sizeof(double));
-  assertStreamPrint(threadData, NULL != f, "out of memory");
+  assertStreamPrint(NULL, NULL != f, "out of memory");
   for( i = 0; i < m; i++) {
     x0[i] = systemData->nlsx[i];
     f[i]  = systemData->resValues[i];
@@ -1226,7 +1226,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Total number of equations    = %d", systemData->nonlinearPattern->numberOfEqns);
   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Number of unknowns           = %d", systemData->nonlinearPattern->numberOfVars);
   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Number of non-linear entries = %d", systemData->nonlinearPattern->numberOfNonlinear);
-  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS) ;
+  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS);
 
   // --------------------------------------------------------------------------------------------------------------------------------
 
@@ -1234,43 +1234,46 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 
   // Prints values of unknown vector x0 - printed indeces range from 1 to m (as in mathematics, not in C)
   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "Vector x0 of unknowns");
-  for (i = 0; i < m; i++)
-	if(m < 10)
+  for (i = 0; i < m; i++) {
+    if(m < 10)
       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "x0[%1d] = %14.10f  (%s)", i+1, x0[i],
         modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[i]);
-	else if(m < 100)
+    else if(m < 100)
       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "x0[%2d] = %14.10f  (%s)", i+1, x0[i],
         modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[i]);
-	else if(m < 1000)
+    else if(m < 1000)
       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "x0[%3d] = %14.10f  (%s)", i+1, x0[i],
         modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[i]);
-	else if(m < 100)
+    else if(m < 100)
       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "x0[%4d] = %14.10f  (%s)", i+1, x0[i],
         modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[i]);
-	else
+    else
       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "x0[%5d] = %14.10f  (%s)", i+1, x0[i],
         modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[i]);
-  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS) ;
+  }
+  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS);
 
   // Prints residual function values at x0: vector f(x0)
   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "Residual function values of all equations f(x0)");
-  for (i = 0; i < m; i++)
-    if (fabs(f[i]) > 1.e-9)
-	  if (m < 10)
+  for (i = 0; i < m; i++) {
+    if (fabs(f[i]) > 1.e-9) {
+      if (m < 10)
         infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "f[%1d] = %14.10f", i+1, f[i]);
-	  else if (m < 100)
+      else if (m < 100)
         infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "f[%2d] = %14.10f", i+1, f[i]);
-	  else if (m < 1000)
+      else if (m < 1000)
         infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "f[%3d] = %14.10f", i+1, f[i]);
-	  else if (m < 10000)
+      else if (m < 10000)
         infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "f[%4d] = %14.10f", i+1, f[i]);
-	  else
+      else
         infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "f[%5d] = %14.10f", i+1, f[i]);
-  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS) ;
+    }
+  }
+  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS);
 
   // Prints values of nonlinear unknown vector w0 - printed indeces range from 1 to m (as in mathematics, not in C)
   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "Vector w0 of nonlinear unknowns");
-  for (i = 0; i < q; i++)
+  for (i = 0; i < q; i++) {
     if (m < 10)
       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "w0[%1d] = x0[%1d] = %14.10f  (%s)", i+1, w_idx[i] + 1, x0[w_idx[i]],
         modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[w_idx[i]]);
@@ -1286,12 +1289,13 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
     else
       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "w0[%5d] = x0[%5d] = %14.10f  (%s)", i+q+1, w_idx[i] + 1, x0[w_idx[i]],
         modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[w_idx[i]]);
-  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS) ;
+  }
+  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS);
 
   // Prints valuse of linear unknown vector z0 - printed indeces range from 1 to m (as in mathematics, not in C)
   if (m > q) {
     infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "Vector z0 of nonlinear unknowns");
-    for (i = 0; i < m-q; i++)
+    for (i = 0; i < m-q; i++) {
       if (m - q < 10)
         infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "z0[%1d] = %14.10f  (%s)", i + 1, x0[z_idx[i]],
           modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[z_idx[i]]);
@@ -1307,23 +1311,25 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
       else
         infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "z0[%5d] = %14.10f  (%s)", i + 1, x0[z_idx[i]],
           modelInfoGetEquation(&data->modelData->modelDataXml, systemData->equationIndex).vars[z_idx[i]]);
-    messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS) ;
+    }
+    messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS);
   }
 
   // Prints nonlinear residual function values at x0: vector n(x0)
   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "Residual function values of all nonlinear equations n(w0)");
-  for (i = 0; i < p; ++i)
-	if (m < 10)
+  for (i = 0; i < p; ++i) {
+    if (m < 10)
       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "n[%1d] = f[%1d] = %14.10f", i+1, n_idx[i]+1, f[n_idx[i]]);
-	else if (m < 100)
+    else if (m < 100)
       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "n[%2d] = f[%2d] = %14.10f", i+1, n_idx[i]+1, f[n_idx[i]]);
-	else if (m < 1000)
+    else if (m < 1000)
       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "n[%3d] = f[%3d] = %14.10f", i+1, n_idx[i]+1, f[n_idx[i]]);
-	else if (m < 10000)
+    else if (m < 10000)
       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "n[%4d] = f[%4d] = %14.10f", i+1, n_idx[i]+1, f[n_idx[i]]);
-	else
+    else
       infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "n[%5d] = f[%5d] = %14.10f", i+1, n_idx[i]+1, f[n_idx[i]]);
-  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS) ;
+  }
+  messageClose(OMC_LOG_NLS_NEWTON_DIAGNOSTICS);
 
 
   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Final damping factor lambda = %.3g", lambda);
