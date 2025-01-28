@@ -3809,6 +3809,19 @@ annotation(
   preferredView="text");
 end removeElementModifiers;
 
+function getExtendsModifierValue
+  input TypeName className;
+  input TypeName extendsName;
+  input TypeName modifierName;
+  output Expression result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the modifier value for a modifier on an extends clause.
+</html>"),
+  preferredView="text");
+end getExtendsModifierValue;
+
 function setExtendsModifierValue
   input TypeName className;
   input TypeName extendsName;

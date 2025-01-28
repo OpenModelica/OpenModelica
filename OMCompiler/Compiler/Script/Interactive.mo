@@ -900,14 +900,6 @@ algorithm
   args := getApiFunctionArgs(inStatement);
 
   outResult := match(fn_name)
-    case "getExtendsModifierValue"
-      algorithm
-        {Absyn.CREF(componentRef = class_),
-         Absyn.CREF(componentRef = crident),
-         Absyn.CREF(componentRef = subident)} := args;
-      then
-        getExtendsModifierValue(class_, crident, subident, p);
-
     case "isExtendsModifierFinal"
       algorithm
         {Absyn.CREF(componentRef = class_),
@@ -4088,21 +4080,16 @@ algorithm
   end if;
 end mkFullyQual;
 
-protected function getExtendsModifierValue
+public function getExtendsModifierValue
 " Return the submodifier value of an extends clause
    for instance,
    model test extends A(p1=3,p2(z=3));end test;
-   getExtendsModifierValue(test,A,p1) => =3
-   inputs:  (Absyn.ComponentRef, /* class */
-               Absyn.ComponentRef, /* ident */
-               Absyn.ComponentRef, /* subident */
-               Absyn.Program)
-   outputs:  string"
-  input Absyn.ComponentRef classRef;
-  input Absyn.ComponentRef extendsRef;
-  input Absyn.ComponentRef varRef;
+   getExtendsModifierValue(test,A,p1) => 3"
+  input Absyn.Path classPath;
+  input Absyn.Path extendsPath;
+  input Absyn.Path modifierPath;
   input Absyn.Program program;
-  output String valueStr;
+  output Values.Value result;
 protected
   Absyn.Path cls_path, name;
   Absyn.Class cls;
@@ -4111,15 +4098,13 @@ protected
   list<Absyn.ElementSpec> exts;
 algorithm
   try
-    cls_path := AbsynUtil.crefToPath(classRef);
-    name := AbsynUtil.crefToPath(extendsRef);
-    cls := InteractiveUtil.getPathedClassInProgram(cls_path, program);
-    env := getClassEnv(program, cls_path);
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    env := getClassEnv(program, classPath);
     exts := list(makeExtendsFullyQualified(e, env) for e in InteractiveUtil.getExtendsElementspecInClass(cls));
-    {Absyn.EXTENDS(elementArg = args)} := List.select1(exts, extendsElementspecNamed, name);
-    valueStr := Dump.printExpStr(getModificationValue(args, AbsynUtil.crefToPath(varRef)));
+    {Absyn.EXTENDS(elementArg = args)} := List.select1(exts, extendsElementspecNamed, extendsPath);
+    result := ValuesUtil.makeCodeTypeNameStr(Dump.printExpStr(getModificationValue(args, modifierPath)));
   else
-    valueStr := "";
+    result := ValuesUtil.makeCodeTypeNameStr("");
   end try;
 end getExtendsModifierValue;
 
