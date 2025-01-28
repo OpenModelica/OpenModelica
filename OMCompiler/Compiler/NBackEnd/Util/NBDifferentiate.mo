@@ -1246,6 +1246,29 @@ public
         ret := Expression.MULTARY({Expression.REAL(1.0)}, {ret}, addOp);  // 1-tanh(arg)^2
       then ret;
 
+      // acosh(arg) -> 1/sqrt(arg^2-1)
+      case ("acosh") algorithm
+        ret := Expression.BINARY(arg, powOp, Expression.REAL(2.0));       // arg^2
+        ret := Expression.MULTARY({ret}, {Expression.REAL(1.0)}, addOp);  // arg^2-1
+        ret := Expression.BINARY(ret, powOp, Expression.REAL(0.5));       // sqrt(arg^2-1)
+        ret := Expression.MULTARY({Expression.REAL(1.0)}, {ret}, mulOp);  // 1/sqrt(arg^2-1)
+      then ret;
+
+      // asinh(arg) -> 1/sqrt(arg^2+1)
+      case ("asinh") algorithm
+        ret := Expression.BINARY(arg, powOp, Expression.REAL(2.0));         // arg^2
+        ret := Expression.MULTARY({ret, Expression.REAL(1.0)}, {}, addOp);  // arg^2+1
+        ret := Expression.BINARY(ret, powOp, Expression.REAL(0.5));         // sqrt(arg^2+1)
+        ret := Expression.MULTARY({Expression.REAL(1.0)}, {ret}, mulOp);    // 1/sqrt(arg^2+1)
+      then ret;
+
+      // atanh(arg) -> 1/(1-arg^2)
+      case ("atanh") algorithm
+        ret := Expression.BINARY(arg, powOp, Expression.REAL(2.0));       // arg^2
+        ret := Expression.MULTARY({Expression.REAL(1.0)}, {ret}, addOp);  // 1-arg^2
+        ret := Expression.MULTARY({Expression.REAL(1.0)}, {ret}, mulOp);  // 1/(1-arg^2)
+      then ret;
+
       // exp(arg) -> exp(arg)
       case ("exp") then Expression.CALL(Call.makeTypedCall(
           fn          = NFBuiltinFuncs.EXP_REAL,

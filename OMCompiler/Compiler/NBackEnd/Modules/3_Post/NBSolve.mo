@@ -984,48 +984,169 @@ protected
         end if;
         if crefFoundInRecursion then
           // case for call(f(cref)) -> call^{-1}($SUBST_CREF)
-          // TODO: add asserts
+          // TODO: add asserts?
           crefFound := true;
-          invInstruction := match name
-   
+          inverseInstructions := match name
+            case "sqrt" then
+              Expression.BINARY(substExp, Operator.OPERATOR(ty, NFOperator.Op.POW), Expression.REAL(2)) :: inverseInstructions;
+            // trigonometric
+            case "cos" then
+              Expression.CALL(Call.makeTypedCall(
+                fn          = NFBuiltinFuncs.ACOS_REAL,
+                args        = {substExp},
+                variability = Expression.variability(substExp),
+                purity      = NFPrefixes.Purity.PURE
+              )) :: inverseInstructions;
+            case "sin" then
+              Expression.CALL(Call.makeTypedCall(
+                fn          = NFBuiltinFuncs.ASIN_REAL,
+                args        = {substExp},
+                variability = Expression.variability(substExp),
+                purity      = NFPrefixes.Purity.PURE
+              )) :: inverseInstructions;
+            case "tan" then
+              Expression.CALL(Call.makeTypedCall(
+                fn          = NFBuiltinFuncs.ATAN_REAL,
+                args        = {substExp},
+                variability = Expression.variability(substExp),
+                purity      = NFPrefixes.Purity.PURE
+              )) :: inverseInstructions;
+            // inverse trigonometric
             case "acos" then
               Expression.CALL(Call.makeTypedCall(
                 fn          = NFBuiltinFuncs.COS_REAL,
                 args        = {substExp},
                 variability = Expression.variability(substExp),
                 purity      = NFPrefixes.Purity.PURE
-              ));
+              )) :: inverseInstructions;
             case "asin" then
               Expression.CALL(Call.makeTypedCall(
                 fn          = NFBuiltinFuncs.SIN_REAL,
                 args        = {substExp},
                 variability = Expression.variability(substExp),
                 purity      = NFPrefixes.Purity.PURE
-              ));
+              )) :: inverseInstructions;
             case "atan" then
               Expression.CALL(Call.makeTypedCall(
                 fn          = NFBuiltinFuncs.TAN_REAL,
                 args        = {substExp},
                 variability = Expression.variability(substExp),
                 purity      = NFPrefixes.Purity.PURE
-              ));
+              )) :: inverseInstructions;
+            // hyperbolic
+            case "cosh" then
+              Expression.CALL(Call.makeTypedCall(
+                fn          = NFBuiltinFuncs.ACOSH_REAL,
+                args        = {substExp},
+                variability = Expression.variability(substExp),
+                purity      = NFPrefixes.Purity.PURE
+              )) :: inverseInstructions;
+            case "sinh" then
+            Expression.CALL(Call.makeTypedCall(
+                fn          = NFBuiltinFuncs.ASINH_REAL,
+                args        = {substExp},
+                variability = Expression.variability(substExp),
+                purity      = NFPrefixes.Purity.PURE
+              )) :: inverseInstructions;
+            case "tanh" then
+            Expression.CALL(Call.makeTypedCall(
+                fn          = NFBuiltinFuncs.ATANH_REAL,
+                args        = {substExp},
+                variability = Expression.variability(substExp),
+                purity      = NFPrefixes.Purity.PURE
+              )) :: inverseInstructions;
+            // inverse hyperbolic
+            case "acosh" then
+              Expression.CALL(Call.makeTypedCall(
+                fn          = NFBuiltinFuncs.COSH_REAL,
+                args        = {substExp},
+                variability = Expression.variability(substExp),
+                purity      = NFPrefixes.Purity.PURE
+              )) :: inverseInstructions;
+            case "asinh" then
+            Expression.CALL(Call.makeTypedCall(
+                fn          = NFBuiltinFuncs.SINH_REAL,
+                args        = {substExp},
+                variability = Expression.variability(substExp),
+                purity      = NFPrefixes.Purity.PURE
+              )) :: inverseInstructions;
+            case "atanh" then
+            Expression.CALL(Call.makeTypedCall(
+                fn          = NFBuiltinFuncs.TANH_REAL,
+                args        = {substExp},
+                variability = Expression.variability(substExp),
+                purity      = NFPrefixes.Purity.PURE
+              )) :: inverseInstructions;
+            // exponential / logarithmic
             case "exp" then
               Expression.CALL(Call.makeTypedCall(
                 fn          = NFBuiltinFuncs.LOG_REAL,
                 args        = {substExp},
                 variability = Expression.variability(substExp),
                 purity      = NFPrefixes.Purity.PURE
-              ));
+              )) :: inverseInstructions;
             case "log" then
               Expression.CALL(Call.makeTypedCall(
                 fn          = NFBuiltinFuncs.EXP_REAL,
                 args        = {substExp},
                 variability = Expression.variability(substExp),
                 purity      = NFPrefixes.Purity.PURE
-              ));
-            case "log10" then Expression.BINARY(Expression.REAL(10), Operator.OPERATOR(ty, NFOperator.Op.POW), substExp); 
+              )) :: inverseInstructions;
+            case "log10" then Expression.BINARY(Expression.REAL(10), Operator.OPERATOR(ty, NFOperator.Op.POW), substExp) :: inverseInstructions;
           end match;
-          inverseInstructions := invInstruction :: inverseInstructions;
+        end if;
+        then ();
+      case (Expression.CALL(call = call as Call.TYPED_CALL())) guard(listLength(Call.arguments(exp.call)) == 2) algorithm           
+        name :=  AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
+        {local_exp1, local_exp2} := match Call.arguments(call)
+          case {local_exp1, local_exp2} then {local_exp1, local_exp2};
+        end match;
+        (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(local_exp1, cref, crefFound, inverseInstructions);
+        if status == Status.IMPLICIT then
+          return;
+        end if;
+        if crefFoundInRecursion then
+          crefFound := true;
+          if Expression.containsCref(local_exp2, cref) then
+            status := Status.IMPLICIT;
+          else
+            // calc inverse w.r.t first argument and append to instructions
+            inverseInstructions := match name
+              local
+                Expression e1, e2;
+              case "atan2" algorithm
+                e1 := Expression.CALL(Call.makeTypedCall(
+                fn          = NFBuiltinFuncs.TAN_REAL,
+                args        = {substExp},
+                variability = Expression.variability(substExp),
+                purity      = NFPrefixes.Purity.PURE
+                ));
+                e2 := Expression.MULTARY({substExp, local_exp2}, {}, Operator.OPERATOR(ty, NFOperator.Op.MUL));
+              then e1 :: e2 :: inverseInstructions;
+            end match;
+          end if;
+        else
+          (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(local_exp2, cref, crefFound, inverseInstructions);
+          if status == Status.IMPLICIT then
+            return;
+          end if;
+          if crefFoundInRecursion then
+            crefFound := true;
+            // calc inverse w.r.t second argument and append to instructions
+            inverseInstructions := match name
+              local
+                Expression e1, e2;
+              case "atan2" algorithm
+                e1 := Expression.CALL(Call.makeTypedCall(
+                fn          = NFBuiltinFuncs.TAN_REAL,
+                args        = {substExp},
+                variability = Expression.variability(substExp),
+                purity      = NFPrefixes.Purity.PURE
+                ));
+                e2 := Expression.MULTARY({local_exp1}, {substExp}, Operator.OPERATOR(ty, NFOperator.Op.MUL));
+              then e1 :: e2 :: inverseInstructions;
+            end match;
+          end if;
         end if;
         then ();
     end match;
