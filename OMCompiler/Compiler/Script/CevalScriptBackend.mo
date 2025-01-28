@@ -2569,6 +2569,12 @@ algorithm
       then
         Values.BOOL(b);
 
+    case ("getExtendsModifierValue",
+          {Values.CODE(Absyn.C_TYPENAME(classpath)),
+           Values.CODE(Absyn.C_TYPENAME(baseClassPath)),
+           Values.CODE(Absyn.C_TYPENAME(path))})
+      then Interactive.getExtendsModifierValue(classpath, baseClassPath, path, SymbolTable.getAbsyn());
+
     case ("setExtendsModifierValue",
           {Values.CODE(Absyn.C_TYPENAME(classpath)),
            Values.CODE(Absyn.C_TYPENAME(baseClassPath)),
