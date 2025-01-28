@@ -39,6 +39,6 @@ getDefaultComponentPrefixes(A3);
 // end B;"
 // "inner"
 // "inner parameter"
-// {}
+// ""
 // "outer replaceable"
 // endResult

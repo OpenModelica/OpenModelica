@@ -2064,9 +2064,6 @@ bool OMCProxy::addClassAnnotation(QString className, QString annotation)
 QString OMCProxy::getDefaultComponentName(QString className)
 {
   sendCommand("getDefaultComponentName(" + className + ")");
-  if (getResult().compare("{}") == 0)
-    return "";
-
   return StringHandler::unparse(getResult());
 }
 
@@ -2078,9 +2075,6 @@ QString OMCProxy::getDefaultComponentName(QString className)
 QString OMCProxy::getDefaultComponentPrefixes(QString className)
 {
   sendCommand("getDefaultComponentPrefixes(" + className + ")");
-  if (getResult().compare("{}") == 0)
-    return "";
-
   return StringHandler::unparse(getResult());
 }
 
