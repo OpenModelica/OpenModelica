@@ -2291,20 +2291,20 @@ namespace ModelInstance
   /*!
    * \brief Component::getExtendsModifiers
    * Makes a list of all extends modifiers.
-   * \param pModifier
+   * \param pParentModel
    * \return
    */
-  QList<Modifier*> Component::getExtendsModifiers(const Modifier *pModifier) const
+  QList<Modifier*> Component::getExtendsModifiers(const Model *pParentModel) const
   {
     QList<Modifier*> modifiers;
-    if (pModifier && pModifier->getParentModel() && pModifier->getParentModel()->getParentElement() && pModifier->getParentModel()->getParentElement()->getModifier()) {
-      Modifier *pExtentElementModifier = pModifier->getParentModel()->getParentElement()->getModifier();
+    if (pParentModel && pParentModel->getParentElement() && pParentModel->getParentElement()->getModifier()) {
+      Modifier *pExtentElementModifier = pParentModel->getParentElement()->getModifier();
       foreach (auto *pSubModifier, pExtentElementModifier->getModifiers()) {
         if (pSubModifier->getName().compare(mName) == 0) {
           modifiers.append(pSubModifier);
         }
       }
-      modifiers.append(getExtendsModifiers(pExtentElementModifier));
+      modifiers.append(getExtendsModifiers(pExtentElementModifier->getParentModel()));
     }
     return modifiers;
   }
@@ -2401,23 +2401,25 @@ namespace ModelInstance
       value.append("[" % dims % "]");
     }
     // modifiers
-    if (mpModifier) {
-      Modifier *pModifier = nullptr;
-      if (mergeExtendsModifiers) {
-        // Merge extends modifiers. See issue #13301 and #13516.
-        QList<Modifier *> extendsModifiers = getExtendsModifiers(mpModifier);
-        pModifier = mergeModifiersIntoOne(extendsModifiers);
-      }
-
-      if (pModifier) {
+    Modifier *pModifier = nullptr;
+    if (mergeExtendsModifiers) {
+      // Merge extends modifiers. See issue #13301 and #13516.
+      QList<Modifier *> extendsModifiers = getExtendsModifiers(mpParentModel);
+      pModifier = mergeModifiersIntoOne(extendsModifiers);
+    }
+    // if merge modifiers
+    if (pModifier) {
+      // if this modifier exists then merge it
+      if (mpModifier) {
         Component::mergeModifiers(pModifier, mpModifier);
-        // we don't need the name coming from the extend modification
-        pModifier->setName("");
-        value.append(pModifier->toString());
-        delete pModifier;
-      } else {
-        value.append(mpModifier->toString());
       }
+      // we don't need the name coming from the extend modification
+      pModifier->setName("");
+      value.append(pModifier->toString());
+      delete pModifier;
+    } else if (mpModifier) {
+      // if there are no merged modifiers then just use this modifier if exists.
+      value.append(mpModifier->toString());
     }
     // constrainedby issue #13300
     if (mpPrefixes && mpPrefixes->getReplaceable() && !mpPrefixes->getReplaceable()->getConstrainedby().isEmpty()) {

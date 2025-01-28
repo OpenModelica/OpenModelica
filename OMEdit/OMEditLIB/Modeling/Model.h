@@ -760,7 +760,7 @@ private:
     void setType(const QString &type) {mType = type;}
   private:
     void deserialize_impl(const QJsonObject &jsonObject) override;
-    QList<Modifier*> getExtendsModifiers(const Modifier *pModifier) const;
+    QList<Modifier*> getExtendsModifiers(const Model *pParentModel) const;
     Modifier *mergeModifiersIntoOne(QList<Modifier*> extendsModifiers) const;
     static void mergeModifiers(Modifier *pModifier1, Modifier *pModifier2);
   private:
