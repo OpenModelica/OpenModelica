@@ -900,18 +900,6 @@ algorithm
   args := getApiFunctionArgs(inStatement);
 
   outResult := match(fn_name)
-    case "getDefaultComponentName"
-      algorithm
-        {Absyn.CREF(componentRef = class_)} := args;
-      then
-        getDefaultComponentName(AbsynUtil.crefToPath(class_), p);
-
-    case "getDefaultComponentPrefixes"
-      algorithm
-        {Absyn.CREF(componentRef = class_)} := args;
-      then
-        getDefaultComponentPrefixes(AbsynUtil.crefToPath(class_), p);
-
     case "setComponentProperties"
       algorithm
         {Absyn.CREF(componentRef = class_),
@@ -8753,75 +8741,37 @@ algorithm
   end matchcontinue;
 end getDocumentationClassAnnotationModStr;
 
-protected function getDefaultComponentName
-"Returns the default component name of a class.
-  This is annotated with the annotation:
-  annotation(defaultComponentName=\"name\"); in the class definition"
-  input Absyn.Path className;
-  input Absyn.Program p;
-  output String compName;
+public function getDefaultComponentName
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  String str;
 algorithm
-  compName := match(className,p)
-    case(_,_)
-      equation
-        compName = getNamedAnnotationExp(className,p,Absyn.IDENT("defaultComponentName"),SOME("{}"),getDefaultComponentNameModStr);
-      then
-        compName;
-  end match;
+  str := getStringNamedAnnotation(classPath, program, Absyn.IDENT("defaultComponentName"));
+  result := ValuesUtil.makeString(str);
 end getDefaultComponentName;
 
-protected function getDefaultComponentNameModStr
-"Extractor function for defaultComponentName modifier"
-  input Option<Absyn.Modification> mod;
-  output String docStr;
+public function getDefaultComponentPrefixes
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  String str;
 algorithm
-  docStr := matchcontinue(mod)
-    local Absyn.Exp e;
-
-    case(SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=e))))
-      equation
-        docStr = Dump.printExpStr(e);
-      then
-        docStr;
-
-    else "";
-
-  end matchcontinue;
-end getDefaultComponentNameModStr;
-
-protected function getDefaultComponentPrefixes
-"Returns the default component prefixes of a class.
-  This is annotated with the annotation
-    annotation(defaultComponentPrefixes=\"<prefixes>\");
-  in the class definition"
-  input Absyn.Path className;
-  input Absyn.Program p;
-  output String compName;
-algorithm
-  compName := match(className,p)
-    case(_,_)
-      equation
-        compName = getNamedAnnotationExp(className,p,Absyn.IDENT("defaultComponentPrefixes"),SOME("{}"),getDefaultComponentPrefixesModStr);
-      then
-        compName;
-  end match;
+  str := getStringNamedAnnotation(classPath, program, Absyn.IDENT("defaultComponentPrefixes"));
+  result := ValuesUtil.makeString(str);
 end getDefaultComponentPrefixes;
 
-public function getAnnotationValue
+protected function getAnnotationValue
   input Option<Absyn.Modification> mod;
   output String str;
+protected
+  Absyn.Exp exp;
 algorithm
-  str := matchcontinue (mod)
-    local
-      String s;
-      Absyn.Exp exp;
-
-    case (SOME(Absyn.CLASSMOD(elementArgLst = {}, eqMod=Absyn.EQMOD(exp=exp))))
-      equation
-        s = Dump.printExpStr(exp);
-        s = stringAppendList({"{", s, "}"});
-      then
-        s;
+  str := matchcontinue mod
+    case SOME(Absyn.CLASSMOD(elementArgLst = {}, eqMod=Absyn.EQMOD(exp=exp)))
+      then "{" + Dump.printExpStr(exp) + "}";
 
     // adrpo: empty if no value
     else "{}";

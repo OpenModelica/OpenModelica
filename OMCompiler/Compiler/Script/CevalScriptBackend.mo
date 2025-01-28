@@ -3316,6 +3316,12 @@ algorithm
     case ("getCrefInfo", {Values.CODE(Absyn.C_TYPENAME(classpath))})
       then Interactive.getCrefInfo(classpath, SymbolTable.getAbsyn());
 
+    case ("getDefaultComponentName", {Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then Interactive.getDefaultComponentName(classpath, SymbolTable.getAbsyn());
+
+    case ("getDefaultComponentPrefixes", {Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then Interactive.getDefaultComponentPrefixes(classpath, SymbolTable.getAbsyn());
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 

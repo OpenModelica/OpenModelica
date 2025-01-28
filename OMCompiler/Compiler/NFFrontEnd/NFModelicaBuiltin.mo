@@ -5320,6 +5320,26 @@ annotation(
 </html>"), preferredView="text");
 end getCrefInfo;
 
+function getDefaultComponentName
+  input TypeName cl;
+  output String name;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Returns the default component name for a class as defined by the defaultComponentName annotation.</p>
+</html>"), preferredView="text");
+end getDefaultComponentName;
+
+function getDefaultComponentPrefixes
+  input TypeName cl;
+  output String prefixes;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Returns the default component prefixes for a class as defined by the defaultComponentPrefixes annotation.</p>
+</html>"), preferredView="text");
+end getDefaultComponentPrefixes;
+
 function getShortDefinitionBaseClassInformation
   input TypeName className;
   output Expression result;
