@@ -994,19 +994,6 @@ algorithm
       then
         InteractiveUtil.getLocalVariables(cls, useQuotes(nargs), genv);
 
-    // adrpo added 2006-10-16 - i think this function is needed here!
-    //             2020-06-11 - remove this after 1.16 to use the one in Ceval*
-    case "getErrorString"
-      algorithm
-        warningsAsErrors := match args
-          case {Absyn.BOOL(warningsAsErrors)} then warningsAsErrors;
-          else false;
-        end match;
-        outResult := Error.printMessagesStr(warningsAsErrors);
-        outResult := System.escapedString(outResult,false);
-      then
-        stringAppendList({"\"", outResult, "\""});
-
   end match;
 end evaluateGraphicalApi_dispatch;
 
