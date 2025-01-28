@@ -382,6 +382,7 @@ public
               if not listEmpty(no_ret) then
                 // append them to the end, compiler won't let me do it unless i double reverse the lists
                 allSim := listReverse(listAppend(no_ret, listReverse(allSim)));
+                algebraic := listReverse(no_ret :: listReverse(algebraic));
               end if;
             end if;
 
