@@ -5129,6 +5129,7 @@ template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix)
     const int *equationIndexes = NULL;
 
     <%varDecls%>
+    modelica_integer current_index = 0;
 
     if(evalforZeroCross) {
       <%relationsCode%>
@@ -5177,7 +5178,8 @@ let &preExp = buffer ""
     <%forHead%>
     <%preExp%>
     <%forBody%>
-    data->simulationInfo->relations[<%index1%><%tmp_%>] = <%res%>;
+    data->simulationInfo->relations[current_index<%tmp_%>] = <%res%>;
+    current_index++;
     <%forTail%>
     >>
   else
