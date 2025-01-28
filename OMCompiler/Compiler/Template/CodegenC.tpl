@@ -5069,7 +5069,7 @@ template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>>
     <%preExp%>
     <%forBody%>
     gout[start_index<%tmp_%>] = (ceil(<%e1%>) != ceil(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1;
-    current_index++,
+    current_index++;
     <%forTail%>
     >>
   case CALL(path=IDENT(name="mod"), expLst={exp1, exp2, idx}) then
@@ -5202,9 +5202,13 @@ let &preExp = buffer ""
     current_index++;
     <%forTail%>
     >>
+
   else
     <<
+    <%forHead%>
     /* UNKNOWN Relation for <%index1%> */
+    current_index++;
+    <%forTail%>
     >>
 end relationTpl;
 
