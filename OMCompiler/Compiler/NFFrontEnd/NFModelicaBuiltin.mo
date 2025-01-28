@@ -3862,6 +3862,19 @@ Sets a modifier on an extends clause in a class definition."),
   preferredView="text");
 end setExtendsModifier;
 
+function isExtendsModifierFinal
+  input TypeName className;
+  input TypeName extendsName;
+  input TypeName modifierName;
+  output Boolean isFinal;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns whether a modifier on an extends clause is final or not.
+</html>"),
+  preferredView="text");
+end isExtendsModifierFinal;
+
 function getComponentCount
   input TypeName classPath;
   output Integer count;

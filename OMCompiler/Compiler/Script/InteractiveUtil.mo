@@ -1020,20 +1020,12 @@ algorithm
   end if;
 
   try
-    cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
-    exts := InteractiveUtil.getExtendsElementspecInClass(cdef);
+    SOME(Absyn.EXTENDS(elementArg = extmod)) :=
+      getPathedExtendsInProgram(classPath, extendsPath, program);
+    res := getModificationNames(extmod, includeRedeclares = true);
 
-    if hasModifiers(exts) then
-      env := Interactive.getClassEnv(program, classPath);
-      exts := list(Interactive.makeExtendsFullyQualified(e, env) for e in exts);
-      {Absyn.EXTENDS(elementArg = extmod)} := List.select1(exts, Interactive.extendsElementspecNamed, extendsPath);
-      res := getModificationNames(extmod, includeRedeclares = true);
-
-      if useQuotes then
-        res := Interactive.insertQuotesToList(res);
-      end if;
-    else
-      res := {};
+    if useQuotes then
+      res := Interactive.insertQuotesToList(res);
     end if;
 
     result := ValuesUtil.makeArray(list(ValuesUtil.makeCodeTypeName(AbsynUtil.makeIdentPathFromString(s)) for s in res));
@@ -4770,6 +4762,35 @@ algorithm
     else NONE();
   end match;
 end getPathedElementInElement;
+
+public function getPathedExtendsInProgram
+  "Returns the extends clause that matches the fully qualified extends path in
+   the given class."
+  input Absyn.Path classPath;
+  input Absyn.Path extendsPath;
+  input Absyn.Program program;
+  output Option<Absyn.ElementSpec> extendsSpec;
+protected
+  Absyn.Class cls;
+  GraphicEnvCache env;
+algorithm
+  try
+    cls := getPathedClassInProgram(classPath, program);
+    env := Interactive.getClassEnv(program, classPath);
+
+    for ext in getExtendsElementspecInClass(cls) loop
+      ext := Interactive.makeExtendsFullyQualified(ext, env);
+
+      if AbsynUtil.pathEqual(extendsPath, AbsynUtil.elementSpecToPath(ext)) then
+        extendsSpec := SOME(ext);
+        return;
+      end if;
+    end for;
+  else
+  end try;
+
+  extendsSpec := NONE();
+end getPathedExtendsInProgram;
 
 public function transformPathedElementInList<T>
   input list<T> inList;
