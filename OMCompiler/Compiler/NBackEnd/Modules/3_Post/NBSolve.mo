@@ -45,6 +45,7 @@ public
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import NFFlatten.FunctionTree;
+  import NFFunction.Function;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
   import Type = NFType;
@@ -806,7 +807,7 @@ protected
     // apply the inverse operations (order reversed) or return if implicit
     eqn := match status
       case Status.IMPLICIT
-          then eqn;
+        then eqn;
       else algorithm
         status := Status.EXPLICIT;
         solvedRHS := Expression.makeZero(ty);
@@ -848,7 +849,9 @@ protected
     () := match exp
       local
         list<Expression> argList = {}, invargList = {};
-        Expression local_exp1, local_exp2;
+        Expression local_exp1, local_exp2, invInstruction;
+        Call call;
+        String name;
       case Expression.REAL() algorithm
         then ();
       case Expression.CREF() algorithm
@@ -934,43 +937,98 @@ protected
               end if;
             end if;
           then ();
-          // call multary, if binary has operator add or mul
-          case Operator.OPERATOR(op = NFOperator.Op.ADD) algorithm
-            (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(Expression.MULTARY({exp.exp1, exp.exp2}, {}, exp.operator), cref, crefFound, inverseInstructions);
-            if status == Status.IMPLICIT then
-              return;
-            end if;
-            if crefFoundInRecursion then
-              crefFound := true;
-            end if;
+        // call multary, if binary has operator add or mul
+        case Operator.OPERATOR(op = NFOperator.Op.ADD) algorithm
+          (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(Expression.MULTARY({exp.exp1, exp.exp2}, {}, exp.operator), cref, crefFound, inverseInstructions);
+          if status == Status.IMPLICIT then
+            return;
+          end if;
+          if crefFoundInRecursion then
+            crefFound := true;
+          end if;
           then();
-          case Operator.OPERATOR(op = NFOperator.Op.MUL) algorithm
-            (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(Expression.MULTARY({exp.exp1, exp.exp2}, {}, exp.operator), cref, crefFound, inverseInstructions);
-            if status == Status.IMPLICIT then
-              return;
-            end if;
-            if crefFoundInRecursion then
-              crefFound := true;
-            end if;
+        case Operator.OPERATOR(op = NFOperator.Op.MUL) algorithm
+          (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(Expression.MULTARY({exp.exp1, exp.exp2}, {}, exp.operator), cref, crefFound, inverseInstructions);
+          if status == Status.IMPLICIT then
+            return;
+          end if;
+          if crefFoundInRecursion then
+            crefFound := true;
+          end if;
           then();
         end match;
         then ();
-        case Expression.UNARY() algorithm
-          () := match exp.operator
-            case Operator.OPERATOR(op = NFOperator.Op.UMINUS) algorithm
-              (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(exp.exp, cref, crefFound, inverseInstructions);
-              if status == Status.IMPLICIT then
-                return;
-              end if;
-              if crefFoundInRecursion then
-                // case for -(f(cref)) -> -($SUBST_CREF)
-                crefFound := true;
-                inverseInstructions := Expression.UNARY(Operator.OPERATOR(ty, NFOperator.Op.UMINUS), substExp) :: inverseInstructions;
-              end if;
-            then ();
-          end match;
+      case Expression.UNARY() algorithm
+        () := match exp.operator
+          case Operator.OPERATOR(op = NFOperator.Op.UMINUS) algorithm
+            (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(exp.exp, cref, crefFound, inverseInstructions);
+            if status == Status.IMPLICIT then
+              return;
+            end if;
+            if crefFoundInRecursion then
+              // case for -(f(cref)) -> -($SUBST_CREF)
+              crefFound := true;
+              inverseInstructions := Expression.UNARY(Operator.OPERATOR(ty, NFOperator.Op.UMINUS), substExp) :: inverseInstructions;
+            end if;
+          then ();
+        end match;
         then ();
-      end match;
+      case (Expression.CALL(call = call as Call.TYPED_CALL())) guard List.hasOneElement(Call.arguments(exp.call)) algorithm
+        name :=  AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
+        local_exp1 := match Call.arguments(call)
+          case {local_exp1} then local_exp1;
+        end match;
+        (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(local_exp1, cref, crefFound, inverseInstructions);
+        if status == Status.IMPLICIT then
+          return;
+        end if;
+        if crefFoundInRecursion then
+          // case for call(f(cref)) -> call^{-1}($SUBST_CREF)
+          // TODO: add asserts
+          crefFound := true;
+          invInstruction := match name
+   
+            case "acos" then
+              Expression.CALL(Call.makeTypedCall(
+                fn          = NFBuiltinFuncs.COS_REAL,
+                args        = {substExp},
+                variability = Expression.variability(substExp),
+                purity      = NFPrefixes.Purity.PURE
+              ));
+            case "asin" then
+              Expression.CALL(Call.makeTypedCall(
+                fn          = NFBuiltinFuncs.SIN_REAL,
+                args        = {substExp},
+                variability = Expression.variability(substExp),
+                purity      = NFPrefixes.Purity.PURE
+              ));
+            case "atan" then
+              Expression.CALL(Call.makeTypedCall(
+                fn          = NFBuiltinFuncs.TAN_REAL,
+                args        = {substExp},
+                variability = Expression.variability(substExp),
+                purity      = NFPrefixes.Purity.PURE
+              ));
+            case "exp" then
+              Expression.CALL(Call.makeTypedCall(
+                fn          = NFBuiltinFuncs.LOG_REAL,
+                args        = {substExp},
+                variability = Expression.variability(substExp),
+                purity      = NFPrefixes.Purity.PURE
+              ));
+            case "log" then
+              Expression.CALL(Call.makeTypedCall(
+                fn          = NFBuiltinFuncs.EXP_REAL,
+                args        = {substExp},
+                variability = Expression.variability(substExp),
+                purity      = NFPrefixes.Purity.PURE
+              ));
+            case "log10" then Expression.BINARY(Expression.REAL(10), Operator.OPERATOR(ty, NFOperator.Op.POW), substExp); 
+          end match;
+          inverseInstructions := invInstruction :: inverseInstructions;
+        end if;
+        then ();
+    end match;
   end solveUniqueFindInstructions;
 
   function applyInstruction
@@ -1026,7 +1084,7 @@ protected
             exp.call := local_call;
           then ();
         end match;
-      then exp;
+        then exp;
     end match;
   end applyInstruction;
 
