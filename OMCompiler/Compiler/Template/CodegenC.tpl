@@ -4944,6 +4944,8 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
     const int *equationIndexes = NULL;
 
     <%varDecls2%>
+    modelica_integer current_index = 0;
+    modelica_integer start_index;
 
   #if !defined(OMC_MINIMAL_RUNTIME)
     <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_tick(SIM_TIMER_ZC);
@@ -5002,28 +5004,34 @@ template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>>
   case exp as RELATION(__) then
     let e1 = daeExp(exp, contextZeroCross, &preExp, &varDecls, &auxFunction)
     <<
+    start_index = current_index;
     <%forHead%>
     <%preExp%>
     <%forBody%>
-    gout[<%index1%><%tmp_%>] = (<%e1%>) ? 1 : -1;
+    gout[start_index<%tmp_%>] = (<%e1%>) ? 1 : -1;
+    current_index++;
     <%forTail%>
     >>
   case (exp1 as LBINARY(__)) then
     let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
     <<
+    start_index = current_index;
     <%forHead%>
     <%preExp%>
     <%forBody%>
-    gout[<%index1%><%tmp_%>] = (<%e1%>) ? 1 : -1;
+    gout[start_index<%tmp_%>] = (<%e1%>) ? 1 : -1;
+    current_index++;
     <%forTail%>
     >>
   case (exp1 as LUNARY(__)) then
     let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
     <<
+    start_index = current_index;
     <%forHead%>
     <%preExp%>
     <%forBody%>
-    gout[<%index1%><%tmp_%>] = (<%e1%>) ? 1 : -1;
+    gout[start_index<%tmp_%>] = (<%e1%>) ? 1 : -1;
+    current_index++;
     <%forTail%>
     >>
   case CALL(path=IDENT(name="sample"), expLst={_, start, interval}) then
@@ -5032,30 +5040,36 @@ template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>>
     let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
     let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &auxFunction)
     <<
+    start_index = current_index;
     <%forHead%>
     <%preExp%>
     <%forBody%>
-    gout[<%index1%><%tmp_%>] = (floor(<%e1%>) != floor(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1;
+    gout[start_index<%tmp_%>] = (floor(<%e1%>) != floor(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1;
+    current_index++;
     <%forTail%>
     >>
   case CALL(path=IDENT(name="floor"), expLst={exp1, idx}) then
     let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
     let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &auxFunction)
     <<
+    start_index = current_index;
     <%forHead%>
     <%preExp%>
     <%forBody%>
-    gout[<%index1%><%tmp_%>] = (floor(<%e1%>) != floor(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1;
+    gout[start_index<%tmp_%>] = (floor(<%e1%>) != floor(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1;
+    current_index++;
     <%forTail%>
     >>
   case CALL(path=IDENT(name="ceil"), expLst={exp1, idx}) then
     let e1 = daeExp(exp1, contextZeroCross, &preExp, &varDecls, &auxFunction)
     let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &auxFunction)
     <<
+    start_index = current_index;
     <%forHead%>
     <%preExp%>
     <%forBody%>
-    gout[<%index1%><%tmp_%>] = (ceil(<%e1%>) != ceil(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1;
+    gout[start_index<%tmp_%>] = (ceil(<%e1%>) != ceil(data->simulationInfo->mathEventsValuePre[<%indx%>])) ? 1 : -1;
+    current_index++,
     <%forTail%>
     >>
   case CALL(path=IDENT(name="mod"), expLst={exp1, exp2, idx}) then
@@ -5067,10 +5081,12 @@ template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>>
     let &preExp += '<%tvar1%> = floor((<%e1%>) / (<%e2%>));<%\n%>'
     let &preExp += '<%tvar2%> = floor((data->simulationInfo->mathEventsValuePre[<%indx%>]) / (data->simulationInfo->mathEventsValuePre[<%indx%>+1]));<%\n%>'
     <<
+    start_index = current_index;
     <%forHead%>
     <%preExp%>
     <%forBody%>
-    gout[<%index1%><%tmp_%>] = <%tvar1%> != <%tvar2%> ? 1 : -1;
+    gout[start_index<%tmp_%>] = <%tvar1%> != <%tvar2%> ? 1 : -1;
+    current_index++;
     <%forTail%>
     >>
   case CALL(path=IDENT(name="div"), expLst={exp1, exp2, idx}) then
@@ -5078,10 +5094,12 @@ template zeroCrossingTpl(Integer index1, Exp relation, Option<list<SimIterator>>
     let e2 = daeExp(exp2, contextZeroCross, &preExp, &varDecls, &auxFunction)
     let indx = daeExp(idx, contextZeroCross, &preExp, &varDecls, &auxFunction)
     <<
+    start_index = current_index;
     <%forHead%>
     <%preExp%>
     <%forBody%>
-    gout[<%index1%><%tmp_%>] = (trunc((<%e1%>)/(<%e2%>)) != trunc(data->simulationInfo->mathEventsValuePre[<%indx%>]/data->simulationInfo->mathEventsValuePre[<%indx%>+1])) ? 1 : -1;
+    gout[start_index<%tmp_%>] = (trunc((<%e1%>)/(<%e2%>)) != trunc(data->simulationInfo->mathEventsValuePre[<%indx%>]/data->simulationInfo->mathEventsValuePre[<%indx%>+1])) ? 1 : -1;
+    current_index++;
     <%forTail%>
     >>
   else
@@ -5130,6 +5148,7 @@ template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix)
 
     <%varDecls%>
     modelica_integer current_index = 0;
+    modelica_integer start_index;
 
     if(evalforZeroCross) {
       <%relationsCode%>
@@ -5175,10 +5194,11 @@ let &preExp = buffer ""
   case exp as RELATION(__) then
     let res = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
     <<
+    start_index = current_index;
     <%forHead%>
     <%preExp%>
     <%forBody%>
-    data->simulationInfo->relations[current_index<%tmp_%>] = <%res%>;
+    data->simulationInfo->relations[start_index<%tmp_%>] = <%res%>;
     current_index++;
     <%forTail%>
     >>
