@@ -7813,9 +7813,6 @@ protected
   Integer numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions;
 algorithm
   (numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions) := BackendDAEUtil.numberOfZeroCrossings(dlow);
-  numZeroCrossings := numZeroCrossings;
-  numTimeEvents := numTimeEvents;
-  numRelations := numRelations;
   varInfo := SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, nx, ny, ndy, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
           next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets,0,numOptimizeConstraints, numOptimizeFinalConstraints, 0, 0, 0, numRealInputVars, 0, 0);
 end createVarInfo;
@@ -16007,18 +16004,6 @@ algorithm
   cmakeVersion := SemanticVersion.parse(cmakeVersionString);
   System.removeFile(cmakeVersionLogFile);
 end getCMakeVersion;
-
-function getSimIteratorSize
-  input list<BackendDAE.SimIterator> iters;
-  output Integer size = 1;
-protected
-  Integer local_size;
-algorithm
-  for iter in iters loop
-    local_size := match iter case BackendDAE.SIM_ITERATOR_RANGE() then iter.size; case BackendDAE.SIM_ITERATOR_LIST() then iter.size; end match;
-    size := size * local_size;
-  end for;
-end getSimIteratorSize;
 
 public function getExpNominal
   "Returns the nominal value of an expression.

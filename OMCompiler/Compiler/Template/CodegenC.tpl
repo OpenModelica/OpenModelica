@@ -4967,7 +4967,7 @@ end functionZeroCrossing;
 template descriptionString(Text &descStr, Option<list<SimIterator>> iter)
 ::=
   match iter
-    case SOME(iter_) then (List.intRange(SimCodeUtil.getSimIteratorSize(iter_)) |> idx =>
+    case SOME(iter_) then (List.intRange(BackendDAEUtil.getSimIteratorSize(iter_)) |> idx =>
       '"[<%idx%>] <%descStr%>';separator=",\n")
     else <<"<%descStr%>>>
 end descriptionString;

@@ -594,6 +594,18 @@ algorithm
   osyst := setEqSystVars(syst, BackendVariable.addVars(varlst, vars));
 end addVarsToEqSystem;
 
+public function getSimIteratorSize
+  input list<BackendDAE.SimIterator> iters;
+  output Integer size = 1;
+protected
+  Integer local_size;
+algorithm
+  for iter in iters loop
+    local_size := match iter case BackendDAE.SIM_ITERATOR_RANGE() then iter.size; case BackendDAE.SIM_ITERATOR_LIST() then iter.size; end match;
+    size := size * local_size;
+  end for;
+end getSimIteratorSize;
+
 public function numberOfZeroCrossings "author: lochel"
   input BackendDAE.BackendDAE inBackendDAE;
   output Integer outNumZeroCrossings "number of ordinary zero crossings" ;
