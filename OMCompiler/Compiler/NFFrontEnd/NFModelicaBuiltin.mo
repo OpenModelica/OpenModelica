@@ -6402,10 +6402,9 @@ package AutoCompletion "Auto completion information for OMEdit."
       String zeroDerivative;
     end derivative;
 
-    record __OpenModelica_commandLineOptions
-    end __OpenModelica_commandLineOptions;
+    String __OpenModelica_commandLineOptions "annotation(__OpenModelica_commandLineOptions = \"--matchingAlgorithm=BFSB --indexReductionMethod=dynamicStateSelection\");";
 
-    record __OpenModelica_simulationFlags
+    record __OpenModelica_simulationFlags "annotation(__OpenModelica_simulationFlags(s = \"heun\", cpu = \"()\"));"
     end __OpenModelica_simulationFlags;
 
     // TODO: Annotation for External Libraries and Include Files

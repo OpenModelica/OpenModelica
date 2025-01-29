@@ -177,7 +177,8 @@ bool ElementInfo::operator!=(const ElementInfo &elementInfo) const
 
 QString ElementInfo::getHTMLDescription() const
 {
-  return QString("<b>%1</b><br/>&nbsp;&nbsp;&nbsp;&nbsp;%2 <i>\"%3\"<i>").arg(mClassName, mName, Utilities::escapeForHtmlNonSecure(mComment));
+  const QString comment = QString(mComment).replace("\\\"", "\"");
+  return QString("<b>%1</b><br/>&nbsp;&nbsp;&nbsp;&nbsp;%2 <i>\"%3\"<i>").arg(mClassName, mName, Utilities::escapeForHtmlNonSecure(comment));
 }
 
 Element::Element(ModelInstance::Component *pModelComponent, bool inherited, GraphicsView *pGraphicsView, bool createTransformation, QPointF position,
