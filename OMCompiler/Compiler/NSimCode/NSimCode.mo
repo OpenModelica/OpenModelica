@@ -357,7 +357,6 @@ public
 
             // start allSim with no return equations
             (no_ret, simCodeIndices) := SimStrongComponent.Block.createNoReturnBlocks(eqData.removed, simCodeIndices, NBPartition.Kind.ODE, simcode_map, equation_map);
-            no_ret := listAppend(event_clocks, no_ret);
             init_no_ret := {};
             start := {};
             discreteVars := {};
@@ -365,11 +364,10 @@ public
             if isSome(bdae.dae) then
               // DAEMode
               ode := {};
+              algebraic := if listEmpty(no_ret) then {} else {no_ret};
+              no_ret := listAppend(event_clocks, no_ret);
               if not listEmpty(no_ret) then
-                algebraic := {no_ret};
                 allSim    := listReverse(listAppend(no_ret, listReverse(allSim)));
-              else
-                algebraic := {};
               end if;
               (daeModeData, simCodeIndices) := DaeModeData.create(Util.getOption(bdae.dae), simCodeIndices, simcode_map, equation_map);
             else
@@ -380,10 +378,15 @@ public
               (ode, allSim, event_blocks, simCodeIndices)       := SimStrongComponent.Block.createDiscreteBlocks(bdae.ode_event, ode, allSim, event_blocks, simCodeIndices, simcode_map, equation_map);
               (algebraic, allSim, event_blocks, simCodeIndices) := SimStrongComponent.Block.createDiscreteBlocks(bdae.alg_event, algebraic, allSim, event_blocks, simCodeIndices, simcode_map, equation_map);
               if not listEmpty(no_ret) then
+                algebraic := listReverse(no_ret :: listReverse(algebraic));
+              end if;
+              no_ret    := listAppend(event_clocks, no_ret);
+              if not listEmpty(no_ret) then
                 // append them to the end, compiler won't let me do it unless i double reverse the lists
-                allSim := listReverse(listAppend(no_ret, listReverse(allSim)));
+                allSim    := listReverse(listAppend(no_ret, listReverse(allSim)));
               end if;
             end if;
+            // append event_clocks to no_return after adding them to algebraic
 
             // add all entwined equations to all sim
             allSim := listAppend(List.flatten(list(SimStrongComponent.Block.collectEntwinedEquations(blck) for blck in allSim)), allSim);
