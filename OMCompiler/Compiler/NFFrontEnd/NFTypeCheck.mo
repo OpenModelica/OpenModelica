@@ -1452,6 +1452,7 @@ function checkRelationOperation
   input Expression exp2;
   input Type type2;
   input Variability var2;
+  input Integer index;
   input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
@@ -1474,7 +1475,7 @@ algorithm
   valid := isCompatibleMatch(mk);
 
   resultType := Type.BOOLEAN();
-  outExp := Expression.RELATION(e1, Operator.setType(ty, operator), e2);
+  outExp := Expression.RELATION(e1, Operator.setType(ty, operator), e2, index);
 
   valid := match ty
     case Type.INTEGER() then valid;
@@ -2879,11 +2880,11 @@ algorithm
           // [if start == stop then 1 else if start < stop then 2 else 0]
           dim_exp := Expression.IF(
             Type.INTEGER(),
-            Expression.RELATION(startExp, Operator.makeEqual(Type.BOOLEAN()), stopExp),
+            Expression.RELATION(startExp, Operator.makeEqual(Type.BOOLEAN()), stopExp, -1),
             Expression.INTEGER(1),
             Expression.IF(
               Type.INTEGER(),
-              Expression.RELATION(startExp, Operator.makeLess(Type.BOOLEAN()), stopExp),
+              Expression.RELATION(startExp, Operator.makeLess(Type.BOOLEAN()), stopExp, -1),
               Expression.INTEGER(2),
               Expression.INTEGER(0)));
 

@@ -1553,7 +1553,7 @@ function evalRelationOp
   input Expression exp2;
   output Expression exp;
 algorithm
-  exp := Expression.mapSplitExpressions(Expression.RELATION(exp1, op, exp2), evalRelationExp);
+  exp := Expression.mapSplitExpressions(Expression.RELATION(exp1, op, exp2, -1), evalRelationExp);
 end evalRelationOp;
 
 function evalRelationExp
@@ -1585,7 +1585,7 @@ algorithm
     else
       algorithm
         Error.addInternalError(getInstanceName() + ": unimplemented case for " +
-          Expression.toString(Expression.RELATION(exp1, op, exp2)), sourceInfo());
+          Expression.toString(Expression.RELATION(exp1, op, exp2, -1)), sourceInfo());
       then
         fail();
   end match;
@@ -1619,7 +1619,7 @@ algorithm
     else
       algorithm
         printFailedEvalError(getInstanceName(),
-          Expression.RELATION(exp1, Operator.makeLess(Type.UNKNOWN()), exp2), sourceInfo());
+          Expression.RELATION(exp1, Operator.makeLess(Type.UNKNOWN()), exp2, -1), sourceInfo());
       then
         fail();
   end match;
@@ -1651,7 +1651,7 @@ algorithm
     else
       algorithm
         printFailedEvalError(getInstanceName(),
-          Expression.RELATION(exp1, Operator.makeLessEq(Type.UNKNOWN()), exp2), sourceInfo());
+          Expression.RELATION(exp1, Operator.makeLessEq(Type.UNKNOWN()), exp2, -1), sourceInfo());
       then
         fail();
   end match;
@@ -1683,7 +1683,7 @@ algorithm
     else
       algorithm
         printFailedEvalError(getInstanceName(),
-          Expression.RELATION(exp1, Operator.makeGreater(Type.UNKNOWN()), exp2), sourceInfo());
+          Expression.RELATION(exp1, Operator.makeGreater(Type.UNKNOWN()), exp2, -1), sourceInfo());
       then
         fail();
   end match;
@@ -1715,7 +1715,7 @@ algorithm
     else
       algorithm
         printFailedEvalError(getInstanceName(),
-          Expression.RELATION(exp1, Operator.makeGreaterEq(Type.UNKNOWN()), exp2), sourceInfo());
+          Expression.RELATION(exp1, Operator.makeGreaterEq(Type.UNKNOWN()), exp2, -1), sourceInfo());
       then
         fail();
   end match;
@@ -1747,7 +1747,7 @@ algorithm
     else
       algorithm
         printFailedEvalError(getInstanceName(),
-          Expression.RELATION(exp1, Operator.makeEqual(Type.UNKNOWN()), exp2), sourceInfo());
+          Expression.RELATION(exp1, Operator.makeEqual(Type.UNKNOWN()), exp2, -1), sourceInfo());
       then
         fail();
   end match;
@@ -1779,7 +1779,7 @@ algorithm
     else
       algorithm
         printFailedEvalError(getInstanceName(),
-          Expression.RELATION(exp1, Operator.makeNotEqual(Type.UNKNOWN()), exp2), sourceInfo());
+          Expression.RELATION(exp1, Operator.makeNotEqual(Type.UNKNOWN()), exp2, -1), sourceInfo());
       then
         fail();
   end match;

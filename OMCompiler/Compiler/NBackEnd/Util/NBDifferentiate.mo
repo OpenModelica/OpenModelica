@@ -1035,7 +1035,7 @@ public
         if not Expression.isZero(diffArg1) then
           ty    := Expression.typeOf(diffArg1);
           // x >= 0
-          ret1  := Expression.RELATION(arg1, Operator.makeGreaterEq(ty), Expression.makeZero(ty));
+          ret1  := Expression.RELATION(arg1, Operator.makeGreaterEq(ty), Expression.makeZero(ty), -1);
           // if x >= 0 then m1 else m2
           ret1  := Expression.IF(ty, ret1, arg2, arg3);
           // dx/dz * (if x >= 0 then m1 else m2)
@@ -1069,7 +1069,8 @@ public
           ret1 := Expression.RELATION(
             arg1,
             if name == "min" then Operator.makeLess(ty) else Operator.makeGreater(ty),
-            arg2);
+            arg2,
+            -1);
           // if condition then dx/dz else dy/dz
           ret := Expression.IF(ty, ret1, diffArg1, diffArg2);
         end if;

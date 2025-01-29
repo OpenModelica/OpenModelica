@@ -697,6 +697,7 @@ public
 
         // add the new event to the map
         sev := STATE_EVENT(UnorderedMap.size(bucket.state_map), aux_var, {eqn});
+        condition := Condition.setRelationIndex(condition, sev.index);
         UnorderedMap.add(condition, sev, bucket.state_map);
       end if;
 
@@ -927,6 +928,21 @@ public
       input Condition cond;
       output Integer s = Iterator.size(cond.iter);
     end size;
+
+    function setRelationIndex
+      input output Condition cond;
+      input Integer index;
+    algorithm
+      cond.exp := match cond.exp
+        local
+          Expression exp;
+        case exp as Expression.RELATION()
+          algorithm
+            exp.index := index;
+          then exp;
+        else cond.exp;
+      end match;
+    end setRelationIndex;
   end Condition;
 
 // =========================================================================

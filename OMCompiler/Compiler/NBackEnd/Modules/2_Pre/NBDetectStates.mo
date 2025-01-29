@@ -402,7 +402,7 @@ protected
       case Expression.CALL(call = Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "change")), arguments = args))
       algorithm
         (new_exp, old_exp) := preFromArgs(args, acc_previous, scalarized, "change");
-      then Expression.RELATION(old_exp, Operator.makeNotEqual(Expression.typeOf(old_exp)), new_exp);
+      then Expression.RELATION(old_exp, Operator.makeNotEqual(Expression.typeOf(old_exp)), new_exp, -1);
 
       else exp;
     end match;
