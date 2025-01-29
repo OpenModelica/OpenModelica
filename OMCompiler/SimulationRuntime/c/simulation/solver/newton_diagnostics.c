@@ -213,7 +213,7 @@ double maxNonLinearResiduals( unsigned m, unsigned l, unsigned* z_idx,
   // Calculate the absolute maximum value of the non-linear residuals r_x0 = f_x0 + fz * (z1 - z0)
   // at iteration point x0, where z1 - z0 = dx and fz = J for the linear values and equations.
 
-  // l = m - p: number of linear dependables or equations
+  // l = m - q: number of linear unknowns
   // z_idx    : index of linear dependable in f, fx, dx
 
   double r_x0, fz_dz;
@@ -1338,7 +1338,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
 
   // --------------------------------------------------------------------------------------------------------------------------------
 
-  double maxRes = maxNonLinearResiduals(m, m - p, z_idx, f, fx, dx);
+  double maxRes = maxNonLinearResiduals(m, m - q, z_idx, f, fx, dx);
 
   double* alpha = calcAlpha(data, threadData, sysNumber, m, p, q, n_idx, w_idx, x0, dx, f, fxx, lambda, maxRes);
 
