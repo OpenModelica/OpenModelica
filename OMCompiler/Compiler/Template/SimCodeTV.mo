@@ -1444,11 +1444,6 @@ package SimCodeUtil
     output Boolean b ;
   end jacobianColumnsAreEmpty;
 
-  function getSimIteratorSize
-    input list<BackendDAE.SimIterator> iters;
-    output Integer size ;
-  end getSimIteratorSize;
-
   function getFmiInitialAttributeStr
     input SimCodeVar.SimVar simVar;
     output String out_string;
@@ -1794,6 +1789,13 @@ package BackendDAE
     end EQUATION_ATTRIBUTES;
   end EquationAttributes;
 end BackendDAE;
+
+package BackendDAEUtil
+  function getSimIteratorSize
+    input list<BackendDAE.SimIterator> iters;
+    output Integer size ;
+  end getSimIteratorSize;
+end BackendDAEUtil;
 
 package System
   function substring

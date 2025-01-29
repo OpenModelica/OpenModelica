@@ -40,6 +40,7 @@ encapsulated package ZeroCrossings
 import BackendDAE;
 import BackendDAE.{ZeroCrossing,ZeroCrossingSet};
 import BackendDAE.ZeroCrossingSet.ZERO_CROSSING_SET;
+import BackendDAEUtil;
 
 protected
 import DoubleEnded;
@@ -79,9 +80,23 @@ end new;
 function length
   input ZeroCrossingSet zc_set;
   output Integer i;
+protected
+  list<ZeroCrossing> zcs = DoubleEnded.toListNoCopyNoClear(zc_set.zc);
 algorithm
-  i := DoubleEnded.length(zc_set.zc);
+  i := sum(zeroCrossingSize(zc) for zc in zcs);
 end length;
+
+function zeroCrossingSize
+  input ZeroCrossing zc;
+  output Integer s;
+algorithm
+  s := match zc.iter
+    local
+      list<BackendDAE.SimIterator> iter;
+    case SOME(iter) then BackendDAEUtil.getSimIteratorSize(iter);
+    else 1;
+  end match;
+end zeroCrossingSize;
 
 function add
   input ZeroCrossingSet zc_set;
