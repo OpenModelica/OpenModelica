@@ -53,7 +53,6 @@ protected
   import MetaModelica.Dangerous.*;
   import NFInstNode.InstNode;
   import NFPrefixes.Purity;
-  import NFPrefixes.Variability;
   import Operator = NFOperator;
   import Op = NFOperator.Op;
   import SBFunctions;

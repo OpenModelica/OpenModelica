@@ -347,12 +347,8 @@ function scalarVariableAttribute "Generates code for ScalarVariable Attribute fi
   input Integer classIndex;
 protected
   Integer inputIndex = SimCodeUtil.getInputIndex(simVar);
-  DAE.ElementSource source;
-  SourceInfo info;
-  String hideResult;
+  SourceInfo info = simVar.source.info;
 algorithm
-  source := simVar.source;
-  info := source.info;
 
   File.write(file, "    name = \"");
   CR.writeCref(file, simVar.name, XML);
@@ -399,13 +395,7 @@ algorithm
   File.write(file, "    isProtected = \"");
   File.write(file, String(simVar.isProtected));
   File.write(file, "\" hideResult = \"");
-  hideResult := match (simVar.hideResult)
-    local
-      Boolean bval;
-    case SOME(bval) then String(bval);
-    else "";
-  end match;
-  File.write(file, hideResult);
+  File.write(file, Util.applyOptionOrDefault(simVar.hideResult, boolString, ""));
   File.write(file, "\" isEncrypted = \"");
   File.write(file, boolString(simVar.isEncrypted));
   File.write(file, "\" initNonlinear = \"");

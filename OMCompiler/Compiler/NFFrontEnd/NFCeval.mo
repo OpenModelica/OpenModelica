@@ -241,19 +241,6 @@ algorithm
   end match;
 end evalExp;
 
-function evalExpOpt
-  input output Option<Expression> oexp;
-  input EvalTarget target = noTarget;
-algorithm
-  oexp := match oexp
-    local
-      Expression e;
-
-    case SOME(e) then SOME(evalExp(e, target));
-    else oexp;
-  end match;
-end evalExpOpt;
-
 function evalExpPartialDefault
   "Simplied version of evalExpPartial to work around MetaModelica issues with
    default arguments and multiple return values when used as a function pointer."
@@ -793,7 +780,7 @@ protected
 algorithm
   Expression.RANGE(ty = ty, start = start_exp, step = step_exp, stop = stop_exp) := rangeExp;
   start_exp := evalExp(start_exp, target);
-  step_exp := evalExpOpt(step_exp, target);
+  step_exp := Util.applyOption(step_exp, function evalExp(target = target));
   stop_exp := evalExp(stop_exp, target);
 
   if InstContext.inIterationRange(target.context) then
@@ -3261,7 +3248,7 @@ algorithm
     case Expression.RANGE()
       then Expression.RANGE(exp.ty,
                             evalExp(exp.start, target),
-                            evalExpOpt(exp.step, target),
+                            Util.applyOption(exp.step, function evalExp(target = target)),
                             evalExp(exp.stop, target));
 
     else evalExp(exp, target);

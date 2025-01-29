@@ -1106,10 +1106,10 @@ public
               Function.name(call.fn),
               Absyn.COMBINE(),
               Type.toDAE(call.ty),
-              Expression.toDAEValueOpt(call.defaultExp),
+              Util.applyOption(call.defaultExp, Expression.toDAEValue),
               fold_id,
               res_id,
-              Expression.toDAEOpt(fold_exp)),
+              Util.applyOption(fold_exp, Expression.toDAE)),
             Expression.toDAE(call.exp),
             list(iteratorToDAE(iter) for iter in call.iters));
 
@@ -1713,7 +1713,7 @@ public
         algorithm
           e := Expression.map(call.exp, func);
           iters := mapIteratorsExp(call.iters, func);
-          default_exp := Expression.mapOpt(call.defaultExp, func);
+          default_exp := Util.applyOption(call.defaultExp, function Expression.map(func = func));
           fold_exp := Util.applyTuple31(call.foldExp, function Expression.mapOpt(func = func));
         then
           TYPED_REDUCTION(call.fn, call.ty, call.var, call.purity, e, iters, default_exp, fold_exp);

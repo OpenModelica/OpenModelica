@@ -1046,9 +1046,9 @@ protected
   Real min_val, max_val;
 algorithm
   omin := lookupVarAttr(flowCref, "min", variables);
-  omin := SimplifyExp.simplifyOpt(omin);
+  omin := Util.applyOption(omin, function SimplifyExp.simplify(includeScope = false));
   omax := lookupVarAttr(flowCref, "max", variables);
-  omax := SimplifyExp.simplifyOpt(omax);
+  omax := Util.applyOption(omax, function SimplifyExp.simplify(includeScope = false));
 
   direction := match (omin, omax)
     // No attributes, flow direction can't be decided.

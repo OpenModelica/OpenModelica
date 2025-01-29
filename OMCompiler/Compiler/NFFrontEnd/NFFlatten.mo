@@ -2080,7 +2080,7 @@ algorithm
   (connects, non_connects) := splitForLoop2(body);
 
   if not listEmpty(connects) then
-    range := Ceval.evalExpOpt(range, Ceval.EvalTarget.new(Equation.info(forLoop), NFInstContext.ITERATION_RANGE));
+    range := Util.applyOption(range, function Ceval.evalExp(target = Ceval.EvalTarget.new(Equation.info(forLoop), NFInstContext.ITERATION_RANGE)));
     eq := Equation.FOR(iter, range, connects, scope, src);
 
     if settings.arrayConnect then
