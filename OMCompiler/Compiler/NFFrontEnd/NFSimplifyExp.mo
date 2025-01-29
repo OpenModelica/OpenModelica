@@ -132,17 +132,6 @@ algorithm
   end if;
 end simplify;
 
-function simplifyOpt
-  input output Option<Expression> exp;
-protected
-  Expression e;
-algorithm
-  exp := match exp
-    case SOME(e) then SOME(simplify(e));
-    else exp;
-  end match;
-end simplifyOpt;
-
 function simplifyRange
   input Expression range;
   output Expression exp;
@@ -154,7 +143,7 @@ algorithm
   Expression.RANGE(ty = ty, start = start_exp1, step = step_exp1, stop = stop_exp1) := range;
 
   start_exp2 := simplify(start_exp1);
-  step_exp2 := simplifyOpt(step_exp1);
+  step_exp2 := Util.applyOption(step_exp1, function simplify(includeScope = false));
   stop_exp2 := simplify(stop_exp1);
   ty2 := Type.simplify(ty);
 

@@ -2299,19 +2299,6 @@ public
     end match;
   end computeNominal;
 
-  function toAbsynOpt
-    input Option<Expression> exp;
-    output Option<Absyn.Exp> aexp;
-  algorithm
-    aexp := match exp
-      local
-        Expression e;
-
-      case SOME(e) then SOME(toAbsyn(e));
-      else NONE();
-    end match;
-  end toAbsynOpt;
-
   function toAbsyn
     input Expression exp;
     output Absyn.Exp aexp;
@@ -2331,7 +2318,7 @@ public
       case TYPENAME() then Absyn.Exp.CREF(Absyn.ComponentRef.CREF_IDENT(Type.toString(exp.ty), {}));
       case ARRAY() then Absyn.Exp.ARRAY(list(toAbsyn(e) for e in exp.elements));
       case MATRIX() then Absyn.Exp.MATRIX(list(list(toAbsyn(e) for e in l) for l in exp.elements));
-      case RANGE() then Absyn.Exp.RANGE(toAbsyn(exp.start), toAbsynOpt(exp.step), toAbsyn(exp.stop));
+      case RANGE() then Absyn.Exp.RANGE(toAbsyn(exp.start), Util.applyOption(exp.step, toAbsyn), toAbsyn(exp.stop));
       case TUPLE() then Absyn.Exp.TUPLE(list(toAbsyn(e) for e in exp.elements));
       case RECORD() then AbsynUtil.makeCall(AbsynUtil.pathToCref(exp.path), list(toAbsyn(e) for e in exp.elements));
       case CALL() then Call.toAbsyn(exp.call);
@@ -2362,19 +2349,6 @@ public
 
     end match;
   end toAbsyn;
-
-  function toDAEOpt
-    input Option<Expression> exp;
-    output Option<DAE.Exp> dexp;
-  algorithm
-    dexp := match exp
-      local
-        Expression e;
-
-      case SOME(e) then SOME(toDAE(e));
-      else NONE();
-    end match;
-  end toDAEOpt;
 
   function toDAE
     input Expression exp;
@@ -2591,11 +2565,6 @@ public
       else
         DAE.RECORD(path, dargs, field_names, Type.toDAE(ty));
   end toDAERecord;
-
-  function toDAEValueOpt
-    input Option<Expression> exp;
-    output Option<Values.Value> value = Util.applyOption(exp, toDAEValue);
-  end toDAEValueOpt;
 
   function toDAEValue
     input Expression exp;

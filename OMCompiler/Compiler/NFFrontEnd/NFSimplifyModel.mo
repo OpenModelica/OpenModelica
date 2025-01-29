@@ -182,7 +182,7 @@ algorithm
           //elseif not Dimension.isZero(dim) then
           //if not Dimension.isZero(dim) then
             // Otherwise just simplify if the iteration range is not empty.
-            eq.range := SimplifyExp.simplifyOpt(eq.range);
+            eq.range := Util.applyOption(eq.range, function SimplifyExp.simplify(includeScope = false));
             eq.body := body;
             equations := eq :: equations;
           //end if;

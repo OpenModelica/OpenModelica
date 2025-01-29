@@ -854,18 +854,6 @@ public
     function toString
       input Matrix adj;
       input output String str = "";
-    protected
-      function complexSizeStr
-        input Option<Integer> sz;
-        output String str;
-      algorithm
-        str := match sz
-          local
-            Integer i;
-          case SOME(i) then intString(i);
-          else "0";
-        end match;
-      end complexSizeStr;
     algorithm
       str := StringUtil.headline_2(str + "AdjacencyMatrix") + "\n";
       str := match adj
@@ -876,7 +864,7 @@ public
 
         case FULL() algorithm
           types := list(ComponentRef.getSubscriptedType(name) for name in adj.equation_names);
-          complex_sizes := listArray(list(complexSizeStr(Type.complexSize(ty, true)) for ty in types));
+          complex_sizes := listArray(list(Util.applyOptionOrDefault(Type.complexSize(ty, true), intString, "0") for ty in types));
           types_str := listArray(list(dimsString(Type.arrayDims(ty)) for ty in types));
           names := listArray(list(ComponentRef.toString(name) for name in adj.equation_names));
           length0 := max(stringLength(sz) for sz in complex_sizes);

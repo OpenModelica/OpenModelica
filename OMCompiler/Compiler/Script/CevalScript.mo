@@ -568,14 +568,7 @@ protected
   String actualVersionStr, pathStr;
 algorithm
   semverWanted := SemanticVersion.parse(version);
-  _ := match actualVersion
-    case SOME(actualVersionStr)
-      then ();
-    case NONE()
-      algorithm
-        actualVersionStr := "";
-      then ();
-  end match;
+  actualVersionStr := Util.getOptionOrDefault(actualVersion, "");
   pathStr := AbsynUtil.pathString(path);
   semverActual := SemanticVersion.parse(actualVersionStr);
   if 0 == SemanticVersion.compare(semverWanted, semverActual, comparePrerelease=false) then

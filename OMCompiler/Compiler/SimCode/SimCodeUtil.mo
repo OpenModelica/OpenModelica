@@ -8860,11 +8860,7 @@ algorithm
     case SimCodeVar.NEGATEDALIAS(varName = cr) then " (negated alias: " + ComponentReference.printComponentRefStr(cr) + ") ";
   end match);
   s := s + (if inVar.isProtected then " protected " else "");
-  s := s + (match inVar.hideResult
-    local Boolean bval;
-    case SOME(bval) then (if bval then " hideResult " else "");
-    else "";
-  end match);
+  s := s + (if Util.getOptionOrDefault(inVar.hideResult, false) then " hideResult " else "");
   s := s + " initial: " + (if Util.isSome(inVar.initialValue) then ExpressionDump.printOptExpStr(inVar.initialValue) else "");
   s := s + (if Util.isSome(inVar.arrayCref) then "\tarrCref:" + ComponentReference.printComponentRefStr(Util.getOption(inVar.arrayCref)) else "\tno arrCref");
   s := s + " index:(" + (if Util.isSome(inVar.variable_index) then intString(Util.getOption(inVar.variable_index)) else "") + ")";

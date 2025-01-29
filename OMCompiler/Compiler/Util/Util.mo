@@ -1018,23 +1018,6 @@ algorithm
   end match;
 end optionEqual;
 
-public function optionHash<T>
-  input Option<T> inOption;
-  input HashFunc inFunc;
-  output Integer outHash;
-  partial function HashFunc
-    input T inValue;
-    output Integer outHash;
-  end HashFunc;
-algorithm
-  outHash := match inOption
-    local
-      T val;
-    case SOME(val) then inFunc(val);
-    else 0;
-  end match;
-end optionHash;
-
 public function makeValueOrDefault<TI, TO>
   "Returns the value if the function call succeeds, otherwise the default"
   input FuncType inFunc;
@@ -1206,21 +1189,6 @@ public function stringEqCaseInsensitive
 algorithm
   eq := stringEq(System.tolower(str1), System.tolower(str2));
 end stringEqCaseInsensitive;
-
-public function optionList<T>
-  "SOME(a) => {a}
-   NONE()  => {}"
-  input Option<T> inOption;
-  output list<T> outList;
-algorithm
-  outList := match(inOption)
-    local
-      T value;
-
-    case SOME(value) then {value};
-    else {};
-  end match;
-end optionList;
 
 public function stringPadRight
   "Pads a string with the given padding so that the resulting string is as long

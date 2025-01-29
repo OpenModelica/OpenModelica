@@ -3990,12 +3990,7 @@ public
       "Returns -1 if cref was deleted or cannot be found."
       input EquationPointers equations;
       input ComponentRef name;
-      output Integer index;
-    algorithm
-      index := match UnorderedMap.get(name, equations.map)
-        case SOME(index) then index;
-        case NONE() then -1;
-      end match;
+      output Integer index = UnorderedMap.getOrDefault(name, equations.map, -1);
     end getEqnIndex;
 
     function compress "O(n)

@@ -1805,12 +1805,7 @@ public
       "Returns -1 if cref was deleted or cannot be found."
       input VariablePointers variables;
       input ComponentRef cref;
-      output Integer index;
-    algorithm
-      index := match UnorderedMap.get(cref, variables.map)
-        case SOME(index) then index;
-        case NONE() then -1;
-      end match;
+      output Integer index = UnorderedMap.getOrDefault(cref, variables.map, -1);
     end getVarIndex;
 
     function contains

@@ -1723,7 +1723,7 @@ algorithm
         deps = getDepsFromExps(exps, inAllElements, {}, isFunction);
         // remove the current element from the deps as it is usally Real A[size(A,1)]; or self reference FlowModel fm(... blah = fcall(fm.x));
         deps = removeCurrentElementFromArrayDimDeps(name, deps);
-        deps = getDepsFromExps(Util.optionList(cExpOpt), inAllElements, deps, isFunction);
+        deps = getDepsFromExps(List.fromOption(cExpOpt), inAllElements, deps, isFunction);
         deps = List.union(deps,{});
         // print(name + " deps " + stringDelimitList(list(SCodeUtil.elementName(Util.tuple21(e)) for e in deps),",") + "\n");
       then
@@ -1758,7 +1758,7 @@ algorithm
         deps = getDepsFromExps(exps, inAllElements, {}, isFunction);
         // remove the current element from the deps as it is usally Real A[size(A,1)];
         deps = removeCurrentElementFromArrayDimDeps(name, deps);
-        deps = getDepsFromExps(Util.optionList(cExpOpt), inAllElements, deps, isFunction);
+        deps = getDepsFromExps(List.fromOption(cExpOpt), inAllElements, deps, isFunction);
         deps = List.union(deps,{});
         // print(name + " deps " + stringDelimitList(list(SCodeUtil.elementName(Util.tuple21(e)) for e in deps),",") + "\n");
       then
