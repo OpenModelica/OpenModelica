@@ -820,7 +820,7 @@ public
       simVars := SIMVARS(
         stateVars                         = stateVars,
         derivativeVars                    = derivativeVars,
-        algVars                           = List.flatten({algVars, nonTrivialAlias}),
+        algVars                           = List.flatten({algVars, inputVars, nonTrivialAlias}),
         discreteAlgVars                   = List.flatten({discreteAlgVars, discreteAlgVars2, discreteAlgVars3}),
         intAlgVars                        = List.flatten({intAlgVars, intAlgVars2, intAlgVars3}),
         boolAlgVars                       = List.flatten({boolAlgVars, boolAlgVars2, boolAlgVars3}),
