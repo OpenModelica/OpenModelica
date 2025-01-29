@@ -1,5 +1,5 @@
 // name: 13328
-// keywords: NewBackend
+// keywords: NewBackend, reduction, top level input, events, for loop, for expression
 // status: correct
 // cflags: --newBackend
 
