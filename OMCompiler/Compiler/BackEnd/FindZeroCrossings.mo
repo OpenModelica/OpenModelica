@@ -1957,7 +1957,7 @@ algorithm
       start := DAEUtil.getInteger(exp.start);
       step  := DAEUtil.getInteger(Util.getOptionOrDefault(exp.step, DAE.ICONST(1)));
       stop  := DAEUtil.getInteger(exp.stop);
-    then BackendDAE.SIM_ITERATOR_RANGE(DAE.CREF_IDENT(red_iter.id, DAE.T_INTEGER_DEFAULT, {}), start, step, intDiv(start-step, stop));
+    then BackendDAE.SIM_ITERATOR_RANGE(DAE.CREF_IDENT(red_iter.id, DAE.T_INTEGER_DEFAULT, {}), start, step, intDiv(stop-start, step));
 
     case exp as DAE.ARRAY() algorithm
     then BackendDAE.SIM_ITERATOR_LIST(DAE.CREF_IDENT(red_iter.id, DAE.T_INTEGER_DEFAULT, {}), list(DAEUtil.getInteger(e) for e in exp.array), listLength(exp.array));

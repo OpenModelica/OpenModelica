@@ -2188,16 +2188,16 @@ algorithm
     DAE.Exp exp;
     list<Integer> occurEquLst;
     list<BackendDAE.ZeroCrossing> rest;
+    Option<list<BackendDAE.SimIterator>> iter;
 
    case ({}, _, _) then Dangerous.listReverseInPlace(iAccum);
 
-   case (BackendDAE.ZERO_CROSSING(relation_=exp, occurEquLst=occurEquLst)::rest, _, _)
+   case (BackendDAE.ZERO_CROSSING(relation_=exp, occurEquLst=occurEquLst,iter=iter)::rest, _, _)
      equation
        occurEquLst = convertListIndx(occurEquLst, eqBackendSimCodeMappingArray);
-       ozeroCrossings = updateZeroCrossEqnIndexHelp(rest, eqBackendSimCodeMappingArray, BackendDAE.ZERO_CROSSING(0, exp, occurEquLst, NONE())::iAccum);
+       ozeroCrossings = updateZeroCrossEqnIndexHelp(rest, eqBackendSimCodeMappingArray, BackendDAE.ZERO_CROSSING(0, exp, occurEquLst, iter)::iAccum);
      then
        ozeroCrossings;
-
   end match;
 end updateZeroCrossEqnIndexHelp;
 
