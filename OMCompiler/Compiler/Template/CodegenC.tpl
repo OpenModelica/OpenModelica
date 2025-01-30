@@ -4773,6 +4773,11 @@ template computeVarIndices(SimVars vars, String modelNamePrefix)
     {
       TRACE_PUSH
 
+      size_t i_real = 0;
+      size_t i_integer = 0;
+      size_t i_boolean = 0;
+      size_t i_string = 0;
+
       realIndex[0] = 0;
       integerIndex[0] = 0;
       booleanIndex[0] = 0;
@@ -4790,6 +4795,13 @@ template computeVarIndices(SimVars vars, String modelNamePrefix)
       /* discreteAlgVars */
       <%computeVarIndicesList(discreteAlgVars)%>
 
+      /* realOptimizeConstraintsVars */
+      <%computeVarIndicesList(realOptimizeConstraintsVars)%>
+
+      /* realOptimizeFinalConstraintsVars */
+      <%computeVarIndicesList(realOptimizeFinalConstraintsVars)%>
+
+
       /* intAlgVars */
       <%computeVarIndicesList(intAlgVars)%>
 
@@ -4798,83 +4810,6 @@ template computeVarIndices(SimVars vars, String modelNamePrefix)
 
       /* stringAlgVars */
       <%computeVarIndicesList(stringAlgVars)%>
-
-      /* enumAlgVars */
-
-      /* inputVars */
-      <%computeVarIndicesList(inputVars)%>
-
-      /* outputVars */
-      <%computeVarIndicesList(outputVars)%>
-
-      /* aliasVars */
-      <%computeVarIndicesList(aliasVars)%>
-
-      /* intAliasVars */
-      <%computeVarIndicesList(intAliasVars)%>
-
-      /* boolAliasVars */
-      <%computeVarIndicesList(boolAliasVars)%>
-
-      /* stringAliasVars */
-      <%computeVarIndicesList(stringAliasVars)%>
-
-      /* enumAliasVars */
-
-      /* paramVars */
-      <%computeVarIndicesList(paramVars)%>
-
-      /* intParamVars */
-      <%computeVarIndicesList(intParamVars)%>
-
-      /* boolParamVars */
-      <%computeVarIndicesList(boolParamVars)%>
-
-      /* stringParamVars */
-      <%computeVarIndicesList(stringParamVars)%>
-
-      /* enumParamVars */
-
-      /* extObjVars */
-
-      /* constVars */
-      <%computeVarIndicesList(constVars)%>
-
-      /* intConstVars */
-      <%computeVarIndicesList(intConstVars)%>
-
-      /* boolConstVars */
-      <%computeVarIndicesList(boolConstVars)%>
-
-      /* stringConstVars */
-      <%computeVarIndicesList(stringConstVars)%>
-
-      /* enumConstVars */
-
-      /* residualVars */
-
-      /* jacobianVars */
-      <%computeVarIndicesList(jacobianVars)%>
-
-      /* seedVars */
-
-      /* realOptimizeConstraintsVars */
-      <%computeVarIndicesList(realOptimizeConstraintsVars)%>
-
-      /* realOptimizeFinalConstraintsVars */
-      <%computeVarIndicesList(realOptimizeFinalConstraintsVars)%>
-
-      /* sensitivityVars */
-      <%computeVarIndicesList(sensitivityVars)%>
-
-      /* dataReconSetcVars */
-      <%computeVarIndicesList(dataReconSetcVars)%>
-
-      /* dataReconinputVars */
-      <%computeVarIndicesList(dataReconinputVars)%>
-
-      /* dataReconSetBVars */
-      <%computeVarIndicesList(dataReconSetBVars)%>
 
       TRACE_POP
     }
@@ -4885,7 +4820,10 @@ template computeVarIndicesList(list<SimVar> vars)
 ::=
   (vars |> var => match var
     case SIMVAR(__)
-    then '<%crefShortType(name)%>Index[<%index%>+1] = <%crefShortType(name)%>Index[<%index%>] + 1; <%crefCCommentWithVariability(var)%>'; separator="\n")
+    then
+      let ty = crefShortType(name)
+      let i = 'i_<%ty%>'
+      '<%ty%>Index[<%i%>+1] = <%ty%>Index[<%i%>] + 1; <%i%>++; <%crefCCommentWithVariability(var)%>'; separator="\n")
 end computeVarIndicesList;
 
 
