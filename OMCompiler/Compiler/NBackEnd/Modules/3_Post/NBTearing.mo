@@ -186,6 +186,16 @@ public
           status  = NBSolve.Status.IMPLICIT);
       then finalize(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
+      case StrongComponent.RESIZABLE_COMPONENT() algorithm
+        new_comp := StrongComponent.ALGEBRAIC_LOOP(
+          idx     = index,
+          strict  = singleImplicit(Slice.getT(comp.var), Slice.getT(comp.eqn)),
+          casual  = NONE(),
+          linear  = false,
+          mixed   = false,
+          status  = NBSolve.Status.IMPLICIT);
+      then finalize(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
+
       // do nothing otherwise
       else (comp, dummy, funcTree, index);
     end match;
