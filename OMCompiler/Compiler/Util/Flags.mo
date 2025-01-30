@@ -551,6 +551,8 @@ constant DebugFlag DUMP_EVENTS = DEBUG_FLAG(193, "dumpEvents", false,
   Gettext.gettext("Dumps information about the detected event functions."));
 constant DebugFlag DUMP_RESIZABLE = DEBUG_FLAG(194, "dumpResizable", false,
   Gettext.gettext("Dumps information about resizable paremeter handling."));
+constant DebugFlag DUMP_SOLVE = DEBUG_FLAG(195, "dumpSolve", false,
+  Gettext.gettext("Dumps information about equation solving."));
 
 public
 // CONFIGURATION FLAGS
