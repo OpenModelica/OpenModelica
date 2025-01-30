@@ -3892,10 +3892,8 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
       copyClassPathHelper(pLibraryTreeItem->getNameStructure());
     } else if (event->key() == Qt::Key_Delete) {
       if (isModelicaLibraryType) {
-        // If item is OpenModelica or part of it then don't unload it.
         // If item is system library and not a toplevel then don't unload it.
-        if (!(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()).compare("OpenModelica") == 0)
-            && (!isSystemLibrary || (isSystemLibrary && isTopLevel))) {
+        if (!isSystemLibrary || (isSystemLibrary && isTopLevel)) {
           unloadClass();
         }
       } else if (isTopLevel && isOMSimulatorLibraryType) {
