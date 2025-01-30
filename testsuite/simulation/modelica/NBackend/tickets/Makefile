@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 13328.mos \
+13144.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

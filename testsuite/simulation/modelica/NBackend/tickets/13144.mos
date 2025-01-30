@@ -1,0 +1,32 @@
+// name: 13144
+// keywords: NewBackend, alias
+// status: correct
+// cflags: --newBackend
+
+loadString("
+model non_trivial_alias
+  Real y1;
+  Real y2;
+equation
+  y1 = time;
+  y2 = y1*2;
+end non_trivial_alias;
+"); getErrorString();
+
+simulate(non_trivial_alias); getErrorString();
+
+diffSimulationResults("non_trivial_alias_res.mat", "ReferenceFiles/non_trivial_alias_res.mat", "non_trivial_alias_diff.csv", 1e-8);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "non_trivial_alias_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'non_trivial_alias', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// endResult
