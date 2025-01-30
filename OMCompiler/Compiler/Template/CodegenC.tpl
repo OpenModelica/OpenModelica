@@ -1288,6 +1288,8 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""), hpcomData.schedules, modelNamePrefixStr)%>
 
+    <%computeVarIndices(modelInfo.vars, modelNamePrefixStr)%>
+
     /* forward the main in the simulation runtime */
     extern int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData);
 
@@ -1308,6 +1310,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
        NULL,
        #endif    /* initializeStateSets */
        <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>,
+       <%symbolName(modelNamePrefixStr,"computeVarIndices")%>,
        <%symbolName(modelNamePrefixStr,"functionODE")%>,
        <%symbolName(modelNamePrefixStr,"functionAlgebraics")%>,
        <%symbolName(modelNamePrefixStr,"functionDAE")%>,
@@ -4759,6 +4762,69 @@ template genVarIndexes(list<SimVar> vars, String arrayName)
   const int <%arrayName%>[<%size%>] = {<%varIndexes%>};
   >>
 end genVarIndexes;
+
+template computeVarIndices(SimVars vars, String modelNamePrefix)
+""
+::=
+  match vars
+  case SIMVARS(__) then
+    <<
+    void <%symbolName(modelNamePrefix,"computeVarIndices")%>(size_t* realIndex, size_t* integerIndex, size_t* booleanIndex, size_t* stringIndex)
+    {
+      TRACE_PUSH
+
+      size_t i_real = 0;
+      size_t i_integer = 0;
+      size_t i_boolean = 0;
+      size_t i_string = 0;
+
+      realIndex[0] = 0;
+      integerIndex[0] = 0;
+      booleanIndex[0] = 0;
+      stringIndex[0] = 0;
+
+      /* stateVars */
+      <%computeVarIndicesList(stateVars)%>
+
+      /* derivativeVars */
+      <%computeVarIndicesList(derivativeVars)%>
+
+      /* algVars */
+      <%computeVarIndicesList(algVars)%>
+
+      /* discreteAlgVars */
+      <%computeVarIndicesList(discreteAlgVars)%>
+
+      /* realOptimizeConstraintsVars */
+      <%computeVarIndicesList(realOptimizeConstraintsVars)%>
+
+      /* realOptimizeFinalConstraintsVars */
+      <%computeVarIndicesList(realOptimizeFinalConstraintsVars)%>
+
+
+      /* intAlgVars */
+      <%computeVarIndicesList(intAlgVars)%>
+
+      /* boolAlgVars */
+      <%computeVarIndicesList(boolAlgVars)%>
+
+      /* stringAlgVars */
+      <%computeVarIndicesList(stringAlgVars)%>
+
+      TRACE_POP
+    }
+    >>
+end computeVarIndices;
+
+template computeVarIndicesList(list<SimVar> vars)
+::=
+  (vars |> var => match var
+    case SIMVAR(__)
+    then
+      let ty = crefShortType(name)
+      let i = 'i_<%ty%>'
+      '<%ty%>Index[<%i%>+1] = <%ty%>Index[<%i%>] + 1; <%i%>++; <%crefCCommentWithVariability(var)%>'; separator="\n")
+end computeVarIndicesList;
 
 
 template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer nAuxVars, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
