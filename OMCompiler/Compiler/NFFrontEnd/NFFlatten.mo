@@ -1142,7 +1142,11 @@ algorithm
   (vrs, sects) := flattenClass(cls, prefix, visibility, binding, {}, Sections.SECTIONS({}, {}, {}, {}), deletedVars, settings);
 
   for v in listReverse(vrs) loop
-    v.ty := Type.liftArrayLeftList(v.ty, dimensions);
+    // kabdelhak: this would only add 1 layer of dimensions. for nested records it needs to go deeper
+    // handling it in Variable.expandChildren instead for the new backend
+    if not settings.newBackend then
+      v.ty := Type.liftArrayLeftList(v.ty, dimensions);
+    end if;
     vars := v :: vars;
   end for;
 

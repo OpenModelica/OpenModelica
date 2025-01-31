@@ -1301,12 +1301,12 @@ public
       Integer index;
     algorithm
       for var in children loop
-        try
-          SOME(index) := UnorderedMap.get(ComponentRef.firstName(var.name), indexMap);
-          childrenAttr[index] := create(var.typeAttributes, var.ty, var.attributes, var.children, var.comment);
-        else
-          Error.assertion(false, getInstanceName() + " got unknown record child: " + ComponentRef.firstName(var.name), sourceInfo());
-        end try;
+        _ := match UnorderedMap.get(ComponentRef.firstName(var.name), indexMap)
+          case SOME(index) algorithm
+            childrenAttr[index] := create(var.typeAttributes, var.ty, var.attributes, var.children, var.comment);
+          then ();
+          else ();
+        end match;
       end for;
       attributes := VAR_ATTR_RECORD(indexMap, childrenAttr);
     end createRecord;

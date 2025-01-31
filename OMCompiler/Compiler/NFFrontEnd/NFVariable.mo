@@ -216,15 +216,13 @@ public
     list<Dimension> newArrayDims;
   algorithm
     // add dimensions of surrounding record
-    if not listEmpty(arrayDims) then
+    if not listEmpty(arrayDims) and not Type.isComplex(var.ty) then
       var.ty := Type.liftArrayLeftList(var.ty, arrayDims);
     end if;
     newArrayDims := Type.arrayDims(var.ty);
 
-    // for non-complex variables the children are empty therefore it will be returned itself
-    var.children := List.flatten(list(expandChildren(v, newArrayDims) for v in var.children));
     // return all children and the variable itself
-    children := var :: var.children;
+    children := var :: List.flatten(list(expandChildren(v, newArrayDims) for v in var.children));
   end expandChildren;
 
   function typeOf
