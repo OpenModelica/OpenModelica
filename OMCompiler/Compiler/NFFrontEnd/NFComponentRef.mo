@@ -2100,6 +2100,11 @@ public
     output Boolean b = firstName(cref) == "time";
   end isTime;
 
+  function isSubstitute
+    input ComponentRef cref;
+    output Boolean b = firstName(cref) == "$SUBST_CREF";
+  end isSubstitute;
+
   function isTopLevel
     input ComponentRef cref;
     output Boolean b;
