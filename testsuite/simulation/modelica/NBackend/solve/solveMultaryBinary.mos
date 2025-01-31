@@ -1,4 +1,4 @@
-// name: solveForLoop
+// name: solveMultaryBinary
 // keywords: NewBackend
 // status: correct
 // cflags: --newBackend -d=dumpSolve
