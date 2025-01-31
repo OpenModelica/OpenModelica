@@ -610,7 +610,7 @@ public
         // If eqn is linear in cref:
         (eqn, funcTree) := solveLinear(eqn, residual, derivative, diffArgs, fixed_cref, funcTree);
         // If the derivative is negative, invert possible inequality sign
-        invertRelation := if Expression.isPositive(derivative) then RelationInversion.TRUE else if Expression.isNegative(derivative) then RelationInversion.FALSE else RelationInversion.UNKNOWN;
+        invertRelation := if Expression.isPositive(derivative) then RelationInversion.FALSE else if Expression.isNegative(derivative) then RelationInversion.TRUE else RelationInversion.UNKNOWN;
         status := Status.EXPLICIT;
       else
         // call general solving routine, can solve an equation, if a cref is contained once in the equation
