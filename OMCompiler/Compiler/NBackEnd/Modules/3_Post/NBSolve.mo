@@ -723,7 +723,7 @@ protected
       // -cref = exp
       case (Expression.UNARY(exp = Expression.CREF(cref = checkCref)), exp)
         guard(ComponentRef.isEqual(cref, checkCref) and not Expression.containsCref(exp, cref))
-      then (Equation.updateLHSandRHS(eqn, Expression.negate(lhs), Expression.negate(rhs)), Status.EXPLICIT, RelationInversion.FALSE);
+      then (Equation.updateLHSandRHS(eqn, Expression.negate(lhs), Expression.negate(rhs)), Status.EXPLICIT, RelationInversion.TRUE);
 
       // 3.2 negate (NOT) lhs and rhs
       // not cref = exp
