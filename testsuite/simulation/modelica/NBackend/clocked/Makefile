@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+arraySample.mos \
 subSample.mos \
 sampleVar.mos \
 shiftSample1.mos \

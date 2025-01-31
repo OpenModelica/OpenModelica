@@ -1169,13 +1169,14 @@ public
       output list<SimVar> part_vars = {};
     algorithm
       part_vars := match comp
-        case StrongComponent.SINGLE_COMPONENT()   then getVars(comp.var, simcode_map);
-        case StrongComponent.MULTI_COMPONENT()    then List.flatten(list(getVars(Slice.getT(v), simcode_map) for v in comp.vars));
-        case StrongComponent.SLICED_COMPONENT()   then getVars(Slice.getT(comp.var), simcode_map);
-        case StrongComponent.GENERIC_COMPONENT()  then getVars(BVariable.getVarPointer(comp.var_cref), simcode_map);
-        case StrongComponent.ENTWINED_COMPONENT() then List.flatten(list(getStrongComponentVars(c, simcode_map) for c in comp.entwined_slices));
-        case  StrongComponent.ALGEBRAIC_LOOP()    then List.flatten(list(getVars(Slice.getT(v), simcode_map) for v in comp.strict.iteration_vars));
-        case StrongComponent.ALIAS()              then getStrongComponentVars(comp.original, simcode_map);
+        case StrongComponent.SINGLE_COMPONENT()     then getVars(comp.var, simcode_map);
+        case StrongComponent.MULTI_COMPONENT()      then List.flatten(list(getVars(Slice.getT(v), simcode_map) for v in comp.vars));
+        case StrongComponent.SLICED_COMPONENT()     then getVars(Slice.getT(comp.var), simcode_map);
+        case StrongComponent.RESIZABLE_COMPONENT()  then getVars(Slice.getT(comp.var), simcode_map);
+        case StrongComponent.GENERIC_COMPONENT()    then getVars(BVariable.getVarPointer(comp.var_cref), simcode_map);
+        case StrongComponent.ENTWINED_COMPONENT()   then List.flatten(list(getStrongComponentVars(c, simcode_map) for c in comp.entwined_slices));
+        case StrongComponent.ALGEBRAIC_LOOP()       then List.flatten(list(getVars(Slice.getT(v), simcode_map) for v in comp.strict.iteration_vars));
+        case StrongComponent.ALIAS()                then getStrongComponentVars(comp.original, simcode_map);
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with unknown reason for \n" + StrongComponent.toString(comp)});
         then fail();
