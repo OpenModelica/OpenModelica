@@ -5,7 +5,7 @@
 
 loadString("
 record A
-  Real x;
+  Real x[1];
   Real y;
 end A;
 
@@ -18,7 +18,7 @@ model record_arrays_1
 equation
   for i in 1:2 loop
     for j in 1:2 loop
-      b[i].a[j].x = time*i+j;
+      b[i].a[j].x[1] = time*i+j;
       b[i].a[j].y = time*i/j;
     end for;
   end for;

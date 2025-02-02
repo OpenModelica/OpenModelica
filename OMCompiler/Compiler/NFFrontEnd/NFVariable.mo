@@ -216,7 +216,7 @@ public
     list<Dimension> newArrayDims;
   algorithm
     // add dimensions of surrounding record
-    if not listEmpty(arrayDims) and not Type.isComplex(var.ty) then
+    if not listEmpty(arrayDims) then
       var.ty := Type.liftArrayLeftList(var.ty, arrayDims);
     end if;
     newArrayDims := Type.arrayDims(var.ty);
