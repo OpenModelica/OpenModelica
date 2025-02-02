@@ -4821,9 +4821,17 @@ template computeVarIndicesList(list<SimVar> vars)
   (vars |> var => match var
     case SIMVAR(__)
     then
+      let &preExp = buffer ""
+      let &varDecls = buffer ""
+      let &auxFunction = buffer ""
       let ty = crefShortType(name)
       let i = 'i_<%ty%>'
-      '<%ty%>Index[<%i%>+1] = <%ty%>Index[<%i%>] + 1; <%i%>++; <%crefCCommentWithVariability(var)%>'; separator="\n")
+      let size = daeExp(DAEUtil.typeExp(type_), contextOther, &preExp, &varDecls, &auxFunction)
+      <<
+      <%preExp%>
+      <%varDecls%>
+      <%auxFunction%>
+      <%ty%>Index[<%i%>+1] = <%ty%>Index[<%i%>] + <%size%>; <%i%>++; <%crefCCommentWithVariability(var)%>>>; separator="")
 end computeVarIndicesList;
 
 

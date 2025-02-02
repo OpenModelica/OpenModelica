@@ -4193,6 +4193,10 @@ package DAEUtil
     output Boolean b;
   end statementsContainTryBlock;
 
+  function typeExp
+    input DAE.Type tp;
+    output DAE.Exp exp;
+  end typeExp;
 end DAEUtil;
 
 package Types
