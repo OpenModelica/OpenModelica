@@ -1019,7 +1019,7 @@ algorithm
     verifyDimensions(dims, node);
     (vars, sections) := flattenArray(cls, dims, pre, visibility, opt_binding, vars, sections, {}, deletedVars, info, settings);
   else
-    (vars, sections) := vectorizeArray(cls, dims, pre, visibility, opt_binding, vars, sections, {}, deletedVars, settings);
+    (vars, sections) := vectorizeArray(cls, ty, dims, pre, visibility, opt_binding, vars, sections, {}, deletedVars, settings);
   end if;
 end flattenComplexComponent;
 
@@ -1117,6 +1117,7 @@ end flattenArray;
 
 function vectorizeArray
   input Class cls;
+  input Type cls_ty;
   input list<Dimension> dimensions;
   input Prefix prefix;
   input Visibility visibility;
@@ -1142,7 +1143,11 @@ algorithm
   (vrs, sects) := flattenClass(cls, prefix, visibility, binding, {}, Sections.SECTIONS({}, {}, {}, {}), deletedVars, settings);
 
   for v in listReverse(vrs) loop
-    v.ty := Type.liftArrayLeftList(v.ty, dimensions);
+    // kabdelhak: this would only add 1 layer of dimensions. for nested records it needs to go deeper
+    // handling it in Variable.expandChildren instead for the new backend
+    if not (settings.newBackend and Type.isRecord(Type.arrayElementType(cls_ty))) then
+      v.ty := Type.liftArrayLeftList(v.ty, dimensions);
+    end if;
     vars := v :: vars;
   end for;
 

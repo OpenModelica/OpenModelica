@@ -6,6 +6,7 @@ record_inlining.mos \
 simple_tuple.mos \
 ComplexTest.mos \
 NonTopLevelInputs.mos \
+record_arrays.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
