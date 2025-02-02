@@ -245,8 +245,27 @@ algorithm
   end match;
 end expTypeArrayDimensions;
 
+public function typeExp
+ "Converts a type to an expression, covering constants and parameters."
+  input DAE.Type tp;
+  output DAE.Exp exp;
+algorithm
+  exp := match tp
+    local
+      DAE.Dimension dim;
+      list<DAE.Dimension> rest;
+    case DAE.T_ARRAY(dims = dim :: rest) algorithm
+      exp := dimExp(dim);
+      for d in rest loop
+        exp := DAE.BINARY(exp, DAE.MUL(DAE.T_INTEGER_DEFAULT), dimExp(d));
+      end for;
+    then exp;
+    else DAE.ICONST(1);
+  end match;
+end typeExp;
+
 public function dimExp
- "Converts a dimension to an expression, covering constants and paramters."
+ "Converts a dimension to an expression, covering constants and parameters."
   input DAE.Dimension dim;
   output DAE.Exp exp;
 algorithm
