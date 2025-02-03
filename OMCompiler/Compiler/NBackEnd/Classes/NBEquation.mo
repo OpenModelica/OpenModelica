@@ -542,7 +542,7 @@ public
     protected
       UnorderedMap<ComponentRef, Expression> replacements = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
     algorithm
-      (exp, iter) := Expression.mapFold(exp, function extractFromCall(replacements = replacements), EMPTY());
+      (exp, iter) := extractFromCall(exp, EMPTY(), replacements);
       exp := Expression.map(exp, function Replacements.applySimpleExp(replacements = replacements));
     end extract;
 
@@ -573,7 +573,12 @@ public
           end if;
         then (call.exp, iter);
 
-        else (exp, iter);
+        // do not iterate call arguments
+        case Expression.CALL() then (exp, iter);
+
+        else algorithm
+          (exp, iter) := Expression.mapFoldShallow(exp, function extractFromCall(replacements = replacements), iter);
+        then (exp, iter);
       end match;
     end extractFromCall;
 
