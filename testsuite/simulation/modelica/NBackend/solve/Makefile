@@ -1,29 +1,14 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
-arraySample.mos \
-subSample.mos \
-sampleVar.mos \
-shiftSample1.mos \
-backSample1.mos \
-inferredSampleVar.mos \
-subSuperSample1.mos \
-holdVar.mos \
-eventConstructor.mos \
-inferredConstructor2.mos \
-rationalConstructor1.mos \
-subSuperSample2.mos \
+solveCallExp.mos \
+solveCallTan.mos \
+solveForLoop.mos \
+solveMultaryBinary.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
-absoluteClocks.mos \
-boolEventClock.mos \
-firstTick.mos \
-inferredConstructor1.mos \
-intervalBase.mos \
-noClock.mos \
-rationalConstructor2.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

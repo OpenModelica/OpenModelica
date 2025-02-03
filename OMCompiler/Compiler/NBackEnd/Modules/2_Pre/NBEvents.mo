@@ -412,7 +412,8 @@ public
           local
             Equation tmpEqn;
             Solve.Status status;
-            Boolean invert, can_trigger;
+            Boolean can_trigger;
+            Solve.RelationInversion invert;
             Call call;
             Expression trigger, new_exp;
             TimeEvent timeEvent;
@@ -433,10 +434,10 @@ public
             _ := Equation.map(tmpEqn, function containsTimeTraverseExp(b = containsTime), SOME(function containsTimeTraverseCref(b = containsTime)));
             if Pointer.access(containsTime) then
               (tmpEqn, _, status, invert) := Solve.solveBody(tmpEqn, NFBuiltin.TIME_CREF, funcTree);
-              if status == NBSolve.Status.EXPLICIT then
+              if status == NBSolve.Status.EXPLICIT and invert <> NBSolve.RelationInversion.UNKNOWN then
                 trigger := Equation.getRHS(tmpEqn);
-                exp.operator := if invert then Operator.invert(exp.operator) else exp.operator;
-
+                // only cases for RelationInversion == TRUE or FALSE can be present
+                exp.operator := if invert == NBSolve.RelationInversion.TRUE then Operator.invert(exp.operator) else exp.operator;
                 if Equation.isWhenEquation(eqn) then
                   // if it is a when equation check if it can even trigger
                   can_trigger := match exp.operator.op

@@ -6,9 +6,16 @@
 loadString("
 package Test
   model M
+    Real x;
     parameter Real p(fixed = false);
+    Integer i(start = 1);
   initial equation
     20 = p*10 + 10;
+  equation
+    x = cos(x);
+    when time > 0.5 then
+      i = pre(i) + 1;
+    end when;
   end M;
 
   model Q
@@ -18,10 +25,14 @@ end Test;
 "); getErrorString();
 
 simulate(Test.Q, fileNamePrefix="Test.Q_xxx"); getErrorString();
+val(m.x, {0.5});
 val(m.p, {0.0, 0.5});
+val(m.i, {0.0, 1.0});
 
 simulate(Test.Q, simflags="-iim=none -iif=Test.Q_xxx_res.mat -iit=1.0 -lv=LOG_INIT_V"); getErrorString();
+val(m.x, {0.5});
 val(m.p, {0.0, 0.5});
+val(m.i, {0.0, 1.0});
 
 // Result:
 // true
@@ -33,8 +44,11 @@ val(m.p, {0.0, 0.5});
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// {0.7390851332151607}
 // {1.0, 1.0}
+// {1.0, 2.0}
 // record SimulationResult
 //     resultFile = "Test.Q_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Test.Q', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-iim=none -iif=Test.Q_xxx_res.mat -iit=1.0 -lv=LOG_INIT_V'",
@@ -47,9 +61,12 @@ val(m.p, {0.0, 0.5});
 // |                 | |       | file: Test.Q_xxx_res.mat
 // |                 | |       | time: 1
 // LOG_INIT          | info    | import real variables
+// LOG_INIT_V        | info    | | m.x(start=0.739085)
+// LOG_INIT          | info    | import integer variables
+// LOG_INIT_V        | info    | | m.i(start=2)
+// LOG_INIT          | info    | import boolean variables
 // LOG_INIT          | info    | import real parameters
 // LOG_INIT_V        | info    | | m.p(start=1)
-// LOG_INIT          | info    | import real discrete
 // LOG_INIT          | info    | import integer parameters
 // LOG_INIT          | info    | import boolean parameters
 // LOG_INIT          | info    | initialization method: none            [sets all variables to their start values and skips the initialization process]
@@ -57,11 +74,20 @@ val(m.p, {0.0, 0.5});
 // |                 | |       | | real parameters
 // |                 | |       | | | [1] parameter Real m.p(start=1, fixed=false) = 1
 // LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real m.x(start=0.739085, nominal=1) = 0.739085 (pre: 0)
+// |                 | |       | | integer variables
+// |                 | |       | | | [1] Integer m.i(start=2) = 2 (pre: 1)
+// |                 | |       | | boolean variables
+// |                 | |       | | | [1] Boolean $whenCondition1(start=false) = false (pre: false)
 // LOG_INIT          | info    | ### END INITIALIZATION ###
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// {0.7390851332151607}
 // {1.0, 1.0}
+// {2.0, 3.0}
 // endResult

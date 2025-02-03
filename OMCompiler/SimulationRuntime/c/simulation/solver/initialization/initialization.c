@@ -537,7 +537,7 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
 
   infoStreamPrint(OMC_LOG_INIT, 0, "import start values\nfile: %s\ntime: %g", pInitFile, initTime);
 
-  if(!strcmp(data->modelData->resultFileName, pInitFile))
+  if(!strcmp(mData->resultFileName, pInitFile))
   {
     errorStreamPrint(OMC_LOG_INIT, 0, "Cannot import a result file for initialization that is also the current output file <%s>.\nConsider redirecting the output result file (-r=<new_res.mat>) or renaming the result file that is used for initialization import.", pInitFile);
     return 1;
@@ -568,6 +568,48 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
       }
     }
 
+    infoStreamPrint(OMC_LOG_INIT, 0, "import integer variables");
+    for(i=0; i<mData->nVariablesInteger; ++i) {
+      pVar = omc_matlab4_find_var(&reader, mData->integerVarsData[i].info.name);
+
+      if(!pVar) {
+        newVarname = mapToDymolaVars(mData->integerVarsData[i].info.name);
+        pVar = omc_matlab4_find_var(&reader, newVarname);
+        free(newVarname);
+      }
+      if(pVar) {
+        omc_matlab4_val(&value, &reader, pVar, initTime);
+        mData->integerVarsData[i].attribute.start = (modelica_integer) value;
+        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=%ld)", mData->integerVarsData[i].info.name, mData->integerVarsData[i].attribute.start);
+      } else if((strlen(mData->integerVarsData[i].info.name) > 0) &&
+              (mData->integerVarsData[i].info.name[0] != '$') &&
+              (strncmp(mData->integerVarsData[i].info.name, "der($", 5) != 0)) {
+        /* skip warnings about self-generated variables */
+        warningStreamPrint(OMC_LOG_INIT, 0, "unable to import integer variable %s from given file", mData->integerVarsData[i].info.name);
+      }
+    }
+
+    infoStreamPrint(OMC_LOG_INIT, 0, "import boolean variables");
+    for(i=0; i<mData->nVariablesBoolean; ++i) {
+      pVar = omc_matlab4_find_var(&reader, mData->booleanVarsData[i].info.name);
+
+      if(!pVar) {
+        newVarname = mapToDymolaVars(mData->booleanVarsData[i].info.name);
+        pVar = omc_matlab4_find_var(&reader, newVarname);
+        free(newVarname);
+      }
+      if(pVar) {
+        omc_matlab4_val(&value, &reader, pVar, initTime);
+        mData->booleanVarsData[i].attribute.start = (modelica_integer) value;
+        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=%s)", mData->booleanVarsData[i].info.name, mData->booleanVarsData[i].attribute.start ? "true" : "false");
+      } else if((strlen(mData->booleanVarsData[i].info.name) > 0) &&
+              (mData->booleanVarsData[i].info.name[0] != '$') &&
+              (strncmp(mData->booleanVarsData[i].info.name, "der($", 5) != 0)) {
+        /* skip warnings about self-generated variables */
+        warningStreamPrint(OMC_LOG_INIT, 0, "unable to import boolean variable %s from given file", mData->integerVarsData[i].info.name);
+      }
+    }
+
     infoStreamPrint(OMC_LOG_INIT, 0, "import real parameters");
     for(i=0; i<mData->nParametersReal; ++i) {
       pVar = omc_matlab4_find_var(&reader, mData->realParameterData[i].info.name);
@@ -581,24 +623,6 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
       if(pVar) {
         omc_matlab4_val(&(mData->realParameterData[i].attribute.start), &reader, pVar, initTime);
         data->simulationInfo->realParameter[i] = mData->realParameterData[i].attribute.start;
-        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
-      } else {
-        warningStreamPrint(OMC_LOG_INIT, 0, "unable to import real parameter %s from given file", mData->realParameterData[i].info.name);
-      }
-    }
-
-    infoStreamPrint(OMC_LOG_INIT, 0, "import real discrete");
-    for(i=mData->nVariablesReal-mData->nDiscreteReal; i<mData->nDiscreteReal; ++i) {
-      pVar = omc_matlab4_find_var(&reader, mData->realParameterData[i].info.name);
-
-      if(!pVar) {
-        newVarname = mapToDymolaVars(mData->realParameterData[i].info.name);
-        pVar = omc_matlab4_find_var(&reader, newVarname);
-        free(newVarname);
-      }
-
-      if(pVar) {
-        omc_matlab4_val(&(mData->realParameterData[i].attribute.start), &reader, pVar, initTime);
         infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
       } else {
         warningStreamPrint(OMC_LOG_INIT, 0, "unable to import real parameter %s from given file", mData->realParameterData[i].info.name);

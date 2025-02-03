@@ -2052,26 +2052,37 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
         if (!pPlotCurve) {
           pPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().last();
         }
+        bool requiresUpdate = false;
         if (pPlotCurve && !pVariablesTreeItem->isString() && pVariablesTreeItem->getUnit().compare(pVariablesTreeItem->getDisplayUnit()) != 0) {
           OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pVariablesTreeItem->getUnit(), pVariablesTreeItem->getDisplayUnit());
           if (convertUnit.unitsCompatible) {
+            pPlotCurve->resetPrefixUnit();
+            requiresUpdate = true;
             for (int i = 0 ; i < pPlotCurve->mYAxisVector.size() ; i++) {
               pPlotCurve->updateYAxisValue(i, Utilities::convertUnit(pPlotCurve->mYAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
             }
-            pPlotCurve->plotData();
           } else {
             pPlotCurve->setYDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
           }
         }
         // update the time values if time unit is different then s
-        if (pPlotWindow->getTimeUnit().compare("s") != 0) {
+        if (pPlotCurve && pPlotWindow->getTimeUnit().compare("s") != 0) {
           OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits("s", pPlotWindow->getTimeUnit());
+          /* if requiresUpdate = false then call pPlotCurve->resetPrefixUnit() and set it to true.
+           * otherwise avoid calling pPlotCurve->resetPrefixUnit() since it is already called above.
+           */
+          if (!requiresUpdate) {
+            pPlotCurve->resetPrefixUnit();
+            requiresUpdate = true;
+          }
           if (convertUnit.unitsCompatible) {
             for (int i = 0 ; i < pPlotCurve->mXAxisVector.size() ; i++) {
               pPlotCurve->updateXAxisValue(i, Utilities::convertUnit(pPlotCurve->mXAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
             }
-            pPlotCurve->plotData();
           }
+        }
+        if (requiresUpdate) {
+          pPlotCurve->plotData();
         }
         pPlotWindow->updatePlot();
       } else if (!pVariablesTreeItem->isChecked()) {  // if user unchecks the variable then remove it from the plot
@@ -2159,13 +2170,15 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
               pPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().last();
             }
             // convert x value
+            bool requiresUpdate = false;
             if (pPlotCurve && !plotParametricCurve.xVariable.isString && plotParametricCurve.xVariable.unit.compare(plotParametricCurve.xVariable.displayUnit) != 0) {
               OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(plotParametricCurve.xVariable.unit, plotParametricCurve.xVariable.displayUnit);
               if (convertUnit.unitsCompatible) {
+                pPlotCurve->resetPrefixUnit();
+                requiresUpdate = true;
                 for (int i = 0 ; i < pPlotCurve->mXAxisVector.size() ; i++) {
                   pPlotCurve->updateXAxisValue(i, Utilities::convertUnit(pPlotCurve->mXAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
                 }
-                pPlotCurve->plotData();
               } else {
                 pPlotCurve->setXDisplayUnit(Utilities::convertUnitToSymbol(plotParametricCurve.xVariable.displayUnit));
               }
@@ -2174,15 +2187,23 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             if (pPlotCurve && !plotParametricVariable.isString && plotParametricVariable.unit.compare(plotParametricVariable.displayUnit) != 0) {
               OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(plotParametricVariable.unit, plotParametricVariable.displayUnit);
               if (convertUnit.unitsCompatible) {
+                /* if requiresUpdate = false then call pPlotCurve->resetPrefixUnit() and set it to true.
+                 * otherwise avoid calling pPlotCurve->resetPrefixUnit() since it is already called above.
+                 */
+                if (!requiresUpdate) {
+                  pPlotCurve->resetPrefixUnit();
+                  requiresUpdate = true;
+                }
                 for (int i = 0 ; i < pPlotCurve->mYAxisVector.size() ; i++) {
                   pPlotCurve->updateYAxisValue(i, Utilities::convertUnit(pPlotCurve->mYAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
                 }
-                pPlotCurve->plotData();
               } else {
                 pPlotCurve->setYDisplayUnit(Utilities::convertUnitToSymbol(plotParametricVariable.displayUnit));
               }
             }
-
+            if (requiresUpdate) {
+              pPlotCurve->plotData();
+            }
             pPlotWindow->updatePlot();
           }
         }
@@ -2339,28 +2360,36 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
       }
       /* update plots */
       foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
+        bool requiresUpdate = false;
         const QString yVariableName = QString("%1.%2").arg(pPlotCurve->getFileName(), pPlotCurve->getYVariable());
         if (yVariableName.compare(pVariablesTreeItem->getVariableName()) == 0) {
           // reset prefix unit
           pPlotCurve->resetPrefixUnit();
+          requiresUpdate = true;
           for (int i = 0 ; i < pPlotCurve->mYAxisVector.size() ; i++) {
             pPlotCurve->updateYAxisValue(i, Utilities::convertUnit(pPlotCurve->mYAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
           }
           pPlotCurve->setYDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
-          pPlotCurve->plotData();
-          if (!(pPlotWindow->isPlotParametric() || pPlotWindow->isPlotArrayParametric())) {
-            break;
-          }
         }
         if (pPlotWindow->isPlotParametric() || pPlotWindow->isPlotArrayParametric()) {
           const QString xVariableName = QString("%1.%2").arg(pPlotCurve->getFileName(), pPlotCurve->getXVariable());
           if (xVariableName.compare(pVariablesTreeItem->getVariableName()) == 0) {
+            /* if requiresUpdate = false then call pPlotCurve->resetPrefixUnit() and set it to true.
+             * otherwise avoid calling pPlotCurve->resetPrefixUnit() since it is already called above.
+             */
+            if (!requiresUpdate) {
+              pPlotCurve->resetPrefixUnit();
+              requiresUpdate = true;
+            }
             for (int i = 0 ; i < pPlotCurve->mXAxisVector.size() ; i++) {
               pPlotCurve->updateXAxisValue(i, Utilities::convertUnit(pPlotCurve->mXAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
             }
             pPlotCurve->setXDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
-            pPlotCurve->plotData();
           }
+        }
+        if (requiresUpdate) {
+          // update plot data and do not break the loop as the variable can be used in multiple curves in the case of parametric plot.
+          pPlotCurve->plotData();
         }
       }
       pPlotWindow->updatePlot();

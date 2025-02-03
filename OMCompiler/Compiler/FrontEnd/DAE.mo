@@ -1161,7 +1161,6 @@ uniontype Dimension
   end DIM_EXP;
 
   record DIM_UNKNOWN "Dimension with unknown size."
-    //DimensionBinding dimensionBinding "unknown dimension can be bound or unbound";
   end DIM_UNKNOWN;
 end Dimension;
 

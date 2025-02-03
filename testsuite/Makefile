@@ -66,6 +66,7 @@ simulationnewbackend-msl.log \
 simulationnewbackend-records.log \
 simulationnewbackend-ScalableTestsuite.log \
 simulationnewbackend-simplification.log \
+simulationnewbackend-solve.log \
 simulationnewbackend-tearing.log \
 simulationnewbackend-tickets.log \
 simulationdeclarations.log \
@@ -369,6 +370,9 @@ simulationnewbackend-ScalableTestsuite.log: omc-diff
 	@echo $@ done
 simulationnewbackend-simplification.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/simplification/ -f Makefile test > $@
+	@echo $@ done
+simulationnewbackend-solve.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/solve/ -f Makefile test > $@
 	@echo $@ done
 simulationnewbackend-tearing.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/tearing/ -f Makefile test > $@

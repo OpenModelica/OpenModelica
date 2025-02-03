@@ -1,0 +1,77 @@
+// name: solveCallExp
+// keywords: NewBackend
+// status: correct
+// cflags: --newBackend -d=dumpSolve
+
+loadString("
+  model solveCallExp
+    Real x;
+  equation
+    exp(-(2^x)^2) = sin(2);
+  end solveCallExp;
+"); getErrorString();
+
+setCommandLineOptions("-d=dumpSolve");
+simulate(solveCallExp); getErrorString();
+// Result:
+// true
+// ""
+// true
+//
+// ##########################################
+// START - Solve
+//
+// Solve Input:
+// ### Variable:
+// 	$FUN_1
+// ### Equation:
+// 	[SCAL] (1) $FUN_1 = 0.9092974268256817 ($RES_SIM_0)
+//
+// Solve Output:
+// ### Status:
+// 	Solve.EXPLICIT
+// ### Equation:
+// 	[SCAL] (1) $FUN_1 = 0.9092974268256817 ($RES_SIM_0)
+//
+// END - Solve
+// ##########################################
+//
+//
+// ##########################################
+// START - Solve
+//
+// Solve Input:
+// ### Variable:
+// 	x
+// ### Equation:
+// 	[SCAL] (1) 0.9092974268256817 = exp(-(2.0 ^ x) ^ 2.0) ($RES_AUX_1)
+//
+// SolveUnique Instructions (substitute from top to bottom):
+// 	0 (is initial)
+// 	$SUBST_CREF - (-0.9092974268256817)
+// 	log($SUBST_CREF)
+// 	-$SUBST_CREF
+// 	$SUBST_CREF ^ (1/2.0)
+// 	log($SUBST_CREF)
+// 	$SUBST_CREF / log(2.0)
+// ### Status:
+// 	Solve.EXPLICIT
+//
+// Solve Output:
+// ### Status:
+// 	Solve.EXPLICIT
+// ### Equation:
+// 	[SCAL] (1) x = -1.6973341095413634 ($RES_AUX_1)
+//
+// END - Solve
+// ##########################################
+//
+// record SimulationResult
+//     resultFile = "solveCallExp_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'solveCallExp', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult
