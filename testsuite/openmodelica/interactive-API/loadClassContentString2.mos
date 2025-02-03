@@ -1,0 +1,50 @@
+// name: loadClassContentString2
+// keywords:
+// status: correct
+// cflags: -d=newInst
+
+loadString("
+  model M
+    Modelica.Blocks.Continuous.Integrator integrator annotation(
+      Placement(transformation(origin = {-26, 32}, extent = {{-10, -10}, {10, 10}})));
+    Modelica.Blocks.Continuous.Integrator integrator1 annotation(
+      Placement(transformation(extent = {{-10, -10}, {10, 10}})));
+  equation
+    connect(integrator.y, integrator1.u) annotation(
+      Line(points = {{-14, 32}, {16, 32}}, color = {0, 0, 127}));
+    annotation(
+      Diagram(graphics = {Rectangle(origin = {1, -5}, extent = {{-23, 13}, {23, -13}})}));
+  end M;
+");
+
+loadClassContentString("
+  Modelica.Blocks.Continuous.Integrator integrator annotation(Placement(transformation(origin={-26,32},extent={{-10,-10},{10,10}})));
+  Modelica.Blocks.Continuous.Integrator integrator1 annotation(Placement(transformation(extent={{-10,-10},{10,10}})));
+equation
+  connect(integrator.y, integrator1.u) annotation (Line(points={{-14,32},{16,32}},color={0,0,127}));
+  annotation (Diagram(graphics={Rectangle(origin={1,-5},extent={{-23,13},{23,-13}})}));
+", M, 15, 23);
+
+list(M);
+
+// Result:
+// true
+// true
+// "model M
+//   Modelica.Blocks.Continuous.Integrator integrator annotation(
+//     Placement(transformation(origin = {-26, 32}, extent = {{-10, -10}, {10, 10}})));
+//   Modelica.Blocks.Continuous.Integrator integrator1 annotation(
+//     Placement(transformation(extent = {{-10, -10}, {10, 10}})));
+//   Modelica.Blocks.Continuous.Integrator integrator2 annotation(
+//     Placement(transformation(origin = {-11, 55}, extent = {{-10, -10}, {10, 10}})));
+//   Modelica.Blocks.Continuous.Integrator integrator11 annotation(
+//     Placement(transformation(origin = {15, 23}, extent = {{-10, -10}, {10, 10}})));
+// equation
+//   connect(integrator.y, integrator1.u) annotation(
+//     Line(points = {{-14, 32}, {16, 32}}, color = {0, 0, 127}));
+//   connect(integrator2.y, integrator11.u) annotation(
+//     Line(points = {{1, 55}, {31, 55}}, color = {0, 0, 127}));
+//   annotation(
+//     Diagram(graphics = {Rectangle(origin = {16, 18}, extent = {{-23, 13}, {23, -13}})}));
+// end M;"
+// endResult

@@ -1208,10 +1208,12 @@ function loadClassContentString
   "Loads class elements from a string and inserts them into the given loaded class."
   input String data;
   input TypeName className;
+  input Integer offsetX = 0;
+  input Integer offsetY = 0;
   output Boolean success;
 external "builtin";
 annotation(preferredView="test",Documentation(info="<html>
-<p>Loads class content from a string and inserts it into the given loaded class.
+<p>Loads class content from a string and inserts it into the given loaded class with an optional position offset for graphical annotations.
 The existing class must be a long class definition, either normal or class
 extends. The content is merged according to the following rules:</p>
 <p>
@@ -1237,6 +1239,9 @@ loadClassContentString(\"
 \", P.M);
 </pre>
 </blockquote>
+</p>
+<p>
+If an offset is given it will be applied to the graphical annotations on the loaded content before it's merged into the class, for example Placement annotations on components.
 </p>
 </html>"));
 end loadClassContentString;

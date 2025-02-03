@@ -1748,9 +1748,9 @@ bool OMCProxy::loadString(QString value, QString fileName, QString encoding, boo
  * \param className
  * \return
  */
-bool OMCProxy::loadClassContentString(const QString &data, const QString &className)
+bool OMCProxy::loadClassContentString(const QString &data, const QString &className, int offsetX, int offsetY)
 {
-  bool result = mpOMCInterface->loadClassContentString(data, className);
+  bool result = mpOMCInterface->loadClassContentString(data, className, offsetX, offsetY);
   printMessagesStringInternal();
   return result;
 }

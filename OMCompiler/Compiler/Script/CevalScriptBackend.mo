@@ -1747,7 +1747,7 @@ algorithm
       Option<DAE.DAElist> odae;
       Values.Value v,cvar,cvar2,v1,v2;
       Absyn.ComponentRef cr, cr2;
-      Integer size,i,n,curveStyle,numberOfIntervals;
+      Integer size,i,n,curveStyle,numberOfIntervals,x,y;
       Access access;
       list<String> vars_1,args,strings,strs1,strs2,files;
       Real timeStamp,val,x1,x2,y1,y2,r1,r2,curveWidth, interval;
@@ -3086,9 +3086,9 @@ algorithm
         Values.BOOL(b);
 
     case ("loadClassContentString",
-          {Values.STRING(str), Values.CODE(Absyn.C_TYPENAME(classpath))})
+          {Values.STRING(str), Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(x), Values.INTEGER(y)})
       algorithm
-        (p, b) := InteractiveUtil.loadClassContentString(str, classpath, SymbolTable.getAbsyn());
+        (p, b) := InteractiveUtil.loadClassContentString(str, classpath, x, y, SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(p);
       then
         Values.BOOL(b);
