@@ -950,6 +950,7 @@ void ShapeAnnotation::insertPointsGeometriesAndCornerItems(int index)
     mGeometries.insert(index, ShapeAnnotation::HorizontalLine);
   }
   // if we add new points then we need to add new CornerItems and also need to adjust CornerItems connected indexes.
+  index = qMin(index, mCornerItemsList.size());
   mCornerItemsList.insert(index, new CornerItem(point.x(), point.y(), index, this));
   mCornerItemsList.insert(index, new CornerItem(point.x(), point.y(), index, this));
   adjustCornerItemsConnectedIndexes();
