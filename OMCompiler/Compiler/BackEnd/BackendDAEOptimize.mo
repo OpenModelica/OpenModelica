@@ -2795,7 +2795,7 @@ algorithm
 
     case (_,tbs,{})
       equation
-        List.map_0(tbs, List.assertIsEmpty);
+        true = List.all(tbs, listEmpty);
       then {};
 
     case (conds,tbs,fb::fbs)
@@ -2902,7 +2902,7 @@ algorithm
 
     case (_, _, {}, _, _)
       equation
-        List.map_0(inExpLst2, List.assertIsEmpty);
+        true = List.all(inExpLst2, listEmpty);
       then {};
 
     case (_, _, fb::fbs, _, _)

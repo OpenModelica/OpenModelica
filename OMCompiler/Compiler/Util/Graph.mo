@@ -1034,7 +1034,7 @@ public function filterGraph
     output Boolean outCond;
   end CondFunc;
 algorithm
-  outGraph := List.accumulateMapAccum1(inGraph, filterGraph2, inCondFunc);
+  outGraph := List.accumulateMapAccum(inGraph, function filterGraph2(inCondFunc = inCondFunc));
 end filterGraph;
 
 protected function filterGraph2

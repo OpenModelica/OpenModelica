@@ -4900,8 +4900,7 @@ algorithm
 
     else
       equation
-        (expl, _) = List.map3_2(inArray, typeConvert, inActualType,
-          inExpectedType, inPrintFailtrace);
+        expl = List.map_2(inArray, function typeConvert(actual = inActualType, expected = inExpectedType, printFailtrace = inPrintFailtrace));
       then
         expl;
 

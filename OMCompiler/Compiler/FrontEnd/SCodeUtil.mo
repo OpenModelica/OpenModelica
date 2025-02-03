@@ -1648,7 +1648,7 @@ algorithm
 
     case SCode.EQ_IF()
       algorithm
-        outArg := List.foldList1(inEquation.thenBranch, foldEquations, inFunc, outArg);
+        outArg := List.foldList(inEquation.thenBranch, function foldEquations(inFunc = inFunc), outArg);
       then
         List.fold1(inEquation.elseBranch, foldEquations, inFunc, outArg);
 
@@ -1691,7 +1691,7 @@ algorithm
     case SCode.EQ_IF()
       algorithm
         outArg := List.fold(inEquation.condition, inFunc, outArg);
-        outArg := List.foldList1(inEquation.thenBranch, foldEquationsExps, inFunc, outArg);
+        outArg := List.foldList(inEquation.thenBranch, function foldEquationsExps(inFunc = inFunc), outArg);
       then
         List.fold1(inEquation.elseBranch, foldEquationsExps, inFunc, outArg);
 

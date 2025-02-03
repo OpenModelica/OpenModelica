@@ -408,7 +408,7 @@ protected
   Boolean found;
 algorithm
   (outVariables, found) :=
-    List.findMap3(inVariables, addVarToVarList2, inCref, inValue, inEnv);
+    List.findMap(inVariables, function addVarToVarList2(inCref = inCref, inValue = inValue, inEnv = inEnv));
   outVariables := addVarToVarList4(found, inCref, inValue, outVariables);
 end addVarToVarList;
 

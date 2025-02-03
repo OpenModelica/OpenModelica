@@ -748,7 +748,7 @@ protected function makeTupleCrefs
   input SourceInfo inInfo;
   output list<DAE.ComponentRef> outCrefs;
 algorithm
-  outCrefs := List.threadMap3(inCrefs, inTypes, makeTupleCref, inEnv, inCache, inInfo);
+  outCrefs := list(makeTupleCref(c, t, inEnv, inCache, inInfo) threaded for c in inCrefs, t in inTypes);
 end makeTupleCrefs;
 
 protected function makeTupleCref

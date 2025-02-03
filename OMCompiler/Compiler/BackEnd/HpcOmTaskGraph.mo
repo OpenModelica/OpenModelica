@@ -5811,7 +5811,7 @@ algorithm
   parentComps := arrayGet(inComps, iParentNodeIdx);
   childComps := arrayGet(inComps, iChildNodeIdx);
   concreteCommCostsOpt := List.map2(parentComps, getCommCostBetweenNodes0, childComps, commCosts);
-  concreteCommCosts := List.flatten(List.map(concreteCommCostsOpt, List.fromOption));
+  concreteCommCosts := list(Util.getOption(c) for c guard isSome(c) in concreteCommCostsOpt);
   oCommCost := getHighestCommCost(concreteCommCosts, COMMUNICATION(0,{},{},{},{},-1,-1.0));
 end getCommCostBetweenNodes;
 

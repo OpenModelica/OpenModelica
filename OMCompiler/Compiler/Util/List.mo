@@ -193,22 +193,6 @@ algorithm
   outRange := list(i for i in inStart:inStep:inStop);
 end intRange3;
 
-public function toOption<T>
-  "Returns an option of the element in a list if the list contains exactly one
-   element, NONE() if the list is empty and fails if the list contains more than
-   one element."
-  input list<T> inList;
-  output Option<T> outOption;
-algorithm
-  outOption := match(inList)
-    local
-      T e;
-
-    case {} then NONE();
-    case {e} then SOME(e);
-  end match;
-end toOption;
-
 public function fromOption<T>
   "Returns an empty list for NONE() and a list containing the element for
    SOME(element)."
@@ -223,13 +207,6 @@ algorithm
     else {};
   end match;
 end fromOption;
-
-public function assertIsEmpty<T>
-  "Fails if the given list is not empty."
-  input list<T> inList;
-algorithm
-  {} := inList;
-end assertIsEmpty;
 
 public function isEqual<T>
   "Checks if two lists are equal. If inEqualLength is true the lists are assumed
@@ -412,26 +389,6 @@ algorithm
   outList := if inCondition then inElement :: inList else inList;
 end consOnTrue;
 
-public function consOnSuccess<T>
-  "Adds the element to the front of the list if the predicate succeeds.
-   Prefer using consOnTrue instead of this function, it's more efficient."
-  input T inElement;
-  input list<T> inList;
-  input Predicate inPredicate;
-  output list<T> outList;
-
-  partial function Predicate
-    input T inElement;
-  end Predicate;
-algorithm
-  try
-    inPredicate(inElement);
-    outList := inElement :: inList;
-  else
-    outList := inList;
-  end try;
-end consOnSuccess;
-
 public function consOption<T>
   "Adds an optional element to the front of the list, or returns the list if the
    element is none."
@@ -487,29 +444,6 @@ algorithm
     outList := e::outList;
   end for;
 end append_reverse;
-
-public function append_reverser<T>
-  "Appends the elements from list2 in reverse order to list1."
-  input list<T> inList1;
-  input list<T> inList2;
-  output list<T> outList=inList1;
-algorithm
-  // Do not optimize the case listEmpty(inList2) and listLength(inList1)==1
-  // since we use listReverseInPlace together with this function.
-  // An alternative would be to keep both (and rename this append_reverse_always_copy)
-  for e in inList2 loop
-    outList := e::outList;
-  end for;
-end append_reverser;
-
-public function appendr<T>
-  "Appends two lists in reverse order compared to listAppend."
-  input list<T> inList1;
-  input list<T> inList2;
-  output list<T> outList;
-algorithm
-  outList := listAppend(inList2, inList1);
-end appendr;
 
 public function appendElt<T>
   "Appends an element to the end of the list. Note that this is very
@@ -686,21 +620,6 @@ algorithm
   end for;
 end last;
 
-public function lastElement<T>
-  "Returns the last cons-cell of a list. Fails if the list is empty. Also returns the list length."
-  input list<T> inList;
-  output list<T> lst;
-  output Integer listLength=0;
-protected
-  list<T> rest=inList;
-algorithm
-  false := listEmpty(rest);
-  while not listEmpty(rest) loop
-    (lst as (_::rest)) := rest;
-    listLength := listLength+1;
-  end while;
-end lastElement;
-
 public function lastListOrEmpty<T>
   "Returns the last element(list) of a list of lists. Returns empty list
   if the outer list is empty."
@@ -711,15 +630,6 @@ algorithm
     outLastList := e;
   end for;
 end lastListOrEmpty;
-
-public function secondLast<T>
-  "Returns the second last element of a list, or fails if such an element does
-   not exist."
-  input list<T> inList;
-  output T outSecondLast;
-algorithm
-  _ :: outSecondLast :: _ := listReverse(inList);
-end secondLast;
 
 public function lastN<T>
   "Returns the last N elements of a list."
@@ -755,15 +665,6 @@ public function rest<T>
 algorithm
   _ :: outList := inList;
 end rest;
-
-public function restCond<T>
-  "Returns all elements except for the first in a list."
-  input Boolean cond;
-  input list<T> inList;
-  output list<T> outList;
-algorithm
-  outList := if cond then listRest(inList) else inList;
-end restCond;
 
 public function restOrEmpty<T>
   "Returns all elements except for the first in a list, or the empty list of the
@@ -1203,50 +1104,6 @@ algorithm
   GCExt.free(arr);
 end uniqueIntN;
 
-public function uniqueIntNArr
-  "Takes a list of integes and returns a list with duplicates removed, so that
-   each element in the new list is unique. O(listLength(inList)). The function
-   also takes an array of Integer of size N+1 to mark the already selected entries <= N.
-   The last entrie of the array is used for the mark index. It will be updated after
-   each call"
-  input list<Integer> inList;
-  input array<Integer> inMarkArray;
-  input list<Integer> inAccum;
-  output list<Integer> outAccum;
-protected
-  Integer len, mark;
-algorithm
-  if listEmpty(inList) then
-    outAccum := inAccum;
-  else
-    len := arrayLength(inMarkArray);
-    mark := inMarkArray[len];
-    arrayUpdate(inMarkArray, len, mark + 1);
-    outAccum := uniqueIntNArr1(inList, len, mark + 1, inMarkArray, inAccum);
-  end if;
-end uniqueIntNArr;
-
-protected function uniqueIntNArr1
-  "Helper for uniqueIntNArr1."
-  input list<Integer> inList;
-  input Integer inLength;
-  input Integer inMark;
-  input array<Integer> inMarkArray;
-  input list<Integer> inAccum;
-  output list<Integer> outAccum = inAccum;
-algorithm
-  for i in inList loop
-    if i >= inLength then
-      fail();
-    end if;
-
-    if arrayGet(inMarkArray, i) <> inMark then
-      outAccum := i :: outAccum;
-      _ := arrayUpdate(inMarkArray, i, inMark);
-    end if;
-  end for;
-end uniqueIntNArr1;
-
 public function uniqueOnTrue<T>
   "Takes a list of elements and a comparison function over two elements of the
    list and returns a list with duplicates removed, so that each element in the
@@ -1268,17 +1125,6 @@ algorithm
   end for;
   outList := listReverseInPlace(outList);
 end uniqueOnTrue;
-
-public function reverseList<T>
-  "Takes a list of lists and reverses it at both levels, i.e. both the list
-   itself and each sublist.
-     Example:
-       reverseList({{1, 2}, {3, 4, 5}, {6}}) => {{6}, {5, 4, 3}, {2, 1}}"
-  input list<list<T>> inList;
-  output list<list<T>> outList;
-algorithm
-  outList := listReverse(listReverse(e) for e in inList);
-end reverseList;
 
 public function split<T>
   "Takes a list and a position, and splits the list at the position given.
@@ -1437,34 +1283,6 @@ algorithm
   outList1 := listReverseInPlace(outList1);
 end splitOnFirstMatch;
 
-public function splitFirst<T>
-  "Returns the first element of a list and the rest of the list. Fails if the
-   list is empty."
-  input list<T> inList;
-  output T outFirst;
-  output list<T> outRest;
-algorithm
-  outFirst :: outRest := inList;
-end splitFirst;
-
-public function splitFirstOption<T>
-  "Returns the first element of a list as an option, and the rest of the list.
-   Returns NONE and {} if the list is empty."
-  input list<T> inList;
-  output Option<T> outFirst;
-  output list<T> outRest;
-algorithm
-  (outFirst, outRest) := match(inList)
-    local
-      T el;
-      list<T> rest;
-
-    case (el :: rest) then (SOME(el), rest);
-    else (NONE(), {});
-
-  end match;
-end splitFirstOption;
-
 public function splitLast<T>
   "Returns the last element of a list and a list of all previous elements. If
    the list is the empty list, the function fails.
@@ -1608,40 +1426,6 @@ algorithm
   outList := listReverseInPlace(outList);
 end sublist;
 
-public function productMap<T1, T2, TO>
-  "Given two lists and a function, forms the cartesian product of the lists and
-   applies the function to each resulting pair.
-     Example: productMap({1, 2}, {3, 4}, intMul) = {1*3, 1*4, 2*3, 2*4}"
-  input list<T1> inList1;
-  input list<T2> inList2;
-  input MapFunc inMapFunc;
-  output list<TO> outResult = {};
-
-  partial function MapFunc
-    input T1 inElement1;
-    input T2 inElement2;
-    output TO outResult;
-  end MapFunc;
-algorithm
-  for e1 in listReverse(inList1), e2 in listReverse(inList2) loop
-    outResult := inMapFunc(e1, e2) :: outResult;
-  end for;
-end productMap;
-
-public function product<T>
-  "Given 2 lists, generate the product of them.
-     Example:
-       list1 = {{1}, {2}}, list2 = {{1}, {3}, {4}}
-       result = {{1, 1}, {1, 3}, {1, 4}, {2, 1}, {2, 3}, {2, 4}}"
-  input list<list<T>> inList1;
-  input list<list<T>> inList2;
-  output list<list<T>> outProduct = {};
-algorithm
-  for e1 in inList1, e2 in inList2 loop
-    outProduct := listAppend(e1, e2) :: outProduct;
-  end for;
-end product;
-
 public function transposeList<T>
   "Transposes a list of lists. Example:
      transposeList({{1, 2, 3}, {4, 5, 6}}) => {{1, 4}, {2, 5}, {3, 6}}"
@@ -1720,84 +1504,6 @@ algorithm
   outIsEqual := intEq(lst_size, listLength(inList1)) and
                 intEq(lst_size, listLength(inList2));
 end setEqualOnTrue;
-
-public function intersectionIntSorted
-  "Provides same functionality as listIntersection, but for integer values
-   in sorted lists. The complexity in this case is O(n)."
-  input list<Integer> inList1;
-  input list<Integer> inList2;
-  output list<Integer> outResult = {};
-protected
-  Integer i1, i2;
-  Integer o1, o2;
-  list<Integer> l1 = inList1, l2 = inList2;
-algorithm
-  if listEmpty(inList1) or listEmpty(inList2) then
-    return;
-  end if;
-  i1::l1 := l1;
-  i2::l2 := l2;
-  o1:=i1;o2:=i2;
-  while true loop
-    if i1 > i2 then
-      if listEmpty(l2) then
-        break;
-      end if;
-      i2::l2 := l2;
-      if o2 > i2 then fail();end if; o2:=i2;
-    elseif i1 < i2 then
-      if listEmpty(l1) then
-        break;
-      end if;
-      i1::l1 := l1;
-      if o1 > i1 then fail();end if; o1:=i1;
-    else
-      outResult := i1::outResult;
-      if listEmpty(l1) or listEmpty(l2) then
-        break;
-      end if;
-      i1::l1 := l1;
-      i2::l2 := l2;
-      if o1 > i1 then fail();end if; o1:=i1;
-      if o2 > i2 then fail();end if; o2:=i2;
-    end if;
-  end while;
-  outResult := listReverseInPlace(outResult);
-end intersectionIntSorted;
-
-public function intersectionIntN
-  "Provides same functionality as listIntersection, but for integer values
-   between 1 and N. The complexity in this case is O(n)."
-  input list<Integer> inList1;
-  input list<Integer> inList2;
-  input Integer inN;
-  output list<Integer> outResult;
-protected
-  array<Integer> a;
-algorithm
-  if inN > 0 then
-    a := arrayCreate(inN, 0);
-    a := addPos(inList1, a, 1);
-    a := addPos(inList2, a, 1);
-    outResult := intersectionIntVec(a, inList1);
-    GCExt.free(a);
-  else
-    outResult := {};
-  end if;
-end intersectionIntN;
-
-protected function intersectionIntVec
-  "Helper function to intersectionIntN."
-  input array<Integer> inArray;
-  input list<Integer> inList1;
-  output list<Integer> outResult = {};
-algorithm
-  for i in inList1 loop
-    if arrayGet(inArray,i) == 2 then
-      outResult := i :: outResult;
-    end if;
-  end for;
-end intersectionIntVec;
 
 protected function addPos
   "Helper function to intersectionIntN."
@@ -2021,24 +1727,6 @@ algorithm
   outUnion := listReverseInPlace(outUnion);
 end union;
 
-public function unionAppendonUnion<T>
-  "As union but this function assume that List1 is already union.
-   i.e. a list of all elements combined without duplicates.
-   Example:
-     union({0, 1}, {2, 1}) => {0, 1, 2}"
-  input list<T> inList1;
-  input list<T> inList2;
-  output list<T> outUnion;
-algorithm
-  outUnion := listReverse(inList1);
-
-  for e in inList2 loop
-    outUnion := unionElt(e, outUnion);
-  end for;
-
-  outUnion := listReverseInPlace(outUnion);
-end unionAppendonUnion;
-
 public function unionOnTrue<T>
   "Takes two lists an a comparison function over two elements of the lists. It
    returns the union of the two lists, using the comparison function passed as
@@ -2107,7 +1795,7 @@ public function unionOnTrueList<T>
   end CompFunc;
 algorithm
   outUnion := if listEmpty(inList) then {}
-              else reduce1(inList, unionOnTrue, inCompFunc);
+              else reduce(inList, function unionOnTrue(inCompFunc = inCompFunc));
 end unionOnTrueList;
 
 public function map<TI, TO>
@@ -2368,24 +2056,6 @@ algorithm
   outList := list(inMapFunc(e, inArg1) for e in inList);
 end map1;
 
-public function map1Reverse<TI, TO, ArgT1>
-  "Takes a list, a function and one extra argument, and creates a new list
-   by applying the function to each element of the list. The created list will
-   be reversed compared to the given list."
-  input list<TI> inList;
-  input MapFunc inMapFunc;
-  input ArgT1 inArg1;
-  output list<TO> outList;
-
-  partial function MapFunc
-    input TI inElement;
-    input ArgT1 inArg1;
-    output TO outElement;
-  end MapFunc;
-algorithm
-  outList := listReverse(inMapFunc(e, inArg1) for e in inList);
-end map1Reverse;
-
 public function map1r<TI, TO, ArgT1>
   "Takes a list, a function and one extra argument, and creates a new list
    by applying the function to each element of the list. The given map
@@ -2449,40 +2119,6 @@ algorithm
   outList1 := listReverseInPlace(outList1);
   outList2 := listReverseInPlace(outList2);
 end map1_2;
-
-public function map1_3<TI, TO1, TO2, TO3, ArgT1>
-  "Takes a list and a function, and creates three new lists by applying the
-   function to each element of the list."
-  input list<TI> inList;
-  input MapFunc inFunc;
-  input ArgT1 inArg1;
-  output list<TO1> outList1 = {};
-  output list<TO2> outList2 = {};
-  output list<TO3> outList3 = {};
-
-  partial function MapFunc
-    input TI inElement;
-    input ArgT1 inArg1;
-    output TO1 outElement1;
-    output TO2 outElement2;
-    output TO3 outElement3;
-  end MapFunc;
-protected
-  TO1 e1;
-  TO2 e2;
-  TO3 e3;
-algorithm
-  for e in inList loop
-    (e1, e2, e3) := inFunc(e, inArg1);
-    outList1 := e1 :: outList1;
-    outList2 := e2 :: outList2;
-    outList3 := e3 :: outList3;
-  end for;
-
-  outList1 := listReverseInPlace(outList1);
-  outList2 := listReverseInPlace(outList2);
-  outList3 := listReverseInPlace(outList3);
-end map1_3;
 
 public function map2<TI, TO, ArgT1, ArgT2>
   "Takes a list, a function and two extra arguments, and creates a new list
@@ -2613,42 +2249,6 @@ algorithm
   outList2 := listReverseInPlace(outList2);
 end map2_2;
 
-public function map2_3<TI, TO1, TO2, TO3, ArgT1, ArgT2>
-  "Takes a list, a function and two extra argument, and creates three new lists
-   by applying the function to each element of the list."
-  input list<TI> inList;
-  input MapFunc inFunc;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-  output list<TO1> outList1 = {};
-  output list<TO2> outList2 = {};
-  output list<TO3> outList3 = {};
-
-  partial function MapFunc
-    input TI inElement;
-    input ArgT1 inArg1;
-    input ArgT2 inArg2;
-    output TO1 outElement1;
-    output TO2 outElement2;
-    output TO3 outElement3;
-  end MapFunc;
-protected
-  TO1 e1;
-  TO2 e2;
-  TO3 e3;
-algorithm
-  for e in inList loop
-    (e1, e2, e3) := inFunc(e, inArg1, inArg2);
-    outList1 := e1 :: outList1;
-    outList2 := e2 :: outList2;
-    outList3 := e3 :: outList3;
-  end for;
-
-  outList1 := listReverseInPlace(outList1);
-  outList2 := listReverseInPlace(outList2);
-  outList3 := listReverseInPlace(outList3);
-end map2_3;
-
 public function map3<TI, TO, ArgT1, ArgT2, ArgT3>
   "Takes a list, a function and three extra arguments, and creates a new list
    by applying the function to each element of the list."
@@ -2713,39 +2313,6 @@ algorithm
   end for;
 end map3_0;
 
-public function map3_2<TI, TO1, TO2, ArgT1, ArgT2, ArgT3>
-  "Takes a list, a function and three extra argument, and creates two new lists
-   by applying the function to each element of the list."
-  input list<TI> inList;
-  input MapFunc inFunc;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-  input ArgT3 inArg3;
-  output list<TO1> outList1 = {};
-  output list<TO2> outList2 = {};
-
-  partial function MapFunc
-    input TI inElement;
-    input ArgT1 inArg1;
-    input ArgT2 inArg2;
-    input ArgT3 inArg3;
-    output TO1 outElement1;
-    output TO2 outElement2;
-  end MapFunc;
-protected
-  TO1 e1;
-  TO2 e2;
-algorithm
-  for e in inList loop
-    (e1, e2) := inFunc(e, inArg1, inArg2, inArg3);
-    outList1 := e1 :: outList1;
-    outList2 := e2 :: outList2;
-  end for;
-
-  outList1 := listReverseInPlace(outList1);
-  outList2 := listReverseInPlace(outList2);
-end map3_2;
-
 public function map4<TI, TO, ArgT1, ArgT2, ArgT3, ArgT4>
   "Takes a list, a function and four extra arguments, and creates a new list
    by applying the function to each element of the list."
@@ -2791,41 +2358,6 @@ algorithm
     inFunc(e, inArg1, inArg2, inArg3, inArg4);
   end for;
 end map4_0;
-
-public function map4_2<TI, TO1, TO2, ArgT1, ArgT2, ArgT3, ArgT4>
-  "Takes a list, a function and three extra argument, and creates two new lists
-   by applying the function to each element of the list."
-  input list<TI> inList;
-  input MapFunc inFunc;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-  input ArgT3 inArg3;
-  input ArgT4 inArg4;
-  output list<TO1> outList1 = {};
-  output list<TO2> outList2 = {};
-
-  partial function MapFunc
-    input TI inElement;
-    input ArgT1 inArg1;
-    input ArgT2 inArg2;
-    input ArgT3 inArg3;
-    input ArgT4 inArg4;
-    output TO1 outElement1;
-    output TO2 outElement2;
-  end MapFunc;
-protected
-  TO1 e1;
-  TO2 e2;
-algorithm
-  for e in inList loop
-    (e1, e2) := inFunc(e, inArg1, inArg2, inArg3, inArg4);
-    outList1 := e1 :: outList1;
-    outList2 := e2 :: outList2;
-  end for;
-
-  outList1 := listReverseInPlace(outList1);
-  outList2 := listReverseInPlace(outList2);
-end map4_2;
 
 public function map5<TI, TO, ArgT1, ArgT2, ArgT3, ArgT4, ArgT5>
   "Takes a list, a function and five extra arguments, and creates a new list
@@ -2879,102 +2411,6 @@ algorithm
   outList := list(inFunc(e, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6) for e in inList);
 end map6;
 
-public function map7<TI, TO, ArgT1, ArgT2, ArgT3, ArgT4, ArgT5, ArgT6, ArgT7>
-  "Takes a list, a function and seven extra arguments, and creates a new list
-   by applying the function to each element of the list."
-  input list<TI> inList;
-  input MapFunc inFunc;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-  input ArgT3 inArg3;
-  input ArgT4 inArg4;
-  input ArgT5 inArg5;
-  input ArgT6 inArg6;
-  input ArgT7 inArg7;
-  output list<TO> outList;
-
-  partial function MapFunc
-    input TI inElement;
-    input ArgT1 inArg1;
-    input ArgT2 inArg2;
-    input ArgT3 inArg3;
-    input ArgT4 inArg4;
-    input ArgT5 inArg5;
-    input ArgT6 inArg6;
-    input ArgT7 inArg7;
-    output TO outElement;
-  end MapFunc;
-algorithm
-  outList := list(inFunc(e, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6,
-    inArg7) for e in inList);
-end map7;
-
-public function map8<TI, TO, ArgT1, ArgT2, ArgT3, ArgT4, ArgT5, ArgT6, ArgT7, ArgT8>
-  "Takes a list, a function and eight extra arguments, and creates a new list
-   by applying the function to each element of the list."
-  input list<TI> inList;
-  input MapFunc inFunc;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-  input ArgT3 inArg3;
-  input ArgT4 inArg4;
-  input ArgT5 inArg5;
-  input ArgT6 inArg6;
-  input ArgT7 inArg7;
-  input ArgT8 inArg8;
-  output list<TO> outList;
-
-  partial function MapFunc
-    input TI inElement;
-    input ArgT1 inArg1;
-    input ArgT2 inArg2;
-    input ArgT3 inArg3;
-    input ArgT4 inArg4;
-    input ArgT5 inArg5;
-    input ArgT6 inArg6;
-    input ArgT7 inArg7;
-    input ArgT8 inArg8;
-    output TO outElement;
-  end MapFunc;
-algorithm
-  outList := list(inFunc(e, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6,
-    inArg7, inArg8) for e in inList);
-end map8;
-
-public function map9<TI, TO, ArgT1, ArgT2, ArgT3, ArgT4, ArgT5, ArgT6, ArgT7, ArgT8, ArgT9>
-  "Takes a list, a function and nine extra arguments, and creates a new list
-   by applying the function to each element of the list."
-  input list<TI> inList;
-  input MapFunc inFunc;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-  input ArgT3 inArg3;
-  input ArgT4 inArg4;
-  input ArgT5 inArg5;
-  input ArgT6 inArg6;
-  input ArgT7 inArg7;
-  input ArgT8 inArg8;
-  input ArgT9 inArg9;
-  output list<TO> outList;
-
-  partial function MapFunc
-    input TI inElement;
-    input ArgT1 inArg1;
-    input ArgT2 inArg2;
-    input ArgT3 inArg3;
-    input ArgT4 inArg4;
-    input ArgT5 inArg5;
-    input ArgT6 inArg6;
-    input ArgT7 inArg7;
-    input ArgT8 inArg8;
-    input ArgT9 inArg9;
-    output TO outElement;
-  end MapFunc;
-algorithm
-  outList := list(inFunc(e, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6,
-    inArg7, inArg8, inArg9) for e in inList);
-end map9;
-
 public function mapFlat<TI, TO>
   "Takes a list and a function that maps elements to lists, which are flattened
    into one list. Example (fill2(n) = {n, n}):
@@ -3010,50 +2446,6 @@ algorithm
   end for;
 end mapFlatReverse;
 
-public function map1Flat<TI, TO, ArgT1>
-  "Takes a list and a function that maps elements to lists, which are flattened
-   into one list. This function also takes an extra argument that is passed to
-   the mapping function."
-  input list<TI> inList;
-  input MapFunc inMapFunc;
-  input ArgT1 inArg1;
-  output list<TO> outList = {};
-
-  partial function MapFunc
-    input TI inElement;
-    input ArgT1 inArg1;
-    output list<TO> outList;
-  end MapFunc;
-algorithm
-  for e in inList loop
-    outList := listAppend(inMapFunc(e, inArg1), outList);
-  end for;
-  outList := listReverseInPlace(outList);
-end map1Flat;
-
-public function map2Flat<TI, TO, ArgT1, ArgT2>
-  "Takes a list and a function that maps elements to lists, which are flattened
-   into one list. This function also takes two extra arguments that are passed
-   to the mapping function."
-  input list<TI> inList;
-  input MapFunc inMapFunc;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-  output list<TO> outList = {};
-
-  partial function MapFunc
-    input TI inElement;
-    input ArgT1 inArg1;
-    input ArgT2 inArg2;
-    output list<TO> outList;
-  end MapFunc;
-algorithm
-  for e in inList loop
-    outList := listAppend(inMapFunc(e, inArg1, inArg2), outList);
-  end for;
-  outList := listReverseInPlace(outList);
-end map2Flat;
-
 public function mapMap<TI, TO1, TO2>
   "More efficient than: map(map(inList, inMapFunc1), inMapFunc2)"
   input list<TI> inList;
@@ -3073,26 +2465,6 @@ public function mapMap<TI, TO1, TO2>
 algorithm
   outList := list(inMapFunc2(inMapFunc1(e)) for e in inList);
 end mapMap;
-
-public function mapMap_0<TI, TO>
-  "More efficient than map_0(map(inList, inMapFunc1), inMapFunc2),"
-  input list<TI> inList;
-  input MapFunc1 inMapFunc1;
-  input MapFunc2 inMapFunc2;
-
-  partial function MapFunc1
-    input TI inElement;
-    output TO outElement;
-  end MapFunc1;
-
-  partial function MapFunc2
-    input TO inElement;
-  end MapFunc2;
-algorithm
-  for e in inList loop
-    inMapFunc2(inMapFunc1(e));
-  end for;
-end mapMap_0;
 
 public function mapAllValue<TI, TO, VT>
   "Applies a function to all elements in the lists, and fails if not all
@@ -3134,28 +2506,6 @@ algorithm
     outAllValue := false;
   end try;
 end mapAllValueBool;
-
-public function map1AllValueBool<TI, TO, VT, ArgT1>
-  "Same as mapAllValueBool, but takes one extra argument."
-  input list<TI> inList;
-  input MapFunc inMapFunc;
-  input VT inValue;
-  input ArgT1 inArg1;
-  output Boolean outAllValue;
-
-  partial function MapFunc
-    input TI inElement;
-    input ArgT1 inArg1;
-    output TO outElement;
-  end MapFunc;
-algorithm
-  try
-    map1AllValue(inList, inMapFunc, inValue, inArg1);
-    outAllValue := true;
-  else
-    outAllValue := false;
-  end try;
-end map1AllValueBool;
 
 public function map1AllValue<TI, TO, VT, ArgT1>
   "Applies a function to all elements in the lists, and fails if not all
@@ -3203,31 +2553,6 @@ algorithm
   end for;
 end map1rAllValue;
 
-public function map2AllValue<TI, TO, VT, ArgT1, ArgT2>
-  "Applies a function to all elements in the lists, and fails if not all
-   elements are equal to the given value. This function also takes two extra
-   arguments that are passed to the mapping function."
-  input list<TI> inList;
-  input MapFunc inMapFunc;
-  input VT inValue;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-
-  partial function MapFunc
-    input TI inElement;
-    input ArgT1 inArg1;
-    input ArgT2 inArg2;
-    output TO outElement;
-  end MapFunc;
-protected
-  TO eo;
-algorithm
-  for e in inList loop
-    eo := inMapFunc(e, inArg1, inArg2);
-    true := valueEq(eo, inValue);
-  end for;
-end map2AllValue;
-
 public function mapListAllValueBool<TI, TO, VT>
   "Same as mapAllValue, but returns true or false instead of succeeding or
   failing."
@@ -3248,28 +2573,6 @@ algorithm
     end if;
   end for;
 end mapListAllValueBool;
-
-public function map1ListAllValueBool<TI, TO, VT, ArgT1>
-  "Same as mapListAllValueBool, but takes one extra argument."
-  input list<list<TI>> inList;
-  input MapFunc inMapFunc;
-  input VT inValue;
-  input ArgT1 inArg1;
-  output Boolean outAllValue = true;
-
-  partial function MapFunc
-    input TI inElement;
-    input ArgT1 inArg1;
-    output TO outElement;
-  end MapFunc;
-algorithm
-  for lst in inList loop
-    if not map1AllValueBool(lst, inMapFunc, inValue, inArg1) then
-      outAllValue := false;
-      return;
-    end if;
-  end for;
-end map1ListAllValueBool;
 
 public function foldAllValue<TI, TO, ArgT1>
   "Applies a function to all elements in the lists, and fails if not all
@@ -3499,57 +2802,6 @@ algorithm
   outListList := list(list(inFunc(e) for e in lst) for lst in inListList);
 end mapList;
 
-public function mapList0<TI>
-  "Takes a list of lists and a functions, and applying
-  the function to all elements in  the list of lists.
-     Example: mapList0({{1, 2},{3},{4}}, print)"
-
-  input list<list<TI>> inListList;
-  input MapFunc inFunc;
-
-  partial function MapFunc
-    input TI inElement;
-  end MapFunc;
-algorithm
-  map1_0(inListList, map_0, inFunc);
-end mapList0;
-
-public function mapList1_0<TI, ArgT1>
-  "Takes a list of lists and a functions, and applying
-  the function to all elements in  the list of lists.
-     Example: mapList1_0({{1, 2},{3},{4}}, costomPrint, inArg1)"
-
-  input list<list<TI>> inListList;
-  input MapFunc inFunc;
-  input ArgT1 inArg1;
-
-  partial function MapFunc
-    input TI inElement;
-    input ArgT1 inArg1;
-  end MapFunc;
-algorithm
-  map2_0(inListList, map1_0, inFunc, inArg1);
-end mapList1_0;
-
-public function mapList2_0<TI, ArgT1, ArgT2>
-  "Takes a list of lists and a functions, and applying
-  the function to all elements in  the list of lists.
-     Example: mapList1_0({{1, 2},{3},{4}}, costomPrint, inArg1, inArg2)"
-
-  input list<list<TI>> inListList;
-  input MapFunc inFunc;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-
-  partial function MapFunc
-    input TI inElement;
-    input ArgT1 inArg1;
-    input ArgT2 inArg2;
-  end MapFunc;
-algorithm
-  map3_0(inListList, map2_0, inFunc, inArg1, inArg2);
-end mapList2_0;
-
 public function mapList1_1<TI, TO, ArgT1>
   "Takes a list of lists and a functions, and applying
   the function to all elements in  the list of lists.
@@ -3777,54 +3029,6 @@ algorithm
   end for;
 end foldList;
 
-public function foldList1<T, FT, ArgT1>
-  input list<list<T>> inList;
-  input FoldFunc inFoldFunc;
-  input ArgT1 inExtraArg1;
-  input FT inStartValue;
-  output FT outResult = inStartValue;
-
-  partial function FoldFunc
-    input T inElement;
-    input ArgT1 inConstantArg1;
-    input FT inFoldArg;
-    output FT outFoldArg;
-  end FoldFunc;
-algorithm
-  for lst in inList loop
-    for e in lst loop
-      outResult := inFoldFunc(e, inExtraArg1, outResult);
-    end for;
-  end for;
-end foldList1;
-
-public function foldList2<T, FT, ArgT1, ArgT2>
-  "Takes a list and a function operating on list elements having an extra
-   argument that is 'updated', thus returned from the function, and two constant
-   arguments that is not updated. fold will call the function for each element in
-   a sequence, updating the start value."
-  input list<list<T>> inList;
-  input FoldFunc inFoldFunc;
-  input ArgT1 inExtraArg1;
-  input ArgT2 inExtraArg2;
-  input FT inStartValue;
-  output FT outResult = inStartValue;
-
-  partial function FoldFunc
-    input T inElement;
-    input ArgT1 inConstantArg1;
-    input ArgT2 inConstantArg2;
-    input FT inFoldArg;
-    output FT outFoldArg;
-  end FoldFunc;
-algorithm
-  for lst in inList loop
-    for e in lst loop
-      outResult := inFoldFunc(e, inExtraArg1, inExtraArg2, outResult);
-    end for;
-  end for;
-end foldList2;
-
 public function fold2r<T, FT, ArgT1, ArgT2>
   "Same as fold2, but with reversed order on the fold function arguments."
   input list<T> inList;
@@ -3874,30 +3078,6 @@ algorithm
   end for;
 end fold3;
 
-public function fold3r<T, FT, ArgT1, ArgT2, ArgT3>
-  "Same as fold3, but with reversed order on the fold function arguments."
-  input list<T> inList;
-  input FoldFunc inFoldFunc;
-  input ArgT1 inExtraArg1;
-  input ArgT2 inExtraArg2;
-  input ArgT3 inExtraArg3;
-  input FT inStartValue;
-  output FT outResult = inStartValue;
-
-  partial function FoldFunc
-    input FT inFoldArg;
-    input T inElement;
-    input ArgT1 inArg1;
-    input ArgT2 inArg2;
-    input ArgT3 inArg3;
-    output FT outFoldArg;
-  end FoldFunc;
-algorithm
-  for e in inList loop
-    outResult := inFoldFunc(outResult, e, inExtraArg1, inExtraArg2, inExtraArg3);
-  end for;
-end fold3r;
-
 public function fold4<T, FT, ArgT1, ArgT2, ArgT3, ArgT4>
   "Takes a list and a function operating on list elements having an extra
    argument that is 'updated', thus returned from the function, and four constant
@@ -3928,44 +3108,6 @@ algorithm
   end for;
 end fold4;
 
-public function fold43<T, FT1, FT2, FT3, ArgT1, ArgT2, ArgT3, ArgT4>
-  "Takes a list and a function operating on list elements having three extra
-   arguments that is 'updated', thus returned from the function, and three constant
-   arguments that are not updated. fold will call the function for each element in
-   a sequence, updating the start values."
-  input list<T> inList;
-  input FoldFunc inFoldFunc;
-  input ArgT1 inExtraArg1;
-  input ArgT2 inExtraArg2;
-  input ArgT3 inExtraArg3;
-  input ArgT4 inExtraArg4;
-  input FT1 inStartValue1;
-  input FT2 inStartValue2;
-  input FT3 inStartValue3;
-  output FT1 outResult1 = inStartValue1;
-  output FT2 outResult2 = inStartValue2;
-  output FT3 outResult3 = inStartValue3;
-
-  partial function FoldFunc
-    input T inElement;
-    input ArgT1 inConstantArg1;
-    input ArgT2 inConstantArg2;
-    input ArgT3 inConstantArg3;
-    input ArgT4 inConstantArg4;
-    input FT1 inFoldArg1;
-    input FT2 inFoldArg2;
-    input FT3 inFoldArg3;
-    output FT1 outFoldArg1;
-    output FT2 outFoldArg2;
-    output FT3 outFoldArg3;
-  end FoldFunc;
-algorithm
-  for e in inList loop
-    (outResult1, outResult2, outResult3) := inFoldFunc(e, inExtraArg1,
-        inExtraArg2, inExtraArg3, inExtraArg4, outResult1, outResult2, outResult3);
-  end for;
-end fold43;
-
 public function fold20<T, FT1, FT2>
   "Takes a list and a function operating on list elements having two extra
    arguments that are 'updated', thus returned from the function. fold will call
@@ -3989,34 +3131,6 @@ algorithm
     (outResult1, outResult2) := inFoldFunc(e, outResult1,outResult2);
   end for;
 end fold20;
-
-public function fold30<T, FT1, FT2, FT3>
-  "Takes a list and a function operating on list elements having three extra
-   arguments that are 'updated', thus returned from the function. fold will call
-   the function for each element in a sequence, updating the start value."
-  input list<T> inList;
-  input FoldFunc inFoldFunc;
-  input FT1 inStartValue1;
-  input FT2 inStartValue2;
-  input FT3 inStartValue3;
-  output FT1 outResult1 = inStartValue1;
-  output FT2 outResult2 = inStartValue2;
-  output FT3 outResult3 = inStartValue3;
-
-  partial function FoldFunc
-    input T inElement;
-    input FT1 inFoldArg1;
-    input FT2 inFoldArg2;
-    input FT3 inFoldArg3;
-    output FT1 outFoldArg1;
-    output FT2 outFoldArg2;
-    output FT3 outFoldArg3;
-  end FoldFunc;
-algorithm
-  for e in inList loop
-    (outResult1, outResult2, outResult3) := inFoldFunc(e, outResult1,outResult2,outResult3);
-  end for;
-end fold30;
 
 public function fold21<T, FT1, FT2, ArgT1>
  "Takes a list and a function operating on list elements having two extra
@@ -4072,73 +3186,6 @@ algorithm
     (outResult1, outResult2, outResult3) := inFoldFunc(e, inExtraArg1, outResult1, outResult2, outResult3);
   end for;
 end fold31;
-
-
-public function fold5<T, FT, ArgT1, ArgT2, ArgT3, ArgT4, ArgT5>
-  "Takes a list and a function operating on list elements having an extra
-   argument that is 'updated', thus returned from the function, and five constant
-   arguments that is not updated. fold will call the function for each element in
-   a sequence, updating the start value."
-  input list<T> inList;
-  input FoldFunc inFoldFunc;
-  input ArgT1 inExtraArg1;
-  input ArgT2 inExtraArg2;
-  input ArgT3 inExtraArg3;
-  input ArgT4 inExtraArg4;
-  input ArgT5 inExtraArg5;
-  input FT inStartValue;
-  output FT outResult = inStartValue;
-
-  partial function FoldFunc
-    input T inElement;
-    input ArgT1 inArg1;
-    input ArgT2 inArg2;
-    input ArgT3 inArg3;
-    input ArgT4 inArg4;
-    input ArgT5 inArg5;
-    input FT inFoldArg;
-    output FT outFoldArg;
-  end FoldFunc;
-algorithm
-  for e in inList loop
-    outResult := inFoldFunc(e, inExtraArg1, inExtraArg2, inExtraArg3,
-        inExtraArg4, inExtraArg5, outResult);
-  end for;
-end fold5;
-
-public function fold6<T, FT, ArgT1, ArgT2, ArgT3, ArgT4, ArgT5, ArgT6>
-  "Takes a list and a function operating on list elements having an extra
-   argument that is 'updated', thus returned from the function, and six constant
-   arguments that is not updated. fold will call the function for each element in
-   a sequence, updating the start value."
-  input list<T> inList;
-  input FoldFunc inFoldFunc;
-  input ArgT1 inExtraArg1;
-  input ArgT2 inExtraArg2;
-  input ArgT3 inExtraArg3;
-  input ArgT4 inExtraArg4;
-  input ArgT5 inExtraArg5;
-  input ArgT6 inExtraArg6;
-  input FT inStartValue;
-  output FT outResult = inStartValue;
-
-  partial function FoldFunc
-    input T inElement;
-    input ArgT1 inArg1;
-    input ArgT2 inArg2;
-    input ArgT3 inArg3;
-    input ArgT4 inArg4;
-    input ArgT5 inArg5;
-    input ArgT6 inArg6;
-    input FT inFoldArg;
-    output FT outFoldArg;
-  end FoldFunc;
-algorithm
-  for e in inList loop
-    outResult := inFoldFunc(e, inExtraArg1, inExtraArg2, inExtraArg3,
-        inExtraArg4, inExtraArg5, inExtraArg6, outResult);
-  end for;
-end fold6;
 
 public function mapFold<TI, TO, FT>
   "Takes a list, an extra argument and a function. The function will be applied
@@ -4425,41 +3472,6 @@ algorithm
   outList := listReverseInPlace(outList);
 end map3Fold;
 
-public function map4Fold<TI, TO, FT, ArgT1, ArgT2, ArgT3, ArgT4>
-  "Takes a list, four extra constant arguments, an extra argument, and a function.
-  The function will be applied to each element in the list, and the extra
-  argument will be passed to the function and updated."
-  input list<TI> inList;
-  input FuncType inFunc;
-  input ArgT1 inConstArg;
-  input ArgT2 inConstArg2;
-  input ArgT3 inConstArg3;
-  input ArgT4 inConstArg4;
-  input FT inArg;
-  output list<TO> outList = {};
-  output FT outArg = inArg;
-
-  partial function FuncType
-    input TI inElem;
-    input ArgT1 inConstArg;
-    input ArgT2 inConstArg2;
-    input ArgT3 inConstArg3;
-    input ArgT4 inConstArg4;
-    input FT inArg;
-    output TO outResult;
-    output FT outArg;
-  end FuncType;
-protected
-  TO res;
-algorithm
-  for e in inList loop
-    (res, outArg) := inFunc(e, inConstArg, inConstArg2, inConstArg3,
-        inConstArg4, outArg);
-    outList := res :: outList;
-  end for;
-  outList := listReverseInPlace(outList);
-end map4Fold;
-
 public function mapFoldList<TI, TO, FT>
   "Takes a list of lists, an extra argument, and a function.  The function will
   be applied to each element in the list, and the extra argument will be passed
@@ -4486,38 +3498,6 @@ algorithm
   outListList := listReverseInPlace(outListList);
 end mapFoldList;
 
-public function map3FoldList<TI, TO, FT, ArgT1, ArgT2, ArgT3>
-  "Takes a list of lists, an extra argument, and a function.  The function will
-  be applied to each element in the list, and the extra argument will be passed
-  to the function and updated for each element."
-  input list<list<TI>> inListList;
-  input FuncType inFunc;
-  input ArgT1 inConstArg1;
-  input ArgT2 inConstArg2;
-  input ArgT3 inConstArg3;
-  input FT inArg;
-  output list<list<TO>> outListList = {};
-  output FT outArg = inArg;
-
-  partial function FuncType
-    input TI inElem;
-    input ArgT1 inConstArg1;
-    input ArgT2 inConstArg2;
-    input ArgT3 inConstArg3;
-    input FT inArg;
-    output TO outResult;
-    output FT outArg;
-  end FuncType;
-protected
-  list<TO> res;
-algorithm
-  for lst in inListList loop
-    (res, outArg) := map3Fold(lst, inFunc, inConstArg1, inConstArg2, inConstArg3, inArg);
-    outListList := res :: outListList;
-  end for;
-  outListList := listReverseInPlace(outListList);
-end map3FoldList;
-
 public function reduce<T>
   "Takes a list and a function operating on two elements of the list.
    The function performs a reduction of the list to a single value using the
@@ -4540,31 +3520,6 @@ algorithm
     outResult := inReduceFunc(outResult, e);
   end for;
 end reduce;
-
-public function reduce1<T, ArgT1>
-  "Takes a list and a function operating on two elements of the list.
-   The function performs a reduction of the list to a single value using the
-   function. This function also takes an extra argument that is sent to the
-   reduction function."
-  input list<T> inList;
-  input ReduceFunc inReduceFunc;
-  input ArgT1 inExtraArg1;
-  output T outResult;
-
-  partial function ReduceFunc
-    input T inElement1;
-    input T inElement2;
-    input ArgT1 inExtraArg1;
-    output T outElement;
-  end ReduceFunc;
-protected
-  list<T> rest;
-algorithm
-  outResult :: rest := inList;
-  for e in rest loop
-    outResult := inReduceFunc(outResult, e, inExtraArg1);
-  end for;
-end reduce1;
 
 public function flatten<T>
   "Takes a list of lists and flattens it out, producing one list of all elements
@@ -4687,22 +3642,6 @@ algorithm
   end for;
 end unzip3;
 
-public function unzipReverse<T1, T2>
-  "Like unzip, but returns the lists in reverse order."
-  input list<tuple<T1, T2>> inTuples;
-  output list<T1> outList1 = {};
-  output list<T2> outList2 = {};
-protected
-  T1 e1;
-  T2 e2;
-algorithm
-  for tpl in inTuples loop
-    (e1, e2) := tpl;
-    outList1 := e1 :: outList1;
-    outList2 := e2 :: outList2;
-  end for;
-end unzipReverse;
-
 public function unzipFirst<T1, T2>
   "Takes a list of two-element tuples and creates a list from the first element
    of each tuple. Example: unzipFirst({(1, 2), (3, 4)}) => {1, 3}"
@@ -4750,25 +3689,6 @@ public function threadMap<T1, T2, TO>
 algorithm
   outList := list(inMapFunc(e1, e2) threaded for e1 in inList1, e2 in inList2);
 end threadMap;
-
-public function threadMapReverse<T1, T2, TO>
-  "Takes two lists and a function and threads (interleaves) and maps the
-   elements of two lists, creating a new list. The order of the result list
-   will be reversed compared to the input lists.
-     Example: threadMap({1, 2}, {3, 4}, intAdd) => {2+4, 1+3}"
-  input list<T1> inList1;
-  input list<T2> inList2;
-  input MapFunc inMapFunc;
-  output list<TO> outList;
-
-  partial function MapFunc
-    input T1 inElement1;
-    input T2 inElement2;
-    output TO outElement;
-  end MapFunc;
-algorithm
-  outList := listReverse(inMapFunc(e1, e2) threaded for e1 in inList1, e2 in inList2);
-end threadMapReverse;
 
 public function threadMap_2<T1, T2, TO1, TO2>
   "Like threadMap, but returns two lists instead of one."
@@ -4908,27 +3828,6 @@ algorithm
   outList := list(inMapFunc(e1, e2, inArg1) threaded for e1 in inList1, e2 in inList2);
 end threadMap1;
 
-public function threadMap1Reverse<T1, T2, TO, ArgT1>
-  "Takes two lists and a function and threads (interleaves) and maps the
-   elements of two lists, creating a new list. This function also takes an
-   extra arguments that are passed to the mapping function. The order of the
-   result list will be reversed compared to the input lists."
-  input list<T1> inList1;
-  input list<T2> inList2;
-  input MapFunc inMapFunc;
-  input ArgT1 inArg1;
-  output list<TO> outList;
-
-  partial function MapFunc
-    input T1 inElement1;
-    input T2 inElement2;
-    input ArgT1 inArg1;
-    output TO outElement;
-  end MapFunc;
-algorithm
-  outList := listReverse(inMapFunc(e1, e2, inArg1) threaded for e1 in inList1, e2 in inList2);
-end threadMap1Reverse;
-
 public function threadMap1_0<T1, T2, ArgT1>
   "Takes two lists and a function, and applies the function to each element of
    the lists in a pairwise fashion. This function also takes an extra argument
@@ -4983,124 +3882,6 @@ algorithm
   outList := list(inMapFunc(e1, e2, inArg1, inArg2) threaded for e1 in inList1, e2 in inList2);
 end threadMap2;
 
-public function threadMap2Reverse<T1, T2, TO, ArgT1, ArgT2>
-  "Takes two lists and a function and threads (interleaves) and maps the
-   elements of two lists, creating a new list. This function also takes two
-   extra arguments that are passed to the mapping function. The order of the
-   result list will be reversed compared to the input lists."
-  input list<T1> inList1;
-  input list<T2> inList2;
-  input MapFunc inMapFunc;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-  output list<TO> outList;
-
-  partial function MapFunc
-    input T1 inElement1;
-    input T2 inElement2;
-    input ArgT1 inArg1;
-    input ArgT2 inArg2;
-    output TO outElement;
-  end MapFunc;
-algorithm
-  outList := listReverse(inMapFunc(e1, e2, inArg1, inArg2) threaded for e1 in inList1, e2 in inList2);
-end threadMap2Reverse;
-
-public function threadMap2ReverseFold<T1, T2, TO, FT, ArgT1, ArgT2>
-  "Takes two lists and a function and threads (interleaves) and maps the
-   elements of two lists, creating a new list. This function also takes two
-   extra arguments and a fold argument that are passed to the mapping function.
-   The order of the result list will be reversed compared to the input lists."
-  input list<T1> inList1;
-  input list<T2> inList2;
-  input MapFunc inMapFunc;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-  input FT inFoldArg;
-  input list<TO> inAccum = {};
-  output list<TO> outList;
-  output FT outFoldArg;
-
-  partial function MapFunc
-    input T1 inElement1;
-    input T2 inElement2;
-    input ArgT1 inArg1;
-    input ArgT2 inArg2;
-    input FT inFoldArg;
-    output TO outElement;
-    output FT outFoldArg;
-  end MapFunc;
-algorithm
-  (outList,outFoldArg) := match(inList1, inList2)
-    local
-      T1 e1;
-      list<T1> rest1;
-      T2 e2;
-      list<T2> rest2;
-      TO res;
-      FT foldArg;
-
-    case ({}, {}) then (inAccum, inFoldArg);
-    case (e1 :: rest1, e2 :: rest2)
-      equation
-        (res, foldArg) = inMapFunc(e1, e2, inArg1, inArg2, inFoldArg);
-        (outList, foldArg) = threadMap2ReverseFold(rest1, rest2, inMapFunc,
-            inArg1, inArg2, foldArg, res :: inAccum);
-      then
-        (outList, foldArg);
-  end match;
-end threadMap2ReverseFold;
-
-public function threadMap3<T1, T2, TO, ArgT1, ArgT2, ArgT3>
-  "Takes two lists and a function and threads (interleaves) and maps the
-   elements of two lists, creating a new list. This function also takes three
-   extra arguments that are passed to the mapping function."
-  input list<T1> inList1;
-  input list<T2> inList2;
-  input MapFunc inMapFunc;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-  input ArgT3 inArg3;
-  output list<TO> outList;
-
-  partial function MapFunc
-    input T1 inElement1;
-    input T2 inElement2;
-    input ArgT1 inArg1;
-    input ArgT2 inArg2;
-    input ArgT3 inArg3;
-    output TO outElement;
-  end MapFunc;
-algorithm
-  outList := list(inMapFunc(e1, e2, inArg1, inArg2, inArg3)
-      threaded for e1 in inList1, e2 in inList2);
-end threadMap3;
-
-public function threadMap3Reverse<T1, T2, TO, ArgT1, ArgT2, ArgT3>
-  "Takes two lists and a function and threads (interleaves) and maps the
-   elements of two lists, creating a new list. This function also takes three
-   extra arguments that are passed to the mapping function."
-  input list<T1> inList1;
-  input list<T2> inList2;
-  input MapFunc inMapFunc;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-  input ArgT3 inArg3;
-  output list<TO> outList;
-
-  partial function MapFunc
-    input T1 inElement1;
-    input T2 inElement2;
-    input ArgT1 inArg1;
-    input ArgT2 inArg2;
-    input ArgT3 inArg3;
-    output TO outElement;
-  end MapFunc;
-algorithm
-  outList := listReverse(inMapFunc(e1, e2, inArg1, inArg2, inArg3)
-      threaded for e1 in inList1, e2 in inList2);
-end threadMap3Reverse;
-
 public function thread3Map<T1, T2, T3, TO>
   "Takes three lists and a function, and threads (interleaves) and maps the
    elements of the three lists, creating a new list.
@@ -5120,95 +3901,6 @@ public function thread3Map<T1, T2, T3, TO>
 algorithm
   outList := list(inFunc(e1, e2, e3) threaded for e1 in inList1, e2 in inList2, e3 in inList3);
 end thread3Map;
-
-public function threadMap3ReverseFold<T1, T2, TO, FT, ArgT1, ArgT2, ArgT3>
-  "Takes two lists and a function and threads (interleaves) and maps the
-   elements of two lists, creating a new list. This function also takes three
-   extra arguments and a fold argument that are passed to the mapping function.
-   The order of the result list will be reversed compared to the input lists."
-  input list<T1> inList1;
-  input list<T2> inList2;
-  input MapFunc inMapFunc;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-  input ArgT3 inArg3;
-  input FT inFoldArg;
-  input list<TO> inAccum = {};
-  output list<TO> outList;
-  output FT outFoldArg;
-
-  partial function MapFunc
-    input T1 inElement1;
-    input T2 inElement2;
-    input ArgT1 inArg1;
-    input ArgT2 inArg2;
-    input ArgT3 inArg3;
-    input FT inFoldArg;
-    output TO outElement;
-    output FT outFoldArg;
-  end MapFunc;
-algorithm
-  (outList,outFoldArg) := match(inList1, inList2)
-    local
-      T1 e1;
-      list<T1> rest1;
-      T2 e2;
-      list<T2> rest2;
-      TO res;
-      FT foldArg;
-
-    case (e1 :: rest1, e2 :: rest2)
-      equation
-        (res,foldArg) = inMapFunc(e1, e2, inArg1, inArg2, inArg3, inFoldArg);
-        (outList,foldArg) = threadMap3ReverseFold(rest1, rest2, inMapFunc,
-            inArg1, inArg2, inArg3, foldArg, res :: inAccum);
-      then
-        (outList,foldArg);
-
-    case ({}, {}) then (inAccum, inFoldArg);
-  end match;
-end threadMap3ReverseFold;
-
-public function thread3Map_2<T1, T2, T3, TO1, TO2>
-  "Takes three lists and a function, and threads (interleaves) and maps the
-   elements of the three lists, creating two new list.
-     Example: thread3Map({1, 2}, {3, 4}, {5, 6}, intAddSub3) =>
-              ({1+3+5, 2+4+6}, {1-3-5, 2-4-6})"
-  input list<T1> inList1;
-  input list<T2> inList2;
-  input list<T3> inList3;
-  input MapFunc inFunc;
-  output list<TO1> outList1 = {};
-  output list<TO2> outList2 = {};
-
-  partial function MapFunc
-    input T1 inElement1;
-    input T2 inElement2;
-    input T3 inElement3;
-    output TO1 outElement1;
-    output TO2 outElement2;
-  end MapFunc;
-protected
-  T2 e2;
-  list<T2> rest_e2 = inList2;
-  T3 e3;
-  list<T3> rest_e3 = inList3;
-  TO1 res1;
-  TO2 res2;
-algorithm
-  for e1 in inList1 loop
-    e2 :: rest_e2 := rest_e2;
-    e3 :: rest_e3 := rest_e3;
-    (res1, res2) := inFunc(e1, e2, e3);
-    outList1 := res1 :: outList1;
-    outList2 := res2 :: outList2;
-  end for;
-
-  true := listEmpty(rest_e2);
-  true := listEmpty(rest_e3);
-  outList1 := listReverseInPlace(outList1);
-  outList2 := listReverseInPlace(outList2);
-end thread3Map_2;
 
 public function thread3MapFold<T1, T2, T3, TO, ArgT1>
   "Takes three lists and a function, and threads (interleaves) and maps the
@@ -5248,33 +3940,6 @@ algorithm
   true := listEmpty(rest_e3);
   outList := listReverseInPlace(outList);
 end thread3MapFold;
-
-public function thread3Map3<T1, T2, T3, TO, ArgT1, ArgT2, ArgT3>
-  "Takes three lists and a function, and threads (interleaves) and maps the
-   elements of the three lists, creating a new list. This function also takes
-   three extra arguments which are passed to the mapping function."
-  input list<T1> inList1;
-  input list<T2> inList2;
-  input list<T3> inList3;
-  input MapFunc inFunc;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-  input ArgT3 inArg3;
-  output list<TO> outList;
-
-  partial function MapFunc
-    input T1 inElement1;
-    input T2 inElement2;
-    input T3 inElement3;
-    input ArgT1 inArg1;
-    input ArgT2 inArg2;
-    input ArgT3 inArg3;
-    output TO outElement;
-  end MapFunc;
-algorithm
-  outList := list(inFunc(e1, e2, e3, inArg1, inArg2, inArg3) threaded for
-      e1 in inList1, e2 in inList2, e3 in inList3);
-end thread3Map3;
 
 public function threadFold1<T1, T2, FT, ArgT1>
   "This is a combination of thread and fold that applies a function to the head
@@ -5395,50 +4060,6 @@ algorithm
 
   end match;
 end threadFold3;
-
-public function threadFold4<T1, T2, FT, ArgT1, ArgT2, ArgT3, ArgT4>
-  "This is a combination of thread and fold that applies a function to the head
-   of two lists with an extra argument that is updated and passed on. This
-   function also takes four extra constant arguments that is passed to the function."
-  input list<T1> inList1;
-  input list<T2> inList2;
-  input FoldFunc inFoldFunc;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-  input ArgT3 inArg3;
-  input ArgT4 inArg4;
-  input FT inFoldArg;
-  output FT outFoldArg;
-
-  partial function FoldFunc
-    input T1 inElement1;
-    input T2 inElement2;
-    input ArgT1 inArg1;
-    input ArgT2 inArg2;
-    input ArgT3 inArg3;
-    input ArgT4 inArg4;
-    input FT inFoldArg;
-    output FT outFoldArg;
-  end FoldFunc;
-algorithm
-  outFoldArg := match(inList1, inList2)
-    local
-      T1 e1;
-      list<T1> rest1;
-      T2 e2;
-      list<T2> rest2;
-      FT res;
-
-    case (e1 :: rest1, e2 :: rest2)
-      equation
-        res = inFoldFunc(e1, e2, inArg1, inArg2, inArg3, inArg4, inFoldArg);
-      then
-        threadFold4(rest1, rest2, inFoldFunc, inArg1, inArg2, inArg3, inArg4, res);
-
-    case ({}, {}) then inFoldArg;
-
-  end match;
-end threadFold4;
 
 public function threadFold<T1, T2, FT>
   "This is a combination of thread and fold that applies a function to the head
@@ -5575,33 +4196,6 @@ algorithm
   outPosition := -1;
 end position1OnTrue;
 
-public function positionList<T>
-  "Takes a value and a list of lists, and returns the position of the value.
-   outListIndex is the index of the list the value was found in, and outPosition
-   is the position in that list.
-     Example: positionList(3, {{4, 2}, {6, 4, 3, 1}}) => (2, 3)"
-  input T inElement;
-  input list<list<T>> inList;
-  output Integer outListIndex = 1 "one-based index";
-  output Integer outPosition "one-based index";
-algorithm
-  for lst in inList loop
-    outPosition := 1;
-
-    for e in lst loop
-      if valueEq(e, inElement) then
-        return;
-      end if;
-
-      outPosition := outPosition + 1;
-    end for;
-
-    outListIndex := outListIndex + 1;
-  end for;
-
-  fail();
-end positionList;
-
 public function getMember<T>
   "Takes a value and a list, and returns the value if it's present in the list.
    If not present the function will fail.
@@ -5732,33 +4326,6 @@ algorithm
 
   outExists := false;
 end exist1;
-
-public function exist2<T, ArgT1, ArgT2>
-  "Returns true if a certain element exists in the given list as indicated by
-   the given predicate function. Also takes two extra arguments that is passed
-   to the predicate function."
-  input list<T> inList;
-  input FindFunc inFindFunc;
-  input ArgT1 inExtraArg1;
-  input ArgT2 inExtraArg2;
-  output Boolean outExists;
-
-  partial function FindFunc
-    input T inElement;
-    input ArgT1 inExtraArg1;
-    input ArgT2 inExtraArg2;
-    output Boolean outFound;
-  end FindFunc;
-algorithm
-  for e in inList loop
-    if inFindFunc(e, inExtraArg1, inExtraArg2) then
-      outExists := true;
-      return;
-    end if;
-  end for;
-
-  outExists := false;
-end exist2;
 
 public function extractOnTrue<T>
   "Takes a list of values and a filter function over the values and returns
@@ -5994,23 +4561,6 @@ algorithm
   outList_a := listReverseInPlace(outList_a);
   outList_b := listReverseInPlace(outList_b);
 end filterOnTrueSync;
-
-public function filterOnTrueReverse<T>
-  "Takes a list of values and a filter function over the values and returns a
-   sub list of values in reverse order for which the matching function returns true.
-     Example:
-       filter({1, 2, 3, 4, 5}, isEven) => {4, 2}"
-  input list<T> inList;
-  input FilterFunc inFilterFunc;
-  output list<T> outList;
-
-  partial function FilterFunc
-    input T inElement;
-    output Boolean outResult;
-  end FilterFunc;
-algorithm
-  outList := listReverse(e for e guard(inFilterFunc(e)) in inList);
-end filterOnTrueReverse;
 
 public function filter1<T, ArgT1>
   "Takes a list of values, a filter function over the values and an extra
@@ -6471,22 +5021,6 @@ algorithm
   outList := listReverse(outList);
 end keepPositionsSorted;
 
-public function removeMatchesFirst
-  "Removes all matching integers that occur first in a list. If the first
-   element doesn't match it returns the list."
-  input list<Integer> inList;
-  input Integer inN;
-  output list<Integer> outList = inList;
-algorithm
-  for e in inList loop
-    if e <> inN then
-      break;
-    end if;
-
-    _ :: outList := outList;
-  end for;
-end removeMatchesFirst;
-
 public function replaceAt<T>
   "Takes an element, a position and a list, and replaces the value at the given
    position in the list. Position is an integer between 1 and n for a list of
@@ -6588,41 +5122,6 @@ algorithm
   outList := append_reverse(outList, rest);
 end replaceAtWithList;
 
-public function replaceAtWithFill<T>
-  "Takes
-   - an element,
-   - a position (indexed from 1)
-   - a list and
-   - a fill value
-   The function replaces the value at the given position in the list, if the
-   given position is out of range, the fill value is used to padd the list up to
-   that element position and then insert the value at the position
-     Example: replaceAtWithFill(\"A\", 5, {\"a\",\"b\",\"c\"},\"dummy\") =>
-              {\"a\",\"b\",\"c\",\"dummy\",\"A\"}"
-  input T inElement;
-  input Integer inPosition;
-  input list<T> inList;
-  input T inFillValue;
-  output list<T> outList;
-protected
-  Integer len;
-  list<T> fill_lst;
-algorithm
-  true := inPosition >= 0;
-  len := listLength(inList);
-
-  if inPosition <= len then
-    outList := replaceAt(inElement, inPosition, inList);
-  else
-    fill_lst := {inElement};
-    for i in 2:(inPosition - len) loop
-      fill_lst := inFillValue :: fill_lst;
-    end for;
-
-    outList := listAppend(inList, fill_lst);
-  end if;
-end replaceAtWithFill;
-
 public function toString<T>
   "Creates a string from a list and a function that maps a list element to a
    string. It also takes several parameters that determine the formatting of
@@ -6708,138 +5207,6 @@ algorithm
   outLength := sum(listLength(lst) for lst in inListList);
 end lengthListElements;
 
-public function generate<T, ArgT1>
-  "This function generates a list by calling the given function with the given
-   argument. The elements generated by the function are accumulated in a list
-   until the function returns false as the last return value."
-  input ArgT1 inArg;
-  input GenerateFunc inFunc;
-  output list<T> outList;
-
-  partial function GenerateFunc
-    input ArgT1 inArg;
-    output ArgT1 outArg;
-    output T outElement;
-    output Boolean outContinue;
-  end GenerateFunc;
-algorithm
-  outList := listReverseInPlace(generateReverse(inArg, inFunc));
-end generate;
-
-public function generateReverse<T, ArgT1>
-  "This function generates a list by calling the given function with the given
-   argument. The elements generated by the function are accumulated in a list
-   until the function returns false as the last return value. This function
-   returns the generated list reversed."
-  input ArgT1 inArg;
-  input GenerateFunc inFunc;
-  output list<T> outList = {};
-
-  partial function GenerateFunc
-    input ArgT1 inArg;
-    output ArgT1 outArg;
-    output T outElement;
-    output Boolean outContinue;
-  end GenerateFunc;
-protected
-  Boolean cont;
-  ArgT1 arg = inArg;
-  T e;
-algorithm
-  while true loop
-    (arg, e, cont) := inFunc(arg);
-    if not cont then break; end if;
-    outList := e :: outList;
-  end while;
-end generateReverse;
-
-public function mapFoldSplit<TI, TO, FT>
-  "Like mapFold, but with the function split into a map and a fold function."
-  input list<TI> inList;
-  input MapFunc inMapFunc;
-  input FoldFunc inFoldFunc;
-  input FT inStartValue;
-  output list<TO> outList = {};
-  output FT outResult = inStartValue;
-
-  partial function MapFunc
-    input TI inElem;
-    output TO outElem;
-    output FT outResult;
-  end MapFunc;
-
-  partial function FoldFunc
-    input FT inNewValue;
-    input FT inOldValue;
-    output FT outFoldedValue;
-  end FoldFunc;
-protected
-  TO eo;
-  FT res;
-algorithm
-  for e in inList loop
-    (eo, res) := inMapFunc(e);
-    outResult := inFoldFunc(res, outResult);
-    outList := eo :: outList;
-  end for;
-  outList := listReverseInPlace(outList);
-end mapFoldSplit;
-
-public function map1FoldSplit<TI, TO, FT, ArgT1>
-  "Like map1Fold, but with the function split into a map and a fold function."
-  input list<TI> inList;
-  input MapFunc inMapFunc;
-  input FoldFunc inFoldFunc;
-  input ArgT1 inConstArg;
-  input FT inStartValue;
-  output list<TO> outList = {};
-  output FT outResult = inStartValue;
-
-  partial function MapFunc
-    input TI inElem;
-    input ArgT1 inConstArg;
-    output TO outElem;
-    output FT outResult;
-  end MapFunc;
-
-  partial function FoldFunc
-    input FT inNewValue;
-    input FT inOldValue;
-    output FT outFoldedValue;
-  end FoldFunc;
-protected
-  TO eo;
-  FT res;
-algorithm
-  for e in inList loop
-    (eo, res) := inMapFunc(e, inConstArg);
-    outResult := inFoldFunc(res, outResult);
-    outList := eo :: outList;
-  end for;
-  outList := listReverseInPlace(outList);
-end map1FoldSplit;
-
-public function accumulateMap = accumulateMapAccum;
-
-public function accumulateMapReverse<TI, TO>
-  "Takes a list and a function. The function is applied to each element in the
-   list, and the function is itself responsible for adding elements to the
-   result list."
-  input list<TI> inList;
-  input MapFunc inMapFunc;
-  output list<TO> outList = {};
-
-  partial function MapFunc
-    input TI inElement;
-    input list<TO> inAccumList;
-    output list<TO> outList;
-  end MapFunc;
-algorithm
-  for e in inList loop
-    outList := inMapFunc(e, outList);
-  end for;
-end accumulateMapReverse;
-
 public function accumulateMapAccum<TI, TO>
   "Takes a list, a function and a result list. The function is applied to each
    element of the list, and the function is itself responsible for adding
@@ -6859,51 +5226,6 @@ algorithm
   end for;
   outList := listReverse(outList);
 end accumulateMapAccum;
-
-public function accumulateMapAccum1<TI, TO, ArgT1>
-  "Takes a list, a function, an extra argument, and a result list. The function
-   is applied to each element of the list, and the function is itself responsible
-   for adding elements to the result list."
-  input list<TI> inList;
-  input MapFunc inMapFunc;
-  input ArgT1 inArg;
-  output list<TO> outList = {};
-
-  partial function MapFunc
-    input TI inElement;
-    input ArgT1 inArg;
-    input list<TO> inAccumList;
-    output list<TO> outList;
-  end MapFunc;
-algorithm
-  for e in inList loop
-    outList := inMapFunc(e, inArg, outList);
-  end for;
-  outList := listReverse(outList);
-end accumulateMapAccum1;
-
-public function accumulateMapFold = accumulateMapFoldAccum;
-
-public function accumulateMapFoldAccum<TI, TO, FT>
-  input list<TI> inList;
-  input FuncType inFunc;
-  input FT inFoldArg;
-  output list<TO> outList = {};
-  output FT outFoldArg = inFoldArg;
-
-  partial function FuncType
-    input TI inElement;
-    input FT inFoldArg;
-    input list<TO> inAccumList;
-    output list<TO> outList;
-    output FT outFoldArg;
-  end FuncType;
-algorithm
-  for e in inList loop
-    (outList, outFoldArg) := inFunc(e, outFoldArg, outList);
-  end for;
-  outList := listReverse(outList);
-end accumulateMapFoldAccum;
 
 public function findMap<T>
   "Same as map, but stops when it find a certain element as indicated by the
@@ -6931,99 +5253,6 @@ algorithm
 
   outList := append_reverse(outList, rest);
 end findMap;
-
-public function findMap1<T, ArgT1>
-  "Same as map1, but stops when it find a certain element as indicated by the
-   mapping function. Returns the new list, and whether the element was found or
-   not."
-  input list<T> inList;
-  input FuncType inFunc;
-  input ArgT1 inArg1;
-  output list<T> outList = {};
-  output Boolean outFound = false;
-
-  partial function FuncType
-    input T inElement;
-    input ArgT1 inArg1;
-    output T outElement;
-    output Boolean outFound;
-  end FuncType;
-protected
-  T e;
-  list<T> rest = inList;
-algorithm
-  while not listEmpty(rest) and not outFound loop
-    e :: rest := rest;
-    (e, outFound) := inFunc(e, inArg1);
-    outList := e :: outList;
-  end while;
-
-  outList := append_reverse(outList, rest);
-end findMap1;
-
-public function findMap2<T, ArgT1, ArgT2>
-  "Same as map2, but stops when it find a certain element as indicated by the
-   mapping function. Returns the new list, and whether the element was found or
-   not."
-  input list<T> inList;
-  input FuncType inFunc;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-  output list<T> outList = {};
-  output Boolean outFound = false;
-
-  partial function FuncType
-    input T inElement;
-    input ArgT1 inArg1;
-    input ArgT2 inArg2;
-    output T outElement;
-    output Boolean outFound;
-  end FuncType;
-protected
-  T e;
-  list<T> rest = inList;
-algorithm
-  while not listEmpty(rest) and not outFound loop
-    e :: rest := rest;
-    (e, outFound) := inFunc(e, inArg1, inArg2);
-    outList := e :: outList;
-  end while;
-
-  outList := append_reverse(outList, rest);
-end findMap2;
-
-public function findMap3<T, ArgT1, ArgT2, ArgT3>
-  "Same as map3, but stops when it find a certain element as indicated by the
-   mapping function. Returns the new list, and whether the element was found or
-   not."
-  input list<T> inList;
-  input FuncType inFunc;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-  input ArgT3 inArg3;
-  output list<T> outList = {};
-  output Boolean outFound = false;
-
-  partial function FuncType
-    input T inElement;
-    input ArgT1 inArg1;
-    input ArgT2 inArg2;
-    input ArgT3 inArg3;
-    output T outElement;
-    output Boolean outFound;
-  end FuncType;
-protected
-  T e;
-  list<T> rest = inList;
-algorithm
-  while not listEmpty(rest) and not outFound loop
-    e :: rest := rest;
-    (e, outFound) := inFunc(e, inArg1, inArg2, inArg3);
-    outList := e :: outList;
-  end while;
-
-  outList := append_reverse(outList, rest);
-end findMap3;
 
 public function findAndMap<T>
   "Applies a function to the first element in the list for which the predicate
@@ -7224,97 +5453,6 @@ algorithm
   end match;
 end combinationMap_tail;
 
-public function combinationMap1<TI, TO, ArgT1>
-  "Takes a two-dimensional list and calls the given function on the combinations
-   given by the cartesian product of the sublists. Also takes an extra constant
-   argument that is sent to the function.
-
-   Ex: combinationMap({{1, 2}, {3}, {4, 5}}, func, x) =>
-   {func({1, 3, 4}, x), func({1, 3, 5}, x), func({2, 3, 4}, x), func({2, 3, 5}, x)}
-  "
-  input list<list<TI>> inElements;
-  input MapFunc inMapFunc;
-  input ArgT1 inArg;
-  output list<TO> outElements;
-
-  partial function MapFunc
-    input list<TI> inElements;
-    input ArgT1 inArg;
-    output TO outElement;
-  end MapFunc;
-protected
-  list<TO> elems;
-algorithm
-  elems := combinationMap1_tail(inElements, inMapFunc, inArg, {}, {});
-  outElements := listReverse(elems);
-end combinationMap1;
-
-protected function combinationMap1_tail<TI, TO, ArgT1>
-  input list<list<TI>> inElements;
-  input MapFunc inMapFunc;
-  input ArgT1 inArg;
-  input list<TI> inCombination;
-  input list<TO> inAccumElems;
-  output list<TO> outElements;
-
-  partial function MapFunc
-    input list<TI> inElements;
-    input ArgT1 inArg;
-    output TO outElement;
-  end MapFunc;
-algorithm
-  outElements := match(inElements)
-    local
-      list<TI> head;
-      list<list<TI>> rest;
-      list<TO> acc;
-
-    case head :: rest
-      algorithm
-        acc := inAccumElems;
-        for e in head loop
-          acc := combinationMap1_tail(rest, inMapFunc, inArg, e :: inCombination, acc);
-        end for;
-      then
-        acc;
-
-    else inMapFunc(listReverse(inCombination), inArg) :: inAccumElems;
-
-  end match;
-end combinationMap1_tail;
-
-protected function combinationMap1_tail2<TI, TO, ArgT1>
-  input list<TI> inHead;
-  input list<list<TI>> inRest;
-  input MapFunc inMapFunc;
-  input ArgT1 inArg;
-  input list<TI> inCombination;
-  input list<TO> inAccumElems;
-  output list<TO> outElements;
-
-  partial function MapFunc
-    input list<TI> inElements;
-    input ArgT1 inArg;
-    output TO outElement;
-  end MapFunc;
-algorithm
-  outElements := match(inHead, inCombination, inAccumElems)
-    local
-      TI head;
-      list<TI> rest, comb;
-      list<TO> accum;
-
-    case (head :: rest, comb, accum)
-      equation
-        accum = combinationMap1_tail(inRest, inMapFunc, inArg, head :: comb, accum);
-      then
-        combinationMap1_tail2(rest, inRest, inMapFunc, inArg, comb, accum);
-
-    else inAccumElems;
-
-  end match;
-end combinationMap1_tail2;
-
 public function allReferenceEq<T>
   "Checks if all elements in the lists have equal references"
   input list<T> inList1;
@@ -7333,34 +5471,6 @@ algorithm
     else false;
   end match;
 end allReferenceEq;
-
-public function removeEqualPrefix<T1, T2>
-  "Takes two lists and a comparison function and removes the heads from both
-   lists as long as they are equal. Ex:
-     removeEqualPrefix({1, 2, 3, 5, 7}, {1, 2, 3, 9, 7}) => ({5, 7}, {9, 7})"
-  input list<T1> inList1;
-  input list<T2> inList2;
-  input CompFunc inCompFunc;
-  output list<T1> outList1 = inList1;
-  output list<T2> outList2 = inList2;
-
-  partial function CompFunc
-    input T1 inElement1;
-    input T2 inElement2;
-    output Boolean outIsEqual;
-  end CompFunc;
-protected
-  T1 e1;
-  T2 e2;
-algorithm
-  while not (listEmpty(outList1) or listEmpty(outList2)) loop
-    e1 := listHead(outList1);
-    e2 := listHead(outList2);
-    if not inCompFunc(e1, e2) then break; end if;
-    outList1 := listRest(outList1);
-    outList2 := listRest(outList2);
-  end while;
-end removeEqualPrefix;
 
 public function listIsLonger<T>
   "Returns true if inList1 is longer than inList2, otherwise false."
@@ -7522,54 +5632,6 @@ algorithm
     end if;
   end for;
 end separate1OnTrue;
-
-public function mapFirst<TI, TO>
-  input list<TI> inList;
-  input FindMapFunc inFunc;
-  output TO outElement;
-
-  partial function FindMapFunc
-    input TI inElement;
-    output TO outElement;
-    output Boolean outFound;
-  end FindMapFunc;
-protected
-  Boolean found;
-algorithm
-  for e in inList loop
-    (outElement, found) := inFunc(e);
-
-    if found then
-      return;
-    end if;
-  end for;
-  fail();
-end mapFirst;
-
-public function isSorted<T>
-  input list<T> inList;
-  input Comp inFunc;
-  output Boolean b=true;
-
-  partial function Comp
-    input T a,b;
-    output Boolean c;
-  end Comp;
-protected
-  Boolean found;
-  T prev;
-algorithm
-  if listEmpty(inList) then
-    return;
-  end if;
-  prev::_ := inList;
-  for e in listRest(inList) loop
-    if not inFunc(prev,e) then
-      b := false;
-      return;
-    end if;
-  end for;
-end isSorted;
 
 function mapIndices<T>
   "Applies a function to only the elements given by the sorted list of indices."
