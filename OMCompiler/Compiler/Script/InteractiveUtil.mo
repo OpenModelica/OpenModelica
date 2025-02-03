@@ -5142,6 +5142,8 @@ end setElementAnnotation;
 public function loadClassContentString
   input String content;
   input Absyn.Path classPath;
+  input Integer offsetX;
+  input Integer offsetY;
   input output Absyn.Program program;
         output Boolean success = true;
 protected
@@ -5151,6 +5153,7 @@ algorithm
     Absyn.Program.PROGRAM(classes = {Absyn.Class.CLASS(body = parsed_body)}) :=
       Parser.parsestring(stringAppendList({"model dummy\n", content, "end dummy;\n"}));
 
+    parsed_body := offsetAnnotationsInClassDef(parsed_body, offsetX, offsetY);
     (program, _, success) := transformPathedElementInProgram(classPath,
       function mergeClassContents(newContent = parsed_body), program);
   else
@@ -6293,6 +6296,397 @@ algorithm
     else Absyn.Within.WITHIN(path);
   end match;
 end parseWithinPath;
+
+function offsetAnnotationsInClassDef
+  input output Absyn.ClassDef cdef;
+  input Integer x;
+  input Integer y;
+algorithm
+  if x == 0 and y == 0 then
+    return;
+  end if;
+
+  () := match cdef
+    case Absyn.ClassDef.PARTS()
+      algorithm
+        cdef.classParts := list(offsetAnnotationsInClassPart(p, x, y) for p in cdef.classParts);
+        cdef.ann := list(offsetDiagramAnnotation(a, x, y) for a in cdef.ann);
+      then
+        ();
+
+    case Absyn.ClassDef.DERIVED()
+      algorithm
+        cdef.comment := offsetDiagramAnnotationInOptComment(cdef.comment, x, y);
+      then
+        ();
+
+    case Absyn.ClassDef.ENUMERATION()
+      algorithm
+        cdef.comment := offsetDiagramAnnotationInOptComment(cdef.comment, x, y);
+      then
+        ();
+
+    case Absyn.ClassDef.OVERLOAD()
+      algorithm
+        cdef.comment := offsetDiagramAnnotationInOptComment(cdef.comment, x, y);
+      then
+        ();
+
+    case Absyn.ClassDef.CLASS_EXTENDS()
+      algorithm
+        cdef.parts := list(offsetAnnotationsInClassPart(p, x, y) for p in cdef.parts);
+        cdef.ann := list(offsetDiagramAnnotation(a, x, y) for a in cdef.ann);
+      then
+        ();
+
+    case Absyn.ClassDef.PDER()
+      algorithm
+        cdef.comment := offsetDiagramAnnotationInOptComment(cdef.comment, x, y);
+      then
+        ();
+
+  end match;
+end offsetAnnotationsInClassDef;
+
+function offsetAnnotationsInClassPart
+  input output Absyn.ClassPart part;
+  input Integer x;
+  input Integer y;
+algorithm
+  () := match part
+    case Absyn.ClassPart.PUBLIC()
+      algorithm
+        part.contents := list(offsetAnnotationsInElementItem(i, x, y) for i in part.contents);
+      then
+        ();
+
+    case Absyn.ClassPart.PROTECTED()
+      algorithm
+        part.contents := list(offsetAnnotationsInElementItem(i, x, y) for i in part.contents);
+      then
+        ();
+
+    case Absyn.ClassPart.EQUATIONS()
+      algorithm
+        part.contents := list(offsetAnnotationsInEquationItem(e, x, y) for e in part.contents);
+      then
+        ();
+
+    else ();
+  end match;
+end offsetAnnotationsInClassPart;
+
+function offsetAnnotationsInElementItem
+  input output Absyn.ElementItem item;
+  input Integer x;
+  input Integer y;
+algorithm
+  () := match item
+    case Absyn.ElementItem.ELEMENTITEM()
+      algorithm
+        item.element := offsetAnnotationsInElement(item.element, x, y);
+      then
+        ();
+
+    else ();
+  end match;
+end offsetAnnotationsInElementItem;
+
+function offsetAnnotationsInElement
+  input output Absyn.Element element;
+  input Integer x;
+  input Integer y;
+algorithm
+  () := match element
+    case Absyn.Element.ELEMENT()
+      algorithm
+        element.specification := offsetAnnotationsInElementSpec(element.specification, x, y);
+      then
+        ();
+
+    else ();
+  end match;
+end offsetAnnotationsInElement;
+
+function offsetAnnotationsInElementSpec
+  input output Absyn.ElementSpec spec;
+  input Integer x;
+  input Integer y;
+algorithm
+  () := match spec
+    case Absyn.ElementSpec.COMPONENTS()
+      algorithm
+        spec.components := list(offsetAnnotationsInComponentItem(c, x, y) for c in spec.components);
+      then
+        ();
+
+    else ();
+  end match;
+end offsetAnnotationsInElementSpec;
+
+constant Absyn.Path PLACEMENT_ORIGIN_PATH =
+  Absyn.Path.QUALIFIED("Placement", Absyn.Path.QUALIFIED("transformation", Absyn.Path.IDENT("origin")));
+constant Absyn.Path LINE_POINTS_PATH = Absyn.Path.QUALIFIED("Line", Absyn.Path.IDENT("points"));
+constant Absyn.Path DIAGRAM_GRAPHICS_PATH = Absyn.Path.QUALIFIED("Diagram", Absyn.Path.IDENT("graphics"));
+
+function offsetAnnotationsInComponentItem
+  input output Absyn.ComponentItem item;
+  input Integer x;
+  input Integer y;
+protected
+  Option<Absyn.Annotation> oann;
+  Absyn.Annotation ann;
+algorithm
+  oann := AbsynUtil.getCommentOptAnnotation(item.comment);
+  ann := if isSome(oann) then Util.getOption(oann) else Absyn.Annotation.ANNOTATION({});
+  ann := AbsynUtil.transformAnnotationArg(ann, PLACEMENT_ORIGIN_PATH, function offsetOriginAnnotation(x = x, y = y));
+  item := AbsynUtil.setComponentItemAnnotation(item, SOME(ann));
+end offsetAnnotationsInComponentItem;
+
+function offsetOriginAnnotation
+  input output Absyn.ElementArg arg;
+  input Integer x;
+  input Integer y;
+protected
+  Absyn.Modification mod;
+  Absyn.EqMod eq_mod;
+algorithm
+  () := match arg
+    case Absyn.ElementArg.MODIFICATION()
+      algorithm
+        if isSome(arg.modification) then
+          SOME(mod) := arg.modification;
+        else
+          mod := Absyn.Modification.CLASSMOD({}, Absyn.EqMod.NOMOD());
+        end if;
+
+        eq_mod := mod.eqMod;
+        mod.eqMod := match eq_mod
+          case Absyn.EqMod.EQMOD()
+            algorithm
+              eq_mod.exp := offsetPointExpression(eq_mod.exp, x, y);
+            then
+              eq_mod;
+
+          else Absyn.EqMod.EQMOD(makeOrigin(x, y), AbsynUtil.dummyInfo);
+        end match;
+
+        arg.modification := SOME(mod);
+      then
+        ();
+  end match;
+end offsetOriginAnnotation;
+
+function makeOrigin
+  input Integer x;
+  input Integer y;
+  output Absyn.Exp origin = Absyn.Exp.ARRAY({Absyn.Exp.INTEGER(x), Absyn.Exp.INTEGER(y)});
+end makeOrigin;
+
+function offsetPointExpression
+  input output Absyn.Exp point;
+  input Integer x;
+  input Integer y;
+protected
+  Absyn.Exp e1, e2;
+algorithm
+  point := match point
+    case Absyn.Exp.ARRAY(arrayExp = {e1, e2})
+      then Absyn.Exp.ARRAY({offsetIntegerExpression(e1, x), offsetIntegerExpression(e2, y)});
+    else Absyn.Exp.BINARY(point, Absyn.Operator.ADD(), makeOrigin(x, y));
+  end match;
+end offsetPointExpression;
+
+function offsetIntegerExpression
+  input output Absyn.Exp exp;
+  input Integer offset;
+protected
+  Integer v;
+algorithm
+  exp := match exp
+    case Absyn.Exp.INTEGER() then Absyn.Exp.INTEGER(exp.value + offset);
+    case Absyn.Exp.UNARY(op = Absyn.Operator.UPLUS(), exp = Absyn.Exp.INTEGER(v)) then Absyn.Exp.INTEGER(v + offset);
+    case Absyn.Exp.UNARY(op = Absyn.Operator.UMINUS(), exp = Absyn.Exp.INTEGER(v)) then Absyn.Exp.INTEGER(-v + offset);
+    else if offset > 0 then Absyn.Exp.BINARY(exp, Absyn.Operator.ADD(), Absyn.Exp.INTEGER(offset))
+         elseif offset < 0 then Absyn.Exp.BINARY(exp, Absyn.Operator.SUB(), Absyn.Exp.INTEGER(-offset))
+         else exp;
+  end match;
+end offsetIntegerExpression;
+
+function offsetLineExpression
+  input output Absyn.Exp line;
+  input Integer x;
+  input Integer y;
+algorithm
+  () := match line
+    case Absyn.Exp.ARRAY()
+      algorithm
+        line.arrayExp := list(offsetPointExpression(p, x, y) for p in line.arrayExp);
+      then
+        ();
+
+    else ();
+  end match;
+end offsetLineExpression;
+
+function offsetAnnotationsInEquationItem
+  input output Absyn.EquationItem item;
+  input Integer x;
+  input Integer y;
+protected
+  Absyn.Comment cmt;
+  Absyn.Annotation ann;
+algorithm
+  () := matchcontinue item
+    case Absyn.EquationItem.EQUATIONITEM(comment = SOME(cmt as Absyn.COMMENT(annotation_ = SOME(ann))))
+      algorithm
+        ann := AbsynUtil.transformAnnotationArg(ann, LINE_POINTS_PATH,
+          function offsetConnectionLineAnnotation(x = x, y = y), insert = false);
+        cmt.annotation_ := SOME(ann);
+        item.comment := SOME(cmt);
+      then
+        ();
+
+    else ();
+  end matchcontinue;
+end offsetAnnotationsInEquationItem;
+
+function offsetConnectionLineAnnotation
+  input output Absyn.ElementArg arg;
+  input Integer x;
+  input Integer y;
+protected
+  Absyn.Modification mod;
+  Absyn.EqMod eq_mod;
+algorithm
+  () := match arg
+    case Absyn.ElementArg.MODIFICATION(modification = SOME(Absyn.Modification.CLASSMOD(eqMod = eq_mod as Absyn.EqMod.EQMOD())))
+      algorithm
+        eq_mod.exp := offsetLineExpression(eq_mod.exp, x, y);
+        arg.modification := SOME(Absyn.Modification.CLASSMOD({}, eq_mod));
+      then
+        ();
+
+    else ();
+  end match;
+end offsetConnectionLineAnnotation;
+
+function offsetDiagramAnnotationInOptComment
+  input output Option<Absyn.Comment> cmt;
+  input Integer x;
+  input Integer y;
+protected
+  Option<String> cmt_str;
+  Absyn.Annotation ann;
+algorithm
+  () := match cmt
+    case SOME(Absyn.Comment.COMMENT(SOME(ann), cmt_str))
+      algorithm
+        ann := offsetDiagramAnnotation(ann, x, y);
+        cmt := SOME(Absyn.Comment.COMMENT(SOME(ann), cmt_str));
+      then
+        ();
+
+    else ();
+  end match;
+end offsetDiagramAnnotationInOptComment;
+
+function offsetDiagramAnnotation
+  input output Absyn.Annotation ann;
+  input Integer x;
+  input Integer y;
+algorithm
+  ann := AbsynUtil.transformAnnotationArg(ann, DIAGRAM_GRAPHICS_PATH,
+    function offsetGraphicsAnnotation(x = x, y = y));
+end offsetDiagramAnnotation;
+
+function offsetGraphicsAnnotation
+  input output Absyn.ElementArg arg;
+  input Integer x;
+  input Integer y;
+protected
+  Absyn.Modification mod;
+  Absyn.EqMod eq_mod;
+algorithm
+  () := match arg
+    case Absyn.ElementArg.MODIFICATION(modification = SOME(Absyn.Modification.CLASSMOD(eqMod = eq_mod as Absyn.EqMod.EQMOD())))
+      algorithm
+        eq_mod.exp := offsetGraphicsExpression(eq_mod.exp, x, y);
+        arg.modification := SOME(Absyn.Modification.CLASSMOD({}, eq_mod));
+      then
+        ();
+
+    else ();
+  end match;
+end offsetGraphicsAnnotation;
+
+function offsetGraphicsExpression
+  input output Absyn.Exp graphics;
+  input Integer x;
+  input Integer y;
+algorithm
+  () := match graphics
+    case Absyn.Exp.ARRAY()
+      algorithm
+        graphics.arrayExp := list(offsetGraphicsItemExpression(p, x, y) for p in graphics.arrayExp);
+      then
+        ();
+
+    else ();
+  end match;
+end offsetGraphicsExpression;
+
+function offsetGraphicsItemExpression
+  input output Absyn.Exp item;
+  input Integer x;
+  input Integer y;
+protected
+  Absyn.FunctionArgs args;
+  list<Absyn.NamedArg> named_args;
+  Boolean found;
+  Absyn.Exp visible, origin;
+  list<Absyn.Exp> rest;
+
+  function offset_named_origin
+    input output Absyn.NamedArg arg;
+    input Integer x;
+    input Integer y;
+          output Boolean found;
+  algorithm
+    found := arg.argName == "origin";
+
+    if found then
+      arg.argValue := offsetPointExpression(arg.argValue, x, y);
+    end if;
+  end offset_named_origin;
+algorithm
+  () := match item
+    case Absyn.Exp.CALL(functionArgs = args as Absyn.FunctionArgs.FUNCTIONARGS())
+      algorithm
+        if listLength(args.args) >= 2 then
+          // If there are two or more positional argument then origin is the second one.
+          visible :: origin :: rest := args.args;
+          origin := offsetPointExpression(origin, x, y);
+          args.args := visible :: origin :: rest;
+        else
+          // Otherwise try to find and update a named origin argument.
+          (named_args, found) := List.findMap(args.argNames, function offset_named_origin(x = x, y = y));
+
+          if found then
+            args.argNames := named_args;
+          else
+            // No origin was found, add it.
+            args.argNames := Absyn.NamedArg.NAMEDARG("origin", makeOrigin(x, y)) :: args.argNames;
+          end if;
+        end if;
+
+        item.functionArgs := args;
+      then
+        ();
+
+    else ();
+  end match;
+end offsetGraphicsItemExpression;
 
 annotation(__OpenModelica_Interface="backend");
 end InteractiveUtil;

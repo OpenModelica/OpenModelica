@@ -4414,6 +4414,94 @@ algorithm
   end matchcontinue;
 end getNamedAnnotationStr;
 
+public function transformAnnotationArg
+  "Looks up an ElementArg in an annotation and applies a function to it.
+   If the ElementArg doesn't exist it will be created if insert = true,
+   otherwise the function will fail."
+  input output Absyn.Annotation ann;
+  input Absyn.Path path;
+  input Func func;
+  input Boolean insert = true;
+
+  partial function Func
+    input output Absyn.ElementArg arg;
+  end Func;
+algorithm
+  ann.elementArgs := transformAnnotationInArgs(ann.elementArgs, path, func, insert);
+end transformAnnotationArg;
+
+function transformAnnotationInArgs
+  input output list<Absyn.ElementArg> args;
+  input Absyn.Path path;
+  input Fn fn;
+  input Boolean insert = true;
+
+  partial function Fn
+    input output Absyn.ElementArg arg;
+  end Fn;
+protected
+  String name;
+  Boolean found;
+  Absyn.ElementArg arg;
+
+  function is_named
+    input Absyn.ElementArg arg;
+    input String name;
+    output Boolean result;
+  protected
+    String arg_name;
+  algorithm
+    result := match arg
+      case Absyn.ElementArg.MODIFICATION(path = Absyn.Path.IDENT(name = arg_name)) then name == arg_name;
+      else false;
+    end match;
+  end is_named;
+
+  function apply_fn
+    input output Absyn.ElementArg arg;
+    input Absyn.Path path;
+    input Fn fn;
+    input Boolean insert;
+  protected
+    Absyn.Modification mod;
+  algorithm
+    if pathIsIdent(path) then
+      arg := fn(arg);
+    else
+      () := match arg
+        case Absyn.ElementArg.MODIFICATION()
+          algorithm
+            if isSome(arg.modification) then
+              SOME(mod) := arg.modification;
+            elseif insert then
+              mod := Absyn.Modification.CLASSMOD({}, Absyn.EqMod.NOMOD());
+            else
+              fail();
+            end if;
+
+            mod.elementArgLst := transformAnnotationInArgs(mod.elementArgLst, pathRest(path), fn, insert);
+            arg.modification := SOME(mod);
+          then
+            ();
+      end match;
+    end if;
+  end apply_fn;
+algorithm
+  name := pathFirstIdent(path);
+  (args, found) := List.findAndMap(args, function is_named(name = name),
+                                         function apply_fn(path = path, fn = fn, insert = insert));
+
+  if not found then
+    if insert then
+      arg := Absyn.ElementArg.MODIFICATION(false, Absyn.Each.NON_EACH(), Absyn.IDENT(name), NONE(), NONE(), dummyInfo);
+      arg := apply_fn(arg, path, fn, insert);
+      args := arg :: args;
+    else
+      fail();
+    end if;
+  end if;
+end transformAnnotationInArgs;
+
 public function mapCrefParts
   "This function splits each part of a cref into CREF_IDENTs and applies the
    given function to each part. If the given cref is a qualified cref then the
