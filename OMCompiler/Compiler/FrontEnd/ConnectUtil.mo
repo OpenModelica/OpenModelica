@@ -624,7 +624,7 @@ protected
   OuterConnect new_oc;
 algorithm
   // Only add a new outer connection if it doesn't already exist in the list.
-  if not List.exist2(sets.outerConnects, outerConnectionMatches, cr1, cr2) then
+  if not List.exist(sets.outerConnects, function outerConnectionMatches(cr1 = cr1, cr2 = cr2)) then
     new_oc := OuterConnect.OUTERCONNECT(scope, cr1, io1, f1, cr2, io2, f2, source);
     sets.outerConnects := new_oc :: sets.outerConnects;
   end if;
@@ -734,7 +734,7 @@ protected function collectOuterElements
 algorithm
   outerElements := match node
     case SetTrieNode.SET_TRIE_NODE()
-      then List.map2Flat(node.nodes, collectOuterElements2, face, NONE());
+      then List.mapFlat(node.nodes, function collectOuterElements2(face = face, prefix = NONE()));
 
     else collectOuterElements2(node, face, NONE());
   end match;
@@ -757,7 +757,7 @@ algorithm
       algorithm
         cr := optPrefixCref(prefix, cr);
       then
-        List.map2Flat(node.nodes, collectOuterElements2, face, SOME(cr));
+        List.mapFlat(node.nodes, function collectOuterElements2(face = face, prefix = SOME(cr)));
 
     case SetTrieNode.SET_TRIE_LEAF()
       algorithm

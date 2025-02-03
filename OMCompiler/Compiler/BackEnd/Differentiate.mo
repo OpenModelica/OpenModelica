@@ -678,7 +678,7 @@ algorithm
     then (res, functionTree);
 
     case DAE.MATRIX(ty=tp, integer=i, matrix=matrix) algorithm
-      (dmatrix, functionTree) := List.map3FoldList(matrix, function differentiateExp(maxIter=maxIter-1), inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
+      (dmatrix, functionTree) := List.mapFoldList(matrix, function differentiateExp(maxIter=maxIter-1, inDiffwrtCref = inDiffwrtCref, inInputData = inInputData, inDiffType = inDiffType), inFunctionTree);
       res := DAE.MATRIX(tp, i, dmatrix);
       (res, _) := ExpressionSimplify.simplify1(res);
     then (res, functionTree);
@@ -823,7 +823,7 @@ algorithm
         (DAE.TUPLE(expLstRHS),_) = ExpressionSimplify.simplify(derivedRHS);
         exptl = List.zip(dexpLst, expLstRHS);
         optDerivedStatements1 = List.map2(exptl, makeAssignmentfromTuple, source, inFunctionTree);
-        derivedStatements1 = List.flatten(List.map(optDerivedStatements1, List.fromOption));
+        derivedStatements1 = list(Util.getOption(s) for s guard isSome(s) in optDerivedStatements1);
         derivedStatements2 = listAppend(derivedStatements1, {currStatement});
         derivedStatements1 = listAppend(derivedStatements2, inStmtsAccum);
         (derivedStatements2, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, functions, maxIter);
@@ -834,7 +834,7 @@ algorithm
         (dexpLst,functions) = List.map3Fold(expLst, function differentiateExp(maxIter=maxIter), inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (derivedRHS as DAE.CALL(attr=DAE.CALL_ATTR(ty=type_)), functions) = differentiateExp(rhs, inDiffwrtCref, inInputData, inDiffType, functions, maxIter);
         optDerivedStatements1 = {SOME(DAE.STMT_TUPLE_ASSIGN(type_, dexpLst, derivedRHS, source))};
-        derivedStatements1 = List.flatten(List.map(optDerivedStatements1, List.fromOption));
+        derivedStatements1 = list(Util.getOption(s) for s guard isSome(s) in optDerivedStatements1);
         derivedStatements2 = listAppend(derivedStatements1, {currStatement});
         derivedStatements1 = listAppend(derivedStatements2, inStmtsAccum);
         (derivedStatements2, functions) = differentiateStatements(restStatements, inDiffwrtCref, inInputData, inDiffType, derivedStatements1, functions, maxIter);

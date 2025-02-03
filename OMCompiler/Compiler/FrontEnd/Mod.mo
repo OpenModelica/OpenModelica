@@ -854,7 +854,8 @@ protected
   list<SCode.SubMod> submods;
   Boolean found;
 algorithm
-  (submods, found) := List.findMap3(inAccumMods, compactSubMod2, inSubMod, inModScope, inName);
+  (submods, found) := List.findMap(inAccumMods,
+    function compactSubMod2(inNewMod = inSubMod, inModScope = inModScope, inName = inName));
   outSubMods := List.consOnTrue(not found, inSubMod, submods);
 end compactSubMod;
 

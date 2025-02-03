@@ -146,7 +146,8 @@ protected
   Boolean found;
 algorithm
   SCode.NAMEMOD(name, _) := inSubMod;
-  (submods, found) := List.findMap3(inAccumMods, compactSubMod2, inSubMod, inModScope, inName);
+  (submods, found) := List.findMap(inAccumMods,
+    function compactSubMod2(inNewMod = inSubMod, inModScope = inModScope, inName = inName));
   outSubMods := List.consOnTrue(not found, inSubMod, submods);
 end compactSubMod;
 

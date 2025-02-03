@@ -4944,22 +4944,24 @@ algorithm
     // 2. vars occur in all branches: check how they are occur
     // 3. vars occur not in all branches: mark as unsolvable
     case(vars, BackendDAE.IF_EQUATION(conditions=expl,eqnstrue=eqnslst,eqnsfalse=eqnselse),_,_,_)
-      equation
+      algorithm
         //print("Warning: BackendDAEUtil.adjacencyRowEnhanced does not handle if-equations propper!\n");
         // mark all negative because the when condition cannot used to solve a variable
-        lst = List.fold4(expl, adjacencyRowExpEnhanced, vars, mark, rowmark, isInitial, {});
-        _ = List.fold1(lst,markNegativ,rowmark,mark);
-        row1 = adjacencyRowEnhanced1(lst,DAE.RCONST(0.0),DAE.RCONST(0.0),vars,globalKnownVars,mark,rowmark,{},trytosolve,1,shared);
+        lst := List.fold4(expl, adjacencyRowExpEnhanced, vars, mark, rowmark, isInitial, {});
+        _ := List.fold1(lst,markNegativ,rowmark,mark);
+        row1 := adjacencyRowEnhanced1(lst,DAE.RCONST(0.0),DAE.RCONST(0.0),vars,globalKnownVars,mark,rowmark,{},trytosolve,1,shared);
 
-        (row, size) = adjacencyRowEnhancedEqnLst(eqnselse, vars, mark, rowmark, globalKnownVars, trytosolve,shared);
-        lst = List.map(row,Util.tuple31);
+        (row, size) := adjacencyRowEnhancedEqnLst(eqnselse, vars, mark, rowmark, globalKnownVars, trytosolve,shared);
+        lst := List.map(row,Util.tuple31);
 
-        (lst, row, _) = List.fold6(eqnslst, adjacencyRowEnhancedEqnLstIfBranches, vars, mark, rowmark, globalKnownVars, trytosolve, shared, (lst, row, size));
+        for eq in eqnslst loop
+          (lst, row, _) := adjacencyRowEnhancedEqnLstIfBranches(eq, vars, mark, rowmark, globalKnownVars, trytosolve, shared, (lst, row, size));
+        end for;
 
-        lstall = List.map(row, Util.tuple31);
-        (_, lst, _) = List.intersection1OnTrue(lstall, lst, intEq);
-        _ = List.fold1(lst, markNegativ, rowmark, mark);
-        row = listAppend(row1,row);
+        lstall := List.map(row, Util.tuple31);
+        (_, lst, _) := List.intersection1OnTrue(lstall, lst, intEq);
+        _ := List.fold1(lst, markNegativ, rowmark, mark);
+        row := listAppend(row1,row);
       then
         (row,size);
 

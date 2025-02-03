@@ -3785,7 +3785,7 @@ algorithm
     end for;
   end for;
   // Make asubs from all combinations of the subscript indices.
-  asubs := List.combinationMap1(indices, simplifyAsubSlicing2, inExp);
+  asubs := List.combinationMap(indices, function simplifyAsubSlicing2(inExp = inExp));
   outAsubArray := Expression.makeScalarArray(asubs, Types.unliftArray(Expression.typeof(inExp)));
 end simplifyAsubSlicing;
 

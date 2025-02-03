@@ -7698,10 +7698,10 @@ algorithm
      then isZeroOrAlmostZero(e, nominal);
 
     case (DAE.ARRAY(array = ae),_)
-     then List.map1AllValueBool(ae,isZeroOrAlmostZero,true,nominal);
+     then List.mapAllValueBool(ae, function isZeroOrAlmostZero(nominal = nominal), true);
 
     case (DAE.MATRIX(matrix = matrix),_)
-      then List.map1ListAllValueBool(matrix,isZeroOrAlmostZero,true,nominal);
+      then List.mapListAllValueBool(matrix, function isZeroOrAlmostZero(nominal = nominal), true);
 
     case (DAE.UNARY(DAE.UMINUS_ARR(_),e),_)
      then isZeroOrAlmostZero(e, nominal);
@@ -12434,37 +12434,6 @@ algorithm
 
   end match;
 end traversingextendArrExp;
-
-protected function insertSubScripts"traverses the subscripts of the templSubScript and searches for wholedim. the value replaces the wholedim.
-If there are multiple values, the templSubScript will be used for each of them and multiple new subScriptLsts are created.
-author:Waurich TUD 2014-04"
-  input list<DAE.Subscript> templSubScript;
-  input list<list<DAE.Subscript>> value;
-  input list<DAE.Subscript> lstIn;
-  output list<list<DAE.Subscript>> outSubScript;
-algorithm
-  outSubScript := matchcontinue(templSubScript,value,lstIn)
-    local
-      Integer i;
-      DAE.Subscript sub;
-      list<DAE.Subscript> rest,lst,val;
-      list<list<DAE.Subscript>> lsts;
-    case(DAE.WHOLEDIM()::rest,_,_)
-      equation
-        // found a wholedim, replace with value, insert in lst
-        lsts = List.map1(value,listAppend,lstIn);
-        lsts = List.map1(lsts,List.append_reverser,rest);
-      then
-        lsts;
-    case(DAE.INDEX()::rest,_,_)
-      equation
-        sub = listHead(templSubScript);
-        lsts = insertSubScripts(rest,value,sub::lstIn);
-      then
-        lsts;
-    else value;
-  end matchcontinue;
-end insertSubScripts;
 
 protected function makeMatrix
   input list<DAE.Exp> expl;

@@ -3341,7 +3341,7 @@ algorithm
         crefs =  List.map(varLst,creffromVar);
         crefs = List.map1r(crefs,joinCrefs,inCref);
       then
-        List.map1Flat(crefs,expandCref_impl,true);
+        List.mapFlat(crefs, function expandCref_impl(expandRecord = true));
 
     // A array record ident cref without subscripts. Expand record true
     case (DAE.CREF_IDENT(id, ty as DAE.T_ARRAY(), {}),true)
