@@ -445,12 +445,16 @@ public
     output Status status;
     input output Integer implicit_index;
     input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
+  protected
+    ComponentRef var_cref;
   algorithm
     if ComponentRef.isEmpty(var.name) then
       // empty variable name implies equation without return value
       (eqn, status) := (eqn, Status.EXPLICIT);
     else
-      (eqn, funcTree, status, implicit_index, _) := solveEquation(eqn, var.name, funcTree, kind, implicit_index, slicing_map);
+      (var_cref, status) := getVarSlice(var.name, eqn);
+      var_cref := if status < Status.UNSOLVABLE then var_cref else var.name;
+      (eqn, funcTree, status, implicit_index, _) := solveEquation(eqn, var_cref, funcTree, kind, implicit_index, slicing_map);
     end if;
   end solveSingleStrongComponent;
 

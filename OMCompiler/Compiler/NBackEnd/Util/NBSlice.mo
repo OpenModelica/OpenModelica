@@ -256,8 +256,10 @@ public
     Note: the name has to be stripped of all subscripts for this to work."
   extends filterCref;
     input ComponentRef name "the name of the variable";
+  protected
+    ComponentRef checkCref = ComponentRef.stripSubscriptsAll(cref);
   algorithm
-    if ComponentRef.isEqual(name, ComponentRef.stripSubscriptsAll(cref)) then
+    if ComponentRef.isEqual(name, checkCref) or ComponentRef.isEqualRecordChild(name, checkCref) then
       UnorderedSet.add(cref, acc);
     end if;
   end getSliceCandidates;

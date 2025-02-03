@@ -354,17 +354,26 @@ public
     outType := CONDITIONAL_ARRAY(trueType, falseType, matched_branch);
   end setConditionalArrayTypes;
 
-  function removeSizeOneArrays
+  function removeSizeOneArraysAndRecords
     "only to be used for backend. removes size one arrays from type"
     input output Type ty;
   algorithm
     ty := match ty
+      local
+        array<Record.Field> fields;
+
+      // remove size one arrays
       case ARRAY() algorithm
         ty.dimensions := list(dim for dim guard(not Dimension.isOne(dim)) in ty.dimensions);
-      then if listEmpty(ty.dimensions) then ty.elementType else ty;
+      then if listEmpty(ty.dimensions) then removeSizeOneArraysAndRecords(ty.elementType) else ty;
+
+      // remove one-element records
+      case COMPLEX(complexTy = ComplexType.RECORD(fields = fields)) guard(arrayLength(fields) == 1)
+      then removeSizeOneArraysAndRecords(lookupRecordFieldType(Record.Field.name(fields[1]), ty));
+
       else ty;
     end match;
-  end removeSizeOneArrays;
+  end removeSizeOneArraysAndRecords;
 
   function isMatchedBranch
     input Boolean condition;

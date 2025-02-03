@@ -169,8 +169,8 @@ public
           local
             Type ty1, ty2;
           case StrongComponent.SINGLE_COMPONENT() algorithm
-            ty1 := Type.removeSizeOneArrays(Variable.typeOf(Pointer.access(scc.var)));
-            ty2 := Type.removeSizeOneArrays(Equation.getType(Pointer.access(scc.eqn)));
+            ty1 := Type.removeSizeOneArraysAndRecords(Variable.typeOf(Pointer.access(scc.var)));
+            ty2 := Type.removeSizeOneArraysAndRecords(Equation.getType(Pointer.access(scc.eqn)));
             if not Type.isEqual(ty1, ty2) then
               // The variability of the equation must be greater or equal to that of the variable it solves.
               // See MLS section 3.8 Variability of Expressions

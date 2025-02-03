@@ -245,6 +245,28 @@ public
     end match;
   end isNameNode;
 
+  function isEqualRecordChild
+    "R.x and R can be considered equal in certain cases if x is the only attribute of R"
+    input ComponentRef child;
+    input ComponentRef recd;
+    output Boolean b = ComponentRef.size(child, true) == ComponentRef.size(recd, true);
+  algorithm
+    if b then
+      b := isRecordChild(child, recd);
+    end if;
+  end isEqualRecordChild;
+
+  function isRecordChild
+    input ComponentRef child;
+    input ComponentRef recd;
+    output Boolean b;
+  algorithm
+    b := match recd
+      case CREF() then ComponentRef.isEqual(child, recd) or isRecordChild(child, recd.restCref);
+      else false;
+    end match;
+  end isRecordChild;
+
   function node
     input ComponentRef cref;
     output InstNode node;
