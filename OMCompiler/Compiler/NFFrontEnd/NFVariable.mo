@@ -303,7 +303,7 @@ public
 
   function isTopLevelInput
     input Variable variable;
-    output Boolean topInput = ComponentRef.isSimple(variable.name) and
+    output Boolean topInput = ComponentRef.isTopLevel(variable.name) and
                               variable.attributes.direction == Direction.INPUT;
   end isTopLevelInput;
 

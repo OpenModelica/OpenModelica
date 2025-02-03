@@ -173,6 +173,28 @@ public
     end match;
   end isSimple;
 
+  function isTopLevel
+    input ComponentRef cref;
+    output Boolean b;
+  protected
+    function isTopLevelRecord
+      input ComponentRef cref;
+      output Boolean b;
+    algorithm
+      b := match cref
+        case CREF() then Type.isRecord(cref.ty) and isTopLevelRecord(cref.restCref);
+        case EMPTY() then true;
+        else false;
+      end match;
+    end isTopLevelRecord;
+  algorithm
+    b := match cref
+      case CREF(restCref = EMPTY()) then true;
+      case CREF() then isTopLevelRecord(cref.restCref);
+      else false;
+    end match;
+  end isTopLevel;
+
   function isCref
     input ComponentRef cref;
     output Boolean isCref;
@@ -2105,15 +2127,6 @@ public
     output Boolean b = firstName(cref) == "$SUBST_CREF";
   end isSubstitute;
 
-  function isTopLevel
-    input ComponentRef cref;
-    output Boolean b;
-  algorithm
-    b := match cref
-      case CREF(restCref = EMPTY()) then true;
-      else false;
-    end match;
-  end isTopLevel;
   /* ========================================
       Backend Extension functions
   ========================================= */
