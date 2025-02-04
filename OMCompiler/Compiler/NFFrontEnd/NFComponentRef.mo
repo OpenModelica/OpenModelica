@@ -2368,9 +2368,10 @@ public
     input ComponentRef cref;
     output list<ComponentRef> children = {};
   protected
+    Type ty = Type.arrayElementType(getComponentType(cref));
     list<InstNode> children_nodes = {};
   algorithm
-    if Type.isComplex(getComponentType(cref)) then
+    if Type.isComplex(ty) then
       children_nodes := match cref
         case CREF() then arrayList(ClassTree.getComponents(Class.classTree(InstNode.getClass(Component.classInstance(InstNode.component(cref.node))))));
         else {};

@@ -309,6 +309,11 @@ protected
     eqData  := EqData.addTypedList(eqData, new_eqns_init, EqData.EqType.INITIAL, false);
     eqData  := EqData.addTypedList(eqData, new_eqns_clck, EqData.EqType.CLOCKED, false);
 
+    // update record children
+    for var in new_vars_recd loop
+      BackendDAE.lowerRecordChildren(var, VarData.getVariables(varData));
+    end for;
+
     // dump if flag is set
     if Flags.isSet(Flags.DUMP_CSE) then
       // remove sim vars from final map to see whats exclusively initial
@@ -566,13 +571,14 @@ protected
     input Boolean init;
   protected
     list<Variable> children;
+    Pointer<Variable> var_ptr;
   algorithm
     if BVariable.isRecord(new_var) then
       new_vars_recd := new_var :: new_vars_recd;
       // create record element variables (ignore first output since its the variable itself)
-      _ :: children := Variable.expandChildren(Pointer.access(new_var));
-      for elem_var in children loop
-        (disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd) := addAuxVar(Pointer.create(elem_var), disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, init);
+      _ :: children := Variable.expandChildren(Pointer.access(new_var), addDimensions = false);
+      for child in children loop
+        (disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd) := addAuxVar(BVariable.makeVarPtrCyclic(child, child.name), disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, init);
       end for;
     elseif init then
       new_vars_init := BVariable.setFixed(new_var, false) :: new_vars_init;

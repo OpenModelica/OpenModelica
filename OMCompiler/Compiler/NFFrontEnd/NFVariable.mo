@@ -211,18 +211,19 @@ public
     "Expands a variable into itself and its children if its complex."
     input Variable var;
     input list<Dimension> arrayDims = {};
+    input Boolean addDimensions = true;
     output list<Variable> children;
   protected
     list<Dimension> newArrayDims;
   algorithm
     // add dimensions of surrounding record
-    if not listEmpty(arrayDims) then
+    if addDimensions and not listEmpty(arrayDims) then
       var.ty := Type.liftArrayLeftList(var.ty, arrayDims);
     end if;
     newArrayDims := Type.arrayDims(var.ty);
 
     // return all children and the variable itself
-    children := var :: List.flatten(list(expandChildren(v, newArrayDims) for v in var.children));
+    children := var :: List.flatten(list(expandChildren(v, newArrayDims, addDimensions) for v in var.children));
   end expandChildren;
 
   function typeOf

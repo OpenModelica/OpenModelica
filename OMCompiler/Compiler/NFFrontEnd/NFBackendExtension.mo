@@ -295,7 +295,7 @@ public
       input Boolean makeParam;
       output VariableKind varKind;
     algorithm
-      if Type.isRecord(ty) then
+      if Type.isRecord(Type.arrayElementType(ty)) then
         varKind := RECORD({}, makeParam); // ToDo: children!
       elseif makeParam then
         varKind := PARAMETER(NONE());

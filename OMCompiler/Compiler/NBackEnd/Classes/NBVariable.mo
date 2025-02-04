@@ -956,6 +956,18 @@ public
     end match;
   end getRecordChildren;
 
+  function getRecordChildrenCref
+    input ComponentRef cref;
+    output list<ComponentRef> children;
+  protected
+    list<Subscript> subscripts;
+    list<Pointer<Variable>> arg_children;
+  algorithm
+    subscripts    := ComponentRef.subscriptsAllFlat(cref);
+    arg_children  := BVariable.getRecordChildren(getVarPointer(cref));
+    children      := list(ComponentRef.mergeSubscripts(subscripts, getVarName(child))  for child in arg_children);
+  end getRecordChildrenCref;
+
   function makeDummyState
     input Pointer<Variable> varPointer;
     output Pointer<Variable> derivative;
