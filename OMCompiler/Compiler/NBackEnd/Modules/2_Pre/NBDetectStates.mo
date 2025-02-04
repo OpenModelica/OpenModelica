@@ -222,6 +222,7 @@ protected
   algorithm
     exp := match exp
       local
+        Expression res;
         ComponentRef state_cref, der_cref;
         Pointer<Variable> state_var, der_var;
 
@@ -229,17 +230,25 @@ protected
         arguments = {Expression.CREF(cref = state_cref)}))
         algorithm
           state_var := BVariable.getVarPointer(state_cref);
-          if BVariable.hasDerVar(state_var) then
-            // this derivative was already created -> the variable should already have a pointer to its derivative
-            der_cref := BVariable.getPartnerCref(state_cref, BVariable.getVarDer, scalarized);
+
+          if not BVariable.isContinuous(state_var, false) then
+            // if the variable is not continuous, its derivative is zero
+            res := Expression.makeZero(ComponentRef.getSubscriptedType(state_cref));
           else
-            (der_cref, der_var) := BVariable.makeDerVar(state_cref, scalarized);
-            state_var := BVariable.getVarPointer(state_cref);
-            BVariable.setStateDerivativeVar(state_var, der_var);
-            Pointer.update(acc_states, state_var :: Pointer.access(acc_states));
-            Pointer.update(acc_derivatives, der_var :: Pointer.access(acc_derivatives));
+            if BVariable.hasDerVar(state_var) then
+              // this derivative was already created -> the variable should already have a pointer to its derivative
+              der_cref := BVariable.getPartnerCref(state_cref, BVariable.getVarDer, scalarized);
+            else
+              // create new derivative variable
+              (der_cref, der_var) := BVariable.makeDerVar(state_cref, scalarized);
+              state_var := BVariable.getVarPointer(state_cref);
+              BVariable.setStateDerivativeVar(state_var, der_var);
+              Pointer.update(acc_states, state_var :: Pointer.access(acc_states));
+              Pointer.update(acc_derivatives, der_var :: Pointer.access(acc_derivatives));
+            end if;
+            res := Expression.fromCref(der_cref);
           end if;
-      then Expression.fromCref(der_cref);
+      then res;
 
       else exp;
     end match;
