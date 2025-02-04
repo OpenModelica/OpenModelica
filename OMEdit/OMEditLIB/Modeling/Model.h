@@ -494,6 +494,7 @@ private:
     void addModifier(const Modifier *pModifier);
     bool isFinal() const {return mFinal;}
     bool isEach() const {return mEach;}
+    bool isBreak() const;
     bool isRedeclare() const;
     bool isReplaceable() const;
     const QString &getValue() const {return mValue;}

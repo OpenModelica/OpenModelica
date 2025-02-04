@@ -871,6 +871,11 @@ namespace ModelInstance
     mModifiers.append(createModifier(pModifier, mpParentModel));
   }
 
+  bool Modifier::isBreak() const
+  {
+    return mValue.compare(Helper::BREAK) == 0 ? true : false;
+  }
+
   bool Modifier::isRedeclare() const
   {
     return mpElement && mpElement->isRedeclare();
