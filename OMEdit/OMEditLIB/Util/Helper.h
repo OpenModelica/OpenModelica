@@ -131,6 +131,7 @@ public:
   static QString BOOLEAN;
   static QString INTEGER;
   static QString REAL;
+  static QString BREAK;
   /* OMSimulator system types */
   static QString systemTLM;
   static QString systemWC;

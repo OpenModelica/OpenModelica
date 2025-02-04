@@ -49,6 +49,8 @@ public:
   bool isFinal() const {return mpFinalAction->isChecked();}
   void setEach(bool each);
   bool isEach() const {return mpEachAction->isChecked();}
+  void setBreak(bool break_);
+  bool isBreak() const {return mpBreakAction->isChecked();}
   bool isModified() const;
 private:
   QMenu *mpFinalEachMenu;
@@ -56,6 +58,10 @@ private:
   bool mFinalDefault = false;
   QAction *mpEachAction;
   bool mEachDefault = false;
+  QAction *mpBreakAction;
+  bool mBreakDefault = false;
+signals:
+  void breakToggled(bool breakValue);
 public slots:
   void showParameterMenu();
 };
@@ -187,6 +193,8 @@ private:
   void updateValueBinding(const FlatModelica::Expression expression);
   bool isValueModifiedHelper() const;
   void resetUnitCombobox();
+private slots:
+  void setBreakValue(bool breakValue);
 public slots:
   void editClassButtonClicked();
   void fileSelectorButtonClicked();

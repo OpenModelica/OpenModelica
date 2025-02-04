@@ -125,6 +125,7 @@ QString Helper::STRING = QString("String");
 QString Helper::BOOLEAN = QString("Boolean");
 QString Helper::INTEGER = QString("Integer");
 QString Helper::REAL = QString("Real");
+QString Helper::BREAK = QString("break");
 /* OMSimulator system types */
 QString Helper::systemTLM = QString("TLM - Transmission Line Modeling System");
 QString Helper::systemWC = QString("Weakly Coupled - Connected Co-Simulation FMUs System");
