@@ -377,50 +377,15 @@ protected
   algorithm
     exp := match exp
       local
-        list<ComponentRef> names;
-        list<Expression> ranges;
-        list<Option<Iterator>> maps;
-        Iterator new_iter;
-        Call_Id id;
-        ComponentRef name;
-        Type ty;
-        Call_Aux aux;
-        Option<Call_Aux> aux_opt;
+        Call call;
         Expression new_exp, sub_exp;
-       list<Expression> tpl_lst;
 
-      case Expression.CALL() guard(checkCallReplacement(exp.call)) algorithm
-        // strip nested iterator for the iterators that actually occure in the function call
-        if not Iterator.isEmpty(iter) then
-          (names, ranges, maps) := Iterator.getFrames(iter);
-          new_iter := Iterator.fromFrames(filterFrames(exp, names, ranges, maps));
-        else
-          new_iter := iter;
-        end if;
-        // check if call id already exists in the map
-        id      := CALL_ID(exp, new_iter);
-        aux_opt := UnorderedMap.get(id, map);
-        if isSome(aux_opt) then
-          aux := Util.getOption(aux_opt);
-          new_exp := aux.replacer;
-          ty := Expression.typeOf(new_exp);
-        else
-          // for initial systems create parameters, otherwise use type to determine variable kind
-          ty := Expression.typeOf(exp);
-          new_exp := match ty
-            case Type.TUPLE() algorithm
-              names   := list(Call_Aux.createName(sub_ty, new_iter, aux_index, init) for sub_ty in ty.types);
-              tpl_lst := list(if ComponentRef.size(cref, true) == 0 then Expression.fromCref(ComponentRef.WILD()) else Expression.fromCref(cref) for cref in names);
-            then Expression.TUPLE(ty, tpl_lst);
-            else algorithm
-              name := Call_Aux.createName(ty, new_iter, aux_index, init);
-            then Expression.fromCref(name);
-          end match;
-        end if;
+      case Expression.CALL() guard(checkCallReplacement(exp.call)) then introduceAlias(exp, map, aux_index, iter, init);
 
-        // create auxilliary and add to map
-        aux := CALL_AUX(new_exp, if Type.isDiscrete(ty) then EquationKind.DISCRETE else EquationKind.CONTINUOUS, false);
-        UnorderedMap.add(id, aux, map);
+      // create alias for array constructors as arguments to functions
+      case new_exp as Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
+        call.arguments  := list(Expression.map(arg, function introduceArrayConstructorAlias(map = map, aux_index = aux_index, iter = iter, init = init)) for arg in call.arguments);
+        new_exp.call    := call;
       then new_exp;
 
       // remove tuple expressions that occur when using a function only for one output
@@ -439,6 +404,71 @@ protected
       else exp;
     end match;
   end introduceFunctionAlias;
+
+  function introduceArrayConstructorAlias
+    input output Expression exp;
+    input UnorderedMap<Call_Id, Call_Aux> map;
+    input Pointer<Integer> aux_index;
+    input Iterator iter;
+    input Boolean init;
+  algorithm
+    exp := match exp
+      case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR()) then introduceAlias(exp, map, aux_index, iter, init);
+      else exp;
+    end match;
+  end introduceArrayConstructorAlias;
+
+  function introduceAlias
+    input output Expression exp;
+    input UnorderedMap<Call_Id, Call_Aux> map;
+    input Pointer<Integer> aux_index;
+    input Iterator iter;
+    input Boolean init;
+  protected
+    list<ComponentRef> names;
+    list<Expression> ranges;
+    list<Option<Iterator>> maps;
+    Iterator new_iter;
+    Call_Id id;
+    ComponentRef name;
+    Type ty;
+    Call_Aux aux;
+    Option<Call_Aux> aux_opt;
+    list<Expression> tpl_lst;
+  algorithm
+    // strip nested iterator for the iterators that actually occure in the function call
+    if not Iterator.isEmpty(iter) then
+      (names, ranges, maps) := Iterator.getFrames(iter);
+      new_iter := Iterator.fromFrames(filterFrames(exp, names, ranges, maps));
+    else
+      new_iter := iter;
+    end if;
+
+    // check if call id already exists in the map
+    id      := CALL_ID(exp, new_iter);
+    aux_opt := UnorderedMap.get(id, map);
+    if isSome(aux_opt) then
+      aux := Util.getOption(aux_opt);
+      exp := aux.replacer;
+      ty := Expression.typeOf(exp);
+    else
+      // for initial systems create parameters, otherwise use type to determine variable kind
+      ty := Expression.typeOf(exp);
+      exp := match ty
+        case Type.TUPLE() algorithm
+          names   := list(Call_Aux.createName(sub_ty, new_iter, aux_index, init) for sub_ty in ty.types);
+          tpl_lst := list(if ComponentRef.size(cref, true) == 0 then Expression.fromCref(ComponentRef.WILD()) else Expression.fromCref(cref) for cref in names);
+        then Expression.TUPLE(ty, tpl_lst);
+        else algorithm
+          name := Call_Aux.createName(ty, new_iter, aux_index, init);
+        then Expression.fromCref(name);
+      end match;
+    end if;
+
+    // create auxilliary and add to map
+    aux := CALL_AUX(exp, if Type.isDiscrete(ty) then EquationKind.DISCRETE else EquationKind.CONTINUOUS, false);
+    UnorderedMap.add(id, aux, map);
+  end introduceAlias;
 
   function checkCallReplacement
     "returns true if the call should be replaced"
