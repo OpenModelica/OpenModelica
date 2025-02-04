@@ -110,13 +110,7 @@ double** MatMult( unsigned rA, unsigned cArB, unsigned cB, double** A, double** 
 double** getJacobian( DATA* data, threadData_t *threadData, unsigned sysNumber, unsigned m)
 {
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
-  ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
-  assertStreamPrint(NULL, NULL != jac, "NEWTON_DIAGNOSTICS: invalid jac-pointer.");
-  assertStreamPrint(NULL, jac->availability != JACOBIAN_UNKNOWN, "NEWTON_DIAGNOSTICS: Jacobian availablity status is unknown.");
-  assertStreamPrint(NULL, NULL != jac->seedVars, "NEWTON_DIAGNOSTICS: invalid seedVars-pointer.");
-  assertStreamPrint(NULL, NULL != systemData, "NEWTON_DIAGNOSTICS: invalid systemData-pointer.");
-  assertStreamPrint(NULL, NULL != systemData->analyticalJacobianColumn, "NEWTON_DIAGNOSTICS: invalid analyticJacobianColumn-pointer.");
-
+  ANALYTIC_JACOBIAN* jac = NULL;
   unsigned i, j;
 
   // Allocate memory for fx (m * m matrix)
@@ -134,17 +128,23 @@ double** getJacobian( DATA* data, threadData_t *threadData, unsigned sysNumber, 
   // ...
   // variable n:   df_n/dv_1, df_2/dv_2, .... df_n/dv_n
 
-  for (j = 0; j < m; j++) {
-    jac->seedVars[j] = 1.0;
+  if (systemData->jacobianIndex != -1) {
+    jac = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
 
-    // Calculate values for one column of the Jacobian, output: df_1/dv_j, df_2/dv_j, .... df_n/dv_j
-    systemData->analyticalJacobianColumn(data, threadData, jac, NULL);
+    for (j = 0; j < m; j++) {
+      jac->seedVars[j] = 1.0;
 
-    // Store values in column of Jacobian
-    for (i = 0; i < m; i++)
-      fx[i][j] = jac->resultVars[i];
+      // Calculate values for one column of the Jacobian, output: df_1/dv_j, df_2/dv_j, .... df_n/dv_j
+      systemData->analyticalJacobianColumn(data, threadData, jac, NULL);
 
-    jac->seedVars[j] = 0.0;
+      // Store values in column of Jacobian
+      for (i = 0; i < m; i++)
+        fx[i][j] = jac->resultVars[i];
+
+      jac->seedVars[j] = 0.0;
+    }
+  } else {
+    assertStreamPrint(NULL, FALSE, "NEWTON_DIAGNOSTICS: numeric jacobian not yet supported.");
   }
 
   return fx;

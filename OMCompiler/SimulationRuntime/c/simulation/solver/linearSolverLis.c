@@ -149,7 +149,7 @@ void printLisMatrixCSR(LIS_MATRIX A, int n)
 int getAnalyticalJacobianLis(DATA* data, threadData_t *threadData, int sysNumber)
 {
   int i,j,k,l,ii;
-  LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo->linearSystemData[sysNumber]);
+  LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
 
   const int index = systemData->jacobianIndex;
   ANALYTIC_JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
@@ -160,7 +160,7 @@ int getAnalyticalJacobianLis(DATA* data, threadData_t *threadData, int sysNumber
 
   for(i=0; i < jacobian->sizeRows; i++) {
     jacobian->seedVars[i] = 1;
-    ((systemData->analyticalJacobianColumn))(data, threadData, jacobian, parentJacobian);
+    systemData->analyticalJacobianColumn(data, threadData, jacobian, parentJacobian);
 
     for(j = 0; j < jacobian->sizeCols; j++) {
       if(jacobian->seedVars[j] == 1) {
