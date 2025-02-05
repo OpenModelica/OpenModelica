@@ -3896,8 +3896,11 @@ void GraphicsView::pasteItems()
             }
           }
           LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(lineShape, 0, 0, this);
+          // the start and end element of connection is added in ModelWidget::drawConnections() when the connection is updated
           pConnectionLineAnnotation->setStartElementName(connectionObject.value("from").toString());
           pConnectionLineAnnotation->setEndElementName(connectionObject.value("to").toString());
+          pConnectionLineAnnotation->drawCornerItems();
+          pConnectionLineAnnotation->setCornerItemsActiveOrPassive();
           // always add the connections to diagram layer.
           GraphicsView *pDiagramGraphicsView = mpModelWidget->getDiagramGraphicsView();
           pDiagramGraphicsView->addConnectionToView(pConnectionLineAnnotation, false);
@@ -7130,7 +7133,6 @@ void ModelWidget::drawOMSModelConnections()
         pConnectionLineAnnotation->setStartElementName(pStartConnectorComponent->getLibraryTreeItem() ? pStartConnectorComponent->getLibraryTreeItem()->getNameStructure() : "");
         pConnectionLineAnnotation->setEndElementName(pEndConnectorComponent->getLibraryTreeItem() ? pEndConnectorComponent->getLibraryTreeItem()->getNameStructure() : "");
         pConnectionLineAnnotation->setOMSConnectionType(pConnections[i]->type);
-        pConnectionLineAnnotation->updateToolTip();
         pConnectionLineAnnotation->drawCornerItems();
         pConnectionLineAnnotation->setCornerItemsActiveOrPassive();
         mpDiagramGraphicsView->addConnectionToView(pConnectionLineAnnotation, false);
