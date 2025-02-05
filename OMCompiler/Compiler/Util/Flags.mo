@@ -1365,6 +1365,13 @@ constant ConfigFlag MAX_SIZE_LINEARIZATION = CONFIG_FLAG(156, "maxSizeLinearizat
 constant ConfigFlag RESIZABLE_ARRAYS = CONFIG_FLAG(157, "resizableArrays",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Assumes all arrays are resizable. Only works with the new backend --newBackend."));
+constant ConfigFlag EVALUATE_STRUCTURAL_PARAMETERS = CONFIG_FLAG(158, "evaluateStructuralParameters",
+  NONE(), EXTERNAL(), STRING_FLAG("all"),
+  SOME(STRING_DESC_OPTION({
+    ("all", Gettext.gettext("Evaluates all structural parameters")),
+    ("strictlyNecessary", Gettext.gettext("Evaluates only structural parameters strictly required by the frontend"))
+  })),
+  Gettext.gettext("Sets which structural parameters are evaluated by the frontend."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

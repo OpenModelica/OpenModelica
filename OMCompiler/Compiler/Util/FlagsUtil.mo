@@ -415,7 +415,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.BASE_MODELICA_OPTIONS,
   Flags.DEBUG_FOLLOW_EQUATIONS,
   Flags.MAX_SIZE_LINEARIZATION,
-  Flags.RESIZABLE_ARRAYS
+  Flags.RESIZABLE_ARRAYS,
+  Flags.EVALUATE_STRUCTURAL_PARAMETERS
 };
 
 public function new

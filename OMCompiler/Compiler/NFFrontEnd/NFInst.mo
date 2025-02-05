@@ -2362,7 +2362,7 @@ protected
 algorithm
   comp := InstNode.component(node);
 
-  if not Component.getFixedAttribute(comp) or InstNode.hasBinding(node) then
+  if not Component.isFixed(comp) or InstNode.hasBinding(node) then
     // If the parameter is not fixed or belongs to a record with a binding, do nothing.
     return;
   end if;

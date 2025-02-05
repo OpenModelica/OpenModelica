@@ -156,6 +156,7 @@ uniontype FlattenSettings
     Boolean newBackend;
     Boolean vectorizeBindings;
     Boolean implicitStartAttribute;
+    Boolean minimalEval;
   end SETTINGS;
 end FlattenSettings;
 
@@ -352,7 +353,8 @@ algorithm
     Flags.isSet(Flags.NF_API) or Flags.getConfigBool(Flags.CHECK_MODEL),
     Flags.getConfigBool(Flags.NEW_BACKEND),
     Flags.isSet(Flags.VECTORIZE_BINDINGS),
-    Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "implicitParameterStartAttribute")
+    Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "implicitParameterStartAttribute"),
+    Flags.getConfigString(Flags.EVALUATE_STRUCTURAL_PARAMETERS) <> "all"
   );
 
   prefix := Prefix.new(classInst, indexed = settings.vectorizeBindings);
@@ -1861,7 +1863,7 @@ algorithm
 
     case Equation.FOR()
       algorithm
-        if settings.scalarize then
+        if settings.scalarize and not settings.minimalEval then
           eql := unrollForLoop(eq, prefix, equations, settings);
         else
           eql := splitForLoop(eq, prefix, equations, settings);
@@ -2056,6 +2058,7 @@ algorithm
 
   // Unroll the loop by replacing the iterator with each of its values in the for loop body.
   range := flattenExp(range, prefix, info);
+  Structural.markExp(range);
   range := Ceval.evalExp(range, Ceval.EvalTarget.new(info, NFInstContext.ITERATION_RANGE));
   range_iter := RangeIterator.fromExp(range);
 
@@ -2074,19 +2077,26 @@ function splitForLoop
   input FlattenSettings settings;
 protected
   InstNode iter;
-  Option<Expression> range;
+  Option<Expression> opt_range;
+  Expression range;
   list<Equation> body, connects, non_connects;
   DAE.ElementSource src;
   Equation eq;
   InstNode scope;
 algorithm
-  Equation.FOR(iter, range, body, scope, src) := forLoop;
+  Equation.FOR(iter, opt_range, body, scope, src) := forLoop;
   body := flattenEquations(body, EMPTY_PREFIX, settings);
   (connects, non_connects) := splitForLoop2(body);
 
   if not listEmpty(connects) then
-    range := Util.applyOption(range, function Ceval.evalExp(target = Ceval.EvalTarget.new(Equation.info(forLoop), NFInstContext.ITERATION_RANGE)));
-    eq := Equation.FOR(iter, range, connects, scope, src);
+    if isSome(opt_range) then
+      SOME(range) := opt_range;
+      range := Ceval.evalExp(range, Ceval.EvalTarget.new(Equation.info(forLoop), NFInstContext.ITERATION_RANGE));
+      Structural.markExp(range);
+      opt_range := SOME(range);
+    end if;
+
+    eq := Equation.FOR(iter, opt_range, connects, scope, src);
 
     if settings.arrayConnect then
       equations := eq :: equations;
@@ -2096,7 +2106,7 @@ algorithm
   end if;
 
   if not listEmpty(non_connects) then
-    equations := Equation.FOR(iter, range, non_connects, scope, src) :: equations;
+    equations := Equation.FOR(iter, opt_range, non_connects, scope, src) :: equations;
   end if;
 end splitForLoop;
 
