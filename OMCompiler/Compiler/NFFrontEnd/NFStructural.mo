@@ -71,7 +71,7 @@ public
       // If the component or any of its parents has an Evaluate=true annotation
       // we should probably evaluate the parameter, which we do by marking it as
       // structural.
-      if not Component.getFixedAttribute(component) then
+      if not Component.isFixed(component) then
         // Except non-fixed parameters.
         isStructural := false;
       elseif Component.isExternalObject(component) then
@@ -93,7 +93,7 @@ public
         // All other parameters are considered structural in this case.
         isStructural := true;
       end if;
-    //elseif Component.isFinal(component) and Component.getFixedAttribute(component) then
+    //elseif Component.isFinal(component) and Component.isFixed(component) then
     //  // If a parameter is fixed and final we might also want to evaluate it,
     //  // since its binding can't be modified. But only if all parameters it
     //  // depends on are also fixed and final.
@@ -184,7 +184,7 @@ public
             elseif var == Variability.PARAMETER and
                    (not requireFinal or Component.isFinal(c)) and
                    not Component.isExternalObject(c) and
-                   Component.getFixedAttribute(c) then
+                   Component.isFixed(c) then
               isNotFixed := isComponentBindingNotFixed(c, node, requireFinal, maxDepth - 1);
             else
               isNotFixed := true;
