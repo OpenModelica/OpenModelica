@@ -1782,8 +1782,9 @@ public
         // variables not occuring in both branches will be tagged implicit
         diff  := UnorderedSet.sym_difference(set1, set2);
         Solvability.updateList(UnorderedSet.toList(diff), Solvability.IMPLICIT(), sol_map);
-        // variables in conditions are unsolvable and their skips have to be removed
+        // variables in conditions are unsolvable, their skips have to be removed and they can be repeated
         set   := collectDependencies(exp.condition, depth, map, dep_map, sol_map, rep_set);
+        addRepetitions(set, rep_set);
         updateConditionCrefs(UnorderedSet.toList(set), dep_map, sol_map);
       then UnorderedSet.union_list({set, set1, set2}, ComponentRef.hash, ComponentRef.isEqual);
 
@@ -1925,8 +1926,9 @@ public
     list<UnorderedSet<ComponentRef>> sets1 = {};
     UnorderedSet<ComponentRef> set1, set2, diff;
   algorithm
-    // variables in conditions are unsolvable, reduced and get their skips removed
+    // variables in conditions are unsolvable, repeated and get their skips removed
     set := collectDependencies(body.condition, 0, map, dep_map, sol_map, rep_set);
+    addRepetitions(set, rep_set);
     updateConditionCrefs(UnorderedSet.toList(set), dep_map, sol_map);
 
     // get variables from 'then' branch
