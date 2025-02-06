@@ -101,7 +101,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentProperties(A, x, {false, false, false, false}, {""}, {true, true}, {""})
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
@@ -109,7 +109,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentProperties(A, x, {true, false, true, true, true}, {""}, {true, true}, {"input"})
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
@@ -117,7 +117,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentProperties(A, x, {true, true, true, true}, {"parameter"}, {true, true}, {"input"})
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
@@ -125,7 +125,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentProperties(A, x, {true, true, false, true}, {"constant"}, {false, true}, {"output"})
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
@@ -133,7 +133,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentProperties(A, x, {true, false, false, false}, {"discrete"}, {true, false}, {""})
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
@@ -226,7 +226,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentProperties(A, y, {true, false, true, false, false}, {""}, {false, false}, {""})
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: list(A)
@@ -255,7 +255,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentProperties(A, x, {false, false, false, false}, {""}, {true, true}, {""})
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
@@ -263,7 +263,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentProperties(A, x, {true, false, true, true, true}, {""}, {true, true}, {"input"})
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
@@ -271,7 +271,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentProperties(A, x, {true, true, true, true}, {"parameter"}, {true, true}, {"input"})
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
@@ -279,7 +279,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentProperties(A, x, {true, true, false, true}, {"constant"}, {false, true}, {"output"})
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
@@ -287,7 +287,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentProperties(A, x, {true, false, false, false}, {"discrete"}, {true, false}, {""})
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getComponents(A)
@@ -366,7 +366,7 @@ list(A);                                                                        
 // Evaluating: getErrorString()
 // ""
 // Evaluating: setComponentProperties(A, y, {true, false, true, false, false}, {""}, {false, false}, {""})
-// Ok
+// true
 // Evaluating: getErrorString()
 // ""
 // Evaluating: list(A)

@@ -3125,6 +3125,19 @@ algorithm
       then
         ValuesUtil.makeBoolean(b);
 
+    case ("setComponentProperties", {Values.CODE(Absyn.C_TYPENAME(classpath)),
+        Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(name))),
+        Values.ARRAY(valueLst = vals),
+        Values.ARRAY(valueLst = {Values.STRING(s1)}),
+        Values.ARRAY(valueLst = {Values.BOOL(b1), Values.BOOL(b2)}),
+        Values.ARRAY(valueLst = {Values.STRING(s2)})})
+      algorithm
+        (p, v) := Interactive.setComponentProperties(classpath, name,
+          list(ValuesUtil.valueBool(va) for va in vals), s1, b1, b2, s2, SymbolTable.getAbsyn());
+        SymbolTable.setAbsyn(p);
+      then
+        v;
+
     case ("createModel", {Values.CODE(Absyn.C_TYPENAME(classpath))})
       algorithm
         p := Interactive.createModel(classpath, SymbolTable.getAbsyn());

@@ -4046,6 +4046,21 @@ annotation(
   preferredView="text");
 end setComponentDimensions;
 
+function setComponentProperties
+  input TypeName className;
+  input TypeName componentName;
+  input Boolean[:] prefixArray;
+  input String[1] variability;
+  input Boolean[2] innerOuter;
+  input String[1] direction;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  <p>Sets the properties of a component in a class. The prefixArray argument is an array of 4 or 5 values: final, flow, stream (optional), protected, replaceable.</p>
+</html>"),
+  preferredView="text");
+end setComponentProperties;
+
 function getNthConnector
   input TypeName className;
   input Integer n;
