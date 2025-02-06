@@ -859,7 +859,7 @@ public
     evaluate := SCodeUtil.getEvaluateAnnotation(comment(component));
   end getEvaluateAnnotation;
 
-  function getFixedAttribute
+  function isFixed
     input Component component;
     output Boolean fixed;
   protected
@@ -885,7 +885,7 @@ public
         else false;
       end match;
     end if;
-  end getFixedAttribute;
+  end isFixed;
 
   function getUnitAttribute
     input Component component;

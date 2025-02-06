@@ -413,7 +413,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.EXPOSE_LOCAL_IOS,
   Flags.BASE_MODELICA_FORMAT,
   Flags.BASE_MODELICA_OPTIONS,
-  Flags.DEBUG_FOLLOW_EQUATIONS
+  Flags.DEBUG_FOLLOW_EQUATIONS,
+  Flags.EVALUATE_STRUCTURAL_PARAMETERS
 };
 
 public function new

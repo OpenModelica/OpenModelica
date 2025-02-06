@@ -590,7 +590,7 @@ algorithm
   // Only use the start value if the component is a fixed parameter.
   var := Component.variability(comp);
   if (var <> Variability.PARAMETER and var <> Variability.STRUCTURAL_PARAMETER) or
-     not Component.getFixedAttribute(comp) then
+     not Component.isFixed(comp) then
     return;
   end if;
 
@@ -3322,7 +3322,7 @@ algorithm
            Util.getOptionOrDefault(Component.getEvaluateAnnotation(component), false)
         then
           // only add an error if fixed = true
-          if Component.getFixedAttribute(component) then
+          if Component.isFixed(component) then
             Error.addMultiSourceMessage(Error.UNBOUND_PARAMETER_EVALUATE_TRUE,
               {Expression.toString(exp) + "(fixed = true)"},
               {InstNode.info(ComponentRef.node(Expression.toCref(exp))), EvalTarget.getInfo(target)});

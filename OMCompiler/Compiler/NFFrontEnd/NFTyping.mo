@@ -2687,31 +2687,6 @@ algorithm
   purity := Prefixes.purityMin(cond_pur, Prefixes.purityMin(tb_pur, fb_pur));
 end typeIfExpression;
 
-function evaluateCondition
-  input Expression condExp;
-  input InstContext.Type context;
-  input SourceInfo info;
-  output Boolean condBool;
-protected
-  Expression cond_exp;
-algorithm
-  cond_exp := Ceval.evalExp(condExp, Ceval.EvalTarget.new(info, context));
-
-  if Expression.arrayAllEqual(cond_exp) then
-    cond_exp := Expression.arrayFirstScalar(cond_exp);
-  end if;
-
-  condBool := match cond_exp
-    case Expression.BOOLEAN() then cond_exp.value;
-    else
-      algorithm
-        Error.assertion(false, getInstanceName() + " failed to evaluate condition `" +
-          Expression.toString(condExp) + "`", info);
-      then
-        fail();
-  end match;
-end evaluateCondition;
-
 function typeClassSections
   input InstNode classNode;
   input InstContext.Type context;
@@ -3053,10 +3028,6 @@ algorithm
         e1 := typeIterator(eq.iterator, e1, context, structural = true);
         next_context := InstContext.set(context, NFInstContext.FOR);
         body := list(typeEquation(e, next_context) for e in eq.body);
-
-        if Equation.containsList(body, Equation.isConnection) then
-          Structural.markExp(e1);
-        end if;
       then
         Equation.FOR(eq.iterator, SOME(e1), body, eq.scope, eq.source);
 
