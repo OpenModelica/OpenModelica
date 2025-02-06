@@ -202,6 +202,7 @@ public
           stripped := ComponentRef.stripSubscriptsAll(exp.cref);
           if UnorderedMap.contains(stripped, replacements) then
             subs  := ComponentRef.subscriptsAllFlat(exp.cref);
+            subs  := list(s for s guard(not Subscript.isWhole(s)) in subs);
             res   := UnorderedMap.getOrFail(stripped, replacements);
             res   := Expression.applySubscripts(subs, res, true);
           else
@@ -341,8 +342,6 @@ public
   protected
     ComponentRef cref;
     Expression arg;
-    list<Subscript> subscripts;
-    list<Pointer<Variable>> arg_children;
     list<Expression> children_args;
     list<ComponentRef> children, tmp;
     Call call;
@@ -358,9 +357,7 @@ public
 
         // if the argument is a cref, get its children
         case Expression.CREF() algorithm
-          subscripts    := ComponentRef.subscriptsAllFlat(arg.cref);
-          arg_children  := BVariable.getRecordChildren(BVariable.getVarPointer(arg.cref));
-          tmp           := list(ComponentRef.mergeSubscripts(subscripts, BVariable.getVarName(child))  for child in arg_children);
+          tmp := BVariable.getRecordChildrenCref(arg.cref);
         then list(Expression.fromCref(child) for child in tmp);
 
         // if it is a basic record, take its elements
