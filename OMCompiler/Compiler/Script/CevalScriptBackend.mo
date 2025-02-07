@@ -3198,6 +3198,9 @@ algorithm
     case ("getElements", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b)})
       then Interactive.getElements(classpath, b, SymbolTable.getAbsyn());
 
+    case ("getElementsInfo", {Values.CODE(Absyn.C_TYPENAME(classpath))})
+      then Interactive.getElementsInfo(classpath, SymbolTable.getAbsyn());
+
     case ("getComponentAnnotations", {Values.CODE(Absyn.C_TYPENAME(classpath))})
       then Interactive.getComponentAnnotations(classpath, SymbolTable.getAbsyn());
 

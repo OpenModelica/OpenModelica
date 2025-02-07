@@ -3403,6 +3403,17 @@ array:</p>
   preferredView="text");
 end getElements;
 
+function getElementsInfo
+  input TypeName className;
+  output Expression result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Returns information about the elements in a given class.</p>
+</html>"),
+  preferredView="text");
+end getElementsInfo;
+
 function getComponentModifierNames
   input TypeName class_;
   input String componentName;
