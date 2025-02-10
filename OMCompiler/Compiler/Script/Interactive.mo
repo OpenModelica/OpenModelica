@@ -900,44 +900,6 @@ algorithm
   args := getApiFunctionArgs(inStatement);
 
   outResult := match(fn_name)
-    //case "setComponentProperties"
-    //  algorithm
-    //    {Absyn.CREF(componentRef = class_),
-    //     Absyn.CREF(componentRef = cr),
-    //     Absyn.ARRAY(arrayExp = expl),
-    //     // Absyn.ARRAY(arrayExp = {Absyn.STRING(value = parallelism)}),
-    //     Absyn.ARRAY(arrayExp = {Absyn.STRING(value = variability)}),
-    //     Absyn.ARRAY(arrayExp = {Absyn.BOOL(value = dref1),Absyn.BOOL(value = dref2)}),
-    //     Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})/*,
-    //     Absyn.ARRAY(arrayExp = {Absyn.STRING(value = isField)})*/} := args;
-
-    //    if listLength(expl) == 5 then
-    //{Absyn.BOOL(value = finalPrefix),
-    //       Absyn.BOOL(value = flowPrefix),
-    //       Absyn.BOOL(value = streamPrefix),
-    //       Absyn.BOOL(value = protected_),
-    //       Absyn.BOOL(value = repl)} := expl;
-    //    else // Old version of setComponentProperties, without stream.
-    //      {Absyn.BOOL(value = finalPrefix),
-    //       Absyn.BOOL(value = flowPrefix),
-    //       Absyn.BOOL(value = protected_),
-    //       Absyn.BOOL(value = repl)} := expl;
-    //      streamPrefix := false;
-    //    end if;
-
-    //    (outResult, p) := setComponentProperties(AbsynUtil.crefToPath(class_), cr,
-    //        finalPrefix, flowPrefix, streamPrefix, protected_, repl,
-    //        /*parallelism,*/ variability, {dref1,dref2}, causality, p/*, isField*/);
-    //    SymbolTable.setAbsyn(p);
-    //  then
-    //    outResult;
-
-    case "getElementsInfo"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        getElementsInfo(cr, p);
-
     case "getElementsOfVisType"
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
@@ -3414,33 +3376,25 @@ protected function constructElementsInfo
    helperfunction to getElementsInfo
    inputs:  (string /* \"public\" or \"protected\" */, Absyn.ElementItem list)
    outputs:  string"
-  input String inString;
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  output String outString;
+  input String visibility;
+  input list<Absyn.ElementItem> elements;
+  output String result;
+protected
+  list<String> elements_strl = {};
+  String element_str;
 algorithm
-  outString:=
-  matchcontinue (inString,inAbsynElementItemLst)
-    local
-      String visibility_str,s1,element_str,res,s2;
-      Absyn.ElementItem current;
-      list<Absyn.ElementItem> rest;
-    case (_,{}) then "";
-    case (visibility_str,(current :: {})) /* deal with the last element */
-      equation
-        s1 = getElementInfo(current);
-        element_str = stringAppendList({"{ rec(elementvisibility=",visibility_str,", ",s1,") }"});
-        res = stringAppendList({element_str,"\n"});
-      then
-        res;
-    case (visibility_str,(current :: rest))
-      equation
-        s1 = getElementInfo(current);
-        element_str = stringAppendList({"{ rec(elementvisibility=",visibility_str,", ",s1,") }"});
-        s2 = constructElementsInfo(visibility_str, rest);
-        res = stringAppendList({element_str,",\n",s2});
-      then
-        res;
-  end matchcontinue;
+  for e in elements loop
+    element_str := getElementInfo(e);
+    element_str := stringAppendList({"{ rec(elementvisibility=", visibility, ", ", element_str, ") }"});
+    elements_strl := element_str :: elements_strl;
+  end for;
+
+  elements_strl := Dangerous.listReverseInPlace(elements_strl);
+  result := stringDelimitList(elements_strl, ",\n");
+
+  if not listEmpty(elements) then
+    result := result + "\n";
+  end if;
 end constructElementsInfo;
 
 protected function appendNonEmptyStrings
@@ -3450,26 +3404,21 @@ protected function appendNonEmptyStrings
    input: \"\", \"\", \",\" => \"\"
           \"some\", \"\", \",\" => \"some\"
           \"some\", \"some\", \",\" => \"some, some\""
-  input String inString1;
-  input String inString2;
-  input String inString3;
+  input String str1;
+  input String str2;
+  input String delim;
   output String outString;
 algorithm
-  outString:=
-  match (inString1,inString2,inString3)
-    local String s1,s2,str,delimiter;
-    case ("","",_) then "";
-    case (s1,"",_) then s1;
-    case ("",s2,_) then s2;
-    case (s1,s2,delimiter)
-      equation
-        str = stringAppendList({s1,delimiter,s2});
-      then
-        str;
-  end match;
+  if stringEmpty(str1) then
+    outString := str2;
+  elseif stringEmpty(str2) then
+    outString := str1;
+  else
+    outString := stringAppendList({str1, delim, str2});
+  end if;
 end appendNonEmptyStrings;
 
-protected function getElementsInfo
+public function getElementsInfo
 " author: adrpo@ida
    date  : 2005-11-11, changed 2006-02-06 to mirror the new SOURCEINFO
    Retrieves the Info attribute of an element.
@@ -3477,57 +3426,28 @@ protected function getElementsInfo
     -> file name + readonly + start lineno + start columnno + end lineno + end columnno is added to the Element
    and to the Class definition, see SourceInfo.
    This function retrieves the Info contents of the elements of a class."
-  input Absyn.ComponentRef inComponentRef;
-  input Absyn.Program inProgram;
-  output String outString;
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  String result_str, public_str, protected_str;
+  Absyn.Class cls;
+  list<Absyn.ClassPart> parts;
+  list<Absyn.ElementItem> public_elems, protected_elems;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef,inProgram)
-    local
-      Absyn.Path modelpath;
-      String i,public_str,protected_str,elements_str,str;
-      Boolean f,e;
-      Absyn.Restriction r;
-      list<Absyn.ClassPart> parts;
-      list<Absyn.ElementItem> public_elementitem_list,protected_elementitem_list;
-      Absyn.ComponentRef model_;
-      Absyn.Program p;
-    /* a class with parts */
-    case (model_,p)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(classParts=parts),_) = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        public_elementitem_list = InteractiveUtil.getPublicList(parts);
-        protected_elementitem_list = InteractiveUtil.getProtectedList(parts);
-        public_str = constructElementsInfo("public", public_elementitem_list);
-        protected_str = constructElementsInfo("protected", protected_elementitem_list);
-        elements_str = appendNonEmptyStrings(public_str, protected_str, ", ");
-        str = stringAppendList({"{ ",elements_str," }"});
-      then
-        str;
-    /* an extended class with parts: model extends M end M; */
-    case (model_,p)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        Absyn.CLASS(_,_,_,_,_,Absyn.CLASS_EXTENDS(parts=parts),_) = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        public_elementitem_list = InteractiveUtil.getPublicList(parts);
-        protected_elementitem_list = InteractiveUtil.getProtectedList(parts);
-        public_str = constructElementsInfo("public", public_elementitem_list);
-        protected_str = constructElementsInfo("protected", protected_elementitem_list);
-        elements_str = appendNonEmptyStrings(public_str, protected_str, ", ");
-        str = stringAppendList({"{ ",elements_str," }"});
-      then
-        str;
-    /* otherwise */
-    case (model_,p)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        Absyn.CLASS(_,_,_,_,_,_,_) = InteractiveUtil.getPathedClassInProgram(modelpath, p) "there are no elements in DERIVED, ENUMERATION, OVERLOAD, CLASS_EXTENDS and PDER
-        maybe later we can give info about that also" ;
-      then
-        "{ }";
-    else "Error";
-  end matchcontinue;
+  try
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    parts := AbsynUtil.getClassPartsInClass(cls);
+    public_str := constructElementsInfo("public", InteractiveUtil.getPublicList(parts));
+    protected_str := constructElementsInfo("protected", InteractiveUtil.getProtectedList(parts));
+    result_str := appendNonEmptyStrings(public_str, protected_str, ", ");
+    result_str := stringAppendList({"{ ", result_str, " }"});
+  else
+    result_str := "Error";
+  end try;
+
+  // getElementsInfo uses a format that can't be represented as a Value, fake it with a CodeType.
+  result := ValuesUtil.makeCodeTypeNameStr(result_str);
 end getElementsInfo;
 
 public function getSourceFile
