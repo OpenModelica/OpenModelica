@@ -1198,7 +1198,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 
   /* enable to avoid division by zero */
   data->simulationInfo->noThrowDivZero = 1;
-  ((DATA*)data)->simulationInfo->solveContinuous = 1;
+  data->simulationInfo->solveContinuous = 1;
 
   /* performance measurement */
   rt_ext_tp_tick(&nonlinsys->totalTimeClock);
@@ -1400,7 +1400,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 
   /* enable to avoid division by zero */
   data->simulationInfo->noThrowDivZero = 0;
-  ((DATA*)data)->simulationInfo->solveContinuous = 0;
+  data->simulationInfo->solveContinuous = 0;
 
   /* performance measurement and statistics */
   nonlinsys->totalTime += rt_ext_tp_tock(&(nonlinsys->totalTimeClock));

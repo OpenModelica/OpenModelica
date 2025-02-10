@@ -86,15 +86,13 @@ void initializeStateSetJacobians(DATA *data, threadData_t *threadData)
   TRACE_PUSH
   long i = 0;
   STATE_SET_DATA *set = NULL;
-  unsigned int jacIndex;
   ANALYTIC_JACOBIAN* jacobian;
 
   /* go troug all state sets*/
   for(i=0; i<data->modelData->nStateSets; i++)
   {
     set = &(data->simulationInfo->stateSetData[i]);
-    jacIndex = set->jacobianIndex;
-    jacobian = &(data->simulationInfo->analyticJacobians[jacIndex]);
+    jacobian = &(data->simulationInfo->analyticJacobians[set->jacobianIndex]);
 
     if(set->initialAnalyticalJacobian(data, threadData, jacobian))
     {
@@ -183,7 +181,7 @@ static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsig
 {
   TRACE_PUSH
   unsigned int i, j, k, l, ii;
-  unsigned int jacIndex = data->simulationInfo->stateSetData[index].jacobianIndex;
+  const unsigned int jacIndex = data->simulationInfo->stateSetData[index].jacobianIndex;
   ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[jacIndex]);
 
   unsigned int nrows = jacobian->sizeRows;

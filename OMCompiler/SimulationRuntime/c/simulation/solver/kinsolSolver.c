@@ -645,7 +645,7 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
       }
     }
     /* Evaluate Jacobian column */
-    ((nlsData->analyticalJacobianColumn))(data, threadData, analyticJacobian, NULL);
+    nlsData->analyticalJacobianColumn(data, threadData, analyticJacobian, NULL);
 
     /* Save column in Jac and unset seed variables */
     for (ii = 0; ii < kinsolData->size; ii++) {

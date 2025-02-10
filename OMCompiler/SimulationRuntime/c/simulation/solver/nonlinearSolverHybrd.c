@@ -263,7 +263,6 @@ static int getAnalyticalJacobian(NLS_USERDATA* hybrdUserData, double* jac)
   threadData_t *threadData = hybrdUserData->threadData;
   NONLINEAR_SYSTEM_DATA* systemData = hybrdUserData->nlsData;
   DATA_HYBRD* solverData = (DATA_HYBRD*)(systemData->solverData);
-  const int index = systemData->jacobianIndex;
   ANALYTIC_JACOBIAN* jacobian = hybrdUserData->analyticJacobian;
 
   memset(jac, 0, (solverData->n)*(solverData->n)*sizeof(double));
@@ -280,9 +279,9 @@ static int getAnalyticalJacobian(NLS_USERDATA* hybrdUserData, double* jac)
       if(jacobian->sparsePattern->colorCols[ii]-1 == i)
         jacobian->seedVars[ii] = 1;
 
-    ((systemData->analyticalJacobianColumn))(data, threadData, jacobian, NULL);
+    systemData->analyticalJacobianColumn(data, threadData, jacobian, NULL);
 
-    for(j=0; j<jacobian->sizeCols; j++)
+    for(j = 0; j < jacobian->sizeCols; j++)
     {
       if(jacobian->seedVars[j] == 1)
       {

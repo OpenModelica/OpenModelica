@@ -108,8 +108,8 @@ int freeLapackData(void **voiddata)
  */
 int getAnalyticalJacobianLapack(DATA* data, threadData_t *threadData, double* jac, int sysNumber)
 {
-  int i,j,k,l,ii,currentSys = sysNumber;
-  LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo->linearSystemData[currentSys]);
+  int i,j,k,l,ii;
+  LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
 
   const int index = systemData->jacobianIndex;
   ANALYTIC_JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
@@ -128,7 +128,7 @@ int getAnalyticalJacobianLapack(DATA* data, threadData_t *threadData, double* ja
       if(jacobian->sparsePattern->colorCols[ii]-1 == i)
           jacobian->seedVars[ii] = 1;
 
-    ((systemData->analyticalJacobianColumn))(data, threadData, jacobian, parentJacobian);
+    systemData->analyticalJacobianColumn(data, threadData, jacobian, parentJacobian);
 
     for(j = 0; j < jacobian->sizeCols; j++) {
       if(jacobian->seedVars[j] == 1) {
@@ -155,9 +155,7 @@ int getAnalyticalJacobianLapack(DATA* data, threadData_t *threadData, double* ja
  */
 static int wrapper_fvec_lapack(_omc_vector* x, _omc_vector* f, int* iflag, RESIDUAL_USERDATA* resUserData, int sysNumber)
 {
-  int currentSys = sysNumber;
-
-  resUserData->data->simulationInfo->linearSystemData[currentSys].residualFunc(resUserData, x->data, f->data, iflag);
+  resUserData->data->simulationInfo->linearSystemData[sysNumber].residualFunc(resUserData, x->data, f->data, iflag);
   return 0;
 }
 
