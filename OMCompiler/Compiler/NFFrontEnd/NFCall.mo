@@ -601,6 +601,25 @@ public
     end match;
   end isKnownSizeFill;
 
+  function isReduction
+    "returns true if the call is a typed reduction or if the call is a typed
+    call of a function that represents an array reduction"
+    input Call call;
+    output Boolean b;
+  algorithm
+    b := match call
+      case TYPED_REDUCTION() then true;
+      case TYPED_CALL() then match AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn))
+          case "min" then true;
+          case "max" then true;
+          case "sum" then true;
+          case "product" then true;
+          else false;
+        end match;
+      else false;
+    end match;
+  end isReduction;
+
   function inlineType
     input NFCall call;
     output DAE.InlineType inlineTy;
