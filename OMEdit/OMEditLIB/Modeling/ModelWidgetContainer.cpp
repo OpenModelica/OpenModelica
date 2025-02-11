@@ -2944,7 +2944,7 @@ Element* GraphicsView::connectorElementAtPosition(QPoint position)
         return 0;
       } else if (pRootElement && !pRootElement->isSelected()) {
         // Issue #11310. If both root and element are connectors then use the root.
-        if ((pRootElement->getModel() && pRootElement->getModel()->isConnector() && pElement && pElement->getModel() && pElement->getModel()->isConnector())) {
+        if (pRootElement->getModel() && pRootElement->getModel()->isConnector() && pElement && pElement->getModel() && pElement->getModel()->isConnector()) {
           pElement = pRootElement;
         }
         if (MainWindow::instance()->getConnectModeAction()->isChecked() && isDiagramView() &&
@@ -7149,6 +7149,7 @@ void ModelWidget::drawOMSModelConnections()
         }
       }
     }
+    mpDiagramGraphicsView->handleCollidingConnections();
   }
 }
 
