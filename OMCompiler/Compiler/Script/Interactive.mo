@@ -890,15 +890,7 @@ algorithm
   fn_name := getApiFunctionNameInfo(inStatement);
   p := SymbolTable.getAbsyn();
   args := getApiFunctionArgs(inStatement);
-
-  outResult := match(fn_name)
-    case "getDefinitions"
-      algorithm
-        {Absyn.BOOL(addFunctions)} := args;
-      then
-        getDefinitions(p, addFunctions);
-
-  end match;
+  fail();
 end evaluateGraphicalApi_dispatch;
 
 protected function extractAllComponentreplacements
@@ -10464,62 +10456,33 @@ end transformFlatElseIfAlgorithm;
 
 /* Start getDefinitions */
 
-protected function getDefinitions
+public function getDefinitions
 "This function dumps the defined packages, classes and functions to a string.
  The function is used by org.openmodelica.corba.parser.DefinitionsCreator."
   input  Absyn.Program ast "The AST to dump";
   input  Boolean addFunctions;
-  output String res "An easily parsed string containing all definitions";
+  output Values.Value res "An easily parsed string containing all definitions";
+protected
+  list<Absyn.Class> classes;
+  list<String> toPrint;
+  Integer handle;
+  Absyn.Class cl;
 algorithm
-  res := match (ast,addFunctions)
-    local
-      list<Absyn.Class> classes;
-      list<String> toPrint;
-      Integer handle;
-      Absyn.Class cl;
+  Absyn.PROGRAM(classes = classes) := MetaUtil.createMetaClassesInProgram(ast);
+  handle := Print.saveAndClearBuf();
+  Print.printBuf("(\n");
 
-    case (_,_)
-      equation
-        Absyn.PROGRAM(classes = classes) = MetaUtil.createMetaClassesInProgram(ast);
-        handle = Print.saveAndClearBuf();
-        Print.printBuf("\"(\n");
-        toPrint = getDefinitions2(classes,addFunctions);
-        List.map_0(toPrint, printWithNewline);
-        cl = InteractiveUtil.getPathedClassInProgram(Absyn.IDENT("SourceInfo"), ast);
-        toPrint = getDefinitions2({cl},false);
-        List.map_0(toPrint, printWithNewline);
-        Print.printBuf("\n)\"");
-        res = Print.getString();
-        Print.restoreBuf(handle);
-      then res;
+  for c in classes loop
+    Print.printBuf(getDefinitionsClass(c, addFunctions));
+    Print.printBufNewLine();
+  end for;
 
-  end match;
+  cl := InteractiveUtil.getPathedClassInProgram(Absyn.IDENT("SourceInfo"), ast);
+  Print.printBuf(getDefinitionsClass(cl, false));
+  Print.printBuf("\n\n)");
+  res := ValuesUtil.makeString(Print.getString());
+  Print.restoreBuf(handle);
 end getDefinitions;
-
-protected function printWithNewline
-  input String s;
-algorithm
-  Print.printBuf(s);
-  Print.printBuf("\n");
-end printWithNewline;
-
-protected function getDefinitions2
-  input  list<Absyn.Class> classes;
-  input  Boolean addFunctions;
-  output list<String> res;
-algorithm
-  res := match (classes,addFunctions)
-    local
-      list<Absyn.Class> rest;
-      Absyn.Class class_;
-      String str;
-    case ({},_) then {};
-    case (class_::rest,_) equation
-      str = getDefinitionsClass(class_, addFunctions);
-      res = getDefinitions2(rest, addFunctions);
-    then str::res;
-  end match;
-end getDefinitions2;
 
 protected function getDefinitionsClass
   input Absyn.Class class_;
@@ -10614,11 +10577,9 @@ protected function getDefinitionPathString
   input Absyn.Path path;
   output String out;
 algorithm
-  out := match (path)
-    // Doesn't work because we only know the AST after parsing... case (Absyn.FULLYQUALIFIED(path)) then "#" + AbsynUtil.pathString(path);
-    // Thus, scope/lookup is done by the application recieving this information
-    case _ then AbsynUtil.pathString(path);
-  end match;
+  // Doesn't work because we only know the AST after parsing... case (Absyn.FULLYQUALIFIED(path)) then "#" + AbsynUtil.pathString(path);
+  // Thus, scope/lookup is done by the application recieving this information
+  out := AbsynUtil.pathString(path);
 end getDefinitionPathString;
 
 public function getDefinitionTypeSpecPathString
@@ -10726,10 +10687,10 @@ protected function getDefinitionDirString
   input Boolean isFunction;
   output String res;
 algorithm
-  res := match (dir, variability, isFunction)
-    case (Absyn.INPUT(),_,true) then "input ";
-    case (Absyn.OUTPUT(),_,true) then "output ";
-    case (_, _,false)
+  res := match (dir, isFunction)
+    case (Absyn.INPUT(),true) then "input ";
+    case (Absyn.OUTPUT(),true) then "output ";
+    case (_, false)
       equation
         failure(Absyn.CONST() = variability);
       then "";
@@ -10743,21 +10704,21 @@ protected function getDefinitionComponents
   input list<Absyn.ComponentItem> components;
   output list<String> res;
 algorithm
-  res := matchcontinue (typeStr,dirStr,numDim,components)
+  res := matchcontinue components
   local
     list<Absyn.ComponentItem> rest;
     String ident;
     list<Absyn.Subscript> l;
     Integer sumDim;
 
-    case (_,_,_,{}) then {};
-    case (_,_,_,Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = ident, arrayDim = l))::rest) equation
+    case {} then {};
+    case Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = ident, arrayDim = l))::rest equation
       sumDim = numDim + listLength(l);
       ident = dirStr + (if numDim == 0 then "" else ("[" + intString(sumDim))) + typeStr + " " + ident;
       ident = "(" + ident + ")";
       res = getDefinitionComponents(typeStr,dirStr,numDim,rest);
     then ident :: res;
-    case (_,_,_,_::rest) then getDefinitionComponents(typeStr,dirStr,numDim,rest);
+    case rest then getDefinitionComponents(typeStr,dirStr,numDim,rest);
   end matchcontinue;
 end getDefinitionComponents;
 

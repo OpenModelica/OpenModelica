@@ -5604,6 +5604,15 @@ annotation(preferredView="text",Documentation(info="<html>
 </html>"));
 end qualifyPath;
 
+function getDefinitions
+  input Boolean addFunctions;
+  output String result;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Dumps the defined packages, classes, and optionally functions to a string. Used by org.openmodelica.corba.parser.DefinitionsCreator.</p>
+</html>"));
+end getDefinitions;
+
 // OMSimulator API calls
 type oms_system = enumeration(oms_system_none,oms_system_tlm, oms_system_wc,oms_system_sc);
 type oms_causality = enumeration(oms_causality_input, oms_causality_output, oms_causality_parameter, oms_causality_bidir, oms_causality_undefined);
