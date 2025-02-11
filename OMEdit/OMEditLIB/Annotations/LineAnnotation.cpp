@@ -1383,7 +1383,8 @@ void LineAnnotation::handleCollidingConnections()
   for (int i = 0; i < items.size(); ++i) {
     if (Element *pElement = dynamic_cast<Element*>(items.at(i))) {
       if ((pElement->getModel() && pElement->getModel()->isConnector())
-          || (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isConnector())) {
+          || (pElement->getLibraryTreeItem() && (pElement->getLibraryTreeItem()->getOMSConnector() || pElement->getLibraryTreeItem()->getOMSBusConnector()
+                                                 || pElement->getLibraryTreeItem()->getOMSTLMBusConnector()))) {
         mCollidingConnectorElements.append(pElement);
       }
     } else if (LineAnnotation *pConnectionAnnotation = dynamic_cast<LineAnnotation*>(items.at(i))) {

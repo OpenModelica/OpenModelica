@@ -2944,14 +2944,12 @@ Element* GraphicsView::connectorElementAtPosition(QPoint position)
         return 0;
       } else if (pRootElement && !pRootElement->isSelected()) {
         // Issue #11310. If both root and element are connectors then use the root.
-        if ((pRootElement->getModel() && pRootElement->getModel()->isConnector() && pElement && pElement->getModel() && pElement->getModel()->isConnector())
-            || (pRootElement->getLibraryTreeItem() && pRootElement->getLibraryTreeItem()->isConnector() && pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isConnector())) {
+        if (pRootElement->getModel() && pRootElement->getModel()->isConnector() && pElement && pElement->getModel() && pElement->getModel()->isConnector()) {
           pElement = pRootElement;
         }
         if (MainWindow::instance()->getConnectModeAction()->isChecked() && isDiagramView() &&
             !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) &&
             ((pElement->getModel() && pElement->getModel()->isConnector()) ||
-             (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isConnector()) ||
              (mpModelWidget->getLibraryTreeItem()->isSSP() &&
               (pElement->getLibraryTreeItem()->getOMSConnector() || pElement->getLibraryTreeItem()->getOMSBusConnector()
                || pElement->getLibraryTreeItem()->getOMSTLMBusConnector() || pElement->isPort())))) {
@@ -7152,6 +7150,7 @@ void ModelWidget::drawOMSModelConnections()
         }
       }
     }
+    mpDiagramGraphicsView->handleCollidingConnections();
   }
 }
 
