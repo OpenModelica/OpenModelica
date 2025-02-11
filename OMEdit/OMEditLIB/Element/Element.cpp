@@ -328,6 +328,8 @@ Element::Element(Element *pElement, Element *pParentElement, Element *pRootParen
   : QGraphicsItem(pRootParentElement), mpReferenceElement(pElement), mpParentElement(pParentElement)
 {
   mpLibraryTreeItem = mpReferenceElement->getLibraryTreeItem();
+  mName = mpReferenceElement->getName();
+  mClassName = mpReferenceElement->getClassName();
   mIsInheritedElement = mpReferenceElement->isInheritedElement();
   mElementType = Element::Port;
   mpGraphicsView = mpParentElement->getGraphicsView();
