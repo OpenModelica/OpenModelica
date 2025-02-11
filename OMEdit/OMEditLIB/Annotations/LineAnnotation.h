@@ -256,7 +256,6 @@ public:
   QModelIndex findFirstEnabledItem(ExpandableConnectorTreeItem *pExpandableConnectorTreeItem);
   QModelIndex expandableConnectorTreeItemIndex(const ExpandableConnectorTreeItem *pExpandableConnectorTreeItem) const;
   void createExpandableConnectorTreeItem(ModelInstance::Element *pModelElement, bool inherited, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
-  void createExpandableConnectorTreeItem(Element *pElement, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
 private:
   CreateConnectionDialog *mpCreateConnectionDialog;
   ExpandableConnectorTreeItem *mpRootExpandableConnectorTreeItem;

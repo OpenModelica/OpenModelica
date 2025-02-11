@@ -322,8 +322,7 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     // state machine visualization
     // text annotation on a element
     if (mpElement && mpElement->getGraphicsView()->isVisualizationView()
-        && ((mpElement->getModel() && mpElement->getModel()->getAnnotation()->isState())
-            || (mpElement->getLibraryTreeItem() && mpElement->getLibraryTreeItem()->isState()))) {
+        && (mpElement->getModel() && mpElement->getModel()->getAnnotation()->isState())) {
       if (mpElement->isActiveState()) {
         painter->setOpacity(1.0);
       } else {
