@@ -1807,6 +1807,15 @@ public
         Dependency.updateList(UnorderedSet.toList(set), -1, false, dep_map);
       then set;
 
+      // typed call expressions can be considered reductions too, but dont have an iterator
+      case Expression.CALL(call = call as Call.TYPED_CALL()) guard(Call.isReduction(call)) algorithm
+        for arg in call.arguments loop
+          sets := collectDependencies(arg, depth, map, dep_map, sol_map, rep_set) :: sets;
+        end for;
+        set := UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
+        Dependency.updateList(UnorderedSet.toList(set), -1, false, dep_map);
+      then set;
+
       // for functions set the dependency to full reduction (+ repetition) and solvability to implicit
       case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
         // add depth if return type is tuple
