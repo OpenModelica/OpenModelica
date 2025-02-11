@@ -1038,23 +1038,6 @@ algorithm
   end if;
 end getExtendsModifierNames;
 
-function hasModifiers
-  input list<Absyn.ElementSpec> exts;
-  output Boolean b = false;
-protected
-   Absyn.ElementSpec ext;
-algorithm
-  for e in exts loop
-    b := match e
-      case ext as Absyn.EXTENDS() then not listEmpty(ext.elementArg);
-      else false;
-    end match;
-    if b then
-      break;
-    end if;
-  end for;
-end hasModifiers;
-
 protected function getModificationNames
 "Helper function to getElementModifierNames"
   input list<Absyn.ElementArg> inAbsynElementArgLst;
@@ -2479,20 +2462,6 @@ algorithm
   end matchcontinue;
 end qualifyType;
 
-protected function arrayDimensionStr
-"prints array dimensions to a string"
-  input Option<Absyn.ArrayDim> ad;
-  output String str;
-algorithm
-  str:=match(ad)
-  local Absyn.ArrayDim adim;
-    case(SOME(adim)) equation
-      str = stringDelimitList(List.map(adim,Dump.printSubscriptStr),",");
-    then str;
-    else "";
-  end match;
-end arrayDimensionStr;
-
 public function getElementsInfo
   input list<Absyn.Element> elements;
   input Boolean isPublic;
@@ -2599,19 +2568,6 @@ algorithm
     case (Absyn.ATTR(variability = Absyn.CONST())) then "constant";
   end match;
 end attrVariabilityStr;
-
-public function attrDimensionStr
-"Helper function to getElementInfo,
-  retrieve dimension as a string."
-  input Absyn.ElementAttributes inElementAttributes;
-  output String outString;
-algorithm
-  outString:=
-  match (inElementAttributes)
-      local Absyn.ArrayDim ad;
-    case (Absyn.ATTR(arrayDim = ad)) then arrayDimensionStr(SOME(ad));
-  end match;
-end attrDimensionStr;
 
 public function attrDirectionStr
 "Helper function to get_component_info,
@@ -2824,30 +2780,13 @@ algorithm
 
     case (c1,Absyn.WITHIN(path = Absyn.QUALIFIED(path = path)),c2)
       equation
-        name2 = getFirstIdentFromPath(path);
+        name2 = AbsynUtil.pathFirstIdent(path);
         cinner = getInnerClass(c2, name2);
         cnew = insertClassInClass(c1, Absyn.WITHIN(path), cinner, mergeAST);
       then replaceInnerClass(cnew, c2, mergeAST);
 
   end match;
 end insertClassInClass;
-
-protected function getFirstIdentFromPath "
-   This function takes a `Path` as argument and returns the first `Ident\'
-   of the path.
-"
-  input Absyn.Path inPath;
-  output Absyn.Ident outIdent;
-algorithm
-  outIdent:=
-  match (inPath)
-    local
-      String name;
-      Absyn.Path path;
-    case (Absyn.IDENT(name = name)) then name;
-    case (Absyn.QUALIFIED(name = name)) then name;
-  end match;
-end getFirstIdentFromPath;
 
 protected function classElementItemIsNamed
   input String inClassName;
