@@ -77,7 +77,6 @@ import ExpressionDump;
 import ExpressionSimplify;
 import FGraph;
 import Flags;
-import FlagsUtil;
 import GCExt;
 import GlobalScriptDump;
 import InnerOuter;
@@ -284,47 +283,28 @@ public function evaluate2
   output String outString;
 protected
   String str, str_1;
+  Absyn.AlgorithmItem algitem;
+  Absyn.Exp exp;
+  SourceInfo info;
 algorithm
   try /* Stack overflow */
-  outString := matchcontinue inStatement
-    local
-      Absyn.AlgorithmItem algitem;
-      Boolean outres;
-      Absyn.Exp exp;
-      Boolean partialInst, gen, evalfunc, keepArrays;
-      SourceInfo info;
+    outString := match inStatement
+      // Evaluate algorithm statements in evaluateAlgStmt()
+      case GlobalScript.IALG(algItem = algitem as Absyn.ALGORITHMITEM())
+        equation
+          InstHashTable.init();
+          str = evaluateAlgItem(algitem);
+          str_1 = stringAppend(str, "\n");
+        then str_1;
 
-    // evaluate graphical API
-    case GlobalScript.IEXP(exp = Absyn.CALL())
-      equation
-        // adrpo: always evaluate the graphicalAPI with these options so instantiation is faster!
-        partialInst = System.getPartialInstantiation();
-        System.setPartialInstantiation(true);
-        gen = FlagsUtil.set(Flags.GEN, false);
-        evalfunc = FlagsUtil.set(Flags.EVAL_FUNC, false);
-        keepArrays = Flags.getConfigBool(Flags.KEEP_ARRAYS);
-        FlagsUtil.setConfigBool(Flags.KEEP_ARRAYS, false);
-        InstHashTable.init();
-        str = evaluateGraphicalApi(inStatement, partialInst, gen, evalfunc, keepArrays);
-        str_1 = stringAppend(str, "\n");
-      then str_1;
-
-    // Evaluate algorithm statements in evaluateAlgStmt()
-    case GlobalScript.IALG(algItem = (algitem as Absyn.ALGORITHMITEM()))
-      equation
-        InstHashTable.init();
-        str = evaluateAlgItem(algitem);
-        str_1 = stringAppend(str, "\n");
-      then str_1;
-
-    // Evaluate expressions in evaluate_exprToStr()
-    case GlobalScript.IEXP(exp = exp, info = info)
-      equation
-        InstHashTable.init();
-        str = evaluateExprToStr(exp, info);
-        str_1 = stringAppend(str, "\n");
-      then str_1;
-  end matchcontinue;
+      // Evaluate expressions in evaluate_exprToStr()
+      case GlobalScript.IEXP(exp = exp, info = info)
+        equation
+          InstHashTable.init();
+          str = evaluateExprToStr(exp, info);
+          str_1 = stringAppend(str, "\n");
+        then str_1;
+    end match;
   else
     str := "";
     str_1 := "";
@@ -722,22 +702,11 @@ protected function evaluateExprToStr
   input SourceInfo info;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inExp,info)
-    local
-      Values.Value value;
-      String str;
-      Absyn.Exp exp;
-
-    case (exp,_)
-      equation
-        value = evaluateExpr(exp, info);
-        str = ValuesUtil.valString(value);
-      then str;
-
-    else "";
-
-  end matchcontinue;
+  try
+    outString := ValuesUtil.valString(evaluateExpr(inExp, info));
+  else
+    outString := "";
+  end try;
 end evaluateExprToStr;
 
 protected function makeTupleCrefs
@@ -803,95 +772,6 @@ algorithm
   // did not find a type
   fail();
 end getTypeOfVariable;
-
-protected function getApiFunctionNameInfo
-  "Returns the name of the called API function."
-  input GlobalScript.Statement inStmt;
-  output String outName;
-  output SourceInfo outInfo;
-algorithm
-  GlobalScript.IEXP(
-      exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = outName)),
-      info = outInfo
-    ) := inStmt;
-end getApiFunctionNameInfo;
-
-protected function getApiFunctionArgs
-  "Returns a list of arguments to the function in the interactive statement list."
-  input GlobalScript.Statement inStmt;
-  output list<Absyn.Exp> outArgs;
-algorithm
-  outArgs := match(inStmt)
-    local
-      list<Absyn.Exp> args;
-
-    case GlobalScript.IEXP(exp = Absyn.CALL(functionArgs =
-      Absyn.FUNCTIONARGS(args = args))) then list(AbsynUtil.stripCommentExpressions(arg) for arg in args);
-    else {};
-  end match;
-end getApiFunctionArgs;
-
-protected function evaluateGraphicalApi
-"Evaluating graphical api.
-  NOTE: the graphical API is always evaluated with checkModel ON and -d=nogen,noevalfunc ON"
-  input GlobalScript.Statement inStatement;
-  input Boolean isPartialInst;
-  input Boolean flagGen;
-  input Boolean flagEvalFunc;
-  input Boolean flagKeepArrays;
-  output String outResult;
-protected
-  String fn_name;
-  SourceInfo info;
-  Boolean failed = false;
-algorithm
-  try
-    outResult := evaluateGraphicalApi_dispatch(inStatement);
-  else
-    failed := true;
-  end try;
-
-  // Reset the flags!
-  System.setPartialInstantiation(isPartialInst);
-  FlagsUtil.set(Flags.GEN, flagGen);
-  FlagsUtil.set(Flags.EVAL_FUNC, flagEvalFunc);
-  FlagsUtil.setConfigBool(Flags.KEEP_ARRAYS, flagKeepArrays);
-
-  if failed then fail(); end if;
-end evaluateGraphicalApi;
-
-protected function evaluateGraphicalApi_dispatch
-"This function evaluates all primitives in the graphical api."
-  input GlobalScript.Statement inStatement;
-  output String outResult;
-protected
-  String fn_name, name;
-  Absyn.Program old_p, p, p_1;
-  SCode.Program s;
-  list<Absyn.Exp> args, expl;
-  Absyn.ComponentRef cr, cr1, cr2, tp, model_, class_, old_cname, new_cname;
-  Absyn.ComponentRef crident, subident;
-  Absyn.Path path;
-  list<Absyn.NamedArg> nargs;
-  Integer n;
-  String cmt, variability, causality/*, isField*/;
-  Absyn.Class cls;
-  Absyn.Modification mod;
-  Boolean finalPrefix, flowPrefix, streamPrefix, protected_, repl, dref1, dref2, evalParamAnn;
-  Boolean addFunctions, graphicsExpMode, warningsAsErrors;
-  FCore.Graph env;
-  GraphicEnvCache genv;
-  Absyn.Exp exp;
-  list<Absyn.Exp> dimensions;
-  Absyn.CodeNode cn;
-  Absyn.Element el;
-  Access access;
-algorithm
-  fn_name := getApiFunctionNameInfo(inStatement);
-  p := SymbolTable.getAbsyn();
-  args := getApiFunctionArgs(inStatement);
-  fail();
-end evaluateGraphicalApi_dispatch;
 
 protected function extractAllComponentreplacements
 "author: x02lucpo
@@ -2850,7 +2730,7 @@ algorithm
   matches := AbsynUtil.pathEqual(po, p);
 end matchPath;
 
-public function getClassEnv_dispatch
+protected function getClassEnv_dispatch
 " Retrieves the environment of the class,
    including the frame of the class itself
    by partially instantiating it."
@@ -5169,20 +5049,6 @@ algorithm
     else false;
   end match;
 end isPrimitiveClass;
-
-public function mergeProgram
-  "Merges two programs into one."
-  input Absyn.Program newProgram;
-  input Absyn.Program oldProgram;
-  output Absyn.Program program;
-protected
-  list<Absyn.Class> cl1, cl2;
-  Absyn.Within w;
-algorithm
-  Absyn.PROGRAM(classes = cl1, within_ = w) := newProgram;
-  Absyn.PROGRAM(classes = cl2) := oldProgram;
-  program := Absyn.PROGRAM(listAppend(cl1, cl2), w);
-end mergeProgram;
 
 public function addScope
 " This function adds the scope of the scope variable to
@@ -7945,16 +7811,6 @@ algorithm
   end match;
 end parseConversionAnnotationElement;
 
-protected function filterIsVersionElement
-  input Absyn.ElementArg eltArg;
-  output Boolean b;
-algorithm
-  b := match eltArg
-    case Absyn.MODIFICATION(path = Absyn.IDENT(name = "version")) then true;
-    else false;
-  end match;
-end filterIsVersionElement;
-
 public function getPackagesInPath
 " This function takes a Path and a Program and returns a list of the
    names of the packages found in the Path."
@@ -9261,66 +9117,6 @@ algorithm
   end matchcontinue;
 end addToEquation;
 
-protected function getInitialEquationList "This function takes a ClassPart List and returns the first InitialEquationItem
-  list of the class."
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  output list<Absyn.EquationItem> outAbsynInitialEquationItemLst;
-algorithm
-  outAbsynInitialEquationItemLst := match (inAbsynClassPartLst)
-    local
-      list<Absyn.EquationItem> lst,ys;
-      list<Absyn.ClassPart> rest,xs;
-      Absyn.ClassPart x;
-    case (Absyn.INITIALEQUATIONS(contents = lst) :: _) then lst;
-    case ((_ :: xs))
-      equation
-        ys = getInitialEquationList(xs);
-      then
-        ys;
-    else fail();
-  end match;
-end getInitialEquationList;
-
-protected function getAlgorithmList "This function takes a ClassPart List and returns the first AlgorithmItem
-  list of the class."
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  output list<Absyn.AlgorithmItem> outAbsynAlgorithmItemLst;
-algorithm
-  outAbsynAlgorithmItemLst := match (inAbsynClassPartLst)
-    local
-      list<Absyn.AlgorithmItem> lst,ys;
-      list<Absyn.ClassPart> rest,xs;
-      Absyn.ClassPart x;
-    case (Absyn.ALGORITHMS(contents = lst) :: _) then lst;
-    case ((_ :: xs))
-      equation
-        ys = getAlgorithmList(xs);
-      then
-        ys;
-    else fail();
-  end match;
-end getAlgorithmList;
-
-protected function getInitialAlgorithmList "This function takes a ClassPart List and returns the first InitialAlgorithmItem
-  list of the class."
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  output list<Absyn.AlgorithmItem> outAbsynInitialAlgorithmItemLst;
-algorithm
-  outAbsynInitialAlgorithmItemLst := match (inAbsynClassPartLst)
-    local
-      list<Absyn.AlgorithmItem> lst,ys;
-      list<Absyn.ClassPart> rest,xs;
-      Absyn.ClassPart x;
-    case (Absyn.INITIALALGORITHMS(contents = lst) :: _) then lst;
-    case ((_ :: xs))
-      equation
-        ys = getInitialAlgorithmList(xs);
-      then
-        ys;
-    else fail();
-  end match;
-end getInitialAlgorithmList;
-
 public function transformPathedClassInProgram
   "Transforms a referenced class in a program by applying the given function to it."
   input Absyn.Path inPath;
@@ -9549,158 +9345,6 @@ algorithm
     else false;
   end match;
 end transformClassInElementSpec;
-
-protected function modificationToAbsyn
-" This function takes a list of NamedArg and returns an Absyn.Modification option.
-   It collects binding equation from the named argument binding=<expr> and creates
-   corresponding Modification option Absyn node.
-   Future extension: add general modifiers. Problem: how to express this using named
-   arguments. This is not possible. Instead we need a new data type for storing AST,
-   and a constructor function for AST,
-   e.g. AST x = ASTModification(redeclare R2 r, x=4.2); // new datatype AST
-             // new constructor operator ASTModification"
-  input list<Absyn.NamedArg> inAbsynNamedArgLst;
-  input Option<Absyn.Modification> inAbsynModificationOption;
-  output Option<Absyn.Modification> outAbsynModificationOption;
-algorithm
-  outAbsynModificationOption:=
-  matchcontinue (inAbsynNamedArgLst,inAbsynModificationOption)
-    local
-      Absyn.Modification mod;
-      list<Absyn.NamedArg> nargs;
-      Option<Absyn.Modification> oldmod;
-    case (nargs,_)
-      equation
-        SOME(mod) = modificationToAbsyn2(nargs);
-      then
-        SOME(mod);
-    else inAbsynModificationOption;
-  end matchcontinue;
-end modificationToAbsyn;
-
-protected function modificationToAbsyn2
-"Helper function to modificationToAbsyn."
-  input list<Absyn.NamedArg> inAbsynNamedArgLst;
-  output Option<Absyn.Modification> outAbsynModificationOption;
-algorithm
-  outAbsynModificationOption:=
-  match (inAbsynNamedArgLst)
-    local
-      Absyn.Exp exp;
-      list<Absyn.NamedArg> xs;
-      Absyn.Modification mod;
-      Option<Absyn.Modification> res;
-      Absyn.NamedArg x;
-    case ({}) then NONE();
-    case ((Absyn.NAMEDARG(argName = "binding",argValue = exp) :: _)) then SOME(Absyn.CLASSMOD({},Absyn.EQMOD(exp,AbsynUtil.dummyInfo)));
-    case ((Absyn.NAMEDARG(argName = "modification",argValue = Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))) :: _)) then SOME(mod);
-    case ((_ :: xs)) equation res = modificationToAbsyn2(xs); then res;
-  end match;
-end modificationToAbsyn2;
-
-protected function selectAnnotation
-"@author: adrpo
-  Selects either the new annotation if is SOME or the old one"
-  input Option<Absyn.Annotation> newAnn;
-  input Option<Absyn.Annotation> oldAnn;
-  output Option<Absyn.Annotation> outAnn = if isSome(newAnn) then newAnn else oldAnn;
-end selectAnnotation;
-
-protected function annotationListToAbsynComment
-" This function takes a list of NamedArg and returns an absyn Comment.
-   for instance {annotation = Placement( ...), comment=\"stringcomment\" }
-   is converted to SOME(COMMENT(ANNOTATION(Placement(...), SOME(\"stringcomment\"))))"
-  input list<Absyn.NamedArg> inAbsynNamedArgLst;
-  input Option<Absyn.Comment> inAbsynCommentOption;
-  output Option<Absyn.Comment> outAbsynCommentOption;
-algorithm
-  outAbsynCommentOption := matchcontinue (inAbsynNamedArgLst,inAbsynCommentOption)
-    local
-      Absyn.Comment ann;
-      list<Absyn.NamedArg> nargs;
-      String oldcmt,newcmt;
-      Option<String> cmtOpt;
-      Option<Absyn.Annotation> annOptOld, annOptNew, annOpt;
-
-    // old annotation is NONE! take the new one.
-    case (nargs,NONE())
-      equation
-        SOME(ann) = annotationListToAbsynComment2(nargs);
-      then
-        SOME(ann);
-
-    // old annotation comment is NONE! take the new one.
-    case (nargs,SOME(Absyn.COMMENT(annOptOld, NONE())))
-      equation
-        SOME(Absyn.COMMENT(annOptNew, cmtOpt)) = annotationListToAbsynComment2(nargs);
-        annOpt = selectAnnotation(annOptNew, annOptOld);
-      then
-        SOME(Absyn.COMMENT(annOpt, cmtOpt));
-
-    // old annotation comment is SOME and new is NONE! take the old one.
-    case (nargs,SOME(Absyn.COMMENT(annOptOld, SOME(oldcmt))))
-      equation
-        SOME(Absyn.COMMENT(annOptNew, NONE())) = annotationListToAbsynComment2(nargs);
-        annOpt = selectAnnotation(annOptNew, annOptOld);
-      then
-        SOME(Absyn.COMMENT(annOpt, SOME(oldcmt)));
-
-    // old annotation comment is SOME and new is SOME! take the new one.
-    case (nargs,SOME(Absyn.COMMENT(annOptOld, SOME(_))))
-      equation
-        SOME(Absyn.COMMENT(annOptNew, SOME(newcmt))) = annotationListToAbsynComment2(nargs);
-        annOpt = selectAnnotation(annOptNew, annOptOld);
-      then
-        SOME(Absyn.COMMENT(annOpt, SOME(newcmt)));
-
-    // no annotations from nargs
-    else inAbsynCommentOption;
-  end matchcontinue;
-end annotationListToAbsynComment;
-
-protected function annotationListToAbsynComment2
-"Helper function to annotationListToAbsynComment2."
-  input list<Absyn.NamedArg> inNamedArgs;
-  output Option<Absyn.Comment> outComment;
-protected
-  list<Absyn.ElementArg> annargs;
-  Option<String> ostrcmt;
-  Absyn.Annotation ann;
-algorithm
-  ann as Absyn.ANNOTATION(annargs) := InteractiveUtil.annotationListToAbsyn(inNamedArgs);
-  ostrcmt := commentToAbsyn(inNamedArgs);
-
-  outComment := match(ostrcmt, annargs)
-    case (SOME(""), {}) then NONE();
-    case (SOME(_), {}) then SOME(Absyn.COMMENT(NONE(), ostrcmt));
-    case (NONE(), {}) then NONE();
-    else SOME(Absyn.COMMENT(SOME(ann), ostrcmt));
-  end match;
-end annotationListToAbsynComment2;
-
-protected function commentToAbsyn
-"Helper function to annotationListToAbsynComment2."
-  input list<Absyn.NamedArg> inAbsynNamedArgLst;
-  output Option<String> outStringOption;
-algorithm
-  outStringOption:=
-  match (inAbsynNamedArgLst)
-    local
-      String str;
-      Option<String> res;
-      list<Absyn.NamedArg> rest;
-    case ((Absyn.NAMEDARG(argName = "comment",argValue = Absyn.STRING(value = str)) :: _))
-        guard not stringEq(str, "")
-      then
-        SOME(str);
-    case ((_ :: rest))
-      equation
-        res = commentToAbsyn(rest);
-      then
-        res;
-    else NONE();
-  end match;
-end commentToAbsyn;
 
 public function getContainedClassAndFile
 " author: PA
@@ -10812,86 +10456,6 @@ algorithm
     else inAcc;
   end match;
 end getSCodeClassNamesRecursiveWork;
-
-public function getPathedComponentElementInProgram "Returns a component given a path and a program. See also getPathedClassInProgram"
-  input Absyn.Path path;
-  input Absyn.Program prg;
-  output Absyn.ElementSpec comp;
-algorithm
-  comp := match(path,prg)
-  local Absyn.Class cl;
-    case(_,_) equation
-      cl = InteractiveUtil.getPathedClassInProgram(AbsynUtil.stripLast(path),prg);
-      comp = getComponentElementInClass(cl,AbsynUtil.pathLastIdent(path));
-    then comp;
-  end match;
-end getPathedComponentElementInProgram;
-
-protected function getComponentElementInClass
-  input Absyn.Class cl;
-  input Absyn.Ident compName;
-  output Absyn.ElementSpec comp;
-algorithm
- comp := match(cl,compName)
-   local
-     list<Absyn.ClassPart> parts;
-     list<Absyn.ElementItem> publst;
-   /* a class with parts */
-   case(Absyn.CLASS(body=Absyn.PARTS(classParts=parts)), _) equation
-     publst = InteractiveUtil.getPublicList(parts);
-     comp = getComponentsContainsName(Absyn.CREF_IDENT(compName,{}), publst);
-   then comp;
-   /* an extended class with parts: model extends M end M; */
-   case(Absyn.CLASS(body=Absyn.CLASS_EXTENDS(parts=parts)), _) equation
-     publst = InteractiveUtil.getPublicList(parts);
-     comp = getComponentsContainsName(Absyn.CREF_IDENT(compName,{}), publst);
-   then comp;
- end match;
-end getComponentElementInClass;
-
-public function getFunctionsInProgram
-  input Absyn.Program prog;
-  output list<Absyn.Class> funcs;
-protected
-  list<Absyn.Class> classes;
-  list<list<Absyn.Class>> classesList;
-algorithm
-  Absyn.PROGRAM(classes = classes) := prog;
-  classesList := List.map(classes, getAllClassesInClass);
-  funcs := List.fold(classes::classesList, getFunctionsInClasses, {});
-end getFunctionsInProgram;
-
-protected function getFunctionsInClasses
-  input list<Absyn.Class> classes;
-  input list<Absyn.Class> acc;
-  output list<Absyn.Class> funcs;
-algorithm
-  funcs := match (classes,acc)
-    local
-      Absyn.Class cl;
-      list<Absyn.Class> rest;
-
-    case ({},_) then acc;
-    case ((cl as Absyn.CLASS(restriction = Absyn.R_FUNCTION(_)))::rest,_)
-      equation
-        funcs = getFunctionsInClasses(rest,cl::acc);
-      then funcs;
-    case (_::rest,_) then getFunctionsInClasses(rest,acc);
-  end match;
-end getFunctionsInClasses;
-
-protected function getAllClassesInClass
-  input Absyn.Class class_;
-  output list<Absyn.Class> outClasses;
-algorithm
-  outClasses := matchcontinue class_
-    local
-      list<Absyn.ClassPart> classParts;
-    case Absyn.CLASS(body = Absyn.PARTS(classParts = classParts))
-      then InteractiveUtil.getClassesInParts(classParts);
-    else {};
-  end matchcontinue;
-end getAllClassesInClass;
 
 public function getAllInheritedClasses
   input Absyn.Path inClassName;

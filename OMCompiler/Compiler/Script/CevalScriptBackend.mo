@@ -3345,9 +3345,9 @@ algorithm
 end cevalInteractiveFunctions4;
 
 protected function getSimulationExtension
-input String inString;
-input String inString2;
-output String outString;
+  input String inString;
+  input String inString2;
+  output String outString;
 algorithm
   outString:=match(inString,inString2)
   local
@@ -3370,18 +3370,7 @@ algorithm
       then ".sh";
     else Autoconf.exeExt;
   end match;
- end getSimulationExtension;
-
-
-protected function sconstToString
-"@author: adrpo
-  Transform an DAE.SCONST into a string.
-  Fails if the given DAE.Exp is not a DAE.SCONST."
-  input DAE.Exp exp;
-  output String str;
-algorithm
-  DAE.SCONST(str) := exp;
-end sconstToString;
+end getSimulationExtension;
 
 public function getAdjacencyMatrix " author: adrpo
  translates a model and returns the adjacency matrix"
@@ -6179,24 +6168,6 @@ algorithm
   end matchcontinue;
 end checkModel;
 
-protected function selectIfNotEmpty
-  input String inString;
-  input String selector " ";
-  output String outString;
-algorithm
-  outString := match(inString, selector)
-    local
-      String s;
-
-    case (_, "") then "";
-
-    else
-      equation
-        s = inString + selector;
-      then s;
-  end match;
-end selectIfNotEmpty;
-
 protected function getWithinStatement "To get a correct Within-path with unknown input-path."
   input Absyn.Path ip;
   output Absyn.Within op;
@@ -6206,23 +6177,6 @@ algorithm op :=  matchcontinue(ip)
     else Absyn.TOP();
   end matchcontinue;
 end getWithinStatement;
-
-public function subtractDummy
-"if $dummy is present in Variables, subtract 1 from equation and variable size, otherwise not"
-  input BackendDAE.Variables vars;
-  input Integer eqnSize;
-  input Integer varSize;
-  output Integer outEqnSize;
-  output Integer outVarSize;
-algorithm
-  (outEqnSize,outVarSize) := matchcontinue(vars,eqnSize,varSize)
-    case(_,_,_)
-      equation
-        (_,_) = BackendVariable.getVar(ComponentReference.makeCrefIdent("$dummy",DAE.T_UNKNOWN_DEFAULT,{}),vars);
-      then (eqnSize-1,varSize-1);
-    else (eqnSize,varSize);
-  end matchcontinue;
-end subtractDummy;
 
 protected function dumpXMLDAE " author: fildo
  This function outputs the DAE system corresponding to a specific model."
@@ -7618,7 +7572,7 @@ algorithm
   outValue := unparseNthImport(listGet(pub_imports_list,inInteger));
 end getNthImport;
 
-public function unparseNthImport
+protected function unparseNthImport
 " helperfunction to getNthImport."
   input Absyn.Import inImport;
   output list<Values.Value> outValue;
