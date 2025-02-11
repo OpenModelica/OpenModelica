@@ -2976,14 +2976,13 @@ Element* GraphicsView::stateElementAtPosition(QPoint position)
       Element *pRootElement = pElement->getRootParentElement();
       if (pRootElement && !pRootElement->isSelected()) {
         // Issue #11310. If both root and element are connectors then use the root.
-        if ((pRootElement->getModel() && pRootElement->getModel()->getAnnotation()->isState() && pElement && pElement->getModel() && pElement->getModel()->getAnnotation()->isState())
-            || (pRootElement->getLibraryTreeItem() && pRootElement->getLibraryTreeItem()->isState() && pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isState())) {
+        if ((pRootElement->getModel() && pRootElement->getModel()->getAnnotation()->isState() &&
+             pElement && pElement->getModel() && pElement->getModel()->getAnnotation()->isState())) {
           pElement = pRootElement;
         }
         if (MainWindow::instance()->getTransitionModeAction()->isChecked() && isDiagramView() &&
             !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) &&
-            ((pElement->getModel() && pElement->getModel()->getAnnotation()->isState()) ||
-             (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isModelica() && pElement->getLibraryTreeItem()->isState()))) {
+            (pElement->getModel() && pElement->getModel()->getAnnotation()->isState())) {
           return pElement;
         }
       }

@@ -234,8 +234,7 @@ void UpdateComponentTransformationsCommand::redoInternal()
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   if (mMoveConnectorsTogether && pModelWidget->getLibraryTreeItem()->isModelica()
-      && ((mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector())
-          || (mpComponent->getModel() && mpComponent->getModel()->isConnector()))) {
+      && (mpComponent->getModel() && mpComponent->getModel()->isConnector())) {
     GraphicsView *pGraphicsView;
     if (mpComponent->getGraphicsView()->isIconView()) {
       pGraphicsView = pModelWidget->getDiagramGraphicsView();
@@ -276,8 +275,7 @@ void UpdateComponentTransformationsCommand::undo()
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   if (mMoveConnectorsTogether && pModelWidget->getLibraryTreeItem()->isModelica()
-      && ((mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector())
-          || (mpComponent->getModel() && mpComponent->getModel()->isConnector()))) {
+      && (mpComponent->getModel() && mpComponent->getModel()->isConnector())) {
     GraphicsView *pGraphicsView;
     if (mpComponent->getGraphicsView()->isIconView()) {
       pGraphicsView = pModelWidget->getDiagramGraphicsView();
