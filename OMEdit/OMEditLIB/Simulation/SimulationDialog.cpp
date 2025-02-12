@@ -161,7 +161,7 @@ void SimulationDialog::setUpForm()
   mpNumberofIntervalsRadioButton = new QRadioButton(tr("Number of Intervals:"));
   mpNumberofIntervalsRadioButton->setChecked(true);
   connect(mpNumberofIntervalsRadioButton, SIGNAL(toggled(bool)), SLOT(numberOfIntervalsRadioToggled(bool)));
-  mpNumberofIntervalsSpinBox = new QSpinBox;
+  mpNumberofIntervalsSpinBox = new SpinBox;
   mpNumberofIntervalsSpinBox->setRange(0, std::numeric_limits<int>::max());
   mpNumberofIntervalsSpinBox->setSingleStep(100);
   // Interval
@@ -190,7 +190,7 @@ void SimulationDialog::setUpForm()
   // get the solver methods
   QStringList solverMethods, solverMethodsDesc;
   MainWindow::instance()->getOMCProxy()->getSolverMethods(&solverMethods, &solverMethodsDesc);
-  mpMethodComboBox = new QComboBox;
+  mpMethodComboBox = new ComboBox;
   mpMethodComboBox->addItems(solverMethods);
   Utilities::setToolTip(mpMethodComboBox, "Integration Methods", solverMethodsDesc);
   connect(mpMethodComboBox, SIGNAL(currentIndexChanged(int)), SLOT(enableDisableOptions(int)));
@@ -206,7 +206,7 @@ void SimulationDialog::setUpForm()
   mpJacobianLabel->setToolTip(MainWindow::instance()->getOMCProxy()->getJacobianFlagDetailedDescription());
   QStringList jacobianMethods, jacobianMethodsDesc;
   MainWindow::instance()->getOMCProxy()->getJacobianMethods(&jacobianMethods, &jacobianMethodsDesc);
-  mpJacobianComboBox = new QComboBox;
+  mpJacobianComboBox = new ComboBox;
   jacobianMethods.prepend("");
   jacobianMethodsDesc.prepend("");
   mpJacobianComboBox->addItems(jacobianMethods);
@@ -227,7 +227,7 @@ void SimulationDialog::setUpForm()
   mpMaxStepSizeTextBox = new QLineEdit;
   // max integration order
   mpMaxIntegrationOrderLabel = new Label(tr("Maximum Integration Order:"));
-  mpMaxIntegrationOrderSpinBox = new QSpinBox;
+  mpMaxIntegrationOrderSpinBox = new SpinBox;
   // set the layout for options groupbox
   QGridLayout *pOptionsGridLayout = new QGridLayout;
   pOptionsGridLayout->setColumnStretch(1, 1);
@@ -258,7 +258,7 @@ void SimulationDialog::setUpForm()
   mpCflagsTextBox = new QLineEdit;
   // Number of Processors
   mpNumberOfProcessorsLabel = new Label(tr("Number of Processors:"));
-  mpNumberOfProcessorsSpinBox = new QSpinBox;
+  mpNumberOfProcessorsSpinBox = new SpinBox;
   mpNumberOfProcessorsSpinBox->setMinimum(1);
   mpNumberOfProcessorsNoteLabel = new Label(tr("Use 1 processor if you encounter problems during compilation."));
   // build only
@@ -356,7 +356,7 @@ void SimulationDialog::setUpForm()
   MainWindow::instance()->getOMCProxy()->getInitializationMethods(&initializationMethods, &initializationMethodsDesc);
   initializationMethods.prepend("");
   initializationMethodsDesc.prepend("");
-  mpInitializationMethodComboBox = new QComboBox;
+  mpInitializationMethodComboBox = new ComboBox;
   mpInitializationMethodComboBox->addItems(initializationMethods);
   Utilities::setToolTip(mpInitializationMethodComboBox, "Initialization Methods", initializationMethodsDesc);
   // Equation System Initialization File
@@ -372,7 +372,7 @@ void SimulationDialog::setUpForm()
   mpEquationSystemInitializationTimeTextBox = new QLineEdit;
   // clock
   mpClockLabel = new Label(tr("Clock (Optional):"));
-  mpClockComboBox = new QComboBox;
+  mpClockComboBox = new ComboBox;
   mpClockComboBox->addItems(Helper::clockOptions.split(","));
   // Linear Solvers
   mpLinearSolverLabel = new Label(tr("Linear Solver (Optional):"));
@@ -381,7 +381,7 @@ void SimulationDialog::setUpForm()
   MainWindow::instance()->getOMCProxy()->getLinearSolvers(&linearSolverMethods, &linearSolverMethodsDesc);
   linearSolverMethods.prepend("");
   linearSolverMethodsDesc.prepend("");
-  mpLinearSolverComboBox = new QComboBox;
+  mpLinearSolverComboBox = new ComboBox;
   mpLinearSolverComboBox->addItems(linearSolverMethods);
   Utilities::setToolTip(mpLinearSolverComboBox, "Linear Solvers", linearSolverMethodsDesc);
   // Non Linear Solvers
@@ -391,7 +391,7 @@ void SimulationDialog::setUpForm()
   MainWindow::instance()->getOMCProxy()->getNonLinearSolvers(&nonLinearSolverMethods, &nonLinearSolverMethodsDesc);
   nonLinearSolverMethods.prepend("");
   nonLinearSolverMethodsDesc.prepend("");
-  mpNonLinearSolverComboBox = new QComboBox;
+  mpNonLinearSolverComboBox = new ComboBox;
   mpNonLinearSolverComboBox->addItems(nonLinearSolverMethods);
   Utilities::setToolTip(mpNonLinearSolverComboBox, "Non Linear Solvers", nonLinearSolverMethodsDesc);
   // time where the linearization of the model should be performed
@@ -403,7 +403,7 @@ void SimulationDialog::setUpForm()
   mpOutputVariablesTextBox = new QLineEdit;
   // measure simulation time checkbox
   mpProfilingLabel = new Label(tr("Profiling (enable performance measurements)"));
-  mpProfilingComboBox = new QComboBox;
+  mpProfilingComboBox = new ComboBox;
   OMCInterface::getConfigFlagValidOptions_res profiling = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("profiling");
   mpProfilingComboBox->addItems(profiling.validOptions);
   mpProfilingComboBox->setCurrentIndex(0);
@@ -483,7 +483,7 @@ void SimulationDialog::setUpForm()
   mpOutputTab = new QWidget;
   // Output Format
   mpOutputFormatLabel = new Label(tr("Output Format:"));
-  mpOutputFormatComboBox = new QComboBox;
+  mpOutputFormatComboBox = new ComboBox;
   mpOutputFormatComboBox->addItems(Helper::ModelicaSimulationOutputFormats.toLower().split(","));
   // single precision
   mpSinglePrecisionCheckBox = new QCheckBox(tr("Single Precision"));
@@ -2215,7 +2215,7 @@ void SimulationDialog::reject()
 void SimulationDialog::resultFileNameChanged(int index)
 {
   Q_UNUSED(index);
-  QComboBox *pComboBoxSender = qobject_cast<QComboBox*>(sender());
+  ComboBox *pComboBoxSender = qobject_cast<ComboBox*>(sender());
   if (pComboBoxSender) {
     mpSinglePrecisionCheckBox->setEnabled(mpOutputFormatComboBox->currentText().compare("mat") == 0);
     mpResultFileNameTextBox->setPlaceholderText(QString("%1_res.%2").arg(mClassName).arg(mpOutputFormatComboBox->currentText()));
@@ -2242,7 +2242,7 @@ DataReconciliationDialog::DataReconciliationDialog(LibraryTreeItem *pLibraryTree
   pHeadingLabel->setElideMode(Qt::ElideMiddle);
   QFrame *pHeadingLineFrame = Utilities::getHeadingLine();
   mpDataReconciliationAlgorithmLabel = new Label(tr("Algorithm:"));
-  mpDataReconciliationAlgorithmComboBox = new QComboBox;
+  mpDataReconciliationAlgorithmComboBox = new ComboBox;
   mpDataReconciliationAlgorithmComboBox->addItem(tr("Data Reconciliation"), QString("dataReconciliation"));
   mpDataReconciliationAlgorithmComboBox->addItem(tr("Boundary Conditions"), QString("dataReconciliationBoundaryConditions"));
   connect(mpDataReconciliationAlgorithmComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(switchAlgorithmPage(int)));

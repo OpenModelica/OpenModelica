@@ -171,7 +171,7 @@ private:
   ValueType mValueType;
   bool mValueCheckBoxModified;
   QString mDefaultValue;
-  QComboBox *mpValueComboBox;
+  ComboBox *mpValueComboBox;
   QLineEdit *mpValueTextBox;
   QCheckBox *mpValueCheckBox;
   QToolButton *mpEditClassButton = 0;
@@ -181,7 +181,7 @@ private:
   QString mUnit;
   QString mDisplayUnit;
   QString mPreviousUnit;
-  QComboBox *mpUnitComboBox;
+  ComboBox *mpUnitComboBox;
   FinalEachToolButton *mpDisplayUnitFinalEachMenuButton = 0;
   Label *mpCommentLabel;
   bool mStartFinalInHierarchy = false;

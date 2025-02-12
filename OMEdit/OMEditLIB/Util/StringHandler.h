@@ -39,6 +39,7 @@
 #include <QComboBox>
 #include <QProcessEnvironment>
 
+class ComboBox;
 class StringHandler : public QObject
 {
   Q_OBJECT
@@ -80,11 +81,11 @@ public:
   static Qt::PenStyle getLinePatternType(StringHandler::LinePattern type);
   static StringHandler::LinePattern getLinePatternType(QString type);
   static QString getLinePatternString(StringHandler::LinePattern type);
-  static QComboBox* getLinePatternComboBox();
+  static ComboBox *getLinePatternComboBox();
   static Qt::BrushStyle getFillPatternType(StringHandler::FillPattern type);
   static StringHandler::FillPattern getFillPatternType(QString type);
   static QString getFillPatternString(StringHandler::FillPattern type);
-  static QComboBox* getFillPatternComboBox();
+  static ComboBox *getFillPatternComboBox();
   static StringHandler::BorderPattern getBorderPatternType(QString type);
   static QString getBorderPatternString(StringHandler::BorderPattern type);
   static StringHandler::Smooth getSmoothType(QString type);
@@ -93,8 +94,8 @@ public:
   static QString getClosureString(StringHandler::EllipseClosure type);
   static StringHandler::Arrow getArrowType(QString type);
   static QString getArrowString(StringHandler::Arrow type);
-  static QComboBox* getStartArrowComboBox();
-  static QComboBox* getEndArrowComboBox();
+  static ComboBox *getStartArrowComboBox();
+  static ComboBox *getEndArrowComboBox();
   static int getFontWeight(QVector<TextStyle> styleList);
   static bool getFontItalic(QVector<StringHandler::TextStyle> styleList);
   static bool getFontUnderline(QVector<StringHandler::TextStyle> styleList);

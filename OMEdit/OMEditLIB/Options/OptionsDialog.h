@@ -174,7 +174,6 @@ public:
   void saveDialogGeometry();
   void show();
   TabSettings getTabSettings();
-  virtual bool eventFilter(QObject *pObject, QEvent *pEvent) override;
 signals:
   void textSettingsChanged();
   void modelicaEditorSettingsChanged();
@@ -271,10 +270,10 @@ public:
     Never = 2
   };
   GeneralSettingsPage(OptionsDialog *pOptionsDialog);
-  QComboBox* getLanguageComboBox() {return mpLanguageComboBox;}
+  ComboBox* getLanguageComboBox() {return mpLanguageComboBox;}
   void setWorkingDirectory(QString value) {mpWorkingDirectoryTextBox->setText(value);}
   QString getWorkingDirectory();
-  QSpinBox* getToolbarIconSizeSpinBox() {return mpToolbarIconSizeSpinBox;}
+  SpinBox* getToolbarIconSizeSpinBox() {return mpToolbarIconSizeSpinBox;}
   void setPreserveUserCustomizations(bool value) {mpPreserveUserCustomizations->setChecked(value);}
   bool getPreserveUserCustomizations() {return mpPreserveUserCustomizations->isChecked();}
   void setTerminalCommand(QString value) {mpTerminalCommandTextBox->setText(value);}
@@ -282,22 +281,22 @@ public:
   void setTerminalCommandArguments(QString value) {mpTerminalCommandArgumentsTextBox->setText(value);}
   QString getTerminalCommandArguments() {return mpTerminalCommandArgumentsTextBox->text();}
   QCheckBox* getHideVariablesBrowserCheckBox() {return mpHideVariablesBrowserCheckBox;}
-  QComboBox* getActivateAccessAnnotationsComboBox() {return mpActivateAccessAnnotationsComboBox;}
+  ComboBox* getActivateAccessAnnotationsComboBox() {return mpActivateAccessAnnotationsComboBox;}
   QCheckBox* getCreateBackupFileCheckbox() {return mpCreateBackupFileCheckbox;}
   QCheckBox* getDisplayNFAPIErrorsWarningsCheckBox() {return mpDisplayNFAPIErrorsWarningsCheckBox;}
-  QSpinBox* getLibraryIconSizeSpinBox() {return mpLibraryIconSizeSpinBox;}
-  QSpinBox* getLibraryIconTextLengthSpinBox() {return mpLibraryIconTextLengthSpinBox;}
+  SpinBox* getLibraryIconSizeSpinBox() {return mpLibraryIconSizeSpinBox;}
+  SpinBox* getLibraryIconTextLengthSpinBox() {return mpLibraryIconTextLengthSpinBox;}
   void setShowProtectedClasses(bool value) {mpShowProtectedClasses->setChecked(value);}
   bool getShowProtectedClasses() {return mpShowProtectedClasses->isChecked();}
   void setShowHiddenClasses(bool value) {mpShowHiddenClasses->setChecked(value);}
   bool getShowHiddenClasses() {return mpShowHiddenClasses->isChecked();}
   QCheckBox* getSynchronizeWithModelWidgetCheckBox() {return mpSynchronizeWithModelWidgetCheckBox;}
   QGroupBox* getEnableAutoSaveGroupBox() {return mpEnableAutoSaveGroupBox;}
-  QSpinBox* getAutoSaveIntervalSpinBox() {return mpAutoSaveIntervalSpinBox;}
+  SpinBox* getAutoSaveIntervalSpinBox() {return mpAutoSaveIntervalSpinBox;}
   int getWelcomePageView();
   void setWelcomePageView(int view);
   QCheckBox* getShowLatestNewsCheckBox() {return mpShowLatestNewsCheckBox;}
-  QSpinBox* getRecentFilesAndLatestNewsSizeSpinBox() {return mpRecentFilesAndLatestNewsSizeSpinBox;}
+  SpinBox* getRecentFilesAndLatestNewsSizeSpinBox() {return mpRecentFilesAndLatestNewsSizeSpinBox;}
 protected:
   QCheckBox* getEnableCRMLSupportCheckBox() {return mpEnableCRMLSupportCheckBox;}
 private:
@@ -305,12 +304,12 @@ private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralSettingsGroupBox;
   Label *mpLanguageLabel;
-  QComboBox *mpLanguageComboBox;
+  ComboBox *mpLanguageComboBox;
   Label *mpWorkingDirectoryLabel;
   QLineEdit *mpWorkingDirectoryTextBox;
   QPushButton *mpWorkingDirectoryBrowseButton;
   Label *mpToolbarIconSizeLabel;
-  QSpinBox *mpToolbarIconSizeSpinBox;
+  SpinBox *mpToolbarIconSizeSpinBox;
   QCheckBox *mpPreserveUserCustomizations;
   Label *mpTerminalCommandLabel;
   QLineEdit *mpTerminalCommandTextBox;
@@ -319,27 +318,27 @@ private:
   QLineEdit *mpTerminalCommandArgumentsTextBox;
   QCheckBox *mpHideVariablesBrowserCheckBox;
   Label *mpActivateAccessAnnotationsLabel;
-  QComboBox *mpActivateAccessAnnotationsComboBox;
+  ComboBox *mpActivateAccessAnnotationsComboBox;
   QCheckBox *mpCreateBackupFileCheckbox;
   QCheckBox *mpDisplayNFAPIErrorsWarningsCheckBox;
   QCheckBox *mpEnableCRMLSupportCheckBox;
   QGroupBox *mpLibraryBrowserGroupBox;
   Label *mpLibraryIconSizeLabel;
-  QSpinBox *mpLibraryIconSizeSpinBox;
+  SpinBox *mpLibraryIconSizeSpinBox;
   Label *mpLibraryIconTextLengthLabel;
-  QSpinBox *mpLibraryIconTextLengthSpinBox;
+  SpinBox *mpLibraryIconTextLengthSpinBox;
   QCheckBox *mpShowProtectedClasses;
   QCheckBox *mpShowHiddenClasses;
   QCheckBox *mpSynchronizeWithModelWidgetCheckBox;
   QGroupBox *mpEnableAutoSaveGroupBox;
   Label *mpAutoSaveIntervalLabel;
-  QSpinBox *mpAutoSaveIntervalSpinBox;
+  SpinBox *mpAutoSaveIntervalSpinBox;
   Label *mpAutoSaveSecondsLabel;
   QGroupBox *mpWelcomePageGroupBox;
   QRadioButton *mpHorizontalViewRadioButton;
   QRadioButton *mpVerticalViewRadioButton;
   QCheckBox *mpShowLatestNewsCheckBox;
-  QSpinBox *mpRecentFilesAndLatestNewsSizeSpinBox;
+  SpinBox *mpRecentFilesAndLatestNewsSizeSpinBox;
 public slots:
   void selectWorkingDirectory();
   void selectTerminalCommand();
@@ -438,11 +437,11 @@ class TextEditorPage : public QWidget
   Q_OBJECT
 public:
   TextEditorPage(OptionsDialog *pOptionsDialog);
-  QComboBox *getLineEndingComboBox() {return mpLineEndingComboBox;}
-  QComboBox *getBOMComboBox() {return mpBOMComboBox;}
-  QComboBox *getTabPolicyComboBox() {return mpTabPolicyComboBox;}
-  QSpinBox *getTabSizeSpinBox() {return mpTabSizeSpinBox;}
-  QSpinBox *getIndentSpinBox() {return mpIndentSpinBox;}
+  ComboBox *getLineEndingComboBox() {return mpLineEndingComboBox;}
+  ComboBox *getBOMComboBox() {return mpBOMComboBox;}
+  ComboBox *getTabPolicyComboBox() {return mpTabPolicyComboBox;}
+  SpinBox *getTabSizeSpinBox() {return mpTabSizeSpinBox;}
+  SpinBox *getIndentSpinBox() {return mpIndentSpinBox;}
   QGroupBox* getSyntaxHighlightingGroupBox() {return mpSyntaxHighlightingGroupBox;}
   QCheckBox* getAutoCompleteCheckBox() {return mpAutoCompleteCheckBox;}
   QCheckBox* getCodeFoldingCheckBox() {return mpCodeFoldingCheckBox;}
@@ -454,16 +453,16 @@ private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpFormatGroupBox;
   Label *mpLineEndingLabel;
-  QComboBox *mpLineEndingComboBox;
+  ComboBox *mpLineEndingComboBox;
   Label *mpBOMLabel;
-  QComboBox *mpBOMComboBox;
+  ComboBox *mpBOMComboBox;
   QGroupBox *mpTabsAndIndentation;
   Label *mpTabPolicyLabel;
-  QComboBox *mpTabPolicyComboBox;
+  ComboBox *mpTabPolicyComboBox;
   Label *mpTabSizeLabel;
-  QSpinBox *mpTabSizeSpinBox;
+  SpinBox *mpTabSizeSpinBox;
   Label *mpIndentSizeLabel;
-  QSpinBox *mpIndentSpinBox;
+  SpinBox *mpIndentSpinBox;
   QGroupBox *mpSyntaxHighlightAndTextWrappingGroupBox;
   QGroupBox *mpSyntaxHighlightingGroupBox;
   QGroupBox *mpAutoCompleteGroupBox;
@@ -665,10 +664,10 @@ class SimulationPage : public QWidget
 public:
   SimulationPage(OptionsDialog *pOptionsDialog);
   TranslationFlagsWidget *getTranslationFlagsWidget() const {return mpTranslationFlagsWidget;}
-  QComboBox* getTargetLanguageComboBox() {return mpTargetLanguageComboBox;}
-  QComboBox* getTargetBuildComboBox() {return mpTargetBuildComboBox;}
-  QComboBox* getCompilerComboBox() {return mpCompilerComboBox;}
-  QComboBox* getCXXCompilerComboBox() {return mpCXXCompilerComboBox;}
+  ComboBox* getTargetLanguageComboBox() {return mpTargetLanguageComboBox;}
+  ComboBox* getTargetBuildComboBox() {return mpTargetBuildComboBox;}
+  ComboBox* getCompilerComboBox() {return mpCompilerComboBox;}
+  ComboBox* getCXXCompilerComboBox() {return mpCXXCompilerComboBox;}
 #ifdef Q_OS_WIN
   QCheckBox* getUseStaticLinkingCheckBox() {return mpUseStaticLinkingCheckBox;}
 #endif
@@ -683,20 +682,20 @@ public:
   QCheckBox* getDeleteEntireSimulationDirectoryCheckBox() {return mpDeleteEntireSimulationDirectoryCheckBox;}
   void setOutputMode(QString value);
   QString getOutputMode();
-  QSpinBox* getDisplayLimitSpinBox() {return mpDisplayLimitSpinBox;}
+  SpinBox* getDisplayLimitSpinBox() {return mpDisplayLimitSpinBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpSimulationGroupBox;
   QGroupBox *mpTranslationFlagsGroupBox;
   TranslationFlagsWidget *mpTranslationFlagsWidget;
   Label *mpTargetLanguageLabel;
-  QComboBox *mpTargetLanguageComboBox;
+  ComboBox *mpTargetLanguageComboBox;
   Label *mpTargetBuildLabel;
-  QComboBox *mpTargetBuildComboBox;
+  ComboBox *mpTargetBuildComboBox;
   Label *mpCompilerLabel;
-  QComboBox *mpCompilerComboBox;
+  ComboBox *mpCompilerComboBox;
   Label *mpCXXCompilerLabel;
-  QComboBox *mpCXXCompilerComboBox;
+  ComboBox *mpCXXCompilerComboBox;
 #ifdef Q_OS_WIN
   QCheckBox *mpUseStaticLinkingCheckBox;
 #endif
@@ -712,7 +711,7 @@ private:
   QRadioButton *mpStructuredRadioButton;
   QRadioButton *mpFormattedTextRadioButton;
   Label *mpDisplayLimitLabel;
-  QSpinBox *mpDisplayLimitSpinBox;
+  SpinBox *mpDisplayLimitSpinBox;
   Label *mpDisplayLimitMBLabel;
 public slots:
   void targetBuildChanged(int index);
@@ -724,7 +723,7 @@ class MessagesPage : public QWidget
   Q_OBJECT
 public:
   MessagesPage(OptionsDialog *pOptionsDialog);
-  QSpinBox* getOutputSizeSpinBox() {return mpOutputSizeSpinBox;}
+  SpinBox* getOutputSizeSpinBox() {return mpOutputSizeSpinBox;}
   QCheckBox* getResetMessagesNumberBeforeSimulationCheckBox() {return mpResetMessagesNumberBeforeSimulationCheckBox;}
   QCheckBox* getClearMessagesBrowserBeforeSimulationCheckBox() {return mpClearMessagesBrowserBeforeSimulationCheckBox;}
   QCheckBox* getEnlargeMessageBrowserCheckBox() {return mpEnlargeMessageBrowserCheckBox;}
@@ -744,7 +743,7 @@ private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralGroupBox;
   Label *mpOutputSizeLabel;
-  QSpinBox *mpOutputSizeSpinBox;
+  SpinBox *mpOutputSizeSpinBox;
   QCheckBox *mpResetMessagesNumberBeforeSimulationCheckBox;
   QCheckBox *mpClearMessagesBrowserBeforeSimulationCheckBox;
   QCheckBox *mpEnlargeMessageBrowserCheckBox;
@@ -825,13 +824,13 @@ private:
   QPushButton *mpLinePickColorButton;
   QColor mLineColor;
   Label *mpLinePatternLabel;
-  QComboBox *mpLinePatternComboBox;
+  ComboBox *mpLinePatternComboBox;
   Label *mpLineThicknessLabel;
   DoubleSpinBox *mpLineThicknessSpinBox;
   Label *mpLineStartArrowLabel;
-  QComboBox *mpLineStartArrowComboBox;
+  ComboBox *mpLineStartArrowComboBox;
   Label *mpLineEndArrowLabel;
-  QComboBox *mpLineEndArrowComboBox;
+  ComboBox *mpLineEndArrowComboBox;
   Label *mpLineArrowSizeLabel;
   DoubleSpinBox *mpLineArrowSizeSpinBox;
   Label *mpLineSmoothLabel;
@@ -857,7 +856,7 @@ private:
   QPushButton *mpFillPickColorButton;
   QColor mFillColor;
   Label *mpFillPatternLabel;
-  QComboBox *mpFillPatternComboBox;
+  ComboBox *mpFillPatternComboBox;
 public slots:
   void fillPickColor();
 };
@@ -875,7 +874,7 @@ public:
   int getCurvePattern();
   void setCurveThickness(qreal thickness);
   qreal getCurveThickness();
-  QSpinBox* getFilterIntervalSpinBox() {return mpFilterIntervalSpinBox;}
+  SpinBox* getFilterIntervalSpinBox() {return mpFilterIntervalSpinBox;}
   DoubleSpinBox *getTitleFontSizeSpinBox() const {return mpTitleFontSizeSpinBox;}
   DoubleSpinBox *getVerticalAxisTitleFontSizeSpinBox() const {return mpVerticalAxisTitleFontSizeSpinBox;}
   DoubleSpinBox *getVerticalAxisNumbersFontSizeSpinBox() const {return mpVerticalAxisNumbersFontSizeSpinBox;}
@@ -893,13 +892,13 @@ private:
   QRadioButton *mpPlottingSubWindowViewRadioButton;
   QGroupBox *mpCurveStyleGroupBox;
   Label *mpCurvePatternLabel;
-  QComboBox *mpCurvePatternComboBox;
+  ComboBox *mpCurvePatternComboBox;
   Label *mpCurveThicknessLabel;
   DoubleSpinBox *mpCurveThicknessSpinBox;
   QGroupBox *mpVariableFilterGroupBox;
   Label *mpFilterIntervalHelpLabel;
   Label *mpFilterIntervalLabel;
-  QSpinBox *mpFilterIntervalSpinBox;
+  SpinBox *mpFilterIntervalSpinBox;
   QGroupBox *mpFontSizeGroupBox;
   Label *mpTitleFontSizeLabel;
   DoubleSpinBox *mpTitleFontSizeSpinBox;
@@ -953,8 +952,8 @@ public:
   void setGDBPath(QString path);
   QString getGDBPath();
   QLineEdit* getGDBPathTextBox() {return mpGDBPathTextBox;}
-  QSpinBox* getGDBCommandTimeoutSpinBox() {return mpGDBCommandTimeoutSpinBox;}
-  QSpinBox* getGDBOutputLimitSpinBox() {return mpGDBOutputLimitSpinBox;}
+  SpinBox* getGDBCommandTimeoutSpinBox() {return mpGDBCommandTimeoutSpinBox;}
+  SpinBox* getGDBOutputLimitSpinBox() {return mpGDBOutputLimitSpinBox;}
   QCheckBox* getDisplayCFramesCheckBox() {return mpDisplayCFramesCheckBox;}
   QCheckBox* getDisplayUnknownFramesCheckBox() {return mpDisplayUnknownFramesCheckBox;}
   QCheckBox* getClearOutputOnNewRunCheckBox() {return mpClearOutputOnNewRunCheckBox;}
@@ -968,9 +967,9 @@ private:
   QLineEdit *mpGDBPathTextBox;
   QPushButton *mpGDBPathBrowseButton;
   Label *mpGDBCommandTimeoutLabel;
-  QSpinBox *mpGDBCommandTimeoutSpinBox;
+  SpinBox *mpGDBCommandTimeoutSpinBox;
   Label *mpGDBOutputLimitLabel;
-  QSpinBox *mpGDBOutputLimitSpinBox;
+  SpinBox *mpGDBOutputLimitSpinBox;
   QCheckBox *mpDisplayCFramesCheckBox;
   QCheckBox *mpDisplayUnknownFramesCheckBox;
   QCheckBox *mpClearOutputOnNewRunCheckBox;
@@ -995,8 +994,8 @@ public:
   QLineEdit* getFMUNameTextBox() {return mpFMUNameTextBox;}
   QLineEdit* getMoveFMUTextBox() {return mpMoveFMUTextBox;}
   QGroupBox* getPlatformsGroupBox() {return mpPlatformsGroupBox;}
-  QComboBox *getModelDescriptionFiltersComboBox() const {return mpModelDescriptionFiltersComboBox;}
-  QComboBox *getSolverForCoSimulationComboBox() const {return mpSolverForCoSimulationComboBox;}
+  ComboBox *getSolverForCoSimulationComboBox() const {return mpSolverForCoSimulationComboBox;}
+  ComboBox *getModelDescriptionFiltersComboBox() const {return mpModelDescriptionFiltersComboBox;}
   QCheckBox *getIncludeResourcesCheckBox() const {return mpIncludeResourcesCheckBox;}
   QCheckBox *getIncludeSourceCodeCheckBox() const {return mpIncludeSourceCodeCheckBox;}
   QCheckBox *getGenerateDebugSymbolsCheckBox() const {return mpGenerateDebugSymbolsCheckBox;}
@@ -1021,8 +1020,8 @@ private:
   QLineEdit *mpMoveFMUTextBox;
   QPushButton *mpBrowseFMUDirectoryButton;
   QGroupBox *mpPlatformsGroupBox;
-  QComboBox *mpSolverForCoSimulationComboBox;
-  QComboBox *mpModelDescriptionFiltersComboBox;
+  ComboBox *mpSolverForCoSimulationComboBox;
+  ComboBox *mpModelDescriptionFiltersComboBox;
   QCheckBox *mpIncludeResourcesCheckBox;
   QCheckBox *mpIncludeSourceCodeCheckBox;
   QCheckBox *mpGenerateDebugSymbolsCheckBox;
@@ -1038,13 +1037,13 @@ class OMSimulatorPage : public QWidget
   Q_OBJECT
 public:
   OMSimulatorPage(OptionsDialog *pOptionsDialog);
-  QComboBox* getLoggingLevelComboBox() {return mpLoggingLevelComboBox;}
+  ComboBox* getLoggingLevelComboBox() {return mpLoggingLevelComboBox;}
   QLineEdit* getCommandLineOptionsTextBox() {return mpCommandLineOptionsTextBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralGroupBox;
   Label *mpLoggingLevelLabel;
-  QComboBox *mpLoggingLevelComboBox;
+  ComboBox *mpLoggingLevelComboBox;
   Label *mpCommandLineOptionsLabel;
   QLineEdit *mpCommandLineOptionsTextBox;
 };

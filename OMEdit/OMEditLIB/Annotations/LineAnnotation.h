@@ -41,7 +41,6 @@
 #include <QTreeView>
 #include <QSortFilterProxyModel>
 #include <QSpinBox>
-#include <QUndoCommand>
 #include<functional>
 
 class Label;

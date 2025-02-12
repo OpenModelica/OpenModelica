@@ -40,7 +40,6 @@
 #include "Modeling/Model.h"
 
 #include <QGraphicsItem>
-#include <QSettings>
 #include <QGroupBox>
 #include <QDialog>
 #include <QComboBox>

@@ -243,7 +243,7 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
             << QString("p%1").arg(mUnit);
     }
   }
-  mpUnitComboBox = new QComboBox;
+  mpUnitComboBox = new ComboBox;
   units.removeDuplicates();
   foreach (QString unit, units) {
     mpUnitComboBox->addItem(Utilities::convertUnitToSymbol(unit), unit);
@@ -625,7 +625,7 @@ void Parameter::createValueWidget()
 
   switch (mValueType) {
     case Parameter::Boolean:
-      mpValueComboBox = new QComboBox;
+      mpValueComboBox = new ComboBox;
       mpValueComboBox->setEditable(true);
       mpValueComboBox->setInsertPolicy(QComboBox::NoInsert);
       mpValueComboBox->addItem("", "");
@@ -635,7 +635,7 @@ void Parameter::createValueWidget()
       break;
 
     case Parameter::Enumeration:
-      mpValueComboBox = new QComboBox;
+      mpValueComboBox = new ComboBox;
       mpValueComboBox->setEditable(true);
       mpValueComboBox->setInsertPolicy(QComboBox::NoInsert);
       mpValueComboBox->addItem("", "");
@@ -686,7 +686,7 @@ void Parameter::createValueWidget()
         constrainedByClassName = className;
       }
 
-      mpValueComboBox = new QComboBox;
+      mpValueComboBox = new ComboBox;
       mpValueComboBox->setEditable(true);
       mpValueComboBox->setInsertPolicy(QComboBox::NoInsert);
       mpValueComboBox->addItem("", "");

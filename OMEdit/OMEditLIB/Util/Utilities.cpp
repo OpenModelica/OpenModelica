@@ -310,6 +310,51 @@ void Label::resizeEvent(QResizeEvent *event)
   QLabel::setText(elidedText());
 }
 
+ComboBox::ComboBox(QWidget *parent)
+  : QComboBox(parent)
+{
+  setFocusPolicy(Qt::StrongFocus);
+}
+
+void ComboBox::wheelEvent(QWheelEvent *event)
+{
+  if (!hasFocus()) {
+    event->ignore();
+  } else {
+    QComboBox::wheelEvent(event);
+  }
+}
+
+SpinBox::SpinBox(QWidget *parent)
+  : QSpinBox(parent)
+{
+  setFocusPolicy(Qt::StrongFocus);
+}
+
+void SpinBox::wheelEvent(QWheelEvent *event)
+{
+  if (!hasFocus()) {
+    event->ignore();
+  } else {
+    QSpinBox::wheelEvent(event);
+  }
+}
+
+DoubleSpinBox::DoubleSpinBox(QWidget *parent)
+  : QDoubleSpinBox(parent)
+{
+  setFocusPolicy(Qt::StrongFocus);
+}
+
+void DoubleSpinBox::wheelEvent(QWheelEvent *event)
+{
+  if (!hasFocus()) {
+    event->ignore();
+  } else {
+    QDoubleSpinBox::wheelEvent(event);
+  }
+}
+
 FixedCheckBox::FixedCheckBox(QWidget *parent)
  : QCheckBox(parent)
 {
