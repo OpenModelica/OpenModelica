@@ -47,6 +47,7 @@ import Class = NFClass;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
 import NFModifier.Modifier;
+import SimplifyExp = NFSimplifyExp;
 import Statement = NFStatement;
 import NFType.Type;
 import Operator = NFOperator;
@@ -1311,6 +1312,7 @@ function typeExp
   input output Expression exp;
   input InstContext.Type context;
   input SourceInfo info;
+  input Boolean retype = false;
         output Type ty;
         output Variability variability;
         output Purity purity;
@@ -1411,8 +1413,7 @@ algorithm
 
     case Expression.CALL()
       algorithm
-        (e1, ty, var1, pur1) := Call.typeCall(exp, context, info);
-
+        (e1, ty, var1, pur1) := Call.typeCall(exp, context, info, retype);
         // If the call has multiple outputs and isn't alone on either side of an
         // equation/algorithm, select the first output.
         if Type.isTuple(ty) and not InstContext.isSingleExpression(context) then
@@ -1426,7 +1427,7 @@ algorithm
       algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
       then
-        typeExp(exp.exp, next_context, info);
+        typeExp(exp.exp, next_context, info, retype);
 
     case Expression.SUBSCRIPTED_EXP()
       then typeSubscriptedExp(exp, context, info);
@@ -1434,7 +1435,7 @@ algorithm
     case Expression.MUTABLE()
       algorithm
         e1 := Mutable.access(exp.exp);
-        (e1, ty, variability, purity) := typeExp(e1, context, info);
+        (e1, ty, variability, purity) := typeExp(e1, context, info, retype);
         exp.exp := Mutable.create(e1);
       then
         (exp, ty, variability, purity);
@@ -1443,6 +1444,8 @@ algorithm
       then Function.typePartialApplication(exp, context, info);
 
     case Expression.FILENAME() then (exp, Type.STRING(),  Variability.CONSTANT, Purity.PURE);
+
+    case Expression.MULTARY() then typeExp(SimplifyExp.splitMultary(exp), context, info, retype);
 
     else
       algorithm

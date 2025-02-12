@@ -83,6 +83,13 @@ public
         then
           ();
 
+      // for retyping
+      case Call.TYPED_CALL()
+        algorithm
+          special := Function.isSpecialBuiltin(call.fn);
+        then
+          ();
+
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown call: " +
