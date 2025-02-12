@@ -6259,6 +6259,8 @@ end offsetAnnotationsInElementSpec;
 
 constant Absyn.Path PLACEMENT_ORIGIN_PATH =
   Absyn.Path.QUALIFIED("Placement", Absyn.Path.QUALIFIED("transformation", Absyn.Path.IDENT("origin")));
+constant Absyn.Path PLACEMENT_ICON_TRANSFORMATION_PATH =
+  Absyn.Path.QUALIFIED("Placement", Absyn.Path.IDENT("iconTransformation"));
 constant Absyn.Path LINE_POINTS_PATH = Absyn.Path.QUALIFIED("Line", Absyn.Path.IDENT("points"));
 constant Absyn.Path DIAGRAM_GRAPHICS_PATH = Absyn.Path.QUALIFIED("Diagram", Absyn.Path.IDENT("graphics"));
 
@@ -6273,8 +6275,39 @@ algorithm
   oann := AbsynUtil.getCommentOptAnnotation(item.comment);
   ann := if isSome(oann) then Util.getOption(oann) else Absyn.Annotation.ANNOTATION({});
   ann := AbsynUtil.transformAnnotationArg(ann, PLACEMENT_ORIGIN_PATH, function offsetOriginAnnotation(x = x, y = y));
+  ann := offsetIconTransformationAnnotation(ann, x, y);
   item := AbsynUtil.setComponentItemAnnotation(item, SOME(ann));
 end offsetAnnotationsInComponentItem;
+
+function offsetIconTransformationAnnotation
+  input output Absyn.Annotation ann;
+  input Integer x;
+  input Integer y;
+protected
+  function impl
+    input output Absyn.ElementArg arg;
+    input Integer x;
+    input Integer y;
+  protected
+    Absyn.Modification mod;
+  algorithm
+    () := match arg
+      case Absyn.ElementArg.MODIFICATION(modification = SOME(mod))
+        algorithm
+          mod.elementArgLst := AbsynUtil.transformAnnotationInArgs(mod.elementArgLst, Absyn.IDENT("origin"),
+            function offsetOriginAnnotation(x = x, y = y));
+          arg.modification := SOME(mod);
+        then
+          ();
+    end match;
+  end impl;
+algorithm
+  try
+    ann := AbsynUtil.transformAnnotationArg(ann, PLACEMENT_ICON_TRANSFORMATION_PATH,
+      function impl(x = x, y = y), insert = false);
+  else
+  end try;
+end offsetIconTransformationAnnotation;
 
 function offsetOriginAnnotation
   input output Absyn.ElementArg arg;
