@@ -19,7 +19,7 @@ loadString("
 
 loadClassContentString("
   Modelica.Blocks.Continuous.Integrator integrator annotation(Placement(transformation(origin={-26,32},extent={{-10,-10},{10,10}})));
-  Modelica.Blocks.Continuous.Integrator integrator1 annotation(Placement(transformation(extent={{-10,-10},{10,10}})));
+  Modelica.Blocks.Continuous.Integrator integrator1 annotation(Placement(transformation(extent={{-10,-10},{10,10}}), iconTransformation(extent = {{-10, -10}, {10, 10}})));
 equation
   connect(integrator.y, integrator1.u) annotation (Line(points={{-14,32},{16,32}},color={0,0,127}));
   annotation (Diagram(graphics={Rectangle(origin={1,-5},extent={{-23,13},{23,-13}})}));
@@ -38,7 +38,7 @@ list(M);
 //   Modelica.Blocks.Continuous.Integrator integrator2 annotation(
 //     Placement(transformation(origin = {-11, 55}, extent = {{-10, -10}, {10, 10}})));
 //   Modelica.Blocks.Continuous.Integrator integrator11 annotation(
-//     Placement(transformation(origin = {15, 23}, extent = {{-10, -10}, {10, 10}})));
+//     Placement(transformation(origin = {15, 23}, extent = {{-10, -10}, {10, 10}}), iconTransformation(origin = {15, 23}, extent = {{-10, -10}, {10, 10}})));
 // equation
 //   connect(integrator.y, integrator1.u) annotation(
 //     Line(points = {{-14, 32}, {16, 32}}, color = {0, 0, 127}));
