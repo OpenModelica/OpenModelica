@@ -81,7 +81,7 @@ public:
   // Used for non-existing class
   LineAnnotation(GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation) override;
-  void parseShapeAnnotation();
+  void parseShapeAnnotation() override;
   QPainterPath getShape() const;
   QRectF boundingRect() const override;
   QPainterPath shape() const override;

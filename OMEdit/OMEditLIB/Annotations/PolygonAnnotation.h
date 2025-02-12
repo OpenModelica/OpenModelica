@@ -52,7 +52,7 @@ public:
   // Used for default input/output component
   PolygonAnnotation(Element *pParent);
   void parseShapeAnnotation(QString annotation) override;
-  void parseShapeAnnotation();
+  void parseShapeAnnotation() override;
   QPainterPath getShape() const;
   QRectF boundingRect() const override;
   QPainterPath shape() const override;

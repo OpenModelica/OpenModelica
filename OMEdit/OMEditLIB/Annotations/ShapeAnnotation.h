@@ -137,6 +137,7 @@ public:
   void applyLinePattern(QPainter *painter);
   void applyFillPattern(QPainter *painter);
   virtual void parseShapeAnnotation(QString annotation) = 0;
+  virtual void parseShapeAnnotation() = 0;
   virtual QString getOMCShapeAnnotation() = 0;
   virtual QString getOMCShapeAnnotationWithShapeName() = 0;
   virtual QString getShapeAnnotation() = 0;

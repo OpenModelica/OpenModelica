@@ -337,6 +337,8 @@ void GraphicsView::drawShapes(ModelInstance::Model *pModelInstance, bool inherti
         } else if (BitmapAnnotation *pBitmapAnnotation = dynamic_cast<BitmapAnnotation*>(mShapesList.at(i))) {
           pBitmapAnnotation->setBitmap(dynamic_cast<ModelInstance::Bitmap*>(shapes.at(i)));
         }
+        mShapesList.at(i)->parseShapeAnnotation();
+        mShapesList.at(i)->updateCornerItems();
         // remove and add the shape to keep the correct order of shapes.
         removeItem(mShapesList.at(i));
         removeItem(mShapesList.at(i)->getOriginItem());
@@ -458,6 +460,8 @@ void GraphicsView::drawConnections(ModelInstance::Model *pModelInstance, bool in
               pConnectionLineAnnotation->setEndElement(pEndConnectorElement);
               pConnectionLineAnnotation->setEndElementName(pConnection->getEndConnector()->getName());
               pConnectionLineAnnotation->setLine(pConnection->getAnnotation()->getLine());
+              pConnectionLineAnnotation->parseShapeAnnotation();
+              pConnectionLineAnnotation->updateCornerItems();
               addConnectionDetails(pConnectionLineAnnotation);
               addItem(pConnectionLineAnnotation);
               addConnectionToList(pConnectionLineAnnotation);
@@ -2505,45 +2509,68 @@ void GraphicsView::adjustInitializeDraw(ShapeAnnotation* shapeAnnotation)
 
 /*!
  * \brief GraphicsView::itemsBoundingRect
- * Gets the bounding rectangle of all the items added to the view, excluding background and so on
+ * Gets the bounding rectangle of all the items added to the view, excluding background and so on.
+ * \param onlySelected - items bounding rect of only selected items.
  * \return
  */
-QRectF GraphicsView::itemsBoundingRect()
+QRectF GraphicsView::itemsBoundingRect(bool onlySelected)
 {
   QRectF rect;
   foreach (Element *pElement, mElementsList) {
-    rect |= pElement->itemsBoundingRect();
+    if (!onlySelected || pElement->isSelected()) {
+      rect |= pElement->itemsBoundingRect();
+    }
   }
   foreach (QGraphicsItem *item, mShapesList) {
-    rect |= item->sceneBoundingRect();
+    if (!onlySelected || item->isSelected()) {
+      rect |= item->sceneBoundingRect();
+    }
   }
   foreach (QGraphicsItem *item, mConnectionsList) {
-    rect |= item->sceneBoundingRect();
+    if (!onlySelected || item->isSelected()) {
+      rect |= item->sceneBoundingRect();
+    }
   }
   foreach (QGraphicsItem *item, mTransitionsList) {
-    rect |= item->sceneBoundingRect();
+    if (!onlySelected || item->isSelected()) {
+      rect |= item->sceneBoundingRect();
+    }
   }
   foreach (QGraphicsItem *item, mInitialStatesList) {
-    rect |= item->sceneBoundingRect();
+    if (!onlySelected || item->isSelected()) {
+      rect |= item->sceneBoundingRect();
+    }
   }
   foreach (Element *pElement, mInheritedElementsList) {
-    rect |= pElement->itemsBoundingRect();
+    if (!onlySelected || pElement->isSelected()) {
+      rect |= pElement->itemsBoundingRect();
+    }
   }
   foreach (QGraphicsItem *item, mInheritedShapesList) {
-    rect |= item->sceneBoundingRect();
+    if (!onlySelected || item->isSelected()) {
+      rect |= item->sceneBoundingRect();
+    }
   }
   foreach (QGraphicsItem *item, mInheritedConnectionsList) {
-    rect |= item->sceneBoundingRect();
+    if (!onlySelected || item->isSelected()) {
+      rect |= item->sceneBoundingRect();
+    }
   }
   foreach (QGraphicsItem *item, mInheritedTransitionsList) {
-    rect |= item->sceneBoundingRect();
+    if (!onlySelected || item->isSelected()) {
+      rect |= item->sceneBoundingRect();
+    }
   }
   foreach (QGraphicsItem *item, mInheritedInitialStatesList) {
-    rect |= item->sceneBoundingRect();
+    if (!onlySelected || item->isSelected()) {
+      rect |= item->sceneBoundingRect();
+    }
   }
-  qreal x1, y1, x2, y2;
-  rect.getCoords(&x1, &y1, &x2, &y2);
-  rect.setCoords(x1 -5, y1 -5, x2 + 5, y2 + 5);
+  if (!onlySelected) {
+    qreal x1, y1, x2, y2;
+    rect.getCoords(&x1, &y1, &x2, &y2);
+    rect.setCoords(x1 -5, y1 -5, x2 + 5, y2 + 5);
+  }
   return mapFromScene(rect).boundingRect();
 }
 
@@ -3545,6 +3572,11 @@ void GraphicsView::copyItems(bool cut)
         const QString shapesStr = shapesOMC.join(", ");
         pMimeData->setData(cutCopyPasteShapesOMCFormat, shapesStr.toUtf8());
       }
+      // save the copied items bounding rect
+      mCopiedItemsBoundingRect = itemsBoundingRect(true).toAlignedRect();
+      mCopiedItemsBoundingRect = mapToScene(mCopiedItemsBoundingRect).boundingRect().toRect();
+      // save the current cursor position
+      mCursorPositionAtCopy = mapToScene(mapFromGlobal(QCursor::pos()));
       QApplication::clipboard()->setMimeData(pMimeData);
       // if cut flag is set
       if (cut) {
@@ -3839,28 +3871,31 @@ void GraphicsView::pasteItems()
       shapesOMC = pClipboard->mimeData()->data(cutCopyPasteShapesOMCFormat);
     }
 
-    const QString view = isIconView() ? "Icon" : "Diagram";
-    QString annotation;
     if (!shapes.isEmpty()) {
-      QStringList coOrdinateSystemList;
-      QStringList graphicsList;
-      getCoordinateSystemAndGraphics(coOrdinateSystemList, graphicsList);
-      graphicsList.append(shapes);
-
-      if (coOrdinateSystemList.size() > 0) {
-        annotation = "annotation (" % view % "(coordinateSystem(" % coOrdinateSystemList.join(",") % "), graphics={" % graphicsList.join(",") % "}));";
-      } else {
-        annotation = "annotation (" % view % "(graphics={" % graphicsList.join(",") % "}));";
-      }
+      const QString view = isIconView() ? "Icon" : "Diagram";
+      allItems << "annotation (" % view % "(graphics={" % shapes % "}));";
     }
-
-    allItems << annotation;
     allItems.removeAll(QString(""));
     const QString allItemsStr = allItems.join("\n");
+    /* Get the cursor position and see if it is changed since cut/copy
+     * if its changed then calculate the offset
+     * otherwise set cursorPosition to (0, 0) so loadClassContentString don't update positions.
+     */
+    QPointF cursorPosition = mapToScene(mapFromGlobal(QCursor::pos()));
+    if (mCursorPositionAtCopy != cursorPosition) {
+      cursorPosition = cursorPosition - QPointF(mCopiedItemsBoundingRect.left(), mCopiedItemsBoundingRect.bottom());
+    } else {
+      cursorPosition = QPointF(0, 0);
+    }
     // Load the text in the model.
-    if (!allItemsStr.isEmpty() && MainWindow::instance()->getOMCProxy()->loadClassContentString(allItemsStr, mpModelWidget->getLibraryTreeItem()->getNameStructure())) {
+    if (!allItemsStr.isEmpty() && MainWindow::instance()->getOMCProxy()->loadClassContentString(allItemsStr, mpModelWidget->getLibraryTreeItem()->getNameStructure(),
+                                                                                                cursorPosition.x(), cursorPosition.y())) {
+      // clear selected items before doing paste
+      clearSelection();
       const QString action = "Paste items from clipboard";
       mpModelWidget->beginMacro(action);
+      QList<Element*> newElements;
+      QList<LineAnnotation*> newConnections;
       // add components
       if (jsonObject.contains("components")) {
         QJsonArray componentsArray = jsonObject.value("components").toArray();
@@ -3871,9 +3906,10 @@ void GraphicsView::pasteItems()
           const bool connector = componentObject.value("connector").toBool();
           const QString placement = componentObject.value("placement").toString();
           const int numberOfElements = mElementsList.size();
-          addElementToView(GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), name, className, connector), false, false, false, QPointF(0, 0), placement, false);
+          ModelInstance::Component *pComponent = GraphicsView::createModelInstanceComponent(mpModelWidget->getModelInstance(), name, className, connector);
+          addElementToView(pComponent, false, false, false, QPointF(0, 0), placement, false);
           assert(mElementsList.size() > numberOfElements);
-          mElementsList.last()->setSelected(true);
+          newElements.append(mElementsList.last());
         }
       }
       // add connections
@@ -3902,20 +3938,33 @@ void GraphicsView::pasteItems()
           GraphicsView *pDiagramGraphicsView = mpModelWidget->getDiagramGraphicsView();
           pDiagramGraphicsView->addConnectionToView(pConnectionLineAnnotation, false);
           if (isDiagramView()) {
-            mConnectionsList.last()->setSelected(true);
+            newConnections.append(mConnectionsList.last());
           }
         }
       }
       // add shapes
+      int existingShapesSize = mShapesList.size();
       QStringList shapesList = StringHandler::getStrings(shapesOMC);
       bool state = isAddClassAnnotationNeeded();
-      mpModelWidget->drawModelIconDiagramShapes(shapesList, this, true);
+      mpModelWidget->drawModelIconDiagramShapes(shapesList, this, false);
       setAddClassAnnotationNeeded(state);
       ModelInfo newModelInfo = mpModelWidget->createModelInfo();
       mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, action));
       // update the model text
       mpModelWidget->updateModelText();
       mpModelWidget->endMacro();
+      // select the new pasted elements
+      foreach (auto pElement, newElements) {
+        pElement->setSelected(true);
+      }
+      // select the new pasted connections
+      foreach (auto pConnectionLineAnnotation, newConnections) {
+        pConnectionLineAnnotation->setSelected(true);
+      }
+      // select the new pasted shapes
+      for (int i = existingShapesSize; i < mShapesList.size(); ++i) {
+        mShapesList.at(i)->setSelected(true);
+      }
     }
   }
 }
