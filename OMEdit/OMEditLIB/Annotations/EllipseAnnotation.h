@@ -49,7 +49,7 @@ public:
   // Used for shape inside a component
   EllipseAnnotation(ModelInstance::Ellipse *pEllipse, Element *pParent);
   void parseShapeAnnotation(QString annotation) override;
-  void parseShapeAnnotation();
+  void parseShapeAnnotation() override;
   QRectF boundingRect() const override;
   QPainterPath shape() const override;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;

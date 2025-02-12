@@ -180,6 +180,8 @@ public:
   bool mSkipBackground; /* Do not draw the background rectangle */
   QPointF mContextMenuStartPosition;
   bool mContextMenuStartPositionValid;
+  QRect mCopiedItemsBoundingRect;
+  QPointF mCursorPositionAtCopy;
   void initializeCoordinateSystem();
   void resetCoordinateSystem();
   bool isIconView() const {return mViewType == StringHandler::Icon;}
@@ -350,7 +352,7 @@ public:
   void createEllipseShape(QPointF point);
   void createTextShape(QPointF point);
   void createBitmapShape(QPointF point);
-  QRectF itemsBoundingRect();
+  QRectF itemsBoundingRect(bool onlySelected = false);
   QPointF snapPointToGrid(QPointF point);
   QPointF movePointByGrid(QPointF point, QPointF origin = QPointF(0, 0), bool useShiftModifier = false);
   QPointF roundPoint(QPointF point);
