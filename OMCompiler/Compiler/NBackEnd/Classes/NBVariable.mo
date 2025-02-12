@@ -2316,6 +2316,7 @@ public
         case (VAR_DATA_SIM(), VarType.ITERATOR) algorithm
           varData.variables   := VariablePointers.addList(var_lst, varData.variables);
           varData.knowns      := VariablePointers.addList(var_lst, varData.knowns);
+          varData.artificials := VariablePointers.addList(var_lst, varData.artificials);
         then varData;
 
         case (VAR_DATA_SIM(), VarType.CLOCK) algorithm
