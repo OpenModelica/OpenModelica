@@ -200,12 +200,8 @@ public
       // 2. retyping already typed calls
       case TYPED_CALL() guard(retype)
         algorithm
-          if BuiltinCall.needSpecialHandling(call) then
-            (outExp, ty, var, pur) := BuiltinCall.typeSpecial(call, context, info);
-          else
-            ty_call := retypeCall(call, context, info);
-            (outExp, ty, var, pur)  := typeCallExp(ty_call);
-          end if;
+          ty_call := retypeCall(call, context, info);
+          (outExp, ty, var, pur)  := typeCallExp(ty_call);
         then
           outExp;
 
