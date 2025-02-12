@@ -309,6 +309,9 @@ algorithm
 
     case Statement.ASSIGNMENT() then simplifyAssignment(stmt, statements);
 
+    // if there are no body equations, remove the for-loop
+    case Statement.FOR(body = {}) then statements;
+
     case Statement.FOR(range = SOME(e))
       algorithm
         dim := Type.nthDimension(Expression.typeOf(e), 1);

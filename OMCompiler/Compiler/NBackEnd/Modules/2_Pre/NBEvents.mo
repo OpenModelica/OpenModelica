@@ -634,6 +634,7 @@ public
         case Statement.FOR(range = SOME(range)) algorithm
           new_stmts := {};
           name := ComponentRef.fromNode(stmt.iterator, Type.INTEGER());
+          name := BackendDAE.lowerComponentReference(name, variables);
           new_frames := (name, range, NONE()) :: frames;
           for elem in stmt.body loop
             new_stmt := fromStatement(elem, bucket_ptr, eqn, variables, funcTree, new_frames);

@@ -1289,20 +1289,7 @@ protected
     exp := Expression.applyToType(exp, function Type.applyToDims(func = function lowerDimension(variables = variables)));
   end lowerComponentReferenceExp;
 
-  protected function lowerDimension
-    input output Dimension dim;
-    input VariablePointers variables;
-  algorithm
-    dim := match dim
-      case Dimension.RESIZABLE() algorithm
-        dim.exp := Expression.map(dim.exp, function lowerComponentReferenceExp(variables = variables));
-      then dim;
-
-      else dim;
-    end match;
-  end lowerDimension;
-
-  function lowerComponentReference
+  public function lowerComponentReference
     input output ComponentRef cref;
     input VariablePointers variables;
   protected
@@ -1321,6 +1308,19 @@ protected
       end if;
     end try;
   end lowerComponentReference;
+
+  protected function lowerDimension
+    input output Dimension dim;
+    input VariablePointers variables;
+  algorithm
+    dim := match dim
+      case Dimension.RESIZABLE() algorithm
+        dim.exp := Expression.map(dim.exp, function lowerComponentReferenceExp(variables = variables));
+      then dim;
+
+      else dim;
+    end match;
+  end lowerDimension;
 
   function collectIterators
     "collects all iterators in expressions and creates variables for them.
@@ -1573,7 +1573,6 @@ public
       + " * Number of for-loop strong components: ......... " + for_sc + "\n"
       + " * Number of algebraic-loop strong components: ... " + alg_sc);
   end strongcomponentinfo;
-
 
   function debugFollowEquations
     input BackendDAE bdae;
