@@ -47,6 +47,7 @@ import Class = NFClass;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
 import NFModifier.Modifier;
+import SimplifyExp = NFSimplifyExp;
 import Statement = NFStatement;
 import NFType.Type;
 import Operator = NFOperator;
@@ -1426,7 +1427,7 @@ algorithm
       algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
       then
-        typeExp(exp.exp, next_context, info);
+        typeExp(exp.exp, next_context, info, retype);
 
     case Expression.SUBSCRIPTED_EXP()
       then typeSubscriptedExp(exp, context, info);
@@ -1434,7 +1435,7 @@ algorithm
     case Expression.MUTABLE()
       algorithm
         e1 := Mutable.access(exp.exp);
-        (e1, ty, variability, purity) := typeExp(e1, context, info);
+        (e1, ty, variability, purity) := typeExp(e1, context, info, retype);
         exp.exp := Mutable.create(e1);
       then
         (exp, ty, variability, purity);
@@ -1443,6 +1444,8 @@ algorithm
       then Function.typePartialApplication(exp, context, info);
 
     case Expression.FILENAME() then (exp, Type.STRING(),  Variability.CONSTANT, Purity.PURE);
+
+    case Expression.MULTARY() then typeExp(SimplifyExp.splitMultary(exp), context, info, retype);
 
     else
       algorithm
