@@ -159,18 +159,19 @@ public
     input Expression callExp;
     input InstContext.Type context;
     input SourceInfo info;
+    input Boolean retype = false;
     output Expression outExp;
     output Type ty;
     output Variability var;
     output Purity pur;
   protected
     NFCall call, ty_call;
-    list<Expression> args;
     ComponentRef cref;
   algorithm
     Expression.CALL(call = call) := callExp;
 
     outExp := match call
+      // 1. typing all the untyped calls
       case UNTYPED_CALL(ref = cref)
         algorithm
           if BuiltinCall.needSpecialHandling(call) then
@@ -178,20 +179,7 @@ public
           else
             checkNotPartial(cref, context, info);
             ty_call := typeMatchNormalCall(call, context, info);
-            ty := typeOf(ty_call);
-            var := variability(ty_call);
-            pur := purity(ty_call);
-
-            if isRecordConstructor(ty_call) then
-              outExp := toRecordExpression(ty_call, ty);
-            else
-              if Function.hasUnboxArgs(typedFunction(ty_call)) then
-                outExp := Expression.CALL(unboxArgs(ty_call));
-              else
-                outExp := Expression.CALL(ty_call);
-              end if;
-              outExp := Inline.inlineCallExp(outExp);
-            end if;
+            (outExp, ty, var, pur)  := typeCallExp(ty_call);
           end if;
         then
           outExp;
@@ -209,6 +197,19 @@ public
         then
           Expression.CALL(ty_call);
 
+      // 2. retyping already typed calls
+      case TYPED_CALL() guard(retype)
+        algorithm
+          if BuiltinCall.needSpecialHandling(call) then
+            (outExp, ty, var, pur) := BuiltinCall.typeSpecial(call, context, info);
+          else
+            ty_call := retypeCall(call, context, info);
+            (outExp, ty, var, pur)  := typeCallExp(ty_call);
+          end if;
+        then
+          outExp;
+
+      // 3. not retyping already typed calls
       case TYPED_CALL()
         algorithm
           ty := call.ty;
@@ -251,6 +252,28 @@ public
       fail();
     end if;
   end checkNotPartial;
+
+  function typeCallExp
+    input Call ty_call;
+    output Expression outExp;
+    output Type ty;
+    output Variability var;
+    output Purity pur;
+  algorithm
+    ty := typeOf(ty_call);
+    var := variability(ty_call);
+    pur := purity(ty_call);
+    if isRecordConstructor(ty_call) then
+      outExp := toRecordExpression(ty_call, ty);
+    else
+      if Function.hasUnboxArgs(typedFunction(ty_call)) then
+        outExp := Expression.CALL(unboxArgs(ty_call));
+      else
+        outExp := Expression.CALL(ty_call);
+      end if;
+      outExp := Inline.inlineCallExp(outExp);
+    end if;
+  end typeCallExp;
 
   function typeNormalCall
     input output NFCall call;
@@ -402,6 +425,43 @@ public
       updateExternalRecordArgsInType(ty);
     end if;
   end matchTypedNormalCall;
+
+  function retypeCall
+    input Call call;
+    input InstContext.Type context;
+    input SourceInfo info;
+    output Call ty_call;
+  protected
+    InstContext.Type next_context;
+    Type ty, arg_ty;
+    Variability arg_var;
+    Purity arg_pur;
+    list<TypedArg> typed_args = {};
+    list<Expression> args = {};
+  algorithm
+    ty_call := match call
+      case TYPED_CALL() algorithm
+        next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
+        for arg in listReverse(call.arguments) loop
+          (arg, arg_ty, arg_var, arg_pur) := Typing.typeExp(arg, next_context, info, true);
+          typed_args := TypedArg.TYPED_ARG(NONE(), arg, arg_ty, arg_var, arg_pur) :: typed_args;
+          args := arg :: args;
+        end for;
+
+        ty := Function.returnType(call.fn);
+        ty := resolvePolymorphicReturnType(call.fn, typed_args, ty);
+
+        ty := evaluateCallType(ty, call.fn, args);
+        ty_call := makeTypedCall(call.fn, args, call.var, call.purity, ty);
+      then ty_call;
+
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got invalid function call expression", sourceInfo());
+        then
+          fail();
+    end match;
+  end retypeCall;
 
   function typeOf
     input NFCall call;

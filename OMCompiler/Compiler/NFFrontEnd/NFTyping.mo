@@ -1311,6 +1311,7 @@ function typeExp
   input output Expression exp;
   input InstContext.Type context;
   input SourceInfo info;
+  input Boolean retype = false;
         output Type ty;
         output Variability variability;
         output Purity purity;
@@ -1411,8 +1412,7 @@ algorithm
 
     case Expression.CALL()
       algorithm
-        (e1, ty, var1, pur1) := Call.typeCall(exp, context, info);
-
+        (e1, ty, var1, pur1) := Call.typeCall(exp, context, info, retype);
         // If the call has multiple outputs and isn't alone on either side of an
         // equation/algorithm, select the first output.
         if Type.isTuple(ty) and not InstContext.isSingleExpression(context) then
