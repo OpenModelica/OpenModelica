@@ -3286,25 +3286,6 @@ TabSettings OptionsDialog::getTabSettings()
 }
 
 /*!
- * \brief OptionsDialog::eventFilter
- * Reimplementation for QDialog::eventFilter
- * \param pObject
- * \param pEvent
- * \return
- */
-bool OptionsDialog::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-  /* ticket:10458
-   * Disable the wheel event of combobox, spinbox and doublespinbox
-   * We install the event filter for each control for which we want to disable wheel event.
-   */
-  if (pEvent->type() == QEvent::Wheel) {
-    return true;
-  }
-  return QDialog::eventFilter(pObject, pEvent);
-}
-
-/*!
  * \brief OptionsDialog::changePage
  * Change the page in Options Widget when the mpOptionsList currentItemChanged Signal is raised.
  * \param current
@@ -3467,7 +3448,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpGeneralSettingsGroupBox = new QGroupBox(Helper::general);
   // Language Option
   mpLanguageLabel = new Label(tr("Language: *"));
-  mpLanguageComboBox = new QComboBox;
+  mpLanguageComboBox = new ComboBox;
   mpLanguageComboBox->addItem(tr("Auto Detected"), "");
   QMap<QString, QLocale> languagesMap = Utilities::supportedLanguages();
   QStringList keys(languagesMap.keys());
@@ -3477,7 +3458,6 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
     QLocale locale = languagesMap[key];
     mpLanguageComboBox->addItem(key, locale);
   }
-  mpLanguageComboBox->installEventFilter(mpOptionsDialog);
   // Working Directory
   mpWorkingDirectoryLabel = new Label(Helper::workingDirectory);
   OptionsDefaults::GeneralSettings::workingDirectory = MainWindow::instance()->getOMCProxy()->changeDirectory();
@@ -3488,10 +3468,9 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   connect(mpWorkingDirectoryBrowseButton, SIGNAL(clicked()), SLOT(selectWorkingDirectory()));
   // toolbar icon size
   mpToolbarIconSizeLabel = new Label(tr("Toolbar Icon Size: *"));
-  mpToolbarIconSizeSpinBox = new QSpinBox;
+  mpToolbarIconSizeSpinBox = new SpinBox;
   mpToolbarIconSizeSpinBox->setMinimum(16); // icons smaller than 16.......naaaaahhhh!!!!!
   mpToolbarIconSizeSpinBox->setValue(OptionsDefaults::GeneralSettings::toolBarIconSize);
-  mpToolbarIconSizeSpinBox->installEventFilter(mpOptionsDialog);
   // Store Customizations Option
   mpPreserveUserCustomizations = new QCheckBox(tr("Preserve User's GUI Customizations"));
   mpPreserveUserCustomizations->setChecked(OptionsDefaults::GeneralSettings::preserveUserCustomizations);
@@ -3511,7 +3490,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpHideVariablesBrowserCheckBox->setChecked(OptionsDefaults::GeneralSettings::hideVariablesBrowser);
   // activate access annotation
   mpActivateAccessAnnotationsLabel = new Label(tr("Activate Access Annotations *"));
-  mpActivateAccessAnnotationsComboBox = new QComboBox;
+  mpActivateAccessAnnotationsComboBox = new ComboBox;
   QStringList activateAccessAnnotationsDescriptions;
   activateAccessAnnotationsDescriptions << tr("Activates the access annotations even for the non-encrypted libraries.")
                       << tr("Activates the access annotations even if the .mol contains a non-encrypted library.")
@@ -3521,7 +3500,6 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpActivateAccessAnnotationsComboBox->addItem(tr("Never"), GeneralSettingsPage::Never);
   mpActivateAccessAnnotationsComboBox->setCurrentIndex(OptionsDefaults::GeneralSettings::activateAccessAnnotationsIndex);
   Utilities::setToolTip(mpActivateAccessAnnotationsComboBox, tr("Options for handling of access annotations"), activateAccessAnnotationsDescriptions);
-  mpActivateAccessAnnotationsComboBox->installEventFilter(mpOptionsDialog);
   // create backup file
   mpCreateBackupFileCheckbox = new QCheckBox(tr("Create a model.bak-mo backup file when deleting a model."));
   mpCreateBackupFileCheckbox->setChecked(OptionsDefaults::GeneralSettings::createBackupFile);
@@ -3557,16 +3535,14 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpLibraryBrowserGroupBox = new QGroupBox(tr("Library Browser"));
   // library icon size
   mpLibraryIconSizeLabel = new Label(tr("Library Icon Size: *"));
-  mpLibraryIconSizeSpinBox = new QSpinBox;
+  mpLibraryIconSizeSpinBox = new SpinBox;
   mpLibraryIconSizeSpinBox->setMinimum(16);
   mpLibraryIconSizeSpinBox->setValue(OptionsDefaults::GeneralSettings::libraryIconSize);
-  mpLibraryIconSizeSpinBox->installEventFilter(mpOptionsDialog);
   // library icon max. text length, value is set later
   mpLibraryIconTextLengthLabel = new Label(tr("Max. Library Icon Text Length to Show: *"));
-  mpLibraryIconTextLengthSpinBox = new QSpinBox;
+  mpLibraryIconTextLengthSpinBox = new SpinBox;
   mpLibraryIconTextLengthSpinBox->setMinimum(0);
   mpLibraryIconTextLengthSpinBox->setValue(OptionsDefaults::GeneralSettings::libraryIconMaximumTextLength);
-  mpLibraryIconTextLengthSpinBox->installEventFilter(mpOptionsDialog);
   // show protected classes
   mpShowProtectedClasses = new QCheckBox(tr("Show Protected Classes"));
   // show hidden classes
@@ -3592,14 +3568,13 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpEnableAutoSaveGroupBox->setCheckable(true);
   mpEnableAutoSaveGroupBox->setChecked(OptionsDefaults::GeneralSettings::enableAutoSave);
   mpAutoSaveIntervalLabel = new Label(tr("Auto Save Interval:"));
-  mpAutoSaveIntervalSpinBox = new QSpinBox;
+  mpAutoSaveIntervalSpinBox = new SpinBox;
   mpAutoSaveIntervalSpinBox->setSuffix(tr(" seconds"));
   mpAutoSaveIntervalSpinBox->setRange(60, std::numeric_limits<int>::max());
   mpAutoSaveIntervalSpinBox->setSingleStep(30);
   mpAutoSaveIntervalSpinBox->setValue(OptionsDefaults::GeneralSettings::autoSaveInterval);
   mpAutoSaveSecondsLabel = new Label;
   connect(mpAutoSaveIntervalSpinBox, SIGNAL(valueChanged(int)), SLOT(autoSaveIntervalValueChanged(int)));
-  mpAutoSaveIntervalSpinBox->installEventFilter(mpOptionsDialog);
   // calculate the auto save interval seconds.
   autoSaveIntervalValueChanged(mpAutoSaveIntervalSpinBox->value());
   // Auto Save layout
@@ -3626,9 +3601,8 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpShowLatestNewsCheckBox->setChecked(OptionsDefaults::GeneralSettings::showLatestNews);
   // Recent files and latest news size
   Label *pRecentFilesAndLatestNewsSizeLabel = new Label(tr("Recent Files and Latest News & Events Size:"));
-  mpRecentFilesAndLatestNewsSizeSpinBox = new QSpinBox;
+  mpRecentFilesAndLatestNewsSizeSpinBox = new SpinBox;
   mpRecentFilesAndLatestNewsSizeSpinBox->setValue(OptionsDefaults::GeneralSettings::recentFilesAndLatestNewsSize);
-  mpRecentFilesAndLatestNewsSizeSpinBox->installEventFilter(mpOptionsDialog);
   // Welcome Page layout
   QGridLayout *pWelcomePageGridLayout = new QGridLayout;
   pWelcomePageGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -4200,14 +4174,13 @@ TextEditorPage::TextEditorPage(OptionsDialog *pOptionsDialog)
   mpFormatGroupBox = new QGroupBox(tr("Format"));
   // line ending
   mpLineEndingLabel = new Label(tr("Line Ending:"));
-  mpLineEndingComboBox = new QComboBox;
+  mpLineEndingComboBox = new ComboBox;
   mpLineEndingComboBox->addItem(tr("Windows (CRLF)"), Utilities::CRLFLineEnding);
   mpLineEndingComboBox->addItem(tr("Unix (LF)"), Utilities::LFLineEnding);
   mpLineEndingComboBox->setCurrentIndex(OptionsDefaults::TextEditor::lineEnding);
-  mpLineEndingComboBox->installEventFilter(mpOptionsDialog);
   // Byte Order Mark BOM
   mpBOMLabel = new Label(tr("Byte Order Mark (BOM):"));
-  mpBOMComboBox = new QComboBox;
+  mpBOMComboBox = new ComboBox;
   QStringList bomDescriptions;
   bomDescriptions << tr("Always add a BOM when saving a file.")
                   << tr("Save the file with a BOM if it already had one when it was loaded.")
@@ -4217,7 +4190,6 @@ TextEditorPage::TextEditorPage(OptionsDialog *pOptionsDialog)
   mpBOMComboBox->addItem(tr("Always Delete"), Utilities::AlwaysDeleteBom);
   mpBOMComboBox->setCurrentIndex(OptionsDefaults::TextEditor::bom);
   Utilities::setToolTip(mpBOMComboBox, tr("Note that BOMs are uncommon and treated incorrectly by some editors, so it usually makes little sense to add any"), bomDescriptions);
-  mpBOMComboBox->installEventFilter(mpOptionsDialog);
   // set format groupbox layout
   QGridLayout *pFormatGroupBoxLayout = new QGridLayout;
   pFormatGroupBoxLayout->addWidget(mpLineEndingLabel, 0, 0);
@@ -4230,22 +4202,19 @@ TextEditorPage::TextEditorPage(OptionsDialog *pOptionsDialog)
   mpTabsAndIndentation = new QGroupBox(tr("Tabs and Indentation"));
   // tab policy
   mpTabPolicyLabel = new Label(tr("Tab Policy:"));
-  mpTabPolicyComboBox = new QComboBox;
+  mpTabPolicyComboBox = new ComboBox;
   mpTabPolicyComboBox->addItem(tr("Spaces Only"), 0);
   mpTabPolicyComboBox->addItem(tr("Tabs Only"), 1);
-  mpTabPolicyComboBox->installEventFilter(mpOptionsDialog);
   // tab size
   mpTabSizeLabel = new Label(tr("Tab Size:"));
-  mpTabSizeSpinBox = new QSpinBox;
+  mpTabSizeSpinBox = new SpinBox;
   mpTabSizeSpinBox->setRange(1, 20);
   mpTabSizeSpinBox->setValue(OptionsDefaults::TextEditor::tabSize);
-  mpTabSizeSpinBox->installEventFilter(mpOptionsDialog);
   // indent size
   mpIndentSizeLabel = new Label(tr("Indent Size:"));
-  mpIndentSpinBox = new QSpinBox;
+  mpIndentSpinBox = new SpinBox;
   mpIndentSpinBox->setRange(1, 20);
   mpIndentSpinBox->setValue(OptionsDefaults::TextEditor::indentSize);
-  mpIndentSpinBox->installEventFilter(mpOptionsDialog);
   // set tabs & indentation groupbox layout
   QGridLayout *pTabsAndIndentationGroupBoxLayout = new QGridLayout;
   pTabsAndIndentationGroupBoxLayout->addWidget(mpTabPolicyLabel, 0, 0);
@@ -4302,7 +4271,6 @@ TextEditorPage::TextEditorPage(OptionsDialog *pOptionsDialog)
   mpFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
   mpFontSizeSpinBox->setSingleStep(1);
   mpFontSizeSpinBox->setValue(Helper::monospacedFontInfo.pointSizeF());
-  mpFontSizeSpinBox->installEventFilter(mpOptionsDialog);
   // set font groupbox layout
   QGridLayout *pFontGroupBoxLayout = new QGridLayout;
   pFontGroupBoxLayout->addWidget(mpFontFamilyLabel, 0, 0);
@@ -5175,14 +5143,13 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   // Target Language
   mpTargetLanguageLabel = new Label(tr("Target Language:"));
   OMCInterface::getConfigFlagValidOptions_res simCodeTarget = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("simCodeTarget");
-  mpTargetLanguageComboBox = new QComboBox;
+  mpTargetLanguageComboBox = new ComboBox;
   mpTargetLanguageComboBox->addItems(simCodeTarget.validOptions);
   mpTargetLanguageComboBox->setCurrentIndex(mpTargetLanguageComboBox->findText("C"));
   Utilities::setToolTip(mpTargetLanguageComboBox, simCodeTarget.mainDescription, simCodeTarget.descriptions);
-  mpTargetLanguageComboBox->installEventFilter(mpOptionsDialog);
   // Target Build
   mpTargetBuildLabel = new Label(tr("Target Build:"));
-  mpTargetBuildComboBox = new QComboBox;
+  mpTargetBuildComboBox = new ComboBox;
 #ifdef Q_OS_WIN
   mpTargetBuildComboBox->addItem("MinGW", "gcc");
   // We do not support any of the MSVC targets anymore
@@ -5198,10 +5165,9 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpTargetBuildComboBox->addItem("vxworks69", "vxworks69");
   mpTargetBuildComboBox->addItem("debugrt", "debugrt");
   connect(mpTargetBuildComboBox, SIGNAL(currentIndexChanged(int)), SLOT(targetBuildChanged(int)));
-  mpTargetBuildComboBox->installEventFilter(mpOptionsDialog);
   // C Compiler
   mpCompilerLabel = new Label(tr("C Compiler:"));
-  mpCompilerComboBox = new QComboBox;
+  mpCompilerComboBox = new ComboBox;
   mpCompilerComboBox->setEditable(true);
   mpCompilerComboBox->addItem("");
   mpCompilerComboBox->addItem("gcc");
@@ -5210,10 +5176,9 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
 #endif
   OptionsDefaults::Simulation::cCompiler = MainWindow::instance()->getOMCProxy()->getCompiler();
   mpCompilerComboBox->lineEdit()->setPlaceholderText(OptionsDefaults::Simulation::cCompiler);
-  mpCompilerComboBox->installEventFilter(mpOptionsDialog);
   // CXX Compiler
   mpCXXCompilerLabel = new Label(tr("CXX Compiler:"));
-  mpCXXCompilerComboBox = new QComboBox;
+  mpCXXCompilerComboBox = new ComboBox;
   mpCXXCompilerComboBox->setEditable(true);
   mpCXXCompilerComboBox->addItem("");
   mpCXXCompilerComboBox->addItem("g++");
@@ -5222,7 +5187,6 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
 #endif
   OptionsDefaults::Simulation::cxxCompiler = MainWindow::instance()->getOMCProxy()->getCXXCompiler();
   mpCXXCompilerComboBox->lineEdit()->setPlaceholderText(OptionsDefaults::Simulation::cxxCompiler);
-  mpCXXCompilerComboBox->installEventFilter(mpOptionsDialog);
 #ifdef Q_OS_WIN
   mpUseStaticLinkingCheckBox = new QCheckBox(tr("Use static Linking"));
   mpUseStaticLinkingCheckBox->setToolTip(tr("Enables static linking for the simulation executable. Default is dynamic linking."));
@@ -5267,12 +5231,11 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   pOutputRadioButtonsLayout->addWidget(mpFormattedTextRadioButton);
   // display limit
   mpDisplayLimitLabel = new Label(tr("Display Limit:"));
-  mpDisplayLimitSpinBox = new QSpinBox;
+  mpDisplayLimitSpinBox = new SpinBox;
   mpDisplayLimitSpinBox->setSuffix(" KB");
   mpDisplayLimitSpinBox->setRange(1, std::numeric_limits<int>::max());
   mpDisplayLimitSpinBox->setSingleStep(100);
   mpDisplayLimitSpinBox->setValue(OptionsDefaults::Simulation::displayLimit);
-  mpDisplayLimitSpinBox->installEventFilter(mpOptionsDialog);
   mpDisplayLimitMBLabel = new Label;
   connect(mpDisplayLimitSpinBox, SIGNAL(valueChanged(int)), SLOT(displayLimitValueChanged(int)));
   // calculate the display limit in MBs.
@@ -5379,12 +5342,11 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   mpOutputSizeLabel = new Label(tr("Output size:"));
   mpOutputSizeLabel->setToolTip(tr("Specifies the maximum number of rows the message browser may have. "
                                    "If there are more rows then the rows are removed from the beginning."));
-  mpOutputSizeSpinBox = new QSpinBox;
+  mpOutputSizeSpinBox = new SpinBox;
   mpOutputSizeSpinBox->setRange(0, std::numeric_limits<int>::max());
   mpOutputSizeSpinBox->setSingleStep(1000);
   mpOutputSizeSpinBox->setSuffix(" rows");
   mpOutputSizeSpinBox->setSpecialValueText(Helper::unlimited);
-  mpOutputSizeSpinBox->installEventFilter(mpOptionsDialog);
   // reset messages number before simulation
   mpResetMessagesNumberBeforeSimulationCheckBox = new QCheckBox(tr("Reset messages number before checking, instantiation, and simulation"));
   mpResetMessagesNumberBeforeSimulationCheckBox->setChecked(OptionsDefaults::Messages::resetMessagesNumberBeforeSimulation);
@@ -5416,7 +5378,6 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   mpFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
   mpFontSizeSpinBox->setValue(textBrowser.font().pointSize());
   mpFontSizeSpinBox->setSingleStep(1);
-  mpFontSizeSpinBox->installEventFilter(mpOptionsDialog);
   // Notification Color
   mpNotificationColorLabel = new Label(tr("Notification Color:"));
   mpNotificationColorButton = new QPushButton(Helper::pickColor);
@@ -5612,7 +5573,6 @@ LineStylePage::LineStylePage(OptionsDialog *pOptionsDialog)
   // Line Pattern
   mpLinePatternLabel = new Label(Helper::pattern);
   mpLinePatternComboBox = StringHandler::getLinePatternComboBox();
-  mpLinePatternComboBox->installEventFilter(mpOptionsDialog);
   setLinePattern(OptionsDefaults::LineStyle::pattern);
   // Line Thickness
   mpLineThicknessLabel = new Label(Helper::thickness);
@@ -5620,20 +5580,16 @@ LineStylePage::LineStylePage(OptionsDialog *pOptionsDialog)
   mpLineThicknessSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpLineThicknessSpinBox->setValue(OptionsDefaults::LineStyle::thickness);
   mpLineThicknessSpinBox->setSingleStep(0.25);
-  mpLineThicknessSpinBox->installEventFilter(mpOptionsDialog);
   // Line Arrow
   mpLineStartArrowLabel = new Label(Helper::startArrow);
   mpLineStartArrowComboBox = StringHandler::getStartArrowComboBox();
-  mpLineStartArrowComboBox->installEventFilter(mpOptionsDialog);
   mpLineEndArrowLabel = new Label(Helper::endArrow);
   mpLineEndArrowComboBox = StringHandler::getEndArrowComboBox();
-  mpLineEndArrowComboBox->installEventFilter(mpOptionsDialog);
   mpLineArrowSizeLabel = new Label(Helper::arrowSize);
   mpLineArrowSizeSpinBox = new DoubleSpinBox;
   mpLineArrowSizeSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpLineArrowSizeSpinBox->setValue(OptionsDefaults::LineStyle::arrowSize);
   mpLineArrowSizeSpinBox->setSingleStep(1);
-  mpLineArrowSizeSpinBox->installEventFilter(mpOptionsDialog);
   // Line smooth
   mpLineSmoothLabel = new Label(Helper::smooth);
   mpLineSmoothCheckBox = new QCheckBox(Helper::bezier);
@@ -5791,7 +5747,6 @@ FillStylePage::FillStylePage(OptionsDialog *pOptionsDialog)
   // Fill Pattern
   mpFillPatternLabel = new Label(Helper::pattern);
   mpFillPatternComboBox = StringHandler::getFillPatternComboBox();
-  mpFillPatternComboBox->installEventFilter(mpOptionsDialog);
   setFillPattern(OptionsDefaults::FillStyle::pattern);
   // set the layout
   QGridLayout *pFillStyleLayout = new QGridLayout;
@@ -5890,7 +5845,7 @@ PlottingPage::PlottingPage(OptionsDialog *pOptionsDialog)
   mpCurveStyleGroupBox = new QGroupBox(Helper::curveStyle);
   // Curve Pattern
   mpCurvePatternLabel = new Label(Helper::pattern);
-  mpCurvePatternComboBox = new QComboBox;
+  mpCurvePatternComboBox = new ComboBox;
   mpCurvePatternComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   mpCurvePatternComboBox->addItem("SolidLine", 1);
   mpCurvePatternComboBox->addItem("DashLine", 2);
@@ -5899,14 +5854,12 @@ PlottingPage::PlottingPage(OptionsDialog *pOptionsDialog)
   mpCurvePatternComboBox->addItem("DashDotDotLine", 5);
   mpCurvePatternComboBox->addItem("Sticks", 6);
   mpCurvePatternComboBox->addItem("Steps", 7);
-  mpCurvePatternComboBox->installEventFilter(mpOptionsDialog);
   // Curve Thickness
   mpCurveThicknessLabel = new Label(Helper::thickness);
   mpCurveThicknessSpinBox = new DoubleSpinBox;
   mpCurveThicknessSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpCurveThicknessSpinBox->setValue(OptionsDefaults::Plotting::curveThickness);
   mpCurveThicknessSpinBox->setSingleStep(1);
-  mpCurveThicknessSpinBox->installEventFilter(mpOptionsDialog);
   // set the layout
   QGridLayout *pCurveStyleLayout = new QGridLayout;
   pCurveStyleLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -5921,12 +5874,11 @@ PlottingPage::PlottingPage(OptionsDialog *pOptionsDialog)
   mpFilterIntervalHelpLabel = new Label(tr("Adds a delay, specified as Filter Interval, in filtering the variables.\n"
                                            "Set the value to 0 if you don't want any delay."));
   mpFilterIntervalLabel = new Label(tr("Filter Interval:"));
-  mpFilterIntervalSpinBox = new QSpinBox;
+  mpFilterIntervalSpinBox = new SpinBox;
   mpFilterIntervalSpinBox->setSuffix(tr(" seconds"));
   mpFilterIntervalSpinBox->setRange(0, std::numeric_limits<int>::max());
   mpFilterIntervalSpinBox->setValue(OptionsDefaults::Plotting::variableFilterInterval);
   mpFilterIntervalSpinBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  mpFilterIntervalSpinBox->installEventFilter(mpOptionsDialog);
   // variable filter layout
   QGridLayout *pVariableFilterGridLayout = new QGridLayout;
   pVariableFilterGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -5942,43 +5894,36 @@ PlottingPage::PlottingPage(OptionsDialog *pOptionsDialog)
   mpTitleFontSizeSpinBox->setValue(OptionsDefaults::Plotting::titleFontSize);
   mpTitleFontSizeSpinBox->setSingleStep(1);
   mpTitleFontSizeSpinBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  mpTitleFontSizeSpinBox->installEventFilter(mpOptionsDialog);
   mpVerticalAxisTitleFontSizeLabel = new Label("Vertical Axis Title:");
   mpVerticalAxisTitleFontSizeSpinBox = new DoubleSpinBox;
   mpVerticalAxisTitleFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
   mpVerticalAxisTitleFontSizeSpinBox->setValue(OptionsDefaults::Plotting::verticalAxisTitleFontSize);
   mpVerticalAxisTitleFontSizeSpinBox->setSingleStep(1);
-  mpVerticalAxisTitleFontSizeSpinBox->installEventFilter(mpOptionsDialog);
   mpVerticalAxisNumbersFontSizeLabel = new Label("Vertical Axis Numbers:");
   mpVerticalAxisNumbersFontSizeSpinBox = new DoubleSpinBox;
   mpVerticalAxisNumbersFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
   mpVerticalAxisNumbersFontSizeSpinBox->setValue(OptionsDefaults::Plotting::verticalAxisNumbersFontSize);
   mpVerticalAxisNumbersFontSizeSpinBox->setSingleStep(1);
-  mpVerticalAxisNumbersFontSizeSpinBox->installEventFilter(mpOptionsDialog);
   mpHorizontalAxisTitleFontSizeLabel = new Label("Horizontal Axis Title:");
   mpHorizontalAxisTitleFontSizeSpinBox = new DoubleSpinBox;
   mpHorizontalAxisTitleFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
   mpHorizontalAxisTitleFontSizeSpinBox->setValue(OptionsDefaults::Plotting::horizontalAxisTitleFontSize);
   mpHorizontalAxisTitleFontSizeSpinBox->setSingleStep(1);
-  mpHorizontalAxisTitleFontSizeSpinBox->installEventFilter(mpOptionsDialog);
   mpHorizontalAxisNumbersFontSizeLabel = new Label("Horizontal Axis Numbers:");
   mpHorizontalAxisNumbersFontSizeSpinBox = new DoubleSpinBox;
   mpHorizontalAxisNumbersFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
   mpHorizontalAxisNumbersFontSizeSpinBox->setValue(OptionsDefaults::Plotting::horizontalAxisNumbersFontSize);
   mpHorizontalAxisNumbersFontSizeSpinBox->setSingleStep(1);
-  mpHorizontalAxisNumbersFontSizeSpinBox->installEventFilter(mpOptionsDialog);
   mpFooterFontSizeLabel = new Label("Footer:");
   mpFooterFontSizeSpinBox = new DoubleSpinBox;
   mpFooterFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
   mpFooterFontSizeSpinBox->setValue(QApplication::font().pointSize());
   mpFooterFontSizeSpinBox->setSingleStep(1);
-  mpFooterFontSizeSpinBox->installEventFilter(mpOptionsDialog);
   mpLegendFontSizeLabel = new Label("Legend:");
   mpLegendFontSizeSpinBox = new DoubleSpinBox;
   mpLegendFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
   mpLegendFontSizeSpinBox->setValue(QApplication::font().pointSize());
   mpLegendFontSizeSpinBox->setSingleStep(1);
-  mpLegendFontSizeSpinBox->installEventFilter(mpOptionsDialog);
   // font size layout
   QGridLayout *pFontSizeGridLayout = new QGridLayout;
   pFontSizeGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -6168,20 +6113,18 @@ DebuggerPage::DebuggerPage(OptionsDialog *pOptionsDialog)
   connect(mpGDBPathBrowseButton, SIGNAL(clicked()), SLOT(browseGDBPath()));
   /* GDB Command Timeout */
   mpGDBCommandTimeoutLabel = new Label(tr("GDB Command Timeout:"));
-  mpGDBCommandTimeoutSpinBox = new QSpinBox;
+  mpGDBCommandTimeoutSpinBox = new SpinBox;
   mpGDBCommandTimeoutSpinBox->setSuffix(tr(" seconds"));
   mpGDBCommandTimeoutSpinBox->setRange(30, std::numeric_limits<int>::max());
   mpGDBCommandTimeoutSpinBox->setSingleStep(10);
   mpGDBCommandTimeoutSpinBox->setValue(OptionsDefaults::Debugger::GDBCommandTimeout);
-  mpGDBCommandTimeoutSpinBox->installEventFilter(mpOptionsDialog);
   /* GDB Output limit */
   mpGDBOutputLimitLabel = new Label(tr("GDB Output Limit:"));
-  mpGDBOutputLimitSpinBox = new QSpinBox;
+  mpGDBOutputLimitSpinBox = new SpinBox;
   mpGDBOutputLimitSpinBox->setSuffix(tr(" characters"));
   mpGDBOutputLimitSpinBox->setSpecialValueText(Helper::unlimited);
   mpGDBOutputLimitSpinBox->setRange(0, std::numeric_limits<int>::max());
   mpGDBOutputLimitSpinBox->setSingleStep(10);
-  mpGDBOutputLimitSpinBox->installEventFilter(mpOptionsDialog);
   // Display C Frames
   mpDisplayCFramesCheckBox = new QCheckBox(tr("Display C frames"));
   mpDisplayCFramesCheckBox->setChecked(OptionsDefaults::Debugger::displayCFrames);
@@ -6371,18 +6314,16 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   pPlatformsLayout->addWidget(pCustomPlatformsTextBox);
   mpPlatformsGroupBox->setLayout(pPlatformsLayout);
   // Solver for co-simulation
-  mpSolverForCoSimulationComboBox = new QComboBox;
+  mpSolverForCoSimulationComboBox = new ComboBox;
   mpSolverForCoSimulationComboBox->addItem(tr("Explicit Euler"), "");
   mpSolverForCoSimulationComboBox->addItem(tr("CVODE"), "cvode");
-  mpSolverForCoSimulationComboBox->installEventFilter(mpOptionsDialog);
   // Model description filters
   OMCInterface::getConfigFlagValidOptions_res fmiFilters = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("fmiFilter");
-  mpModelDescriptionFiltersComboBox = new QComboBox;
+  mpModelDescriptionFiltersComboBox = new ComboBox;
   mpModelDescriptionFiltersComboBox->addItems(fmiFilters.validOptions);
   mpModelDescriptionFiltersComboBox->setCurrentIndex(mpModelDescriptionFiltersComboBox->findText(OptionsDefaults::FMI::modelDescriptionFilter));
   Utilities::setToolTip(mpModelDescriptionFiltersComboBox, fmiFilters.mainDescription, fmiFilters.descriptions);
   connect(mpModelDescriptionFiltersComboBox, SIGNAL(currentIndexChanged(int)), SLOT(enableIncludeSourcesCheckBox(int)));
-  mpModelDescriptionFiltersComboBox->installEventFilter(mpOptionsDialog);
   // include resources checkbox
   mpIncludeResourcesCheckBox = new QCheckBox(tr("Include Modelica based resources via loadResource"));
   // include source code checkbox
@@ -6549,11 +6490,10 @@ OMSimulatorPage::OMSimulatorPage(OptionsDialog *pOptionsDialog)
   mpCommandLineOptionsTextBox->setToolTip(tr("Space separated list of command line options e.g., --suppressPath=true --ignoreInitialUnknowns=true"));
   // logging level
   mpLoggingLevelLabel = new Label(tr("Logging Level:"));
-  mpLoggingLevelComboBox = new QComboBox;
+  mpLoggingLevelComboBox = new ComboBox;
   mpLoggingLevelComboBox->addItem("default", QVariant(0));
   mpLoggingLevelComboBox->addItem("default+debug", QVariant(1));
   mpLoggingLevelComboBox->addItem("default+debug+trace", QVariant(2));
-  mpLoggingLevelComboBox->installEventFilter(mpOptionsDialog);
   // set the layout
   QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;
   pGeneralGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);

@@ -185,26 +185,49 @@ protected:
   virtual void resizeEvent(QResizeEvent *event) override;
 };
 
-//! @class DoubleSpinBox
-/*! \brief Only keeping this class so that if in future we need to change the way QDoubleSpinBox works then we don't have to change the
- * forms controls again.
+/* ticket:10458 ticket:13591
+ * Disable the wheel event of combobox, spinbox and doublespinbox
+ * Set the focus to Qt::StrongFocus instead of Qt::WheelFocus
+ * Ignore the wheel event if it doesn't have the focus.
  */
-/* Old Description */
-/*! \brief It creates a double spinbox with a specified precision value.
- * If you want the precision value to be changed based on the global precision value defined in omedit.ini then connect this object with
- * the object of GeneralSettingsPage object right after creating this object. e.g,\n
- * connect(GeneralSettingsPage, SIGNAL(globalPrecisionValueChanged(int)), DoubleSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
+
+/*!
+ * \class ComboBox
+ * \brief Creates a QComboBox.
+ */
+class ComboBox : public QComboBox
+{
+  Q_OBJECT
+public:
+  ComboBox(QWidget *parent = nullptr);
+protected:
+  virtual void wheelEvent(QWheelEvent *event) override;
+};
+
+/*!
+ * \class SpinBox
+ * \brief Creates a QSpinBox.
+ */
+class SpinBox : public QSpinBox
+{
+  Q_OBJECT
+public:
+  SpinBox(QWidget *parent = 0);
+protected:
+  virtual void wheelEvent(QWheelEvent *event) override;
+};
+
+/*!
+ * \class DoubleSpinBox
+ * \brief Creates a QDoubleSpinBox.
  */
 class DoubleSpinBox : public QDoubleSpinBox
 {
   Q_OBJECT
 public:
-  DoubleSpinBox(QWidget *parent = 0) : QDoubleSpinBox(parent) {}
-  /* old implementation
-  DoubleSpinBox(int precision = 2, QWidget *parent = 0) : QDoubleSpinBox(parent) {setDecimals(precision);}
-public slots:
-  void handleGlobalPrecisionValueChange(int value) {setDecimals(value);}
-  */
+  DoubleSpinBox(QWidget *parent = 0);
+protected:
+  virtual void wheelEvent(QWheelEvent *event) override;
 };
 
 /*!

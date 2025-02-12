@@ -323,9 +323,9 @@ QString StringHandler::getLinePatternString(StringHandler::LinePattern type)
   }
 }
 
-QComboBox* StringHandler::getLinePatternComboBox()
+ComboBox* StringHandler::getLinePatternComboBox()
 {
-  QComboBox *pLinePatternComboBox = new QComboBox;
+  ComboBox *pLinePatternComboBox = new ComboBox;
   pLinePatternComboBox->setIconSize(QSize(58, 16));
   pLinePatternComboBox->addItem(ResourceCache::getIcon(":/Resources/icons/line-none.svg"), getLinePatternString(LineNone));
   pLinePatternComboBox->addItem(ResourceCache::getIcon(":/Resources/icons/line-solid.svg"), getLinePatternString(LineSolid));
@@ -428,9 +428,9 @@ QString StringHandler::getFillPatternString(StringHandler::FillPattern type)
   }
 }
 
-QComboBox* StringHandler::getFillPatternComboBox()
+ComboBox* StringHandler::getFillPatternComboBox()
 {
-  QComboBox *pFillPatternComboBox = new QComboBox;
+  ComboBox *pFillPatternComboBox = new ComboBox;
   pFillPatternComboBox->addItem(ResourceCache::getIcon(":/Resources/icons/fill-none.svg"), getFillPatternString(FillNone));
   pFillPatternComboBox->addItem(ResourceCache::getIcon(":/Resources/icons/fill-solid.svg"), getFillPatternString(FillSolid));
   pFillPatternComboBox->addItem(ResourceCache::getIcon(":/Resources/icons/fill-horizontal.svg"), getFillPatternString(FillHorizontal));
@@ -558,9 +558,9 @@ QString StringHandler::getArrowString(StringHandler::Arrow type)
   }
 }
 
-QComboBox* StringHandler::getStartArrowComboBox()
+ComboBox* StringHandler::getStartArrowComboBox()
 {
-  QComboBox *pStartArrowComboBox = new QComboBox;
+  ComboBox *pStartArrowComboBox = new ComboBox;
   pStartArrowComboBox->setIconSize(QSize(58, 16));
   pStartArrowComboBox->addItem(ResourceCache::getIcon(":/Resources/icons/line-solid.svg"), getArrowString(ArrowNone));
   pStartArrowComboBox->addItem(ResourceCache::getIcon(":/Resources/icons/arrow-start-open.svg"), getArrowString(ArrowOpen));
@@ -569,9 +569,9 @@ QComboBox* StringHandler::getStartArrowComboBox()
   return pStartArrowComboBox;
 }
 
-QComboBox* StringHandler::getEndArrowComboBox()
+ComboBox* StringHandler::getEndArrowComboBox()
 {
-  QComboBox *pEndArrowComboBox = new QComboBox;
+  ComboBox *pEndArrowComboBox = new ComboBox;
   pEndArrowComboBox->setIconSize(QSize(58, 16));
   pEndArrowComboBox->addItem(ResourceCache::getIcon(":/Resources/icons/line-solid.svg"), getArrowString(ArrowNone));
   pEndArrowComboBox->addItem(ResourceCache::getIcon(":/Resources/icons/arrow-end-open.svg"), getArrowString(ArrowOpen));
