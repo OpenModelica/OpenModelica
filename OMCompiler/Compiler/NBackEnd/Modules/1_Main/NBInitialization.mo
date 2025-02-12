@@ -186,8 +186,8 @@ public
     initialEqs := EquationPointers.addList(start_eqs, initialEqs);
 
     if Flags.isSet(Flags.INITIALIZATION) and not listEmpty(start_eqs) then
-      print(List.toString(start_eqs, function Equation.pointerToString(str = ""),
-        StringUtil.headline_4("Created " + str + " Start Equations (" + intString(listLength(start_eqs)) + "):"), "\t", "\n\t", "", false) + "\n\n");
+      print(List.toString(start_eqs, function Equation.pointerToString(str = "\t"),
+        StringUtil.headline_4("Created " + str + " Start Equations (" + intString(listLength(start_eqs)) + "):"), "", "\n", "", false) + "\n\n");
     end if;
   end createStartEquations;
 
@@ -255,8 +255,8 @@ public
     initialEqs := EquationPointers.addList(start_eqs, initialEqs);
 
     if Flags.isSet(Flags.INITIALIZATION) and not listEmpty(start_eqs) then
-      print(List.toString(start_eqs, function Equation.pointerToString(str = ""),
-        StringUtil.headline_4("Created When Replacement Equations (" + intString(listLength(start_eqs)) + "):"), "\t", "\n\t", "", false) + "\n\n");
+      print(List.toString(start_eqs, function Equation.pointerToString(str = "\t"),
+        StringUtil.headline_4("Created When Replacement Equations (" + intString(listLength(start_eqs)) + "):"), "", "\n", "", false) + "\n\n");
     end if;
   end createWhenReplacementEquations;
 
@@ -378,8 +378,8 @@ public
     initialEqs := EquationPointers.addList(parameter_eqs, initialEqs);
     initialVars := VariablePointers.addList(initial_param_vars, initialVars);
     if (Flags.isSet(Flags.INITIALIZATION) and not listEmpty(parameter_eqs)) or Flags.isSet(Flags.DUMP_BINDINGS) then
-      print(List.toString(parameter_eqs, function Equation.pointerToString(str = ""),
-        StringUtil.headline_4("Created" + str + "Parameter Binding Equations (" + intString(listLength(parameter_eqs)) + "):"), "\t", "\n\t", "", false) + "\n\n");
+      print(List.toString(parameter_eqs, function Equation.pointerToString(str = "\t"),
+        StringUtil.headline_4("Created" + str + "Parameter Binding Equations (" + intString(listLength(parameter_eqs)) + "):"), "", "\n", "", false) + "\n\n");
     end if;
   end createParameterEquations;
 
