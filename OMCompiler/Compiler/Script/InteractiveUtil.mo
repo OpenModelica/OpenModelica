@@ -5193,7 +5193,7 @@ algorithm
   else
     old_ann := listHead(oldAnnotations);
     for new_ann in newAnnotations loop
-      old_ann := AbsynUtil.mergeAnnotations(old_ann, new_ann);
+      old_ann := AbsynUtil.mergeAnnotations(old_ann, new_ann, mergeSubMods = true, mergeEqMods = true);
     end for;
     outAnnotations := old_ann :: listRest(oldAnnotations);
   end if;

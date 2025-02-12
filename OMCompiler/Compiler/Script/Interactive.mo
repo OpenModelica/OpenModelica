@@ -5666,7 +5666,7 @@ algorithm
   body := match body
     case Absyn.PARTS()
       algorithm
-        body.ann := {List.fold(body.ann, AbsynUtil.mergeAnnotations, inAnnotation)};
+        body.ann := {AbsynUtil.mergeAnnotationsList(inAnnotation, body.ann)};
       then
         body;
 
@@ -5690,7 +5690,7 @@ algorithm
 
     case Absyn.CLASS_EXTENDS()
       algorithm
-        body.ann := {List.fold(body.ann, AbsynUtil.mergeAnnotations, inAnnotation)};
+        body.ann := {AbsynUtil.mergeAnnotationsList(inAnnotation, body.ann)};
       then
         body;
 

@@ -3975,53 +3975,122 @@ algorithm
   end match;
 end importName;
 
-public function mergeAnnotations
-" This function takes an old annotation as first argument and a new
-   annotation as  second argument and merges the two.
-   Absyn.Annotation \"parts\" that exist in both the old and the new annotation
-   will be changed according to the new definition. For instance,
-   merge_annotations(annotation(x=1,y=2),annotation(x=3))
-   => annotation(x=3,y=2)"
-  input Absyn.Annotation inAnnotation1;
-  input Absyn.Annotation inAnnotation2;
-  output Absyn.Annotation outAnnotation;
+public function mergeAnnotationsList
+  input Absyn.Annotation oldAnnotation;
+  input list<Absyn.Annotation> newAnnotations;
+  output Absyn.Annotation outAnnotation = oldAnnotation;
 algorithm
-  outAnnotation:=
-  match (inAnnotation1,inAnnotation2)
-    local
-      list<Absyn.ElementArg> oldmods,newmods;
-      Absyn.Annotation a;
-    case (Absyn.ANNOTATION(elementArgs = {}),a) then a;
+  for ann in newAnnotations loop
+    outAnnotation := mergeAnnotations(ann, outAnnotation);
+  end for;
+end mergeAnnotationsList;
 
-    case (Absyn.ANNOTATION(elementArgs = oldmods),Absyn.ANNOTATION(elementArgs = newmods))
-      then Absyn.ANNOTATION(mergeAnnotations2(oldmods, newmods));
+public function mergeAnnotations
+  "Merges an old annotation with a new. If mergeSubMods is true it merges the
+   annotations recursively, otherwise it only merges the first level of the
+   annotation. Example:
+     mergeAnnotations(a(x = 1, y = 2), a(x = 3)) =>
+       mergeSubMods = false: a(x = 3)
+       mergeSubMods = true:  a(x = 3, y = 2)
+
+   If mergeEqMods is true it tries to concatenate binding equation expression
+   such as Icon/Diagram graphics arrays, otherwise the new binding overwrites
+   the old one.
+  "
+  input Absyn.Annotation oldAnnotation;
+  input Absyn.Annotation newAnnotation;
+  input Boolean mergeSubMods = false;
+  input Boolean mergeEqMods = false;
+  output Absyn.Annotation outAnnotation;
+protected
+  list<Absyn.ElementArg> args1, args2;
+algorithm
+  outAnnotation := match (oldAnnotation, newAnnotation)
+    case (Absyn.ANNOTATION(elementArgs = {}), _) then newAnnotation;
+    case (_, Absyn.ANNOTATION(elementArgs = {})) then oldAnnotation;
+    else Absyn.ANNOTATION(mergeAnnotations2(oldAnnotation.elementArgs, newAnnotation.elementArgs,
+                                            mergeSubMods, mergeEqMods));
   end match;
 end mergeAnnotations;
 
+protected function mergeAnnotations2
+  input list<Absyn.ElementArg> oldArgs;
+  input list<Absyn.ElementArg> newArgs;
+  input Boolean mergeSubMods = false;
+  input Boolean mergeEqMods = false;
+  output list<Absyn.ElementArg> outArgs = oldArgs;
 protected
-
-function mergeAnnotations2
-  input list<Absyn.ElementArg> oldmods;
-  input list<Absyn.ElementArg> newmods;
-  output list<Absyn.ElementArg> res = listReverse(oldmods);
-protected
-  list<Absyn.ElementArg> mods;
-  Boolean b;
-  Absyn.Path p;
-  Absyn.ElementArg mod1,mod2;
+  Boolean found;
+  list<Absyn.ElementArg> new_args = {};
 algorithm
-  for mod in newmods loop
-    Absyn.MODIFICATION(path=p) := mod;
-    try
-      mod2 := List.find(res, function isModificationOfPath(path=p));
-      mod1 := subModsInSameOrder(mod2, mod);
-      (res, true) := List.replaceOnTrue(mod1, res, function isModificationOfPath(path=p));
-    else
-      res := mod::res;
-    end try;
+  for arg in newArgs loop
+    // Try to merge the annotation with an existing one.
+    (outArgs, found) := List.findAndMap(outArgs,
+      function isModificationOfPath(path = elementArgName(arg)),
+      if mergeSubMods then
+        function mergeAnnotations3(newArg = arg, mergeEqMods = mergeEqMods) else
+        function subModsInSameOrder(newmod = arg));
+
+    if not found then
+      new_args := arg :: new_args;
+    end if;
   end for;
-  res := listReverse(res);
+
+  // Add any completely new annotations to the end of the list.
+  outArgs := listAppend(outArgs, listReverseInPlace(new_args)) annotation(__OpenModelica_DisableListAppendWarning = true);
 end mergeAnnotations2;
+
+protected function mergeAnnotations3
+  input Absyn.ElementArg oldArg;
+  input Absyn.ElementArg newArg;
+  input Boolean mergeEqMods;
+  output Absyn.ElementArg outArg;
+protected
+  list<Absyn.ElementArg> old_args, new_args;
+  Absyn.EqMod old_eq, new_eq;
+  Option<String> cmt;
+algorithm
+  outArg := match (oldArg, newArg)
+    case (Absyn.ElementArg.MODIFICATION(modification = NONE()), _) then newArg;
+    case (_, Absyn.ElementArg.MODIFICATION(modification = NONE())) then oldArg;
+    case (Absyn.ElementArg.MODIFICATION(modification = SOME(Absyn.Modification.CLASSMOD(old_args, old_eq))),
+          Absyn.ElementArg.MODIFICATION(modification = SOME(Absyn.Modification.CLASSMOD(new_args, new_eq))))
+      algorithm
+        new_eq := mergeAnnotationEqMods(old_eq, new_eq, mergeEqMods);
+        new_args := mergeAnnotations2(old_args, new_args, true, mergeEqMods);
+        cmt := if isSome(newArg.comment) then newArg.comment else oldArg.comment;
+      then
+        Absyn.ElementArg.MODIFICATION(false, Absyn.NON_EACH(), oldArg.path,
+          SOME(Absyn.Modification.CLASSMOD(new_args, new_eq)), cmt, oldArg.info);
+    else newArg;
+  end match;
+end mergeAnnotations3;
+
+protected function mergeAnnotationEqMods
+  input Absyn.EqMod oldEq;
+  input Absyn.EqMod newEq;
+  input Boolean mergeExpressions = false;
+  output Absyn.EqMod outEq;
+protected
+  Absyn.Exp new_exp, old_exp;
+algorithm
+  outEq := match (oldEq, newEq)
+    case (Absyn.EqMod.NOMOD(), _) then newEq;
+    case (_, Absyn.EqMod.NOMOD()) then oldEq;
+    case (Absyn.EqMod.EQMOD(exp = old_exp), Absyn.EqMod.EQMOD(exp = new_exp))
+      guard mergeExpressions
+      algorithm
+        new_exp := match (old_exp, new_exp)
+          case (Absyn.Exp.ARRAY(arrayExp = Absyn.Exp.CALL() :: _),
+                Absyn.Exp.ARRAY(arrayExp = Absyn.Exp.CALL() :: _))
+            then Absyn.Exp.ARRAY(listAppend(old_exp.arrayExp, new_exp.arrayExp));
+          else new_exp;
+        end match;
+      then
+        Absyn.EqMod.EQMOD(new_exp, newEq.info);
+    else newEq;
+  end match;
+end mergeAnnotationEqMods;
 
 public function mergeCommentAnnotation
   "Merges an annotation into a Absyn.Comment option."
@@ -4923,6 +4992,16 @@ algorithm
     else false;
   end match;
 end isEmptySubMod;
+
+function isEmptyEqMod
+  input Absyn.EqMod eqMod;
+  output Boolean isEmpty;
+algorithm
+  isEmpty := match eqMod
+    case Absyn.EqMod.NOMOD() then true;
+    else false;
+  end match;
+end isEmptyEqMod;
 
 public function elementArgName
   input Absyn.ElementArg inArg;
