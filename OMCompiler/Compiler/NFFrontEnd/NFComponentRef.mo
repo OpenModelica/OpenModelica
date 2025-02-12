@@ -1838,6 +1838,7 @@ public
         local_lst := sizes_local(cref, withComplex, resize);
         s_lst := listAppend(local_lst, s_lst);
       then sizes(cref.restCref, withComplex, resize, s_lst);
+      case WILD() then {0};
     end match;
   end sizes;
 
