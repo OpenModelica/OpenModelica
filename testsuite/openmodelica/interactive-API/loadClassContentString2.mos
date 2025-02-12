@@ -45,6 +45,6 @@ list(M);
 //   connect(integrator2.y, integrator11.u) annotation(
 //     Line(points = {{1, 55}, {31, 55}}, color = {0, 0, 127}));
 //   annotation(
-//     Diagram(graphics = {Rectangle(origin = {16, 18}, extent = {{-23, 13}, {23, -13}})}));
+//     Diagram(graphics = {Rectangle(origin = {1, -5}, extent = {{-23, 13}, {23, -13}}), Rectangle(origin = {16, 18}, extent = {{-23, 13}, {23, -13}})}));
 // end M;"
 // endResult

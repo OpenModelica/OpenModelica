@@ -1492,7 +1492,7 @@ algorithm
       then SCode.COMMENT(ann,ostr);
     case (absann::anns,_)
       equation
-        absann = List.fold(anns, AbsynUtil.mergeAnnotations, absann);
+        absann = AbsynUtil.mergeAnnotationsList(absann, anns);
         ann = translateAnnotation(absann);
         ostr = Util.applyOption(inString,System.unescapedString);
       then SCode.COMMENT(ann,ostr);
