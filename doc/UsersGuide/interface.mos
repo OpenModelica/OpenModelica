@@ -20,8 +20,8 @@ protected
   String cmt = \"\";
 algorithm
   out := \"\\n.. _\" + strs[end] + \" :\\n\\n\" + strs[end] + \"\\n\" + sum(\"^\" for c in 1:stringLength(strs[end])) + \"\\n\";
-  cmt := sum(\"  \" + trim(l) + \"\\n\" for l in OpenModelica.Scripting.strtok(OpenModelica.Scripting.getClassComment(cl), \"\\n\"));
-  cmt := if (cmt == \"\") then \"\" else \"::\\n\\n\" + cmt + \"\\n\";
+  cmt := sum(\"\" + trim(l) + \"\\n\" for l in OpenModelica.Scripting.strtok(OpenModelica.Scripting.getClassComment(cl), \"\\n\"));
+  cmt := if (cmt == \"\") then \"\" else \"\\n\\n\" + cmt + \"\\n\";
   out := out + cmt;
   OpenModelica.Scripting.writeFile(\"tmp/interface.inc.tmp\", doc1, false);
   // Disable wrapping in order to fix some modelica:// links
