@@ -1650,9 +1650,11 @@ public
   algorithm
     _ := match cref
       case ComponentRef.CREF(node = InstNode.VAR_NODE()) then ();
-      else algorithm
+      case ComponentRef.CREF(node = InstNode.NAME_NODE()) then ();
+      case ComponentRef.CREF() algorithm
         UnorderedSet.add(cref, set);
       then ();
+      else ();
     end match;
   end checkLoweredCref;
 
