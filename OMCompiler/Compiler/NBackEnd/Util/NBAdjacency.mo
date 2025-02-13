@@ -557,12 +557,8 @@ public
         print(StringUtil.headline_1("Expanding from size [vars: " + intString(size_vo) + "| eqns: " + intString(size_eo) + "] to [vars: " + intString(size_vn) + "| eqns: " + intString(size_en) +  "]") + "\n");
       end if;
 
-      // check if full has to be expanded
-      full := match full
-        case FULL() guard(EquationPointers.size(eqns) > arrayLength(full.equation_names))
-          then expandFull(full, vo, vn, eo, en, vars, eqns);
-        else full;
-      end match;
+      // expand full
+      full := expandFull(full, vo, vn, eo, en, vars, eqns);
 
       adj := match (adj, full)
         local

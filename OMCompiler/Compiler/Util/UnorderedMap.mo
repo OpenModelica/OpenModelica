@@ -699,6 +699,7 @@ public
     input KeyStringFn keyStringFn;
     input ValueStringFn valueStringFn;
     input String delimiter = "\n";
+    input String concatinator = ", ";
     output String str;
   protected
     list<String> strl = {};
@@ -706,7 +707,7 @@ public
     Vector<V> values = map.values;
   algorithm
     for i in Vector.size(keys):-1:1 loop
-      strl := "(" + keyStringFn(Vector.get(keys, i)) + ", " +
+      strl := "(" + keyStringFn(Vector.get(keys, i)) + concatinator +
               valueStringFn(Vector.get(values, i)) + ")" :: strl;
     end for;
 

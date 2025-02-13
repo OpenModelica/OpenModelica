@@ -291,6 +291,15 @@ public
     var_ptr := Pointer.create(var);
   end subIdxName;
 
+  function getVarKind
+    input Pointer<Variable> var_ptr;
+    output VariableKind kind;
+  protected
+    Variable var = Pointer.access(var_ptr);
+  algorithm
+    kind := BackendInfo.getVarKind(var.backendinfo);
+  end getVarKind;
+
   function toExpression
     input Pointer<Variable> var_ptr;
     output Expression exp = Expression.fromCref(getVarName(var_ptr));
@@ -2081,6 +2090,9 @@ public
       VariablePointers records            "Records";
       VariablePointers external_objects   "External Objects";
       VariablePointers artificials        "artificial variables to have pointers on crefs";
+
+      /* state order for differentiation and index reduction */
+      UnorderedMap<ComponentRef, ComponentRef> state_order;
     end VAR_DATA_SIM;
 
     record VAR_DATA_JAC
