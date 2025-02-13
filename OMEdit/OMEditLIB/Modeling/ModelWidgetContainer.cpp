@@ -339,6 +339,8 @@ void GraphicsView::drawShapes(ModelInstance::Model *pModelInstance, bool inherti
         }
         mShapesList.at(i)->parseShapeAnnotation();
         mShapesList.at(i)->updateCornerItems();
+        mShapesList.at(i)->setCornerItemsActiveOrPassive();
+        mShapesList.at(i)->applyTransformation();
         // remove and add the shape to keep the correct order of shapes.
         removeItem(mShapesList.at(i));
         removeItem(mShapesList.at(i)->getOriginItem());
@@ -3573,10 +3575,9 @@ void GraphicsView::copyItems(bool cut)
         pMimeData->setData(cutCopyPasteShapesOMCFormat, shapesStr.toUtf8());
       }
       // save the copied items bounding rect
-      mCopiedItemsBoundingRect = itemsBoundingRect(true).toAlignedRect();
-      mCopiedItemsBoundingRect = mapToScene(mCopiedItemsBoundingRect).boundingRect().toRect();
+      MainWindow::instance()->getModelWidgetContainer()->mCopiedItemsBoundingRect = mapToScene(itemsBoundingRect(true).toAlignedRect()).boundingRect().toRect();
       // save the current cursor position
-      mCursorPositionAtCopy = mapToScene(mapFromGlobal(QCursor::pos()));
+      MainWindow::instance()->getModelWidgetContainer()->mCursorPositionAtCopy = mapToScene(mapFromGlobal(QCursor::pos()));
       QApplication::clipboard()->setMimeData(pMimeData);
       // if cut flag is set
       if (cut) {
@@ -3882,8 +3883,10 @@ void GraphicsView::pasteItems()
      * otherwise set cursorPosition to (0, 0) so loadClassContentString don't update positions.
      */
     QPointF cursorPosition = mapToScene(mapFromGlobal(QCursor::pos()));
-    if (mCursorPositionAtCopy != cursorPosition) {
-      cursorPosition = cursorPosition - QPointF(mCopiedItemsBoundingRect.left(), mCopiedItemsBoundingRect.bottom());
+    QPointF cursorPositionAtCopy = MainWindow::instance()->getModelWidgetContainer()->mCursorPositionAtCopy;
+    QRect copiedItemsBoundingRect = MainWindow::instance()->getModelWidgetContainer()->mCopiedItemsBoundingRect;
+    if (!cursorPositionAtCopy.isNull() && cursorPositionAtCopy != cursorPosition) {
+      cursorPosition = cursorPosition - QPointF(copiedItemsBoundingRect.left(), copiedItemsBoundingRect.bottom());
     } else {
       cursorPosition = QPointF(0, 0);
     }
