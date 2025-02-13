@@ -907,6 +907,8 @@ public
     input ComponentRef srcCref;
     input ComponentRef dstCref;
     output ComponentRef cref;
+  protected
+    list<Subscript> subs;
   algorithm
     cref := match (srcCref, dstCref)
       case (EMPTY(), _) then dstCref;
@@ -923,8 +925,12 @@ public
       case (CREF(), CREF()) guard InstNode.refEqual(srcCref.node, dstCref.node)
         algorithm
           cref := transferSubscripts(srcCref.restCref, dstCref.restCref);
+          // Don't remove subscripts unless there's something to replace them with.
+          // This avoids loosing subscripts when flattening an already flattened cref with
+          // a prefix without subscripts, which can happen in the non-scalarized path.
+          subs := if listEmpty(srcCref.subscripts) then dstCref.subscripts else srcCref.subscripts;
         then
-          CREF(dstCref.node, srcCref.subscripts, dstCref.ty, dstCref.origin, cref);
+          CREF(dstCref.node, subs, dstCref.ty, dstCref.origin, cref);
 
       case (CREF(), CREF())
         then transferSubscripts(srcCref.restCref, dstCref);
