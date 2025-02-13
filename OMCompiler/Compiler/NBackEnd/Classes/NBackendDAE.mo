@@ -363,6 +363,9 @@ public
           debugStr := debugStr + StringUtil.repeat(".", intMax(100 - stringLength(debugStr), 0));
           debugStr := debugStr + " " + realString(clock_time) + "s\n";
           print(debugStr);
+
+          // run lowering diagnostics when failtrace is active
+          debugLowering(bdae);
         end if;
       else
         bdae := func(bdae);
@@ -1420,6 +1423,7 @@ public
     for iter in iterators loop
       UnorderedSet.add(lowerIterator(iter), set);
     end for;
+
     // get all iterators from the equation body
     Equation.map(eqn, function collectIterators(variables = variables, set = set));
   end lowerEquationIterators;
@@ -1591,6 +1595,66 @@ public
       else ();
     end match;
   end debugFollowEquations;
+
+  function debugLowering
+    input BackendDAE bdae;
+  algorithm
+    _ := match bdae
+      case MAIN() algorithm
+        EqData.map(bdae.eqData, checkLoweredCrefEqn);
+        VariablePointers.mapPtr(VarData.getVariables(bdae.varData), checkLoweredCrefVar);
+      then ();
+      else ();
+    end match;
+  end debugLowering;
+
+  function checkLoweredCrefVar
+    input Pointer<Variable> var;
+  protected
+    UnorderedSet<ComponentRef> set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+  algorithm
+    BVariable.mapExp(var, function checkLoweredCrefExp(set = set));
+    if not UnorderedSet.isEmpty(set) then
+      print("[failtrace] the variable:\n" + BVariable.pointerToString(var) + "\n");
+      print("[failtrace] has following non-lowered component references: " + List.toString(UnorderedSet.toList(set), ComponentRef.toString) + "\n");
+    end if;
+  end checkLoweredCrefVar;
+
+  function checkLoweredCrefEqn
+    input output Equation eqn;
+  protected
+    UnorderedSet<ComponentRef> set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+  algorithm
+    Equation.map(eqn, function checkLoweredCrefExp(set = set), SOME(function checkLoweredCref(set = set)));
+    if not UnorderedSet.isEmpty(set) then
+      print("[failtrace] the equation:\n" + Equation.toString(eqn) + "\n");
+      print("[failtrace] has following non-lowered component references: " + List.toString(UnorderedSet.toList(set), ComponentRef.toString) + "\n");
+    end if;
+  end checkLoweredCrefEqn;
+
+  function checkLoweredCrefExp
+    input output Expression exp;
+    input UnorderedSet<ComponentRef> set;
+  algorithm
+    _ := match exp
+      case Expression.CREF() algorithm
+        checkLoweredCref(exp.cref, set);
+      then ();
+      else ();
+    end match;
+  end checkLoweredCrefExp;
+
+  function checkLoweredCref
+    input output ComponentRef cref;
+    input UnorderedSet<ComponentRef> set;
+  algorithm
+    _ := match cref
+      case ComponentRef.CREF(node = InstNode.VAR_NODE()) then ();
+      else algorithm
+        UnorderedSet.add(cref, set);
+      then ();
+    end match;
+  end checkLoweredCref;
 
   annotation(__OpenModelica_Interface="backend");
 end NBackendDAE;
