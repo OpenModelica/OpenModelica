@@ -1863,6 +1863,16 @@ public
     end match;
   end sizes_local;
 
+  function sizeKnown
+    input ComponentRef cref;
+    output Boolean b;
+  algorithm
+    b := match cref
+      case CREF() then Type.sizeKnown(cref.ty);
+      else true; // size of WILD() and EMPTY() is known
+    end match;
+  end sizeKnown;
+
   function subscriptsToInteger
     input ComponentRef cref;
     output list<Integer> s_lst = {};
