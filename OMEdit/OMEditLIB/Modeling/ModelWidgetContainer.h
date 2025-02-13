@@ -180,8 +180,6 @@ public:
   bool mSkipBackground; /* Do not draw the background rectangle */
   QPointF mContextMenuStartPosition;
   bool mContextMenuStartPositionValid;
-  QRect mCopiedItemsBoundingRect;
-  QPointF mCursorPositionAtCopy;
   void initializeCoordinateSystem();
   void resetCoordinateSystem();
   bool isIconView() const {return mViewType == StringHandler::Icon;}
@@ -697,6 +695,9 @@ public:
   bool validateText();
   void getOpenedModelWidgetsAndSelectedElementsOfClass(const QString &modelName, QHash<QString, QPair<QStringList, QStringList> > *pOpenedModelWidgetsAndSelectedElements);
   void openModelWidgetsAndSelectElement(QHash<QString, QPair<QStringList, QStringList> > closedModelWidgetsAndSelectedElements, bool skipSelection = false);
+
+  QRect mCopiedItemsBoundingRect;
+  QPointF mCursorPositionAtCopy;
 private:
   StringHandler::ViewType mPreviousViewType;
   bool mShowGridLines;
