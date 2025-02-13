@@ -342,6 +342,11 @@ public
     output Boolean b = List.any(arrayDims(ty), Dimension.isResizable);
   end isResizable;
 
+  function sizeKnown
+    input Type ty;
+    output Boolean b = not List.any(arrayDims(ty), Dimension.isUnknown);
+  end sizeKnown;
+
   function setConditionalArrayTypes
     input Type condType;
     input Type trueType;

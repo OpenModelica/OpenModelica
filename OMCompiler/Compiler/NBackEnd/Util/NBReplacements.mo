@@ -323,7 +323,10 @@ public
         body_exp := getFunctionBody(fn);
         // replace input withs arguments in expression
         body_exp := Expression.map(body_exp, function applySimpleExp(replacements = local_replacements));
-        body_exp := Typing.typeExp(body_exp, NFInstContext.RHS, sourceInfo(), true);
+        // if any of the inputs had an undetermined size, retype the new body
+        if not List.all(input_crefs, ComponentRef.sizeKnown) then
+          body_exp := Typing.typeExp(body_exp, NFInstContext.RHS, sourceInfo(), true);
+        end if;
         body_exp := SimplifyExp.combineBinaries(body_exp);
         body_exp := SimplifyExp.simplifyDump(body_exp, true, getInstanceName(), "\n");
 
