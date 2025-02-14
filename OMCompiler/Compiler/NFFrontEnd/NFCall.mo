@@ -2271,6 +2271,17 @@ public
     end match;
   end isStreamOperator;
 
+  function isCardinality
+    input Call call;
+    output Boolean isCardinality;
+  algorithm
+    isCardinality := match call
+      case TYPED_CALL() guard Function.isBuiltin(call.fn)
+        then functionNameFirst(call) == "cardinality";
+      else false;
+    end match;
+  end isCardinality;
+
 protected
   function instNormalCall
     input Absyn.ComponentRef functionName;

@@ -2121,7 +2121,9 @@ protected
   algorithm
     res := match exp
       case Expression.CALL()
-        then Call.isConnectionsOperator(exp.call) or Call.isStreamOperator(exp.call);
+        then Call.isConnectionsOperator(exp.call) or
+             Call.isStreamOperator(exp.call) or
+             Call.isCardinality(exp.call);
       else false;
     end match;
   end is_conn_operator;
