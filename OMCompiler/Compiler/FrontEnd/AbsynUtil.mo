@@ -3758,6 +3758,8 @@ algorithm
       algorithm
         elts as _ :: _ := List.fold(listReverse(def.classParts), getFunctionInterfaceParts, {});
         cl.body := Absyn.PARTS(def.typeVars, def.classAttrs, {Absyn.PUBLIC(elts)}, {}, NONE());
+        cl.commentsBeforeEnd := {};
+        cl.commentsAfterEnd := {};
       then
         ();
   end match;
