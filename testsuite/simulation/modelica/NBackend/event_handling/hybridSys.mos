@@ -2,7 +2,6 @@
 // keywords: NewBackend
 // status: correct
 
-
 loadFile("hybridSys.mo"); getErrorString();
 
 setCommandLineOptions("--newBackend"); getErrorString();

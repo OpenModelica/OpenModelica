@@ -338,7 +338,7 @@ public
       end match;
     end isDiscrete;
 
-    function filterDiscrete
+    function filterWhen
       input list<Block> blcks;
       input output list<Block> out_blcks;
       input output list<Block> new_blcks;
@@ -349,28 +349,27 @@ public
       list<Statement> stmts;
     algorithm
       (out_blcks, new_blcks, indices) := match blcks
-        case blck :: rest guard(isDiscrete(blck)) then filterDiscrete(rest, out_blcks, new_blcks, indices);
-        case WHEN() :: rest then filterDiscrete(rest, out_blcks, new_blcks, indices);
+        case WHEN() :: rest then filterWhen(rest, out_blcks, new_blcks, indices);
         case (blck as ALGORITHM()) :: rest algorithm
           stmts := Statement.filterDiscrete(blck.stmts);
           if listLength(stmts) == 0 then
             // filtered everything out, skip entire block
-            (out_blcks, new_blcks, indices) := filterDiscrete(rest, out_blcks, new_blcks, indices);
+            (out_blcks, new_blcks, indices) := filterWhen(rest, out_blcks, new_blcks, indices);
           elseif listLength(stmts) <> listLength(blck.stmts) then
             // filtered part of it out, create new block
             new_blck := ALGORITHM(indices.equationIndex, stmts, blck.attr);
             indices.equationIndex := indices.equationIndex + 1;
-            (out_blcks, new_blcks, indices) := filterDiscrete(rest, new_blck :: out_blcks, new_blck :: new_blcks, indices);
+            (out_blcks, new_blcks, indices) := filterWhen(rest, new_blck :: out_blcks, new_blck :: new_blcks, indices);
             //UnorderedMap.add(Equation.getEqnName(Pointer.create(eqn)), blck, equation_map);
           else
             // filtered nothing out, keep block as it is
-            (out_blcks, new_blcks, indices) := filterDiscrete(rest, blck :: out_blcks, new_blcks, indices);
+            (out_blcks, new_blcks, indices) := filterWhen(rest, blck :: out_blcks, new_blcks, indices);
           end if;
         then (out_blcks, new_blcks, indices);
-        case blck :: rest then filterDiscrete(rest, blck :: out_blcks, new_blcks, indices);
+        case blck :: rest then filterWhen(rest, blck :: out_blcks, new_blcks, indices);
         else (out_blcks, new_blcks, indices);
       end match;
-    end filterDiscrete;
+    end filterWhen;
 
     function map
       "ToDo: other blocks and cref func"
@@ -439,10 +438,12 @@ public
         (tmp, simCodeIndices) := fromPartition(partition, simCodeIndices, simcode_map, equation_map);
         // add all
         all_blcks := listAppend(tmp, all_blcks);
-        // filter all discrete equations and add to blcks (ode or algebraic) and event dependencies
-        (tmp, new_blcks, simCodeIndices) := filterDiscrete(listReverse(tmp), {}, {}, simCodeIndices);
+        // filter all when equations and add to blcks (ode or algebraic)
+        (tmp, new_blcks, simCodeIndices) := filterWhen(listReverse(tmp), {}, {}, simCodeIndices);
         all_blcks := listAppend(new_blcks, all_blcks);
         blcks := tmp :: blcks;
+        // filter all other discrete equations and add to event_dependencies
+        tmp := list(blck for blck guard(not isDiscrete(blck)) in tmp);
         event_dependencies := listAppend(tmp, event_dependencies);
       end for;
       blcks := listReverse(blcks);
