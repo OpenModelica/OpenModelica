@@ -1554,26 +1554,6 @@ void LineAnnotation::updateInitialStateAnnotation()
   pOMCProxy->updateInitialState(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), getStartElementName(), annotationString);
 }
 
-/*!
- * \brief LineAnnotation::duplicate
- * Duplicates the shape.
- */
-void LineAnnotation::duplicate()
-{
-  LineAnnotation *pLineAnnotation = new LineAnnotation("", mpGraphicsView);
-  pLineAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->mMergedCoordinateSystem.getHorizontalGridStep() * 5,
-                   mpGraphicsView->mMergedCoordinateSystem.getVerticalGridStep() * 5);
-  pLineAnnotation->setOrigin(mOrigin + gridStep);
-  pLineAnnotation->drawCornerItems();
-  pLineAnnotation->setCornerItemsActiveOrPassive();
-  pLineAnnotation->applyTransformation();
-  pLineAnnotation->update();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pLineAnnotation));
-  setSelected(false);
-  pLineAnnotation->setSelected(true);
-}
-
 void LineAnnotation::redraw(const QString& annotation, std::function<void()> updateAnnotationFunction)
 {
   prepareGeometryChange();

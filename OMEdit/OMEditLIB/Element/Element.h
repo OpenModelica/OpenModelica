@@ -275,7 +275,6 @@ public slots:
   void finishResizeElement();
   void resizedElement();
   void deleteMe();
-  void duplicate();
   void rotateClockwise();
   void rotateAntiClockwise();
   void flipHorizontal();

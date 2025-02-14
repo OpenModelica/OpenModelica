@@ -273,23 +273,3 @@ ModelInstance::Extend *RectangleAnnotation::getExtend() const
 {
   return mpRectangle->getParentExtend();
 }
-
-/*!
- * \brief RectangleAnnotation::duplicate
- * Duplicates the shape.
- */
-void RectangleAnnotation::duplicate()
-{
-  RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation("", mpGraphicsView);
-  pRectangleAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->mMergedCoordinateSystem.getHorizontalGridStep() * 5,
-                   mpGraphicsView->mMergedCoordinateSystem.getVerticalGridStep() * 5);
-  pRectangleAnnotation->setOrigin(mOrigin + gridStep);
-  pRectangleAnnotation->drawCornerItems();
-  pRectangleAnnotation->setCornerItemsActiveOrPassive();
-  pRectangleAnnotation->applyTransformation();
-  pRectangleAnnotation->update();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pRectangleAnnotation));
-  setSelected(false);
-  pRectangleAnnotation->setSelected(true);
-}

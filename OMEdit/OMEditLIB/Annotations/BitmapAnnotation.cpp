@@ -269,23 +269,3 @@ ModelInstance::Extend *BitmapAnnotation::getExtend() const
 {
   return mpBitmap->getParentExtend();
 }
-
-/*!
- * \brief BitmapAnnotation::duplicate
- * Duplicates the shape.
- */
-void BitmapAnnotation::duplicate()
-{
-  BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(mClassFileName, "", mpGraphicsView);
-  pBitmapAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->mMergedCoordinateSystem.getHorizontalGridStep() * 5,
-                   mpGraphicsView->mMergedCoordinateSystem.getVerticalGridStep() * 5);
-  pBitmapAnnotation->setOrigin(mOrigin + gridStep);
-  pBitmapAnnotation->drawCornerItems();
-  pBitmapAnnotation->setCornerItemsActiveOrPassive();
-  pBitmapAnnotation->applyTransformation();
-  pBitmapAnnotation->update();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pBitmapAnnotation));
-  setSelected(false);
-  pBitmapAnnotation->setSelected(true);
-}

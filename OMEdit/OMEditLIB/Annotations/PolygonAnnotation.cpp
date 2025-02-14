@@ -318,23 +318,3 @@ ModelInstance::Extend *PolygonAnnotation::getExtend() const
 {
   return mpPolygon->getParentExtend();
 }
-
-/*!
- * \brief PolygonAnnotation::duplicate
- * Duplicates the shape.
- */
-void PolygonAnnotation::duplicate()
-{
-  PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation("", mpGraphicsView);
-  pPolygonAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->mMergedCoordinateSystem.getHorizontalGridStep() * 5,
-                   mpGraphicsView->mMergedCoordinateSystem.getVerticalGridStep() * 5);
-  pPolygonAnnotation->setOrigin(mOrigin + gridStep);
-  pPolygonAnnotation->drawCornerItems();
-  pPolygonAnnotation->setCornerItemsActiveOrPassive();
-  pPolygonAnnotation->applyTransformation();
-  pPolygonAnnotation->update();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pPolygonAnnotation));
-  setSelected(false);
-  pPolygonAnnotation->setSelected(true);
-}

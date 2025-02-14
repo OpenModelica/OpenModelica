@@ -400,7 +400,6 @@ private:
 signals:
   void manhattanize();
   void deleteSignal();
-  void duplicate();
   void mouseRotateClockwise();
   void mouseRotateAntiClockwise();
   void mouseFlipHorizontal();
@@ -437,7 +436,7 @@ public slots:
   void selectAll();
   void cutItems();
   void copyItems();
-  void pasteItems();
+  void pasteItems(QPointF positionOffset = QPointF(0, 0));
   void clearSelection(QGraphicsItem *pSelectGraphicsItem = 0);
   void addClassAnnotation();
   void showParameters();

@@ -70,8 +70,6 @@ public:
   void setPolygon(ModelInstance::Polygon *pPolygon) {mpPolygon = pPolygon;}
 private:
   ModelInstance::Polygon *mpPolygon;
-public slots:
-  void duplicate() override;
 };
 
 #endif // POLYGONANNOTATION_H

@@ -2191,43 +2191,6 @@ void Element::deleteMe()
 }
 
 /*!
- * \brief Element::duplicate
- * Duplicates the Element.
- */
-void Element::duplicate()
-{
-  QString name = getName();
-  QString defaultPrefix = "";
-  if (mpLibraryTreeItem) {
-    if (!mpGraphicsView->performElementCreationChecks(mpLibraryTreeItem->getNameStructure(), mpLibraryTreeItem->isPartial(), &name, &defaultPrefix)) {
-      return;
-    }
-  } else {
-    if (!mpGraphicsView->performElementCreationChecks(getClassName(), mpModel->isPartial(), &name, &defaultPrefix)) {
-      return;
-    }
-  }
-  QPointF gridStep(mpGraphicsView->mMergedCoordinateSystem.getHorizontalGridStep() * 5, mpGraphicsView->mMergedCoordinateSystem.getVerticalGridStep() * 5);
-  // add component
-  ModelInstance::Component *pModelInstanceComponent = GraphicsView::createModelInstanceComponent(mpGraphicsView->getModelWidget()->getModelInstance(), name,
-                                                                                                 getClassName(), mpModelComponent->getModel()->isConnector());
-  mpGraphicsView->addElementToView(pModelInstanceComponent, false, true, false, QPointF(0, 0), getOMCPlacementAnnotation(gridStep), false);
-  // set modifiers
-  if (mpModelComponent->getModifier()) {
-    MainWindow::instance()->getOMCProxy()->setElementModifierValue(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), name,
-                                                                   mpModelComponent->getModifier()->toString());
-  }
-  Element *pDiagramElement = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getElementsList().last();
-  setSelected(false);
-  if (mpGraphicsView->isDiagramView()) {
-    pDiagramElement->setSelected(true);
-  } else {
-    Element *pIconElement = mpGraphicsView->getModelWidget()->getIconGraphicsView()->getElementsList().last();
-    pIconElement->setSelected(true);
-  }
-}
-
-/*!
  * \brief Element::rotateClockwise
  * Rotates the element clockwise.
  */
@@ -2562,7 +2525,6 @@ QVariant Element::itemChange(GraphicsItemChange change, const QVariant &value)
       if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->getModelWidget()->isElementMode()
           && !mpGraphicsView->isVisualizationView() && !isInheritedElement()) {
         connect(mpGraphicsView, SIGNAL(deleteSignal()), this, SLOT(deleteMe()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(duplicate()), this, SLOT(duplicate()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(mouseRotateClockwise()), this, SLOT(rotateClockwise()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(mouseRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(mouseFlipHorizontal()), this, SLOT(flipHorizontal()), Qt::UniqueConnection);
@@ -2605,7 +2567,6 @@ QVariant Element::itemChange(GraphicsItemChange change, const QVariant &value)
       if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpGraphicsView->getModelWidget()->isElementMode()
           && !mpGraphicsView->isVisualizationView() && !isInheritedElement()) {
         disconnect(mpGraphicsView, SIGNAL(deleteSignal()), this, SLOT(deleteMe()));
-        disconnect(mpGraphicsView, SIGNAL(duplicate()), this, SLOT(duplicate()));
         disconnect(mpGraphicsView, SIGNAL(mouseRotateClockwise()), this, SLOT(rotateClockwise()));
         disconnect(mpGraphicsView, SIGNAL(mouseRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));
         disconnect(mpGraphicsView, SIGNAL(mouseFlipHorizontal()), this, SLOT(flipHorizontal()));
