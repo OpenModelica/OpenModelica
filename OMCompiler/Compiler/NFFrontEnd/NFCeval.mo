@@ -931,11 +931,12 @@ function evalBinaryOp_dispatch
   output Expression exp;
 algorithm
   exp := match op.op
-    case Op.ADD then evalBinaryAdd(exp1, exp2);
-    case Op.SUB then evalBinarySub(exp1, exp2);
-    case Op.MUL then evalBinaryMul(exp1, exp2);
-    case Op.DIV then evalBinaryDiv(exp1, exp2, target);
-    case Op.POW then evalBinaryPow(exp1, exp2, target);
+    case Op.ADD    then evalBinaryAdd(exp1, exp2);
+    case Op.SUB    then evalBinarySub(exp1, exp2);
+    case Op.MUL    then evalBinaryMul(exp1, exp2);
+    case Op.DIV    then evalBinaryDiv(exp1, exp2, target);
+    case Op.DIV_EW then evalBinaryDiv(exp1, exp2, target);
+    case Op.POW    then evalBinaryPow(exp1, exp2, target);
     case Op.ADD_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, evalBinaryAdd);
     case Op.ADD_ARRAY_SCALAR then evalBinaryArrayScalar(exp1, exp2, evalBinaryAdd);
     case Op.SUB_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, evalBinarySub);
