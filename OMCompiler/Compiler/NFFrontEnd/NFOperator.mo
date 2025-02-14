@@ -853,6 +853,19 @@ public
     (_, scl) := classify(op);
   end getSizeClassification;
 
+  function combineSizeClassification
+    input SizeClassification scl1;
+    input SizeClassification scl2;
+    output SizeClassification scl;
+  algorithm
+    scl := match (scl1, scl2)
+      // Todo: more cases?
+      case (SizeClassification.ELEMENT_WISE, SizeClassification.SCALAR) then SizeClassification.ARRAY_SCALAR;
+      case (SizeClassification.SCALAR, SizeClassification.ELEMENT_WISE) then SizeClassification.SCALAR_ARRAY;
+      else scl1;
+    end match;
+  end combineSizeClassification;
+
   function isDashClassification
     input MathClassification mcl;
     output Boolean b;
