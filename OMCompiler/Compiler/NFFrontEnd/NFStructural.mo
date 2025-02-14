@@ -316,6 +316,7 @@ public
     Option<Expression> binding;
   algorithm
     comp := Component.setVariability(Variability.STRUCTURAL_PARAMETER, component);
+    comp := Component.setFinal(comp, true);
     InstNode.updateComponent(comp, node);
 
     binding := Binding.untypedExp(Component.getBinding(comp));

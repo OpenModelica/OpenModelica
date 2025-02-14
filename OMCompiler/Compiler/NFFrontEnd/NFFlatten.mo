@@ -398,6 +398,8 @@ algorithm
     end if;
     InstUtil.dumpFlatModelDebug("connections", flatModel);
   end if;
+
+  flatModel.variables := list(updateVariability(var) for var in flatModel.variables);
 end flatten;
 
 function flattenConnection
@@ -1863,7 +1865,7 @@ algorithm
 
     case Equation.FOR()
       algorithm
-        if settings.scalarize and not settings.minimalEval then
+        if settings.scalarize then
           eql := unrollForLoop(eq, prefix, equations, settings);
         else
           eql := splitForLoop(eq, prefix, equations, settings);
@@ -1928,7 +1930,7 @@ protected
   Expression cond;
   list<Equation> eql;
   Variability var;
-  Boolean has_connect;
+  Boolean has_connect, should_eval;
   DAE.ElementSource src;
   SourceInfo info;
   Ceval.EvalTarget target;
@@ -1954,13 +1956,27 @@ algorithm
           // Evaluate structural conditions.
           if var <= Variability.STRUCTURAL_PARAMETER then
             if Expression.isPure(cond) then
-              // Always evaluate if scalarization is on or the if contains
-              // connects, otherwise skip it if either the new backend is used
-              // or the condition contains iterators.
-              // TODO: The condition shouldn't be evaluated if scalarization is
-              //       turned off since that breaks vectorizeEquation, but
-              //       turning it off completely doesn't work yet either.
-              if settings.scalarize or has_connect or not (settings.newBackend or Expression.contains(cond, Expression.isIterator)) then
+              if has_connect then
+                // If-equations containing connects must be evaluated.
+                should_eval := true;
+              elseif settings.minimalEval then
+                // Don't evaluate if --evaluateStructuralParameters=strictlyNecessary
+                should_eval := false;
+              elseif settings.scalarize then
+                // Evaluate if scalarization is turned on.
+                should_eval := true;
+              elseif settings.newBackend or Expression.contains(cond, Expression.isIterator) then
+                // Don't evaluate if the new backend is used or the expression contains iterators.
+                should_eval := false;
+              else
+                // TODO: The condition shouldn't be evaluated if scalarization is
+                //       turned off since that breaks vectorizeEquation, but
+                //       turning it off completely doesn't work yet either.
+                should_eval := true;
+              end if;
+
+              if should_eval then
+                Structural.markExp(cond);
                 cond := Ceval.evalExp(cond, target);
                 cond := flattenExp(cond, prefix, info);
               end if;
@@ -2003,6 +2019,7 @@ algorithm
         guard has_connect
         algorithm
           if var <= Variability.STRUCTURAL_PARAMETER then
+            Structural.markExp(cond);
             cond := Ceval.evalExp(cond, target);
             cond := flattenExp(cond, prefix, info);
           end if;
@@ -3072,6 +3089,20 @@ algorithm
     else ();
   end match;
 end verifyDimension;
+
+function updateVariability
+  input output Variable var;
+protected
+  Variability v;
+algorithm
+  if var.attributes.variability == Variability.PARAMETER then
+    v := Component.variability(InstNode.component(ComponentRef.node(var.name)));
+
+    if v < Variability.PARAMETER then
+      var := Variable.setVariability(var, v);
+    end if;
+  end if;
+end updateVariability;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFFlatten;

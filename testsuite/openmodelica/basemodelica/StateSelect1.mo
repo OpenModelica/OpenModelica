@@ -13,7 +13,7 @@ end StateSelect1;
 // package 'StateSelect1'
 //   model 'StateSelect1'
 //     Real 'x'(stateSelect = StateSelect.never);
-//     parameter StateSelect 's' = StateSelect.always;
+//     final parameter StateSelect 's' = StateSelect.always;
 //     Real 'y'(stateSelect = StateSelect.always);
 //   end 'StateSelect1';
 // end 'StateSelect1';

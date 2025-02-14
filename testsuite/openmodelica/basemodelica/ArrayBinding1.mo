@@ -16,7 +16,7 @@ end ArrayBinding1;
 // package 'ArrayBinding1'
 //   model 'ArrayBinding1'
 //     final parameter Real 'P' = 1.0;
-//     parameter Real[4, 4, 4] 'a.p' = fill(1.0, 4, 4, 4);
+//     final parameter Real[4, 4, 4] 'a.p' = fill(1.0, 4, 4, 4);
 //   end 'ArrayBinding1';
 // end 'ArrayBinding1';
 // endResult
