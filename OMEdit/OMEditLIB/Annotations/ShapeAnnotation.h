@@ -215,7 +215,6 @@ public:
   void emitPrepareGeometryChange() {prepareGeometryChange();}
 public slots:
   void deleteMe();
-  virtual void duplicate() = 0;
   void bringToFront();
   void bringForward();
   void sendToBack();

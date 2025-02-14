@@ -186,7 +186,6 @@ public slots:
   void updateTransitionAnnotation(QString oldCondition, bool oldImmediate, bool oldReset, bool oldSynchronize, int oldPriority);
   void redraw(const QString& annotation, std::function<void()> updateAnnotationFunction);
   void updateInitialStateAnnotation();
-  void duplicate() override;
 };
 
 class ExpandableConnectorTreeItem : public QObject

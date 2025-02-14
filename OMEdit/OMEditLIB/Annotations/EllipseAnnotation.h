@@ -62,8 +62,6 @@ public:
   void setEllipse(ModelInstance::Ellipse *pEllipse) {mpEllipse = pEllipse;}
 private:
   ModelInstance::Ellipse *mpEllipse;
-public slots:
-  void duplicate() override;
 };
 
 #endif // ELLIPSEANNOTATION_H

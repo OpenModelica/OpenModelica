@@ -67,8 +67,6 @@ public:
   void setRectangle(ModelInstance::Rectangle *pRectangle) {mpRectangle = pRectangle;}
 private:
   ModelInstance::Rectangle *mpRectangle;
-public slots:
-  void duplicate() override;
 };
 
 #endif // RECTANGLEANNOTATION_H

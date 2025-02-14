@@ -77,7 +77,6 @@ private:
   void updateTextStringHelper(QRegExp regExp);
 public slots:
   void updateTextString();
-  void duplicate() override;
 };
 
 #endif // TEXTANNOTATION_H

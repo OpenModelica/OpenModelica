@@ -2894,18 +2894,15 @@ bool GraphicsView::isAnyItemSelectedAndEditable(int key)
 
 /*!
  * \brief GraphicsView::duplicateItems
- * Duplicates the selected items by emitting GraphicsView::duplicate() SIGNAL.
+ * Duplicates the selected items.
  * \param action
  */
 void GraphicsView::duplicateItems(const QString &action)
 {
   mpModelWidget->beginMacro(action);
-  ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
-  emit duplicate();
-  ModelInfo newModelInfo = mpModelWidget->createModelInfo();
-  mpModelWidget->getUndoStack()->push(new OMCUndoCommand(mpModelWidget->getLibraryTreeItem(), oldModelInfo, newModelInfo, action));
-  mpModelWidget->updateClassAnnotationIfNeeded();
-  mpModelWidget->updateModelText();
+  copyItems();
+  QPointF position(mMergedCoordinateSystem.getHorizontalGridStep() * 5, mMergedCoordinateSystem.getVerticalGridStep() * 5);
+  pasteItems(position);
   mpModelWidget->endMacro();
 }
 
@@ -3832,8 +3829,10 @@ void GraphicsView::getCoordinateSystemAndGraphics(QStringList &coOrdinateSystemL
  * \brief GraphicsView::pasteItems
  * Slot activated when mpPasteAction triggered SIGNAL is raised.
  * Reads the items from the clipboard and adds them to the view.
+ * \param positionOffset - positionOffset to use as offset instead of cursor position.
+ * Use cursor position when positionOffset is null.
  */
-void GraphicsView::pasteItems()
+void GraphicsView::pasteItems(QPointF positionOffset)
 {
   QClipboard *pClipboard = QApplication::clipboard();
   if (pClipboard && pClipboard->mimeData() && pClipboard->mimeData()->hasFormat(Helper::cutCopyPasteFormat)) {
@@ -3878,17 +3877,24 @@ void GraphicsView::pasteItems()
     }
     allItems.removeAll(QString(""));
     const QString allItemsStr = allItems.join("\n");
-    /* Get the cursor position and see if it is changed since cut/copy
+    /* If positionOffset is null then
+     * Get the cursor position and see if it is changed since cut/copy
      * if its changed then calculate the offset
      * otherwise set cursorPosition to (0, 0) so loadClassContentString don't update positions.
+     * If positionOffset is set then use it as offset. Then we got a call from duplicate actions.
      */
-    QPointF cursorPosition = mapToScene(mapFromGlobal(QCursor::pos()));
-    QPointF cursorPositionAtCopy = MainWindow::instance()->getModelWidgetContainer()->mCursorPositionAtCopy;
-    QRect copiedItemsBoundingRect = MainWindow::instance()->getModelWidgetContainer()->mCopiedItemsBoundingRect;
-    if (!cursorPositionAtCopy.isNull() && cursorPositionAtCopy != cursorPosition) {
-      cursorPosition = cursorPosition - QPointF(copiedItemsBoundingRect.left(), copiedItemsBoundingRect.bottom());
+    QPointF cursorPosition;
+    if (positionOffset.isNull()) {
+      cursorPosition = mapToScene(mapFromGlobal(QCursor::pos()));
+      QPointF cursorPositionAtCopy = MainWindow::instance()->getModelWidgetContainer()->mCursorPositionAtCopy;
+      QRect copiedItemsBoundingRect = MainWindow::instance()->getModelWidgetContainer()->mCopiedItemsBoundingRect;
+      if (!cursorPositionAtCopy.isNull() && cursorPositionAtCopy != cursorPosition) {
+        cursorPosition = cursorPosition - QPointF(copiedItemsBoundingRect.left(), copiedItemsBoundingRect.bottom());
+      } else {
+        cursorPosition = QPointF(0, 0);
+      }
     } else {
-      cursorPosition = QPointF(0, 0);
+      cursorPosition = positionOffset;
     }
     // Load the text in the model.
     if (!allItemsStr.isEmpty() && MainWindow::instance()->getOMCProxy()->loadClassContentString(allItemsStr, mpModelWidget->getLibraryTreeItem()->getNameStructure(),

@@ -661,23 +661,3 @@ void TextAnnotation::updateTextString()
     }
   }
 }
-
-/*!
- * \brief TextAnnotation::duplicate
- * Duplicates the shape.
- */
-void TextAnnotation::duplicate()
-{
-  TextAnnotation *pTextAnnotation = new TextAnnotation("", mpGraphicsView);
-  pTextAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->mMergedCoordinateSystem.getHorizontalGridStep() * 5,
-                   mpGraphicsView->mMergedCoordinateSystem.getVerticalGridStep() * 5);
-  pTextAnnotation->setOrigin(mOrigin + gridStep);
-  pTextAnnotation->drawCornerItems();
-  pTextAnnotation->setCornerItemsActiveOrPassive();
-  pTextAnnotation->applyTransformation();
-  pTextAnnotation->update();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pTextAnnotation));
-  setSelected(false);
-  pTextAnnotation->setSelected(true);
-}

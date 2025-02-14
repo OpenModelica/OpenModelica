@@ -65,8 +65,6 @@ public:
   void setBitmap(ModelInstance::Bitmap *pBitmap) {mpBitmap = pBitmap;}
 private:
   ModelInstance::Bitmap *mpBitmap;
-public slots:
-  void duplicate() override;
 };
 
 #endif // BITMAPANNOTATION_H
