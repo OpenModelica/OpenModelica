@@ -908,6 +908,7 @@ OperationAdd1.mo \
 OperationAddEW1.mo \
 OperationDiv1.mo \
 OperationDivEW1.mo \
+OperationDivEW2.mo \
 OperationLogicalBinary1.mo \
 OperationLogicalBinary2.mo \
 OperationLogicalUnary1.mo \

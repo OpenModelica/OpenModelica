@@ -582,7 +582,7 @@ public
       end if;
 
       if expanded then
-        outExp := expandBinaryElementWise2(exp1, op, exp2, SimplifyExp.simplifyBinaryOp);
+        outExp := expandBinaryElementWise2(exp1, Operator.stripEW(op), exp2, SimplifyExp.simplifyBinaryOp);
       else
         outExp := exp;
       end if;
