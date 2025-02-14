@@ -128,6 +128,44 @@ public
     DAE.ElementSource source;
   end FAILURE;
 
+  function isDiscrete
+    input Statement stmt;
+    output Boolean b;
+  algorithm
+    b := match stmt
+      case ASSIGNMENT()           then Type.isDiscrete(stmt.ty);
+      case FUNCTION_ARRAY_INIT()  then Type.isDiscrete(stmt.ty);
+      case WHEN()                 then true;
+      case ASSERT()               then true;
+      case TERMINATE()            then true;
+      case REINIT()               then true;
+                                  else false;
+    end match;
+  end isDiscrete;
+
+  function filterDiscrete
+    input list<Statement> stmts;
+    input output list<Statement> out_stmts = {};
+  protected
+    Statement stmt;
+    list<Statement> rest;
+  algorithm
+    out_stmts := match stmts
+      case (stmt as FOR()) :: rest algorithm
+        stmt.body := filterDiscrete(stmt.body);
+        out_stmts := if listLength(stmt.body) == 0 then out_stmts else stmt :: out_stmts;
+      then filterDiscrete(rest, out_stmts);
+      case (stmt as IF()) :: rest algorithm
+        // ToDo: remove empty branches after removal
+        // Note: need to be careful to carry inverted conditions of removed branches
+        stmt.branches := list((Util.tuple21(tpl), filterDiscrete(Util.tuple22(tpl))) for tpl in stmt.branches);
+      then filterDiscrete(rest, stmt :: out_stmts);
+      case stmt :: rest guard(isDiscrete(stmt)) then filterDiscrete(rest, out_stmts);
+      case stmt :: rest then filterDiscrete(rest, stmt :: out_stmts);
+      else listReverse(out_stmts);
+    end match;
+  end filterDiscrete;
+
   function isEqual
     input Statement stmt1;
     input Statement stmt2;
@@ -191,6 +229,16 @@ public
       else false;
     end match;
   end isAssignment;
+
+  function isWhen
+    input Statement stmt;
+    output Boolean res;
+  algorithm
+    res := match stmt
+      case WHEN() then true;
+      else false;
+    end match;
+  end isWhen;
 
   function makeIf
     input list<tuple<Expression, list<Statement>>> branches;

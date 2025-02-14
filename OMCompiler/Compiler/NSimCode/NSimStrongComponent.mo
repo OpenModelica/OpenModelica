@@ -180,6 +180,7 @@ public
       Integer index;
       AliasInfo aliasInfo     "backend alias info";
       Integer aliasOf         "final alias index";
+      Boolean isDiscrete;
     end ALIAS;
 
     record ALGORITHM
@@ -328,7 +329,7 @@ public
         case ARRAY_ASSIGN(attr = attr)      then attr.kind == EquationKind.DISCRETE;
         case GENERIC_ASSIGN(attr = attr)    then attr.kind == EquationKind.DISCRETE;
         case ENTWINED_ASSIGN(attr = attr)   then attr.kind == EquationKind.DISCRETE;
-        case ALIAS()                        then false; // todo: once this is implemented check in the HT for alias eq discrete
+        case ALIAS()                        then blck.isDiscrete;
         case ALGORITHM(attr = attr)         then attr.kind == EquationKind.DISCRETE;
         case INVERSE_ALGORITHM(attr = attr) then attr.kind == EquationKind.DISCRETE;
         case IF(attr = attr)                then attr.kind == EquationKind.DISCRETE;
@@ -337,15 +338,39 @@ public
       end match;
     end isDiscrete;
 
-    function isWhen
-      input Block blck;
-      output Boolean b;
+    function filterDiscrete
+      input list<Block> blcks;
+      input output list<Block> out_blcks;
+      input output list<Block> new_blcks;
+      input output SimCodeIndices indices;
+    protected
+      Block blck, new_blck;
+      list<Block> rest;
+      list<Statement> stmts;
     algorithm
-      b := match blck
-        case WHEN() then true;
-        else false;
+      (out_blcks, new_blcks, indices) := match blcks
+        case blck :: rest guard(isDiscrete(blck)) then filterDiscrete(rest, out_blcks, new_blcks, indices);
+        case WHEN() :: rest then filterDiscrete(rest, out_blcks, new_blcks, indices);
+        case (blck as ALGORITHM()) :: rest algorithm
+          stmts := Statement.filterDiscrete(blck.stmts);
+          if listLength(stmts) == 0 then
+            // filtered everything out, skip entire block
+            (out_blcks, new_blcks, indices) := filterDiscrete(rest, out_blcks, new_blcks, indices);
+          elseif listLength(stmts) <> listLength(blck.stmts) then
+            // filtered part of it out, create new block
+            new_blck := ALGORITHM(indices.equationIndex, stmts, blck.attr);
+            indices.equationIndex := indices.equationIndex + 1;
+            (out_blcks, new_blcks, indices) := filterDiscrete(rest, new_blck :: out_blcks, new_blck :: new_blcks, indices);
+            //UnorderedMap.add(Equation.getEqnName(Pointer.create(eqn)), blck, equation_map);
+          else
+            // filtered nothing out, keep block as it is
+            (out_blcks, new_blcks, indices) := filterDiscrete(rest, blck :: out_blcks, new_blcks, indices);
+          end if;
+        then (out_blcks, new_blcks, indices);
+        case blck :: rest then filterDiscrete(rest, blck :: out_blcks, new_blcks, indices);
+        else (out_blcks, new_blcks, indices);
       end match;
-    end isWhen;
+    end filterDiscrete;
 
     function map
       "ToDo: other blocks and cref func"
@@ -408,17 +433,16 @@ public
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
       input UnorderedMap<ComponentRef, Block> equation_map;
     protected
-      list<Block> tmp;
+      list<Block> tmp, new_blcks;
     algorithm
       for partition in partitions loop
         (tmp, simCodeIndices) := fromPartition(partition, simCodeIndices, simcode_map, equation_map);
         // add all
         all_blcks := listAppend(tmp, all_blcks);
-        // filter all when equations and add to blcks (ode or algebraic)
-        tmp := list(blck for blck guard(not isWhen(blck)) in tmp);
+        // filter all discrete equations and add to blcks (ode or algebraic) and event dependencies
+        (tmp, new_blcks, simCodeIndices) := filterDiscrete(listReverse(tmp), {}, {}, simCodeIndices);
+        all_blcks := listAppend(new_blcks, all_blcks);
         blcks := tmp :: blcks;
-        // filter all other discrete equations and add to event_dependencies
-        tmp := list(blck for blck guard(not isDiscrete(blck)) in tmp);
         event_dependencies := listAppend(tmp, event_dependencies);
       end for;
       blcks := listReverse(blcks);
@@ -713,7 +737,7 @@ public
 
         case StrongComponent.ALIAS() algorithm
           aliasOf := UnorderedMap.getOrDefault(comp.aliasInfo, simCodeIndices.alias_map, -1);
-          tmp := ALIAS(simCodeIndices.equationIndex, comp.aliasInfo, aliasOf);
+          tmp := ALIAS(simCodeIndices.equationIndex, comp.aliasInfo, aliasOf, StrongComponent.isDiscrete(comp));
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then (tmp, getIndex(tmp));
 
