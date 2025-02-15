@@ -852,7 +852,7 @@ int getAnalyticalJacobianHomotopy(DATA_HOMOTOPY* solverData, double* jac)
       if(jacobian->sparsePattern->colorCols[ii]-1 == i)
         jacobian->seedVars[ii] = 1;
 
-    ((systemData->analyticalJacobianColumn))(data, threadData, jacobian, NULL);
+    systemData->analyticalJacobianColumn(data, threadData, jacobian, NULL);
 
     for(j = 0; j < jacobian->sizeCols; j++)
     {
@@ -863,7 +863,6 @@ int getAnalyticalJacobianHomotopy(DATA_HOMOTOPY* solverData, double* jac)
         {
           l  = jacobian->sparsePattern->index[ii];
           k  = j*jacobian->sizeRows + l;
-          /* Calculate scaled difference quotient */
           jac[k] = jacobian->resultVars[l] * solverData->xScaling[j];
           ii++;
         };
@@ -975,14 +974,12 @@ int wrapper_fvec_constraints(DATA_HOMOTOPY* solverData, double* x, double* f)
 static int wrapper_fvec_der(DATA_HOMOTOPY* solverData, double* x, double* fJac)
 {
   NONLINEAR_SYSTEM_DATA* nlsData = solverData->userData->nlsData;
-  int jacobianIndex = nlsData->jacobianIndex;
-  int i;
 
   /* performance measurement */
   rt_ext_tp_tick(&nlsData->jacobianTimeClock);
 
   /* calculate jacobian */
-  if(jacobianIndex != -1)
+  if(nlsData->jacobianIndex != -1)
   {
     /* !!!!!!!!!!! Be sure that actual x is used !!!!!!!!!!! */
     getAnalyticalJacobianHomotopy(solverData, fJac);
@@ -2244,7 +2241,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
       /* evaluate with discontinuities */
       if(data->simulationInfo->discreteCall)
       {
-        ((DATA*)data)->simulationInfo->solveContinuous = 0;
+        data->simulationInfo->solveContinuous = 0;
       }
       /* evaluate with discontinuities */
 #ifndef OMC_EMCC
@@ -2310,7 +2307,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
           homotopyData->x0[i] = homotopyData->xStart[i] + homotopyData->xScaling[i]*i/homotopyData->n*0.1;
       }
     }
-    ((DATA*)data)->simulationInfo->solveContinuous = 1;
+    data->simulationInfo->solveContinuous = 1;
     vecCopy(homotopyData->n, homotopyData->x0, homotopyData->x);
     vecCopy(homotopyData->n, homotopyData->f1, homotopyData->fx0);
   }
@@ -2356,9 +2353,9 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
       /* This case may be switched off, because of event chattering!!!*/
       if(mixedSystem && data->simulationInfo->discreteCall && (alreadyTested<1))
       {
-        debugVectorBool(OMC_LOG_NLS_V,"Relations Pre vector", ((DATA*)data)->simulationInfo->relationsPre, ((DATA*)data)->modelData->nRelations);
-        debugVectorBool(OMC_LOG_NLS_V,"Relations Backup vector", relationsPreBackup, ((DATA*)data)->modelData->nRelations);
-        ((DATA*)data)->simulationInfo->solveContinuous = 0;
+        debugVectorBool(OMC_LOG_NLS_V,"Relations Pre vector", data->simulationInfo->relationsPre, data->modelData->nRelations);
+        debugVectorBool(OMC_LOG_NLS_V,"Relations Backup vector", relationsPreBackup, data->modelData->nRelations);
+        data->simulationInfo->solveContinuous = 0;
 
         if (homotopyData->casualTearingSet){
           constraintViolated = homotopyData->f_con(homotopyData, homotopyData->x, homotopyData->f1);
@@ -2370,8 +2367,8 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
         else
           homotopyData->f(homotopyData, homotopyData->x, homotopyData->f1);
 
-        debugVectorBool(OMC_LOG_NLS_V,"Relations vector", ((DATA*)data)->simulationInfo->relations, ((DATA*)data)->modelData->nRelations);
-        if (isNotEqualVectorInt(((DATA*)data)->modelData->nRelations, ((DATA*)data)->simulationInfo->relations, relationsPreBackup)>0)
+        debugVectorBool(OMC_LOG_NLS_V,"Relations vector", data->simulationInfo->relations, data->modelData->nRelations);
+        if (isNotEqualVectorInt(data->modelData->nRelations, data->simulationInfo->relations, relationsPreBackup)>0)
         {
           /* re-run the solution process, since relations in the system have changed */
           success = NLS_FAILED;
@@ -2397,7 +2394,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
         /* take the solution */
         vecCopy(homotopyData->n, homotopyData->x, nlsData->nlsx);
         /* reset continous flag */
-        ((DATA*)data)->simulationInfo->solveContinuous = 0;
+        data->simulationInfo->solveContinuous = 0;
         break;
       }
     }

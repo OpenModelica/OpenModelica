@@ -202,7 +202,6 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   struct dataSolver *solverData = (struct dataSolver*) calloc(1,sizeof(struct dataSolver));
 
   NONLINEAR_SYSTEM_DATA* nlsData;
-  analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
 
   nlsData = allocNlsDataGB(threadData, gbData->nlSystemSize);
   nlsData->equationIndex = -1;
@@ -310,7 +309,6 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
   struct dataSolver *solverData = (struct dataSolver*) calloc(1, sizeof(struct dataSolver));
 
   NONLINEAR_SYSTEM_DATA* nlsData;
-  analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
 
   nlsData = allocNlsDataGB(threadData, gbfData->nStates);
   nlsData->equationIndex = -1;

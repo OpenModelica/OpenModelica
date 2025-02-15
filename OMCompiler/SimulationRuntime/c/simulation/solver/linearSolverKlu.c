@@ -120,7 +120,7 @@ static int getAnalyticalJacobian(DATA* data, threadData_t *threadData,
 {
   int i,ii,j,k,l;
 
-  LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo->linearSystemData[sysNumber]);
+  LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
 
   const int index = systemData->jacobianIndex;
   ANALYTIC_JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
@@ -144,7 +144,7 @@ static int getAnalyticalJacobian(DATA* data, threadData_t *threadData,
       }
     }
 
-    ((systemData->analyticalJacobianColumn))(data, threadData, jacobian, parentJacobian);
+    systemData->analyticalJacobianColumn(data, threadData, jacobian, parentJacobian);
 
     for(j = 0; j < jacobian->sizeCols; j++)
     {

@@ -338,7 +338,7 @@ int freeTotalPivotData(void** voiddata)
 int getAnalyticalJacobianTotalPivot(DATA* data, threadData_t *threadData, double* jac, int sysNumber)
 {
   int i,j,k,l,ii;
-  LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo->linearSystemData[sysNumber]);
+  LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
 
   const int index = systemData->jacobianIndex;
 
@@ -354,7 +354,7 @@ int getAnalyticalJacobianTotalPivot(DATA* data, threadData_t *threadData, double
       if(jacobian->sparsePattern->colorCols[ii]-1 == i)
         jacobian->seedVars[ii] = 1;
 
-    ((systemData->analyticalJacobianColumn))(data, threadData, jacobian, parentJacobian);
+    systemData->analyticalJacobianColumn(data, threadData, jacobian, parentJacobian);
 
     for(j = 0; j < jacobian->sizeCols; j++)
     {

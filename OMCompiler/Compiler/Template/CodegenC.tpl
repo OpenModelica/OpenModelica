@@ -679,6 +679,7 @@ template simulationFile_lsy(SimCode simCode)
     extern "C" {
     #endif
 
+    /* linear systems */
     <%functionSetupLinearSystems(linearSystems, modelNamePrefix(simCode))%>
 
     <% if intGt(varInfo.numLinearSystems,0) then functionInitialLinearSystems(linearSystems, modelNamePrefix(simCode))%>
@@ -2279,131 +2280,110 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> linearSystems, Strin
   "Generates functions in simulation file."
 ::=
   (linearSystems |> eqn => (match eqn
-     // Mixed system
-     case eq as SES_MIXED(__) then functionInitialLinearSystemsTemp(fill(eq.cont,1), modelNamePrefix, "")
+    // Mixed system
+    case eq as SES_MIXED(__) then functionInitialLinearSystemsTemp(fill(eq.cont,1), modelNamePrefix, "")
 
-     // No dynamic tearing
-     case eq as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing=NONE()) then
-       match ls.jacobianMatrix
-         case NONE() then
-           let size = listLength(ls.vars)
-           let nnz = listLength(ls.simJac)
-           <<
-           assertStreamPrint(NULL, nLinearSystems > <%ls.indexLinearSystem%>, "Internal Error: nLinearSystems mismatch!");
-           linearSystemData[<%ls.indexLinearSystem%>].equationIndex = <%ls.index%>;
-           linearSystemData[<%ls.indexLinearSystem%>].size = <%size%>;
-           linearSystemData[<%ls.indexLinearSystem%>].nnz = <%nnz%>;
-           linearSystemData[<%ls.indexLinearSystem%>].method = 0;   /* No symbolic Jacobian available */
-           linearSystemData[<%ls.indexLinearSystem%>].strictTearingFunctionCall = NULL;
-           linearSystemData[<%ls.indexLinearSystem%>].setA = setLinearMatrixA<%ls.index%>;
-           linearSystemData[<%ls.indexLinearSystem%>].setb = setLinearVectorb<%ls.index%>;
-           linearSystemData[<%ls.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%ls.index%>;
-           >>
-         case SOME(__) then
-           let size = listLength(ls.vars)
-           let nnz = listLength(ls.simJac)
-           let generatedJac = match ls.jacobianMatrix case SOME(JAC_MATRIX(matrixName=name)) then '<%symbolName(modelNamePrefix,"functionJac")%><%name%>_column' case NONE() then 'NULL'
-           let initialJac = match ls.jacobianMatrix case SOME(JAC_MATRIX(matrixName=name))then '<%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
-           let jacIndex = match ls.jacobianMatrix case SOME(JAC_MATRIX(matrixName=name, jacobianIndex=jacindex)) then '<%jacindex%> /*jacInx*/' case NONE() then '-1'
-           <<
-           assertStreamPrint(NULL, nLinearSystems > <%ls.indexLinearSystem%>, "Internal Error: indexlinearSystem mismatch!");
-           linearSystemData[<%ls.indexLinearSystem%>].equationIndex = <%ls.index%>;
-           linearSystemData[<%ls.indexLinearSystem%>].size = <%size%>;
-           linearSystemData[<%ls.indexLinearSystem%>].nnz = <%nnz%>;
-           linearSystemData[<%ls.indexLinearSystem%>].method = 1;   /* Symbolic Jacobian available */
-           linearSystemData[<%ls.indexLinearSystem%>].residualFunc = residualFunc<%ls.index%>;
-           linearSystemData[<%ls.indexLinearSystem%>].strictTearingFunctionCall = NULL;
-           linearSystemData[<%ls.indexLinearSystem%>].analyticalJacobianColumn = <%generatedJac%>;
-           linearSystemData[<%ls.indexLinearSystem%>].initialAnalyticalJacobian = <%initialJac%>;
-           linearSystemData[<%ls.indexLinearSystem%>].jacobianIndex = <%jacIndex%>;
-           linearSystemData[<%ls.indexLinearSystem%>].setA = NULL;  //setLinearMatrixA<%ls.index%>;
-           linearSystemData[<%ls.indexLinearSystem%>].setb = NULL;  //setLinearVectorb<%ls.index%>;
-           linearSystemData[<%ls.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%ls.index%>;
-           >>
-         else
-         error(sourceInfo(), ' No jacobian create for linear system <%ls.index%>.')
-       end match
+    // No dynamic tearing
+    case eq as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing=NONE()) then
+      match ls.jacobianMatrix
+        case NONE() then
+          <<
+          assertStreamPrint(NULL, nLinearSystems > <%ls.indexLinearSystem%>, "Internal Error: nLinearSystems mismatch!");
+          linearSystemData[<%ls.indexLinearSystem%>].equationIndex = <%ls.index%>;
+          linearSystemData[<%ls.indexLinearSystem%>].size = <%listLength(ls.vars)%>;
+          linearSystemData[<%ls.indexLinearSystem%>].nnz = <%listLength(ls.simJac)%>;
+          linearSystemData[<%ls.indexLinearSystem%>].method = 0;   /* No symbolic Jacobian available */
+          linearSystemData[<%ls.indexLinearSystem%>].strictTearingFunctionCall = NULL;
+          linearSystemData[<%ls.indexLinearSystem%>].setA = setLinearMatrixA<%ls.index%>;
+          linearSystemData[<%ls.indexLinearSystem%>].setb = setLinearVectorb<%ls.index%>;
+          linearSystemData[<%ls.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%ls.index%>;
+          >>
+        case SOME(JAC_MATRIX(matrixName=name, jacobianIndex=jacIndex)) then
+          <<
+          assertStreamPrint(NULL, nLinearSystems > <%ls.indexLinearSystem%>, "Internal Error: indexlinearSystem mismatch!");
+          linearSystemData[<%ls.indexLinearSystem%>].equationIndex = <%ls.index%>;
+          linearSystemData[<%ls.indexLinearSystem%>].size = <%listLength(ls.vars)%>;
+          linearSystemData[<%ls.indexLinearSystem%>].nnz = <%listLength(ls.simJac)%>;
+          linearSystemData[<%ls.indexLinearSystem%>].method = 1;   /* Symbolic Jacobian available */
+          linearSystemData[<%ls.indexLinearSystem%>].residualFunc = residualFunc<%ls.index%>;
+          linearSystemData[<%ls.indexLinearSystem%>].strictTearingFunctionCall = NULL;
+          linearSystemData[<%ls.indexLinearSystem%>].analyticalJacobianColumn = <%symbolName(modelNamePrefix,"functionJac")%><%name%>_column;
+          linearSystemData[<%ls.indexLinearSystem%>].initialAnalyticalJacobian = <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>;
+          linearSystemData[<%ls.indexLinearSystem%>].jacobianIndex = <%jacIndex%> /*jacInx*/;
+          linearSystemData[<%ls.indexLinearSystem%>].setA = NULL;  //setLinearMatrixA<%ls.index%>;
+          linearSystemData[<%ls.indexLinearSystem%>].setb = NULL;  //setLinearVectorb<%ls.index%>;
+          linearSystemData[<%ls.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%ls.index%>;
+          >>
+        else
+          error(sourceInfo(), ' No jacobian create for linear system <%ls.index%>.')
+      end match
 
-     // Dynamic tearing
-     case eq as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(at as LINEARSYSTEM(__))) then
-       match ls.jacobianMatrix
-         case NONE() then
-           // for strict tearing set
-           let size = listLength(ls.vars)
-           let nnz = listLength(ls.simJac)
-           // for casual tearing set
-           let size2 = listLength(at.vars)
-           let nnz2 = listLength(at.simJac)
-           let &globalConstraintsFunctions += createGlobalConstraintsFunction(eq)
-           <<
-           assertStreamPrint(NULL, nLinearSystems > <%ls.indexLinearSystem%>, "Internal Error: nLinearSystems mismatch!");
-           linearSystemData[<%ls.indexLinearSystem%>].equationIndex = <%ls.index%>;
-           linearSystemData[<%ls.indexLinearSystem%>].size = <%size%>;
-           linearSystemData[<%ls.indexLinearSystem%>].nnz = <%nnz%>;
-           linearSystemData[<%ls.indexLinearSystem%>].method = 0;   /* No symbolic Jacobian available */
-           linearSystemData[<%ls.indexLinearSystem%>].strictTearingFunctionCall = NULL;
-           linearSystemData[<%ls.indexLinearSystem%>].setA = setLinearMatrixA<%ls.index%>;
-           linearSystemData[<%ls.indexLinearSystem%>].setb = setLinearVectorb<%ls.index%>;
-           linearSystemData[<%ls.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%ls.index%>;
+    // Dynamic tearing
+    case eq as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(at as LINEARSYSTEM(__))) then
+      let &globalConstraintsFunctions += createGlobalConstraintsFunction(eq)
+      match ls.jacobianMatrix
+        case NONE() then
+          <<
+          assertStreamPrint(NULL, nLinearSystems > <%ls.indexLinearSystem%>, "Internal Error: nLinearSystems mismatch!");
+          linearSystemData[<%ls.indexLinearSystem%>].equationIndex = <%ls.index%>;
+          linearSystemData[<%ls.indexLinearSystem%>].size = <%listLength(ls.vars)%>;
+          linearSystemData[<%ls.indexLinearSystem%>].nnz = <%listLength(ls.simJac)%>;
+          linearSystemData[<%ls.indexLinearSystem%>].method = 0;   /* No symbolic Jacobian available */
+          linearSystemData[<%ls.indexLinearSystem%>].strictTearingFunctionCall = NULL;
+          linearSystemData[<%ls.indexLinearSystem%>].setA = setLinearMatrixA<%ls.index%>;
+          linearSystemData[<%ls.indexLinearSystem%>].setb = setLinearVectorb<%ls.index%>;
+          linearSystemData[<%ls.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%ls.index%>;
 
-           assertStreamPrint(NULL, nLinearSystems > <%at.indexLinearSystem%>, "Internal Error: nLinearSystems mismatch!");
-           linearSystemData[<%at.indexLinearSystem%>].equationIndex = <%at.index%>;
-           linearSystemData[<%at.indexLinearSystem%>].size = <%size2%>;
-           linearSystemData[<%at.indexLinearSystem%>].nnz = <%nnz2%>;
-           linearSystemData[<%at.indexLinearSystem%>].method = 0;   /* No symbolic Jacobian available */
-           linearSystemData[<%at.indexLinearSystem%>].strictTearingFunctionCall = <%symbolName(modelNamePrefix,"eqFunction")%>_<%ls.index%>;
-           linearSystemData[<%at.indexLinearSystem%>].setA = setLinearMatrixA<%at.index%>;
-           linearSystemData[<%at.indexLinearSystem%>].setb = setLinearVectorb<%at.index%>;
-           linearSystemData[<%at.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%at.index%>;
-           linearSystemData[<%at.indexLinearSystem%>].checkConstraints = checkConstraints<%at.index%>;
-           >>
-         case SOME(__) then
-           let size = listLength(ls.vars)
-           let nnz = listLength(ls.simJac)
-           let generatedJac = match ls.jacobianMatrix case SOME(JAC_MATRIX(matrixName=name)) then '<%symbolName(modelNamePrefix,"functionJac")%><%name%>_column' case NONE() then 'NULL'
-           let initialJac = match ls.jacobianMatrix case SOME(JAC_MATRIX(matrixName=name))then '<%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
-           let jacIndex = match ls.jacobianMatrix case SOME(JAC_MATRIX(matrixName=name, jacobianIndex=jacindex)) then '<%jacindex%>' case NONE() then '-1'
-           let size2 = listLength(at.vars)
-           let nnz2 = listLength(at.simJac)
-           let generatedJac2 = match at.jacobianMatrix case SOME(JAC_MATRIX(matrixName=name)) then '<%symbolName(modelNamePrefix,"functionJac")%><%name%>_column' case NONE() then 'NULL'
-           let initialJac2 = match at.jacobianMatrix case SOME(JAC_MATRIX(matrixName=name))then '<%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
-           let jacIndex2 = match at.jacobianMatrix case SOME(JAC_MATRIX(matrixName=name, jacobianIndex=jacindex)) then '<%jacindex%>' case NONE() then '-1'
-           let &globalConstraintsFunctions += createGlobalConstraintsFunction(eq)
-           <<
-           assertStreamPrint(NULL, nLinearSystems > <%ls.indexLinearSystem%>, "Internal Error: indexlinearSystem mismatch!");
-           linearSystemData[<%ls.indexLinearSystem%>].equationIndex = <%ls.index%>;
-           linearSystemData[<%ls.indexLinearSystem%>].size = <%size%>;
-           linearSystemData[<%ls.indexLinearSystem%>].nnz = <%nnz%>;
-           linearSystemData[<%ls.indexLinearSystem%>].method = 1;   /* Symbolic Jacobian available */
-           linearSystemData[<%ls.indexLinearSystem%>].residualFunc = residualFunc<%ls.index%>;
-           linearSystemData[<%ls.indexLinearSystem%>].strictTearingFunctionCall = NULL;
-           linearSystemData[<%ls.indexLinearSystem%>].analyticalJacobianColumn = <%generatedJac%>;
-           linearSystemData[<%ls.indexLinearSystem%>].initialAnalyticalJacobian = <%initialJac%>;
-           linearSystemData[<%ls.indexLinearSystem%>].jacobianIndex = <%jacIndex%>;
-           linearSystemData[<%ls.indexLinearSystem%>].setA = NULL;  //setLinearMatrixA<%ls.index%>;
-           linearSystemData[<%ls.indexLinearSystem%>].setb = NULL;  //setLinearVectorb<%ls.index%>;
-           linearSystemData[<%ls.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%ls.index%>;
+          assertStreamPrint(NULL, nLinearSystems > <%at.indexLinearSystem%>, "Internal Error: nLinearSystems mismatch!");
+          linearSystemData[<%at.indexLinearSystem%>].equationIndex = <%at.index%>;
+          linearSystemData[<%at.indexLinearSystem%>].size = <%listLength(at.vars)%>;
+          linearSystemData[<%at.indexLinearSystem%>].nnz = <%listLength(at.simJac)%>;
+          linearSystemData[<%at.indexLinearSystem%>].method = 0;   /* No symbolic Jacobian available */
+          linearSystemData[<%at.indexLinearSystem%>].strictTearingFunctionCall = <%symbolName(modelNamePrefix,"eqFunction")%>_<%ls.index%>;
+          linearSystemData[<%at.indexLinearSystem%>].setA = setLinearMatrixA<%at.index%>;
+          linearSystemData[<%at.indexLinearSystem%>].setb = setLinearVectorb<%at.index%>;
+          linearSystemData[<%at.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%at.index%>;
+          linearSystemData[<%at.indexLinearSystem%>].checkConstraints = checkConstraints<%at.index%>;
+          >>
+        case SOME(JAC_MATRIX(matrixName=name, jacobianIndex=jacIndex)) then
+          let generatedJac2 = match at.jacobianMatrix case SOME(JAC_MATRIX(matrixName=name)) then '<%symbolName(modelNamePrefix,"functionJac")%><%name%>_column' case NONE() then 'NULL'
+          let initialJac2 = match at.jacobianMatrix case SOME(JAC_MATRIX(matrixName=name))then '<%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
+          let jacIndex2 = match at.jacobianMatrix case SOME(JAC_MATRIX(jacobianIndex=jacindex)) then '<%jacindex%>' case NONE() then '-1'
+          <<
+          assertStreamPrint(NULL, nLinearSystems > <%ls.indexLinearSystem%>, "Internal Error: indexlinearSystem mismatch!");
+          linearSystemData[<%ls.indexLinearSystem%>].equationIndex = <%ls.index%>;
+          linearSystemData[<%ls.indexLinearSystem%>].size = <%listLength(ls.vars)%>;
+          linearSystemData[<%ls.indexLinearSystem%>].nnz = <%listLength(ls.simJac)%>;
+          linearSystemData[<%ls.indexLinearSystem%>].method = 1;   /* Symbolic Jacobian available */
+          linearSystemData[<%ls.indexLinearSystem%>].residualFunc = residualFunc<%ls.index%>;
+          linearSystemData[<%ls.indexLinearSystem%>].strictTearingFunctionCall = NULL;
+          linearSystemData[<%ls.indexLinearSystem%>].analyticalJacobianColumn = <%symbolName(modelNamePrefix,"functionJac")%><%name%>_column;
+          linearSystemData[<%ls.indexLinearSystem%>].initialAnalyticalJacobian = <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>;
+          linearSystemData[<%ls.indexLinearSystem%>].jacobianIndex = <%jacIndex%>;
+          linearSystemData[<%ls.indexLinearSystem%>].setA = NULL;  //setLinearMatrixA<%ls.index%>;
+          linearSystemData[<%ls.indexLinearSystem%>].setb = NULL;  //setLinearVectorb<%ls.index%>;
+          linearSystemData[<%ls.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%ls.index%>;
 
-           assertStreamPrint(NULL, nLinearSystems > <%at.indexLinearSystem%>, "Internal Error: indexlinearSystem mismatch!");
-           linearSystemData[<%at.indexLinearSystem%>].equationIndex = <%at.index%>;
-           linearSystemData[<%at.indexLinearSystem%>].size = <%size2%>;
-           linearSystemData[<%at.indexLinearSystem%>].nnz = <%nnz2%>;
-           linearSystemData[<%at.indexLinearSystem%>].method = 1;   /* Symbolic Jacobian available */
-           linearSystemData[<%at.indexLinearSystem%>].residualFunc = residualFunc<%at.index%>;
-           linearSystemData[<%at.indexLinearSystem%>].strictTearingFunctionCall = <%symbolName(modelNamePrefix,"eqFunction")%>_<%ls.index%>;
-           linearSystemData[<%at.indexLinearSystem%>].analyticalJacobianColumn = <%generatedJac2%>;
-           linearSystemData[<%at.indexLinearSystem%>].initialAnalyticalJacobian = <%initialJac2%>;
-           linearSystemData[<%at.indexLinearSystem%>].jacobianIndex = <%jacIndex2%>;
-           linearSystemData[<%at.indexLinearSystem%>].setA = NULL;  //setLinearMatrixA<%at.index%>;
-           linearSystemData[<%at.indexLinearSystem%>].setb = NULL;  //setLinearVectorb<%at.index%>;
-           linearSystemData[<%at.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%at.index%>;
-           linearSystemData[<%at.indexLinearSystem%>].checkConstraints = checkConstraints<%at.index%>;
-           >>
+          assertStreamPrint(NULL, nLinearSystems > <%at.indexLinearSystem%>, "Internal Error: indexlinearSystem mismatch!");
+          linearSystemData[<%at.indexLinearSystem%>].equationIndex = <%at.index%>;
+          linearSystemData[<%at.indexLinearSystem%>].size = <%listLength(at.vars)%>;
+          linearSystemData[<%at.indexLinearSystem%>].nnz = <%listLength(at.simJac)%>;
+          linearSystemData[<%at.indexLinearSystem%>].method = 1;   /* Symbolic Jacobian available */
+          linearSystemData[<%at.indexLinearSystem%>].residualFunc = residualFunc<%at.index%>;
+          linearSystemData[<%at.indexLinearSystem%>].strictTearingFunctionCall = <%symbolName(modelNamePrefix,"eqFunction")%>_<%ls.index%>;
+          linearSystemData[<%at.indexLinearSystem%>].analyticalJacobianColumn = <%generatedJac2%>;
+          linearSystemData[<%at.indexLinearSystem%>].initialAnalyticalJacobian = <%initialJac2%>;
+          linearSystemData[<%at.indexLinearSystem%>].jacobianIndex = <%jacIndex2%>;
+          linearSystemData[<%at.indexLinearSystem%>].setA = NULL;  //setLinearMatrixA<%at.index%>;
+          linearSystemData[<%at.indexLinearSystem%>].setb = NULL;  //setLinearVectorb<%at.index%>;
+          linearSystemData[<%at.indexLinearSystem%>].initializeStaticLSData = initializeStaticLSData<%at.index%>;
+          linearSystemData[<%at.indexLinearSystem%>].checkConstraints = checkConstraints<%at.index%>;
+          >>
 
         // Error case
-         else
-         error(sourceInfo(), ' No jacobian create for linear system <%ls.index%> or <%at.index%>.')
-       end match
+        else
+          error(sourceInfo(), ' No jacobian create for linear system <%ls.index%> or <%at.index%>.')
+      end match
    )
    ;separator="\n\n")
 end functionInitialLinearSystemsTemp;
@@ -2411,19 +2391,9 @@ end functionInitialLinearSystemsTemp;
 template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String modelNamePrefix)
   "Generates functions in simulation file."
 ::=
-  let linearbody = functionSetupLinearSystemsTemp(linearSystems, modelNamePrefix)
-  <<
-  /* linear systems */
-  <%linearbody%>
-  >>
-end functionSetupLinearSystems;
-
-template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String modelNamePrefix)
-  "Generates functions in simulation file."
-::=
   let &sub = buffer ""
   (linearSystems |> eqn => (match eqn
-     case eq as SES_MIXED(__) then functionSetupLinearSystemsTemp(fill(eq.cont,1), modelNamePrefix)
+     case eq as SES_MIXED(__) then functionSetupLinearSystems(fill(eq.cont,1), modelNamePrefix)
      // no dynamic tearing
      case eq as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing=NONE()) then
      match ls.jacobianMatrix
@@ -2695,7 +2665,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
      end match
    )
    ;separator="\n\n")
-end functionSetupLinearSystemsTemp;
+end functionSetupLinearSystems;
 
 template functionInitialNonLinearSystems(list<SimEqSystem> nonlinearSystems, String modelNamePrefix)
   "Generates functions in simulation file."
@@ -2750,9 +2720,9 @@ template generateNonLinearSystemData(NonlinearSystem system, Integer indexStrict
   match system
     case nls as NONLINEARSYSTEM(__) then
       let size = listLength(nls.crefs)
-      let generatedJac = match nls.jacobianMatrix case SOME(JAC_MATRIX(columns={},matrixName=name)) then 'NULL' case SOME(JAC_MATRIX(matrixName=name)) then '<%symbolName(modelPrefixName,"functionJac")%><%name%>_column' case NONE() then 'NULL'
-      let initialJac = match nls.jacobianMatrix case SOME(JAC_MATRIX(columns={},matrixName=name)) then 'NULL' case SOME(JAC_MATRIX(matrixName=name)) then '<%symbolName(modelPrefixName,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
-      let jacIndex = match nls.jacobianMatrix case SOME(JAC_MATRIX(columns={}, matrixName=name)) then '-1' case SOME(JAC_MATRIX(matrixName=name, jacobianIndex=jacindex)) then  '<%jacindex%> /*jacInx*/' case NONE() then '-1'
+      let generatedJac = match nls.jacobianMatrix case SOME(JAC_MATRIX(columns={})) then 'NULL' case SOME(JAC_MATRIX(matrixName=name)) then '<%symbolName(modelPrefixName,"functionJac")%><%name%>_column' case NONE() then 'NULL'
+      let initialJac = match nls.jacobianMatrix case SOME(JAC_MATRIX(columns={})) then 'NULL' case SOME(JAC_MATRIX(matrixName=name)) then '<%symbolName(modelPrefixName,"initialAnalyticJacobian")%><%name%>' case NONE() then 'NULL'
+      let jacIndex = match nls.jacobianMatrix case SOME(JAC_MATRIX(columns={})) then '-1' case SOME(JAC_MATRIX(jacobianIndex=jacindex)) then  '<%jacindex%> /*jacInx*/' case NONE() then '-1'
       let innerSystems = functionInitialNonLinearSystemsTemp(nls.eqs, modelPrefixName, "")
       let casualCall = if not intEq(indexStrict, 0) then '<%symbolName(modelPrefixName,"eqFunction")%>_<%indexStrict%>' else 'NULL'
       let constraintsCall = if not intEq(indexStrict, 0) then 'checkConstraints<%nls.index%>' else 'NULL'
@@ -5683,7 +5653,7 @@ end genVector;
 template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices,String modelNamePrefix, String fileNamePrefix) "template functionAnalyticJacobians
   This template generates source code for all given jacobians."
 ::=
-  let initialjacMats = (JacobianMatrices |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, sparsity=sparsepattern, coloredCols=colorList, maxColorCols=maxColor, jacobianIndex=indexJacobian) =>
+  let initialjacMats = (JacobianMatrices |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, sparsity=sparsepattern, coloredCols=colorList, maxColorCols=maxColor) =>
     initialAnalyticJacobians(mat, vars, name, sparsepattern, colorList, maxColor, modelNamePrefix, fileNamePrefix); separator="\n")
   let jacMats = (JacobianMatrices |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, partitionIndex=partIdx, crefsHT=crefsHT) =>
     generateMatrix(mat, vars, name, partIdx, crefsHT, modelNamePrefix) ;separator="\n")

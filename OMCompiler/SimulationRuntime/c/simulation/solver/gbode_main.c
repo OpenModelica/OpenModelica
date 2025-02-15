@@ -105,7 +105,6 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
   gbData->gbfData = gbfData;
 
   ANALYTIC_JACOBIAN *jacobian = NULL;
-  analyticalJacobianColumn_func_ptr analyticalJacobianColumn = NULL;
   int i;
 
   gbfData->nStates = gbData->nStates;
@@ -315,7 +314,6 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   gbData->nStates = data->modelData->nStates;
 
   ANALYTIC_JACOBIAN* jacobian = NULL;
-  analyticalJacobianColumn_func_ptr analyticalJacobianColumn = NULL;
 
   gbData->GM_method = getGB_method(FLAG_SR);
   gbData->tableau = initButcherTableau(gbData->GM_method, FLAG_SR_ERR);
