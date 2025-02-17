@@ -285,6 +285,7 @@ private slots:
   void incrementVisualization();
 signals:
   void updateDynamicSelect(double time);
+  void resetDynamicSelect();
 };
 
 #endif // VARIABLESWIDGET_H
