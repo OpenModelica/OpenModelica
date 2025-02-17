@@ -1854,31 +1854,32 @@ void VariablesWidget::initializeVisualization()
     } else {
       pVariablesTreeItem = mpVariablesTreeModel->getActiveVariablesTreeItem();
     }
-    if (pVariablesTreeItem) {
-      // close any result file before opening a new one
-      closeResultFile();
-      // Open the file for reading
-      double startTime = 0.0;
-      double stopTime = 0.0;
-      openResultFile(pVariablesTreeItem, startTime, stopTime);
-      // Initialize the time manager
-      mpTimeManager->setStartTime(startTime);
-      mpTimeManager->setEndTime(stopTime);
-      mpTimeManager->setVisTime(mpTimeManager->getStartTime());
-      mpTimeManager->setPause(true);
-      // reset the visualization controls
-      mpTimeControlsDescriptionLabel->setText(tr("Enabled for %1").arg(pVariablesTreeItem->getVariableName()));
-      mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
-      mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
-      enableVisualizationControls(true);
-      updateVisualization();
-    }
   }
 
-  if (!pVariablesTreeItem) {
+  if (pVariablesTreeItem) {
+    // close any result file before opening a new one
+    closeResultFile();
+    // Open the file for reading
+    double startTime = 0.0;
+    double stopTime = 0.0;
+    openResultFile(pVariablesTreeItem, startTime, stopTime);
+    // Initialize the time manager
+    mpTimeManager->setStartTime(startTime);
+    mpTimeManager->setEndTime(stopTime);
+    mpTimeManager->setVisTime(mpTimeManager->getStartTime());
+    mpTimeManager->setPause(true);
+    // reset the visualization controls
+    mpTimeControlsDescriptionLabel->setText(tr("Enabled for %1").arg(pVariablesTreeItem->getVariableName()));
+    mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
+    mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
+    enableVisualizationControls(true);
+    updateVisualization();
+  } else {
     mpTimeControlsDescriptionLabel->setText("");
-    rewindVisualization();
+    // disable visualization controls so the call to rewindVisualization doesn't try to update visualization.
     enableVisualizationControls(false);
+    rewindVisualization();
+    emit resetDynamicSelect();
   }
 }
 
