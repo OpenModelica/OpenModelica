@@ -3323,6 +3323,7 @@ function setParameterValue
   input TypeName className;
   input TypeName variableName;
   input Expression value;
+  output Boolean success;
 external "builtin";
 annotation(
   Documentation(info="<html>
