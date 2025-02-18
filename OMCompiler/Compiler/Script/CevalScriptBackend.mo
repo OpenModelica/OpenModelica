@@ -4714,7 +4714,7 @@ algorithm
     else
       // Qualified identifier, move the class inside its parent.
       (parent_cls, Absyn.IDENT(cls_name)) := AbsynUtil.splitQualAndIdentPath(inClassName);
-      outProgram := Interactive.transformPathedClassInProgram(parent_cls, inProgram,
+      outProgram := AbsynUtil.transformPathedClassInProgram(parent_cls, inProgram,
          function moveClassInClass(inName = cls_name, inOffset = inOffset));
     end if;
 
@@ -4753,7 +4753,7 @@ algorithm
       end match;
     else
       (parent_cls, Absyn.IDENT(cls_name)) := AbsynUtil.splitQualAndIdentPath(inClassName);
-      outProgram := Interactive.transformPathedClassInProgram(parent_cls, inProgram,
+      outProgram := AbsynUtil.transformPathedClassInProgram(parent_cls, inProgram,
         function moveClassToTopInClass(inName = cls_name));
     end if;
 
@@ -4791,7 +4791,7 @@ algorithm
       end match;
     else
       (parent_cls, Absyn.IDENT(cls_name)) := AbsynUtil.splitQualAndIdentPath(inClassName);
-      outProgram := Interactive.transformPathedClassInProgram(parent_cls, inProgram,
+      outProgram := AbsynUtil.transformPathedClassInProgram(parent_cls, inProgram,
         function moveClassToBottomInClass(inName = cls_name));
     end if;
 

@@ -6891,5 +6891,342 @@ function enumLiteralName
   output String name = literal.literal;
 end enumLiteralName;
 
+public function getPathedClassInProgram
+  "This function takes a Path and a Program and retrieves the class definition
+   referenced by the Path from the Program.
+   If enclOnErr is true and such class doesn't exist return enclosing class."
+  input Absyn.Path inPath;
+  input Absyn.Program inProgram;
+  input Boolean enclOnErr = false;
+  output Absyn.Class outClass;
+algorithm
+  outClass := match inPath
+    local
+      Absyn.Class c;
+
+    case Absyn.IDENT()
+      then getClassInProgram(inPath.name, inProgram);
+
+    case Absyn.QUALIFIED()
+      algorithm
+        c := getClassInProgram(inPath.name, inProgram);
+      then
+        getPathedClassInProgramWork(inPath.path, c, enclOnErr);
+
+    case Absyn.FULLYQUALIFIED()
+      then
+        getPathedClassInProgram(inPath.path, inProgram, enclOnErr);
+
+  end match;
+end getPathedClassInProgram;
+
+public function getClassInProgram
+  "Looks up a function with the given name in a program, or fails if the class doesn't exist."
+  input String name;
+  input Absyn.Program program;
+  output Absyn.Class cls;
+algorithm
+  cls := List.find(program.classes, function isClassNamed(inName = name));
+end getClassInProgram;
+
+protected function getPathedClassInProgramWork
+  "Retrieves the class definition referenced by the Path in the given class.
+   If such class doesn't exist return the class itself if enclOnError = true, otherwise fail."
+  input Absyn.Path inPath;
+  input Absyn.Class inClass;
+  input Boolean enclOnError;
+  output Absyn.Class outClass;
+algorithm
+  outClass := matchcontinue inPath
+    local
+      Absyn.Class c;
+      String str;
+      Absyn.Path path;
+
+    case Absyn.IDENT(name = str)
+      then
+        getClassInClass(str, inClass);
+
+    case Absyn.FULLYQUALIFIED(path)
+      then
+        getPathedClassInProgramWork(path, inClass, enclOnError);
+
+    case Absyn.QUALIFIED(name = str, path = path)
+      equation
+        c = getClassInClass(str, inClass);
+      then
+        getPathedClassInProgramWork(path, c, enclOnError);
+
+    case _ guard enclOnError then inClass;
+  end matchcontinue;
+end getPathedClassInProgramWork;
+
+protected function getClassInClass
+  "Looks up a named class in the given class. Fails if the class can't be found."
+  input String name;
+  input Absyn.Class inClass;
+  output Absyn.Class outClass;
+algorithm
+  for part in getClassPartsInClass(inClass) loop
+    for item in getElementItemsInClassPart(part) loop
+      if AbsynUtil.isElementItemClassNamed(name, item) then
+        outClass := elementItemClass(item);
+        return;
+      end if;
+    end for;
+  end for;
+
+  fail();
+end getClassInClass;
+
+protected function elementItemClass
+  input Absyn.ElementItem item;
+  output Absyn.Class cls;
+algorithm
+  Absyn.ElementItem.ELEMENTITEM(element = Absyn.Element.ELEMENT(specification =
+    Absyn.ElementSpec.CLASSDEF(class_ = cls))) := item;
+end elementItemClass;
+
+public function replacePathedClassInProgram
+  input Absyn.Path path;
+  input Absyn.Class cls;
+  input output Absyn.Program program;
+protected
+  function replace
+    input Absyn.Class oldClass;
+    input output Absyn.Class newClass;
+  end replace;
+algorithm
+  program := transformPathedClassInProgram(path, program, function replace(newClass = cls));
+end replacePathedClassInProgram;
+
+public function transformPathedClassInProgram
+  "Transforms a referenced class in a program by applying the given function to it."
+  input Absyn.Path inPath;
+  input Absyn.Program inProgram;
+  input FuncType inFunc;
+  output Absyn.Program outProgram;
+
+  partial function FuncType
+    input Absyn.Class inClass;
+    output Absyn.Class outClass;
+  end FuncType;
+algorithm
+  outProgram := match inPath
+    case Absyn.IDENT()
+      then transformClassInProgram(inPath.name, inProgram, inFunc);
+
+    case Absyn.FULLYQUALIFIED()
+      then transformPathedClassInProgram(inPath.path, inProgram, inFunc);
+
+    case Absyn.QUALIFIED()
+      then transformClassInProgram(inPath.name, inProgram,
+          function transformPathedClassInClass(inPath = inPath.path, inFunc = inFunc));
+
+  end match;
+end transformPathedClassInProgram;
+
+public function transformClassInProgram
+  "Transforms a referenced class in a program by applying the given function to
+   it, replacing the old class with the new in the list of classes. Fails if the
+   class can't be found."
+  input String inName;
+  input Absyn.Program inProgram;
+  input FuncType inFunc;
+  output Absyn.Program outProgram;
+
+  partial function FuncType
+    input Absyn.Class inClass;
+    output Absyn.Class outClass;
+  end FuncType;
+protected
+  list<Absyn.Class> classes, acc = {};
+  Absyn.Within wi;
+  Absyn.Class cls;
+  String name;
+algorithm
+  Absyn.PROGRAM(classes, wi) := inProgram;
+
+  while true loop
+    cls :: classes := classes;
+    Absyn.CLASS(name = name) := cls;
+
+    if name == inName then
+      cls := inFunc(cls);
+      classes := List.append_reverse(acc, cls :: classes);
+      outProgram := Absyn.PROGRAM(classes, wi);
+      break;
+    end if;
+
+    acc := cls :: acc;
+  end while;
+end transformClassInProgram;
+
+protected function transformPathedClassInClass
+  input Absyn.Path inPath;
+  input Absyn.Class inClass;
+  input FuncType inFunc;
+  output Absyn.Class outClass;
+
+  partial function FuncType
+    input Absyn.Class inClass;
+    output Absyn.Class outClass;
+  end FuncType;
+algorithm
+  outClass := match inPath
+    case Absyn.Path.IDENT()
+      then transformClassInClass(inPath.name, inFunc, inClass);
+
+    case Absyn.Path.QUALIFIED()
+      then transformClassInClass(inPath.name,
+        function transformPathedClassInClass(inPath = inPath.path, inFunc = inFunc),
+        inClass);
+
+    case Absyn.Path.FULLYQUALIFIED()
+      then transformPathedClassInClass(inPath.path, inClass, inFunc);
+
+  end match;
+end transformPathedClassInClass;
+
+function transformClassInClass
+  input String name;
+  input FuncType func;
+  input output Absyn.Class cls;
+
+  partial function FuncType
+    input output Absyn.Class cls;
+  end FuncType;
+protected
+  Absyn.ClassDef body = cls.body;
+algorithm
+  () := match body
+    case Absyn.ClassDef.PARTS()
+      algorithm
+        body.classParts := List.findMap(body.classParts,
+          function transformClassInClassPart(name = name, func = func));
+      then
+        ();
+
+    case Absyn.ClassDef.CLASS_EXTENDS()
+      algorithm
+        body.parts := List.findMap(body.parts,
+          function transformClassInClassPart(name = name, func = func));
+      then
+        ();
+
+    else ();
+  end match;
+
+  cls.body := body;
+end transformClassInClass;
+
+function transformClassInClassPart
+  input String name;
+  input FuncType func;
+  input output Absyn.ClassPart part;
+        output Boolean found;
+
+  partial function FuncType
+    input output Absyn.Class cls;
+  end FuncType;
+algorithm
+  found := match part
+    local
+      list<Absyn.ElementItem> items;
+
+    case Absyn.ClassPart.PUBLIC()
+      algorithm
+        (items, found) := List.findMap(part.contents,
+          function transformClassInElementItem(name = name, func = func));
+        part.contents := items;
+      then
+        found;
+
+    case Absyn.ClassPart.PROTECTED()
+      algorithm
+        (items, found) := List.findMap(part.contents,
+          function transformClassInElementItem(name = name, func = func));
+        part.contents := items;
+      then
+        found;
+
+    else false;
+  end match;
+end transformClassInClassPart;
+
+function transformClassInElementItem
+  input String name;
+  input FuncType func;
+  input output Absyn.ElementItem item;
+        output Boolean found;
+
+  partial function FuncType
+    input output Absyn.Class cls;
+  end FuncType;
+algorithm
+  found := match item
+    local
+      Absyn.Element e;
+
+    case Absyn.ElementItem.ELEMENTITEM()
+      algorithm
+        (e, found) := transformClassInElement(name, func, item.element);
+        item.element := e;
+      then
+        found;
+
+    else false;
+  end match;
+end transformClassInElementItem;
+
+function transformClassInElement
+  input String name;
+  input FuncType func;
+  input output Absyn.Element element;
+        output Boolean found;
+
+  partial function FuncType
+    input output Absyn.Class cls;
+  end FuncType;
+algorithm
+  found := match element
+    local
+      Absyn.ElementSpec spec;
+
+    case Absyn.Element.ELEMENT()
+      algorithm
+        (spec, found) := transformClassInElementSpec(name, func, element.specification);
+        element.specification := spec;
+      then
+        found;
+
+    else false;
+  end match;
+end transformClassInElement;
+
+function transformClassInElementSpec
+  input String name;
+  input FuncType func;
+  input output Absyn.ElementSpec spec;
+        output Boolean found;
+
+  partial function FuncType
+    input output Absyn.Class cls;
+  end FuncType;
+algorithm
+  found := match spec
+    local
+      Absyn.Class cls;
+
+    case Absyn.ElementSpec.CLASSDEF(class_ = cls)
+      guard cls.name == name
+      algorithm
+        spec.class_ := func(cls);
+      then
+        true;
+
+    else false;
+  end match;
+end transformClassInElementSpec;
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;
