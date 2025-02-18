@@ -1129,14 +1129,14 @@ algorithm
         (_, _, mk) := matchArrayTypes(ty1, ty2, e1, ALLOW_UNKNOWN);
         valid := valid and isCompatibleMatch(mk);
       then
-        (ty1, if isElementWise then Operator.makeDivEW(ty1) else Operator.makeDiv(ty1));
+        (ty1, Operator.makeDiv(ty1));
 
     // Anything else is an error.
     else
       algorithm
         valid := false;
       then
-        (ty1, if isElementWise then Operator.makeDivEW(ty1) else Operator.makeDiv(ty1));
+        (ty1, Operator.makeDiv(ty1));
   end match;
 
   binaryExp := Expression.BINARY(e1, op, e2);

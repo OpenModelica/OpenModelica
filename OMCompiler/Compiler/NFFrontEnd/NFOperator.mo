@@ -308,7 +308,7 @@ public
       case Op.MUL_MATRIX_VECTOR then Absyn.Operator.MUL();
       case Op.SCALAR_PRODUCT    then Absyn.Operator.MUL();
       case Op.MATRIX_PRODUCT    then Absyn.Operator.MUL();
-      case Op.DIV_SCALAR_ARRAY  then Absyn.Operator.DIV_EW();
+      case Op.DIV_SCALAR_ARRAY  then Absyn.Operator.DIV();
       case Op.DIV_ARRAY_SCALAR  then Absyn.Operator.DIV();
       case Op.POW_SCALAR_ARRAY  then Absyn.Operator.POW();
       case Op.POW_ARRAY_SCALAR  then Absyn.Operator.POW();
@@ -357,7 +357,6 @@ public
       case Op.SCALAR_PRODUCT    then DAE.MUL_SCALAR_PRODUCT(ty);
       case Op.ADD_EW            then DAE.ADD_ARR(ty);
       case Op.SUB_EW            then DAE.SUB_ARR(ty);
-      case Op.DIV_EW            then DAE.DIV_ARR(ty);
       case Op.MATRIX_PRODUCT    then DAE.MUL_MATRIX_PRODUCT(ty);
       case Op.DIV_SCALAR_ARRAY  then DAE.DIV_SCALAR_ARRAY(ty);
       case Op.DIV_ARRAY_SCALAR  then DAE.DIV_ARRAY_SCALAR(ty);
