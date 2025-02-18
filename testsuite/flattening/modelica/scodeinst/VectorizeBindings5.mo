@@ -31,11 +31,13 @@ end VectorizeBindings5;
 //   final parameter Integer N = 2;
 //   parameter Boolean[2] initialEquation = array(true for $f1 in 1:2);
 //   parameter Boolean[2] module.initialEquation = array(initialEquation[$module1] for $module1 in 1:2);
-//   final parameter Boolean[2] module.f.initialEquation = array(module[$module1].initialEquation for $module1 in 1:2);
+//   parameter Boolean[2] module.f.initialEquation = array(module[$module1].initialEquation for $module1 in 1:2);
 //   Real[2] module.f.pOut(start = array(0.0 for $f1 in 1:2));
 // initial equation
 //   for $i1 in 1:2 loop
-//     module[$i1].f.pOut = 1.0;
+//     if module[$i1].f.initialEquation then
+//       module[$i1].f.pOut = 1.0;
+//     end if;
 //   end for;
 // equation
 //   for $i1 in 1:2 loop

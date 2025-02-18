@@ -241,6 +241,17 @@ public
     output Variability variability = variable.attributes.variability;
   end variability;
 
+  function setVariability
+    input output Variable variable;
+    input Variability variability;
+  protected
+    Attributes attr;
+  algorithm
+    attr := variable.attributes;
+    attr.variability := variability;
+    variable.attributes := attr;
+  end setVariability;
+
   function visibility
     input Variable variable;
     output Visibility visibility = variable.visibility;
