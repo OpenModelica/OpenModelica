@@ -3547,7 +3547,6 @@ algorithm
       // If all conditions up to and including this one are parameter
       // expressions, consider the condition to be structural.
       var := Variability.STRUCTURAL_PARAMETER;
-      Structural.markExp(cond);
     end if;
 
     accum_var := Prefixes.variabilityMax(accum_var, var);

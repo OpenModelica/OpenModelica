@@ -735,6 +735,7 @@ IfEquationEval1.mo \
 IfEquationEval2.mo \
 IfEquationEval3.mo \
 IfEquationEval4.mo \
+IfEquationEval5.mo \
 IfEquationImpure1.mo \
 IfExpression1.mo \
 IfExpression2.mo \

@@ -30,7 +30,7 @@ end ActualStreamMinMax2;
 
 // Result:
 // class ActualStreamMinMax2
-//   parameter Boolean a.cond = true;
+//   final parameter Boolean a.cond = true;
 //   Real a.s1.r;
 //   Real a.s1.f(min = 0.0);
 //   Real a.s1.s;

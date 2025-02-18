@@ -11,7 +11,7 @@ end IfExpression4;
 
 // Result:
 // class IfExpression4
-//   parameter Boolean b = true;
+//   final parameter Boolean b = true;
 //   Real x[1];
 //   Real x[2];
 // equation
