@@ -3811,6 +3811,7 @@ function setComponentProperties
   input String[1] variability;
   input Boolean[2] innerOuter;
   input String[1] direction;
+  output Boolean success;
 external "builtin";
 annotation(
   Documentation(info="<html>

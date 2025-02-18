@@ -153,10 +153,7 @@ public:
   QList<QList<QString> > getTransitions(QString className);
   QList<QList<QString> > getInitialStates(QString className);
   int getInheritanceCount(QString className);
-  QString getNthInheritedClass(QString className, int num);
   QList<QString> getInheritedClasses(QString className);
-  QString getNthInheritedClassIconMapAnnotation(QString className, int num);
-  QString getNthInheritedClassDiagramMapAnnotation(QString className, int num);
   QList<ElementInfo> getElements(QString className);
   QStringList getElementAnnotations(QString className);
   QString getDocumentationAnnotationInfoHeader(LibraryTreeItem *pLibraryTreeItem, QString infoHeader);
@@ -177,8 +174,6 @@ public:
   bool deleteClass(QString className);
   QString getSourceFile(QString className);
   bool setSourceFile(QString className, QString path);
-  bool save(QString className);
-  bool saveModifiedModel(QString modelText);
   bool saveTotalModel(QString fileName, QString className, bool stripAnnotations, bool stripComments, bool obfuscate, bool simplified);
   QString list(QString className);
   QString listFile(QString className, bool nestedClasses = true);
@@ -190,8 +185,6 @@ public:
   QString getDefaultComponentPrefixes(QString className);
   bool addComponent(QString name, QString componentName, QString className, QString placementAnnotation);
   bool deleteComponent(QString name, QString componentName);
-  bool renameComponent(QString className, QString oldName, QString newName);
-  bool updateComponent(QString name, QString className, QString componentName, QString placementAnnotation);
   bool setElementAnnotation(const QString &elementName, QString annotation);
   bool renameComponentInClass(QString className, QString oldName, QString newName);
   bool updateConnection(QString className, QString from, QString to, QString annotation);
@@ -209,8 +202,6 @@ public:
   bool addInitialState(QString className, QString state, QString annotation);
   bool deleteInitialState(QString className, QString state);
   bool updateInitialState(QString className, QString state, QString annotation);
-  bool simulate(QString className, QString simualtionParameters);
-  bool buildModel(QString className, QString simualtionParameters);
   bool translateModel(QString className, QString simualtionParameters);
   int readSimulationResultSize(QString fileName);
   QStringList readSimulationResultVars(QString fileName);

@@ -1046,7 +1046,7 @@ bool OMCProxy::setParameterValue(const QString &className, const QString &parame
 {
   QString expression = QString("setParameterValue(%1, %2, %3)").arg(className, parameter, value);
   sendCommand(expression);
-  if (getResult().toLower().compare("ok") == 0) {
+  if (StringHandler::unparseBool(getResult())) {
     return true;
   } else {
     QString msg = tr("Unable to set the parameter value using command <b>%1</b>").arg(expression);
@@ -1399,85 +1399,16 @@ QList<QList<QString> > OMCProxy::getInitialStates(QString className)
 }
 
 /*!
- * \brief OMCProxy::getInheritanceCount
- * Returns the inheritance count of a model.
- * \param className - is the name of the model.
- * \return
- * \deprecated Use OMCProxy::getInheritedClasses()
- */
-int OMCProxy::getInheritanceCount(QString className)
-{
-  QString expression = "getInheritanceCount(" + className + ")";
-  sendCommand(expression);
-  QString result = getResult();
-  if (!result.isEmpty()) {
-    bool ok;
-    int result_number = result.toInt(&ok);
-    if (ok) {
-      return result_number;
-    } else {
-      return 0;
-    }
-  }
-  return 0;
-}
-
-/*!
- * \brief OMCProxy::getNthInheritedClass
- * Returns the inherited class at a specific index from a model.
- * \param className - is the name of the model.
- * \param num - is the index of inherited class.
- * \return
- * \deprecated Use OMCProxy::getInheritedClasses()
- */
-QString OMCProxy::getNthInheritedClass(QString className, int num)
-{
-  QString expression = "getNthInheritedClass(" + className + ", " + QString::number(num) + ")";
-  sendCommand(expression);
-  return getResult();
-}
-
-/*!
  * \brief OMCProxy::getInheritedClasses
  * Returns the list of Inherited Classes.
  * \param className
  * \return
- * \sa OMCProxy::getInheritanceCount()
- * \sa OMCProxy::getNthInheritedClass()
  */
 QList<QString> OMCProxy::getInheritedClasses(QString className)
 {
   QList<QString> result = mpOMCInterface->getInheritedClasses(className);
   printMessagesStringInternal();
   return result;
-}
-
-/*!
- * \brief OMCProxy::getNthInheritedClassIconMapAnnotation
- * Returns the icon map of an inherited class at a specific index from a model.
- * \param className
- * \param num
- * \return
- */
-QString OMCProxy::getNthInheritedClassIconMapAnnotation(QString className, int num)
-{
-  QString expression = "getNthInheritedClassIconMapAnnotation(" + className + ", " + QString::number(num) + ")";
-  sendCommand(expression);
-  return getResult();
-}
-
-/*!
- * \brief OMCProxy::getNthInheritedClassDiagramMapAnnotation
- * Returns the diagram map of an inherited class at a specific index from a model.
- * \param className
- * \param num
- * \return
- */
-QString OMCProxy::getNthInheritedClassDiagramMapAnnotation(QString className, int num)
-{
-  QString expression = "getNthInheritedClassDiagramMapAnnotation(" + className + ", " + QString::number(num) + ")";
-  sendCommand(expression);
-  return getResult();
 }
 
 /*!
@@ -1873,10 +1804,7 @@ bool OMCProxy::existClass(QString className)
 bool OMCProxy::renameClass(QString oldName, QString newName)
 {
   sendCommand("renameClass(" + oldName + ", " + newName + ")");
-  if (StringHandler::unparseBool(getResult()))
-    return false;
-  else
-    return true;
+  return StringHandler::unparseBool(getResult());
 }
 
 /*!
@@ -1887,10 +1815,7 @@ bool OMCProxy::renameClass(QString oldName, QString newName)
 bool OMCProxy::deleteClass(QString className)
 {
   sendCommand("deleteClass(" + className + ")");
-  if (StringHandler::unparseBool(getResult()))
-    return true;
-  else
-    return false;
+  return StringHandler::unparseBool(getResult());
 }
 
 /*!
@@ -1919,32 +1844,6 @@ QString OMCProxy::getSourceFile(QString className)
 bool OMCProxy::setSourceFile(QString className, QString path)
 {
   return mpOMCInterface->setSourceFile(className, path);
-}
-
-/*!
- * \brief OMCProxy::save
- * Saves a model.
- * \param className - the name of the class.
- * \deprecated OMEdit saves the files by itself and doesn't use OMC save API anymore.
- * \return true on success.
- */
-bool OMCProxy::save(QString className)
-{
-  sendCommand("save(" + className + ")");
-  bool result = StringHandler::unparseBool(getResult());
-  if (!result) {
-    printMessagesStringInternal();
-  }
-  return result;
-}
-
-bool OMCProxy::saveModifiedModel(QString modelText)
-{
-  sendCommand(modelText);
-  if (getResult().toLower().contains("error"))
-    return false;
-  else
-    return true;
 }
 
 /*!
@@ -2088,11 +1987,7 @@ QString OMCProxy::getDefaultComponentPrefixes(QString className)
 bool OMCProxy::addComponent(QString name, QString componentName, QString className, QString placementAnnotation)
 {
   sendCommand("addComponent(" + name + "," + componentName + "," + className + "," + placementAnnotation + ")");
-  if (StringHandler::unparseBool(getResult())) {
-    return true;
-  } else {
-    return false;
-  }
+  return StringHandler::unparseBool(getResult());
 }
 
 /*!
@@ -2104,51 +1999,7 @@ bool OMCProxy::addComponent(QString name, QString componentName, QString classNa
 bool OMCProxy::deleteComponent(QString name, QString componentName)
 {
   sendCommand("deleteComponent(" + name + "," + componentName + ")");
-  if (StringHandler::unparseBool(getResult())) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-/*!
-  Renames a component
-  \param className - the name of the class.
-  \param oldName - the old name of the component.
-  \param newName - the new name of the component.
-  \return true on success.
-  \deprecated
-  \see OMCProxy::renameComponentInClass(QString className, QString oldName, QString newName)
-  */
-bool OMCProxy::renameComponent(QString className, QString oldName, QString newName)
-{
-  sendCommand("renameComponent(" + className + "," + oldName + "," + newName + ")");
-  if (getResult().toLower().contains("error")) {
-    return false;
-  } else {
-    return true;
-  }
-}
-
-/*!
- * \brief OMCProxy::updateComponent
- * Updates the component annotations.
- * \param name - the component name
- * \param className - the component fully qualified name.
- * \param componentName - the name of the component to update.
- * \param placementAnnotation - the updated annotation.
- * \return true on success.
- * \deprecated
- * \see OMCProxy::setElementAnnotation(const QString &elementName, QString annotation)
- */
-bool OMCProxy::updateComponent(QString name, QString className, QString componentName, QString placementAnnotation)
-{
-  sendCommand("updateComponent(" + name + "," + className + "," + componentName + "," + placementAnnotation + ")");
-  if (StringHandler::unparseBool(getResult())) {
-    return true;
-  } else {
-    return false;
-  }
+  return StringHandler::unparseBool(getResult());
 }
 
 /*!
@@ -2161,29 +2012,21 @@ bool OMCProxy::updateComponent(QString name, QString className, QString componen
 bool OMCProxy::setElementAnnotation(const QString &elementName, QString annotation)
 {
   sendCommand("setElementAnnotation(" % elementName % "," + annotation + ")");
-  if (StringHandler::unparseBool(getResult())) {
-    return true;
-  } else {
-    return false;
-  }
+  return StringHandler::unparseBool(getResult());
 }
 
 /*!
-  Renames a component in a class.
-  \param className - the name of the class.
-  \param oldName - the old name of the component.
-  \param newName - the new name of the component.
-  \return true on success.
-  \see OMCProxy::renameComponent(QString className, QString oldName, QString newName)
-  */
+ * \brief OMCProxy::renameComponentInClass
+ * Renames a component only in the given class.
+ * \param className - the name of the class.
+ * \param oldName - the old name of the component.
+ * \param newName - the new name of the component.
+ * \return the name of the class if successful.
+ */
 bool OMCProxy::renameComponentInClass(QString className, QString oldName, QString newName)
 {
   sendCommand("renameComponentInClass(" + className + "," + oldName + "," + newName + ")");
-  if (getResult().toLower().contains("error")) {
-    return false;
-  } else {
-    return true;
-  }
+  return !getResult().isEmpty();
 }
 
 /*!
@@ -2243,10 +2086,7 @@ bool OMCProxy::setComponentProperties(QString className, QString componentName, 
   sendCommand("setComponentProperties(" + className + "," + componentName + ",{" + isFinal + "," + isFlow + "," + isProtected +
               "," + isReplaceAble + "}, {\"" + variability + "\"}, {" + isInner + "," + isOuter + "}, {\"" + causality + "\"})");
 
-  if (getResult().toLower().contains("error")) {
-    return false;
-  }
-  return true;
+  return StringHandler::unparseBool(getResult());
 }
 
 /*!
@@ -2259,10 +2099,7 @@ bool OMCProxy::setComponentProperties(QString className, QString componentName, 
 bool OMCProxy::setComponentComment(QString className, QString componentName, QString comment)
 {
   sendCommand("setComponentComment(" + className + "," + componentName + ",\"" + comment + "\")");
-  if (getResult().toLower().contains("error"))
-    return false;
-  else
-    return true;
+  return StringHandler::unparseBool(getResult());
 }
 
 /*!
@@ -2276,11 +2113,7 @@ bool OMCProxy::setComponentComment(QString className, QString componentName, QSt
 bool OMCProxy::setComponentDimensions(QString className, QString componentName, QString dimensions)
 {
   sendCommand("setComponentDimensions(" + className + "," + componentName + "," + dimensions + ")");
-  if (getResult().toLower().compare("ok") == 0) {
-    return true;
-  } else {
-    return false;
-  }
+  return StringHandler::unparseBool(getResult());
 }
 
 /*!
@@ -2298,7 +2131,8 @@ void OMCProxy::addConnection(QString from, QString to, QString className, QStrin
   } else {
     sendCommand("addConnection(" + from + "," + to + "," + className + "," + annotation + ")");
   }
-  if (getResult().toLower().compare("ok") != 0) {
+
+  if (!StringHandler::unparseBool(getResult())) {
     printMessagesStringInternal();
   }
 }
@@ -2313,7 +2147,7 @@ void OMCProxy::addConnection(QString from, QString to, QString className, QStrin
 bool OMCProxy::deleteConnection(QString from, QString to, QString className)
 {
   sendCommand("deleteConnection(" + from + "," + to + "," + className + ")");
-  if (getResult().toLower().compare("ok") == 0) {
+  if (StringHandler::unparseBool(getResult())) {
     return true;
   } else {
     printMessagesStringInternal();
@@ -2462,45 +2296,12 @@ bool OMCProxy::updateInitialState(QString className, QString state, QString anno
 }
 
 /*!
- * \brief OMCProxy::simulate
- * Simulate the model. Creates an execuatble and runs it.
+ * \brief OMCProxy::translateModel
+ * Builds the model. Only creates the simulation files.
  * \param className - the name of the class.
  * \param simualtionParameters - the simulation parameters.
  * \return true on success.
- * \deprecated OMEdit only use OMCProxy::buildModel(QString className, QString simualtionParameters)
  */
-bool OMCProxy::simulate(QString className, QString simualtionParameters)
-{
-  sendCommand("OMEdit_simulate_result:=simulate(" + className + "," + simualtionParameters + ")");
-  sendCommand("OMEdit_simulate_result.resultFile");
-  if (StringHandler::unparse(getResult()).isEmpty()) {
-    return false;
-  } else {
-    return true;
-  }
-}
-
-/*!
-  Builds the model. Only creates the simualtion executable, doesn't run it.
-  \param className - the name of the class.
-  \param simualtionParameters - the simulation parameters.
-  \return true on success.
-  \deprecated OMEdit now use OMCProxy::translateModel(QString className, QString simualtionParameters)
-  */
-bool OMCProxy::buildModel(QString className, QString simualtionParameters)
-{
-  sendCommand("buildModel(" + className + "," + simualtionParameters + ")");
-  bool res = getResult() != "{\"\",\"\"}";
-  printMessagesStringInternal();
-  return res;
-}
-
-/*!
-  Builds the model. Only creates the simulation files.
-  \param className - the name of the class.
-  \param simualtionParameters - the simulation parameters.
-  \return true on success.
-  */
 bool OMCProxy::translateModel(QString className, QString simualtionParameters)
 {
   sendCommand("translateModel(" + className + "," + simualtionParameters + ")");
@@ -2802,10 +2603,9 @@ OMCInterface::getAvailableIndexReductionMethods_res OMCProxy::getAvailableIndexR
 bool OMCProxy::setIndexReductionMethod(QString method)
 {
   sendCommand("setIndexReductionMethod(\"" + method + "\")");
-  if (StringHandler::unparseBool(getResult()))
+  if (StringHandler::unparseBool(getResult())) {
     return true;
-  else
-  {
+  } else {
     printMessagesStringInternal();
     return false;
   }
