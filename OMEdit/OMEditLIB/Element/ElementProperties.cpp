@@ -79,6 +79,7 @@ FinalEachToolButton::FinalEachToolButton(bool canHaveEach, QWidget *parent)
   mpFinalEachMenu = new QMenu;
   mpFinalEachMenu->addAction(mpFinalAction);
   if (canHaveEach) {
+    mHasEach = canHaveEach;
     mpFinalEachMenu->addAction(mpEachAction);
   }
   mpFinalEachMenu->addSeparator();
@@ -758,6 +759,12 @@ void Parameter::enableDisableUnitComboBox(const QString &value)
    */
   if (!literalConstant) {
     resetUnitCombobox();
+  }
+  /* Issue #13636
+   * Set each is value is scalar or remove it if value is not scalar.
+   */
+  if (mpFinalEachMenuButton->hasEach()) {
+    mpFinalEachMenuButton->setEach(Utilities::isValueScalarLiteralConstant(value));
   }
 }
 

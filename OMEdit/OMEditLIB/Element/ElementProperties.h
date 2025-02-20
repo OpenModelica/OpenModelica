@@ -49,6 +49,7 @@ public:
   bool isFinal() const {return mpFinalAction->isChecked();}
   void setEach(bool each);
   bool isEach() const {return mpEachAction->isChecked();}
+  bool hasEach() const {return mHasEach;}
   void setBreak(bool break_);
   bool isBreak() const {return mpBreakAction->isChecked();}
   bool isModified() const;
@@ -58,6 +59,7 @@ private:
   bool mFinalDefault = false;
   QAction *mpEachAction;
   bool mEachDefault = false;
+  bool mHasEach = false;
   QAction *mpBreakAction;
   bool mBreakDefault = false;
 signals:

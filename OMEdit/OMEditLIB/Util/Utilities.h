@@ -477,6 +477,7 @@ namespace Utilities {
   QString generateHash(const QString &input);
   qreal convertUnit(qreal value, qreal offset, qreal scaleFactor);
   bool isValueLiteralConstant(QString value);
+  bool isValueScalarLiteralConstant(QString value);
   QString arrayExpressionUnitConversion(OMCProxy *pOMCProxy, QString modifierValue, QString fromUnit, QString toUnit);
   Label* getHeadingLabel(QString heading);
   QFrame* getHeadingLine();
