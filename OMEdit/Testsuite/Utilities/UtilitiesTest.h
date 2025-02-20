@@ -47,6 +47,8 @@ class UtilitiesTest: public QObject
 private slots:
   void literalConstant();
   void literalConstant_data();
+  void scalarLiteralConstant();
+  void scalarLiteralConstant_data();
   void cleanupTestCase();
 };
 

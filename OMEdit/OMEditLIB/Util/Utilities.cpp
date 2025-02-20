@@ -697,6 +697,20 @@ bool Utilities::isValueLiteralConstant(QString value)
 }
 
 /*!
+ * \brief Utilities::isValueScalarLiteralConstant
+ * \param value
+ * \return
+ */
+bool Utilities::isValueScalarLiteralConstant(QString value)
+{
+  /* Issue #13636
+   * Check if value is scalar and literal constant.
+   */
+  QRegExp rx("\\s*-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?");
+  return rx.exactMatch(value);
+}
+
+/*!
  * \brief Utilities::arrayExpressionUnitConversion
  * If the expression is like an array of constants see ticket:4840
  * \param pOMCProxy

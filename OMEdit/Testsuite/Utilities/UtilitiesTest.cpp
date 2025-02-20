@@ -70,6 +70,26 @@ void UtilitiesTest::literalConstant_data()
   QTest::newRow("Exponential form array with whitespace") << "{1e-09 , 2e-3 , 0.456e7}";
 }
 
+void UtilitiesTest::scalarLiteralConstant()
+{
+  QFETCH(QString, string);
+
+  if (!Utilities::isValueScalarLiteralConstant(string)) {
+    QFAIL(QString("The value %1 is not a scalar literal constant.").arg(string).toStdString().c_str());
+  }
+}
+
+void UtilitiesTest::scalarLiteralConstant_data()
+{
+  QTest::addColumn<QString>("string");
+
+  QTest::newRow("Integer") << "123";
+  QTest::newRow("Negative integer value") << "-23";
+  QTest::newRow("Decimal") << "56.7";
+  QTest::newRow("Negative decimal value") << "-10.00";
+  QTest::newRow("Exponential form") << "1e-09";
+}
+
 void UtilitiesTest::cleanupTestCase()
 {
   MainWindow::instance()->close();
