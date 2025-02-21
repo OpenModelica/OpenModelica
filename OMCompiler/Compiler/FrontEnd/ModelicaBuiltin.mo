@@ -1440,32 +1440,6 @@ external "builtin";
 annotation(preferredView="text");
 end setCXXCompiler;
 
-function verifyCompiler
-  output Boolean compilerWorks;
-external "builtin";
-annotation(preferredView="text");
-end verifyCompiler;
-
-function setCompilerPath
-  input String compilerPath;
-  output Boolean success;
-external "builtin";
-annotation(preferredView="text");
-end setCompilerPath;
-
-function getCompileCommand
-  output String compileCommand;
-external "builtin";
-annotation(preferredView="text");
-end getCompileCommand;
-
-function setCompileCommand
-  input String compileCommand;
-  output Boolean success;
-external "builtin";
-annotation(preferredView="text");
-end setCompileCommand;
-
 function setPlotCommand
   input String plotCommand;
   output Boolean success;
@@ -1477,7 +1451,6 @@ function getSettings
   output String settings;
 algorithm
   settings :=
-    "Compile command: " + getCompileCommand() + "\n" +
     "Temp folder path: " + getTempDirectoryPath() + "\n" +
     "Installation folder: " + getInstallationDirectoryPath() + "\n" +
     "Modelica path: " + getModelicaPath() + "\n";

@@ -41,30 +41,6 @@ public function getVersionNr "Returns the version number of this release"
 external "C" outString=Settings_getVersionNr() annotation(Library = "omcruntime");
 end getVersionNr;
 
-public function setCompilePath
-  input String inString;
-  external "C" SettingsImpl__setCompilePath(inString) annotation(Library = "omcruntime");
-end setCompilePath;
-
-/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
-public function getCompilePath
-  output String outString;
-
-  external "C" outString=Settings_getCompilePath() annotation(Library = "omcruntime");
-end getCompilePath;*/
-
-public function setCompileCommand
-  input String inString;
-
-  external "C" SettingsImpl__setCompileCommand(inString) annotation(Library = "omcruntime");
-end setCompileCommand;
-
-public function getCompileCommand
-  output String outString;
-
-  external "C" outString=Settings_getCompileCommand() annotation(Library = "omcruntime");
-end getCompileCommand;
-
 public function setTempDirectoryPath
   input String inString;
 

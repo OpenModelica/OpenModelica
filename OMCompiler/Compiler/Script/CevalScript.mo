@@ -826,16 +826,6 @@ algorithm
     case ("listVariables",{})
       then ValuesUtil.makeArray(getVariableNames(SymbolTable.getVars(),{}));
 
-    case ("setCompileCommand",{Values.STRING(cmd)})
-      algorithm
-        // cmd = Util.rawStringToInputString(cmd);
-        Settings.setCompileCommand(cmd);
-      then
-        Values.BOOL(true);
-
-    case ("getCompileCommand",{})
-      then Values.STRING(Settings.getCompileCommand());
-
     case ("setTempDirectoryPath",{Values.STRING(cmd)})
       algorithm
         // cmd = Util.rawStringToInputString(cmd);

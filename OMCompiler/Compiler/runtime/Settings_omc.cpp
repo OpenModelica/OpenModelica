@@ -57,11 +57,8 @@ extern const char* Settings_getModelicaPath(int runningTestsuite)
   return path;
 }
 
-extern const char* Settings_getCompileCommand()
-{
-  const char *res = SettingsImpl__getCompileCommand();
-  return strcpy(ModelicaAllocateString(strlen(res)), res);
-}
+// Unused but referenced by the bootstrapping sources.
+extern const char* Settings_getCompileCommand() { return 0; }
 
 extern void Settings_setPlotCommand(const char* _inString);
 
