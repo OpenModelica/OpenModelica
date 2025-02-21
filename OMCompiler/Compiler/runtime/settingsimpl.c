@@ -58,8 +58,6 @@
 extern "C" {
 #endif
 
-static char* compileCommand = 0;
-static char* compilePath = 0;
 static char* tempDirectoryPath = 0;
 static int   echo = 1; //true
 
@@ -256,42 +254,9 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
   return omc_modelicaPath;
 }
 
-static const char* SettingsImpl__getCompileCommand(void)
-{
-  if (compileCommand == NULL) {
-    // Get a default command
-    const char *res = getenv("MC_DEFAULT_COMPILE_CMD");
-    if (res == NULL)
-      return DEFAULT_CXX;
-    return res;
-  }
-  return compileCommand;
-}
-
-extern void SettingsImpl__setCompileCommand(const char *command)
-{
-  if(compileCommand)
-    free(compileCommand);
-  compileCommand = strdup(command);
-}
-
-static const char* SettingsImpl__getCompilePath(void)
-{
-  if (compilePath == NULL) {
-    // Get a default command
-    const char *res = getenv("MC_DEFAULT_COMPILE_PATH");
-    if (res == NULL)
-      return "";
-    return res;
-  }
-  return compilePath;
-}
-
-extern void SettingsImpl__setCompilePath(const char *path) {
-  if(compilePath)
-    free(compilePath);
-  compilePath = strdup(path);
-}
+// Unused but referenced by the bootstrapping sources.
+extern void SettingsImpl__setCompileCommand(const char *) { }
+extern void SettingsImpl__setCompilePath(const char*) { }
 
 static void commonSetEnvVar(const char *var, const char *value)
 {
