@@ -1093,7 +1093,7 @@ void LineAnnotation::clearPoints()
 void LineAnnotation::updateStartPoint(QPointF point)
 {
   prepareGeometryChange();
-  manhattanizeShape();
+  manhattanizeShape(false);
   removeRedundantPointsGeometriesAndCornerItems();
   qreal dx = point.x() - mPoints[0].x();
   qreal dy = point.y() - mPoints[0].y();
