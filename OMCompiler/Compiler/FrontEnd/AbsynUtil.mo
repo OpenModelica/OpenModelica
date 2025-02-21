@@ -6891,5 +6891,13 @@ function enumLiteralName
   output String name = literal.literal;
 end enumLiteralName;
 
+public function elementItemClass
+  input Absyn.ElementItem item;
+  output Absyn.Class cls;
+algorithm
+  Absyn.ElementItem.ELEMENTITEM(element = Absyn.Element.ELEMENT(specification =
+    Absyn.ElementSpec.CLASSDEF(class_ = cls))) := item;
+end elementItemClass;
+
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;
