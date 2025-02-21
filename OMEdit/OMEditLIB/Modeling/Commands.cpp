@@ -303,7 +303,7 @@ void UpdateComponentTransformationsCommand::undo()
   mpComponent->mTransformation = mOldTransformation;
   mpComponent->emitTransformChange(mPositionChanged);
   mpComponent->emitTransformHasChanged();
-  if (mpComponent->getGraphicsView()->isDiagramView()/* && pModelWidget->isNewApi()*/) {
+  if (mpComponent->getGraphicsView()->isDiagramView()) {
     pModelWidget->setHandleCollidingConnectionsNeeded(true);
   }
 }
@@ -976,6 +976,9 @@ OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInf
   mNewModelInfo = newModelInfo;
   setText(commandText);
   mSkipGetModelInstance = skipGetModelInstance;
+  if (mSkipGetModelInstance && mpLibraryTreeItem && mpLibraryTreeItem->getModelWidget()) {
+    mpLibraryTreeItem->getModelWidget()->setHandleCollidingConnectionsNeeded(true);
+  }
 }
 
 /*!
