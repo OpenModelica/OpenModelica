@@ -1486,6 +1486,13 @@ namespace ModelInstance
       return true;
     }
 
+    // Issue #12163. Skip checking for compatibility if any of the component is conditional.
+    const Component *lhs_component = dynamic_cast<const Component*>(lhs);
+    const Component *rhs_component = dynamic_cast<const Component*>(rhs);
+    if ((lhs_component && !lhs_component->getCondition()) || (rhs_component && !rhs_component->getCondition())) {
+      return true;
+    }
+
     Model *lhs_model = lhs->getModel();
     Model *rhs_model = rhs->getModel();
 
