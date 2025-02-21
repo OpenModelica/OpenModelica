@@ -33,5 +33,5 @@ getClassComment(OpenModelica.Scripting.loadFile);
 // "After constraint"
 // "M comment"
 // "ME comment"
-// "load file (*.mo) and merge it with the loaded AST."
+// "Loads a Modelica file (*.mo)."
 // endResult
