@@ -3375,8 +3375,8 @@ void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
             for (int i = 0; pStartBus->connectors[i] ; ++i) {
               if (startBusConnectors.contains(pAtomicConnectionLineAnnotation->getStartElement()->getName())
                   && endBusConnectors.contains(pAtomicConnectionLineAnnotation->getEndElement()->getName())) {
-                removeConnectionFromView(pAtomicConnectionLineAnnotation);
                 deleteConnectionFromClass(pAtomicConnectionLineAnnotation);
+                removeConnectionFromView(pAtomicConnectionLineAnnotation);
                 break;
               }
             }
@@ -3384,11 +3384,16 @@ void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
         }
       }
     }
-    removeConnectionFromView(pConnectionLineAnnotation);
     deleteConnectionFromClass(pConnectionLineAnnotation);
+    removeConnectionFromView(pConnectionLineAnnotation);
   } else {
-    removeConnectionFromView(pConnectionLineAnnotation);
+    /* Issue #12388.
+     * Call deleteConnectionFromClass() before removeConnectionFromView() to makesure connectorSizing is handled properly.
+     * If we remove the connection from view first then the connectorSizing parameter will not be updated because removeConnectionFromView() sets the start and end
+     * connector element to nullptr.
+     */
     deleteConnectionFromClass(pConnectionLineAnnotation);
+    removeConnectionFromView(pConnectionLineAnnotation);
   }
 }
 

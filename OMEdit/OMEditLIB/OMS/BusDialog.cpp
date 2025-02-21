@@ -1602,8 +1602,8 @@ void BusConnectionDialog::deleteAtomicConnection(QString startConnectorName, QSt
 
     foreach (LineAnnotation *pConnectionLineAnnotation, mpGraphicsView->getConnectionsList()) {
       if ((pConnectionLineAnnotation->getStartElementName().compare(startComponentName) == 0) && (pConnectionLineAnnotation->getEndElementName().compare(endComponentName) == 0)) {
-        mpGraphicsView->removeConnectionFromView(pConnectionLineAnnotation);
         mpGraphicsView->deleteConnectionFromClass(pConnectionLineAnnotation);
+        mpGraphicsView->removeConnectionFromView(pConnectionLineAnnotation);
       }
     }
   }
