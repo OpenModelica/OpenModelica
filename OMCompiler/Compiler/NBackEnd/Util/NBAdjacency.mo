@@ -320,11 +320,9 @@ public
     end create;
 
     function merge
-      input output Mode mode1;
+      input Mode mode1;
       input Mode mode2;
-    algorithm
-      mode1.crefs := listAppend(mode1.crefs, mode2.crefs);
-      mode1.scalarize := mode1.scalarize or mode2.scalarize;
+      output Mode oMode = MODE(mode1.eqn_name, listAppend(mode1.crefs, mode2.crefs), mode1.scalarize or mode2.scalarize);
     end merge;
 
     function mergeCreate
@@ -656,12 +654,12 @@ public
           UnorderedSet<ComponentRef> occ_set;
         case FULL() algorithm
           // 0. enlargen the arrays
-          full.mapping        := Mapping.expand(full.mapping, new_eqns, new_vars);
-          full.equation_names := Array.expandToSize(size, full.equation_names, ComponentRef.EMPTY());
-          full.occurences     := Array.expandToSize(size, full.occurences, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
-          full.dependencies   := Array.expandToSize(size, full.dependencies, UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual));
-          full.solvabilities  := Array.expandToSize(size, full.solvabilities, UnorderedMap.new<Solvability>(ComponentRef.hash, ComponentRef.isEqual));
-          full.repetitions    := Array.expandToSize(size, full.repetitions, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+          full := FULL(Array.expandToSize(size, full.equation_names, ComponentRef.EMPTY()),
+            Array.expandToSize(size, full.occurences, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual)),
+            Array.expandToSize(size, full.dependencies, UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual)),
+            Array.expandToSize(size, full.solvabilities, UnorderedMap.new<Solvability>(ComponentRef.hash, ComponentRef.isEqual)),
+            Array.expandToSize(size, full.repetitions, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual)),
+            Mapping.expand(full.mapping, new_eqns, new_vars));
 
           // I. update all old equations with the new variables
           if not UnorderedMap.isEmpty(vn) then
