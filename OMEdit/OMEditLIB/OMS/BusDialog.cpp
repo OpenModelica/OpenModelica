@@ -1603,7 +1603,6 @@ void BusConnectionDialog::deleteAtomicConnection(QString startConnectorName, QSt
     foreach (LineAnnotation *pConnectionLineAnnotation, mpGraphicsView->getConnectionsList()) {
       if ((pConnectionLineAnnotation->getStartElementName().compare(startComponentName) == 0) && (pConnectionLineAnnotation->getEndElementName().compare(endComponentName) == 0)) {
         mpGraphicsView->deleteConnectionFromClass(pConnectionLineAnnotation);
-        mpGraphicsView->removeConnectionFromView(pConnectionLineAnnotation);
       }
     }
   }
@@ -1659,11 +1658,11 @@ void BusConnectionDialog::addAtomicConnection(QString startConnectorName, QStrin
     pNewConnectionLineAnnotation->setEndElement(pEndComponent);
     pNewConnectionLineAnnotation->setEndElementName(endComponentName);
 
-    mpGraphicsView->addConnectionToView(pNewConnectionLineAnnotation, false);
     if (mpGraphicsView->addConnectionToClass(pNewConnectionLineAnnotation) && pStartLibraryTreeItem->getOMSBusConnector() && pEndLibraryTreeItem->getOMSBusConnector()) {
+      mpGraphicsView->addConnectionToView(pNewConnectionLineAnnotation, false);
       pNewConnectionLineAnnotation->setVisible(false);
     } else {
-      mpGraphicsView->removeConnectionFromView(pNewConnectionLineAnnotation);
+      pNewConnectionLineAnnotation->deleteLater();
     }
   }
 }
