@@ -1240,9 +1240,6 @@ algorithm
     case ("translateGraphics",{Values.CODE(Absyn.C_TYPENAME(className))})
       then translateGraphics(className, msg);
 
-    case ("setPlotCommand",{Values.STRING(_)})
-      then Values.BOOL(false);
-
     case ("getLoadedLibraries",{})
       algorithm
         p := SymbolTable.getAbsyn();

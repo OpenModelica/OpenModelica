@@ -1440,13 +1440,6 @@ external "builtin";
 annotation(preferredView="text");
 end setCXXCompiler;
 
-function setPlotCommand
-  input String plotCommand;
-  output Boolean success;
-external "builtin";
-annotation(preferredView="text");
-end setPlotCommand;
-
 function getSettings
   output String settings;
 algorithm
