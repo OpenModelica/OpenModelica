@@ -281,7 +281,6 @@ public:
   void deleteConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.removeOne(pConnectionLineAnnotation);}
   void deleteConnectionFromOutOfSceneList(LineAnnotation *pConnectionLineAnnotation) {mOutOfSceneConnectionsList.removeOne(pConnectionLineAnnotation);}
   void removeConnectionDetails(LineAnnotation *pConnectionLineAnnotation);
-  void removeConnectionFromView(LineAnnotation *pConnectionLineAnnotation);
   void removeConnectionsFromView();
   void deleteInheritedConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.removeOne(pConnectionLineAnnotation);}
   int numberOfElementConnections(Element *pElement, LineAnnotation *pExcludeConnectionLineAnnotation = 0);

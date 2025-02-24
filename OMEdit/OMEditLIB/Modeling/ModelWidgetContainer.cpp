@@ -1512,6 +1512,12 @@ int elementIndexInConnection(const QString &connectionElementName)
  */
 void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectionLineAnnotation)
 {
+  // unselect the connection so it will not receive further signals
+  pConnectionLineAnnotation->setSelected(false);
+  pConnectionLineAnnotation->clearCollidingConnections();
+  // Issue #12388. Call deleteConnectionFromList() here to makesure connectorSizing is handled properly.
+  deleteConnectionFromList(pConnectionLineAnnotation);
+
   MainWindow *pMainWindow = MainWindow::instance();
   if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
     OMSProxy::instance()->deleteConnection(pConnectionLineAnnotation->getStartElementName(), pConnectionLineAnnotation->getEndElementName());
@@ -1581,6 +1587,10 @@ void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectionLineAnno
       }
     }
   }
+  // Call removeConnectionDetails() now to remove the conneciton and set the start and end connector element to nullptr.
+  removeConnectionDetails(pConnectionLineAnnotation);
+  addConnectionToOutOfSceneList(pConnectionLineAnnotation);
+  removeItem(pConnectionLineAnnotation);
 }
 
 /*!
@@ -1626,22 +1636,6 @@ void GraphicsView::removeConnectionDetails(LineAnnotation *pConnectionLineAnnota
     }
   }
   pConnectionLineAnnotation->setEndElement(0);
-}
-
-/*!
- * \brief GraphicsView::removeConnectionFromView
- * Removes the connection from the view.
- * \param pConnectionLineAnnotation
- */
-void GraphicsView::removeConnectionFromView(LineAnnotation *pConnectionLineAnnotation)
-{
-  // unselect the connection so it will not receive further signals
-  pConnectionLineAnnotation->setSelected(false);
-  pConnectionLineAnnotation->clearCollidingConnections();
-  removeConnectionDetails(pConnectionLineAnnotation);
-  deleteConnectionFromList(pConnectionLineAnnotation);
-  addConnectionToOutOfSceneList(pConnectionLineAnnotation);
-  removeItem(pConnectionLineAnnotation);
 }
 
 /*!
@@ -3376,7 +3370,6 @@ void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
               if (startBusConnectors.contains(pAtomicConnectionLineAnnotation->getStartElement()->getName())
                   && endBusConnectors.contains(pAtomicConnectionLineAnnotation->getEndElement()->getName())) {
                 deleteConnectionFromClass(pAtomicConnectionLineAnnotation);
-                removeConnectionFromView(pAtomicConnectionLineAnnotation);
                 break;
               }
             }
@@ -3385,15 +3378,8 @@ void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
       }
     }
     deleteConnectionFromClass(pConnectionLineAnnotation);
-    removeConnectionFromView(pConnectionLineAnnotation);
   } else {
-    /* Issue #12388.
-     * Call deleteConnectionFromClass() before removeConnectionFromView() to makesure connectorSizing is handled properly.
-     * If we remove the connection from view first then the connectorSizing parameter will not be updated because removeConnectionFromView() sets the start and end
-     * connector element to nullptr.
-     */
     deleteConnectionFromClass(pConnectionLineAnnotation);
-    removeConnectionFromView(pConnectionLineAnnotation);
   }
 }
 

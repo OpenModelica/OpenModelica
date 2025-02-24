@@ -407,7 +407,6 @@ void AddConnectionCommand::redoInternal()
 void AddConnectionCommand::undo()
 {
   mpConnectionLineAnnotation->getGraphicsView()->deleteConnectionFromClass(mpConnectionLineAnnotation);
-  mpConnectionLineAnnotation->getGraphicsView()->removeConnectionFromView(mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->setHandleCollidingConnectionsNeeded(true);
 }
 
@@ -458,7 +457,6 @@ DeleteConnectionCommand::DeleteConnectionCommand(LineAnnotation *pConnectionLine
 void DeleteConnectionCommand::redoInternal()
 {
   mpConnectionLineAnnotation->getGraphicsView()->deleteConnectionFromClass(mpConnectionLineAnnotation);
-  mpConnectionLineAnnotation->getGraphicsView()->removeConnectionFromView(mpConnectionLineAnnotation);
 }
 
 /*!
