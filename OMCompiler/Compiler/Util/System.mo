@@ -628,12 +628,6 @@ using the asctime() function in time.h (libc)
   external "C" timeStr=System_getCurrentTimeStr() annotation(Library = "omcruntime");
 end getCurrentTimeStr;
 
-public function readFileNoNumeric
-  input String inString;
-  output String outString;
-  external "C" outString=SystemImpl__readFileNoNumeric(inString) annotation(Library = "omcruntime");
-end readFileNoNumeric;
-
 public function setHasExpandableConnectors
 "@author: adrpo
  sets the external flag that signals the

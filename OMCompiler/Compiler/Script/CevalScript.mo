@@ -1123,9 +1123,6 @@ algorithm
     case ("compareFilesAndMove",_)
       then Values.BOOL(false);
 
-    case ("readFileNoNumeric",{Values.STRING(str)})
-      then Values.STRING(System.readFileNoNumeric(str));
-
     case ("getErrorString",{Values.BOOL(b)})
       then Values.STRING(Error.printMessagesStr(b));
 
