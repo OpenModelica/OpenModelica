@@ -1818,13 +1818,6 @@ annotation(preferredView="text", Documentation(info="<html>
 </html>"));
 end getErrorString;
 
-function getMessagesString
-  "see getErrorString()"
-  output String messagesString;
-external "builtin" messagesString=getErrorString();
-annotation(preferredView="text");
-end getMessagesString;
-
 record SourceInfo
   String fileName;
   Boolean readonly;
@@ -1892,25 +1885,6 @@ function echo "echo(false) disables Interactive output, echo(true) enables it ag
 external "builtin";
 annotation(preferredView="text");
 end echo;
-
-function getClassesInModelicaPath "MathCore-specific or not? Who knows!"
-  output String classesInModelicaPath;
-external "builtin";
-annotation(preferredView="text");
-end getClassesInModelicaPath;
-
-/* These don't influence anything...
-function getClassNamesForSimulation
-  output String classNamesForSimulation;
-external "builtin";
-end getClassNamesForSimulation;
-
-function setClassNamesForSimulation
-  input String classNamesForSimulation;
-  output Boolean success;
-external "builtin";
-end setClassNamesForSimulation;
-*/
 
 function getAnnotationVersion "Returns the current annotation version."
   output String annotationVersion;
