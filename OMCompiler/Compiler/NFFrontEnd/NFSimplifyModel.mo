@@ -516,6 +516,7 @@ algorithm
             else
               // Otherwise just discard the rest of the branches.
               accum := Equation.makeBranch(cond, simplifyEquations(body)) :: accum;
+              accum := List.trim(accum, Equation.Branch.isEmpty);
               elements := Equation.makeIf(listReverseInPlace(accum), scope, src) :: elements;
               return;
             end if;
@@ -544,6 +545,8 @@ algorithm
       else branch :: accum;
     end match;
   end for;
+
+  accum := List.trim(accum, Equation.Branch.isEmpty);
 
   if not listEmpty(accum) then
     elements := Equation.makeIf(listReverseInPlace(accum), scope, src) :: elements;
