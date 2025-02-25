@@ -3338,6 +3338,9 @@ algorithm
     case ("getDefinitions", {Values.BOOL(b)})
       then Interactive.getDefinitions(SymbolTable.getAbsyn(), b);
 
+    case ("getDefaultOpenCLDevice", {})
+      then ValuesUtil.makeInteger(Config.getDefaultOpenCLDevice());
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 
