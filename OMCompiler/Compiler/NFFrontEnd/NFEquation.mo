@@ -95,6 +95,16 @@ public
       end match;
     end mapExp;
 
+    function isEmpty
+      input Branch branch;
+      output Boolean empty;
+    algorithm
+      empty := match branch
+        case Branch.BRANCH() then listEmpty(branch.body);
+        case Branch.INVALID_BRANCH() then isEmpty(branch.branch);
+      end match;
+    end isEmpty;
+
     function sizeOf
       input Branch branch;
       output Integer size;
