@@ -2052,17 +2052,6 @@ algorithm
   fixed := matches[i];
 end testsuiteFriendlyName;
 
-function readFileNoNumeric
-  "Returns the contents of the file, with anything resembling a (real) number stripped out, and at the end adding:
-  Filter count from number domain: n.
-  This should probably be changed to multiple outputs; the filtered string and an integer.
-  Does anyone use this API call?"
-  input String fileName;
-  output String contents;
-external "builtin";
-annotation(preferredView="text");
-end readFileNoNumeric;
-
 impure function getErrorString "Returns the current error message. [file.mo:n:n-n:n:b] Error: message"
   input Boolean warningsAsErrors = false;
   output String errorString;

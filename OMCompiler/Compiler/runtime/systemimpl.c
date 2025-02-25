@@ -174,6 +174,11 @@ static int usesCardinality = 1;
 static char* class_names_for_simulation = NULL;
 static const char *select_from_dir = NULL;
 
+
+/* TODO: Unused functions referenced by the bootstrapping sources.
+ *       Remove when the sources have been updated. */
+extern const char* SystemImpl__readFileNoNumeric(const char* filename) { return 0; }
+
 /*
  * Common implementations
  */
@@ -193,39 +198,6 @@ static int str_contain_char(const char* chars, const char chr)
     i++;
   }
   return 0;
-}
-
-static int filterString(char* buf,char* bufRes)
-{
-  int i,bufPointer = 0,slen,isNumeric=0,numericEncounter=0;
-  char preChar;
-  char filterChars[] = "0123456789.\0";
-  char numeric[] = "0123456789\0";
-  slen = strlen(buf);
-  preChar = '\0';
-  for(i=0;i<slen;++i) {
-    if((str_contain_char(filterChars,buf[i]))) {
-      if(buf[i]=='.') {
-        if(str_contain_char(numeric,preChar) || (( i < slen+1) && str_contain_char(numeric,buf[i+1])) ) {
-          if(isNumeric == 0) {isNumeric=1; numericEncounter++;}
-          //printf("skipping_1: '%c'\n",buf[i]);
-        } else {
-          bufRes[bufPointer++] = buf[i];
-          isNumeric=0;
-        }
-      } else {
-        if(isNumeric == 0){isNumeric=1;numericEncounter++;}
-        //printf("skipping_2: '%c'\n",buf[i]);
-      }
-    } else {
-      bufRes[bufPointer++] = buf[i];
-      isNumeric=0;
-    }
-    preChar = buf[i];
-    //isNumeric=0;
-  }
-  bufRes[bufPointer++] = '\0';
-  return numericEncounter;
 }
 
 extern int SystemImpl__setCCompiler(const char *str)
@@ -1295,39 +1267,6 @@ extern int SystemImpl__removeDirectory(const char *path)
   }
 
   return retval==0;
-}
-
-extern const char* SystemImpl__readFileNoNumeric(const char* filename)
-{
-  char* buf, *bufRes;
-  int res,numCount;
-  FILE * file = NULL;
-  omc_stat_t statstr;
-  res = omc_stat(filename, &statstr);
-
-  if(res!=0) {
-    const char *c_tokens[1]={filename};
-    c_add_message(NULL,85, /* ERROR_OPENING_FILE */
-      ErrorType_scripting,
-      ErrorLevel_error,
-      gettext("Error opening file %s."),
-      c_tokens,
-      1);
-    return "No such file";
-  }
-
-  file = omc_fopen(filename,"rb");
-  buf = (char*) omc_alloc_interface.malloc_atomic(statstr.st_size+1);
-  bufRes = (char*) omc_alloc_interface.malloc_atomic((statstr.st_size+70)*sizeof(char));
-  if( (res = omc_fread(buf, sizeof(char), statstr.st_size, file, 0)) != statstr.st_size) {
-    fclose(file);
-    return "Failed while reading file";
-  }
-  buf[statstr.st_size] = '\0';
-  numCount = filterString(buf,bufRes);
-  fclose(file);
-  sprintf(bufRes,"%s\nFilter count from number domain: %d",bufRes,numCount);
-  return bufRes;
 }
 
 extern double SystemImpl__getCurrentTime(void)
