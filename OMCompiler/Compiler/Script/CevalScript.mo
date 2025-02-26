@@ -3407,74 +3407,57 @@ public function getImportList
   input output list<Absyn.Import> pub_imports_list = {};
   input output list<Absyn.Import> pro_imports_list = {};
 algorithm
-  () := match (inClass)
-    local
-      list<Absyn.ClassPart> parts;
+  for part in AbsynUtil.getClassPartsInClass(inClass) loop
+    (pub_imports_list, pro_imports_list) := getImportsInClassPart(part, pub_imports_list, pro_imports_list);
+  end for;
 
-    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts)) algorithm
-      for part in parts loop
-        (pub_imports_list, pro_imports_list) := getImportsInClassPart(part, pub_imports_list, pro_imports_list);
-      end for;
-    then ();
-
-    // check also the case model extends X end X;
-    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)) algorithm
-      for part in parts loop
-        (pub_imports_list, pro_imports_list) := getImportsInClassPart(part, pub_imports_list, pro_imports_list);
-      end for;
-    then ();
-
-    case Absyn.CLASS(body = Absyn.DERIVED()) then ();
-  end match;
+  pub_imports_list := listReverseInPlace(pub_imports_list);
+  pro_imports_list := listReverseInPlace(pro_imports_list);
 end getImportList;
 
 protected function getImportsInClassPart
-  input Absyn.ClassPart inAbsynClassPart;
+  input Absyn.ClassPart part;
   input output list<Absyn.Import> pub_imports_list;
   input output list<Absyn.Import> pro_imports_list;
 algorithm
-  () := matchcontinue (inAbsynClassPart)
-    local
-      list<Absyn.ElementItem> els;
-    case Absyn.PUBLIC(contents = els) algorithm
-      for elem in els loop
-        pub_imports_list := getImportsInElementItem(elem, pub_imports_list);
-      end for;
-    then ();
+  () := match part
+    case Absyn.PUBLIC()
+      algorithm
+        for elem in part.contents loop
+          pub_imports_list := getImportsInElementItem(elem, pub_imports_list);
+        end for;
+      then
+        ();
 
-    case Absyn.PROTECTED(contents = els) algorithm
-      for elem in els loop
-        pro_imports_list := getImportsInElementItem(elem, pro_imports_list);
-      end for;
-    then ();
+    case Absyn.PROTECTED()
+      algorithm
+        for elem in part.contents loop
+          pro_imports_list := getImportsInElementItem(elem, pro_imports_list);
+        end for;
+      then
+        ();
 
     else ();
-
-  end matchcontinue;
+  end match;
 end getImportsInClassPart;
 
 protected function getImportsInElementItem
-"Helper function to getImportCount"
-  input Absyn.ElementItem inAbsynElementItem;
+  "Helper function to getImportCount"
+  input Absyn.ElementItem item;
   input output list<Absyn.Import> imports_list;
 algorithm
-  () := matchcontinue inAbsynElementItem
+  () := match item
     local
       Absyn.Import import_;
-      Absyn.Class class_;
 
     case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.IMPORT(import_ = import_)))
       algorithm
         imports_list := import_::imports_list;
-      then ();
-
-    case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = class_)))
-      algorithm
-        // imports_list := getImportList(class_, get_protected, imports_list);
-      then ();
+      then
+        ();
 
     else ();
-  end matchcontinue;
+  end match;
 end getImportsInElementItem;
 
 protected function getMMfileTotalDependencies
