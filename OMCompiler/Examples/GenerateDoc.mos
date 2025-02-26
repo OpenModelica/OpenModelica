@@ -202,15 +202,14 @@ function itemString
   input String version;
   output String res;
 protected
-  String docInfo, revision;
+  String docDesc, docInfo, revision;
 algorithm
-  docInfo := if item.docInfo[1] == \"\"
-    then preSuffixIfNotEmpty(\"<h2><a name=\\\"info\\\">Information</a></h2><pre>\", item.comment, \"</pre>\")
-    else if OpenModelica.Scripting.regexBool(item.docInfo[1],\"<html>\", caseInsensitive=true)
+  docDesc := item.comment;
+  docInfo := if OpenModelica.Scripting.regexBool(item.docInfo[1],\"<html>\", caseInsensitive=true)
     then \"<h2><a name=\\\"info\\\">Information</a></h2>\" + item.docInfo[1]
     else preSuffixIfNotEmpty(\"<h2><a name=\\\"info\\\">Information</a></h2><pre>\", toHtml(item.docInfo[1]), \"</pre>\");
   revision := if item.docInfo[2] <> \"\" then \"<h2><a name=\\\"revisions\\\">Revisions</a></h2>\" + item.docInfo[2] else \"\";
-  res := item.head + docInfo + item.interface + item.short + item.contents + revision + version + \"</body>\";
+  res := item.head + docDesc + docInfo + item.interface + item.short + item.contents + revision + version + \"</body>\";
 end itemString;
 
 function itemFile
