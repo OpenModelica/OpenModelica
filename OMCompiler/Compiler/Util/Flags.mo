@@ -1472,7 +1472,7 @@ constant ConfigFlag BASE_MODELICA_OPTIONS = CONFIG_FLAG(154, "baseModelicaOption
 constant ConfigFlag DEBUG_FOLLOW_EQUATIONS = CONFIG_FLAG(155, "debugFollowEquations",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
   Gettext.gettext("Takes a list of equation names and prints the corresponding equations after each stage of the backend process."));
-constant ConfigFlag EVALUATE_STRUCTURAL_PARAMETERS = CONFIG_FLAG(158, "evaluateStructuralParameters",
+constant ConfigFlag EVALUATE_STRUCTURAL_PARAMETERS = CONFIG_FLAG(156, "evaluateStructuralParameters",
   NONE(), EXTERNAL(), STRING_FLAG("all"),
   SOME(STRING_DESC_OPTION({
     ("all", Gettext.gettext("Evaluates all structural parameters")),

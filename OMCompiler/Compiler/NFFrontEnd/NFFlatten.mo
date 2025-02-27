@@ -1885,7 +1885,7 @@ protected
   Expression cond;
   list<Equation> eql;
   Variability var;
-  Boolean has_connect, should_eval;
+  Boolean has_connect, should_eval = false, structural = true;
   DAE.ElementSource src;
   SourceInfo info;
   Ceval.EvalTarget target;
@@ -1917,12 +1917,16 @@ algorithm
               elseif settings.minimalEval then
                 // Don't evaluate if --evaluateStructuralParameters=strictlyNecessary
                 should_eval := false;
+                structural := false;
               elseif settings.scalarize then
                 // Evaluate if scalarization is turned on.
                 should_eval := true;
               elseif settings.newBackend or Expression.contains(cond, Expression.isIterator) then
                 // Don't evaluate if the new backend is used or the expression contains iterators.
                 should_eval := false;
+                // The condition needs to be vectorized before we evaluate it for the new backend,
+                // so mark it as structural so it gets evaluated later instead.
+                structural := settings.newBackend;
               else
                 // TODO: The condition shouldn't be evaluated if scalarization is
                 //       turned off since that breaks vectorizeEquation, but
@@ -1930,8 +1934,12 @@ algorithm
                 should_eval := true;
               end if;
 
-              if should_eval then
+              // Mark the expression if it's structural. If we evaluate it it's always structural.
+              if structural or should_eval then
                 Structural.markExp(cond);
+              end if;
+
+              if should_eval then
                 cond := Ceval.evalExp(cond, target);
                 cond := flattenExp(cond, prefix, info);
               end if;
