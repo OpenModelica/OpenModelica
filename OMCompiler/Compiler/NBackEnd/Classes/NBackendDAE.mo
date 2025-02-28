@@ -388,9 +388,14 @@ public
     input output BackendDAE bdae;
     input Boolean init;
   protected
+    Pointer<list<Pointer<Variable>>> acc_discrete_states = Pointer.create({});
+    Pointer<list<Pointer<Variable>>> acc_previous = Pointer.create({});
+
     BEquation.MapFuncEqn func = function Equation.simplify(
             name = getInstanceName(),
             indent = "",
+            acc_discrete_states = acc_discrete_states,
+            acc_previous = acc_previous,
             simplifyExp = function SimplifyExp.simplifyDump(
               includeScope = true,
               name = getInstanceName(),
@@ -399,6 +404,9 @@ public
     bdae := match bdae
       local
         EqData eqData;
+        VarData varData;
+        list<Pointer<Variable>> acc_discrete_states_accessed;
+
       case MAIN(eqData = eqData as BEquation.EQ_DATA_SIM()) algorithm
         if init then
           eqData.initials := EquationPointers.map(eqData.initials, func);
@@ -406,6 +414,30 @@ public
           eqData.equations := EquationPointers.map(eqData.equations, func);
         end if;
         bdae.eqData := EqData.compress(eqData);
+
+        // update varData with accs obtained from mapping
+        bdae.varData := match bdae.varData
+          case varData as VarData.VAR_DATA_SIM() algorithm
+            acc_discrete_states_accessed := Pointer.access(acc_discrete_states);
+
+            VariablePointers.removeList(acc_discrete_states_accessed, varData.unknowns);
+            VariablePointers.removeList(acc_discrete_states_accessed, varData.discretes);
+            VariablePointers.removeList(acc_discrete_states_accessed, varData.discrete_states);
+            // TODO: CLOCKED?
+
+            VariablePointers.removeList(Pointer.access(acc_previous), varData.previous);
+            VariablePointers.removeList(Pointer.access(acc_previous), varData.variables);
+
+            VariablePointers.addList(acc_discrete_states_accessed, varData.parameters);
+            VariablePointers.addList(acc_discrete_states_accessed, varData.knowns);
+
+            for v in acc_discrete_states_accessed loop
+              BVariable.setVarKind(v, VariableKind.PARAMETER(NONE()));
+              BVariable.removePartner(v, BackendInfo.setVarPre);
+            end for;
+          then varData;
+          else bdae.varData;
+        end match;
       then bdae;
       else bdae;
     end match;
@@ -420,12 +452,17 @@ public
     bdae := match bdae
       local
         EqData eqData;
+        Pointer<list<Pointer<Variable>>> acc_discrete_states = Pointer.create({});
+        Pointer<list<Pointer<Variable>>> acc_previous = Pointer.create({});
+
       case MAIN(eqData = eqData as BEquation.EQ_DATA_SIM()) algorithm
         eqData.equations := EquationPointers.map(
           eqData.equations,
           function Equation.simplify(
             name = getInstanceName(),
             indent = "",
+            acc_discrete_states = acc_discrete_states,
+            acc_previous = acc_previous,
             simplifyExp = SimplifyExp.removeStream));
         bdae.eqData := EqData.compress(eqData);
       then bdae;
@@ -1245,7 +1282,7 @@ protected
     eq := Pointer.create(Equation.ALGORITHM(size, alg, alg.source, DAE.EXPAND(), attr));
   end lowerAlgorithm;
 
-  protected function lowerEquationAttributes
+  function lowerEquationAttributes
     input Type ty;
     input Boolean init;
     output EquationAttributes attr;
@@ -1259,7 +1296,7 @@ protected
     end if;
   end lowerEquationAttributes;
 
-  function lowerComponentReferences
+  protected function lowerComponentReferences
     input output EquationPointers equations;
     input VariablePointers variables;
   algorithm

@@ -75,6 +75,7 @@ protected
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import ExpressionIterator = NFExpressionIterator;
+  import NFFunction.Function;
   import Type = NFType;
   import Operator = NFOperator;
   import Variable = NFVariable;
@@ -220,7 +221,7 @@ protected
         UnorderedMap<ComponentRef, Expression> replacements;
         EquationPointers newEquations;
         list<Pointer<Variable>> alias_vars, const_vars, non_trivial_alias;
-        list<Pointer<Equation>> non_trivial_eqs;
+        list<Pointer<Equation>> non_trivial_eqs, auxEquations;
 
       case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM())
         algorithm
@@ -228,6 +229,7 @@ protected
           //            1. 2. 3.
           // -----------------------------------
           (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation, "Simulation");
+          (replacements, auxEquations) := checkReplacements(replacements, eqData);
 
           // -----------------------------------
           // 4. apply replacements
@@ -273,13 +275,82 @@ protected
           non_trivial_eqs := list(Equation.generateBindingEquation(var, eqData.uniqueIndex, false) for var in non_trivial_alias);
           eqData.removed := EquationPointers.addList(non_trivial_eqs, eqData.removed);
           //eqData.equations := EquationPointers.addList(non_trivial_eqs, eqData.equations);
-      then (varData, eqData);
+      then (varData, EqData.addUntypedList(eqData, auxEquations, false));
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
       then fail();
     end match;
   end aliasDefault;
+
+  function checkReplacements
+    "Checks validity of all replacements, returns all valid replacements and auxiliary equations"
+    input UnorderedMap<ComponentRef, Expression> replacements;
+    input EqData eqData;
+    output UnorderedMap<ComponentRef, Expression> newReplacements = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+    output list<Pointer<Equation>> auxEquations = {};
+  protected
+    UnorderedSet<ComponentRef> exceptionSet = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    ComponentRef cref;
+    Expression exp;
+    Pointer<Equation> eqPtr;
+    EquationAttributes attr;
+  algorithm
+    EqData.mapExp(eqData, function filterPre(acc = exceptionSet));
+    for keyValueTpl in UnorderedMap.toList(replacements) loop
+      (cref, exp) := keyValueTpl;
+      if isReplaceable(cref, exp, exceptionSet) then
+        // replacement is valid - add to newReplacements
+        UnorderedMap.add(cref, exp, newReplacements);
+      else
+        // add auxiliary equation
+        attr := BackendDAE.lowerEquationAttributes(ComponentRef.getSubscriptedType(cref), false);
+        eqPtr := Equation.makeAssignment(Expression.fromCref(cref), exp, EqData.getUniqueIndex(eqData), "SIM", Iterator.EMPTY(), attr);
+        auxEquations := eqPtr :: auxEquations;
+      end if;
+    end for;
+
+    if Flags.isSet(Flags.DUMP_REPL) then
+      print(Replacements.simpleToString(newReplacements) + "\n");
+      print(StringUtil.headline_4("[dumprepl] Found But Illegal Alias Replacements (added as equations):"));
+      for eqPtr in auxEquations loop
+        print("\t" + Equation.toString(Pointer.access(eqPtr)) + "\n");
+      end for;
+      print("\n");
+    end if;
+  end checkReplacements;
+
+  function isReplaceable
+    "Checks if a replacement (cref, exp) is valid"
+    input ComponentRef cref;
+    input Expression exp;
+    input UnorderedSet<ComponentRef> exceptionSet;
+    output Boolean b = true;
+  algorithm
+    // TODO: possibly match cref, exp here: add if needed
+    if UnorderedSet.contains(cref, exceptionSet) then
+      b := false;
+    end if;
+  end isReplaceable;
+
+  function filterPre
+    "Filter expression for pre call"
+    input output Expression exp;
+    input UnorderedSet<ComponentRef> acc;
+  algorithm
+    () := match exp
+      local
+        Call call;
+        ComponentRef cref;
+
+      case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {Expression.CREF(cref = cref)}))
+        guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "pre") algorithm
+        UnorderedSet.add(cref, acc);
+      then ();
+
+      else ();
+    end match;
+  end filterPre;
 
   function aliasClocks
     "STEPS:
@@ -371,9 +442,6 @@ protected
       replacements := createReplacementRules(set, replacements);
     end for;
 
-    if Flags.isSet(Flags.DUMP_REPL) then
-      print(Replacements.simpleToString(replacements) + "\n");
-    end if;
   end aliasCausalize;
 
   function findSimpleEquation
