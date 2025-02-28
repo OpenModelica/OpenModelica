@@ -963,11 +963,15 @@ protected
         DAE.ElementSource source;
         IfEquationBody ifEqBody;
         list<IfEquationBody> bodies;
-        EquationAttributes attr;
 
       case FEquation.IF(branches = branches, source = source) algorithm
-        attr      := EquationAttributes.default(EquationKind.CONTINUOUS, init);
-        ifEqBody  := lowerIfEquationBody(branches, init);
+        try
+          ifEqBody  := lowerIfEquationBody(branches, init);
+        else
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + FEquation.toString(frontend_equation)});
+          fail();
+        end try;
+
         if Expression.isEnd(ifEqBody.condition) then
           // if the condition is end from the start, there is no alternatives.
           // remove surrounding if structure and return body equations
@@ -1024,10 +1028,8 @@ protected
       // We should never get an empty list here since the last condition has to
       // be TRUE. If-Equations have to have a plain else case for consistency!
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n"
-          + List.toString(branches, function FEquation.Branch.toString(indent = ""), "", "\t", "\n", "\n")});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed due to invalid missing else case."});
       then fail();
-
     end match;
   end lowerIfEquationBody;
 
