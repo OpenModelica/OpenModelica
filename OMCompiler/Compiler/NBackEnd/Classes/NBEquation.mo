@@ -65,6 +65,7 @@ public
   import OldBackendDAE = BackendDAE;
 
   // New Backend imports
+  import DetectStates = NBDetectStates;
   import Evaluation = NBEvaluation;
   import Inline = NBInline;
   import Replacements = NBReplacements;
@@ -1441,6 +1442,8 @@ public
       input output Equation eq;
       input String name = "";
       input String indent = "";
+      input Pointer<list<Pointer<Variable>>> acc_discrete_states = Pointer.create({});
+      input Pointer<list<Pointer<Variable>>> acc_previous = Pointer.create({});
       input SimplifyFunc simplifyExp = function SimplifyExp.simplifyDump(includeScope = true, name = name, indent = indent);
 
       partial function SimplifyFunc
@@ -1499,7 +1502,9 @@ public
             case SOME(body) algorithm
               eq.body := body;
             then eq;
-            else Equation.DUMMY_EQUATION();
+            else algorithm
+              DetectStates.findDiscreteStatesFromWhenBody(eq.body, acc_discrete_states, acc_previous);
+            then Equation.DUMMY_EQUATION();
           end match;
         then new_eq;
 

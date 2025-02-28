@@ -584,6 +584,33 @@ protected
     end if;
   end getPreVar;
 
+  public function findDiscreteStatesFromWhenBody
+    "All variables on the LHS in a when equation are considered discrete, add these to acc lists"
+    input WhenEquationBody body;
+    input Pointer<list<Pointer<Variable>>> acc_discrete_states;
+    input Pointer<list<Pointer<Variable>>> acc_previous;
+  algorithm
+    for body_stmt in body.when_stmts loop
+      () := match body_stmt
+        local
+          ComponentRef state_cref, pre_cref;
+          Pointer<Variable> state_var, pre_var;
+
+        case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = state_cref)) algorithm
+          state_var := BVariable.getVarPointer(state_cref);
+          _ := match BVariable.getVarPre(state_var)
+            case SOME(pre_var) algorithm
+              Pointer.update(acc_previous, pre_var :: Pointer.access(acc_previous));
+            then ();
+            else ();
+          end match;
+          Pointer.update(acc_discrete_states, state_var :: Pointer.access(acc_discrete_states));
+        then ();
+        else ();
+      end match;
+    end for;
+  end findDiscreteStatesFromWhenBody;
+
   annotation(__OpenModelica_Interface="backend");
 end NBDetectStates;
 

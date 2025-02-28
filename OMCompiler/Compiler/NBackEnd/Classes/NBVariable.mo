@@ -225,6 +225,17 @@ public
     Pointer.update(par_ptr, par);
   end connectPartners;
 
+  function removePartner
+    "removes the partner for the variable"
+    input Pointer<Variable> var_ptr;
+    input BackendInfo.setPartner func;
+  protected
+    Variable var = Pointer.access(var_ptr);
+  algorithm
+    var.backendinfo := func(var.backendinfo, NONE());
+    Pointer.update(var_ptr, var);
+  end removePartner;
+
   function getVar
     input ComponentRef cref;
     output Variable var;
