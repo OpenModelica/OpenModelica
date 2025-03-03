@@ -299,7 +299,7 @@ protected
     EqData.mapExp(eqData, function filterPre(acc = exceptionSet));
     for keyValueTpl in UnorderedMap.toList(replacements) loop
       (cref, exp) := keyValueTpl;
-      if isReplaceable(cref, exp, exceptionSet) then
+      if isValidReplacement(cref, exp, exceptionSet) then
         // replacement is valid - add to newReplacements
         UnorderedMap.add(cref, exp, newReplacements);
       else
@@ -311,11 +311,11 @@ protected
     end for;
 
     if Flags.isSet(Flags.DUMP_REPL)  then
-      dumpReplacements(replacements, auxEquations);
+      dumpReplacements(newReplacements, auxEquations);
     end if;
   end checkReplacements;
 
-  function isReplaceable
+  function isValidReplacement
     "Checks if a replacement (cref, exp) is valid"
     input ComponentRef cref;
     input Expression exp;
@@ -326,7 +326,7 @@ protected
     if UnorderedSet.contains(cref, exceptionSet) then
       b := false;
     end if;
-  end isReplaceable;
+  end isValidReplacement;
 
   function filterPre
     "Filter expression for pre call"
