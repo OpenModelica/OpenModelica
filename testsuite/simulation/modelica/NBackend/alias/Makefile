@@ -9,6 +9,7 @@ Alias_test4.mos \
 Alias_test5.mos \
 ArrayAlias1.mos \
 ArrayAlias2.mos \
+Alias_pre.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

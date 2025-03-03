@@ -1,0 +1,75 @@
+// name: Alias_pre
+// keywords: NewBackend, Alias
+// status: correct
+// tests, if the invalid alias b => -(3.0 - y) is correctly identified
+// otherwise pre(-(3.0 - y)) would result
+
+loadString("
+model Alias_pre
+  Real x, y, b, b_prev;
+initial equation
+  b_prev = 0;
+equation
+  b = x;
+  y = x + 3;
+  y = sin(time);
+  when time > 0.5 then
+    b_prev = pre(b);
+  end when;
+end Alias_pre;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=dumprepl");
+simulate(Alias_pre); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// =====================================
+//   [dumprepl] Simulation Alias Sets:
+// =====================================
+//
+// Alias Set 1:
+// **************
+// 	<No Constant/Parameter Binding>
+// 	### Set Equations:
+// 	[SCAL] (1) y = $FUN_1 ($RES_SIM_2)
+// 	[SCAL] (1) y = 3.0 + x ($RES_SIM_3)
+// 	[SCAL] (1) b = x ($RES_SIM_4)
+//
+// [dumprepl] Constant Replacements:
+// ***********************************
+// [dumprepl] Trivial Alias Replacements:
+// ****************************************
+// 	$FUN_1	 ==> 	y
+// [dumprepl] Nontrivial Alias Replacements:
+// *******************************************
+// 	x	 ==> 	-(3.0 - y)
+//
+// [dumprepl] Found But Illegal Alias Replacements (added as equations):
+// ***********************************************************************
+// 	[SCAL] (1) b = -(3.0 - y) ($RES_SIM_6)
+//
+// ==================================
+//   [dumprepl] Clocked Alias Sets:
+// ==================================
+//
+// <No Clocked Alias Sets>
+//
+// [dumprepl] Constant Replacements:
+// ***********************************
+// [dumprepl] Trivial Alias Replacements:
+// ****************************************
+// [dumprepl] Nontrivial Alias Replacements:
+// *******************************************
+//
+// record SimulationResult
+//     resultFile = "Alias_pre_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Alias_pre', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult
