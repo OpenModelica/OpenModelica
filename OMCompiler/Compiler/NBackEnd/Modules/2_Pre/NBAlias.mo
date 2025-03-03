@@ -311,7 +311,7 @@ protected
     end for;
 
     if Flags.isSet(Flags.DUMP_REPL)  then
-      dumpReplacements(replacements);
+      dumpReplacements(replacements, auxEquations);
     end if;
   end checkReplacements;
 
