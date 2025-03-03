@@ -637,6 +637,160 @@ public
       end match;
     end normalizedSubscript;
 
+    function simplifyRangeCondition
+      "used for nested for/if equation. e.g:
+      for i in 1:10 loop
+        if i <> 6 then // (no else case)
+          [...]
+      has to be simplified to
+      for i in {1,2,3,4,5,7,8,9,10} loop
+        [...]"
+      input output Iterator iter;
+      input Expression condition;
+      output Solve.Status status;
+    protected
+      type IterOpt = Option<Iterator>; // needed for the map
+      list<ComponentRef> names;
+      list<Expression> ranges;
+      list<Option<Iterator>> maps;
+      UnorderedMap<ComponentRef, Expression> iter_map = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+      UnorderedMap<ComponentRef, IterOpt> opt_map = UnorderedMap.new<IterOpt>(ComponentRef.hash, ComponentRef.isEqual);
+    algorithm
+      (iter, status) := match condition
+        local
+          Equation tmpEqn;
+          list<ComponentRef> occs;
+          ComponentRef cref;
+          Solve.RelationInversion invert;
+          Expression range;
+          Operator operator;
+
+        case Expression.RELATION() algorithm
+          // prepare the mappings
+          (names, ranges, maps) := getFrames(iter);
+          for frame in List.zip3(names, ranges, maps) loop
+            UnorderedMap.add(Util.tuple31(frame), Util.tuple32(frame), iter_map);
+            UnorderedMap.add(Util.tuple31(frame), Util.tuple33(frame), opt_map);
+          end for;
+
+          // create temp equation and collect all occuring iterator crefs
+          tmpEqn  := Pointer.access(Equation.makeAssignment(condition.exp1, condition.exp2, Pointer.create(0), NBVariable.TEMPORARY_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false)));
+          occs    := Equation.collectCrefs(tmpEqn, function Equation.collectFromMap(check_map = iter_map));
+
+
+          if listLength(occs) == 1 then
+            // get the only occuring iterator cref and solve the body for it
+            cref := List.first(occs);
+            (tmpEqn, _, status, invert) := Solve.solveBody(tmpEqn, cref, FunctionTree.EMPTY());
+
+            // if its solvable, get the corresponding iterator range and adapt it with the information of the if-condition
+            if status == NBSolve.Status.EXPLICIT and invert <> NBSolve.RelationInversion.UNKNOWN then
+              range := UnorderedMap.getSafe(cref, iter_map, sourceInfo());
+              (range, status) := match range
+                case Expression.RANGE() algorithm
+                  operator  := if invert == NBSolve.RelationInversion.TRUE then Operator.invert(condition.operator) else condition.operator;
+                then (adaptRange(UnorderedMap.getSafe(cref, iter_map, sourceInfo()), Equation.getRHS(tmpEqn), operator.op), status);
+
+                // ToDo: intercepting this
+                case Expression.ARRAY() then (range, status);
+
+                // can't do anything here
+                else (range, NBSolve.Status.UNSOLVABLE);
+              end match;
+
+              UnorderedMap.add(cref, range, iter_map);
+            else
+              status := NBSolve.Status.UNSOLVABLE;
+            end if;
+          end if;
+
+          // if something changed, create a new iterator
+          if status == NBSolve.Status.EXPLICIT then
+            iter := Iterator.fromFrames(list((name, UnorderedMap.getSafe(name, iter_map, sourceInfo()), UnorderedMap.getSafe(name, opt_map, sourceInfo())) for name in names));
+          end if;
+        then (iter, status);
+
+        else (iter, NBSolve.Status.UNSOLVABLE);
+      end match;
+    end simplifyRangeCondition;
+
+    function adaptRange
+      input output Expression range;
+      input Expression rhs;
+      input Operator.Op op;
+    protected
+      Integer thresh, start, step, stop;
+      Type ty;
+      Boolean within_range;
+    algorithm
+      (thresh, start, step, stop, ty) := match (rhs, range)
+        case (Expression.INTEGER(thresh), range as Expression.RANGE(start = Expression.INTEGER(start), step = SOME(Expression.INTEGER(step)), stop = Expression.INTEGER(stop))) then (thresh, start, step, stop, range.ty);
+        case (Expression.INTEGER(thresh), range as Expression.RANGE(start = Expression.INTEGER(start), stop = Expression.INTEGER(stop))) then (thresh, start, 1, stop, range.ty);
+        else (0, 0, 0, 0, Type.UNKNOWN());
+      end match;
+
+      if not Type.isUnknown(ty) then
+        within_range := thresh * sign(step) > start * sign(step) and thresh * sign(step) < stop * sign(step);
+
+        range := match op
+          // i == VAL as a condition
+          case NFOperator.Op.EQUAL then
+            // remove all but this element from the range
+            if within_range then Expression.makeRange(Expression.INTEGER(thresh), NONE(), Expression.INTEGER(thresh))
+            // this element is not in the range >>> no valid element
+            else Expression.makeRange(Expression.INTEGER(0), SOME(Expression.INTEGER(0)), Expression.INTEGER(0));
+
+          // i <> VAL as a condition
+          case NFOperator.Op.NEQUAL then
+            // remove only this element from the range
+            if within_range then Expression.makeExpArray(listArray(list(Expression.INTEGER(i) for i guard(i <> thresh) in List.intRange3(start, step, stop))), Type.INTEGER(), true)
+            // this element is not in the range >>> original range not changed
+            else range;
+
+          // i <, <=, >, >=  VAL as a condition
+          case NFOperator.Op.LESS       then interceptRange(thresh - 1, start, step, stop, within_range, sign(step) > 0, range, intLe);
+          case NFOperator.Op.LESSEQ     then interceptRange(thresh, start, step, stop, within_range, sign(step) > 0, range, intLt);
+          case NFOperator.Op.GREATER    then interceptRange(thresh + 1, start, step, stop, within_range, sign(step) < 0, range, intGe);
+          case NFOperator.Op.GREATEREQ  then interceptRange(thresh, start, step, stop, within_range, sign(step) < 0, range, intGt);
+
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for an unknown reason."});
+          then fail();
+        end match;
+      end if;
+    end adaptRange;
+
+    function interceptRange
+      input Integer thresh, start, step, stop;
+      input Boolean within_range, at_end;
+      input output Expression range;
+      input intComp func;
+    protected
+      partial function intComp
+        input Integer i1, i2;
+        output Boolean b;
+      end intComp;
+
+      function lowerBoundary
+        input Integer thresh, start, step;
+        output Integer boundary = thresh + mod(start - thresh, step);
+      end lowerBoundary;
+    algorithm
+      if within_range then
+        // the threshold is within the range, intercept it
+        if at_end then
+          // interception at the end does not have to be truncated to the fitting part
+          range := Expression.makeRange(Expression.INTEGER(start), SOME(Expression.INTEGER(step)), Expression.INTEGER(thresh));
+        else
+          // interception at the start has to compute the correct lower boundary
+          range := Expression.makeRange(Expression.INTEGER(lowerBoundary(thresh, start, step)), SOME(Expression.INTEGER(step)), Expression.INTEGER(stop));
+        end if;
+      elseif func(if at_end then stop else start, thresh) then
+        // the threshold leads to an empty range, otherwise leave it as it was
+        range := Expression.makeRange(Expression.INTEGER(0), SOME(Expression.INTEGER(0)), Expression.INTEGER(0));
+      end if;
+    end interceptRange;
+
     function toString
       input Iterator iter;
       output String str = "";
@@ -1308,6 +1462,22 @@ public
       cref_lst := UnorderedSet.toList(acc);
     end collectCrefs;
 
+    function collectFromSet extends Slice.filterCref;
+      input UnorderedSet<ComponentRef> check_set;
+    algorithm
+      if UnorderedSet.contains(cref, check_set) then
+        UnorderedSet.add(cref, acc);
+      end if;
+    end collectFromSet;
+
+    function collectFromMap<T> extends Slice.filterCref;
+      input UnorderedMap<ComponentRef, T> check_map;
+    algorithm
+      if UnorderedMap.contains(cref, check_map) then
+        UnorderedSet.add(cref, acc);
+      end if;
+    end collectFromMap;
+
     function getLHS
       "gets the left hand side expression of an equation."
       input Equation eq;
@@ -1469,6 +1639,10 @@ public
       eq := match eq
         local
           Equation new_eq;
+          WhenEquationBody when_body;
+          IfEquationBody if_body;
+          Iterator iter;
+          Solve.Status status;
 
         case SCALAR_EQUATION() algorithm
           if Expression.isEqual(eq.lhs, eq.rhs) then
@@ -1497,10 +1671,8 @@ public
 
         case WHEN_EQUATION() algorithm
           new_eq := match WhenEquationBody.simplify(SOME(eq.body))
-            local
-              WhenEquationBody body;
-            case SOME(body) algorithm
-              eq.body := body;
+            case SOME(when_body) algorithm
+              eq.body := when_body;
             then eq;
             else algorithm
               DetectStates.findDiscreteStatesFromWhenBody(eq.body, acc_discrete_states, acc_previous);
@@ -1510,17 +1682,15 @@ public
 
         case IF_EQUATION() algorithm
           new_eq := match IfEquationBody.simplify(SOME(eq.body))
-            local
-              IfEquationBody body;
-            case SOME(body) algorithm
-              if isNone(body.else_if) and not List.hasSeveralElements(body.then_eqns) then
+            case SOME(if_body) algorithm
+              if isNone(if_body.else_if) and not List.hasSeveralElements(if_body.then_eqns) then
                 // first if-branch is true and has only one equation
                 // just replace if-equation with body
-                new_eq := Pointer.access(List.first(body.then_eqns));
+                new_eq := Pointer.access(List.first(if_body.then_eqns));
               else
-                eq.body := body;
+                eq.body := if_body;
                 try
-                  new_eq := IfEquationBody.inline(body, eq);
+                  new_eq := IfEquationBody.inline(if_body, eq);
                 else
                   new_eq := eq;
                 end try;
@@ -1530,10 +1700,19 @@ public
           end match;
         then new_eq;
 
-        // ToDo: implement the following correctly:
+        // for equation with a single if-body without else-if.
+        // structurally ambiguous of size, the if-condition and the for-loop have to be combined
+        case FOR_EQUATION(body = {IF_EQUATION(body = if_body as IfEquationBody.IF_EQUATION_BODY(else_if = NONE()))}) algorithm
+          (iter, status) := Iterator.simplifyRangeCondition(eq.iter, if_body.condition);
+          if status == NBSolve.Status.EXPLICIT then
+            eq.iter := iter;
+            eq.body := list(Pointer.access(be) for be in if_body.then_eqns);
+            eq.size := Equation.size(Pointer.create(eq), true);
+          end if;
+        then Inline.inlineForEquation(eq);
 
-        case FOR_EQUATION()     then eq;
-        case AUX_EQUATION()     then eq;
+        case FOR_EQUATION() then Inline.inlineForEquation(eq);
+        case AUX_EQUATION() then eq;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for: " + toString(eq)});
         then fail();
