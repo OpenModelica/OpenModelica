@@ -310,13 +310,8 @@ protected
       end if;
     end for;
 
-    if Flags.isSet(Flags.DUMP_REPL) then
-      print(Replacements.simpleToString(newReplacements) + "\n");
-      print(StringUtil.headline_4("[dumprepl] Found But Illegal Alias Replacements (added as equations):"));
-      for eqPtr in auxEquations loop
-        print("\t" + Equation.toString(Pointer.access(eqPtr)) + "\n");
-      end for;
-      print("\n");
+    if Flags.isSet(Flags.DUMP_REPL)  then
+      dumpReplacements(replacements);
     end if;
   end checkReplacements;
 
@@ -352,6 +347,20 @@ protected
     end match;
   end filterPre;
 
+  function dumpReplacements
+    input UnorderedMap<ComponentRef, Expression> replacements;
+    input list<Pointer<Equation>> auxEquations = {};
+  algorithm
+    print(Replacements.simpleToString(replacements) + "\n");
+    if not listEmpty(auxEquations) then
+      print(StringUtil.headline_4("[dumprepl] Found But Illegal Alias Replacements (added as equations):"));
+      for eqPtr in auxEquations loop
+        print("\t" + Equation.toString(Pointer.access(eqPtr)) + "\n");
+      end for;
+      print("\n");
+    end if;
+  end dumpReplacements;
+
   function aliasClocks
     "STEPS:
       1. collect alias sets (variables, equations, optional constant binding)
@@ -367,6 +376,7 @@ protected
         UnorderedMap<ComponentRef, Expression> replacements;
         EquationPointers newEquations;
         list<Pointer<Variable>> alias_vars;
+        list<Pointer<Equation>> auxEquations;
 
       case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM())
         algorithm
@@ -374,6 +384,7 @@ protected
           //            1. 2. 3.
           // -----------------------------------
           (replacements, newEquations) := aliasCausalize(varData.clocks, eqData.clocked, "Clocked");
+          (replacements, auxEquations) := checkReplacements(replacements, eqData);
 
           // -----------------------------------
           // 4. apply replacements
@@ -388,7 +399,7 @@ protected
           // remove alias variables from clocks and add to alias
           varData.clocks    := VariablePointers.removeList(alias_vars, varData.clocks);
           varData.aliasVars := VariablePointers.addList(alias_vars, varData.aliasVars);
-      then (varData, eqData);
+      then (varData, EqData.addUntypedList(eqData, auxEquations, false));
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
