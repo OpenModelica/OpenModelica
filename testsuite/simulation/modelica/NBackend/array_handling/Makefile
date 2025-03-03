@@ -9,6 +9,7 @@ exemplary.mos\
 simple_der_for.mos\
 for_exp.mos\
 for_list.mos\
+for_if.mos\
 Resizable_HeatTransfer_equations.mos\
 testVectorizedSolarSystem.mos\
 testVectorizedPowerSystem.mos\

@@ -881,6 +881,7 @@ protected
   function lowerEquation
     input FEquation frontend_equation                 "Original Frontend equation.";
     input Boolean init                                "True if an initial equation should be created.";
+    input Boolean in_for = false;
     output list<Pointer<Equation>> backend_equations  "Resulting Backend equations.";
   algorithm
     backend_equations := match frontend_equation
@@ -921,7 +922,7 @@ protected
           // E.g.: DISCRETE, EvalStages
           iterator := ComponentRef.fromNode(frontend_equation.iterator, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR);
           for eq in frontend_equation.body loop
-            for body_elem_ptr in lowerEquation(eq, init) loop
+            for body_elem_ptr in lowerEquation(eq, init, true) loop
               body_elem := Pointer.access(body_elem_ptr);
               new_body := match body_elem
                 case Equation.IF_EQUATION() algorithm
@@ -947,7 +948,7 @@ protected
             // merge iterators of each for equation instead of having nested loops (for {i in 1:10, j in 1:3, k in 1:5})
             body_elem := Equation.mergeIterators(body_elem);
             // inline if size 1
-            body_elem := Inline.inlineForEquation(body_elem);
+            body_elem := Equation.simplify(body_elem);
 
             Pointer.update(body_elem_ptr, body_elem);
             result := body_elem_ptr :: result;
@@ -961,7 +962,7 @@ protected
       then result;
 
       // if equation
-      case FEquation.IF() then lowerIfEquation(frontend_equation, init);
+      case FEquation.IF() then lowerIfEquation(frontend_equation, init, in_for);
 
       // When equation cases
       case FEquation.WHEN()   then lowerWhenEquation(frontend_equation, init);
@@ -992,6 +993,7 @@ protected
   function lowerIfEquation
     input FEquation frontend_equation;
     input Boolean init;
+    input Boolean in_for;
     output list<Pointer<Equation>> backend_equations;
   algorithm
     backend_equations := match frontend_equation
@@ -1003,7 +1005,7 @@ protected
 
       case FEquation.IF(branches = branches, source = source) algorithm
         try
-          ifEqBody  := lowerIfEquationBody(branches, init);
+          ifEqBody  := lowerIfEquationBody(branches, init, in_for);
         else
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + FEquation.toString(frontend_equation)});
           fail();
@@ -1030,6 +1032,7 @@ protected
   function lowerIfEquationBody
     input list<FEquation.Branch> branches;
     input Boolean init;
+    input Boolean in_for;
     output IfEquationBody ifEq;
   algorithm
     ifEq := match branches
@@ -1052,12 +1055,12 @@ protected
           elseif Expression.isFalse(condition) then
             // discard a branch and continue with the rest if a condition is
             // found to be false, because it can never be reached.
-            result := lowerIfEquationBody(rest, init);
+            result := lowerIfEquationBody(rest, init, in_for);
           else
-            if listEmpty(rest) and init then
+            if listEmpty(rest) and (init or in_for) then
               result := BEquation.IF_EQUATION_BODY(condition, eqns, NONE());
             else
-              result := BEquation.IF_EQUATION_BODY(condition, eqns, SOME(lowerIfEquationBody(rest, init)));
+              result := BEquation.IF_EQUATION_BODY(condition, eqns, SOME(lowerIfEquationBody(rest, init, in_for)));
             end if;
           end if;
       then result;
