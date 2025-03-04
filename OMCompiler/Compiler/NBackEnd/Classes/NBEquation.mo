@@ -682,21 +682,25 @@ public
             // get the only occuring iterator cref and solve the body for it
             cref := List.first(occs);
             (tmpEqn, _, status, invert) := Solve.solveBody(tmpEqn, cref, FunctionTree.EMPTY());
+            operator := if invert == NBSolve.RelationInversion.TRUE then Operator.invert(condition.operator) else condition.operator;
 
             // if its solvable, get the corresponding iterator range and adapt it with the information of the if-condition
             if status == NBSolve.Status.EXPLICIT and invert <> NBSolve.RelationInversion.UNKNOWN then
               range := UnorderedMap.getSafe(cref, iter_map, sourceInfo());
-              (range, status) := match range
-                case Expression.RANGE() algorithm
-                  operator  := if invert == NBSolve.RelationInversion.TRUE then Operator.invert(condition.operator) else condition.operator;
-                then (adaptRange(UnorderedMap.getSafe(cref, iter_map, sourceInfo()), Equation.getRHS(tmpEqn), operator.op), status);
+              try
+                (range, status) := match range
+                  case Expression.RANGE() then (adaptRange(UnorderedMap.getSafe(cref, iter_map, sourceInfo()), Equation.getRHS(tmpEqn), operator), status);
 
-                // ToDo: intercepting this
-                case Expression.ARRAY() then (range, status);
+                  // ToDo: intercepting this
+                  case Expression.ARRAY() then (adaptArray(UnorderedMap.getSafe(cref, iter_map, sourceInfo()), Equation.getRHS(tmpEqn), operator), status);
 
-                // can't do anything here
-                else (range, NBSolve.Status.UNSOLVABLE);
-              end match;
+                  // can't do anything here
+                  else (range, NBSolve.Status.UNSOLVABLE);
+                end match;
+              else
+                Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to combine iterator: " + toString(iter) + " with condition " + Expression.toString(condition) + "."});
+                fail();
+              end try;
 
               UnorderedMap.add(cref, range, iter_map);
             else
@@ -717,47 +721,47 @@ public
     function adaptRange
       input output Expression range;
       input Expression rhs;
-      input Operator.Op op;
+      input Operator operator;
     protected
       Integer thresh, start, step, stop;
-      Type ty;
       Boolean within_range;
     algorithm
-      (thresh, start, step, stop, ty) := match (rhs, range)
-        case (Expression.INTEGER(thresh), range as Expression.RANGE(start = Expression.INTEGER(start), step = SOME(Expression.INTEGER(step)), stop = Expression.INTEGER(stop))) then (thresh, start, step, stop, range.ty);
-        case (Expression.INTEGER(thresh), range as Expression.RANGE(start = Expression.INTEGER(start), stop = Expression.INTEGER(stop))) then (thresh, start, 1, stop, range.ty);
-        else (0, 0, 0, 0, Type.UNKNOWN());
+      // extract the primitive type representation
+      (thresh, start, step, stop) := match (rhs, range)
+        case (Expression.INTEGER(thresh), range as Expression.RANGE(start = Expression.INTEGER(start), step = SOME(Expression.INTEGER(step)), stop = Expression.INTEGER(stop))) then (thresh, start, step, stop);
+        case (Expression.INTEGER(thresh), range as Expression.RANGE(start = Expression.INTEGER(start), stop = Expression.INTEGER(stop))) then (thresh, start, 1, stop);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because range could not be evaluated: " + Expression.toString(range)});
+        then fail();
       end match;
 
-      if not Type.isUnknown(ty) then
-        within_range := thresh * sign(step) > start * sign(step) and thresh * sign(step) < stop * sign(step);
+      within_range := thresh * sign(step) > start * sign(step) and thresh * sign(step) < stop * sign(step);
 
-        range := match op
-          // i == VAL as a condition
-          case NFOperator.Op.EQUAL then
-            // remove all but this element from the range
-            if within_range then Expression.makeRange(Expression.INTEGER(thresh), NONE(), Expression.INTEGER(thresh))
-            // this element is not in the range >>> no valid element
-            else Expression.makeRange(Expression.INTEGER(0), SOME(Expression.INTEGER(0)), Expression.INTEGER(0));
+      range := match operator.op
+        // i == VAL as a condition
+        case NFOperator.Op.EQUAL then
+          // remove all but this element from the range
+          if within_range then Expression.makeRange(Expression.INTEGER(thresh), NONE(), Expression.INTEGER(thresh))
+          // this element is not in the range >>> no valid element
+          else Expression.makeRange(Expression.INTEGER(0), SOME(Expression.INTEGER(0)), Expression.INTEGER(0));
 
-          // i <> VAL as a condition
-          case NFOperator.Op.NEQUAL then
-            // remove only this element from the range
-            if within_range then Expression.makeExpArray(listArray(list(Expression.INTEGER(i) for i guard(i <> thresh) in List.intRange3(start, step, stop))), Type.INTEGER(), true)
-            // this element is not in the range >>> original range not changed
-            else range;
+        // i <> VAL as a condition
+        case NFOperator.Op.NEQUAL then
+          // remove only this element from the range
+          if within_range then Expression.makeExpArray(listArray(list(Expression.INTEGER(i) for i guard(i <> thresh) in List.intRange3(start, step, stop))), Type.INTEGER(), true)
+          // this element is not in the range >>> original range not changed
+          else range;
 
-          // i <, <=, >, >=  VAL as a condition
-          case NFOperator.Op.LESS       then interceptRange(thresh - 1, start, step, stop, within_range, sign(step) > 0, range, intLe);
-          case NFOperator.Op.LESSEQ     then interceptRange(thresh, start, step, stop, within_range, sign(step) > 0, range, intLt);
-          case NFOperator.Op.GREATER    then interceptRange(thresh + 1, start, step, stop, within_range, sign(step) < 0, range, intGe);
-          case NFOperator.Op.GREATEREQ  then interceptRange(thresh, start, step, stop, within_range, sign(step) < 0, range, intGt);
+        // i <, <=, >, >=  VAL as a condition
+        case NFOperator.Op.LESS       then interceptRange(thresh - 1, start, step, stop, within_range, sign(step) > 0, range, intLe);
+        case NFOperator.Op.LESSEQ     then interceptRange(thresh, start, step, stop, within_range, sign(step) > 0, range, intLt);
+        case NFOperator.Op.GREATER    then interceptRange(thresh + 1, start, step, stop, within_range, sign(step) < 0, range, intGe);
+        case NFOperator.Op.GREATEREQ  then interceptRange(thresh, start, step, stop, within_range, sign(step) < 0, range, intGt);
 
-          else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for an unknown reason."});
-          then fail();
-        end match;
-      end if;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for operator: " + Operator.toDebugString(operator)});
+        then fail();
+      end match;
     end adaptRange;
 
     function interceptRange
@@ -790,6 +794,43 @@ public
         range := Expression.makeRange(Expression.INTEGER(0), SOME(Expression.INTEGER(0)), Expression.INTEGER(0));
       end if;
     end interceptRange;
+
+    function adaptArray
+      input output Expression array;
+      input Expression rhs;
+      input Operator operator;
+    protected
+      Integer thresh;
+      list<Integer> elems;
+    algorithm
+      // extract the primitive type representation
+      (thresh, elems) := match (rhs, array)
+        case (Expression.INTEGER(thresh), Expression.ARRAY(literal = true)) then (thresh, list(Expression.integerValue(e) for e in array.elements));
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array range is non literal: " + Expression.toString(array)});
+        then fail();
+      end match;
+
+      array := match operator.op
+        // i == VAL as a condition
+        case NFOperator.Op.EQUAL then
+          // remove all but this element from the array
+          if List.contains(elems, thresh, intEq) then Expression.makeRange(Expression.INTEGER(thresh), NONE(), Expression.INTEGER(thresh))
+          // this element is not in the range >>> no valid element
+          else Expression.makeRange(Expression.INTEGER(0), SOME(Expression.INTEGER(0)), Expression.INTEGER(0));
+
+        // i <>, <, <=, >, >=  VAL as a condition
+        case NFOperator.Op.NEQUAL     then Expression.makeExpArray(listArray(list(Expression.INTEGER(i) for i guard(i <> thresh) in elems)), Type.INTEGER(), true);
+        case NFOperator.Op.LESS       then Expression.makeExpArray(listArray(list(Expression.INTEGER(i) for i guard(i < thresh) in elems)), Type.INTEGER(), true);
+        case NFOperator.Op.LESSEQ     then Expression.makeExpArray(listArray(list(Expression.INTEGER(i) for i guard(i <= thresh) in elems)), Type.INTEGER(), true);
+        case NFOperator.Op.GREATER    then Expression.makeExpArray(listArray(list(Expression.INTEGER(i) for i guard(i > thresh) in elems)), Type.INTEGER(), true);
+        case NFOperator.Op.GREATEREQ  then Expression.makeExpArray(listArray(list(Expression.INTEGER(i) for i guard(i >= thresh) in elems)), Type.INTEGER(), true);
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for operator: " + Operator.toDebugString(operator)});
+        then fail();
+      end match;
+    end adaptArray;
 
     function toString
       input Iterator iter;

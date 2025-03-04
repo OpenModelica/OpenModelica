@@ -43,11 +43,52 @@ equation
     end if;
   end for;
 end for_if;
+
+model for_if_lists
+  Real[5] x, y, z;
+equation
+  // <> and ==
+  for i in {1,2,3,4,5} loop
+    if i <> 3 then
+      x[i] = time + i;
+    end if;
+  end for;
+  for i in {5,4,3,2,1} loop
+    if i == 3 then
+      x[i] = time;
+    end if;
+  end for;
+
+  // < and >=
+  for i in {1,2,3,4,5} loop
+    if i < 3 then
+      y[i] = time + i;
+    end if;
+  end for;
+  for i in {5,4,3,2,1} loop
+    if i >= 3 then
+      y[i] = time - 1;
+    end if;
+  end for;
+
+  // > and <=
+  for i in {1,2,3,4,5} loop
+    if i > 3 then
+      z[i] = time + i;
+    end if;
+  end for;
+  for i in {5,4,3,2,1} loop
+    if i <= 3 then
+      z[i] = time - 1;
+    end if;
+  end for;
+end for_if_lists;
 "); getErrorString();
 
 setCommandLineOptions("--newBackend, -d=dumpSimplify");
 
 simulate(for_if); getErrorString();
+simulate(for_if_lists); getErrorString();
 
 // Result:
 // true
@@ -151,6 +192,109 @@ simulate(for_if); getErrorString();
 // record SimulationResult
 //     resultFile = "for_if_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'for_if', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// ### dumpSimplify |  ###
+// [BEFORE]
+//   [FOR-] (5)
+//   [----] for i in {1, 2, 3, 4, 5} loop
+//   [----]   [-IF-] (1)
+//   [----]   [----] if i <> 3 then
+//   [----]   [----]   [SCAL] (1) x[i] = time + i
+//   [----]   [----] end if;
+//   [----] end for;
+// [AFTER ]
+//   [FOR-] (4)
+//   [----] for i in {1, 2, 4, 5} loop
+//   [----]   [SCAL] (1) x[i] = time + i
+//   [----] end for;
+//
+// ### dumpSimplify |  ###
+// [BEFORE]
+//   [FOR-] (5)
+//   [----] for i in {5, 4, 3, 2, 1} loop
+//   [----]   [-IF-] (1)
+//   [----]   [----] if i == 3 then
+//   [----]   [----]   [SCAL] (1) x[i] = time
+//   [----]   [----] end if;
+//   [----] end for;
+// [AFTER ]
+//   [SCAL] (1) x[3] = time
+//
+// ### dumpSimplify |  ###
+// [BEFORE]
+//   [FOR-] (5)
+//   [----] for i in {1, 2, 3, 4, 5} loop
+//   [----]   [-IF-] (1)
+//   [----]   [----] if i < 3 then
+//   [----]   [----]   [SCAL] (1) y[i] = time + i
+//   [----]   [----] end if;
+//   [----] end for;
+// [AFTER ]
+//   [FOR-] (2)
+//   [----] for i in {1, 2} loop
+//   [----]   [SCAL] (1) y[i] = time + i
+//   [----] end for;
+//
+// ### dumpSimplify |  ###
+// [BEFORE] time - 1.0
+// [AFTER ] (-1.0) + time
+//
+// ### dumpSimplify |  ###
+// [BEFORE]
+//   [FOR-] (5)
+//   [----] for i in {5, 4, 3, 2, 1} loop
+//   [----]   [-IF-] (1)
+//   [----]   [----] if i >= 3 then
+//   [----]   [----]   [SCAL] (1) y[i] = (-1.0) + time
+//   [----]   [----] end if;
+//   [----] end for;
+// [AFTER ]
+//   [FOR-] (3)
+//   [----] for i in {5, 4, 3} loop
+//   [----]   [SCAL] (1) y[i] = (-1.0) + time
+//   [----] end for;
+//
+// ### dumpSimplify |  ###
+// [BEFORE]
+//   [FOR-] (5)
+//   [----] for i in {1, 2, 3, 4, 5} loop
+//   [----]   [-IF-] (1)
+//   [----]   [----] if i > 3 then
+//   [----]   [----]   [SCAL] (1) z[i] = time + i
+//   [----]   [----] end if;
+//   [----] end for;
+// [AFTER ]
+//   [FOR-] (2)
+//   [----] for i in {4, 5} loop
+//   [----]   [SCAL] (1) z[i] = time + i
+//   [----] end for;
+//
+// ### dumpSimplify |  ###
+// [BEFORE] time - 1.0
+// [AFTER ] (-1.0) + time
+//
+// ### dumpSimplify |  ###
+// [BEFORE]
+//   [FOR-] (5)
+//   [----] for i in {5, 4, 3, 2, 1} loop
+//   [----]   [-IF-] (1)
+//   [----]   [----] if i <= 3 then
+//   [----]   [----]   [SCAL] (1) z[i] = (-1.0) + time
+//   [----]   [----] end if;
+//   [----] end for;
+// [AFTER ]
+//   [FOR-] (3)
+//   [----] for i in {3, 2, 1} loop
+//   [----]   [SCAL] (1) z[i] = (-1.0) + time
+//   [----] end for;
+//
+// record SimulationResult
+//     resultFile = "for_if_lists_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'for_if_lists', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
