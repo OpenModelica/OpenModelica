@@ -32,38 +32,38 @@ getErrorString();
 // ========================================
 // 1: new_Sink1.C.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 2: new_Sink1.C.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 3: new_Sink1.C.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 3: new_Sink1.C.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 4: new_Sink1.C.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 5: new_Sink1.C.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 6: new_Sink1.C.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 5: new_Sink1.C.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 6: new_Sink1.C.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 7: new_Sink1.ISpecificEnthalpy.signal:VARIABLE(flow=false )  type: Real
 // 8: new_Sink1.h:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy" type: Real
 // 9: new_Sink1.Q:VARIABLE(unit = "kg/s" )  "Mass flow rate" type: Real
-// 10: new_Sink1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure" type: Real
+// 10: new_Sink1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid pressure" type: Real
 // 11: lumpedStraightPipe1.pro.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
 // 12: lumpedStraightPipe1.pro.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 13: lumpedStraightPipe1.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 14: lumpedStraightPipe1.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 15: lumpedStraightPipe1.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 16: lumpedStraightPipe1.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 17: lumpedStraightPipe1.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 18: lumpedStraightPipe1.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 19: lumpedStraightPipe1.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 16: lumpedStraightPipe1.pro.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 17: lumpedStraightPipe1.pro.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 18: lumpedStraightPipe1.pro.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 19: lumpedStraightPipe1.pro.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 20: lumpedStraightPipe1.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 21: lumpedStraightPipe1.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 22: lumpedStraightPipe1.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 23: lumpedStraightPipe1.C2.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 23: lumpedStraightPipe1.C2.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 24: lumpedStraightPipe1.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 25: lumpedStraightPipe1.C2.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 26: lumpedStraightPipe1.C2.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 25: lumpedStraightPipe1.C2.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 26: lumpedStraightPipe1.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 27: lumpedStraightPipe1.C1.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 28: lumpedStraightPipe1.C1.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 29: lumpedStraightPipe1.C1.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 29: lumpedStraightPipe1.C1.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 30: lumpedStraightPipe1.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 31: lumpedStraightPipe1.C1.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 32: lumpedStraightPipe1.C1.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 31: lumpedStraightPipe1.C1.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 32: lumpedStraightPipe1.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 33: lumpedStraightPipe1.h:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy" type: Real
-// 34: lumpedStraightPipe1.Pm:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Fluid average pressure" type: Real
+// 34: lumpedStraightPipe1.Pm:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid average pressure" type: Real
 // 35: lumpedStraightPipe1.T:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
 // 36: lumpedStraightPipe1.mu:VARIABLE(min = 0.0 unit = "Pa.s" )  "Fluid dynamic viscosity" type: Real
 // 37: lumpedStraightPipe1.rho:VARIABLE(min = 0.0 unit = "kg/m3" )  "Fluid density" type: Real
@@ -71,33 +71,33 @@ getErrorString();
 // 39: lumpedStraightPipe1.Relim:VARIABLE(unit = "1" )  "Limit Reynolds number" type: Real
 // 40: lumpedStraightPipe1.Re:VARIABLE(unit = "1" )  "Reynolds number" type: Real
 // 41: lumpedStraightPipe1.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 42: lumpedStraightPipe1.deltaP:VARIABLE(min = -1000000000.0 max = 1000000000.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Total pressure loss" type: Real
-// 43: lumpedStraightPipe1.deltaPf:VARIABLE(min = -1000000000.0 max = 1000000000.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Friction pressure loss" type: Real
+// 42: lumpedStraightPipe1.deltaP:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Total pressure loss" type: Real
+// 43: lumpedStraightPipe1.deltaPf:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Friction pressure loss" type: Real
 // 44: lumpedStraightPipe1.khi:VARIABLE()  "Hydraulic pressure loss coefficient" type: Real
 // 45: lumpedStraightPipe3.pro.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
 // 46: lumpedStraightPipe3.pro.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 47: lumpedStraightPipe3.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 48: lumpedStraightPipe3.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 49: lumpedStraightPipe3.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 50: lumpedStraightPipe3.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 51: lumpedStraightPipe3.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 52: lumpedStraightPipe3.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 53: lumpedStraightPipe3.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 50: lumpedStraightPipe3.pro.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 51: lumpedStraightPipe3.pro.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 52: lumpedStraightPipe3.pro.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 53: lumpedStraightPipe3.pro.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 54: lumpedStraightPipe3.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 55: lumpedStraightPipe3.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 56: lumpedStraightPipe3.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 57: lumpedStraightPipe3.C2.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 57: lumpedStraightPipe3.C2.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 58: lumpedStraightPipe3.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 59: lumpedStraightPipe3.C2.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 60: lumpedStraightPipe3.C2.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 59: lumpedStraightPipe3.C2.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 60: lumpedStraightPipe3.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 61: lumpedStraightPipe3.C1.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 62: lumpedStraightPipe3.C1.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 63: lumpedStraightPipe3.C1.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 63: lumpedStraightPipe3.C1.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 64: lumpedStraightPipe3.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 65: lumpedStraightPipe3.C1.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 66: lumpedStraightPipe3.C1.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 65: lumpedStraightPipe3.C1.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 66: lumpedStraightPipe3.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 67: lumpedStraightPipe3.h:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy" type: Real
-// 68: lumpedStraightPipe3.Pm:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Fluid average pressure" type: Real
+// 68: lumpedStraightPipe3.Pm:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid average pressure" type: Real
 // 69: lumpedStraightPipe3.T:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
 // 70: lumpedStraightPipe3.mu:VARIABLE(min = 0.0 unit = "Pa.s" )  "Fluid dynamic viscosity" type: Real
 // 71: lumpedStraightPipe3.rho:VARIABLE(min = 0.0 unit = "kg/m3" )  "Fluid density" type: Real
@@ -105,55 +105,55 @@ getErrorString();
 // 73: lumpedStraightPipe3.Relim:VARIABLE(unit = "1" )  "Limit Reynolds number" type: Real
 // 74: lumpedStraightPipe3.Re:VARIABLE(unit = "1" )  "Reynolds number" type: Real
 // 75: lumpedStraightPipe3.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 76: lumpedStraightPipe3.deltaP:VARIABLE(min = -1000000000.0 max = 1000000000.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Total pressure loss" type: Real
-// 77: lumpedStraightPipe3.deltaPf:VARIABLE(min = -1000000000.0 max = 1000000000.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Friction pressure loss" type: Real
+// 76: lumpedStraightPipe3.deltaP:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Total pressure loss" type: Real
+// 77: lumpedStraightPipe3.deltaPf:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Friction pressure loss" type: Real
 // 78: lumpedStraightPipe3.khi:VARIABLE()  "Hydraulic pressure loss coefficient" type: Real
 // 79: sourceQ2.C.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 80: sourceQ2.C.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 81: sourceQ2.C.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 81: sourceQ2.C.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 82: sourceQ2.C.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 83: sourceQ2.C.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 84: sourceQ2.C.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 83: sourceQ2.C.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 84: sourceQ2.C.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 85: sourceQ2.ISpecificEnthalpy.signal:VARIABLE(flow=false )  type: Real
 // 86: sourceQ2.IMassFlow.signal:VARIABLE(flow=false )  type: Real
 // 87: sourceQ2.h:VARIABLE(unit = "J/kg" protected = true )  "Fluid specific enthalpy" type: Real
 // 88: sourceQ2.Q:VARIABLE(unit = "kg/s" protected = true )  "Mass flow rate" type: Real
-// 89: sourceQ2.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 protected = true )  "Fluid pressure" type: Real
+// 89: sourceQ2.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 protected = true )  "Fluid pressure" type: Real
 // 90: sourceQ1.C.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 91: sourceQ1.C.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 92: sourceQ1.C.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 92: sourceQ1.C.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 93: sourceQ1.C.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 94: sourceQ1.C.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 95: sourceQ1.C.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 94: sourceQ1.C.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 95: sourceQ1.C.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 96: sourceQ1.ISpecificEnthalpy.signal:VARIABLE(flow=false )  type: Real
 // 97: sourceQ1.IMassFlow.signal:VARIABLE(flow=false )  type: Real
 // 98: sourceQ1.h:VARIABLE(unit = "J/kg" protected = true )  "Fluid specific enthalpy" type: Real
 // 99: sourceQ1.Q:VARIABLE(unit = "kg/s" protected = true )  "Mass flow rate" type: Real
-// 100: sourceQ1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 protected = true )  "Fluid pressure" type: Real
+// 100: sourceQ1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 protected = true )  "Fluid pressure" type: Real
 // 101: lumpedStraightPipe2.pro.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
 // 102: lumpedStraightPipe2.pro.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 103: lumpedStraightPipe2.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 104: lumpedStraightPipe2.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 105: lumpedStraightPipe2.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 106: lumpedStraightPipe2.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 107: lumpedStraightPipe2.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 108: lumpedStraightPipe2.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 109: lumpedStraightPipe2.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 106: lumpedStraightPipe2.pro.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 107: lumpedStraightPipe2.pro.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 108: lumpedStraightPipe2.pro.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 109: lumpedStraightPipe2.pro.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 110: lumpedStraightPipe2.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 111: lumpedStraightPipe2.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 112: lumpedStraightPipe2.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 113: lumpedStraightPipe2.C2.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 113: lumpedStraightPipe2.C2.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 114: lumpedStraightPipe2.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 115: lumpedStraightPipe2.C2.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 116: lumpedStraightPipe2.C2.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 115: lumpedStraightPipe2.C2.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 116: lumpedStraightPipe2.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 117: lumpedStraightPipe2.C1.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 118: lumpedStraightPipe2.C1.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 119: lumpedStraightPipe2.C1.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 119: lumpedStraightPipe2.C1.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 120: lumpedStraightPipe2.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 121: lumpedStraightPipe2.C1.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 122: lumpedStraightPipe2.C1.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 121: lumpedStraightPipe2.C1.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 122: lumpedStraightPipe2.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 123: lumpedStraightPipe2.h:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy" type: Real
-// 124: lumpedStraightPipe2.Pm:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Fluid average pressure" type: Real
+// 124: lumpedStraightPipe2.Pm:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid average pressure" type: Real
 // 125: lumpedStraightPipe2.T:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
 // 126: lumpedStraightPipe2.mu:VARIABLE(min = 0.0 unit = "Pa.s" )  "Fluid dynamic viscosity" type: Real
 // 127: lumpedStraightPipe2.rho:VARIABLE(min = 0.0 unit = "kg/m3" )  "Fluid density" type: Real
@@ -161,8 +161,8 @@ getErrorString();
 // 129: lumpedStraightPipe2.Relim:VARIABLE(unit = "1" )  "Limit Reynolds number" type: Real
 // 130: lumpedStraightPipe2.Re:VARIABLE(unit = "1" )  "Reynolds number" type: Real
 // 131: lumpedStraightPipe2.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 132: lumpedStraightPipe2.deltaP:VARIABLE(min = -1000000000.0 max = 1000000000.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Total pressure loss" type: Real
-// 133: lumpedStraightPipe2.deltaPf:VARIABLE(min = -1000000000.0 max = 1000000000.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Friction pressure loss" type: Real
+// 132: lumpedStraightPipe2.deltaP:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Total pressure loss" type: Real
+// 133: lumpedStraightPipe2.deltaPf:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Friction pressure loss" type: Real
 // 134: lumpedStraightPipe2.khi:VARIABLE()  "Hydraulic pressure loss coefficient" type: Real
 // 135: staticDrum1.Cth.W:VARIABLE(flow=true unit = "W" )  "Thermal flow rate. Positive when going into the component" type: Real
 // 136: staticDrum1.Cth.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Temperature" type: Real
@@ -172,65 +172,65 @@ getErrorString();
 // 140: staticDrum1.vsat.h:VARIABLE(unit = "J/kg" )  "Specific enthalpy" type: Real
 // 141: staticDrum1.vsat.rho:VARIABLE(min = 0.0 unit = "kg/m3" )  "Density" type: Real
 // 142: staticDrum1.vsat.T:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Temperature" type: Real
-// 143: staticDrum1.vsat.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Pressure" type: Real
+// 143: staticDrum1.vsat.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Pressure" type: Real
 // 144: staticDrum1.lsat.cv:VARIABLE(unit = "J/(kg.K)" )  "Specific heat capacity at constant volume" type: Real
 // 145: staticDrum1.lsat.pt:VARIABLE()  "Derivative of pressure wrt. temperature" type: Real
 // 146: staticDrum1.lsat.cp:VARIABLE(unit = "J/(kg.K)" )  "Specific heat capacity at constant pressure" type: Real
 // 147: staticDrum1.lsat.h:VARIABLE(unit = "J/kg" )  "Specific enthalpy" type: Real
 // 148: staticDrum1.lsat.rho:VARIABLE(min = 0.0 unit = "kg/m3" )  "Density" type: Real
 // 149: staticDrum1.lsat.T:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Temperature" type: Real
-// 150: staticDrum1.lsat.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Pressure" type: Real
+// 150: staticDrum1.lsat.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Pressure" type: Real
 // 151: staticDrum1.Ce_sup.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 152: staticDrum1.Ce_sup.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 153: staticDrum1.Ce_sup.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 153: staticDrum1.Ce_sup.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 154: staticDrum1.Ce_sup.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 155: staticDrum1.Ce_sup.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 156: staticDrum1.Ce_sup.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 155: staticDrum1.Ce_sup.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 156: staticDrum1.Ce_sup.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 157: staticDrum1.Ce_steam.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 158: staticDrum1.Ce_steam.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 159: staticDrum1.Ce_steam.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 159: staticDrum1.Ce_steam.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 160: staticDrum1.Ce_steam.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 161: staticDrum1.Ce_steam.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 162: staticDrum1.Ce_steam.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 161: staticDrum1.Ce_steam.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 162: staticDrum1.Ce_steam.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 163: staticDrum1.Cs_purg.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 164: staticDrum1.Cs_purg.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 165: staticDrum1.Cs_purg.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 165: staticDrum1.Cs_purg.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 166: staticDrum1.Cs_purg.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 167: staticDrum1.Cs_purg.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 168: staticDrum1.Cs_purg.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 167: staticDrum1.Cs_purg.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 168: staticDrum1.Cs_purg.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 169: staticDrum1.Cs_sur.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 170: staticDrum1.Cs_sur.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 171: staticDrum1.Cs_sur.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 171: staticDrum1.Cs_sur.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 172: staticDrum1.Cs_sur.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 173: staticDrum1.Cs_sur.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 174: staticDrum1.Cs_sur.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 173: staticDrum1.Cs_sur.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 174: staticDrum1.Cs_sur.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 175: staticDrum1.Cs_eva.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 176: staticDrum1.Cs_eva.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 177: staticDrum1.Cs_eva.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 177: staticDrum1.Cs_eva.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 178: staticDrum1.Cs_eva.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 179: staticDrum1.Cs_eva.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 180: staticDrum1.Cs_eva.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 179: staticDrum1.Cs_eva.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 180: staticDrum1.Cs_eva.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 181: staticDrum1.Cs_sup.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 182: staticDrum1.Cs_sup.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 183: staticDrum1.Cs_sup.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 183: staticDrum1.Cs_sup.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 184: staticDrum1.Cs_sup.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 185: staticDrum1.Cs_sup.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 186: staticDrum1.Cs_sup.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 185: staticDrum1.Cs_sup.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 186: staticDrum1.Cs_sup.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 187: staticDrum1.Ce_eco.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 188: staticDrum1.Ce_eco.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 189: staticDrum1.Ce_eco.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 189: staticDrum1.Ce_eco.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 190: staticDrum1.Ce_eco.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 191: staticDrum1.Ce_eco.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 192: staticDrum1.Ce_eco.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 191: staticDrum1.Ce_eco.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 192: staticDrum1.Ce_eco.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 193: staticDrum1.Ce_eva.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 194: staticDrum1.Ce_eva.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 195: staticDrum1.Ce_eva.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 195: staticDrum1.Ce_eva.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 196: staticDrum1.Ce_eva.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 197: staticDrum1.Ce_eva.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 198: staticDrum1.Ce_eva.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
-// 199: staticDrum1.hv:VARIABLE(start = 2800000.0 unit = "J/kg" )  "Gas phase specific enthalpy" type: Real
-// 200: staticDrum1.hl:VARIABLE(start = 100000.0 unit = "J/kg" )  "Liquid phase specific enthalpy" type: Real
-// 201: staticDrum1.P:VARIABLE(min = 0.0 start = 1000000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure" type: Real
+// 197: staticDrum1.Ce_eva.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 198: staticDrum1.Ce_eva.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 199: staticDrum1.hv:VARIABLE(start = 2.8e6 unit = "J/kg" )  "Gas phase specific enthalpy" type: Real
+// 200: staticDrum1.hl:VARIABLE(start = 1e5 unit = "J/kg" )  "Liquid phase specific enthalpy" type: Real
+// 201: staticDrum1.P:VARIABLE(min = 0.0 start = 1e6 unit = "Pa" nominal = 1e5 )  "Fluid pressure" type: Real
 // 202: staticDrum1.T:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
 // 203: sourceQ1.Q0:VARIABLE(unit = "kg/s" )  "Mass flow (active if IMassFlow connector is not connected)" type: Real
 // 204: sourceQ1.h0:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy (active if IEnthalpy connector is not connected)" type: Real
@@ -242,10 +242,10 @@ getErrorString();
 // OrderedEquation (167, 207)
 // ========================================
 // 1/1 (1): sourceQ1.Q0 = 100.0   [binding |0|0|0|0|]
-// 2/2 (1): sourceQ1.h0 = 1000000.0   [binding |0|0|0|0|]
+// 2/2 (1): sourceQ1.h0 = 1e6   [binding |0|0|0|0|]
 // 3/3 (1): sourceQ2.Q0 = 100.0   [binding |0|0|0|0|]
-// 4/4 (1): sourceQ2.h0 = 1000000.0   [binding |0|0|0|0|]
-// 5/5 (1): new_Sink1.h0 = 100000.0   [binding |0|0|0|0|]
+// 4/4 (1): sourceQ2.h0 = 1e6   [binding |0|0|0|0|]
+// 5/5 (1): new_Sink1.h0 = 1e5   [binding |0|0|0|0|]
 // 6/6 (1): sourceQ1.C.P = lumpedStraightPipe2.C1.P   [dynamic |0|0|0|0|]
 // 7/7 (1): sourceQ1.C.Q = lumpedStraightPipe2.C1.Q   [dynamic |0|0|0|0|]
 // 8/8 (1): sourceQ1.C.a = lumpedStraightPipe2.C1.a   [dynamic |0|0|0|0|]
@@ -284,19 +284,19 @@ getErrorString();
 // 41/41 (1): lumpedStraightPipe1.C2.h_vol = new_Sink1.C.h_vol   [dynamic |0|0|0|0|]
 // 42/42 (1): staticDrum1.Cth.W = 0.0   [dynamic |0|0|0|0|]
 // 43/43 (1): staticDrum1.Ce_sup.Q = 0.0   [dynamic |0|0|0|0|]
-// 44/44 (1): staticDrum1.Ce_sup.h = 100000.0   [dynamic |0|0|0|0|]
+// 44/44 (1): staticDrum1.Ce_sup.h = 1e5   [dynamic |0|0|0|0|]
 // 45/45 (1): staticDrum1.Ce_sup.b = true   [dynamic |0|0|0|0|]
 // 46/46 (1): staticDrum1.Ce_eva.Q = 0.0   [dynamic |0|0|0|0|]
-// 47/47 (1): staticDrum1.Ce_eva.h = 100000.0   [dynamic |0|0|0|0|]
+// 47/47 (1): staticDrum1.Ce_eva.h = 1e5   [dynamic |0|0|0|0|]
 // 48/48 (1): staticDrum1.Ce_eva.b = true   [dynamic |0|0|0|0|]
 // 49/49 (1): staticDrum1.Cs_eva.Q = 0.0   [dynamic |0|0|0|0|]
-// 50/50 (1): staticDrum1.Cs_eva.h = 100000.0   [dynamic |0|0|0|0|]
+// 50/50 (1): staticDrum1.Cs_eva.h = 1e5   [dynamic |0|0|0|0|]
 // 51/51 (1): staticDrum1.Cs_eva.a = true   [dynamic |0|0|0|0|]
 // 52/52 (1): staticDrum1.Cs_purg.Q = 0.0   [dynamic |0|0|0|0|]
-// 53/53 (1): staticDrum1.Cs_purg.h = 100000.0   [dynamic |0|0|0|0|]
+// 53/53 (1): staticDrum1.Cs_purg.h = 1e5   [dynamic |0|0|0|0|]
 // 54/54 (1): staticDrum1.Cs_purg.a = true   [dynamic |0|0|0|0|]
 // 55/55 (1): staticDrum1.Cs_sur.Q = 0.0   [dynamic |0|0|0|0|]
-// 56/56 (1): staticDrum1.Cs_sur.h = 100000.0   [dynamic |0|0|0|0|]
+// 56/56 (1): staticDrum1.Cs_sur.h = 1e5   [dynamic |0|0|0|0|]
 // 57/57 (1): staticDrum1.Cs_sur.a = true   [dynamic |0|0|0|0|]
 // 58/58 (1): staticDrum1.P = staticDrum1.Ce_steam.P   [dynamic |0|0|0|0|]
 // 59/59 (1): staticDrum1.P = staticDrum1.Ce_sup.P   [dynamic |0|0|0|0|]
@@ -327,11 +327,11 @@ getErrorString();
 // 84/97 (1): lumpedStraightPipe2.h = lumpedStraightPipe2.C1.h   [dynamic |0|0|0|0|]
 // 85/98 (1): lumpedStraightPipe2.Q = lumpedStraightPipe2.C1.Q   [dynamic |0|0|0|0|]
 // 86/99 (1): lumpedStraightPipe2.h = ThermoSysPro.Functions.SmoothCond(lumpedStraightPipe2.Q, lumpedStraightPipe2.C1.h_vol, lumpedStraightPipe2.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
-// 87/100 (1): lumpedStraightPipe2.deltaP = lumpedStraightPipe2.deltaPf + 9.806649999999999 * lumpedStraightPipe2.rho * (lumpedStraightPipe2.z2 - lumpedStraightPipe2.z1)   [dynamic |0|0|0|0|]
+// 87/100 (1): lumpedStraightPipe2.deltaP = lumpedStraightPipe2.deltaPf + 9.80665 * lumpedStraightPipe2.rho * (lumpedStraightPipe2.z2 - lumpedStraightPipe2.z1)   [dynamic |0|0|0|0|]
 // 88/101 (1): lumpedStraightPipe2.deltaPf = 0.5 * lumpedStraightPipe2.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe2.Q, lumpedStraightPipe2.eps) / (lumpedStraightPipe2.A ^ 2.0 * lumpedStraightPipe2.rho)   [dynamic |0|0|0|0|]
 // 89/102 (1): lumpedStraightPipe2.khi = lumpedStraightPipe2.lam * lumpedStraightPipe2.L / lumpedStraightPipe2.D   [dynamic |0|0|0|0|]
 // 90/103 (1): lumpedStraightPipe2.lam = lumpedStraightPipe2.lambda   [dynamic |0|0|0|0|]
-// 91/104 (1): lumpedStraightPipe2.Relim = 5600000.0   [dynamic |0|0|0|0|]
+// 91/104 (1): lumpedStraightPipe2.Relim = if lumpedStraightPipe2.rugosrel > 5e-5 then max(560.0 / lumpedStraightPipe2.rugosrel, 2e5) else 4000.0   [dynamic |0|0|0|0|]
 // 92/105 (1): lumpedStraightPipe2.Re = 4.0 * abs(lumpedStraightPipe2.Q) / (lumpedStraightPipe2.mu * lumpedStraightPipe2.Pw)   [dynamic |0|0|0|0|]
 // 93/106 (1): lumpedStraightPipe2.Pm = 0.5 * (lumpedStraightPipe2.C1.P + lumpedStraightPipe2.C2.P)   [dynamic |0|0|0|0|]
 // 94/107 (10): lumpedStraightPipe2.pro = ThermoSysPro.Properties.Fluid.Ph(lumpedStraightPipe2.Pm, lumpedStraightPipe2.h, lumpedStraightPipe2.mode, lumpedStraightPipe2.fluid)   [dynamic |0|0|0|0|]
@@ -358,11 +358,11 @@ getErrorString();
 // 115/137 (1): lumpedStraightPipe3.h = lumpedStraightPipe3.C1.h   [dynamic |0|0|0|0|]
 // 116/138 (1): lumpedStraightPipe3.Q = lumpedStraightPipe3.C1.Q   [dynamic |0|0|0|0|]
 // 117/139 (1): lumpedStraightPipe3.h = ThermoSysPro.Functions.SmoothCond(lumpedStraightPipe3.Q, lumpedStraightPipe3.C1.h_vol, lumpedStraightPipe3.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
-// 118/140 (1): lumpedStraightPipe3.deltaP = lumpedStraightPipe3.deltaPf + 9.806649999999999 * lumpedStraightPipe3.rho * (lumpedStraightPipe3.z2 - lumpedStraightPipe3.z1)   [dynamic |0|0|0|0|]
+// 118/140 (1): lumpedStraightPipe3.deltaP = lumpedStraightPipe3.deltaPf + 9.80665 * lumpedStraightPipe3.rho * (lumpedStraightPipe3.z2 - lumpedStraightPipe3.z1)   [dynamic |0|0|0|0|]
 // 119/141 (1): lumpedStraightPipe3.deltaPf = 0.5 * lumpedStraightPipe3.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe3.Q, lumpedStraightPipe3.eps) / (lumpedStraightPipe3.A ^ 2.0 * lumpedStraightPipe3.rho)   [dynamic |0|0|0|0|]
 // 120/142 (1): lumpedStraightPipe3.khi = lumpedStraightPipe3.lam * lumpedStraightPipe3.L / lumpedStraightPipe3.D   [dynamic |0|0|0|0|]
 // 121/143 (1): lumpedStraightPipe3.lam = lumpedStraightPipe3.lambda   [dynamic |0|0|0|0|]
-// 122/144 (1): lumpedStraightPipe3.Relim = 5600000.0   [dynamic |0|0|0|0|]
+// 122/144 (1): lumpedStraightPipe3.Relim = if lumpedStraightPipe3.rugosrel > 5e-5 then max(560.0 / lumpedStraightPipe3.rugosrel, 2e5) else 4000.0   [dynamic |0|0|0|0|]
 // 123/145 (1): lumpedStraightPipe3.Re = 4.0 * abs(lumpedStraightPipe3.Q) / (lumpedStraightPipe3.mu * lumpedStraightPipe3.Pw)   [dynamic |0|0|0|0|]
 // 124/146 (1): lumpedStraightPipe3.Pm = 0.5 * (lumpedStraightPipe3.C1.P + lumpedStraightPipe3.C2.P)   [dynamic |0|0|0|0|]
 // 125/147 (10): lumpedStraightPipe3.pro = ThermoSysPro.Properties.Fluid.Ph(lumpedStraightPipe3.Pm, lumpedStraightPipe3.h, lumpedStraightPipe3.mode, lumpedStraightPipe3.fluid)   [dynamic |0|0|0|0|]
@@ -375,11 +375,11 @@ getErrorString();
 // 132/163 (1): lumpedStraightPipe1.h = lumpedStraightPipe1.C1.h   [dynamic |0|0|0|0|]
 // 133/164 (1): lumpedStraightPipe1.Q = lumpedStraightPipe1.C1.Q   [dynamic |0|0|0|0|]
 // 134/165 (1): lumpedStraightPipe1.h = ThermoSysPro.Functions.SmoothCond(lumpedStraightPipe1.Q, lumpedStraightPipe1.C1.h_vol, lumpedStraightPipe1.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
-// 135/166 (1): lumpedStraightPipe1.deltaP = lumpedStraightPipe1.deltaPf + 9.806649999999999 * lumpedStraightPipe1.rho * (lumpedStraightPipe1.z2 - lumpedStraightPipe1.z1)   [dynamic |0|0|0|0|]
+// 135/166 (1): lumpedStraightPipe1.deltaP = lumpedStraightPipe1.deltaPf + 9.80665 * lumpedStraightPipe1.rho * (lumpedStraightPipe1.z2 - lumpedStraightPipe1.z1)   [dynamic |0|0|0|0|]
 // 136/167 (1): lumpedStraightPipe1.deltaPf = 0.5 * lumpedStraightPipe1.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe1.Q, lumpedStraightPipe1.eps) / (lumpedStraightPipe1.A ^ 2.0 * lumpedStraightPipe1.rho)   [dynamic |0|0|0|0|]
 // 137/168 (1): lumpedStraightPipe1.khi = lumpedStraightPipe1.lam * lumpedStraightPipe1.L / lumpedStraightPipe1.D   [dynamic |0|0|0|0|]
 // 138/169 (1): lumpedStraightPipe1.lam = lumpedStraightPipe1.lambda   [dynamic |0|0|0|0|]
-// 139/170 (1): lumpedStraightPipe1.Relim = 5600000.0   [dynamic |0|0|0|0|]
+// 139/170 (1): lumpedStraightPipe1.Relim = if lumpedStraightPipe1.rugosrel > 5e-5 then max(560.0 / lumpedStraightPipe1.rugosrel, 2e5) else 4000.0   [dynamic |0|0|0|0|]
 // 140/171 (1): lumpedStraightPipe1.Re = 4.0 * abs(lumpedStraightPipe1.Q) / (lumpedStraightPipe1.mu * lumpedStraightPipe1.Pw)   [dynamic |0|0|0|0|]
 // 141/172 (1): lumpedStraightPipe1.Pm = 0.5 * (lumpedStraightPipe1.C1.P + lumpedStraightPipe1.C2.P)   [dynamic |0|0|0|0|]
 // 142/173 (10): lumpedStraightPipe1.pro = ThermoSysPro.Properties.Fluid.Ph(lumpedStraightPipe1.Pm, lumpedStraightPipe1.h, lumpedStraightPipe1.mode, lumpedStraightPipe1.fluid)   [dynamic |0|0|0|0|]
@@ -623,10 +623,10 @@ getErrorString();
 // Standard BLT of the original model:(207)
 // ============================================================
 //
-// 207: new_Sink1.h0: (5/5): (1): new_Sink1.h0 = 100000.0
-// 206: sourceQ2.h0: (4/4): (1): sourceQ2.h0 = 1000000.0
+// 207: new_Sink1.h0: (5/5): (1): new_Sink1.h0 = 1e5
+// 206: sourceQ2.h0: (4/4): (1): sourceQ2.h0 = 1e6
 // 205: sourceQ2.Q0: (3/3): (1): sourceQ2.Q0 = 100.0
-// 204: sourceQ1.h0: (2/2): (1): sourceQ1.h0 = 1000000.0
+// 204: sourceQ1.h0: (2/2): (1): sourceQ1.h0 = 1e6
 // 203: sourceQ1.Q0: (1/1): (1): sourceQ1.Q0 = 100.0
 // 202: staticDrum1.T: (79/92): (1): staticDrum1.T = staticDrum1.lsat.T
 // 201: staticDrum1.P: (76/78): (14): (staticDrum1.lsat, staticDrum1.vsat) = ThermoSysPro.Properties.WaterSteam.IF97.Water_sat_P(staticDrum1.P)
@@ -635,7 +635,7 @@ getErrorString();
 // 198: staticDrum1.Ce_eva.P: (60/60): (1): staticDrum1.P = staticDrum1.Ce_eva.P
 // 197: staticDrum1.Ce_eva.h_vol: (67/67): (1): staticDrum1.Ce_eva.h_vol = staticDrum1.hl
 // 196: staticDrum1.Ce_eva.Q: (46/46): (1): staticDrum1.Ce_eva.Q = 0.0
-// 195: staticDrum1.Ce_eva.h: (47/47): (1): staticDrum1.Ce_eva.h = 100000.0
+// 195: staticDrum1.Ce_eva.h: (47/47): (1): staticDrum1.Ce_eva.h = 1e5
 // 194: staticDrum1.Ce_eva.a: (151/191): (1): staticDrum1.Ce_eva.a = true
 // 193: staticDrum1.Ce_eva.b: (48/48): (1): staticDrum1.Ce_eva.b = true
 // 192: staticDrum1.Ce_eco.P: (61/61): (1): staticDrum1.P = staticDrum1.Ce_eco.P
@@ -653,19 +653,19 @@ getErrorString();
 // 180: staticDrum1.Cs_eva.P: (62/62): (1): staticDrum1.P = staticDrum1.Cs_eva.P
 // 179: staticDrum1.Cs_eva.h_vol: (72/72): (1): staticDrum1.Cs_eva.h_vol = staticDrum1.hl
 // 178: staticDrum1.Cs_eva.Q: (49/49): (1): staticDrum1.Cs_eva.Q = 0.0
-// 177: staticDrum1.Cs_eva.h: (50/50): (1): staticDrum1.Cs_eva.h = 100000.0
+// 177: staticDrum1.Cs_eva.h: (50/50): (1): staticDrum1.Cs_eva.h = 1e5
 // 176: staticDrum1.Cs_eva.a: (51/51): (1): staticDrum1.Cs_eva.a = true
 // 175: staticDrum1.Cs_eva.b: (154/194): (1): staticDrum1.Cs_eva.b = true
 // 174: staticDrum1.Cs_sur.P: (65/65): (1): staticDrum1.P = staticDrum1.Cs_sur.P
 // 173: staticDrum1.Cs_sur.h_vol: (73/73): (1): staticDrum1.Cs_sur.h_vol = (1.0 - staticDrum1.x) * staticDrum1.hl + staticDrum1.x * staticDrum1.hv
 // 172: staticDrum1.Cs_sur.Q: (55/55): (1): staticDrum1.Cs_sur.Q = 0.0
-// 171: staticDrum1.Cs_sur.h: (56/56): (1): staticDrum1.Cs_sur.h = 100000.0
+// 171: staticDrum1.Cs_sur.h: (56/56): (1): staticDrum1.Cs_sur.h = 1e5
 // 170: staticDrum1.Cs_sur.a: (57/57): (1): staticDrum1.Cs_sur.a = true
 // 169: staticDrum1.Cs_sur.b: (155/195): (1): staticDrum1.Cs_sur.b = true
 // 168: staticDrum1.Cs_purg.P: (63/63): (1): staticDrum1.P = staticDrum1.Cs_purg.P
 // 167: staticDrum1.Cs_purg.h_vol: (70/70): (1): staticDrum1.Cs_purg.h_vol = staticDrum1.hl
 // 166: staticDrum1.Cs_purg.Q: (52/52): (1): staticDrum1.Cs_purg.Q = 0.0
-// 165: staticDrum1.Cs_purg.h: (53/53): (1): staticDrum1.Cs_purg.h = 100000.0
+// 165: staticDrum1.Cs_purg.h: (53/53): (1): staticDrum1.Cs_purg.h = 1e5
 // 164: staticDrum1.Cs_purg.a: (54/54): (1): staticDrum1.Cs_purg.a = true
 // 163: staticDrum1.Cs_purg.b: (156/196): (1): staticDrum1.Cs_purg.b = true
 // 162: staticDrum1.Ce_steam.P: (58/58): (1): staticDrum1.P = staticDrum1.Ce_steam.P
@@ -677,7 +677,7 @@ getErrorString();
 // 156: staticDrum1.Ce_sup.P: (59/59): (1): staticDrum1.P = staticDrum1.Ce_sup.P
 // 155: staticDrum1.Ce_sup.h_vol: (66/66): (1): staticDrum1.Ce_sup.h_vol = staticDrum1.hl
 // 154: staticDrum1.Ce_sup.Q: (43/43): (1): staticDrum1.Ce_sup.Q = 0.0
-// 153: staticDrum1.Ce_sup.h: (44/44): (1): staticDrum1.Ce_sup.h = 100000.0
+// 153: staticDrum1.Ce_sup.h: (44/44): (1): staticDrum1.Ce_sup.h = 1e5
 // 152: staticDrum1.Ce_sup.a: (158/198): (1): staticDrum1.Ce_sup.a = true
 // 151: staticDrum1.Ce_sup.b: (45/45): (1): staticDrum1.Ce_sup.b = true
 // 150: staticDrum1.lsat.P: (76/79): (14): (staticDrum1.lsat, staticDrum1.vsat) = ThermoSysPro.Properties.WaterSteam.IF97.Water_sat_P(staticDrum1.P)
@@ -698,10 +698,10 @@ getErrorString();
 // 135: staticDrum1.Cth.W: (42/42): (1): staticDrum1.Cth.W = 0.0
 // 134: lumpedStraightPipe2.khi: (89/102): (1): lumpedStraightPipe2.khi = lumpedStraightPipe2.lam * lumpedStraightPipe2.L / lumpedStraightPipe2.D
 // 133: lumpedStraightPipe2.deltaPf: (88/101): (1): lumpedStraightPipe2.deltaPf = 0.5 * lumpedStraightPipe2.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe2.Q, lumpedStraightPipe2.eps) / (lumpedStraightPipe2.A ^ 2.0 * lumpedStraightPipe2.rho)
-// 132: lumpedStraightPipe2.deltaP: (87/100): (1): lumpedStraightPipe2.deltaP = lumpedStraightPipe2.deltaPf + 9.806649999999999 * lumpedStraightPipe2.rho * (lumpedStraightPipe2.z2 - lumpedStraightPipe2.z1)
+// 132: lumpedStraightPipe2.deltaP: (87/100): (1): lumpedStraightPipe2.deltaP = lumpedStraightPipe2.deltaPf + 9.80665 * lumpedStraightPipe2.rho * (lumpedStraightPipe2.z2 - lumpedStraightPipe2.z1)
 // 131: lumpedStraightPipe2.Q: (85/98): (1): lumpedStraightPipe2.Q = lumpedStraightPipe2.C1.Q
 // 130: lumpedStraightPipe2.Re: (92/105): (1): lumpedStraightPipe2.Re = 4.0 * abs(lumpedStraightPipe2.Q) / (lumpedStraightPipe2.mu * lumpedStraightPipe2.Pw)
-// 129: lumpedStraightPipe2.Relim: (91/104): (1): lumpedStraightPipe2.Relim = 5600000.0
+// 129: lumpedStraightPipe2.Relim: (91/104): (1): lumpedStraightPipe2.Relim = if lumpedStraightPipe2.rugosrel > 5e-5 then max(560.0 / lumpedStraightPipe2.rugosrel, 2e5) else 4000.0
 // 128: lumpedStraightPipe2.lam: (90/103): (1): lumpedStraightPipe2.lam = lumpedStraightPipe2.lambda
 // 127: lumpedStraightPipe2.rho: (96/118): (1): lumpedStraightPipe2.rho = lumpedStraightPipe2.pro.d
 // 126: lumpedStraightPipe2.mu: (97/119): (1): lumpedStraightPipe2.mu = ThermoSysPro.Properties.Fluid.DynamicViscosity_Ph(lumpedStraightPipe2.Pm, lumpedStraightPipe2.h, lumpedStraightPipe2.fluid, lumpedStraightPipe2.mode, 0.1, 0.1, 0.1, 0.0)
@@ -754,10 +754,10 @@ getErrorString();
 // 79: sourceQ2.C.b: (162/202): (1): sourceQ2.C.b = true
 // 78: lumpedStraightPipe3.khi: (120/142): (1): lumpedStraightPipe3.khi = lumpedStraightPipe3.lam * lumpedStraightPipe3.L / lumpedStraightPipe3.D
 // 77: lumpedStraightPipe3.deltaPf: (119/141): (1): lumpedStraightPipe3.deltaPf = 0.5 * lumpedStraightPipe3.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe3.Q, lumpedStraightPipe3.eps) / (lumpedStraightPipe3.A ^ 2.0 * lumpedStraightPipe3.rho)
-// 76: lumpedStraightPipe3.deltaP: (118/140): (1): lumpedStraightPipe3.deltaP = lumpedStraightPipe3.deltaPf + 9.806649999999999 * lumpedStraightPipe3.rho * (lumpedStraightPipe3.z2 - lumpedStraightPipe3.z1)
+// 76: lumpedStraightPipe3.deltaP: (118/140): (1): lumpedStraightPipe3.deltaP = lumpedStraightPipe3.deltaPf + 9.80665 * lumpedStraightPipe3.rho * (lumpedStraightPipe3.z2 - lumpedStraightPipe3.z1)
 // 75: lumpedStraightPipe3.Q: (116/138): (1): lumpedStraightPipe3.Q = lumpedStraightPipe3.C1.Q
 // 74: lumpedStraightPipe3.Re: (123/145): (1): lumpedStraightPipe3.Re = 4.0 * abs(lumpedStraightPipe3.Q) / (lumpedStraightPipe3.mu * lumpedStraightPipe3.Pw)
-// 73: lumpedStraightPipe3.Relim: (122/144): (1): lumpedStraightPipe3.Relim = 5600000.0
+// 73: lumpedStraightPipe3.Relim: (122/144): (1): lumpedStraightPipe3.Relim = if lumpedStraightPipe3.rugosrel > 5e-5 then max(560.0 / lumpedStraightPipe3.rugosrel, 2e5) else 4000.0
 // 72: lumpedStraightPipe3.lam: (121/143): (1): lumpedStraightPipe3.lam = lumpedStraightPipe3.lambda
 // 71: lumpedStraightPipe3.rho: (127/158): (1): lumpedStraightPipe3.rho = lumpedStraightPipe3.pro.d
 // 70: lumpedStraightPipe3.mu: (128/159): (1): lumpedStraightPipe3.mu = ThermoSysPro.Properties.Fluid.DynamicViscosity_Ph(lumpedStraightPipe3.Pm, lumpedStraightPipe3.h, lumpedStraightPipe3.fluid, lumpedStraightPipe3.mode, 0.1, 0.1, 0.1, 0.0)
@@ -787,11 +787,11 @@ getErrorString();
 // 46: lumpedStraightPipe3.pro.duhp: (125/155): (10): lumpedStraightPipe3.pro = ThermoSysPro.Properties.Fluid.Ph(lumpedStraightPipe3.Pm, lumpedStraightPipe3.h, lumpedStraightPipe3.mode, lumpedStraightPipe3.fluid)
 // 45: lumpedStraightPipe3.pro.x: (125/156): (10): lumpedStraightPipe3.pro = ThermoSysPro.Properties.Fluid.Ph(lumpedStraightPipe3.Pm, lumpedStraightPipe3.h, lumpedStraightPipe3.mode, lumpedStraightPipe3.fluid)
 // 44: lumpedStraightPipe1.khi: (137/168): (1): lumpedStraightPipe1.khi = lumpedStraightPipe1.lam * lumpedStraightPipe1.L / lumpedStraightPipe1.D
-// 43: lumpedStraightPipe1.deltaPf: (135/166): (1): lumpedStraightPipe1.deltaP = lumpedStraightPipe1.deltaPf + 9.806649999999999 * lumpedStraightPipe1.rho * (lumpedStraightPipe1.z2 - lumpedStraightPipe1.z1)
+// 43: lumpedStraightPipe1.deltaPf: (135/166): (1): lumpedStraightPipe1.deltaP = lumpedStraightPipe1.deltaPf + 9.80665 * lumpedStraightPipe1.rho * (lumpedStraightPipe1.z2 - lumpedStraightPipe1.z1)
 // 42: lumpedStraightPipe1.deltaP: (131/162): (1): lumpedStraightPipe1.C1.P - lumpedStraightPipe1.C2.P = lumpedStraightPipe1.deltaP
 // 41: lumpedStraightPipe1.Q: (133/164): (1): lumpedStraightPipe1.Q = lumpedStraightPipe1.C1.Q
 // 40: lumpedStraightPipe1.Re: (140/171): (1): lumpedStraightPipe1.Re = 4.0 * abs(lumpedStraightPipe1.Q) / (lumpedStraightPipe1.mu * lumpedStraightPipe1.Pw)
-// 39: lumpedStraightPipe1.Relim: (139/170): (1): lumpedStraightPipe1.Relim = 5600000.0
+// 39: lumpedStraightPipe1.Relim: (139/170): (1): lumpedStraightPipe1.Relim = if lumpedStraightPipe1.rugosrel > 5e-5 then max(560.0 / lumpedStraightPipe1.rugosrel, 2e5) else 4000.0
 // 38: lumpedStraightPipe1.lam: (138/169): (1): lumpedStraightPipe1.lam = lumpedStraightPipe1.lambda
 // 37: lumpedStraightPipe1.rho: (136/167): (1): lumpedStraightPipe1.deltaPf = 0.5 * lumpedStraightPipe1.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe1.Q, lumpedStraightPipe1.eps) / (lumpedStraightPipe1.A ^ 2.0 * lumpedStraightPipe1.rho)
 // 36: lumpedStraightPipe1.mu: (145/185): (1): lumpedStraightPipe1.mu = ThermoSysPro.Properties.Fluid.DynamicViscosity_Ph(lumpedStraightPipe1.Pm, lumpedStraightPipe1.h, lumpedStraightPipe1.fluid, lumpedStraightPipe1.mode, 0.1, 0.1, 0.1, 0.0)
@@ -868,10 +868,10 @@ getErrorString();
 // 181: staticDrum1.Cs_sup.b: (153/193): (1): staticDrum1.Cs_sup.b = true
 // 188: staticDrum1.Ce_eco.a: (152/192): (1): staticDrum1.Ce_eco.a = true
 // 194: staticDrum1.Ce_eva.a: (151/191): (1): staticDrum1.Ce_eva.a = true
-// 207: new_Sink1.h0: (5/5): (1): new_Sink1.h0 = 100000.0
-// 206: sourceQ2.h0: (4/4): (1): sourceQ2.h0 = 1000000.0
+// 207: new_Sink1.h0: (5/5): (1): new_Sink1.h0 = 1e5
+// 206: sourceQ2.h0: (4/4): (1): sourceQ2.h0 = 1e6
 // 205: sourceQ2.Q0: (3/3): (1): sourceQ2.Q0 = 100.0
-// 204: sourceQ1.h0: (2/2): (1): sourceQ1.h0 = 1000000.0
+// 204: sourceQ1.h0: (2/2): (1): sourceQ1.h0 = 1e6
 // 203: sourceQ1.Q0: (1/1): (1): sourceQ1.Q0 = 100.0
 //
 //
@@ -922,38 +922,38 @@ getErrorString();
 // ========================================
 // 1: new_Sink1.C.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 2: new_Sink1.C.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 3: new_Sink1.C.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 3: new_Sink1.C.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 4: new_Sink1.C.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 5: new_Sink1.C.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 6: new_Sink1.C.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 5: new_Sink1.C.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 6: new_Sink1.C.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 7: new_Sink1.ISpecificEnthalpy.signal:VARIABLE(flow=false )  type: Real
 // 8: new_Sink1.h:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy" type: Real
 // 9: new_Sink1.Q:VARIABLE(unit = "kg/s" )  "Mass flow rate" type: Real
-// 10: new_Sink1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure" type: Real
+// 10: new_Sink1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid pressure" type: Real
 // 11: lumpedStraightPipe1.pro.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
 // 12: lumpedStraightPipe1.pro.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 13: lumpedStraightPipe1.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 14: lumpedStraightPipe1.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 15: lumpedStraightPipe1.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 16: lumpedStraightPipe1.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 17: lumpedStraightPipe1.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 18: lumpedStraightPipe1.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 19: lumpedStraightPipe1.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 16: lumpedStraightPipe1.pro.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 17: lumpedStraightPipe1.pro.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 18: lumpedStraightPipe1.pro.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 19: lumpedStraightPipe1.pro.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 20: lumpedStraightPipe1.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 21: lumpedStraightPipe1.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 22: lumpedStraightPipe1.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 23: lumpedStraightPipe1.C2.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 23: lumpedStraightPipe1.C2.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 24: lumpedStraightPipe1.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 25: lumpedStraightPipe1.C2.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 26: lumpedStraightPipe1.C2.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 25: lumpedStraightPipe1.C2.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 26: lumpedStraightPipe1.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 27: lumpedStraightPipe1.C1.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 28: lumpedStraightPipe1.C1.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 29: lumpedStraightPipe1.C1.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 29: lumpedStraightPipe1.C1.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 30: lumpedStraightPipe1.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 31: lumpedStraightPipe1.C1.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 32: lumpedStraightPipe1.C1.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 31: lumpedStraightPipe1.C1.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 32: lumpedStraightPipe1.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 33: lumpedStraightPipe1.h:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy" type: Real
-// 34: lumpedStraightPipe1.Pm:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Fluid average pressure" type: Real
+// 34: lumpedStraightPipe1.Pm:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid average pressure" type: Real
 // 35: lumpedStraightPipe1.T:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
 // 36: lumpedStraightPipe1.mu:VARIABLE(min = 0.0 unit = "Pa.s" )  "Fluid dynamic viscosity" type: Real
 // 37: lumpedStraightPipe1.rho:VARIABLE(min = 0.0 unit = "kg/m3" )  "Fluid density" type: Real
@@ -961,33 +961,33 @@ getErrorString();
 // 39: lumpedStraightPipe1.Relim:VARIABLE(unit = "1" )  "Limit Reynolds number" type: Real
 // 40: lumpedStraightPipe1.Re:VARIABLE(unit = "1" )  "Reynolds number" type: Real
 // 41: lumpedStraightPipe1.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 42: lumpedStraightPipe1.deltaP:VARIABLE(min = -1000000000.0 max = 1000000000.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Total pressure loss" type: Real
-// 43: lumpedStraightPipe1.deltaPf:VARIABLE(min = -1000000000.0 max = 1000000000.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Friction pressure loss" type: Real
+// 42: lumpedStraightPipe1.deltaP:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Total pressure loss" type: Real
+// 43: lumpedStraightPipe1.deltaPf:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Friction pressure loss" type: Real
 // 44: lumpedStraightPipe1.khi:VARIABLE()  "Hydraulic pressure loss coefficient" type: Real
 // 45: lumpedStraightPipe3.pro.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
 // 46: lumpedStraightPipe3.pro.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 47: lumpedStraightPipe3.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 48: lumpedStraightPipe3.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 49: lumpedStraightPipe3.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 50: lumpedStraightPipe3.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 51: lumpedStraightPipe3.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 52: lumpedStraightPipe3.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 53: lumpedStraightPipe3.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 50: lumpedStraightPipe3.pro.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 51: lumpedStraightPipe3.pro.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 52: lumpedStraightPipe3.pro.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 53: lumpedStraightPipe3.pro.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 54: lumpedStraightPipe3.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 55: lumpedStraightPipe3.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 56: lumpedStraightPipe3.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 57: lumpedStraightPipe3.C2.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 57: lumpedStraightPipe3.C2.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 58: lumpedStraightPipe3.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 59: lumpedStraightPipe3.C2.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 60: lumpedStraightPipe3.C2.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 59: lumpedStraightPipe3.C2.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 60: lumpedStraightPipe3.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 61: lumpedStraightPipe3.C1.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 62: lumpedStraightPipe3.C1.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 63: lumpedStraightPipe3.C1.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 63: lumpedStraightPipe3.C1.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 64: lumpedStraightPipe3.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 65: lumpedStraightPipe3.C1.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 66: lumpedStraightPipe3.C1.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 65: lumpedStraightPipe3.C1.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 66: lumpedStraightPipe3.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 67: lumpedStraightPipe3.h:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy" type: Real
-// 68: lumpedStraightPipe3.Pm:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Fluid average pressure" type: Real
+// 68: lumpedStraightPipe3.Pm:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid average pressure" type: Real
 // 69: lumpedStraightPipe3.T:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
 // 70: lumpedStraightPipe3.mu:VARIABLE(min = 0.0 unit = "Pa.s" )  "Fluid dynamic viscosity" type: Real
 // 71: lumpedStraightPipe3.rho:VARIABLE(min = 0.0 unit = "kg/m3" )  "Fluid density" type: Real
@@ -995,55 +995,55 @@ getErrorString();
 // 73: lumpedStraightPipe3.Relim:VARIABLE(unit = "1" )  "Limit Reynolds number" type: Real
 // 74: lumpedStraightPipe3.Re:VARIABLE(unit = "1" )  "Reynolds number" type: Real
 // 75: lumpedStraightPipe3.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 76: lumpedStraightPipe3.deltaP:VARIABLE(min = -1000000000.0 max = 1000000000.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Total pressure loss" type: Real
-// 77: lumpedStraightPipe3.deltaPf:VARIABLE(min = -1000000000.0 max = 1000000000.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Friction pressure loss" type: Real
+// 76: lumpedStraightPipe3.deltaP:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Total pressure loss" type: Real
+// 77: lumpedStraightPipe3.deltaPf:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Friction pressure loss" type: Real
 // 78: lumpedStraightPipe3.khi:VARIABLE()  "Hydraulic pressure loss coefficient" type: Real
 // 79: sourceQ2.C.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 80: sourceQ2.C.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 81: sourceQ2.C.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 81: sourceQ2.C.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 82: sourceQ2.C.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 83: sourceQ2.C.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 84: sourceQ2.C.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 83: sourceQ2.C.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 84: sourceQ2.C.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 85: sourceQ2.ISpecificEnthalpy.signal:VARIABLE(flow=false )  type: Real
 // 86: sourceQ2.IMassFlow.signal:VARIABLE(flow=false )  type: Real
 // 87: sourceQ2.h:VARIABLE(unit = "J/kg" protected = true )  "Fluid specific enthalpy" type: Real
 // 88: sourceQ2.Q:VARIABLE(unit = "kg/s" protected = true )  "Mass flow rate" type: Real
-// 89: sourceQ2.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 protected = true )  "Fluid pressure" type: Real
+// 89: sourceQ2.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 protected = true )  "Fluid pressure" type: Real
 // 90: sourceQ1.C.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 91: sourceQ1.C.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 92: sourceQ1.C.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 92: sourceQ1.C.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 93: sourceQ1.C.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 94: sourceQ1.C.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 95: sourceQ1.C.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 94: sourceQ1.C.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 95: sourceQ1.C.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 96: sourceQ1.ISpecificEnthalpy.signal:VARIABLE(flow=false )  type: Real
 // 97: sourceQ1.IMassFlow.signal:VARIABLE(flow=false )  type: Real
 // 98: sourceQ1.h:VARIABLE(unit = "J/kg" protected = true )  "Fluid specific enthalpy" type: Real
 // 99: sourceQ1.Q:VARIABLE(unit = "kg/s" protected = true )  "Mass flow rate" type: Real
-// 100: sourceQ1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 protected = true )  "Fluid pressure" type: Real
+// 100: sourceQ1.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 protected = true )  "Fluid pressure" type: Real
 // 101: lumpedStraightPipe2.pro.x:VARIABLE(unit = "1" )  "Vapor mass fraction" type: Real
 // 102: lumpedStraightPipe2.pro.duhp:VARIABLE(unit = "1" )  "Derivative of specific inner energy wrt. specific enthalpy at constant pressure" type: Real
 // 103: lumpedStraightPipe2.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 104: lumpedStraightPipe2.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 105: lumpedStraightPipe2.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 106: lumpedStraightPipe2.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
-// 107: lumpedStraightPipe2.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
-// 108: lumpedStraightPipe2.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 109: lumpedStraightPipe2.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 106: lumpedStraightPipe2.pro.cp:VARIABLE(min = 1e-9 max = 1e60 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 107: lumpedStraightPipe2.pro.s:VARIABLE(min = -1e6 max = 1e6 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
+// 108: lumpedStraightPipe2.pro.u:VARIABLE(min = -1e8 max = 1e8 unit = "J/kg" nominal = 1e6 )  "Specific inner energy" type: Real
+// 109: lumpedStraightPipe2.pro.d:VARIABLE(min = 1e-9 max = 1e5 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 110: lumpedStraightPipe2.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 111: lumpedStraightPipe2.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 112: lumpedStraightPipe2.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 113: lumpedStraightPipe2.C2.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 113: lumpedStraightPipe2.C2.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 114: lumpedStraightPipe2.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 115: lumpedStraightPipe2.C2.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 116: lumpedStraightPipe2.C2.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 115: lumpedStraightPipe2.C2.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 116: lumpedStraightPipe2.C2.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 117: lumpedStraightPipe2.C1.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 118: lumpedStraightPipe2.C1.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 119: lumpedStraightPipe2.C1.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 119: lumpedStraightPipe2.C1.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 120: lumpedStraightPipe2.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 121: lumpedStraightPipe2.C1.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 122: lumpedStraightPipe2.C1.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 121: lumpedStraightPipe2.C1.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 122: lumpedStraightPipe2.C1.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 123: lumpedStraightPipe2.h:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy" type: Real
-// 124: lumpedStraightPipe2.Pm:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Fluid average pressure" type: Real
+// 124: lumpedStraightPipe2.Pm:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Fluid average pressure" type: Real
 // 125: lumpedStraightPipe2.T:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
 // 126: lumpedStraightPipe2.mu:VARIABLE(min = 0.0 unit = "Pa.s" )  "Fluid dynamic viscosity" type: Real
 // 127: lumpedStraightPipe2.rho:VARIABLE(min = 0.0 unit = "kg/m3" )  "Fluid density" type: Real
@@ -1051,8 +1051,8 @@ getErrorString();
 // 129: lumpedStraightPipe2.Relim:VARIABLE(unit = "1" )  "Limit Reynolds number" type: Real
 // 130: lumpedStraightPipe2.Re:VARIABLE(unit = "1" )  "Reynolds number" type: Real
 // 131: lumpedStraightPipe2.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 132: lumpedStraightPipe2.deltaP:VARIABLE(min = -1000000000.0 max = 1000000000.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Total pressure loss" type: Real
-// 133: lumpedStraightPipe2.deltaPf:VARIABLE(min = -1000000000.0 max = 1000000000.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Friction pressure loss" type: Real
+// 132: lumpedStraightPipe2.deltaP:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Total pressure loss" type: Real
+// 133: lumpedStraightPipe2.deltaPf:VARIABLE(min = -1e9 max = 1e9 start = 1e5 unit = "Pa" nominal = 1e5 )  "Friction pressure loss" type: Real
 // 134: lumpedStraightPipe2.khi:VARIABLE()  "Hydraulic pressure loss coefficient" type: Real
 // 135: staticDrum1.Cth.W:VARIABLE(flow=true unit = "W" )  "Thermal flow rate. Positive when going into the component" type: Real
 // 136: staticDrum1.Cth.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Temperature" type: Real
@@ -1062,65 +1062,65 @@ getErrorString();
 // 140: staticDrum1.vsat.h:VARIABLE(unit = "J/kg" )  "Specific enthalpy" type: Real
 // 141: staticDrum1.vsat.rho:VARIABLE(min = 0.0 unit = "kg/m3" )  "Density" type: Real
 // 142: staticDrum1.vsat.T:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Temperature" type: Real
-// 143: staticDrum1.vsat.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Pressure" type: Real
+// 143: staticDrum1.vsat.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Pressure" type: Real
 // 144: staticDrum1.lsat.cv:VARIABLE(unit = "J/(kg.K)" )  "Specific heat capacity at constant volume" type: Real
 // 145: staticDrum1.lsat.pt:VARIABLE()  "Derivative of pressure wrt. temperature" type: Real
 // 146: staticDrum1.lsat.cp:VARIABLE(unit = "J/(kg.K)" )  "Specific heat capacity at constant pressure" type: Real
 // 147: staticDrum1.lsat.h:VARIABLE(unit = "J/kg" )  "Specific enthalpy" type: Real
 // 148: staticDrum1.lsat.rho:VARIABLE(min = 0.0 unit = "kg/m3" )  "Density" type: Real
 // 149: staticDrum1.lsat.T:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Temperature" type: Real
-// 150: staticDrum1.lsat.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 100000.0 )  "Pressure" type: Real
+// 150: staticDrum1.lsat.P:VARIABLE(min = 0.0 unit = "Pa" nominal = 1e5 )  "Pressure" type: Real
 // 151: staticDrum1.Ce_sup.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 152: staticDrum1.Ce_sup.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 153: staticDrum1.Ce_sup.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 153: staticDrum1.Ce_sup.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 154: staticDrum1.Ce_sup.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 155: staticDrum1.Ce_sup.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 156: staticDrum1.Ce_sup.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 155: staticDrum1.Ce_sup.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 156: staticDrum1.Ce_sup.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 157: staticDrum1.Ce_steam.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 158: staticDrum1.Ce_steam.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 159: staticDrum1.Ce_steam.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 159: staticDrum1.Ce_steam.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 160: staticDrum1.Ce_steam.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 161: staticDrum1.Ce_steam.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 162: staticDrum1.Ce_steam.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 161: staticDrum1.Ce_steam.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 162: staticDrum1.Ce_steam.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 163: staticDrum1.Cs_purg.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 164: staticDrum1.Cs_purg.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 165: staticDrum1.Cs_purg.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 165: staticDrum1.Cs_purg.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 166: staticDrum1.Cs_purg.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 167: staticDrum1.Cs_purg.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 168: staticDrum1.Cs_purg.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 167: staticDrum1.Cs_purg.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 168: staticDrum1.Cs_purg.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 169: staticDrum1.Cs_sur.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 170: staticDrum1.Cs_sur.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 171: staticDrum1.Cs_sur.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 171: staticDrum1.Cs_sur.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 172: staticDrum1.Cs_sur.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 173: staticDrum1.Cs_sur.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 174: staticDrum1.Cs_sur.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 173: staticDrum1.Cs_sur.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 174: staticDrum1.Cs_sur.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 175: staticDrum1.Cs_eva.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 176: staticDrum1.Cs_eva.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 177: staticDrum1.Cs_eva.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 177: staticDrum1.Cs_eva.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 178: staticDrum1.Cs_eva.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 179: staticDrum1.Cs_eva.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 180: staticDrum1.Cs_eva.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 179: staticDrum1.Cs_eva.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 180: staticDrum1.Cs_eva.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 181: staticDrum1.Cs_sup.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 182: staticDrum1.Cs_sup.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 183: staticDrum1.Cs_sup.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 183: staticDrum1.Cs_sup.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 184: staticDrum1.Cs_sup.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 185: staticDrum1.Cs_sup.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 186: staticDrum1.Cs_sup.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 185: staticDrum1.Cs_sup.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 186: staticDrum1.Cs_sup.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 187: staticDrum1.Ce_eco.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 188: staticDrum1.Ce_eco.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 189: staticDrum1.Ce_eco.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 189: staticDrum1.Ce_eco.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 190: staticDrum1.Ce_eco.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 191: staticDrum1.Ce_eco.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 192: staticDrum1.Ce_eco.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
+// 191: staticDrum1.Ce_eco.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 192: staticDrum1.Ce_eco.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
 // 193: staticDrum1.Ce_eva.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 194: staticDrum1.Ce_eva.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
-// 195: staticDrum1.Ce_eva.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
+// 195: staticDrum1.Ce_eva.h:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
 // 196: staticDrum1.Ce_eva.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 197: staticDrum1.Ce_eva.h_vol:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
-// 198: staticDrum1.Ce_eva.P:VARIABLE(flow=false min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure in the control volume" type: Real
-// 199: staticDrum1.hv:VARIABLE(start = 2800000.0 unit = "J/kg" )  "Gas phase specific enthalpy" type: Real
-// 200: staticDrum1.hl:VARIABLE(start = 100000.0 unit = "J/kg" )  "Liquid phase specific enthalpy" type: Real
-// 201: staticDrum1.P:VARIABLE(min = 0.0 start = 1000000.0 unit = "Pa" nominal = 100000.0 )  "Fluid pressure" type: Real
+// 197: staticDrum1.Ce_eva.h_vol:VARIABLE(flow=false start = 1e5 unit = "J/kg" )  "Fluid specific enthalpy in the control volume" type: Real
+// 198: staticDrum1.Ce_eva.P:VARIABLE(flow=false min = 0.0 start = 1e5 unit = "Pa" nominal = 1e5 )  "Fluid pressure in the control volume" type: Real
+// 199: staticDrum1.hv:VARIABLE(start = 2.8e6 unit = "J/kg" )  "Gas phase specific enthalpy" type: Real
+// 200: staticDrum1.hl:VARIABLE(start = 1e5 unit = "J/kg" )  "Liquid phase specific enthalpy" type: Real
+// 201: staticDrum1.P:VARIABLE(min = 0.0 start = 1e6 unit = "Pa" nominal = 1e5 )  "Fluid pressure" type: Real
 // 202: staticDrum1.T:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
 // 203: sourceQ1.Q0:VARIABLE(unit = "kg/s" )  "Mass flow (active if IMassFlow connector is not connected)" type: Real
 // 204: sourceQ1.h0:VARIABLE(unit = "J/kg" )  "Fluid specific enthalpy (active if IEnthalpy connector is not connected)" type: Real
@@ -1134,10 +1134,10 @@ getErrorString();
 // 1/1 (1): lumpedStraightPipe1.Q = 0.0   [binding |0|0|0|0|]
 // 2/2 (1): lumpedStraightPipe3.Q = 0.0   [binding |0|0|0|0|]
 // 3/3 (1): sourceQ1.Q0 = 100.0   [binding |0|0|0|0|]
-// 4/4 (1): sourceQ1.h0 = 1000000.0   [binding |0|0|0|0|]
+// 4/4 (1): sourceQ1.h0 = 1e6   [binding |0|0|0|0|]
 // 5/5 (1): sourceQ2.Q0 = 100.0   [binding |0|0|0|0|]
-// 6/6 (1): sourceQ2.h0 = 1000000.0   [binding |0|0|0|0|]
-// 7/7 (1): new_Sink1.h0 = 100000.0   [binding |0|0|0|0|]
+// 6/6 (1): sourceQ2.h0 = 1e6   [binding |0|0|0|0|]
+// 7/7 (1): new_Sink1.h0 = 1e5   [binding |0|0|0|0|]
 // 8/8 (1): sourceQ1.C.P = lumpedStraightPipe2.C1.P   [dynamic |0|0|0|0|]
 // 9/9 (1): sourceQ1.C.Q = lumpedStraightPipe2.C1.Q   [dynamic |0|0|0|0|]
 // 10/10 (1): sourceQ1.C.a = lumpedStraightPipe2.C1.a   [dynamic |0|0|0|0|]
@@ -1176,19 +1176,19 @@ getErrorString();
 // 43/43 (1): lumpedStraightPipe1.C2.h_vol = new_Sink1.C.h_vol   [dynamic |0|0|0|0|]
 // 44/44 (1): staticDrum1.Cth.W = 0.0   [dynamic |0|0|0|0|]
 // 45/45 (1): staticDrum1.Ce_sup.Q = 0.0   [dynamic |0|0|0|0|]
-// 46/46 (1): staticDrum1.Ce_sup.h = 100000.0   [dynamic |0|0|0|0|]
+// 46/46 (1): staticDrum1.Ce_sup.h = 1e5   [dynamic |0|0|0|0|]
 // 47/47 (1): staticDrum1.Ce_sup.b = true   [dynamic |0|0|0|0|]
 // 48/48 (1): staticDrum1.Ce_eva.Q = 0.0   [dynamic |0|0|0|0|]
-// 49/49 (1): staticDrum1.Ce_eva.h = 100000.0   [dynamic |0|0|0|0|]
+// 49/49 (1): staticDrum1.Ce_eva.h = 1e5   [dynamic |0|0|0|0|]
 // 50/50 (1): staticDrum1.Ce_eva.b = true   [dynamic |0|0|0|0|]
 // 51/51 (1): staticDrum1.Cs_eva.Q = 0.0   [dynamic |0|0|0|0|]
-// 52/52 (1): staticDrum1.Cs_eva.h = 100000.0   [dynamic |0|0|0|0|]
+// 52/52 (1): staticDrum1.Cs_eva.h = 1e5   [dynamic |0|0|0|0|]
 // 53/53 (1): staticDrum1.Cs_eva.a = true   [dynamic |0|0|0|0|]
 // 54/54 (1): staticDrum1.Cs_purg.Q = 0.0   [dynamic |0|0|0|0|]
-// 55/55 (1): staticDrum1.Cs_purg.h = 100000.0   [dynamic |0|0|0|0|]
+// 55/55 (1): staticDrum1.Cs_purg.h = 1e5   [dynamic |0|0|0|0|]
 // 56/56 (1): staticDrum1.Cs_purg.a = true   [dynamic |0|0|0|0|]
 // 57/57 (1): staticDrum1.Cs_sur.Q = 0.0   [dynamic |0|0|0|0|]
-// 58/58 (1): staticDrum1.Cs_sur.h = 100000.0   [dynamic |0|0|0|0|]
+// 58/58 (1): staticDrum1.Cs_sur.h = 1e5   [dynamic |0|0|0|0|]
 // 59/59 (1): staticDrum1.Cs_sur.a = true   [dynamic |0|0|0|0|]
 // 60/60 (1): staticDrum1.P = staticDrum1.Ce_steam.P   [dynamic |0|0|0|0|]
 // 61/61 (1): staticDrum1.P = staticDrum1.Ce_sup.P   [dynamic |0|0|0|0|]
@@ -1219,11 +1219,11 @@ getErrorString();
 // 86/99 (1): lumpedStraightPipe2.h = lumpedStraightPipe2.C1.h   [dynamic |0|0|0|0|]
 // 87/100 (1): lumpedStraightPipe2.Q = lumpedStraightPipe2.C1.Q   [dynamic |0|0|0|0|]
 // 88/101 (1): lumpedStraightPipe2.h = ThermoSysPro.Functions.SmoothCond(lumpedStraightPipe2.Q, lumpedStraightPipe2.C1.h_vol, lumpedStraightPipe2.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
-// 89/102 (1): lumpedStraightPipe2.deltaP = lumpedStraightPipe2.deltaPf + 9.806649999999999 * lumpedStraightPipe2.rho * (lumpedStraightPipe2.z2 - lumpedStraightPipe2.z1)   [dynamic |0|0|0|0|]
+// 89/102 (1): lumpedStraightPipe2.deltaP = lumpedStraightPipe2.deltaPf + 9.80665 * lumpedStraightPipe2.rho * (lumpedStraightPipe2.z2 - lumpedStraightPipe2.z1)   [dynamic |0|0|0|0|]
 // 90/103 (1): lumpedStraightPipe2.deltaPf = 0.5 * lumpedStraightPipe2.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe2.Q, lumpedStraightPipe2.eps) / (lumpedStraightPipe2.A ^ 2.0 * lumpedStraightPipe2.rho)   [dynamic |0|0|0|0|]
 // 91/104 (1): lumpedStraightPipe2.khi = lumpedStraightPipe2.lam * lumpedStraightPipe2.L / lumpedStraightPipe2.D   [dynamic |0|0|0|0|]
 // 92/105 (1): lumpedStraightPipe2.lam = lumpedStraightPipe2.lambda   [dynamic |0|0|0|0|]
-// 93/106 (1): lumpedStraightPipe2.Relim = 5600000.0   [dynamic |0|0|0|0|]
+// 93/106 (1): lumpedStraightPipe2.Relim = if lumpedStraightPipe2.rugosrel > 5e-5 then max(560.0 / lumpedStraightPipe2.rugosrel, 2e5) else 4000.0   [dynamic |0|0|0|0|]
 // 94/107 (1): lumpedStraightPipe2.Re = 4.0 * abs(lumpedStraightPipe2.Q) / (lumpedStraightPipe2.mu * lumpedStraightPipe2.Pw)   [dynamic |0|0|0|0|]
 // 95/108 (1): lumpedStraightPipe2.Pm = 0.5 * (lumpedStraightPipe2.C1.P + lumpedStraightPipe2.C2.P)   [dynamic |0|0|0|0|]
 // 96/109 (10): lumpedStraightPipe2.pro = ThermoSysPro.Properties.Fluid.Ph(lumpedStraightPipe2.Pm, lumpedStraightPipe2.h, lumpedStraightPipe2.mode, lumpedStraightPipe2.fluid)   [dynamic |0|0|0|0|]
@@ -1248,11 +1248,11 @@ getErrorString();
 // 115/137 (1): lumpedStraightPipe3.h = lumpedStraightPipe3.C1.h   [dynamic |0|0|0|0|]
 // 116/138 (1): lumpedStraightPipe3.Q = lumpedStraightPipe3.C1.Q   [dynamic |0|0|0|0|]
 // 117/139 (1): lumpedStraightPipe3.h = ThermoSysPro.Functions.SmoothCond(lumpedStraightPipe3.Q, lumpedStraightPipe3.C1.h_vol, lumpedStraightPipe3.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
-// 118/140 (1): lumpedStraightPipe3.deltaP = lumpedStraightPipe3.deltaPf + 9.806649999999999 * lumpedStraightPipe3.rho * (lumpedStraightPipe3.z2 - lumpedStraightPipe3.z1)   [dynamic |0|0|0|0|]
+// 118/140 (1): lumpedStraightPipe3.deltaP = lumpedStraightPipe3.deltaPf + 9.80665 * lumpedStraightPipe3.rho * (lumpedStraightPipe3.z2 - lumpedStraightPipe3.z1)   [dynamic |0|0|0|0|]
 // 119/141 (1): lumpedStraightPipe3.deltaPf = 0.5 * lumpedStraightPipe3.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe3.Q, lumpedStraightPipe3.eps) / (lumpedStraightPipe3.A ^ 2.0 * lumpedStraightPipe3.rho)   [dynamic |0|0|0|0|]
 // 120/142 (1): lumpedStraightPipe3.khi = lumpedStraightPipe3.lam * lumpedStraightPipe3.L / lumpedStraightPipe3.D   [dynamic |0|0|0|0|]
 // 121/143 (1): lumpedStraightPipe3.lam = lumpedStraightPipe3.lambda   [dynamic |0|0|0|0|]
-// 122/144 (1): lumpedStraightPipe3.Relim = 5600000.0   [dynamic |0|0|0|0|]
+// 122/144 (1): lumpedStraightPipe3.Relim = if lumpedStraightPipe3.rugosrel > 5e-5 then max(560.0 / lumpedStraightPipe3.rugosrel, 2e5) else 4000.0   [dynamic |0|0|0|0|]
 // 123/145 (1): lumpedStraightPipe3.Re = 4.0 * abs(lumpedStraightPipe3.Q) / (lumpedStraightPipe3.mu * lumpedStraightPipe3.Pw)   [dynamic |0|0|0|0|]
 // 124/146 (1): lumpedStraightPipe3.Pm = 0.5 * (lumpedStraightPipe3.C1.P + lumpedStraightPipe3.C2.P)   [dynamic |0|0|0|0|]
 // 125/147 (10): lumpedStraightPipe3.pro = ThermoSysPro.Properties.Fluid.Ph(lumpedStraightPipe3.Pm, lumpedStraightPipe3.h, lumpedStraightPipe3.mode, lumpedStraightPipe3.fluid)   [dynamic |0|0|0|0|]
@@ -1265,11 +1265,11 @@ getErrorString();
 // 132/163 (1): lumpedStraightPipe1.h = lumpedStraightPipe1.C1.h   [dynamic |0|0|0|0|]
 // 133/164 (1): lumpedStraightPipe1.Q = lumpedStraightPipe1.C1.Q   [dynamic |0|0|0|0|]
 // 134/165 (1): lumpedStraightPipe1.h = ThermoSysPro.Functions.SmoothCond(lumpedStraightPipe1.Q, lumpedStraightPipe1.C1.h_vol, lumpedStraightPipe1.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
-// 135/166 (1): lumpedStraightPipe1.deltaP = lumpedStraightPipe1.deltaPf + 9.806649999999999 * lumpedStraightPipe1.rho * (lumpedStraightPipe1.z2 - lumpedStraightPipe1.z1)   [dynamic |0|0|0|0|]
+// 135/166 (1): lumpedStraightPipe1.deltaP = lumpedStraightPipe1.deltaPf + 9.80665 * lumpedStraightPipe1.rho * (lumpedStraightPipe1.z2 - lumpedStraightPipe1.z1)   [dynamic |0|0|0|0|]
 // 136/167 (1): lumpedStraightPipe1.deltaPf = 0.5 * lumpedStraightPipe1.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe1.Q, lumpedStraightPipe1.eps) / (lumpedStraightPipe1.A ^ 2.0 * lumpedStraightPipe1.rho)   [dynamic |0|0|0|0|]
 // 137/168 (1): lumpedStraightPipe1.khi = lumpedStraightPipe1.lam * lumpedStraightPipe1.L / lumpedStraightPipe1.D   [dynamic |0|0|0|0|]
 // 138/169 (1): lumpedStraightPipe1.lam = lumpedStraightPipe1.lambda   [dynamic |0|0|0|0|]
-// 139/170 (1): lumpedStraightPipe1.Relim = 5600000.0   [dynamic |0|0|0|0|]
+// 139/170 (1): lumpedStraightPipe1.Relim = if lumpedStraightPipe1.rugosrel > 5e-5 then max(560.0 / lumpedStraightPipe1.rugosrel, 2e5) else 4000.0   [dynamic |0|0|0|0|]
 // 140/171 (1): lumpedStraightPipe1.Re = 4.0 * abs(lumpedStraightPipe1.Q) / (lumpedStraightPipe1.mu * lumpedStraightPipe1.Pw)   [dynamic |0|0|0|0|]
 // 141/172 (1): lumpedStraightPipe1.Pm = 0.5 * (lumpedStraightPipe1.C1.P + lumpedStraightPipe1.C2.P)   [dynamic |0|0|0|0|]
 // 142/173 (10): lumpedStraightPipe1.pro = ThermoSysPro.Properties.Fluid.Ph(lumpedStraightPipe1.Pm, lumpedStraightPipe1.h, lumpedStraightPipe1.mode, lumpedStraightPipe1.fluid)   [dynamic |0|0|0|0|]
@@ -1513,10 +1513,10 @@ getErrorString();
 // Standard BLT of the original model:(207)
 // ============================================================
 //
-// 207: new_Sink1.h0: (7/7): (1): new_Sink1.h0 = 100000.0
-// 206: sourceQ2.h0: (6/6): (1): sourceQ2.h0 = 1000000.0
+// 207: new_Sink1.h0: (7/7): (1): new_Sink1.h0 = 1e5
+// 206: sourceQ2.h0: (6/6): (1): sourceQ2.h0 = 1e6
 // 205: sourceQ2.Q0: (5/5): (1): sourceQ2.Q0 = 100.0
-// 204: sourceQ1.h0: (4/4): (1): sourceQ1.h0 = 1000000.0
+// 204: sourceQ1.h0: (4/4): (1): sourceQ1.h0 = 1e6
 // 203: sourceQ1.Q0: (3/3): (1): sourceQ1.Q0 = 100.0
 // 202: staticDrum1.T: (81/94): (1): staticDrum1.T = staticDrum1.lsat.T
 // 201: staticDrum1.P: (78/80): (14): (staticDrum1.lsat, staticDrum1.vsat) = ThermoSysPro.Properties.WaterSteam.IF97.Water_sat_P(staticDrum1.P)
@@ -1525,7 +1525,7 @@ getErrorString();
 // 198: staticDrum1.Ce_eva.P: (62/62): (1): staticDrum1.P = staticDrum1.Ce_eva.P
 // 197: staticDrum1.Ce_eva.h_vol: (69/69): (1): staticDrum1.Ce_eva.h_vol = staticDrum1.hl
 // 196: staticDrum1.Ce_eva.Q: (48/48): (1): staticDrum1.Ce_eva.Q = 0.0
-// 195: staticDrum1.Ce_eva.h: (49/49): (1): staticDrum1.Ce_eva.h = 100000.0
+// 195: staticDrum1.Ce_eva.h: (49/49): (1): staticDrum1.Ce_eva.h = 1e5
 // 194: staticDrum1.Ce_eva.a: (151/191): (1): staticDrum1.Ce_eva.a = true
 // 193: staticDrum1.Ce_eva.b: (50/50): (1): staticDrum1.Ce_eva.b = true
 // 192: staticDrum1.Ce_eco.P: (63/63): (1): staticDrum1.P = staticDrum1.Ce_eco.P
@@ -1543,19 +1543,19 @@ getErrorString();
 // 180: staticDrum1.Cs_eva.P: (64/64): (1): staticDrum1.P = staticDrum1.Cs_eva.P
 // 179: staticDrum1.Cs_eva.h_vol: (74/74): (1): staticDrum1.Cs_eva.h_vol = staticDrum1.hl
 // 178: staticDrum1.Cs_eva.Q: (51/51): (1): staticDrum1.Cs_eva.Q = 0.0
-// 177: staticDrum1.Cs_eva.h: (52/52): (1): staticDrum1.Cs_eva.h = 100000.0
+// 177: staticDrum1.Cs_eva.h: (52/52): (1): staticDrum1.Cs_eva.h = 1e5
 // 176: staticDrum1.Cs_eva.a: (53/53): (1): staticDrum1.Cs_eva.a = true
 // 175: staticDrum1.Cs_eva.b: (154/194): (1): staticDrum1.Cs_eva.b = true
 // 174: staticDrum1.Cs_sur.P: (67/67): (1): staticDrum1.P = staticDrum1.Cs_sur.P
 // 173: staticDrum1.Cs_sur.h_vol: (75/75): (1): staticDrum1.Cs_sur.h_vol = (1.0 - staticDrum1.x) * staticDrum1.hl + staticDrum1.x * staticDrum1.hv
 // 172: staticDrum1.Cs_sur.Q: (57/57): (1): staticDrum1.Cs_sur.Q = 0.0
-// 171: staticDrum1.Cs_sur.h: (58/58): (1): staticDrum1.Cs_sur.h = 100000.0
+// 171: staticDrum1.Cs_sur.h: (58/58): (1): staticDrum1.Cs_sur.h = 1e5
 // 170: staticDrum1.Cs_sur.a: (59/59): (1): staticDrum1.Cs_sur.a = true
 // 169: staticDrum1.Cs_sur.b: (155/195): (1): staticDrum1.Cs_sur.b = true
 // 168: staticDrum1.Cs_purg.P: (65/65): (1): staticDrum1.P = staticDrum1.Cs_purg.P
 // 167: staticDrum1.Cs_purg.h_vol: (72/72): (1): staticDrum1.Cs_purg.h_vol = staticDrum1.hl
 // 166: staticDrum1.Cs_purg.Q: (54/54): (1): staticDrum1.Cs_purg.Q = 0.0
-// 165: staticDrum1.Cs_purg.h: (55/55): (1): staticDrum1.Cs_purg.h = 100000.0
+// 165: staticDrum1.Cs_purg.h: (55/55): (1): staticDrum1.Cs_purg.h = 1e5
 // 164: staticDrum1.Cs_purg.a: (56/56): (1): staticDrum1.Cs_purg.a = true
 // 163: staticDrum1.Cs_purg.b: (156/196): (1): staticDrum1.Cs_purg.b = true
 // 162: staticDrum1.Ce_steam.P: (60/60): (1): staticDrum1.P = staticDrum1.Ce_steam.P
@@ -1567,7 +1567,7 @@ getErrorString();
 // 156: staticDrum1.Ce_sup.P: (61/61): (1): staticDrum1.P = staticDrum1.Ce_sup.P
 // 155: staticDrum1.Ce_sup.h_vol: (68/68): (1): staticDrum1.Ce_sup.h_vol = staticDrum1.hl
 // 154: staticDrum1.Ce_sup.Q: (45/45): (1): staticDrum1.Ce_sup.Q = 0.0
-// 153: staticDrum1.Ce_sup.h: (46/46): (1): staticDrum1.Ce_sup.h = 100000.0
+// 153: staticDrum1.Ce_sup.h: (46/46): (1): staticDrum1.Ce_sup.h = 1e5
 // 152: staticDrum1.Ce_sup.a: (158/198): (1): staticDrum1.Ce_sup.a = true
 // 151: staticDrum1.Ce_sup.b: (47/47): (1): staticDrum1.Ce_sup.b = true
 // 150: staticDrum1.lsat.P: (78/81): (14): (staticDrum1.lsat, staticDrum1.vsat) = ThermoSysPro.Properties.WaterSteam.IF97.Water_sat_P(staticDrum1.P)
@@ -1588,10 +1588,10 @@ getErrorString();
 // 135: staticDrum1.Cth.W: (44/44): (1): staticDrum1.Cth.W = 0.0
 // 134: lumpedStraightPipe2.khi: (91/104): (1): lumpedStraightPipe2.khi = lumpedStraightPipe2.lam * lumpedStraightPipe2.L / lumpedStraightPipe2.D
 // 133: lumpedStraightPipe2.deltaPf: (90/103): (1): lumpedStraightPipe2.deltaPf = 0.5 * lumpedStraightPipe2.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe2.Q, lumpedStraightPipe2.eps) / (lumpedStraightPipe2.A ^ 2.0 * lumpedStraightPipe2.rho)
-// 132: lumpedStraightPipe2.deltaP: (89/102): (1): lumpedStraightPipe2.deltaP = lumpedStraightPipe2.deltaPf + 9.806649999999999 * lumpedStraightPipe2.rho * (lumpedStraightPipe2.z2 - lumpedStraightPipe2.z1)
+// 132: lumpedStraightPipe2.deltaP: (89/102): (1): lumpedStraightPipe2.deltaP = lumpedStraightPipe2.deltaPf + 9.80665 * lumpedStraightPipe2.rho * (lumpedStraightPipe2.z2 - lumpedStraightPipe2.z1)
 // 131: lumpedStraightPipe2.Q: (87/100): (1): lumpedStraightPipe2.Q = lumpedStraightPipe2.C1.Q
 // 130: lumpedStraightPipe2.Re: (94/107): (1): lumpedStraightPipe2.Re = 4.0 * abs(lumpedStraightPipe2.Q) / (lumpedStraightPipe2.mu * lumpedStraightPipe2.Pw)
-// 129: lumpedStraightPipe2.Relim: (93/106): (1): lumpedStraightPipe2.Relim = 5600000.0
+// 129: lumpedStraightPipe2.Relim: (93/106): (1): lumpedStraightPipe2.Relim = if lumpedStraightPipe2.rugosrel > 5e-5 then max(560.0 / lumpedStraightPipe2.rugosrel, 2e5) else 4000.0
 // 128: lumpedStraightPipe2.lam: (92/105): (1): lumpedStraightPipe2.lam = lumpedStraightPipe2.lambda
 // 127: lumpedStraightPipe2.rho: (98/120): (1): lumpedStraightPipe2.rho = lumpedStraightPipe2.pro.d
 // 126: lumpedStraightPipe2.mu: (99/121): (1): lumpedStraightPipe2.mu = ThermoSysPro.Properties.Fluid.DynamicViscosity_Ph(lumpedStraightPipe2.Pm, lumpedStraightPipe2.h, lumpedStraightPipe2.fluid, lumpedStraightPipe2.mode, 0.1, 0.1, 0.1, 0.0)
@@ -1644,10 +1644,10 @@ getErrorString();
 // 79: sourceQ2.C.b: (162/202): (1): sourceQ2.C.b = true
 // 78: lumpedStraightPipe3.khi: (120/142): (1): lumpedStraightPipe3.khi = lumpedStraightPipe3.lam * lumpedStraightPipe3.L / lumpedStraightPipe3.D
 // 77: lumpedStraightPipe3.deltaPf: (119/141): (1): lumpedStraightPipe3.deltaPf = 0.5 * lumpedStraightPipe3.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe3.Q, lumpedStraightPipe3.eps) / (lumpedStraightPipe3.A ^ 2.0 * lumpedStraightPipe3.rho)
-// 76: lumpedStraightPipe3.deltaP: (118/140): (1): lumpedStraightPipe3.deltaP = lumpedStraightPipe3.deltaPf + 9.806649999999999 * lumpedStraightPipe3.rho * (lumpedStraightPipe3.z2 - lumpedStraightPipe3.z1)
+// 76: lumpedStraightPipe3.deltaP: (118/140): (1): lumpedStraightPipe3.deltaP = lumpedStraightPipe3.deltaPf + 9.80665 * lumpedStraightPipe3.rho * (lumpedStraightPipe3.z2 - lumpedStraightPipe3.z1)
 // 75: lumpedStraightPipe3.Q: (2/2): (1): lumpedStraightPipe3.Q = 0.0
 // 74: lumpedStraightPipe3.Re: (123/145): (1): lumpedStraightPipe3.Re = 4.0 * abs(lumpedStraightPipe3.Q) / (lumpedStraightPipe3.mu * lumpedStraightPipe3.Pw)
-// 73: lumpedStraightPipe3.Relim: (122/144): (1): lumpedStraightPipe3.Relim = 5600000.0
+// 73: lumpedStraightPipe3.Relim: (122/144): (1): lumpedStraightPipe3.Relim = if lumpedStraightPipe3.rugosrel > 5e-5 then max(560.0 / lumpedStraightPipe3.rugosrel, 2e5) else 4000.0
 // 72: lumpedStraightPipe3.lam: (121/143): (1): lumpedStraightPipe3.lam = lumpedStraightPipe3.lambda
 // 71: lumpedStraightPipe3.rho: (127/158): (1): lumpedStraightPipe3.rho = lumpedStraightPipe3.pro.d
 // 70: lumpedStraightPipe3.mu: (128/159): (1): lumpedStraightPipe3.mu = ThermoSysPro.Properties.Fluid.DynamicViscosity_Ph(lumpedStraightPipe3.Pm, lumpedStraightPipe3.h, lumpedStraightPipe3.fluid, lumpedStraightPipe3.mode, 0.1, 0.1, 0.1, 0.0)
@@ -1677,11 +1677,11 @@ getErrorString();
 // 46: lumpedStraightPipe3.pro.duhp: (125/155): (10): lumpedStraightPipe3.pro = ThermoSysPro.Properties.Fluid.Ph(lumpedStraightPipe3.Pm, lumpedStraightPipe3.h, lumpedStraightPipe3.mode, lumpedStraightPipe3.fluid)
 // 45: lumpedStraightPipe3.pro.x: (125/156): (10): lumpedStraightPipe3.pro = ThermoSysPro.Properties.Fluid.Ph(lumpedStraightPipe3.Pm, lumpedStraightPipe3.h, lumpedStraightPipe3.mode, lumpedStraightPipe3.fluid)
 // 44: lumpedStraightPipe1.khi: (137/168): (1): lumpedStraightPipe1.khi = lumpedStraightPipe1.lam * lumpedStraightPipe1.L / lumpedStraightPipe1.D
-// 43: lumpedStraightPipe1.deltaPf: (135/166): (1): lumpedStraightPipe1.deltaP = lumpedStraightPipe1.deltaPf + 9.806649999999999 * lumpedStraightPipe1.rho * (lumpedStraightPipe1.z2 - lumpedStraightPipe1.z1)
+// 43: lumpedStraightPipe1.deltaPf: (135/166): (1): lumpedStraightPipe1.deltaP = lumpedStraightPipe1.deltaPf + 9.80665 * lumpedStraightPipe1.rho * (lumpedStraightPipe1.z2 - lumpedStraightPipe1.z1)
 // 42: lumpedStraightPipe1.deltaP: (131/162): (1): lumpedStraightPipe1.C1.P - lumpedStraightPipe1.C2.P = lumpedStraightPipe1.deltaP
 // 41: lumpedStraightPipe1.Q: (1/1): (1): lumpedStraightPipe1.Q = 0.0
 // 40: lumpedStraightPipe1.Re: (140/171): (1): lumpedStraightPipe1.Re = 4.0 * abs(lumpedStraightPipe1.Q) / (lumpedStraightPipe1.mu * lumpedStraightPipe1.Pw)
-// 39: lumpedStraightPipe1.Relim: (139/170): (1): lumpedStraightPipe1.Relim = 5600000.0
+// 39: lumpedStraightPipe1.Relim: (139/170): (1): lumpedStraightPipe1.Relim = if lumpedStraightPipe1.rugosrel > 5e-5 then max(560.0 / lumpedStraightPipe1.rugosrel, 2e5) else 4000.0
 // 38: lumpedStraightPipe1.lam: (138/169): (1): lumpedStraightPipe1.lam = lumpedStraightPipe1.lambda
 // 37: lumpedStraightPipe1.rho: (136/167): (1): lumpedStraightPipe1.deltaPf = 0.5 * lumpedStraightPipe1.khi * ThermoSysPro.Functions.ThermoSquare(lumpedStraightPipe1.Q, lumpedStraightPipe1.eps) / (lumpedStraightPipe1.A ^ 2.0 * lumpedStraightPipe1.rho)
 // 36: lumpedStraightPipe1.mu: (145/185): (1): lumpedStraightPipe1.mu = ThermoSysPro.Properties.Fluid.DynamicViscosity_Ph(lumpedStraightPipe1.Pm, lumpedStraightPipe1.h, lumpedStraightPipe1.fluid, lumpedStraightPipe1.mode, 0.1, 0.1, 0.1, 0.0)
@@ -1758,10 +1758,10 @@ getErrorString();
 // 181: staticDrum1.Cs_sup.b: (153/193): (1): staticDrum1.Cs_sup.b = true
 // 188: staticDrum1.Ce_eco.a: (152/192): (1): staticDrum1.Ce_eco.a = true
 // 194: staticDrum1.Ce_eva.a: (151/191): (1): staticDrum1.Ce_eva.a = true
-// 207: new_Sink1.h0: (7/7): (1): new_Sink1.h0 = 100000.0
-// 206: sourceQ2.h0: (6/6): (1): sourceQ2.h0 = 1000000.0
+// 207: new_Sink1.h0: (7/7): (1): new_Sink1.h0 = 1e5
+// 206: sourceQ2.h0: (6/6): (1): sourceQ2.h0 = 1e6
 // 205: sourceQ2.Q0: (5/5): (1): sourceQ2.Q0 = 100.0
-// 204: sourceQ1.h0: (4/4): (1): sourceQ1.h0 = 1000000.0
+// 204: sourceQ1.h0: (4/4): (1): sourceQ1.h0 = 1e6
 // 203: sourceQ1.Q0: (3/3): (1): sourceQ1.Q0 = 100.0
 // 75: lumpedStraightPipe3.Q: (2/2): (1): lumpedStraightPipe3.Q = 0.0
 // 41: lumpedStraightPipe1.Q: (1/1): (1): lumpedStraightPipe1.Q = 0.0
@@ -1898,7 +1898,7 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "econcile",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.TSP_Splitter7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_Splitter7_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.TSP_Splitter7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_Splitter7_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // LOG_STDOUT        | info    | DataReconciliation Starting!

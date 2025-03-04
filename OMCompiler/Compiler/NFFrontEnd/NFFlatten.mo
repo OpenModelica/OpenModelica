@@ -156,6 +156,7 @@ uniontype FlattenSettings
     Boolean newBackend;
     Boolean vectorizeBindings;
     Boolean implicitStartAttribute;
+    Boolean minimalEval;
   end SETTINGS;
 end FlattenSettings;
 
@@ -352,7 +353,8 @@ algorithm
     Flags.isSet(Flags.NF_API) or Flags.getConfigBool(Flags.CHECK_MODEL),
     Flags.getConfigBool(Flags.NEW_BACKEND),
     Flags.isSet(Flags.VECTORIZE_BINDINGS),
-    Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "implicitParameterStartAttribute")
+    Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "implicitParameterStartAttribute"),
+    Flags.getConfigString(Flags.EVALUATE_STRUCTURAL_PARAMETERS) <> "all"
   );
 
   prefix := Prefix.new(classInst, indexed = settings.vectorizeBindings);
@@ -396,6 +398,8 @@ algorithm
     end if;
     InstUtil.dumpFlatModelDebug("connections", flatModel);
   end if;
+
+  flatModel.variables := list(updateVariability(var) for var in flatModel.variables);
 end flatten;
 
 function flattenConnection
@@ -1881,7 +1885,7 @@ protected
   Expression cond;
   list<Equation> eql;
   Variability var;
-  Boolean has_connect;
+  Boolean has_connect, should_eval = false, structural = true;
   DAE.ElementSource src;
   SourceInfo info;
   Ceval.EvalTarget target;
@@ -1907,9 +1911,35 @@ algorithm
           // Evaluate structural conditions.
           if var <= Variability.STRUCTURAL_PARAMETER then
             if Expression.isPure(cond) then
-              // Skip evaluation if the condition contains iterators, which can
-              // happen if scalarization is turned off and for-loops aren't unrolled.
-              if settings.scalarize or not Expression.contains(cond, Expression.isIterator) then
+              if has_connect then
+                // If-equations containing connects must be evaluated.
+                should_eval := true;
+              elseif settings.minimalEval then
+                // Don't evaluate if --evaluateStructuralParameters=strictlyNecessary
+                should_eval := false;
+                structural := false;
+              elseif settings.scalarize then
+                // Evaluate if scalarization is turned on.
+                should_eval := true;
+              elseif settings.newBackend or Expression.contains(cond, Expression.isIterator) then
+                // Don't evaluate if the new backend is used or the expression contains iterators.
+                should_eval := false;
+                // The condition needs to be vectorized before we evaluate it for the new backend,
+                // so mark it as structural so it gets evaluated later instead.
+                structural := settings.newBackend;
+              else
+                // TODO: The condition shouldn't be evaluated if scalarization is
+                //       turned off since that breaks vectorizeEquation, but
+                //       turning it off completely doesn't work yet either.
+                should_eval := true;
+              end if;
+
+              // Mark the expression if it's structural. If we evaluate it it's always structural.
+              if structural or should_eval then
+                Structural.markExp(cond);
+              end if;
+
+              if should_eval then
                 cond := Ceval.evalExp(cond, target);
                 cond := flattenExp(cond, prefix, info);
               end if;
@@ -1952,6 +1982,7 @@ algorithm
         guard has_connect
         algorithm
           if var <= Variability.STRUCTURAL_PARAMETER then
+            Structural.markExp(cond);
             cond := Ceval.evalExp(cond, target);
             cond := flattenExp(cond, prefix, info);
           end if;
@@ -2007,6 +2038,7 @@ algorithm
 
   // Unroll the loop by replacing the iterator with each of its values in the for loop body.
   range := flattenExp(range, prefix, info);
+  Structural.markExp(range);
   range := Ceval.evalExp(range, Ceval.EvalTarget.new(info, NFInstContext.ITERATION_RANGE));
   range_iter := RangeIterator.fromExp(range);
 
@@ -2025,19 +2057,26 @@ function splitForLoop
   input FlattenSettings settings;
 protected
   InstNode iter;
-  Option<Expression> range;
+  Option<Expression> opt_range;
+  Expression range;
   list<Equation> body, connects, non_connects;
   DAE.ElementSource src;
   Equation eq;
   InstNode scope;
 algorithm
-  Equation.FOR(iter, range, body, scope, src) := forLoop;
+  Equation.FOR(iter, opt_range, body, scope, src) := forLoop;
   body := flattenEquations(body, EMPTY_PREFIX, settings);
   (connects, non_connects) := splitForLoop2(body);
 
   if not listEmpty(connects) then
-    range := Ceval.evalExpOpt(range, Ceval.EvalTarget.new(Equation.info(forLoop), NFInstContext.ITERATION_RANGE));
-    eq := Equation.FOR(iter, range, connects, scope, src);
+    if isSome(opt_range) then
+      SOME(range) := opt_range;
+      range := Ceval.evalExp(range, Ceval.EvalTarget.new(Equation.info(forLoop), NFInstContext.ITERATION_RANGE));
+      Structural.markExp(range);
+      opt_range := SOME(range);
+    end if;
+
+    eq := Equation.FOR(iter, opt_range, connects, scope, src);
 
     if settings.arrayConnect then
       equations := eq :: equations;
@@ -2047,7 +2086,7 @@ algorithm
   end if;
 
   if not listEmpty(non_connects) then
-    equations := Equation.FOR(iter, range, non_connects, scope, src) :: equations;
+    equations := Equation.FOR(iter, opt_range, non_connects, scope, src) :: equations;
   end if;
 end splitForLoop;
 
@@ -3011,6 +3050,20 @@ algorithm
     else ();
   end match;
 end verifyDimension;
+
+function updateVariability
+  input output Variable var;
+protected
+  Variability v;
+algorithm
+  if var.attributes.variability == Variability.PARAMETER then
+    v := Component.variability(InstNode.component(ComponentRef.node(var.name)));
+
+    if v < Variability.PARAMETER then
+      var := Variable.setVariability(var, v);
+    end if;
+  end if;
+end updateVariability;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFFlatten;

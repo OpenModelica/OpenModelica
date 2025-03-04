@@ -587,6 +587,24 @@ public
     end match;
   end isFinal;
 
+  function setFinal
+    input output Component component;
+    input Boolean isFinal;
+  protected
+    Attributes attr;
+  algorithm
+    () := match component
+      case COMPONENT(attributes = attr)
+        algorithm
+          attr.isFinal := isFinal;
+          component.attributes := attr;
+        then
+          ();
+
+      else ();
+    end match;
+  end setFinal;
+
   function innerOuter
     input Component component;
     output InnerOuter io;
@@ -859,7 +877,7 @@ public
     evaluate := SCodeUtil.getEvaluateAnnotation(comment(component));
   end getEvaluateAnnotation;
 
-  function getFixedAttribute
+  function isFixed
     input Component component;
     output Boolean fixed;
   protected
@@ -885,7 +903,7 @@ public
         else false;
       end match;
     end if;
-  end getFixedAttribute;
+  end isFixed;
 
   function getUnitAttribute
     input Component component;
