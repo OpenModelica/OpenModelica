@@ -1,4 +1,4 @@
-// name: simple_tuple
+// name: record_arrays
 // keywords: NewBackend
 // status: correct
 // cflags: --newBackend

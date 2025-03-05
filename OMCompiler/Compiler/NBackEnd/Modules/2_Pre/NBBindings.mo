@@ -68,8 +68,9 @@ public
         bound_vars := list(var for var guard(BVariable.isBound(var)) in VariablePointers.toList(varData.unknowns));
         for var in bound_vars loop
           // do not create bindings for record children with bound parents! they are bound off their record variables
+          // if the parent is not fully unkown also create individual bindings
           skip_record_element := match BVariable.getParent(var)
-            case SOME(parent) then BVariable.isBound(parent);
+            case SOME(parent) then BVariable.isBound(parent) and BVariable.isUnknownRecord(var);
             else false;
           end match;
 
@@ -84,7 +85,7 @@ public
 
         // create record binding equations, but only for unknown records
         // known record binding equations will be created for initialization
-        bound_vars := list(var for var guard(BVariable.isBound(var) and not BVariable.isKnownRecord(var)) in VariablePointers.toList(varData.records));
+        bound_vars := list(var for var guard(BVariable.isBound(var) and BVariable.isUnknownRecord(var)) in VariablePointers.toList(varData.records));
         for var in bound_vars loop
           binding_rec := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_rec;
         end for;

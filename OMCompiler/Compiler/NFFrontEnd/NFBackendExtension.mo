@@ -206,7 +206,8 @@ public
     record ITERATOR end ITERATOR;
     record RECORD
       list<Pointer<Variable>> children;
-      Boolean known                         "true if the record is known. e.g. parameters";
+      Variability min_var;
+      Variability max_var;
     end RECORD;
     record START
       Pointer<Variable> original            "Pointer to the corresponding original variable.";
@@ -294,9 +295,12 @@ public
       input Type ty;
       input Boolean makeParam;
       output VariableKind varKind;
+    protected
+      Variability variability;
     algorithm
       if Type.isRecord(Type.arrayElementType(ty)) then
-        varKind := RECORD({}, makeParam); // ToDo: children!
+        variability := if makeParam then NFPrefixes.Variability.PARAMETER else NFPrefixes.Variability.CONTINUOUS;
+        varKind := RECORD({}, variability, variability); // ToDo: children!
       elseif makeParam then
         varKind := PARAMETER(NONE());
       elseif Type.isDiscrete(ty) then
