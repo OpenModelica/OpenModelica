@@ -2929,7 +2929,7 @@ protected
   DAE.Type tp = ComponentReference.crefLastType(cr);
   DAE.Dimensions dims = Expression.arrayDimension(tp);
 algorithm
- v := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), dims, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
+ v := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), tp, NONE(), NONE(), dims, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
 end makeVar;
 
 public function addVarDAE
