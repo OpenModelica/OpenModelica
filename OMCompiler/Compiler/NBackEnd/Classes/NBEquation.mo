@@ -1460,7 +1460,7 @@ public
           if not referenceEq(iter, eq.iter) then
             eq.iter := iter;
           end if;
-          eq.body := list(map(body_eqn, funcExp, funcCrefOpt) for body_eqn in eq.body);
+          eq.body := list(map(body_eqn, funcExp, funcCrefOpt, mapFunc) for body_eqn in eq.body);
         then eq;
 
         case WHEN_EQUATION() algorithm
