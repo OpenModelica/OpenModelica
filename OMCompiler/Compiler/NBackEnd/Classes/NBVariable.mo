@@ -424,10 +424,23 @@ public
     extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
-      case VariableKind.RECORD(known = true) then true;
+      local
+        Prefixes.Variability variability;
+      case VariableKind.RECORD(max_var = variability) guard(variability < NFPrefixes.Variability.DISCRETE) then true;
       else false;
     end match;
   end isKnownRecord;
+
+ function isUnknownRecord
+    extends checkVar;
+  algorithm
+    b := match var.backendinfo.varKind
+      local
+        Prefixes.Variability variability;
+      case VariableKind.RECORD(min_var = variability) guard(variability > NFPrefixes.Variability.NON_STRUCTURAL_PARAMETER) then true;
+      else false;
+    end match;
+  end isUnknownRecord;
 
   function isClock
     extends checkVar;

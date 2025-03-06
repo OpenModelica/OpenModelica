@@ -681,7 +681,7 @@ protected
       // only change varKind if unset (Iterators are set before)
       var.backendinfo := match var.backendinfo
         case BackendInfo.BACKEND_INFO(varKind = VariableKind.FRONTEND_DUMMY()) algorithm
-          (varKind, attributes) := lowerVariableKind(Variable.variability(var), attributes, var.ty);
+          (varKind, attributes) := lowerVariableKind(var, attributes, var.ty);
         then BackendInfo.BACKEND_INFO(varKind, attributes, annotations, NONE(), NONE(), NONE(), NONE());
         else BackendInfo.setAttributes(var.backendinfo, attributes, annotations);
       end match;
@@ -701,10 +701,29 @@ protected
     "ToDo: Merge this part from old backend conversion:
       /* Consider toplevel inputs as known unless they are protected. Ticket #5591 */
       false := DAEUtil.topLevelInput(inComponentRef, inVarDirection, inConnectorType, protection);"
-    input Prefixes.Variability variability;
+    input Variable var;
     output VariableKind varKind;
     input output VariableAttributes attributes;
     input Type ty;
+  protected
+    Prefixes.Variability min_var, max_var, variability = Variable.variability(var);
+    function lowerRecordKind
+      input list<Variable> children;
+      output Prefixes.Variability min_var = NFPrefixes.Variability.CONTINUOUS;
+      output Prefixes.Variability max_var = NFPrefixes.Variability.CONSTANT;
+    protected
+      Prefixes.Variability tmp_min_var, tmp_max_var;
+    algorithm
+      for child in children loop
+        (tmp_min_var, tmp_max_var) := match child.ty
+          case Type.COMPLEX()                           then lowerRecordKind(child.children);
+          case Type.ARRAY(elementType = Type.COMPLEX()) then lowerRecordKind(child.children);
+          else (Variable.variability(child), Variable.variability(child));
+        end match;
+        min_var := if tmp_min_var < min_var then tmp_min_var else min_var;
+        max_var := if tmp_max_var > max_var then tmp_max_var else max_var;
+      end for;
+    end lowerRecordKind;
   algorithm
     varKind := match(variability, attributes, ty)
       local
@@ -725,8 +744,12 @@ protected
       then VariableKind.EXTOBJ(Class.constrainingClassPath(elemTy.cls));
 
       // add children pointers for records afterwards, record is considered known if it is of "less" then discrete variability
-      case (_, _, Type.COMPLEX())                                     then VariableKind.RECORD({}, variability < NFPrefixes.Variability.DISCRETE);
-      case (_, _, Type.ARRAY(elementType = Type.COMPLEX()))           then VariableKind.RECORD({}, variability < NFPrefixes.Variability.DISCRETE);
+      case (_, _, Type.COMPLEX()) algorithm
+        (min_var, max_var) := lowerRecordKind(var.children);
+      then VariableKind.RECORD({}, min_var, max_var);
+      case (_, _, Type.ARRAY(elementType = Type.COMPLEX())) algorithm
+        (min_var, max_var) := lowerRecordKind(var.children);
+      then VariableKind.RECORD({}, min_var, max_var);
 
       case (NFPrefixes.Variability.CONTINUOUS, _, Type.BOOLEAN())     then VariableKind.DISCRETE();
       case (NFPrefixes.Variability.CONTINUOUS, _, Type.INTEGER())     then VariableKind.DISCRETE();

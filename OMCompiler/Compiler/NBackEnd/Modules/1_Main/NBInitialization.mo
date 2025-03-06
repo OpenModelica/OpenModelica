@@ -342,8 +342,9 @@ public
   algorithm
     for var in VariablePointers.toList(parameters) loop
       // check if the variable is a record element with bound parent or a record without binding
+      // if the parent is not fully unknown also create individual bindings
       skip := match BVariable.getParent(var)
-        case SOME(parent) then BVariable.isBound(parent);
+        case SOME(parent) then BVariable.isBound(parent) and BVariable.isKnownRecord(parent);
         else BVariable.isRecord(var) and not BVariable.isBound(var);
       end match;
 
