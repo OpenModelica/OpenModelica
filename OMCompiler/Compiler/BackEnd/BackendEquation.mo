@@ -1675,8 +1675,8 @@ public function convertResidualsIntoSolvedEquations
     e.g.: 0 = a+b -> $res1 = a+b"
   input list<BackendDAE.Equation> inResidualList;
   input String inName;
-  input BackendDAE.Var inTemplateVar;
   input Integer inIndex;
+  input Boolean isResidual = false  "only used for dae mode";
   output list<BackendDAE.Equation> outEquationList = {};
   output list<BackendDAE.Var> outVariableList = {};
   output Integer outVarIndex = inIndex;
@@ -1697,7 +1697,10 @@ algorithm
         equation
           componentRef = DAE.CREF_IDENT(inName + intString(outVarIndex), DAE.T_REAL_DEFAULT, {});
           currEquation = BackendDAE.SOLVED_EQUATION(componentRef, exp, source, eqAttr);
-          currVariable = BackendVariable.copyVarNewName(componentRef, inTemplateVar);
+          currVariable = BackendVariable.makeVar(componentRef);
+          if isResidual then
+            currVariable = BackendVariable.setVarKind(currVariable, BackendDAE.DAE_RESIDUAL_VAR());
+          end if;
 
           outVarIndex = outVarIndex + 1;
           outEquationList = currEquation::outEquationList;

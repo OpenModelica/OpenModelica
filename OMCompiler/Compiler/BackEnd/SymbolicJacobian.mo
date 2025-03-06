@@ -2754,7 +2754,7 @@ try
   // create  residual equations
   (_, reqns) := BackendEquation.traverseEquationArray(outResidualEqns, BackendEquation.traverseEquationToScalarResidualForm, (funcTree, {}));
   reqns := listReverse(reqns);
-  (reqns, resVarsLst) := BackendEquation.convertResidualsIntoSolvedEquations(reqns, "$res_" + name + "_", BackendVariable.makeVar(DAE.emptyCref), 1);
+  (reqns, resVarsLst) := BackendEquation.convertResidualsIntoSolvedEquations(reqns, "$res_" + name + "_", 1);
   outResidualVars := BackendVariable.listVar1(resVarsLst);
   outResidualEqns := BackendEquation.listEquation(reqns);
 
@@ -2957,7 +2957,7 @@ algorithm
           // create  residual equations
           (_, reqns) = BackendEquation.traverseEquationArray(eqns, BackendEquation.traverseEquationToScalarResidualForm, (inShared.functionTree, {}));
           reqns = listReverse(reqns);
-          (reqns, resVarsLst) = BackendEquation.convertResidualsIntoSolvedEquations(reqns, "$res_" + name + "_", BackendVariable.makeVar(DAE.emptyCref), 1);
+          (reqns, resVarsLst) = BackendEquation.convertResidualsIntoSolvedEquations(reqns, "$res_" + name + "_", 1);
           resVars = BackendVariable.listVar1(resVarsLst);
           eqns = BackendEquation.listEquation(reqns);
 
