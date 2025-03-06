@@ -70,7 +70,7 @@ public
           // do not create bindings for record children with bound parents! they are bound off their record variables
           // if the parent is not fully unkown also create individual bindings
           skip_record_element := match BVariable.getParent(var)
-            case SOME(parent) then BVariable.isBound(parent) and BVariable.isUnknownRecord(var);
+            case SOME(parent) then BVariable.isBound(parent) and BVariable.isUnknownRecord(parent);
             else false;
           end match;
 
