@@ -454,7 +454,7 @@ algorithm
 
         // prepare set-c residual equations and residual vars
         (_, reqns) = BackendEquation.traverseEquationArray(BackendEquation.listEquation(setC_eq), BackendEquation.traverseEquationToScalarResidualForm, (shared.functionTree, {}));
-        (reqns, resVarsLst) = BackendEquation.convertResidualsIntoSolvedEquations(listReverse(reqns), "$res", BackendVariable.makeVar(DAE.emptyCref), 1);
+        (reqns, resVarsLst) = BackendEquation.convertResidualsIntoSolvedEquations(listReverse(reqns), "$res", 1);
         outResidualVars = BackendVariable.listVar(resVarsLst);
         outResidualEqns = BackendEquation.listEquation(reqns);
 

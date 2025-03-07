@@ -4324,59 +4324,59 @@ algorithm
               end if; //isScalar
             end if; // isWild
           end for;
-      elseif Expression.isArray(left) and Expression.isArray(right)
-      then // array{} = array{} // not work with arrayType
-          //print(BackendDump.equationString(eqn) + "--In--\n");
-        try
-          left_lst := Expression.getArrayOrRangeContents(left);
-          right_lst := Expression.getArrayOrRangeContents(right);
-          update := true;
-          indRemove := i :: indRemove;
-          for e1 in left_lst loop
-          e2 :: right_lst := right_lst;
-          //print("=>" +  ExpressionDump.printExpStr(e2) + " = " +  ExpressionDump.printExpStr(e1) + "\n");
-          if not Expression.isWild(e1) then
-            if Expression.isScalar(e2) then
-            eqn1 := BackendEquation.generateEquation(e1, e2, source, attr);
-            eqns := BackendEquation.add(eqn1, eqns);
-            //print(BackendDump.equationString(eqn1) + "--new--\n");
-            else
-            expLst := simplifyComplexFunction2(e1);
-            arrayLst := simplifyComplexFunction2(e2);
-            for e_asub in arrayLst loop
-              e3 :: expLst := expLst;
-              eqn1 := BackendEquation.generateEquation(e_asub, e3, source, attr);
+        elseif Expression.isArray(left) and Expression.isArray(right)
+        then // array{} = array{} // not work with arrayType
+            //print(BackendDump.equationString(eqn) + "--In--\n");
+          try
+            left_lst := Expression.getArrayOrRangeContents(left);
+            right_lst := Expression.getArrayOrRangeContents(right);
+            update := true;
+            indRemove := i :: indRemove;
+            for e1 in left_lst loop
+            e2 :: right_lst := right_lst;
+            //print("=>" +  ExpressionDump.printExpStr(e2) + " = " +  ExpressionDump.printExpStr(e1) + "\n");
+            if not Expression.isWild(e1) then
+              if Expression.isScalar(e2) then
+              eqn1 := BackendEquation.generateEquation(e1, e2, source, attr);
               eqns := BackendEquation.add(eqn1, eqns);
               //print(BackendDump.equationString(eqn1) + "--new--\n");
+              else
+              expLst := simplifyComplexFunction2(e1);
+              arrayLst := simplifyComplexFunction2(e2);
+              for e_asub in arrayLst loop
+                e3 :: expLst := expLst;
+                eqn1 := BackendEquation.generateEquation(e_asub, e3, source, attr);
+                eqns := BackendEquation.add(eqn1, eqns);
+                //print(BackendDump.equationString(eqn1) + "--new--\n");
+              end for;
+              end if; //isScalar
+            end if; // isWild
             end for;
-            end if; //isScalar
-          end if; // isWild
-          end for;
-        else
-          continue;
-        end try;
-      elseif withTmpVars and  Expression.isTuple(left) and Expression.isCall(right)  //tuple() = call()
-      then
-        DAE.TUPLE(PR = left_lst) := left;
-        DAE.CALL(path=path,expLst = expLst, attr= cattr) := right;
-        expLst := {};
-        for e1 in left_lst loop
-          if Expression.isCref(e1) then
-            DAE.CREF(componentRef = cr) := e1;
-            if Expression.expHasCrefNoPreOrStart(right, cr) then
-              update := true;
-              cr  := ComponentReference.makeCrefIdent(tmpVarPrefix + intString(idx), Expression.typeof(e1) , {});
-              idx := idx + 1;
-              e := Expression.crefExp(cr);
-              tmpvar := BackendVariable.makeVar(cr);
-              tmpvar := BackendVariable.setVarTS(tmpvar,SOME(BackendDAE.AVOID()));
-              vars := BackendVariable.addVar(tmpvar, vars);
+          else
+            continue;
+          end try;
+        elseif withTmpVars and  Expression.isTuple(left) and Expression.isCall(right)  //tuple() = call()
+        then
+          DAE.TUPLE(PR = left_lst) := left;
+          DAE.CALL(path=path,expLst = expLst, attr= cattr) := right;
+          expLst := {};
+          for e1 in left_lst loop
+            if Expression.isCref(e1) then
+              DAE.CREF(componentRef = cr) := e1;
+              if Expression.expHasCrefNoPreOrStart(right, cr) then
+                update := true;
+                cr  := ComponentReference.makeCrefIdent(tmpVarPrefix + intString(idx), Expression.typeof(e1) , {});
+                idx := idx + 1;
+                e := Expression.crefExp(cr);
+                tmpvar := BackendVariable.makeVar(cr);
+                tmpvar := BackendVariable.setVarTS(tmpvar,SOME(BackendDAE.AVOID()));
+                vars := BackendVariable.addVar(tmpvar, vars);
 
-              eqn1 := BackendDAE.EQUATION(e, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-              eqns := BackendEquation.add(eqn1, eqns);
-            else
-              e := e1;
-            end if;
+                eqn1 := BackendDAE.EQUATION(e, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+                eqns := BackendEquation.add(eqn1, eqns);
+              else
+                e := e1;
+              end if;
             elseif Expression.isUnaryCref(e1) then
               update := true;
               cr  := ComponentReference.makeCrefIdent(tmpVarPrefix + intString(idx), Expression.typeof(e1) , {});
@@ -4388,7 +4388,7 @@ algorithm
               eqn1 := BackendDAE.EQUATION(e, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
               //print(BackendDump.equationString(eqn1) + "--new--\n");
               eqns := BackendEquation.add(eqn1, eqns);
-             elseif Expression.isArray(e1) then
+            elseif Expression.isArray(e1) then
               update := true;
               DAE.ARRAY(array=arrayLst, scalar=sc) := e1;
               m := listLength(arrayLst);

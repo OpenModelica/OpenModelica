@@ -288,7 +288,6 @@ algorithm
       list<BackendDAE.Var> newResVars, newAuxVars, discVars, contVars;
       BackendDAE.Var var;
       BackendDAE.Variables systemVars;
-      BackendDAE.Var dummyVar;
       BackendDAE.Equation eq, new_eq, aux_eq;
       Integer size, newnumResVars;
       DAE.Exp exp, exp2;
@@ -408,10 +407,8 @@ algorithm
         eq.right = Expression.crefToExp(cref);
         newResEqns = BackendEquation.equationToScalarResidualForm(eq, traverserArgs.functionTree);
         //if debug then print("case: new eqns:\n" + BackendDump.dumpEqnsStr(newResEqns) + "\n"); end if;
-        dummyVar = BackendVariable.makeVar(DAE.emptyCref);
-        dummyVar = BackendVariable.setVarKind(dummyVar, BackendDAE.DAE_RESIDUAL_VAR());
         (newResEqns, newResVars, newnumResVars) = BackendEquation.convertResidualsIntoSolvedEquations(newResEqns,
-            "$DAEres", dummyVar, globalDAEData.numResVars);
+            "$DAEres", globalDAEData.numResVars, true);
         globalDAEData.numResVars = newnumResVars;
         newResEqns = list(BackendEquation.setEquationAttributes(e, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC) for e in newResEqns);
         traverserArgs.newDAEVars = BackendVariable.addNewVars(newResVars, traverserArgs.newDAEVars);
@@ -431,10 +428,8 @@ algorithm
       equation
         globalDAEData = traverserArgs.globalDAEData;
         newResEqns = BackendEquation.equationToScalarResidualForm(eq, traverserArgs.functionTree);
-        dummyVar = BackendVariable.makeVar(DAE.emptyCref);
-        dummyVar = BackendVariable.setVarKind(dummyVar, BackendDAE.DAE_RESIDUAL_VAR());
         (newResEqns, newResVars, newnumResVars) = BackendEquation.convertResidualsIntoSolvedEquations(newResEqns,
-            "$DAEres", dummyVar, globalDAEData.numResVars);
+            "$DAEres", globalDAEData.numResVars, true);
         globalDAEData.numResVars = newnumResVars;
         newResEqns = list(BackendEquation.setEquationAttributes(e, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC) for e in newResEqns);
         traverserArgs.newDAEVars = BackendVariable.addNewVars(newResVars, traverserArgs.newDAEVars);
@@ -478,10 +473,8 @@ algorithm
         eq.right = Expression.crefToExp(cref);
         newResEqns = BackendEquation.equationToScalarResidualForm(eq, traverserArgs.functionTree);
         //if debug then print("case: new eqns:\n" + BackendDump.dumpEqnsStr(newResEqns) + "\n"); end if;
-        dummyVar = BackendVariable.makeVar(DAE.emptyCref);
-        dummyVar = BackendVariable.setVarKind(dummyVar, BackendDAE.DAE_RESIDUAL_VAR());
         (newResEqns, newResVars, newnumResVars) = BackendEquation.convertResidualsIntoSolvedEquations(newResEqns,
-            "$DAEres", dummyVar, globalDAEData.numResVars);
+            "$DAEres", globalDAEData.numResVars, true);
         globalDAEData.numResVars = newnumResVars;
         newResEqns = list(BackendEquation.setEquationAttributes(e, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC) for e in newResEqns);
         traverserArgs.newDAEVars = BackendVariable.addNewVars(newResVars, traverserArgs.newDAEVars);

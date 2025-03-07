@@ -235,7 +235,7 @@ algorithm
 
   // prepare set-c residual equations and residual vars
   (_, residualEquations) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(setC_Eq), BackendEquation.traverseEquationToScalarResidualForm, (shared.functionTree, {}));
-  (residualEquations, residualVars) := BackendEquation.convertResidualsIntoSolvedEquations(listReverse(residualEquations), "$res_F_", BackendVariable.makeVar(DAE.emptyCref), 1);
+  (residualEquations, residualVars) := BackendEquation.convertResidualsIntoSolvedEquations(listReverse(residualEquations), "$res_F_", 1);
   outResidualVars := BackendVariable.listVar(listReverse(residualVars));
   outResidualEqns := BackendEquation.listEquation(residualEquations);
 
@@ -763,7 +763,7 @@ algorithm
 
   // prepare set-c residual equations and residual vars
   (_, residualEquations) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(setC_Eq), BackendEquation.traverseEquationToScalarResidualForm, (shared.functionTree, {}));
-  (residualEquations, residualVars) := BackendEquation.convertResidualsIntoSolvedEquations(listReverse(residualEquations), "$res_F_", BackendVariable.makeVar(DAE.emptyCref), 1);
+  (residualEquations, residualVars) := BackendEquation.convertResidualsIntoSolvedEquations(listReverse(residualEquations), "$res_F_", 1);
   outResidualVars := BackendVariable.listVar(listReverse(residualVars));
   outResidualEqns := BackendEquation.listEquation(residualEquations);
 
@@ -1743,7 +1743,7 @@ algorithm
 
   // prepare set-c residual equations and residual vars
   (_, residualEquations) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(setC_Eq), BackendEquation.traverseEquationToScalarResidualForm, (shared.functionTree, {}));
-  (residualEquations, residualVars) := BackendEquation.convertResidualsIntoSolvedEquations(listReverse(residualEquations), "$res_F_", BackendVariable.makeVar(DAE.emptyCref), 1);
+  (residualEquations, residualVars) := BackendEquation.convertResidualsIntoSolvedEquations(listReverse(residualEquations), "$res_F_", 1);
   outResidualVars := BackendVariable.listVar(listReverse(residualVars));
   outResidualEqns := BackendEquation.listEquation(residualEquations);
 
