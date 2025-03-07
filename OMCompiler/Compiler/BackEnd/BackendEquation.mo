@@ -1695,7 +1695,7 @@ algorithm
 
       case BackendDAE.RESIDUAL_EQUATION(exp=exp,source=source,attr=eqAttr)
         equation
-          componentRef = DAE.CREF_IDENT(inName + intString(outVarIndex), DAE.T_REAL_DEFAULT, {});
+          componentRef = DAE.CREF_IDENT(inName + intString(outVarIndex), Expression.typeof(exp), {});
           currEquation = BackendDAE.SOLVED_EQUATION(componentRef, exp, source, eqAttr);
           currVariable = BackendVariable.makeVar(componentRef);
           if isResidual then

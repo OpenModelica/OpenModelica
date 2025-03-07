@@ -1450,7 +1450,6 @@ algorithm
     algorithm
       cr := DAE.CREF_IDENT(BackendDAE.WHENCLK_PRREFIX + intString(suffixIdx), DAE.T_CLOCK_DEFAULT, {});
       addVar := BackendVariable.makeVar(cr);
-      addVar.varType := DAE.T_CLOCK_DEFAULT;
       addEq := BackendDAE.EQUATION(Expression.crefToExp(cr), clk, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
   then(substGetPartition(varExp), false, (addEq::newEqs, addVar::newVars, suffixIdx+1));
   else

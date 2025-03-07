@@ -2280,7 +2280,7 @@ algorithm
   eqn := BackendEquation.get(eqns, eqNum);
   v := match eqn
     case BackendDAE.WHEN_EQUATION() then
-      BackendVariable.makeVar(DAE.WILD()); // dummy, not used
+      BackendVariable.makeVar(DAE.emptyCref); // dummy, not used
     else
       BackendVariable.getVarAt(vars, varNum);
   end match;
