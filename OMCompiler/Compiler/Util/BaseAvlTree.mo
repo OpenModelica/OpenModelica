@@ -372,23 +372,15 @@ algorithm
     local
       Key key;
       Value value, new_value;
-      Tree branch, new_branch;
+      Tree branch, new_left, new_right;
 
     case NODE(key=key, value=value)
       algorithm
-        new_branch := map(outTree.left, inFunc);
-        if not referenceEq(new_branch, outTree.left) then
-          outTree.left := new_branch;
-        end if;
-
+        new_left := map(outTree.left, inFunc);
         new_value := inFunc(key, value);
-        if not referenceEq(value, new_value) then
-          outTree.value := new_value;
-        end if;
-
-        new_branch := map(outTree.right, inFunc);
-        if not referenceEq(new_branch, outTree.right) then
-          outTree.right := new_branch;
+        new_right := map(outTree.right, inFunc);
+        if not referenceEq(new_left, outTree.left) or not referenceEq(value, new_value) or not referenceEq(new_right, outTree.right) then
+          outTree := NODE(key, new_value, outTree.height, new_left, new_right);
         end if;
       then
         outTree;
@@ -536,23 +528,15 @@ algorithm
     local
       Key key;
       Value value, new_value;
-      Tree branch, new_branch;
+      Tree branch, new_left, new_right;
 
     case NODE(key=key, value=value)
       algorithm
-        (new_branch, outResult) := mapFold(outTree.left, inFunc, outResult);
-        if not referenceEq(new_branch, outTree.left) then
-          outTree.left := new_branch;
-        end if;
-
+        (new_left, outResult) := mapFold(outTree.left, inFunc, outResult);
         (new_value, outResult) := inFunc(key, value, outResult);
-        if not referenceEq(value, new_value) then
-          outTree.value := new_value;
-        end if;
-
-        (new_branch, outResult) := mapFold(outTree.right, inFunc, outResult);
-        if not referenceEq(new_branch, outTree.right) then
-          outTree.right := new_branch;
+        (new_right, outResult) := mapFold(outTree.right, inFunc, outResult);
+        if not referenceEq(new_left, outTree.left) or not referenceEq(value, new_value) or not referenceEq(new_right, outTree.right) then
+          outTree := NODE(key, new_value, outTree.height, new_left, new_right);
         end if;
       then outTree;
 
