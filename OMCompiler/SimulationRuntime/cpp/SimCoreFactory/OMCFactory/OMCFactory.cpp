@@ -40,7 +40,7 @@ class LoggerXMLTCP: public LoggerXML
  protected:
   LoggerXMLTCP(std::string host, int port, LogSettings &logSettings)
     : LoggerXML(logSettings, true, _sstream)
-    , _endpoint(boost::asio::ip::address::from_string(host), port)
+    , _endpoint(boost::asio::ip::make_address(host), port)
     , _socket(_ios)
   {
     if (logSettings.format != LF_XML && logSettings.format != LF_XMLTCP) {
@@ -82,7 +82,7 @@ class LoggerXMLTCP: public LoggerXML
     }
   }
 
-  boost::asio::io_service _ios;
+  boost::asio::io_context _ios;
   boost::asio::ip::tcp::endpoint _endpoint;
   boost::asio::ip::tcp::socket _socket;
   std::stringstream _sstream;
