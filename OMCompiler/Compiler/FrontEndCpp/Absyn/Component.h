@@ -25,6 +25,8 @@ namespace OpenModelica::Absyn
       MetaModelica::Value toSCode() const noexcept override;
 
       const std::string& name() const noexcept;
+      const ElementPrefixes& prefixes() const noexcept;
+      const ElementAttributes& attributes() const noexcept;
       const Comment& comment() const noexcept;
 
       std::unique_ptr<Element> clone() const noexcept override;

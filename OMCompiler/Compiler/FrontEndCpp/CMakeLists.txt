@@ -17,7 +17,11 @@ set(OMC_FRONTEND_CPP_SOURCES
     Class.cpp
     ClassNode.cpp
     ClassTree.cpp
+    Component.cpp
+    ComponentNode.cpp
+    Import.cpp
     Inst.cpp
+    InstNode.cpp
     InstNodeType.cpp
     MetaModelica.cpp
     Path.cpp

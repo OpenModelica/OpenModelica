@@ -2,7 +2,10 @@
 #define INSTNODE_H
 
 #include "Absyn/AbsynFwd.h"
+#include "MetaModelica.h"
 #include "InstNodeType.h"
+
+#include <memory>
 
 namespace OpenModelica
 {
@@ -10,6 +13,19 @@ namespace OpenModelica
 
   class InstNode
   {
+    public:
+      static constexpr int CLASS_NODE = 0;
+      static constexpr int COMPONENT_NODE = 1;
+      static constexpr int INNER_OUTER_NODE = 2;
+      static constexpr int REF_NODE = 3;
+      static constexpr int NAME_NODE = 4;
+      static constexpr int IMPLICIT_SCOPE = 5;
+      static constexpr int ITERATOR_NODE = 6;
+      static constexpr int VAR_NODE = 7;
+      static constexpr int EMPTY_NODE = 8;
+
+      static const MetaModelica::Value emptyMMNode;
+
     public:
       virtual ~InstNode() = default;
 
@@ -30,6 +46,8 @@ namespace OpenModelica
       virtual void partialInst() {};
       virtual void expand() {};
       virtual void instantiate() {};
+
+      virtual MetaModelica::Value toMetaModelica() const = 0;
   };
 
 

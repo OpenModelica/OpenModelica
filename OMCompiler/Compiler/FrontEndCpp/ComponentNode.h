@@ -1,20 +1,16 @@
-#ifndef CLASSNODE_H
-#define CLASSNODE_H
+#ifndef COMPONENTNODE_H
+#define COMPONENTNODE_H
 
 #include "InstNode.h"
 
-#include <optional>
-
 namespace OpenModelica
 {
-  class ClassNode : public InstNode
+  class ComponentNode : public InstNode
   {
     public:
-      ClassNode(Absyn::Class *cls, InstNode *parent);
-      ClassNode(Absyn::Class *cls, InstNode *parent, std::unique_ptr<InstNodeType> nodeType);
-      ~ClassNode();
-
-      //const Class* getClass() const noexcept override;
+      ComponentNode(Absyn::Component *definition, InstNode *parent);
+      ComponentNode(Absyn::Component *definition, InstNode *parent, std::unique_ptr<InstNodeType> nodeType);
+      ~ComponentNode();
 
       const std::string& name() const noexcept override { return _name; }
       Absyn::Element* definition() const noexcept override { return _definition; }
@@ -22,23 +18,18 @@ namespace OpenModelica
       const InstNodeType* nodeType() const noexcept override;
       void setNodeType(std::unique_ptr<InstNodeType> nodeType) noexcept override;
 
-      void partialInst() override;
-      void expand() override;
-      void instantiate() override;
-
       MetaModelica::Value toMetaModelica() const override;
 
     private:
       std::string _name;
-      Absyn::Class *_definition;
+      Absyn::Component *_definition;
       Visibility _visibility;
-      std::unique_ptr<Class> _cls;
-      // array<CachedData> caches;
-      InstNode *_parentScope [[maybe_unused]];
+      std::unique_ptr<Component> _component;
+      InstNode *_parent;
       std::unique_ptr<InstNodeType> _nodeType;
 
       mutable std::optional<MetaModelica::Value> _mmCache;
   };
 }
 
-#endif /* CLASSNODE_H */
+#endif /* COMPONENTNODE_H */

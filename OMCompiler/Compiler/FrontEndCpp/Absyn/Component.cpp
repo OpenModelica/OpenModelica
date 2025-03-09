@@ -48,6 +48,17 @@ const std::string& Component::name() const noexcept
   return _name;
 }
 
+const ElementPrefixes& Component::prefixes() const noexcept
+{
+  return _prefixes;
+}
+
+
+const ElementAttributes& Component::attributes() const noexcept
+{
+  return _attributes;
+}
+
 const Comment& Component::comment() const noexcept
 {
   return _comment;

@@ -455,6 +455,7 @@ protected
   UnorderedMap<String, InstNode> generated_inners;
 algorithm
   //topNode := Inst_makeTopNode(topClasses, annotationClasses);
+
   top_classes := topClasses;
 
   if Flags.getConfigBool(Flags.BASE_MODELICA) then
