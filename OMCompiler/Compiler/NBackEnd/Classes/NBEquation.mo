@@ -4482,6 +4482,20 @@ public
       end match;
     end getUniqueIndex;
 
+    function getEquations
+      input EqData eqData;
+      output EquationPointers equations;
+    algorithm
+      equations := match eqData
+        case EqData.EQ_DATA_SIM() then eqData.equations;
+        case EqData.EQ_DATA_JAC() then eqData.equations;
+        case EqData.EQ_DATA_HES() then eqData.equations;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
+        then fail();
+      end match;
+    end getEquations;
+
     function setEquations
       input output EqData eqData;
       input EquationPointers equations;

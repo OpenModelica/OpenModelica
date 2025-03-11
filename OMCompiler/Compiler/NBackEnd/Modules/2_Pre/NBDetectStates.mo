@@ -52,6 +52,7 @@ protected
   import Type = NFType;
   import Operator = NFOperator;
   import Variable = NFVariable;
+  import NFBackendExtension.VariableKind;
 
   // Backend imports
   import BackendDAE = NBackendDAE;
@@ -133,6 +134,7 @@ protected
     VariablePointers clocked_states "Clocked state variables";
     VariablePointers previous       "Previous discrete variables (pre(d) -> $PRE.d)";
     list<Pointer<Equation>> aux_eqns;
+    EqData newEqData;
   algorithm
     (varData, eqData) := match (varData, eqData)
       case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM()) algorithm
@@ -157,7 +159,6 @@ protected
         (variables, init_eqns, knowns, initials, discretes, discrete_states, clocked_states, previous)
           := discreteFunc(variables, eqData.initials, knowns, initials, discretes, discrete_states, clocked_states, previous, "initial equations");
 
-
         // update variable arrays
         varData.variables         := variables;
         varData.unknowns          := unknowns;
@@ -172,7 +173,15 @@ protected
         varData.states            := states;
 
         // update equation arrays
-      then (varData, EqData.addTypedList(eqData, aux_eqns, EqData.EqType.CONTINUOUS, false));
+        newEqData := EqData.addTypedList(eqData, aux_eqns, EqData.EqType.CONTINUOUS, false);
+
+        // detect state order
+        EquationPointers.map(EqData.getEquations(newEqData), function stateOrder(state_order = varData.state_order));
+        if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) and not UnorderedMap.isEmpty(varData.state_order) then
+          print(StringUtil.headline_4("[stateselection] State Order:"));
+          print("\t" + UnorderedMap.toString(varData.state_order, ComponentRef.toString, ComponentRef.toString, "\n\t", " --d/dt--> ") + "\n\n");
+        end if;
+      then (varData, newEqData);
       else (varData, eqData);
     end match;
   end detectStatesDefault;
@@ -191,7 +200,7 @@ protected
     EquationPointers.mapExp(equations, function resolveGeneralDer(acc_states = acc_states, acc_derivatives = acc_derivatives, acc_aux_equations = acc_aux_equations, uniqueIndex = uniqueIndex, diffArgs = diffArgs));
     // move stuff to their correct arrays
     (variables, unknowns, knowns, initials, states, derivatives, algebraics) := updateStatesAndDerivatives(variables, unknowns, knowns, initials, states, derivatives, algebraics, Pointer.access(acc_states), Pointer.access(acc_derivatives));
-    // ToDo: these are apparently not yet added anywhere
+
     aux_eqns := Pointer.access(acc_aux_equations);
     if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) and not listEmpty(aux_eqns) then
       print(StringUtil.headline_4("[stateselection] Created auxiliary equations:"));
@@ -610,6 +619,53 @@ protected
       end match;
     end for;
   end findDiscreteStatesFromWhenBody;
+
+  function stateOrder
+    input output Equation eqn;
+    input UnorderedMap<ComponentRef, ComponentRef> state_order;
+  protected
+    Expression lhs, rhs;
+  algorithm
+    _ := match eqn
+      case Equation.SCALAR_EQUATION(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CREF()) algorithm
+        updateStateOrder(lhs.cref, rhs.cref, state_order);
+      then ();
+
+      // ToDo: sliced array/for-loops
+      case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CREF()) algorithm
+        updateStateOrder(lhs.cref, rhs.cref, state_order);
+      then ();
+
+      case Equation.FOR_EQUATION() algorithm
+        for b in eqn.body loop
+          stateOrder(b, state_order);
+        end for;
+      then ();
+
+      else ();
+    end match;
+  end stateOrder;
+
+  function updateStateOrder
+    input ComponentRef lhs;
+    input ComponentRef rhs;
+    input UnorderedMap<ComponentRef, ComponentRef> state_order;
+  protected
+    Pointer<Variable> state;
+    VariableKind lhs_k, rhs_k;
+  algorithm
+    _ := match (BVariable.getVarKind(BVariable.getVarPointer(lhs)), BVariable.getVarKind(BVariable.getVarPointer(rhs)))
+      // a = der(b)
+      case (_, VariableKind.STATE_DER(state = state)) algorithm
+        UnorderedMap.add(BVariable.getVarName(state), lhs, state_order);
+      then ();
+      // der(b) = a
+      case (VariableKind.STATE_DER(state = state), _) algorithm
+        UnorderedMap.add(BVariable.getVarName(state), rhs, state_order);
+      then ();
+      else ();
+    end match;
+  end updateStateOrder;
 
   annotation(__OpenModelica_Interface="backend");
 end NBDetectStates;

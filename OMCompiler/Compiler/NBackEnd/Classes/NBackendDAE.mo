@@ -663,7 +663,8 @@ protected
     /* create variable data */
     variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias,
                       derivatives, algebraics, discretes, discrete_states, clocked_states, previous, clocks,
-                      states, inputs, resizables, parameters, constants, records, external_objects, artificials);
+                      states, inputs, resizables, parameters, constants, records, external_objects, artificials,
+                      UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual));
   end lowerVariableData;
 
   function lowerVariable

@@ -286,10 +286,12 @@ public
     list<Slice<VariablePointer>> unmatched_vars, matched_vars;
     list<Slice<EquationPointer>> unmatched_eqns, matched_eqns;
     String err_str;
-    Adjacency.Mapping mapping;
-    Option<array<tuple<Integer, Integer>>> var_opt, eqn_opt;
+    list<Option<Pointer<Variable>>> opt_states;
+    list<Pointer<Variable>> states;
+    UnorderedMap<ComponentRef, Integer> vo, vn, eo, en;
+    Adjacency.Matrix ir_full, ir_adj; // adjacency matrices containing states
     array<list<Integer>> msss;
-    VariablePointers states;
+    VariablePointers candidates, ir_variables;
     EquationPointers constraints;
     Integer msss_idx = 1;
   algorithm
@@ -302,21 +304,34 @@ public
         + StringUtil.headline_4("(" + intString(listLength(unmatched_eqns)) + "|"
         + intString(sum(Slice.size(e, function Equation.size(resize = true)) for e in unmatched_eqns)) + ") Unmatched Equations")
         + List.toString(unmatched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n";
+
       if Flags.isSet(Flags.BLT_DUMP) then
+        // get all states and add them to the variables
+        opt_states        := list(BVariable.getVarState(var) for var guard(BVariable.isStateDerivative(var)) in VariablePointers.toList(variables));
+        states            := list(Util.getOption(var) for var guard(Util.isSome(var)) in opt_states);
+
+        // add the new variables to the adjacency matrices
+        vo                := UnorderedMap.copy(variables.map);
+        ir_variables      := VariablePointers.addList(states, variables);
+        vn                := UnorderedMap.subMap(variables.map, list(BVariable.getVarName(state) for state in states));
+        eo                := equations.map;
+        en                := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+        (ir_adj, ir_full) := Adjacency.Matrix.expand(adj, full, vo, vn, eo, en, ir_variables, equations);
+
         // get the minimally structurally singular subset
-        msss := match adj
-          case Adjacency.FINAL() then getMSSS(adj.m, adj.mT, matching);
+        msss := match ir_adj
+          case Adjacency.FINAL() then getMSSS(ir_adj.m, ir_adj.mT, matching);
           else algorithm
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected final matrix as adj input but got :\n"
-              + Adjacency.Matrix.toString(adj)});
+              + Adjacency.Matrix.toString(ir_adj)});
           then fail();
         end match;
 
         for marked_eqns in msss loop
-          (constraints, states, _, _) := getConstraintsAndCandidates(equations, marked_eqns, mapping_opt);
+          (constraints, candidates, _, _) := getConstraintsAndCandidates(equations, marked_eqns, mapping_opt);
           err_str := err_str + StringUtil.headline_2("MSSS " + intString(msss_idx) + "") + "\n"
             + EquationPointers.toString(constraints, "Constraint")
-            + VariablePointers.toString(states, "State");
+            + VariablePointers.toString(candidates, "State Candidates");
           msss_idx := msss_idx + 1;
         end for;
       end if;
@@ -440,8 +455,8 @@ protected
     output array<list<Integer>> msss;
   protected
     list<Integer> eqn_candidates = {};
-    array<Integer> eqn_coloring = arrayCreate(arrayLength(matching.eqn_to_var), -1);
-    array<Integer> var_coloring = arrayCreate(arrayLength(matching.var_to_eqn), -1);
+    array<Integer> eqn_coloring = arrayCreate(arrayLength(m), -1);
+    array<Integer> var_coloring = arrayCreate(arrayLength(mT), -1);
     Integer color = 0;
   algorithm
     // find all unmatched variable and equation indices
