@@ -11,14 +11,14 @@ underdetermined_init.mos \
 partitioning.mos \
 variability.mos \
 enumeration.mos \
-
-# test that currently fail. Move up when fixed.
-# Run make failingtest
-FAILINGTESTFILES = \
 simpleForLoop.mos \
 minimalTearing.mos \
 solveSingleEquation.mos \
 detectStates.mos \
+
+# test that currently fail. Move up when fixed.
+# Run make failingtest
+FAILINGTESTFILES = \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
