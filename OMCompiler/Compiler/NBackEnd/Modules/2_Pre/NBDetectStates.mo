@@ -203,7 +203,7 @@ protected
 
     aux_eqns := Pointer.access(acc_aux_equations);
     if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) and not listEmpty(aux_eqns) then
-      print(StringUtil.headline_4("[stateselection] Created auxiliary equations:"));
+      print(StringUtil.headline_4("[stateselection] (" + intString(listLength(aux_eqns)) + ") Created auxiliary equations:"));
       print(List.toString(aux_eqns, function Equation.pointerToString(str=""), "", "\t", "\n\t", "\n") + "\n");
     end if;
   end detectContinuousStatesDefault;
@@ -351,7 +351,7 @@ protected
     algebraics := VariablePointers.removeList(acc_states, algebraics);
 
     if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
-      print(StringUtil.headline_4("[stateselection] Natural states before index reduction:"));
+      print(StringUtil.headline_4("[stateselection] (" + intString(listLength(acc_states)) + ") Natural states before index reduction:"));
       if listEmpty(acc_states) then
         print("\t<no states>\n\n");
       else

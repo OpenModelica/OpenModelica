@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 basic_IR.mos\
+static_IR.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
