@@ -329,7 +329,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   /* if FLAG_IDA_LS is set, choose ida linear solver method */
   if (omc_flag[FLAG_IDA_LS]) {
     for (i=1; i< IDA_LS_MAX; i++) {
-      if (!strcmp((const char*)omc_flagValue[FLAG_IDA_LS], IDA_LS_METHOD[i])) {
+      if (!strcmp((const char*)omc_flagValue[FLAG_IDA_LS], IDA_LS_METHOD_NAME[i])) {
         idaData->linearSolverMethod = (enum IDA_LS)i;
         break;
       }
@@ -338,7 +338,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
       if (OMC_ACTIVE_WARNING_STREAM(OMC_LOG_SOLVER)) {
         warningStreamPrint(OMC_LOG_SOLVER, 1, "unrecognized ida linear solver method %s, current options are:", (const char*)omc_flagValue[FLAG_IDA_LS]);
         for(i=1; i < IDA_LS_MAX; ++i) {
-          warningStreamPrint(OMC_LOG_SOLVER, 0, "%-15s [%s]", IDA_LS_METHOD[i], IDA_LS_METHOD_DESC[i]);
+          warningStreamPrint(OMC_LOG_SOLVER, 0, "%-15s [%s]", IDA_LS_METHOD_NAME[i], IDA_LS_METHOD_DESC[i]);
         }
         messageClose(OMC_LOG_SOLVER);
       }
@@ -465,7 +465,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
 #endif
       break;
     default:
-      throwStreamPrint(threadData,"For the klu solver jacobian calculation method has to be %s or %s", JACOBIAN_METHOD[COLOREDSYMJAC], JACOBIAN_METHOD[COLOREDNUMJAC]);
+      throwStreamPrint(threadData,"For the klu solver jacobian calculation method has to be %s or %s", JACOBIAN_METHOD_NAME[COLOREDSYMJAC], JACOBIAN_METHOD_NAME[COLOREDNUMJAC]);
       break;
     }
   /* Use dense jacobian evaluation */

@@ -252,7 +252,6 @@ enum GB_METHOD {
   RK_RUNGEKUTTA,      /* rungekutta*/
   RK_RKSSC,           /* rungekuttaSsc */
 
-
   RK_MAX
 };
 
@@ -419,7 +418,7 @@ typedef enum NEWTON_STRATEGY
 extern const char *NEWTONSTRATEGY_NAME[NEWTON_MAX];
 extern const char *NEWTONSTRATEGY_DESC[NEWTON_MAX];
 
-enum JACOBIAN_METHOD
+typedef enum JACOBIAN_METHOD
 {
   JAC_UNKNOWN = 0,
 
@@ -430,9 +429,9 @@ enum JACOBIAN_METHOD
   SYMJAC,             /* Non-colored symbolic Jacobian */
 
   JAC_MAX
-};
+} JACOBIAN_METHOD;
 
-extern const char *JACOBIAN_METHOD[JAC_MAX];
+extern const char *JACOBIAN_METHOD_NAME[JAC_MAX];
 extern const char *JACOBIAN_METHOD_DESC[JAC_MAX];
 
 /**
@@ -453,7 +452,7 @@ enum IDA_LS
   IDA_LS_MAX        /* Maximum number of methods available. Not a method itself! */
 };
 
-extern const char *IDA_LS_METHOD[IDA_LS_MAX];
+extern const char *IDA_LS_METHOD_NAME[IDA_LS_MAX];
 extern const char *IDA_LS_METHOD_DESC[IDA_LS_MAX];
 
 /**
@@ -474,7 +473,7 @@ typedef enum NLS_LS
   NLS_LS_MAX
 } NLS_LS;
 
-extern const char *NLS_LS_METHOD[NLS_LS_MAX];
+extern const char *NLS_LS_METHOD_NAME[NLS_LS_MAX];
 extern const char *NLS_LS_METHOD_DESC[NLS_LS_MAX];
 
 /**
@@ -492,7 +491,7 @@ enum IMPRK_LS
   IMPRK_LS_MAX
 };
 
-extern const char *IMPRK_LS_METHOD[IMPRK_LS_MAX];
+extern const char *IMPRK_LS_METHOD_NAME[IMPRK_LS_MAX];
 extern const char *IMPRK_LS_METHOD_DESC[IMPRK_LS_MAX];
 
 enum HOMOTOPY_BACKTRACE_STRATEGY

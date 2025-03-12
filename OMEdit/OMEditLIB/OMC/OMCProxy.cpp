@@ -3085,7 +3085,7 @@ void OMCProxy::getSolverMethods(QStringList *methods, QStringList *descriptions)
 void OMCProxy::getJacobianMethods(QStringList *methods, QStringList *descriptions)
 {
   for (int i = JAC_UNKNOWN + 1 ; i < JAC_MAX ; i++) {
-    *methods << JACOBIAN_METHOD[i];
+    *methods << JACOBIAN_METHOD_NAME[i];
     *descriptions << JACOBIAN_METHOD_DESC[i];
   }
 }

@@ -594,7 +594,7 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
     assertStreamPrint(threadData, NULL != cvodeData->linSol, "##CVODE## SUNLinSol_Dense failed.");
     break;
   default:
-    throwStreamPrint(threadData, "##CVODE## Unknown linear solver method %s for CVODE.", JACOBIAN_METHOD[cvodeData->config.jacobianMethod]);
+    throwStreamPrint(threadData, "##CVODE## Unknown linear solver method %s for CVODE.", JACOBIAN_METHOD_NAME[cvodeData->config.jacobianMethod]);
   }
   flag = CVodeSetLinearSolver(cvodeData->cvode_mem, cvodeData->linSol, cvodeData->J);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CVLS_FLAG, "CVodeSetLinearSolver");
@@ -619,13 +619,13 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
     infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE Use internal dense numeric jacobian method.");
     break;
   case COLOREDNUMJAC:
-    throwStreamPrint(threadData, "##CVODE## LJacobian method %s not yet implemented.", JACOBIAN_METHOD[cvodeData->config.jacobianMethod]);
+    throwStreamPrint(threadData, "##CVODE## LJacobian method %s not yet implemented.", JACOBIAN_METHOD_NAME[cvodeData->config.jacobianMethod]);
     //flag = CVodeSetJacFn(cvodeData->cvode_mem, callDenseJacobian);
     //checkReturnFlag_SUNDIALS(flag, SUNDIALS_CVLS_FLAG, "CVodeSetJacFn");
     //infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE Use colored dense numeric jacobian method.");
     break;
   default:
-    throwStreamPrint(threadData, "##CVODE## Jacobian method %s not yet implemented.", JACOBIAN_METHOD[cvodeData->config.jacobianMethod]);
+    throwStreamPrint(threadData, "##CVODE## Jacobian method %s not yet implemented.", JACOBIAN_METHOD_NAME[cvodeData->config.jacobianMethod]);
   }
 
   /* Set optional non-linear solver module */

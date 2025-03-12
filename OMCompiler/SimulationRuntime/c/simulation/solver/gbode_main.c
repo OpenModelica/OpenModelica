@@ -214,7 +214,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
       } else {
         flagValue = NULL;
       }
-      enum JACOBIAN_METHOD jacobianMethod = setJacobianMethod(threadData, jacobian->availability, flagValue);
+      JACOBIAN_METHOD jacobianMethod = setJacobianMethod(threadData, jacobian->availability, flagValue);
 
       gbfData->symJacAvailable = jacobian->availability == JACOBIAN_AVAILABLE;
       // change GBODE specific jacobian method
@@ -447,7 +447,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     } else {
       flagValue = NULL;
     }
-    enum JACOBIAN_METHOD jacobianMethod = setJacobianMethod(threadData, jacobian->availability, flagValue);
+    JACOBIAN_METHOD jacobianMethod = setJacobianMethod(threadData, jacobian->availability, flagValue);
 
     gbData->symJacAvailable = jacobian->availability == JACOBIAN_AVAILABLE;
     // change GBODE specific jacobian method

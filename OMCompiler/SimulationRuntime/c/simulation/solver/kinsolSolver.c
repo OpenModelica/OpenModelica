@@ -189,7 +189,7 @@ void initKinsolMemory(NLS_KINSOL_DATA *kinsolData) {
     throwStreamPrint(NULL, "KINSOL: Unknown linear solver method.");
   }
   /* Log used solver */
-  infoStreamPrint(OMC_LOG_NLS, 0, "KINSOL: Using linear solver method %s", NLS_LS_METHOD[kinsolData->linearSolverMethod]);
+  infoStreamPrint(OMC_LOG_NLS, 0, "KINSOL: Using linear solver method %s", NLS_LS_METHOD_NAME[kinsolData->linearSolverMethod]);
 
   /* Set linear solver */
   flag = KINSetLinearSolver(kinsolData->kinsolMemory, kinsolData->linSol,

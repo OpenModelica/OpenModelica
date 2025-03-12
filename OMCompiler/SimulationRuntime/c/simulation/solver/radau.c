@@ -162,7 +162,7 @@ int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     /* Set lsMethod to IMPRK_LS_ITERATIVE or IMPRK_LS_DENSE, warn if IMPRK_LS_UNKNOWN */
     for(i=1; i < IMPRK_LS_MAX; i++)
     {
-      if (!strcmp((const char*)omc_flagValue[FLAG_IMPRK_LS], IMPRK_LS_METHOD[i])){
+      if (!strcmp((const char*)omc_flagValue[FLAG_IMPRK_LS], IMPRK_LS_METHOD_NAME[i])){
         kinOde->lsMethod = (enum IMPRK_LS)i;
         break;
       }
@@ -174,7 +174,7 @@ int allocateKinOde(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
         warningStreamPrint(OMC_LOG_SOLVER, 1, "unrecognized linear solver method %s, current options are:", (const char*)omc_flagValue[FLAG_IMPRK_LS]);
         for(i=1; i < IMPRK_LS_MAX; ++i)
         {
-          warningStreamPrint(OMC_LOG_SOLVER, 0, "%-15s [%s]", IMPRK_LS_METHOD[i], IMPRK_LS_METHOD_DESC[i]);
+          warningStreamPrint(OMC_LOG_SOLVER, 0, "%-15s [%s]", IMPRK_LS_METHOD_NAME[i], IMPRK_LS_METHOD_DESC[i]);
         }
         messageClose(OMC_LOG_SOLVER);
       }

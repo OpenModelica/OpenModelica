@@ -322,7 +322,7 @@ int dassl_initial(DATA* data, threadData_t *threadData,
   {
     for(i=1; i< JAC_MAX;i++)
     {
-      if(!strcmp((const char*)omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD[i])){
+      if(!strcmp((const char*)omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD_NAME[i])){
         dasslData->dasslJacobian = (int)i;
         break;
       }
@@ -334,7 +334,7 @@ int dassl_initial(DATA* data, threadData_t *threadData,
         warningStreamPrint(OMC_LOG_SOLVER, 1, "unrecognized jacobian calculation method %s, current options are:", (const char*)omc_flagValue[FLAG_JACOBIAN]);
         for(i=1; i < JAC_MAX; ++i)
         {
-          warningStreamPrint(OMC_LOG_SOLVER, 0, "%-15s [%s]", JACOBIAN_METHOD[i], JACOBIAN_METHOD_DESC[i]);
+          warningStreamPrint(OMC_LOG_SOLVER, 0, "%-15s [%s]", JACOBIAN_METHOD_NAME[i], JACOBIAN_METHOD_DESC[i]);
         }
         messageClose(OMC_LOG_SOLVER);
       }
