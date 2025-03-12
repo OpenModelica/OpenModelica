@@ -210,6 +210,12 @@ protected
   list<BackendDAE.Var> referencevar, tempreferencevar, knownVarList={}, aliasVarList={};
   BackendDAE.Var tempvar;
 algorithm
+  // only do this for FMUs
+  if not Flags.getConfigBool(Flags.BUILDING_FMU) then
+    outDAE := inDAE;
+    return;
+  end if;
+
   aliasVars := BackendDAEUtil.getAliasVars(inDAE);
   systvars := BackendVariable.listVar(BackendVariable.equationSystemsVarsLst(inDAE.eqs));
 
