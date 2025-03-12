@@ -146,14 +146,14 @@ public
       (adj, full, vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.balanceInitialization(adj, full, vars, eqns, varData, eqData, funcTree, matching, mapping);
     else
       // ####### INDEX REDUCTION #######
-      (adj, full, vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.noIndexReduction(adj, full, vars, eqns, varData, eqData, funcTree, matching, mapping);
+      (adj, full, vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.indexReduction(adj, full, vars, eqns, varData, eqData, funcTree, matching, mapping);
     end if;
 
     // 3. Recompute adjacency and restart matching if something changed in step 2.
     if changed then
       // ToDo: keep more of old information by only updating changed stuff
-      adj := Adjacency.Matrix.createFull(vars, eqns);
-      adj := Adjacency.Matrix.fromFull(adj, vars.map, eqns.map, eqns, matrixStrictness);
+      full  := Adjacency.Matrix.createFull(vars, eqns);
+      adj   := Adjacency.Matrix.fromFull(full, vars.map, eqns.map, eqns, matrixStrictness);
       if Kind == NBPartition.Kind.INI then
         // ####### DO NOT REDO BALANCING INITIALIZATION #######
         matching := regular(EMPTY_MATCHING, adj);

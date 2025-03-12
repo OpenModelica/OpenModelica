@@ -626,7 +626,7 @@ public
           invertRelation := RelationInversion.FALSE;
         end if;
 
-        if Flags.isSet(Flags.FAILTRACE) then
+        if Flags.isSet(Flags.FAILTRACE) and status <> Status.EXPLICIT then
           Error.addCompilerWarning(getInstanceName() + " cref: " + ComponentRef.toString(fixed_cref)
             + " has to be solved implicitely in equation:\n" + Equation.toString(eqn));
         end if;

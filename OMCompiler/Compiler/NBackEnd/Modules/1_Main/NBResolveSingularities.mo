@@ -102,7 +102,6 @@ public
   protected
     list<Integer> marked_eqns;
     Adjacency.Matrix state_adj;
-    SlicingStatus status;
     Pointer<Equation> constraint, sliced_eqn, diffed_eqn;
     list<Slice<VariablePointer>> state_candidates = {}, states, dummy_states;
     list<Pointer<Variable>> sliced_candidates, sliced_states, sliced_dummy_states, state_derivatives, dummy_derivatives = {};
@@ -130,7 +129,6 @@ public
       changed := true;
       // msss to flat unique list (via UnorderedSet)
       marked_eqns := UnorderedSet.unique_list(List.flatten(arrayList(msss)), Util.id, intEq);
-      print(List.toString(marked_eqns, intString) + "\n");
       // --------------------------------------------------------
       //      1. BASIC INDEX REDUCTION
       // --------------------------------------------------------
@@ -139,28 +137,23 @@ public
       // state candidates and constraint equations are lists of slices
       // adjacency matrix and arrays are only full based
       // slice them before matching
-      (_, _, state_adj, constraint_eqns) := getConstraintsAndCandidates(equations, marked_eqns, mapping_opt);
-      state_candidates := {};
+      (constraint_ptrs, candidate_ptrs, state_adj, constraint_eqns) := getConstraintsAndCandidates(equations, marked_eqns, mapping_opt);
 
-      if List.compareLength(state_candidates, constraint_eqns) < 0 then
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-          + " failed because there were not enough state candidates to balance out the constraint equations.\n"
-          + StringUtil.headline_4("(" + intString(listLength(state_candidates)) + "|"
-          + intString(sum(Slice.size(v, function BVariable.size(resize = true)) for v in state_candidates)) + ") State Candidates")
-          + List.toString(state_candidates, function Slice.toString(func=BVariable.pointerToString, maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"
-          + StringUtil.headline_4("(" + intString(listLength(constraint_eqns)) + "|"
-          + intString(sum(Slice.size(e, function Equation.size(resize = true)) for e in constraint_eqns)) + ") Constraint Equations")
-          + List.toString(constraint_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"});
-        fail();
+      if VariablePointers.scalarSize(candidate_ptrs) < EquationPointers.scalarSize(constraint_ptrs) then
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there was not enough state candidates to balance out the constraint equations.\n"
+          + EquationPointers.toString(constraint_ptrs, "Constraint") + "\n" + VariablePointers.toString(candidate_ptrs, "State Candidate")});
+       fail();
       end if;
 
       // ToDo: differ between user dumping and developer dumping
       if Flags.isSet(Flags.DUMMY_SELECT) then
-        print(toStringCandidatesConstraints(state_candidates, constraint_eqns));
+        print(StringUtil.headline_1("Index Reduction") + "\n"
+            + VariablePointers.toString(candidate_ptrs, "State Candidate")
+            + EquationPointers.toString(constraint_ptrs, "Constraint"));
       end if;
 
       // Build differentiation argument structure
-      diffArguments := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.TIME, funcTree);
+      diffArguments     := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.TIME, funcTree);
       diffArguments_ptr := Pointer.create(diffArguments);
 
       if Flags.isSet(Flags.DUMMY_SELECT) then
@@ -168,17 +161,8 @@ public
       end if;
 
       // differentiate all eqns
-      for eqn in constraint_eqns loop
-        constraint := Slice.getT(eqn);
-        (sliced_eqn, status) := Equation.slice(constraint, eqn.indices, NONE(), funcTree);
-        if status == SlicingStatus.UNCHANGED then
-          diffed_eqn := Differentiate.differentiateEquationPointer(constraint, diffArguments_ptr);
-        else
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because slicing during index reduction is not yet supported.\n"
-            + "  constraint eqn:\t\t" + Equation.toString(Pointer.access(constraint)) + "\n"
-            + "  needed sliced eqn:\t\t" + Equation.toString(Pointer.access(sliced_eqn)) + "\n"});
-          fail();
-        end if;
+      for constraint in EquationPointers.toList(constraint_ptrs) loop
+        diffed_eqn := Differentiate.differentiateEquationPointer(constraint, diffArguments_ptr);
         new_eqns := diffed_eqn :: new_eqns;
         if Flags.isSet(Flags.DUMMY_SELECT) then
           print("[dummyselect] constraint eqn:\t\t" + Equation.toString(Pointer.access(constraint)) + "\n");
@@ -190,10 +174,8 @@ public
       // --------------------------------------------------------
       //  2. DUMMY DERIVATIVE
       // --------------------------------------------------------
-      sliced_candidates := list(Slice.getT(state) for state in state_candidates);
-      candidate_ptrs  := VariablePointers.fromList(sliced_candidates);
-      sliced_constraints := list(Slice.getT(constraint) for constraint in constraint_eqns);
-      constraint_ptrs := EquationPointers.fromList(sliced_constraints);
+      //sliced_constraints := list(Slice.getT(constraint) for constraint in constraint_eqns);
+      //constraint_ptrs := EquationPointers.fromList(sliced_constraints);
 
       // create adjacency matrix and match with transposed matrix to respect variable priority
       // create full matrix
@@ -212,7 +194,7 @@ public
 
       if Flags.isSet(Flags.DUMMY_SELECT) then
         print(StringUtil.headline_4("(" + intString(listLength(states)) + ") Selected States"));
-        print(Slice.lstToString(states, BVariable.pointerToString) + "\n");
+        print(Slice.lstToString(states, BVariable.pointerToString) + "\n\n");
       end if;
 
       // --------------------------------------------------------
@@ -234,7 +216,7 @@ public
         //  4. STATIC STATE SELECTION
         // --------------------------------------------------------
         if Flags.isSet(Flags.DUMMY_SELECT) then
-          print(StringUtil.headline_2("\t STATIC STATE SELECTION\n\t(no unmatched equations)"));
+          print(StringUtil.headline_2("\t STATIC STATE SELECTION\n\t(no unmatched equations)") + "\n");
         end if;
       else
         // --------------------------------------------------------
@@ -286,12 +268,8 @@ public
     list<Slice<VariablePointer>> unmatched_vars, matched_vars;
     list<Slice<EquationPointer>> unmatched_eqns, matched_eqns;
     String err_str;
-    list<Option<Pointer<Variable>>> opt_states;
-    list<Pointer<Variable>> states;
-    UnorderedMap<ComponentRef, Integer> vo, vn, eo, en;
-    Adjacency.Matrix ir_full, ir_adj; // adjacency matrices containing states
     array<list<Integer>> msss;
-    VariablePointers candidates, ir_variables;
+    VariablePointers candidates;
     EquationPointers constraints;
     Integer msss_idx = 1;
   algorithm
@@ -306,24 +284,12 @@ public
         + List.toString(unmatched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n";
 
       if Flags.isSet(Flags.BLT_DUMP) then
-        // get all states and add them to the variables
-        opt_states        := list(BVariable.getVarState(var) for var guard(BVariable.isStateDerivative(var)) in VariablePointers.toList(variables));
-        states            := list(Util.getOption(var) for var guard(Util.isSome(var)) in opt_states);
-
-        // add the new variables to the adjacency matrices
-        vo                := UnorderedMap.copy(variables.map);
-        ir_variables      := VariablePointers.addList(states, variables);
-        vn                := UnorderedMap.subMap(variables.map, list(BVariable.getVarName(state) for state in states));
-        eo                := equations.map;
-        en                := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
-        (ir_adj, ir_full) := Adjacency.Matrix.expand(adj, full, vo, vn, eo, en, ir_variables, equations);
-
         // get the minimally structurally singular subset
-        msss := match ir_adj
-          case Adjacency.FINAL() then getMSSS(ir_adj.m, ir_adj.mT, matching);
+        msss := match adj
+          case Adjacency.FINAL() then getMSSS(adj.m, adj.mT, matching);
           else algorithm
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected final matrix as adj input but got :\n"
-              + Adjacency.Matrix.toString(ir_adj)});
+              + Adjacency.Matrix.toString(adj)});
           then fail();
         end match;
 
@@ -331,7 +297,7 @@ public
           (constraints, candidates, _, _) := getConstraintsAndCandidates(equations, marked_eqns, mapping_opt);
           err_str := err_str + StringUtil.headline_2("MSSS " + intString(msss_idx) + "") + "\n"
             + EquationPointers.toString(constraints, "Constraint")
-            + VariablePointers.toString(candidates, "State Candidates");
+            + VariablePointers.toString(candidates, "State Candidate");
           msss_idx := msss_idx + 1;
         end for;
       end if;
@@ -568,12 +534,6 @@ protected
     // create adjacency matrix
     full      := Adjacency.Matrix.createFull(states, constr);
     state_adj := Adjacency.Matrix.fromFull(full, states.map, constr.map, constr, NBAdjacency.MatrixStrictness.LINEAR);
-
-    print(VariablePointers.toString(states) + "\n");
-    print(EquationPointers.toString(constr) + "\n");
-
-    print(Adjacency.Matrix.toString(full, "full") + "\n");
-    print(Adjacency.Matrix.toString(state_adj, "final") + "\n");
 
     // plan:
     // BEFORE -> figure out state order stuff (in detect states? replace all know der() calls with respective states instead of $DER)
