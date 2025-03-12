@@ -38,7 +38,7 @@ public
 
 protected
   // NF imports
-  import NFBackendExtension.{BackendInfo, VariableAttributes};
+  import NFBackendExtension.{BackendInfo, VariableAttributes, StateSelect};
   import ComponentRef = NFComponentRef;
   import NFFlatten.FunctionTree;
 
@@ -100,11 +100,13 @@ public
       "
   extends Module.resolveSingularitiesInterface;
   protected
+    array<list<Integer>> msss;
     list<Integer> marked_eqns;
     Adjacency.Matrix state_adj;
     Pointer<Equation> constraint, sliced_eqn, diffed_eqn;
     list<Slice<VariablePointer>> state_candidates = {}, states, dummy_states;
     list<Pointer<Variable>> sliced_candidates, sliced_states, sliced_dummy_states, state_derivatives, dummy_derivatives = {};
+    list<Pointer<Variable>> current_candidates, rest_candidates;
     list<Slice<EquationPointer>> constraint_eqns = {}, matched_eqns, unmatched_eqns;
     list<Pointer<Equation>> sliced_constraints, new_eqns = {};
     Differentiate.DifferentiationArguments diffArguments;
@@ -113,7 +115,7 @@ public
     EquationPointers constraint_ptrs;
     Adjacency.Matrix set_adj, full_local;
     Matching set_matching;
-    array<list<Integer>> msss;
+    UnorderedMap<ComponentRef, Integer> vo, vn, eo, en;
     Boolean debug = false;
   algorithm
     // get the minimally structurally singular subset
@@ -137,7 +139,7 @@ public
       // state candidates and constraint equations are lists of slices
       // adjacency matrix and arrays are only full based
       // slice them before matching
-      (constraint_ptrs, candidate_ptrs, state_adj, constraint_eqns) := getConstraintsAndCandidates(equations, marked_eqns, mapping_opt);
+      (constraint_ptrs, candidate_ptrs, constraint_eqns) := getConstraintsAndCandidates(equations, marked_eqns, mapping_opt);
 
       if VariablePointers.scalarSize(candidate_ptrs) < EquationPointers.scalarSize(constraint_ptrs) then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there was not enough state candidates to balance out the constraint equations.\n"
@@ -174,28 +176,45 @@ public
       // --------------------------------------------------------
       //  2. DUMMY DERIVATIVE
       // --------------------------------------------------------
-      //sliced_constraints := list(Slice.getT(constraint) for constraint in constraint_eqns);
-      //constraint_ptrs := EquationPointers.fromList(sliced_constraints);
+      // create full adjacency matrix and prepare data
+      full_local      := Adjacency.Matrix.createFull(candidate_ptrs, constraint_ptrs);
+      set_adj         := Adjacency.Matrix.EMPTY(NBAdjacency.MatrixStrictness.LINEAR);
+      rest_candidates := VariablePointers.toList(candidate_ptrs);
+      eo              := constraint_ptrs.map;
+      en              := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+      vo              := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+      vn              := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+      set_matching    := NBMatching.EMPTY_MATCHING;
 
-      // create adjacency matrix and match with transposed matrix to respect variable priority
-      // create full matrix
-      full_local := Adjacency.Matrix.createFull(candidate_ptrs, constraint_ptrs);
-      // create solvable adjacency matrix for matching
-      set_adj := Adjacency.Matrix.fromFull(full_local, candidate_ptrs.map, constraint_ptrs.map, constraint_ptrs, NBAdjacency.MatrixStrictness.LINEAR);
-      set_matching := Matching.regular(NBMatching.EMPTY_MATCHING, set_adj, true, true);
+      for stateSelect in {StateSelect.NEVER, StateSelect.AVOID, StateSelect.DEFAULT, StateSelect.PREFER} loop
+        // split the candidates to get all currently relevant ones and create the index map for them
+        (current_candidates, rest_candidates) := List.splitOnTrue(rest_candidates, function BVariable.isStateSelect(stateSelect = stateSelect));
+        if not listEmpty(current_candidates) then
+          // prepare the current maps
+          vo := UnorderedMap.merge(vo, UnorderedMap.copy(vn), sourceInfo());
+          vn := UnorderedMap.subMap(candidate_ptrs.map, list(BVariable.getVarName(var) for var in current_candidates));
+          // expand the adjacency matrix
+          (set_adj, full_local)   := Adjacency.Matrix.expand(set_adj, full_local, vo, vn, eo, en, candidate_ptrs, constraint_ptrs);
+          // continue matching
+          set_matching            := Matching.regular(set_matching, set_adj, false, true, false);
 
-      if debug then
-        print(Adjacency.Matrix.toString(set_adj, "Index Reduction"));
-        print(Matching.toString(set_matching, "Index Reduction "));
-      end if;
+          if debug then
+            print(Adjacency.Matrix.toString(set_adj, "(" + VariableAttributes.stateSelectString(stateSelect) + ") Index Reduction"));
+            print(Matching.toString(set_matching, "(" + VariableAttributes.stateSelectString(stateSelect) + ") Index Reduction"));
+          end if;
+        else
+          if debug then
+            print("Nothing done for (" + VariableAttributes.stateSelectString(stateSelect) + ") Index Reduction\n\n");
+          end if;
+        end if;
+      end for;
+
+
+      //if not BVariable.isStateSelect(BVariable.getVarPointer(candidate), StateSelect.ALWAYS) then
+
 
       // parse the result of the matching
       (dummy_states, states, matched_eqns, unmatched_eqns) := Matching.getMatches(set_matching, Adjacency.Matrix.getMappingOpt(set_adj), candidate_ptrs, constraint_ptrs);
-
-      if Flags.isSet(Flags.DUMMY_SELECT) then
-        print(StringUtil.headline_4("(" + intString(listLength(states)) + ") Selected States"));
-        print(Slice.lstToString(states, BVariable.pointerToString) + "\n\n");
-      end if;
 
       // --------------------------------------------------------
       //  3. STATIC AND DYNAMIC STATE SELECTION
@@ -210,6 +229,17 @@ public
           fail();
         end if;
       end for;
+
+      if Flags.isSet(Flags.DUMMY_SELECT) then
+        print(StringUtil.headline_4("[dummyselect] (" + intString(listLength(states)) + ") Selected States"));
+        print(Slice.lstToString(states, BVariable.pointerToString) + "\n\n");
+      end if;
+      if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
+        print(StringUtil.headline_4("[stateselection] (" + intString(listLength(diffArguments.new_vars)) + ") State Derivatives Created by Differentiation"));
+        print(List.toString(diffArguments.new_vars, BVariable.pointerToString, "", "\t", "\n\t", "") + "\n\n");
+        print(StringUtil.headline_4("[stateselection] (" + intString(listLength(dummy_states)) + ") Selected Dummy States"));
+        print(Slice.lstToString(dummy_states, BVariable.pointerToString) + "\n\n");
+      end if;
 
       if listEmpty(unmatched_eqns) then
         // --------------------------------------------------------
@@ -294,7 +324,7 @@ public
         end match;
 
         for marked_eqns in msss loop
-          (constraints, candidates, _, _) := getConstraintsAndCandidates(equations, marked_eqns, mapping_opt);
+          (constraints, candidates, _) := getConstraintsAndCandidates(equations, marked_eqns, mapping_opt);
           err_str := err_str + StringUtil.headline_2("MSSS " + intString(msss_idx) + "") + "\n"
             + EquationPointers.toString(constraints, "Constraint")
             + VariablePointers.toString(candidates, "State Candidate");
@@ -491,7 +521,6 @@ protected
     input Option<Adjacency.Mapping> mapping_opt;
     output EquationPointers constr = EquationPointers.empty();
     output VariablePointers states = VariablePointers.empty();
-    output Adjacency.Matrix state_adj;
     output list<Slice<EquationPointer>> sliced_constr = {};
   protected
     Adjacency.Mapping mapping;
@@ -499,7 +528,6 @@ protected
     array<list<Integer>> eqn_slices = arrayCreate(EquationPointers.size(equations), {});
     UnorderedSet<ComponentRef> state_candidates = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     Pointer<Equation> eqn_ptr;
-    Adjacency.Matrix full;
   algorithm
     // get the mapping and fail if there is none
     mapping := match mapping_opt
@@ -530,48 +558,6 @@ protected
     for candidate in UnorderedSet.toList(state_candidates) loop
       states := VariablePointers.add(BVariable.getVarPointer(candidate), states);
     end for;
-
-    // create adjacency matrix
-    full      := Adjacency.Matrix.createFull(states, constr);
-    state_adj := Adjacency.Matrix.fromFull(full, states.map, constr.map, constr, NBAdjacency.MatrixStrictness.LINEAR);
-
-    // plan:
-    // BEFORE -> figure out state order stuff (in detect states? replace all know der() calls with respective states instead of $DER)
-    // just like with the constraint equations, get the states candidates
-    // create state candidates array use it for createFull
-    // create final from full
-    // slice final using the constr slicings (state slicing not needed)
-
-/*
-    (constraint_eqns, state_candidates) := match mapping_opt
-      local
-        Adjacency.Mapping mapping;
-        Pointer<Equation> constraint;
-
-      // SCALAR
-      case NONE() algorithm
-        candidates := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(marked_eqns)));
-        for idx in marked_eqns loop
-          constraint := ExpandableArray.get(idx, equations.eqArr);
-          eqns_scalar := constraint :: eqns_scalar;
-          for candidate in BEquation.Equation.collectCrefs(Pointer.access(constraint), getStateCandidate) loop
-            UnorderedSet.add(candidate, candidates);
-          end for;
-        end for;
-        for cref in UnorderedSet.toList(candidates) loop
-          vars_scalar := BVariable.getVarPointer(cref) :: vars_scalar;
-        end for;
-        vars_scalar := sortCandidates(vars_scalar);
-      then (list(Slice.SLICE(eqn, {}) for eqn in eqns_scalar), list(Slice.SLICE(var, {}) for var in vars_scalar));
-
-      // PSEUDO ARRAY
-      case SOME(mapping) algorithm
-      then ({}, {});
-
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
-      then fail();
-    end match;*/
   end getConstraintsAndCandidates;
 
   function getStateCandidate

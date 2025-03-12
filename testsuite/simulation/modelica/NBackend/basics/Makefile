@@ -18,7 +18,6 @@ FAILINGTESTFILES = \
 simpleForLoop.mos \
 minimalTearing.mos \
 solveSingleEquation.mos \
-StaticIR.mos \
 detectStates.mos \
 
 # Dependency files that are not .mo .mos or Makefile
