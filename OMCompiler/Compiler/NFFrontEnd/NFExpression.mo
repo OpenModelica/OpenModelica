@@ -5762,6 +5762,25 @@ public
     end match;
   end nthRecordElement;
 
+  function getRecordElements
+    input Expression exp;
+    output list<Expression> elements = {};
+  protected
+    Type ty = Type.arrayElementType(typeOf(exp));
+  algorithm
+    elements := match ty
+      local
+        ComplexType complexTy;
+
+      case Type.COMPLEX(complexTy = complexTy as ComplexType.RECORD()) algorithm
+        for i in arrayLength(complexTy.fields):-1:1 loop
+          elements := recordElement(Record.Field.name(complexTy.fields[i]), exp) :: elements;
+        end for;
+      then elements;
+      else elements;
+    end match;
+  end getRecordElements;
+
   function retype
     input output Expression exp;
   algorithm
