@@ -338,6 +338,26 @@ constant Function MAX_REAL = Function.FUNCTION(Path.IDENT("max"),
     Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
+constant Function MIN_INT = Function.FUNCTION(Path.IDENT("min"),
+  InstNode.EMPTY_NODE(), {INT_PARAM, INT_PARAM}, {INT_PARAM}, {}, {},
+    Type.INTEGER(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function MIN_REAL = Function.FUNCTION(Path.IDENT("min"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function ARG_MIN_ARR_REAL = Function.FUNCTION(Path.IDENT("argmin"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM}, {INT_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function ARG_MAX_ARR_REAL = Function.FUNCTION(Path.IDENT("argmax"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM}, {INT_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
 constant Function DIV_INT = Function.FUNCTION(Path.IDENT("div"),
   InstNode.EMPTY_NODE(), {INT_PARAM, INT_PARAM}, {INT_PARAM}, {}, {},
     Type.INTEGER(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),

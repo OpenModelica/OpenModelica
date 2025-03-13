@@ -60,6 +60,7 @@ public
   import Sections = NFSections;
   import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
+  import Subscript = NFSubscript;
   import Type = NFType;
   import NFPrefixes.Variability;
   import Variable = NFVariable;
@@ -1045,35 +1046,48 @@ public
         end if;
       then ret;
 
+      // d/dz min(X) = (dX/dz)[argmin(X)]
       // d/dz min(x,y) = if x < y then dx/dz else dy/dz
       // d/dz max(x,y) = if x > y then dx/dz else dy/dz
-      // FIXME at x = y the derivative may not be well-defined
       case (Expression.CALL()) guard(name == "min" or name == "max")
       algorithm
-        (arg1, arg2) := match Call.arguments(exp.call)
-          case {arg1, arg2} then (arg1, arg2);
+        ret := match Call.arguments(exp.call)
+          case {arg1} algorithm
+            // dx/dz
+            (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
+            ty := Expression.typeOf(diffArg1);
+            if Expression.isZero(diffArg1) then
+              ret := Expression.makeZero(ty);
+            else
+              ret1 := Expression.CALL(Call.makeTypedCall(
+                fn          = if name == "min" then NFBuiltinFuncs.ARG_MIN_ARR_REAL else NFBuiltinFuncs.ARG_MAX_ARR_REAL,
+                args        = {arg1},
+                variability = Expression.variability(arg1),
+                purity      = NFPrefixes.Purity.PURE));
+              ret := Expression.applySubscripts({Subscript.INDEX(ret1)}, diffArg1);
+            end if;
+          then ret;
+
+          case {arg1, arg2} algorithm
+            // dx/dz, dy/dz
+            (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
+            (diffArg2, diffArguments) := differentiateExpression(arg2, diffArguments);
+
+            ty := Expression.typeOf(diffArg1);
+            if Expression.isZero(diffArg1) and Expression.isZero(diffArg2) then
+              ret := Expression.makeZero(ty);
+            else
+              // condition x < y or x > y
+              ret1 := Expression.RELATION(arg1, if name == "min" then Operator.makeLess(ty) else Operator.makeGreater(ty), arg2, -1);
+              // if condition then dx/dz else dy/dz
+              ret := Expression.IF(ty, ret1, diffArg1, diffArg2);
+            end if;
+          then ret;
           else algorithm
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
           then fail();
         end match;
 
-        // dx/dz, dy/dz
-        (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
-        (diffArg2, diffArguments) := differentiateExpression(arg2, diffArguments);
-
-        ty := Expression.typeOf(diffArg1);
-        if Expression.isZero(diffArg1) and Expression.isZero(diffArg2) then
-          ret := Expression.makeZero(ty);
-        else
-          // condition x < y or x > y
-          ret1 := Expression.RELATION(
-            arg1,
-            if name == "min" then Operator.makeLess(ty) else Operator.makeGreater(ty),
-            arg2,
-            -1);
-          // if condition then dx/dz else dy/dz
-          ret := Expression.IF(ty, ret1, diffArg1, diffArg2);
-        end if;
       then ret;
 
       // Builtin function call with one argument
