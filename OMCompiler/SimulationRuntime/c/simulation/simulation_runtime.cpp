@@ -985,7 +985,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
         {
           case FLAG_IDA_LS:
             for(j=1; j<IDA_LS_MAX; ++j) {
-              infoStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", IDA_LS_METHOD[j], IDA_LS_METHOD_DESC[j]);
+              infoStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", IDA_LS_METHOD_NAME[j], IDA_LS_METHOD_DESC[j]);
             }
             break;
 
@@ -997,7 +997,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
 
           case FLAG_JACOBIAN:
             for(j=1; j<JAC_MAX; ++j) {
-              infoStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", JACOBIAN_METHOD[j], JACOBIAN_METHOD_DESC[j]);
+              infoStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", JACOBIAN_METHOD_NAME[j], JACOBIAN_METHOD_DESC[j]);
             }
             break;
 
@@ -1033,7 +1033,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
 
           case FLAG_NLS_LS:
             for(j=firstOMCErrorStream; j<NLS_LS_MAX; ++j) {
-              infoStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", NLS_LS_METHOD[j], NLS_LS_METHOD_DESC[j]);
+              infoStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", NLS_LS_METHOD_NAME[j], NLS_LS_METHOD_DESC[j]);
             }
             break;
 
@@ -1078,7 +1078,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
   readFlag((int*)&homBacktraceStrategy, HOM_BACK_STRAT_MAX, omc_flagValue[FLAG_HOMOTOPY_BACKTRACE_STRATEGY], "-homBacktraceStrategy", HOM_BACK_STRAT_NAME, HOM_BACK_STRAT_DESC);
   readFlag((int*)&data->simulationInfo->newtonStrategy, NEWTON_MAX, omc_flagValue[FLAG_NEWTON_STRATEGY], "-newton", NEWTONSTRATEGY_NAME, NEWTONSTRATEGY_DESC);
   data->simulationInfo->nlsCsvInfomation = omc_flag[FLAG_NLS_INFO];
-  readFlag((int*)&data->simulationInfo->nlsLinearSolver, NLS_LS_MAX, omc_flagValue[FLAG_NLS_LS], "-nlsLS", NLS_LS_METHOD, NLS_LS_METHOD_DESC);
+  readFlag((int*)&data->simulationInfo->nlsLinearSolver, NLS_LS_MAX, omc_flagValue[FLAG_NLS_LS], "-nlsLS", NLS_LS_METHOD_NAME, NLS_LS_METHOD_DESC);
 
   if(omc_flag[FLAG_HOMOTOPY_ADAPT_BEND]) {
     homAdaptBend = atof(omc_flagValue[FLAG_HOMOTOPY_ADAPT_BEND]);

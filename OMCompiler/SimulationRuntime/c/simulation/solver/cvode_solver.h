@@ -78,7 +78,7 @@ typedef struct CVODE_CONFIG
                                 * CV_ITER_NEWTON = 2 for Newton iterations */
 
   booleantype internalSteps;           /* if TRUE internal step of the integrator are used, default FALSE */
-  enum JACOBIAN_METHOD jacobianMethod; /* Method for Jacobian computation */
+  JACOBIAN_METHOD jacobianMethod; /* Method for Jacobian computation */
 
   /* Optional configurations */
   double minStepSize;          /* Lower bound on the magnitude of the step size.

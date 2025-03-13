@@ -2722,7 +2722,7 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
 
       case FLAG_IDA_LS:
         numExtraFlags = IDA_LS_MAX;
-        flagName = IDA_LS_METHOD;
+        flagName = IDA_LS_METHOD_NAME;
         flagDesc = IDA_LS_METHOD_DESC;
         break;
 
@@ -2734,7 +2734,7 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
 
       case FLAG_JACOBIAN:
         numExtraFlags = JAC_MAX;
-        flagName = JACOBIAN_METHOD;
+        flagName = JACOBIAN_METHOD_NAME;
         flagDesc = JACOBIAN_METHOD_DESC;
         break;
 
@@ -2771,7 +2771,7 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
 
       case FLAG_NLS_LS:
         numExtraFlags = NLS_LS_MAX;
-        flagName = NLS_LS_METHOD;
+        flagName = NLS_LS_METHOD_NAME;
         flagDesc = NLS_LS_METHOD_DESC;
         break;
 

@@ -159,6 +159,7 @@ void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATT
       t_jac->seedVars[j] = 0;
     }
   }
+
 } // omp parallel
 }
 
@@ -178,3 +179,6 @@ void freeAnalyticalJacobian(ANALYTIC_JACOBIAN** jacColumns)
   free(*jacColumns);
 }
 #endif
+
+
+
