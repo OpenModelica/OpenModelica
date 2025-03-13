@@ -380,11 +380,11 @@ public
             //   case that inputs map 1:1 to attributes
             children_args := call.arguments;
           else
-            children_args := {};
+            children_args := Expression.getRecordElements(arg);
           end if;
         then children_args;
 
-        else {};
+        else Expression.getRecordElements(arg);
       end match;
 
       // check if children and children_args can be mapped to one another
