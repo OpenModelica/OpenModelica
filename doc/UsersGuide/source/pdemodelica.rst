@@ -3,7 +3,7 @@ PDEModelica1
 
 PDEModelica1 is nonstandardised experimental Modelica language extension for 1-dimensional partial differential extensions (PDE).
 
-It is enabled using compiler flag ``--grammar=PDEModelica``. Compiler flags may be set e.g. in OMEdit (Tools->Options->Simulation->OMC Flags) or in the OpenModelica script using command. Note that PDEModelica does now work yet with the current frontend so you need to set ``-d=newInst`` in Tools->Options->Simulation->OMC Flags or check "Enable old frontend for code generation".
+It is enabled using compiler flag ``--grammar=PDEModelica``. Compiler flags may be set e.g. in OMEdit (globally in Tools->Options->Simulation->Translation Flags or in Simulation Setup->Translation Flags for specific models) or in an OpenModelica script using ``setCommandLineOptions``. Note that PDEModelica does now work yet with the current frontend so you need to also use the flag ``-d=-newInst`` or check "Enable old frontend for code generation" in OMEdit under Translation Flags.
 
 .. omc-mos ::
   setCommandLineOptions("--grammar=PDEModelica -d=-newInst")
@@ -15,7 +15,7 @@ PDEModelica1 language elements
 Let us introduce new PDEModelica1 language elements by an advection equation example model:
 
 
-.. omc-loadstring ::
+.. code-block:: modelica
 
   model Advection "advection equation"
     parameter Real pi = Modelica.Constants.pi;
