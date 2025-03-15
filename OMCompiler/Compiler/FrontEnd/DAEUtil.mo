@@ -4213,63 +4213,70 @@ algorithm
     case DAE.EQUEQUATION(cr1 = cr1, cr2 = cr2)
       algorithm
         (DAE.CREF(new_cr1), arg) := func(Expression.crefExp(cr1), arg);
-        if not referenceEq(cr1, new_cr1) then element.cr1 := new_cr1; end if;
         (DAE.CREF(new_cr2), arg) := func(Expression.crefExp(cr2), arg);
-        if not referenceEq(cr2, new_cr2) then element.cr2 := new_cr2; end if;
+        if not referenceEq(cr1, new_cr1) or not referenceEq(cr2, new_cr2) then
+          element := DAE.EQUEQUATION(new_cr1, new_cr2, element.source);
+        end if;
       then
         ();
 
     case DAE.EQUATION(exp = e1, scalar = e2)
       algorithm
         (new_e1, arg) := func(e1, arg);
-        if not referenceEq(e1, new_e1) then element.exp := new_e1; end if;
         (new_e2, arg) := func(e2, arg);
-        if not referenceEq(e2, new_e2) then element.scalar := new_e2; end if;
+        if not referenceEq(e1, new_e1) or not referenceEq(e2, new_e2) then
+          element := DAE.EQUATION(new_e1, new_e2, element.source);
+        end if;
       then
         ();
 
     case DAE.INITIALEQUATION(exp1 = e1, exp2 = e2)
       algorithm
         (new_e1, arg) := func(e1, arg);
-        if not referenceEq(e1, new_e1) then element.exp1 := new_e1; end if;
         (new_e2, arg) := func(e2, arg);
-        if not referenceEq(e2, new_e2) then element.exp2 := new_e2; end if;
+        if not referenceEq(e1, new_e1) or not referenceEq(e2, new_e2) then
+          element := DAE.INITIALEQUATION(new_e1, new_e2, element.source);
+        end if;
       then
         ();
 
     case DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2)
       algorithm
         (new_e1, arg) := func(e1, arg);
-        if not referenceEq(e1, new_e1) then element.lhs := new_e1; end if;
         (new_e2, arg) := func(e2, arg);
-        if not referenceEq(e2, new_e2) then element.rhs := new_e2; end if;
+        if not referenceEq(e1, new_e1) or not referenceEq(e2, new_e2) then
+          element := DAE.COMPLEX_EQUATION(new_e1, new_e2, element.source);
+        end if;
       then
         ();
 
     case DAE.INITIAL_COMPLEX_EQUATION(lhs = e1, rhs = e2)
       algorithm
         (new_e1, arg) := func(e1, arg);
-        if not referenceEq(e1, new_e1) then element.lhs := new_e1; end if;
         (new_e2, arg) := func(e2, arg);
-        if not referenceEq(e2, new_e2) then element.rhs := new_e2; end if;
+        if not referenceEq(e1, new_e1) or not referenceEq(e2, new_e2) then
+          element := DAE.INITIAL_COMPLEX_EQUATION(new_e1, new_e2, element.source);
+        end if;
       then
         ();
 
     case DAE.ARRAY_EQUATION(exp = e1, array = e2)
       algorithm
         (new_e1, arg) := func(e1, arg);
-        if not referenceEq(e1, new_e1) then element.exp := new_e1; end if;
         (new_e2, arg) := func(e2, arg);
-        if not referenceEq(e2, new_e2) then element.array := new_e2; end if;
+        if not referenceEq(e1, new_e1) or not referenceEq(e2, new_e2) then
+          element := DAE.ARRAY_EQUATION(element.dimension, new_e1, new_e2, element.source);
+        end if;
       then
         ();
 
     case DAE.INITIAL_ARRAY_EQUATION(exp = e1, array = e2)
       algorithm
         (new_e1, arg) := func(e1, arg);
-        if not referenceEq(e1, new_e1) then element.exp := new_e1; end if;
         (new_e2, arg) := func(e2, arg);
-        if not referenceEq(e2, new_e2) then element.array := new_e2; end if;
+        if not referenceEq(e1, new_e1) or not referenceEq(e2, new_e2) then
+          element := DAE.INITIAL_ARRAY_EQUATION(element.dimension, new_e1, new_e2, element.source);
+        end if;
       then
         ();
 
