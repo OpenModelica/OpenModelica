@@ -269,8 +269,8 @@ static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, 
     }
   }
 
-  /* prevent emit if noEventEmit flag is used, if it's an event */
-  if (!omc_flag[FLAG_NOEVENTEMIT] || !solverInfo->didEventStep) {
+  /* prevent emit if noEventEmit flag is used, if it's an event, unless equidistant time grid is active */
+  if (!omc_flag[FLAG_NOEVENTEMIT] || !solverInfo->didEventStep || !omc_flag[FLAG_NOEQUIDISTANT_GRID]) {
     sim_result.emit(&sim_result, data, threadData);
   }
 #if !defined(OMC_MINIMAL_RUNTIME)
