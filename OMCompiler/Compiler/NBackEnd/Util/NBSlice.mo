@@ -1556,6 +1556,8 @@ protected
     Integer var_arr_idx, var_start;
     list<Integer> sizes;
     list<Expression> subs;
+    Type ty;
+    Integer complex_size;
   algorithm
     // try to get array index, if it fails, strip the subscripts
     (var_arr_idx, c)  := match UnorderedMap.get(cref, map)
@@ -1567,7 +1569,17 @@ protected
     (var_start, _)  := mapping.var_AtS[var_arr_idx];
     sizes           := ComponentRef.sizes(c, false);
     subs            := ComponentRef.subscriptsToExpression(cref, true);
-    scal_lst        := listReverse(combineFrames2Indices(var_start, sizes, subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual)));
+    ty              := Type.arrayElementType(ComponentRef.getComponentType(cref));
+    if Type.isComplex(ty) then
+      // if the cref is complex, loop over each child and add it
+      scal_lst := {};
+      SOME(complex_size) := Type.complexSize(ty);
+      for i in complex_size:-1:1 loop
+        scal_lst    := listAppend(listReverse(combineFrames2Indices(var_start, complex_size :: sizes, Expression.INTEGER(i) :: subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual))), scal_lst);
+      end for;
+    else
+      scal_lst    := listReverse(combineFrames2Indices(var_start, sizes, subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual)));
+    end if;
   end getCrefInFrameIndices;
 
   function resolveDimensionsSubscripts
