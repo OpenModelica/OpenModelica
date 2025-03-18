@@ -126,8 +126,9 @@ public
           // apply all previous replacements on the RHS
           replace_exp := Equation.getRHS(solvedEq);
           replace_exp := Expression.map(replace_exp, function applySimpleExp(replacements = replacements));
+          replace_exp := SimplifyExp.simplifyDump(replace_exp, true, getInstanceName());
           // add the new replacement rule
-          UnorderedMap.add(varName, SimplifyExp.simplifyDump(replace_exp, true, getInstanceName()), replacements);
+          addInputArgTpl((varName, replace_exp) , replacements, true);
         else
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong component cannot be solved explicitly: " + StrongComponent.toString(comp)});
           fail();
@@ -302,7 +303,7 @@ public
         input_crefs := list(ComponentRef.fromNode(node, InstNode.getType(node)) for node in fn.inputs);
         // ToDo: rather use the function slots for this?
         for tpl in List.zip(input_crefs, call.arguments) loop
-          addInputArgTpl(tpl, local_replacements);
+          addInputArgTpl(tpl, local_replacements, false);
         end for;
 
         // add replacement rules for local (protected) variables
@@ -316,7 +317,7 @@ public
             // add a "wild" binding. This will result in unused outputs being ignored.
             binding_exp := Expression.CREF(Type.UNKNOWN(), ComponentRef.WILD());
           end if;
-          addInputArgTpl((local_cref, binding_exp), local_replacements);
+          addInputArgTpl((local_cref, binding_exp), local_replacements, false);
         end for;
 
         // get the expression from function body (fails if its not a single replacable assignment)
@@ -345,6 +346,7 @@ public
     all record children replacements."
     input tuple<ComponentRef, Expression> tpl;
     input UnorderedMap<ComponentRef, Expression> replacements;
+    input Boolean lowered_lhs "true if the LHS has properly lowered (backend) crefs";
   protected
     ComponentRef cref;
     Expression arg;
@@ -356,8 +358,8 @@ public
     (cref, arg) := tpl;
     UnorderedMap.add(cref, arg, replacements);
 
-    // also try to add element replacements (throw error if impossible?)
-    children := ComponentRef.getRecordChildren(cref);
+    // also try to add record children replacements (throw error if impossible?)
+    children := if lowered_lhs then BVariable.getRecordChildrenCref(cref) else ComponentRef.getRecordChildren(cref);
     if not listEmpty(children) then
       children_args := match arg
 
@@ -390,7 +392,7 @@ public
       // check if children and children_args can be mapped to one another
       if List.compareLength(children, children_args) == 0 then
         for child_tpl in List.zip(children, children_args) loop
-          addInputArgTpl(child_tpl, replacements);
+          addInputArgTpl(child_tpl, replacements, lowered_lhs);
         end for;
       end if;
     end if;
