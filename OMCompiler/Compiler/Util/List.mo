@@ -1565,6 +1565,7 @@ public function intersection1OnTrue<T>
   end CompFunc;
 protected
   Option<T> oe;
+  list<T> lst1 = inList1, lst2 = inList2;
 algorithm
   if listEmpty(inList1) then
     return;
@@ -1573,7 +1574,18 @@ algorithm
     outList1Rest := inList1;
     return;
   end if;
-  for e in inList1 loop
+
+  while not (listEmpty(lst1) or listEmpty(lst2)) loop
+    if not inCompFunc(listHead(lst1), listHead(lst2)) then
+      break;
+    end if;
+
+    outIntersection := listHead(lst1) :: outIntersection;
+    lst1 := listRest(lst1);
+    lst2 := listRest(lst2);
+  end while;
+
+  for e in lst1 loop
     if isMemberOnTrue(e, inList2, inCompFunc) then
       outIntersection := e :: outIntersection;
     elseif isPresent(outList1Rest) then
