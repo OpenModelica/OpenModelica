@@ -813,8 +813,8 @@ algorithm
         nextPaths2 = List.filter1OnTrue(allPathsIn, lastInListIsEqual, startNode);
         nextPaths2 = listAppend(nextPaths1,nextPaths2);
         nextPath = listHead(nextPaths2);
-        rest = List.deleteMember(allPathsIn,nextPath);
-        nextPath = List.deleteMember(nextPath,startNode);
+        rest = List.deleteMemberOnTrue(nextPath,allPathsIn, function List.isEqualOnTrue(inCompFunc = intEq));
+        nextPath = List.deleteMemberOnTrue(startNode,nextPath,intEq);
         path = listAppend(nextPath,loopIn);
         path = connectPathsToOneLoop(rest,path);
       then
@@ -826,7 +826,7 @@ algorithm
         nextPaths2 = List.filter1OnTrue(rest, lastInListIsEqual, startNode);
         nextPaths2 = listAppend(nextPaths1,nextPaths2);
         nextPath = listHead(nextPaths2);
-        rest = List.deleteMember(rest,nextPath);
+        rest = List.deleteMemberOnTrue(nextPath,rest, function List.isEqualOnTrue(inCompFunc = intEq));
         path = listAppend(nextPath,restPath);
         path = connectPathsToOneLoop(rest,path);
       then
@@ -886,7 +886,7 @@ algorithm
         pos = -1;
       end if;
 
-      eqs = List.deleteMember(loop1,pos);
+      eqs = List.deleteMemberOnTrue(pos,loop1,intEq);
         //print("contract eqs: "+stringDelimitList(List.map(eqs,intString),",")+" to eq "+intString(pos)+"\n");
 
       // get the corresponding vars
@@ -935,7 +935,7 @@ algorithm
       pos = if not listEmpty(replEqs) then listHead(replEqs) else -1;
       pos = if not listEmpty(eqs) then listHead(eqs) else pos;
 
-      eqs = List.deleteMember(loop1,pos);
+      eqs = List.deleteMemberOnTrue(pos,loop1,intEq);
         //print("contract eqs: "+stringDelimitList(List.map(eqs,intString),",")+" to eq "+intString(pos)+"\n");
 
       // get the corresponding vars
@@ -1128,7 +1128,7 @@ algorithm
       equation
         elemR = listReverse(elem);
         elemR = List.getMember(elemR,elemLst);
-        foldLst = List.deleteMember(foldLstIn,elem);
+        foldLst = List.deleteMemberOnTrue(elem,foldLstIn,function List.isEqualOnTrue(inCompFunc = intEq));
       then
         elemR::foldLst;
     else
@@ -1342,7 +1342,7 @@ algorithm
         else
           next := List.first(eqs);
         end if;
-        rest := List.deleteMember(loopIn,next);
+        rest := List.deleteMemberOnTrue(next,loopIn,intEq);
       then sortLoop(rest,m,mT,next::sortLoopIn);
   end matchcontinue;
 end sortLoop;
@@ -1500,7 +1500,7 @@ algorithm
         // check the next eqNode of the crossEq whether the paths is finished here or the path goes on to another crossEq
         adjVars = arrayGet(mIn,crossEq);
         adjEqs = List.map1(adjVars,Array.getIndexFirst,mTIn);
-        adjEqs = List.map1(adjEqs,List.deleteMember,crossEq);// REMARK: this works only if there are no varCrossNodes
+        adjEqs = list(List.deleteMemberOnTrue(crossEq, eq, intEq) for eq in adjEqs); // REMARK: this works only if there are no varCrossNodes
         adjEqs = List.filterOnFalse(adjEqs,listEmpty);
         nextEqs = List.flatten(adjEqs);
         (endEqs,unfinEqs,_) = List.intersection1OnTrue(nextEqs,allEqCrossNodes,intEq);
@@ -1517,7 +1517,7 @@ algorithm
         prevEq = List.second(pathStart);
         adjVars = arrayGet(mIn,lastEq);
         adjEqs = List.map1(adjVars,Array.getIndexFirst,mTIn);
-        adjEqs = List.map1(adjEqs,List.deleteMember,lastEq);// REMARK: this works only if there are no varCrossNodes
+        adjEqs = list(List.deleteMemberOnTrue(lastEq, eq, intEq) for eq in adjEqs); // REMARK: this works only if there are no varCrossNodes
         adjEqs = List.filterOnFalse(adjEqs,listEmpty);
         nextEqs = List.map(adjEqs,listHead);
         (nextEqs,_) = List.deleteMemberOnTrue(prevEq,nextEqs,intEq); //do not take the path back to the previous node
@@ -2133,7 +2133,7 @@ algorithm
         path = listHead(allPaths);
         endNode = if not listEmpty(allPaths) then List.last(path) else -1;
         endNode = if not listEmpty(paths2) then listHead(path) else -1;
-        rest = List.deleteMember(pathsIn,path);
+        rest = List.deleteMemberOnTrue(path,pathsIn,function List.isEqualOnTrue(inCompFunc = intEq));
         sortedPaths = listAppend(sortedPathsIn,{path});
         sortedPaths = sortPathsAsChain1(rest,firstNode,endNode,sortedPaths);
 
@@ -2149,7 +2149,7 @@ algorithm
         path = listHead(allPaths);
         startNode = if not listEmpty(allPaths) then List.last(path) else -1;
         startNode = if not listEmpty(paths2) then listHead(path) else -1;
-        rest = List.deleteMember(pathsIn,path);
+        rest = List.deleteMemberOnTrue(path,pathsIn,function List.isEqualOnTrue(inCompFunc = intEq));
         sortedPaths = path::sortedPathsIn;
         sortedPaths = sortPathsAsChain1(rest,startNode,lastNode,sortedPaths);
       then

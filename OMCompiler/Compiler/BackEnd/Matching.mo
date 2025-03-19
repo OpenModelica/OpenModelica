@@ -5897,7 +5897,7 @@ algorithm
         //update mt
         for varIdx in varIdxs loop
           row := arrayGet(mt,varIdx);
-          row := List.deleteMember(row,e);
+          row := List.deleteMemberOnTrue(e, row, intEq);
           arrayUpdate(mt,varIdx,row);
         end for;
       end for;
@@ -5942,7 +5942,7 @@ algorithm
       //update mt
       for varIdx in varIdxs loop
         row := arrayGet(mt,varIdx);
-        row := List.deleteMember(row,idx);
+        row := List.deleteMemberOnTrue(idx,row,intEq);
         arrayUpdate(mt,varIdx,row);
       end for;
     end if;

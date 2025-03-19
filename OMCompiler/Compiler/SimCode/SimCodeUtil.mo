@@ -8049,7 +8049,7 @@ algorithm
 
       //check these equations again
       newEqIdcs := arrayGet(mT,varIdx0);
-      newEqIdcs := List.deleteMember(newEqIdcs,eqIdx);
+      newEqIdcs := List.deleteMemberOnTrue(eqIdx,newEqIdcs,intEq);
       workList := List.append_reverse(newEqIdcs,workList);
       //print("check these equations again: "+stringDelimitList(List.map(newEqIdcs,intString),", ")+"\n");
       // replace the var with the new start value in these equations
@@ -8058,7 +8058,7 @@ algorithm
       eqArr := List.threadFold(newEqIdcs,eqLst,BackendEquation.setAtIndexFirst,eqs);
       // update the adjacencyMatrix m and remove the idcs for the calculated var
       mEntries := List.map1(newEqIdcs,Array.getIndexFirst,m);
-      mEntries := List.map1(mEntries,List.deleteMember,varIdx0);
+      mEntries := list(List.deleteMemberOnTrue(varIdx0, e, intEq) for e in mEntries);
       List.threadMap1_0(newEqIdcs,mEntries,Array.updateIndexFirst,m);
     else
     end try;

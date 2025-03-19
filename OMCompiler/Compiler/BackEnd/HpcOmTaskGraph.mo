@@ -4075,7 +4075,7 @@ algorithm
   //print("HpcOmTaskGraph.contractNodesInGraph1 contractNodes: " + stringDelimitList(List.map(contractNodes,intString),",") + "\n");
   //print("HpcOmTaskGraph.contractNodesInGraph1 startNode: " + intString(List.last(contractNodes)) + "\n");
   startNode := List.last(contractNodes);
-  deleteEntries := List.deleteMember(contractNodes,startNode); //all nodes which should be deleted
+  deleteEntries := List.deleteMemberOnTrue(startNode,contractNodes,intEq); //all nodes which should be deleted
   //print("HpcOmTaskGraph.contractNodesInGraph1 deleteEntries: " + stringDelimitList(List.map(deleteEntries,intString),",") + "\n");
   deleteNodesParents := List.flatten(List.map1(deleteEntries, Array.getIndexFirst, graphInT));
   //print("HpcOmTaskGraph.contractNodesInGraph1 deleteNodesParents: " + stringDelimitList(List.map(deleteNodesParents,intString),",") + "\n");
@@ -4394,7 +4394,7 @@ algorithm
         pathLst = listHead(lstIn);
         pathLst = inPath::pathLst;
         lstTmp = List.replaceAt(pathLst, 1, lstIn);
-        rest = List.deleteMember(allNodes,inPath);
+        rest = List.deleteMemberOnTrue(inPath,allNodes,intEq);
         lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstTmp,child,contrNodes);
       then
         lstTmp;
@@ -4411,7 +4411,7 @@ algorithm
         pathLst = listHead(lstIn);
         pathLst = inPath::pathLst;
         lstTmp = List.replaceAt(pathLst, 1, lstIn);
-        rest = List.deleteMember(allNodes,inPath);
+        rest = List.deleteMemberOnTrue(inPath,allNodes,intEq);
         lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstTmp,0,contrNodes);
       then
         lstTmp;

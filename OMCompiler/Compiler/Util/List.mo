@@ -1662,7 +1662,7 @@ algorithm
   end if;
 
   for e in inList2 loop
-    outDifference := deleteMember(outDifference, e);
+    outDifference := deleteMemberOnTrue(e, outDifference, valueEq);
   end for;
 end setDifference;
 
@@ -4887,39 +4887,6 @@ algorithm
   outElement := inFalseValue;
 end findBoolList;
 
-public function deleteMember<T>
-  "Takes a list and a value, and deletes the first occurence of the value in the
-   list. Example: deleteMember({1, 2, 3, 2}, 2) => {1, 3, 2}"
-  input list<T> inList;
-  input T inElement;
-  output list<T> outList = {};
-protected
-  T e;
-  list<T> rest = inList;
-algorithm
-  while not listEmpty(rest) loop
-    e :: rest := rest;
-
-    if valueEq(e, inElement) then
-      outList := append_reverse(outList, rest);
-      return;
-    end if;
-
-    outList := e :: outList;
-  end while;
-  outList := inList;
-end deleteMember;
-
-public function deleteMemberF<T>
-  "Same as deleteMember, but fails if the element isn't present in the list."
-  input list<T> inList;
-  input T inElement;
-  output list<T> outList;
-algorithm
-  outList := deleteMember(inList, inElement);
-  if referenceEq(outList, inList) then fail(); end if;
-end deleteMemberF;
-
 public function deleteMemberOnTrue<T, VT>
   "Takes a list and a value and a comparison function and deletes the first
   occurence of the value in the list for which the function returns true. It
@@ -4945,7 +4912,7 @@ algorithm
     e :: rest := rest;
 
     if inCompareFunc(inValue, e) then
-      outList := append_reverse(acc, rest);
+      outList := listAppend(listReverseInPlace(acc), rest);
       outDeletedElement := SOME(e);
       return;
     end if;

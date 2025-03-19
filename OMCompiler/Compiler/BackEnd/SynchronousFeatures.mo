@@ -1219,10 +1219,10 @@ protected
   list<Integer> row;
 algorithm
   row := arrayGet(m,eq);
-  row := List.deleteMember(row,var);
+  row := List.deleteMemberOnTrue(var,row,intEq);
   arrayUpdate(m,eq,row);
   row := arrayGet(mT,var);
-  row := List.deleteMember(row,eq);
+  row := List.deleteMemberOnTrue(eq,row,intEq);
   arrayUpdate(mT,var,row);
 end removeEdge;
 
