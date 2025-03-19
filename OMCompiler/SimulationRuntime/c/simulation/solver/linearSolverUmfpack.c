@@ -134,13 +134,10 @@ freeUmfPackData(void **voiddata)
  */
 void getAnalyticalJacobianUmfPack(DATA* data, threadData_t *threadData, LINEAR_SYSTEM_DATA* systemData)
 {
-  int i,ii,j,k,l;
-
+  int i,j,l,nth;
   JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
   JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
-
-  int nth = 0;
 
   /* evaluate constant equations of Jacobian */
   if (jacobian->constantEqns != NULL) {
@@ -159,11 +156,9 @@ void getAnalyticalJacobianUmfPack(DATA* data, threadData_t *threadData, LINEAR_S
 
     for (j = 0; j < jacobian->sizeCols; j++) {
       if (sp->colorCols[j]-1 == i) {
-        for (ii = sp->leadindex[j]; ii < sp->leadindex[j+1]; ii++) {
-          l = sp->index[ii];
-          /* infoStreamPrint(OMC_LOG_LS_V, 0, "set on Matrix A (%d, %d)(%d) = %f", i, l, nth, -jacobian->resultVars[l]); */
-          systemData->setAElement(i, l, -jacobian->resultVars[l], nth, (void*) systemData, threadData);
-          nth++;
+        for (nth = sp->leadindex[j]; nth < sp->leadindex[j+1]; nth++) {
+          l = sp->index[nth];
+          systemData->setAElement(j, l, -jacobian->resultVars[l], nth, systemData, threadData);
         }
         /* de-activate seed variable for the corresponding color */
         jacobian->seedVars[j] = 0.0;

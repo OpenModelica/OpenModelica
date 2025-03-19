@@ -118,7 +118,7 @@ int freeKluData(void **voiddata)
 static int getAnalyticalJacobian(DATA* data, threadData_t *threadData,
                                  int sysNumber)
 {
-  int i,ii,j,k,l;
+  int i,j,k,l,nth;
 
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
 
@@ -127,36 +127,28 @@ static int getAnalyticalJacobian(DATA* data, threadData_t *threadData,
   JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
 
-  int nth = 0;
-
+  /* evaluate constant equations of Jacobian */
   if (jacobian->constantEqns != NULL) {
     jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
   }
 
-  for(i=0; i < sp->maxColors; i++)
-  {
+  /* evaluate Jacobian */
+  for (i = 0; i < sp->maxColors; i++) {
     /* activate seed variable for the corresponding color */
-    for(ii=0; ii < jacobian->sizeCols; ii++)
-    {
-      if(sp->colorCols[ii]-1 == i)
-      {
-        jacobian->seedVars[ii] = 1;
-      }
-    }
+    for (j = 0; j < jacobian->sizeCols; j++)
+      if(sp->colorCols[j]-1 == i)
+        jacobian->seedVars[j] = 1.0;
 
     jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
 
-    for(j = 0; j < jacobian->sizeCols; j++)
-    {
-      if(sp->colorCols[ii]-1 == i)
-      {
-        for (nth = sp->leadindex[j]; nth < sp->leadindex[j+1]; nth++)
-        {
-          l  = sp->index[nth];
-          systemData->setAElement(j, l, -jacobian->resultVars[l], nth, (void*) systemData, threadData);
+    for(j = 0; j < jacobian->sizeCols; j++) {
+      if(sp->colorCols[j]-1 == i) {
+        for (nth = sp->leadindex[j]; nth < sp->leadindex[j+1]; nth++) {
+          l = sp->index[nth];
+          systemData->setAElement(j, l, -jacobian->resultVars[l], nth, systemData, threadData);
         }
         /* de-activate seed variable for the corresponding color */
-        jacobian->seedVars[j] = 0;
+        jacobian->seedVars[j] = 0.0;
       }
     }
   }
