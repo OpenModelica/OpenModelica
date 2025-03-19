@@ -1162,6 +1162,10 @@ protected
         // see if there is nested skips
       then resolveSkips(index, ComponentRef.getSubscriptedType(field), rest, cref, fullmap);
 
+      // size one arrays do not have a skip associated
+      case (Type.ARRAY(), rest) guard(Dimension.sizesProduct(ty.dimensions, true) == 1) algorithm
+      then resolveSkips(index, ty.elementType, rest, cref, fullmap);
+
       // skip to an array element
       case (Type.ARRAY(), rest) guard List.compareLength(rest, ty.dimensions) >= 0 algorithm
         (rest, tail) := List.split(rest, listLength(ty.dimensions));
