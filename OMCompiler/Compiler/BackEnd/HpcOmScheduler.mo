@@ -1707,7 +1707,7 @@ algorithm
 
         // get the nodes that are necessary to compute the next critical path node, collect unassigned
         levelNodes = List.flatten(List.map1(List.intRange2(levelIdx,critNodeLevel),List.getIndexFirst,levelIn));
-        levelNodes = List.deleteMember(levelNodes,critPathNode);
+        levelNodes = List.deleteMemberOnTrue(critPathNode,levelNodes,intEq);
           //print("levelNodes: \n"+stringDelimitList(List.map(levelNodes,intString)," ; ")+"\n");
         necessaryPredecessors = arrayGet(iGraphT,listHead(restCritNodes));
           //print("necessaryPredecessors: "+stringDelimitList(List.map(necessaryPredecessors,intString)," ; ")+"\n");
@@ -5261,7 +5261,7 @@ algorithm
     case(_,_::_,_)
       equation
         pivotElement = listGet(lstIn,pivotIdx);
-        marked = List.deleteMember(markedLstIn,pivotElement);
+        marked = List.deleteMemberOnTrue(pivotElement,markedLstIn,realEq);
         r1 = listHead(marked);
         r2 = List.last(marked);
         midIdx = intDiv(listLength(marked),2);

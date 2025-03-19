@@ -2483,7 +2483,7 @@ algorithm
         vars = listGet(varsIn,idx);
         eq = listGet(eqsIn,idx);
         depEqs = List.flatten(List.map1(vars,Array.getIndexFirst,mt));
-        depEqs = List.deleteMember(depEqs,eq);
+        depEqs = List.deleteMemberOnTrue(eq,depEqs,intEq);
         graph = arrayUpdate(graphIn,eq,depEqs);
         graph = buildMatchedGraphForTornSystem(idx+1,eqsIn,varsIn,m,mt,graph);
     then graph;

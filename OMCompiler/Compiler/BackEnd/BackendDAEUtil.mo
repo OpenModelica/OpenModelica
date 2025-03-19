@@ -4588,7 +4588,7 @@ algorithm
             Integer i;
           case(i,_,_) then i;
         end match for adjacencyElemT in adjacencyRowT);
-      eqns := List.deleteMember(eqns,eqn);
+      eqns := List.deleteMemberOnTrue(eqn,eqns,intEq);
       for e in eqns loop
         adjacencyRow := m[e];
         adjacencyRow := list(

@@ -1750,7 +1750,7 @@ try
         if isEntrySolved(entr) then
           (vidx,_,_) := entr;
           algSolvedVars := vidx::algSolvedVars;
-          unsolvedCombined := List.deleteMember(unsolvedCombined,vidx);
+          unsolvedCombined := List.deleteMemberOnTrue(vidx, unsolvedCombined, intEq);
 
           // mark the var to be ignored for later
           // matching.
@@ -3832,7 +3832,7 @@ algorithm
   while not listEmpty(eqns) loop
     eqOut := getMostNonlinearEquation(eqnNonlinPoints, eqns, mapEqnIncRow, mapIncRowEqn);
     (solvable, eqnsOut, varsOut) := eqnSolvableCheck(eqOut, mapEqnIncRow, ass1, m, me);
-    eqns := List.deleteMember(eqns, eqOut);
+    eqns := List.deleteMemberOnTrue(eqOut, eqns, intEq);
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("Most nonlinear equation: " + intString(eqOut) + " - solvable?: " + boolString(solvable) + "\n");
     end if;
@@ -4098,7 +4098,7 @@ algorithm
     rowsIndx := arrayGet(mHelp,entry);
     for rowIndx in rowsIndx loop
       row := arrayGet(mUpdate,rowIndx);
-      row := List.deleteMember(row,entry);
+      row := List.deleteMemberOnTrue(entry, row, intEq);
       Array.replaceAtWithFill(rowIndx,row,row,mUpdate);
     end for;
   end for;

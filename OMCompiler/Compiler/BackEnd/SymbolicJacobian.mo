@@ -760,7 +760,7 @@ algorithm
       (pivotIdx,pivot) := getPivotElement(A,rangeIn,indxIn,n);
         //print("pivot: "+intString(pivotIdx)+" has value: "+realString(pivot)+"\n");
       arrayUpdate(permutation,indxIn,pivotIdx);
-      range := List.deleteMember(rangeIn,pivotIdx);
+      range := List.deleteMemberOnTrue(pivotIdx,rangeIn,intEq);
 
       // the pivot row in the A-matrix divided by the pivot element
       for ic in indxIn:n loop

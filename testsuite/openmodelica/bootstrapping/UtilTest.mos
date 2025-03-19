@@ -53,8 +53,6 @@ UtilTest.listMapMap({1,2,3,4,5});
 getErrorString();
 List.position(1,{1,2,3,4,5});
 getErrorString();
-List.deleteMember({1,2,3,4,5},1);
-getErrorString();
 List.setDifference({1,2,3,4,5},{1});
 getErrorString();
 List.setDifference({1,2,3,4,5},{3});
@@ -111,8 +109,6 @@ getErrorString();
 // {"1.0", "2.0", "3.0", "4.0", "5.0"}
 // ""
 // 1
-// ""
-// {2, 3, 4, 5}
 // ""
 // {2, 3, 4, 5}
 // ""
