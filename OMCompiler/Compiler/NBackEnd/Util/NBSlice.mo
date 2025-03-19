@@ -1498,14 +1498,14 @@ protected
         ComponentRef iterator;
         Expression range;
         Integer start, step, stop;
-        list<tuple<Integer, Integer>> ranges;
+        list<list<tuple<Integer, Integer>>> ranges;
         list<Expression> iterator_exps;
         list<Integer> iterator_lst;
 
       // only occurs for non-for-loop equations (no frames to replace)
       case {} algorithm
         ranges  := resolveDimensionsSubscripts(sizes, subs, replacements);
-      then {locationToIndex(ranges, first)};
+      then list(locationToIndex(r, first) for r in ranges);
 
       // extract numeric information about the range
       case (iterator, range) :: rest algorithm
@@ -1529,7 +1529,9 @@ protected
           if listEmpty(rest) then
             // bottom line, resolve current configuration and create index for it
             ranges  := resolveDimensionsSubscripts(sizes, subs, replacements);
-            indices := locationToIndex(ranges, first) :: indices;
+            for r in listReverse(ranges) loop
+              indices := locationToIndex(r, first) :: indices;
+            end for;
           else
             // not last frame, go deeper
             indices := combineFrames2Indices(first, sizes, subs, rest, replacements, indices);
@@ -1592,15 +1594,46 @@ protected
     input list<Integer> sizes                                     "dimension sizes";
     input list<Expression> subs                                   "subscript expressions";
     input UnorderedMap<ComponentRef, Expression> replacements     "replacement map for iterator crefs";
-    output list<tuple<Integer, Integer>> ranges                   "tuple pairs (size, pos)";
+    output list<list<tuple<Integer, Integer>>> ranges             "tuple pairs (size, pos)";
   protected
     list<Expression> replaced;
-    list<Integer> values;
+    list<list<Integer>> values;
   algorithm
+    // get all possible subscript combinations
     replaced := list(Expression.map(sub, function Replacements.applySimpleExp(replacements = replacements)) for sub in subs);
-    values := list(Expression.integerValueOrDefault(SimplifyExp.simplifyDump(rep, true, getInstanceName()), 1) for rep in replaced);
-    ranges := List.zip(sizes, values);
+    values := list(resolveDimensionsSubscript(rep) for rep in replaced);
+    values := List.combination(values);
+    ranges := list(List.zip(sizes, v) for v in values);
   end resolveDimensionsSubscripts;
+
+  function resolveDimensionsSubscript
+    input Expression exp;
+    output list<Integer> res;
+  protected
+    Expression rep = SimplifyExp.simplifyDump(exp, true, getInstanceName());
+  algorithm
+    res := match rep
+      local
+        Integer start, step, stop;
+
+      // just a single element
+      case Expression.INTEGER() then {rep.value};
+
+      // build list from range
+      case Expression.RANGE() algorithm
+        (start, step, stop) := Expression.getIntegerRange(rep);
+      then List.intRange3(start,step, stop);
+
+      // resolve individual array elements
+      case Expression.ARRAY(literal = true)
+      then List.flatten(list(resolveDimensionsSubscript(e) for e in rep.elements));
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+          + " failed because expression was not evaluable to a list of integers: " + Expression.toString(exp)});
+      then fail();
+    end match;
+  end resolveDimensionsSubscript;
 
   function applyNewFrameRange
     "applies new start, step and stop to a frame"

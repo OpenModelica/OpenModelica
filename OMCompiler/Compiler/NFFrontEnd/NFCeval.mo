@@ -992,6 +992,18 @@ algorithm
         Array.threadMap(exp1.elements, exp2.elements, evalBinaryAdd),
         literal = true);
 
+    // technically the following two are incorrect because they need element wise addition
+    // but the backend can create these and immediately tries to evaluate them.
+    // kabdelhak: instead of fixing the operators we will just allow this to be immediately evaluated
+    case (Expression.ARRAY(), Expression.INTEGER())
+      then Expression.makeArray(exp1.ty,
+        Array.map(exp1.elements, function evalBinaryAdd(exp2 = exp2)),
+        literal = exp1.literal);
+    case (Expression.INTEGER(), Expression.ARRAY())
+      then Expression.makeArray(exp2.ty,
+        Array.map(exp2.elements, function evalBinaryAdd(exp1 = exp1)),
+        literal = exp2.literal);
+
     else
       algorithm
         exp := Expression.BINARY(exp1, Operator.makeAdd(Type.UNKNOWN()), exp2);
