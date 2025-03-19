@@ -449,7 +449,8 @@ public
       input UnorderedMap<ComponentRef, Integer> eqns_map;
       input EquationPointers eqns;
       input MatrixStrictness st;
-      output Matrix adj = upgrade(EMPTY(MatrixStrictness.FULL), full, vars_map, eqns_map, eqns, st);
+      input Iterator iter = Iterator.EMPTY() "optional iterator the whole system might be surrounded by";
+      output Matrix adj = upgrade(EMPTY(MatrixStrictness.FULL), full, vars_map, eqns_map, eqns, st, iter);
     end fromFull;
 
     function upgrade
@@ -460,6 +461,7 @@ public
       input UnorderedMap<ComponentRef, Integer> eqns_map;
       input EquationPointers eqns;
       input MatrixStrictness st;
+      input Iterator iter = Iterator.EMPTY();
     algorithm
       if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
         print(StringUtil.headline_1("Upgrading from [" + strictnessString(getStrictness(adj)) + "] to [" + strictnessString(st) +"]") + "\n");
@@ -500,7 +502,7 @@ public
                 for index in UnorderedMap.valueList(eqns_map) loop
                   filtered := Solvability.filter(UnorderedSet.toList(occ[index]), sol[index], vars_map, min, max);
                   // upgrade the row and all meta data
-                  upgradeRow(EquationPointers.getEqnAt(eqns, index), index, filtered, dep[index], rep[index], vars_map, vars_map, adj.m, adj.mapping, adj.modes);
+                  upgradeRow(EquationPointers.getEqnAt(eqns, index), index, filtered, dep[index], rep[index], vars_map, vars_map, adj.m, adj.mapping, adj.modes, iter);
                 end for;
                 adj.mT := transposeScalar(adj.m, arrayLength(adj.mapping.var_StA));
                 result := adj;
@@ -511,7 +513,7 @@ public
                     + Solvability.toString(Solvability.fromStrictness(st)) + ". The new matrix will be
                     created from using only the full adjacency matrix.");
                 end if;
-                result := fromFull(full, vars_map, eqns_map, eqns, st);
+                result := fromFull(full, vars_map, eqns_map, eqns, st, iter);
               end if;
             then result;
 
@@ -1167,12 +1169,16 @@ public
       input array<list<Integer>> m;
       input Mapping mapping;
       input UnorderedMap<Mode.Key, Mode> modes;
+      input Iterator iter_ = Iterator.EMPTY();
     protected
       Integer eqn_scal_idx, eqn_size;
       list<Integer> row;
       Equation eqn = Pointer.access(eqn_ptr);
       Iterator iter = Equation.getForIterator(eqn);
       Type ty = Equation.getType(eqn, true);
+      list<ComponentRef> names;
+      list<Expression> ranges;
+      list<Option<Iterator>> maps;
     algorithm
       try
         // don't do this for if equations as soon as we properly split them
@@ -1185,6 +1191,13 @@ public
           end for;
         else
           // todo: if, when single equation (needs to be updated for if)
+
+          // add the optional surrounding iterator frames
+          if not Iterator.isEmpty(iter_) then
+            (names, ranges, maps) := Iterator.getFrames(iter_);
+            iter := Iterator.addFrames(iter, List.zip3(names, ranges, maps));
+          end if;
+
           Slice.upgradeRow(Equation.getEqnName(eqn_ptr), eqn_arr_idx, iter, ty, dependencies, dep, rep, map, fullmap, m, mapping, modes);
         end if;
       else
