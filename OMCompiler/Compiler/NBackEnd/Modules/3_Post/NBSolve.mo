@@ -56,7 +56,7 @@ public
   import BackendUtil = NBBackendUtil;
   import Causalize = NBCausalize;
   import Differentiate = NBDifferentiate;
-  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, IfEquationBody, WhenEquationBody, WhenStatement, SlicingStatus};
+  import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, Iterator, IfEquationBody, WhenEquationBody, WhenStatement, SlicingStatus};
   import NBVariable.{VariablePointer, VariablePointers, VarData};
   import BVariable = NBVariable;
   import Inline = NBInline;
@@ -216,7 +216,7 @@ public
         then ({StrongComponent.SINGLE_COMPONENT(comp.var, Pointer.create(eqn), solve_status)}, solve_status);
 
         case StrongComponent.MULTI_COMPONENT() algorithm
-          (eqn_slice, funcTree, solve_status, implicit_index) := solveMultiStrongComponent(comp.eqn, comp.vars, funcTree, kind, implicit_index, slicing_map);
+          (eqn_slice, funcTree, solve_status, implicit_index) := solveMultiStrongComponent(comp.eqn, comp.vars, funcTree, kind, implicit_index, slicing_map, Iterator.EMPTY());
         then ({StrongComponent.MULTI_COMPONENT(comp.vars, eqn_slice, solve_status)}, solve_status);
 
         case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
@@ -466,6 +466,7 @@ public
     output Status status;
     input output Integer implicit_index;
     input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
+    input Iterator iter;
   protected
     Equation eqn = Pointer.access(Slice.getT(eqn_slice));
   algorithm
@@ -480,7 +481,7 @@ public
         UnorderedSet<ComponentRef> record_crefs;
 
       case Equation.IF_EQUATION() algorithm
-        (if_body, funcTree, status, implicit_index) := solveIfBody(eqn.body, VariablePointers.fromList(vars), funcTree, kind, implicit_index, slicing_map);
+        (if_body, funcTree, status, implicit_index) := solveIfBody(eqn.body, VariablePointers.fromList(vars), funcTree, kind, implicit_index, slicing_map, iter);
         eqn.body := if_body;
       then (Slice.SLICE(Pointer.create(eqn), eqn_slice.indices), funcTree, status);
 
@@ -546,12 +547,14 @@ public
         Equation body;
         Slice<EquationPointer> body_slice;
         Pointer<Variable> indexed_var;
+        Iterator dummy;
 
       // For equations are expected to only have one body equation at this point
       case Equation.FOR_EQUATION(body = {body as Equation.IF_EQUATION()}) algorithm
         // create indexed variable to trick matching algorithm to solve for it
         indexed_var := BVariable.makeVarPtrCyclic(BVariable.getVar(cref), cref);
-        (body_slice, funcTree, status, implicit_index) := solveMultiStrongComponent(Slice.SLICE(Pointer.create(body), {}), {Slice.SLICE(indexed_var, {})}, funcTree, kind, implicit_index, slicing_map);
+        dummy := Iterator.dummy(eqn.iter);
+        (body_slice, funcTree, status, implicit_index) := solveMultiStrongComponent(Slice.SLICE(Pointer.create(body), {}), {Slice.SLICE(indexed_var, {})}, funcTree, kind, implicit_index, slicing_map, dummy);
         eqn.body := {Pointer.access(Slice.getT(body_slice))};
       then (eqn, funcTree, status, RelationInversion.FALSE);
 
@@ -646,13 +649,14 @@ public
     input BPartition.Kind kind;
     input output Integer implicit_index;
     input UnorderedMap<ComponentRef, list<Pointer<Equation>>> slicing_map;
+    input Iterator iter;
   protected
     IfEquationBody else_if;
     list<StrongComponent> comps, solved_comps;
     list<Pointer<Equation>> new_then_eqns = {};
   algorithm
     // causalize this branch equations for the unknowns
-    (_, comps) := Causalize.simple(vars, EquationPointers.fromList(body.then_eqns));
+    (_, comps) := Causalize.simple(vars, EquationPointers.fromList(body.then_eqns), iter = iter);
     // solve each strong component explicitly and save equations to branch
     for comp in comps loop
       (solved_comps, funcTree, implicit_index) := solveStrongComponent(comp, funcTree, kind, implicit_index, slicing_map);
@@ -663,7 +667,7 @@ public
     body.then_eqns := listReverse(new_then_eqns);
     // if there is an else branch -> go deeper
     if Util.isSome(body.else_if) then
-      (else_if, funcTree, status, implicit_index) := solveIfBody(Util.getOption(body.else_if), vars, funcTree, kind, implicit_index, slicing_map);
+      (else_if, funcTree, status, implicit_index) := solveIfBody(Util.getOption(body.else_if), vars, funcTree, kind, implicit_index, slicing_map, iter);
       body.else_if := SOME(else_if);
     else
       // StrongComponent.toSolvedEquation fails for everything that is not explicitly solvable so at this point one can assume it is

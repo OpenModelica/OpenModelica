@@ -411,6 +411,35 @@ public
       output list<Dimension> dims = List.flatten(list(Type.arrayDims(t) for t in types(iter)));
     end dimensions;
 
+    function dummy
+      "creates a dummy iterator as a replacement for the actual correct one
+      Used for solving the body to only evaluate a single frame location instead of all."
+      input output Iterator iter;
+    protected
+      list<ComponentRef> names;
+      list<Expression> ranges;
+      list<Option<Iterator>> maps;
+      function dummyRange
+        "artificially set the range to only its first element"
+        input output Expression exp;
+      algorithm
+        exp := match exp
+          case Expression.RANGE() then Expression.makeRange(exp.start, NONE(), exp.start);
+          case Expression.ARRAY() algorithm
+          then if arrayLength(exp.elements) > 0 then Expression.makeArray(
+              ty      = Type.ARRAY(Type.INTEGER(), {Dimension.fromInteger(1)}),
+              expl    = arrayCreate(1, exp.elements[1]),
+              literal = Expression.isLiteral(exp.elements[1]))
+            else exp;
+          else exp;
+        end match;
+      end dummyRange;
+    algorithm
+      (names, ranges, maps) := getFrames(iter);
+      ranges := list(dummyRange(e) for e in ranges);
+      iter := fromFrames(List.zip3(names, ranges, maps));
+    end dummy;
+
     function createLocationReplacements
       "adds replacements rules for a single frame location
       Note: does not take body sizes > 1 into account"

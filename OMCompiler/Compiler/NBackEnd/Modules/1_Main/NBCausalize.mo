@@ -55,7 +55,7 @@ protected
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
   import Differentiate = NBDifferentiate;
-  import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes};
+  import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, Iterator};
   import Matching = NBMatching;
   import Sorting = NBSorting;
   import StrongComponent = NBStrongComponent;
@@ -194,6 +194,7 @@ public
     input VariablePointers vars;
     input EquationPointers eqns;
     input Adjacency.MatrixStrictness st = NBAdjacency.MatrixStrictness.MATCHING;
+    input Iterator iter = Iterator.EMPTY();
     output Matching matching;
     output list<StrongComponent> comps;
   protected
@@ -203,7 +204,7 @@ public
     full := Adjacency.Matrix.createFull(vars, eqns);
 
     // create solvable adjacency matrix for matching
-    adj := Adjacency.Matrix.fromFull(full, vars.map, eqns.map, eqns, st);
+    adj := Adjacency.Matrix.fromFull(full, vars.map, eqns.map, eqns, st, iter);
     matching := Matching.regular(NBMatching.EMPTY_MATCHING, adj);
 
     // create all occurence adjacency matrix for sorting, upgrading the matching matrix
