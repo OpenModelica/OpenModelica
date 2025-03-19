@@ -107,44 +107,45 @@ double** MatMult( unsigned rA, unsigned cArB, unsigned cB, double** A, double** 
 
 // --------------------------------------------------------------------------------------------------------------------------------
 
-double** getJacobian( DATA* data, threadData_t *threadData, unsigned sysNumber, unsigned m)
+double** getJacobian( DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* systemData)
 {
-  NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
-  ANALYTIC_JACOBIAN* jac = NULL;
   unsigned i, j;
+  size_t m = systemData->size;
+  JACOBIAN* jacobian = NULL;
+
+  modelica_real* jac = NULL;
 
   // Allocate memory for fx (m * m matrix)
-  double** fx = (double**)malloc(m * sizeof(double*));
-  assertStreamPrint(NULL, NULL != fx, "out of memory");
+  double** fx = (double**)malloc(m * sizeof(double*)); // freed by the caller
+  assertStreamPrint(threadData, NULL != fx, "out of memory");
   for (i = 0; i < m; i++) {
-    fx[i] = (double*)malloc(m * sizeof(double));
-    assertStreamPrint(NULL, NULL != fx[i], "out of memory");
+    fx[i] = (double*)malloc(m * sizeof(double)); // freed by the caller
+    assertStreamPrint(threadData, NULL != fx[i], "out of memory");
   }
 
   // Order of Jacobian elements:
   // variable 1:   df_1/dv_1, df_1/dv_2, .... df_1/dv_n
   // variable 2:   df_2/dv_1, df_2/dv_2, .... df_2/dv_n
   // ...
-  // ...
   // variable n:   df_n/dv_1, df_2/dv_2, .... df_n/dv_n
 
   if (systemData->jacobianIndex != -1) {
-    jac = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
+    jacobian = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
 
-    for (j = 0; j < m; j++) {
-      jac->seedVars[j] = 1.0;
+    jac = (modelica_real*) calloc(jacobian->sizeRows * jacobian->sizeCols, sizeof(modelica_real*));
+    assertStreamPrint(threadData, NULL != jac, "out of memory");
 
-      // Calculate values for one column of the Jacobian, output: df_1/dv_j, df_2/dv_j, .... df_n/dv_j
-      systemData->analyticalJacobianColumn(data, threadData, jac, NULL);
+    evalJacobian(data, threadData, jacobian, NULL, jac);
 
-      // Store values in column of Jacobian
-      for (i = 0; i < m; i++)
-        fx[i][j] = jac->resultVars[i];
+    /* copy jacobian from column-major to row-major */
+    for (i = 0; i < jacobian->sizeRows; ++i)
+      for (j = 0; j < jacobian->sizeCols; ++j)
+        fx[i][j] = jac[j*jacobian->sizeRows + i];
 
-      jac->seedVars[j] = 0.0;
-    }
+    free(jac);
+
   } else {
-    assertStreamPrint(NULL, FALSE, "NEWTON_DIAGNOSTICS: numeric jacobian not yet supported.");
+    assertStreamPrint(threadData, FALSE, "NEWTON_DIAGNOSTICS: numeric jacobian not yet supported.");
   }
 
   return fx;
@@ -239,7 +240,7 @@ double maxNonLinearResiduals( unsigned m, unsigned l, unsigned* z_idx,
 double*** getHessian( DATA* data, threadData_t *threadData, unsigned sysNumber, unsigned m)
 {
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
-  ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
+  JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
 
   unsigned i, j, k;
   const modelica_real eps = 1.e-7;
@@ -1198,7 +1199,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
   }
 
   // Get Jacobian fx from system data
-  double** fx = getJacobian(data, threadData, sysNumber, m);
+  double** fx = getJacobian(data, threadData, systemData);
 
   // Obtain Newton steps dx = -f(x0)/fx(x0)
   double* dx = getFirstNewtonStep(m, f, fx);

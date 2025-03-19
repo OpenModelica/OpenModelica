@@ -40,6 +40,7 @@ extern "C" {
 #include <string.h> /* memcpy */
 
 #include "../simulation_info_json.h"
+#include "../jacobian_util.h"
 #include "../../util/omc_error.h"
 #include "../../util/varinfo.h"
 #include "model_help.h"
@@ -258,47 +259,15 @@ static int getNumericalJacobian(NLS_USERDATA* hybrdUserData, double* jac, const 
  */
 static int getAnalyticalJacobian(NLS_USERDATA* hybrdUserData, double* jac)
 {
-  int i, j, k, l, ii;
   DATA *data = hybrdUserData->data;
   threadData_t *threadData = hybrdUserData->threadData;
   NONLINEAR_SYSTEM_DATA* systemData = hybrdUserData->nlsData;
   DATA_HYBRD* solverData = (DATA_HYBRD*)(systemData->solverData);
-  ANALYTIC_JACOBIAN* jacobian = hybrdUserData->analyticJacobian;
+  JACOBIAN* jacobian = hybrdUserData->analyticJacobian;
 
-  memset(jac, 0, (solverData->n)*(solverData->n)*sizeof(double));
-  memset(solverData->fjacobian, 0, (solverData->n)*(solverData->n)*sizeof(double));
+  evalJacobian(data, threadData, jacobian, NULL, jac);
 
-  if (jacobian->constantEqns != NULL) {
-    jacobian->constantEqns(data, threadData, jacobian, NULL);
-  }
-
-  for(i=0; i < jacobian->sparsePattern->maxColors; i++)
-  {
-    /* activate seed variable for the corresponding color */
-    for(ii=0; ii < jacobian->sizeCols; ii++)
-      if(jacobian->sparsePattern->colorCols[ii]-1 == i)
-        jacobian->seedVars[ii] = 1;
-
-    systemData->analyticalJacobianColumn(data, threadData, jacobian, NULL);
-
-    for(j = 0; j < jacobian->sizeCols; j++)
-    {
-      if(jacobian->seedVars[j] == 1)
-      {
-        ii = jacobian->sparsePattern->leadindex[j];
-        while(ii < jacobian->sparsePattern->leadindex[j+1])
-        {
-          l  = jacobian->sparsePattern->index[ii];
-          k  = j*jacobian->sizeRows + l;
-          solverData->fjacobian[k] = jac[k] = jacobian->resultVars[l];
-          ii++;
-        };
-      }
-      /* de-activate seed variable for the corresponding color */
-      if(jacobian->sparsePattern->colorCols[j]-1 == i)
-        jacobian->seedVars[j] = 0;
-    }
-  }
+  memcpy(solverData->fjacobian, jac, (jacobian->sizeRows) * (jacobian->sizeCols) * sizeof(modelica_real));
 
   return 0;
 }

@@ -65,7 +65,7 @@ void projVector_gbf(double* a, double* b, int nIndx, int* indx);
 void printVector_gb(enum OMC_LOG_STREAM stream, char name[], double* a, int n, double time);
 void printIntVector_gb(enum OMC_LOG_STREAM stream, char name[], int* a, int n, double time);
 void printVector_gbf(enum OMC_LOG_STREAM stream, char name[], double* a, int n, double time, int nIndx, int* indx);
-void printSparseJacobianLocal(ANALYTIC_JACOBIAN* jacobian, const char* name);
+void printSparseJacobianLocal(JACOBIAN* jacobian, const char* name);
 
 void debugRingBuffer(enum OMC_LOG_STREAM stream, double* x, double* k, int nStates, BUTCHER_TABLEAU* tableau, double time, double stepSize);
 void debugRingBufferSteps(enum OMC_LOG_STREAM stream, double* x, double* k, double* t, int nStates, int size);

@@ -37,6 +37,7 @@
 
 #include "../../simulation_data.h"
 #include "../simulation_info_json.h"
+#include "../jacobian_util.h"
 #include "../../util/omc_error.h"
 #include "../../util/parallel_helper.h"
 #include "omc_math.h"
@@ -106,48 +107,16 @@ int freeLapackData(void **voiddata)
  *  \author wbraun
  *
  */
-int getAnalyticalJacobianLapack(DATA* data, threadData_t *threadData, double* jac, int sysNumber)
+void getAnalyticalJacobianLapack(DATA* data, threadData_t *threadData, LINEAR_SYSTEM_DATA* systemData, double* jac)
 {
-  int i,j,k,l,ii;
-  LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
+  int k;
+  JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
+  JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
 
-  const int index = systemData->jacobianIndex;
-  ANALYTIC_JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
-  ANALYTIC_JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
+  evalJacobian(data, threadData, jacobian, parentJacobian, jac);
 
-  memset(jac, 0, (systemData->size)*(systemData->size)*sizeof(double));
-
-  if (jacobian->constantEqns != NULL) {
-    jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
-  }
-
-  for(i=0; i < jacobian->sparsePattern->maxColors; i++)
-  {
-    /* activate seed variable for the corresponding color */
-    for(ii=0; ii < jacobian->sizeCols; ii++)
-      if(jacobian->sparsePattern->colorCols[ii]-1 == i)
-          jacobian->seedVars[ii] = 1;
-
-    systemData->analyticalJacobianColumn(data, threadData, jacobian, parentJacobian);
-
-    for(j = 0; j < jacobian->sizeCols; j++) {
-      if(jacobian->seedVars[j] == 1) {
-        ii = jacobian->sparsePattern->leadindex[j];
-        while(ii < jacobian->sparsePattern->leadindex[j+1]) {
-          l  = jacobian->sparsePattern->index[ii];
-          k  = j*jacobian->sizeRows + l;
-          jac[k] = -jacobian->resultVars[l];
-          ii++;
-        };
-      }
-      /* de-activate seed variable for the corresponding color */
-      if(jacobian->sparsePattern->colorCols[j]-1 == i) {
-          jacobian->seedVars[j] = 0;
-      }
-    }
-  }
-
-  return 0;
+  for (k = 0; k < (jacobian->sizeRows) * (jacobian->sizeCols); k++)
+    jac[k] = -jac[k];
 }
 
 /*! \fn wrapper_fvec_lapack for the residual function
@@ -209,7 +178,7 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
     if (!reuseMatrixJac) {
       /* calculate jacobian -> matrix A*/
       if(systemData->jacobianIndex != -1) {
-        getAnalyticalJacobianLapack(data, threadData, solverData->A->data, sysNumber);
+        getAnalyticalJacobianLapack(data, threadData, systemData, solverData->A->data);
       } else {
         assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
       }

@@ -332,7 +332,7 @@ int functionJacBD_num(DATA* data, threadData_t *threadData, double *matrixB, dou
 int functionJacA(DATA* data, threadData_t *threadData, double* jac){
 
   const int index = data->callback->INDEX_JAC_A;
-  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
+  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
   unsigned int i,j,k;
   k = 0;
   if (jacobian->constantEqns != NULL) {
@@ -378,7 +378,7 @@ int functionJacA(DATA* data, threadData_t *threadData, double* jac){
 int functionJacB(DATA* data, threadData_t *threadData, double* jac){
 
   const int index = data->callback->INDEX_JAC_B;
-  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
+  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
 
   unsigned int i,j,k;
   k = 0;
@@ -424,7 +424,7 @@ int functionJacB(DATA* data, threadData_t *threadData, double* jac){
 int functionJacC(DATA* data, threadData_t *threadData, double* jac){
 
   const int index = data->callback->INDEX_JAC_C;
-  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
+  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
   unsigned int i,j,k;
   k = 0;
   if (jacobian->constantEqns != NULL) {
@@ -467,7 +467,7 @@ int functionJacC(DATA* data, threadData_t *threadData, double* jac){
 int functionJacD(DATA* data, threadData_t *threadData, double* jac){
 
   const int index = data->callback->INDEX_JAC_D;
-  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
+  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
   unsigned int i,j,k;
   k = 0;
   if (jacobian->constantEqns != NULL) {
@@ -572,7 +572,7 @@ int linearize(DATA* data, threadData_t *threadData)
     if (data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeTmpVars > 0){
         /* Retrieve symbolic Jacobian */
         /* Determine Matrix A */
-        ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+        JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
         if(!data->callback->initialAnalyticJacobianA(data, threadData, jacobian)){
             assertStreamPrint(threadData,0==functionJacA(data, threadData, matrixA),"Error, can not get Matrix A ");
         }

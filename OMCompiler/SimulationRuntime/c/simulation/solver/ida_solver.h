@@ -116,7 +116,7 @@ typedef struct IDA_SOLVER
   N_Vector* ySResult;
 
 #ifdef USE_PARJAC
-  ANALYTIC_JACOBIAN* jacColumns;
+  JACOBIAN* jacColumns;
 #endif
   int allocatedParMem; /* indicated if parallel memory was allocated, 0=false, 1=true*/
 } IDA_SOLVER;

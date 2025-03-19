@@ -37,6 +37,7 @@
 
 #include "../../simulation_data.h"
 #include "../simulation_info_json.h"
+#include "../jacobian_util.h"
 #include "../../util/omc_error.h"
 #include "../../util/parallel_helper.h"
 #include "omc_math.h"
@@ -335,47 +336,12 @@ int freeTotalPivotData(void** voiddata)
  *  \author wbraun
  *
  */
-int getAnalyticalJacobianTotalPivot(DATA* data, threadData_t *threadData, double* jac, int sysNumber)
+void getAnalyticalJacobianTotalPivot(DATA* data, threadData_t *threadData, LINEAR_SYSTEM_DATA* systemData, modelica_real* jac)
 {
-  int i,j,k,l,ii;
-  LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
+  JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
+  JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
 
-  const int index = systemData->jacobianIndex;
-
-  ANALYTIC_JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
-  ANALYTIC_JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
-
-  memset(jac, 0, (systemData->size)*(systemData->size)*sizeof(double));
-
-  for(i=0; i < jacobian->sparsePattern->maxColors; i++)
-  {
-    /* activate seed variable for the corresponding color */
-    for(ii=0; ii < jacobian->sizeCols; ii++)
-      if(jacobian->sparsePattern->colorCols[ii]-1 == i)
-        jacobian->seedVars[ii] = 1;
-
-    systemData->analyticalJacobianColumn(data, threadData, jacobian, parentJacobian);
-
-    for(j = 0; j < jacobian->sizeCols; j++)
-    {
-      if(jacobian->seedVars[j] == 1)
-      {
-        ii = jacobian->sparsePattern->leadindex[j];
-        while(ii < jacobian->sparsePattern->leadindex[j+1]) {
-          l  = jacobian->sparsePattern->index[ii];
-          k  = j*jacobian->sizeRows + l;
-          jac[k] = jacobian->resultVars[l];
-          ii++;
-        }
-      }
-      /* de-activate seed variable for the corresponding color */
-      if(jacobian->sparsePattern->colorCols[j]-1 == i) {
-        jacobian->seedVars[j] = 0;
-      }
-    }
-
-  }
-  return 0;
+  evalJacobian(data, threadData, jacobian, parentJacobian, jac);
 }
 
 /*! \fn wrapper_fvec_hybrd for the residual Function
@@ -448,7 +414,7 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double*
 
     /* calculate jacobian -> first n columns of matrix Ab*/
     if(systemData->jacobianIndex != -1){
-      getAnalyticalJacobianTotalPivot(data, threadData, solverData->Ab, sysNumber);
+      getAnalyticalJacobianTotalPivot(data, threadData, systemData, solverData->Ab);
     } else {
       assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
     }

@@ -91,7 +91,7 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
   modelica_real diffQ = 0.0, dTnextQ = 0.0, nextQ = 0.0;
   modelica_integer* der = NULL;
   const int index = data->callback->INDEX_JAC_A;
-  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
+  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
 
   solverInfo->currentTime = simInfo->startTime;
 

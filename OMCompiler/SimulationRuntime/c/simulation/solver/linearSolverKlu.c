@@ -123,39 +123,37 @@ static int getAnalyticalJacobian(DATA* data, threadData_t *threadData,
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
 
   const int index = systemData->jacobianIndex;
-  ANALYTIC_JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
-  ANALYTIC_JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
+  JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
+  JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
+  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
 
   int nth = 0;
-  int nnz = jacobian->sparsePattern->numberOfNonZeros;
 
   if (jacobian->constantEqns != NULL) {
     jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
   }
 
-  for(i=0; i < jacobian->sparsePattern->maxColors; i++)
+  for(i=0; i < sp->maxColors; i++)
   {
     /* activate seed variable for the corresponding color */
     for(ii=0; ii < jacobian->sizeCols; ii++)
     {
-      if(jacobian->sparsePattern->colorCols[ii]-1 == i)
+      if(sp->colorCols[ii]-1 == i)
       {
         jacobian->seedVars[ii] = 1;
       }
     }
 
-    systemData->analyticalJacobianColumn(data, threadData, jacobian, parentJacobian);
+    jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
 
     for(j = 0; j < jacobian->sizeCols; j++)
     {
-      if(jacobian->seedVars[j] == 1)
+      if(sp->colorCols[ii]-1 == i)
       {
-        nth = jacobian->sparsePattern->leadindex[j];
-        while(nth < jacobian->sparsePattern->leadindex[j+1])
+        for (nth = sp->leadindex[j]; nth < sp->leadindex[j+1]; nth++)
         {
-          l  = jacobian->sparsePattern->index[nth];
+          l  = sp->index[nth];
           systemData->setAElement(j, l, -jacobian->resultVars[l], nth, (void*) systemData, threadData);
-          nth++;
         }
         /* de-activate seed variable for the corresponding color */
         jacobian->seedVars[j] = 0;

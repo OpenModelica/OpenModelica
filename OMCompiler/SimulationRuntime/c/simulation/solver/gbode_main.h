@@ -74,7 +74,7 @@ typedef struct DATA_GBODEF{
                                                      * Something like
                                                      *  0 = yold-x + h*(sum(A[i,j]*k[j], j=1..i-1) + A[i,i]*f(t + c[i]*h, x))
                                                      * */
-  ANALYTIC_JACOBIAN* jacobian;                      /* Jacobian of non-linear system of implicit Runge-Kutta method */
+  JACOBIAN* jacobian;                               /* Jacobian of non-linear system of implicit Runge-Kutta method */
   SPARSE_PATTERN* sparsePattern_DIRK;               /* Sparsity pattern for the DIRK methd, will be reduced based on the fast states selection */
 
   double *y;                                        /* State vector of the current Runge-Kutta step */
@@ -127,7 +127,7 @@ typedef struct DATA_GBODE{
                                                      * Something like
                                                      *  0 = yold-x + h*(sum(A[i,j]*k[j], j=1..i-1) + A[i,i]*f(t + c[i]*h, x))
                                                      * */
-  ANALYTIC_JACOBIAN* jacobian;                      /* Jacobian of non-linear system of implicit Runge-Kutta method */
+  JACOBIAN* jacobian;                               /* Jacobian of non-linear system of implicit Runge-Kutta method */
   double *y;                                        /* State vector of the current Runge-Kutta step */
   double *yt, *y1;                                  /* Result vector of the states of embedded RK step */
   double *yLeft, *kLeft, *yRight, *kRight;          /* Needed for interpolation of the slow states and emitting to the result files */

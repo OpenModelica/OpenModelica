@@ -132,45 +132,44 @@ freeUmfPackData(void **voiddata)
  *  \author wbraun
  *
  */
-int getAnalyticalJacobianUmfPack(DATA* data, threadData_t *threadData, int sysNumber)
+void getAnalyticalJacobianUmfPack(DATA* data, threadData_t *threadData, LINEAR_SYSTEM_DATA* systemData)
 {
   int i,ii,j,k,l;
-  LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
 
-  const int index = systemData->jacobianIndex;
-  ANALYTIC_JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
-  ANALYTIC_JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
+  JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
+  JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
+  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
 
   int nth = 0;
-  int nnz = jacobian->sparsePattern->numberOfNonZeros;
 
-  for(i=0; i < jacobian->sizeRows; i++)
-  {
-    jacobian->seedVars[i] = 1;
+  /* evaluate constant equations of Jacobian */
+  if (jacobian->constantEqns != NULL) {
+    jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
+  }
 
-    systemData->analyticalJacobianColumn(data, threadData, jacobian, parentJacobian);
+  /* evaluate Jacobian */
+  for (i = 0; i < sp->maxColors; i++) {
+    /* activate seed variable for the corresponding color */
+    for (j = 0; j < jacobian->sizeCols; j++)
+      if (sp->colorCols[j]-1 == i)
+        jacobian->seedVars[j] = 1.0;
 
-    for(j = 0; j < jacobian->sizeCols; j++)
-    {
-      if(jacobian->seedVars[j] == 1)
-      {
-        ii = jacobian->sparsePattern->leadindex[j];
-        while(ii < jacobian->sparsePattern->leadindex[j+1])
-        {
-          l  = jacobian->sparsePattern->index[ii];
+    /* evaluate Jacobian column */
+    jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
+
+    for (j = 0; j < jacobian->sizeCols; j++) {
+      if (sp->colorCols[j]-1 == i) {
+        for (ii = sp->leadindex[j]; ii < sp->leadindex[j+1]; ii++) {
+          l = sp->index[ii];
           /* infoStreamPrint(OMC_LOG_LS_V, 0, "set on Matrix A (%d, %d)(%d) = %f", i, l, nth, -jacobian->resultVars[l]); */
           systemData->setAElement(i, l, -jacobian->resultVars[l], nth, (void*) systemData, threadData);
           nth++;
-          ii++;
-        };
+        }
+        /* de-activate seed variable for the corresponding color */
+        jacobian->seedVars[j] = 0.0;
       }
-    };
-
-    /* de-activate seed variable for the corresponding color */
-    jacobian->seedVars[i] = 0;
+    }
   }
-
-  return 0;
 }
 
 /*! \fn wrapper_fvec_umfpack for the residual function
@@ -227,7 +226,7 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
       solverData->Ap[0] = 0;
       /* calculate jacobian -> matrix A*/
       if(systemData->jacobianIndex != -1){
-        getAnalyticalJacobianUmfPack(data, threadData, sysNumber);
+        getAnalyticalJacobianUmfPack(data, threadData, systemData);
       } else {
         assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
       }

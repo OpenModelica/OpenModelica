@@ -671,7 +671,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   comp->fmiDerJac = NULL;
   if (comp->fmuData->callback->initialPartialFMIDER != NULL)
   {
-    comp->fmiDerJac = (ANALYTIC_JACOBIAN*) functions->allocateMemory(1, sizeof(ANALYTIC_JACOBIAN));
+    comp->fmiDerJac = (JACOBIAN*) functions->allocateMemory(1, sizeof(JACOBIAN));
     if (! comp->fmuData->callback->initialPartialFMIDER(comp->fmuData, comp->threadData, comp->fmiDerJac))
     {
       comp->_has_jacobian = 1;
@@ -683,7 +683,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   comp->fmiDerJacInitialization = NULL;
   if (comp->fmuData->callback->initialPartialFMIDERINIT != NULL)
   {
-    comp->fmiDerJacInitialization = (ANALYTIC_JACOBIAN*) functions->allocateMemory(1, sizeof(ANALYTIC_JACOBIAN));
+    comp->fmiDerJacInitialization = (JACOBIAN*) functions->allocateMemory(1, sizeof(JACOBIAN));
     if (! comp->fmuData->callback->initialPartialFMIDERINIT(comp->fmuData, comp->threadData, comp->fmiDerJacInitialization))
     {
       comp->_has_jacobian_intialization = 1;

@@ -39,7 +39,8 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h> /* memcpy */
 
-#include "simulation/simulation_info_json.h"
+#include "../simulation_info_json.h"
+#include "../jacobian_util.h"
 #include "util/omc_error.h"
 
 #include "util/varinfo.h"
@@ -59,57 +60,6 @@ int wrapper_fvec_newton(int n, double* x, double* fvec, NLS_USERDATA* userData, 
 
 extern double enorm_(int *n, double *x);
 extern int dgesv_(int *n, int *nrhs, doublereal *a, int *lda, int *ipiv, doublereal *b, int *ldb, int *info);
-
-
-/**
- * @brief Compute analytical Jacobian for Newton solver.
- *
- * Using coloring and sparsity pattern.
- *
- * @param data        Pointer to data.
- * @param threadData  Pointer to thread data.
- * @param jac         Contains jacobian values on exit.
- * @param nlsData     Non-linear system data.
- * @param jacobian    Analytic Jacobian.
- * @return int        Return 0 on success.
- */
-int getAnalyticalJacobianNewton(DATA* data, threadData_t *threadData, double* jac, NONLINEAR_SYSTEM_DATA* nlsData, ANALYTIC_JACOBIAN* jacobian)
-{
-  int i,j,k,l,ii;
-  DATA_NEWTON* solverData = (DATA_NEWTON*)(nlsData->solverData);
-
-  memset(jac, 0, (solverData->n)*(solverData->n)*sizeof(double));
-
-  for(i=0; i < jacobian->sparsePattern->maxColors; i++)
-  {
-    /* activate seed variable for the corresponding color */
-    for(ii=0; ii < jacobian->sizeCols; ii++)
-      if(jacobian->sparsePattern->colorCols[ii]-1 == i)
-        jacobian->seedVars[ii] = 1;
-
-    nlsData->analyticalJacobianColumn(data, threadData, jacobian, NULL);
-
-    for(j = 0; j < jacobian->sizeCols; j++)
-    {
-      if(jacobian->seedVars[j] == 1)
-      {
-        ii = jacobian->sparsePattern->leadindex[j];
-        while(ii < jacobian->sparsePattern->leadindex[j+1])
-        {
-          l  = jacobian->sparsePattern->index[ii];
-          k  = j*jacobian->sizeRows + l;
-          jac[k] = jacobian->resultVars[l];
-          ii++;
-        };
-      }
-      /* de-activate seed variable for the corresponding color */
-      if(jacobian->sparsePattern->colorCols[j]-1 == i)
-        jacobian->seedVars[j] = 0;
-    }
-  }
-
-  return 0;
-}
 
 
 /**
@@ -133,20 +83,20 @@ int wrapper_fvec_newton(int n, double* x, double* fvec, NLS_USERDATA* userData, 
   threadData_t *threadData = userData->threadData;
   int sysNumber = userData->sysNumber;
   NONLINEAR_SYSTEM_DATA* nlsData = userData->nlsData;
-  ANALYTIC_JACOBIAN* jacobian = userData->analyticJacobian;
+  JACOBIAN* jacobian = userData->analyticJacobian;
 
   DATA_NEWTON* solverData = (DATA_NEWTON*)(nlsData->solverData);
   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=userData->solverData};
   int flag = 1;
 
   if (fj) {
-    (nlsData->residualFunc)(&resUserData, x, fvec, &flag);
+    nlsData->residualFunc(&resUserData, x, fvec, &flag);
   } else {
     /* performance measurement */
     rt_ext_tp_tick(&nlsData->jacobianTimeClock);
 
     if(nlsData->jacobianIndex != -1 && jacobian != NULL ) {
-      getAnalyticalJacobianNewton(data, threadData, solverData->fjac, nlsData, jacobian);
+      evalJacobian(data, threadData, jacobian, NULL, solverData->fjac);
     } else {
       double delta_h = sqrt(solverData->epsfcn);
       double delta_hh;
