@@ -4913,7 +4913,9 @@ algorithm
 
     if inCompareFunc(inValue, e) then
       outList := listAppend(listReverseInPlace(acc), rest);
-      outDeletedElement := SOME(e);
+      if isPresent(outDeletedElement) then
+        outDeletedElement := SOME(e);
+      end if;
       return;
     end if;
 
