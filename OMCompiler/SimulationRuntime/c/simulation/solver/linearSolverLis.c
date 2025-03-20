@@ -148,7 +148,7 @@ void printLisMatrixCSR(LIS_MATRIX A, int n)
  */
 void getAnalyticalJacobianLis(DATA* data, threadData_t *threadData, LINEAR_SYSTEM_DATA* systemData)
 {
-  int i,j,k,l,nth;
+  int i,j,l,nth;
   JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
   JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;

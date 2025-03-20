@@ -115,14 +115,10 @@ int freeKluData(void **voiddata)
  *  \author wbraun
  *
  */
-static int getAnalyticalJacobian(DATA* data, threadData_t *threadData,
-                                 int sysNumber)
+static void getAnalyticalJacobian(DATA* data, threadData_t *threadData,
+                                 LINEAR_SYSTEM_DATA* systemData)
 {
-  int i,j,k,l,nth;
-
-  LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
-
-  const int index = systemData->jacobianIndex;
+  int i,j,l,nth;
   JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
   JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
@@ -136,13 +132,14 @@ static int getAnalyticalJacobian(DATA* data, threadData_t *threadData,
   for (i = 0; i < sp->maxColors; i++) {
     /* activate seed variable for the corresponding color */
     for (j = 0; j < jacobian->sizeCols; j++)
-      if(sp->colorCols[j]-1 == i)
+      if (sp->colorCols[j]-1 == i)
         jacobian->seedVars[j] = 1.0;
 
+    /* Evaluate Jacobian column */
     jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
 
-    for(j = 0; j < jacobian->sizeCols; j++) {
-      if(sp->colorCols[j]-1 == i) {
+    for (j = 0; j < jacobian->sizeCols; j++) {
+      if (sp->colorCols[j]-1 == i) {
         for (nth = sp->leadindex[j]; nth < sp->leadindex[j+1]; nth++) {
           l = sp->index[nth];
           systemData->setAElement(j, l, -jacobian->resultVars[l], nth, systemData, threadData);
@@ -152,7 +149,6 @@ static int getAnalyticalJacobian(DATA* data, threadData_t *threadData,
       }
     }
   }
-  return 0;
 }
 
 /*! \fn residual_wrapper for the residual function
@@ -206,7 +202,7 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
       solverData->Ap[0] = 0;
       /* calculate jacobian -> matrix A*/
       if(systemData->jacobianIndex != -1){
-        getAnalyticalJacobian(data, threadData, sysNumber);
+        getAnalyticalJacobian(data, threadData, systemData);
       } else {
         assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
       }
