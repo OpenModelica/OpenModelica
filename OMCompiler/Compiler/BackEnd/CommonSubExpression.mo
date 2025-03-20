@@ -2200,7 +2200,7 @@ algorithm
       // the partition consists of 2 equations
       varIdcs1 = arrayGet(m, eqIdx1);
       varIdcs2 = arrayGet(m, eqIdx2);
-      (sharedVarIdcs, varIdcs1, varIdcs2) = List.intersection1OnTrue(varIdcs1, varIdcs2, intEq);
+      (sharedVarIdcs, varIdcs1, varIdcs2) = List.intIntersection1OnTrue(varIdcs1, varIdcs2);
         //print("sharedVarIdcs "+stringDelimitList(List.map(sharedVarIdcs, intString), ", ")+"\n");
       {varIdx1} = varIdcs1;
       {varIdx2} = varIdcs2;
@@ -2265,7 +2265,7 @@ algorithm
           {eqIdx1, eqIdx2} := loop1;
           varIdcs1 := arrayGet(m, eqIdx1);
           varIdcs2 := arrayGet(m, eqIdx2);
-          (sharedVarIdcs, varIdcs1, varIdcs2) := List.intersection1OnTrue(varIdcs1, varIdcs2, intEq);
+          (sharedVarIdcs, varIdcs1, varIdcs2) := List.intIntersection1OnTrue(varIdcs1, varIdcs2);
             //print("sharedVarIdcs "+stringDelimitList(List.map(sharedVarIdcs, intString), ", ")+"\n");
             //print("varIdcs1 "+stringDelimitList(List.map(varIdcs1, intString), ", ")+"\n");
             //print("varIdcs2 "+stringDelimitList(List.map(varIdcs2, intString), ", ")+"\n");

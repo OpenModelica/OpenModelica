@@ -1715,7 +1715,7 @@ algorithm
           //print("unassNodes: \n"+stringDelimitList(List.map(unassNodes,intString)," ; ")+"\n");
         necessaryPredecessors = List.flatten(List.map4(List.map(necessaryPredecessors,List.create),BLS_getDependentGroups,iGraph,iGraphT,unassNodes,{}));  // get all unassigned dependents for the necessary predecessors
         necessaryPredecessors = List.unique(necessaryPredecessors);
-        (necessaryPredecessors,_,unassNodes) = List.intersection1OnTrue(necessaryPredecessors,unassNodes,intEq);
+        (necessaryPredecessors,_,unassNodes) = List.intIntersection1OnTrue(necessaryPredecessors,unassNodes);
 
         // build the section
         section = critPathNode::necessaryPredecessors;
@@ -1791,7 +1791,7 @@ algorithm
       dependentNodes = BLS_getDependentGroups({node},iGraph,iGraphT,nodesIn,{});
       section = node::dependentNodes;
       section = List.unique(section);
-      (_,rest,_) = List.intersection1OnTrue(rest,dependentNodes,intEq);
+      (_,rest,_) = List.intIntersection1OnTrue(rest,dependentNodes);
       section = listReverse(section);
       //print("section: \n"+stringDelimitList(List.map(section,intString)," ; ")+"\n");
       sections = BLS_mergeDependentLevelTask(rest,iGraph,iGraphT,section::sectionsIn);
@@ -1821,8 +1821,8 @@ algorithm
       predecessors = arrayGet(iGraphT,node);
       //print("successors: \n"+stringDelimitList(List.map(successors,intString)," ; ")+"\n");
       //print("predecessors: \n"+stringDelimitList(List.map(predecessors,intString)," ; ")+"\n");
-      (successors,_,referenceNodes) = List.intersection1OnTrue(successors,referenceNodesIn,intEq);
-      (predecessors,_,referenceNodes) = List.intersection1OnTrue(predecessors,referenceNodes,intEq);
+      (successors,_,referenceNodes) = List.intIntersection1OnTrue(successors,referenceNodesIn);
+      (predecessors,_,referenceNodes) = List.intIntersection1OnTrue(predecessors,referenceNodes);
       //print("successors: \n"+stringDelimitList(List.map(successors,intString)," ; ")+"\n");
       //print("predecessors: \n"+stringDelimitList(List.map(predecessors,intString)," ; ")+"\n");
       dependentNodes = listAppend(predecessors,successors);
@@ -1909,7 +1909,7 @@ protected function deleteIntListMembers "author: Waurich TUD 2014-07
   input list<Integer> lst2;
   output list<Integer> lstOut;
 algorithm
-  (_,lstOut,_):= List.intersection1OnTrue(lst1,lst2,intEq);
+  (_,lstOut,_):= List.intIntersection1OnTrue(lst1,lst2);
 end deleteIntListMembers;
 
 
@@ -3785,7 +3785,7 @@ algorithm
         clTasks = listHead(allCluster);// the current cluster
         //print("clTasks :"+intListString(clTasks)+"\n");
         origPredTasks = arrayGet(taskGraphTOrig,node);
-        (clPredTasks,origPredTasks,_) = List.intersection1OnTrue(origPredTasks,clTasks,intEq);
+        (clPredTasks,origPredTasks,_) = List.intIntersection1OnTrue(origPredTasks,clTasks);
         //print("origPredTasks :"+intListString(origPredTasks)+"\n");
         pos = List.map1(clPredTasks,List.position,clTasks);
         clTasks = arrayGet(procAssIn,threadIdx);
@@ -3793,7 +3793,7 @@ algorithm
         //print("clTasks :"+intListString(clTasks)+"\n");
         clPredTasks = List.map1(pos,List.getIndexFirst,clTasks);
         //print("clPredTasks :"+intListString(clPredTasks)+"\n");
-        (duplPredTasks,_,_) = List.intersection1OnTrue(clPredTasks,clTasks,intEq);
+        (duplPredTasks,_,_) = List.intIntersection1OnTrue(clPredTasks,clTasks);
         //print("duplPredTasks :"+intListString(duplPredTasks)+"\n");
         taskGraph = List.fold1(duplPredTasks,Array.appendToElement,{node},taskGraphIn); // add edges from duplicated predecessors to task
         taskGraphOut = List.fold1(origPredTasks,Array.appendToElement,{node},taskGraph); // add edges from non duplicated predecessors to task
@@ -3939,7 +3939,7 @@ algorithm
   clTasks := listHead(allCluster);// the current cluster
   //print("clTasks :"+intListString(clTasks)+"\n");
   origPredTasks := arrayGet(taskGraphTOrig,node);
-  (clPredTasks,origPredTasks,_) := List.intersection1OnTrue(origPredTasks,clTasks,intEq);
+  (clPredTasks,origPredTasks,_) := List.intIntersection1OnTrue(origPredTasks,clTasks);
   //print("origPredTasks :"+intListString(origPredTasks)+"\n");
   pos := List.map1(clPredTasks,List.position,clTasks);
   clTasks := arrayGet(procAssOut,threadIdx);
@@ -3947,7 +3947,7 @@ algorithm
   //print("clTasks :"+intListString(clTasks)+"\n");
   clPredTasks := List.map1(pos,List.getIndexFirst,clTasks);
   //print("clPredTasks :"+intListString(clPredTasks)+"\n");
-  (duplPredTasks,_,_) := List.intersection1OnTrue(clPredTasks,clTasks,intEq);
+  (duplPredTasks,_,_) := List.intIntersection1OnTrue(clPredTasks,clTasks);
   //print("duplPredTasks :"+intListString(duplPredTasks)+"\n");
   taskGraph := List.fold1(duplPredTasks,Array.appendToElement,{taskIdx},taskGraphIn); // add edges from duplicated predecessors to task
   taskGraphOut := List.fold1(origPredTasks,Array.appendToElement,{taskIdx},taskGraph); // add edges from non duplicated predecessors to task
@@ -4939,8 +4939,8 @@ algorithm
         //print("Node: " + intString(node) + "\n");
         //print("Children: {" + stringDelimitList(List.map(childNodes, intString), ",") + "}\n");
         //print("Parents: {" + stringDelimitList(List.map(parentNodes, intString), ",") + "}\n");
-        (_,otherParents,_) = List.intersection1OnTrue(parentNodes,sameProcTasks,intEq);
-        (_,otherChildren,_) = List.intersection1OnTrue(childNodes,sameProcTasks,intEq);
+        (_,otherParents,_) = List.intIntersection1OnTrue(parentNodes,sameProcTasks);
+        (_,otherChildren,_) = List.intIntersection1OnTrue(childNodes,sameProcTasks);
         //print("Other children: {" + stringDelimitList(List.map(otherChildren, intString), ",") + "}\n");
         //print("Other parents: {" + stringDelimitList(List.map(otherParents, intString), ",") + "}\n");
         // keep the locks that are superfluous, remove them later

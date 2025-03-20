@@ -3293,14 +3293,14 @@ algorithm
   // Condition -2
   condition2 := "Condition-2 \"All variables of interest must be involved in SET_C or SET_S\"";
   print(condition2 +  "\n" + UNDERLINE + "\n");
-  (tmplist1, tmplist2, tmplist3) := List.intersection1OnTrue(matchedknownssetc, knowns, intEq);
+  (tmplist1, tmplist2, tmplist3) := List.intIntersection1OnTrue(matchedknownssetc, knowns);
 
   if listEmpty(tmplist3) then
     print("-Passed\n");
     BackendDump.dumpVarList(List.map1r(tmplist1, BackendVariable.getVarAt, allVars), "-SET_C has all known variables:" + dumplistInteger(tmplist1));
    // check in sets
   elseif not listEmpty(tmplist3) then
-    (tmplist1sets, tmplist2, _) := List.intersection1OnTrue(tmplist3, matchedknownssets, intEq);
+    (tmplist1sets, tmplist2, _) := List.intIntersection1OnTrue(tmplist3, matchedknownssets);
     if not listEmpty(tmplist2) then
       str := dumplistInteger(tmplist2);
       print("-Failed\n");
@@ -3342,7 +3342,7 @@ algorithm
   //Condition-4
   condition4 := "Condition-4 \"SET_S should contain all intermediate variables involved in SET_C\"";
   print(condition4 + "\n" + UNDERLINE + "\n");
-  (tmplistvar1, tmplistvar2, tmplistvar3) := List.intersection1OnTrue(matchedunknownssetc, matchedunknownssets, intEq);
+  (tmplistvar1, tmplistvar2, tmplistvar3) := List.intIntersection1OnTrue(matchedunknownssetc, matchedunknownssets);
 
   if listEmpty(matchedunknownssetc) then
     print("-Passed"+"\n"+"-SET_C contains No Intermediate Variables\n\n");

@@ -1564,7 +1564,6 @@ public function intersection1OnTrue<T>
     output Boolean outIsEqual;
   end CompFunc;
 protected
-  Option<T> oe;
   list<T> lst1 = inList1, lst2 = inList2;
 algorithm
   if listEmpty(inList1) then
@@ -1597,6 +1596,91 @@ algorithm
   outList1Rest := if isPresent(outList1Rest) then listReverseInPlace(outList1Rest) else {};
   outList2Rest := if isPresent(outList2Rest) then setDifferenceOnTrue(inList2, outIntersection, inCompFunc) else {};
 end intersection1OnTrue;
+
+public function intIntersection1OnTrue
+  "Takes two lists of Integers. It returns the intersection of the two lists.
+   This function also returns a list of the elements from list 1 which is not
+   in list 2 and a list of the elements from list 2 which is not in list 1."
+  input list<Integer> inList1;
+  input list<Integer> inList2;
+  output list<Integer> outIntersection = {};
+  output list<Integer> outList1Rest = {};
+  output list<Integer> outList2Rest = inList2;
+protected
+  list<Integer> lst1 = inList1, lst2 = inList2;
+  Integer e1, e2;
+algorithm
+  if listEmpty(inList1) then
+    return;
+  end if;
+  if listEmpty(inList2) then
+    outList1Rest := inList1;
+    return;
+  end if;
+  lst1 := sort(inList1, intGt);
+  lst2 := sort(inList2, intGt);
+  if isPresent(outList1Rest) then
+    if isPresent(outList2Rest) then
+        (outIntersection, outList1Rest, outList2Rest) := intSortedIntersection1OnTrue(inList1, inList2);
+    else
+        (outIntersection, outList1Rest, _) := intSortedIntersection1OnTrue(inList1, inList2);
+    end if;
+  else
+    if isPresent(outList2Rest) then
+        (outIntersection, _, outList2Rest) := intSortedIntersection1OnTrue(inList1, inList2);
+    else
+        (outIntersection, _, _) := intSortedIntersection1OnTrue(inList1, inList2);
+    end if;
+  end if;
+end intIntersection1OnTrue;
+
+public function intSortedIntersection1OnTrue
+  "Takes two lists of Integers. It returns the intersection of the two lists.
+   This function also returns a list of the elements from list 1 which is not
+   in list 2 and a list of the elements from list 2 which is not in list 1."
+  input list<Integer> inList1;
+  input list<Integer> inList2;
+  output list<Integer> outIntersection = {};
+  output list<Integer> outList1Rest = {};
+  output list<Integer> outList2Rest = inList2;
+protected
+  list<Integer> lst1 = inList1, lst2 = inList2;
+  Integer e1, e2;
+algorithm
+  if listEmpty(inList1) then
+    return;
+  end if;
+  if listEmpty(inList2) then
+    outList1Rest := inList1;
+    return;
+  end if;
+
+  while not (listEmpty(lst1) or listEmpty(lst2)) loop
+    e1 := listHead(lst1);
+    e2 := listHead(lst2);
+    if e1 == e2 then
+      outIntersection := e1 :: outIntersection;
+      lst1 := listRest(lst1);
+      lst2 := listRest(lst2);
+    elseif e1 < e2 then
+      outList1Rest := e1 :: outList1Rest;
+      lst1 := listRest(lst1);
+    else
+      outList2Rest := e2 :: outList2Rest;
+      lst2 := listRest(lst2);
+    end if;
+  end while;
+  for e in lst1 loop
+    outList1Rest := e1 :: outList1Rest;
+  end for;
+  for e in lst2 loop
+    outList2Rest := e2 :: outList2Rest;
+  end for;
+
+  outIntersection := listReverseInPlace(outIntersection);
+  outList1Rest := if isPresent(outList1Rest) then listReverseInPlace(outList1Rest) else {};
+  outList2Rest := if isPresent(outList2Rest) then listReverseInPlace(outList2Rest) else {};
+end intSortedIntersection1OnTrue;
 
 public function setDifferenceIntN
   "Provides same functionality as setDifference, but for integer values
@@ -4913,7 +4997,9 @@ algorithm
 
     if inCompareFunc(inValue, e) then
       outList := listAppend(listReverseInPlace(acc), rest);
-      outDeletedElement := SOME(e);
+      if isPresent(outDeletedElement) then
+        outDeletedElement := SOME(e);
+      end if;
       return;
     end if;
 

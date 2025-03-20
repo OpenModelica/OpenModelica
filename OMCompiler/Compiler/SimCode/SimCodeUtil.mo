@@ -13293,7 +13293,7 @@ protected
   list<Integer> preEqs,reqEqs;
 algorithm
   preEqs := arrayGet(tree,eq);
-  (_,preEqs,_) := List.intersection1OnTrue(preEqs,eqsIn,intEq);
+  (_,preEqs,_) := List.intIntersection1OnTrue(preEqs,eqsIn);
   reqEqs := listAppend(preEqs,eqsIn);
   eqsOut := List.fold1(preEqs,collectReqSimEqs,tree,reqEqs);
 end collectReqSimEqs;

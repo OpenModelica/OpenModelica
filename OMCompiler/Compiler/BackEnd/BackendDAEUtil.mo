@@ -4959,7 +4959,7 @@ algorithm
         end for;
 
         lstall := List.map(row, Util.tuple31);
-        (_, lst, _) := List.intersection1OnTrue(lstall, lst, intEq);
+        (_, lst, _) := List.intIntersection1OnTrue(lstall, lst);
         _ := List.fold1(lst, markNegativ, rowmark, mark);
         row := listAppend(row1,row);
       then

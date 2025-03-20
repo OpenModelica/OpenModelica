@@ -872,7 +872,7 @@ algorithm
       (resolvedEq, m_row) = resolveClosedLoop(loop1,mIn,mTIn,eqMap,varMap,daeEqsIn,daeVarsIn);
 
       // get the equation that will be replaced and the rest
-      (crossEqs,eqs,_) = List.intersection1OnTrue(loop1,eqCrossLstIn,intEq);  // replace a crossEq in the loop
+      (crossEqs,eqs,_) = List.intIntersection1OnTrue(loop1,eqCrossLstIn);  // replace a crossEq in the loop
       replEqs = List.intersectionOnTrue(replEqsIn,loop1,intEq);  // just consider the already replaced equations in this loop
 
       // first try to replace a non cross node, otherwise an already replaced eq, or if none of them is available take a crossnode (THIS IS NOT YET CLEAR)
@@ -893,7 +893,7 @@ algorithm
       eqVars = List.map1(loop1,Array.getIndexFirst,mIn);
       vars = List.flatten(eqVars);
       loopVars = doubleEntriesInLst(vars);  // the vars in the loop
-      (_,adjVars,_) = List.intersection1OnTrue(vars,loopVars,intEq); // the vars adjacent to the loop
+      (_,adjVars,_) = List.intIntersection1OnTrue(vars,loopVars); // the vars adjacent to the loop
 
       // update adjacencyMatrix
       List.map2_0(loopVars,Array.updateIndexFirst,{},mTIn);  //delete the vars in the loop
@@ -925,7 +925,7 @@ algorithm
       (resolvedEq, m_row) = resolveClosedLoop(loop1,mIn,mTIn,eqMap,varMap,daeEqsIn,daeVarsIn);
 
       // get the equation that will be replaced and the rest
-      (replEqs,_,eqs) = List.intersection1OnTrue(replEqsIn,loop1,intEq);  // just consider the already replaced equations in this loop
+      (replEqs,_,eqs) = List.intIntersection1OnTrue(replEqsIn,loop1);  // just consider the already replaced equations in this loop
 
       //priorize the not yet replaced equations
       eqs = priorizeEqsWithVarCrosses(eqs,mIn,varCrossLstIn);
@@ -942,10 +942,10 @@ algorithm
       eqVars = List.map1(loop1,Array.getIndexFirst,mIn);
       vars = List.flatten(eqVars);
       loopVars = doubleEntriesInLst(vars);  // the vars in the loop
-      (crossVars,loopVars,_) = List.intersection1OnTrue(loopVars,varCrossLstIn,intEq);  // some crossVars have to remain
+      (crossVars,loopVars,_) = List.intIntersection1OnTrue(loopVars,varCrossLstIn);  // some crossVars have to remain
       //print("loopVars: "+stringDelimitList(List.map(loopVars,intString),",")+"\n");
 
-      (_,adjVars,_) = List.intersection1OnTrue(vars,loopVars,intEq); // the vars adjacent to the loop
+      (_,adjVars,_) = List.intIntersection1OnTrue(vars,loopVars); // the vars adjacent to the loop
       adjVars = listAppend(crossVars,adjVars);
       adjVars = List.unique(adjVars);
 
@@ -979,7 +979,7 @@ algorithm
       (resolvedEq, m_row) = resolveClosedLoop(loop1,mIn,mTIn,eqMap,varMap,daeEqsIn,daeVarsIn);
 
       // update AdjacencyMatrix
-      (_,crossEqs,_) = List.intersection1OnTrue(loop1,replEqsIn,intEq);  // do not replace an already replaced Eq
+      (_,crossEqs,_) = List.intIntersection1OnTrue(loop1,replEqsIn);  // do not replace an already replaced Eq
       (pos::_) = crossEqs;  // the equation that will be replaced = pos
       eqVars = List.map1(loop1,Array.getIndexFirst,mIn);
       vars = List.flatten(eqVars);
@@ -1097,7 +1097,7 @@ protected
   list<Integer> entry;
 algorithm
   entry := arrayGet(arrIn,idx);
-  (_,entry,_) := List.intersection1OnTrue(entry,delEntries,intEq);
+  (_,entry,_) := List.intIntersection1OnTrue(entry,delEntries);
   _ := arrayUpdate(arrIn,idx,entry);
 end arrayGetDeleteInLst;
 
@@ -1262,7 +1262,7 @@ algorithm
       // get the vars that are shared of the 2 equations
       adjVars1 := m_row;
       adjVars2 := arrayGet(m,eqIdx2);
-      (adjVars, adjVars1, adjVars2) := List.intersection1OnTrue(adjVars1, adjVars2, intEq);
+      (adjVars, adjVars1, adjVars2) := List.intIntersection1OnTrue(adjVars1, adjVars2);
 
       // split shared vars by sign
       (posVars, negVars) := List.splitOnTrue(adjVars, function varSign(varMap = varMap, daeVarsIn = daeVarsIn, eq1 = eq, eq2 = eq2));
@@ -1503,7 +1503,7 @@ algorithm
         adjEqs = list(List.deleteMemberOnTrue(crossEq, eq, intEq) for eq in adjEqs); // REMARK: this works only if there are no varCrossNodes
         adjEqs = List.filterOnFalse(adjEqs,listEmpty);
         nextEqs = List.flatten(adjEqs);
-        (endEqs,unfinEqs,_) = List.intersection1OnTrue(nextEqs,allEqCrossNodes,intEq);
+        (endEqs,unfinEqs,_) = List.intIntersection1OnTrue(nextEqs,allEqCrossNodes);
         paths = List.map1(endEqs,cons1,{crossEq}); //TODO: replace this stupid cons1
         paths = listAppend(paths,eqPathsIn) annotation(__OpenModelica_DisableListAppendWarning=true);
         unfinPaths = List.map1(unfinEqs,cons1,{crossEq});
@@ -1521,7 +1521,7 @@ algorithm
         adjEqs = List.filterOnFalse(adjEqs,listEmpty);
         nextEqs = List.map(adjEqs,listHead);
         (nextEqs,_) = List.deleteMemberOnTrue(prevEq,nextEqs,intEq); //do not take the path back to the previous node
-        (endEqs,unfinEqs,_) = List.intersection1OnTrue(nextEqs,allEqCrossNodes,intEq);
+        (endEqs,unfinEqs,_) = List.intIntersection1OnTrue(nextEqs,allEqCrossNodes);
         paths = List.map1(endEqs,cons1,pathStart); //TODO: replace this stupid cons1
         paths = listAppend(paths,eqPathsIn) annotation(__OpenModelica_DisableListAppendWarning=true);
         unfinPaths = List.map1(unfinEqs,cons1,pathStart);

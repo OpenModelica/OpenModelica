@@ -428,7 +428,7 @@ algorithm
         extractedvars=getVariablesAfterExtraction(tempsetC,tempsetS,mExt);
         extractedsetsvars=getVariablesAfterExtraction(tempsetS,{},mExt);
         finalvarlist=getRemovedEquationSolvedVariables(listAppend(tempsetC,tempsetS),var);
-        (finalvarlist,inputvarlist,_)=List.intersection1OnTrue(extractedvars,finalvarlist,intEq);
+        (finalvarlist,inputvarlist,_)=List.intIntersection1OnTrue(extractedvars,finalvarlist);
 
         inputvarlist=List.setDifferenceOnTrue(inputvarlist,knowns,intEq);
 
@@ -608,7 +608,7 @@ algorithm
        var:=List.map1r({varnumber},BackendVariable.getVarAt,allVars);
        depeqs:=List.map1r(List.map1r(eqs, listGet, arrayList(mapIncRowEqn)), BackendEquation.get, allEqs);
        (kn1,kn2,kn3):=List.intersection1OnTrue(varlist,listAppend(knowns,constantvars),intEq);
-       //(c1,c2,c3):=List.intersection1OnTrue(varlist,constantvars,intEq);
+       //(c1,c2,c3):=List.intIntersection1OnTrue(varlist,constantvars);
 
        if(listEmpty(kn1)) then
           print("\n-The intermediate variable: " + intString(varnumber) + " does not have any knowns or constants as Leaf");
@@ -742,14 +742,14 @@ algorithm
 
    // Condition -2
    print("Condition-2 " + "\"All variables of interest must be involved in SET_C or SET_S\"" + "\n" +UNDERLINE  +"\n");
-   (tmplist1,tmplist2,tmplist3):=List.intersection1OnTrue(matchedknownssetc,knowns,intEq);
+   (tmplist1,tmplist2,tmplist3):=List.intIntersection1OnTrue(matchedknownssetc,knowns);
 
    if(listEmpty(tmplist3)) then
          print("-Passed \n");
          BackendDump.dumpVarList(List.map1r(tmplist1,BackendVariable.getVarAt,allVars),"-SET_C has all known variables:" +dumplistInteger(tmplist1));
     // check in sets
    elseif(not listEmpty(tmplist3)) then
-         (tmplist1sets,tmplist2,_):=List.intersection1OnTrue(tmplist3,matchedknownssets,intEq);
+         (tmplist1sets,tmplist2,_):=List.intIntersection1OnTrue(tmplist3,matchedknownssets);
          if(not listEmpty(tmplist2)) then
               str:=dumplistInteger(tmplist2);
               print("-Failed\n");
@@ -774,7 +774,7 @@ algorithm
 
    //Condition-4
     print("Condition-4 " +"\"SET_S should contain all intermediate variables involved in SET_C\"" + "\n" + UNDERLINE +"\n");
-   (tmplistvar1,tmplistvar2,tmplistvar3):=List.intersection1OnTrue(matchedunknownssetc,matchedunknownssets,intEq);
+   (tmplistvar1,tmplistvar2,tmplistvar3):=List.intIntersection1OnTrue(matchedunknownssetc,matchedunknownssets);
 
    if(listEmpty(matchedunknownssetc))then
        print("-Passed"+"\n"+"-SET_C contains No Intermediate Variables \n\n");
@@ -813,7 +813,7 @@ algorithm
    /*
    if(not listEmpty(matchedunknownssetc)) then
        (sets_eqs,sets_vars):=getSolvedDependentEquationAndVars(matchedunknownssetc,solvedvar);
-       (tmplist1,tmplist2,tmplist3):=List.intersection1OnTrue(sets_eqs,sets,intEq);
+       (tmplist1,tmplist2,tmplist3):=List.intIntersection1OnTrue(sets_eqs,sets);
        if(listEmpty(tmplist2)) then
           BackendDump.dumpVarList(List.map1r(matchedunknownssetc,BackendVariable.getVarAt,allVars),"-SET_C has intermediate variables:" +dumplistInteger(matchedunknownssetc));
           BackendDump.dumpEquationList(List.map1r(List.map1r(sets_eqs, listGet, arrayList(mapIncRowEqn)), BackendEquation.get, allEqs),"-SET_S has equations which can compute above intermediate variable");
@@ -849,8 +849,8 @@ algorithm
        Boolean found=false;
    case(tmpvars,tmpknowns,tmpExt,tmpsolveeqvar,tempsolvedvars,tempsolvedeqs,tmpconstantvars)
      equation
-     (t1,t2,t3)=List.intersection1OnTrue(tmpvars,tmpknowns,intEq);
-     (c1,c2,c3)=List.intersection1OnTrue(tmpvars,tmpconstantvars,intEq);
+     (t1,t2,t3)=List.intIntersection1OnTrue(tmpvars,tmpknowns);
+     (c1,c2,c3)=List.intIntersection1OnTrue(tmpvars,tmpconstantvars);
      //print("\n tempvars:=>"+anyString(tmpvars)+"t1:=>"+anyString(t1) +"t2:=>"+ anyString(t2) +"c1:=>" + anyString(c1) + "c2:=>" + anyString (c2));
      if(not listEmpty(c1)) then
          //print("\n constant leaf found:=>" + anyString(c1));
@@ -873,7 +873,7 @@ algorithm
          //print("\n false loop-1" + anyString(tempsolvedeqs) +" "+ anyString(tempeqs));
          (tempvars1,tempvars2)=getVariableOccurence(tempeqs,mExt,knowns);
          allvars=List.unique(listAppend(tempvars1,tempvars2));
-         (tmp1,tmp2,tmp3)=List.intersection1OnTrue(allvars,solvedvars,intEq);
+         (tmp1,tmp2,tmp3)=List.intIntersection1OnTrue(allvars,solvedvars);
          if(not listEmpty(tmp2)) then
             (tempsolvedvars,tempsolvedeqs)=BuildSquareSubSetHelper(tmp2,tmpknowns,tmpExt,tmpsolveeqvar,tempsolvedvars,tempsolvedeqs,tmpconstantvars);
          end if;
@@ -924,7 +924,7 @@ algorithm
        (tempvars1,tempvars2):=getVariableOccurence({i},mExt,knowns);
        varnumber:=listGet(invars,count);
        allvars:=List.unique(listAppend(tempvars1,tempvars2));
-      //(t1,t2,t3):=List.intersection1OnTrue(allvars,invars,intEq);
+      //(t1,t2,t3):=List.intIntersection1OnTrue(allvars,invars);
        (t1,t2,t3):=List.intersection1OnTrue(allvars,{varnumber},intEq);
        (tmpvars,tmpeqs):=BuildSquareSubSetHelper(allvars,knowns,mExt,solvedeqvar,{varnumber},{i},constantvars);
        solvedvars:=listAppend(solvedvars,tmpvars) annotation(__OpenModelica_DisableListAppendWarning=true);
@@ -1561,7 +1561,7 @@ algorithm
             */
             (setc1,sets1):=extractMixedBlock(blockitem,blockvarlist);
             // put the approximated equations front if present
-            (tmplist1,tmplist2,tmplist3):=List.intersection1OnTrue(setc1,approximatedEquation,intEq);
+            (tmplist1,tmplist2,tmplist3):=List.intIntersection1OnTrue(setc1,approximatedEquation);
             setc1:=listAppend(tmplist1,tmplist2);
             setc:=listAppend(List.restOrEmpty(setc1),setc);
             sets:=listAppend(sets,sets1) annotation(__OpenModelica_DisableListAppendWarning=true);
