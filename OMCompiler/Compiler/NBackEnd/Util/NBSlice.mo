@@ -1576,16 +1576,17 @@ protected
     sizes           := ComponentRef.sizes(c, false);
     subs            := ComponentRef.subscriptsToExpression(cref, true);
     ty              := Type.arrayElementType(ComponentRef.getComponentType(cref));
-    if Type.isComplex(ty) then
-      // if the cref is complex, loop over each child and add it
-      scal_lst := {};
-      SOME(complex_size) := Type.complexSize(ty);
-      for i in complex_size:-1:1 loop
-        scal_lst    := listAppend(listReverse(combineFrames2Indices(var_start, complex_size :: sizes, Expression.INTEGER(i) :: subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual))), scal_lst);
-      end for;
-    else
-      scal_lst    := listReverse(combineFrames2Indices(var_start, sizes, subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual)));
-    end if;
+
+    // check if it needs special record handling
+    scal_lst := match Type.complexSize(ty)
+      case SOME(complex_size) algorithm
+        scal_lst := {};
+        for i in complex_size:-1:1 loop
+          scal_lst    := listAppend(listReverse(combineFrames2Indices(var_start, complex_size :: sizes, Expression.INTEGER(i) :: subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual))), scal_lst);
+         end for;
+      then scal_lst;
+      else listReverse(combineFrames2Indices(var_start, sizes, subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual)));
+    end match;
   end getCrefInFrameIndices;
 
   function resolveDimensionsSubscripts
