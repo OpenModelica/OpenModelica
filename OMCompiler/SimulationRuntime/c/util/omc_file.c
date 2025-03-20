@@ -145,7 +145,7 @@ size_t omc_fread(void *buffer, size_t size, size_t count, FILE *stream, int allo
   if(read_len != count)  {
     if (feof(stream) && !allow_early_eof) {
       fprintf(stderr, "Error reading stream: unexpected end of file.\n");
-      fprintf(stderr, "Expected to read %zu. Read only %zu\n", count, read_len);
+      fprintf(stderr, "Expected to read %zu. Read only %zu.\n", count, read_len);
     }
     else if (ferror(stream)) {
       fprintf(stderr, "Error: omc_fread() failed to read file.\n");

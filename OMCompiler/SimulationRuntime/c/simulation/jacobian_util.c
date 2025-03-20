@@ -114,7 +114,7 @@ void freeJacobian(JACOBIAN *jac)
  *  \param [ref] [jacobian]   Pointer to Jacobian
  *  \param [out] [jac]        Contains jacobian values on exit, column-major
  */
-void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian,modelica_real* jac)
+void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jac)
 {
   int i,j,k,l,ii;
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
