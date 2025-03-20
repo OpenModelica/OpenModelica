@@ -1240,34 +1240,24 @@ protected
     Dependency d;
     list<tuple<Integer, Type>> skip_lst;
     Type skip_ty;
-    Integer skip_idx, start, size, body_size, iter_size, scal_size, shift = 0;
+    Integer skip_idx, start, size, body_size, iter_size;
     list<ComponentRef> names;
     list<Expression> ranges;
     list<tuple<ComponentRef, Expression>> frames;
     list<Boolean> regulars;
-    ComponentRef cref, stripped;
-    list<Subscript> subs;
-    list<Dimension> dims, eq_dims;
-    array<Integer> key;
-    UnorderedMap<Key, Val1> map1;
-    UnorderedMap<Key, Val2> map2;
-    UnorderedMap<ComponentRef, Val2> map3;
-    list<ComponentRef> scalarized;
-    list<Integer> scal_lst;
-    Boolean repeated;
-    Mode mode;
+    ComponentRef cref;
   algorithm
     try
       // remove resizable parameters for index lookup
       cref := ComponentRef.mapExp(original_cref, Expression.replaceResizableParameter);
 
       // I. resolve the skips
-      d                   := UnorderedMap.getSafe(original_cref, dep, sourceInfo());
-      (start, _)          := mapping.eqn_AtS[eqn_arr_idx];
+      d           := UnorderedMap.getSafe(original_cref, dep, sourceInfo());
+      (start, _)  := mapping.eqn_AtS[eqn_arr_idx];
       if not UnorderedSet.contains(cref, rep) then
-        skip_lst := resolveSkipsLst(start, ty, arrayList(d.skips), cref, fullmap);
+        skip_lst  := resolveSkipsLst(start, ty, arrayList(d.skips), cref, fullmap);
       else
-        skip_lst := {(start, ty)};
+        skip_lst  := {(start, ty)};
       end if;
 
       for tpl in skip_lst loop
@@ -1283,91 +1273,13 @@ protected
         regulars := Dependency.toBoolean(d);
         if List.all(regulars, Util.id) then
           // II.1 all regular - single dependency per row.
-          mode        := Mode.create(eqn_name, {original_cref}, false);
-          scalarized  := listReverse(ComponentRef.scalarizeAll(cref, true));
-          map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
-          for scal in scalarized loop
-            UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map), map3);
-          end for;
-          scal_size   := listLength(List.flatten(UnorderedMap.valueList(map3)));
-          // either the scalarized list has to be equal in length to the equation or it can be repeated enough times to fit
-          if size == scal_size or (UnorderedSet.contains(cref, rep) and intMod(size, scal_size) == 0) then
-            for i in 1:size/scal_size loop
-              for scal in scalarized loop
-                for scal_idx in UnorderedMap.getSafe(scal, map3, sourceInfo()) loop
-                  addMatrixEntry(m, modes, skip_idx + shift, scal_idx, mode);
-                  shift := shift + 1;
-                end for;
-              end for;
-            end for;
-          else
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " (single dependency) failed because list of scalar variables ("
-              + intString(scal_size) + ") " + List.toString(scalarized, ComponentRef.toString)
-              + ", does not fit the equation size " + intString(size) + ".\n"});
-            fail();
-          end if;
-
+          resolveAllRegular(cref, original_cref, eqn_name, skip_idx, size, iter_size, frames, rep, map, m, mapping, modes);
         elseif List.any(regulars, Util.id) then
           // II.2 mixed regularity - find all necessary configurations and add them to a map with a proper key
-          // 1. get the cref subscripts and dimensions as well as the equation dimensions (they have to match in length)
-          subs    := ComponentRef.subscriptsAllWithWholeFlat(cref);
-          dims    := Type.arrayDims(ComponentRef.getSubscriptedType(cref));
-          eq_dims := Type.arrayDims(ty);
-          if List.compareLength(subs, dims) == 0 and List.compareLength(subs, regulars) == 0 and List.compareLength(subs, eq_dims) == 0 then
-            // 2. create a map that maps a configuration key to the corresponding scalar crefs
-            stripped  := ComponentRef.stripSubscriptsAll(cref);
-            key       := arrayCreate(listLength(subs), 0);
-            map1      := UnorderedMap.new<Val1>(keyHash, keyEqual);
-            resolveReductions(List.zip3(subs, dims, regulars), map1, key, stripped);
-
-            // 3. create a map that maps a configuration key to the final variable indices
-            map2      := UnorderedMap.new<Val2>(keyHash, keyEqual);
-            for k in UnorderedMap.keyList(map1) loop
-              scalarized := UnorderedMap.getSafe(k, map1, sourceInfo());
-              scal_lst := List.flatten(list(getCrefInFrameIndices(scal, frames, mapping, map) for scal in scalarized));
-              UnorderedMap.add(k, scal_lst, map2);
-            end for;
-
-            // 4. iterate over all equation dimensions and use the map to get the correct dependencies
-            key := arrayCreate(listLength(subs), 0);
-            resolveEquationDimensions(List.zip(eq_dims, regulars), map2, key, m, modes, Mode.create(eqn_name, {original_cref}, false), Pointer.create(skip_idx));
-          else
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because subscripts, dimensions and dependencies were not of equal length.\n"
-              + "variable subscripts(" + intString(listLength(subs)) + "): " + List.toString(subs, Subscript.toString) + "\n"
-              + "variable dimensions(" + intString(listLength(dims)) + "): " + List.toString(dims, Dimension.toString) + "\n"
-              + "equation dimensions(" + intString(listLength(eq_dims)) + "): " + List.toString(eq_dims, Dimension.toString) + "\n"
-              + "variable dependencies(" + intString(listLength(regulars)) + "): " + List.toString(regulars, boolString) + "\n"});
-            fail();
-          end if;
-
+          resolveMixed(cref, original_cref, eqn_name, skip_idx, ty, frames, regulars, map, m, mapping, modes);
         else
           // II.3 all reduced - full dependency per row. scalarize and add to all rows of the equation
-          repeated    := UnorderedSet.contains(cref, rep);
-          scalarized  := listReverse(ComponentRef.scalarizeAll(cref, true));
-          map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
-          for scal in scalarized loop
-            UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map), map3);
-          end for;
-
-          // if its repeated, use the same cref always
-          if repeated then
-            mode := Mode.create(eqn_name, {original_cref}, false);
-          end if;
-
-          for i in skip_idx:iter_size:skip_idx+size-iter_size loop
-            shift := 0;
-            for scal in scalarized loop
-              // if its not repeated use local cref
-              if not repeated then
-                mode := Mode.create(eqn_name, {original_cref}, true);
-              end if;
-              for scal_idx in UnorderedMap.getSafe(scal, map3, sourceInfo()) loop
-                if intMod(shift, iter_size) == 0 then shift := 0; end if;
-                addMatrixEntry(m, modes, i + shift, scal_idx, mode);
-                shift := shift + 1;
-              end for;
-            end for;
-          end for;
+          resolveAllReduced(cref, original_cref, eqn_name, skip_idx, size, iter_size, frames, rep, map, m, mapping, modes);
         end if;
       end for;
     else
@@ -1375,6 +1287,151 @@ protected
       fail();
     end try;
   end resolveDependency;
+
+  function resolveAllRegular
+    "II.1 all regular - single dependency per row."
+    input ComponentRef cref;
+    input ComponentRef original_cref;
+    input ComponentRef eqn_name;
+    input Integer skip_idx, size, iter_size;
+    input list<tuple<ComponentRef, Expression>> frames;
+    input UnorderedSet<ComponentRef> rep                    "repetition set";
+    input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
+    input array<list<Integer>> m;
+    input Mapping mapping                                   "array <-> scalar index mapping";
+    input UnorderedMap<Mode.Key, Mode> modes;
+  protected
+    Mode mode;
+    list<ComponentRef> scalarized;
+    UnorderedMap<ComponentRef, Val2> map3;
+    Integer scal_size, shift;
+  algorithm
+    mode        := Mode.create(eqn_name, {original_cref}, false);
+    scalarized  := listReverse(ComponentRef.scalarizeAll(cref, true));
+    map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
+    for scal in scalarized loop
+      UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map), map3);
+    end for;
+    scal_size   := listLength(List.flatten(UnorderedMap.valueList(map3)));
+    // either the scalarized list has to be equal in length to the equation or it can be repeated enough times to fit
+    if size == scal_size or (UnorderedSet.contains(cref, rep) and intMod(size, scal_size) == 0) then
+      shift := 0;
+      for i in 1:size/scal_size loop
+        for scal in scalarized loop
+          for scal_idx in UnorderedMap.getSafe(scal, map3, sourceInfo()) loop
+            addMatrixEntry(m, modes, skip_idx + shift, scal_idx, mode);
+            shift := shift + 1;
+          end for;
+        end for;
+      end for;
+    else
+      // undetected full dependency caused by non-evaluable subscripts, this can happen by inlining functions
+      // II.3 all reduced - full dependency per row. scalarize and add to all rows of the equation
+      resolveAllReduced(cref, original_cref, eqn_name, skip_idx, size, iter_size, frames, rep, map, m, mapping, modes);
+    end if;
+  end resolveAllRegular;
+
+  function resolveMixed
+    "II.2 mixed regularity - find all necessary configurations and add them to a map with a proper key"
+    input ComponentRef cref;
+    input ComponentRef original_cref;
+    input ComponentRef eqn_name;
+    input Integer skip_idx;
+    input Type ty;
+    input list<tuple<ComponentRef, Expression>> frames;
+    input list<Boolean> regulars;
+    input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
+    input array<list<Integer>> m;
+    input Mapping mapping                                   "array <-> scalar index mapping";
+    input UnorderedMap<Mode.Key, Mode> modes;
+  protected
+    ComponentRef stripped;
+    list<Subscript> subs;
+    list<Dimension> dims, eq_dims;
+    array<Integer> key;
+    UnorderedMap<Key, Val1> map1;
+    UnorderedMap<Key, Val2> map2;
+    list<ComponentRef> scalarized;
+    list<Integer> scal_lst;
+  algorithm
+    // 1. get the cref subscripts and dimensions as well as the equation dimensions (they have to match in length)
+    subs    := ComponentRef.subscriptsAllWithWholeFlat(cref);
+    dims    := Type.arrayDims(ComponentRef.getSubscriptedType(cref));
+    eq_dims := Type.arrayDims(ty);
+    if List.compareLength(subs, dims) == 0 and List.compareLength(subs, regulars) == 0 and List.compareLength(subs, eq_dims) == 0 then
+      // 2. create a map that maps a configuration key to the corresponding scalar crefs
+      stripped  := ComponentRef.stripSubscriptsAll(cref);
+      key       := arrayCreate(listLength(subs), 0);
+      map1      := UnorderedMap.new<Val1>(keyHash, keyEqual);
+      resolveReductions(List.zip3(subs, dims, regulars), map1, key, stripped);
+
+      // 3. create a map that maps a configuration key to the final variable indices
+      map2      := UnorderedMap.new<Val2>(keyHash, keyEqual);
+      for k in UnorderedMap.keyList(map1) loop
+        scalarized := UnorderedMap.getSafe(k, map1, sourceInfo());
+        scal_lst := List.flatten(list(getCrefInFrameIndices(scal, frames, mapping, map) for scal in scalarized));
+        UnorderedMap.add(k, scal_lst, map2);
+      end for;
+
+      // 4. iterate over all equation dimensions and use the map to get the correct dependencies
+      key := arrayCreate(listLength(subs), 0);
+      resolveEquationDimensions(List.zip(eq_dims, regulars), map2, key, m, modes, Mode.create(eqn_name, {original_cref}, false), Pointer.create(skip_idx));
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because subscripts, dimensions and dependencies were not of equal length.\n"
+        + "variable subscripts(" + intString(listLength(subs)) + "): " + List.toString(subs, Subscript.toString) + "\n"
+        + "variable dimensions(" + intString(listLength(dims)) + "): " + List.toString(dims, Dimension.toString) + "\n"
+        + "equation dimensions(" + intString(listLength(eq_dims)) + "): " + List.toString(eq_dims, Dimension.toString) + "\n"
+        + "variable dependencies(" + intString(listLength(regulars)) + "): " + List.toString(regulars, boolString) + "\n"});
+      fail();
+    end if;
+  end resolveMixed;
+
+  function resolveAllReduced
+    "II.3 all reduced - full dependency per row. scalarize and add to all rows of the equation"
+    input ComponentRef cref;
+    input ComponentRef original_cref;
+    input ComponentRef eqn_name;
+    input Integer skip_idx, size, iter_size;
+    input list<tuple<ComponentRef, Expression>> frames;
+    input UnorderedSet<ComponentRef> rep                    "repetition set";
+    input UnorderedMap<ComponentRef, Integer> map           "unordered map to check for relevance";
+    input array<list<Integer>> m;
+    input Mapping mapping                                   "array <-> scalar index mapping";
+    input UnorderedMap<Mode.Key, Mode> modes;
+  protected
+    Boolean repeated;
+    list<ComponentRef> scalarized;
+    UnorderedMap<ComponentRef, Val2> map3;
+    Integer shift;
+    Mode mode;
+  algorithm
+    repeated    := UnorderedSet.contains(cref, rep);
+    scalarized  := listReverse(ComponentRef.scalarizeAll(cref, true));
+    map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
+    for scal in scalarized loop
+      UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map), map3);
+    end for;
+
+    // if its repeated, use the same cref always
+    if repeated then
+      mode := Mode.create(eqn_name, {original_cref}, false);
+    end if;
+
+    for i in skip_idx:iter_size:skip_idx+size-iter_size loop
+      shift := 0;
+      for scal in scalarized loop
+        // if its not repeated use local cref
+        if not repeated then
+          mode := Mode.create(eqn_name, {original_cref}, true);
+        end if;
+        for scal_idx in UnorderedMap.getSafe(scal, map3, sourceInfo()) loop
+          if intMod(shift, iter_size) == 0 then shift := 0; end if;
+          addMatrixEntry(m, modes, i + shift, scal_idx, mode);
+          shift := shift + 1;
+        end for;
+      end for;
+    end for;
+  end resolveAllReduced;
 
   function resolveEquationDimensions
     "a component reference in a list of equation dimensions. The second argument to the tuple
@@ -1602,17 +1659,20 @@ protected
   algorithm
     // get all possible subscript combinations
     replaced := list(Expression.map(sub, function Replacements.applySimpleExp(replacements = replacements)) for sub in subs);
-    values := list(resolveDimensionsSubscript(rep) for rep in replaced);
+    values := list(resolveDimensionsSubscript(tpl) for tpl in List.zip(replaced, sizes));
     values := List.combination(values);
     ranges := list(List.zip(sizes, v) for v in values);
   end resolveDimensionsSubscripts;
 
   function resolveDimensionsSubscript
-    input Expression exp;
+    input tuple<Expression, Integer> tpl;
     output list<Integer> res;
   protected
-    Expression rep = SimplifyExp.simplifyDump(exp, true, getInstanceName());
+    Expression rep;
+    Integer size;
   algorithm
+    (rep, size) := tpl;
+    rep := SimplifyExp.simplifyDump(rep, true, getInstanceName());
     res := match rep
       local
         Integer start, step, stop;
@@ -1626,13 +1686,11 @@ protected
       then List.intRange3(start,step, stop);
 
       // resolve individual array elements
-      case Expression.ARRAY(literal = true)
-      then List.flatten(list(resolveDimensionsSubscript(e) for e in rep.elements));
+      case Expression.ARRAY()
+      then List.flatten(list(resolveDimensionsSubscript((e, size)) for e in rep.elements));
 
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-          + " failed because expression was not evaluable to a list of integers: " + Expression.toString(exp)});
-      then fail();
+      // assume full dependency if it cannot be evaluated
+      else List.intRange(size);
     end match;
   end resolveDimensionsSubscript;
 
