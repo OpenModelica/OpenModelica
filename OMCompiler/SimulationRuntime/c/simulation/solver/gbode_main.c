@@ -104,7 +104,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
   DATA_GBODEF *gbfData = (DATA_GBODEF *)calloc(1, sizeof(DATA_GBODEF));
   gbData->gbfData = gbfData;
 
-  ANALYTIC_JACOBIAN *jacobian = NULL;
+  JACOBIAN *jacobian = NULL;
   int i;
 
   gbfData->nStates = gbData->nStates;
@@ -313,7 +313,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
 
   gbData->nStates = data->modelData->nStates;
 
-  ANALYTIC_JACOBIAN* jacobian = NULL;
+  JACOBIAN* jacobian = NULL;
 
   gbData->GM_method = getGB_method(FLAG_SR);
   gbData->tableau = initButcherTableau(gbData->GM_method, FLAG_SR_ERR);
@@ -558,7 +558,7 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
   freeRK_NLS_DATA(gbfData->nlsData);
 
   /* Free Jacobian */
-  freeAnalyticJacobian(gbfData->jacobian);
+  freeJacobian(gbfData->jacobian);
   free(gbfData->jacobian); gbfData->jacobian = NULL;
 
   /* Free sparsity pattern */
@@ -606,14 +606,14 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
  */
 void gbode_freeData(DATA* data, DATA_GBODE *gbData)
 {
-  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-  freeAnalyticJacobian(jacobian);
+  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  freeJacobian(jacobian);
 
   /* Free non-linear system data */
   freeRK_NLS_DATA(gbData->nlsData);
 
   /* Free Jacobian */
-  freeAnalyticJacobian(gbData->jacobian);
+  freeJacobian(gbData->jacobian);
   free(gbData->jacobian); gbData->jacobian = NULL;
 
   /* Free Butcher tableau */

@@ -32,6 +32,7 @@
 
 #include "stateset.h"
 #include "../../util/omc_error.h"
+#include "../jacobian_util.h"
 
 /*! \fn printStateSelectionInfo
  *
@@ -86,7 +87,7 @@ void initializeStateSetJacobians(DATA *data, threadData_t *threadData)
   TRACE_PUSH
   long i = 0;
   STATE_SET_DATA *set = NULL;
-  ANALYTIC_JACOBIAN* jacobian;
+  JACOBIAN* jacobian;
 
   /* go troug all state sets*/
   for(i=0; i<data->modelData->nStateSets; i++)
@@ -182,64 +183,18 @@ static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsig
   TRACE_PUSH
   unsigned int i, j, k, l, ii;
   const unsigned int jacIndex = data->simulationInfo->stateSetData[index].jacobianIndex;
-  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[jacIndex]);
+  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[jacIndex]);
+  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
 
-  unsigned int nrows = jacobian->sizeRows;
-  unsigned int ncols = jacobian->sizeCols;
-  double* jac = data->simulationInfo->stateSetData[index].J;
+  modelica_real* jac = data->simulationInfo->stateSetData[index].J;
 
-
-  /* set all elements to zero */
-  memset(jac, 0, (nrows*ncols*sizeof(double)));
-
-  if (jacobian->constantEqns != NULL) {
-    jacobian->constantEqns(data, threadData, jacobian, NULL);
-  }
-  for(i=0; i < jacobian->sparsePattern->maxColors; i++)
-  {
-    for(ii=0; ii < jacobian->sizeCols; ii++)
-      if(jacobian->sparsePattern->colorCols[ii]-1 == i)
-        jacobian->seedVars[ii] = 1;
-
-/*
-    if(OMC_ACTIVE_STREAM(OMC_LOG_DSS_JAC))
-    {
-      infoStreamPrint(OMC_LOG_DSS_JAC, 1, "Caluculate one col:");
-      for(l=0; l < jacobian->sizeCols; l++)
-        infoStreamPrint(OMC_LOG_DSS_JAC, 0, "seed: data->simulationInfo->analyticJacobians[index].seedVars[%d]= %f", l, jacobian->seedVars[l]);
-      messageClose(OMC_LOG_DSS_JAC);
-    }
-*/
-    (data->simulationInfo->stateSetData[index].analyticalJacobianColumn)(data, threadData, jacobian, NULL);
-
-    for(j=0; j < jacobian->sizeCols; j++)
-    {
-      if(jacobian->seedVars[j] == 1)
-      {
-        ii = jacobian->sparsePattern->leadindex[j];
-
-        /* infoStreamPrint(OMC_LOG_DSS_JAC, 0, "take for %d -> %d\n", j, ii); */
-
-        while(ii < jacobian->sparsePattern->leadindex[j+1])
-        {
-          l  = jacobian->sparsePattern->index[ii];
-          k  = j*jacobian->sizeRows + l;
-          jac[k] = jacobian->resultVars[l];
-          /* infoStreamPrint(OMC_LOG_DSS_JAC, 0, "write %d. in jac[%d]-[%d, %d]=%f from col[%d]=%f", ii, k, l, j, jac[k], l, jacobian->resultVars[l]); */
-          ii++;
-        };
-      }
-    }
-    for(ii=0; ii < jacobian->sizeCols; ii++)
-      if(jacobian->sparsePattern->colorCols[ii]-1 == i)
-        jacobian->seedVars[ii] = 0;
-  }
+  evalJacobian(data, threadData, jacobian, NULL, jac);
 
   if(OMC_ACTIVE_STREAM(OMC_LOG_DSS_JAC))
   {
     char *buffer = (char*)malloc(sizeof(char)*jacobian->sizeCols*20);
 
-    infoStreamPrint(OMC_LOG_DSS_JAC, 1, "jacobian %dx%d [id: %d]", jacobian->sizeRows, jacobian->sizeCols, jacIndex);
+    infoStreamPrint(OMC_LOG_DSS_JAC, 1, "jacobian %zux%zu [id: %d]", jacobian->sizeRows, jacobian->sizeCols, jacIndex);
 
     for(i=0; i<jacobian->sizeRows; i++)
     {

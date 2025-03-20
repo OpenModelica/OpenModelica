@@ -167,20 +167,20 @@ end translateModel;
     extern const char* <%symbolName(modelNamePrefixStr,"zeroCrossingDescription")%>(int i, int **out_EquationIndexes);
     extern const char* <%symbolName(modelNamePrefixStr,"relationDescription")%>(int i);
     extern void <%symbolName(modelNamePrefixStr,"function_initSample")%>(DATA *data, threadData_t *threadData);
-    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianG")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
-    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianA")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
-    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianB")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
-    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianC")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
-    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianD")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
-    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianF")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
-    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianH")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
-    extern int <%symbolName(modelNamePrefixStr,"functionJacG_column")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
-    extern int <%symbolName(modelNamePrefixStr,"functionJacA_column")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
-    extern int <%symbolName(modelNamePrefixStr,"functionJacB_column")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
-    extern int <%symbolName(modelNamePrefixStr,"functionJacC_column")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
-    extern int <%symbolName(modelNamePrefixStr,"functionJacD_column")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
-    extern int <%symbolName(modelNamePrefixStr,"functionJacF_column")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
-    extern int <%symbolName(modelNamePrefixStr,"functionJacH_column")%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianG")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
+    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianA")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
+    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianB")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
+    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianC")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
+    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianD")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
+    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianF")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
+    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianH")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
+    extern int <%symbolName(modelNamePrefixStr,"functionJacG_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
+    extern int <%symbolName(modelNamePrefixStr,"functionJacA_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
+    extern int <%symbolName(modelNamePrefixStr,"functionJacB_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
+    extern int <%symbolName(modelNamePrefixStr,"functionJacC_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
+    extern int <%symbolName(modelNamePrefixStr,"functionJacD_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
+    extern int <%symbolName(modelNamePrefixStr,"functionJacF_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
+    extern int <%symbolName(modelNamePrefixStr,"functionJacH_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_frame")%>(void);
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>(void);
     extern int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res, short *);
@@ -1842,8 +1842,8 @@ template symJacDefinition(list<JacobianMatrix> JacobianMatrices, String modelNam
   let symbolicJacsDefine = (JacobianMatrices |> jac as JAC_MATRIX(columns=jacColumn, seedVars=seedVars, matrixName=name, jacobianIndex=indexJacobian)  =>
     <<
     #define <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%name%> <%indexJacobian%>
-    int <%symbolName(modelNamePrefix,"functionJac")%><%name%>_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
-    int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+    int <%symbolName(modelNamePrefix,"functionJac")%><%name%>_column(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
+    int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
     <%genericCallHeaders(jac.generic_loop_calls, createJacContext(jac.crefsHT))%>
     >>
     ;separator="\n\n";empty)
@@ -2435,9 +2435,9 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          threadData_t *threadData = userData->threadData;
          const int equationIndexes[2] = {1,<%ls.index%>};
          <% if ls.partOfJac then
-           'ANALYTIC_JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
+           'JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
          %>
-         ANALYTIC_JACOBIAN* jacobian = NULL;
+         JACOBIAN* jacobian = NULL;
          <%varDeclsRes%>
          <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ls.index%>);' %>
          <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%ls.index%>).profileBlockIndex,1);' %>
@@ -2473,7 +2473,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
        void setLinearMatrixA<%ls.index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData)
        {
          const int equationIndexes[2] = {1,<%ls.index%>};
-         <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
+         <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
          <%varDecls%>
          <%MatrixA%>
        }
@@ -2481,7 +2481,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
        void setLinearVectorb<%ls.index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData)
        {
          const int equationIndexes[2] = {1,<%ls.index%>};
-         <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
+         <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
          <%varDecls2%>
          <%vectorb%>
        }
@@ -2546,9 +2546,9 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          threadData_t *threadData = userData->threadData;
          const int equationIndexes[2] = {1,<%ls.index%>};
          <% if ls.partOfJac then
-           'ANALYTIC_JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
+           'JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
          %>
-         ANALYTIC_JACOBIAN* jacobian = NULL;
+         JACOBIAN* jacobian = NULL;
          <%varDeclsRes%>
          <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ls.index%>);' %>
          <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%ls.index%>).profileBlockIndex,1);' %>
@@ -2571,9 +2571,9 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          threadData_t *threadData = userData->threadData;
          const int equationIndexes[2] = {1,<%at.index%>};
          <% if ls.partOfJac then
-           'ANALYTIC_JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
+           'JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
          %>
-         ANALYTIC_JACOBIAN* jacobian = NULL;
+         JACOBIAN* jacobian = NULL;
          <%varDeclsRes2%>
          <% if profileAll() then 'SIM_PROF_TICK_EQ(<%at.index%>);' %>
          <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%at.index%>).profileBlockIndex,1);' %>
@@ -2627,7 +2627,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
        void setLinearMatrixA<%ls.index%>(DATA* data, LINEAR_SYSTEM_DATA *linearSystemData)
        {
          const int equationIndexes[2] = {1,<%ls.index%>};
-         <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
+         <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
          <%varDecls%>
          <%MatrixA%>
        }
@@ -2635,7 +2635,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
        void setLinearVectorb<%ls.index%>(DATA* data, LINEAR_SYSTEM_DATA* linearSystemData)
        {
          const int equationIndexes[2] = {1,<%ls.index%>};
-         <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
+         <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
          <%varDecls2%>
          <%vectorb%>
        }
@@ -2647,7 +2647,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
        void setLinearMatrixA<%at.index%>(DATA* data, LINEAR_SYSTEM_DATA* linearSystemData)
        {
          const int equationIndexes[2] = {1,<%at.index%>};
-         <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
+         <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
          <%varDecls3%>
          <%MatrixA2%>
        }
@@ -2655,7 +2655,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
        void setLinearVectorb<%at.index%>(DATA* data, LINEAR_SYSTEM_DATA* linearSystemData)
        {
          const int equationIndexes[2] = {1,<%at.index%>};
-         <% if ls.partOfJac then 'ANALYTIC_JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
+         <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
          <%varDecls4%>
          <%vectorb2%>
        }
@@ -5676,7 +5676,7 @@ template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimV
 match sparsepattern
   case {} then
     <<
-    int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian)
+    int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
     {
       TRACE_PUSH
       TRACE_POP
@@ -5696,17 +5696,18 @@ match sparsepattern
     let constantEqns = (jacobianColumn |> JAC_COLUMN(constantEqns=constantEqns) =>
       match constantEqns case {} then 'NULL' case _ then '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_constantEqns'
       ;separator="")
+    let evalColumn = '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column'
     let sizeCols = listLength(seedVars)
     <<
     OMC_DISABLE_OPT
-    int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian)
+    int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
     {
       TRACE_PUSH
       size_t count;
 
       FILE* pFile = openSparsePatternFile(data, threadData, "<%fileName%>");
 
-      initAnalyticJacobian(jacobian, <%sizeCols%>, <%sizeRows%>, <%tmpvarsSize%>, <%constantEqns%>, jacobian->sparsePattern);
+      initJacobian(jacobian, <%sizeCols%>, <%sizeRows%>, <%tmpvarsSize%>, <%evalColumn%>, <%constantEqns%>, NULL);
       jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
       jacobian->availability = <%availability%>;
 
@@ -5742,7 +5743,7 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
   match nRows
   case "0" then
     <<
-    int <%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian)
+    int <%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian)
     {
       TRACE_PUSH
       TRACE_POP
@@ -5753,7 +5754,7 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
     match seedVars
      case {} then
         <<
-        int <%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian)
+        int <%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian)
         {
           TRACE_PUSH
           TRACE_POP
@@ -5779,7 +5780,7 @@ template generateConstantEqns(list<SimEqSystem> constantEqns, String matrixName,
 ::=
     <<
     OMC_DISABLE_OPT
-    int <%symbolName(modelNamePrefix,"functionJac")%><%matrixName%>_constantEqns(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian)
+    int <%symbolName(modelNamePrefix,"functionJac")%><%matrixName%>_constantEqns(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian)
     {
       TRACE_PUSH
 
@@ -5807,7 +5808,7 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimEqSystem> constantE
 
   <%constantEqns2%>
 
-  int <%symbolName(modelNamePrefix,"functionJac")%><%matrixName%>_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian)
+  int <%symbolName(modelNamePrefix,"functionJac")%><%matrixName%>_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian)
   {
     TRACE_PUSH
 
@@ -6125,7 +6126,7 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
         /*
         <%dumpEqs(fill(eq,1))%>
         */
-        <%OMC_NO_OPT%><% if static then "static "%>void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian)
+        <%OMC_NO_OPT%><% if static then "static "%>void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian)
         {
           TRACE_PUSH
           <%baseClockIndex_%>
@@ -7435,7 +7436,7 @@ end equationNames_Partial;
 template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
  "Generates the body for a set of generic calls."
 ::=
-  let jac = match context case JACOBIAN_CONTEXT() then ", ANALYTIC_JACOBIAN *jacobian" else ""
+  let jac = match context case JACOBIAN_CONTEXT() then ", JACOBIAN *jacobian" else ""
   (genericCalls |> call =>
     let &sub = buffer ""
     let &preExp = buffer ""
@@ -7571,7 +7572,7 @@ end forIteratorBody;
 template genericCallHeaders(list<SimGenericCall> genericCalls, Context context)
  "Generates the header for a set of generic calls."
 ::=
-  let jac = match context case JACOBIAN_CONTEXT() then ", ANALYTIC_JACOBIAN *jacobian" else ""
+  let jac = match context case JACOBIAN_CONTEXT() then ", JACOBIAN *jacobian" else ""
   (genericCalls |> call => match call
     case SINGLE_GENERIC_CALL() then <<void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, int idx);>>
     case IF_GENERIC_CALL() then <<void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, int idx);>>;

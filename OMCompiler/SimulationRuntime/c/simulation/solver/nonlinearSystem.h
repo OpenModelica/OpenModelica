@@ -55,7 +55,7 @@ typedef struct NLS_USERDATA {
 
   int sysNumber;                        /* System index, for print messages only */
   NONLINEAR_SYSTEM_DATA* nlsData;       /* Pointer to nonlinear system data */
-  ANALYTIC_JACOBIAN* analyticJacobian;  /* Pointer to analytic Jacobian */
+  JACOBIAN* analyticJacobian;           /* Pointer to analytic Jacobian */
 
   void* solverData;                     /* Optional pointer to ODE solver data.
                                          * Used in NLS solving of ODE integrator step. */
@@ -84,7 +84,7 @@ int print_csvLineIterStats(void* csvData, int size, int num,
                            double lambda);
 void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *nonlinsys, int sysNum, modelica_boolean* isSparseNls, modelica_boolean* isBigNls);
 
-NLS_USERDATA* initNlsUserData(DATA* data, threadData_t* threadData, int sysNumber, NONLINEAR_SYSTEM_DATA* nlsData, ANALYTIC_JACOBIAN* analyticJacobian);
+NLS_USERDATA* initNlsUserData(DATA* data, threadData_t* threadData, int sysNumber, NONLINEAR_SYSTEM_DATA* nlsData, JACOBIAN* analyticJacobian);
 void freeNlsUserData(NLS_USERDATA* userData);
 
 extern void debugMatrixPermutedDouble(int logName, char* matrixName, double* matrix, int n, int m, int* indRow, int* indCol);

@@ -36,8 +36,9 @@
 #include "nonlinearSystem.h"
 #include "omc_config.h"
 #include "omc_math.h"
-#include "simulation/options.h"
-#include "simulation/simulation_info_json.h"
+#include "../options.h"
+#include "../simulation_info_json.h"
+#include "../jacobian_util.h"
 #include "sundials_util.h"
 #include "util/omc_error.h"
 
@@ -589,41 +590,23 @@ static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
 int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
                     void *userData, N_Vector tmp1, N_Vector tmp2) {
   /* Variables */
-  NLS_USERDATA *kinsolUserData;
-  DATA *data;
-  threadData_t *threadData;
-  NONLINEAR_SYSTEM_DATA *nlsData;
-  NLS_KINSOL_DATA *kinsolData;
-  SPARSE_PATTERN *sparsePattern;
-  ANALYTIC_JACOBIAN *analyticJacobian;
-
-  double *x;
-  double *fx;
-  double *xScaling;
-
-  long int i, j, ii;
-  int nth;
+  NLS_USERDATA* kinsolUserData = (NLS_USERDATA *)userData;;
+  DATA* data = kinsolUserData->data;
+  threadData_t* threadData = kinsolUserData->threadData;
+  NONLINEAR_SYSTEM_DATA* nlsData = kinsolUserData->nlsData;
+  NLS_KINSOL_DATA* kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
+  JACOBIAN* jacobian = kinsolUserData->analyticJacobian;
+  assertStreamPrint(threadData, NULL != jacobian, "jacobian is NULL");
+  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
+  assertStreamPrint(threadData, NULL != sp, "sp is NULL");
+  double *xScaling = NV_DATA_S(kinsolData->xScale);
+  long int i, j, ii, l;
 
   if (SUNMatGetID(Jac) != SUNMATRIX_SPARSE || SM_SPARSETYPE_S(Jac) == CSR_MAT) {
     errorStreamPrint(OMC_LOG_STDOUT, 0,
                      "KINSOL: nlsSparseJac illegal input Jac. Matrix is not sparse!");
     return -1;
   }
-
-  /* Access userData and nonlinear system data */
-  kinsolUserData = (NLS_USERDATA *)userData;
-  data = kinsolUserData->data;
-  threadData = kinsolUserData->threadData;
-  nlsData = kinsolUserData->nlsData;
-  analyticJacobian = kinsolUserData->analyticJacobian;
-  kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
-  sparsePattern = nlsData->sparsePattern;
-
-  /* Access N_Vector variables */
-  x = N_VGetArrayPointer(vecX);
-  xScaling = NV_DATA_S(kinsolData->xScale);
-
-  nth = 0;
 
   /* performance measurement */
   rt_ext_tp_tick(&nlsData->jacobianTimeClock);
@@ -632,41 +615,38 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   SUNMatZero(Jac);
 
   /* Evaluate constant equations of Jacobian */
-  if (analyticJacobian->constantEqns != NULL) {
-    analyticJacobian->constantEqns(data, threadData, analyticJacobian, NULL);
+  if (jacobian->constantEqns != NULL) {
+    jacobian->constantEqns(data, threadData, jacobian, NULL);
   }
 
   /* Evaluate Jacobian */
-  for (i = 0; i < sparsePattern->maxColors; i++) {
+  for (i = 0; i < sp->maxColors; i++) {
     /* Set seed variables */
-    for (ii = 0; ii < kinsolData->size; ii++) {
-      if (sparsePattern->colorCols[ii] - 1 == i) {
-        analyticJacobian->seedVars[ii] = 1.0;
-      }
-    }
+    for (j = 0; j < jacobian->sizeCols; j++)
+      if (sp->colorCols[j] - 1 == i)
+        jacobian->seedVars[j] = 1.0;
+
     /* Evaluate Jacobian column */
-    nlsData->analyticalJacobianColumn(data, threadData, analyticJacobian, NULL);
+    jacobian->evalColumn(data, threadData, jacobian, NULL);
 
     /* Save column in Jac and unset seed variables */
-    for (ii = 0; ii < kinsolData->size; ii++) {
-      if (sparsePattern->colorCols[ii] - 1 == i) {
-        nth = sparsePattern->leadindex[ii];
-        while (nth < sparsePattern->leadindex[ii + 1]) {
-          j = sparsePattern->index[nth];
+    for (j = 0; j < jacobian->sizeCols; j++) {
+      if (sp->colorCols[j] - 1 == i) {
+        for (ii = sp->leadindex[j]; ii < sp->leadindex[j + 1]; ii++) {
+          l = sp->index[ii];
           if (kinsolData->nominalJac) {
-            setJacElementSundialsSparse(j, ii, nth, analyticJacobian->resultVars[j] / xScaling[ii], Jac, SM_CONTENT_S(Jac)->M);
+            setJacElementSundialsSparse(l, j, ii, jacobian->resultVars[l] / xScaling[j], Jac, SM_CONTENT_S(Jac)->M);
           } else {
-            setJacElementSundialsSparse(j, ii, nth, analyticJacobian->resultVars[j], Jac, SM_CONTENT_S(Jac)->M);
+            setJacElementSundialsSparse(l, j, ii, jacobian->resultVars[l], Jac, SM_CONTENT_S(Jac)->M);
           }
-          nth++;
         }
-        analyticJacobian->seedVars[ii] = 0;
+        jacobian->seedVars[j] = 0.0;
       }
     }
   }
 
   /* Finish sparse matrix and do a cheap check for singularity */
-  finishSparseColPtr(Jac, sparsePattern->numberOfNonZeros);
+  finishSparseColPtr(Jac, sp->numberOfNonZeros);
 
   /* Debug print */
   if (OMC_ACTIVE_STREAM(OMC_LOG_NLS_JAC)) {

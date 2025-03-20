@@ -347,7 +347,7 @@ int dassl_initial(DATA* data, threadData_t *threadData,
     dasslData->dasslJacobian = COLOREDNUMJAC;
   }
 
-  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
   data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
   if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
     infoStreamPrint(OMC_LOG_SIMULATION, 1, "Initialized Jacobian:");
@@ -462,8 +462,8 @@ int dassl_deinitial(DATA* data, DASSL_DATA *dasslData)
   free(dasslData->states);
 
   /* Free Jacobians */
-  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-  freeAnalyticJacobian(jacobian);
+  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  freeJacobian(jacobian);
 
 #ifdef USE_PARJAC
   if (dasslData->allocatedParMem) {
@@ -989,12 +989,12 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
   threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   const int index = data->callback->INDEX_JAC_A;
-  ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
+  JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
 
 #ifdef USE_PARJAC
-  ANALYTIC_JACOBIAN* t_jac = (dasslData->jacColumns);
+  JACOBIAN* t_jac = (dasslData->jacColumns);
 #else
-  ANALYTIC_JACOBIAN* t_jac = jac;
+  JACOBIAN* t_jac = jac;
 #endif
 
   unsigned int columns = jac->sizeCols;
@@ -1032,7 +1032,7 @@ int jacA_sym(double *t, double *y, double *yprime, double *delta,
   threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
 
   const int index = data->callback->INDEX_JAC_A;
-  ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
+  JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
   unsigned int columns = jac->sizeCols;
   unsigned int rows = jac->sizeRows;
   unsigned int sizeTmpVars = jac->sizeTmpVars;
@@ -1058,10 +1058,10 @@ int jacA_sym(double *t, double *y, double *yprime, double *delta,
      GC_register_my_thread (&sb);
   }
   // Use thread local analytic Jacobians
-  ANALYTIC_JACOBIAN* t_jac = &(dasslData->jacColumns[omc_get_thread_num()]);
+  JACOBIAN* t_jac = &(dasslData->jacColumns[omc_get_thread_num()]);
   //printf("index= %d, t_jac->sizeCols= %d, t_jac->sizeRows = %d, t_jac->sizeTmpVars = %d \n",index, t_jac->sizeCols , t_jac->sizeRows, t_jac->sizeTmpVars);
 #else
-  ANALYTIC_JACOBIAN* t_jac = jac;
+  JACOBIAN* t_jac = jac;
 #endif
   unsigned int j;
 
@@ -1180,7 +1180,7 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta,
   threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
 
   const int index = data->callback->INDEX_JAC_A;
-  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
+  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
 
   double delta_h = numericalDifferentiationDeltaXsolver;
   double delta_hhh;

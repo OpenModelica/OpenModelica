@@ -48,13 +48,15 @@
  *                                  NULL if not available.
  * @param sparsePattern             Pointer to sparsity pattern of Jacobian.
  */
-void initAnalyticJacobian(ANALYTIC_JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRows, unsigned int sizeTmpVars, int (*constantEqns)(void* data, threadData_t *threadData, void* thisJacobian, void* parentJacobian), SPARSE_PATTERN* sparsePattern) {
+void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRows, unsigned int sizeTmpVars, jacobianColumn_func_ptr evalColumn, jacobianColumn_func_ptr constantEqns, SPARSE_PATTERN* sparsePattern)
+{
   jacobian->sizeCols = sizeCols;
   jacobian->sizeRows = sizeRows;
   jacobian->sizeTmpVars = sizeTmpVars;
   jacobian->seedVars = (modelica_real*) calloc(sizeCols, sizeof(modelica_real));
   jacobian->resultVars = (modelica_real*) calloc(sizeRows, sizeof(modelica_real));
   jacobian->tmpVars = (modelica_real*) calloc(sizeTmpVars, sizeof(modelica_real));
+  jacobian->evalColumn = evalColumn;
   jacobian->constantEqns = constantEqns;
   jacobian->sparsePattern = sparsePattern;
   jacobian->availability = JACOBIAN_UNKNOWN;
@@ -67,16 +69,18 @@ void initAnalyticJacobian(ANALYTIC_JACOBIAN* jacobian, unsigned int sizeCols, un
  * Sparsity pattern is not copied, only the pointer to it.
  *
  * @param source                  Jacobian that should be copied.
- * @return ANALYTIC_JACOBIAN*     Copy of source.
+ * @return JACOBIAN*              Copy of source.
  */
-ANALYTIC_JACOBIAN* copyAnalyticJacobian(ANALYTIC_JACOBIAN* source) {
-  ANALYTIC_JACOBIAN* jacobian = (ANALYTIC_JACOBIAN*) malloc(sizeof(ANALYTIC_JACOBIAN));
-  initAnalyticJacobian(jacobian,
-                       source->sizeCols,
-                       source->sizeRows,
-                       source->sizeTmpVars,
-                       source->constantEqns,
-                       source->sparsePattern);
+JACOBIAN* copyJacobian(JACOBIAN* source)
+{
+  JACOBIAN* jacobian = (JACOBIAN*) malloc(sizeof(JACOBIAN));
+  initJacobian(jacobian,
+    source->sizeCols,
+    source->sizeRows,
+    source->sizeTmpVars,
+    source->evalColumn,
+    source->constantEqns,
+    source->sparsePattern);
 
   return jacobian;
 }
@@ -88,7 +92,8 @@ ANALYTIC_JACOBIAN* copyAnalyticJacobian(ANALYTIC_JACOBIAN* source) {
  *
  * @param jac   Pointer to Jacobian.
  */
-void freeAnalyticJacobian(ANALYTIC_JACOBIAN *jac) {
+void freeJacobian(JACOBIAN *jac)
+{
   if (jac == NULL) {
     return;
   }
@@ -99,6 +104,53 @@ void freeAnalyticJacobian(ANALYTIC_JACOBIAN *jac) {
   free(jac->sparsePattern); jac->sparsePattern = NULL;
 }
 
+/*! \fn evalJacobian
+ *
+ *  compute entries of Jacobian
+ *  uses coloring (from sparsity pattern) if available
+ *
+ *  \param [ref] [data]
+ *  \param [ref] [threadData]
+ *  \param [ref] [jacobian]   Pointer to Jacobian
+ *  \param [out] [jac]        Contains jacobian values on exit, column-major
+ */
+void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jac)
+{
+  int i,j,k,l,ii;
+  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
+
+  memset(jac, 0.0, (jacobian->sizeRows) * (jacobian->sizeCols) * sizeof(modelica_real));
+
+  /* evaluate constant equations of Jacobian */
+  if (jacobian->constantEqns != NULL) {
+    jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
+  }
+
+  /* evaluate Jacobian */
+  for (i = 0; i < sp->maxColors; i++) {
+    /* activate seed variable for the corresponding color */
+    for (j = 0; j < jacobian->sizeCols; j++)
+      if (sp->colorCols[j]-1 == i)
+        jacobian->seedVars[j] = 1.0;
+
+    /* evaluate Jacobian column */
+    jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
+
+    for (j = 0; j < jacobian->sizeCols; j++) {
+      if (sp->colorCols[j]-1 == i) {
+        for (ii = sp->leadindex[j]; ii < sp->leadindex[j+1]; ii++) {
+          l = sp->index[ii];
+          k = j*jacobian->sizeRows + l;
+          jac[k] = jacobian->resultVars[l]; //* solverData->xScaling[j];
+        }
+        /* de-activate seed variable for the corresponding color */
+        jacobian->seedVars[j] = 0.0;
+      }
+    }
+  }
+}
+
+
 /**
  * @brief Allocate memory for sparsity pattern.
  *
@@ -108,7 +160,8 @@ void freeAnalyticJacobian(ANALYTIC_JACOBIAN *jac) {
  * @param maxColors           Maximum number of colors of Matrix.
  * @return SPARSE_PATTERN*    Pointer ot allocated sparsity pattern of Matrix.
  */
-SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int numberOfNonZeros, unsigned int maxColors) {
+SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int numberOfNonZeros, unsigned int maxColors)
+{
   SPARSE_PATTERN* sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
   sparsePattern->leadindex = (unsigned int*) malloc((n_leadIndex+1)*sizeof(unsigned int));
   sparsePattern->index = (unsigned int*) malloc(numberOfNonZeros*sizeof(unsigned int));
@@ -125,7 +178,8 @@ SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int number
  *
  * @param spp   Pointer to sparsity pattern
  */
-void freeSparsePattern(SPARSE_PATTERN *spp) {
+void freeSparsePattern(SPARSE_PATTERN *spp)
+{
   if (spp != NULL) {
     free(spp->index); spp->index = NULL;
     free(spp->colorCols); spp->colorCols = NULL;
@@ -141,7 +195,8 @@ void freeSparsePattern(SPARSE_PATTERN *spp) {
  * @param filename    String for the filename.
  * @return FILE*      Pointer to sparsity pattern stream.
  */
-FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* filename) {
+FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* filename)
+{
   FILE* pFile;
   const char* fullPath = NULL;
 
@@ -168,7 +223,8 @@ FILE * openSparsePatternFile(DATA* data, threadData_t *threadData, const char* f
  * @param color         Current color index.
  * @param length        Number of columns in color `color`.
  */
-void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int* colorCols, unsigned int color, unsigned int length, unsigned int maxIndex) {
+void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int* colorCols, unsigned int color, unsigned int length, unsigned int maxIndex)
+{
   unsigned int i, index;
   size_t count;
 
@@ -192,7 +248,8 @@ void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int
  * @param flagValue               Flag value of FLAG_JACOBIAN. Can be NULL.
  * @return JACOBIAN_METHOD   Returns jacobian method that is availble.
  */
-JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILITY availability, const char* flagValue){
+JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILITY availability, const char* flagValue)
+{
   JACOBIAN_METHOD jacobianMethod = JAC_UNKNOWN;
   assertStreamPrint(threadData, availability != JACOBIAN_UNKNOWN, "Jacobian availablity status is unknown.");
 
@@ -205,7 +262,7 @@ JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILIT
       }
     }
     // Error case
-    if(jacobianMethod == JAC_UNKNOWN){
+    if (jacobianMethod == JAC_UNKNOWN) {
       errorStreamPrint(OMC_LOG_STDOUT, 0, "Unknown value `%s` for flag `-jacobian`", flagValue);
       infoStreamPrint(OMC_LOG_STDOUT, 1, "Available options are");
       for (int method=1; method < JAC_MAX; method++) {
@@ -271,7 +328,8 @@ JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILIT
   return jacobianMethod;
 }
 
-void freeNonlinearPattern(NONLINEAR_PATTERN *nlp) {
+void freeNonlinearPattern(NONLINEAR_PATTERN *nlp)
+{
   if (nlp != NULL) {
     free(nlp->indexVar); nlp->indexVar = NULL;
     free(nlp->indexEqn); nlp->indexEqn = NULL;
@@ -280,19 +338,20 @@ void freeNonlinearPattern(NONLINEAR_PATTERN *nlp) {
   }
 }
 
-unsigned int* getNonlinearPatternCol(NONLINEAR_PATTERN *nlp, int var_idx){
+unsigned int* getNonlinearPatternCol(NONLINEAR_PATTERN *nlp, int var_idx)
+{
   unsigned int idx_start = nlp->indexVar[var_idx];
   unsigned int idx_stop;
-  if (var_idx == nlp->numberOfVars){
+  if (var_idx == nlp->numberOfVars) {
     idx_stop = nlp->numberOfNonlinear;
-  }else{
+  } else {
     idx_stop = nlp->indexVar[var_idx + 1];
   }
 
   unsigned int* col = (unsigned int*) malloc((idx_stop - idx_start + 1)*sizeof(unsigned int));
 
   int index = 0;
-  for(int i = idx_start; i < idx_stop + 1; i++){
+  for (int i = idx_start; i < idx_stop + 1; i++) {
     col[index] = nlp->columns[i];
     index++;
   }
@@ -305,12 +364,13 @@ unsigned int* getNonlinearPatternCol(NONLINEAR_PATTERN *nlp, int var_idx){
   return col;
 }
 
-unsigned int* getNonlinearPatternRow(NONLINEAR_PATTERN *nlp, int eqn_idx){
+unsigned int* getNonlinearPatternRow(NONLINEAR_PATTERN *nlp, int eqn_idx)
+{
   unsigned int idx_start = nlp->indexEqn[eqn_idx];
   unsigned int idx_stop;
-  if (eqn_idx == nlp->numberOfEqns){
+  if (eqn_idx == nlp->numberOfEqns) {
     idx_stop = nlp->numberOfNonlinear;
-  }else{
+  } else {
     idx_stop = nlp->indexEqn[eqn_idx + 1];
   }
   //printf("   eqn_idx   = %d\n", eqn_idx);
@@ -319,7 +379,7 @@ unsigned int* getNonlinearPatternRow(NONLINEAR_PATTERN *nlp, int eqn_idx){
   unsigned int* row = (unsigned int*) malloc((idx_stop - idx_start + 1)*sizeof(unsigned int));
 
   int index = 0;
-  for(int i = idx_start; i < idx_stop + 1; i++){
+  for (int i = idx_start; i < idx_stop + 1; i++) {
     row[index] = nlp->rows[i];
     //printf("      row[index] = row[%d] = %d\n", index, row[index]);
     index++;

@@ -247,8 +247,8 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
 
   nlsData->initializeStaticNLSData(data, threadData, nlsData, TRUE, TRUE);
 
-  gbData->jacobian = (ANALYTIC_JACOBIAN*) malloc(sizeof(ANALYTIC_JACOBIAN));
-  initAnalyticJacobian(gbData->jacobian, gbData->nlSystemSize, gbData->nlSystemSize, gbData->nlSystemSize, NULL, nlsData->sparsePattern);
+  gbData->jacobian = (JACOBIAN*) malloc(sizeof(JACOBIAN));
+  initJacobian(gbData->jacobian, gbData->nlSystemSize, gbData->nlSystemSize, gbData->nlSystemSize, nlsData->analyticalJacobianColumn, NULL, nlsData->sparsePattern);
   nlsData->initialAnalyticalJacobian = NULL;
   nlsData->jacobianIndex = -1;
 
@@ -343,8 +343,8 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
 
   nlsData->initializeStaticNLSData(data, threadData, nlsData, TRUE, TRUE);
 
-  gbfData->jacobian = (ANALYTIC_JACOBIAN*) malloc(sizeof(ANALYTIC_JACOBIAN));
-  initAnalyticJacobian(gbfData->jacobian, gbfData->nlSystemSize, gbfData->nlSystemSize, gbfData->nlSystemSize, NULL, nlsData->sparsePattern);
+  gbfData->jacobian = (JACOBIAN*) malloc(sizeof(JACOBIAN));
+  initJacobian(gbfData->jacobian, gbfData->nlSystemSize, gbfData->nlSystemSize, gbfData->nlSystemSize, nlsData->analyticalJacobianColumn, NULL, nlsData->sparsePattern);
   nlsData->initialAnalyticalJacobian = NULL;
   nlsData->jacobianIndex = -1;
 
@@ -776,7 +776,7 @@ void residual_IRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, 
  * @param parentJacobian    Unused
  * @return int              Return 0 on success.
  */
-int jacobian_SR_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
+int jacobian_SR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian) {
 
   DATA_GBODE* gbData = (DATA_GBODE*) data->simulationInfo->backupSolverData;
 
@@ -786,7 +786,7 @@ int jacobian_SR_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *
   int stage = gbData->act_stage;
 
   /* Evaluate column of Jacobian ODE */
-  ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
   memcpy(jacobian_ODE->seedVars, jacobian->seedVars, sizeof(modelica_real)*jacobian->sizeCols);
   data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
 
@@ -820,13 +820,13 @@ int jacobian_SR_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *
  * @param parentJacobian    Unused
  * @return int              Return 0 on success.
  */
-int jacobian_MR_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
+int jacobian_MR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian) {
 
   DATA_GBODE* gbData = (DATA_GBODE*) data->simulationInfo->backupSolverData;
   DATA_GBODEF* gbfData = gbData->gbfData;
 
   /* define callback to column function of Jacobian ODE */
-  ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
 
   int i, ii;
   int nStates = data->modelData->nStates;
@@ -875,7 +875,7 @@ int jacobian_MR_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *
  * @param parentJacobian    Unused
  * @return int              Return 0 on success.
  */
-int jacobian_IRK_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian, ANALYTIC_JACOBIAN *parentJacobian) {
+int jacobian_IRK_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian) {
 
   DATA_GBODE* gbData = (DATA_GBODE*) data->simulationInfo->backupSolverData;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
@@ -888,7 +888,7 @@ int jacobian_IRK_column(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN 
   int nStates = data->modelData->nStates;
 
   /* Evaluate column of Jacobian ODE */
-  ANALYTIC_JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
 
   // Map the jacobian->seedVars to the jacobian_ODE->seedVars
   // and find out which stage is active; different stages have different colors

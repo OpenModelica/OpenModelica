@@ -81,9 +81,9 @@ typedef struct DASSL_DATA{
   void* zeroCrossingFunction;
 
 #ifdef USE_PARJAC
-  ANALYTIC_JACOBIAN* jacColumns;    /* thread local analytic jacobians */
+  JACOBIAN* jacColumns;         /* thread local analytic jacobians */
 #endif
-  int allocatedParMem; /* indicated if parallel memory was allocated, 0=false, 1=true*/
+  int allocatedParMem;          /* indicated if parallel memory was allocated, 0=false, 1=true*/
 } DASSL_DATA;
 
 /* main dassl function to make a step */

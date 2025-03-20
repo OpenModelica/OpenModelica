@@ -352,7 +352,7 @@ int print_csvLineIterStats(void* voidCsvData, int size, int num,
  * @param analyticJacobian  Pointer to analytic Jacobian. Can be NULL.
  * @return NLS_USERDATA*    Newly allocated struct with NLS user data.
  */
-NLS_USERDATA* initNlsUserData(DATA* data, threadData_t* threadData, int sysNumber, NONLINEAR_SYSTEM_DATA* nlsData, ANALYTIC_JACOBIAN* analyticJacobian) {
+NLS_USERDATA* initNlsUserData(DATA* data, threadData_t* threadData, int sysNumber, NONLINEAR_SYSTEM_DATA* nlsData, JACOBIAN* analyticJacobian) {
   NLS_USERDATA* userData = (NLS_USERDATA*) malloc(sizeof(NLS_USERDATA));
   assertStreamPrint(threadData, userData != NULL, "setNlsUserData failed: userData is NULL");
 
@@ -396,7 +396,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
   unsigned int nnz;
   struct dataSolver *solverData;
   struct dataMixedSolver *mixedSolverData;
-  ANALYTIC_JACOBIAN* jacobian;
+  JACOBIAN* jacobian;
 
   size = nonlinsys->size;
   nonlinsys->numberOfFEval = 0;

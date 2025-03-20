@@ -339,4 +339,3 @@ int _omc_SUNMatScaleIAdd_Sparse(realtype c, SUNMatrix A)
 }
 
 #endif /* WITH_SUNDIALS */
-

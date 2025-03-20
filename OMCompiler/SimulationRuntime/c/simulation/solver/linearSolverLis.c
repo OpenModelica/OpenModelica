@@ -146,38 +146,39 @@ void printLisMatrixCSR(LIS_MATRIX A, int n)
  *  \author wbraun
  *
  */
-int getAnalyticalJacobianLis(DATA* data, threadData_t *threadData, int sysNumber)
+void getAnalyticalJacobianLis(DATA* data, threadData_t *threadData, LINEAR_SYSTEM_DATA* systemData)
 {
-  int i,j,k,l,ii;
-  LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
+  int i,j,l,nth;
+  JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
+  JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
+  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
 
-  const int index = systemData->jacobianIndex;
-  ANALYTIC_JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
-  ANALYTIC_JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
-
-  int nth = 0;
-  int nnz = jacobian->sparsePattern->numberOfNonZeros;
-
-  for(i=0; i < jacobian->sizeRows; i++) {
-    jacobian->seedVars[i] = 1;
-    systemData->analyticalJacobianColumn(data, threadData, jacobian, parentJacobian);
-
-    for(j = 0; j < jacobian->sizeCols; j++) {
-      if(jacobian->seedVars[j] == 1) {
-        ii = jacobian->sparsePattern->leadindex[j];
-        while(ii < jacobian->sparsePattern->leadindex[j+1]) {
-          l  = jacobian->sparsePattern->index[ii];
-          /*infoStreamPrint(OMC_LOG_LS_V, 0, "set on Matrix A (%d, %d)(%d) = %f", l, i, nth, -jacobian->resultVars[l]); */
-          systemData->setAElement(l, i, -jacobian->resultVars[l], nth, (void*) systemData, threadData);
-          nth++;
-          ii++;
-        };
-      }
-    }
-    jacobian->seedVars[i] = 0;
+  /* evaluate constant equations of Jacobian */
+  if (jacobian->constantEqns != NULL) {
+    jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
   }
 
-  return 0;
+  /* evaluate Jacobian */
+  for (i = 0; i < sp->maxColors; i++) {
+    /* activate seed variable for the corresponding color */
+    for (j = 0; j < jacobian->sizeCols; j++)
+      if (sp->colorCols[j]-1 == i)
+        jacobian->seedVars[j] = 1.0;
+
+    /* evaluate Jacobian column */
+    jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
+
+    for (j = 0; j < jacobian->sizeCols; j++) {
+      if (sp->colorCols[j]-1 == i) {
+        for (nth = sp->leadindex[j]; nth < sp->leadindex[j+1]; nth++) {
+          l = sp->index[nth];
+          systemData->setAElement(l, j, -jacobian->resultVars[l], nth, systemData, threadData);
+        }
+        /* de-activate seed variable for the corresponding color */
+        jacobian->seedVars[j] = 0.0;
+      }
+    }
+  }
 }
 
 /*! \fn wrapper_fvec_lis for the residual function
@@ -235,7 +236,7 @@ int solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
   } else {
     /* calculate jacobian -> matrix A*/
     if(systemData->jacobianIndex != -1){
-      getAnalyticalJacobianLis(data, threadData, sysNumber);
+      getAnalyticalJacobianLis(data, threadData, systemData);
     } else {
       assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
     }

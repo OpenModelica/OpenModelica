@@ -1187,7 +1187,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo->inlineData->algOldVars = (modelica_real*) calloc(data->modelData->nStates, sizeof(modelica_real));
 
   /* buffer for analytical jacobians */
-  data->simulationInfo->analyticJacobians = (ANALYTIC_JACOBIAN*) omc_alloc_interface.malloc_uncollectable(data->modelData->nJacobians*sizeof(ANALYTIC_JACOBIAN));
+  data->simulationInfo->analyticJacobians = (JACOBIAN*) omc_alloc_interface.malloc_uncollectable(data->modelData->nJacobians*sizeof(JACOBIAN));
 
   data->modelData->modelDataXml.functionNames = NULL;
   data->modelData->modelDataXml.equationInfo = NULL;

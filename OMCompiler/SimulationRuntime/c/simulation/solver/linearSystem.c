@@ -112,7 +112,7 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
       {
         assertStreamPrint(threadData, 0 != linsys[i].analyticalJacobianColumn, "jacobian function pointer is invalid" );
       }
-      ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[linsys[i].jacobianIndex]);
+      JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[linsys[i].jacobianIndex]);
       if(linsys[i].initialAnalyticalJacobian(data, threadData, jacobian))
       {
         linsys[i].jacobianIndex = -1;
@@ -126,7 +126,7 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
       for (j=0; j<maxNumberThreads; ++j)
       {
         // ToDo Simplify this. Only have one location for jacobian
-        linsys[i].parDynamicData[j].jacobian = copyAnalyticJacobian(jacobian);
+        linsys[i].parDynamicData[j].jacobian = copyJacobian(jacobian);
       }
 #else
       linsys[i].parDynamicData[0].jacobian = jacobian;
@@ -430,15 +430,15 @@ int freeLinearSystems(DATA *data, threadData_t *threadData)
       }
     }
 
-    /* ToDo Implement unique function to free a ANALYTIC_JACOBIAN */
+    /* ToDo Implement unique function to free a JACOBIAN */
     if (1 == linsys[i].method) {
-      ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[linsys[i].jacobianIndex]);
-      freeAnalyticJacobian(jacobian);
+      JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[linsys[i].jacobianIndex]);
+      freeJacobian(jacobian);
       /* Note: The Jacobian of data->simulationInfo itself will be free later. */
 
 #ifdef USE_PARJAC
       for (j=0; j<omc_get_max_threads(); ++j) {
-        // Note: We cannot use neither freeAnalyticJacobian() nor freeSparsePattern()
+        // Note: We cannot use neither freeJacobian() nor freeSparsePattern()
         //       since the sparsePattern points to data->simulationInfo->analyticJacobians[linsys[i].jacobianIndex]
         //       which is free some lines above (and are invalid pointers at this point). Thus, free
         //       what is left.

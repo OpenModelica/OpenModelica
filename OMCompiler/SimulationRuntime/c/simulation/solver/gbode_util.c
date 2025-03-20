@@ -614,7 +614,7 @@ void printVector_gbf(enum OMC_LOG_STREAM stream, char name[], double* a, int n, 
  * @param stream          Steam to print to.
  * @param name            Name of matrix.
  */
-void printSparseJacobianLocal(ANALYTIC_JACOBIAN* jacobian, const char* name) {
+void printSparseJacobianLocal(JACOBIAN* jacobian, const char* name) {
   /* Variables */
   unsigned int row, col, i, j;
   infoStreamPrint(OMC_LOG_STDOUT, 0, "Sparse structure of %s [size: %ux%u]", name, jacobian->sizeRows, jacobian->sizeCols);

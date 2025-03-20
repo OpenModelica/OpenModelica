@@ -1489,7 +1489,7 @@ matrixData getJacobianMatrixF(DATA * data, threadData_t * threadData, ofstream &
 {
   // initialize the jacobian call
   const int index = data->callback->INDEX_JAC_F;
-  ANALYTIC_JACOBIAN *jacobian = &(data->simulationInfo->analyticJacobians[index]);
+  JACOBIAN *jacobian = &(data->simulationInfo->analyticJacobians[index]);
   data->callback->initialAnalyticJacobianF(data, threadData, jacobian);
   int cols = jacobian->sizeCols;
   int rows = jacobian->sizeRows;
@@ -1533,7 +1533,7 @@ matrixData getJacobianMatrixH(DATA * data, threadData_t * threadData, ofstream &
 {
   // initialize the jacobian call
   const int index = data->callback->INDEX_JAC_H;
-  ANALYTIC_JACOBIAN *jacobian = &(data->simulationInfo->analyticJacobians[index]);
+  JACOBIAN *jacobian = &(data->simulationInfo->analyticJacobians[index]);
   data->callback->initialAnalyticJacobianH(data, threadData, jacobian);
   int cols = jacobian->sizeCols;
   int rows = jacobian->sizeRows;

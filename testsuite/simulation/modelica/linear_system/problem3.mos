@@ -3,134 +3,50 @@
 // status: correct
 // teardown_command: rm -rf linear_system.problem3* output.log
 // cflags: -d=-newInst
-// 
+//
 // Solving of a linear system of equations
 
 loadFile("linearTestPackage.mo"); getErrorString();
-setCommandLineOptions("--maxSizeLinearTearing=0");
+setCommandLineOptions("--maxSizeLinearTearing=0"); getErrorString();
 
-simulate(linear_system.problem3);
-getErrorString();
+buildModel(linear_system.problem3); getErrorString();
 
-val(x[1], 0.0);
-val(x[1], 1.0);
-val(x[2], 0.0);
-val(x[2], 1.0);
-
-simulate(linear_system.problem3, simflags="-ls lis");
-getErrorString();
-
-val(x[1], 0.0);
-val(x[1], 1.0);
-val(x[2], 0.0);
-val(x[2], 1.0);
-
-simulate(linear_system.problem3, simflags="-ls lapack");
-getErrorString();
-
-val(x[1], 0.0);
-val(x[1], 1.0);
-val(x[2], 0.0);
-val(x[2], 1.0);
-
-simulate(linear_system.problem3, simflags="-ls umfpack");
-getErrorString();
-
-val(x[1], 0.0);
-val(x[1], 1.0);
-val(x[2], 0.0);
-val(x[2], 1.0);
-
-simulate(linear_system.problem3, simflags="-ls klu");
-getErrorString();
-
-val(x[1], 0.0);
-val(x[1], 1.0);
-val(x[2], 0.0);
-val(x[2], 1.0);
-
-simulate(linear_system.problem3, simflags="-ls totalpivot");
-getErrorString();
-
-val(x[1], 0.0);
-val(x[1], 1.0);
-val(x[2], 0.0);
-val(x[2], 1.0);
+system(realpath(".") + "/linear_system.problem3"); getErrorString();
+system(realpath(".") + "/linear_system.problem3 -ls lis"); getErrorString();
+system(realpath(".") + "/linear_system.problem3 -ls lapack"); getErrorString();
+system(realpath(".") + "/linear_system.problem3 -ls umfpack"); getErrorString();
+system(realpath(".") + "/linear_system.problem3 -ls klu"); getErrorString();
+system(realpath(".") + "/linear_system.problem3 -ls totalpivot"); getErrorString();
 
 // Result:
 // true
 // ""
 // true
-// record SimulationResult
-//     resultFile = "linear_system.problem3_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
 // ""
-// 10.0
-// 9.980736544657136
-// 1.0
-// 0.9833730926233127
-// record SimulationResult
-//     resultFile = "linear_system.problem3_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls lis'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
+// {"linear_system.problem3", "linear_system.problem3_init.xml"}
 // ""
-// 10.0
-// 9.980736544657136
-// 0.9999999999999999
-// 0.9833730926233127
-// record SimulationResult
-//     resultFile = "linear_system.problem3_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls lapack'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
+// 0
 // ""
-// 10.0
-// 9.980736544657136
-// 1.0
-// 0.9833730926233127
-// record SimulationResult
-//     resultFile = "linear_system.problem3_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls umfpack'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
+// 0
 // ""
-// 9.999999999999998
-// 9.980736544657136
-// 1.0
-// 0.9833730926233127
-// record SimulationResult
-//     resultFile = "linear_system.problem3_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls klu'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
+// 0
 // ""
-// 10.0
-// 9.980736544657136
-// 1.0
-// 0.9833730926233127
-// record SimulationResult
-//     resultFile = "linear_system.problem3_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'linear_system.problem3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ls totalpivot'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
+// 0
 // ""
-// 9.999999999999998
-// 9.980736544657136
-// 1.0
-// 0.9833730926233127
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// 0
+// ""
 // endResult

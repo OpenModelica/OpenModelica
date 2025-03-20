@@ -63,9 +63,9 @@
 #endif
 
 /* Forward declarations */
-struct DATA;
 typedef struct DATA DATA;
 typedef struct VALUES_LIST VALUES_LIST;
+typedef struct JACOBIAN JACOBIAN;
 
 /* Model info structures */
 typedef struct VAR_INFO
@@ -182,23 +182,28 @@ typedef struct NONLINEAR_PATTERN
   unsigned int* rows;                  // size: numberOfNonlinear - all rows appended in one vector
 } NONLINEAR_PATTERN;
 
+
+typedef int (*jacobianColumn_func_ptr)(DATA* data, threadData_t* threadData, JACOBIAN* thisJacobian, JACOBIAN* parentJacobian);
+typedef int (*initialAnalyticalJacobian_func_ptr)(DATA* data, threadData_t* threadData, JACOBIAN* jacobian);
+
 /**
  * @brief Analytic jacobian struct
  *
  */
-typedef struct ANALYTIC_JACOBIAN
+typedef struct JACOBIAN
 {
-  JACOBIAN_AVAILABILITY availability;  /* Availability status */
-  unsigned int sizeCols;               /* Number of columns of Jacobian */
-  unsigned int sizeRows;               /* Number of rows of Jacobian */
-  unsigned int sizeTmpVars;            /* Length of vector tmpVars */
-  SPARSE_PATTERN* sparsePattern;       /* Contain sparse pattern including coloring */
-  modelica_real* seedVars;             /* Seed vector for specifying which columns to evaluate */
+  JACOBIAN_AVAILABILITY availability;   /* Availability status */
+  size_t sizeCols;                      /* Number of columns of Jacobian */
+  size_t sizeRows;                      /* Number of rows of Jacobian */
+  size_t sizeTmpVars;                   /* Length of vector tmpVars */
+  SPARSE_PATTERN* sparsePattern;        /* Contain sparse pattern including coloring */
+  modelica_real* seedVars;              /* Seed vector for specifying which columns to evaluate */
   modelica_real* tmpVars;
-  modelica_real* resultVars;           /* Result column for given seed vector */
-  modelica_real dae_cj;                /* Is the scalar in the system Jacobian, proportional to the inverse of the step size. From User Documentation for ida v5.4.0 equation (2.5). */
-  int (*constantEqns)(void* data, threadData_t *threadData, void* thisJacobian, void* parentJacobian);  /* Constant equations independent of seed vector */
-} ANALYTIC_JACOBIAN;
+  modelica_real* resultVars;            /* Result column for given seed vector */
+  modelica_real dae_cj;                 /* Is the scalar in the system Jacobian, proportional to the inverse of the step size. From User Documentation for ida v5.4.0 equation (2.5). */
+  jacobianColumn_func_ptr evalColumn;   /* symbolic jacobian column based on seed vector */
+  jacobianColumn_func_ptr constantEqns; /* Constant equations independent of seed vector */
+} JACOBIAN;
 
 /* EXTERNAL_INPUT
  *
@@ -294,9 +299,6 @@ typedef struct STATIC_STRING_DATA
   modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
 } STATIC_STRING_DATA;
 
-typedef int (*analyticalJacobianColumn_func_ptr)(DATA* data, threadData_t* threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
-typedef int (*initialAnalyticalJacobian_func_ptr)(DATA* data, threadData_t* threadData, ANALYTIC_JACOBIAN* jacobian);
-
 /**
  * @brief User data provided to residual functions.
  *
@@ -333,11 +335,11 @@ typedef struct NONLINEAR_SYSTEM_DATA
 
   /* if analyticalJacobianColumn != NULL analyticalJacobian is available and
    * can be produced with the help of analyticalJacobianColumnn function pointer
-   * which is a generic column of the jacobian matrix. (see ANALYTIC_JACOBIAN)
+   * which is a generic column of the jacobian matrix. (see JACOBIAN)
    *
    * if analyticalJacobianColumn == NULL no analyticalJacobian is available
    */
-  analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
+  jacobianColumn_func_ptr analyticalJacobianColumn;
   initialAnalyticalJacobian_func_ptr initialAnalyticalJacobian;
   modelica_integer jacobianIndex;
 
@@ -396,8 +398,8 @@ typedef struct LINEAR_SYSTEM_THREAD_DATA
   modelica_real *A;                    /* matrix A */
   modelica_real *b;                    /* vector b */
 
-  ANALYTIC_JACOBIAN* parentJacobian;   /* if != NULL then it's the parent jacobian matrix */
-  ANALYTIC_JACOBIAN* jacobian;         /* jacobian */
+  JACOBIAN* parentJacobian;            /* if != NULL then it's the parent jacobian matrix */
+  JACOBIAN* jacobian;                  /* jacobian */
 
   /* Statistics for each thread */
   unsigned long numberOfCall;          /* number of solving calls of this system */
@@ -418,7 +420,7 @@ typedef struct LINEAR_SYSTEM_DATA
   void (*setAElement)(int row, int col, double value, int nth, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t* threadData);
   void (*setBElement)(int row, double value, LINEAR_SYSTEM_DATA* linearSystemData, threadData_t* threadData);
 
-  analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
+  jacobianColumn_func_ptr analyticalJacobianColumn;
   initialAnalyticalJacobian_func_ptr initialAnalyticalJacobian;
 
   void (*residualFunc)(RESIDUAL_USERDATA* userData, const double* x, double* res, const int* flag);
@@ -505,11 +507,11 @@ typedef struct STATE_SET_DATA
 
   /* if analyticalJacobianColumn != NULL analyticalJacobian is available and
    * can be produced with the help of analyticalJacobianColumnn function pointer
-   * which is a generic column of the jacobian matrix. (see ANALYTIC_JACOBIAN)
+   * which is a generic column of the jacobian matrix. (see JACOBIAN)
    *
    * if analyticalJacobianColumn == NULL no analyticalJacobian is available
    */
-  analyticalJacobianColumn_func_ptr analyticalJacobianColumn;
+  jacobianColumn_func_ptr analyticalJacobianColumn;
   initialAnalyticalJacobian_func_ptr initialAnalyticalJacobian;
   modelica_integer jacobianIndex;
 } STATE_SET_DATA;
@@ -813,7 +815,7 @@ typedef struct SIMULATION_INFO
   modelica_real* sensitivityMatrix;    /* used by integrator for sensitivity mode */
   int* sensitivityParList;             /* used by integrator for sensitivity mode */
 
-  ANALYTIC_JACOBIAN* analyticJacobians; // TODO Only store information for Jacobian used by integrator here
+  JACOBIAN* analyticJacobians;          // TODO Only store information for Jacobian used by integrator here
 
   NONLINEAR_SYSTEM_DATA* nonlinearSystemData; /* Array of non-linear systems */
 

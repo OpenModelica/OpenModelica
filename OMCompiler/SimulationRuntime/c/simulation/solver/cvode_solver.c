@@ -526,7 +526,7 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   int flag;
   int i;
   double *abstol_tmp;
-  ANALYTIC_JACOBIAN *jacobian;
+  JACOBIAN *jacobian;
 
   /* Log cvode_initial */
   infoStreamPrint(OMC_LOG_SOLVER_V, 0, "### Start initialize of CVODE solver ###");
