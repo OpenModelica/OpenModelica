@@ -263,47 +263,6 @@ testlogwindows:
 	cat testsuite/testsuite-trace.txt | grep "==== Log" | wc -l
 	cat testsuite/testsuite-trace.txt | grep "==== Log" ; echo DONE!
 
-builddir_lib=$(OMBUILDDIR)/lib
-builddir_share=$(OMBUILDDIR)/share
-IDLPYTHON = $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/bin/x86_win32/omniidl -bpython -Wbglobal=_OMCIDL -Wbpackage=OMPythonIDL
-IDLPYTHONTARGET = $(builddir_share)/omc/scripts/PythonInterface/OMPythonIDL/omc_communication_idl.py
-IDLFILE=OMCompiler/Compiler/runtime/omc_communication.idl
-
-install-python: script-files-python # $(IDLPYTHONTARGET)
-
-.PHONY: script-files-python
-
-script-files-python: mkbuilddirs-python
-	# copy library files neeeded by OMPython
-	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omni*_rt.dll $(builddir_lib)/python)
-	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/COS*_rt.dll $(builddir_lib)/python)
-	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/lib*.dll $(builddir_lib)/python)
-	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/x86_win32/_omnipy.pyd $(builddir_lib)/python)
-	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/__init__.py $(builddir_lib)/python/omniORB/)
-	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/boxes_idl.py $(builddir_lib)/python/omniORB/)
-	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/CORBA.py $(builddir_lib)/python/omniORB/)
-	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/corbaidl_idl.py $(builddir_lib)/python/omniORB/)
-	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/minorCodes.py $(builddir_lib)/python/omniORB/)
-	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/PortableServer.py $(builddir_lib)/python/omniORB/)
-	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/tcInternal.py $(builddir_lib)/python/omniORB/)
-	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/omniPolicy.py $(builddir_lib)/python/omniORB/)
-	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/pollable_idl.py $(builddir_lib)/python/omniORB/)
-	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/messaging_idl.py $(builddir_lib)/python/omniORB/)
-	# copy OMPython files
-	cp -rfp OMPython/setup.py $(builddir_share)/omc/scripts/PythonInterface
-	cp -rfp OMPython/OMPython/* $(builddir_share)/omc/scripts/PythonInterface/OMPython
-
-$(IDLPYTHONTARGET) : $(IDLFILE)
-	$(IDLPYTHON) -C$(builddir_share)/omc/scripts/PythonInterface $(IDLFILE)
-
-mkbuilddirs-python:
-	# create directories
-	mkdir -p $(builddir_lib)/python/omniORB
-	mkdir -p $(builddir_share)/omc/scripts/PythonInterface/OMPython/OMParser
-
-clean-python:
-	rm -rf $(builddir_share)/omc/scripts/PythonInterface $(builddir_lib)/python
-
 clean:
 	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler clean OMBUILDDIR=$(OMBUILDDIR)
 	test ! -d $(OMBUILDDIR) || rm -rf $(OMBUILDDIR)

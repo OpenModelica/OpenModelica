@@ -22,18 +22,15 @@ OMC=@OMC@
 ifdef USE_CORBA
   CORBAINCL = @CORBACFLAGS@
   OMCCORBASRC = omc_communication.o omc_communication_impl.o Corba_omc.o
-  IDLPYTHONTARGET = $(builddir_share)/omc/scripts/PythonInterface/stubs/omc_communication_idl.py
 else
   CORBAINCL =
   OMCCORBASRC = corbaimpl_stub_omc.o
-  IDLPYTHONTARGET =
 endif
 
 SHELL	= /bin/sh
 CC	= @CC@
 CXX	= @CXX@
 IDL	= @IDLCMD@
-IDLPYTHON = @IDLPYTHONCMD@
 CXXFLAGS = @CXXFLAGS@
 CPPFLAGS = @CPPFLAGS@ -I$(OMC_CONFIG_INC) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc -I. $(CORBAINCL) $(GCINCLUDE) -I$(FMIINCLUDE) -I$(GRAPHINCLUDE) -I$(CJSONINCLUDE) -I$(ZMQINCLUDE)  -I"$(TOP_DIR)/3rdParty/zlib" -I"$(TOP_DIR)/3rdParty/libffi/install/include/"
 TRIPLE=@host_short@

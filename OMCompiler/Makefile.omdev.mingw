@@ -113,9 +113,6 @@ LD_LAPACK=-lopenblas
 GRAPHLIB=libmetis.a
 GRAPHINCLUDE=3rdParty/metis-5.1.0/include/ -DUSE_METIS -DUSE_GRAPH
 BOOTSTRAP_FMIL_DEP=fmil
-IDLPYTHON = $(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug
-IDLPYTHONTARGET = $(builddir_share)/omc/scripts/PythonInterface/OMPythonIDL/omc_communication_idl.py
-IDLFILE=$(top_builddir)/Compiler/runtime/omc_communication.idl
 LIB_OMC=lib/omc
 LIBMODELICAEXTERNALC=$(OMBUILDDIR)/lib/omc/libModelicaExternalC$(STAEXT)
 LIBMODELICASTANDARDTABLES=$(OMBUILDDIR)/lib/omc/libModelicaStandardTables$(STAEXT)
