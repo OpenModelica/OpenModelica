@@ -1638,13 +1638,21 @@ public function setDifferenceOnTrue<T>
     input T inElement2;
     output Boolean outIsEqual;
   end CompFunc;
+protected
+  list<T> lst1 = inList1, lst2 = inList2;
 algorithm
   // Empty - B = Empty
   if listEmpty(inList1) then
     return;
   end if;
 
-  outDifference := list(e for e guard not isMemberOnTrue(e, inList2, inCompFunc) in inList1);
+  // remove common start
+  while not (listEmpty(lst1) or listEmpty(lst2)) and inCompFunc(listHead(lst1), listHead(lst2)) loop
+    lst1 := listRest(lst1);
+    lst2 := listRest(lst2);
+  end while;
+
+  outDifference := list(e for e guard not isMemberOnTrue(e, lst2, inCompFunc) in lst1);
 end setDifferenceOnTrue;
 
 public function setDifference<T>
