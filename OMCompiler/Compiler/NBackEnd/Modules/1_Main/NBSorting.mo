@@ -277,6 +277,9 @@ public
           end match;
         then comps;
 
+        // do nothing for empty matrix (empty system)
+        case Adjacency.Matrix.EMPTY() then {};
+
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because adjacency matrix has unknown type."});
         then fail();

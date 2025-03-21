@@ -1,0 +1,39 @@
+// name: ModelicaTest.Math.TestMatricesExamplesSolveLinearEquations
+// keywords: NewBackend
+// status: correct
+
+loadModel(ModelicaTest);getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(ModelicaTest.Math.TestMatricesExamplesSolveLinearEquations); getErrorString();
+diffSimulationResults("ModelicaTest.Math.TestMatricesExamplesSolveLinearEquations_res.mat", "ReferenceFiles/ModelicaTest.Math.TestMatricesExamplesSolveLinearEquations_res.mat", "ModelicaTest.Math.TestMatricesExamplesSolveLinearEquations_diff.csv", 1e-8);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ModelicaTest.Math.TestMatricesExamplesSolveLinearEquations_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaTest.Math.TestMatricesExamplesSolveLinearEquations', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_STDOUT        | info    |
+// |                 | |       | Demonstrate how to solve linear equation systems:
+// |                 | |       |
+// LOG_STDOUT        | info    | diff1 = 8.00593e-16
+// LOG_STDOUT        | info    | diff2 = 3.66878e-15
+// LOG_STDOUT        | info    | diff3 = 4.07014e-15, n = 3, rank = 2
+// LOG_STDOUT        | info    | diff4 = 2.04386e-14, n = 3, rank = 2
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_STDOUT        | info    |
+// |                 | |       | Demonstrate how to solve linear equation systems:
+// |                 | |       |
+// LOG_STDOUT        | info    | diff1 = 8.00593e-16
+// LOG_STDOUT        | info    | diff2 = 3.66878e-15
+// LOG_STDOUT        | info    | diff3 = 4.07014e-15, n = 3, rank = 2
+// LOG_STDOUT        | info    | diff4 = 2.04386e-14, n = 3, rank = 2
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// endResult
