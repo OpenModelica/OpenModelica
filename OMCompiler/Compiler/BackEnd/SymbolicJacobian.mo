@@ -2646,7 +2646,7 @@ protected
   BackendDAE.EqSystem syst;
 algorithm
   (BackendDAE.DAE(systems, shared), _, _, _, _, _) := jacobian;
-  syst := List.first(systems);  // Only the first system contains directional derivative,
+  syst := listHead(systems);  // Only the first system contains directional derivative,
                                 // the others contain optional constant equations
   dependencies := BackendEquation.getCrefsFromEquations(syst.orderedEqs, syst.orderedVars, shared.globalKnownVars);
 end calcJacobianDependencies;

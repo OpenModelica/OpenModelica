@@ -13987,18 +13987,18 @@ algorithm
   // --fmiFlags or --fmiFlags=none
   if listEmpty(fmiFlagsList) then
     fmiSimulationFlags := NONE();
-  elseif listLength(fmiFlagsList) == 1 and stringEqual(List.first(fmiFlagsList), "none") then
+  elseif listLength(fmiFlagsList) == 1 and stringEqual(listHead(fmiFlagsList), "none") then
     fmiSimulationFlags := NONE();
 
   // Default case
   // --fmiFlags=default
-  elseif listLength(fmiFlagsList) == 1 and stringEqual(List.first(fmiFlagsList), "default") then
+  elseif listLength(fmiFlagsList) == 1 and stringEqual(listHead(fmiFlagsList), "default") then
     fmiSimulationFlags := SOME(SimCode.defaultFmiSimulationFlags);
 
   // User supplied file
   // --fmiFlags=path/to/*.json
-  elseif listLength(fmiFlagsList) == 1 and stringEqual( List.last(Util.stringSplitAtChar(List.first(fmiFlagsList),".")) , "json" )  then
-    pathToFile := List.first(fmiFlagsList);
+  elseif listLength(fmiFlagsList) == 1 and stringEqual( List.last(Util.stringSplitAtChar(listHead(fmiFlagsList),".")) , "json" )  then
+    pathToFile := listHead(fmiFlagsList);
     if System.regularFileExists(pathToFile) then
       fmiSimulationFlags := SOME(SimCode.FMI_SIMULATION_FLAGS_FILE(path=pathToFile));
       return;
@@ -15996,7 +15996,7 @@ algorithm
     Error.addInternalError("Failed to read semantic version from " + pathToCMake, sourceInfo());
     fail();
   end if;
-  cmakeVersionString := List.first(regexOut);
+  cmakeVersionString := listHead(regexOut);
   cmakeVersion := SemanticVersion.parse(cmakeVersionString);
   System.removeFile(cmakeVersionLogFile);
 end getCMakeVersion;

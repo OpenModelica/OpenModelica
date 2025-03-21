@@ -577,11 +577,7 @@ public function first<T>
   input list<T> inList;
   output T out;
 algorithm
-  out := match(inList)
-    local
-      T e;
-    case e :: _ then e;
-  end match;
+  out :: _ := inList;
 end first;
 
 public function firstOrEmpty<T>
@@ -604,7 +600,7 @@ public function second<T>
   input list<T> inList;
   output T outSecond;
 algorithm
-  outSecond := listGet(inList, 2);
+  _ :: outSecond :: _ := inList;
 end second;
 
 public function last<T>
@@ -667,7 +663,7 @@ algorithm
 end rest;
 
 public function restOrEmpty<T>
-  "Returns all elements except for the first in a list, or the empty list of the
+  "Returns all elements except for the first in a list, or the empty list if the
    list is empty."
   input list<T> inList;
   output list<T> outList;

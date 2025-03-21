@@ -5532,8 +5532,8 @@ protected
   array<Real> tdsLevel = tdsLevelIn;
 algorithm
   while not(listEmpty(nodes)) loop
-    if arrayGet(visitedNodes, List.first(nodes)) then
-      nodes := List.rest(nodes);
+    if arrayGet(visitedNodes, listHead(nodes)) then
+      nodes := listRest(nodes);
     else
       nodes := computeGraphValuesTopDown2(nodes,iTaskGraph,iTaskGraphT,iTaskGraphMeta,alap,last,lact,tdsLevel,visitedNodes);
     end if;

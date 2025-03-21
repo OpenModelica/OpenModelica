@@ -2517,7 +2517,7 @@ import Util;
           if(boolNot(listEmpty(iVarList))) then
             varHead = listHead(iVarList);
             if(intEq(varHead, varIdx)) then
-              iVarList = List.rest(iVarList);
+              iVarList = listRest(iVarList);
               //print("createMemoryMapTraverse0: Removed variable " + intString(varIdx) + "\n");
             end if;
           end if;
