@@ -195,6 +195,24 @@ public
     end match;
   end continue_;
 
+  function isEmpty
+    input Matching matching;
+    output Boolean b = arrayEmpty(matching.eqn_to_var) and arrayEmpty(matching.var_to_eqn);
+  end isEmpty;
+
+  function isPerfect
+    "returns true if all variables OR equations have been matched
+    Note: if it's not a square problem, it returns true if one of the two is fully matched"
+    input Matching matching;
+    output Boolean b;
+  algorithm
+    if arrayLength(matching.var_to_eqn) > arrayLength(matching.eqn_to_var) then
+      b := Array.all(matching.eqn_to_var, function intGt(i2 = 0));
+    else
+      b := Array.all(matching.var_to_eqn, function intGt(i2 = 0));
+    end if;
+  end isPerfect;
+
   function getAssignments
     "expands the assignments with -1 if needed"
     input Matching matching;

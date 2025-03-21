@@ -894,6 +894,12 @@ public
     end match;
   end isDummyVariable;
 
+  function isArtificial
+    extends checkVar;
+  algorithm
+    b := StringUtil.startsWith(ComponentRef.firstName(getVarName(var_ptr)), "$");
+  end isArtificial;
+
   function isFunctionAlias
     extends checkVar;
   algorithm
@@ -2341,6 +2347,10 @@ public
           varData.unknowns    := VariablePointers.addList(var_lst, varData.unknowns);
           varData.algebraics  := VariablePointers.addList(var_lst, varData.algebraics);
           varData.initials    := VariablePointers.addList(var_lst, varData.initials);
+          // also remove from states/derivatives in the case it was moved
+          varData.states      := VariablePointers.removeList(var_lst, varData.states);
+          varData.derivatives := VariablePointers.removeList(var_lst, varData.derivatives);
+          varData.knowns      := VariablePointers.removeList(var_lst, varData.knowns);
         then varData;
 
         case (VAR_DATA_SIM(), VarType.DISCRETE) algorithm
