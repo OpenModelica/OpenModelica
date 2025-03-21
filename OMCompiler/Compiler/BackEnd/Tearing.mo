@@ -947,7 +947,7 @@ algorithm
         end if;
         // mark tearing var
         markTVarsOrResiduals(tSel_always, ass1);
-        (_,unsolv,_) = List.intersection1OnTrue(unsolvables,tSel_always,intEq);
+        unsolv = List.remove1OnTrue(unsolvables,tSel_always,intEq);
         // equations not yet assigned containing the tvars
         vareqns = findVareqns(ass2,isAssignedSaveEnhanced,mt,tSel_always);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -1037,7 +1037,7 @@ algorithm
           print("omcTearingSelectTearingVar Candidates(unassigned vars):\n");
           BackendDump.debuglst(freeVars,intString,", ","\n");
         end if;
-        (_,freeVars,_) = List.intersection1OnTrue(freeVars,tSel_never,intEq);
+        freeVars = List.remove1OnTrue(freeVars,tSel_never,intEq);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Candidates without variables with annotation attribute 'never':\n");
           BackendDump.debuglst(freeVars,intString,", ","\n");
@@ -2527,7 +2527,7 @@ algorithm
       // ascertain if there are new unsolvables now
       unsolvables = getUnsolvableVarsConsiderMatching(arrayLength(meTIn),meTIn,ass1In,ass2In);
       if debug then execStat("Tearing.CellierTearing2 - 1.3"); end if;
-      (_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tvars,intEq);
+      unsolvables = List.remove1OnTrue(unsolvables,tvars,intEq);
 
       if debug then execStat("Tearing.CellierTearing2 - 1 done"); end if;
 
@@ -2587,7 +2587,7 @@ algorithm
 
       // ascertain if there are new unsolvables now
       unsolvables = getUnsolvableVarsConsiderMatching(arrayLength(meTIn),meTIn,ass1In,ass2In);
-      (_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tvars,intEq);
+      unsolvables = List.remove1OnTrue(unsolvables,tvars,intEq);
       if debug then execStat("Tearing.CellierTearing2 - 2"); end if;
 
       // repeat until system is causal
@@ -2694,7 +2694,7 @@ algorithm
     print("1st: " + stringDelimitList(List.map(selectedcols1,intString),",") + "\n");
   end if;
   // Without discrete:
-  (_,selectedcols1,_) := List.intersection1OnTrue(selectedcols1,discreteVars,intEq);
+  selectedcols1 := List.remove1OnTrue(selectedcols1,discreteVars,intEq);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("Without Discrete: " + stringDelimitList(List.map(selectedcols1,intString),",") + "\n(Variables in the equation(s) with most Variables)\n\n");
   end if;
@@ -2730,7 +2730,7 @@ algorithm
 
   // 0. Consider only non-discrete Vars
   varlst := getUnassigned(ass1In);
-  (_,selectedcols1,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
+  selectedcols1 := List.remove1OnTrue(varlst,discreteVars,intEq);
 
   // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
   (edges,selectedcols1) := getVarsOccurringInMostEquations(mtIn, selectedcols1);
@@ -2771,7 +2771,7 @@ algorithm
   end if;
 
   // Without discrete:
-  (_,selectedcols1,_) := List.intersection1OnTrue(selectedcols1,discreteVars,intEq);
+  selectedcols1 := List.remove1OnTrue(selectedcols1,discreteVars,intEq);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("Without Discrete: " + stringDelimitList(List.map(selectedcols1,intString),",") + "\n(Variables in the equation(s) with most Variables)\n\n");
   end if;
@@ -2813,7 +2813,7 @@ algorithm
 
   // 0. Consider only non-discrete Vars
   varlst := getUnassigned(ass1In);
-  (_,selectedcols1,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
+  selectedcols1 := List.remove1OnTrue(varlst,discreteVars,intEq);
 
   // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
   (edges,selectedcols1) := getVarsOccurringInMostEquations(mtIn, selectedcols1);
@@ -2860,7 +2860,7 @@ algorithm
   end if;
 
   // Without discrete:
-  (_,selectedcols1,_) := List.intersection1OnTrue(selectedcols1,discreteVars,intEq);
+  selectedcols1 := List.remove1OnTrue(selectedcols1,discreteVars,intEq);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("Without Discrete: " + stringDelimitList(List.map(selectedcols1,intString),",") + "\n(Variables in the equation(s) with most Variables)\n\n");
   end if;
@@ -2902,7 +2902,7 @@ algorithm
 
   // 0. Consider only non-discrete Vars
   varlst := getUnassigned(ass1In);
-  (_,selectedcols1,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
+  selectedcols1 := List.remove1OnTrue(varlst,discreteVars,intEq);
 
   // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
   (edges,selectedcols1) := getVarsOccurringInMostEquations(mtIn, selectedcols1);
@@ -2949,7 +2949,7 @@ algorithm
   end if;
 
   // Without discrete:
-  (_,selectedcols1,_) := List.intersection1OnTrue(selectedcols1,discreteVars,intEq);
+  selectedcols1 := List.remove1OnTrue(selectedcols1,discreteVars,intEq);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("Without Discrete: " + stringDelimitList(List.map(selectedcols1,intString),",") + "\n(Variables in the equation(s) with most Variables)\n\n");
   end if;
@@ -2998,7 +2998,7 @@ algorithm
 
   // 0. Consider only non-discrete Vars
   varlst := getUnassigned(ass1In);
-  (_,selectedcols1,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
+  selectedcols1 := List.remove1OnTrue(varlst,discreteVars,intEq);
 
   // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
   (edges,selectedcols1) := getVarsOccurringInMostEquations(mtIn, selectedcols1);
@@ -3048,7 +3048,7 @@ algorithm
 
   // 0. Consider only non-discrete Vars
   varlst := getUnassigned(ass1In);
-  (_,selectedcols0,_) := List.intersection1OnTrue(varlst,discreteVars,intEq);
+  selectedcols0 := List.remove1OnTrue(varlst,discreteVars,intEq);
 
   // 1. choose rows (vars) with most nonzero entries and write the indexes in a list
   (edges,selectedcols1) := getVarsOccurringInMostEquations(mtIn, selectedcols0);
@@ -3154,14 +3154,14 @@ algorithm
   // 3. Remove variables we don't want as tearing variables
   // ******************************************************
   // Remove variables with attribute '__OpenModelica_tearingSelect = TearingSelect.never'
-  (_,potentialTVars,_) := List.intersection1OnTrue(potentialTVars,tSel_never,intEq);
+  potentialTVars := List.remove1OnTrue(potentialTVars,tSel_never,intEq);
   if listEmpty(potentialTVars) then
     Error.addCompilerError("It is not possible to select a new tearing variable, because all remaining variables have the attribute '__OpenModelica_tearingSelect = TearingSelect.never'.");
     return;
   end if;
 
   // Remove discrete variables
-  (_,potentialTVars2,_) := List.intersection1OnTrue(potentialTVars,discreteVars,intEq);
+  potentialTVars2 := List.remove1OnTrue(potentialTVars,discreteVars,intEq);
 
   // Only discrete potentials, then allow discrete tearing variables
   if listEmpty(potentialTVars2) then

@@ -1550,7 +1550,7 @@ algorithm
   graphTmp := arrayCopy(graphIn);
   (graphOdeOut,cutNodes) := cutTaskGraph(graphTmp,stateNodes,whenNodes);
   cutNodeChildren := List.flatten(List.map1(listAppend(cutNodes,whenNodes),Array.getIndexFirst,graphIn)); // for computing new root-nodes when cutting out when-equations
-  (_,cutNodeChildren,_) := List.intersection1OnTrue(cutNodeChildren,cutNodes,intEq);
+  cutNodeChildren := List.remove1OnTrue(cutNodeChildren,cutNodes,intEq);
   graphDataOdeOut := cutSystemData(graphDataIn,listAppend(cutNodes,{}),cutNodeChildren);
 end getOdeSystem;
 
@@ -1654,7 +1654,7 @@ algorithm
         sizeDAE = arrayLength(graphIn);
         graphT = AdjacencyMatrix.transposeAdjacencyMatrix(graphIn,sizeDAE);
         odeNodes = listAppend(exceptNodes,getAllSuccessors(exceptNodes,graphT));//the ODE-System
-        (_,odeNodes,_) = List.intersection1OnTrue(odeNodes,whenNodes,intEq);
+        odeNodes = List.remove1OnTrue(odeNodes,whenNodes,intEq);
         (odeNodes,_,_) = List.intersection1OnTrue(List.intRange(sizeDAE),odeNodes,intEq);
 
         odeNodes = List.sort(odeNodes,intGt);
@@ -2405,7 +2405,7 @@ algorithm
   graphTmp := iTaskGraph; //arrayCopy(graphIn);
   (graphTmp,cutNodes) := cutTaskGraph(graphTmp,discreteNodes,{});
   cutNodeChildren := List.flatten(List.map1(cutNodes,Array.getIndexFirst,iTaskGraph)); // for computing new root-nodes when cutting out nodes
-  (_,cutNodeChildren,_) := List.intersection1OnTrue(cutNodeChildren,cutNodes,intEq);
+  cutNodeChildren := List.remove1OnTrue(cutNodeChildren,cutNodes,intEq);
   oTaskGraphMeta := cutSystemData(iTaskGraphMeta,cutNodes,cutNodeChildren);
   oTaskGraph := graphTmp;
 end getEventSystem;
@@ -3355,7 +3355,7 @@ algorithm
         (_,singleNodes) = List.filterOnTrueSync(arrayList(iTaskGraph),listEmpty,List.intRange(arrayLength(iTaskGraph)));  //nodes without successor
         (_,singleNodes1) = List.filterOnTrueSync(arrayList(taskGraphT),listEmpty,List.intRange(arrayLength(taskGraphT))); //nodes without predecessor
         (singleNodes,_,_) = List.intersection1OnTrue(singleNodes,singleNodes1,intEq);
-        (_,singleNodes,_) = List.intersection1OnTrue(singleNodes,doNotMergeIn,intEq);
+        singleNodes = List.remove1OnTrue(singleNodes,doNotMergeIn,intEq);
         exeCosts = List.map1(singleNodes,getExeCostReqCycles,iTaskGraphMeta);
         (exeCosts,pos) = HpcOmScheduler.quicksortWithOrder(exeCosts);
         singleNodes = List.map1(pos,List.getIndexFirst,singleNodes);
@@ -4216,7 +4216,7 @@ algorithm
   //mergedPaths := List.map1(mergedPaths,List.sort,intGt);
   startNodes := List.map(mergedPaths,List.last);
   //startNodes := List.map(mergedPaths,listHead);
-  (_,deleteNodes,_) := List.intersection1OnTrue(List.flatten(mergedPaths),startNodes,intEq);
+  deleteNodes := List.remove1OnTrue(List.flatten(mergedPaths),startNodes,intEq);
   //deleteNodes := List.map(mergedPaths,List.rest);
   inCompsLst := arrayList(inCompsIn);
   inCompsLst := List.fold2(List.intRange(arrayLength(inCompsIn)),updateInComps1,(startNodes,deleteNodes,mergedPaths),inCompsIn,inCompsLst);

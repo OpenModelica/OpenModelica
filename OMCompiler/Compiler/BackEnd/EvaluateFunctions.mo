@@ -1402,7 +1402,7 @@ algorithm
 
         const = intEq(listLength(scalars),listLength(constVars));
         constScalarCrefs = List.filter1OnTrue(constCrefs,ComponentReference.crefInLst,constVars);
-        (_,varCrefs,_) = List.intersection1OnTrue(scalars,constScalarCrefs,ComponentReference.crefEqual);
+        varCrefs = List.remove1OnTrue(scalars,constScalarCrefs,ComponentReference.crefEqual);
         //constCompl = if_(const,cref::constComplexLstIn,constComplexLstIn);
         constCompl = if false then cref::constComplexLstIn else constComplexLstIn;
         //varCompl = if_(not const,cref::varComplexLstIn,varComplexLstIn);

@@ -584,8 +584,8 @@ algorithm
     else numIterNew := numIter;
     end if;
   //take the non-assigned vars only
-  (_,varIdcs,_) := List.intersection1OnTrue(List.intRange(size),varIdcs,intEq);
-  (_,eqIdcs,_) := List.intersection1OnTrue(List.intRange(size),eqIdcs,intEq);
+  varIdcs := List.remove1OnTrue(List.intRange(size),varIdcs,intEq);
+  eqIdcs := List.remove1OnTrue(List.intRange(size),eqIdcs,intEq);
   eqsOut := BackendEquation.getList(eqIdcs,eqArr);
   varsOut := List.map1(varIdcs,BackendVariable.getVarAtIndexFirst,varArr);
   if numIterNew<>0 then (eqsOut,varsOut,resEqsOut) := simplifyNewEquations(eqsOut,varsOut,resEqsOut,numAux,numIterNew-1,shared);

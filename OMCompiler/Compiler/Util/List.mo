@@ -1564,7 +1564,6 @@ public function intersection1OnTrue<T>
     output Boolean outIsEqual;
   end CompFunc;
 protected
-  Option<T> oe;
   list<T> lst1 = inList1, lst2 = inList2;
 algorithm
   if listEmpty(inList1) then
@@ -1597,6 +1596,48 @@ algorithm
   outList1Rest := if isPresent(outList1Rest) then listReverseInPlace(outList1Rest) else {};
   outList2Rest := if isPresent(outList2Rest) then setDifferenceOnTrue(inList2, outIntersection, inCompFunc) else {};
 end intersection1OnTrue;
+
+public function remove1OnTrue<T>
+  "Takes two lists and a comparison function over two elements of the lists. It
+   returns a list of the elements from list 1 which is not in list 2."
+  input list<T> inList1;
+  input list<T> inList2;
+  input CompFunc inCompFunc;
+  output list<T> outList1Rest = {};
+
+  partial function CompFunc
+    input T inElement1;
+    input T inElement2;
+    output Boolean outIsEqual;
+  end CompFunc;
+protected
+  list<T> lst1 = inList1, lst2 = inList2;
+algorithm
+  if listEmpty(inList1) then
+    return;
+  end if;
+  if listEmpty(inList2) then
+    outList1Rest := inList1;
+    return;
+  end if;
+
+  while not (listEmpty(lst1) or listEmpty(lst2)) loop
+    if not inCompFunc(listHead(lst1), listHead(lst2)) then
+      break;
+    end if;
+
+    lst1 := listRest(lst1);
+    lst2 := listRest(lst2);
+  end while;
+
+  for e in lst1 loop
+    if not isMemberOnTrue(e, inList2, inCompFunc) then
+      outList1Rest := e :: outList1Rest;
+    end if;
+  end for;
+
+  outList1Rest := listReverseInPlace(outList1Rest);
+end remove1OnTrue;
 
 public function setDifferenceIntN
   "Provides same functionality as setDifference, but for integer values
@@ -2129,7 +2170,7 @@ algorithm
   end for;
 
   outList1 := listReverseInPlace(outList1);
-  outList2 := listReverseInPlace(outList2);
+  outList2 := if isPresent(outList2) then listReverseInPlace(outList2) else {};
 end map1_2;
 
 public function map2<TI, TO, ArgT1, ArgT2>
@@ -2258,7 +2299,7 @@ algorithm
   end for;
 
   outList1 := listReverseInPlace(outList1);
-  outList2 := listReverseInPlace(outList2);
+  outList2 := if isPresent(outList2) then listReverseInPlace(outList2) else {};
 end map2_2;
 
 public function map3<TI, TO, ArgT1, ArgT2, ArgT3>

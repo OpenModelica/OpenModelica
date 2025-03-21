@@ -5892,7 +5892,7 @@ algorithm
       //update m
       for e in eqIdxs loop
         row := m[e];
-        (_,row,_) := List.intersection1OnTrue(row,varIdxs,intEq);
+        row := List.remove1OnTrue(row,varIdxs,intEq);
         arrayUpdate(m,e,row);
         //update mt
         for varIdx in varIdxs loop
@@ -5937,7 +5937,7 @@ algorithm
         //print("remove edges between eq: "+intString(idx)+" and vars "+stringDelimitList(List.map(varIdxs,intString),", ")+"\n");
       //update m
       row := m[idx];
-      (_,row,_) := List.intersection1OnTrue(row,varIdxs,intEq);
+      row := List.remove1OnTrue(row,varIdxs,intEq);
       arrayUpdate(m,idx,row);
       //update mt
       for varIdx in varIdxs loop

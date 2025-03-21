@@ -443,7 +443,7 @@ algorithm
 
         simpleLoops := getDoubles(paths1,{});  // get 2 adjacent equations which form a simple loop i.e. they share 2 variables
         //print("all simpleLoop-paths: \n"+stringDelimitList(List.map(simpleLoops,HpcOmTaskGraph.intLstString)," / ")+"\n");
-        (_,paths,_) := List.intersection1OnTrue(paths1,simpleLoops,intLstIsEqual);
+        paths := List.remove1OnTrue(paths1,simpleLoops,intLstIsEqual);
 
         // special case to find more complex structures (arrays and triple loops)
         if listEmpty(simpleLoops) then
@@ -893,7 +893,7 @@ algorithm
       eqVars = List.map1(loop1,Array.getIndexFirst,mIn);
       vars = List.flatten(eqVars);
       loopVars = doubleEntriesInLst(vars);  // the vars in the loop
-      (_,adjVars,_) = List.intersection1OnTrue(vars,loopVars,intEq); // the vars adjacent to the loop
+      adjVars = List.remove1OnTrue(vars,loopVars,intEq); // the vars adjacent to the loop
 
       // update adjacencyMatrix
       List.map2_0(loopVars,Array.updateIndexFirst,{},mTIn);  //delete the vars in the loop
@@ -945,7 +945,7 @@ algorithm
       (crossVars,loopVars,_) = List.intersection1OnTrue(loopVars,varCrossLstIn,intEq);  // some crossVars have to remain
       //print("loopVars: "+stringDelimitList(List.map(loopVars,intString),",")+"\n");
 
-      (_,adjVars,_) = List.intersection1OnTrue(vars,loopVars,intEq); // the vars adjacent to the loop
+      adjVars = List.remove1OnTrue(vars,loopVars,intEq); // the vars adjacent to the loop
       adjVars = listAppend(crossVars,adjVars);
       adjVars = List.unique(adjVars);
 
@@ -979,7 +979,7 @@ algorithm
       (resolvedEq, m_row) = resolveClosedLoop(loop1,mIn,mTIn,eqMap,varMap,daeEqsIn,daeVarsIn);
 
       // update AdjacencyMatrix
-      (_,crossEqs,_) = List.intersection1OnTrue(loop1,replEqsIn,intEq);  // do not replace an already replaced Eq
+      crossEqs = List.remove1OnTrue(loop1,replEqsIn,intEq);  // do not replace an already replaced Eq
       (pos::_) = crossEqs;  // the equation that will be replaced = pos
       eqVars = List.map1(loop1,Array.getIndexFirst,mIn);
       vars = List.flatten(eqVars);
@@ -1097,7 +1097,7 @@ protected
   list<Integer> entry;
 algorithm
   entry := arrayGet(arrIn,idx);
-  (_,entry,_) := List.intersection1OnTrue(entry,delEntries,intEq);
+  entry := List.remove1OnTrue(entry,delEntries,intEq);
   _ := arrayUpdate(arrIn,idx,entry);
 end arrayGetDeleteInLst;
 

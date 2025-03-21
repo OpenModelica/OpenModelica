@@ -1753,7 +1753,7 @@ algorithm
         unassNodes = critPathNode::unassNodes;
         unassNodes = List.unique(unassNodes);
         levelNodeCluster = BLS_mergeDependentLevelTask(unassNodes,iGraph,iGraphT,{});
-        (_,unassNodes,_) = List.intersection1OnTrue(unassNodes,List.flatten(levelNodeCluster),intEq);
+        unassNodes = List.remove1OnTrue(unassNodes,List.flatten(levelNodeCluster),intEq);
         sectionLst = levelNodeCluster::sectionsIn;
           //print("section: \n"+stringDelimitList(List.map(levelNodeCluster,intListString),"  |  ")+"\n");
 
@@ -1791,7 +1791,7 @@ algorithm
       dependentNodes = BLS_getDependentGroups({node},iGraph,iGraphT,nodesIn,{});
       section = node::dependentNodes;
       section = List.unique(section);
-      (_,rest,_) = List.intersection1OnTrue(rest,dependentNodes,intEq);
+      rest = List.remove1OnTrue(rest,dependentNodes,intEq);
       section = listReverse(section);
       //print("section: \n"+stringDelimitList(List.map(section,intString)," ; ")+"\n");
       sections = BLS_mergeDependentLevelTask(rest,iGraph,iGraphT,section::sectionsIn);
@@ -4939,8 +4939,8 @@ algorithm
         //print("Node: " + intString(node) + "\n");
         //print("Children: {" + stringDelimitList(List.map(childNodes, intString), ",") + "}\n");
         //print("Parents: {" + stringDelimitList(List.map(parentNodes, intString), ",") + "}\n");
-        (_,otherParents,_) = List.intersection1OnTrue(parentNodes,sameProcTasks,intEq);
-        (_,otherChildren,_) = List.intersection1OnTrue(childNodes,sameProcTasks,intEq);
+        otherParents = List.remove1OnTrue(parentNodes,sameProcTasks,intEq);
+        otherChildren = List.remove1OnTrue(childNodes,sameProcTasks,intEq);
         //print("Other children: {" + stringDelimitList(List.map(otherChildren, intString), ",") + "}\n");
         //print("Other parents: {" + stringDelimitList(List.map(otherParents, intString), ",") + "}\n");
         // keep the locks that are superfluous, remove them later
@@ -5056,7 +5056,7 @@ protected function removeLocksFromLockList "author:Waurich TUD 2013-12
   input list<HpcOmSimCode.Task> lockTasks;
   output list<HpcOmSimCode.Task> lockIdsOut;
 algorithm
-  (_,lockIdsOut,_) := List.intersection1OnTrue(lockIdsIn,lockTasks,tasksEqual);
+  lockIdsOut := List.remove1OnTrue(lockIdsIn,lockTasks,tasksEqual);
 end removeLocksFromLockList;
 
 protected function removeLocksFromThread "author:Waurich TUD 2013-12
@@ -5065,7 +5065,7 @@ protected function removeLocksFromThread "author:Waurich TUD 2013-12
   input list<HpcOmSimCode.Task> lockLst;
   output list<HpcOmSimCode.Task> threadOut;
 algorithm
-  (_,threadOut,_) := List.intersection1OnTrue(threadIn,lockLst,tasksEqual);
+  threadOut := List.remove1OnTrue(threadIn,lockLst,tasksEqual);
 end removeLocksFromThread;
 
 protected function getSuperfluousLocks "author:Waurich TUD 2013-12
