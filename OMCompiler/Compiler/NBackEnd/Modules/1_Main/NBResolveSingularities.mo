@@ -116,6 +116,9 @@ public
     Adjacency.Matrix set_adj, full_local;
     Matching set_matching;
     UnorderedMap<ComponentRef, Integer> vo, vn, eo, en;
+    list<tuple<String, BVariable.checkVar>> stages;
+    BVariable.checkVar stageFunc;
+    String stageStr;
     Boolean debug = false;
   algorithm
     // get the minimally structurally singular subset
@@ -186,10 +189,26 @@ public
       vn              := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
       set_matching    := NBMatching.EMPTY_MATCHING;
 
-      for stateSelect in {StateSelect.NEVER, StateSelect.AVOID, StateSelect.DEFAULT, StateSelect.PREFER} loop
-        // split the candidates to get all currently relevant ones and create the index map for them
-        (current_candidates, rest_candidates) := List.splitOnTrue(rest_candidates, function BVariable.isStateSelect(stateSelect = stateSelect));
-        if not listEmpty(current_candidates) then
+      // order of importance for variables to not be states:
+      stages := {
+        ("1. StateSelect.NEVER",    function BVariable.isStateSelect(stateSelect = StateSelect.NEVER)),
+        ("2. StateSelect.AVOID",    function BVariable.isStateSelect(stateSelect = StateSelect.AVOID)),
+        ("3. Artificial Variables", BVariable.isArtificial),
+        ("4. StateSelect.DEFAULT",  function BVariable.isStateSelect(stateSelect = StateSelect.DEFAULT)),
+        ("5. StateSelect.PREFER",   function BVariable.isStateSelect(stateSelect = StateSelect.PREFER))
+      };
+
+      for stage in stages loop
+        (stageStr, stageFunc) := stage;
+        // split the candidates to get all currently relevant ones
+        (current_candidates, rest_candidates) := List.splitOnTrue(rest_candidates, stageFunc);
+
+        if listEmpty(current_candidates) or (not Matching.isEmpty(set_matching) and Matching.isPerfect(set_matching)) then
+          // nothing to do, no candidates for this stage or matching is already perfect
+          if debug then
+            print(StringUtil.headline_2("Nothing done for (" + stageStr + ") Index Reduction") + "\n");
+          end if;
+        else
           // prepare the current maps
           vo := UnorderedMap.merge(vo, UnorderedMap.copy(vn), sourceInfo());
           vn := UnorderedMap.subMap(candidate_ptrs.map, list(BVariable.getVarName(var) for var in current_candidates));
@@ -199,12 +218,8 @@ public
           set_matching            := Matching.regular(set_matching, set_adj, false, true, false);
 
           if debug then
-            print(Adjacency.Matrix.toString(set_adj, "(" + VariableAttributes.stateSelectString(stateSelect) + ") Index Reduction"));
-            print(Matching.toString(set_matching, "(" + VariableAttributes.stateSelectString(stateSelect) + ") Index Reduction"));
-          end if;
-        else
-          if debug then
-            print("Nothing done for (" + VariableAttributes.stateSelectString(stateSelect) + ") Index Reduction\n\n");
+            print(Adjacency.Matrix.toString(set_adj, "(" + stageStr + ") Index Reduction"));
+            print(Matching.toString(set_matching, "(" + stageStr + ") Index Reduction"));
           end if;
         end if;
       end for;
