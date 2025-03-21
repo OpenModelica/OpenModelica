@@ -703,6 +703,38 @@ public
     set := fromList(acc, hashFunc, keyEqFunc);
   end intersection_list;
 
+  function difference_list
+    "lst1 / lst2, assuming unique lists"
+    input list<T> inList1;
+    input list<T> inList2;
+    input Hash hashFunc;
+    input KeyEq keyEqFunc;
+    output list<T> acc = {};
+  protected
+    UnorderedSet<T> set2;
+    list<T> lst1 = inList1, lst2 = inList2;
+  algorithm
+    // remove common start, since this seems to be very common
+    while not (listEmpty(lst1) or listEmpty(lst2)) and keyEqFunc(listHead(lst1), listHead(lst2)) loop
+      lst1 := listRest(lst1);
+      lst2 := listRest(lst2);
+    end while;
+
+    // {} - B = {}
+    // A - {} = A
+    if listEmpty(lst1) or listEmpty(lst2) then
+      acc := lst1;
+      return;
+    end if;
+
+    set2 := fromList(lst2, hashFunc, keyEqFunc);
+    for k in lst1 loop
+      if not contains(k, set2) then
+        acc := k :: acc;
+      end if;
+    end for;
+  end difference_list;
+
   function difference
     "set1 / set2"
     input UnorderedSet<T> set1;

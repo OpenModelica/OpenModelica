@@ -61,6 +61,7 @@ import IndexReduction;
 import Inline;
 import List;
 import MetaModelica.Dangerous;
+import UnorderedSet;
 import Util;
 import Sorting;
 import System;
@@ -5892,14 +5893,14 @@ algorithm
       //update m
       for e in eqIdxs loop
         row := m[e];
-        (_,row,_) := List.intersection1OnTrue(row,varIdxs,intEq);
+        row := UnorderedSet.difference_list(row, varIdxs, Util.id, intEq);
         arrayUpdate(m,e,row);
-        //update mt
-        for varIdx in varIdxs loop
-          row := arrayGet(mt,varIdx);
-          row := List.deleteMemberOnTrue(e, row, intEq);
-          arrayUpdate(mt,varIdx,row);
-        end for;
+      end for;
+      //update mt
+      for varIdx in varIdxs loop
+        row := mt[varIdx];
+        row := UnorderedSet.difference_list(row, eqIdxs, Util.id, intEq);
+        arrayUpdate(mt,varIdx,row);
       end for;
     end if;
     idx := idx+1;
@@ -5937,7 +5938,7 @@ algorithm
         //print("remove edges between eq: "+intString(idx)+" and vars "+stringDelimitList(List.map(varIdxs,intString),", ")+"\n");
       //update m
       row := m[idx];
-      (_,row,_) := List.intersection1OnTrue(row,varIdxs,intEq);
+      row := UnorderedSet.difference_list(row,varIdxs,Util.id,intEq);
       arrayUpdate(m,idx,row);
       //update mt
       for varIdx in varIdxs loop
