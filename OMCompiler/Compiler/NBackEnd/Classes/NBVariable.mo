@@ -370,6 +370,15 @@ public
     end match;
   end isStart;
 
+  function isExtObj
+    extends checkVar;
+  algorithm
+    b := match var.backendinfo.varKind
+      case VariableKind.EXTOBJ() then true;
+      else false;
+    end match;
+  end isExtObj;
+
   function isTime
     extends checkVar;
   algorithm
@@ -388,6 +397,8 @@ public
       case VariableKind.DISCRETE()        then false; // like parameter?
       case VariableKind.PREVIOUS()        then false; // like parameter?
       case VariableKind.CONSTANT()        then false;
+      case VariableKind.ITERATOR()        then false;
+      case VariableKind.EXTOBJ()          then false;
       case VariableKind.PARAMETER()       then init and Type.isContinuous(var.ty);
       else true;
     end match;
