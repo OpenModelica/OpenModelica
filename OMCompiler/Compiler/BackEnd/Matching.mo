@@ -61,6 +61,7 @@ import IndexReduction;
 import Inline;
 import List;
 import MetaModelica.Dangerous;
+import UnorderedSet;
 import Util;
 import Sorting;
 import System;
@@ -5858,6 +5859,7 @@ protected function removeEdgesToDiscreteEquations""
   output BackendDAE.AdjacencyMatrix mOut;
   output BackendDAE.AdjacencyMatrixT mtOut;
 protected
+  Boolean isDiscrete;
   Integer idx, idx2, size, varIdx;
   list<Integer> varIdxs, row, eqIdxs;
   BackendDAE.EquationArray eqs;
@@ -5881,23 +5883,24 @@ algorithm
   idx := 1;
   for eq in BackendEquation.equationList(eqs) loop
     //print("Check equation "+BackendDump.equationString(eq)+"\n");
-    if BackendEquation.isWhenEquationOrDiscreteAlgorithm(eq, vars) then
-      varLst := BackendEquation.equationVars(eq, vars);
+    isDiscrete := BackendEquation.isWhenEquationOrDiscreteAlgorithm(eq,vars);
+    if isDiscrete then
+      varLst := BackendEquation.equationVars(eq,vars);
 
-      varIdxs := BackendVariable.getVarIndexFromVars(varLst, vars);
+      varIdxs := BackendVariable.getVarIndexFromVars(varLst,vars);
       eqIdxs := eqIdxArray[idx];
       //print("remove edges between eqs: "+stringDelimitList(List.map(eqIdxs,intString),", ")+" and vars "+stringDelimitList(List.map(varIdxs,intString),", ")+"\n");
       //update m
       for e in eqIdxs loop
         row := m[e];
-        row := List.setDifferenceOnTrue(row, varIdxs, intEq);
-        arrayUpdate(m, e, row);
+        row := UnorderedSet.difference_list(row, varIdxs, Util.id, intEq);
+        arrayUpdate(m,e,row);
       end for;
       //update mt
       for varIdx in varIdxs loop
         row := mt[varIdx];
-        row := List.setDifferenceOnTrue(row, eqIdxs, intEq);
-        arrayUpdate(mt, varIdx, row);
+        row := UnorderedSet.difference_list(row, eqIdxs, Util.id, intEq);
+        arrayUpdate(mt,varIdx,row);
       end for;
     end if;
     idx := idx+1;
