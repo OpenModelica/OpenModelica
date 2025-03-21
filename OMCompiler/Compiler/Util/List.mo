@@ -1644,9 +1644,7 @@ algorithm
     return;
   end if;
 
-  for e in inList2 loop
-    (outDifference, _) := deleteMemberOnTrue(e, outDifference, inCompFunc);
-  end for;
+  outDifference := list(e for e guard not isMemberOnTrue(e, inList2, inCompFunc) in inList1);
 end setDifferenceOnTrue;
 
 public function setDifference<T>
