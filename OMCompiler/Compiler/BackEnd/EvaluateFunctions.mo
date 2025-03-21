@@ -3165,7 +3165,6 @@ algorithm
          if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
            print("--> the predicted const outputs:\n"+stringDelimitList(List.map(outExps,ExpressionDump.printExpStr),"\n"));
          end if;
-         (_,_,_) = List.intersection1OnTrue(outExps,allLHS,Expression.expEqual);
 
          //_ = (not listEmpty(constOutExps)) and listEmpty(varOutExps);
          //repl = bcallret3(not predicted, BackendVarTransform.removeReplacements,replIn,varCrefs,NONE(),replIn);

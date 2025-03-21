@@ -5938,7 +5938,7 @@ algorithm
         //print("remove edges between eq: "+intString(idx)+" and vars "+stringDelimitList(List.map(varIdxs,intString),", ")+"\n");
       //update m
       row := m[idx];
-      (_,row,_) := List.intersection1OnTrue(row,varIdxs,intEq);
+      row := UnorderedSet.difference_list(row,varIdxs,Util.id,intEq);
       arrayUpdate(m,idx,row);
       //update mt
       for varIdx in varIdxs loop
