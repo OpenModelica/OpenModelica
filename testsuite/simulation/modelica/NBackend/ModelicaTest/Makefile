@@ -3,6 +3,7 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 ModelicaTest.Tables.CombiTable1Ds.Test1.mos \
 ModelicaTest.Tables.CombiTable1Ds.Test4.mos \
+ModelicaTest.Math.TestMatrices.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

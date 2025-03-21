@@ -6557,6 +6557,7 @@ public
   end makeUnary;
 
   function replaceLiteral
+    "use with fake map because it maps itself"
     input output Expression exp;
     input UnorderedMap<Expression, Integer> map;
     input Pointer<Integer> idx_ptr;
@@ -6581,7 +6582,11 @@ public
         new_exp := SHARED_LITERAL(idx, exp);
       then new_exp;
 
-      else exp;
+      // do nothing on shared literal
+      case Expression.SHARED_LITERAL() then exp;
+
+      // map down for other expressions
+      else Expression.mapShallow(exp, function replaceLiteral(map = map, idx_ptr = idx_ptr));
     end match;
   end replaceLiteral;
 

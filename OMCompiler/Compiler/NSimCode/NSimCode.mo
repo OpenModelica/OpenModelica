@@ -320,7 +320,7 @@ public
             funcTree := BackendDAE.getFunctionTree(bdae);
 
             // get and replace all literals
-            collect_literals := function Expression.map(func = function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
+            collect_literals := function Expression.fakeMap(func = function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
             funcTree := FunctionTreeImpl.mapExp(funcTree, collect_literals);
             literals := UnorderedMap.keyList(literals_map);
 
