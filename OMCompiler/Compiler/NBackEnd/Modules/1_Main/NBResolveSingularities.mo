@@ -209,10 +209,6 @@ public
         end if;
       end for;
 
-
-      //if not BVariable.isStateSelect(BVariable.getVarPointer(candidate), StateSelect.ALWAYS) then
-
-
       // parse the result of the matching
       (dummy_states, states, matched_eqns, unmatched_eqns) := Matching.getMatches(set_matching, Adjacency.Matrix.getMappingOpt(set_adj), candidate_ptrs, constraint_ptrs);
 
@@ -528,6 +524,7 @@ protected
     array<list<Integer>> eqn_slices = arrayCreate(EquationPointers.size(equations), {});
     UnorderedSet<ComponentRef> state_candidates = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     Pointer<Equation> eqn_ptr;
+    Pointer<Variable> var_ptr;
   algorithm
     // get the mapping and fail if there is none
     mapping := match mapping_opt
@@ -556,7 +553,8 @@ protected
 
     // add all state candidates to the array
     for candidate in UnorderedSet.toList(state_candidates) loop
-      states := VariablePointers.add(BVariable.getVarPointer(candidate), states);
+      var_ptr := BVariable.getVarPointer(candidate);
+      states  := VariablePointers.add(var_ptr, states);
     end for;
   end getConstraintsAndCandidates;
 
