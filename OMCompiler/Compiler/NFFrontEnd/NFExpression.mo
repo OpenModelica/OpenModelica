@@ -4669,12 +4669,17 @@ public
   function isLiteralReplace
     input Expression exp;
     output Boolean b;
+  protected
+    function isLiteralReplaceElement
+      "mock function to not change isLiteral()"
+      input Expression exp;
+      output Boolean b = not Expression.isRecord(exp) and Expression.isLiteral(exp);
+    end isLiteralReplaceElement;
   algorithm
     b := match exp
       case STRING()         then true;
       case BOX(STRING())    then true;
-      case ARRAY()          then exp.literal or Array.all(exp.elements, isLiteral);
-      //case RECORD() then List.all(exp.elements, isLiteralReplace);
+      case ARRAY()          then exp.literal or Array.all(exp.elements, isLiteralReplaceElement);
       else false;
     end match;
   end isLiteralReplace;
