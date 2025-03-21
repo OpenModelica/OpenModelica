@@ -2153,7 +2153,7 @@ uniontype Function
   algorithm
     comp := InstNode.component(node);
     binding := Component.getBinding(comp);
-    binding2 := Binding.mapExp(binding, mapFn);
+    binding2 := Binding.mapExpShallow(binding, mapFn);
 
     if not referenceEq(binding, binding2) then
       comp := Component.setBinding(binding2, comp);
