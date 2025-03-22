@@ -572,14 +572,6 @@ algorithm
   outList := append_reverse(lst1,inElement::lst2);
 end set;
 
-public function first<T>
-  "Returns the first element of a list. Fails if the list is empty."
-  input list<T> inList;
-  output T out;
-algorithm
-  out :: _ := inList;
-end first;
-
 public function firstOrEmpty<T>
   "Returns the first element of a list as a list, or an empty list if the given
    list is empty."
@@ -653,14 +645,6 @@ algorithm
     lst := listRest(lst);
   end for;
 end trimToLength;
-
-public function rest<T>
-  "Returns all elements except for the first in a list."
-  input list<T> inList;
-  output list<T> outList;
-algorithm
-  _ :: outList := inList;
-end rest;
 
 public function restOrEmpty<T>
   "Returns all elements except for the first in a list, or the empty list if the
@@ -3534,12 +3518,12 @@ public function flatten<T>
    of the sublists. O(len(outList))
      Example: flatten({{1, 2}, {3, 4, 5}, {6}, {}}) => {1, 2, 3, 4, 5, 6}"
   input list<list<T>> inList;
-  output list<T> outList = if listEmpty(inList) then {} elseif hasOneElement(inList) then first(inList) else listAppend(lst for lst in listReverse(inList));
+  output list<T> outList = if listEmpty(inList) then {} elseif hasOneElement(inList) then listHead(inList) else listAppend(lst for lst in listReverse(inList));
 end flatten;
 
 public function flattenReverse<T>
   input list<list<T>> inList;
-  output list<T> outList = if listEmpty(inList) then {} elseif hasOneElement(inList) then first(inList) else listAppend(lst for lst in inList);
+  output list<T> outList = if listEmpty(inList) then {} elseif hasOneElement(inList) then listHead(inList) else listAppend(lst for lst in inList);
 end flattenReverse;
 
 public function thread<T>

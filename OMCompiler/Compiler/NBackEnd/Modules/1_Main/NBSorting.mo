@@ -145,7 +145,7 @@ public
           mode := Util.getOption(mode_opt);
           if Equation.isRecordOrTupleEquation(EquationPointers.getEqnAt(eqns, mapping.eqn_StA[eqn_scal_idx])) then
             // add the cref to the result, but remove it from the modes so all modes of a tuple equations are equal
-            cref := List.first(mode.crefs);
+            cref := listHead(mode.crefs);
             mode.crefs := {};
             addMulti(cref, eqn_scal_idx, mode, buckets);
           else
@@ -172,7 +172,7 @@ public
         val := Value.addEquation(val, eqn_scal_idx);
         UnorderedMap.add(mode, val, buckets);
       else
-        val := Value.SINGLE_VAL(List.first(mode.crefs), {eqn_scal_idx});
+        val := Value.SINGLE_VAL(listHead(mode.crefs), {eqn_scal_idx});
         UnorderedMap.addNew(mode, val, buckets);
       end if;
     end add;
@@ -555,8 +555,8 @@ public
           for i in node.eqn_indices loop
             indep := indep and List.hasOneElement(m_local[i]);
           end for;
-          eqn_arr_idx := mapping.eqn_StA[List.first(node.eqn_indices)];
-          var_arr_idx := mapping.var_StA[matching.eqn_to_var[List.first(node.eqn_indices)]];
+          eqn_arr_idx := mapping.eqn_StA[listHead(node.eqn_indices)];
+          var_arr_idx := mapping.var_StA[matching.eqn_to_var[listHead(node.eqn_indices)]];
         then StrongComponent.createPseudoSlice(var_arr_idx, eqn_arr_idx, node.cref_to_solve, sorted_body_indices, matching.eqn_to_var, eqns, mapping, indep);
 
         // entwined array equations

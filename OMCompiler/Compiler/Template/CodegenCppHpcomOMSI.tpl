@@ -281,7 +281,7 @@ template generateAdditionalFunctionHeaders(Option<tuple<Schedule,Schedule,Schedu
           <<
           >>
         else
-          let headers = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => generateThreadFunctionHeaderDecl(i0); separator="\n"
+          let headers = listRest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => generateThreadFunctionHeaderDecl(i0); separator="\n"
           <<
           <%headers%>
           >>
@@ -368,9 +368,9 @@ template generateAdditionalHpcomVarHeaders(Option<tuple<Schedule,Schedule,Schedu
           //MF Todo BLABLUB
           >>
         else
-          let threadDecl = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => generateThreadHeaderDecl(i0, type); separator="\n"
-          let thLocks = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => createLockByLockName(i0, "th_lock", type); separator="\n"
-          let thLocks1 = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => createLockByLockName(i0, "th_lock1", type); separator="\n"
+          let threadDecl = listRest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => generateThreadHeaderDecl(i0, type); separator="\n"
+          let thLocks = listRest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => createLockByLockName(i0, "th_lock", type); separator="\n"
+          let thLocks1 = listRest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => createLockByLockName(i0, "th_lock1", type); separator="\n"
           <<
           bool _terminateThreads;
           <%odeLocks%>
@@ -527,11 +527,11 @@ template additionalHpcomConstructorBodyStatements(Option<tuple<Schedule,Schedule
           //MF: Initialize MPI related stuff - nothing todo?
           >>
         else
-          let threadFuncs = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
-          let threadLocksInit = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => initializeLockByLockName(i0, "th_lock", type); separator="\n"
-          let threadLocksInit1 = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => initializeLockByLockName(i0, "th_lock1", type); separator="\n"
-          let threadAssignLocks = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => assignLockByLockName(i0, "th_lock", type); separator="\n"
-          let threadAssignLocks1 = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => assignLockByLockName(i0, "th_lock1", type); separator="\n"
+          let threadFuncs = listRest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
+          let threadLocksInit = listRest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => initializeLockByLockName(i0, "th_lock", type); separator="\n"
+          let threadLocksInit1 = listRest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => initializeLockByLockName(i0, "th_lock1", type); separator="\n"
+          let threadAssignLocks = listRest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => assignLockByLockName(i0, "th_lock", type); separator="\n"
+          let threadAssignLocks1 = listRest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => assignLockByLockName(i0, "th_lock1", type); separator="\n"
           <<
           _terminateThreads = false;
           _command = IContinuous::UNDEF_UPDATE;
@@ -706,11 +706,11 @@ template additionalHpcomDestructorBodyStatements(Option<tuple<Schedule,Schedule,
           //MF: Destruct MPI related stuff - nothing at the moment.
           >>
         else
-          let destroyThreads = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => function_HPCOM_destroyThread(i0, type); separator="\n"
-          let threadLocksDel = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => destroyLockByLockName(i0, "th_lock", type); separator="\n"
-          let threadLocksDel1 = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => destroyLockByLockName(i0, "th_lock1", type); separator="\n"
-          let joinThreads = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => function_HPCOM_joinThread(i0, type); separator="\n"
-          let threadReleaseLocks = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => releaseLockByLockName(i0, "th_lock", type); separator="\n"
+          let destroyThreads = listRest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => function_HPCOM_destroyThread(i0, type); separator="\n"
+          let threadLocksDel = listRest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => destroyLockByLockName(i0, "th_lock", type); separator="\n"
+          let threadLocksDel1 = listRest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => destroyLockByLockName(i0, "th_lock1", type); separator="\n"
+          let joinThreads = listRest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => function_HPCOM_joinThread(i0, type); separator="\n"
+          let threadReleaseLocks = listRest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => releaseLockByLockName(i0, "th_lock", type); separator="\n"
           <<
           _terminateThreads = true;
           <%threadReleaseLocks%>
@@ -1098,8 +1098,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         else
           let &mainThreadCode = buffer "" /*BUFD*/
           let threadFuncs = List.intRange(arrayLength(odeSchedule.threadTasks)) |> threadIdx => generateThreadFunc(allEquationsPlusWhen, arrayGet(odeSchedule.threadTasks, threadIdx), arrayGet(daeSchedule.threadTasks, threadIdx), arrayGet(zeroFuncSchedule.threadTasks, threadIdx), type, intSub(threadIdx, 1), modelNamePrefixStr, &varDecls, simCode, extraFuncs, extraFuncsDecl, lastIdentOfPath(name), &mainThreadCode, useFlatArrayNotation); separator="\n"
-          let threadAssignLocks1 = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => assignLockByLockName(i0, "th_lock1", type); separator="\n"
-          let threadReleaseLocks = List.rest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => releaseLockByLockName(i0, "th_lock", type); separator="\n"
+          let threadAssignLocks1 = listRest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => assignLockByLockName(i0, "th_lock1", type); separator="\n"
+          let threadReleaseLocks = listRest(arrayList(odeSchedule.threadTasks)) |> tt hasindex i0 fromindex 1 => releaseLockByLockName(i0, "th_lock", type); separator="\n"
           <<
           <%threadFuncs%>
 

@@ -2703,7 +2703,7 @@ algorithm
     case (lst,dim)
       equation
         first_lst = List.map(lst, listHead);
-        rest = List.map(lst, List.rest);
+        rest = List.map(lst, listRest);
         first_lst_1 = catDimension(first_lst, dim);
         rest_1 = catDimension2(rest, dim);
         res = List.threadMap(rest_1, first_lst_1, List.consr);

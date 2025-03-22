@@ -2800,7 +2800,7 @@ algorithm
 
     case (conds,tbs,fb::fbs)
       equation
-        tbsRest = List.map(tbs,List.rest);
+        tbsRest = List.map(tbs, listRest);
         rest_res = makeResidualIfExpLst(conds, tbsRest, fbs);
 
         tbsFirst = List.map(tbs,listHead);
@@ -2908,7 +2908,7 @@ algorithm
     case (_, _, fb::fbs, _, _)
       equation
         size = Expression.sizeOf(Expression.typeof(fb));
-        tbsRest = List.map(inExpLst2, List.rest);
+        tbsRest = List.map(inExpLst2, listRest);
         rest_res = makeEquationsFromResiduals(inExp1, tbsRest, fbs, inSource, inEqAttr);
         tbsFirst = List.map(inExpLst2, listHead);
         ifexp = Expression.makeNestedIf(inExp1,tbsFirst,fb);

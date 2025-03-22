@@ -861,7 +861,7 @@ protected
     end if;
     fixed_start_map := setStartFixed(attrcollector.start_map, attrcollector.fixed_map, set);
     if UnorderedMap.size(fixed_start_map) == 1 then
-      new_start := SOME(List.first(UnorderedMap.valueList(fixed_start_map)));
+      new_start := SOME(listHead(UnorderedMap.valueList(fixed_start_map)));
       fixed_var := BVariable.getVarPointer(UnorderedMap.firstKey(fixed_start_map));
       BVariable.setFixed(fixed_var, false, true); // avoid having two fixed variables
       UnorderedMap.add(BVariable.getVarName(fixed_var), Expression.BOOLEAN(false), attrcollector.fixed_map); // update attribute collector
@@ -942,7 +942,7 @@ protected
     if listEmpty(rest) then // constants and rest are empty
       max_exp := NONE();
     elseif List.hasOneElement(rest) then // one constant or one rest
-      max_exp := SOME(List.first(rest));
+      max_exp := SOME(listHead(rest));
     else
       max_exp_val :=  Expression.CALL(Call.makeTypedCall(
         fn          = NFBuiltinFuncs.MAX_REAL,
@@ -971,7 +971,7 @@ protected
     if listEmpty(rest) then // constants and rest are empty
       min_exp := NONE();
     elseif List.hasOneElement(rest) then // one constant or one rest
-      min_exp := SOME(List.first(rest));
+      min_exp := SOME(listHead(rest));
     else
       min_exp_val :=  Expression.CALL(Call.makeTypedCall(
         fn          = NFBuiltinFuncs.MAX_REAL,
@@ -1198,7 +1198,7 @@ protected
       chosen_val := NONE();
       chosen_cref := NONE();
     elseif List.hasOneElement(lst_values) then
-      (compref, sval) := List.first(lst_values);
+      (compref, sval) := listHead(lst_values);
       chosen_val := SOME(sval);
       chosen_cref := SOME(compref);
     else
@@ -1225,7 +1225,7 @@ protected
     if listEmpty(lst_values) then
       chosen_val := NONE();
     elseif List.hasOneElement(lst_values) then
-      chosen_val := SOME(List.first(lst_values));
+      chosen_val := SOME(listHead(lst_values));
     else
       tearing_select := TearingSelect.NEVER;
       for val in lst_values loop

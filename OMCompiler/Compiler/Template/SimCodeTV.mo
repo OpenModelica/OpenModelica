@@ -198,6 +198,12 @@ package builtin
     output TypeVar head;
   end listHead;
 
+  function listRest
+    replaceable type TypeVar subtypeof Any;
+    input list<TypeVar> lst;
+    output list<TypeVar> rest;
+  end listRest;
+
   function intString
     input Integer i;
     output String s;
@@ -3597,12 +3603,6 @@ package List
     output list<list<Type_a>> outParts;
   end splitEqualParts;
 
-  function rest
-    replaceable type Type_a subtypeof Any;
-    input list<Type_a> inList;
-    output list<Type_a> outParts;
-  end rest;
-
   function restOrEmpty
     replaceable type Type_a subtypeof Any;
     input list<Type_a> inList;
@@ -3636,12 +3636,6 @@ package List
     output list<Type_b> outTypeALst;
     replaceable type Type_a subtypeof Any;
   end unzipSecond;
-
-  function first
-    replaceable type ElementType subtypeof Any;
-    input list<ElementType> inList;
-    output ElementType val;
-  end first;
 
   function last
     replaceable type ElementType subtypeof Any;

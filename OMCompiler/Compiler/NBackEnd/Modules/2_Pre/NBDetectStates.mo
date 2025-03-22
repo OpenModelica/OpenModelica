@@ -297,7 +297,7 @@ protected
             (returnExp, oDiffArgs) := Differentiate.differentiateExpression(arg, diffArgs);
             returnExp := SimplifyExp.simplifyDump(returnExp, true, getInstanceName());
             if List.hasOneElement(oDiffArgs.new_vars) then
-              der_var := List.first(oDiffArgs.new_vars);
+              der_var := listHead(oDiffArgs.new_vars);
               Pointer.update(acc_derivatives, der_var :: Pointer.access(acc_derivatives));
               Pointer.update(acc_states, Util.getOption(BVariable.getVarState(der_var)) :: Pointer.access(acc_states));
             elseif List.hasSeveralElements(oDiffArgs.new_vars) then
