@@ -118,7 +118,7 @@ public
         if Flags.isSet(Flags.DUMP_SLICE) then
           for tpl in UnorderedMap.toList(duplicate_map) loop
             (unsolved, solved) := tpl;
-            if not referenceEq(List.first(solved), unsolved) then
+            if not referenceEq(listHead(solved), unsolved) then
               print("[dumpSlice] The block:\n" + StrongComponent.toString(unsolved) + "\n"
                 + "[dumpSlice] got sliced to:\n" + List.toString(solved, function StrongComponent.toString(index = -1), "", "", "\n", "") + "\n\n");
             end if;
@@ -365,7 +365,7 @@ public
     // solve implicit equation (algebraic loop is always implicit)
     if solve_status == Status.IMPLICIT and List.hasOneElement(solved_comps) then
       (implicit_comp, funcTree, implicit_index)  := Tearing.implicit(
-        comp        = List.first(solved_comps),
+        comp        = listHead(solved_comps),
         funcTree    = funcTree,
         index       = implicit_index,
         kind  = kind
@@ -424,7 +424,7 @@ public
   algorithm
     if listLength(eqn_slice.indices) == 1 then
       replacements    := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
-      (eqn, funcTree) := Equation.singleSlice(eqn_ptr, List.first(eqn_slice.indices), Equation.sizes(eqn_ptr), cref, replacements, funcTree);
+      (eqn, funcTree) := Equation.singleSlice(eqn_ptr, listHead(eqn_slice.indices), Equation.sizes(eqn_ptr), cref, replacements, funcTree);
     else
       (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(Pointer.access(eqn_ptr), cref, funcTree, kind, implicit_index, slicing_map);
     end if;
@@ -1438,7 +1438,7 @@ protected
     slices_lst := Equation.collectCrefs(eqn, function Slice.getSliceCandidates(name = var_cref));
 
     if List.hasOneElement(slices_lst) then
-      var_cref := List.first(slices_lst);
+      var_cref := listHead(slices_lst);
       solve_status := Status.UNPROCESSED;
     else
       // check if the record parents occur (todo: vice versa?)

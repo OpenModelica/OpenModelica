@@ -999,7 +999,7 @@ template functionPrototype(String fname, list<Variable> fargs, list<Variable> ou
   let fn_name_typedef = (if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then '<%boxPtrStr%>td_<%fname%>' else fn_name)
   let fn_name_ptr_typedef = (if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then (if isPrototype then '(*<%fn_name_typedef%>)' else fn_name_impl) else fn_name)
   let res = (if outVars then
-    let outargs = List.rest(outVars) |> var => ", " + (match var
+    let outargs = listRest(outVars) |> var => ", " + (match var
       case var as VARIABLE(__) then '<%if boxed then varTypeBoxed(var) else varType(var)%> *out<%funArgName(var)%>'
       case FUNCTION_PTR(__) then 'modelica_fnptr *out<%funArgName(var)%>')
     '<%outarg%> <%fn_name_ptr_typedef%>(threadData_t *threadData<%fargsStr%><%outargs%>)'
@@ -3220,7 +3220,7 @@ match stmt
     let &preExp = buffer ""
     let &postExp = buffer ""
 
-    let lhsCrefs = (List.rest(expExpLst) |> e => " ," + tupleReturnVariableUpdates(e, context, varDecls, preExp, postExp, &auxFunction))
+    let lhsCrefs = (listRest(expExpLst) |> e => " ," + tupleReturnVariableUpdates(e, context, varDecls, preExp, postExp, &auxFunction))
     // The tuple expressions might take fewer variables than the number of outputs. No worries.
     let lhsCrefs2 = lhsCrefs + List.fill(", NULL", intMax(0,intSub(listLength(ntys),listLength(expExpLst))))
 
@@ -5615,7 +5615,7 @@ template indexSubRecursive(list<Dimension> dims, list<Subscript> subs, Context c
       '<%daeSubscript(sub, context, &preExp, &varDecls, &auxFunction)%> - 1'
     case sub :: sub_rest then
       let recurse = indexSubRecursive(List.restOrEmpty(dims), sub_rest, context, preExp, varDecls, auxFunction)
-      let dim1 = dimension(List.first(dims), context, &preExp, &varDecls, &auxFunction)
+      let dim1 = dimension(listHead(dims), context, &preExp, &varDecls, &auxFunction)
       let sub1 = daeSubscript(sub, context, &preExp, &varDecls, &auxFunction)
       '(<%recurse%>) * <%dim1%> + (<%sub1%>-1)'
 end indexSubRecursive;

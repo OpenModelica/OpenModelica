@@ -200,7 +200,7 @@ public
       list<Option<Iterator>> tmp_maps, maps = {};
     algorithm
       if List.hasOneElement(iterators) then
-        result := List.first(iterators);
+        result := listHead(iterators);
       else
         for iter in listReverse(iterators) loop
           (tmp_names, tmp_ranges, tmp_maps) := getFrames(iter);
@@ -709,7 +709,7 @@ public
 
           if listLength(occs) == 1 then
             // get the only occuring iterator cref and solve the body for it
-            cref := List.first(occs);
+            cref := listHead(occs);
             (tmpEqn, _, status, invert) := Solve.solveBody(tmpEqn, cref, FunctionTree.EMPTY());
             operator := if invert == NBSolve.RelationInversion.TRUE then Operator.invert(condition.operator) else condition.operator;
 
@@ -875,7 +875,7 @@ public
       algorithm
         if Util.isSome(map) then
           (names, _) := getFrames(Util.getOption(map));
-          str := str + " (" + ComponentRef.toString(List.first(names)) + ")";
+          str := str + " (" + ComponentRef.toString(listHead(names)) + ")";
         end if;
       end singleStr;
     algorithm
@@ -1559,7 +1559,7 @@ public
         case SCALAR_EQUATION()        then eq.lhs;
         case ARRAY_EQUATION()         then eq.lhs;
         case RECORD_EQUATION()        then eq.lhs;
-        case FOR_EQUATION(body = {_}) then getLHS(List.first(eq.body));
+        case FOR_EQUATION(body = {_}) then getLHS(listHead(eq.body));
         case IF_EQUATION()            algorithm
           (lhs, success) := IfEquationBody.getLHS(eq.body);
           if not success then
@@ -1582,7 +1582,7 @@ public
         case SCALAR_EQUATION()        then eq.rhs;
         case ARRAY_EQUATION()         then eq.rhs;
         case RECORD_EQUATION()        then eq.rhs;
-        case FOR_EQUATION(body = {_}) then getRHS(List.first(eq.body));
+        case FOR_EQUATION(body = {_}) then getRHS(listHead(eq.body));
         case IF_EQUATION()            then IfEquationBody.getRHS(eq.body);
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because RHS was ambiguous for: " + toString(eq)});
@@ -1600,7 +1600,7 @@ public
         case ARRAY_EQUATION()   algorithm eq.lhs := lhs; then eq;
         case RECORD_EQUATION()  algorithm eq.lhs := lhs; then eq;
         case FOR_EQUATION(body = {_}) algorithm
-          eq.body := {setLHS(List.first(eq.body), lhs)};
+          eq.body := {setLHS(listHead(eq.body), lhs)};
         then eq;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because LHS " + Expression.toString(lhs) + " could not be set for:\n " + toString(eq)});
@@ -1618,7 +1618,7 @@ public
         case ARRAY_EQUATION()   algorithm eq.rhs := rhs; then eq;
         case RECORD_EQUATION()  algorithm eq.rhs := rhs; then eq;
         case FOR_EQUATION(body = {_}) algorithm
-          eq.body := {setRHS(List.first(eq.body), rhs)};
+          eq.body := {setRHS(listHead(eq.body), rhs)};
         then eq;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because RHS could not be set for: " + toString(eq)});
@@ -1756,7 +1756,7 @@ public
               if isNone(if_body.else_if) and not List.hasSeveralElements(if_body.then_eqns) then
                 // first if-branch is true and has only one equation
                 // just replace if-equation with body
-                new_eq := Pointer.access(List.first(if_body.then_eqns));
+                new_eq := Pointer.access(listHead(if_body.then_eqns));
               else
                 eq.body := if_body;
                 try
@@ -1997,7 +1997,7 @@ public
 
         // returns innermost residual!
         // Ambiguous for entwined for loops!
-        case FOR_EQUATION(body = {_}) then getResidualExp(List.first(eqn.body));
+        case FOR_EQUATION(body = {_}) then getResidualExp(listHead(eqn.body));
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(eqn)});
@@ -2016,7 +2016,7 @@ public
         case ARRAY_EQUATION()   then eq.ty;
         case RECORD_EQUATION()  then eq.ty;
         case FOR_EQUATION()     algorithm
-          ty := getType(List.first(eq.body));
+          ty := getType(listHead(eq.body));
           if not skipIterator then
             ty := Type.liftArrayRightList(ty, Iterator.dimensions(eq.iter));
           end if;
@@ -2278,7 +2278,7 @@ public
         local
           Equation body;
         case FOR_EQUATION() algorithm
-          (body, acc) := mergeIterators(List.first(eq.body), false);
+          (body, acc) := mergeIterators(listHead(eq.body), false);
           acc := eq.iter :: acc;
         then (if top_level then FOR_EQUATION(eq.size, Iterator.merge(acc), {body}, eq.source, eq.attr) else body, acc);
         else (eq, {});
@@ -2296,7 +2296,7 @@ public
         case FOR_EQUATION() algorithm
           // split returns innermost first
           iterators := Iterator.split(eqn.iter);
-          body := List.first(eqn.body);
+          body := listHead(eqn.body);
           for iter in iterators loop
             body := FOR_EQUATION(eqn.size, iter, {body}, eqn.source, eqn.attr);
           end for;
@@ -2475,7 +2475,7 @@ public
               ComponentRef cref;
             case SOME(cref) algorithm
               // first solve then replace iterators
-              (body, funcTree, solve_status, _) := Solve.solveBody(List.first(eqn.body), cref, funcTree);
+              (body, funcTree, solve_status, _) := Solve.solveBody(listHead(eqn.body), cref, funcTree);
               body := map(body, function Replacements.applySimpleExp(replacements = replacements));
 
               // if there is a diagonal to remove, get the necessary linear maps
@@ -2543,7 +2543,7 @@ public
           // create the replacement rules for this location
           Iterator.createLocationReplacements(eqn.iter, listArray(location), replacements);
           // replace iterators
-          sliced_eqn := map(List.first(eqn.body), function Replacements.applySimpleExp(replacements = replacements));
+          sliced_eqn := map(listHead(eqn.body), function Replacements.applySimpleExp(replacements = replacements));
           // solve the body if necessary
           if not ComponentRef.isEmpty(cref_to_solve) then
             (sliced_eqn, funcTree, _, _) := Solve.solveBody(sliced_eqn, cref_to_solve, funcTree);

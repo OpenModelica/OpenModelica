@@ -197,7 +197,7 @@ public
   algorithm
 
     if List.hasOneElement(jacobians) then
-      jacobian := List.first(jacobians);
+      jacobian := listHead(jacobians);
       jacobian := match jacobian case BackendDAE.JACOBIAN() algorithm jacobian.name := name; then jacobian; end match;
     else
       for jac in jacobians loop

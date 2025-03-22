@@ -6752,7 +6752,7 @@ template whenOperators(list<WhenOperator> whenOps, Context context, Text &varDec
     case ASSIGN(left = lhs as DAE.TUPLE(PR = expLst as firstexp::_), right = DAE.CALL(attr=CALL_ATTR(ty=T_TUPLE(types=ntys)))) then
     let &preExp = buffer ""
     let &postExp = buffer ""
-    let lhsCrefs = (List.rest(expLst) |> e => " ," + tupleReturnVariableUpdates(e, context, varDecls, preExp, postExp, &auxFunction))
+    let lhsCrefs = (listRest(expLst) |> e => " ," + tupleReturnVariableUpdates(e, context, varDecls, preExp, postExp, &auxFunction))
     // The tuple expressions might take fewer variables than the number of outputs. No worries.
     let lhsCrefs2 = lhsCrefs + List.fill(", NULL", intMax(0,intSub(listLength(ntys),listLength(expLst))))
     let call = daeExpCallTuple(right, lhsCrefs2, context, &preExp, &varDecls, &auxFunction)
