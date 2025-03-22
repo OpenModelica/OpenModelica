@@ -469,7 +469,7 @@ algorithm
       case 1 then DAE.ARRAY(ComponentReference.crefTypeFull(cref), true, expLst);
       case 2 algorithm
         dims := Types.getDimensions(ComponentReference.crefLastType(cref));
-        firstDim := match List.first(dims)
+        firstDim := match listHead(dims)
           case DAE.DIM_INTEGER(firstDim) then firstDim;
         end match;
         try

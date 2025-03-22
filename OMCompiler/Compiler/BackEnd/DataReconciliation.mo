@@ -2365,7 +2365,7 @@ algorithm
   for blocks in predecessorBlockInfo loop
     (mainBlock, targetBlocks, _, knownBlocks, constantBlocks, _) := blocks;
     if not listEmpty(knownBlocks) then // known Blocks
-      targetBlocksWithKnowns := filterTargetBlocksWithoutRanks(List.rest(targetBlocks), targetBlocksWithKnowns);
+      targetBlocksWithKnowns := filterTargetBlocksWithoutRanks(listRest(targetBlocks), targetBlocksWithKnowns);
     elseif not listEmpty(constantBlocks) then // constant Blocks
       targetBlocksWithConstants := filterTargetBlocksWithoutRanks(targetBlocks, targetBlocksWithConstants);
     else // unknown Blocks
@@ -3090,7 +3090,7 @@ algorithm
     for tmpblocks in blockinfo loop
       (_, tmptargetblocks, _) := tmpblocks;
       if not intEq(count,tmpcount) then
-        if listMember(List.first(targetblocks), tmptargetblocks) then
+        if listMember(listHead(targetblocks), tmptargetblocks) then
           targetexist := true;
         end if;
       end if;

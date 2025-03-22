@@ -1444,7 +1444,7 @@ protected
   ParseTree label;
 algorithm
   (tokens, tree) := scan(tokens, tree, TokenId.IDENT);
-  label := List.first(tree);
+  label := listHead(tree);
   (tokens, tree) := scan(tokens, tree, TokenId.EQUALS);
   (tokens, tree) := expression(tokens, tree);
   outTree := makeNodePrependTree(listReverse(tree), inTree, label=label);
@@ -2074,7 +2074,7 @@ algorithm
       then ();
     else ();
   end match;
-  if parseTreeIsNewLine(List.first(t2)) then
+  if parseTreeIsNewLine(listHead(t2)) then
     t2_strip := listRest(t2);
   else
     t2_strip := t2;
@@ -2305,11 +2305,11 @@ algorithm
   diff := {};
   firstIter := true;
   while not listEmpty(diffLocal) loop
-    // (diffEnum,tree) := List.first(diffLocal);
+    // (diffEnum,tree) := listHead(diffLocal);
     // print(String(diffEnum) + ":\n");
     // print(parseTreeStr(tree));
     // print("\n");
-    (diffEnum, treeLast) := List.first(diffLocal);
+    (diffEnum, treeLast) := listHead(diffLocal);
     (firstTreeSecondLast, firstTreeLast) := match treeLast
       case {} then (EMPTY(),EMPTY());
       case {firstTreeLast} then (EMPTY(),firstTreeLast);
@@ -2399,17 +2399,17 @@ algorithm
 
       // EQ(...) + ADD(WS, ...) => EQ(...) + ADD(...)
       case ((diff1 as (Diff.Equal,tree1))::(Diff.Add, tree2 as _::_::_)::diffLocal)
-        guard not needsWhitespaceBetweenTokens(lastToken(firstTreeLast),firstTokenInTree(List.second(tree2))) and parseTreeIsWhitespaceNotComment(List.first(tree2)) and not parseTreeIsNewLine(firstTreeLast)
+        guard not needsWhitespaceBetweenTokens(lastToken(firstTreeLast),firstTokenInTree(List.second(tree2))) and parseTreeIsWhitespaceNotComment(listHead(tree2)) and not parseTreeIsNewLine(firstTreeLast)
         then diff1::(Diff.Add, listRest(tree2))::diffLocal;
 
       // ADD(..., WS) EQ(...) => ADD(...) + EQ(...)
       case ((Diff.Add,tree1 as _::_::_)::(diff2 as (Diff.Equal, tree2))::diffLocal)
-        guard not needsWhitespaceBetweenTokens(lastToken(firstTreeLast),firstTokenInTree(List.first(tree2))) and not (parseTreeIsNewLine(firstTreeSecondLast) or parseTreeIsLineComment(firstTreeSecondLast)) and parseTreeIsWhitespaceNotCommentOrNewline(firstTreeLast)
+        guard not needsWhitespaceBetweenTokens(lastToken(firstTreeLast),firstTokenInTree(listHead(tree2))) and not (parseTreeIsNewLine(firstTreeSecondLast) or parseTreeIsLineComment(firstTreeSecondLast)) and parseTreeIsWhitespaceNotCommentOrNewline(firstTreeLast)
         then (Diff.Add, List.stripLast(tree1))::diff2::diffLocal;
 
       // EQ(NEWLINE) + ADD(NEWLINE, ...) => EQ(NEWLINE) + ADD(...)
       case ((diff1 as (Diff.Equal,tree1))::(Diff.Add, tree2)::diffLocal)
-        guard parseTreeIsNewLine(firstTreeLast) and parseTreeIsNewLine(List.first(tree2))
+        guard parseTreeIsNewLine(firstTreeLast) and parseTreeIsNewLine(listHead(tree2))
         then diff1::(Diff.Add, listRest(tree2))::diffLocal;
       // NEWLINE ADD WS DEL => NEWLINE WS ADD DEL
       case (diff1 as (Diff.Equal,tree1))::(diff2 as (Diff.Add, tree2))::(diff3 as (Diff.Equal, tree3))::(diff4 as (Diff.Delete, tree4First::tree4))::diffLocal
@@ -2551,7 +2551,7 @@ algorithm
       return;
     end if;
     if listMember(item, del) then
-      while item <> List.first(del) loop
+      while item <> listHead(del) loop
         s::del := del;
         if listMember(s, acc) then
           return;

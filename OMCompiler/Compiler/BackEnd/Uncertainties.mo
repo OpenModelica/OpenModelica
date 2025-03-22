@@ -1184,8 +1184,8 @@ algorithm
       (_,tmptargetblocks,_):= tmpblocks;
       if(not intEq(count,tmpcount)) then
         //print("Targets:" + intString(tmpcount) + ": " + anyString(tmptargetblocks) + "\n ");
-        //print("first block:" + anyString(List.first(targetblocks))+ "\n");
-        if(listMember(List.first(targetblocks),tmptargetblocks)) then
+        //print("first block:" + anyString(listHead(targetblocks))+ "\n");
+        if(listMember(listHead(targetblocks),tmptargetblocks)) then
           //print("Predeccsors Block Found:" + anyString(targetblocks) + "\n");
           targetexist:=true;
         end if;
@@ -1285,7 +1285,7 @@ algorithm
    for blocks in blockinfo loop
       (blockitems1,targetblocks,targetblocksvar):= blocks;
       (blockstoupdate,exist,foundblock):=findSquareAndNonSquareBlocksHelper(targetblocks,targetblocksvar);
-      (blockvarlst1,_):=List.first(targetblocksvar);
+      (blockvarlst1,_):=listHead(targetblocksvar);
       outlist1:=(blockitems1,blockvarlst1,exist,foundblock)::outlist1;
       for j in blockstoupdate loop
          (blockitem,_):=j;
@@ -1428,12 +1428,12 @@ algorithm
   print("\nLoop-1\n"+ "========\n");
   for blocks in predecessortargetinfo loop
     (blockitems,targetblocks,targetblocksvar,knownblocks,foundblockranks):= blocks;
-    (dependendblock,_):=listGet(allblockranks,List.first(foundblockranks));
+    (dependendblock,_):=listGet(allblockranks,listHead(foundblockranks));
     targetblocktobeinserted:=List.setDifferenceOnTrue(knownblocks,usedblocks,intEq);
     print("\nExtractEquationsfromNoPredecessorBlocks :" + dumplistInteger(blockitems) + " => " + dumplistInteger(dependendblock) + " => known blocks:" + dumplistInteger(targetblocktobeinserted) + "\n");
     //print("\ntargetblocktobeinserted :" + anyString(targetblocktobeinserted) + "=> SET_S :" + anyString(usedblocks));
     if(not listEmpty(targetblocktobeinserted)) then
-       usedblocks:=List.first(targetblocktobeinserted)::usedblocks;
+       usedblocks:=listHead(targetblocktobeinserted)::usedblocks;
     else
        //print("\n Problem is ill posed because there are two few variables of interest. Boundary condition A is ignored \n");
        blockspostoberemoved:=tmpcount::blockspostoberemoved;
@@ -1451,8 +1451,8 @@ algorithm
         blocksize:=listLength(blockitems)-1;
         sets:=listAppend(List.firstN(blockitems,blocksize),sets);
         // insert 1 equation of targetBlock into set-s
-        //sets:=List.first(dependendblock)::sets;
-        sets:=List.first(targetblocktobeinserted)::sets;
+        //sets:=listHead(dependendblock)::sets;
+        sets:=listHead(targetblocktobeinserted)::sets;
         print("\nAfterinsertion :" + dumplistInteger(targetblocktobeinserted) + "=> SET_S :" + dumplistInteger(sets) + "\n");
     elseif(not List.setEqualOnTrue(blockitems,dependendblock,intEq) and listEmpty(targetblocktobeinserted)) then
        // Block does not exist

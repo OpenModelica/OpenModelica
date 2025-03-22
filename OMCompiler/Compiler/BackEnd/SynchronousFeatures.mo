@@ -1799,13 +1799,13 @@ protected
   Integer i;
   DAE.Exp e, subclk;
 algorithm
-  DAE.CREF(componentRef = cr) := List.first(inExpLst);
+  DAE.CREF(componentRef = cr) := listHead(inExpLst);
   (_, varIxs) := BackendVariable.getVar(cr, inVars);
-  i := List.first(varIxs);
-  i := List.first(arrayGet(mT, i)) "Equation idx, containing var";
+  i := listHead(varIxs);
+  i := listHead(arrayGet(mT, i)) "Equation idx, containing var";
   i := arrayGet(inPartitions, i) "Partitions, from which var get";
   subclk := DAE.CREF(getSubClkName(i, 1), DAE.T_CLOCK_DEFAULT);
-  e := DAE.CALL(inPath, subclk::List.rest(inExpLst), inAttr);
+  e := DAE.CALL(inPath, subclk::listRest(inExpLst), inAttr);
   (outVar, outEq) := createSubClock(inPartitionIdx, inClkCnt, e);
 end createSubClockVar;
 
@@ -1972,7 +1972,7 @@ protected function createSubClockVarFactor
 protected
   DAE.Exp e;
 algorithm
-  outExp := substGetPartition(List.first(inExpLst));
+  outExp := substGetPartition(listHead(inExpLst));
   //To do this, the eqPartMap has to exclude the subPartition interfaces. Anyway, its not used anymore
   /*
   (outExp, outNewEqs, outNewVars, outClkCnt) := match listGet(inExpLst, 2)
@@ -2415,7 +2415,7 @@ protected
   Boolean create;
   DAE.Exp e;
 algorithm
-  e := List.first(inExps);
+  e := listHead(inExps);
   create := match e
     case DAE.CREF() then false;
     case DAE.RCONST() then false;
@@ -2436,7 +2436,7 @@ algorithm
         ty := Expression.typeof(e);
         cr := DAE.CREF_IDENT("$var" + intString(inCnt), ty, {});
         (var, eq) := createEqVarPair(cr, ty, e);
-      then (DAE.CREF(cr, ty)::List.rest(inExps), eq::inEqs, var::inVars, inCnt + 1);
+      then (DAE.CREF(cr, ty)::listRest(inExps), eq::inEqs, var::inVars, inCnt + 1);
     case false
       then (inExps, inEqs, inVars, inCnt);
   end match;

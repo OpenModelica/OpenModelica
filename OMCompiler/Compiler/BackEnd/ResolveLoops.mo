@@ -1338,9 +1338,9 @@ algorithm
         eqs := List.unique(eqs);
         eqs := List.intersectionOnTrue(eqs,loopIn,intEq);
         if listEmpty(eqs) then
-          next := List.first(loopIn);
+          next := listHead(loopIn);
         else
-          next := List.first(eqs);
+          next := listHead(eqs);
         end if;
         rest := List.deleteMemberOnTrue(next,loopIn,intEq);
       then sortLoop(rest,m,mT,next::sortLoopIn);

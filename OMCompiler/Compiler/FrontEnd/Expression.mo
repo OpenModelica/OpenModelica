@@ -3483,7 +3483,7 @@ public function makeTuple
   input list<DAE.Exp> inExps;
   output DAE.Exp outExp;
 algorithm
-  outExp := if listLength(inExps) > 1 then DAE.TUPLE(inExps) else List.first(inExps);
+  outExp := if listLength(inExps) > 1 then DAE.TUPLE(inExps) else listHead(inExps);
 end makeTuple;
 
 

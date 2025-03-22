@@ -2518,7 +2518,7 @@ algorithm
         inside := removeStreamSetElement(streamCref, inside);
         e := streamSumEquationExp(outside, inside, flowThreshold);
         if not listEmpty(inside) then
-          expr := streamFlowExp(List.first(inside));
+          expr := streamFlowExp(listHead(inside));
           e := Expression.makePureBuiltinCall("$OMC$inStreamDiv", {e, expr}, Expression.typeof(e));
         end if;
         // Evaluate any inStream calls that were generated.
