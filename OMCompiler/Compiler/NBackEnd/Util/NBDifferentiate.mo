@@ -789,7 +789,7 @@ public
 
     (exp, diffArguments) := match exp
       local
-        Expression ret;
+        Expression ret, arg;
         Call call, der_call;
         Option<Function> func_opt, der_func_opt;
         list<Function> derivatives;
@@ -797,7 +797,6 @@ public
         list<Expression> arguments = {};
         Operator addOp, mulOp;
         list<tuple<Expression, InstNode>> arguments_inputs;
-        Expression arg;
         InstNode inp;
         Boolean isCont, isReal;
         // interface map. If the map contains a variable it has a zero derivative
@@ -805,7 +804,14 @@ public
         // (it is possible that a variable has a zero derivative, but still appears in the interface)
         UnorderedMap<String, Boolean> interface_map = UnorderedMap.new<Boolean>(stringHashDjb2, stringEqual);
 
-      // for reductions only differentiate the argument
+      // for array constructors only differentiate the argument
+      case ret as Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
+        (arg, diffArguments) := differentiateExpression(call.exp, diffArguments);
+        call.exp := arg;
+        ret.call := call;
+      then (ret, diffArguments);
+
+      // handle reductions
       case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
         (ret, diffArguments) := differentiateReduction(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)), exp, diffArguments);
       then (ret, diffArguments);
