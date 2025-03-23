@@ -1029,7 +1029,7 @@ protected
 
       case FEquation.IF(branches = branches, source = source) algorithm
         try
-          ifEqBody  := lowerIfEquationBody(branches, init, in_for);
+          ifEqBody  := lowerIfEquationBody(branches, init, in_for or FEquation.sizeOf(frontend_equation) == 0);
         else
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + FEquation.toString(frontend_equation)});
           fail();
@@ -1056,7 +1056,7 @@ protected
   function lowerIfEquationBody
     input list<FEquation.Branch> branches;
     input Boolean init;
-    input Boolean in_for;
+    input Boolean allow_imbalance;
     output IfEquationBody ifEq;
   algorithm
     ifEq := match branches
@@ -1079,12 +1079,12 @@ protected
           elseif Expression.isFalse(condition) then
             // discard a branch and continue with the rest if a condition is
             // found to be false, because it can never be reached.
-            result := lowerIfEquationBody(rest, init, in_for);
+            result := lowerIfEquationBody(rest, init, allow_imbalance);
           else
-            if listEmpty(rest) and (init or in_for) then
+            if listEmpty(rest) and (init or allow_imbalance) then
               result := BEquation.IF_EQUATION_BODY(condition, eqns, NONE());
             else
-              result := BEquation.IF_EQUATION_BODY(condition, eqns, SOME(lowerIfEquationBody(rest, init, in_for)));
+              result := BEquation.IF_EQUATION_BODY(condition, eqns, SOME(lowerIfEquationBody(rest, init, allow_imbalance)));
             end if;
           end if;
       then result;
