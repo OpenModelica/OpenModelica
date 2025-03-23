@@ -1,0 +1,27 @@
+// name: ModelicaTest.Media.TestAllProperties.ConstantPropertyLiquidWater
+// keywords: NewBackend
+// status: correct
+
+
+loadModel(ModelicaTest);getErrorString();
+setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(ModelicaTest.Media.TestAllProperties.ConstantPropertyLiquidWater); getErrorString();
+diffSimulationResults("ModelicaTest.Media.TestAllProperties.ConstantPropertyLiquidWater_res.mat", "ReferenceFiles/ModelicaTest.Media.TestAllProperties.ConstantPropertyLiquidWater_res.mat", "ModelicaTest.Media.TestAllProperties.ConstantPropertyLiquidWater_diff.csv", 1e-8);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ModelicaTest.Media.TestAllProperties.ConstantPropertyLiquidWater_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaTest.Media.TestAllProperties.ConstantPropertyLiquidWater', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: NBAlias.setStartFixed: Alias set with conflicting unfixed start values detected. Use -d=dumprepl for more information.
+// "
+// (true, {})
+// endResult
