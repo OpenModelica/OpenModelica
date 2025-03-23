@@ -244,7 +244,7 @@ protected
     // collect new iterators from replaced function bodies
     eqData  := EqData.map(eqData, function BackendDAE.lowerEquationIterators(variables = variables, set = set));
     varData := VarData.addTypedList(varData, UnorderedSet.toList(set), NBVariable.VarData.VarType.ITERATOR);
-    eqData  := EqData.mapExp(eqData, function BackendDAE.lowerComponentReferenceExp(variables = variables));
+    eqData  := EqData.mapExp(eqData, function BackendDAE.lowerComponentReferenceExp(variables = variables, complete = true));
   end inline;
 
   function collectInlineFunctions
@@ -519,7 +519,9 @@ protected
   protected
     list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
     list<Subscript> subs;
-    Expression cref_exp;
+    Expression cref_exp, new_rhs;
+    UnorderedSet<VariablePointer> local_set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
+    VariablePointers local_it;
     list<Pointer<Equation>> eqns;
   algorithm
     if Flags.isSet(Flags.DUMPBACKENDINLINE) then
@@ -528,13 +530,19 @@ protected
     eqns := Pointer.access(new_eqns);
 
     // inline the iterators
-    frames := list(inlineArrayIterator(iter, set) for iter in iters);
+    frames  := list(inlineArrayIterator(iter, local_set) for iter in iters);
+    _ := UnorderedSet.merge(set, local_set);
 
     // add the iterators to the cref
     subs      := Iterator.normalizedSubscripts(Iterator.fromFrames(frames));
-    //subs      := list(Subscript.INDEX(Expression.CREF(Type.INTEGER(), Util.tuple31(tpl))) for tpl in frames);
     cref_exp  := Expression.fromCref(ComponentRef.mergeSubscripts(subs, cref, true));
-    eqns      := createInlinedEquation(eqns, cref_exp, rhs, attr, Iterator.addFrames(iter, frames), variables, set, index);
+
+    // lower the potentiall new iterators
+    local_it  := VariablePointers.fromList(UnorderedSet.toList(local_set));
+    cref_exp  := Expression.map(cref_exp, function BackendDAE.lowerComponentReferenceExp(variables = local_it, complete = false));
+    new_rhs   := Expression.map(rhs, function BackendDAE.lowerComponentReferenceExp(variables = local_it, complete = false));
+
+    eqns      := createInlinedEquation(eqns, cref_exp, new_rhs, attr, Iterator.addFrames(iter, frames), variables, set, index);
     Pointer.update(new_eqns, eqns);
     eqn := Equation.DUMMY_EQUATION();
   end inlineArrayConstructor;
@@ -614,7 +622,7 @@ protected
    // lower indexed record constructor elements
     exp := Expression.map(exp, inlineRecordConstructorElements);
     // lower the new component references of record attributes
-    exp := Expression.map(exp, function BackendDAE.lowerComponentReferenceExp(variables = variables));
+    exp := Expression.map(exp, function BackendDAE.lowerComponentReferenceExp(variables = variables, complete = true));
   end inlineRecordConstructorExp;
 
   function inlineRecordConstructorElements

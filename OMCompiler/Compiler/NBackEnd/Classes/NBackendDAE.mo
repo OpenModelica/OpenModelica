@@ -654,7 +654,7 @@ protected
     artificials     := VariablePointers.addList(binding_iter_lst, artificials);
 
     // lower the component references properly
-    variables       := VariablePointers.map(variables, function Variable.mapExp(fn = function lowerComponentReferenceExp(variables = variables)));
+    variables       := VariablePointers.map(variables, function Variable.mapExp(fn = function lowerComponentReferenceExp(variables = variables, complete = true)));
     variables       := VariablePointers.map(variables, function Variable.applyToType(func = function Type.applyToDims(func = function lowerDimension(variables = variables))));
 
     /* lower the records to add children */
@@ -1327,19 +1327,21 @@ protected
     input output EquationPointers equations;
     input VariablePointers variables;
   algorithm
-    equations := EquationPointers.mapExp(equations,function lowerComponentReferenceExp(variables = variables), SOME(function lowerComponentReference(variables = variables)));
+    equations := EquationPointers.mapExp(equations, function lowerComponentReferenceExp(variables = variables, complete = true),
+      SOME(function lowerComponentReference(variables = variables, complete = true)));
   end lowerComponentReferences;
 
   public function lowerComponentReferenceExp
     input output Expression exp;
     input VariablePointers variables;
+    input Boolean complete = true       "if false it will not report lowering errors";
   algorithm
     exp := match exp
       local
         Call call;
 
       case Expression.CREF() guard(not ComponentRef.isNameNode(exp.cref))
-      then Expression.CREF(exp.ty, lowerComponentReference(exp.cref, variables));
+      then Expression.CREF(exp.ty, lowerComponentReference(exp.cref, variables, complete));
 
       case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
         call.iters := list(Util.applyTuple21(tpl, function lowerInstNode(variables = variables)) for tpl in call.iters);
@@ -1361,18 +1363,19 @@ protected
   public function lowerComponentReference
     input output ComponentRef cref;
     input VariablePointers variables;
+    input Boolean complete = true       "if false it will not report lowering errors";
   protected
     Pointer<Variable> var;
     list<list<Subscript>> subs;
   algorithm
     try
       if not ComponentRef.isWild(cref) then
-        var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref));
+        var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref), complete);
         cref := lowerComponentReferenceInstNode(cref, var);
-        cref := ComponentRef.mapSubscripts(cref, function Subscript.mapExp(func = function lowerComponentReferenceExp(variables = variables)));
+        cref := ComponentRef.mapSubscripts(cref, function Subscript.mapExp(func = function lowerComponentReferenceExp(variables = variables, complete = true)));
       end if;
     else
-      if Flags.isSet(Flags.FAILTRACE) then
+      if Flags.isSet(Flags.FAILTRACE) and complete then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
       end if;
     end try;
@@ -1384,7 +1387,7 @@ protected
   algorithm
     dim := match dim
       case Dimension.RESIZABLE() algorithm
-        dim.exp := Expression.map(dim.exp, function lowerComponentReferenceExp(variables = variables));
+        dim.exp := Expression.map(dim.exp, function lowerComponentReferenceExp(variables = variables, complete = true));
       then dim;
 
       else dim;

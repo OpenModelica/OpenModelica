@@ -225,7 +225,8 @@ public
       // if it has a statement index, it already has been created as a statement inside an algorithm (0 implies no index)
       if cond.stmt_index == 0 then
         // lower the subscripts (containing iterators)
-        lhs_cref := ComponentRef.mapSubscripts(BVariable.getVarName(aux_var), function Subscript.mapExp(func = function BackendDAE.lowerComponentReferenceExp(variables = variables)));
+        lhs_cref := ComponentRef.mapSubscripts(BVariable.getVarName(aux_var), function Subscript.mapExp(
+          func = function BackendDAE.lowerComponentReferenceExp(variables = variables, complete = true)));
         aux_eqn := Equation.makeAssignment(Expression.fromCref(lhs_cref), cond.exp, idx, "EVT", cond.iter, EquationAttributes.default(EquationKind.DISCRETE, false));
         auxiliary_eqns := aux_eqn :: auxiliary_eqns;
       end if;
@@ -248,7 +249,8 @@ public
         // add all new statements to the algorithm body
         for tpl in Util.getOption(bucket.aux_stmts) loop
           (cond, aux) := tpl;
-          aux               := ComponentRef.mapSubscripts(aux, function Subscript.mapExp(func = function BackendDAE.lowerComponentReferenceExp(variables = variables)));
+          aux               := ComponentRef.mapSubscripts(aux, function Subscript.mapExp(func =
+            function BackendDAE.lowerComponentReferenceExp(variables = variables, complete = true)));
           new_stmt          := Statement.makeAssignment(Expression.fromCref(aux), cond.exp, ComponentRef.getSubscriptedType(aux), DAE.emptyElementSource);
           new_stmts         := new_stmt :: new_stmts;
         end for;
