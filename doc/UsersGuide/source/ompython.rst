@@ -5,8 +5,6 @@ This chapter describes the OpenModelica Python integration facilities.
 
 -  OMPython - the OpenModelica Python scripting interface, see :ref:`ompython`.
 -  EnhancedOMPython - Enhanced OMPython scripting interface, see :ref:`enhancedompython`.
--  PySimulator - a Python package that provides simulation and post
-   processing/analysis tools integrated with OpenModelica, see :ref:`pysimulator`.
 
 .. _ompython:
 
@@ -26,12 +24,8 @@ offering a flexible platform for algorithm development and research.
 OMPython is not a standalone package, it depends upon the
 OpenModelica installation.
 
-OMPython is implemented in Python and depends either on
-the OmniORB and OmniORBpy - high performance CORBA ORBs for Python
-or ZeroMQ - high performance asynchronous
-messaging library and it supports the Modelica
-Standard Library version 3.2 that is included in starting with
-OpenModelica 1.9.2.
+OMPython is implemented in Python and depends on ZeroMQ - high performance asynchronous
+messaging library.
 
 To install OMPython follow the instructions at https://github.com/OpenModelica/OMPython
 
@@ -54,12 +48,7 @@ OMPython provides user friendly features like:
 Test Commands
 ~~~~~~~~~~~~~
 
-OMPython provides two classes for communicating with OpenModelica i.e.,
-OMCSession and OMCSessionZMQ. Both classes have the same interface,
-the only difference is that OMCSession uses omniORB and OMCSessionZMQ
-uses ZeroMQ. All the examples listed down uses OMCSessionZMQ but if you
-want to test OMCSession simply replace OMCSessionZMQ with OMCSession. We
-recommend to use OMCSessionZMQ.
+OMPython provides a OMCSessionZMQ class that uses ZeroMQ to communicate with OpenModelica.
 
 To test the command outputs, simply create an OMCSessionZMQ object by
 importing from the OMPython library within Python interepreter. The
@@ -143,9 +132,9 @@ OMShell's style of operations.
 
 OMPython is designed to,
 
--  Initialize the CORBA/ZeroMQ communication.
+-  Initialize the ZeroMQ communication.
 
--  Send commands to the OMC server via the CORBA/ZeroMQ interface.
+-  Send commands to the OMC server via the ZeroMQ interface.
 
 -  Receive the string results.
 
@@ -184,9 +173,6 @@ The object constructor requires a minimum of 2 input arguments which are strings
 -  The fourth input argument (optional), is a keyword argument which is used to set the command line options e.g.,
 
 >>> mod=ModelicaSystem(model_path + "BouncingBall.mo","BouncingBall",commandLineOptions="-d=newInst")
-
--  By default ModelicaSystem uses OMCSessionZMQ but if you want to use OMCSession
-   then pass the argument `useCorba=True` to the constructor.
 
 BuildModel
 ~~~~~~~~~~
@@ -341,22 +327,5 @@ Usage of Linearization methods
 >>> mod.getLinearOutputs() //returns a list of strings of names of outputs used when forming matrices
 
 >>> mod.getLinearStates() // returns a list of strings of names of states used when forming matrices.
-
-
-.. _pysimulator :
-
-PySimulator
------------
-
-PySimulator provides a graphical user interface for performing analyses
-and simulating different model types (currently Functional Mockup Units
-and Modelica Models are supported), plotting result variables and
-applying simulation result analysis tools like Fast Fourier Transform.
-
-.. figure >> media/pysimulator.png
-
-  PySimulator screenshot.
-
-Read more about the PySimulator at https://github.com/PySimulator/PySimulator.
 
 .. omc-reset ::
