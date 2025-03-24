@@ -61,6 +61,7 @@ import SimCodeUtil;
 import SimCodeFunctionUtil;
 import SCodeDump;
 import Util;
+import UnorderedSet;
 
 function serializeWork "Always succeeds in order to clean-up external objects"
   input SimCode.SimCode code;
@@ -1025,7 +1026,7 @@ algorithm
             File.write(file, "\",\"tag\":\"when\",\"defines\":[");
             serializeExp(file,whenOp.left);
             File.write(file, "],\"uses\":[");
-            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.right)));
+            serializeUses(file, getWhenUses(eq.conditions, whenOp.right));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.right);
             File.write(file, "],\"source\":");
@@ -1036,7 +1037,7 @@ algorithm
             File.write(file, "\",\"tag\":\"when\",\"defines\":[");
             serializeCref(file,whenOp.stateVar);
             File.write(file, "],\"uses\":[");
-            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.value)));
+            serializeUses(file, getWhenUses(eq.conditions, whenOp.value));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.value);
             File.write(file, "],\"source\":");
@@ -1046,8 +1047,8 @@ algorithm
           case whenOp as BackendDAE.ASSERT() equation
             File.write(file, "\",\"tag\":\"when\"");
             File.write(file, ",\"uses\":[");
-            crefs = listAppend(Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.condition), Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.message));
-            serializeUses(file,List.union(eq.conditions,crefs));
+            crefs = Expression.extractCrefsFromExpDerPreStart(whenOp.condition);
+            serializeUses(file, getWhenUses(crefs, whenOp.message));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.message);
             File.write(file, "],\"source\":");
@@ -1057,7 +1058,7 @@ algorithm
           case whenOp as BackendDAE.TERMINATE() equation
             File.write(file, "\",\"tag\":\"when\"");
             File.write(file, ",\"uses\":[");
-            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.message)));
+            serializeUses(file, getWhenUses(eq.conditions, whenOp.message));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.message);
             File.write(file, "],\"source\":");
@@ -1067,7 +1068,7 @@ algorithm
           case whenOp as BackendDAE.NORETCALL() equation
             File.write(file, "\",\"tag\":\"when\"");
             File.write(file, ",\"uses\":[");
-            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.exp)));
+            serializeUses(file, getWhenUses(eq.conditions, whenOp.exp));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.exp);
             File.write(file, "],\"source\":");
@@ -1275,6 +1276,17 @@ algorithm
       then ();
   end match;
 end serializeUses;
+
+function getWhenUses
+  input list<DAE.ComponentRef> conditions;
+  input DAE.Exp value;
+  output list<DAE.ComponentRef> uses;
+protected
+  list<DAE.ComponentRef> crefs;
+algorithm
+  uses := listAppend(conditions, Expression.extractCrefsFromExpDerPreStart(value));
+  uses := UnorderedSet.unique_list(uses, ComponentReference.hashComponentRef, ComponentReference.crefEqual);
+end getWhenUses;
 
 function serializeStatement
   input File.File file;
