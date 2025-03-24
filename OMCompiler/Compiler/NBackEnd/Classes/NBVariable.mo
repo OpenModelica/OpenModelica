@@ -1179,8 +1179,8 @@ public
       // for function differentiation (crefs are not lowered and only known locally)
       case qual as InstNode.COMPONENT_NODE() algorithm
         // prepend the seed str, matrix name locally not needed
-        qual.name := FUNCTION_DERIVATIVE_STR + "_" + qual.name;
-        cref := ComponentRef.fromNode(qual, ComponentRef.nodeType(cref));
+        qual.name := FUNCTION_DERIVATIVE_STR;
+        cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
       then cref;
 
       else algorithm
