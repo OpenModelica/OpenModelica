@@ -1053,6 +1053,7 @@ public
       then ret;
 
       // d/dz min(X) = (dX/dz)[argmin(X)]
+      // d/dz max(X) = (dX/dz)[argmax(X)]
       // d/dz min(x,y) = if x < y then dx/dz else dy/dz
       // d/dz max(x,y) = if x > y then dx/dz else dy/dz
       case (Expression.CALL()) guard(name == "min" or name == "max")
@@ -1063,7 +1064,8 @@ public
             (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
             ty := Expression.typeOf(diffArg1);
             if Expression.isZero(diffArg1) then
-              ret := Expression.makeZero(ty);
+              // make 0 of reduced type
+              ret := Expression.makeZero(Type.arrayElementType(ty));
             else
               ret1 := Expression.CALL(Call.makeTypedCall(
                 fn          = if name == "min" then NFBuiltinFuncs.ARG_MIN_ARR_REAL else NFBuiltinFuncs.ARG_MAX_ARR_REAL,
