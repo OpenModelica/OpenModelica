@@ -1411,9 +1411,9 @@ public
             funcDiffArgs              := DifferentiationArguments.default();
             funcDiffArgs.diffType     := DifferentiationType.FUNCTION;
             funcDiffArgs.funcTree     := diffArguments.funcTree;
-            createInterfaceDerivatives(der_func.inputs, interface_map, diff_map);
-            createInterfaceDerivatives(der_func.locals, interface_map, diff_map);
-            createInterfaceDerivatives(der_func.outputs, interface_map, diff_map);
+            createInterfaceDerivatives(der_func.inputs, interface_map, diff_map, false);
+            createInterfaceDerivatives(der_func.locals, interface_map, diff_map, true);
+            createInterfaceDerivatives(der_func.outputs, interface_map, diff_map, false);
             funcDiffArgs.jacobianHT   := SOME(diff_map);
 
             // differentiate interface arguments
@@ -1535,30 +1535,32 @@ public
     input list<InstNode> interface_nodes;
     input UnorderedMap<String, Boolean> interface_map;
     input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+    input Boolean is_local;
   protected
     list<InstNode> n;
-    ComponentRef cref, diff_cref;
+    ComponentRef cref;
 
     function addCref
       input ComponentRef cref;
       input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+      input Boolean is_local;
     protected
       ComponentRef diff_cref;
       list<ComponentRef> children;
     algorithm
-      diff_cref := BVariable.makeFDerVar(cref);
+      diff_cref := BVariable.makeFDerVar(cref, is_local);
       UnorderedMap.add(cref, diff_cref, diff_map);
 
       children := ComponentRef.getRecordChildren(cref);
       for child in children loop
-        addCref(child, diff_map);
+        addCref(child, diff_map, is_local);
       end for;
     end addCref;
   algorithm
     n := list(node for node guard(not UnorderedMap.contains(InstNode.name(node), interface_map)) in interface_nodes);
     for node in n loop
       cref := ComponentRef.fromNode(node, InstNode.getType(node));
-      addCref(cref, diff_map);
+      addCref(cref, diff_map, is_local);
     end for;
   end createInterfaceDerivatives;
 
@@ -1603,9 +1605,9 @@ public
                   local_outputs     := list(InstNode.protect(node) for node in local_outputs);
 
                   // differentiate interface arguments
-                  createInterfaceDerivatives({var}, interface_map, diff_map);
-                  createInterfaceDerivatives(der_func.locals, interface_map, diff_map);
-                  createInterfaceDerivatives(der_func.outputs, interface_map, diff_map);
+                  createInterfaceDerivatives({var}, interface_map, diff_map, false);
+                  createInterfaceDerivatives(der_func.locals, interface_map, diff_map, true);
+                  createInterfaceDerivatives(der_func.outputs, interface_map, diff_map, false);
                   diffArgs.jacobianHT   := SOME(diff_map);
 
                   der_func.locals   := differentiateFunctionInterfaceNodes(der_func.locals, interface_map, diff_map, diffArgs, true);

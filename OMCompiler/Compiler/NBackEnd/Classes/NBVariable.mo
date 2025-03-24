@@ -1171,6 +1171,7 @@ public
       "Creates a function derivative cref. Used in NBDifferentiation
     for differentiating body vars of a function."
     input output ComponentRef cref    "old component reference to new component reference";
+    input Boolean is_local;
   algorithm
     cref := match ComponentRef.node(cref)
       local
@@ -1179,8 +1180,13 @@ public
       // for function differentiation (crefs are not lowered and only known locally)
       case qual as InstNode.COMPONENT_NODE() algorithm
         // prepend the seed str, matrix name locally not needed
-        qual.name := FUNCTION_DERIVATIVE_STR;
-        cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
+        if is_local then
+          qual.name := FUNCTION_DERIVATIVE_STR;
+          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
+        else
+          qual.name := FUNCTION_DERIVATIVE_STR + "_" + qual.name;
+          cref := ComponentRef.fromNode(qual, ComponentRef.scalarType(cref));
+        end if;
       then cref;
 
       else algorithm
