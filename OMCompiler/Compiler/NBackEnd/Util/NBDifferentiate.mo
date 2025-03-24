@@ -1536,14 +1536,29 @@ public
     input UnorderedMap<String, Boolean> interface_map;
     input UnorderedMap<ComponentRef, ComponentRef> diff_map;
   protected
-    ComponentRef cref, diff_cref;
     list<InstNode> n;
+    ComponentRef cref;
+
+    function addCref
+      input ComponentRef cref;
+      input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+    protected
+      ComponentRef diff_cref;
+      list<ComponentRef> children;
+    algorithm
+      diff_cref := BVariable.makeFDerVar(cref);
+      UnorderedMap.add(cref, diff_cref, diff_map);
+
+      children := ComponentRef.getRecordChildren(cref);
+      for child in children loop
+        addCref(child, diff_map);
+      end for;
+    end addCref;
   algorithm
     n := list(node for node guard(not UnorderedMap.contains(InstNode.name(node), interface_map)) in interface_nodes);
     for node in n loop
       cref := ComponentRef.fromNode(node, InstNode.getType(node));
-      diff_cref := BVariable.makeFDerVar(cref);
-      UnorderedMap.add(cref, diff_cref, diff_map);
+      addCref(cref, diff_map);
     end for;
   end createInterfaceDerivatives;
 
