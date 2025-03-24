@@ -3745,8 +3745,8 @@ algorithm
       equation
         var_indxs = fvarsInEqn(m, eqn_indx);
         // Remove duplicates and get in correct order: ascending index
-        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq);
-        var_indxs_1 = List.sort(var_indxs_1,intGt);
+        var_indxs_1 = List.sort(var_indxs,intGt);
+        var_indxs_1 = List.sortedUnique(var_indxs_1, intEq);
         (eqns, shared) = calculateJacobianRow2(Expression.expSub(e1,e2), vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
       then
         (eqns, 1, shared);
@@ -3756,8 +3756,8 @@ algorithm
       equation
         var_indxs = fvarsInEqn(m, eqn_indx);
         // Remove duplicates and get in correct order: ascending index
-        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq);
-        var_indxs_1 = List.sort(var_indxs_1,intGt);
+        var_indxs_1 = List.sort(var_indxs,intGt);
+        var_indxs_1 = List.sortedUnique(var_indxs_1, intEq);
         (eqns, shared) = calculateJacobianRow2(e, vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
       then
         (eqns, 1, shared);
@@ -3769,8 +3769,8 @@ algorithm
 
         var_indxs = fvarsInEqn(m, eqn_indx);
         // Remove duplicates and get in correct order: ascending index
-        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq);
-        var_indxs_1 = List.sort(var_indxs_1,intGt);
+        var_indxs_1 = List.sort(var_indxs,intGt);
+        var_indxs_1 = List.sortedUnique(var_indxs_1, intEq);
         (eqns, shared) = calculateJacobianRow2(Expression.expSub(e1,e2), vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
       then
         (eqns, 1, shared);
@@ -3787,8 +3787,8 @@ algorithm
 
         var_indxs = fvarsInEqn(m, eqn_indx);
         // Remove duplicates and get in correct order: ascending index
-        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq);
-        var_indxs_1 = List.sort(var_indxs_1,intGt);
+        var_indxs_1 = List.sort(var_indxs,intGt);
+        var_indxs_1 = List.sortedUnique(var_indxs_1, intEq);
         (eqns, shared) = calculateJacobianRowLst(expl, vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
         size = List.fold(ds,intMul,1);
       then
