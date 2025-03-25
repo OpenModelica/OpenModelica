@@ -3047,44 +3047,47 @@ protected function addStartValue "author: Frenkel TUD 2012-12"
   input array<SimpleContainer> simpleeqnsarr;
   input tuple<Integer, list<tuple<Option<DAE.Exp>, DAE.ComponentRef>>> iStartvalues;
   output Boolean oFixed;
-  output  tuple<Integer, list<tuple<Option<DAE.Exp>, DAE.ComponentRef>>> oStartvalues;
+  output tuple<Integer, list<tuple<Option<DAE.Exp>, DAE.ComponentRef>>> oStartvalues;
 algorithm
   (oFixed, oStartvalues) := matchcontinue(fixed, fixedset, cr, start, origin, negate, mark, simpleeqnsarr, iStartvalues)
     local
       DAE.Exp startexp;
       Integer setorigin, originvalue;
-      list<tuple<Option<DAE.Exp>, DAE.ComponentRef>> startvalues, startvalues1;
+      list<tuple<Option<DAE.Exp>, DAE.ComponentRef>> startvalues;
       Boolean b, b1;
     case (false, true, _, _, _, _, _, _, _) then (fixedset, iStartvalues);
     case (true, false, _, NONE(), _, _, _, _, _)
-      equation
-        originvalue = BackendVariable.startOriginToValue(origin);
+      algorithm
+        originvalue := BackendVariable.startOriginToValue(origin);
       then
         (true, (originvalue, {(start, cr)}));
     case (true, false, _, SOME(startexp), _, _, _, _, _)
-      equation
-        startexp = negateExpression(negate, startexp, startexp, " start_1 ");
-        originvalue = BackendVariable.startOriginToValue(origin);
+      algorithm
+        startexp := negateExpression(negate, startexp, startexp, " start_1 ");
+        originvalue := BackendVariable.startOriginToValue(origin);
       then
         (true, (originvalue, {(SOME(startexp), cr)}));
     case (_, _, _, NONE(), _, _, _, _, (setorigin, startvalues))
-      equation
-        originvalue = BackendVariable.startOriginToValue(origin);
-        b = intGt(originvalue, setorigin);
-        b1 = intEq(originvalue, setorigin);
-        startvalues = List.consOnTrue(b1 and fixed, (start, cr), startvalues);
-        startvalues1 = if fixed then {(start, cr)} else {};
-        ((setorigin, startvalues)) = if b then (originvalue, startvalues1) else ((setorigin, startvalues));
+      algorithm
+        originvalue := BackendVariable.startOriginToValue(origin);
+        if originvalue > setorigin then
+          setorigin := originvalue;
+          startvalues := if fixed then {(start, cr)} else {};
+        elseif originvalue == setorigin and fixed then
+          startvalues := (start, cr) :: startvalues;
+        end if;
       then
         (fixedset, (setorigin, startvalues));
     case (_, _, _, SOME(startexp), _, _, _, _, (setorigin, startvalues))
-      equation
-        startexp = negateExpression(negate, startexp, startexp, " start_2 ");
-        originvalue = BackendVariable.startOriginToValue(origin);
-        b = intGt(originvalue, setorigin);
-        b1 = intEq(originvalue, setorigin);
-        startvalues = List.consOnTrue(b1, (SOME(startexp), cr), startvalues);
-        ((setorigin, startvalues)) = if b then (originvalue, {(SOME(startexp), cr)}) else ((setorigin, startvalues));
+      algorithm
+        startexp := negateExpression(negate, startexp, startexp, " start_2 ");
+        originvalue := BackendVariable.startOriginToValue(origin);
+        if originvalue > setorigin then
+          setorigin := originvalue;
+          startvalues := {(SOME(startexp), cr)};
+        elseif originvalue == setorigin then
+          startvalues := (SOME(startexp), cr) :: startvalues;
+        end if;
       then
         (fixedset, (setorigin, startvalues));
     else
@@ -3547,11 +3550,12 @@ algorithm
       DAE.Exp e;
       DAE.ComponentRef cr;
       Integer i;
+      tuple<DAE.Exp, DAE.ComponentRef, Integer> tpl;
       list<tuple<DAE.Exp, DAE.ComponentRef, Integer>> rest;
 
-    case ({(e, cr, i)}) then ((e, cr, i));
+    case ({tpl}) then tpl;
 
-    case ((e, cr, i)::_) guard not Expression.isZero(e) then ((e, cr, i));
+    case ((tpl as (e, _, _))::_) guard not Expression.isZero(e) then tpl;
 
     case ((_, _, _)::rest)
       then
@@ -3984,18 +3988,18 @@ algorithm
       DAE.Exp rhs, lhs;
       Boolean b;
     case (BackendDAE.EQUATION(exp=lhs, scalar=rhs), _)
-      equation
-        b = Expression.expEqual(lhs, rhs);
+      algorithm
+        b := Expression.expEqual(lhs, rhs);
       then
         List.consOnTrue(not b, iEqn, iEqns);
     case (BackendDAE.ARRAY_EQUATION(left=lhs, right=rhs), _)
-      equation
-        b = Expression.expEqual(lhs, rhs);
+      algorithm
+        b := Expression.expEqual(lhs, rhs);
       then
         List.consOnTrue(not b, iEqn, iEqns);
     case (BackendDAE.COMPLEX_EQUATION(left=lhs, right=rhs), _)
-      equation
-        b = Expression.expEqual(lhs, rhs);
+      algorithm
+        b := Expression.expEqual(lhs, rhs);
       then
         List.consOnTrue(not b, iEqn, iEqns);
     else iEqn::iEqns;
@@ -4199,17 +4203,22 @@ algorithm
     local
       DAE.Exp exp, exp1;
       BackendVarTransform.VariableReplacements repl;
+      Option<DAE.Exp> expOpt;
       list<Option<DAE.Exp>> exps;
       Boolean b, b1;
     case ((NONE(), (repl, exps, b)))
-      equation
-        exps = NONE()::exps;
+      algorithm
+        exps := NONE()::exps;
       then ((NONE(), (repl, exps, b)));
-    case ((SOME(exp), (repl, exps, b)))
-      equation
-        (exp1, b1) = BackendVarTransform.replaceExp(exp, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
-        exps = SOME(exp1)::exps;
-      then ((SOME(exp), (repl, exps, b or b1)));
+    case ((expOpt as SOME(exp), (repl, exps, b)))
+      algorithm
+        (exp1, b1) := BackendVarTransform.replaceExp(exp, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
+        if referenceEq(exp1, exp) then
+          exps := expOpt::exps;
+        else
+          exps := SOME(exp1)::exps;
+        end if;
+      then ((expOpt, (repl, exps, b or b1)));
   end match;
 end replaceOptExprTraverser;
 
