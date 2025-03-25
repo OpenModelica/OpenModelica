@@ -1,5 +1,5 @@
-OpenModelica Python Interface and PySimulator
-=============================================
+OpenModelica Python Interface
+=============================
 
 This chapter describes the OpenModelica Python integration facilities.
 
