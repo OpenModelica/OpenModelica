@@ -123,6 +123,14 @@ int cvodeRightHandSideODEFunction(realtype time, N_Vector y, N_Vector ydot, void
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
 
+  /*
+   fix issue https://github.com/OpenModelica/OpenModelica/issues/13582
+   Update y*/
+  for (i = 0; i < cvodeData->N; i++)
+  {
+    data->localData[0]->realVars[i] = NV_Ith_S(y, i);
+  }
+
   /* Debug print for states (input) */
   if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER_V))
   {
