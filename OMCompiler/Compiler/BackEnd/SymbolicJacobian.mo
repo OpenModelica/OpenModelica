@@ -569,15 +569,14 @@ protected
   BackendDAE.Variables orderedVars;
   BackendDAE.EquationArray orderedEqs;
   BackendDAE.Matching matching;
-  array<Integer> ass1, ass2, ass1add, ass2add;
+  array<Integer> ass1, ass2, assAdd;
   BackendDAE.StrongComponents comps;
 algorithm
   BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps)) := systIn;
   if not listEmpty(compsAdd) then
-    ass1add := arrayCreate(listLength(compsAdd), 0);
-    ass2add := arrayCreate(listLength(compsAdd), 0);
-    ass1 := arrayAppend(ass1, ass1add);
-    ass2 := arrayAppend(ass2, ass1add);
+    assAdd := arrayCreate(listLength(compsAdd), 0);
+    ass1 := arrayAppend(ass1, assAdd);
+    ass2 := arrayAppend(ass2, assAdd);
     List.map2_0(compsAdd, updateAssignment, ass1, ass2);
   end if;
   List.map2_0(compsNew, updateAssignment, ass1, ass2);
@@ -624,14 +623,14 @@ protected
     BackendDAE.EquationArray eqns,eqns1, eqns2;
     list<DAE.Exp> beqs;
     list<DAE.ElementSource> sources;
-    list<list<Real>> jacVals;
     BackendDAE.Matching matching;
     DAE.FunctionTree funcs;
     BackendDAE.Shared shared;
     BackendDAE.StateSets stateSets;
     BackendDAE.BaseClockPartitionKind partitionKind;
 
-    array<Real> A,b;
+    array<array<Real>> A;
+    array<Real> b;
     Real entry;
     Integer row,col,n, systIdx;
     array<Integer> order;
@@ -644,17 +643,12 @@ algorithm
   (beqs,sources) := BackendDAEUtil.getEqnSysRhs(eqns1,v,SOME(funcs));
   beqs := listReverse(beqs);
     //print("bside: \n"+ExpressionDump.printExpListStr(beqs)+"\n");
-  jacVals := evaluateConstantJacobian(listLength(var_lst),jac);
+  A := evaluateConstantJacobianArray(listLength(var_lst),jac);
     //print("JacVals\n"+stringDelimitList(List.map(jacVals,rListStr),"\n")+"\n\n");
 
-  A := arrayCreate(n*n,0.0);
-  b :=  arrayCreate(n*n,0.0);  // i.e. a matrix for the b-vars to get their coefficients independently [(b1,0,0);(0,b2,0),(0,0,b3)]
+  b := arrayCreate(n*n,0.0);  // i.e. a matrix for the b-vars to get their coefficients independently [(b1,0,0);(0,b2,0),(0,0,b3)]
   order := arrayCreate(n,0);
   for row in 1:n loop
-    for col in 1:n loop
-      entry := listGet(listGet(jacVals,row),col);
-      arrayUpdate(A,((row-1)*n+col),entry);
-    end for;
     arrayUpdate(b,(row-1)*n+row,1.0);
   end for;
     //print("b\n"+stringDelimitList(List.map(arrayList(b),realString),", ")+"\n\n");
@@ -664,6 +658,9 @@ algorithm
 
   (bVarsOut,bEqsOut) := createBVecVars(sysIdxIn,compIdxIn,n,DAE.T_REAL_DEFAULT,beqs);
   sysEqsOut := createSysEquations(A,b,n,order,var_lst,bVarsOut);
+  for a in A loop
+    GCExt.free(a);
+  end for;
   GCExt.free(A);
   GCExt.free(b);
   sysIdxOut := sysIdxIn+1;
@@ -672,7 +669,7 @@ end solveConstJacLinearSystem;
 
 protected function createSysEquations "creates new equations for a linear system with constant Jacobian matrix.
   author: Waurich TUD 2015-03"
-  input array<Real> A;
+  input array<array<Real>> A;
   input array<Real> b;
   input Integer n;
   input array<Integer> order;
@@ -691,7 +688,7 @@ algorithm
   bExps := List.map(bVars, BackendVariable.varExp2);
   for i in 1:n loop
     row := arrayGet(order,i);
-    coeffs := Array.getRange((row-1)*n+1,(row*n),A);
+    coeffs := arrayList(A[row]);
     coeffExps := List.map(coeffs,Expression.makeRealExp);
     xProds := List.threadMap1(coeffExps,xExps,makeBinaryExp,DAE.MUL(DAE.T_REAL_DEFAULT));
     lhs := List.fold1(xProds,Expression.makeBinaryExp,DAE.ADD(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0));
@@ -742,7 +739,7 @@ algorithm
 end createBVecVars;
 
 protected function gauss
-  input array<Real> A;
+  input array<array<Real>> A;
   input array<Real> b;
   input Integer indxIn;
   input Integer n;
@@ -764,11 +761,10 @@ algorithm
 
       // the pivot row in the A-matrix divided by the pivot element
       for ic in indxIn:n loop
-        pos := (pivotIdx-1)*n+ic;
-        entry := arrayGet(A,pos);
+        entry := arrayGet(A[pivotIdx],ic);
         entry := realDiv(entry,pivot); //divide column entry with pivot element
           //print(" pos "+intString(pos)+" entry "+realString(arrayGet(A,pos))+"\n");
-        arrayUpdate(A,pos,entry);
+        arrayUpdate(A[pivotIdx],ic,entry);
       end for;
       // the complete pivot row of the b-vector divided by the pivot element
       for ic in 1:n loop
@@ -780,20 +776,20 @@ algorithm
 
        // the remaining rows
        for ir in range loop
-       first := arrayGet(A,(ir-1)*n+indxIn); //the first row element, that is going to be zero
+         first := arrayGet(A[ir],indxIn); //the first row element, that is going to be zero
          //print("first "+realString(first)+"\n");
           for ic in indxIn:n loop
-          pos := (ir-1)*n+ic;
-          entry := arrayGet(A,pos);  // the current entry
-          pivot := arrayGet(A,(pivotIdx-1)*n+ic);  // the element from the column in the pivot row
+            pos := (ir-1)*n+ic;
+            entry := arrayGet(A[ir],ic);  // the current entry
+            pivot := arrayGet(A[pivotIdx],ic);  // the element from the column in the pivot row
             //print("pivot "+realString(pivot)+"\n");
             //print("ir "+intString(ir)+" pos "+intString(pos)+" entry0 "+realString(entry)+" entry1 "+realString(realSub(entry,realDiv(first,pivot)))+"\n");
-          entry := realSub(entry,realMul(first,pivot));
-          arrayUpdate(A,pos,entry);
-          b_entry := arrayGet(b,pos);
-          pivot := arrayGet(b,(pivotIdx-1)*n+ic);
-          b_entry := b_entry - realMul(first,pivot);
-          arrayUpdate(b,pos,b_entry);
+            entry := realSub(entry,realMul(first,pivot));
+            arrayUpdate(A[ir],ic,entry);
+            b_entry := arrayGet(b,pos);
+            pivot := arrayGet(b,(pivotIdx-1)*n+ic);
+            b_entry := b_entry - realMul(first,pivot);
+            arrayUpdate(b,pos,b_entry);
           end for;
       end for;
         //print("A\n"+stringDelimitList(List.map(arrayList(A),realString),", ")+"\n\n");
@@ -808,7 +804,7 @@ algorithm
 end gauss;
 
 protected function getPivotElement "gets the highest element in the startIdx'th to n'th rows and the startidx'th column"
-  input array<Real> A;
+  input array<array<Real>> A;
   input list<Integer> rangeIn;
   input Integer startIdx;
   input Integer n;
@@ -819,7 +815,7 @@ protected
   Real entry;
 algorithm
   for i in rangeIn loop
-    entry := arrayGet(A,(i-1)*n+startIdx);
+    entry := arrayGet(A[i],startIdx);
     //print("i "+intString(i)+" pi "+intString(p_i)+" entry "+realString(entry)+"\n");
     if realAbs(entry) > value then
       value := entry;
@@ -1116,6 +1112,19 @@ public function evaluateConstantJacobian
   output list<list<Real>> vals;
 protected
   array<array<Real>> valarr;
+  list<array<Real>> tmp2;
+algorithm
+  valarr := evaluateConstantJacobianArray(size, jac);
+  tmp2 := arrayList(valarr);
+  vals := List.map(tmp2,arrayList);
+end evaluateConstantJacobian;
+
+protected function evaluateConstantJacobianArray
+  "Evaluate a constant Jacobian so we can solve a linear system during runtime"
+  input Integer size;
+  input list<tuple<Integer,Integer,BackendDAE.Equation>> jac;
+  output array<array<Real>> valarr;
+protected
   array<Real> tmp;
   list<array<Real>> tmp2;
 algorithm
@@ -1123,9 +1132,7 @@ algorithm
   tmp2 := List.map(List.fill(tmp,size),arrayCopy);
   valarr := listArray(tmp2);
   List.map1_0(jac,evaluateConstantJacobian2,valarr);
-  tmp2 := arrayList(valarr);
-  vals := List.map(tmp2,arrayList);
-end evaluateConstantJacobian;
+end evaluateConstantJacobianArray;
 
 protected function evaluateConstantJacobian2
   input tuple<Integer,Integer,BackendDAE.Equation> jac;
