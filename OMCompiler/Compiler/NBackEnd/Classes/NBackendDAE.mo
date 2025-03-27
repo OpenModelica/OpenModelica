@@ -542,6 +542,9 @@ protected
       lowVar := Pointer.access(lowVar_ptr);
       variables := VariablePointers.add(lowVar_ptr, variables);
       () := match lowVar.backendinfo.varKind
+        local
+          Boolean natural;
+          Pointer<Variable> der_ptr;
 
         // do nothing for size 0 variables, they get removed
         // Note: record elements need to exist in the full
@@ -559,7 +562,15 @@ protected
           initials_lst := lowVar_ptr :: initials_lst;
         then ();
 
-        case VariableKind.STATE() algorithm
+        case VariableKind.STATE(natural = natural) algorithm
+          if not natural then
+            (_, der_ptr) := BVariable.makeDerVar(BVariable.getVarName(lowVar_ptr));
+            BVariable.setStateDerivativeVar(lowVar_ptr, der_ptr);
+            derivatives_lst := der_ptr :: derivatives_lst;
+            unknowns_lst := der_ptr :: unknowns_lst;
+            initials_lst := der_ptr :: initials_lst;
+          end if;
+
           states_lst := lowVar_ptr :: states_lst;
           knowns_lst := lowVar_ptr :: knowns_lst;
           initials_lst := lowVar_ptr :: initials_lst;
