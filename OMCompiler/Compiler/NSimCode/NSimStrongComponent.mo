@@ -728,7 +728,7 @@ public
             indexSystem   = simCodeIndices.nonlinearSystemIndex,
             size          = listLength(crefs),
             jacobian      = Pointer.create(jacobian),
-            homotopy      = false,
+            homotopy      = comp.homotopy,
             mixed         = comp.mixed,
             torn          = true
           );

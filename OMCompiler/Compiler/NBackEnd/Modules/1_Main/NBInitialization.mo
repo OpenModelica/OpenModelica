@@ -632,23 +632,28 @@ public
     input Boolean init "if init then replace with simplified, else replace with actual";
     input Pointer<Boolean> hasHom   "output, determines if partition contains homotopy()";
   algorithm
-    exp := match exp
-      local
-        Expression e;
-        String name;
-        Call call;
-      case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
-        name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
-        e := match name
-          case "homotopy" algorithm
-            Pointer.update(hasHom, true);
-          then listGet(Call.arguments(exp.call), if init then 2 else 1);
-          else exp;
-        end match;
-      then e;
-      else exp;
-    end match;
+    if Expression.isCallNamed(exp, "homotopy") then
+      exp := match exp
+        local
+          Call call;
+
+        case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
+          Pointer.update(hasHom, true);
+        then listGet(Call.arguments(exp.call), if init then 2 else 1);
+
+        else exp;
+      end match;
+    end if;
   end cleanupHomotopy;
+
+  function containsHomotopyCall
+    input output Expression exp;
+    input Pointer<Boolean> b;
+  algorithm
+    if not Pointer.access(b) then
+      Pointer.update(b, Expression.isCallNamed(exp, "homotopy"));
+    end if;
+  end containsHomotopyCall;
 
   function removeWhenEquation
     "this function checks if an equation has to be removed before initialization.

@@ -56,6 +56,7 @@ protected
   import Causalize = NBCausalize;
   import BVariable = NBVariable;
   import NBEquation.{Equation, EquationPointer, EquationPointers, EquationAttributes, Iterator};
+  import Initialization = NBInitialization;
   import NBJacobian.JacobianType;
   import Matching = NBMatching;
   import Resizable = NBResizable;
@@ -153,6 +154,7 @@ public
     Option<Tearing> casual;
     Boolean linear              "true if the loop is linear";
     Boolean mixed               "true for systems that have discrete variables";
+    Boolean homotopy            "true if contains homotopy()";
     Solve.Status status;
   end ALGEBRAIC_LOOP;
 
@@ -210,7 +212,7 @@ public
       then str;
 
       case ALGEBRAIC_LOOP() algorithm
-        str := StringUtil.headline_3("BLOCK" + indexStr + ": Algebraic Loop (Linear = " + boolString(comp.linear) + ", Mixed = " + boolString(comp.mixed) + ")");
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Algebraic Loop (Linear = " + boolString(comp.linear) + ", Mixed = " + boolString(comp.mixed) + ", Homotopy = " + boolString(comp.homotopy) + ")");
         str := str + Tearing.toString(comp.strict, "Strict Tearing Set");
         if isSome(comp.casual) then
           str := str + Tearing.toString(Util.getOption(comp.casual), "Casual Tearing Set");
@@ -771,7 +773,7 @@ public
       case RESIZABLE_COMPONENT()then Equation.isDiscrete(Slice.getT(comp.eqn));
       case ENTWINED_COMPONENT() then List.all(list(isDiscrete(c) for c in comp.entwined_slices), bool_ident);
       case GENERIC_COMPONENT()  then Equation.isDiscrete(Slice.getT(comp.eqn));
-      case ALGEBRAIC_LOOP()     then not comp.mixed;
+      case ALGEBRAIC_LOOP()     then comp.mixed;
       case ALIAS()              then isDiscrete(comp.original);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
@@ -818,6 +820,7 @@ public
         Tearing tearingSet;
         Slice<VariablePointer> var_slice;
         Slice<EquationPointer> eqn_slice;
+        Pointer<Boolean> homotopy = Pointer.create(false);
 
       // Size 1 strong component
       // - case 1: sliced equation because of for-equation
@@ -880,12 +883,16 @@ public
               residual_eqns   = comp_eqns,
               innerEquations  = listArray({}),
               jac             = NONE());
+            for eqn in comp_eqns loop
+              Equation.map(Pointer.access(Slice.getT(eqn)), function Initialization.containsHomotopyCall(b = homotopy));
+            end for;
           then ALGEBRAIC_LOOP(
             idx     = -1,
             strict  = tearingSet,
             casual  = NONE(),
             linear  = false,
             mixed   = false,
+            homotopy = Pointer.access(homotopy),
             status  = NBSolve.Status.IMPLICIT);
         end match;
       then comp;
