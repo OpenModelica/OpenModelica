@@ -2396,130 +2396,117 @@ public
     function slice
       "performs a single slice based on the given indices and the cref to solve for
       does not work for entwined for loops!"
-      input output Pointer<Equation> eqn_ptr  "equation to slice";
+      input Pointer<Equation> eqn_ptr         "equation to slice";
       input list<Integer> indices             "zero based indices of the eqn";
-      input Option<ComponentRef> cref_opt     "optional cref to solve for, if none is given, the body stays as it is";
+      output list<Pointer<Equation>> sliced_eqn;
       output SlicingStatus slicing_status     "unchanged, trivial (only rearranged) or nontrivial";
-      output Solve.Status solve_status        "unprocessed, explicit, implicit, unsolvable";
-      input output FunctionTree funcTree      "function tree for solving";
     protected
       Equation eqn;
-      list<Frame> frames;
       list<Dimension> dims;
       list<Integer> sizes;
-      list<Integer> first_location, last_location, frame_comp;
-      list<list<Integer>> locations;
-      list<array<Integer>> locations_T;
-      list<FrameLocation> frame_locations;
-      list<tuple<Integer, Integer, Integer>> ranges;
-      FrameOrderingStatus frame_status;
     algorithm
       eqn := Pointer.access(eqn_ptr);
-      (eqn_ptr, slicing_status, solve_status) := match eqn
+      (sliced_eqn, slicing_status) := match eqn
         local
-          list<Equation> body_lst;
-          Equation body, sliced;
-          Option<UnorderedMap<ComponentRef, Expression>> removed_diagonals_opt;
-          UnorderedMap<ComponentRef, Expression> replacements, removed_diagonals;
-          list<tuple<ComponentRef, Expression>> removed_diagonals_linear_maps;
-          Expression condition;
-          Integer size;
-          Iterator iter;
 
         // empty index list indicates no slicing and no rearranging
-        case _ guard(listEmpty(indices)) then (Pointer.create(eqn), SlicingStatus.UNCHANGED, NBSolve.Status.EXPLICIT);
+        case _ guard(listEmpty(indices)) then ({Pointer.create(eqn)}, SlicingStatus.UNCHANGED);
 
         case RECORD_EQUATION() algorithm
           slicing_status := if Equation.size(eqn_ptr) == listLength(indices) then SlicingStatus.TRIVIAL else SlicingStatus.NONTRIVIAL;
-          if Util.isSome(cref_opt) then
-            (eqn, funcTree, solve_status, _) := Solve.solveBody(Pointer.access(eqn_ptr), Util.getOption(cref_opt), funcTree);
-          else
-            solve_status := NBSolve.Status.EXPLICIT;
-          end if;
-        then (Pointer.create(eqn), slicing_status, solve_status);
+        then ({Pointer.create(eqn)}, slicing_status);
 
         case ARRAY_EQUATION() algorithm
           slicing_status := if Equation.size(eqn_ptr) == listLength(indices) then SlicingStatus.TRIVIAL else SlicingStatus.NONTRIVIAL;
-          if Util.isSome(cref_opt) then
-            (eqn, funcTree, solve_status, _) := Solve.solveBody(Pointer.access(eqn_ptr), Util.getOption(cref_opt), funcTree);
-          else
-            solve_status := NBSolve.Status.EXPLICIT;
-          end if;
-        then (Pointer.create(eqn), slicing_status, solve_status);
+        then ({Pointer.create(eqn)}, slicing_status);
 
         case FOR_EQUATION() algorithm
-          // get the sizes of the 'return value' of the equation
-          dims      := Type.arrayDims(getType(eqn));
-          sizes     := list(Dimension.size(dim) for dim in dims);
-
           // trivial slices replace the original equation entirely
-          slicing_status := if Equation.size(eqn_ptr) == listLength(indices) then SlicingStatus.TRIVIAL else SlicingStatus.NONTRIVIAL;
-
-          // kabdelhak: ToDo: check ordering of locations and sizes
-          locations                                       := list(Slice.indexToLocation(idx, sizes) for idx in indices);
-          locations_T                                     := Slice.transposeLocations(locations, listLength(sizes));
-          frames                                          := listReverse(getForFrames(eqn));
-          frame_locations                                 := List.zip(locations_T, frames);
-          (frame_locations, replacements, frame_status)   := Slice.orderTransposedFrameLocations(frame_locations);
-          if frame_status == FrameOrderingStatus.FAILURE then
-            slicing_status  := SlicingStatus.FAILURE;
-            solve_status    := NBSolve.Status.UNPROCESSED;
-            return;
+          dims            := Type.arrayDims(getType(eqn));
+          sizes           := list(Dimension.size(dim) for dim in dims);
+          slicing_status  := if Equation.size(eqn_ptr) == listLength(indices) then SlicingStatus.TRIVIAL else SlicingStatus.NONTRIVIAL;
+          if slicing_status == SlicingStatus.NONTRIVIAL then
+            sliced_eqn := sliceFor(listHead(eqn.body), getForIterator(eqn), sizes, listReverse(getForFrames(eqn)), indices);
           end if;
-          (frames, removed_diagonals_opt)                 := Slice.recollectRangesHeuristic(frame_locations);
-
-          // solve the body equation for the cref if needed
-          // ToDo: act on solving status not equal to EXPLICIT ?
-          body_lst := match cref_opt
-            local
-              ComponentRef cref;
-            case SOME(cref) algorithm
-              // first solve then replace iterators
-              (body, funcTree, solve_status, _) := Solve.solveBody(listHead(eqn.body), cref, funcTree);
-              body := map(body, function Replacements.applySimpleExp(replacements = replacements));
-
-              // if there is a diagonal to remove, get the necessary linear maps
-              if Util.isSome(removed_diagonals_opt) then
-                removed_diagonals := Util.getOption(removed_diagonals_opt);
-                removed_diagonals_linear_maps := UnorderedMap.toList(removed_diagonals);
-                condition := Expression.MULTARY(
-                  arguments     = list(makeInequality(tpl) for tpl in removed_diagonals_linear_maps),
-                  inv_arguments = {},
-                  operator      = Operator.OPERATOR(Type.BOOLEAN(), NFOperator.Op.AND)
-                );
-                // removed diagonal is represented with IF_EQUATION
-                body := IF_EQUATION(
-                  size    = Equation.size(Pointer.create(body)),
-                  body    = IF_EQUATION_BODY(
-                    condition = condition,
-                    then_eqns = {Pointer.create(body)},
-                    else_if   = NONE() ),
-                  source  = eqn.source,
-                  attr    = eqn.attr
-                );
-              end if;
-            then {body};
-
-            else eqn.body;
-          end match;
-
-          iter := Iterator.fromFrames(frames);
-          size := Iterator.size(iter) * sum(Equation.size(Pointer.create(eq)) for eq in body_lst);
-          sliced := FOR_EQUATION(
-            size    = size,
-            iter    = iter,
-            body    = body_lst,
-            source  = eqn.source,
-            attr    = eqn.attr
-          );
-          // create a new pointer and do not overwrite the old one!
-        then (Pointer.create(sliced), slicing_status, solve_status);
+        then (sliced_eqn, slicing_status);
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because slicing is not yet supported for: \n" + toString(eqn)});
         then fail();
       end match;
     end slice;
+
+    function sliceFor
+      input Equation body;
+      input Iterator iter;
+      input list<Integer> sizes;
+      input list<Frame> frames;
+      input list<Integer> indices;
+      input Boolean naive = false;
+      output list<Pointer<Equation>> result;
+    protected
+      list<Integer> location;
+      list<Frame> new_frames;
+      list<list<Integer>> locations;
+      list<array<Integer>> locations_T;
+      list<FrameLocation> frame_locations;
+      UnorderedMap<ComponentRef, Expression> replacements;
+      FrameOrderingStatus frame_status;
+      RecollectStatus recollect_status;
+      Equation tmp;
+      Option<UnorderedMap<ComponentRef, Expression>> removed_diagonals_opt;
+      Integer size;
+      Iterator new_iter;
+    algorithm
+      // get the sizes of the 'return value' of the equation
+      if listLength(indices) == 1 then
+        // perform a single replacement for the one index
+        location      := Slice.indexToLocation(listHead(indices), sizes);
+        replacements  := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+        Iterator.createLocationReplacements(iter, listArray(location), replacements);
+        tmp           := map(body, function Replacements.applySimpleExp(replacements = replacements));
+        result        := {Pointer.create(tmp)};
+      else
+        // create the frame locations
+        locations                                       := list(Slice.indexToLocation(idx, sizes) for idx in indices);
+        locations_T                                     := Slice.transposeLocations(locations, listLength(sizes));
+        frame_locations                                 := List.zip(locations_T, frames);
+        (frame_locations, replacements, frame_status)   := Slice.orderTransposedFrameLocations(frame_locations);
+        if frame_status == FrameOrderingStatus.FAILURE then
+          if naive then
+            // already tried naive, need to fully scalarize
+            result := List.flatten(list(sliceFor(body, iter, sizes, frames, {i}, true) for i in indices));
+          else
+            // try naive separation
+            result := List.flatten(list(sliceFor(body, iter, sizes, frames, subset, true) for subset in Slice.naiveSeparation(indices)));
+          end if;
+        else
+          (new_frames, removed_diagonals_opt, recollect_status) := Slice.recollectRangesHeuristic(frame_locations);
+          if recollect_status == RecollectStatus.FAILURE or isSome(removed_diagonals_opt) then
+            if naive then
+              // already tried naive, need to fully scalarize
+              result := List.flatten(list(sliceFor(body, iter, sizes, frames, {i}, true) for i in indices));
+            else
+              // try naive separation
+              result := List.flatten(list(sliceFor(body, iter, sizes, frames, subset, true) for subset in Slice.naiveSeparation(indices)));
+            end if;
+          else
+            // replace iterators
+            tmp := map(body, function Replacements.applySimpleExp(replacements = replacements));
+
+            new_iter  := Iterator.fromFrames(new_frames);
+            size      := Iterator.size(new_iter) * Equation.size(Pointer.create(tmp));
+            tmp       := FOR_EQUATION(
+              size    = size,
+              iter    = new_iter,
+              body    = {tmp},
+              source  = getSource(body),
+              attr    = getAttributes(body));
+            result    := {Pointer.create(tmp)};
+          end if;
+        end if;
+      end if;
+    end sliceFor;
 
     function singleSlice
       input Pointer<Equation> eqn_ptr                             "equation to slice";

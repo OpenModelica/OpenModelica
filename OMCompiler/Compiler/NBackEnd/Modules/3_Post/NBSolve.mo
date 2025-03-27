@@ -233,35 +233,6 @@ public
           (generic_comp, funcTree, solve_status, implicit_index) := solveGenericEquation(comp, funcTree, kind, implicit_index, slicing_map);
         then ({generic_comp}, solve_status);
 
-        /* currently not used */
-        case StrongComponent.SLICED_COMPONENT(eqn = eqn_slice) guard(Equation.isForEquation(Slice.getT(eqn_slice))) algorithm
-          eqn_ptr := Slice.getT(eqn_slice);
-          (eqn_ptr, slicing_status, solve_status, funcTree) := Equation.slice(eqn_ptr, eqn_slice.indices, SOME(comp.var_cref), funcTree);
-          if slicing_status == NBEquation.SlicingStatus.FAILURE then
-            // if slicing failed -> scalarize;
-            (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(Pointer.access(Slice.getT(eqn_slice)), comp.var_cref, funcTree, kind, implicit_index, slicing_map);
-            Pointer.update(eqn_ptr, eqn);
-            sizes := Equation.sizes(eqn_ptr);
-            replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
-            for index in listReverse(eqn_slice.indices) loop
-              (eqn, funcTree) := Equation.singleSlice(eqn_ptr, index, sizes, ComponentRef.EMPTY(), replacements, funcTree);
-              sliced_eqns := Pointer.create(eqn) :: sliced_eqns;
-            end for;
-            sliced_eqns := listReverse(sliced_eqns);
-            solved_comps := list(StrongComponent.fromSolvedEquationSlice(Slice.SLICE(eqn, {})) for eqn in sliced_eqns);
-          else
-            Pointer.update(eqn_ptr, Equation.splitIterators(Pointer.access(eqn_ptr)));
-            sliced_eqns := {eqn_ptr};
-            solved_comps := {StrongComponent.SLICED_COMPONENT(comp.var_cref, comp.var, Slice.SLICE(eqn_ptr, {}), solve_status)};
-          end if;
-
-          // safe the slicing replacement in the map
-          eqn_cref := Equation.getEqnName(eqn_ptr);
-          sliced_eqns := listAppend(UnorderedMap.getOrDefault(eqn_cref, slicing_map, {}), sliced_eqns);
-          UnorderedMap.add(eqn_cref, sliced_eqns, slicing_map);
-
-        then (solved_comps, solve_status);
-
         case StrongComponent.SLICED_COMPONENT(var = var_slice, eqn = eqn_slice) guard(Equation.isArrayEquation(Slice.getT(eqn_slice))) algorithm
           // array equation solved for the a sliced variable.
           // get all slices of the variable ocurring in the equation and select the slice that fits the indices
@@ -301,59 +272,6 @@ public
           end for;
           comp.entwined_slices := listReverse(entwined_slices);
         then ({comp}, NBSolve.Status.EXPLICIT);
-
-        /* currently not used */
-        case StrongComponent.ENTWINED_COMPONENT() algorithm
-          // slice each entwined equation individually
-          for slice in comp.entwined_slices loop
-            StrongComponent.SLICED_COMPONENT(var_cref = var_cref, eqn = eqn_slice) := slice;
-            (eqn_ptr, slicing_status, solve_status, funcTree) := Equation.slice(Slice.getT(eqn_slice), eqn_slice.indices, SOME(var_cref), funcTree);
-            if slicing_status == NBEquation.SlicingStatus.FAILURE then break; end if;
-            Equation.renameIterators(eqn_ptr, "$i");
-            eqn := Pointer.access(eqn_ptr);
-            entwined_eqns := Equation.splitIterators(eqn) :: entwined_eqns;
-          end for;
-
-          if slicing_status == NBEquation.SlicingStatus.FAILURE then
-            // if slicing failed -> scalarize;
-            // first solve all equation bodies accordingly
-            for slice in comp.entwined_slices loop
-              StrongComponent.SLICED_COMPONENT(var_cref = var_cref, eqn = eqn_slice) := slice;
-              (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(Pointer.access(Slice.getT(eqn_slice)), var_cref, funcTree, kind, implicit_index, slicing_map);
-              Pointer.update(eqn_ptr, eqn);
-            end for;
-            replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
-            for tpl in comp.entwined_tpl_lst loop
-              (eqn_ptr, index) := tpl;
-              // do this more efficiently! (sizes beforehand?)
-              sizes := Equation.sizes(eqn_ptr);
-              (eqn, funcTree) := Equation.singleSlice(eqn_ptr, index, sizes, ComponentRef.EMPTY(), replacements, funcTree);
-              sliced_eqns := Pointer.create(eqn) :: sliced_eqns;
-            end for;
-            sliced_eqns := listReverse(sliced_eqns);
-            solved_comps := list(StrongComponent.fromSolvedEquationSlice(Slice.SLICE(eqn, {})) for eqn in sliced_eqns);
-          else
-            // entwine the equations as far as possible
-            entwined_eqns := Equation.entwine(listReverse(entwined_eqns));
-            sliced_eqns := list(Pointer.create(eqn) for eqn in entwined_eqns);
-            solved_comps := list(StrongComponent.fromSolvedEquationSlice(Slice.SLICE(eqn, {})) for eqn in sliced_eqns);
-          end if;
-
-          // safe the slicing replacement in the map
-          // -> just use the first name as replacement for all of them and all other with empty lists
-          eqn_ptr :: rest := sliced_eqns;
-          eqn_cref := Equation.getEqnName(eqn_ptr);
-          sliced_eqns := listAppend(UnorderedMap.getOrDefault(eqn_cref, slicing_map, {}), sliced_eqns);
-          UnorderedMap.add(eqn_cref, sliced_eqns, slicing_map);
-
-          // empty for all others (do not overwrite if it exists)
-          if not listEmpty(rest) then
-            for eqn_ptr in rest loop
-              eqn_cref := Equation.getEqnName(eqn_ptr);
-              UnorderedMap.tryAdd(eqn_cref, {}, slicing_map);
-            end for;
-          end if;
-        then (solved_comps, solve_status);
 
         else ({comp}, Status.UNSOLVABLE);
       end match;

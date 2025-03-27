@@ -399,6 +399,7 @@ public
     Pointer<Equation> start_eq;
     EquationKind kind;
     Iterator iterator;
+    list<Pointer<Equation>> sliced_eqn;
   algorithm
     var_ptr := Slice.getT(var_slice);
     name    := BVariable.getVarName(var_ptr);
@@ -451,9 +452,11 @@ public
     start_eq := Equation.makeAssignment(Expression.fromCref(name, true), start_exp, idx, NBEquation.START_STR, iterator, EquationAttributes.default(kind, true));
     if not listEmpty(var_slice.indices) then
       // empty list indicates full array, slice otherwise
-      (start_eq, _, _) := Equation.slice(start_eq, var_slice.indices, NONE(), FunctionTreeImpl.EMPTY());
+      (sliced_eqn, _) := Equation.slice(start_eq, var_slice.indices);
+      Pointer.update(ptr_start_eqs, listAppend(Pointer.access(ptr_start_eqs), sliced_eqn));
+    else
+      Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
     end if;
-    Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
   end createStartEquationSlice;
 
   protected function createIteratedStartCref
@@ -520,6 +523,7 @@ public
     list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
     Pointer<Equation> pre_eq;
     EquationKind kind;
+    list<Pointer<Equation>> sliced_eqn;
   algorithm
     var_ptr := Slice.getT(var_slice);
     if not BVariable.isPrevious(var_ptr) then
@@ -539,9 +543,11 @@ public
 
         if not listEmpty(var_slice.indices) then
           // empty list indicates full array, slice otherwise
-          (pre_eq, _, _) := Equation.slice(pre_eq, var_slice.indices, NONE(), FunctionTreeImpl.EMPTY());
+          (sliced_eqn, _) := Equation.slice(pre_eq, var_slice.indices);
+          Pointer.update(ptr_pre_eqs, listAppend(Pointer.access(ptr_pre_eqs), sliced_eqn));
+        else
+          Pointer.update(ptr_pre_eqs, pre_eq :: Pointer.access(ptr_pre_eqs));
         end if;
-        Pointer.update(ptr_pre_eqs, pre_eq :: Pointer.access(ptr_pre_eqs));
       end if;
     end if;
   end createPreEquationSlice;

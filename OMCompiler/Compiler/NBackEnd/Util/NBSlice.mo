@@ -785,9 +785,8 @@ public
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, NFOperator.SizeClassification.SCALAR), Type.INTEGER());
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.SCALAR), Type.INTEGER());
           if arrayLength(loc1) <> arrayLength(loc2) then
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because frames have same inertia but different length.\n"
-              + List.toString(arrayList(loc1), intString) + "\n" + List.toString(arrayList(loc2), intString)});
             status := NBEquation.FrameOrderingStatus.FAILURE;
+            return;
           elseif arrayLength(loc1) == 1 then
             b := loc2[1] - loc1[1];
             linMap := Expression.fromCref(name1);
@@ -804,9 +803,8 @@ public
             // check if linear map holds
             for i in 2:arrayLength(loc1) loop
               if loc2[i] <> m*loc1[i] + b then
-                Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because frames have same inertia but the linear map does not hold.\n"
-                  + "map: y = " + intString(m) + " * x + " + intString(b) + "\n" + List.toString(arrayList(loc1), intString) + "\n" + List.toString(arrayList(loc2), intString)});
                 status := NBEquation.FrameOrderingStatus.FAILURE;
+                return;
               end if;
             end for;
             linMap := Expression.fromCref(name1);
@@ -1022,6 +1020,29 @@ public
     end for;
     diagonal := listReverse(diagonal);
   end reconstructDiagonal;
+
+  function naiveSeparation
+    input list<Integer> indices "assumed to be sorted";
+    output list<list<Integer>> index_clusters = {};
+  protected
+    Integer i;
+    list<Integer> rest, current = {};
+  algorithm
+    if not listEmpty(indices) then
+      i :: rest := listReverse(indices);
+      current := {i};
+      for i2 in rest loop
+        if i-i2 == 1 then
+          current := i2 :: current;
+        else
+          index_clusters := current :: index_clusters;
+          current := {i2};
+        end if;
+        i := i2;
+      end for;
+      index_clusters := current :: index_clusters;
+    end if;
+  end naiveSeparation;
 
   // #### KAB ### new adjacency util
   function upgradeRowFull
