@@ -6,6 +6,7 @@ ModelicaTest.Tables.CombiTable1Ds.Test4.mos \
 ModelicaTest.Math.TestMatrices.mos \
 ModelicaTest.Math.TestMatricesExamplesSolveLinearEquations.mos \
 ModelicaTest.Media.TestAllProperties.ConstantPropertyLiquidWater.mos \
+ModelicaTest.Blocks.IntegratorForceState.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
