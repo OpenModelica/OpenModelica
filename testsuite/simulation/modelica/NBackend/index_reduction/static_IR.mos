@@ -31,6 +31,10 @@ simulate(static_IR_2); getErrorString();
 // true
 // ""
 // true
+// [stateselection] (0) Forced states by StateSelect.ALWAYS:
+// ***********************************************************
+// 	<no states>
+//
 // [stateselection] (3) Natural states before index reduction:
 // *************************************************************
 // 	[STAT] (1) Real x (fixed = true, start = 1.0)
@@ -57,9 +61,12 @@ simulate(static_IR_2); getErrorString();
 // "
 // end SimulationResult;
 // ""
-// [stateselection] (3) Natural states before index reduction:
-// *************************************************************
+// [stateselection] (1) Forced states by StateSelect.ALWAYS:
+// ***********************************************************
 // 	[STAT] (1) Real x (start = 1.0, StateSelect = always)
+//
+// [stateselection] (2) Natural states before index reduction:
+// *************************************************************
 // 	[STAT] (1) Real z (StateSelect = prefer)
 // 	[STAT] (1) Real y (StateSelect = prefer)
 //

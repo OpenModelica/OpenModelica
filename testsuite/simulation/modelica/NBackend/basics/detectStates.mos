@@ -44,6 +44,10 @@ simulate(expandDerOperator3); getErrorString();
 // true
 // ""
 // true
+// [stateselection] (0) Forced states by StateSelect.ALWAYS:
+// ***********************************************************
+// 	<no states>
+//
 // [stateselection] (2) Natural states before index reduction:
 // *************************************************************
 // 	[STAT] (1) Real x
@@ -62,6 +66,10 @@ simulate(expandDerOperator3); getErrorString();
 // "
 // end SimulationResult;
 // ""
+// [stateselection] (0) Forced states by StateSelect.ALWAYS:
+// ***********************************************************
+// 	<no states>
+//
 // [stateselection] (2) Natural states before index reduction:
 // *************************************************************
 // 	[STAT] (1) Real y
@@ -87,6 +95,10 @@ simulate(expandDerOperator3); getErrorString();
 // "
 // end SimulationResult;
 // ""
+// [stateselection] (0) Forced states by StateSelect.ALWAYS:
+// ***********************************************************
+// 	<no states>
+//
 // [stateselection] (1) Natural states before index reduction:
 // *************************************************************
 // 	[STAT] (1) Real $AUX_0 = x + y
