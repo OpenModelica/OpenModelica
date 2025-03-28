@@ -403,7 +403,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
   nonlinsys->numberOfIterations = 0;
 
   /* check if residual function pointer are valid */
-  assertStreamPrint(threadData, ((0 != nonlinsys->residualFunc)) || ((nonlinsys->strictTearingFunctionCall != NULL) ? (0 != nonlinsys->strictTearingFunctionCall) : 0), "residual function pointer is invalid" );
+  assertStreamPrint(threadData, (nonlinsys->residualFunc != NULL) || (nonlinsys->strictTearingFunctionCall != NULL), "residual function pointer is invalid");
 
   /* check if analytical jacobian is created */
   if(nonlinsys->jacobianIndex != -1)

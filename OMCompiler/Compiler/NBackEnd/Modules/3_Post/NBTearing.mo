@@ -55,10 +55,11 @@ protected
   // Backend imports
   import Adjacency = NBAdjacency;
   import NBAdjacency.Solvability;
+  import Causalize = NBCausalize;
   import BEquation = NBEquation;
+  import Initialization = NBInitialization;
   import BJacobian = NBJacobian;
   import BVariable = NBVariable;
-  import Causalize = NBCausalize;
   import Differentiate = NBDifferentiate;
   import Inline = NBInline;
   import Jacobian = NBackendDAE.BackendDAE;
@@ -163,36 +164,43 @@ public
     // dummy adjacency matrix, don't need it for implicit
     Adjacency.Matrix dummy = Adjacency.EMPTY(NBAdjacency.MatrixStrictness.FULL);
     StrongComponent new_comp;
+    Pointer<Boolean> homotopy = Pointer.create(false);
   algorithm
     (comp, dummy, funcTree, index) := match comp
       // create implicit equations
       case StrongComponent.SINGLE_COMPONENT() algorithm
+        Equation.map(Pointer.access(comp.eqn), function Initialization.containsHomotopyCall(b = homotopy));
         new_comp := StrongComponent.ALGEBRAIC_LOOP(
           idx     = index,
           strict  = singleImplicit(comp.var, comp.eqn),
           casual  = NONE(),
           linear  = false,
           mixed   = false,
+          homotopy = Pointer.access(homotopy),
           status  = NBSolve.Status.IMPLICIT);
       then finalize(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       case StrongComponent.MULTI_COMPONENT() algorithm
+        Equation.map(Pointer.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(b = homotopy));
         new_comp := StrongComponent.ALGEBRAIC_LOOP(
           idx     = index,
           strict  = singleImplicit(Slice.getT(listHead(comp.vars)), Slice.getT(comp.eqn)), // this is wrong! need to take all vars
           casual  = NONE(),
           linear  = false,
           mixed   = false,
+          homotopy = Pointer.access(homotopy),
           status  = NBSolve.Status.IMPLICIT);
       then finalize(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       case StrongComponent.RESIZABLE_COMPONENT() algorithm
+        Equation.map(Pointer.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(b = homotopy));
         new_comp := StrongComponent.ALGEBRAIC_LOOP(
           idx     = index,
           strict  = singleImplicit(Slice.getT(comp.var), Slice.getT(comp.eqn)),
           casual  = NONE(),
           linear  = false,
           mixed   = false,
+          homotopy = Pointer.access(homotopy),
           status  = NBSolve.Status.IMPLICIT);
       then finalize(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 

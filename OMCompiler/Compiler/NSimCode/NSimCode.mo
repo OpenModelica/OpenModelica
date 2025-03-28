@@ -409,7 +409,8 @@ public
               //(daeModeData, modelInfo, jacA, simcode_map, simCodeIndices) := DaeModeData.createSparsityJacobian(daeModeData, modelInfo, Util.getOption(bdae.dae), simcode_map, simCodeIndices);
             //else
 
-            (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := collectAlgebraicLoops(init, ode, algebraic, daeModeData, simCodeIndices, simcode_map);
+            (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := collectAlgebraicLoops(init, init_0, ode, algebraic, daeModeData, simCodeIndices, simcode_map);
+
             for jac in jacobians loop
               if Util.isSome(jac.jac_map) then
                 vars := SimVars.addSeedAndJacobianVars(vars, UnorderedMap.toList(Util.getOption(jac.jac_map)));
@@ -577,6 +578,7 @@ public
       "Collects algebraic loops from all systems (ode, init, init_0, dae, ...).
       ToDo: Add other systems once implemented!"
       input list<SimStrongComponent.Block> init;
+      input list<SimStrongComponent.Block> init_0;
       input list<list<SimStrongComponent.Block>> ode;
       input list<list<SimStrongComponent.Block>> algebraic;
       input Option<DaeModeData> daeModeData;
@@ -588,7 +590,7 @@ public
     protected
       list<list<SimStrongComponent.Block>> dae_mode_blcks;
     algorithm
-      (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := SimStrongComponent.Block.collectAlgebraicLoops({init}, linearLoops, nonlinearLoops, jacobians, simCodeIndices, simcode_map);
+      (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := SimStrongComponent.Block.collectAlgebraicLoops({init, init_0}, linearLoops, nonlinearLoops, jacobians, simCodeIndices, simcode_map);
       (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := SimStrongComponent.Block.collectAlgebraicLoops(ode, linearLoops, nonlinearLoops, jacobians, simCodeIndices, simcode_map);
       (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := SimStrongComponent.Block.collectAlgebraicLoops(algebraic, linearLoops, nonlinearLoops, jacobians, simCodeIndices, simcode_map);
       if isSome(daeModeData) then
