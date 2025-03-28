@@ -40,12 +40,11 @@ encapsulated package BackendVarTransform
 
 public import BackendDAE;
 public import DAE;
-public import HashTable2;
-public import HashTable3;
+public import UnorderedMap;
+public import UnorderedSet;
 
 protected import Absyn;
 protected import BackendDAETransform;
-protected import BaseHashTable;
 protected import BaseHashSet;
 protected import BackendEquation;
 protected import BackendVariable;
@@ -66,6 +65,13 @@ protected import Util;
 protected import MetaModelica.Dangerous.listReverseInPlace;
 
 public
+type ExpOpt = Option<DAE.Exp>;
+type CrefExpTable = UnorderedMap<DAE.ComponentRef, ExpOpt>;
+type CrefList = list<DAE.ComponentRef>;
+type CrefListOpt = Option<CrefList>;
+type CrefCrefListTable = UnorderedMap<DAE.ComponentRef, CrefListOpt>;
+type CrefSet = UnorderedSet<DAE.ComponentRef>;
+
 uniontype VariableReplacements
 "VariableReplacements consists of a mapping between variables and expressions, the first binary tree of this type.
  To eliminate a variable from an equation system a replacement rule varname->expression is added to this
@@ -74,11 +80,11 @@ uniontype VariableReplacements
  For instance, having a rule a->b and adding a rule b->c requires to find the first rule a->b and update it to
  a->c. This is what the second binary tree is used for."
   record REPLACEMENTS
-    HashTable2.HashTable hashTable "src -> dst, used for replacing. src is variable, dst is expression.";
-    HashTable3.HashTable invHashTable "dst -> list of sources. dst is a variable, sources are variables.";
-    HashTable2.HashTable extendhashTable "src -> noting, used for extend arrays and records.";
+    CrefExpTable hashTable "src -> dst, used for replacing. src is variable, dst is expression.";
+    CrefCrefListTable invHashTable "dst -> list of sources. dst is a variable, sources are variables.";
+    CrefSet extendhashTable "src -> nothing, used for extend arrays and records.";
     list<DAE.Ident> iterationVars "this are the implicit declerate iteration variables for for and range expressions";
-    Option<HashTable2.HashTable> derConst "this is used if states are constant to replace der(state) with 0.0";
+    Option<CrefExpTable> derConst "this is used if states are constant to replace der(state) with 0.0";
   end REPLACEMENTS;
 
 end VariableReplacements;
@@ -88,62 +94,64 @@ partial function FuncTypeExp_ExpToBoolean
   output Boolean outBoolean;
 end FuncTypeExp_ExpToBoolean;
 
+function newCrefExpTable
+  output CrefExpTable table = UnorderedMap.new<ExpOpt>(ComponentReference.hashComponentRef, ComponentReference.crefEqual);
+end newCrefExpTable;
+
+function newCrefExpTableSized
+  input Integer size;
+  output CrefExpTable table = UnorderedMap.new<ExpOpt>(ComponentReference.hashComponentRef, ComponentReference.crefEqual, size);
+end newCrefExpTableSized;
+
+function newCrefCrefListTable
+  output CrefCrefListTable table = UnorderedMap.new<CrefListOpt>(ComponentReference.hashComponentRef, ComponentReference.crefEqual);
+end newCrefCrefListTable;
+
+function newCrefCrefListTableSized
+  input Integer size;
+  output CrefCrefListTable table = UnorderedMap.new<CrefListOpt>(ComponentReference.hashComponentRef, ComponentReference.crefEqual, size);
+end newCrefCrefListTableSized;
+
+function newCrefSet
+  output CrefSet set = UnorderedSet.new(ComponentReference.hashComponentRef, ComponentReference.crefEqual);
+end newCrefSet;
+
+function newCrefSetSized
+  input Integer size;
+  output CrefSet set = UnorderedSet.new(ComponentReference.hashComponentRef, ComponentReference.crefEqual, size);
+end newCrefSetSized;
+
 public function emptyReplacements "
   Returns an empty set of replacement rules
 "
-  output VariableReplacements outVariableReplacements;
-algorithm
-  outVariableReplacements:=
-  match ()
-      local HashTable2.HashTable ht,eht;
-        HashTable3.HashTable invHt;
-    case ()
-      equation
-        ht = HashTable2.emptyHashTable();
-        eht = HashTable2.emptyHashTable();
-        invHt = HashTable3.emptyHashTable();
-      then
-        REPLACEMENTS(ht,invHt,eht,{},NONE());
-  end match;
+  output VariableReplacements outVariableReplacements =
+    REPLACEMENTS(newCrefExpTable(), newCrefCrefListTable(), newCrefSet(), {}, NONE());
 end emptyReplacements;
 
 public function emptyReplacementsSized "Returns an empty set of replacement rules, giving a size of hashtables to allocate"
   input Integer size;
-  output VariableReplacements outVariableReplacements;
-algorithm
-  outVariableReplacements := match (size)
-      local HashTable2.HashTable ht,eht;
-        HashTable3.HashTable invHt;
-    case _
-      equation
-        ht = HashTable2.emptyHashTableSized(size);
-        invHt = HashTable3.emptyHashTableSized(size);
-        eht = HashTable2.emptyHashTableSized(size);
-      then
-        REPLACEMENTS(ht,invHt,eht,{},NONE());
-  end match;
+  output VariableReplacements outVariableReplacements =
+    REPLACEMENTS(newCrefExpTableSized(size), newCrefCrefListTableSized(size), newCrefSetSized(size), {}, NONE());
 end emptyReplacementsSized;
 
-
-public function removeReplacement " removes the replacement for a given key using BaseHashTable.delete
-the extendhashtable is not updated"
+public function removeReplacement
+  "Removes the replacement for a given key. The extendhashtable is not updated."
   input VariableReplacements repl;
   input DAE.ComponentRef inSrc;
-  input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
 protected
+  Option<DAE.Exp> dst_opt;
   DAE.Exp dst;
-  HashTable2.HashTable ht,ht_1;
-  HashTable3.HashTable invHt,invHt_1;
-  String s;
 algorithm
-  REPLACEMENTS(ht,invHt,_,_,_) := repl;
-  if not BaseHashTable.hasKey(inSrc,ht) then
+  dst_opt := UnorderedMap.getOrDefault(inSrc, repl.hashTable, NONE());
+
+  if isNone(dst_opt) then
     return;
   end if;
+
   try
-    dst := BaseHashTable.get(inSrc,ht);
-    BaseHashTable.delete(inSrc,ht);
-    removeReplacementInv(invHt, dst);
+    // Replace the value with NONE() to mark it as deleted.
+    UnorderedMap.add(inSrc, NONE(), repl.hashTable);
+    removeReplacementInv(repl.invHashTable, Util.getOption(dst_opt));
   else
     Error.addInternalError("-BackendVarTransform.removeReplacement failed for " + ComponentReference.printComponentRefStr(inSrc) +"\n", sourceInfo());
   end try;
@@ -152,10 +160,9 @@ end removeReplacement;
 public function removeReplacements
   input VariableReplacements iRepl;
   input list<DAE.ComponentRef> inSrcs;
-  input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
 algorithm
   for cr in inSrcs loop
-    removeReplacement(iRepl,cr,inFuncTypeExpExpToBooleanOption);
+    removeReplacement(iRepl,cr);
   end for;
 end removeReplacements;
 
@@ -197,13 +204,14 @@ algorithm
   outRepl:=
   matchcontinue (repl,inSrc,inDst,inFuncTypeExpExpToBooleanOption)
     local
-      DAE.ComponentRef src,src_1;
-      DAE.Exp dst,dst_1;
-      HashTable2.HashTable ht,ht_1,eht,eht_1;
-      HashTable3.HashTable invHt,invHt_1;
+      DAE.ComponentRef src;
+      DAE.Exp dst;
+      CrefExpTable ht;
+      CrefSet eht;
+      CrefCrefListTable invHt;
       list<DAE.Ident> iv;
       String s;
-      Option<HashTable2.HashTable> derConst;
+      Option<CrefExpTable> derConst;
     // PA: Commented out this, since it will only slow things down without adding any functionality.
     // Once match is available as a complement to matchcontinue, this case could be useful again.
     //case ((repl as REPLACEMENTS(ht,invHt)),src,dst) /* source dest */
@@ -213,8 +221,8 @@ algorithm
      //   fail();
 
     case (_,src,dst,_)
-      equation
-        (REPLACEMENTS(ht,invHt,eht,iv,derConst),src_1,dst_1) = makeTransitive(repl, src, dst, inFuncTypeExpExpToBooleanOption);
+      algorithm
+        (REPLACEMENTS(ht,invHt,eht,iv,derConst),src,dst) := makeTransitive(repl, src, dst, inFuncTypeExpExpToBooleanOption);
         /*s1 = ComponentReference.printComponentRefStr(src);
         s2 = ExpressionDump.printExpStr(dst);
         s3 = ComponentReference.printComponentRefStr(src_1);
@@ -224,14 +232,15 @@ algorithm
           ", ",s4,")\n"});
           print(s);
         fprint(Flags.ADD_REPL, s);*/
-        ht_1 = BaseHashTable.add((src_1, dst_1),ht);
-        invHt_1 = addReplacementInv(invHt, src_1, dst_1);
-        eht_1 = addExtendReplacement(eht,src_1,NONE());
+
+        UnorderedMap.add(src, SOME(dst), ht);
+        invHt := addReplacementInv(invHt, src, dst);
+        eht := addExtendReplacement(eht,src,NONE());
       then
-        REPLACEMENTS(ht_1,invHt_1,eht_1,iv,derConst);
+        REPLACEMENTS(ht,invHt,eht,iv,derConst);
     case (_,_,_,_)
-      equation
-        s = ComponentReference.printComponentRefStr(inSrc);
+      algorithm
+        s := ComponentReference.printComponentRefStr(inSrc);
         print("-BackendVarTransform.addReplacement failed for " + s);
       then
         fail();
@@ -264,24 +273,25 @@ algorithm
     local
       DAE.ComponentRef src;
       DAE.Exp dst,olddst;
-      HashTable2.HashTable ht,ht_1,eht,eht_1;
-      HashTable3.HashTable invHt,invHt_1;
+      CrefExpTable ht;
+      CrefSet eht;
+      CrefCrefListTable invHt;
       list<DAE.Ident> iv;
-      Option<HashTable2.HashTable> derConst;
-    case ((REPLACEMENTS(hashTable=ht)),src,_) /* source dest */
+      Option<CrefExpTable> derConst;
+    case (REPLACEMENTS(hashTable=ht),src,_) /* source dest */
       guard
-        BaseHashTable.hasKey(src,ht) "if rule a->b exists, fail"
+        isSome(UnorderedMap.getOrDefault(src, ht, NONE())) "if rule a->b exists, fail"
       then
         fail();
-    case ((REPLACEMENTS(ht,invHt,eht,iv,derConst)),src,dst)
-      equation
-        ht_1 = BaseHashTable.add((src, dst),ht);
-        invHt_1 = addReplacementInv(invHt, src, dst);
-        eht_1 = addExtendReplacement(eht,src,NONE());
+    case (REPLACEMENTS(ht,invHt,eht,iv,derConst),src,dst)
+      algorithm
+        UnorderedMap.add(src, SOME(dst), ht);
+        invHt := addReplacementInv(invHt, src, dst);
+        eht := addExtendReplacement(eht,src,NONE());
       then
-        REPLACEMENTS(ht_1,invHt_1,eht_1,iv,derConst);
-    case (_,_,_)
-      equation
+        REPLACEMENTS(ht,invHt,eht,iv,derConst);
+    else
+      algorithm
         print("-add_replacement failed for " + ComponentReference.printComponentRefStr(inSrc) + " = " + ExpressionDump.printExpStr(inDst) + "\n");
       then
         fail();
@@ -293,11 +303,11 @@ protected function removeReplacementInv "
   removes the inverse rule of a replacement in the second binary tree
   of VariableReplacements.
 "
-  input HashTable3.HashTable invHt;
+  input CrefCrefListTable invHt;
   input DAE.Exp dst;
 algorithm
   for d in Expression.extractCrefsFromExp(dst) loop
-    BaseHashTable.delete(d, invHt);
+    UnorderedMap.tryUpdate(d, NONE(), invHt);
   end for;
 end removeReplacementInv;
 
@@ -306,48 +316,14 @@ protected function addReplacementInv "
   Adds the inverse rule of a replacement to the second binary tree
   of VariableReplacements.
 "
-  input HashTable3.HashTable invHt;
+  input output CrefCrefListTable invHt;
   input DAE.ComponentRef src;
   input DAE.Exp dst;
-  output HashTable3.HashTable outInvHt;
 algorithm
-  outInvHt:=
-  match (invHt,src,dst)
-    local
-      HashTable3.HashTable invHt_1;
-      HashSet.HashSet set;
-      list<DAE.ComponentRef> dests;
-    case (_,_,_) equation
-      // (_,set) = Expression.traverseExpTopDown(dst, traversingCrefFinder, HashSet.emptyHashSet() /* Very expensive operation */);
-      // dests = BaseHashSet.hashSetList(set);
-      dests = Expression.extractCrefsFromExp(dst);
-      invHt_1 = List.fold1r(dests,addReplacementInv2,src,invHt);
-      then
-        invHt_1;
-  end match;
+  for d in Expression.extractCrefsFromExp(dst) loop
+    invHt := addReplacementInv2(invHt, d, src);
+  end for;
 end addReplacementInv;
-
-protected function traversingCrefFinder "
-Author: Frenkel 2012-12"
-  input DAE.Exp e;
-  input HashSet.HashSet ihs;
-  output DAE.Exp outExp;
-  output Boolean cont;
-  output HashSet.HashSet set;
-algorithm
-  (outExp,cont,set) := matchcontinue (e,ihs)
-    local
-      DAE.ComponentRef cr;
-    case (DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), set)
-      then (e,false,set);
-    case (DAE.CREF(componentRef = cr), set)
-      equation
-        set = BaseHashSet.add(cr,set);
-      then (e,false,set);
-    else (e,true,ihs);
-  end matchcontinue;
-end traversingCrefFinder;
-
 
 protected function addReplacementInv2 "
   Helper function to addReplacementInv
@@ -357,21 +333,23 @@ protected function addReplacementInv2 "
   contains rules for v1 -> var, v2 -> var, ...., vn -> var so that any of the variables of the expression
   will update the rule.
 "
-  input HashTable3.HashTable invHt;
+  input output CrefCrefListTable invHt;
   input DAE.ComponentRef dst;
   input DAE.ComponentRef src;
-  output HashTable3.HashTable outInvHt;
 protected
+  Option<list<DAE.ComponentRef>> srcs_opt;
   list<DAE.ComponentRef> srcs;
 algorithm
-  if BaseHashTable.hasKey(dst,invHt) then
+  srcs_opt := UnorderedMap.getOrDefault(dst, invHt, NONE());
+
+  if isSome(srcs_opt) then
     // previous elt for dst -> src, append..
-    srcs := BaseHashTable.get(dst,invHt);
+    SOME(srcs) := srcs_opt;
     srcs := src::srcs;
-    outInvHt := BaseHashTable.add((dst, srcs),invHt);
+    UnorderedMap.add(dst, SOME(srcs), invHt);
   else
     // No previous elt for dst -> src
-    outInvHt:= BaseHashTable.add((dst, {src}),invHt);
+    UnorderedMap.add(dst, SOME({src}), invHt);
   end if;
 end addReplacementInv2;
 
@@ -428,14 +406,14 @@ algorithm
     local
       list<DAE.ComponentRef> lst;
       VariableReplacements repl_1,singleRepl;
-      HashTable3.HashTable invHt;
+      CrefCrefListTable invHt;
       // old rule a->expr(b1,..,bn) must be updated to a->expr(c_exp,...,bn) when new rule b1->c_exp
       // is introduced
     case ((REPLACEMENTS(invHashTable=invHt)),_,_,_)
-      equation
-        lst = BaseHashTable.get(src, invHt);
-        singleRepl = addReplacementNoTransitive(emptyReplacementsSized(53),src,dst);
-        repl_1 = makeTransitive12(lst,repl,singleRepl,inFuncTypeExpExpToBooleanOption,HashSet.emptyHashSet());
+      algorithm
+        SOME(lst) := UnorderedMap.getOrFail(src, invHt);
+        singleRepl := addReplacementNoTransitive(emptyReplacementsSized(53),src,dst);
+        repl_1 := makeTransitive12(lst,repl,singleRepl,inFuncTypeExpExpToBooleanOption,HashSet.emptyHashSet());
       then
         (repl_1,src,dst);
     else (repl,src,dst);
@@ -449,28 +427,28 @@ in singleRepl."
   input VariableReplacements repl;
   input VariableReplacements singleRepl "contain one replacement rule: the rule to be added";
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
-  input HashSet.HashSet inSet "to avoid touble work";
+  input HashSet.HashSet inSet "to avoid double work";
   output VariableReplacements outRepl;
 algorithm
-  outRepl := matchcontinue(lst,repl,singleRepl,inFuncTypeExpExpToBooleanOption,inSet)
+  outRepl := matchcontinue lst
     local
       DAE.Exp crDst;
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> crs;
       VariableReplacements repl1;
-      HashTable2.HashTable ht;
+      CrefExpTable ht;
       HashSet.HashSet set;
-    case({},_,_,_,_) then repl;
-    case(cr::crs,REPLACEMENTS(hashTable=ht),_,_,_)
-      equation
-        false = BaseHashSet.has(cr,inSet);
-        set = BaseHashSet.add(cr,inSet);
-        crDst = BaseHashTable.get(cr,ht);
-        (crDst,_) = replaceExp(crDst,singleRepl,inFuncTypeExpExpToBooleanOption);
-        repl1 = addReplacementNoTransitive(repl,cr,crDst) "add updated old rule";
+    case {} then repl;
+    case cr::crs
+      algorithm
+        false := BaseHashSet.has(cr,inSet);
+        set := BaseHashSet.add(cr,inSet);
+        SOME(crDst) := UnorderedMap.getOrFail(cr,repl.hashTable);
+        (crDst,_) := replaceExp(crDst,singleRepl,inFuncTypeExpExpToBooleanOption);
+        repl1 := addReplacementNoTransitive(repl,cr,crDst) "add updated old rule";
       then
         makeTransitive12(crs,repl1,singleRepl,inFuncTypeExpExpToBooleanOption,set);
-    case(_::crs,_,_,_,_)
+    case _::crs
       then
         makeTransitive12(crs,repl,singleRepl,inFuncTypeExpExpToBooleanOption,inSet);
   end matchcontinue;
@@ -506,15 +484,15 @@ protected function addExtendReplacement
 "author: Frenkel TUD 2011-04
   checks if the parents of cref from type array or record
   and add a rule to extend them."
-  input HashTable2.HashTable extendrepl;
+  input CrefSet extendrepl;
   input DAE.ComponentRef cr;
   input Option<DAE.ComponentRef> preCr;
-  output HashTable2.HashTable outExtendrepl;
+  output CrefSet outExtendrepl;
 algorithm
   outExtendrepl:=
   matchcontinue (extendrepl,cr,preCr)
     local
-      HashTable2.HashTable erepl,erepl1;
+      CrefSet erepl,erepl1;
       DAE.ComponentRef subcr,precr,precr1,pcr,precrn,precrn1;
       DAE.Ident ident;
       DAE.Type ty;
@@ -525,77 +503,69 @@ algorithm
     case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY()),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
-        false = BaseHashTable.hasKey(precr,extendrepl);
         // update Replacements
-        erepl = BaseHashTable.add((precr, DAE.RCONST(0.0)),extendrepl);
-      then erepl;
+        UnorderedSet.addUnique(precr, extendrepl);
+      then extendrepl;
     case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY()),SOME(pcr))
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         precr1 = ComponentReference.joinCrefs(pcr,precr);
-        false = BaseHashTable.hasKey(precr1,extendrepl);
         // update Replacements
-        erepl = BaseHashTable.add((precr1, DAE.RCONST(0.0)),extendrepl);
-      then erepl;
+        UnorderedSet.addUnique(precr1, extendrepl);
+      then extendrepl;
     case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst)),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
-        false = BaseHashTable.hasKey(precr,extendrepl);
         // update Replacements
-        erepl = BaseHashTable.add((precr, DAE.RCONST(0.0)),extendrepl);
+        UnorderedSet.addUnique(precr, extendrepl);
         // Create a list of crefs from names
         crefs =  List.map(varLst,ComponentReference.creffromVar);
-        erepl = List.fold1r(crefs,addExtendReplacement,SOME(precr),erepl);
+        erepl = List.fold1r(crefs,addExtendReplacement,SOME(precr), extendrepl);
       then erepl;
     case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst)),SOME(pcr))
       equation
         _ = ComponentReference.makeCrefIdent(ident,ty,{});
         precr1 = ComponentReference.joinCrefs(pcr,cr);
-        false = BaseHashTable.hasKey(precr1,extendrepl);
         // update Replacements
-        erepl = BaseHashTable.add((precr1, DAE.RCONST(0.0)),extendrepl);
+        UnorderedSet.addUnique(precr1, extendrepl);
         // Create a list of crefs from names
         crefs =  List.map(varLst,ComponentReference.creffromVar);
-        erepl = List.fold1r(crefs,addExtendReplacement,SOME(precr1),erepl);
+        erepl = List.fold1r(crefs,addExtendReplacement,SOME(precr1), extendrepl);
       then erepl;
     case (_,DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
-        false = BaseHashTable.hasKey(precr,extendrepl);
         // update Replacements
-        erepl = BaseHashTable.add((precr, DAE.RCONST(0.0)),extendrepl);
-      then erepl;
+        UnorderedSet.addUnique(precr, extendrepl);
+      then extendrepl;
     case (_,DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_),SOME(pcr))
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         precr1 = ComponentReference.joinCrefs(pcr,precr);
-        false = BaseHashTable.hasKey(precr1,extendrepl);
         // update Replacements
-        erepl = BaseHashTable.add((precr1, DAE.RCONST(0.0)),extendrepl);
-      then erepl;
+        UnorderedSet.addUnique(precr1, extendrepl);
+      then extendrepl;
     case (_,DAE.CREF_IDENT(),_)
       then
         extendrepl;
     case (_,DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
-        false = BaseHashTable.hasKey(precr,extendrepl);
         // update Replacements
-        erepl = BaseHashTable.add((precr, DAE.RCONST(0.0)),extendrepl);
+        UnorderedSet.addUnique(precr, extendrepl);
         precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
-        erepl1 = addExtendReplacement(erepl,subcr,SOME(precrn));
-      then erepl1;
+        erepl = addExtendReplacement(extendrepl,subcr,SOME(precrn));
+      then erepl;
     case (_,DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         precr1 = ComponentReference.joinCrefs(pcr,precr);
-        false = BaseHashTable.hasKey(precr1,extendrepl);
         // update Replacements
-        erepl = BaseHashTable.add((precr1, DAE.RCONST(0.0)),extendrepl);
+        UnorderedSet.addUnique(precr1, extendrepl);
         precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
         precrn1 = ComponentReference.joinCrefs(pcr,precrn);
-        erepl1 = addExtendReplacement(erepl,subcr,SOME(precrn1));
-      then erepl1;
+        erepl = addExtendReplacement(extendrepl,subcr,SOME(precrn1));
+      then erepl;
     // all other
     case (_,DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
       equation
@@ -619,42 +589,18 @@ end addExtendReplacement;
 
 protected function addIterationVar
 "add a var to the iterationVars"
-  input VariableReplacements repl;
+  input output VariableReplacements repl;
   input DAE.Ident inVar;
-  output VariableReplacements outRepl;
 algorithm
-  outRepl:=
-  match (repl,inVar)
-    local
-      HashTable2.HashTable ht,eht;
-      HashTable3.HashTable invHt;
-      list<DAE.Ident> iv;
-      Option<HashTable2.HashTable> derConst;
-    case (REPLACEMENTS(ht,invHt,eht,iv,derConst),_)
-      then
-        REPLACEMENTS(ht,invHt,eht,inVar::iv,derConst);
-  end match;
+  repl.iterationVars := inVar :: repl.iterationVars;
 end addIterationVar;
 
 protected function removeIterationVar
 "remove the first equal var from the iterationVars"
-  input VariableReplacements repl;
+  input output VariableReplacements repl;
   input DAE.Ident inVar;
-  output VariableReplacements outRepl;
 algorithm
-  outRepl:=
-  match (repl,inVar)
-    local
-      HashTable2.HashTable ht,eht;
-      HashTable3.HashTable invHt;
-      list<DAE.Ident> iv;
-      Option<HashTable2.HashTable> derConst;
-    case (REPLACEMENTS(ht,invHt,eht,iv,derConst),_)
-      equation
-        iv = removeFirstOnTrue(iv,stringEq,inVar,{});
-      then
-        REPLACEMENTS(ht,invHt,eht,iv,derConst);
-  end match;
+  repl.iterationVars := List.deleteMemberOnTrue(inVar, repl.iterationVars, stringEq);
 end removeIterationVar;
 
 protected function isIterationVar
@@ -673,60 +619,21 @@ algorithm
   end match;
 end isIterationVar;
 
-protected function removeFirstOnTrue
-  input list<ArgType1> iLst;
-  input CompFunc func;
-  input ArgType2 value;
-  input list<ArgType1> iAcc;
-  output list<ArgType1> oAcc;
-  partial function CompFunc
-    input ArgType1 inElement;
-    input ArgType2 value;
-    output Boolean outIsEqual;
-  end CompFunc;
-  replaceable type ArgType1 subtypeof Any;
-  replaceable type ArgType2 subtypeof Any;
-algorithm
-  oAcc := match(iLst,func,value,iAcc)
-    local
-      ArgType1 arg;
-      list<ArgType1> arglst;
-
-    case ({},_,_,_) then listReverse(iAcc);
-    case (arg::arglst,_,_,_) guard func(arg,value)
-      then
-        List.append_reverse(iAcc,arglst);
-    case (arg::arglst,_,_,_)
-      then
-        removeFirstOnTrue(arglst,func,value,arg::iAcc);
-  end match;
-end removeFirstOnTrue;
-
 public function addDerConstRepl
 "add a var to the derConst replacements, replace der(const) with 0.0"
   input DAE.ComponentRef inComponentRef;
   input DAE.Exp inExp;
-  input VariableReplacements repl;
-  output VariableReplacements outRepl;
+  input output VariableReplacements repl;
+protected
+  CrefExpTable derConst;
 algorithm
-  outRepl:= match (inComponentRef,inExp,repl)
-    local
-      HashTable2.HashTable ht,eht;
-      HashTable3.HashTable invHt;
-      list<DAE.Ident> iv;
-      HashTable2.HashTable derConst;
-    case (_,_,REPLACEMENTS(ht,invHt,eht,iv,NONE()))
-      equation
-        derConst = HashTable2.emptyHashTable();
-        derConst = BaseHashTable.add((inComponentRef,inExp),derConst);
-      then
-        REPLACEMENTS(ht,invHt,eht,iv,SOME(derConst));
-    case (_,_,REPLACEMENTS(ht,invHt,eht,iv,SOME(derConst)))
-      equation
-        derConst = BaseHashTable.add((inComponentRef,inExp),derConst);
-      then
-        REPLACEMENTS(ht,invHt,eht,iv,SOME(derConst));
-  end match;
+  if isSome(repl.derConst) then
+    UnorderedMap.add(inComponentRef, SOME(inExp), Util.getOption(repl.derConst));
+  else
+    derConst := newCrefExpTable();
+    UnorderedMap.add(inComponentRef, SOME(inExp), derConst);
+    repl.derConst := SOME(derConst);
+  end if;
 end addDerConstRepl;
 
 public function getReplacement "
@@ -735,181 +642,62 @@ public function getReplacement "
 "
   input VariableReplacements inVariableReplacements;
   input DAE.ComponentRef inComponentRef;
-  output DAE.Exp outComponentRef;
+  output DAE.Exp outExp;
 algorithm
-  outComponentRef:=
-  match (inVariableReplacements,inComponentRef)
-    local
-      DAE.ComponentRef src;
-      DAE.Exp dst;
-      HashTable2.HashTable ht;
-    case (REPLACEMENTS(hashTable=ht),src)
-      equation
-        dst = BaseHashTable.get(src,ht);
-      then
-        dst;
-  end match;
+  SOME(outExp) := UnorderedMap.getOrFail(inComponentRef, inVariableReplacements.hashTable);
 end getReplacement;
 
 public function hasReplacement "
   Outputs true if the replacements contain a rule for the cref
 "
-  input VariableReplacements inVariableReplacements;
+  input VariableReplacements repl;
   input DAE.ComponentRef inComponentRef;
   output Boolean bOut;
 algorithm
-  bOut:=
-  match (inVariableReplacements,inComponentRef)
-    local
-      DAE.ComponentRef src;
-      DAE.Exp dst;
-      HashTable2.HashTable ht;
-    case (REPLACEMENTS(hashTable=ht),src)
-      guard BaseHashTable.hasKey(src,ht)
-      then
-        true;
-      else false;
-  end match;
+  bOut := isSome(UnorderedMap.getOrDefault(inComponentRef, repl.hashTable, NONE()));
 end hasReplacement;
 
-public function hasReplacementCrefFirst "
-  Outputs true if the replacements contain a rule for the cref
+public function hasNoReplacement "
+  Outputs false if the replacements contain a rule for the cref
 "
   input DAE.ComponentRef inComponentRef;
-  input VariableReplacements inVariableReplacements;
+  input VariableReplacements repl;
   output Boolean bOut;
 algorithm
-  bOut:=
-  match (inComponentRef,inVariableReplacements)
-    local
-      DAE.ComponentRef src;
-      DAE.Exp dst;
-      HashTable2.HashTable ht;
-    case (src,REPLACEMENTS(hashTable=ht))
-      guard BaseHashTable.hasKey(src,ht)
-      then
-        true;
-      else false;
-  end match;
-end hasReplacementCrefFirst;
+  bOut := isNone(UnorderedMap.getOrDefault(inComponentRef, repl.hashTable, NONE()));
+end hasNoReplacement;
 
-public function hasNoReplacementCrefFirst "
-  Outputs true if the replacements contain a rule for the cref
-"
-  input DAE.ComponentRef inComponentRef;
-  input VariableReplacements inVariableReplacements;
-  output Boolean bOut;
+public function getAllReplacements
+  input VariableReplacements repl;
+  output list<DAE.ComponentRef> crefs;
+  output list<DAE.Exp> dsts;
 algorithm
-  bOut:=
-  match (inComponentRef,inVariableReplacements)
-    local
-      DAE.ComponentRef src;
-      DAE.Exp dst;
-      HashTable2.HashTable ht;
-    case (src,REPLACEMENTS(hashTable=ht))
-      guard BaseHashTable.hasKey(src,ht)
-      then
-        false;
-      else true;
-  end match;
-end hasNoReplacementCrefFirst;
-
-public function varHasNoReplacement "
-  Outputs true if the replacements contains no rule for the var
-"
-  input BackendDAE.Var var;
-  input VariableReplacements inVariableReplacements;
-  output Boolean bOut;
-algorithm
-  bOut:=
-  match (var,inVariableReplacements)
-    local
-      DAE.ComponentRef src;
-      DAE.Exp dst;
-      HashTable2.HashTable ht;
-    case (BackendDAE.VAR(varName=src),REPLACEMENTS(hashTable=ht))
-      guard BaseHashTable.hasKey(src,ht)
-      then
-        false;
-      else true;
-  end match;
-end varHasNoReplacement;
-
-public function getReplacementVarArraySize
-  input VariableReplacements inVariableReplacements;
-  output Integer size;
-protected
-  HashTable2.HashTable hashTable;
-algorithm
-  REPLACEMENTS(hashTable=hashTable) := inVariableReplacements;
-  size := BaseHashTable.hashTableCurrentSize(hashTable);
-end getReplacementVarArraySize;
-
-public function getReplacementCRefFirst "
-  Retrives a replacement variable given a set of replacement rules and a
-  source variable.
-"
-  input DAE.ComponentRef inComponentRef;
-  input VariableReplacements inVariableReplacements;
-  output DAE.Exp outComponentRef;
-algorithm
-  outComponentRef:=
-  match (inComponentRef,inVariableReplacements)
-    local
-      DAE.ComponentRef src;
-      DAE.Exp dst;
-      HashTable2.HashTable ht;
-    case (src,REPLACEMENTS(hashTable=ht))
-      equation
-        dst = BaseHashTable.get(src,ht);
-      then
-        dst;
-  end match;
-end getReplacementCRefFirst;
-
-public function getAllReplacements "
-Author BZ 2009-04
-Extract all crefs -> exp to two separate lists.
-"
-input VariableReplacements inVariableReplacements;
-output list<DAE.ComponentRef> crefs;
-output list<DAE.Exp> dsts;
-algorithm (crefs,dsts) := match (inVariableReplacements)
-    local
-      HashTable2.HashTable ht;
-      list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst;
-    case (REPLACEMENTS(hashTable = ht))
-      equation
-        tplLst = BaseHashTable.hashTableList(ht);
-        crefs = List.map(tplLst,Util.tuple21);
-        dsts = List.map(tplLst,Util.tuple22);
-      then
-        (crefs,dsts);
-  end match;
+  (crefs, dsts) := getCrefExpTableEntries(repl.hashTable);
 end getAllReplacements;
 
-public function getExtendReplacement "
-  Retrives a replacement variable given a set of replacement rules and a
-  source variable.
-"
-  input VariableReplacements inVariableReplacements;
-  input DAE.ComponentRef inComponentRef;
-  output DAE.Exp outComponentRef;
+protected function getCrefExpTableEntries
+  input CrefExpTable table;
+  output list<DAE.ComponentRef> crefs;
+  output list<DAE.Exp> dsts;
+protected
+  list<Option<DAE.Exp>> opt_dsts;
 algorithm
-  outComponentRef:=
-  match (inVariableReplacements,inComponentRef)
-    local
-      DAE.ComponentRef src, src_1;
-      DAE.Exp dst;
-      HashTable2.HashTable ht;
-    case (REPLACEMENTS(extendhashTable=ht),src)
-      equation
-        src_1 = ComponentReference.crefStripLastSubs(src);
-        dst = BaseHashTable.get(src_1,ht);
-      then
-        dst;
-  end match;
-end getExtendReplacement;
+  crefs := UnorderedMap.keyList(table);
+  opt_dsts := UnorderedMap.valueList(table);
+  // Remove deleted replacements, i.e. replacements set to NONE().
+  (opt_dsts, crefs) := List.filterOnTrueSync(opt_dsts, isSome, crefs);
+  dsts := list(Util.getOption(d) for d in opt_dsts);
+end getCrefExpTableEntries;
+
+public function hasExtendReplacement "
+  Returns whether an extend replacement exists or not.
+"
+  input VariableReplacements repl;
+  input DAE.ComponentRef src;
+  output Boolean exists;
+algorithm
+  exists := UnorderedSet.contains(ComponentReference.crefStripLastSubs(src), repl.extendhashTable);
+end hasExtendReplacement;
 
 protected function avoidDoubleHashLookup "
 Author BZ 200X-XX modified 2008-06
@@ -931,28 +719,8 @@ end avoidDoubleHashLookup;
 
 public function isReplacementEmpty
   input VariableReplacements repl;
-  output Boolean empty;
-algorithm
-  empty := match(repl)
-    local
-      HashTable2.HashTable ht;
-
-    case REPLACEMENTS(hashTable=ht, derConst=NONE())
-    then intLt(BaseHashTable.hashTableCurrentSize(ht), 1);
-
-    case REPLACEMENTS(derConst=SOME(_)) then false;
-  end match;
+  output Boolean empty = UnorderedMap.none(repl.hashTable, isSome) and isNone(repl.derConst);
 end isReplacementEmpty;
-
-public function replacementCurrentSize
-  input VariableReplacements repl;
-  output Integer size;
-protected
-  HashTable2.HashTable ht;
-algorithm
-  REPLACEMENTS(hashTable = ht) := repl;
-  size := BaseHashTable.hashTableCurrentSize(ht);
-end replacementCurrentSize;
 
 /*********************************************************/
 /* replace Expression with condition function */
@@ -991,7 +759,7 @@ algorithm
       DAE.ReductionIterators iters;
       DAE.CallAttributes attr;
       DAE.Ident ident;
-      HashTable2.HashTable derConst;
+      CrefExpTable derConst;
       list<String> fields;
 
       // Note: Most of these functions check if a subexpression did a replacement.
@@ -1013,7 +781,7 @@ algorithm
         guard replaceExpCond(cond, e)
       equation
         (cr,_) = replaceCrefSubs(cr,repl,cond);
-        _ = getExtendReplacement(repl, cr);
+        true = hasExtendReplacement(repl, cr);
         (e2,true) = Expression.extendArrExp(e,false);
         (e3,_) = replaceExp(e2,repl,cond);
       then
@@ -1069,7 +837,7 @@ algorithm
         (DAE.IFEXP(e1_1,e2_1,e3_1),true);
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef = cr)}),REPLACEMENTS(derConst=SOME(derConst)),cond)
       equation
-        e = BaseHashTable.get(cr,derConst);
+        SOME(e) = UnorderedMap.getOrFail(cr, derConst);
         (e,_) = replaceExp(e, inVariableReplacements, cond);
       then
         (e,true);
@@ -2420,82 +2188,6 @@ algorithm
 end replaceSTMT_IF;
 
 /*********************************************************/
-/* divide by zero  */
-/*********************************************************/
-
-public function divideByZeroReplacements
-  input VariableReplacements inVariableReplacements;
-  output Boolean divideByZero;
-  output Integer pos;
-  output DAE.Ident ident;
-protected
-  HashTable2.HashTable ht;
-  list<tuple<DAE.ComponentRef, DAE.Exp>> tplLst;
-algorithm
-  REPLACEMENTS(hashTable=ht) := inVariableReplacements;
-  (tplLst) := BaseHashTable.hashTableList(ht);
-  (divideByZero, pos, ident) := divideByZeroReplacements2(tplLst, 1, false, 0, "???");
-end divideByZeroReplacements;
-
-protected function divideByZeroReplacements2
-  input list<tuple<DAE.ComponentRef, DAE.Exp>> tplLst;
-  input Integer counter;
-  input Boolean InDivideByZero;
-  input Integer InPos;
-  input DAE.Ident InIdent;
-  output Boolean divideByZero;
-  output Integer pos;
-  output DAE.Ident ident;
-algorithm
-  (divideByZero, pos, ident) := matchcontinue (tplLst, counter, InDivideByZero, InPos, InIdent)
-    local
-      list<tuple<DAE.ComponentRef, DAE.Exp>> tplLst2;
-      DAE.Exp exp;
-      Boolean BooleanControlExp;
-      String str;
-      DAE.ComponentRef cr;
-
-    case({}, _, _, _, _)
-    then (InDivideByZero, 0, InIdent);
-
-    case ((cr, exp) :: tplLst2, _, false, _, _) equation
-      (_, BooleanControlExp) = Expression.traverseExpBottomUp(exp, controlExp, false);
-      false = BooleanControlExp;
-
-      str = ComponentReference.printComponentRefStr(cr);
-
-      (divideByZero, pos, ident) = divideByZeroReplacements2(tplLst2, counter+1, BooleanControlExp, counter, str);
-    then (divideByZero, pos, ident);
-
-    case((cr, _) :: _, _, _, _, _) equation
-      str = ComponentReference.printComponentRefStr(cr);
-    then (true, counter, str);
-  end matchcontinue;
-end divideByZeroReplacements2;
-
-protected function controlExp
-  input DAE.Exp inExp;
-  input Boolean inB;
-  output DAE.Exp outExp;
-  output Boolean b;
-algorithm
-  (outExp,b) := match (inExp,inB)
-    local
-      DAE.Exp exp1, exp2;
-      DAE.Operator operator;
-
-    case (_, true) then (inExp,true);
-
-    case (DAE.BINARY(_, DAE.DIV(_), exp2), false)
-      equation
-        b = Expression.isZero(exp2);
-      then (inExp, b);
-
-    else (inExp,false);
-  end match;
-end controlExp;
-
-/*********************************************************/
 /* variable replacements  */
 /*********************************************************/
 
@@ -2732,85 +2424,55 @@ end replaceZeroCrossing;
 /*********************************************************/
 
 public function dumpReplacements "Prints the variable replacements on form var1 -> var2"
-  input VariableReplacements inVariableReplacements;
+  input VariableReplacements repl;
+protected
+  list<DAE.ComponentRef> srcs;
+  list<DAE.Exp> dsts;
+  list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst;
 algorithm
-  _ := match (inVariableReplacements)
-    local
-      String str, len_str;
-      Integer len;
-      HashTable2.HashTable ht;
-      list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst;
-
-    case (REPLACEMENTS(hashTable= ht)) equation
-      (tplLst) = BaseHashTable.hashTableList(ht);
-      str = stringDelimitList(List.map(tplLst,printReplacementTupleStr), "\n");
-      print("\nReplacements: (");
-      len = listLength(tplLst);
-      len_str = intString(len);
-      print(len_str);
-      print(")\n");
-      print("========================================\n");
-      print(str);
-      print("\n");
-    then ();
-  end match;
+  (srcs, dsts) := getAllReplacements(repl);
+  tplLst := List.zip(srcs, dsts);
+  print("\nReplacements: (");
+  print(String(listLength(tplLst)));
+  print(")\n");
+  print("========================================\n");
+  print(stringDelimitList(List.map(tplLst,printReplacementTupleStr), "\n"));
+  print("\n");
 end dumpReplacements;
 
 public function dumpExtendReplacements
 "Prints the variable extendreplacements on form var1 -> var2"
-  input VariableReplacements inVariableReplacements;
+  input VariableReplacements repl;
+protected
+  list<DAE.ComponentRef> crefs;
 algorithm
-  _:=
-  match (inVariableReplacements)
-    local
-      String str,len_str;
-      Integer len;
-      HashTable2.HashTable ht;
-      list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst;
-    case (REPLACEMENTS(extendhashTable= ht))
-      equation
-        (tplLst) = BaseHashTable.hashTableList(ht);
-        str = stringDelimitList(List.map(tplLst,printReplacementTupleStr),"\n");
-        print("\nExtendReplacements: (");
-        len = listLength(tplLst);
-        len_str = intString(len);
-        print(len_str);
-        print(")\n");
-        print("========================================\n");
-        print(str);
-        print("\n");
-      then
-        ();
-  end match;
+  crefs := UnorderedSet.toList(repl.extendhashTable);
+  print("\nExtendReplacements: (");
+  print(String(listLength(crefs)));
+  print(")\n");
+  print("========================================\n");
+  print(stringDelimitList(list(ComponentReference.printComponentRefStr(c) for c in crefs), "\n"));
+  print("\n");
 end dumpExtendReplacements;
 
 public function dumpDerConstReplacements
 "Prints the variable derConst replacements on form var1 -> exp"
-  input VariableReplacements inVariableReplacements;
+  input VariableReplacements repl;
+protected
+  list<DAE.ComponentRef> srcs;
+  list<DAE.Exp> dsts;
+  list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst;
 algorithm
-  _:=
-  match (inVariableReplacements)
-    local
-      String str,len_str;
-      Integer len;
-      HashTable2.HashTable ht;
-      list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst;
-    case (REPLACEMENTS(derConst= SOME(ht)))
-      equation
-        (tplLst) = BaseHashTable.hashTableList(ht);
-        str = stringDelimitList(List.map(tplLst,printReplacementTupleStr),"\n");
-        print("\nDerConstReplacements: (");
-        len = listLength(tplLst);
-        len_str = intString(len);
-        print(len_str);
-        print(")\n");
-        print("========================================\n");
-        print(str);
-        print("\n");
-      then
-        ();
-    else ();
-  end match;
+  if isSome(repl.derConst) then
+    (srcs, dsts) := getCrefExpTableEntries(Util.getOption(repl.derConst));
+    tplLst := List.zip(srcs, dsts);
+    print("\nDerConstReplacements: (");
+    print(String(listLength(tplLst)));
+    print(")\n");
+    print("========================================\n");
+    print(stringDelimitList(List.map(tplLst,printReplacementTupleStr), "\n"));
+    print("\n");
+  end if;
 end dumpDerConstReplacements;
 
 protected function printReplacementTupleStr "help function to dumpReplacements"
@@ -2822,26 +2484,6 @@ algorithm
   // Normal debugging, without type&dimension information on crefs.
   str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) + " -> " + ExpressionDump.printExpStr(Util.tuple22(tpl));
 end printReplacementTupleStr;
-
-public function dumpStatistics
-"author Frenkel TUD 2013-02
-  Prints the size of replacement,inverse replacements and"
-  input VariableReplacements inVariableReplacements;
-protected
-  HashTable2.HashTable ht;
-  HashTable3.HashTable invht;
-  HashTable2.HashTable extht;
-  list<DAE.Ident> iVars;
-  Option<HashTable2.HashTable> derConst;
-algorithm
-  REPLACEMENTS(ht,invht,extht,iVars,derConst) := inVariableReplacements;
-  print("Replacements: " + intString(BaseHashTable.hashTableCurrentSize(ht)) + "\n");
-  print("inv. Repl.  : " + intString(BaseHashTable.hashTableCurrentSize(invht)) + "\n");
-  print("ext  Repl.  : " + intString(BaseHashTable.hashTableCurrentSize(extht)) + "\n");
-  print("iVars.      : " + intString(listLength(iVars)) + "\n");
-  extht := Util.getOptionOrDefault(derConst,HashTable2.emptyHashTable());
-  print("derConst: " + intString(BaseHashTable.hashTableCurrentSize(extht)) + "\n");
-end dumpStatistics;
 
 public function simplifyReplacements"applies ExpressionSimplify.simplify on all replacement expressions"
   input VariableReplacements replIn;
