@@ -100,6 +100,8 @@ public
       "
   extends Module.resolveSingularitiesInterface;
   protected
+    Adjacency.Mapping mapping;
+    array<Boolean> discrete_eqns, discrete_vars;
     array<list<Integer>> msss;
     list<Integer> marked_eqns;
     Adjacency.Matrix state_adj;
@@ -121,9 +123,21 @@ public
     String stageStr;
     Boolean debug = false;
   algorithm
+    // get the mapping and fail if there is none
+    mapping := match mapping_opt
+      case SOME(mapping) then mapping;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no mapping was provided."});
+      then fail();
+    end match;
+
+    // mark the discrete equations
+    discrete_eqns := listArray(list(Equation.isDiscrete(eqn) for eqn in EquationPointers.toList(equations)));
+    discrete_vars := listArray(list(BVariable.isDiscrete(var) for var in VariablePointers.toList(variables)));
+
     // get the minimally structurally singular subset
     msss := match adj
-      case Adjacency.FINAL() then getMSSS(adj.m, adj.mT, matching);
+      case Adjacency.FINAL() then getMSSS(adj.m, adj.mT, matching, discrete_eqns, discrete_vars, mapping);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected final matrix as adj input but got :\n"
           + Adjacency.Matrix.toString(adj)});
@@ -142,7 +156,7 @@ public
       // state candidates and constraint equations are lists of slices
       // adjacency matrix and arrays are only full based
       // slice them before matching
-      (constraint_ptrs, candidate_ptrs, constraint_eqns) := getConstraintsAndCandidates(equations, marked_eqns, mapping_opt);
+      (constraint_ptrs, candidate_ptrs, constraint_eqns) := getConstraintsAndCandidates(equations, marked_eqns, mapping);
 
       if VariablePointers.scalarSize(candidate_ptrs) < EquationPointers.scalarSize(constraint_ptrs) then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there was not enough state candidates to balance out the constraint equations.\n"
@@ -306,6 +320,8 @@ public
     "fails if the system has unmatched variables"
     extends Module.resolveSingularitiesInterface;
   protected
+    Adjacency.Mapping mapping;
+    array<Boolean> discrete_eqns, discrete_vars;
     list<Slice<VariablePointer>> unmatched_vars, matched_vars;
     list<Slice<EquationPointer>> unmatched_eqns, matched_eqns;
     String err_str;
@@ -314,6 +330,14 @@ public
     EquationPointers constraints;
     Integer msss_idx = 1;
   algorithm
+    // get the mapping and fail if there is none
+    mapping := match mapping_opt
+      case SOME(mapping) then mapping;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no mapping was provided."});
+      then fail();
+    end match;
+
     (matched_vars, unmatched_vars, matched_eqns, unmatched_eqns) := Matching.getMatches(matching, mapping_opt, variables, equations);
     if not listEmpty(unmatched_vars) then
       err_str := getInstanceName()
@@ -325,9 +349,13 @@ public
         + List.toString(unmatched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n";
 
       if Flags.isSet(Flags.BLT_DUMP) then
+        // mark the discrete equations
+        discrete_eqns := listArray(list(Equation.isDiscrete(eqn) for eqn in EquationPointers.toList(equations)));
+        discrete_vars := listArray(list(BVariable.isDiscrete(var) for var in VariablePointers.toList(variables)));
+
         // get the minimally structurally singular subset
         msss := match adj
-          case Adjacency.FINAL() then getMSSS(adj.m, adj.mT, matching);
+          case Adjacency.FINAL() then getMSSS(adj.m, adj.mT, matching, discrete_eqns, discrete_vars, mapping);
           else algorithm
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected final matrix as adj input but got :\n"
               + Adjacency.Matrix.toString(adj)});
@@ -335,7 +363,7 @@ public
         end match;
 
         for marked_eqns in msss loop
-          (constraints, candidates, _) := getConstraintsAndCandidates(equations, marked_eqns, mapping_opt);
+          (constraints, candidates, _) := getConstraintsAndCandidates(equations, marked_eqns, mapping);
           err_str := err_str + StringUtil.headline_2("MSSS " + intString(msss_idx) + "") + "\n"
             + EquationPointers.toString(constraints, "Constraint")
             + VariablePointers.toString(candidates, "State Candidate");
@@ -459,6 +487,9 @@ protected
     input array<list<Integer>> m              "eqn -> list<var>";
     input array<list<Integer>> mT             "var -> list<eqn>";
     input Matching matching;
+    input array<Boolean> discrete_eqns;
+    input array<Boolean> discrete_vars;
+    input Adjacency.Mapping mapping;
     output array<list<Integer>> msss;
   protected
     list<Integer> eqn_candidates = {};
@@ -468,7 +499,7 @@ protected
   algorithm
     // find all unmatched variable and equation indices
     for eqn in 1:arrayLength(matching.eqn_to_var) loop
-      if matching.eqn_to_var[eqn] == -1 then
+      if matching.eqn_to_var[eqn] == -1 and not discrete_eqns[mapping.eqn_StA[eqn]] then
         eqn_candidates := eqn :: eqn_candidates;
       end if;
     end for;
@@ -477,7 +508,7 @@ protected
     for eqn in eqn_candidates loop
       if eqn_coloring[eqn] == -1 then
         color := color + 1;
-        fillColorEqn(eqn, color, eqn_coloring, var_coloring, m, mT);
+        fillColorEqn(eqn, color, eqn_coloring, var_coloring, m, mT, discrete_eqns, discrete_vars, mapping);
       end if;
     end for;
 
@@ -499,11 +530,14 @@ protected
     input array<Integer> var_coloring;
     input array<list<Integer>> m              "eqn -> list<var>";
     input array<list<Integer>> mT             "var -> list<eqn>";
+    input array<Boolean> discrete_eqns;
+    input array<Boolean> discrete_vars;
+    input Adjacency.Mapping mapping;
   algorithm
     arrayUpdate(eqn_coloring, eqn, color);
     for var in m[eqn] loop
-      if var_coloring[var] == -1 then
-        fillColorVar(var, color, eqn_coloring, var_coloring, m, mT);
+      if var_coloring[var] == -1 and not discrete_vars[mapping.var_StA[var]] then
+        fillColorVar(var, color, eqn_coloring, var_coloring, m, mT, discrete_eqns, discrete_vars, mapping);
       end if;
     end for;
   end fillColorEqn;
@@ -517,11 +551,14 @@ protected
     input array<Integer> var_coloring;
     input array<list<Integer>> m              "eqn -> list<var>";
     input array<list<Integer>> mT             "var -> list<eqn>";
+    input array<Boolean> discrete_eqns;
+    input array<Boolean> discrete_vars;
+    input Adjacency.Mapping mapping;
   algorithm
     arrayUpdate(var_coloring, var, color);
     for eqn in mT[var] loop
-      if eqn_coloring[eqn] == -1 then
-        fillColorEqn(eqn, color, eqn_coloring, var_coloring, m, mT);
+      if eqn_coloring[eqn] == -1 and not discrete_eqns[mapping.eqn_StA[eqn]] then
+        fillColorEqn(eqn, color, eqn_coloring, var_coloring, m, mT, discrete_eqns, discrete_vars, mapping);
       end if;
     end for;
   end fillColorVar;
@@ -529,26 +566,17 @@ protected
   function getConstraintsAndCandidates
     input EquationPointers equations;
     input list<Integer> marked_eqns;
-    input Option<Adjacency.Mapping> mapping_opt;
+    input Adjacency.Mapping mapping;
     output EquationPointers constr = EquationPointers.empty();
     output VariablePointers states = VariablePointers.empty();
     output list<Slice<EquationPointer>> sliced_constr = {};
   protected
-    Adjacency.Mapping mapping;
     UnorderedSet<Integer> eqn_indices = UnorderedSet.new(Util.id, intEq);
     array<list<Integer>> eqn_slices = arrayCreate(EquationPointers.size(equations), {});
     UnorderedSet<ComponentRef> state_candidates = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     Pointer<Equation> eqn_ptr;
     Pointer<Variable> var_ptr;
   algorithm
-    // get the mapping and fail if there is none
-    mapping := match mapping_opt
-      case SOME(mapping) then mapping;
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no mapping was provided."});
-      then fail();
-    end match;
-
     // collect all relevant constraint equations
     for eqn in marked_eqns loop
       UnorderedSet.add(mapping.eqn_StA[eqn], eqn_indices);
