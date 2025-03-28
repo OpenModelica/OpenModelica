@@ -351,167 +351,167 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 //
 // ExtendReplacements: (161)
 // ========================================
-// const -> 0.0
-// torque -> 0.0
-// torque.flange -> 0.0
-// aimc -> 0.0
-// aimc.flange -> 0.0
-// aimc.strayLoad -> 0.0
-// aimc.strayLoad.flange -> 0.0
-// aimc.inertiaRotor -> 0.0
-// aimc.inertiaRotor.flange_b -> 0.0
-// aimc.inertiaRotor.flange_a -> 0.0
-// aimc.airGapS -> 0.0
-// aimc.airGapS.flange -> 0.0
-// aimc.friction -> 0.0
-// aimc.friction.flange -> 0.0
-// ground -> 0.0
-// ground.p -> 0.0
-// star -> 0.0
-// star.pin_n -> 0.0
-// star.plug_p -> 0.0
-// star.plug_p.pin -> 0.0
-// sinevoltage1 -> 0.0
-// sinevoltage1.plug_p -> 0.0
-// sinevoltage1.plug_p.pin -> 0.0
-// sinevoltage1.sineVoltage -> 0.0
-// sinevoltage1.sineVoltage[3].p -> 0.0
-// sinevoltage1.sineVoltage[2].p -> 0.0
-// sinevoltage1.sineVoltage[1].p -> 0.0
-// terminalBox -> 0.0
-// terminalBox.plug_sp -> 0.0
-// terminalBox.plug_sp.pin -> 0.0
-// terminalBox.plugSupply -> 0.0
-// terminalBox.plugSupply.pin -> 0.0
-// sinevoltage1.plug_n -> 0.0
-// sinevoltage1.plug_n.pin -> 0.0
-// sinevoltage1.sineVoltage[3].n -> 0.0
-// aimc.strayLoad.plug_p -> 0.0
-// aimc.strayLoad.plug_p.pin -> 0.0
-// sinevoltage1.sineVoltage[2].n -> 0.0
-// sinevoltage1.sineVoltage[1].n -> 0.0
-// terminalBox.plug_sn -> 0.0
-// terminalBox.plug_sn.pin -> 0.0
-// terminalBox.star -> 0.0
-// terminalBox.star.plug_p -> 0.0
-// terminalBox.star.plug_p.pin -> 0.0
-// terminalBox.star.pin_n -> 0.0
-// terminalBox.starpoint -> 0.0
-// aimc.plug_sn -> 0.0
-// aimc.plug_sn.pin -> 0.0
-// aimc.spacePhasorS -> 0.0
-// aimc.spacePhasorS.plug_n -> 0.0
-// aimc.spacePhasorS.plug_n.pin -> 0.0
-// aimc.plug_sp -> 0.0
-// aimc.plug_sp.pin -> 0.0
-// aimc.strayLoad.i -> 0.0
-// aimc.strayLoad.plug_n -> 0.0
-// aimc.strayLoad.plug_n.pin -> 0.0
-// aimc.rs -> 0.0
-// aimc.rs.plug_p -> 0.0
-// aimc.rs.plug_p.pin -> 0.0
-// aimc.rs.resistor -> 0.0
-// aimc.rs.resistor[1].p -> 0.0
-// aimc.rs.resistor[1].n -> 0.0
-// aimc.rs.plug_n -> 0.0
-// aimc.rs.plug_n.pin -> 0.0
-// aimc.spacePhasorS.plug_p -> 0.0
-// aimc.spacePhasorS.plug_p.pin -> 0.0
-// aimc.rs.i -> 0.0
-// aimc.is -> 0.0
-// aimc.rs.resistor[2].p -> 0.0
-// aimc.rs.resistor[2].n -> 0.0
-// aimc.rs.resistor[3].p -> 0.0
-// aimc.rs.resistor[3].n -> 0.0
-// aimc.statorCore -> 0.0
-// aimc.statorCore.spacePhasor -> 0.0
-// aimc.statorCore.spacePhasor.v_ -> 0.0
-// aimc.spacePhasorS.spacePhasor -> 0.0
-// aimc.spacePhasorS.spacePhasor.v_ -> 0.0
-// aimc.spacePhasorS.ground -> 0.0
-// aimc.lszero -> 0.0
-// aimc.lszero.n -> 0.0
-// aimc.spacePhasorS.zero -> 0.0
-// aimc.thermalAmbient -> 0.0
-// aimc.thermalAmbient.constTs -> 0.0
-// aimc.thermalAmbient.temperatureStatorWinding -> 0.0
-// aimc.thermalAmbient.temperatureStatorWinding.port -> 0.0
-// aimc.thermalAmbient.thermalCollectorStator -> 0.0
-// aimc.thermalAmbient.thermalCollectorStator.port_b -> 0.0
-// aimc.thermalAmbient.thermalCollectorStator.port_a -> 0.0
-// aimc.thermalAmbient.thermalPort -> 0.0
-// aimc.thermalAmbient.thermalPort.heatPortStatorWinding -> 0.0
-// aimc.internalThermalPort -> 0.0
-// aimc.internalThermalPort.heatPortStatorWinding -> 0.0
-// aimc.rs.heatPort -> 0.0
-// aimc.rs.resistor[3].heatPort -> 0.0
-// aimc.rs.resistor[2].heatPort -> 0.0
-// aimc.rs.resistor[1].heatPort -> 0.0
-// aimc.fixed -> 0.0
-// aimc.fixed.flange -> 0.0
-// aimc.airGapS.support -> 0.0
-// aimc.strayLoad.support -> 0.0
-// aimc.internalSupport -> 0.0
-// aimc.inertiaStator -> 0.0
-// aimc.inertiaStator.flange_a -> 0.0
-// aimc.inertiaStator.flange_b -> 0.0
-// aimc.friction.support -> 0.0
-// aimc.thermalAmbient.constTr -> 0.0
-// aimc.thermalAmbient.temperatureRotorWinding -> 0.0
-// aimc.thermalAmbient.temperatureRotorWinding.port -> 0.0
-// aimc.thermalAmbient.thermalPort.heatPortRotorWinding -> 0.0
-// aimc.internalThermalPort.heatPortRotorWinding -> 0.0
-// aimc.squirrelCageR -> 0.0
-// aimc.squirrelCageR.heatPort -> 0.0
-// aimc.lssigma -> 0.0
-// aimc.lssigma.spacePhasor_b -> 0.0
-// aimc.lssigma.spacePhasor_b.v_ -> 0.0
-// aimc.squirrelCageR.spacePhasor_r -> 0.0
-// aimc.squirrelCageR.spacePhasor_r.v_ -> 0.0
-// aimc.airGapS.i_rr -> 0.0
-// aimc.airGapS.spacePhasor_r -> 0.0
-// aimc.airGapS.spacePhasor_r.i_ -> 0.0
-// aimc.squirrelCageR.spacePhasor_r.i_ -> 0.0
-// aimc.ir -> 0.0
-// aimc.lssigma.spacePhasor_a -> 0.0
-// aimc.lssigma.spacePhasor_a.i_ -> 0.0
-// aimc.lssigma.spacePhasor_b.i_ -> 0.0
-// aimc.airGapS.spacePhasor_s -> 0.0
-// aimc.airGapS.spacePhasor_s.i_ -> 0.0
-// aimc.airGapS.i_ss -> 0.0
-// aimc.idq_ss -> 0.0
-// aimc.thermalAmbient.temperatureFriction -> 0.0
-// aimc.thermalAmbient.temperatureFriction.port -> 0.0
-// aimc.thermalAmbient.thermalPort.heatPortFriction -> 0.0
-// aimc.thermalAmbient.temperatureStrayLoad -> 0.0
-// aimc.thermalAmbient.temperatureStrayLoad.port -> 0.0
-// aimc.thermalAmbient.thermalPort.heatPortStrayLoad -> 0.0
-// aimc.internalThermalPort.heatPortRotorCore -> 0.0
-// aimc.thermalAmbient.thermalPort.heatPortRotorCore -> 0.0
-// aimc.thermalAmbient.temperatureRotorCore -> 0.0
-// aimc.thermalAmbient.temperatureRotorCore.port -> 0.0
-// aimc.thermalAmbient.temperatureStatorCore -> 0.0
-// aimc.thermalAmbient.temperatureStatorCore.port -> 0.0
-// aimc.thermalAmbient.thermalPort.heatPortStatorCore -> 0.0
-// aimc.internalThermalPort.heatPortFriction -> 0.0
-// aimc.internalThermalPort.heatPortStrayLoad -> 0.0
-// aimc.internalThermalPort.heatPortStatorCore -> 0.0
-// aimc.lszero.p -> 0.0
-// sinevoltage1.sineVoltage[3].signalSource -> 0.0
-// sinevoltage1.sineVoltage[2].signalSource -> 0.0
-// sinevoltage1.sineVoltage[1].signalSource -> 0.0
-// speedSensor -> 0.0
-// speedSensor.flange -> 0.0
-// aimc.powerBalance -> 0.0
-// aimc.airGapS.RotationMatrix -> 0.0
-// aimc.strayLoad.v -> 0.0
-// aimc.strayLoad.heatPort -> 0.0
-// aimc.statorCore.spacePhasor.i_ -> 0.0
-// aimc.statorCore.heatPort -> 0.0
-// aimc.airGapS.i_rs -> 0.0
-// aimc.airGapS.i_sr -> 0.0
-// aimc.friction.heatPort -> 0.0
-// aimc.spacePhasorS.spacePhasor.i_ -> 0.0
+// sinevoltage1.plug_p
+// sinevoltage1.plug_n
+// aimc.statorCore.heatPort
+// aimc.thermalAmbient.thermalPort.heatPortStatorWinding
+// aimc.thermalAmbient.temperatureStrayLoad
+// aimc.thermalAmbient
+// aimc.strayLoad
+// aimc.strayLoad.plug_p.pin
+// aimc.strayLoad.plug_n.pin
+// terminalBox.star
+// terminalBox.star.plug_p.pin
+// speedSensor.flange
+// aimc.internalThermalPort.heatPortRotorCore
+// aimc.strayLoad.heatPort
+// star.pin_n
+// aimc.squirrelCageR
+// aimc.inertiaRotor.flange_b
+// aimc.inertiaRotor.flange_a
+// aimc.plug_sp.pin
+// aimc.plug_sn.pin
+// aimc.rs
+// aimc.rs.plug_p.pin
+// sinevoltage1.sineVoltage[3].signalSource
+// aimc.rs.plug_n.pin
+// sinevoltage1.sineVoltage[2].signalSource
+// sinevoltage1.sineVoltage[1].signalSource
+// aimc.thermalAmbient.temperatureStatorWinding.port
+// star.plug_p
+// aimc.fixed.flange
+// aimc.lszero.p
+// aimc.lszero.n
+// aimc.thermalAmbient.temperatureRotorCore.port
+// terminalBox.plug_sp.pin
+// terminalBox.plug_sn.pin
+// aimc.statorCore.spacePhasor.v_
+// aimc.squirrelCageR.heatPort
+// aimc.strayLoad.flange
+// aimc.airGapS.RotationMatrix
+// aimc.thermalAmbient.thermalPort.heatPortRotorCore
+// aimc.rs.heatPort
+// aimc.lssigma
+// aimc.inertiaRotor
+// aimc.internalThermalPort
+// aimc.thermalAmbient.temperatureStatorCore.port
+// aimc.is
+// aimc.ir
+// torque
+// aimc.thermalAmbient.temperatureFriction.port
+// ground.p
+// aimc.airGapS
+// aimc.internalThermalPort.heatPortStatorCore
+// terminalBox.plugSupply.pin
+// sinevoltage1.sineVoltage
+// aimc
+// aimc.strayLoad.support
+// aimc.spacePhasorS.plug_p
+// aimc.spacePhasorS.plug_n
+// aimc.lssigma.spacePhasor_b.v_
+// aimc.friction
+// aimc.powerBalance
+// aimc.statorCore.spacePhasor.i_
+// terminalBox
+// aimc.spacePhasorS.spacePhasor.v_
+// aimc.thermalAmbient.thermalPort
+// sinevoltage1
+// aimc.rs.resistor
+// sinevoltage1.plug_p.pin
+// sinevoltage1.plug_n.pin
+// aimc.statorCore.spacePhasor
+// aimc.strayLoad.v
+// aimc.friction.heatPort
+// aimc.strayLoad.i
+// aimc.thermalAmbient.thermalCollectorStator
+// aimc.thermalAmbient.thermalPort.heatPortStatorCore
+// aimc.internalThermalPort.heatPortRotorWinding
+// aimc.thermalAmbient.temperatureRotorWinding.port
+// torque.flange
+// aimc.thermalAmbient.temperatureStrayLoad.port
+// aimc.airGapS.flange
+// terminalBox.star.pin_n
+// aimc.rs.resistor[3].heatPort
+// aimc.rs.resistor[2].heatPort
+// aimc.rs.resistor[1].heatPort
+// aimc.flange
+// aimc.squirrelCageR.spacePhasor_r.v_
+// aimc.strayLoad.plug_p
+// aimc.strayLoad.plug_n
+// aimc.friction.flange
+// aimc.lssigma.spacePhasor_b.i_
+// aimc.lssigma.spacePhasor_a.i_
+// aimc.spacePhasorS.zero
+// terminalBox.star.plug_p
+// aimc.rs.i
+// const
+// star
+// star.plug_p.pin
+// aimc.lssigma.spacePhasor_b
+// aimc.lssigma.spacePhasor_a
+// aimc.spacePhasorS.spacePhasor.i_
+// aimc.thermalAmbient.thermalPort.heatPortRotorWinding
+// aimc.airGapS.spacePhasor_s.i_
+// aimc.airGapS.spacePhasor_r.i_
+// aimc.internalSupport
+// aimc.thermalAmbient.temperatureStatorWinding
+// aimc.airGapS.support
+// aimc.spacePhasorS.ground
+// aimc.thermalAmbient.temperatureRotorCore
+// aimc.plug_sp
+// aimc.plug_sn
+// aimc.spacePhasorS.spacePhasor
+// aimc.airGapS.spacePhasor_s
+// aimc.airGapS.spacePhasor_r
+// aimc.thermalAmbient.thermalCollectorStator.port_b
+// aimc.thermalAmbient.thermalCollectorStator.port_a
+// aimc.rs.plug_p
+// aimc.rs.plug_n
+// aimc.friction.support
+// aimc.inertiaStator.flange_b
+// aimc.inertiaStator.flange_a
+// aimc.lszero
+// aimc.internalThermalPort.heatPortStrayLoad
+// terminalBox.plug_sp
+// terminalBox.plug_sn
+// aimc.thermalAmbient.temperatureStatorCore
+// aimc.squirrelCageR.spacePhasor_r.i_
+// sinevoltage1.sineVoltage[3].p
+// sinevoltage1.sineVoltage[2].p
+// sinevoltage1.sineVoltage[1].p
+// sinevoltage1.sineVoltage[3].n
+// sinevoltage1.sineVoltage[2].n
+// sinevoltage1.sineVoltage[1].n
+// aimc.thermalAmbient.temperatureFriction
+// aimc.internalThermalPort.heatPortFriction
+// aimc.spacePhasorS
+// aimc.spacePhasorS.plug_p.pin
+// aimc.spacePhasorS.plug_n.pin
+// aimc.squirrelCageR.spacePhasor_r
+// aimc.airGapS.i_ss
+// aimc.airGapS.i_sr
+// aimc.internalThermalPort.heatPortStatorWinding
+// aimc.idq_ss
+// ground
+// aimc.airGapS.i_rs
+// aimc.airGapS.i_rr
+// aimc.inertiaStator
+// speedSensor
+// terminalBox.plugSupply
+// aimc.rs.resistor[3].p
+// aimc.rs.resistor[2].p
+// aimc.rs.resistor[1].p
+// aimc.rs.resistor[3].n
+// aimc.rs.resistor[2].n
+// aimc.rs.resistor[1].n
+// aimc.thermalAmbient.thermalPort.heatPortStrayLoad
+// aimc.statorCore
+// terminalBox.starpoint
+// aimc.thermalAmbient.constTs
+// aimc.thermalAmbient.constTr
+// aimc.thermalAmbient.thermalPort.heatPortFriction
+// aimc.fixed
+// aimc.thermalAmbient.temperatureRotorWinding
 //
 // DerConstReplacements: (3)
 // ========================================
@@ -561,29 +561,29 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 //
 // ExtendReplacements: (23)
 // ========================================
-// ground -> 0.0
-// ground.p -> 0.0
-// aimc -> 0.0
-// aimc.airGapS -> 0.0
-// aimc.airGapS.RotationMatrix -> 0.0
-// aimc.strayLoad -> 0.0
-// $DER -> 0.0
-// $DER.aimc -> 0.0
-// $DER.aimc.strayLoad -> 0.0
-// aimc.rs -> 0.0
-// aimc.rs.resistor -> 0.0
-// aimc.powerBalance -> 0.0
-// aimc.friction -> 0.0
-// $DER.aimc.friction -> 0.0
-// aimc.inertiaStator -> 0.0
-// aimc.inertiaStator.flange_a -> 0.0
-// aimc.fixed -> 0.0
-// aimc.fixed.flange -> 0.0
-// $DER.ground -> 0.0
-// $DER.ground.p -> 0.0
-// $DER.aimc.airGapS -> 0.0
-// $DER.aimc.airGapS.psi_mr -> 0.0
-// $DER.aimc.airGapS.psi_ms -> 0.0
+// aimc.strayLoad
+// aimc.rs
+// aimc.fixed.flange
+// aimc.airGapS.RotationMatrix
+// $DER.ground
+// ground.p
+// aimc.airGapS
+// aimc
+// aimc.friction
+// aimc.powerBalance
+// $DER
+// $DER.aimc.strayLoad
+// aimc.rs.resistor
+// $DER.ground.p
+// aimc.inertiaStator.flange_a
+// $DER.aimc.airGapS
+// $DER.aimc
+// $DER.aimc.friction
+// $DER.aimc.airGapS.psi_ms
+// $DER.aimc.airGapS.psi_mr
+// ground
+// aimc.inertiaStator
+// aimc.fixed
 //
 // Unreplaceable Crefs: (2)
 // ========================================
@@ -1289,7 +1289,7 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 59: aimc.strayLoad.flange.tau:VARIABLE(flow=true unit = "N.m" fixed = true )  = -0.0  "Cut torque in the flange" type: Real
 // 60: sinevoltage1.freqHz[3]:PARAM(start = 1.0 unit = "Hz" )  = 50.0  "Frequencies of sine waves" type: Real [3]
 // 61: sinevoltage1.sineVoltage[3].freqHz:PARAM(start = 1.0 unit = "Hz" )  = sinevoltage1.freqHz[3]  "Frequency of sine wave" type: Real [3]
-// 62: sinevoltage1.phase[3]:PARAM(unit = "rad" )  = -4.188790204786391  "Phases of sine waves" type: Real [3]
+// 62: sinevoltage1.phase[3]:PARAM(unit = "rad" )  = -4.1887902047863905  "Phases of sine waves" type: Real [3]
 // 63: sinevoltage1.sineVoltage[3].phase:PARAM(unit = "rad" )  = sinevoltage1.phase[3]  "Phase of sine wave" type: Real [3]
 // 64: sinevoltage1.V[3]:PARAM(start = 1.0 unit = "V" )  = 187.794213613377  "Amplitudes of sine waves" type: Real [3]
 // 65: sinevoltage1.sineVoltage[3].V:PARAM(start = 1.0 unit = "V" )  = sinevoltage1.V[3]  "Amplitude of sine wave" type: Real [3]
@@ -1305,7 +1305,7 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 75: sinevoltage1.sineVoltage[3].signalSource.amplitude:PARAM()  = sinevoltage1.sineVoltage[3].V  "Amplitude of sine wave" type: Real [3]
 // 76: sinevoltage1.freqHz[2]:PARAM(start = 1.0 unit = "Hz" )  = 50.0  "Frequencies of sine waves" type: Real [3]
 // 77: sinevoltage1.sineVoltage[2].freqHz:PARAM(start = 1.0 unit = "Hz" )  = sinevoltage1.freqHz[2]  "Frequency of sine wave" type: Real [3]
-// 78: sinevoltage1.phase[2]:PARAM(unit = "rad" )  = -2.094395102393195  "Phases of sine waves" type: Real [3]
+// 78: sinevoltage1.phase[2]:PARAM(unit = "rad" )  = -2.0943951023931953  "Phases of sine waves" type: Real [3]
 // 79: sinevoltage1.sineVoltage[2].phase:PARAM(unit = "rad" )  = sinevoltage1.phase[2]  "Phase of sine wave" type: Real [3]
 // 80: sinevoltage1.V[2]:PARAM(start = 1.0 unit = "V" )  = 187.794213613377  "Amplitudes of sine waves" type: Real [3]
 // 81: sinevoltage1.sineVoltage[2].V:PARAM(start = 1.0 unit = "V" )  = sinevoltage1.V[2]  "Amplitude of sine wave" type: Real [3]
@@ -1356,7 +1356,7 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 126: aimc.squirrelCageR.T_ref:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TrRef  "Reference temperature" type: Real
 // 127: aimc.Rr:PARAM(start = 0.04 unit = "Ohm" )  = 0.4  "Rotor resistance per phase (equivalent three phase winding) at TRef" type: Real
 // 128: aimc.squirrelCageR.Rr:PARAM(unit = "Ohm" )  = aimc.Rr  "Rotor resistance per phase translated to stator at T_ref" type: Real
-// 129: aimc.Lrsigma:PARAM(start = 0.1017764061411688 / (6.283185307179586 * aimc.fsNominal) unit = "H" )  = 0.002  "Rotor stray inductance per phase (equivalent three phase winding)" type: Real
+// 129: aimc.Lrsigma:PARAM(start = 0.10177640614116878 / (6.283185307179586 * aimc.fsNominal) unit = "H" )  = 0.002  "Rotor stray inductance per phase (equivalent three phase winding)" type: Real
 // 130: aimc.squirrelCageR.Lrsigma:PARAM(unit = "H" )  = aimc.Lrsigma  "Rotor stray inductance per phase translated to stator" type: Real
 // 131: aimc.squirrelCageR.T:PARAM(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.TrRef  "Fixed device temperature if useHeatPort = false" type: Real
 // 132: aimc.squirrelCageR.useHeatPort:PARAM(final = true )  = true  "=true, if HeatPort is enabled" type: Boolean
@@ -1394,7 +1394,7 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 164: aimc.spacePhasorS.TransformationMatrix[2,2]:PARAM(protected = true )  = 0.5773502691896257  type: Real [2,3]
 // 165: aimc.spacePhasorS.TransformationMatrix[2,1]:PARAM(protected = true )  = 0.0  type: Real [2,3]
 // 166: aimc.spacePhasorS.TransformationMatrix[1,3]:PARAM(protected = true )  = -0.3333333333333336  type: Real [2,3]
-// 167: aimc.spacePhasorS.TransformationMatrix[1,2]:PARAM(protected = true )  = -0.3333333333333331  type: Real [2,3]
+// 167: aimc.spacePhasorS.TransformationMatrix[1,2]:PARAM(protected = true )  = -0.33333333333333315  type: Real [2,3]
 // 168: aimc.spacePhasorS.TransformationMatrix[1,1]:PARAM(protected = true )  = 0.6666666666666666  type: Real [2,3]
 // 169: aimc.spacePhasorS.turnsRatio:PARAM()  = 1.0  "Turns ratio" type: Real
 // 170: aimc.spacePhasorS.pi:CONST()  = 3.141592653589793  type: Real
@@ -1403,7 +1403,7 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 173: aimc.statorCoreParameters.m:PARAM()  = 3  "Number of phases (1 for DC, 3 for induction machines)" type: Integer
 // 174: aimc.statorCore.coreParameters.m:PARAM()  = aimc.statorCoreParameters.m  "Number of phases (1 for DC, 3 for induction machines)" type: Integer
 // 175: aimc.statorCore.m:PARAM(final = true )  = aimc.statorCore.coreParameters.m  "Number of phases" type: Integer
-// 176: aimc.statorCoreParameters.wMin:PARAM(unit = "rad/s" final = true )  = 1e-06 * aimc.statorCoreParameters.wRef  type: Real
+// 176: aimc.statorCoreParameters.wMin:PARAM(unit = "rad/s" final = true )  = 1e-6 * aimc.statorCoreParameters.wRef  type: Real
 // 177: aimc.statorCore.coreParameters.wMin:PARAM(unit = "rad/s" final = true )  = aimc.statorCoreParameters.wMin  type: Real
 // 178: aimc.statorCore.coreParameters.GcRef:PARAM(unit = "S" final = true )  = 0.0  "Reference conductance at reference frequency and voltage" type: Real
 // 179: aimc.statorCore.coreParameters.ratioHysteresis:PARAM(min = 0.0 max = 1.0 start = 0.775 final = true )  = 0.0  "Ratio of hysteresis losses with respect to the total core losses at VRef and fRef" type: Real
@@ -1412,7 +1412,7 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 182: aimc.statorCore.coreParameters.VRef:PARAM(min = 1e-60 unit = "V" )  = aimc.statorCoreParameters.VRef  "Reference inner RMS voltage that reference core losses PRef refer to" type: Real
 // 183: aimc.statorCore.coreParameters.PRef:PARAM(min = 0.0 unit = "W" final = true )  = 0.0  "Reference core losses at reference inner voltage VRef" type: Real
 // 184: aimc.statorCore.useHeatPort:PARAM(final = true )  = true  "=true, if heatPort is enabled" type: Boolean
-// 185: aimc.Lssigma:PARAM(start = 0.1017764061411688 / (6.283185307179586 * aimc.fsNominal) unit = "H" )  = 0.004  "Stator stray inductance per phase" type: Real
+// 185: aimc.Lssigma:PARAM(start = 0.10177640614116878 / (6.283185307179586 * aimc.fsNominal) unit = "H" )  = 0.004  "Stator stray inductance per phase" type: Real
 // 186: aimc.Lszero:PARAM(unit = "H" )  = aimc.Lssigma  "Stator zero sequence inductance" type: Real
 // 187: aimc.lszero.L:PARAM(start = 1.0 unit = "H" )  = aimc.Lszero  "Inductance" type: Real
 // 188: aimc.lssigma.L[2]:PARAM(unit = "H" )  = aimc.Lssigma  "Inductance of both axes" type: Real [2]
@@ -1790,7 +1790,7 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 //
 // record SimulationResult
 //     resultFile = "asmaFlow_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'asmaFlow', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 20.0, numberOfIntervals = 10000, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'asmaFlow', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
