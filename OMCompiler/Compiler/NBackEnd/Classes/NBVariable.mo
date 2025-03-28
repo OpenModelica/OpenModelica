@@ -2317,6 +2317,18 @@ public
       end match;
     end setVariables;
 
+    function getStateOrder
+      input VarData varData;
+      output UnorderedMap<ComponentRef, ComponentRef> state_order;
+    algorithm
+      state_order := match varData
+        case VAR_DATA_SIM() then varData.state_order;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because of incorrect record type."});
+        then fail();
+      end match;
+    end getStateOrder;
+
     // used to add specific types. Fill up with Jacobian/Hessian types
     type VarType = enumeration(STATE, STATE_DER, ALGEBRAIC, DISCRETE, DISC_STATE, PREVIOUS, START, PARAMETER, ITERATOR, RECORD, CLOCK);
 

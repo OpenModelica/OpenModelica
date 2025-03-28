@@ -696,7 +696,7 @@ protected
     list<StrongComponent> comps, diffed_comps;
     Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
     Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
-    Pointer<UnorderedMap<ComponentRef,ComponentRef>> jacobianHT = Pointer.create(UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual));
+    Pointer<UnorderedMap<ComponentRef,ComponentRef>> diff_map = Pointer.create(UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual));
     Option<UnorderedMap<ComponentRef,ComponentRef>> optHT;
     Differentiate.DifferentiationArguments diffArguments;
     Pointer<Integer> idx = Pointer.create(0);
@@ -717,26 +717,26 @@ protected
     end if;
 
     // create seed vars
-    VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, ht = jacobianHT, makeVar = BVariable.makeSeedVar, init = init));
+    VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, ht = diff_map, makeVar = BVariable.makeSeedVar, init = init));
 
     // create pDer vars (also filters out discrete vars)
     (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
     (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(init = init));
 
-    for v in res_vars loop makeVarTraverse(v, name, pDer_vars_ptr, jacobianHT, function BVariable.makePDerVar(isTmp = false), init = init); end for;
+    for v in res_vars loop makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), init = init); end for;
     res_vars := Pointer.access(pDer_vars_ptr);
 
     pDer_vars_ptr := Pointer.create({});
-    for v in tmp_vars loop makeVarTraverse(v, name, pDer_vars_ptr, jacobianHT, function BVariable.makePDerVar(isTmp = true), init = init); end for;
+    for v in tmp_vars loop makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), init = init); end for;
     tmp_vars := Pointer.access(pDer_vars_ptr);
 
-    optHT := SOME(Pointer.access(jacobianHT));
+    optHT := SOME(Pointer.access(diff_map));
 
     // Build differentiation argument structure
     diffArguments := Differentiate.DIFFERENTIATION_ARGUMENTS(
       diffCref        = ComponentRef.EMPTY(),   // no explicit cref necessary, rules are set by HT
       new_vars        = {},
-      jacobianHT      = optHT,                  // seed and temporary cref hashtable
+      diff_map        = optHT,                  // seed and temporary cref hashtable
       diffType        = NBDifferentiate.DifferentiationType.JACOBIAN,
       funcTree        = funcTree,
       scalarized      = seedCandidates.scalarized
