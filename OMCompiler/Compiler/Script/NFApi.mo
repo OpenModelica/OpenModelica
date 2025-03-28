@@ -1844,7 +1844,7 @@ algorithm
       then
         json;
 
-    else JSON.makeString(Dump.printExpStr(AbsynUtil.stripCommentExpressions(exp)));
+    else JSON.makeString(Dump.printExpStr(AbsynUtil.stripCommentExpressions(exp, true)));
   end match;
 end dumpJSONAbsynExpression;
 
@@ -2133,7 +2133,7 @@ algorithm
         end if;
 
         if isSome(mod.binding) then
-          binding_json := JSON.makeString(Dump.printExpStr(AbsynUtil.stripCommentExpressions(Util.getOption(mod.binding))));
+          binding_json := JSON.makeString(Dump.printExpStr(AbsynUtil.stripCommentExpressions(Util.getOption(mod.binding), true)));
 
           if JSON.isNull(json) then
             json := binding_json;
