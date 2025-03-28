@@ -1037,6 +1037,9 @@ public
         Pointer.update(derivative, der_var);
       then BackendInfo.setVarKind(var.backendinfo, VariableKind.DUMMY_STATE(derivative));
 
+      // do nothing if its already a dummy state
+      case VariableKind.DUMMY_STATE(dummy_der = derivative) then var.backendinfo;
+
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(getVarName(varPointer)) + "."});
       then fail();
