@@ -303,10 +303,10 @@ public
           list<SimStrongComponent.Block> event_blocks = {}, jac_blocks;
           list<SimStrongComponent.Block> init, init_0, init_no_ret, start;
           list<list<SimStrongComponent.Block>> ode, algebraic;
-          list<SimStrongComponent.Block> linearLoops, nonlinearLoops, linearLoops_0, nonlinearLoops_0;
+          list<SimStrongComponent.Block> linearLoops, nonlinearLoops;
           list<ComponentRef> discreteVars;
           ExtObjInfo extObjInfo;
-          list<SimJacobian> jacobians, jacobians_0;
+          list<SimJacobian> jacobians;
           UnorderedMap<ComponentRef, SimVar> simcode_map;
           UnorderedMap<ComponentRef, SimStrongComponent.Block> equation_map;
           Option<DaeModeData> daeModeData;
@@ -409,11 +409,7 @@ public
               //(daeModeData, modelInfo, jacA, simcode_map, simCodeIndices) := DaeModeData.createSparsityJacobian(daeModeData, modelInfo, Util.getOption(bdae.dae), simcode_map, simCodeIndices);
             //else
 
-            (linearLoops, nonlinearLoops, jacobians, simCodeIndices)        := collectAlgebraicLoops(init, ode, algebraic, daeModeData, simCodeIndices, simcode_map);
-            (linearLoops_0, nonlinearLoops_0, jacobians_0, simCodeIndices)  := collectAlgebraicLoops(init_0, ode, algebraic, daeModeData, simCodeIndices, simcode_map);
-            linearLoops     := listAppend(linearLoops_0, linearLoops);
-            nonlinearLoops  := listAppend(nonlinearLoops_0, nonlinearLoops);
-            jacobians       := listAppend(jacobians_0, jacobians);
+            (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := collectAlgebraicLoops(init, init_0, ode, algebraic, daeModeData, simCodeIndices, simcode_map);
 
             for jac in jacobians loop
               if Util.isSome(jac.jac_map) then
@@ -582,6 +578,7 @@ public
       "Collects algebraic loops from all systems (ode, init, init_0, dae, ...).
       ToDo: Add other systems once implemented!"
       input list<SimStrongComponent.Block> init;
+      input list<SimStrongComponent.Block> init_0;
       input list<list<SimStrongComponent.Block>> ode;
       input list<list<SimStrongComponent.Block>> algebraic;
       input Option<DaeModeData> daeModeData;
@@ -593,7 +590,7 @@ public
     protected
       list<list<SimStrongComponent.Block>> dae_mode_blcks;
     algorithm
-      (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := SimStrongComponent.Block.collectAlgebraicLoops({init}, linearLoops, nonlinearLoops, jacobians, simCodeIndices, simcode_map);
+      (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := SimStrongComponent.Block.collectAlgebraicLoops({init, init_0}, linearLoops, nonlinearLoops, jacobians, simCodeIndices, simcode_map);
       (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := SimStrongComponent.Block.collectAlgebraicLoops(ode, linearLoops, nonlinearLoops, jacobians, simCodeIndices, simcode_map);
       (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := SimStrongComponent.Block.collectAlgebraicLoops(algebraic, linearLoops, nonlinearLoops, jacobians, simCodeIndices, simcode_map);
       if isSome(daeModeData) then
