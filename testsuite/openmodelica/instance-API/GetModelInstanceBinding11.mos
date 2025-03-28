@@ -1,0 +1,52 @@
+// name: GetModelInstanceBinding11
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+    Real x = (1 - 2) / (3);
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+getErrorString();
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"x\",
+//       \"type\": \"Real\",
+//       \"modifiers\": \"(1 - 2)/(3)\",
+//       \"value\": {
+//         \"binding\": {
+//           \"$kind\": \"binary_op\",
+//           \"lhs\": {
+//             \"$kind\": \"binary_op\",
+//             \"lhs\": 1,
+//             \"op\": \"-\",
+//             \"rhs\": 2
+//           },
+//           \"op\": \"/\",
+//           \"rhs\": 3
+//         }
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 4,
+//     \"columnEnd\": 8
+//   }
+// }"
+// ""
+// endResult

@@ -2533,17 +2533,22 @@ algorithm
 end getString;
 
 public function stripCommentExpressions
+  "Strips comment expressions from the given expression. If onlyComments is
+   false it also strips parentheses (represented by tuples)."
   input output Absyn.Exp exp;
+  input Boolean onlyComments = false;
 algorithm
-  (exp,_) := traverseExp(exp, stripCommentExpressionsHelper, true);
+  (exp,_) := traverseExp(exp, stripCommentExpressionsHelper, onlyComments);
 end stripCommentExpressions;
 
-protected function stripCommentExpressionsHelper<T>
+protected function stripCommentExpressionsHelper
   input output Absyn.Exp exp;
-  input output T extra;
+  input output Boolean onlyComments;
+protected
+  Absyn.Exp e;
 algorithm
   exp := match exp
-    case Absyn.TUPLE({exp}) then exp;
+    case Absyn.TUPLE({e}) guard not onlyComments then e;
     case Absyn.EXPRESSIONCOMMENT() then exp.exp;
     else exp;
   end match;
