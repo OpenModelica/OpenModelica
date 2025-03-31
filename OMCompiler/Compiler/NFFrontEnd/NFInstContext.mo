@@ -79,6 +79,7 @@ public
   constant Type EQ_SUBEXPRESSION = intBitOr(EQUATION, SUBEXPRESSION);
   constant Type VALID_TYPENAME_SCOPE = intBitOr(ITERATION_RANGE, DIMENSION);
   constant Type DISCRETE_SCOPE = intBitOr(WHEN, intBitOr(INITIAL, FUNCTION));
+  constant Type NON_EXP_FLAGS = intBitOr(GLOBAL_FLAGS, intBitOr(CLASS, FUNCTION));
 
   function set
     input Type context;
@@ -122,6 +123,13 @@ public
   algorithm
     outContext := intBitAnd(context, GLOBAL_FLAGS);
   end clearScopeFlags;
+
+  function clearExpFlags
+    input Type context;
+    output Type outContext;
+  algorithm
+    outContext := intBitAnd(context, NON_EXP_FLAGS);
+  end clearExpFlags;
 
   function inRelaxed
     input Type context;
