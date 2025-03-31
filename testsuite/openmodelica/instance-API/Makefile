@@ -28,6 +28,7 @@ GetModelInstanceBinding7.mos \
 GetModelInstanceBinding8.mos \
 GetModelInstanceBinding9.mos \
 GetModelInstanceBinding10.mos \
+GetModelInstanceBinding11.mos \
 GetModelInstanceBreak1.mos \
 GetModelInstanceChoices1.mos \
 GetModelInstanceChoices2.mos \

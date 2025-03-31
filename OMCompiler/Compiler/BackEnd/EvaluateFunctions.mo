@@ -1987,7 +1987,7 @@ algorithm
           repl = List.fold(addStmts,addReplacementRuleForAssignment,repl);
           lhsExps = Expression.getComplexContents(exp1);
           outputs = List.map(lhsExps,Expression.expCref);
-          BackendVarTransform.removeReplacements(repl,outputs,NONE());
+          BackendVarTransform.removeReplacements(repl,outputs);
 
           // check if its constant, a record or a tuple
           isCon = Expression.isConst(exp2) and not Expression.isCall(exp2);
@@ -2005,9 +2005,9 @@ algorithm
           repl = if isCon and isRec then BackendVarTransform.addReplacements(repl,scalars,expLst,NONE()) else repl;
           if not isCon then
             if not isRec then
-              BackendVarTransform.removeReplacement(repl,cref,NONE());
+              BackendVarTransform.removeReplacement(repl,cref);
             else
-              BackendVarTransform.removeReplacements(repl,varScalars,NONE());
+              BackendVarTransform.removeReplacements(repl,varScalars);
               repl = BackendVarTransform.addReplacements(repl,constScalars,expLst,NONE());
             end if;
           end if;
@@ -2040,7 +2040,7 @@ algorithm
           repl = List.fold(addStmts,addReplacementRuleForAssignment,repl);
           lhsExps = Expression.getComplexContents(exp1);
           outputs = List.map(lhsExps,Expression.expCref);
-          BackendVarTransform.removeReplacements(repl,outputs,NONE());
+          BackendVarTransform.removeReplacements(repl,outputs);
 
           // check if its constant, a record or a tuple
           isCon = Expression.isConst(exp2) and not Expression.isCall(exp2);
@@ -2060,9 +2060,9 @@ algorithm
           repl = if isCon and isArr then BackendVarTransform.addReplacements(repl,scalars,expLst,NONE()) else repl;
           if not isCon then
             if not isRec then
-              BackendVarTransform.removeReplacement(repl,cref,NONE());
+              BackendVarTransform.removeReplacement(repl,cref);
             else
-              BackendVarTransform.removeReplacements(repl,varScalars,NONE());
+              BackendVarTransform.removeReplacements(repl,varScalars);
               repl = BackendVarTransform.addReplacements(repl,constScalars,expLst,NONE());
             end if;
           end if;
@@ -2111,7 +2111,7 @@ algorithm
 
           // if nothing can be done, remove the replacements for the variables assigned in the if stmt
           if not predicted and not isEval then
-            BackendVarTransform.removeReplacements(repl,outputs,NONE());
+            BackendVarTransform.removeReplacements(repl,outputs);
           end if;
 
           stmts1 = if predicted then stmtsNew else stmts1;
@@ -2141,7 +2141,7 @@ algorithm
           // add the replacements
           varScalars = List.map(expLst,Expression.expCref);
           if not isCon then
-            BackendVarTransform.removeReplacements(repl,varScalars,NONE()); // remove the lhs crefs if tis not constant
+            BackendVarTransform.removeReplacements(repl,varScalars); // remove the lhs crefs if tis not constant
           else
             repl = addTplReplacements(repl,exp1,exp2); // add all tuple exps to repl if the whole tuple is constant
           end if;
@@ -2187,7 +2187,7 @@ algorithm
             print("While-statement (not evaluated):\n"+DAEDump.ppStatementStr(stmt));
           end if;
           outputs = getStatementsOutputs(stmts1, funcTree);
-          BackendVarTransform.removeReplacements(repl,outputs,NONE());
+          BackendVarTransform.removeReplacements(repl,outputs);
           if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
             print("evaluated While-statement to:\n"+DAEDump.ppStatementStr(stmt));
           end if;
@@ -2281,13 +2281,13 @@ algorithm
 
       // check if any variable has been evaluated. If not, skip the loop (this is necessary for testsuite/modelica/linear_systems/problem1.mos)
       outputs := getStatementsOutputs(stmts, funcTreeIn);
-      hasNoRepl := List.applyAndFold1(outputs,boolAnd,BackendVarTransform.hasNoReplacementCrefFirst,repl,true);
+      hasNoRepl := List.applyAndFold1(outputs,boolAnd,BackendVarTransform.hasNoReplacement,repl,true);
       if hasNoRepl then
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then print("For-loop evaluation is skipped, since the first loop evaluated nothing.\n"); end if;
         fail();
       end if;
     end for;
-    BackendVarTransform.removeReplacement(repl,ComponentReference.makeCrefIdent(iter,DAE.T_INTEGER_DEFAULT,{}),NONE());
+    BackendVarTransform.removeReplacement(repl,ComponentReference.makeCrefIdent(iter,DAE.T_INTEGER_DEFAULT,{}));
     funcTreeOut := funcTreeIn;
     idxOut := idxIn;
     stmtsOut := stmts;
@@ -2299,7 +2299,7 @@ algorithm
     lhsExps := listAppend(List.flatten(lhsExpLst),lhsExps);
     outputs := list(Expression.expCref(e) for e guard Expression.isCref(e) in lhsExps); //remove e.g. ASUBs and consider only the scalar subs
     repl := replIn;
-    BackendVarTransform.removeReplacements(repl,outputs,NONE());
+    BackendVarTransform.removeReplacements(repl,outputs);
     stmtsOut := {stmtIn};
     funcTreeOut := funcTreeIn;
     idxOut := idxIn;
@@ -3231,7 +3231,7 @@ algorithm
         (constExps,constCrefs) = List.filterOnTrueSync(rhsLst,Expression.isConst,crefs);
         (_,varCrefs) = List.filterOnTrueSync(rhsLst,Expression.isNotConst,crefs);
         repl = BackendVarTransform.addReplacements(replIn,constCrefs,constExps,NONE());
-        BackendVarTransform.removeReplacements(repl,varCrefs,NONE());
+        BackendVarTransform.removeReplacements(repl,varCrefs);
         repl = collectReplacements1(rest,repl);
       then
         repl;
@@ -3239,7 +3239,7 @@ algorithm
       equation
         lhsLst = getStatementLHS(stmt,{});
         crefs = List.map(lhsLst,Expression.expCref);
-        BackendVarTransform.removeReplacements(replIn,crefs,NONE());
+        BackendVarTransform.removeReplacements(replIn,crefs);
         repl = collectReplacements1(rest,replIn);
       then
         repl;
