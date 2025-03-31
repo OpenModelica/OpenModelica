@@ -7,7 +7,7 @@ loadFile("DM.mo"); getErrorString();
 
 optimize(diesel_model, stopTime=0.5, numberOfIntervals=450,tolerance=1e-10, simflags="-lv LOG_IPOPT_ERROR -optimizerNP 1 -csvInput ./ReferenceFiles/initDM.csv -ipopt_warm_start 12 -emit_protected"); getErrorString();
 
-res := OpenModelica.Scripting.compareSimulationResults("diesel_model_res.mat","ReferenceFiles/diesel_model_ref.mat","diesel_model_res.csv",0.05,0.0005); getErrorString();
+res := OpenModelica.Scripting.compareSimulationResults("diesel_model_res.mat","ReferenceFiles/diesel_model_ref.mat","diesel_model_diff_ws.csv",0.05,0.0005); getErrorString();
 
 // Result:
 // true
