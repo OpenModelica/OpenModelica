@@ -39,7 +39,9 @@ several packages with dependencies among them, you can place them in the same co
 that all the dependencies are loaded automatically. 
 
 Please note that if the ``uses`` annotation refers to a specific version of a package, that package will only be loaded
-if the name of the directory or of the single file that contains it also indicates the version number. For example,
+if the name of the directory or of the single file that contains it also indicates the version number, as allowed by
+the Modelica Specification, `Section 18.8.3
+<https://specification.modelica.org/maint/3.6/annotations.html#mapping-of-versions-to-file-system>`_. For example,
 if MoonShot contains ``annotation(uses(Rockets(version = "2.0.0"));``, OpenModelica will try to load
 ``/home/John/ModelicaPackages/Rockets 2.0.0/package.mo`` or ``/home/John/ModelicaPackages/Rockets 2.0.0.mo``;
 in this case, packages without the version number in their root directory, such as 
