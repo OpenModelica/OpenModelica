@@ -27,8 +27,8 @@ can find them.
 
 The default place where OpenModelica looks for packages is the so-called
 `MODELICAPATH <https://specification.modelica.org/maint/3.6/packages.html#the-modelica-library-path-modelicapath>`_.
-You can check where it is by typing ``getModelicaPath()`` in the Interactive Environment (Tools | OpenModelica Compiler CLI in OMEdit).
-Installed read-only libraries are all placed by default in the MODELICAPATH.
+You can check where it is by typing ``getModelicaPath()`` in the Interactive Environment (Tools | OpenModelica Compiler CLI in OMEdit),
+or by browsing the General group under Tools|Options|Libraries. Installed read-only libraries are all placed by default in the MODELICAPATH.
 
 However, when you open a package from the file system, before looking into MODELICAPATH, OpenModelica will first look for
 packages it depends upon in the same directory that contains the package you just opened. For example, if you open
