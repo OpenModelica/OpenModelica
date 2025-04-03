@@ -1425,7 +1425,7 @@ public
       tearingSelect := lookupTearingSelectMember(name);
 
       if isNone(tearingSelect) then
-        Error.addSourceMessage(Error.UNKNOWN_ANNOTATION_VALUE, {Dump.printExpStr(val)}, info);
+        Error.addSourceMessage(Error.UNKNOWN_ANNOTATION_VALUE, {Dump.printExpStr(val), "__OpenModelica_tearingSelect"}, info);
       end if;
     end createTearingSelect;
 
@@ -1441,12 +1441,12 @@ public
                  Absyn.ComponentRef.CREF_IDENT(name = name, subscripts = {})))
           then name;
 
-        // Single name without the TearingSelect prefix is deprecated but still accepted.
+        // Single name without the TearingSelect prefix is deprecated and no longer accepted.
         case Absyn.Exp.CREF(componentRef = Absyn.ComponentRef.CREF_IDENT(name = name, subscripts = {}))
           algorithm
             Error.addSourceMessage(Error.DEPRECATED_EXPRESSION, {name, "TearingSelect." + name}, info);
           then
-            name;
+            "";
 
         else "";
       end match;
