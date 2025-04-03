@@ -30,13 +30,13 @@ The default place where OpenModelica looks for packages is the so-called
 You can check where it is by typing ``getModelicaPath()`` in the Interactive Environment (Tools | OpenModelica Compiler CLI in OMEdit),
 or by browsing the General group under Tools|Options|Libraries. Installed read-only libraries are all placed by default in the MODELICAPATH.
 
-However, when you open a package from the file system, before looking into MODELICAPATH, OpenModelica will first look for
+However, when you open a package directly from the file system, OpenModelica will also look for
 packages it depends upon in the same directory that contains the package you just opened. For example, if you open
 ``/home/John/ModelicaPackages/MoonShot/package.mo``, and your MoonShot package contains ``annotation(uses(Rockets));``,
-before looking into MODELICAPATH, OpenModelica will try to load ``/home/John/ModelicaPackages/Rockets/package.mo`` or
-``/home/John/ModelicaPackages/Rockets.mo``, if the package is stored in a single file. So, if you are developing
-several packages with dependencies among them, you can place them in the same common root directory to make sure
-that all the dependencies are loaded automatically. 
+OpenModelica will also check ``/home/John/ModelicaPackages/Rockets/package.mo`` and ``/home/John/ModelicaPackages/Rockets.mo``.
+So, if you are developing several packages with dependencies among them, you can place them in the same common root directory
+to make sure that all the dependencies are loaded automatically, without the need of putting them in the MODELICAPATH, or
+to change it to include that directory.
 
 Please note that if the ``uses`` annotation refers to a specific version of a package, that package will only be loaded
 if the name of the directory or of the single file that contains it also indicates the version number, as allowed by
