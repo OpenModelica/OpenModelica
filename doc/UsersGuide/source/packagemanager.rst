@@ -18,7 +18,7 @@ project package and a certain version of a read-only package (or library), which
 and that you drag-and-drop components from.
 
 This dependency is automatically marked in your package by adding a `uses annotation
-<https://specification.modelica.org/maint/3.5/annotations.html#version-handling>`_ at the top level. For example, if you
+<https://specification.modelica.org/maint/3.6/annotations.html#version-handling>`_ at the top level. For example, if you
 drag and drop components from MSL 4.0.0 into models of your package, the ``annotation(uses(Modelica(version="4.0.0")));``
 will be added automatically to it. This information allows OpenModelica to automatically load all the libraries
 that are required to compile the models in your own package next time you (or someone else, possibly on a different
@@ -26,9 +26,27 @@ computer) loads your package, provided they are installed in places on the compu
 can find them.
 
 The default place where OpenModelica looks for packages is the so-called
-`MODELICAPATH <https://specification.modelica.org/maint/3.5/packages.html#the-modelica-library-path-modelicapath>`_.
-You can check where it is by typing ``getModelicaPath()`` in the Interactive Environment (Tools | OpenModelica Compiler CLI in OMEdit).
-Installed read-only libraries are placed by default in the MODELICAPATH.
+`MODELICAPATH <https://specification.modelica.org/maint/3.6/packages.html#the-modelica-library-path-modelicapath>`_.
+You can check where it is by typing ``getModelicaPath()`` in the Interactive Environment (Tools | OpenModelica Compiler CLI in OMEdit),
+or by browsing the General group under Tools|Options|Libraries. Installed read-only libraries are all placed by default in the MODELICAPATH.
+
+However, when you open a package directly from the file system, OpenModelica will also look for
+packages it depends upon in the same directory that contains the package you just opened. For example, if you open
+``/home/John/ModelicaPackages/MoonShot/package.mo``, and your MoonShot package contains ``annotation(uses(Rockets));``,
+OpenModelica will also check ``/home/John/ModelicaPackages/Rockets/package.mo`` and ``/home/John/ModelicaPackages/Rockets.mo``.
+So, if you are developing several packages with dependencies among them, you can place them in the same common root directory
+to make sure that all the dependencies are loaded automatically, without the need of putting them in the MODELICAPATH, or
+to change it to include that directory.
+
+Please note that if the ``uses`` annotation refers to a specific version of a package, that package will only be loaded
+if the name of the directory or of the single file that contains it also indicates the version number, as allowed by
+the Modelica Specification, `Section 18.8.3
+<https://specification.modelica.org/maint/3.6/annotations.html#mapping-of-versions-to-file-system>`_. For example,
+if MoonShot contains ``annotation(uses(Rockets(version = "2.0.0"));``, OpenModelica will try to load
+``/home/John/ModelicaPackages/Rockets 2.0.0/package.mo`` or ``/home/John/ModelicaPackages/Rockets 2.0.0.mo``;
+in this case, packages without the version number in their root directory, such as 
+``/home/John/ModelicaPackages/Rockets/package.mo``, will be ignored. All installed packages in the MODELICAPATH
+include version numbers in their directory name, which also allows to install multiple versions of the same library.
 
 When a new version of certain package comes out, `conversion annotations
 <https://specification.modelica.org/maint/3.5/annotations.html#version-handling>`_ in it declare whether your models using
