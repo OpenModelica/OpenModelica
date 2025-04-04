@@ -34,6 +34,7 @@ extern int Print_saveAndClearBuf(threadData_t *threadData);
 extern void Print_restoreBuf(threadData_t *threadData, int handle);
 extern void Print_printErrorBuf(threadData_t *threadData, const char* str);
 extern void Print_printBuf(threadData_t *threadData, const char* str);
+extern void Print_printBufLen(threadData_t *threadData, const char* str, long len);
 extern int Print_hasBufNewLineAtEnd(threadData_t *threadData);
 extern int Print_getBufLength(threadData_t *threadData);
 extern const char* Print_getString(threadData_t *threadData);
