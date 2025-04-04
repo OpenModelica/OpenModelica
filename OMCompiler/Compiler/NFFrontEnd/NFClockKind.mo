@@ -545,7 +545,7 @@ public
 
   function toJSON
     input ClockKind clk;
-    output JSON json = JSON.emptyObject();
+    output JSON json = JSON.emptyListObject();
   algorithm
     json := JSON.addPair("kind", JSON.makeString("clock"), json);
 

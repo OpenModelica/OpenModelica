@@ -1006,7 +1006,7 @@ public
 
   function toJSON
     input Call call;
-    output JSON json = JSON.emptyObject();
+    output JSON json = JSON.emptyListObject();
 
     function iterators_json
       input list<tuple<InstNode, Expression>> iters;
@@ -1015,7 +1015,7 @@ public
       JSON j;
     algorithm
       for i in iters loop
-        j := JSON.emptyObject();
+        j := JSON.emptyListObject();
         j := JSON.addPair("name", JSON.makeString(InstNode.name(Util.tuple21(i))), j);
         j := JSON.addPair("range", Expression.toJSON(Util.tuple22(i)), j);
         json := JSON.addElement(j, json);

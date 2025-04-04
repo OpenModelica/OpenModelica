@@ -6294,7 +6294,7 @@ public
     function dump_arg
       input String name;
       input Expression arg;
-      output JSON json = JSON.emptyObject();
+      output JSON json = JSON.emptyListObject();
     algorithm
       json := JSON.addPair("name", JSON.makeString(name), json);
       json := JSON.addPair("value", toJSON(arg), json);
@@ -6307,7 +6307,7 @@ public
       case BOOLEAN() then JSON.makeBoolean(exp.value);
       case ENUM_LITERAL()
         algorithm
-          json := JSON.emptyObject();
+          json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("enum"), json);
           json := JSON.addPair("name", JSON.makeString(toString(exp)), json);
           json := JSON.addPair("index", JSON.makeInteger(exp.index), json);
@@ -6321,7 +6321,7 @@ public
 
       case TYPENAME()
         algorithm
-          json := JSON.emptyObject();
+          json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("typename"), json);
           json := JSON.addPair("name", JSON.makeString(Type.toString(exp.ty)), json);
         then
@@ -6338,7 +6338,7 @@ public
 
       case RANGE()
         algorithm
-          json := JSON.emptyObject();
+          json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("range"), json);
           json := JSON.addPair("start", toJSON(exp.start), json);
 
@@ -6352,7 +6352,7 @@ public
 
       case TUPLE()
         algorithm
-          json := JSON.emptyObject();
+          json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("tuple"), json);
           json := JSON.addPair("elements",
             JSON.makeArray(list(toJSON(e) for e in exp.elements)), json);
@@ -6361,7 +6361,7 @@ public
 
       case RECORD()
         algorithm
-          json := JSON.emptyObject();
+          json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("record"), json);
           json := JSON.addPair("name", JSON.makeString(AbsynUtil.pathString(exp.path)), json);
           json := JSON.addPair("elements",
@@ -6374,22 +6374,22 @@ public
 
       case SIZE()
         algorithm
-          json := JSON.emptyObject();
+          json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("call"), json);
           json := JSON.addPair("name", JSON.makeString("size"), json);
 
           if isSome(exp.dimIndex) then
-            JSON.addPair("arguments",
+            json := JSON.addPair("arguments",
               JSON.makeArray({toJSON(exp.exp), toJSON(Util.getOption(exp.dimIndex))}), json);
           else
-            JSON.addPair("arguments", JSON.makeArray({toJSON(exp.exp)}), json);
+            json := JSON.addPair("arguments", JSON.makeArray({toJSON(exp.exp)}), json);
           end if;
         then
           json;
 
       case BINARY()
         algorithm
-          json := JSON.emptyObject();
+          json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("binary_op"), json);
           json := JSON.addPair("lhs", toJSON(exp.exp1), json);
           json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
@@ -6399,7 +6399,7 @@ public
 
       case UNARY()
         algorithm
-          json := JSON.emptyObject();
+          json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("unary_op"), json);
           json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
           json := JSON.addPair("exp", toJSON(exp.exp), json);
@@ -6408,7 +6408,7 @@ public
 
       case LBINARY()
         algorithm
-          json := JSON.emptyObject();
+          json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("binary_op"), json);
           json := JSON.addPair("lhs", toJSON(exp.exp1), json);
           json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
@@ -6418,7 +6418,7 @@ public
 
       case LUNARY()
         algorithm
-          json := JSON.emptyObject();
+          json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("unary_op"), json);
           json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
           json := JSON.addPair("exp", toJSON(exp.exp), json);
@@ -6427,7 +6427,7 @@ public
 
       case RELATION()
         algorithm
-          json := JSON.emptyObject();
+          json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("binary_op"), json);
           json := JSON.addPair("lhs", toJSON(exp.exp1), json);
           json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
@@ -6437,7 +6437,7 @@ public
 
       case MULTARY()
         algorithm
-          json := JSON.emptyObject();
+          json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("multary_op"), json);
           json := JSON.addPair("args",
             JSON.makeArray(list(toJSON(a) for a in exp.arguments)), json);
@@ -6449,7 +6449,7 @@ public
 
       case IF()
         algorithm
-          json := JSON.emptyObject();
+          json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("if"), json);
           json := JSON.addPair("condition", toJSON(exp.condition), json);
           json := JSON.addPair("true", toJSON(exp.trueBranch), json);
@@ -6463,7 +6463,7 @@ public
 
       case SUBSCRIPTED_EXP()
         algorithm
-          json := JSON.emptyObject();
+          json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("sub"), json);
           json := JSON.addPair("exp", toJSON(exp.exp), json);
           json := JSON.addPair("subscripts", Subscript.toJSONList(exp.subscripts), json);
@@ -6472,7 +6472,7 @@ public
 
       case TUPLE_ELEMENT()
         algorithm
-          json := JSON.emptyObject();
+          json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("tuple_element"), json);
           json := JSON.addPair("exp", toJSON(exp.tupleExp), json);
           json := JSON.addPair("index", JSON.makeInteger(exp.index), json);
@@ -6481,7 +6481,7 @@ public
 
       case RECORD_ELEMENT()
         algorithm
-          json := JSON.emptyObject();
+          json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("record_element"), json);
           json := JSON.addPair("exp", toJSON(exp.recordExp), json);
           json := JSON.addPair("index", JSON.makeInteger(exp.index), json);
@@ -6491,7 +6491,7 @@ public
 
       case PARTIAL_FUNCTION_APPLICATION()
         algorithm
-          json := JSON.emptyObject();
+          json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("function"), json);
           json := JSON.addPair("name", JSON.makeString(ComponentRef.toString(exp.fn)), json);
           json := JSON.addPair("arguments", JSON.makeArray(
