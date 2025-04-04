@@ -63,7 +63,14 @@ extern void Print_printErrorBuf(threadData_t *threadData,const char* str)
 extern void Print_printBuf(threadData_t *threadData,const char* str)
 {
   // fprintf(stderr, "Print_printBuf: %s\n", str);
-  if (PrintImpl__printBuf(threadData,str))
+  if (PrintImpl__printBuf(threadData,str,strlen(str)))
+    MMC_THROW();
+}
+
+extern void Print_printBufLen(threadData_t *threadData,const char* str, long len)
+{
+  // fprintf(stderr, "Print_printBuf: %s\n", str);
+  if (PrintImpl__printBuf(threadData,str,len))
     MMC_THROW();
 }
 

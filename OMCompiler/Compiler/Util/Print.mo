@@ -70,7 +70,7 @@ end getErrorString;
 public function printBuf
   input String inString;
 
-  external "C" Print_printBuf(OpenModelica.threadData(),inString) annotation(Library = "omcruntime");
+  external "C" Print_printBufLen(OpenModelica.threadData(),inString,stringLength(inString)) annotation(Library = "omcruntime");
 end printBuf;
 
 public function clearBuf

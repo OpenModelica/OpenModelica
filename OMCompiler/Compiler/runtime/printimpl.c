@@ -277,10 +277,9 @@ static const char* PrintImpl__getErrorString(threadData_t *threadData)
 }
 
 /* returns 0 on success */
-static int PrintImpl__printBuf(threadData_t *threadData,const char* str)
+static int PrintImpl__printBuf(threadData_t *threadData,const char* str,long len)
 {
   print_members* members = getMembers(threadData);
-  long len = strlen(str);
   /* printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str)); */
 
   while (nfilled + len + 1 > cursize) {
