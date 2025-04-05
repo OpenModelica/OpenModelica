@@ -153,6 +153,7 @@ target_link_libraries(omcbackendruntime PUBLIC omc::simrt::runtime)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::metis)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::fmilib)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::zlib)
+target_link_libraries(omcbackendruntime PUBLIC omc::3rd::FMIL::expat)
 
 target_include_directories(omcbackendruntime PUBLIC ${Intl_INCLUDE_DIRS})
 target_include_directories(omcbackendruntime PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
