@@ -1401,7 +1401,7 @@ public
     json := match cref
       case CREF()
         algorithm
-          json := JSON.emptyObject();
+          json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("cref"), json);
           json := JSON.addPair("parts", JSON.makeArray(toJSON_impl(cref)), json);
         then
@@ -1411,7 +1411,7 @@ public
 
       case WILD()
         algorithm
-          json := JSON.emptyObject();
+          json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("cref"), json);
           json := JSON.addPair("parts", JSON.makeArray(
             {JSON.fromPair("name", JSON.makeString("_"))}), json);
@@ -1432,7 +1432,7 @@ public
     objs := match cref
       case CREF()
         algorithm
-          obj := JSON.emptyObject();
+          obj := JSON.emptyListObject();
           obj := JSON.addPair("name", JSON.makeString(InstNode.name(cref.node)), obj);
 
           if not listEmpty(cref.subscripts) then

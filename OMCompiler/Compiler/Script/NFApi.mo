@@ -1727,7 +1727,7 @@ algorithm
 
     case (_, SCode.Mod.NOMOD())
       algorithm
-        json := JSON.addPair(name, JSON.emptyObject(), json);
+        json := JSON.addPair(name, JSON.emptyListObject(), json);
       then
         ();
 
@@ -1745,6 +1745,11 @@ protected
   JSON j;
 algorithm
   json := match absynExp
+    case Absyn.Exp.INTEGER() then JSON.makeInteger(absynExp.value);
+    case Absyn.Exp.REAL() then JSON.makeNumber(stringReal(absynExp.value));
+    case Absyn.Exp.STRING() then JSON.makeString(absynExp.value);
+    case Absyn.Exp.BOOL() then JSON.makeBoolean(absynExp.value);
+
     // For non-literal arrays, dump each element separately to avoid
     // invalidating the whole array expression if any element contains invalid
     // expressions.
@@ -1753,7 +1758,7 @@ algorithm
       algorithm
         json := JSON.emptyArray(listLength(absynExp.arrayExp));
         for e in absynExp.arrayExp loop
-          j := dumpJSONAnnotationExp2(e, scope, info, failOnError);
+          j := dumpJSONAnnotationExp(e, scope, info, failOnError);
           json := JSON.addElement(j, json);
         end for;
       then
