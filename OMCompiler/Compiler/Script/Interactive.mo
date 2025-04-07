@@ -158,6 +158,7 @@ algorithm
     res := evaluate2(stmt);
 
     if getEcho() and (verbose or not semicolon) then
+      res := stringAppend(res, "\n");
       resl := res :: resl;
     end if;
 
@@ -186,6 +187,7 @@ algorithm
 
     if getEcho() and (verbose or not semicolon) then
       print(res);
+      print("\n");
     end if;
 
     showStatement(stmt, semicolon, false);
@@ -277,7 +279,7 @@ algorithm
   outBoolean := 0 <> Settings.getEcho();
 end getEcho;
 
-public function evaluate2
+protected function evaluate2
 "Helper function to evaluate."
   input GlobalScript.Statement inStatement;
   output String outString;
@@ -293,17 +295,15 @@ algorithm
       case GlobalScript.IALG(algItem = algitem as Absyn.ALGORITHMITEM())
         equation
           InstHashTable.init();
-          str = evaluateAlgItem(algitem);
-          str_1 = stringAppend(str, "\n");
-        then str_1;
+        then
+          evaluateAlgItem(algitem);
 
       // Evaluate expressions in evaluate_exprToStr()
       case GlobalScript.IEXP(exp = exp, info = info)
         equation
           InstHashTable.init();
-          str = evaluateExprToStr(exp, info);
-          str_1 = stringAppend(str, "\n");
-        then str_1;
+        then
+          evaluateExprToStr(exp, info);
     end match;
   else
     str := "";
@@ -318,7 +318,7 @@ algorithm
     end if;
     Error.addMessage(Error.STACK_OVERFLOW_DETAILED, {GlobalScriptDump.printIstmtStr(inStatement), str});
     Error.clearCurrentComponent();
-    outString := "\n";
+    outString := "";
   end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
 end evaluate2;
 
