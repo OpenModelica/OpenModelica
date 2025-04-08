@@ -232,22 +232,10 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
       units << mDisplayUnit;
     }
     Utilities::addDefaultDisplayUnit(mUnit, units);
-    // add unit prefixes
-    if (OMPlot::Plot::prefixableUnit(mUnit)) {
-      units << QString("k%1").arg(mUnit)
-            << QString("M%1").arg(mUnit)
-            << QString("G%1").arg(mUnit)
-            << QString("T%1").arg(mUnit)
-            << QString("m%1").arg(mUnit)
-            << QString("u%1").arg(mUnit)
-            << QString("n%1").arg(mUnit)
-            << QString("p%1").arg(mUnit);
-    }
   }
   mpUnitComboBox = new ComboBox;
-  units.removeDuplicates();
   foreach (QString unit, units) {
-    mpUnitComboBox->addItem(Utilities::convertUnitToSymbol(unit), unit);
+    mpUnitComboBox->addItem(OMPlot::Plot::convertUnitToSymbol(unit), unit);
   }
   if (mDisplayUnit.compare(mUnit) != 0) {
     mpUnitComboBox->setCurrentIndex(1);
@@ -1417,7 +1405,7 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
             // add modifier as additional display unit if compatible
             OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
             if (pParameter->getUnitComboBox()->count() > 0 && pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemData(0).toString(), displayUnit).unitsCompatible) {
-              pParameter->getUnitComboBox()->addItem(Utilities::convertUnitToSymbol(displayUnit), displayUnit);
+              pParameter->getUnitComboBox()->addItem(OMPlot::Plot::convertUnitToSymbol(displayUnit), displayUnit);
               index = pParameter->getUnitComboBox()->count() - 1;
             }
           }

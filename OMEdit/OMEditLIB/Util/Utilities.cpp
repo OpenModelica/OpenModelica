@@ -38,6 +38,7 @@
 #include "OMC/OMCProxy.h"
 #include "Modeling/ItemDelegate.h"
 #include "Editors/BaseEditor.h"
+#include "OMPlot.h"
 
 #include <QApplication>
 #include <QCryptographicHash>
@@ -1276,41 +1277,23 @@ void Utilities::addDefaultDisplayUnit(const QString &unit, QStringList &displayU
      */
     displayUnit << "l/s" << "m3/h";
   }
-}
 
-/*!
- * \brief Utilities::convertUnitToSymbol
- * Converts the unit to a symbol.
- * \param displayUnit
- * \return
- */
-QString Utilities::convertUnitToSymbol(const QString &displayUnit)
-{
-  if (displayUnit.compare(QStringLiteral("Ohm")) == 0) {
-    return QChar(937);
-  } else if (displayUnit.compare(QStringLiteral("degC")) == 0) {
-    return QString("%1C").arg(QChar(176));
-  } else {
-    return displayUnit;
+  // add prefixes if unit is prefixable
+  QStringList newDisplayUnits = displayUnit;
+  foreach (auto newDisplayUnit, newDisplayUnits) {
+    if (OMPlot::Plot::prefixableUnit(newDisplayUnit)) {
+      displayUnit << QString("k%1").arg(newDisplayUnit)
+                  << QString("M%1").arg(newDisplayUnit)
+                  << QString("G%1").arg(newDisplayUnit)
+                  << QString("T%1").arg(newDisplayUnit)
+                  << QString("m%1").arg(newDisplayUnit)
+                  << QString("u%1").arg(newDisplayUnit)
+                  << QString("n%1").arg(newDisplayUnit)
+                  << QString("p%1").arg(newDisplayUnit);
+    }
   }
-}
-
-/*!
- * \brief Utilities::convertSymbolToUnit
- * Converts the symbol to unit.
- * \param symbol
- * \return
- */
-QString Utilities::convertSymbolToUnit(const QString &symbol)
-{
-  // Greek Omega
-  if (symbol.compare(QChar(937)) == 0) {
-    return "Ohm";
-  } else if (symbol.compare(QString("%1C").arg(QChar(176))) == 0) {
-    return "degC";
-  } else {
-    return symbol;
-  }
+  // remove duplicates
+  displayUnit.removeDuplicates();
 }
 
 /*!

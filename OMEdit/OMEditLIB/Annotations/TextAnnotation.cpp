@@ -36,6 +36,7 @@
 #include "TextAnnotation.h"
 #include "Modeling/Commands.h"
 #include "Options/OptionsDialog.h"
+#include "OMPlot.h"
 
 /*!
  * \class TextAnnotation
@@ -581,16 +582,16 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
           if (!Utilities::isValueLiteralConstant(textValue) || displayUnit.first.isEmpty() || (displayUnit.first.compare("1") == 0 && unit.first.compare("1") == 0)) {
             textValueWithDisplayUnit = textValue;
           } else if (unit.first.compare(displayUnit.first) == 0) {  // Do not do any conversion if unit and displayUnit are same.
-            textValueWithDisplayUnit = QString("%1 %2").arg(textValue, Utilities::convertUnitToSymbol(displayUnit.first));
+            textValueWithDisplayUnit = QString("%1 %2").arg(textValue, OMPlot::Plot::convertUnitToSymbol(displayUnit.first));
           } else {
             OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
             OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(unit.first, displayUnit.first);
             if (convertUnit.unitsCompatible) {
               qreal convertedValue = Utilities::convertUnit(textValue.toDouble(), convertUnit.offset, convertUnit.scaleFactor);
               textValue = StringHandler::number(convertedValue);
-              textValueWithDisplayUnit = QString("%1 %2").arg(textValue, Utilities::convertUnitToSymbol(displayUnit.first));
+              textValueWithDisplayUnit = QString("%1 %2").arg(textValue, OMPlot::Plot::convertUnitToSymbol(displayUnit.first));
             } else {
-              textValueWithDisplayUnit = QString("%1 %2").arg(textValue, Utilities::convertUnitToSymbol(unit.first));
+              textValueWithDisplayUnit = QString("%1 %2").arg(textValue, OMPlot::Plot::convertUnitToSymbol(unit.first));
             }
           }
           mTextString.replace(pos, regExp.matchedLength(), textValueWithDisplayUnit);

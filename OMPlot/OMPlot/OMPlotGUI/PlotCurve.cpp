@@ -39,6 +39,8 @@
 #include "qwt_scale_map.h"
 #include "qwt_point_polar.h"
 
+#include <QStringBuilder>
+
 using namespace OMPlot;
 
 PlotCurve::PlotCurve(const QString &fileName, const QString &absoluteFilePath, const QString &xVariableName, const QString &xUnit, const QString &xDisplayUnit,
@@ -78,13 +80,13 @@ void PlotCurve::setTitleLocal()
   if (mCustomTitle.isEmpty()) {
     QString titleStr = getYVariable();
     if (!getYDisplayUnit().isEmpty() || !getYUnitPrefix().isEmpty()) {
-      titleStr += QString(" (%1%2)").arg(getYUnitPrefix(), getYDisplayUnit());
+      titleStr += QString(" (%1)").arg(Plot::convertUnitToSymbol(getYUnitPrefix() % getYDisplayUnit()));
     }
 
     if (mpParentPlot->getParentPlotWindow()->isPlotParametric() || mpParentPlot->getParentPlotWindow()->isPlotArrayParametric()) {
       QString xVariable = getXVariable();
       if (!getXDisplayUnit().isEmpty() || !getXUnitPrefix().isEmpty()) {
-        xVariable += QString(" (%1%2)").arg(getXUnitPrefix(), getXDisplayUnit());
+        xVariable += QString(" (%1)").arg(Plot::convertUnitToSymbol(getXUnitPrefix() % getXDisplayUnit()));
       }
       if (!xVariable.isEmpty()) {
         titleStr += QString(" <b>vs</b> %1").arg(xVariable);
@@ -253,11 +255,12 @@ void PlotCurve::toggleVisibility(bool visibility)
 
 /*!
  * \brief PlotCurve::resetPrefixUnit
- * Resets the unit prefix.
+ * Resets the unit prefix and exponent.
+ * \param resetValues - reset the values.
  */
-void PlotCurve::resetPrefixUnit()
+void PlotCurve::resetPrefixUnit(bool resetValues)
 {
-  if (!mXUnitPrefix.isEmpty()) {
+  if (!mXUnitPrefix.isEmpty() && resetValues) {
     for (int i = 0 ; i < mXAxisVector.size() ; i++) {
       updateXAxisValue(i, mXAxisVector.at(i) * qPow(10, mXExponent));
     }
@@ -265,7 +268,7 @@ void PlotCurve::resetPrefixUnit()
   mXUnitPrefix = "";
   mXExponent = 0;
 
-  if (!mYUnitPrefix.isEmpty()) {
+  if (!mYUnitPrefix.isEmpty() && resetValues) {
     for (int i = 0 ; i < mYAxisVector.size() ; i++) {
       updateYAxisValue(i, mYAxisVector.at(i) * qPow(10, mYExponent));
     }
@@ -330,7 +333,7 @@ void PlotCurve::plotData(bool toggleSign)
       }
     } else {
       // revert the values when there is no perfixUnits.
-      resetPrefixUnit();
+      resetPrefixUnit(true);
     }
   }
   setSamples(mXAxisVector, mYAxisVector);

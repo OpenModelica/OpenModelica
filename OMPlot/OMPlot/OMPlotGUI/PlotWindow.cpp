@@ -1420,6 +1420,11 @@ void PlotWindow::updatePlot()
   }
 }
 
+void PlotWindow::emitPrefixUnitsChanged()
+{
+  emit prefixUnitsChanged();
+}
+
 void PlotWindow::setInteractiveControls(bool enabled)
 {
   // control buttons
@@ -2201,7 +2206,7 @@ void SetupDialog::selectVariable(QString variable)
   }
 }
 
-void SetupDialog::setupPlotCurve(VariablePageWidget *pVariablePageWidget)
+void SetupDialog::setupPlotCurve(VariablePageWidget *pVariablePageWidget, bool prefixUnitsChanged)
 {
   if (pVariablePageWidget) {
     PlotCurve *pPlotCurve = pVariablePageWidget->getPlotCurve();
@@ -2231,7 +2236,7 @@ void SetupDialog::setupPlotCurve(VariablePageWidget *pVariablePageWidget)
     /* set the curve toggle sign */
     mpPlotWindow->toggleSign(pPlotCurve, pVariablePageWidget->getToggleSignCheckBox()->isChecked());
     // if prefixunits value is changed
-    if (mPrefixUnitsChanged) {
+    if (prefixUnitsChanged) {
       pPlotCurve->plotData();
     }
   }
@@ -2267,11 +2272,11 @@ void SetupDialog::saveSetup()
 void SetupDialog::applySetup()
 {
   // set the prefix units. Always set prefixUnits before setting plot data.
-  mPrefixUnitsChanged = mpPrefixUnitsCheckbox->isChecked() != mpPlotWindow->getPrefixUnits();
+  const bool prefixUnitsChanged = mpPrefixUnitsCheckbox->isChecked() != mpPlotWindow->getPrefixUnits();
   mpPlotWindow->setPrefixUnits(mpPrefixUnitsCheckbox->isChecked());
   // set the variables attributes
   for (int i = 0 ; i < mpVariablePagesStackedWidget->count() ; i++) {
-    setupPlotCurve(qobject_cast<VariablePageWidget*>(mpVariablePagesStackedWidget->widget(i)));
+    setupPlotCurve(qobject_cast<VariablePageWidget*>(mpVariablePagesStackedWidget->widget(i)), prefixUnitsChanged);
   }
   // set the font sizes. Don't move this line. We should set the font sizes before calling setLegendPosition
   mpPlotWindow->getPlot()->setFontSizes(mpTitleFontSizeSpinBox->value(), mpVerticalAxisTitleFontSizeSpinBox->value(), mpVerticalAxisNumbersFontSizeSpinBox->value(),
@@ -2296,4 +2301,7 @@ void SetupDialog::applySetup()
   }
   // update plot
   mpPlotWindow->updatePlot();
+  if (prefixUnitsChanged) {
+    mpPlotWindow->emitPrefixUnitsChanged();
+  }
 }
