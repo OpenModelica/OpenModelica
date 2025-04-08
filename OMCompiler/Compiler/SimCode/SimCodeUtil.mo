@@ -13443,6 +13443,14 @@ algorithm
   end match;
 end getAssignedCrefsOfSimEq;
 
+public function getSimEqSystemSimVarsLHS
+  input SimCode.SimEqSystem simEqSys;
+  input SimCode.SimCode simCode;
+  output list<SimCodeVar.SimVar> simVars;
+algorithm
+  simVars := list(cref2simvar(cr, simCode) for cr in getSimEqSystemCrefsLHS(simEqSys));
+end getSimEqSystemSimVarsLHS;
+
 protected function getSimEqSystemCrefsLHS "gets the crefs of the vars that are assigned (the lhs) for a simEqSystem
 author:Waurich TUD 2014-05"
   input SimCode.SimEqSystem simEqSys;

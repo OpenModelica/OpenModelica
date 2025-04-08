@@ -609,6 +609,8 @@ typedef struct MODEL_DATA
   long nInputVars;
   long nOutputVars;
 
+  size_t* mapVarToEqNode;               /* map from var index to super node index (size is nVariablesReal) */
+
   long nZeroCrossings;
   long nRelations;
   long nMathEvents;                    /* number of math triggering functions e.g. cail, floor, integer */
@@ -787,6 +789,10 @@ typedef struct SIMULATION_INFO
   size_t* integerVarsIndex;
   size_t* booleanVarsIndex;
   size_t* stringVarsIndex;
+
+  /* adaptive eval of functionXXX */
+  size_t eqEvalN;                       /* number of eqNodes to evaluate in functionXXX */
+  size_t* eqEvalIndex;                  /* indices of eqNodes to evaluate in functionXXX, set by gbode fast states */
 
   /* old vars for event handling */
   modelica_real timeValueOld;
