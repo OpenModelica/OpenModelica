@@ -88,6 +88,8 @@ public:
   void setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, double verticalAxisNumbersFontSize, double horizontalAxisTitleFontSize,
                     double horizontalAxisNumbersFontSize, double footerFontSize, double legendFontSize);
   static bool prefixableUnit(const QString &unit);
+  static QString convertUnitToSymbol(const QString &displayUnit);
+  static QString convertSymbolToUnit(const QString &symbol);
   static void getUnitPrefixAndExponent(double lowerBound, double upperBound, QString &unitPrefix, int &exponent);
 public slots:
   virtual void replot();

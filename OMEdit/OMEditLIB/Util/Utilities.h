@@ -519,8 +519,6 @@ namespace Utilities {
   qreal mapToCoordinateSystem(qreal value, qreal startA, qreal endA, qreal startB, qreal endB);
   QStringList variantListToStringList(const QVariantList lst);
   void addDefaultDisplayUnit(const QString &unit, QStringList &displayUnit);
-  QString convertUnitToSymbol(const QString &displayUnit);
-  QString convertSymbolToUnit(const QString &symbol);
   QRectF adjustSceneRectangle(const QRectF sceneRectangle, const qreal factor);
   void setToolTip(QComboBox *pComboBox, const QString &description, const QStringList &optionsDescriptions);
   bool isMultiline(const QString &text);
