@@ -214,10 +214,12 @@ public:
   double getTime() {return mTime;}
   void updateTimeText();
   void updatePlot();
+  void emitPrefixUnitsChanged();
 private:
   void setInteractiveControls(bool enabled);
 signals:
   void closingDown();
+  void prefixUnitsChanged();
 private slots:
   void fitInView();
 public slots:
@@ -351,7 +353,6 @@ private:
   QLabel *mpYMaximumLabel;
   QLineEdit *mpYMaximumTextBox;
   QCheckBox *mpPrefixUnitsCheckbox;
-  bool mPrefixUnitsChanged = false;
   /* buttons */
   QPushButton *mpOkButton;
   QPushButton *mpApplyButton;
@@ -360,7 +361,7 @@ private:
 public:
   SetupDialog(PlotWindow *pPlotWindow);
   void selectVariable(QString variable);
-  void setupPlotCurve(VariablePageWidget *pVariablePageWidget);
+  void setupPlotCurve(VariablePageWidget *pVariablePageWidget, bool prefixUnitsChanged);
 public slots:
   void variableSelected(QListWidgetItem *current, QListWidgetItem *previous);
   void autoScaleChecked(bool checked);

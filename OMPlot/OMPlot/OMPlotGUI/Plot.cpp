@@ -240,7 +240,7 @@ void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, 
  */
 bool Plot::prefixableUnit(const QString &unit)
 {
-  QStringList prefixableUnits;
+  static QStringList prefixableUnits;
   prefixableUnits << "s"
                   << "m"
                   << "m/s"
@@ -276,6 +276,56 @@ bool Plot::prefixableUnit(const QString &unit)
                   << "var";
 
   return prefixableUnits.contains(unit);
+}
+
+/*!
+ * \brief Plot::convertUnitToSymbol
+ * Converts the unit to a symbol.
+ * \param displayUnit
+ * \return
+ */
+QString Plot::convertUnitToSymbol(const QString &displayUnit)
+{
+  QString symbol = displayUnit;
+  // if symbol startswith u then convert it to QChar(0x03BC)
+  if (symbol.startsWith("u")) {
+    symbol.replace(0, 1, QChar(0x03BC));
+  }
+  // if symbol contains "Ohm" then convert it to QChar(937) i.e., Greek Omega
+  if (symbol.contains("Ohm")) {
+    symbol.replace("Ohm", QChar(937));
+  }
+  // if symbol contains "degC" then convert it to QString("%1C").arg(QChar(176))
+  if (symbol.contains("degC")) {
+    symbol.replace("degC", QString("%1C").arg(QChar(176)));
+  }
+
+  return symbol;
+}
+
+/*!
+ * \brief Plot::convertSymbolToUnit
+ * Converts the symbol to a unit.
+ * \param symbol
+ * \return
+ */
+QString Plot::convertSymbolToUnit(const QString &symbol)
+{
+  QString unit = symbol;
+  // if unit startswith QChar(0x03BC) then convert it to u
+  if (unit.startsWith(QChar(0x03BC))) {
+    unit.replace(0, 1, "u");
+  }
+  // if unit contains QChar(937) i.e., Greek Omega then convert it to "Ohm"
+  if (unit.contains(QChar(937))) {
+    unit.replace(QChar(937), "Ohm");
+  }
+  // if unit contains QString("%1C").arg(QChar(176)) then convert it to "degC"
+  if (unit.contains(QString("%1C").arg(QChar(176)))) {
+    unit.replace(QString("%1C").arg(QChar(176)), "degC");
+  }
+
+  return unit;
 }
 
 /*!
@@ -323,7 +373,7 @@ void Plot::getUnitPrefixAndExponent(double lowerBound, double upperBound, QStrin
           unitPrefix = "m";
           exponent = -3;
         } else if (exponent <= -6 && exponent > -9) {
-          unitPrefix = QChar(0x03BC);
+          unitPrefix = "u";
           exponent = -6;
         } else if (exponent <= -9 && exponent > -12) {
           unitPrefix = "n";
