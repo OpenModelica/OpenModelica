@@ -1023,6 +1023,12 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->modelData->nVariablesBoolean  = data->simulationInfo->booleanVarsIndex[data->modelData->nVariablesBooleanArray];
   data->modelData->nVariablesString   = data->simulationInfo->stringVarsIndex[data->modelData->nVariablesStringArray];
 
+  data->modelData->mapVarToEqNode = (size_t*) calloc(data->modelData->nVariablesReal, sizeof(size_t));
+  data->callback->setEqFunctions(data, threadData);
+  data->callback->getVarToEqMap(data->modelData->mapVarToEqNode, data->simulationInfo->realVarsIndex);
+  data->simulationInfo->eqEvalN = data->callback->eqFunctionsSize;
+  data->simulationInfo->eqEvalIndex = NULL;
+
   /* prepare RingBuffer */
   for(i=0; i<SIZERINGBUFFER; i++)
   {
@@ -1340,6 +1346,13 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->integerVarsIndex);
   free(data->simulationInfo->booleanVarsIndex);
   free(data->simulationInfo->stringVarsIndex);
+
+  /* free buffer for eqFunctions */
+  free(data->callback->eqFunctions);
+
+  /* free buffer for adaptive eval */
+  free(data->modelData->mapVarToEqNode);
+  free(data->simulationInfo->eqEvalIndex);
 
   /* free buffer for old state variables */
   free(data->simulationInfo->realVarsOld);

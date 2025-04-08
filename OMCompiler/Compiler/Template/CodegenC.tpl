@@ -1293,6 +1293,10 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     <%computeVarIndices(modelInfo.vars, modelNamePrefixStr)%>
 
+    <%eqFunctions(allEquations, modelNamePrefixStr)%>
+
+    <%getVarToEqMap(simCode, allEquations, modelNamePrefixStr)%>
+
     /* forward the main in the simulation runtime */
     extern int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData);
 
@@ -1314,6 +1318,10 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       #endif    /* initializeStateSets */
       <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>,
       <%symbolName(modelNamePrefixStr,"computeVarIndices")%>,
+      <%symbolName(modelNamePrefixStr,"eqFunctions")%>,
+      <%varInfo.numEquations%>,
+      NULL,
+      <%symbolName(modelNamePrefixStr,"getVarToEqMap")%>,
       <%symbolName(modelNamePrefixStr,"functionODE")%>,
       <%symbolName(modelNamePrefixStr,"functionAlgebraics")%>,
       <%symbolName(modelNamePrefixStr,"functionDAE")%>,
@@ -1576,6 +1584,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nAliasInteger = <%varInfo.numIntAliasVars%>;
     data->modelData->nAliasBoolean = <%varInfo.numBoolAliasVars%>;
     data->modelData->nAliasString = <%varInfo.numStringAliasVars%>;
+    data->modelData->mapVarToEqNode = NULL;
     data->modelData->nZeroCrossings = <%varInfo.numZeroCrossings%>;
     data->modelData->nSamples = <%varInfo.numTimeEvents%>;
     data->modelData->nRelations = <%varInfo.numRelations%>;
@@ -4430,19 +4439,23 @@ template functionXXX_system(list<SimEqSystem> eqs, String name, Integer n, Strin
 
   static void function<%name%>_system<%n%>(DATA *data, threadData_t *threadData)
   {
-    int id;
-
-    static void (*const eqFunctions[<%nFuncs%>])(DATA*, threadData_t*) = {
-      <%eqs |> eq => '<%symbolName(modelNamePrefix, "eqFunction")%>_<%equationIndexGeneral(eq)%>'; separator=",\n"%>
-    };
+    int i, eqId;
 
     static const int eqIndices[<%nFuncs%>] = {
       <%eqs |> eq => equationIndexGeneral(eq); separator=",\n"%>
     };
 
-    for (id = 0; id < <%nFuncs%>; id++) {
-      eqFunctions[id](data, threadData);
-      threadData->lastEquationSolved = eqIndices[id];
+    if (data->simulationInfo->eqEvalIndex != NULL && data->simulationInfo->eqEvalN < <%nFuncs%>) {
+      for (i = 0; i < data->simulationInfo->eqEvalN; i++) {
+        eqId = data->simulationInfo->eqEvalIndex[i];
+        data->callback->eqFunctions[eqId](data, threadData);
+        threadData->lastEquationSolved = eqId;
+      }
+    } else {
+      for (i = 0; i < <%nFuncs%>; i++) {
+        data->callback->eqFunctions[eqIndices[i]](data, threadData);
+        threadData->lastEquationSolved = eqIndices[i];
+      }
     }
   }
   >>
@@ -4808,6 +4821,52 @@ template computeVarIndicesList(list<SimVar> vars)
       <%ty%>Index[<%i%>+1] = <%ty%>Index[<%i%>] + <%size%>; <%i%>++; <%crefCCommentWithVariability(var)%>>>; separator="")
 end computeVarIndicesList;
 
+template eqFunctions(list<SimEqSystem> eqs, String modelNamePrefix)
+::=
+  <<
+  void <%symbolName(modelNamePrefix,"eqFunctions")%>(DATA *data, threadData_t *threadData)
+  {
+    TRACE_PUSH
+
+    data->callback->eqFunctions = calloc(data->callback->eqFunctionsSize, sizeof(eq_func_ptr));
+    <%eqs |> eq =>
+      let ix = equationIndexGeneral(eq)
+      <<
+      data->callback->eqFunctions[<%ix%>] = <%symbolName(modelNamePrefix, "eqFunction")%>_<%ix%>;
+      >>; separator="\n"
+    %>
+
+    TRACE_POP
+  }
+  >>
+end eqFunctions;
+
+template getVarToEqMap(SimCode simCode, list<SimEqSystem> allEquations, String modelNamePrefix)
+::=
+  <<
+  void <%symbolName(modelNamePrefix,"getVarToEqMap")%>(size_t* mapVarToEqNode, size_t* realVarsIndex)
+  {
+    TRACE_PUSH
+
+    size_t varIdx, i;
+
+    <%allEquations |> eq =>
+      let eqIdx = equationIndexGeneral(eq)
+      <<<%getSimEqSystemSimVarsLHS(eq, simCode) |> var =>
+      match var
+      case SIMVAR(__) then
+      <<
+      for (i = realVarsIndex[<%index%>]; i < realVarsIndex[<%index%>+1]; i++) {
+        mapVarToEqNode[i] = <%eqIdx%>; <%crefCCommentWithVariability(var)%>
+      }
+      >>; separator="\n"%>
+      >>
+      ; separator="\n"%>
+
+    TRACE_POP
+  }
+  >>
+end getVarToEqMap;
 
 template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer nAuxVars, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
   "Generates initialization function for daeMode."
