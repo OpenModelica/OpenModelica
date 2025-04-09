@@ -38,6 +38,8 @@
 #include "Simulation/SimulationOptions.h"
 #include "PlotWindow.h"
 #include "Animation/TimeManager.h"
+#include "util/read_matlab4.h"
+#include "util/read_csv.h"
 
 #include <QDomDocument>
 #include <QTreeView>

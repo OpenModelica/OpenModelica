@@ -65,6 +65,8 @@
 #include "textcell.h"
 #include "celldocument.h"
 #include "graphcell.h"
+#include "OMPlot.h"
+#include "PlotCurve.h"
 #include <QMessageBox>
 #include <QPushButton>
 

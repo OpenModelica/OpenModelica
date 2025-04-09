@@ -34,10 +34,11 @@
 #ifndef SCALEDRAW_H
 #define SCALEDRAW_H
 
-#include "OMPlot.h"
+#include "qwt_scale_draw.h"
 
 namespace OMPlot
 {
+class Plot;
 class ScaleDraw : public QwtScaleDraw
 {
 public:

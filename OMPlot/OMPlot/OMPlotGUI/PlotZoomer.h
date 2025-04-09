@@ -32,7 +32,7 @@
 #ifndef PLOTZOOMER_H
 #define PLOTZOOMER_H
 
-#include "OMPlot.h"
+#include "qwt_plot_zoomer.h"
 
 namespace OMPlot
 {

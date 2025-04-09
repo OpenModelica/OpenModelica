@@ -32,8 +32,10 @@
 #ifndef PLOTCURVE_H
 #define PLOTCURVE_H
 
-#include "OMPlot.h"
-#include <qwt_plot_directpainter.h>
+#include "PlotWindow.h"
+
+#include "qwt_plot_directpainter.h"
+#include "qwt_plot_marker.h"
 
 namespace OMPlot
 {

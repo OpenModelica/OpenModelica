@@ -33,12 +33,10 @@
  */
 
 #include "Legend.h"
-#include "iostream"
-#if QWT_VERSION < 0x060100
-#include "qwt_legend_item.h"
-#else
-#include "qwt_legend_label.h"
-#endif
+#include "OMPlot.h"
+#include "PlotCurve.h"
+
+#include "qwt_text.h"
 
 #include <QAction>
 #include <QEvent>

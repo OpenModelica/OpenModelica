@@ -34,11 +34,12 @@
 #ifndef PLOTPICKER_H
 #define PLOTPICKER_H
 
-#include "qwt_plot_marker.h"
-#include "OMPlot.h"
+#include "qwt_plot_picker.h"
 
 namespace OMPlot
 {
+class Plot;
+class PlotCurve;
 class PlotPicker : public QwtPlotPicker
 {
 public:

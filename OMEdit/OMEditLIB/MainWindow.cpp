@@ -80,6 +80,7 @@
 #include "Modeling/InstallLibraryDialog.h"
 #include "CrashReport/CrashReportDialog.h"
 #include "FMI/FMUExportOutputWidget.h"
+#include "PlotCurve.h"
 #include <QtSvg/QSvgGenerator>
 #include <QNetworkProxyFactory>
 

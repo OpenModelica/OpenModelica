@@ -39,6 +39,7 @@
 #include "Modeling/MessagesWidget.h"
 #include "Plotting/VariablesWidget.h"
 #include "Plotting/DiagramWindow.h"
+#include "PlotCurve.h"
 
 #include <QInputDialog>
 #include <QMessageBox>

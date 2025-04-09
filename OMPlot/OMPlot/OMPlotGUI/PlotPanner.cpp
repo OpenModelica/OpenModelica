@@ -30,7 +30,7 @@
  */
 
 #include "PlotPanner.h"
-#include "iostream"
+#include "OMPlot.h"
 
 #include <QApplication>
 

@@ -32,13 +32,14 @@
 #ifndef PLOTPANNER_H
 #define PLOTPANNER_H
 
-#include "OMPlot.h"
+#include "qwt_plot_panner.h"
 
 namespace OMPlot
 {
+class Plot;
 class PlotPanner : public QwtPlotPanner
 {
-    Q_OBJECT
+  Q_OBJECT
 public:
 #if QWT_VERSION >= 0x060100
   PlotPanner(QWidget *pCanvas, Plot *pParent);
@@ -46,7 +47,7 @@ public:
   PlotPanner(QwtPlotCanvas *pCanvas, Plot *pParent);
 #endif
   ~PlotPanner();
-public Q_SLOTS:
+public slots:
   void updateView(int, int);
 private:
   Plot *mpParentPlot;

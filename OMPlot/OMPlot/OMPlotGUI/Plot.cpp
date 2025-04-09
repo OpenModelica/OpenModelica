@@ -29,8 +29,16 @@
  *
  */
 
+#include "OMPlot.h"
 #include "PlotWindow.h"
+#include "Legend.h"
+#include "PlotGrid.h"
 #include "LinearScaleEngine.h"
+#include "ScaleDraw.h"
+#include "PlotZoomer.h"
+#include "PlotPanner.h"
+#include "PlotPicker.h"
+#include "PlotCurve.h"
 
 #include "qwt_plot_canvas.h"
 #include "qwt_plot_layout.h"

@@ -37,6 +37,7 @@
 #include "Plotting/VariablesWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
 #include "OMS/BusDialog.h"
+#include "OMPlot.h"
 
 #include <QPainter>
 
