@@ -478,13 +478,13 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
 
   copyStartValuestoInitValues(data);
 
+  data->localData[0]->timeValue = simInfo->startTime;
+
   /* read input vars */
   data->callback->input_function_init(data, threadData);
   externalInputUpdate(data);
   data->callback->input_function_updateStartValues(data, threadData);
   data->callback->input_function(data, threadData);
-
-  data->localData[0]->timeValue = simInfo->startTime;
 
   threadData->currentErrorStage = ERROR_SIMULATION;
   /* try */
