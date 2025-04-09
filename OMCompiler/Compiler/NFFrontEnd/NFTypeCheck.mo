@@ -2270,7 +2270,7 @@ function matchDimensions
   output Dimension compatibleDim;
   output Boolean compatible;
 algorithm
-  if Dimension.isEqual(dim1, dim2) then
+  if Dimension.isEqualKnown(dim1, dim2) then
     compatibleDim := dim1;
     compatible := true;
   else
