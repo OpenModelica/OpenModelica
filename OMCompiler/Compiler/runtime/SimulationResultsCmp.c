@@ -281,7 +281,7 @@ static unsigned int cmpData(int isResultCmp, char* varname, DataField *time, Dat
     /* events, in case of an event compare only the left and right values of the absolute event time range,
     * this means ta_left = min(t_left,tr_left) and
     * ta_right = max(t_right,ta_right) */
-    if(i<time->n) {
+    if(i+1<time->n) {
 #ifdef DEBUGOUTPUT
        fprintf(stderr, "check event: %.15g  - %.15g = %.15g\n",t,time->data[i+1],fabs(t-time->data[i+1]));
 #endif
