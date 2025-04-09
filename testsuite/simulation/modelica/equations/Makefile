@@ -4,6 +4,7 @@ TESTFILES = \
 VariableSubscriptAlias.mos \
 ActivateWhenEquation.mos \
 AliasEquations.mos \
+ArrayEquation1.mos \
 BouncingBall.mos BouncingBall2.mos BouncingBallExamples.mos \
 constantLinSys.mos \
 Cross.mos \
