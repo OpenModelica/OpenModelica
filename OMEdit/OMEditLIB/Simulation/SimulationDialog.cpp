@@ -1763,6 +1763,14 @@ void SimulationDialog::performSimulation(const SimulationOptions &simulationOpti
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::notificationLevel));
       return;
     }
+  } else {
+    /* issue #13790
+     * Always add this error message.
+     * It could be that translateModel fails without any error so in this case atleast this simple message is shown.
+     * If translateModel fails with error then its errors and this message is shown.
+     */
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Translation of <b>%1</b> failed.").arg(mClassName),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
