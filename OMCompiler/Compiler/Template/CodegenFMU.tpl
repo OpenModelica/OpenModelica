@@ -285,6 +285,7 @@ case SIMCODE(__) then
   fmi2Status setString(ModelInstance* comp, const fmi2ValueReference vr, fmi2String value);
   fmi2Status setExternalFunction(ModelInstance* c, const fmi2ValueReference vr, const void* value);
   fmi2ValueReference mapInputReference2InputNumber(const fmi2ValueReference vr);
+  fmi2ValueReference mapParameterReference2ParameterNumber(const fmi2ValueReference vr);
   fmi2ValueReference mapOutputReference2OutputNumber(const fmi2ValueReference vr);
   fmi2ValueReference mapOutputReference2RealOutputDerivatives(const fmi2ValueReference vr);
   fmi2ValueReference mapInitialUnknownsdependentIndex(const fmi2ValueReference vr);

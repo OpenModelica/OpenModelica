@@ -1722,8 +1722,8 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
 
   int i,j;
 
-  int independent = modelData->nStates+modelData->nInputVars+modelData->nParametersReal;
-  int dependent = modelData->nStates+modelData->nOutputVars;
+  int independent = modelData->nStates+modelData->nInputVars+modelData->nParametersReal; // its possible to diff wrt.: states, inputs, params
+  int dependent = modelData->nStates+modelData->nOutputVars; // its possible to diff: state ders, outputs
 
   // comp in the wrong state or not
   if (invalidState(comp, "fmi2GetDirectionalDerivative", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
@@ -1758,31 +1758,49 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
     comp->fmiDerJac->constantEqns(fmudata, td, comp->fmiDerJac, NULL);
   }
 
+  printf("%d", comp->fmiDerJac->sizeCols);
+  printf("\n");
+  printf("%d", comp->fmiDerJac->sizeRows);
+  printf("\n");
+  printf("%ld", modelData->nStates);
+  printf("\n");
+  printf("%ld", modelData->nInputVars);
+  printf("\n");
+  printf("%ld", modelData->nParametersReal);
+  printf("\n");
+
+
   /* clear out the seeds */
   // seedVars needs to be bigger (one extra column for each parameter)
+
   for (i=0;i<independent; i++) {
     comp->fmiDerJac->seedVars[i]=0;
   }
   for (i=0;i<nKnown; i++) {
     int idx = vKnown_ref[i];
-    /* if idx is > nStates it's an input so we need a mapping */
-    // first input -> 0 + nStates (first seed after inputs)
-    // second input -> 1 + nStates (second seed after inputs)
-    // ...
-    if (idx >= modelData->nStates){
-      idx = mapInputReference2InputNumber(vKnown_ref[i]);
-      idx = modelData->nStates + idx;
-    }
     /* if idx > nStates + nInputs its a parameter so we need a mapping*/
     // first parameter -> 0 + nStates + nInputs (first seed after states and inputs)
     // ...
-    // how to determine if its a parameter based on idx?
-    // i guess if we sort parameters after states and inputs then this would work
+    // if parameters come after states and inputs then this would work?
     if (idx >= modelData->nStates + modelData->nInputVars){
+      printf("im param case %d\n", idx);
       /*so irgendwie?*/
       idx = mapParameterReference2ParameterNumber(vKnown_ref[i]);
+      printf("im param case nach map %d\n", idx);
       idx = modelData->nStates + modelData->nInputVars + idx;
+      printf("im param case nach map u. add %d\n", idx);
     }
+    /* if idx is > nStates it's an input so we need a mapping */
+    // if after states and before params its an input
+    // first input -> 0 + nStates (first seed after inputs)
+    // second input -> 1 + nStates (second seed after inputs)
+    // ...
+    else if (idx >= modelData->nStates){
+      printf("im input case %d\n", idx);
+      idx = mapInputReference2InputNumber(vKnown_ref[i]);
+      idx = modelData->nStates + idx;
+    }
+    
     if (vrOutOfRange(comp, "fmi2GetDirectionalDerivative input index", idx, independent))
       return fmi2Error;
     /* Put the supplied value in the seeds */
