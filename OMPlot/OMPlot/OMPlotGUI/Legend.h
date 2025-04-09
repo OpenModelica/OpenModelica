@@ -35,7 +35,7 @@
 #ifndef LEGEND_H
 #define LEGEND_H
 
-#include "OMPlot.h"
+#include "qwt_legend.h"
 
 namespace OMPlot
 {

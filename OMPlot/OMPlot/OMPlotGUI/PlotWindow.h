@@ -38,7 +38,6 @@
 #ifndef PLOTWINDOW_H
 #define PLOTWINDOW_H
 
-#include <QtGlobal>
 #include <QMainWindow>
 #include <QCheckBox>
 #include <QComboBox>
@@ -55,18 +54,9 @@
 #include <QTextStream>
 #include <QDialogButtonBox>
 
-#include <qwt_plot.h>
-#include <qwt_text.h>
-#include <qwt_plot_curve.h>
-#include <qwt_plot_picker.h>
-#include <qwt_scale_draw.h>
-#include <qwt_picker_machine.h>
-#include <qwt_plot_grid.h>
-#include <qwt_curve_fitter.h>
-#include <qwt_legend.h>
-#include <qwt_plot_zoomer.h>
-#include <qwt_plot_panner.h>
-#include <qwt_scale_engine.h>
+#include "qwt_series_data.h"
+#include "qwt_scale_draw.h"
+#include "qwt_plot_curve.h"
 #if QWT_VERSION >= 0x060000
 #if QWT_VERSION < 0x060200
 #include <qwt_compat.h>
@@ -74,10 +64,6 @@
 #define QwtArray QVector
 #endif
 #endif
-#include <stdexcept>
-#include "util/read_matlab4.h"
-#include "util/read_csv.h"
-#include "OMPlot.h"
 
 namespace OMPlot
 {

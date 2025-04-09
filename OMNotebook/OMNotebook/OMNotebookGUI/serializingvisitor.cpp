@@ -62,6 +62,9 @@
 #include "celldocument.h"
 #include "xmlnodename.h"
 #include "graphcell.h"
+#include "OMPlot.h"
+#include "qwt_text.h"
+#include "PlotCurve.h"
 #include <QDataStream>
 #include <QGraphicsRectItem>
 

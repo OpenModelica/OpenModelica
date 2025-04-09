@@ -31,6 +31,10 @@
 
 #include "PlotZoomer.h"
 
+#include "qwt_plot.h"
+
+#include <QPen>
+
 using namespace OMPlot;
 
 #if QWT_VERSION >= 0x060100

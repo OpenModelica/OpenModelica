@@ -30,6 +30,7 @@
  */
 
 #include "PlotGrid.h"
+#include "OMPlot.h"
 
 using namespace OMPlot;
 

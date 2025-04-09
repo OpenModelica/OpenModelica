@@ -33,6 +33,10 @@
  */
 
 #include "ScaleDraw.h"
+#include "OMPlot.h"
+#include "PlotWindow.h"
+
+#include "qwt_text.h"
 
 #include <QtMath>
 

@@ -33,7 +33,12 @@
  */
 
 #include "PlotPicker.h"
-#include "qwt_symbol.h"
+#include "OMPlot.h"
+#include "PlotCurve.h"
+#include "PlotGrid.h"
+#include "ScaleDraw.h"
+
+#include "qwt_text.h"
 
 #include <QToolTip>
 #include <QtMath>

@@ -42,6 +42,7 @@
 #include <QtGlobal>
 #include <QtWidgets>
 #include "qwt_plot_renderer.h"
+#include "OMPlot.h"
 
 //IAEX Headers
 #include "printervisitor.h"

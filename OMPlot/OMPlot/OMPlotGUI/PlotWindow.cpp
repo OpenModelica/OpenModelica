@@ -29,20 +29,26 @@
  *
  */
 
-#include <iostream>
-#include <memory>
-
 #include "PlotWindow.h"
+#include "OMPlot.h"
+#include "PlotZoomer.h"
+#include "util/read_csv.h"
+#include "util/read_matlab4.h"
+#include "PlotCurve.h"
+#include "PlotPicker.h"
+#include "Legend.h"
+#include "PlotPanner.h"
+#include "PlotGrid.h"
 #include "LogScaleEngine.h"
 #include "LinearScaleEngine.h"
+
 #include "qwt_plot_layout.h"
+#include "qwt_text.h"
 #if QWT_VERSION >= 0x060000
 #include "qwt_plot_renderer.h"
 #endif
-#include "qwt_scale_draw.h"
-#include "qwt_scale_widget.h"
 #include "qwt_text_label.h"
-#include "qwt_abstract_legend.h"
+#include "qwt_scale_widget.h"
 
 #include <QtSvg/QSvgGenerator>
 #include <QToolBar>

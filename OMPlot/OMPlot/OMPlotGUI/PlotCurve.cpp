@@ -30,15 +30,14 @@
  */
 
 #include "PlotCurve.h"
-#if QWT_VERSION < 0x060000
-#include "qwt_legend_item.h"
-#else
-#include "qwt_painter.h"
-#endif
-#include "qwt_symbol.h"
-#include "qwt_scale_map.h"
-#include "qwt_point_polar.h"
+#include "OMPlot.h"
 
+#include "qwt_symbol.h"
+#include "qwt_text.h"
+#include "qwt_scale_map.h"
+#include "qwt_math.h"
+
+#include <QtMath>
 #include <QStringBuilder>
 
 using namespace OMPlot;

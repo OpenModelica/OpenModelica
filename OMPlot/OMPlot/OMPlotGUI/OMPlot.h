@@ -32,14 +32,10 @@
 #ifndef OMPLOT_H
 #define OMPLOT_H
 
-#include "PlotWindow.h"
-#include "Legend.h"
-#include "PlotGrid.h"
-#include "PlotZoomer.h"
-#include "PlotPanner.h"
-#include "PlotPicker.h"
-#include "ScaleDraw.h"
-#include "PlotCurve.h"
+#include "qwt_plot.h"
+
+#include <QList>
+#include <QColor>
 
 namespace OMPlot
 {

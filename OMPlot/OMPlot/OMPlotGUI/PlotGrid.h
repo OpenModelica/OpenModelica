@@ -32,12 +32,13 @@
 #ifndef PLOTGRID_H
 #define PLOTGRID_H
 
-#include "OMPlot.h"
+#include "qwt_plot_grid.h"
 
 #include <QPen>
 
 namespace OMPlot
 {
+class Plot;
 class PlotGrid : public QwtPlotGrid
 {
 public:

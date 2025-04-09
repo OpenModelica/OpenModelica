@@ -55,6 +55,8 @@
 #include "commandcompletion.h"
 #include "omcinteractiveenvironment.h"
 #include "indent.h"
+#include "OMPlot.h"
+#include "PlotCurve.h"
 
 //#include "evalthread.h"
 

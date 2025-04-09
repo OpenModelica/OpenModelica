@@ -45,6 +45,7 @@
 #include "Simulation/SimulationDialog.h"
 #include "Simulation/SimulationOutputWidget.h"
 #include "TransformationalDebugger/TransformationsWidget.h"
+#include "PlotCurve.h"
 
 #include <QObject>
 #include <QDockWidget>
