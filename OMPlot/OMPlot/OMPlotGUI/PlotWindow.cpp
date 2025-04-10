@@ -29,6 +29,7 @@
  *
  */
 
+#include <memory>
 #include "PlotWindow.h"
 #include "OMPlot.h"
 #include "PlotZoomer.h"
