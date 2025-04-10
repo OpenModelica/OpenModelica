@@ -633,7 +633,6 @@ public
       output Subscript sub;
     protected
       Expression step, sub_exp;
-      Type ty = Type.REAL();
     algorithm
       sub := match range
 
@@ -641,20 +640,32 @@ public
         case Expression.RANGE() algorithm
           step := Util.getOptionOrDefault(range.step, Expression.INTEGER(1));
           sub_exp := Expression.fromCref(iter_name);
-          // if start and step are equal to 1, make simple expression (simplify is not strong enough yet)
-          if not (Expression.isOne(range.start) and Expression.isOne(step)) then
+          // i - start
+          if not Expression.isOne(range.start) then
             sub_exp := Expression.MULTARY(
-              arguments = {Expression.MULTARY(
-                arguments = {Expression.MULTARY(
-                  arguments = {sub_exp},
-                  inv_arguments = {range.start},
-                  operator = Operator.makeAdd(ty))},
-                inv_arguments = {step},
-                operator = Operator.makeMul(ty)),
-              Expression.INTEGER(1)},
-            inv_arguments = {},
-            operator = Operator.makeAdd(ty));
-            sub_exp := SimplifyExp.simplifyDump(sub_exp, true, getInstanceName());
+              arguments = {sub_exp},
+              inv_arguments = {range.start},
+              operator = Operator.makeAdd(Type.INTEGER()));
+          end if;
+
+          // (...)/step
+          if not Expression.isOne(step) then
+            sub_exp := Expression.MULTARY(
+              arguments = {sub_exp},
+              inv_arguments = {step},
+              operator = Operator.makeMul(Type.REAL()));
+          end if;
+
+          // (...) + 1
+          if not Expression.isOne(range.start) then
+            sub_exp := Expression.MULTARY(
+              arguments = {sub_exp, Expression.INTEGER(1)},
+              inv_arguments = {},
+              operator = Operator.makeAdd(Expression.typeOf(sub_exp)));
+          end if;
+
+          sub_exp := SimplifyExp.simplifyDump(sub_exp, true, getInstanceName());
+          if not Type.isInteger(Expression.typeOf(sub_exp)) then
             sub_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.INTEGER_REAL, {sub_exp}, Variability.DISCRETE, Purity.PURE));
           end if;
         then Subscript.INDEX(sub_exp);
@@ -2223,7 +2234,6 @@ public
       Expression lhs, rhs;
       EquationAttributes eqnAttr;
       Iterator iter;
-      list<ComponentRef> sub_crefs;
       list<Subscript> subs;
     algorithm
       var := Pointer.access(var_ptr);
@@ -2259,8 +2269,7 @@ public
         eqn := makeAssignment(lhs, rhs, idx, context, Iterator.EMPTY(), eqnAttr);
       else
         rhs := Expression.map(rhs, Expression.repairOperator);
-        (sub_crefs, _) := Iterator.getFrames(iter);
-        subs := list(Subscript.fromTypedExp(Expression.fromCref(cref)) for cref in sub_crefs);
+        subs := Iterator.normalizedSubscripts(iter);
         lhs := Expression.fromCref(ComponentRef.mergeSubscripts(subs, var.name, true, true));
         eqn := makeAssignment(lhs, rhs, idx, context, iter, eqnAttr);
         // this could lead to non existing variables, should not be a problem though
