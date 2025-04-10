@@ -59,6 +59,7 @@ public
   import Statement = NFStatement;
   import Subscript = NFSubscript;
   import Type = NFType;
+  import Typing = NFTyping;
   import Variable = NFVariable;
 
   // Old Backend imports
@@ -574,6 +575,7 @@ public
     algorithm
       (exp, iter) := extractFromCall(exp, EMPTY(), replacements);
       exp := Expression.map(exp, function Replacements.applySimpleExp(replacements = replacements));
+      exp := Typing.typeExp(exp, NFInstContext.RHS, sourceInfo(), true);
     end extract;
 
     function extractFromCall
