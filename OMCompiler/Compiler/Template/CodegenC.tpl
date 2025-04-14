@@ -4441,21 +4441,10 @@ template functionXXX_system(list<SimEqSystem> eqs, String name, Integer n, Strin
   {
     int i, eqId;
 
-    static const int eqIndices[<%nFuncs%>] = {
-      <%eqs |> eq => equationIndexGeneral(eq); separator=",\n"%>
-    };
-
-    if (data->simulationInfo->eqEvalIndex != NULL && data->simulationInfo->eqEvalN < <%nFuncs%>) {
-      for (i = 0; i < data->simulationInfo->eqEvalN; i++) {
-        eqId = data->simulationInfo->eqEvalIndex[i];
-        data->callback->eqFunctions[eqId](data, threadData);
-        threadData->lastEquationSolved = eqId;
-      }
-    } else {
-      for (i = 0; i < <%nFuncs%>; i++) {
-        data->callback->eqFunctions[eqIndices[i]](data, threadData);
-        threadData->lastEquationSolved = eqIndices[i];
-      }
+    for (i = 0; i < data->simulationInfo->eqEvalN; i++) {
+      eqId = data->simulationInfo->eqEvalIndex[i];
+      data->callback->eqFunctions[eqId](data, threadData);
+      threadData->lastEquationSolved = eqId;
     }
   }
   >>
@@ -4828,7 +4817,12 @@ template eqFunctions(list<SimEqSystem> eqs, String modelNamePrefix)
   {
     TRACE_PUSH
 
-    data->callback->eqFunctions = calloc(data->callback->eqFunctionsSize, sizeof(eq_func_ptr));
+    size_t i=0;
+
+    <%eqs |> eq =>
+      'data->simulationInfo->eqEvalIndexStatic[i++] = <%equationIndexGeneral(eq)%>;'; separator="\n"%>
+    data->simulationInfo->eqEvalNStatic = i;
+
     <%eqs |> eq =>
       let ix = equationIndexGeneral(eq)
       <<
@@ -4844,12 +4838,13 @@ end eqFunctions;
 template getVarToEqMap(SimCode simCode, list<SimEqSystem> allEquations, String modelNamePrefix)
 ::=
   <<
-  void <%symbolName(modelNamePrefix,"getVarToEqMap")%>(size_t* mapVarToEqNode, size_t* realVarsIndex)
+  void <%symbolName(modelNamePrefix,"getVarToEqMap")%>(size_t* mapVarToEqNode, size_t* realVarsIndex, size_t* nEqDependency, size_t** eqDependency)
   {
     TRACE_PUSH
 
-    size_t varIdx, i;
+    size_t i;
 
+    /* mapVarToEqNode */
     <%allEquations |> eq =>
       let eqIdx = equationIndexGeneral(eq)
       <<<%getSimEqSystemSimVarsLHS(eq, simCode) |> var =>
@@ -4858,11 +4853,25 @@ template getVarToEqMap(SimCode simCode, list<SimEqSystem> allEquations, String m
       <<
       for (i = realVarsIndex[<%index%>]; i < realVarsIndex[<%index%>+1]; i++) {
         mapVarToEqNode[i] = <%eqIdx%>; <%crefCCommentWithVariability(var)%>
-      }
+      }<%\n%>
       >>; separator="\n"%>
       >>
       ; separator="\n"%>
 
+    /* eqDependency */
+    <%allEquations |> eq =>
+      let eqIdx = equationIndexGeneral(eq)
+      let n = listLength(getSimEqSystemSimVarsRHSIndex(eq, simCode))
+      <<
+      nEqDependency[<%eqIdx%>] = <%n%>; i = 0;
+      eqDependency[<%eqIdx%>] = malloc(<%n%> * sizeof(size_t));
+      <%getSimEqSystemSimVarsRHSIndex(eq, simCode) |> varIdx =>
+        <<
+        eqDependency[<%eqIdx%>][i++] = mapVarToEqNode[<%varIdx%>];
+        >>
+      ; separator="\n"%>
+      >>
+      ; separator="\n\n"%>
     TRACE_POP
   }
   >>

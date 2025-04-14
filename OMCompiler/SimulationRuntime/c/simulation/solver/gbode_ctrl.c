@@ -221,7 +221,7 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
   /* store values of the states and state derivatives at initial or event time */
   gbData->time = sData->timeValue;
   memcpy(gbData->yOld, sData->realVars, nStates*sizeof(double));
-  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), FALSE);
 
   if (gbData->initialStepSize < 0) {
     memcpy(gbData->f, fODE, nStates*sizeof(double));
@@ -250,7 +250,7 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
     }
     sData->timeValue += h0;
 
-    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), FALSE);
 
     for (i=0; i<nStates; i++) {
       sc = absTol + fabs(gbData->yOld[i])*relTol;

@@ -610,6 +610,8 @@ typedef struct MODEL_DATA
   long nOutputVars;
 
   size_t* mapVarToEqNode;               /* map from var index to super node index (size is nVariablesReal) */
+  size_t* nEqDependency;                /* number of dependencies for each superNode (size is data->callback->eqFunctionsSize) */
+  size_t** eqDependency;                /* index of dependent eqFunctions (DAG) */
 
   long nZeroCrossings;
   long nRelations;
@@ -791,8 +793,13 @@ typedef struct SIMULATION_INFO
   size_t* stringVarsIndex;
 
   /* adaptive eval of functionXXX */
-  size_t eqEvalN;                       /* number of eqNodes to evaluate in functionXXX */
-  size_t* eqEvalIndex;                  /* indices of eqNodes to evaluate in functionXXX, set by gbode fast states */
+  size_t eqEvalNStatic;                 /* number of all eqNodes in functionXXX */
+  size_t eqEvalNAdaptive;               /* number of eqNodes to evaluate in functionXXX, set by gbode fast states */
+  size_t eqEvalN;                       /* number of eqNodes to evaluate in functionXXX, equals one of the above */
+  size_t* eqEvalIndexStatic;            /* all indices of eqNodes in functionXXX */
+  size_t* eqEvalIndexAdaptive;          /* indices of eqNodes to evaluate in functionXXX, set by gbode fast states */
+  size_t* eqEvalIndex;                  /* indices of eqNodes to evaluate in functionXXX, points to one of the above */
+  modelica_boolean* eqEvalSelect;       /* boolean array selecting eqNodes to evaluate in functionXXX (size is data->callback->eqFunctionsSize) */
 
   /* old vars for event handling */
   modelica_real timeValueOld;

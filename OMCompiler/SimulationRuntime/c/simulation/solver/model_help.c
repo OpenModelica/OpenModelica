@@ -1023,11 +1023,18 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->modelData->nVariablesBoolean  = data->simulationInfo->booleanVarsIndex[data->modelData->nVariablesBooleanArray];
   data->modelData->nVariablesString   = data->simulationInfo->stringVarsIndex[data->modelData->nVariablesStringArray];
 
-  data->modelData->mapVarToEqNode = (size_t*) calloc(data->modelData->nVariablesReal, sizeof(size_t));
+  data->callback->eqFunctions = (eq_func_ptr*) calloc(data->callback->eqFunctionsSize, sizeof(eq_func_ptr));
+  data->simulationInfo->eqEvalIndexStatic = (size_t*) calloc(data->callback->eqFunctionsSize, sizeof(size_t));
+  data->simulationInfo->eqEvalIndexAdaptive = (size_t*) calloc(data->callback->eqFunctionsSize, sizeof(size_t));
+  data->simulationInfo->eqEvalSelect = (modelica_boolean*) calloc(data->callback->eqFunctionsSize, sizeof(modelica_boolean));
   data->callback->setEqFunctions(data, threadData);
-  data->callback->getVarToEqMap(data->modelData->mapVarToEqNode, data->simulationInfo->realVarsIndex);
-  data->simulationInfo->eqEvalN = data->callback->eqFunctionsSize;
-  data->simulationInfo->eqEvalIndex = NULL;
+  data->simulationInfo->eqEvalN = data->simulationInfo->eqEvalNStatic;
+  data->simulationInfo->eqEvalIndex = data->simulationInfo->eqEvalIndexStatic;
+
+  data->modelData->mapVarToEqNode = (size_t*) calloc(data->modelData->nVariablesReal, sizeof(size_t));
+  data->modelData->nEqDependency = (size_t*) calloc(data->callback->eqFunctionsSize, sizeof(size_t));
+  data->modelData->eqDependency = (size_t**) calloc(data->callback->eqFunctionsSize, sizeof(size_t*));
+  data->callback->getVarToEqMap(data->modelData->mapVarToEqNode, data->simulationInfo->realVarsIndex, data->modelData->nEqDependency, data->modelData->eqDependency);
 
   /* prepare RingBuffer */
   for(i=0; i<SIZERINGBUFFER; i++)
@@ -1352,7 +1359,11 @@ void deInitializeDataStruc(DATA *data)
 
   /* free buffer for adaptive eval */
   free(data->modelData->mapVarToEqNode);
-  free(data->simulationInfo->eqEvalIndex);
+  for (i = 0; i < data->callback->eqFunctionsSize; i++)
+    free(data->modelData->eqDependency[i]);
+  free(data->modelData->eqDependency);
+  free(data->simulationInfo->eqEvalIndexStatic);
+  free(data->simulationInfo->eqEvalIndexAdaptive);
 
   /* free buffer for old state variables */
   free(data->simulationInfo->realVarsOld);

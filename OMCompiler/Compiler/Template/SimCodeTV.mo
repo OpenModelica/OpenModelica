@@ -1384,6 +1384,12 @@ package SimCodeUtil
     output list<SimCodeVar.SimVar> simVars;
   end getSimEqSystemSimVarsLHS;
 
+  function getSimEqSystemSimVarsRHSIndex
+    input SimCode.SimEqSystem simEqSys;
+    input SimCode.SimCode simCode;
+    output list<Integer> simVarIndices;
+  end getSimEqSystemSimVarsRHSIndex;
+
   function cref2simvar
     input DAE.ComponentRef cref;
     input SimCode.SimCode simCode;
