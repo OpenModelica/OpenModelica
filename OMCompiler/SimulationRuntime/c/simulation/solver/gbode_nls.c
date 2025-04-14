@@ -570,7 +570,7 @@ void residual_MS(RESIDUAL_USERDATA* userData, const double *xloc, double *res, c
     assertStreamPrint(threadData, !isnan(xloc[i]), "residual_MS: xloc is NAN");
   memcpy(sData->realVars, xloc, nStates*sizeof(modelica_real));
   // Evaluate right hand side of ODE
-  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), FALSE);
   for (i = 0; i < nStates; i++)
     assertStreamPrint(threadData, !isnan(fODE[i]), "residual_MS: fODE is NAN");
 
@@ -620,7 +620,7 @@ void residual_MS_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *res
     sData->realVars[i] = xloc[ii];
   }
   // Evaluate right hand side of ODE
-  gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
+  gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), TRUE);
 
   // Evaluate residuals
   for (ii = 0; ii < nFastStates; ii++) {
@@ -667,7 +667,7 @@ void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res,
     assertStreamPrint(threadData, !isnan(xloc[i]), "residual_DIRK: xloc is NAN");
   memcpy(sData->realVars, xloc, nStates*sizeof(double));
   // Evaluate right hand side of ODE
-  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), FALSE);
 
   // Evaluate residuals
   for (i = 0; i < nStates; i++) {
@@ -724,7 +724,7 @@ void residual_DIRK_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *r
     sData->realVars[i] = xloc[ii];
   }
   // Evaluate right hand side of ODE
-  gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
+  gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), FALSE);
 
   // Evaluate residuals
   for (ii = 0; ii < nFastStates; ii++) {
@@ -771,7 +771,7 @@ void residual_IRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, 
     if (!gbData->tableau->isKLeftAvailable || stage_ > 0) {
       sData->timeValue = gbData->time + gbData->tableau->c[stage_] * gbData->stepSize;
       memcpy(sData->realVars, xloc + stage_ * nStates, nStates*sizeof(double));
-      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), FALSE);
       for (i = 0; i < nStates; i++)
         assertStreamPrint(threadData, !isnan(fODE[i]), "residual_IRK: fODE is NAN");
       memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
