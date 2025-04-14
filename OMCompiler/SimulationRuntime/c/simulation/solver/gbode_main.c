@@ -111,8 +111,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
 
   gbfData->GM_method = getGB_method(FLAG_MR);
   gbfData->tableau = initButcherTableau(gbfData->GM_method, FLAG_MR_ERR);
-  if (gbfData->tableau == NULL)
-  {
+  if (gbfData->tableau == NULL) {
     // ERROR
     messageClose(OMC_LOG_STDOUT);
     omc_throw_function(threadData);
@@ -121,8 +120,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
   // Get size of non-linear system
   analyseButcherTableau(gbfData->tableau, gbData->nStates, &gbfData->nlSystemSize, &gbfData->type);
 
-  if (gbfData->GM_method == MS_ADAMS_MOULTON)
-  {
+  if (gbfData->GM_method == MS_ADAMS_MOULTON) {
     gbfData->nlSystemSize = gbData->nStates;
     gbfData->step_fun = &(full_implicit_MS_MR);
     gbfData->type = MS_TYPE_IMPLICIT;
@@ -185,16 +183,14 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
   gbData->nSlowStates = gbData->nFastStates;
   gbfData->fastStates_old = malloc(gbData->nStates*sizeof(int));
   gbfData->nFastStates_old = gbData->nFastStates;
-  for (int i = 0; i < gbData->nStates; i++)
-  {
+  for (int i = 0; i < gbData->nStates; i++) {
     gbfData->fastStates_old[i] = i;
   }
 
   printButcherTableau(gbfData->tableau);
 
   /* initialize analytic Jacobian, if available and needed */
-  if (!gbfData->isExplicit)
-  {
+  if (!gbfData->isExplicit) {
     // Allocate Jacobian, if !gbfData->isExplcit and gbData->isExplicit
     // Free is done in gbode_freeData
     if (gbData->isExplicit) {
@@ -202,7 +198,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
       data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
       if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
         infoStreamPrint(OMC_LOG_SOLVER, 1, "Initialized Jacobian:");
-        infoStreamPrint(OMC_LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
         infoStreamPrint(OMC_LOG_SOLVER, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
         messageClose(OMC_LOG_SOLVER);
       }
@@ -235,14 +231,11 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
 
     /* Initialize data for the nonlinear solver */
     gbfData->nlsData = initRK_NLS_DATA_MR(data, threadData, gbfData);
-    if (!gbfData->nlsData)
-    {
+    if (!gbfData->nlsData) {
       return -1;
     }
     gbfData->sparsePattern_DIRK = initializeSparsePattern_SR(data, gbfData->nlsData);
-  }
-  else
-  {
+  } else {
     gbfData->symJacAvailable = FALSE;
     gbfData->nlsSolverMethod = GB_NLS_UNKNOWN;
     gbfData->nlsData = NULL;
@@ -272,17 +265,14 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
     throwStreamPrint(NULL, "Unhandled interpolation case.");
   }
 
-  if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_STATES))
-  {
+  if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_STATES)) {
     char filename[4096];
     unsigned int bufSize = 4096;
     snprintf(filename, bufSize, "%s_ActiveStates.txt", data->modelData->modelFilePrefix);
     gbfData->fastStatesDebugFile = omc_fopen(filename, "w");
     warningStreamPrint(OMC_LOG_STDOUT, 0, "LOG_GBODE_STATES sets -noEquidistantTimeGrid for emitting results!");
     solverInfo->integratorSteps = TRUE;
-  }
-  else
-  {
+  } else {
     gbfData->fastStatesDebugFile = NULL;
   }
   i = fmin(fmax(round(gbData->nStates * gbData->percentage), 1), gbData->nStates - 1);
@@ -357,45 +347,33 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   gbData->ctrl_method = getControllerMethod(FLAG_SR_CTRL);
   gbData->stepSize_control = getControllFunc(gbData->ctrl_method);
    /* define maximum step size gbode is allowed to go */
-  if (omc_flag[FLAG_MAX_STEP_SIZE])
-  {
+  if (omc_flag[FLAG_MAX_STEP_SIZE]) {
     gbData->maxStepSize = atof(omc_flagValue[FLAG_MAX_STEP_SIZE]);
     if (gbData->maxStepSize < 0 || gbData->maxStepSize > DBL_MAX/2) {
       throwStreamPrint(NULL, "maximum step size %g is not allowed", gbData->maxStepSize);
     } else {
       infoStreamPrint(OMC_LOG_SOLVER, 0, "maximum step size %g", gbData->maxStepSize);
     }
-  }
-  else
-  {
+  } else {
     gbData->maxStepSize = -1;
     infoStreamPrint(OMC_LOG_SOLVER, 0, "maximum step size not set");
   }
     /* Initial step size */
-  if (omc_flag[FLAG_INITIAL_STEP_SIZE])
-  {
+  if (omc_flag[FLAG_INITIAL_STEP_SIZE]) {
     gbData->initialStepSize = atof(omc_flagValue[FLAG_INITIAL_STEP_SIZE]);
     if (gbData->initialStepSize < GB_MINIMAL_STEP_SIZE || gbData->initialStepSize > DBL_MAX/2) {
       throwStreamPrint(NULL, "initial step size %g is not allowed, minimal step size is %g", gbData->initialStepSize, GB_MINIMAL_STEP_SIZE);
     } else {
       infoStreamPrint(OMC_LOG_SOLVER, 0, "initial step size %g", gbData->initialStepSize);
     }
-  }
-  else
-  {
+  } else {
     gbData->initialStepSize = -1; /* use default */
     infoStreamPrint(OMC_LOG_SOLVER, 0, "initial step size not set");
   }
 
  /* if FLAG_NO_RESTART is set, configure gbode */
-  if (omc_flag[FLAG_NO_RESTART])
-  {
-    gbData->noRestart = TRUE;
-  }
-  else
-  {
-    gbData->noRestart = FALSE;
-  }
+  gbData->noRestart = omc_flag[FLAG_NO_RESTART];
+
   infoStreamPrint(OMC_LOG_SOLVER, 0, "gbode performs a restart after an event occurs %s", gbData->noRestart?"NO":"YES");
 
   gbData->isFirstStep = TRUE;
@@ -435,7 +413,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
     if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
       infoStreamPrint(OMC_LOG_SOLVER, 1, "Initialized Jacobian:");
-      infoStreamPrint(OMC_LOG_SOLVER, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
       infoStreamPrint(OMC_LOG_SOLVER, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
       messageClose(OMC_LOG_SOLVER);
     }
@@ -454,7 +432,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     if (jacobianMethod == SYMJAC) {
       warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobians without coloring are currently not supported by GBODE."
                                         " Colored symbolical Jacobian will be used.");
-    } else if(jacobianMethod == NUMJAC || jacobianMethod == COLOREDNUMJAC || jacobianMethod == INTERNALNUMJAC) {
+    } else if (jacobianMethod == NUMJAC || jacobianMethod == COLOREDNUMJAC || jacobianMethod == INTERNALNUMJAC) {
       warningStreamPrint(OMC_LOG_STDOUT, 0, "Numerical Jacobians without coloring are currently not supported by GBODE."
                                         " Colored numerical Jacobian will be used.");
       gbData->symJacAvailable = FALSE;
@@ -489,11 +467,11 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   gbData->nFastStates = 0;
   gbData->nSlowStates = gbData->nStates;
   for (int i = 0; i < gbData->nStates; i++) {
+    // TODO memcpy() faster?
     gbData->fastStatesIdx[i] = i;
     gbData->slowStatesIdx[i] = i;
     gbData->sortedStatesIdx[i] = i;
   }
-
 
   if (gbData->multi_rate && omc_flagValue[FLAG_SR_INT]==NULL) {
     gbData->interpolation = GB_DENSE_OUTPUT;
@@ -502,8 +480,11 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   }
 
   if (!gbData->tableau->withDenseOutput) {
-    if (gbData->interpolation == GB_DENSE_OUTPUT) gbData->interpolation = GB_INTERPOL_HERMITE;
-    if (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL) gbData->interpolation = GB_INTERPOL_HERMITE_ERRCTRL;
+    switch (gbData->interpolation) {
+    case GB_DENSE_OUTPUT:         gbData->interpolation = GB_INTERPOL_HERMITE; break;
+    case GB_DENSE_OUTPUT_ERRCTRL: gbData->interpolation = GB_INTERPOL_HERMITE_ERRCTRL; break;
+    default: break;
+    }
   }
 
   char buffer[1024];
@@ -526,7 +507,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     break;
   case GB_DENSE_OUTPUT:
   case GB_DENSE_OUTPUT_ERRCTRL:
-    infoStreamPrint(OMC_LOG_SOLVER, 0, "Dense output is used  for emitting results%s", buffer);
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Dense output is used for emitting results%s", buffer);
     break;
   default:
     throwStreamPrint(NULL, "Unhandled interpolation case.");
@@ -594,7 +575,6 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
     fclose(gbfData->fastStatesDebugFile);
 
   free(gbfData);
-  gbfData = NULL;
 
   return;
 }
@@ -622,6 +602,7 @@ void gbode_freeData(DATA* data, DATA_GBODE *gbData)
   if (gbData->multi_rate)
   {
     gbodef_freeData(gbData->gbfData);
+    gbData->gbfData = NULL;
   }
   /* Free multi-rate data */
   free(gbData->err);
@@ -654,7 +635,6 @@ void gbode_freeData(DATA* data, DATA_GBODE *gbData)
   free(gbData->errtol);
 
   free(gbData);
-  gbData = NULL;
 
   return;
 }
@@ -692,7 +672,7 @@ void gbodef_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   memcpy(gbfData->kRight, gbData->kLeft, sizeof(double) * nStates);
 
   // set solution ring buffer (extrapolation in case of NLS)
-  for (i=0; i<gbfData->ringBufferSize; i++) {
+  for (i = 0; i < gbfData->ringBufferSize; i++) {
     gbfData->tv[i] = gbData->tv[i];
     memcpy(gbfData->yv + i * nStates, gbData->yv + i * nStates, nStates * sizeof(double));
     memcpy(gbfData->kv + i * nStates, gbData->kv + i * nStates, nStates * sizeof(double));
@@ -717,7 +697,8 @@ void gbode_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   int i;
 
   // initialize ring buffer for error and step size control
-  for (i=0; i<gbData->ringBufferSize; i++) {
+  // TODO memset() faster?
+  for (i = 0; i < gbData->ringBufferSize; i++) {
     gbData->errValues[i] = 0;
     gbData->stepSizeValues[i] = 0;
   }
@@ -734,7 +715,7 @@ void gbode_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   memcpy(gbData->kRight, fODE, nStates*sizeof(double));
 
   // set solution ring buffer (extrapolation in case of NLS)
-  for (i=0; i<gbData->ringBufferSize; i++) {
+  for (i = 0; i < gbData->ringBufferSize; i++) {
     gbData->tv[i] = gbData->timeRight;
     memcpy(gbData->yv + i * nStates, gbData->yRight, nStates * sizeof(double));
     memcpy(gbData->kv + i * nStates, gbData->kRight, nStates * sizeof(double));
@@ -791,8 +772,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     gbfData->nlsData->size = gbData->nFastStates;
 
     infoStreamPrint(OMC_LOG_GBODE, 1, "Fast states and corresponding nominal values:");
-    for (ii = 0; ii < nFastStates; ii++)
-    {
+    for (ii = 0; ii < nFastStates; ii++) {
       i = gbData->fastStatesIdx[ii];
       // Get the nominal values of the fast states
       gbfData->nlsData->nominal[ii] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
@@ -800,8 +780,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     }
     messageClose(OMC_LOG_GBODE);
 
-    if (gbfData->nlsData->isPatternAvailable)
-    {
+    if (gbfData->nlsData->isPatternAvailable) {
       updateSparsePattern_MR(gbData, gbfData->jacobian->sparsePattern);
       gbfData->jacobian->sizeCols = nFastStates;
       gbfData->jacobian->sizeRows = nFastStates;
@@ -877,7 +856,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     do {
       if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER_V)) {
         infoStreamPrint(OMC_LOG_SOLVER_V, 1, "States and derivatives of the ring buffer:");
-        for (int i=0; i<gbfData->ringBufferSize; i++) {
+        for (int i = 0; i < gbfData->ringBufferSize; i++) {
           printVector_gbf(OMC_LOG_SOLVER_V, "y", gbfData->yv + i * nStates, nStates, gbfData->tv[i], gbData->nFastStates, gbData->fastStatesIdx);
           printVector_gbf(OMC_LOG_SOLVER_V, "k", gbfData->kv + i * nStates, nStates, gbfData->tv[i], gbData->nFastStates, gbData->fastStatesIdx);
         }
@@ -919,6 +898,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       gbData->err_fast = err;
 
       // Rotate and update buffer
+      // TODO memcpy() or actual ring buffer swap...
       for (i = (gbfData->ringBufferSize - 1); i > 0 ; i--) {
         gbfData->errValues[i] = gbfData->errValues[i - 1];
         gbfData->stepSizeValues[i] = gbfData->stepSizeValues[i - 1];
@@ -944,8 +924,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       }
 
       // Re-do step, if error is larger than requested
-      if (err > 1)
-      {
+      if (err > 1) {
         gbfData->stats.nErrorTestFailures++;
         infoStreamPrint(OMC_LOG_SOLVER, 0, "Reject step from %10g to %10g, error %10g, new stepsize %10g",
                         gbfData->time, gbfData->time + gbfData->lastStepSize, err, gbfData->stepSize);
@@ -984,8 +963,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     memcpy(gbfData->kRight, fODE, nStates * sizeof(double));
 
     eventTime = checkForEvents(data, threadData, solverInfo, gbfData->time, gbfData->yOld, gbfData->time + gbfData->lastStepSize, gbfData->y, TRUE, &foundEvent);
-    if (foundEvent)
-    {
+    if (foundEvent) {
       solverInfo->currentTime = eventTime;
       sData->timeValue = solverInfo->currentTime;
 
@@ -1196,7 +1174,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     if (gb_step_info !=0) {
       // get out of here, if an event has happend!
       messageClose(OMC_LOG_SOLVER);
-      if (gb_step_info>0)
+      if (gb_step_info > 0)
         return 0;
       else
         return gb_step_info;
@@ -1205,8 +1183,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
   /* Main integration loop, if gbData->time already greater than targetTime, only the
      interpolation is necessary for emitting the output variables (see below) */
-  while (gbData->time < targetTime)
-  {
+  while (gbData->time < targetTime) {
     // store left hand data for later interpolation
     gbData->timeLeft = gbData->timeRight;
     memcpy(gbData->yLeft, gbData->yRight, nStates * sizeof(double));
@@ -1284,8 +1261,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         gbData->err[i] = gbData->tableau->fac * gbData->errest[i] / gbData->errtol[i];
       }
 
-      if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V))
-      {
+      if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
         sortedStates = (int *)malloc(sizeof(int) * nStates);
         memcpy(sortedStates, gbData->sortedStatesIdx, sizeof(int) * nStates);
       }
@@ -1294,11 +1270,9 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       err_threshold = getErrorThreshold(gbData);
       err = err_threshold;
 
-      if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V))
-      {
+      if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
         for (int k = 0; k < nStates; k++)
-          if (sortedStates[k] - gbData->sortedStatesIdx[k])
-          {
+          if (sortedStates[k] - gbData->sortedStatesIdx[k]) {
             printIntVector_gb(OMC_LOG_GBODE_V, "sortedStates before:", sortedStates, nStates, gbData->time);
             printIntVector_gb(OMC_LOG_GBODE_V, "sortedStates after:", gbData->sortedStatesIdx, nStates, gbData->time);
             break;
@@ -1485,8 +1459,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
     if (gbData->gbfData->time < gbData->time) {
       eventTime = checkForEvents(data, threadData, solverInfo, gbData->time, gbData->yOld, gbData->time + gbData->lastStepSize, gbData->y, FALSE, &foundEvent);
-      if (foundEvent)
-      {
+      if (foundEvent) {
         solverInfo->currentTime = eventTime;
         sData->timeValue = solverInfo->currentTime;
 
@@ -1563,8 +1536,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       }
     }
 
-    if ((stopTime - gbData->time) < GB_MINIMAL_STEP_SIZE)
-    {
+    if ((stopTime - gbData->time) < GB_MINIMAL_STEP_SIZE) {
       gbData->time = stopTime;
       break;
     }
@@ -1700,8 +1672,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
 
   /* Main integration loop, if gbData->time already greater than targetTime, only the
      interpolation is necessary for emitting the output variables (see below) */
-  while (gbData->time < targetTime)
-  {
+  while (gbData->time < targetTime) {
     // store left hand data for later interpolation
     gbData->timeLeft = gbData->timeRight;
     memcpy(gbData->yLeft, gbData->yRight, nStates * sizeof(double));
@@ -1717,8 +1688,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
 
     // Loop will be performed until the error estimate for all states fullfills the
     // given tolerance
-    do
-    {
+    do {
       if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER_V)) {
         // debug ring buffer of the states and derivatives during integration
         infoStreamPrint(OMC_LOG_SOLVER_V, 1, "States and derivatives of the ring buffer:");
@@ -1823,7 +1793,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
         messageClose(OMC_LOG_GBODE_V);
       }
       if (gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
-        if (gbData->err_int> err) {
+        if (gbData->err_int > err) {
           gbData->errValues[0] = gbData->err_int;
           gbData->stepSize = gbData->lastStepSize * gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
           if (gbData->maxStepSize > 0 && gbData->maxStepSize < gbData->stepSize)
@@ -1895,8 +1865,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     // check for events, if event is detected stop integrator and trigger event iteration
     eventTime = checkForEvents(data, threadData, solverInfo, gbData->timeLeft, gbData->yLeft, gbData->timeRight, gbData->yRight, FALSE, &foundEvent);
     if (foundEvent) {
-      if (eventTime < targetTime + solverInfo->currentStepSize/2)
-      {
+      if (eventTime < targetTime + solverInfo->currentStepSize/2) {
         solverInfo->currentTime = eventTime;
         sData->timeValue = eventTime;
 
@@ -1944,8 +1913,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
                     gbData->timeLeft, gbData->timeRight, err, gbData->err_int, gbData->stepSize);
 
     /* emit step, if integratorSteps is selected */
-    if (solverInfo->integratorSteps)
-    {
+    if (solverInfo->integratorSteps) {
       solverInfo->currentTime = sData->timeValue;
       /*
        * to emit consistent value we need to update the whole
@@ -1970,8 +1938,8 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     // reduce step size with respect to the simulation stop time, if necessary
     gbData->stepSize = fmin(gbData->stepSize, stopTime - gbData->time);
 
-    if(omc_flag[FLAG_PORT] && solverInfo->integratorSteps) {
-      if(0 != strcmp("ia", data->simulationInfo->outputFormat)) {
+    if (omc_flag[FLAG_PORT] && solverInfo->integratorSteps) {
+      if (0 != strcmp("ia", data->simulationInfo->outputFormat)) {
         communicateStatus("Running", (solverInfo->currentTime - data->simulationInfo->startTime)/(data->simulationInfo->stopTime - data->simulationInfo->startTime), solverInfo->currentTime, solverInfo->currentStepSize);
       }
     }
@@ -2044,7 +2012,6 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
  */
 int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 {
-  SIMULATION_DATA *sData = (SIMULATION_DATA *)data->localData[0];
   DATA_GBODE *gbData = (DATA_GBODE *)solverInfo->solverData;
 
   if (gbData->multi_rate) {
