@@ -13451,6 +13451,31 @@ algorithm
   simVars := list(cref2simvar(cr, simCode) for cr in getSimEqSystemCrefsLHS(simEqSys));
 end getSimEqSystemSimVarsLHS;
 
+public function getSimEqSystemSimVarsRHSIndex
+  input SimCode.SimEqSystem simEqSys;
+  input SimCode.SimCode simCode;
+  output list<Integer> simVarIndices;
+protected
+  list<SimCodeVar.SimVar> simVars;
+
+  function keep
+    input SimCodeVar.SimVar var;
+    output Boolean b;
+  algorithm
+    b := match var
+      case SimCodeVar.SIMVAR(varKind = BackendDAE.STATE())    then false;
+      case SimCodeVar.SIMVAR(varKind = BackendDAE.DISCRETE()) then false;
+      case SimCodeVar.SIMVAR(varKind = BackendDAE.PARAM())    then false;
+      case SimCodeVar.SIMVAR(varKind = BackendDAE.CONST())    then false;
+      else true;
+    end match;
+  end keep;
+algorithm
+  simVars := list(cref2simvar(cr, simCode) for cr in getSimEqSystemCrefsRHS(simEqSys));
+  simVars := list(var for var guard keep(var) in simVars);
+  simVarIndices := UnorderedSet.unique_list(list(var.index for var in simVars), Util.id, intEq);
+end getSimEqSystemSimVarsRHSIndex;
+
 protected function getSimEqSystemCrefsLHS "gets the crefs of the vars that are assigned (the lhs) for a simEqSystem
 author:Waurich TUD 2014-05"
   input SimCode.SimEqSystem simEqSys;
@@ -13498,6 +13523,49 @@ algorithm
       then crefs;
   end match;
 end getSimEqSystemCrefsLHS;
+
+protected function getSimEqSystemCrefsRHS "gets the crefs of the vars that are used (the rhs) for a simEqSystem"
+  input SimCode.SimEqSystem simEqSys;
+  output list<DAE.ComponentRef> crefsOut;
+algorithm
+  crefsOut := match(simEqSys)
+    local
+      DAE.Exp rhs;
+      DAE.ComponentRef cref;
+      list<DAE.ComponentRef> crefs,crefs2;
+      list<SimCodeVar.SimVar> simVars;
+      list<SimCode.SimEqSystem> residual;
+    case SimCode.SES_RESIDUAL() algorithm
+      Error.addInternalError("failed for SES_RESIDUAL", sourceInfo());
+    then fail();
+    case SimCode.SES_SIMPLE_ASSIGN(exp=rhs) then Expression.getAllCrefs(rhs);
+    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(exp=rhs) then Expression.getAllCrefs(rhs);
+    case SimCode.SES_ARRAY_CALL_ASSIGN(exp=rhs) then Expression.getAllCrefs(rhs);
+    case SimCode.SES_IFEQUATION() algorithm
+      Error.addInternalError("failed for SES_IFEQUATION", sourceInfo());
+    then fail();
+    case SimCode.SES_ALGORITHM() algorithm
+      Error.addInternalError("failed for SES_ALGORITHM", sourceInfo());
+    then fail();
+    case SimCode.SES_INVERSE_ALGORITHM() algorithm
+      Error.addInternalError("failed for SES_INVERSE_ALGORITHM", sourceInfo());
+    then fail();
+    case SimCode.SES_LINEAR() algorithm
+      Error.addInternalError("failed for SES_LINEAR", sourceInfo());
+    then fail();
+    case SimCode.SES_NONLINEAR() algorithm
+      Error.addInternalError("failed for SES_NONLINEAR", sourceInfo());
+    then fail();
+    case SimCode.SES_MIXED() algorithm
+      Error.addInternalError("failed for SES_MIXED", sourceInfo());
+    then fail();
+    case SimCode.SES_WHEN(whenStmtLst={BackendDAE.ASSIGN(right=rhs)})
+    then Expression.getAllCrefs(rhs);
+    else algorithm
+      Error.addInternalError("failed", sourceInfo());
+    then fail();
+  end match;
+end getSimEqSystemCrefsRHS;
 
 public function replaceSimVarName "updates the name of simVarIn.
 author:Waurich TUD 2014-05"
