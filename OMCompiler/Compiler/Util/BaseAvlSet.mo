@@ -457,9 +457,11 @@ algorithm
   outString := match inTree
     case NODE()
       then printTreeStr2(inTree.left, true, inIndent + (if isLeft then "     " else " │   ")) +
-           inIndent + (if isLeft then " ┌" else " └") + "────" +
-           printNodeStr(inTree) + "\n" +
+           inIndent + (if isLeft then " ┌" else " └") + "────" + printNodeStr(inTree) + "\n" +
            printTreeStr2(inTree.right, false, inIndent + (if isLeft then " │   " else "     "));
+
+    case LEAF()
+      then inIndent + (if isLeft then " ┌" else " └") + "────" + printNodeStr(inTree) + "\n";
 
     else "";
   end match;
