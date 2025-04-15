@@ -31,9 +31,9 @@ simulate(binding_array); getErrorString();
 // Created Parameter Binding Equations (1):
 // ******************************************
 // 	[FOR-] (5) ($RES_BND_0)
-// [----] for $i1 in 1:5 loop
-// [----]   [SCAL] (1) Cu[$i1] = 1e7 * (1.0 + 0.337 * ((-1) + $i1)) ($RES_BND_1)
-// [----] end for;
+// 	[----] for $i1 in 1:5 loop
+// 	[----]   [SCAL] (1) Cu[$i1] = (($i1 - 1) * 1.348 / 4.0 + 1.0) * 1e7 ($RES_BND_1)
+// 	[----] end for;
 //
 // ##############################
 //

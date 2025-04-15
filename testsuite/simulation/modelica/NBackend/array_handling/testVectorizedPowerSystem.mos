@@ -146,12 +146,16 @@ val(fixedVoltageSource1.p[1], 1.0);
 // ### Equation:
 // 	[SCAL] (1) system.thetaRef = 314.1592653589793 * time ($RES_SIM_7)
 //
-// BLOCK 2: Single Strong Component (status = Solve.UNPROCESSED)
+// ================================
+//   (4) Continuous ODE Partition
+// ================================
+//
+// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
 // ---------------------------------------------------------------
 // ### Variable:
 // 	Real system.thetaRel = system.thetaRef - system.thetaRef
 // ### Equation:
-// 	[SCAL] (1) system.thetaRel = system.thetaRef - system.thetaRef ($RES_BND_21)
+// 	[SCAL] (1) system.thetaRel = 0.0 ($RES_BND_21)
 //
 // #################################################
 //
@@ -281,12 +285,16 @@ val(fixedVoltageSource1.p[1], 1.0);
 // ### Equation:
 // 	[SCAL] (1) system.thetaRef = 314.1592653589793 * time ($RES_SIM_7)
 //
-// BLOCK 2: Single Strong Component (status = Solve.UNPROCESSED)
+// ================================
+//   (4) Continuous ODE Partition
+// ================================
+//
+// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
 // ---------------------------------------------------------------
 // ### Variable:
 // 	Real system.thetaRel = system.thetaRef - system.thetaRef
 // ### Equation:
-// 	[SCAL] (1) system.thetaRel = system.thetaRef - system.thetaRef ($RES_BND_21)
+// 	[SCAL] (1) system.thetaRel = 0.0 ($RES_BND_21)
 //
 // #########################################
 //
@@ -375,16 +383,16 @@ val(fixedVoltageSource1.p[1], 1.0);
 // BLOCK 10: Single Strong Component (status = Solve.UNPROCESSED)
 // ----------------------------------------------------------------
 // ### Variable:
-// 	Real system.thetaRef = system.thetaRef
+// 	Real system.thetaRel = system.thetaRef - system.thetaRef
 // ### Equation:
-// 	[SCAL] (1) system.thetaRef = 314.1592653589793 * time ($RES_SIM_7)
+// 	[SCAL] (1) system.thetaRel = 0.0 ($RES_BND_21)
 //
 // BLOCK 11: Single Strong Component (status = Solve.UNPROCESSED)
 // ----------------------------------------------------------------
 // ### Variable:
-// 	Real system.thetaRel = system.thetaRef - system.thetaRef
+// 	Real system.thetaRef = system.thetaRef
 // ### Equation:
-// 	[SCAL] (1) system.thetaRel = system.thetaRef - system.thetaRef ($RES_BND_21)
+// 	[SCAL] (1) system.thetaRef = 314.1592653589793 * time ($RES_SIM_7)
 //
 // BLOCK 12: Single Strong Component (status = Solve.UNPROCESSED)
 // ----------------------------------------------------------------
@@ -550,7 +558,7 @@ val(fixedVoltageSource1.p[1], 1.0);
 //   (3) Continuous ODE Partition
 // ================================
 //
-// --- Alias of INI[1 | 10] ---
+// --- Alias of INI[1 | 11] ---
 // BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------------
 // ### Variable:
@@ -558,13 +566,17 @@ val(fixedVoltageSource1.p[1], 1.0);
 // ### Equation:
 // 	[SCAL] (1) system.thetaRef = 314.1592653589793 * time ($RES_SIM_7)
 //
-// --- Alias of INI[1 | 11] ---
-// BLOCK 2: Single Strong Component (status = Solve.EXPLICIT)
+// ================================
+//   (4) Continuous ODE Partition
+// ================================
+//
+// --- Alias of INI[1 | 10] ---
+// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
 // ------------------------------------------------------------
 // ### Variable:
 // 	Real system.thetaRel = system.thetaRef - system.thetaRef
 // ### Equation:
-// 	[SCAL] (1) system.thetaRel = system.thetaRef - system.thetaRef ($RES_BND_21)
+// 	[SCAL] (1) system.thetaRel = 0.0 ($RES_BND_21)
 //
 // #####################################
 //
@@ -653,16 +665,16 @@ val(fixedVoltageSource1.p[1], 1.0);
 // BLOCK 10: Single Strong Component (status = Solve.EXPLICIT)
 // -------------------------------------------------------------
 // ### Variable:
-// 	Real system.thetaRef = system.thetaRef
+// 	Real system.thetaRel = system.thetaRef - system.thetaRef
 // ### Equation:
-// 	[SCAL] (1) system.thetaRef = 314.1592653589793 * time ($RES_SIM_7)
+// 	[SCAL] (1) system.thetaRel = 0.0 ($RES_BND_21)
 //
 // BLOCK 11: Single Strong Component (status = Solve.EXPLICIT)
 // -------------------------------------------------------------
 // ### Variable:
-// 	Real system.thetaRel = system.thetaRef - system.thetaRef
+// 	Real system.thetaRef = system.thetaRef
 // ### Equation:
-// 	[SCAL] (1) system.thetaRel = system.thetaRef - system.thetaRef ($RES_BND_21)
+// 	[SCAL] (1) system.thetaRef = 314.1592653589793 * time ($RES_SIM_7)
 //
 // BLOCK 12: Single Strong Component (status = Solve.EXPLICIT)
 // -------------------------------------------------------------
