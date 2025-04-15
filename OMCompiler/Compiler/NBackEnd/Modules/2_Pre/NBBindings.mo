@@ -41,7 +41,7 @@ protected
   import NBEquation.{Equation, EquationPointers, EqData};
   import Variable = NFVariable;
   import BVariable = NBVariable;
-  import NBVariable.{VariablePointers, VarData};
+  import NBVariable.{VariablePointers, VariablePointer, VarData};
 
   // Util
   import StringUtil;
@@ -61,6 +61,7 @@ public
         list<Pointer<Equation>> binding_rec = {}    "list of created record binding equations";
         Pointer<Variable> parent                    "optional record parent";
         Boolean skip_record_element                 "true if this variable is part of an array and the array variable is bound";
+        UnorderedSet<VariablePointer> new_iters = UnorderedSet.new(BVariable.hash, BVariable.equalName);
 
       case BackendDAE.MAIN(varData = varData as VarData.VAR_DATA_SIM(), eqData = eqData as EqData.EQ_DATA_SIM())
       algorithm
@@ -76,9 +77,9 @@ public
 
           if not skip_record_element then
             if BVariable.isContinuous(var, false) then
-              binding_cont := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_cont;
+              binding_cont := Equation.generateBindingEquation(var, eqData.uniqueIndex, false, new_iters) :: binding_cont;
             else
-              binding_disc := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_disc;
+              binding_disc := Equation.generateBindingEquation(var, eqData.uniqueIndex, false, new_iters) :: binding_disc;
             end if;
           end if;
         end for;
@@ -87,13 +88,13 @@ public
         // known record binding equations will be created for initialization
         bound_vars := list(var for var guard(BVariable.isBound(var) and BVariable.isUnknownRecord(var)) in VariablePointers.toList(varData.records));
         for var in bound_vars loop
-          binding_rec := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_rec;
+          binding_rec := Equation.generateBindingEquation(var, eqData.uniqueIndex, false, new_iters) :: binding_rec;
         end for;
 
         // create clock bindings
         bound_clocks := list(var for var guard(BVariable.isBound(var)) in VariablePointers.toList(varData.clocks));
         for var in bound_clocks loop
-          binding_clck := Equation.generateBindingEquation(var, eqData.uniqueIndex, false) :: binding_clck;
+          binding_clck := Equation.generateBindingEquation(var, eqData.uniqueIndex, false, new_iters) :: binding_clck;
         end for;
 
         // adding all continuous equations
@@ -115,6 +116,8 @@ public
         eqData.clocked    := EquationPointers.addList(binding_clck, eqData.clocked);
 
         bdae.eqData := eqData;
+
+        bdae.varData := VarData.addTypedList(bdae.varData, UnorderedSet.toList(new_iters), NBVariable.VarData.VarType.ITERATOR);
 
         if Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) then
           Error.addSourceMessage(Error.BACKENDDAEINFO_LOWER,{
