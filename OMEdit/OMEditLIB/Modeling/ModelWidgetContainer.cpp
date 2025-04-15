@@ -1660,7 +1660,9 @@ void GraphicsView::removeConnectionsFromView()
 int GraphicsView::numberOfElementConnections(Element *pElement, LineAnnotation *pExcludeConnectionLineAnnotation)
 {
   int connections = 0;
-  foreach (LineAnnotation *pConnectionLineAnnotation, mConnectionsList) {
+  QList<LineAnnotation*> connectionsList = mInheritedConnectionsList;
+  connectionsList.append(mConnectionsList);
+  foreach (LineAnnotation *pConnectionLineAnnotation, connectionsList) {
     if (pExcludeConnectionLineAnnotation && pExcludeConnectionLineAnnotation == pConnectionLineAnnotation) {
       continue;
     }
@@ -3033,7 +3035,12 @@ bool GraphicsView::updateElementConnectorSizingParameter(GraphicsView *pGraphics
         return true;
       } else {
         QString modifierKey = QString("%1.%2").arg(pElement->getRootParentElement()->getName()).arg(parameter);
-        MainWindow::instance()->getOMCProxy()->setElementModifierValueOld(className, modifierKey, QString::number(numberOfElementConnections));
+        if (pElement->isInheritedElement() && pElement->getModelComponent()) {
+          MainWindow::instance()->getOMCProxy()->setExtendsModifierValueOld(className, pElement->getModelComponent()->getTopLevelExtendName(),
+                                                                            modifierKey, QString::number(numberOfElementConnections));
+        } else {
+          MainWindow::instance()->getOMCProxy()->setElementModifierValueOld(className, modifierKey, QString::number(numberOfElementConnections));
+        }
         return true;
       }
     }
