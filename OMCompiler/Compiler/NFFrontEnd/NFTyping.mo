@@ -1447,6 +1447,8 @@ algorithm
 
     case Expression.MULTARY() then typeExp(SimplifyExp.splitMultary(exp), context, info, retype);
 
+    case Expression.CLKCONST() then (exp, Expression.typeOf(exp), Expression.variability(exp), Expression.purity(exp));
+
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got unknown expression: " + Expression.toString(exp), sourceInfo());
