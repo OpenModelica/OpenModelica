@@ -91,6 +91,7 @@ public
           EqData eqData;
           EquationPointers clonedEqns;
           VariablePointers clonedVars;
+          UnorderedSet<VariablePointer> new_iters = UnorderedSet.new(BVariable.hash, BVariable.equalName);
           UnorderedMap<ComponentRef, Iterator> cref_map = UnorderedMap.new<Iterator>(ComponentRef.hash, ComponentRef.isEqual);
 
         case BackendDAE.MAIN( varData = varData as VarData.VAR_DATA_SIM(variables = variables, initials = initialVars),
@@ -102,9 +103,9 @@ public
             (variables, equations, initialEqs) := createStartEquations(varData.discretes, variables, equations, initialEqs, eqData.uniqueIndex, "Discrete");
             (variables, equations, initialEqs) := createStartEquations(varData.discrete_states, variables, equations, initialEqs, eqData.uniqueIndex, "Discrete State");
             (variables, equations, initialEqs) := createStartEquations(varData.clocked_states, variables, equations, initialEqs, eqData.uniqueIndex, "Clocked State");
-            (equations, initialEqs, initialVars) := createParameterEquations(varData.parameters, equations, initialEqs, initialVars, eqData.uniqueIndex, " ");
-            (equations, initialEqs, initialVars) := createParameterEquations(varData.records, equations, initialEqs, initialVars, eqData.uniqueIndex, " Record ");
-            (equations, initialEqs, initialVars) := createParameterEquations(varData.external_objects, equations, initialEqs, initialVars, eqData.uniqueIndex, " External Object ");
+            (equations, initialEqs, initialVars) := createParameterEquations(varData.parameters, equations, initialEqs, initialVars, new_iters, eqData.uniqueIndex, " ");
+            (equations, initialEqs, initialVars) := createParameterEquations(varData.records, equations, initialEqs, initialVars, new_iters, eqData.uniqueIndex, " Record ");
+            (equations, initialEqs, initialVars) := createParameterEquations(varData.external_objects, equations, initialEqs, initialVars, new_iters, eqData.uniqueIndex, " External Object ");
 
             // clone all simulation equations and add them to the initial equations.
             clonedEqns := EquationPointers.clone(equations, false);
@@ -124,10 +125,9 @@ public
             varData.initials := VariablePointers.compress(clonedVars);
             eqData.equations := equations;
             eqData.initials := EquationPointers.compress(initialEqs);
-
-            bdae.varData := varData;
+            // add new iterators
             bdae.eqData := eqData;
-        then bdae;
+        then BackendDAE.setVarData(bdae, VarData.addTypedList(varData, UnorderedSet.toList(new_iters), NBVariable.VarData.VarType.ITERATOR));
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed to create initial partition!"});
@@ -333,6 +333,7 @@ public
     input output EquationPointers equations;
     input output EquationPointers initialEqs;
     input output VariablePointers initialVars;
+    input UnorderedSet<VariablePointer> new_iters;
     input Pointer<Integer> idx;
     input String str "only for debug";
   protected
@@ -354,7 +355,7 @@ public
         // only consider non-evaluable parameter bindings
         if not BVariable.hasEvaluableBinding(var) then
           initial_param_vars := listAppend(BVariable.getRecordChildren(var), initial_param_vars);
-          parameter_eqs := Equation.generateBindingEquation(var, idx, true) :: parameter_eqs;
+          parameter_eqs := Equation.generateBindingEquation(var, idx, true, new_iters) :: parameter_eqs;
         else
           for c_var in BVariable.getRecordChildren(var) loop
             BVariable.setBindingAsStart(c_var);
@@ -369,7 +370,7 @@ public
           initial_param_vars := var :: initial_param_vars;
           // generate equation only if variable is fixed
           if BVariable.isFixed(var) then
-            parameter_eqs := Equation.generateBindingEquation(var, idx, true) :: parameter_eqs;
+            parameter_eqs := Equation.generateBindingEquation(var, idx, true, new_iters) :: parameter_eqs;
           end if;
         else
           BVariable.setBindingAsStart(var);

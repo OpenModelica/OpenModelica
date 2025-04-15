@@ -96,7 +96,7 @@ protected
   import NBSolve.Status;
   import StrongComponent = NBStrongComponent;
   import Tearing = NBTearing;
-  import NBVariable.{VariablePointers, VarData};
+  import NBVariable.{VariablePointers, VariablePointer, VarData};
 
   // Util imports
   import MetaModelica.Dangerous;
@@ -219,6 +219,7 @@ protected
     (varData, eqData) := match (varData, eqData)
       local
         UnorderedMap<ComponentRef, Expression> replacements;
+        UnorderedSet<VariablePointer> new_iters = UnorderedSet.new(BVariable.hash, BVariable.equalName);
         EquationPointers newEquations;
         list<Pointer<Variable>> alias_vars, const_vars, non_trivial_alias;
         list<Pointer<Equation>> non_trivial_eqs, auxEquations;
@@ -272,10 +273,10 @@ protected
           varData.nonTrivialAlias := VariablePointers.addList(non_trivial_alias, varData.nonTrivialAlias);
 
           // add non trivial alias to removed
-          non_trivial_eqs := list(Equation.generateBindingEquation(var, eqData.uniqueIndex, false) for var in non_trivial_alias);
+          non_trivial_eqs := list(Equation.generateBindingEquation(var, eqData.uniqueIndex, false, new_iters) for var in non_trivial_alias);
           eqData.removed := EquationPointers.addList(non_trivial_eqs, eqData.removed);
-          //eqData.equations := EquationPointers.addList(non_trivial_eqs, eqData.equations);
-      then (varData, EqData.addUntypedList(eqData, auxEquations, false));
+          // add all new iterators
+      then (VarData.addTypedList(varData, UnorderedSet.toList(new_iters), NBVariable.VarData.VarType.ITERATOR), EqData.addUntypedList(eqData, auxEquations, false));
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});

@@ -570,10 +570,11 @@ public
       also replaces all array constructors with indexed expressions."
       output Iterator iter;
       input output Expression exp;
+      input UnorderedSet<VariablePointer> new_iters;
     protected
       UnorderedMap<ComponentRef, Expression> replacements = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
     algorithm
-      (exp, iter) := extractFromCall(exp, EMPTY(), replacements);
+      (exp, iter) := extractFromCall(exp, EMPTY(), replacements, new_iters);
       exp := Expression.map(exp, function Replacements.applySimpleExp(replacements = replacements));
       exp := Typing.typeExp(exp, NFInstContext.RHS, sourceInfo(), true);
     end extract;
@@ -583,6 +584,7 @@ public
       input output Expression exp;
       input output Iterator iter;
       input UnorderedMap<ComponentRef, Expression> replacements   "replacement rules";
+      input UnorderedSet<VariablePointer> new_iters;
     algorithm
       (exp, iter) := match exp
         local
@@ -594,8 +596,7 @@ public
 
         case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
           for tpl in listReverse(call.iters) loop
-            (node, range) := tpl;
-            frames := (ComponentRef.fromNode(node, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR), range, NONE()) :: frames;
+            frames := Inline.inlineArrayIterator(tpl, new_iters) :: frames;
           end for;
           tmp := fromFrames(frames);
           if not isEmpty(iter) then
@@ -609,7 +610,7 @@ public
         case Expression.CALL() then (exp, iter);
 
         else algorithm
-          (exp, iter) := Expression.mapFoldShallow(exp, function extractFromCall(replacements = replacements), iter);
+          (exp, iter) := Expression.mapFoldShallow(exp, function extractFromCall(replacements = replacements, new_iters = new_iters), iter);
         then (exp, iter);
       end match;
     end extractFromCall;
@@ -2229,6 +2230,7 @@ public
       input Pointer<Variable> var_ptr;
       input Pointer<Integer> idx;
       input Boolean initial_;
+      input UnorderedSet<VariablePointer> new_iters;
       output Pointer<Equation> eqn;
     protected
       String context = "BND";
@@ -2263,7 +2265,7 @@ public
       end if;
 
       // simplify rhs and get potential iterators
-      (iter, rhs) := Iterator.extract(rhs);
+      (iter, rhs) := Iterator.extract(rhs, new_iters);
       rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
 
       if Iterator.isEmpty(iter) then

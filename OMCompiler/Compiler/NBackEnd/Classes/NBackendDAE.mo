@@ -193,14 +193,28 @@ public
     output VarData varData;
   algorithm
     varData := match bdae
-      case MAIN() then bdae.varData;
+      case MAIN()     then bdae.varData;
       case JACOBIAN() then bdae.varData;
-      case HESSIAN() then bdae.varData;
+      case HESSIAN()  then bdae.varData;
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
       then fail();
     end match;
   end getVarData;
+
+  function setVarData
+    input output BackendDAE bdae;
+    input VarData varData;
+  algorithm
+    bdae := match bdae
+      case MAIN()     algorithm bdae.varData := varData; then bdae;
+      case JACOBIAN() algorithm bdae.varData := varData; then bdae;
+      case HESSIAN()  algorithm bdae.varData := varData; then bdae;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
+      then fail();
+    end match;
+  end setVarData;
 
   function getFunctionTree
     input BackendDAE bdae;
