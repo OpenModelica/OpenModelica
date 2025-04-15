@@ -47,12 +47,9 @@ double getErrorThreshold(DATA_GBODE* gbData)
   if (gbData->percentage == 1)
     return -1;
 
-  for (i = 0;  i < gbData->nStates - 1; i++)
-  {
-    for (j = 0; j < gbData->nStates - i - 1; j++)
-    {
-      if (gbData->err[gbData->sortedStatesIdx[j]] < gbData->err[gbData->sortedStatesIdx[j+1]])
-      {
+  for (i = 0;  i < gbData->nStates - 1; i++) {
+    for (j = 0; j < gbData->nStates - i - 1; j++) {
+      if (gbData->err[gbData->sortedStatesIdx[j]] < gbData->err[gbData->sortedStatesIdx[j+1]]) {
         temp = gbData->sortedStatesIdx[j];
         gbData->sortedStatesIdx[j] = gbData->sortedStatesIdx[j+1];
         gbData->sortedStatesIdx[j+1] = temp;
@@ -93,11 +90,10 @@ double IController(double* err_values, double* stepSize_values, unsigned int err
   double facmin = 0.5;
   double beta = 1./(err_order+1);
 
-  if (err_values[0]>0) {
+  if (err_values[0] > 0)
     return fmin(facmax, fmax(facmin, fac*pow(1./err_values[0], beta)));
-  } else {
+  else
     return facmax;
-  }
 }
 
 /**
@@ -172,7 +168,8 @@ double PIDController(double* err_values, double* stepSize_values, unsigned int e
  * @param ctrl_method     Specifying method.
  * @return void*          Pointer to step size control function.
  */
-gm_stepSize_control_function getControllFunc(enum GB_CTRL_METHOD ctrl_method) {
+gm_stepSize_control_function getControllFunc(enum GB_CTRL_METHOD ctrl_method)
+{
   switch (ctrl_method)
   {
   case GB_CTRL_I:

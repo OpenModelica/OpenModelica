@@ -36,8 +36,8 @@
 #ifndef GBODE_TABLEAU_H
 #define GBODE_TABLEAU_H
 
-#include "util/simulation_options.h"
-#include "openmodelica_types.h"
+#include "../../util/simulation_options.h"
+#include "../../openmodelica_types.h"
 
 #if defined(__cplusplus)
 extern "C" {

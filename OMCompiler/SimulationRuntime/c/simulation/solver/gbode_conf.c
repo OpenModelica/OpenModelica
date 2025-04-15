@@ -54,7 +54,8 @@ void dumOptions(const char* flagName, const char* flagValue, const char** argsAr
  *                                      FLAG_MR for multi-rate method.
  * @return enum GB_METHOD    Runge-Kutta method.
  */
-enum GB_METHOD getGB_method(enum _FLAG flag) {
+enum GB_METHOD getGB_method(enum _FLAG flag)
+{
   enum GB_METHOD method;
   const char* flag_value;
   assertStreamPrint(NULL, flag==FLAG_SR || flag==FLAG_MR,
@@ -119,7 +120,8 @@ enum GB_METHOD getGB_method(enum _FLAG flag) {
  *                    FLAG_MR_NLS for multi-rate method.
  * @return enum GB_NLS_METHOD   NLS method.
  */
-enum GB_NLS_METHOD getGB_NLS_method(enum _FLAG flag) {
+enum GB_NLS_METHOD getGB_NLS_method(enum _FLAG flag)
+{
   enum GB_NLS_METHOD method;
   const char* flag_value;
 
@@ -129,8 +131,8 @@ enum GB_NLS_METHOD getGB_NLS_method(enum _FLAG flag) {
 
   // Get method from flag
   if (flag_value != NULL) {
-    for (method=GB_NLS_UNKNOWN; method<GB_NLS_MAX; method++) {
-      if (strcmp(flag_value, GB_NLS_METHOD_NAME[method]) == 0){
+    for (method = GB_NLS_UNKNOWN; method < GB_NLS_MAX; method++) {
+      if (strcmp(flag_value, GB_NLS_METHOD_NAME[method]) == 0) {
         infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode NLS method: %s", GB_NLS_METHOD_NAME[method]);
         return method;
       }
@@ -158,7 +160,8 @@ enum GB_NLS_METHOD getGB_NLS_method(enum _FLAG flag) {
  *                                FLAG_MR_CTRL for multi-rate method.
  * @return enum GB_CTRL_METHOD    Step size control method.
  */
-enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag) {
+enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag)
+{
   enum GB_CTRL_METHOD method;
   const char *flag_value;
 
@@ -167,7 +170,7 @@ enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag) {
 
   flag_value = omc_flagValue[flag];
   if (flag_value != NULL) {
-    for (method=GB_CTRL_UNKNOWN; method<GB_CTRL_MAX; method++) {
+    for (method = GB_CTRL_UNKNOWN; method < GB_CTRL_MAX; method++) {
       if (strcmp(flag_value, GB_CTRL_METHOD_NAME[method]) == 0) {
         infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode step size control: %s", GB_CTRL_METHOD_NAME[method]);
         return method;
@@ -197,7 +200,8 @@ enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag) {
  * @return enum GB_INTERPOL_METHOD    Interpolation method for emitting
  *                                    results and slow states interpolation.
  */
-enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag) {
+enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag)
+{
   enum GB_INTERPOL_METHOD method;
   const char *flag_value;
   char* flag_value_string;
@@ -207,7 +211,7 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag) {
 
   flag_value = omc_flagValue[flag];
   if (flag_value != NULL) {
-    for (method=GB_INTERPOL_UNKNOWN; method<GB_INTERPOL_MAX; method++) {
+    for (method = GB_INTERPOL_UNKNOWN; method < GB_INTERPOL_MAX; method++) {
       if (strcmp(flag_value, GB_INTERPOL_METHOD_NAME[method]) == 0) {
         if (flag == FLAG_MR_INT && (method == GB_INTERPOL_HERMITE_ERRCTRL || method == GB_DENSE_OUTPUT_ERRCTRL)) {
           warningStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode interpolation method %s not supported for fast state integration", GB_INTERPOL_METHOD_NAME[method]);
@@ -244,7 +248,8 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag) {
  *
  * @return double   Percentage of fast states selection.
  */
-double getGBRatio() {
+double getGBRatio()
+{
   double percentage;
   const char *flag_value = omc_flagValue[FLAG_MR_PAR];
 
@@ -269,7 +274,8 @@ double getGBRatio() {
  *                                  Allowed values: FLAG_SR_ERR, FLAG_MR_ERR
  * @return enum GB_EXTRAPOL_METHOD  Extrapolation method.
  */
-enum GB_EXTRAPOL_METHOD getGBErr(enum _FLAG flag) {
+enum GB_EXTRAPOL_METHOD getGBErr(enum _FLAG flag)
+{
   assertStreamPrint(NULL, flag==FLAG_SR_ERR || flag==FLAG_MR_ERR, "Illegal input 'flag' to getGBErr!");
 
   enum GB_EXTRAPOL_METHOD extrapolationMethod;
@@ -305,7 +311,8 @@ enum GB_EXTRAPOL_METHOD getGBErr(enum _FLAG flag) {
  * @param argsArr     Pointer to flag argument names.
  * @param maxArgs     Size of maxArgs.
  */
-void dumOptions(const char* flagName, const char* flagValue, const char** argsArr, unsigned int maxArgs) {
+void dumOptions(const char* flagName, const char* flagValue, const char** argsArr, unsigned int maxArgs)
+{
   errorStreamPrint(OMC_LOG_STDOUT, 0, "Unknown flag value \"%s\" for flag %s.", flagValue, flagName);
   infoStreamPrint(OMC_LOG_STDOUT, 1, "Valid arguments are:");
   for (int i=0; i<maxArgs; i++) {
