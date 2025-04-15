@@ -71,6 +71,7 @@ public
   import BVariable = NBVariable;
   import Replacements = NBReplacements;
   import StrongComponent = NBStrongComponent;
+  import Tearing = NBTearing;
 
   // Util imports
   import Array;
@@ -179,6 +180,8 @@ public
         Slice<VariablePointer> new_var_slice;
         Slice<EquationPointer> new_eqn_slice;
         DifferentiationArguments diffArguments;
+        Tearing strict;
+        Option<Tearing> casual;
 
       case StrongComponent.SINGLE_COMPONENT() algorithm
         new_var := differentiateVariablePointer(comp.var, diffArguments_ptr);
@@ -215,12 +218,13 @@ public
         Equation.createName(new_eqn, idx, context);
       then StrongComponent.GENERIC_COMPONENT(new_cref, Slice.SLICE(new_eqn, comp.eqn.indices));
 
+      case StrongComponent.ALGEBRAIC_LOOP() algorithm
+        strict := differentiateTearing(comp.strict, diffArguments_ptr, idx, context, name);
+        casual := Util.applyOption(comp.casual, function differentiateTearing(diffArguments_ptr=diffArguments_ptr, idx=idx, context=context, name=name));
+      then StrongComponent.ALGEBRAIC_LOOP(-1, strict, casual, comp.linear, false, comp.homotopy, comp.status);
+
       case StrongComponent.ENTWINED_COMPONENT() algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " not implemented for entwined equation:\n" + StrongComponent.toString(comp)});
-      then fail();
-
-      case StrongComponent.ALGEBRAIC_LOOP() algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " not implemented for algebraic loop:\n" + StrongComponent.toString(comp)});
       then fail();
 
       case StrongComponent.ALIAS() then differentiateStrongComponent(comp.original, diffArguments_ptr, idx, context, name);
@@ -230,6 +234,27 @@ public
       then fail();
     end match;
   end differentiateStrongComponent;
+
+  function differentiateTearing
+    input Tearing tearing;
+    input Pointer<DifferentiationArguments> diffArguments_ptr;
+    input Pointer<Integer> idx;
+    input String context;
+    input String name;
+    output Tearing diff_tearing;
+  protected
+    list<Slice<VariablePointer>> ite_vars;
+    list<Slice<EquationPointer>> res_eqns;
+    array<StrongComponent> inner_eqns;
+  algorithm
+    ite_vars := list(Slice.apply(var, function differentiateVariablePointer(diffArguments_ptr = diffArguments_ptr)) for var in tearing.iteration_vars);
+    res_eqns := list(Slice.apply(eqn, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr, name = name)) for eqn in tearing.residual_eqns);
+    // filter discretes?
+    inner_eqns := listArray(list(differentiateStrongComponent(ie, diffArguments_ptr, idx, context, name) for ie in tearing.innerEquations));
+
+    // diff jac?
+    diff_tearing := Tearing.TEARING_SET(ite_vars, res_eqns, inner_eqns, NONE());
+  end differentiateTearing;
 
   function differentiateEquationPointerList
     "author: kabdelhak
