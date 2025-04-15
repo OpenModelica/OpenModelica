@@ -403,7 +403,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     if (gbfData->tableau->A[stage * nStages + stage_] == 0) {
       // Calculate the fODE values for the explicit stage
       memcpy(sData->realVars, gbfData->res_const, nStates*sizeof(double));
-      gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), TRUE);
+      gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), FALSE); /* not fast, why? */
     } else {
       // interpolate the slow states on the time of the current stage
       gb_interpolation(gbData->interpolation,
@@ -599,7 +599,7 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     if (!gbfData->isExplicit) {
       sData->timeValue = gbfData->time;
       memcpy(sData->realVars, gbfData->y, nStates*sizeof(double));
-      gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), TRUE);
+      gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), FALSE);
       gbfData->tv[1] = gbfData->tv[0];
       memcpy(gbfData->yv + nStates, gbfData->yv, nStates * sizeof(double));
       memcpy(gbfData->kv + nStates, gbfData->kv, nStates * sizeof(double));
@@ -627,7 +627,7 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       if (!gbfData->isExplicit) {
         sData->timeValue = gbfData->time + gbfData->stepSize;
         memcpy(sData->realVars, gbfData->y, nStates*sizeof(double));
-        gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), TRUE);
+        gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), FALSE);
         gbfData->tv[0] = gbfData->time;
         memcpy(gbfData->yv, gbfData->y, nStates * sizeof(double));
         memcpy(gbfData->kv, fODE, nStates * sizeof(double));

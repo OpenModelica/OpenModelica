@@ -727,7 +727,11 @@ void gbode_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   }
 }
 
-static void updateEqEval(DATA* data, DATA_GBODE* gbData, DATA_GBODEF* gbfData)
+/*! \fn updateEqEval
+ *
+ *  updates eqEvalIndexAdaptive for evaluating gbode_fODE
+ */
+static void updateEqEval(DATA* data, DATA_GBODE* gbData)
 {
   size_t i, k, nEq;
 
@@ -821,7 +825,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
 
   // update eqEval for fast states
   if (fastStatesChange) {
-    updateEqEval(data, gbData, gbfData);
+    updateEqEval(data, gbData);
   }
 
   if (fastStatesChange && !gbfData->isExplicit) {
@@ -1016,7 +1020,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     if (!gbfData->tableau->isKRightAvailable) {
       sData->timeValue = gbfData->timeRight;
       memcpy(sData->realVars, gbfData->yRight, data->modelData->nStates * sizeof(double));
-      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), TRUE);
+      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), FALSE);
     }
     memcpy(gbfData->kRight, fODE, nStates * sizeof(double));
 
