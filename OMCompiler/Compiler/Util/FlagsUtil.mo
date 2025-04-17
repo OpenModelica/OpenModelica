@@ -416,7 +416,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.DEBUG_FOLLOW_EQUATIONS,
   Flags.MAX_SIZE_LINEARIZATION,
   Flags.RESIZABLE_ARRAYS,
-  Flags.EVALUATE_STRUCTURAL_PARAMETERS
+  Flags.EVALUATE_STRUCTURAL_PARAMETERS,
+  Flags.LOAD_MISSING_LIBRARIES
 };
 
 public function new

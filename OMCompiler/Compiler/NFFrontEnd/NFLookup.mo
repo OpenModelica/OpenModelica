@@ -1169,6 +1169,7 @@ algorithm
   ErrorExt.setCheckpoint(getInstanceName());
 
   try
+    true := Flags.getConfigBool(Flags.LOAD_MISSING_LIBRARIES);
     version := loadLibrary_work(name, scope);
     Error.addMessage(Error.NOTIFY_IMPLICIT_LOAD, {name, version});
     System.loadModelCallBack(name);
