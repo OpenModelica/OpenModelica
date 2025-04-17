@@ -383,16 +383,14 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     messageClose(OMC_LOG_GBODE_NLS);
   }
 
-  for (stage = 0; stage < nStages; stage++)
-  {
+  for (stage = 0; stage < nStages; stage++) {
     gbfData->act_stage = stage;
     // k[i] = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i))
     // residual constant part:
     // res = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i-i))
     // yOld from integrator is correct for the fast states
 
-    for (i=0; i < nStates; i++)
-    {
+    for (i=0; i < nStates; i++) {
       gbfData->res_const[i] = gbfData->yOld[i];
       for (stage_ = 0; stage_ < stage; stage_++)
         gbfData->res_const[i] += gbfData->stepSize * gbfData->tableau->A[stage * nStages + stage_] * gbfData->k[stage_ * nStates + i];
@@ -402,14 +400,12 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     sData->timeValue = gbfData->time + gbfData->tableau->c[stage]*gbfData->stepSize;
 
     // index of diagonal element of A
-    if (gbfData->tableau->A[stage * nStages + stage_] == 0)
-    {
+    if (gbfData->tableau->A[stage * nStages + stage_] == 0) {
       // Calculate the fODE values for the explicit stage
       memcpy(sData->realVars, gbfData->res_const, nStates*sizeof(double));
+
       gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
-    }
-    else
-    {
+    } else {
       // interpolate the slow states on the time of the current stage
       gb_interpolation(gbData->interpolation,
                        gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
@@ -453,13 +449,13 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   // y       = yold+h*sum(b[stage_]  * k[stage_], stage_=1..nStages);
   // yt      = yold+h*sum(bt[stage_] * k[stage_], stage_=1..nStages);
   // for the fast states only!
-  for (ii=0; ii<nFastStates; ii++) {
+  for (ii = 0; ii < nFastStates; ii++) {
     i = gbData->fastStatesIdx[ii];
     // y   is the new approximation
     // yt  is the approximation of the embedded method for error estimation
     gbfData->y[i]  = gbfData->yOld[i];
     gbfData->yt[i] = gbfData->yOld[i];
-    for (stage_=0; stage_<nStages; stage_++) {
+    for (stage_ = 0; stage_ < nStages; stage_++) {
       gbfData->y[i]  += gbfData->stepSize * gbfData->tableau->b[stage_]  * (gbfData->k + stage_ * nStates)[i];
       gbfData->yt[i] += gbfData->stepSize * gbfData->tableau->bt[stage_] * (gbfData->k + stage_ * nStates)[i];
     }
@@ -504,7 +500,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   }
 
   /* Set start values for non-linear solver by extrapolation */
-  for (stage_=0; stage_<nStages; stage_++) {
+  for (stage_ = 0; stage_ < nStages; stage_++) {
     memcpy(nlsData->nlsx + stage_*nStates,    gbData->yOld, nStates*sizeof(modelica_real));
     memcpy(nlsData->nlsxOld + stage_*nStates, gbData->yOld, nStates*sizeof(modelica_real));
 
@@ -521,7 +517,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
     infoStreamPrint(OMC_LOG_GBODE_NLS, 1, "NLS - start values and solution of the NLS:");
-    for (stage_=0; stage_<nStages; stage_++) {
+    for (stage_ = 0; stage_ < nStages; stage_++) {
       printVector_gb(OMC_LOG_GBODE_NLS, "xS", nlsData->nlsxExtrapolation + stage_*nStates, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
       printVector_gb(OMC_LOG_GBODE_NLS, "xL", nlsData->nlsx + stage_*nStates,              nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
     }
@@ -532,10 +528,10 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   // Apply RK-scheme for determining the approximations at (gbData->time + gbData->stepSize)
   // y       = yold+h*sum(b[stage_]  * k[stage_], stage_=1..nStages);
   // yt      = yold+h*sum(bt[stage_] * k[stage_], stage_=1..nStages);
-  for (i=0; i<nStates; i++) {
+  for (i = 0; i < nStates; i++) {
     gbData->y[i]  = gbData->yOld[i];
     gbData->yt[i] = gbData->yOld[i];
-    for (stage_=0; stage_<nStages; stage_++) {
+    for (stage_ = 0; stage_ < nStages; stage_++) {
       gbData->y[i]  += gbData->stepSize * gbData->tableau->b[stage_]  * (gbData->k + stage_ * nStates)[i];
       gbData->yt[i] += gbData->stepSize * gbData->tableau->bt[stage_] * (gbData->k + stage_ * nStates)[i];
     }
@@ -555,7 +551,8 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
  * @param solverInfo
  * @return int
  */
-int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo) {
+int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+{
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
@@ -574,7 +571,7 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
   if (!gbfData->isExplicit) {
     // Store relevant part of the ring buffer, which is used for extrapolation
-    for (i=0; i<2; i++) {
+    for (i = 0; i < 2; i++) {
       gbData->tr[i] = gbfData->tv[i];
       memcpy(gbData->yr + i * nStates, gbfData->yv + i * nStates, nStates * sizeof(double));
       memcpy(gbData->kr + i * nStates, gbfData->kv + i * nStates, nStates * sizeof(double));
@@ -665,7 +662,7 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   memcpy(gbfData->yOld, gbfData->yLeft, nStates * sizeof(double));
   if (!gbfData->isExplicit) {
     // Restore ring buffer
-    for (i=0; i<2; i++) {
+    for (i = 0; i < 2; i++) {
       gbfData->tv[i] = gbData->tr[i];
       memcpy(gbfData->yv + i * nStates, gbData->yr + i * nStates, nStates * sizeof(double));
       memcpy(gbfData->kv + i * nStates, gbData->kr + i * nStates, nStates * sizeof(double));
@@ -673,7 +670,7 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   }
   if (!step_info) {
     // Extrapolate values based on order of the scheme
-    for (i=0; i<nStates; i++) {
+    for (i = 0; i < nStates; i++) {
       gbfData->yt[i] = (pow(2.,p) * gbfData->y1[i] - gbfData->y[i]) / (pow(2.,p) - 1);
     }
   }
@@ -689,7 +686,8 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
  * @param solverInfo
  * @return int
  */
-int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo) {
+int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+{
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
@@ -707,7 +705,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   if (!gbData->isExplicit) {
     // Store relevant part of the ring buffer, which is used for extrapolation
-    for (i=0; i<2; i++) {
+    for (i = 0; i < 2; i++) {
       gbData->tr[i] = gbData->tv[i];
       memcpy(gbData->yr + i * nStates, gbData->yv + i * nStates, nStates * sizeof(double));
       memcpy(gbData->kr + i * nStates, gbData->kv + i * nStates, nStates * sizeof(double));
@@ -799,7 +797,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   if (!gbData->isExplicit) {
     // Restore ring buffer
-    for (i=0; i<2; i++) {
+    for (i = 0; i < 2; i++) {
       gbData->tv[i] = gbData->tr[i];
       memcpy(gbData->yv + i * nStates, gbData->yr + i * nStates, nStates * sizeof(double));
       memcpy(gbData->kv + i * nStates, gbData->kr + i * nStates, nStates * sizeof(double));
@@ -808,7 +806,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   if (!step_info) {
     // Extrapolate values based on order of the scheme
-    for (i=0; i<nStates; i++) {
+    for (i = 0; i < nStates; i++) {
       gbData->yt[i] = (pow(2.,p) * gbData->y1[i] - gbData->y[i]) / (pow(2.,p) - 1);
     }
   }
