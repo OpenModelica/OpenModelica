@@ -813,14 +813,6 @@ void orthogonalBacktraceMatrix(DATA_HOMOTOPY* solverData, double* hJac, double* 
   hJac2[n + m*m] = 0;
 }
 
-void swapPointer(double* *p1, double* *p2)
-{
-  double* help;
-  help = *p1;
-  *p1 = *p2;
-  *p2 = help;
-}
-
 /*! \fn getAnalyticalJacobian
  *
  *  function calculates analytical jacobian
@@ -834,17 +826,18 @@ void swapPointer(double* *p1, double* *p2)
  */
 int getAnalyticalJacobianHomotopy(DATA_HOMOTOPY* solverData, double* jac)
 {
-  int i,j,k,l,ii;
+  int j,k,l,ii;
   DATA* data = solverData->userData->data;
   threadData_t *threadData = solverData->userData->threadData;
   JACOBIAN* jacobian = solverData->userData->analyticJacobian;
+  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
 
   evalJacobian(data, threadData, jacobian, NULL, jac);
 
   /* apply scaling to each column */
   for (j = 0; j < jacobian->sizeCols; j++) {
-    for (ii = jacobian->sparsePattern->leadindex[j]; ii < jacobian->sparsePattern->leadindex[j+1]; ii++) {
-      l = jacobian->sparsePattern->index[ii];
+    for (ii = sp->leadindex[j]; ii < sp->leadindex[j+1]; ii++) {
+      l = sp->index[ii];
       k = j*jacobian->sizeRows + l;
       jac[k] *= solverData->xScaling[j];
     }

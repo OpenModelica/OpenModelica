@@ -407,7 +407,6 @@ void freeRK_NLS_DATA(NONLINEAR_SYSTEM_DATA* nlsData)
   }
   free(dataSolver);
   freeNlsDataGB(nlsData);
-  return;
 }
 
 /**
@@ -512,8 +511,8 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
   }
 
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
-      cpu_time_used = rt_ext_tp_tock(&clock);
-      infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "Time needed for solving the NLS:  %20.16g", cpu_time_used);
+    cpu_time_used = rt_ext_tp_tock(&clock);
+    infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "Time needed for solving the NLS:  %20.16g", cpu_time_used);
   }
 
   return solved;
@@ -545,21 +544,20 @@ void residual_MS(RESIDUAL_USERDATA* userData, const double *xloc, double *res, c
   modelica_real *fODE = &sData->realVars[data->modelData->nStates];
 
   int i;
-  int nStates = data->modelData->nStates;
-  int nStages = gbData->tableau->nStages;
-  int stage_   = gbData->act_stage;
+  const int nStates = data->modelData->nStates;
+  const int nStages = gbData->tableau->nStages;
 
+  // Set states
+  memcpy(sData->realVars, xloc, nStates*sizeof(modelica_real));
   // Evaluate right hand side of ODE
-  memcpy(sData->realVars, xloc, nStates*sizeof(double));
   gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
 
-  // Evaluate residual
-  for (i=0; i<nStates; i++) {
-    res[i] = gbData->res_const[i] - xloc[i] * gbData->tableau->c[nStages-1] +
-                                    fODE[i] * gbData->tableau->b[nStages-1] * gbData->stepSize;
+  // Evaluate residuals
+  for (i = 0; i < nStates; i++) {
+    res[i] = gbData->res_const[i]
+             - xloc[i] * gbData->tableau->c[nStages-1]
+             + fODE[i] * gbData->tableau->b[nStages-1] * gbData->stepSize;
   }
-
-  return;
 }
 
 /**
@@ -589,26 +587,72 @@ void residual_MS_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *res
   modelica_real *fODE = &sData->realVars[data->modelData->nStates];
 
   int i, ii;
-  int nStates = data->modelData->nStates;
-  int nStages = gbfData->tableau->nStages;
-  int nFastStates = gbfData->nFastStates;
-  int stage_   = gbfData->act_stage;
+  const int nFastStates = gbfData->nFastStates;
+  const int nStages = gbfData->tableau->nStages;
 
-  // Evaluate right hand side of ODE
-  for (ii = 0; ii < nFastStates;ii++) {
+  // Set fast states
+  // ph: are slow states interpolated and set correctly?
+  for (ii = 0; ii < nFastStates; ii++) {
     i = gbfData->fastStatesIdx[ii];
     sData->realVars[i] = xloc[ii];
   }
+  // Evaluate right hand side of ODE
   gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
 
   // Evaluate residuals
   for (ii = 0; ii < nFastStates; ii++) {
     i = gbfData->fastStatesIdx[ii];
-    res[ii] = gbfData->res_const[i] - xloc[ii] * gbfData->tableau->c[nStages-1] +
-                                       fODE[i] * gbfData->tableau->b[nStages-1] * gbfData->stepSize;
+    res[ii] = gbfData->res_const[i]
+              - xloc[ii] * gbfData->tableau->c[nStages-1]
+              + fODE[ i] * gbfData->tableau->b[nStages-1] * gbfData->stepSize;
+  }
+}
+
+/**
+ * @brief Residual function for non-linear system for diagonal implicit Runge-Kutta methods.
+ *
+ * Based on the Butcher tableau the following nonlinear residuals will be calculated:
+ * res = f(tOld + c[i]*h, yOld + h*sum(A[i,j]*k[j], j=1..act_stage))
+ * When calling, the following is already calculated:
+ *  sData->timeValue = tOld + c[i]*h
+ *  res_const = yOld + h*sum(A[i,j]*k[j], j=1..act_stage-1)
+ *
+ * @param userData  Userdata provided to non-linear system solver.
+ * @param xloc      Input vector for non-linear system.
+ * @param res       Residuum vector for given input xloc.
+ * @param iflag     Unused.
+ */
+void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag)
+{
+  DATA *data = userData->data;
+  threadData_t *threadData = userData->threadData;
+  DATA_GBODE *gbData = (DATA_GBODE *)userData->solverData;
+  assertStreamPrint(threadData, gbData != NULL, "residual_DIRK: user data not set correctly");
+
+  SIMULATION_DATA *sData = (SIMULATION_DATA *)data->localData[0];
+  modelica_real *fODE = &sData->realVars[data->modelData->nStates];
+
+  int i;
+  const int nStates = data->modelData->nStates;
+  const int nStages = gbData->tableau->nStages;
+  const int stage_  = gbData->act_stage;
+
+  // Set states
+  memcpy(sData->realVars, xloc, nStates*sizeof(double));
+  // Evaluate right hand side of ODE
+  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+
+  // Evaluate residuals
+  for (i = 0; i < nStates; i++) {
+    res[i] = gbData->res_const[i] - xloc[i] + gbData->stepSize * gbData->tableau->A[stage_ * nStages + stage_] * fODE[i];
   }
 
-  return;
+  if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
+    infoStreamPrint(OMC_LOG_GBODE_NLS, 1, "NLS - x and residual:");
+    printVector_gb(OMC_LOG_GBODE_NLS, "x", (double *)xloc, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+    printVector_gb(OMC_LOG_GBODE_NLS, "r", res, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+    messageClose(OMC_LOG_GBODE_NLS);
+  }
 }
 
 /**
@@ -637,72 +681,25 @@ void residual_DIRK_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *r
   modelica_real *fODE = &sData->realVars[data->modelData->nStates];
 
   int i, ii;
-  int nStates = data->modelData->nStates;
-  int nStages = gbfData->tableau->nStages;
-  int stage_  = gbfData->act_stage;
+  const int nFastStates = gbfData->nFastStates;
+  const int nStages = gbfData->tableau->nStages;
+  const int stage_  = gbfData->act_stage;
+  const modelica_real fac = gbfData->stepSize * gbfData->tableau->A[stage_ * nStages + stage_];
 
-  // Evaluate right hand side of ODE
-  for (ii = 0; ii<gbfData->nFastStates;ii++) {
+  // Set fast states
+  // ph: are slow states interpolated and set correctly?
+  for (ii = 0; ii < nFastStates; ii++) {
     i = gbfData->fastStatesIdx[ii];
     sData->realVars[i] = xloc[ii];
   }
+  // Evaluate right hand side of ODE
   gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
 
-  // Evaluate residual
-  for (ii = 0; ii<gbfData->nFastStates; ii++) {
+  // Evaluate residuals
+  for (ii = 0; ii < nFastStates; ii++) {
     i = gbfData->fastStatesIdx[ii];
-    res[ii] = gbfData->res_const[i] - xloc[ii] + gbfData->stepSize * gbfData->tableau->A[stage_ * nStages + stage_] * fODE[i];
+    res[ii] = gbfData->res_const[i] - xloc[ii] + fac * fODE[i];
   }
-
-  return;
-}
-
-/**
- * @brief Residual function for non-linear system for diagonal implicit Runge-Kutta methods.
- *
- * Based on the Butcher tableau the following nonlinear residuals will be calculated:
- * res = f(tOld + c[i]*h, yOld + h*sum(A[i,j]*k[j], j=1..act_stage))
- * When calling, the following is already calculated:
- *  sData->timeValue = tOld + c[i]*h
- *  res_const = yOld + h*sum(A[i,j]*k[j], j=1..act_stage-1)
- *
- * @param userData  Userdata provided to non-linear system solver.
- * @param xloc      Input vector for non-linear system.
- * @param res       Residuum vector for given input xloc.
- * @param iflag     Unused.
- */
-void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag)
-{
-  DATA *data = userData->data;
-  threadData_t *threadData = userData->threadData;
-  DATA_GBODE *gbData = (DATA_GBODE *)userData->solverData;
-  assertStreamPrint(threadData, gbData != NULL, "residual_DIRK: user data not set correctly");
-
-  SIMULATION_DATA *sData = (SIMULATION_DATA *)data->localData[0];
-  modelica_real *fODE = &sData->realVars[data->modelData->nStates];
-
-  int i;
-  int nStates = data->modelData->nStates;
-  int nStages = gbData->tableau->nStages;
-  int stage_   = gbData->act_stage;
-
-  // Evaluate right hand side of ODE
-  memcpy(sData->realVars, xloc, nStates*sizeof(double));
-  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
-
-  // Evaluate residual
-  for (i = 0; i < nStates; i++) {
-    res[i] = gbData->res_const[i] - xloc[i] + gbData->stepSize * gbData->tableau->A[stage_ * nStages + stage_] * fODE[i];
-  }
-
-  if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
-    infoStreamPrint(OMC_LOG_GBODE_NLS, 1, "NLS - x and residual:");
-    printVector_gb(OMC_LOG_GBODE_NLS, "x", (double *)xloc, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-    printVector_gb(OMC_LOG_GBODE_NLS, "r", res, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-    messageClose(OMC_LOG_GBODE_NLS);
-  }
-
-  return;
 }
 
 /**
@@ -729,14 +726,14 @@ void residual_IRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, 
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
 
   int i;
-  int nStages = gbData->tableau->nStages;
-  int nStates = data->modelData->nStates;
+  const int nStages = gbData->tableau->nStages;
+  const int nStates = data->modelData->nStates;
   int stage, stage_;
 
   // Update the derivatives for current estimate of the states
   for (stage_ = 0; stage_ < nStages; stage_++) {
     /* Evaluate ODE for each stage_ */
-    if (!gbData->tableau->isKLeftAvailable || stage_>0) {
+    if (!gbData->tableau->isKLeftAvailable || stage_ > 0) {
       sData->timeValue = gbData->time + gbData->tableau->c[stage_] * gbData->stepSize;
       memcpy(sData->realVars, xloc + stage_ * nStates, nStates*sizeof(double));
       gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
@@ -764,8 +761,6 @@ void residual_IRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, 
     }
     messageClose(OMC_LOG_GBODE_NLS);
   }
-
-  return;
 }
 
 /**
@@ -783,9 +778,9 @@ int jacobian_SR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian,
   DATA_GBODE* gbData = (DATA_GBODE*) data->simulationInfo->backupSolverData;
 
   int i;
-  int nStates = data->modelData->nStates;
-  int nStages = gbData->tableau->nStages;
-  int stage = gbData->act_stage;
+  const int nStages = gbData->tableau->nStages;
+  const int stage = gbData->act_stage;
+  modelica_real fac;
 
   /* Evaluate column of Jacobian ODE */
   JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
@@ -794,19 +789,13 @@ int jacobian_SR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian,
 
   /* Update resultVars array */
   if (gbData->type == MS_TYPE_IMPLICIT) {
-    for (i = 0; i < jacobian->sizeCols; i++) {
-      jacobian->resultVars[i] = gbData->tableau->b[nStages-1] * gbData->stepSize * jacobian_ODE->resultVars[i];
-      if (jacobian->seedVars[i] == 1) {
-        jacobian->resultVars[i] -= 1;
-      }
-    }
+    fac = gbData->stepSize * gbData->tableau->b[nStages-1];
   } else {
-    for (i = 0; i < jacobian->sizeCols; i++) {
-      jacobian->resultVars[i] = gbData->stepSize * gbData->tableau->A[stage * nStages + stage] * jacobian_ODE->resultVars[i];
-      if (jacobian->seedVars[i] == 1) {
-        jacobian->resultVars[i] -= 1;
-      }
-    }
+    fac = gbData->stepSize * gbData->tableau->A[stage * nStages + stage];
+  }
+
+  for (i = 0; i < jacobian->sizeCols; i++) {
+    jacobian->resultVars[i] = fac * jacobian_ODE->resultVars[i] - jacobian->seedVars[i];
   }
 
   return 0;
@@ -831,10 +820,10 @@ int jacobian_MR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian,
   JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
 
   int i, ii;
-  int nStates = data->modelData->nStates;
-  int nStages = gbfData->tableau->nStages;
-  int nFastStates = gbData->nFastStates;
-  int stage_ = gbfData->act_stage;
+  const int nStages = gbfData->tableau->nStages;
+  const int nFastStates = gbData->nFastStates;
+  const int stage_ = gbfData->act_stage;
+  modelica_real fac;
 
   for (i = 0; i < jacobian_ODE->sizeCols; i++) {
     jacobian_ODE->seedVars[i] = 0;
@@ -851,17 +840,15 @@ int jacobian_MR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian,
   data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
 
   /* Update resultVars array */
+  if (gbfData->type == MS_TYPE_IMPLICIT) {
+    fac = gbfData->stepSize * gbfData->tableau->b[nStages-1];
+  } else {
+    fac = gbfData->stepSize * gbfData->tableau->A[stage_ * nStages + stage_];
+  }
+
   for (ii = 0; ii < nFastStates; ii++) {
     i = gbData->fastStatesIdx[ii];
-    if (gbfData->type == MS_TYPE_IMPLICIT) {
-      jacobian->resultVars[ii] = gbfData->tableau->b[nStages-1] * gbfData->stepSize * jacobian_ODE->resultVars[i];
-    } else {
-      jacobian->resultVars[ii] = gbfData->stepSize * gbfData->tableau->A[stage_ * gbfData->tableau->nStages + stage_] * jacobian_ODE->resultVars[i];
-    }
-    /* -1 on diagonal elements */
-    if (jacobian->seedVars[ii] == 1) {
-      jacobian->resultVars[ii] -= 1;
-    }
+    jacobian->resultVars[ii] = fac * jacobian_ODE->resultVars[i] - jacobian->seedVars[ii];
   }
 
   return 0;
@@ -886,8 +873,8 @@ int jacobian_IRK_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian
 
   int i;
   int stage, stage_;
-  int nStages = gbData->tableau->nStages;
-  int nStates = data->modelData->nStates;
+  const int nStages = gbData->tableau->nStages;
+  const int nStates = data->modelData->nStates;
 
   /* Evaluate column of Jacobian ODE */
   JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
@@ -920,11 +907,7 @@ int jacobian_IRK_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian
   /* Update resultVars array for corresponding jacobian->seedVars*/
   for (stage = 0; stage < nStages; stage++) {
     for (i = 0; i < nStates; i++) {
-      jacobian->resultVars[stage * nStates + i] = gbData->stepSize * gbData->tableau->A[stage * nStages + stage_]  * jacobian_ODE->resultVars[i];
-      /* -1 on diagonal elements */
-      if (jacobian->seedVars[stage * nStates + i] == 1) {
-        jacobian->resultVars[stage * nStates + i] -= 1;
-      }
+      jacobian->resultVars[stage * nStates + i] = gbData->stepSize * gbData->tableau->A[stage * nStages + stage_]  * jacobian_ODE->resultVars[i] - jacobian->seedVars[stage * nStates + i];
     }
   }
 
