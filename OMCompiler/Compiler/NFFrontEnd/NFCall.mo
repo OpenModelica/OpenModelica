@@ -198,7 +198,7 @@ public
           Expression.CALL(ty_call);
 
       // 2. retyping already typed calls
-      case TYPED_CALL() guard(retype)
+      case TYPED_CALL() guard(retype and not BuiltinCall.needSpecialHandling(call))
         algorithm
           ty_call := retypeCall(call, context, info);
           (outExp, ty, var, pur)  := typeCallExp(ty_call);
