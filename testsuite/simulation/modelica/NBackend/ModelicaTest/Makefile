@@ -7,6 +7,7 @@ ModelicaTest.Math.TestMatrices.mos \
 ModelicaTest.Math.TestMatricesExamplesSolveLinearEquations.mos \
 ModelicaTest.Media.TestAllProperties.ConstantPropertyLiquidWater.mos \
 ModelicaTest.Blocks.IntegratorForceState.mos \
+ModelicaTest.Blocks.StrictLimiters.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
