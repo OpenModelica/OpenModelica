@@ -167,22 +167,23 @@ function checkBinaryOperation
   input Variability var2;
   input InstContext.Type context;
   input SourceInfo info;
+  input Boolean retype "when retyping accept non elementwise operators for elementwise binaries";
   output Expression binaryExp;
   output Type resultType;
 algorithm
   if Type.isConditionalArray(type1) or Type.isConditionalArray(type2) then
-    (binaryExp, resultType) := checkConditionalBinaryOperator(exp1, type1, var1, operator, exp2, type2, var2, context, info);
+    (binaryExp, resultType) := checkConditionalBinaryOperator(exp1, type1, var1, operator, exp2, type2, var2, context, info, retype);
   elseif Type.isComplex(Type.arrayElementType(type1)) or
      Type.isComplex(Type.arrayElementType(type2)) then
     (binaryExp, resultType) := checkOverloadedBinaryOperator(exp1, type1, var1, operator, exp2, type2, var2, context, info);
   elseif Type.isBoxed(type1) and Type.isBoxed(type2) then
-    (binaryExp, resultType) := checkBinaryOperationBoxed(exp1, type1, var1, operator, exp2, type2, var2, context, info);
+    (binaryExp, resultType) := checkBinaryOperationBoxed(exp1, type1, var1, operator, exp2, type2, var2, context, info, retype);
   else
     (binaryExp, resultType) := match operator.op
       case Op.ADD then checkBinaryOperationAdd(exp1, type1, exp2, type2, info);
       case Op.SUB then checkBinaryOperationSub(exp1, type1, exp2, type2, info);
       case Op.MUL then checkBinaryOperationMul(exp1, type1, exp2, type2, info);
-      case Op.DIV then checkBinaryOperationDiv(exp1, type1, exp2, type2, info, isElementWise = false);
+      case Op.DIV then checkBinaryOperationDiv(exp1, type1, exp2, type2, info, isElementWise = retype);
       case Op.POW then checkBinaryOperationPow(exp1, type1, exp2, type2, info);
       case Op.ADD_EW then checkBinaryOperationEW(exp1, type1, exp2, type2, Op.ADD, info);
       case Op.SUB_EW then checkBinaryOperationEW(exp1, type1, exp2, type2, Op.SUB, info);
@@ -201,8 +202,8 @@ algorithm
       case Op.MUL_MATRIX_VECTOR then checkBinaryOperationMul(exp1, type1, exp2, type2, info);
       case Op.SCALAR_PRODUCT    then checkBinaryOperationMul(exp1, type1, exp2, type2, info);
       case Op.MATRIX_PRODUCT    then checkBinaryOperationMul(exp1, type1, exp2, type2, info);
-      case Op.DIV_SCALAR_ARRAY  then checkBinaryOperationDiv(exp1, type1, exp2, type2, info, isElementWise = false);
-      case Op.DIV_ARRAY_SCALAR  then checkBinaryOperationDiv(exp1, type1, exp2, type2, info, isElementWise = false);
+      case Op.DIV_SCALAR_ARRAY  then checkBinaryOperationDiv(exp1, type1, exp2, type2, info, isElementWise = retype);
+      case Op.DIV_ARRAY_SCALAR  then checkBinaryOperationDiv(exp1, type1, exp2, type2, info, isElementWise = retype);
       case Op.POW_SCALAR_ARRAY  then checkBinaryOperationPowEW(exp1, type1, exp2, type2, info);
       case Op.POW_ARRAY_SCALAR  then checkBinaryOperationPowEW(exp1, type1, exp2, type2, info);
       case Op.POW_MATRIX        then checkBinaryOperationPow(exp1, type1, exp2, type2, info);
@@ -345,6 +346,7 @@ public function checkBinaryOperationBoxed
   input Variability var2;
   input InstContext.Type context;
   input SourceInfo info;
+  input Boolean retype;
   output Expression outExp;
   output Type outType;
 protected
@@ -353,7 +355,7 @@ protected
 algorithm
   (e1, ty1) := matchTypes(type1, Type.unbox(type1), exp1);
   (e2, ty2) := matchTypes(type2, Type.unbox(type2), exp2);
-  (outExp, outType) := checkBinaryOperation(e1, ty1, var1, op, e2, ty2, var2, context, info);
+  (outExp, outType) := checkBinaryOperation(e1, ty1, var1, op, e2, ty2, var2, context, info, retype);
 end checkBinaryOperationBoxed;
 
 protected
@@ -367,6 +369,7 @@ function checkConditionalBinaryOperator
   input Variability var2;
   input InstContext.Type context;
   input SourceInfo info;
+  input Boolean retype;
   output Expression outExp;
   output Type outType;
 protected
@@ -384,14 +387,14 @@ algorithm
 
   ErrorExt.setCheckpoint(getInstanceName());
   try
-    (e1, ty1) := checkBinaryOperation(exp1, tty1, var1, op, exp2, tty2, var2, context, info);
+    (e1, ty1) := checkBinaryOperation(exp1, tty1, var1, op, exp2, tty2, var2, context, info, retype);
     valid1 := true;
   else
     valid1 := false;
   end try;
 
   try
-    (e2, ty2) := checkBinaryOperation(exp1, fty1, var1, op, exp2, fty2, var2, context, info);
+    (e2, ty2) := checkBinaryOperation(exp1, fty1, var1, op, exp2, fty2, var2, context, info, retype);
     valid2 := true;
   else
     valid2 := false;

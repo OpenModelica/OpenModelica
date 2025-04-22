@@ -1362,7 +1362,7 @@ algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
         (e1, ty1, var1, pur1) := typeExp(exp.exp1, next_context, info);
         (e2, ty2, var2, pur2) := typeExp(exp.exp2, next_context, info);
-        (exp, ty) := TypeCheck.checkBinaryOperation(e1, ty1, var1, exp.operator, e2, ty2, var2, context, info);
+        (exp, ty) := TypeCheck.checkBinaryOperation(e1, ty1, var1, exp.operator, e2, ty2, var2, context, info, retype);
       then
         (exp, ty, Prefixes.variabilityMax(var1, var2), Prefixes.purityMin(pur1, pur2));
 
