@@ -438,6 +438,11 @@ constant Function SUM = Function.FUNCTION(Path.IDENT("sum"),
     Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
+constant Function FMU_LOAD_RESOURCE = Function.FUNCTION(Path.IDENT("OpenModelica_fmuLoadResource"),
+  InstNode.EMPTY_NODE(), {STRING_PARAM}, {STRING_PARAM}, {}, {},
+    Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
 constant Function SAMPLE = Function.FUNCTION(Path.QUALIFIED("OMC_NO_CLOCK", Path.IDENT("sample")),
   InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
     Type.BOOLEAN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE, {}, {}, listArray({}),

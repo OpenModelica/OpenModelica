@@ -793,11 +793,20 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
   function getDerivedComments
     input Class cls;
     input output list<SCode.Comment> cmts;
+  protected
+    ClassTree cls_tree;
   algorithm
     cmts := match cls
       case EXPANDED_DERIVED() then InstNode.getComments(cls.baseClass, cmts);
       case TYPED_DERIVED() then InstNode.getComments(cls.baseClass, cmts);
-      else cmts;
+      else
+        algorithm
+          for ext in ClassTree.getExtends(classTree(cls)) loop
+            cmts := InstNode.getComments(ext, cmts);
+          end for;
+        then
+          cmts;
+
     end match;
   end getDerivedComments;
 
