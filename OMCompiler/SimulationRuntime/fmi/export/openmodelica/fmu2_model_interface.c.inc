@@ -1722,7 +1722,7 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
 
   int i,j;
 
-  int independent = modelData->nStates+modelData->nInputVars+modelData->nParametersReal; // its possible to diff wrt.: states, inputs, params
+  int independent = modelData->nStates+modelData->nInputVars+modelData->nParametersReal; // its possible to diff wrt.: states, inputs, params (contains calculatedParameters)
   int dependent = modelData->nStates+modelData->nOutputVars; // its possible to diff: state ders, outputs
 
   // comp in the wrong state or not
@@ -1771,8 +1771,7 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
 
 
   /* clear out the seeds */
-  // seedVars needs to be bigger (one extra column for each parameter)
-
+  // seedVars (or the whole jacobian) needs to be bigger (one extra column for each parameter)
   for (i=0;i<independent; i++) {
     comp->fmiDerJac->seedVars[i]=0;
   }
@@ -1782,6 +1781,9 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
     // first parameter -> 0 + nStates + nInputs (first seed after states and inputs)
     // ...
     // if parameters come after states and inputs then this would work?
+    // -> they do but parameters and calculatedParameters are not distinguished and we only want to differentiate wrt. parameters
+    // so i think we need to distinguish between them and sort parameters before calculatedParameters in value references
+    // then this should work
     if (idx >= modelData->nStates + modelData->nInputVars){
       printf("im param case %d\n", idx);
       /*so irgendwie?*/
