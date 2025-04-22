@@ -72,9 +72,9 @@ protected
 
   // SimCode imports
   import SimCode = NSimCode;
-  import NSimCode.SimCodeIndices;
+  import NSimCode.{Identifier, SimCodeIndices};
+  import NSimGenericCall.SimIterator;
   import NSimJacobian.SimJacobian;
-  import NSimCode.Identifier;
   import SimPartition = NSimPartition;
   import NSimPartition.SimPartitions;
   import NSimVar.{SimVar, SimVars, VarType};
@@ -155,6 +155,15 @@ public
       DAE.ElementSource source;
       EquationAttributes attr;
     end ARRAY_ASSIGN;
+
+    record RESIZABLE_ASSIGN
+      "a resizable assignment calling a for loop body function."
+      Integer index;
+      Integer call_index;
+      list<SimIterator> iters;
+      DAE.ElementSource source;
+      EquationAttributes attr;
+    end RESIZABLE_ASSIGN;
 
     record GENERIC_ASSIGN
       "a generic assignment calling a for loop body function with an index list."
@@ -252,6 +261,7 @@ public
         case GENERIC_RESIDUAL()   then str + "(" + intString(blck.index) + ") Generic For-Loop-Residual:\n" + str + List.toString(blck.scal_indices, intString, "slice", "{", ", ", "}", true, 10) + "\n" + str + "for " + List.toString(blck.iterators, forTplStr) + " loop\n" + str + "  0 = " + Expression.toString(blck.exp) + ";\n" + str + "end for;\n";
         case SIMPLE_ASSIGN()      then str + "(" + intString(blck.index) + ") " + ComponentRef.toString(blck.lhs) + " := " + Expression.toString(blck.rhs) + "\n";
         case ARRAY_ASSIGN()       then str + "(" + intString(blck.index) + ") " + Expression.toString(blck.lhs) + " := " + Expression.toString(blck.rhs) + "\n";
+        case RESIZABLE_ASSIGN()   then str + "(" + intString(blck.index) + ") " + "resizable call [index  " + intString(blck.call_index) + "]\n";
         case GENERIC_ASSIGN()     then str + "(" + intString(blck.index) + ") " + "single generic call [index  " + intString(blck.call_index) + "] " + List.toString(inList = blck.scal_indices, inPrintFunc = intString, maxLength = 10) + "\n";
         case ENTWINED_ASSIGN()    then str + List.toString(blck.single_calls, function toString(str=""), "### entwined call (" + intString(blck.index) + ") ###", "\n    ", "    ", "");
         case ALIAS()              then str + "(" + intString(blck.index) + ") Alias of " + intString(blck.aliasOf) + "\n";
@@ -299,6 +309,7 @@ public
         case FOR_RESIDUAL()       then blck.index;
         case SIMPLE_ASSIGN()      then blck.index;
         case ARRAY_ASSIGN()       then blck.index;
+        case RESIZABLE_ASSIGN()   then blck.index;
         case GENERIC_ASSIGN()     then blck.index;
         case ENTWINED_ASSIGN()    then blck.index;
         case ALIAS()              then blck.index;
@@ -327,6 +338,7 @@ public
         case FOR_RESIDUAL(attr = attr)      then attr.kind == EquationKind.DISCRETE;
         case SIMPLE_ASSIGN(attr = attr)     then attr.kind == EquationKind.DISCRETE;
         case ARRAY_ASSIGN(attr = attr)      then attr.kind == EquationKind.DISCRETE;
+        case RESIZABLE_ASSIGN(attr = attr)  then attr.kind == EquationKind.DISCRETE;
         case GENERIC_ASSIGN(attr = attr)    then attr.kind == EquationKind.DISCRETE;
         case ENTWINED_ASSIGN(attr = attr)   then attr.kind == EquationKind.DISCRETE;
         case ALIAS()                        then blck.isDiscrete;
@@ -640,6 +652,7 @@ public
           UnorderedMap<ComponentRef, Integer> entwined_index_map;
           list<Integer> call_order = {};
           Identifier ident;
+          list<SimIterator> iters;
 
         case StrongComponent.SINGLE_COMPONENT() algorithm
           (tmp, simCodeIndices) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), comp.status, simCodeIndices, kind, simcode_map, equation_map);
@@ -666,8 +679,9 @@ public
           eqn_ptr := Slice.getT(comp.eqn);
           eqn     := Pointer.access(eqn_ptr);
           ident   := Identifier.IDENTIFIER(eqn_ptr, comp.var_cref);
+          iters   := SimIterator.fromIterator(Equation.getForIterator(eqn));
           generic_call_index := UnorderedMap.tryAdd(ident, UnorderedMap.size(simCodeIndices.generic_call_map), simCodeIndices.generic_call_map);
-          tmp     := GENERIC_ASSIGN(simCodeIndices.equationIndex, generic_call_index, comp.eqn.indices, Equation.getSource(eqn), Equation.getAttributes(eqn));
+          tmp     := RESIZABLE_ASSIGN(simCodeIndices.equationIndex, generic_call_index, iters, Equation.getSource(eqn), Equation.getAttributes(eqn));
           UnorderedMap.add(Equation.getEqnName(eqn_ptr), tmp, equation_map);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then (tmp, getIndex(tmp));
@@ -1065,6 +1079,7 @@ public
         then OldSimCode.SES_GENERIC_RESIDUAL(blck.index, blck.res_index, blck.scal_indices, old_iterators, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
         case SIMPLE_ASSIGN()    then OldSimCode.SES_SIMPLE_ASSIGN(blck.index, ComponentRef.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, EquationAttributes.convert(blck.attr));
         case ARRAY_ASSIGN()     then OldSimCode.SES_ARRAY_CALL_ASSIGN(blck.index, Expression.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, EquationAttributes.convert(blck.attr));
+        case RESIZABLE_ASSIGN() then OldSimCode.SES_RESIZABLE_ASSIGN(blck.index, blck.call_index, list(SimIterator.convert(it) for it in blck.iters), blck.source, EquationAttributes.convert(blck.attr));
         case GENERIC_ASSIGN()   then OldSimCode.SES_GENERIC_ASSIGN(blck.index, blck.call_index, blck.scal_indices, blck.source, EquationAttributes.convert(blck.attr));
         case ENTWINED_ASSIGN()  then OldSimCode.SES_ENTWINED_ASSIGN(blck.index, blck.call_order, list(convert(single_call) for single_call in blck.single_calls), blck.source, EquationAttributes.convert(blck.attr));
         case IF() algorithm
@@ -1183,6 +1198,11 @@ public
           indices.equationIndex := indices.equationIndex + 1;
         then blck;
 
+        case RESIZABLE_ASSIGN() algorithm
+          blck.index := indices.equationIndex;
+          indices.equationIndex := indices.equationIndex + 1;
+        then blck;
+
         case GENERIC_ASSIGN() algorithm
           blck.index := indices.equationIndex;
           indices.equationIndex := indices.equationIndex + 1;
@@ -1271,6 +1291,7 @@ public
       output Integer index;
     algorithm
       index := match blck
+        case RESIZABLE_ASSIGN() then blck.call_index;
         case GENERIC_ASSIGN() then blck.call_index;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(blck)});

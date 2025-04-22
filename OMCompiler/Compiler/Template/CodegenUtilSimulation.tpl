@@ -79,6 +79,7 @@ template equationIndex(SimEqSystem eq)
   case SES_SIMPLE_ASSIGN(__)
   case SES_SIMPLE_ASSIGN_CONSTRAINTS(__)
   case SES_ARRAY_CALL_ASSIGN(__)
+  case SES_RESIZABLE_ASSIGN(__)
   case SES_GENERIC_ASSIGN(__)
   case SES_ENTWINED_ASSIGN(__)
   case SES_IFEQUATION(__)
@@ -168,6 +169,11 @@ template dumpEqsWork(list<SimEqSystem> eqs)
       type: ARRAY_CALL_ASSIGN
 
       <%escapeCComments(dumpCref(lhs.componentRef))%> = <%escapeCComments(dumpExp(e.exp,"\""))%>
+      >>
+    case e as SES_RESIZABLE_ASSIGN(__) then
+      <<
+      equation index: <%equationIndex(eq)%>
+      type: SES_RESIZABLE_ASSIGN call index: <%e.call_index%>
       >>
     case e as SES_GENERIC_ASSIGN(__) then
       <<

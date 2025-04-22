@@ -120,7 +120,6 @@ public
           branches  = SimBranch.fromWhenBody(body.body));
 
       case Equation.FOR_EQUATION(body = {body}) algorithm
-        print("creating for equation\n");
         iters := SimIterator.fromIterator(eqn.iter);
       then SINGLE_GENERIC_CALL(
           index = index,
@@ -212,7 +211,6 @@ public
             step      := Util.applyOptionOrDefault(range.step, Expression.integerValue, 1);
             stop      := Expression.integerValue(range.stop);
             sub_iter  := if Util.isSome(map) then subIterators(Util.getOption(map)) else {};
-            print("is some: " + boolString(Util.isSome(map)) + "\n");
           then SIM_ITERATOR_RANGE(name, start, step, stop, intDiv(stop-start,step)+1, sub_iter) :: sim_iter;
 
           case Expression.ARRAY() guard(range.literal) algorithm

@@ -9215,6 +9215,11 @@ algorithm
         s := s+"\n";
     then s;
 
+    case SimCode.SES_RESIZABLE_ASSIGN()
+      algorithm
+        s := intString(eqSysIn.index) +": "+ " (SES_RESIZABLE_ASSIGN) " + " call index: " + intString(eqSysIn.call_index) + "\n";
+    then s;
+
     case SimCode.SES_GENERIC_ASSIGN()
       algorithm
         s := intString(eqSysIn.index) +": "+ " (SES_GENERIC_ASSIGN) " + " call index: " + intString(eqSysIn.call_index) + "\n";
@@ -10648,6 +10653,7 @@ algorithm
     case SimCode.SES_SIMPLE_ASSIGN(source=DAE.SOURCE(info=info)) then info;
     case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(source=DAE.SOURCE(info=info)) then info;
     case SimCode.SES_ARRAY_CALL_ASSIGN(source=DAE.SOURCE(info=info)) then info;
+    case SimCode.SES_RESIZABLE_ASSIGN(source=DAE.SOURCE(info=info)) then info;
     case SimCode.SES_GENERIC_ASSIGN(source=DAE.SOURCE(info=info)) then info;
     case SimCode.SES_ENTWINED_ASSIGN(source=DAE.SOURCE(info=info)) then info;
     case SimCode.SES_WHEN(source=DAE.SOURCE(info=info)) then info;
@@ -10666,6 +10672,7 @@ algorithm
     case SimCode.SES_SIMPLE_ASSIGN(index=index) then index;
     case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index=index) then index;
     case SimCode.SES_ARRAY_CALL_ASSIGN(index=index) then index;
+    case SimCode.SES_RESIZABLE_ASSIGN(index=index) then index;
     case SimCode.SES_GENERIC_ASSIGN(index=index) then index;
     case SimCode.SES_ENTWINED_ASSIGN(index=index) then index;
     case SimCode.SES_IFEQUATION(index=index) then index;

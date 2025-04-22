@@ -5908,6 +5908,8 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
     then equationSimpleAssign(e, context, &varD, &tempeqns)
   case e as SES_ARRAY_CALL_ASSIGN(__)
     then equationArrayCallAssign(e, context, &varD, &tempeqns)
+  case e as SES_RESIZABLE_ASSIGN(__)
+    then equationGenericAssign(e, context, &varD, &tempeqns, modelNamePrefix)
   case e as SES_GENERIC_ASSIGN(__)
     then equationGenericAssign(e, context, &varD, &tempeqns, modelNamePrefix)
   case e as SES_ENTWINED_ASSIGN(__)
@@ -6017,6 +6019,9 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
 
         case e as SES_ARRAY_CALL_ASSIGN(__)
         then equationArrayCallAssign(e, context, &varD, &tempeqns)
+
+        case e as SES_RESIZABLE_ASSIGN(__)
+        then equationGenericAssign(e, context, &varD, &tempeqns, modelNamePrefix)
 
         case e as SES_GENERIC_ASSIGN(__)
         then equationGenericAssign(e, context, &varD, &tempeqns, modelNamePrefix)
@@ -6348,7 +6353,18 @@ template equationGenericAssign(SimEqSystem eq, Context context,
 <<
 <%modelicaLine(eqInfo(eq))%>
 <%match eq
-
+case eqn as SES_RESIZABLE_ASSIGN() then
+  let &preExp = buffer ""
+  let &sub = buffer ""
+  let jac = match context case JACOBIAN_CONTEXT() then ", jacobian" else ""
+  let forIter = (iters |> it => forIterator(it, context, &preExp, &varDecls, &auxFunction, &sub);separator="\n";empty)
+  let forTail = (iters |> it => "}";separator="\n";empty)
+  <<
+    <%forIter%>
+    <%preExp%>
+    genericCall_<%call_index%>(data, threadData<%jac%>, 0 /* currently irrelevant */); /*<%symbolName(modelNamePrefix,"genericCall")%>*/
+    <%forTail%>
+  >>
 case eqn as SES_GENERIC_ASSIGN() then
   let idx_len = listLength(scal_indices)
   let jac = match context case JACOBIAN_CONTEXT() then ", jacobian" else ""
@@ -7142,6 +7158,7 @@ template simEqAttrIsDiscreteKind(SimEqSystem eq)
   case SES_SIMPLE_ASSIGN(__)
   case SES_SIMPLE_ASSIGN_CONSTRAINTS(__)
   case SES_ARRAY_CALL_ASSIGN(__)
+  case SES_RESIZABLE_ASSIGN(__)
   case SES_GENERIC_ASSIGN(__)
   case SES_ENTWINED_ASSIGN(__)
   case SES_IFEQUATION(__)
@@ -7178,6 +7195,7 @@ template simEqAttrEval(SimEqSystem eq)
   case SES_SIMPLE_ASSIGN(__)
   case SES_SIMPLE_ASSIGN_CONSTRAINTS(__)
   case SES_ARRAY_CALL_ASSIGN(__)
+  case SES_RESIZABLE_ASSIGN(__)
   case SES_GENERIC_ASSIGN(__)
   case SES_ENTWINED_ASSIGN(__)
   case SES_IFEQUATION(__)
@@ -7524,9 +7542,7 @@ template genericIterator(SimIterator iter, Context context, Text &preExp, Text &
     let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
     let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, context, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
     <<
-    int <%iter_%>_loc = tmp % <%size%>;
-    int <%iter_%> = <%step%> * <%iter_%>_loc + <%start%>;
-    tmp /= <%size%>;
+    int <%iter_%> = tmp;
     <%sub_iter_%>
     >>
   case SIM_ITERATOR_LIST() then
@@ -7584,7 +7600,7 @@ template subIterator(tuple<DAE.ComponentRef, array<DAE.Exp>> iter, String parent
     let range_ = (arrayList(range) |> elem => daeExp(elem, context, &preExp, &varDecls, &auxFunction); separator=", ")
     let size_ = arrayLength(range)
     <<
-    modelica_real <%name_%>_arr[<%size_%>] = {<%range_%>};
+    static const modelica_real <%name_%>_arr[<%size_%>] = {<%range_%>};
     modelica_real <%name_%> = <%name_%>_arr[<%parent_iter%>];
     >>
 end subIterator;

@@ -619,6 +619,15 @@ package SimCode
       BackendDAE.EquationAttributes eqAttr;
     end SES_ARRAY_CALL_ASSIGN;
 
+  record SES_RESIZABLE_ASSIGN
+    "a resizable assignment calling a for loop body function."
+    Integer index;
+    Integer call_index;
+    list<BackendDAE.SimIterator> iters;
+    DAE.ElementSource source;
+    BackendDAE.EquationAttributes eqAttr;
+  end SES_RESIZABLE_ASSIGN;
+
     record SES_GENERIC_ASSIGN
       "a generic assignment calling a for loop body function with an index list."
       Integer index;
