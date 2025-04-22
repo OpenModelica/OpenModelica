@@ -282,6 +282,7 @@ uniontype Function
   function new
     input Absyn.Path path;
     input InstNode node;
+    input list<SCode.Comment> comments;
     output Function fn;
   protected
     Class cls;
@@ -291,7 +292,7 @@ uniontype Function
     FunctionStatus status;
   algorithm
     (inputs, outputs, locals) := collectParams(node);
-    attr := makeAttributes(node, inputs, outputs);
+    attr := makeAttributes(node, inputs, outputs, comments);
     // Make sure builtin functions aren't added to the function tree.
     status := if isBuiltinAttr(attr) then FunctionStatus.COLLECTED else FunctionStatus.INITIAL;
     fn := FUNCTION(path, node, inputs, outputs, locals, {}, Type.UNKNOWN(),
@@ -425,6 +426,7 @@ uniontype Function
         Absyn.ComponentRef cr;
         InstNode node;
         list<Function> funcs;
+        list<SCode.Comment> cmts;
 
       case SCode.CLASS() guard SCodeUtil.isOperatorRecord(def)
         algorithm
@@ -466,8 +468,8 @@ uniontype Function
         algorithm
           node := makeEnumConversionOp(fnNode);
           node := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(parent), node);
-          node := instFunction3(node, context, info);
-          fn := new(fnPath, node);
+          (node, cmts) := instFunction3(node, context, info);
+          fn := new(fnPath, node, cmts);
           fnNode := InstNode.cacheAddFunc(fnNode, fn, false);
         then
           (fnNode, false);
@@ -479,8 +481,8 @@ uniontype Function
           end if;
 
           fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(parent), fnNode);
-          fnNode := instFunction3(fnNode, context, info);
-          fn := new(fnPath, fnNode);
+          (fnNode, cmts) := instFunction3(fnNode, context, info);
+          fn := new(fnPath, fnNode, cmts);
           specialBuiltin := isSpecialBuiltin(fn);
           fn.derivatives := FunctionDerivative.instDerivatives(fnNode, fn);
           fn.inverses := FunctionInverse.instInverses(fnNode, fn);
@@ -496,6 +498,7 @@ uniontype Function
     input output InstNode fnNode;
     input InstContext.Type context;
     input SourceInfo info;
+          output list<SCode.Comment> cmts;
   protected
     SCode.Element def;
     Integer numError = Error.getNumErrorMessages();
@@ -509,6 +512,10 @@ uniontype Function
       Error.addSourceMessage(Error.UNKNOWN_ERROR_INST_FUNCTION, {SCodeDump.unparseElementStr(def)}, SCodeUtil.elementInfo(def));
       fail();
     end try;
+
+    // Save the comments from the node before the class tree is flattened and
+    // we lose the comments from the extended classes.
+    cmts := InstNode.getComments(fnNode);
 
     // Set up an empty function cache to signal that this function is
     // currently being instantiated, so recursive functions can be handled.
@@ -2472,6 +2479,7 @@ protected
     input InstNode node;
     input list<InstNode> inputs;
     input list<InstNode> outputs;
+    input list<SCode.Comment> comments;
     output DAE.FunctionAttributes attr;
   protected
     SCode.Element def;
@@ -2479,7 +2487,6 @@ protected
     SCode.Restriction res;
     SCode.FunctionRestriction fres;
     Boolean is_partial;
-    list<SCode.Comment> cmts;
     SCode.Comment cmt;
   algorithm
     def := InstNode.definition(Class.lastBaseClass(node));
@@ -2490,8 +2497,7 @@ protected
     SCode.Restriction.R_FUNCTION(functionRestriction = fres) := res;
     is_partial := InstNode.isPartial(node);
 
-    cmts := InstNode.getComments(node);
-    cmt := mergeFunctionAnnotations(cmts);
+    cmt := mergeFunctionAnnotations(comments);
 
     attr := matchcontinue fres
       local

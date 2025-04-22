@@ -275,6 +275,7 @@ algorithm
     case "getInstanceName"  then Ceval.evalGetInstanceName(listHead(args));
     case "$OMC$PositiveMax" then simplifyPositiveMax(args, call);
     case "$OMC$inStreamDiv" then simplifyInStreamDiv(args, call);
+    case "OpenModelica_uriToFilename" then simplifyURIToFilename(listHead(args), call);
 
     else Expression.CALL(call);
   end match;
@@ -1818,6 +1819,18 @@ algorithm
     else exp;
   end match;
 end removeTrivialScalarProduct;
+
+function simplifyURIToFilename
+  input Expression arg;
+  input Call call;
+  output Expression outExp;
+algorithm
+  if Flags.getConfigBool(Flags.BUILDING_FMU) then
+    outExp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.FMU_LOAD_RESOURCE, {arg}, Call.variability(call), NFPrefixes.Purity.IMPURE));
+  else
+    outExp := Expression.CALL(call);
+  end if;
+end simplifyURIToFilename;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFSimplifyExp;

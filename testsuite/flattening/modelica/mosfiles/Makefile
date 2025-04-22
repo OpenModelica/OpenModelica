@@ -20,6 +20,7 @@ GroupImport.mos \
 IntMulOverflow.mos IntPowOverflow.mos IntDivOverflow.mos IntAddSubOverflow.mos \
 ISO-8859-1.mos \
 LeastSquares.mos \
+LoadResource1.mos \
 LookupBuiltin.mos \
 LookupPackageFail.mos \
 Model1.mos \
