@@ -156,6 +156,7 @@ public
       ComponentRef name;
       Integer start;
       Integer step;
+      Integer stop;
       Integer size;
     end SIM_ITERATOR_RANGE;
 
@@ -170,7 +171,7 @@ public
       output String str;
     algorithm
       str := match iter
-        case SIM_ITERATOR_RANGE() then "{" + ComponentRef.toString(iter.name) + " | start:" + intString(iter.start) + ", step:" + intString(iter.step) + ", size: " + intString(iter.size) + "}";
+        case SIM_ITERATOR_RANGE() then "{" + ComponentRef.toString(iter.name) + " | start:" + intString(iter.start) + ", step:" + intString(iter.step) + ", stop:" + intString(iter.stop) + ", size: " + intString(iter.size) + "}";
         case SIM_ITERATOR_LIST()  then "{" + ComponentRef.toString(iter.name) + " | list: " + List.toString(iter.lst, intString, "", "{", ", ", "}", true, 10) + "}";
       end match;
     end toString;
@@ -194,7 +195,7 @@ public
             start := Expression.integerValue(range.start);
             step  := Util.applyOptionOrDefault(range.step, Expression.integerValue, 1);
             stop  := Expression.integerValue(range.stop);
-          then SIM_ITERATOR_RANGE(name, start, step, intDiv(stop-start,step)+1) :: sim_iter;
+          then SIM_ITERATOR_RANGE(name, start, step, stop, intDiv(stop-start,step)+1) :: sim_iter;
 
           case Expression.ARRAY() guard(range.literal) algorithm
             lst   := list(Expression.integerValue(e) for e in range.elements);
@@ -212,7 +213,7 @@ public
       output OldBackendDAE.SimIterator old_iter;
     algorithm
       old_iter := match iter
-        case SIM_ITERATOR_RANGE() then OldBackendDAE.SIM_ITERATOR_RANGE(ComponentRef.toDAE(iter.name), iter.start, iter.step, iter.size);
+        case SIM_ITERATOR_RANGE() then OldBackendDAE.SIM_ITERATOR_RANGE(ComponentRef.toDAE(iter.name), iter.start, iter.step, iter.stop, iter.size);
         case SIM_ITERATOR_LIST()  then OldBackendDAE.SIM_ITERATOR_LIST(ComponentRef.toDAE(iter.name), iter.lst, iter.size);
       end match;
     end convert;

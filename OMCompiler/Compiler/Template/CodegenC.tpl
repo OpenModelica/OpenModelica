@@ -7545,7 +7545,7 @@ template forIterator(SimIterator iter, Context context, Text &preExp, Text &varD
     let rel = if intGt(step, 0) then "<" else ">"
     let sign = if intGt(step, 0) then "+" else "-"
     <<
-    for(int <%iter_%>=<%start%>; <%iter_%><%rel%><%start%><%sign%><%size%>; <%iter_%>+=<%step%>){
+    for(int <%iter_%>=<%start%>; <%iter_%><%rel%><%stop%>; <%iter_%>+=<%step%>){
     >>
   case SIM_ITERATOR_LIST() then
     let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)

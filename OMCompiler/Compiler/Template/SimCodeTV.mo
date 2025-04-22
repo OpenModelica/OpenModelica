@@ -1684,6 +1684,7 @@ package BackendDAE
       DAE.ComponentRef name;
       Integer start;
       Integer step;
+      Integer stop;
       Integer size;
     end SIM_ITERATOR_RANGE;
     record SIM_ITERATOR_LIST
