@@ -102,25 +102,32 @@ public
     (Identifier.IDENTIFIER(eqn = eqn_ptr), index) := ident_tpl;
     eqn := Pointer.access(eqn_ptr);
     call := match eqn
+      local
+        list<SimIterator> iters;
 
-      case Equation.FOR_EQUATION(body = {body as Equation.IF_EQUATION()})
+      case Equation.FOR_EQUATION(body = {body as Equation.IF_EQUATION()}) algorithm
+        iters := SimIterator.fromIterator(eqn.iter);
       then IF_GENERIC_CALL(
           index     = index,
-          iters     = SimIterator.fromIterator(eqn.iter),
+          iters     = iters,
           branches  = SimBranch.fromIfBody(body.body));
 
-      case Equation.FOR_EQUATION(body = {body as Equation.WHEN_EQUATION()})
+      case Equation.FOR_EQUATION(body = {body as Equation.WHEN_EQUATION()}) algorithm
+        iters := SimIterator.fromIterator(eqn.iter);
       then WHEN_GENERIC_CALL(
           index     = index,
-          iters     = SimIterator.fromIterator(eqn.iter),
+          iters     = iters,
           branches  = SimBranch.fromWhenBody(body.body));
 
-      case Equation.FOR_EQUATION(body = {body})
+      case Equation.FOR_EQUATION(body = {body}) algorithm
+        print("creating for equation\n");
+        iters := SimIterator.fromIterator(eqn.iter);
       then SINGLE_GENERIC_CALL(
           index = index,
-          iters = SimIterator.fromIterator(eqn.iter),
+          iters = iters,
           lhs   = Equation.getLHS(body),
           rhs   = Equation.getRHS(body));
+
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for incorrect equation: " + Equation.toString(eqn)});
       then fail();
@@ -158,21 +165,27 @@ public
       Integer step;
       Integer stop;
       Integer size;
+      list<DependentIterator> sub_iter;
     end SIM_ITERATOR_RANGE;
 
     record SIM_ITERATOR_LIST
       ComponentRef name;
       list<Integer> lst;
       Integer size;
+      list<DependentIterator> sub_iter;
     end SIM_ITERATOR_LIST;
 
     function toString
       input SimIterator iter;
       output String str;
+      function subIterString
+        input list<DependentIterator> sub_iter;
+        output String str = List.toString(list(Util.tuple21(tpl) for tpl in sub_iter), ComponentRef.toString, "", "(", ", ", ")", false);
+      end subIterString;
     algorithm
       str := match iter
-        case SIM_ITERATOR_RANGE() then "{" + ComponentRef.toString(iter.name) + " | start:" + intString(iter.start) + ", step:" + intString(iter.step) + ", stop:" + intString(iter.stop) + ", size: " + intString(iter.size) + "}";
-        case SIM_ITERATOR_LIST()  then "{" + ComponentRef.toString(iter.name) + " | list: " + List.toString(iter.lst, intString, "", "{", ", ", "}", true, 10) + "}";
+        case SIM_ITERATOR_RANGE() then "{" + ComponentRef.toString(iter.name) + " | start:" + intString(iter.start) + ", step:" + intString(iter.step) + ", stop:" + intString(iter.stop) + ", size: " + intString(iter.size) + "}" + subIterString(iter.sub_iter);
+        case SIM_ITERATOR_LIST()  then "{" + ComponentRef.toString(iter.name) + " | list: " + List.toString(iter.lst, intString, "", "{", ", ", "}", true, 10) + "}" + subIterString(iter.sub_iter);
       end match;
     end toString;
 
@@ -182,24 +195,30 @@ public
     protected
       list<ComponentRef> names;
       list<Expression> ranges;
+      list<Option<Iterator>> maps;
       ComponentRef name;
       Expression range;
+      Option<Iterator> map;
       Integer start, step, stop;
       list<Integer> lst;
+      list<DependentIterator> sub_iter;
     algorithm
-      (names, ranges) := Iterator.getFrames(iter);
-      for tpl in listReverse(List.zip(names, ranges)) loop
-        (name, range) := tpl;
+      (names, ranges, maps) := Iterator.getFrames(iter);
+      for tpl in listReverse(List.zip3(names, ranges, maps)) loop
+        (name, range, map) := tpl;
         sim_iter := match range
           case Expression.RANGE() algorithm
-            start := Expression.integerValue(range.start);
-            step  := Util.applyOptionOrDefault(range.step, Expression.integerValue, 1);
-            stop  := Expression.integerValue(range.stop);
-          then SIM_ITERATOR_RANGE(name, start, step, stop, intDiv(stop-start,step)+1) :: sim_iter;
+            start     := Expression.integerValue(range.start);
+            step      := Util.applyOptionOrDefault(range.step, Expression.integerValue, 1);
+            stop      := Expression.integerValue(range.stop);
+            sub_iter  := if Util.isSome(map) then subIterators(Util.getOption(map)) else {};
+            print("is some: " + boolString(Util.isSome(map)) + "\n");
+          then SIM_ITERATOR_RANGE(name, start, step, stop, intDiv(stop-start,step)+1, sub_iter) :: sim_iter;
 
           case Expression.ARRAY() guard(range.literal) algorithm
-            lst   := list(Expression.integerValue(e) for e in range.elements);
-          then SIM_ITERATOR_LIST(name, lst, listLength(lst)) :: sim_iter;
+            lst       := list(Expression.integerValue(e) for e in range.elements);
+            sub_iter  := if Util.isSome(map) then subIterators(Util.getOption(map)) else {};
+          then SIM_ITERATOR_LIST(name, lst, listLength(lst), sub_iter) :: sim_iter;
 
           else algorithm
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for incorrect iterator domain: " + Expression.toString(range)});
@@ -208,16 +227,45 @@ public
       end for;
     end fromIterator;
 
+    function subIterators
+      "creates a list dependent sub iterators. the ranges can only be an array"
+      input Iterator iter;
+      output list<DependentIterator> sub_iter = {};
+    protected
+      list<ComponentRef> names;
+      list<Expression> ranges;
+      ComponentRef name;
+      Expression range;
+    algorithm
+      // sub iterators are not allowed to have sub iterators themselves
+      (names, ranges, _) := Iterator.getFrames(iter);
+      for tpl in listReverse(List.zip(names, ranges)) loop
+        (name, range) := tpl;
+        sub_iter := match range
+          case Expression.ARRAY() then (name, range.elements) :: sub_iter;
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for incorrect iterator domain: " + Expression.toString(range)});
+          then fail();
+        end match;
+      end for;
+    end subIterators;
+
     function convert
       input SimIterator iter;
       output OldBackendDAE.SimIterator old_iter;
+      function convertSubIterator
+        input tuple<ComponentRef, array<Expression>> sub_iter;
+        output tuple<DAE.ComponentRef, array<DAE.Exp>> old_sub_iter = (ComponentRef.toDAE(Util.tuple21(sub_iter)), listArray(list(Expression.toDAE(e) for e in Util.tuple22(sub_iter))));
+      end convertSubIterator;
     algorithm
       old_iter := match iter
-        case SIM_ITERATOR_RANGE() then OldBackendDAE.SIM_ITERATOR_RANGE(ComponentRef.toDAE(iter.name), iter.start, iter.step, iter.stop, iter.size);
-        case SIM_ITERATOR_LIST()  then OldBackendDAE.SIM_ITERATOR_LIST(ComponentRef.toDAE(iter.name), iter.lst, iter.size);
+        case SIM_ITERATOR_RANGE() then OldBackendDAE.SIM_ITERATOR_RANGE(ComponentRef.toDAE(iter.name), iter.start, iter.step, iter.stop, iter.size, list(convertSubIterator(si) for si in iter.sub_iter));
+        case SIM_ITERATOR_LIST()  then OldBackendDAE.SIM_ITERATOR_LIST(ComponentRef.toDAE(iter.name), iter.lst, iter.size, list(convertSubIterator(si) for si in iter.sub_iter));
       end match;
     end convert;
   end SimIterator;
+
+  type DependentIterator = tuple<ComponentRef, array<Expression>> "represents a dependent sub iterator";
 
   uniontype SimBranch
     record SIM_BRANCH

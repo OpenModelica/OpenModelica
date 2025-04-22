@@ -1686,11 +1686,13 @@ package BackendDAE
       Integer step;
       Integer stop;
       Integer size;
+      list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iter;
     end SIM_ITERATOR_RANGE;
     record SIM_ITERATOR_LIST
       DAE.ComponentRef name;
       list<Integer> lst;
       Integer size;
+      list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iter;
     end SIM_ITERATOR_LIST;
   end SimIterator;
 

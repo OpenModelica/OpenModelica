@@ -7452,10 +7452,10 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, int idx)
       {
         int tmp = idx;
-        <%iter_%>
         <%varDecls%>
         <%auxFunction%>
         <%preExp%>
+        <%iter_%>
         <%lhs_%> = <%rhs_%>;
       }
       >>
@@ -7467,10 +7467,10 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, int idx)
       {
         int tmp = idx;
-        <%iter_%>
         <%varDecls%>
         <%auxFunction%>
         <%preExp%>
+        <%iter_%>
         <%branches_%>
       }
       >>
@@ -7482,10 +7482,10 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, int idx)
       {
         int tmp = idx;
-        <%iter_%>
         <%varDecls%>
         <%auxFunction%>
         <%preExp%>
+        <%iter_%>
         <%branches_%>
       }
       >>
@@ -7522,19 +7522,23 @@ template genericIterator(SimIterator iter, Context context, Text &preExp, Text &
 ::= match iter
   case SIM_ITERATOR_RANGE() then
     let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, context, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
     <<
     int <%iter_%>_loc = tmp % <%size%>;
     int <%iter_%> = <%step%> * <%iter_%>_loc + <%start%>;
     tmp /= <%size%>;
+    <%sub_iter_%>
     >>
   case SIM_ITERATOR_LIST() then
     let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, context, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
     let arr = (lst |> elem => '<%elem%>'; separator=", ")
     <<
     static const int <%iter_%>_lst[<%size%>] = {<%arr%>};
     int <%iter_%>_loc = tmp % <%size%>;
     int <%iter_%> = <%iter_%>_lst[<%iter_%>_loc];
     tmp /= <%size%>;
+    <%sub_iter_%>
     >>
 end genericIterator;
 
@@ -7542,16 +7546,20 @@ template forIterator(SimIterator iter, Context context, Text &preExp, Text &varD
 ::= match iter
   case SIM_ITERATOR_RANGE() then
     let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, context, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
     let rel = if intGt(step, 0) then "<" else ">"
     let sign = if intGt(step, 0) then "+" else "-"
     <<
     for(int <%iter_%>=<%start%>; <%iter_%><%rel%><%stop%>; <%iter_%>+=<%step%>){
+      <%sub_iter_%>
     >>
   case SIM_ITERATOR_LIST() then
     let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, context, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
     <<
     for(int <%iter_%>_=0; <%iter_%>_<<%size%>; <%iter_%>_++){
       <%iter_%> = <%iter_%>_lst[<%iter_%>_];
+      <%sub_iter_%>
     >>
 end forIterator;
 
@@ -7568,6 +7576,18 @@ template forIteratorBody(SimIterator iter, Context context, Text &preExp, Text &
     <%iter_%>_+<%size%>*(
     >>
 end forIteratorBody;
+
+template subIterator(tuple<DAE.ComponentRef, array<DAE.Exp>> iter, String parent_iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
+::= match iter
+  case (name, range) then
+    let name_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    let range_ = (arrayList(range) |> elem => daeExp(elem, context, &preExp, &varDecls, &auxFunction); separator=", ")
+    let size_ = arrayLength(range)
+    <<
+    modelica_real <%name_%>_arr[<%size_%>] = {<%range_%>};
+    modelica_real <%name_%> = <%name_%>_arr[<%parent_iter%>];
+    >>
+end subIterator;
 
 template genericCallHeaders(list<SimGenericCall> genericCalls, Context context)
  "Generates the header for a set of generic calls."
