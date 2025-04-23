@@ -237,7 +237,6 @@ public:
   OMCInterface::convertUnits_res convertUnits(QString from, QString to);
   QList<QString> getDerivedUnits(QString baseUnit);
   QString getNamedAnnotation(const QString &className, const QString &annotation, StringHandler::ResultType type = StringHandler::String);
-  QString getCommandLineOptionsAnnotation(QString className);
   QList<QString> getAnnotationNamedModifiers(QString className, QString annotation);
   QString getAnnotationModifierValue(QString className, QString annotation, QString modifier);
   QString getSimulationFlagsAnnotation(QString className);

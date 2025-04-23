@@ -1704,7 +1704,11 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
         updateLibraryTreeItem(pLibraryTreeItem->parent());
       }
     }
-    emit modelStateChanged(pLibraryTreeItem->getNameStructure());
+    // set --loadMissingLibraries to false to avoid automatically loading the library again.
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("--loadMissingLibraries=false");
+    emit modelStateChanged(pLibraryTreeItem->getNameStructure(), true);
+    // reset the --loadMissingLibraries to true.
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("--loadMissingLibraries=true");
     pLibraryTreeItem->deleteLater();
     return true;
   } else {
@@ -2458,9 +2462,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(QString name, Libra
     // load the LibraryTreeItem pixmap
     loadLibraryTreeItemPixmap(pLibraryTreeItem);
   }
-  if (!isCreatingAutoLoadedLibrary()) {
-    emit modelStateChanged(nameStructure);
-  }
+  emit modelStateChanged(nameStructure, false);
   return pLibraryTreeItem;
 }
 
@@ -2648,7 +2650,8 @@ void unloadHelper(LibraryTreeItem *pLibraryTreeItem)
       pLibraryTreeItem->getModelWidget()->setIconGraphicsView(0);
     }
     pLibraryTreeItem->getModelWidget()->clearDependsOnModels();
-    QObject::disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString)), pLibraryTreeItem->getModelWidget(), SLOT(updateModelIfDependsOn(QString)));
+    QObject::disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString,bool)),
+                        pLibraryTreeItem->getModelWidget(), SLOT(updateModelIfDependsOn(QString,bool)));
     pLibraryTreeItem->getModelWidget()->deleteLater();
     pLibraryTreeItem->setModelWidget(0);
   }
@@ -4591,6 +4594,35 @@ void LibraryWidget::loadAutoLoadedLibrary(const QString &modelName)
 }
 
 /*!
+ * \brief LibraryWidget::setLoadingLibraries
+ * Sets the loading libraries flag.
+ * If flag is false then see if any model needs update because of it.
+ * \param loadingLibraries
+ */
+void LibraryWidget::setLoadingLibraries(bool loadingLibraries)
+{
+  mLoadingLibraries = loadingLibraries;
+  // if we finish loading libraries then see if any model needs update because of it.
+  if (!loadingLibraries) {
+    reDrawModelsToUpdate();
+  }
+}
+
+/*!
+ * \brief LibraryWidget::setCreatingAutoLoadedLibrary
+ * Sets the creating auto loaded library flag.
+ * If flag is false then see if any model needs update because of it.
+ * \param creatingAutoLoadedLibrary
+ */
+void LibraryWidget::setCreatingAutoLoadedLibrary(bool creatingAutoLoadedLibrary)
+{
+  mCreatingAutoLoadedLibrary = creatingAutoLoadedLibrary;
+  if (!creatingAutoLoadedLibrary) {
+    reDrawModelsToUpdate();
+  }
+}
+
+/*!
  * \brief LibraryWidget::multipleTopLevelClasses
  * Checks if we have more than one classes in the list.
  * \param classesList
@@ -5076,6 +5108,23 @@ void LibraryWidget::cancelLoadingLibraries(const QStringList classes)
 }
 
 /*!
+ * \brief LibraryWidget::reDrawModelsToUpdate
+ * Redraws the models that needs update.
+ */
+void LibraryWidget::reDrawModelsToUpdate()
+{
+  mModelsToUpdate.removeDuplicates();
+  QStringList models = mModelsToUpdate;
+  mModelsToUpdate.clear();
+  foreach (QString model, models) {
+    LibraryTreeItem *pLibraryTreeItem = mpLibraryTreeModel->findLibraryTreeItem(model);
+    if (pLibraryTreeItem && pLibraryTreeItem->getModelWidget()) {
+      pLibraryTreeItem->getModelWidget()->reDrawModelWidget(pLibraryTreeItem->getModelWidget()->createModelInfo());
+    }
+  }
+}
+
+/*!
  * \brief LibraryWidget::handleAutoLoadedLibrary
  * Slot activated when auto load library timer is timeout.
  */
@@ -5084,10 +5133,10 @@ void LibraryWidget::handleAutoLoadedLibrary()
   if (isLoadingLibraries()) {
     mAutoLoadedLibrariesTimer.start();
   } else {
-    mpLibraryTreeModel->setCreatingAutoLoadedLibrary(true);
+    setCreatingAutoLoadedLibrary(true);
     mpLibraryTreeModel->loadDependentLibraries(mAutoLoadedLibrariesList);
     mAutoLoadedLibrariesList.clear();
-    mpLibraryTreeModel->setCreatingAutoLoadedLibrary(false);
+    setCreatingAutoLoadedLibrary(false);
   }
 }
 
