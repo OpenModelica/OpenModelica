@@ -498,9 +498,6 @@ algorithm
 
   // Create a new class from the elements, and update the inst node with it.
   cls := Class.fromSCode(top_classes, false, topNode, NFClass.DEFAULT_PREFIXES);
-  // The class needs to be expanded to allow lookup in it. The top scope will
-  // only contain classes, so we can do this instead of the whole expandClass.
-  cls := Class.initExpandedClass(cls);
 
   // Set the correct InstNodeType for classes with builtin annotation. This
   // could also be done when creating InstNodes, but only top-level classes
