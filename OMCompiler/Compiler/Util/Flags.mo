@@ -553,6 +553,8 @@ constant DebugFlag DUMP_RESIZABLE = DEBUG_FLAG(194, "dumpResizable", false,
   Gettext.gettext("Dumps information about resizable paremeter handling."));
 constant DebugFlag DUMP_SOLVE = DEBUG_FLAG(195, "dumpSolve", false,
   Gettext.gettext("Dumps information about equation solving."));
+constant DebugFlag FMI20_PARAMETER_JACOBIAN = DEBUG_FLAG(196, "fmiParameterJacobian", false,
+  Gettext.gettext("Include Parameter Derivatives in Jacobian."));
 
 public
 // CONFIGURATION FLAGS

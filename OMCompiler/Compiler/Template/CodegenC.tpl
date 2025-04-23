@@ -1563,6 +1563,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nVariablesBooleanArray = <%varInfo.numBoolAlgVars%>;
     data->modelData->nVariablesStringArray = <%varInfo.numStringAlgVars%>;
     data->modelData->nParametersReal = <%varInfo.numParams%>;
+    data->modelData->nCalcParametersReal = <%varInfo.numCalcParams%>;
     data->modelData->nParametersInteger = <%varInfo.numIntParams%>;
     data->modelData->nParametersBoolean = <%varInfo.numBoolParams%>;
     data->modelData->nParametersString = <%varInfo.numStringParamVars%>;
@@ -1688,7 +1689,7 @@ template variableDefinitions(ModelInfo modelInfo, list<BackendDAE.TimeEvent> tim
   if true then "" else
   let () = System.tmpTickReset(1000)
   match modelInfo
-    case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars, numDiscreteReal=numDiscreteReal, numOptimizeConstraints=numOptimizeConstraints, numOptimizeFinalConstraints=numOptimizeFinalConstraints), vars=SIMVARS(__)) then
+    case MODELINFO(vars=SIMVARS(__)) then
       <<
       /* States */
       <%vars.stateVars |> var =>

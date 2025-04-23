@@ -1184,7 +1184,7 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, paramVars=par
     /* function maps parameter references to a parameter index used in partialDerivatives */
     fmi2ValueReference mapParameterReference2ParameterNumber(const fmi2ValueReference vr) {
         switch (vr) {
-          <%paramVars |> var hasindex index0 =>  match var case SIMVAR(name=name, type_=T_REAL()) then
+          <%paramVars |> var hasindex index0 =>  match var case SIMVAR(name=name, type_=T_REAL(), causality=SOME(PARAMETER())) then
           'case <%lookupVR(name, simCode)%>: return <%index0%>; break;' ;separator="\n"%>
           default:
             return -1;

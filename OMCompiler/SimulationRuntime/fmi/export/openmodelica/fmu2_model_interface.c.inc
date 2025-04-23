@@ -1722,8 +1722,8 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
 
   int i,j;
 
-  int independent = modelData->nStates+modelData->nInputVars+modelData->nParametersReal; // its possible to diff wrt.: states, inputs, params (contains calculatedParameters)
-  int dependent = modelData->nStates+modelData->nOutputVars; // its possible to diff: state ders, outputs
+  int independent = modelData->nStates + modelData->nInputVars + (modelData->nParametersReal - modelData->nCalcParametersReal); // its possible to diff wrt.: states, inputs, params (without calculatedParameters)
+  int dependent = modelData->nStates + modelData->nOutputVars; // its possible to diff: state ders, outputs
 
   // comp in the wrong state or not
   if (invalidState(comp, "fmi2GetDirectionalDerivative", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
@@ -1758,20 +1758,19 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
     comp->fmiDerJac->constantEqns(fmudata, td, comp->fmiDerJac, NULL);
   }
 
-  printf("%d", comp->fmiDerJac->sizeCols);
-  printf("\n");
-  printf("%d", comp->fmiDerJac->sizeRows);
-  printf("\n");
-  printf("%ld", modelData->nStates);
-  printf("\n");
-  printf("%ld", modelData->nInputVars);
-  printf("\n");
-  printf("%ld", modelData->nParametersReal);
-  printf("\n");
+  printf("sizeCols: %d \n", comp->fmiDerJac->sizeCols);
+  printf("sizeRows: %d \n", comp->fmiDerJac->sizeRows);
+  printf("independent: %d \n", independent);
+  printf("dependent: %d \n", dependent);
+  printf("nStates: %ld \n", modelData->nStates);
+  printf("nInputs: %ld \n", modelData->nInputVars);
+  printf("nParametersReal: %ld \n", modelData->nParametersReal);
+  printf("nCalcParametersReal: %ld \n", modelData->nCalcParametersReal);
 
 
   /* clear out the seeds */
   // seedVars (or the whole jacobian) needs to be bigger (one extra column for each parameter)
+  // why not sizeCols instead of independent?
   for (i=0;i<independent; i++) {
     comp->fmiDerJac->seedVars[i]=0;
   }
