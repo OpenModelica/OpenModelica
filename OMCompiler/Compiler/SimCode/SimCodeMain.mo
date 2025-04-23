@@ -756,7 +756,7 @@ algorithm
       String fileprefix, fileNamePrefixHash;
       String install_include_omc_dir, install_include_omc_c_dir, install_share_buildproject_dir, install_fmu_sources_dir, fmu_tmp_sources_dir;
       String cmakelistsStr, needCvode, cvodeDirectory;
-      list<String> sourceFiles, model_desc_src_files, fmi2HeaderFiles;
+      list<String> sourceFiles, model_desc_src_files, fmi2HeaderFiles, modelica_standard_table_sources;
       list<String> dgesv_sources, cminpack_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources;
       list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
       SimCode.VarInfo varInfo;
@@ -908,6 +908,18 @@ algorithm
         */
         fmi2HeaderFiles := {"fmi/fmi2Functions.h","fmi/fmi2FunctionTypes.h", "fmi/fmi2TypesPlatform.h", "fmi/fmiModelFunctions.h", "fmi/fmiModelTypes.h"};
         copyFiles(fmi2HeaderFiles, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+        /*
+        * fix issue fhttps://github.com/OpenModelica/OpenModelica/issues/13260
+        * Check if modelicaStandardTables source files are needed
+        * this is not clear as of now, may be we should copy all the external C sources by default
+        */
+        if not listEmpty(simCode.makefileParams.libs) and listMember("-lModelicaStandardTables", simCode.makefileParams.libs)  then
+          copyFiles(RuntimeSources.modelica_external_c_sources, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+          copyFiles(RuntimeSources.modelica_external_c_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+          modelica_standard_table_sources := RuntimeSources.modelica_external_c_sources;
+        else
+          modelica_standard_table_sources := {};
+        end if;
 
         System.writeFile(fmutmp+"/sources/isfmi" + (if FMUVersion=="1.0" then "1" else "2"), "");
 
@@ -928,7 +940,8 @@ algorithm
                                                 shared_source_files,
                                                 dgesv_sources,
                                                 cminpack_sources,
-                                                simrt_c_sundials_sources
+                                                simrt_c_sundials_sources,
+                                                modelica_standard_table_sources
                                     });
         end if;
 
