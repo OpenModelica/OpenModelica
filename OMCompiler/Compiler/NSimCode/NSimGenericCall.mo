@@ -59,18 +59,21 @@ public
     list<SimIterator> iters;
     Expression lhs;
     Expression rhs;
+    Boolean resizable;
   end SINGLE_GENERIC_CALL;
 
   record IF_GENERIC_CALL
     Integer index;
     list<SimIterator> iters;
     list<SimBranch> branches;
+    Boolean resizable;
   end IF_GENERIC_CALL;
 
   record WHEN_GENERIC_CALL
     Integer index;
     list<SimIterator> iters;
     list<SimBranch> branches;
+    Boolean resizable;
   end WHEN_GENERIC_CALL;
 
   function toString
@@ -97,9 +100,10 @@ public
   protected
     Pointer<Equation> eqn_ptr;
     Integer index;
+    Boolean resizable;
     Equation body, eqn;
   algorithm
-    (Identifier.IDENTIFIER(eqn = eqn_ptr), index) := ident_tpl;
+    (Identifier.IDENTIFIER(eqn = eqn_ptr, resizable = resizable), index) := ident_tpl;
     eqn := Pointer.access(eqn_ptr);
     call := match eqn
       local
@@ -110,22 +114,25 @@ public
       then IF_GENERIC_CALL(
           index     = index,
           iters     = iters,
-          branches  = SimBranch.fromIfBody(body.body));
+          branches  = SimBranch.fromIfBody(body.body),
+          resizable = resizable);
 
       case Equation.FOR_EQUATION(body = {body as Equation.WHEN_EQUATION()}) algorithm
         iters := SimIterator.fromIterator(eqn.iter);
       then WHEN_GENERIC_CALL(
           index     = index,
           iters     = iters,
-          branches  = SimBranch.fromWhenBody(body.body));
+          branches  = SimBranch.fromWhenBody(body.body),
+          resizable = resizable);
 
       case Equation.FOR_EQUATION(body = {body}) algorithm
         iters := SimIterator.fromIterator(eqn.iter);
       then SINGLE_GENERIC_CALL(
-          index = index,
-          iters = iters,
-          lhs   = Equation.getLHS(body),
-          rhs   = Equation.getRHS(body));
+          index     = index,
+          iters     = iters,
+          lhs       = Equation.getLHS(body),
+          rhs       = Equation.getRHS(body),
+          resizable = resizable);
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for incorrect equation: " + Equation.toString(eqn)});
@@ -139,18 +146,21 @@ public
   algorithm
     old_call := match call
       case SINGLE_GENERIC_CALL() then OldSimCode.SINGLE_GENERIC_CALL(
-        index = call.index,
-        iters = list(SimIterator.convert(iter) for iter in call.iters),
-        lhs   = Expression.toDAE(call.lhs),
-        rhs   = Expression.toDAE(call.rhs));
+        index     = call.index,
+        iters     = list(SimIterator.convert(iter) for iter in call.iters),
+        lhs       = Expression.toDAE(call.lhs),
+        rhs       = Expression.toDAE(call.rhs),
+        resizable = call.resizable);
       case IF_GENERIC_CALL() then OldSimCode.IF_GENERIC_CALL(
         index     = call.index,
         iters     = list(SimIterator.convert(iter) for iter in call.iters),
-        branches  = list(SimBranch.convert(branch) for branch in call.branches));
+        branches  = list(SimBranch.convert(branch) for branch in call.branches),
+        resizable = call.resizable);
       case WHEN_GENERIC_CALL() then OldSimCode.WHEN_GENERIC_CALL(
         index     = call.index,
         iters     = list(SimIterator.convert(iter) for iter in call.iters),
-        branches  = list(SimBranch.convert(branch) for branch in call.branches));
+        branches  = list(SimBranch.convert(branch) for branch in call.branches),
+        resizable = call.resizable);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for incorrect call: " + toString(call)});
       then fail();

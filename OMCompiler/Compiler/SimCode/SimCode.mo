@@ -582,18 +582,21 @@ public uniontype SimGenericCall
     list<BackendDAE.SimIterator> iters;
     DAE.Exp lhs;
     DAE.Exp rhs;
+    Boolean resizable;
   end SINGLE_GENERIC_CALL;
 
   record IF_GENERIC_CALL
     Integer index;
     list<BackendDAE.SimIterator> iters;
     list<SimBranch> branches;
+    Boolean resizable;
   end IF_GENERIC_CALL;
 
   record WHEN_GENERIC_CALL
     Integer index;
     list<BackendDAE.SimIterator> iters;
     list<SimBranch> branches;
+    Boolean resizable;
   end WHEN_GENERIC_CALL;
 end SimGenericCall;
 

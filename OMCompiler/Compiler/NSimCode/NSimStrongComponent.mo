@@ -678,7 +678,7 @@ public
           // ToDo: actually create resizable code
           eqn_ptr := Slice.getT(comp.eqn);
           eqn     := Pointer.access(eqn_ptr);
-          ident   := Identifier.IDENTIFIER(eqn_ptr, comp.var_cref);
+          ident   := Identifier.IDENTIFIER(eqn_ptr, comp.var_cref, true);
           iters   := SimIterator.fromIterator(Equation.getForIterator(eqn));
           generic_call_index := UnorderedMap.tryAdd(ident, UnorderedMap.size(simCodeIndices.generic_call_map), simCodeIndices.generic_call_map);
           tmp     := RESIZABLE_ASSIGN(simCodeIndices.equationIndex, generic_call_index, iters, Equation.getSource(eqn), Equation.getAttributes(eqn));
@@ -690,7 +690,7 @@ public
           // create a generic index list call of a for-loop equation
           eqn_ptr := Slice.getT(comp.eqn);
           eqn     := Pointer.access(eqn_ptr);
-          ident   := Identifier.IDENTIFIER(eqn_ptr, comp.var_cref);
+          ident   := Identifier.IDENTIFIER(eqn_ptr, comp.var_cref, false);
           generic_call_index := UnorderedMap.tryAdd(ident, UnorderedMap.size(simCodeIndices.generic_call_map), simCodeIndices.generic_call_map);
           tmp     := GENERIC_ASSIGN(simCodeIndices.equationIndex, generic_call_index, comp.eqn.indices, Equation.getSource(eqn), Equation.getAttributes(eqn));
           UnorderedMap.add(Equation.getEqnName(eqn_ptr), tmp, equation_map);

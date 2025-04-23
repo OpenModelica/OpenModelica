@@ -6358,11 +6358,12 @@ case eqn as SES_RESIZABLE_ASSIGN() then
   let &sub = buffer ""
   let jac = match context case JACOBIAN_CONTEXT() then ", jacobian" else ""
   let forIter = (iters |> it => forIterator(it, context, &preExp, &varDecls, &auxFunction, &sub);separator="\n";empty)
+  let forNames = (iters |> it => forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub);separator=", ";empty)
   let forTail = (iters |> it => "}";separator="\n";empty)
   <<
     <%forIter%>
     <%preExp%>
-    genericCall_<%call_index%>(data, threadData<%jac%>, 0 /* currently irrelevant */); /*<%symbolName(modelNamePrefix,"genericCall")%>*/
+    genericCall_<%call_index%>(data, threadData<%jac%>, <%forNames%>); /*<%symbolName(modelNamePrefix,"genericCall")%>*/
     <%forTail%>
   >>
 case eqn as SES_GENERIC_ASSIGN() then
@@ -7466,10 +7467,12 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       let lhs_ = daeExp(lhs, context, &preExp, &varDecls, &auxFunction)
       let rhs_ = daeExp(rhs, context, &preExp, &varDecls, &auxFunction)
       let iter_ = (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
+      let idx_ = if resizable then (iters |> it => 'int <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
+      let idx_copy = if resizable then "" else "int tmp = idx;"
       <<
-      void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, int idx)
+      void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, <%idx_%>)
       {
-        int tmp = idx;
+        <%idx_copy%>
         <%varDecls%>
         <%auxFunction%>
         <%preExp%>
@@ -7481,10 +7484,12 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
     case IF_GENERIC_CALL() then
       let iter_ = (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
       let branches_ = (branches |> branch => genericBranch(branch, context, &preExp, &varDecls, &auxFunction, &sub); separator = " else ")
+      let idx_ = if resizable then (iters |> it => 'int <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
+      let idx_copy = if resizable then "" else "int tmp = idx;"
       <<
-      void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, int idx)
+      void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, <%idx_%>)
       {
-        int tmp = idx;
+        <%idx_copy%>
         <%varDecls%>
         <%auxFunction%>
         <%preExp%>
@@ -7496,10 +7501,12 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
     case WHEN_GENERIC_CALL() then
       let iter_ = (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
       let branches_ = (branches |> branch => genericBranch(branch, context, &preExp, &varDecls, &auxFunction, &sub); separator = " else ")
+      let idx_ = if resizable then (iters |> it => 'int <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
+      let idx_copy = if resizable then "" else "int tmp = idx;"
       <<
-      void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, int idx)
+      void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, <%idx_%>)
       {
-        int tmp = idx;
+        <%idx_copy%>
         <%varDecls%>
         <%auxFunction%>
         <%preExp%>
@@ -7542,7 +7549,6 @@ template genericIterator(SimIterator iter, Context context, Text &preExp, Text &
     let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
     let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, context, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
     <<
-    int <%iter_%> = tmp;
     <%sub_iter_%>
     >>
   case SIM_ITERATOR_LIST() then
@@ -7562,20 +7568,16 @@ template forIterator(SimIterator iter, Context context, Text &preExp, Text &varD
 ::= match iter
   case SIM_ITERATOR_RANGE() then
     let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
-    let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, context, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
     let rel = if intGt(step, 0) then "<" else ">"
     let sign = if intGt(step, 0) then "+" else "-"
     <<
     for(int <%iter_%>=<%start%>; <%iter_%><%rel%><%stop%>; <%iter_%>+=<%step%>){
-      <%sub_iter_%>
     >>
   case SIM_ITERATOR_LIST() then
     let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
-    let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, context, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
     <<
     for(int <%iter_%>_=0; <%iter_%>_<<%size%>; <%iter_%>_++){
       <%iter_%> = <%iter_%>_lst[<%iter_%>_];
-      <%sub_iter_%>
     >>
 end forIterator;
 
@@ -7593,6 +7595,12 @@ template forIteratorBody(SimIterator iter, Context context, Text &preExp, Text &
     >>
 end forIteratorBody;
 
+template forIteratorName(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
+::= match iter
+  case SIM_ITERATOR_RANGE() then contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+  case SIM_ITERATOR_LIST() then contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+end forIteratorName;
+
 template subIterator(tuple<DAE.ComponentRef, array<DAE.Exp>> iter, String parent_iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
 ::= match iter
   case (name, range) then
@@ -7601,7 +7609,7 @@ template subIterator(tuple<DAE.ComponentRef, array<DAE.Exp>> iter, String parent
     let size_ = arrayLength(range)
     <<
     static const modelica_real <%name_%>_arr[<%size_%>] = {<%range_%>};
-    modelica_real <%name_%> = <%name_%>_arr[<%parent_iter%>];
+    modelica_real <%name_%> = <%name_%>_arr[<%parent_iter%>-1];
     >>
 end subIterator;
 
