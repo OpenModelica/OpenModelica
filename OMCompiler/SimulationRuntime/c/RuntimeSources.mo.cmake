@@ -30,6 +30,17 @@ encapsulated package RuntimeSources
 
   constant list<String> simrt_c_sundials_sources={@SOURCE_FMU_CVODE_RUNTIME_FILES@};
 
+  constant list<String> modelica_external_c_sources={"ModelicaExternalC/ModelicaStandardTables.c",
+                                                     "ModelicaExternalC/ModelicaMatIO.c",
+                                                     "ModelicaExternalC/ModelicaIO.c",
+                                                     "ModelicaExternalC/ModelicaStandardTablesDummyUsertab.c"};
+
+  constant list<String> modelica_external_c_headers={"ModelicaExternalC/ModelicaStandardTables.h",
+                                                     "ModelicaExternalC/ModelicaMatIO.h",
+                                                     "ModelicaExternalC/ModelicaIO.h",
+                                                     "ModelicaExternalC/safe-math.h",
+                                                     "ModelicaExternalC/read_data_impl.h"};
+
   constant list<String> dgesv_headers={"./external_solvers/blaswrap.h", "./external_solvers/clapack.h", "./external_solvers/f2c.h"};
 
   constant list<String> dgesv_sources={@SOURCE_FMU_DGESV_FILES@};
