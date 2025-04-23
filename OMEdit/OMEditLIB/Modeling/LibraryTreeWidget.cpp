@@ -109,7 +109,7 @@ LibraryTreeItem::~LibraryTreeItem()
   if (mpModelWidget) {
     delete mpModelWidget;
   }
-  mChildren.clear();
+  qDeleteAll(mChildren);
 }
 
 QString LibraryTreeItem::getWhereToMoveFMU()
