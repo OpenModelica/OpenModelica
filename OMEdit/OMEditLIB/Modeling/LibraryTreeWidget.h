@@ -311,13 +311,10 @@ public:
   void emitDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight) {emit dataChanged(topLeft, bottomRight);}
   void createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
   void unloadFileChildren(LibraryTreeItem *pLibraryTreeItem);
-  void emitModelStateChanged(const QString &name) {emit modelStateChanged(name);}
-  bool isCreatingAutoLoadedLibrary() const {return mCreatingAutoLoadedLibrary;}
-  void setCreatingAutoLoadedLibrary(bool creatingAutoLoadedLibrary) {mCreatingAutoLoadedLibrary = creatingAutoLoadedLibrary;}
+  void emitModelStateChanged(const QString &name, bool unload) {emit modelStateChanged(name, unload);}
 private:
   LibraryWidget *mpLibraryWidget;
   LibraryTreeItem *mpRootLibraryTreeItem;
-  bool mCreatingAutoLoadedLibrary = false;
 
   QModelIndex libraryTreeItemIndexHelper(const LibraryTreeItem *pLibraryTreeItem, const LibraryTreeItem *pParentLibraryTreeItem, const QModelIndex &parentIndex) const;
   LibraryTreeItem* getLibraryTreeItemFromFileHelper(LibraryTreeItem *pLibraryTreeItem, QString fileName, int lineNumber);
@@ -343,7 +340,7 @@ private:
 protected:
   Qt::DropActions supportedDropActions() const override;
 signals:
-  void modelStateChanged(const QString &name);
+  void modelStateChanged(const QString &name, bool unload);
 };
 
 class LibraryTreeView : public QTreeView
@@ -480,11 +477,16 @@ public:
   void openLibraryTreeItem(QString nameStructure);
   void loadAutoLoadedLibrary(const QString &modelName);
   bool isLoadingLibraries() const {return mLoadingLibraries;}
-  void setLoadingLibraries(bool loadingLibraries) {mLoadingLibraries = loadingLibraries;}
+  void setLoadingLibraries(bool loadingLibraries);
+  bool isCreatingAutoLoadedLibrary() const {return mCreatingAutoLoadedLibrary;}
+  void setCreatingAutoLoadedLibrary(bool creatingAutoLoadedLibrary);
+  void addModelToUpdate(const QString &model) {mModelsToUpdate.append(model);}
 private:
-  bool mLoadingLibraries;
+  bool mLoadingLibraries = false;
+  bool mCreatingAutoLoadedLibrary = false;
   QTimer mAutoLoadedLibrariesTimer;
   QStringList mAutoLoadedLibrariesList;
+  QStringList mModelsToUpdate;
   TreeSearchFilters *mpTreeSearchFilters;
   LibraryTreeModel *mpLibraryTreeModel;
   LibraryTreeProxyModel *mpLibraryTreeProxyModel;
@@ -503,6 +505,7 @@ private:
   void saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
   bool resolveConflictWithLoadedLibraries(const QString &library, const QStringList classes);
   static void cancelLoadingLibraries(const QStringList classes);
+  void reDrawModelsToUpdate();
 private slots:
   void handleAutoLoadedLibrary();
 public slots:

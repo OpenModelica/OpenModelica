@@ -5580,7 +5580,8 @@ void ModelWidget::addDependsOnModel(const QString &dependsOnModel)
 {
   if (!mDependsOnModelsList.contains(dependsOnModel)) {
     mDependsOnModelsList.append(dependsOnModel);
-    connect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString)), SLOT(updateModelIfDependsOn(QString)), Qt::UniqueConnection);
+    connect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString,bool)),
+            SLOT(updateModelIfDependsOn(QString,bool)), Qt::UniqueConnection);
   }
 }
 
@@ -5637,7 +5638,7 @@ void ModelWidget::drawModel(const ModelInfo &modelInfo)
   mpIconGraphicsView->drawCoordinateSystem();
   mpDiagramGraphicsView->drawCoordinateSystem();
   clearDependsOnModels();
-  disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString)), this, SLOT(updateModelIfDependsOn(QString)));
+  disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString,bool)), this, SLOT(updateModelIfDependsOn(QString,bool)));
   // if we are drawing the model inside the element mode and the parent element is extends so draw the element as inherited.
   ModelInstance::Element *pElement = mpModelInstance->getRootParentElement();
   if (pElement && pElement->isExtend()) {
@@ -6194,31 +6195,18 @@ void ModelWidget::reDrawModelWidget()
     } else {
       loadModelInstance(true, ModelInfo());
     }
-    // invalidate the simulation options
-    mpLibraryTreeItem->mSimulationOptions.setIsValid(false);
-    mpLibraryTreeItem->mSimulationOptions.setDataReconciliationInitialized(false);
-    // update the icon
-    mpLibraryTreeItem->handleIconUpdated();
-    // if documentation view is visible and this model is the current active model then update it
-    ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-    if (pModelWidget && pModelWidget == this && MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
-      MainWindow::instance()->getDocumentationWidget()->showDocumentation(getLibraryTreeItem());
-    }
-    // Update Element Browser
-    if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
-      MainWindow::instance()->getElementWidget()->getElementTreeModel()->addElements(pModelWidget->getModelInstance());
-      MainWindow::instance()->getElementWidget()->selectDeselectElementItem("", false);
-    }
+    reDrawModelWidgetHelper();
     // clear the undo stack
     mpUndoStack->clear();
-//    if (mpEditor) {
-//      mpEditor->getPlainTextEdit()->document()->clearUndoRedoStacks();
-//    }
-    updateViewButtonsBasedOnAccess();
   }
   QApplication::restoreOverrideCursor();
 }
 
+/*!
+ * \brief ModelWidget::reDrawModelWidget
+ * Redraws the ModelWidget with a new ModelInfo.
+ * \param modelInfo
+ */
 void ModelWidget::reDrawModelWidget(const ModelInfo &modelInfo)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
@@ -6248,10 +6236,20 @@ void ModelWidget::reDrawModelWidget(const ModelInfo &modelInfo)
   if (mpDiagramGraphicsView) {
     mpDiagramGraphicsView->resetCoordinateSystem();
   }
+  // reset if we are inside element mode
+  clearGraphicsViewsExceptOutOfSceneItems();
+  mModelInstanceList.clear();
+  mModelInstancesPos = -1;
+  mpElementModeLabel->setText("");
+  mPreservedIconShapesList.clear();
+  mPreservedDiagramShapesList.clear();
+  setComponentModified(false);
+  updateElementModeButtons();
   loadModelInstance(false, modelInfo);
-  // update the icon
-  mpLibraryTreeItem->handleIconUpdated();
-  updateViewButtonsBasedOnAccess();
+  // update the coordinate system according to new values
+  mpIconGraphicsView->resetZoom();
+  mpDiagramGraphicsView->resetZoom();
+  reDrawModelWidgetHelper();
   QApplication::restoreOverrideCursor();
 }
 
@@ -6334,7 +6332,7 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
       pParentLibraryTreeItem->setClassText(stringToLoad);
       updateModelText();
     } else {
-      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(mpLibraryTreeItem->getNameStructure());
+      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(mpLibraryTreeItem->getNameStructure(), false);
     }
     // update child classes
     updateChildClasses(mpLibraryTreeItem);
@@ -6347,8 +6345,8 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
      * so we tell unloadLibraryTreeItem to don't try deleteClass since it will only produce error
      */
     pLibraryTreeModel->unloadLibraryTreeItem(mpLibraryTreeItem, !mpLibraryTreeItem->isInPackageOneFile());
-    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(mpLibraryTreeItem->getNameStructure());
-    disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString)), this, SLOT(updateModelIfDependsOn(QString)));
+    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(mpLibraryTreeItem->getNameStructure(), false);
+    disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString,bool)), this, SLOT(updateModelIfDependsOn(QString,bool)));
     mpLibraryTreeItem->setModelWidget(0);
     QString name = StringHandler::getLastWordAfterDot(className);
     LibraryTreeItem *pNewLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(name, mpLibraryTreeItem->parent(), false, false, true, row);
@@ -6502,7 +6500,7 @@ void ModelWidget::updateModelText()
     mUpdateModelTimer.start();
     callHandleCollidingConnectionsIfNeeded();
     // announce the change.
-    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(mpLibraryTreeItem->getNameStructure());
+    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(mpLibraryTreeItem->getNameStructure(), false);
     // Update Element Browser
     MainWindow::instance()->getElementWidget()->getElementTreeModel()->addElements(mpModelInstance);
     MainWindow::instance()->getElementWidget()->selectDeselectElementItem("", false);
@@ -6760,14 +6758,20 @@ void ModelWidget::processPendingModelUpdate()
  * Updates the model if it depends on modelName.\n
  * Slot activated when modelStateChanged SIGNAL of LibraryTreeModel is raised.
  * \param modelName
+ * \param unload
  */
-void ModelWidget::updateModelIfDependsOn(const QString &modelName)
+void ModelWidget::updateModelIfDependsOn(const QString &modelName, bool unload)
 {
-  if (mDiagramViewLoaded && dependsOnModel(modelName)) {
+  if (mDiagramViewLoaded && dependsOnModel(modelName, unload)) {
     // if this is the current ModelWidget then update it directly otherwise mark it for update
     if (this == mpModelWidgetContainer->getCurrentModelWidget()) {
       setRequiresUpdate(false);
-      reDrawModelWidget(createModelInfo());
+      // if the update is called because of loading a library then postpone the update
+      if (MainWindow::instance()->getLibraryWidget()->isLoadingLibraries() || MainWindow::instance()->getLibraryWidget()->isCreatingAutoLoadedLibrary()) {
+        MainWindow::instance()->getLibraryWidget()->addModelToUpdate(mpLibraryTreeItem->getNameStructure());
+      } else {
+        reDrawModelWidget(createModelInfo());
+      }
     } else {
       setRequiresUpdate(true);
     }
@@ -7244,12 +7248,18 @@ void ModelWidget::associateBusWithConnectors(Element *pBusComponent, GraphicsVie
  * \brief ModelWidget::dependsOnModel
  * Checks if modelName exists in dependsOnModel list
  * \param modelName
+ * \param unload - true if unloading the model
  * \return
  */
-bool ModelWidget::dependsOnModel(const QString &modelName)
+bool ModelWidget::dependsOnModel(const QString &modelName, bool unload)
 {
   foreach (QString model, mDependsOnModelsList) {
-    if ((model.compare(modelName) == 0)) {
+    // when unloading the model we only check if the depends model starts with otherwise we check for exact match
+    if (unload) {
+      if (model.startsWith(modelName)) {
+        return true;
+      }
+    } else if ((model.compare(modelName) == 0)) {
       return true;
     }
   }
@@ -7280,6 +7290,30 @@ void ModelWidget::updateElementModeButtons()
   } else {
     mpExitToolButton->setDisabled(true);
   }
+}
+
+/*!
+ * \brief ModelWidget::reDrawModelWidgetHelper
+ * Helper function to reDrawModelWidget.
+ */
+void ModelWidget::reDrawModelWidgetHelper()
+{
+  // invalidate the simulation options
+  mpLibraryTreeItem->mSimulationOptions.setIsValid(false);
+  mpLibraryTreeItem->mSimulationOptions.setDataReconciliationInitialized(false);
+  // update the icon
+  mpLibraryTreeItem->handleIconUpdated();
+  // if documentation view is visible and this model is the current active model then update it
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget && pModelWidget == this && MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
+    MainWindow::instance()->getDocumentationWidget()->showDocumentation(getLibraryTreeItem());
+  }
+  // Update Element Browser
+  if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+    MainWindow::instance()->getElementWidget()->getElementTreeModel()->addElements(pModelWidget->getModelInstance());
+    MainWindow::instance()->getElementWidget()->selectDeselectElementItem("", false);
+  }
+  updateViewButtonsBasedOnAccess();
 }
 
 /*!
@@ -8204,25 +8238,27 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   }
   mpLastActiveSubWindow = pSubWindow;
   // update the model if its require update flag is set.
+  // reDrawModelWidget updates the documentation and element browser so only try to update them in the else
   if (pModelWidget && pModelWidget->requiresUpdate()) {
     pModelWidget->setRequiresUpdate(false);
     pModelWidget->reDrawModelWidget(pModelWidget->createModelInfo());
-  }
-  /* ticket:4983 Update the documentation browser when a new ModelWidget is selected.
-   * Provided that the Documentation Browser is already visible.
-   */
-  if (pModelWidget && pModelWidget->getLibraryTreeItem() && MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
-    MainWindow::instance()->getDocumentationWidget()->showDocumentation(pModelWidget->getLibraryTreeItem());
+  } else {
+    /* ticket:4983 Update the documentation browser when a new ModelWidget is selected.
+     * Provided that the Documentation Browser is already visible.
+     */
+    if (pModelWidget && pModelWidget->getLibraryTreeItem() && MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
+      MainWindow::instance()->getDocumentationWidget()->showDocumentation(pModelWidget->getLibraryTreeItem());
+    }
+    // Update Element Browser
+    if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+      MainWindow::instance()->getElementWidget()->getElementTreeModel()->addElements(pModelWidget->getModelInstance());
+      MainWindow::instance()->getElementWidget()->selectDeselectElementItem("", false);
+    }
   }
   // Update the LibraryTreeView to mark the active model
   MainWindow::instance()->getLibraryWidget()->getLibraryTreeView()->viewport()->update();
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getSynchronizeWithModelWidgetCheckBox()->isChecked()) {
     MainWindow::instance()->getLibraryWidget()->scrollToActiveLibraryTreeItem();
-  }
-  // Update Element Browser
-  if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
-    MainWindow::instance()->getElementWidget()->getElementTreeModel()->addElements(pModelWidget->getModelInstance());
-    MainWindow::instance()->getElementWidget()->selectDeselectElementItem("", false);
   }
 }
 
