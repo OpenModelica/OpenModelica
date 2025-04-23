@@ -7466,7 +7466,7 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
     case SINGLE_GENERIC_CALL() then
       let lhs_ = daeExp(lhs, context, &preExp, &varDecls, &auxFunction)
       let rhs_ = daeExp(rhs, context, &preExp, &varDecls, &auxFunction)
-      let iter_ = (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
+      let iter_ = if resizable then (iters |> iter => resizableIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n") else (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
       let idx_ = if resizable then (iters |> it => 'int <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
       let idx_copy = if resizable then "" else "int tmp = idx;"
       <<
@@ -7564,6 +7564,22 @@ template genericIterator(SimIterator iter, Context context, Text &preExp, Text &
     >>
 end genericIterator;
 
+template resizableIterator(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
+::= match iter
+  case SIM_ITERATOR_RANGE() then
+    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, context, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
+    <<
+    <%sub_iter_%>
+    >>
+  case SIM_ITERATOR_LIST() then
+    let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, context, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
+    <<
+    <%sub_iter_%>
+    >>
+end resizableIterator;
+
 template forIterator(SimIterator iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
 ::= match iter
   case SIM_ITERATOR_RANGE() then
@@ -7575,9 +7591,11 @@ template forIterator(SimIterator iter, Context context, Text &preExp, Text &varD
     >>
   case SIM_ITERATOR_LIST() then
     let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
+    let arr = (lst |> elem => '<%elem%>'; separator=", ")
     <<
+    static const int <%iter_%>_lst[<%size%>] = {<%arr%>};
     for(int <%iter_%>_=0; <%iter_%>_<<%size%>; <%iter_%>_++){
-      <%iter_%> = <%iter_%>_lst[<%iter_%>_];
+      int <%iter_%> = <%iter_%>_lst[<%iter_%>_];
     >>
 end forIterator;
 
