@@ -32,17 +32,13 @@
  */
 
 #include <string.h>
-#include <float.h>
 
-#include "simulation/simulation_info_json.h"
-#include "util/omc_error.h"
-#include "util/varinfo.h"
+#include "../../util/omc_error.h"
 #include "model_help.h"
-#include "newtonIteration.h"
-
 
 #include "sym_solver_ssc.h"
 #include "external_input.h"
+
 
 int first_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 int generateTwoApproximationsOfDifferentOrder(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
@@ -236,8 +232,8 @@ int sym_solver_ssc_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solve
 
   /* update step size */
   data->simulationInfo->inlineData->dt = userdata->radauStepSize;
-  solverInfo->solverStepSize = userdata->radauStepSizeOld;
-  infoStreamPrint(OMC_LOG_SOLVER,0, "Step done to %f with step size = %e", sData->timeValue, solverInfo->solverStepSize);
+  userdata->solverStepSize = userdata->radauStepSizeOld;
+  infoStreamPrint(OMC_LOG_SOLVER,0, "Step done to %f with step size = %e", sData->timeValue, userdata->solverStepSize);
 
 
   return retVal;

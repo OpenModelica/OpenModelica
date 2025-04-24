@@ -421,7 +421,7 @@ int irksco_midpoint_rule(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
 
 
   /* Calculate steps until targetTime is reached */
-  if (solverInfo->integratorSteps)
+  if (solverInfo->solverNoEquidistantGrid)
   {
     if (data->simulationInfo->nextSampleEvent < data->simulationInfo->stopTime)
     {
@@ -528,8 +528,8 @@ int irksco_midpoint_rule(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     memcpy(userdata->radauVarsOld, userdata->radauVars, data->modelData->nStates*sizeof(double));
     memcpy(userdata->radauVars, userdata->y2, data->modelData->nStates*sizeof(double));
 
-    /* emit step, if integratorSteps is selected */
-    if (solverInfo->integratorSteps)
+    /* emit step, if solverNoEquidistantGrid is selected */
+    if (solverInfo->solverNoEquidistantGrid)
     {
       sData->timeValue = userdata->radauTime;
       memcpy(sData->realVars, userdata->radauVars, data->modelData->nStates*sizeof(double));
@@ -543,7 +543,7 @@ int irksco_midpoint_rule(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     messageClose(OMC_LOG_SOLVER);
   }
 
-  if (!solverInfo->integratorSteps)
+  if (!solverInfo->solverNoEquidistantGrid)
   {
     solverInfo->currentTime = sDataOld->timeValue + solverInfo->currentStepSize;
     sData->timeValue = solverInfo->currentTime;

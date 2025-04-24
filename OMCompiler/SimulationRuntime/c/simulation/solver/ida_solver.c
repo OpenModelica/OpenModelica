@@ -297,7 +297,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   /* if FLAG_NOEQUIDISTANT_GRID is set, choose ida step method */
   if (omc_flag[FLAG_NOEQUIDISTANT_GRID]) {
     idaData->internalSteps = 1; /* TRUE */
-    solverInfo->solverNoEquidistantGrid = 1;
+    solverInfo->solverNoEquidistantGrid = TRUE;
   } else {
     idaData->internalSteps = 0; /* FALSE */
   }

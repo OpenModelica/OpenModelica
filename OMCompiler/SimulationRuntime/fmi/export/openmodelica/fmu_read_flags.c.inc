@@ -162,7 +162,7 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
   solverInfo->laststep = 0;
   solverInfo->solverMethod = 0;
   solverInfo->solverRootFinding = 0;
-  solverInfo->solverNoEquidistantGrid = 0;
+  solverInfo->solverNoEquidistantGrid = FALSE;
   solverInfo->lastdesiredStep = solverInfo->currentTime + solverInfo->currentStepSize;
   solverInfo->eventLst = NULL;
   solverInfo->didEventStep = 0;

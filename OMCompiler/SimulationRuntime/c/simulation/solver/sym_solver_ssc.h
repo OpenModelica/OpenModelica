@@ -34,9 +34,8 @@
 #ifndef _SYM_SOLVER_SSC_H_
 #define _SYM_SOLVER_SSC_H_
 
-#include "simulation_data.h"
+#include "../../simulation_data.h"
 #include "solver_main.h"
-#include "omc_config.h"
 
 #include <math.h>
 
@@ -48,10 +47,11 @@ typedef struct DATA_SYM_SOLVER_SSC{
   double radauTime;
   double radauTimeOld;
   double radauStepSize, radauStepSizeOld;
+  double solverStepSize;
   int firstStep;
   unsigned int stepsDone;
   unsigned int evalFunctionODE;
-}DATA_SYM_SOLVER_SSC;
+} DATA_SYM_SOLVER_SSC;
 
 
 int allocateSymSolverSsc(SOLVER_INFO* solverInfo, int size);
