@@ -1372,6 +1372,9 @@ constant ConfigFlag EVALUATE_STRUCTURAL_PARAMETERS = CONFIG_FLAG(158, "evaluateS
     ("strictlyNecessary", Gettext.gettext("Evaluates only structural parameters strictly required by the frontend"))
   })),
   Gettext.gettext("Sets which structural parameters are evaluated by the frontend."));
+constant ConfigFlag LOAD_MISSING_LIBRARIES = CONFIG_FLAG(159, "loadMissingLibraries",
+  NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
+  Gettext.gettext("Automatically try to load a matching library if a name can't be found during name lookup."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

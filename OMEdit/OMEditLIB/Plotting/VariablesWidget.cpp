@@ -229,9 +229,9 @@ bool VariablesTreeItem::setData(int column, const QVariant &value, int role)
     }
     return true;
   } else if (column == 3 && role == Qt::EditRole) {
-    if (mDisplayUnit.compare(Utilities::convertSymbolToUnit(value.toString())) != 0) {
+    if (mDisplayUnit.compare(value.toString()) != 0) {
       mPreviousUnit = mDisplayUnit;
-      mDisplayUnit = Utilities::convertSymbolToUnit(value.toString());
+      mDisplayUnit = value.toString();
     }
     return true;
   }
@@ -283,7 +283,7 @@ QVariant VariablesTreeItem::data(int column, int role) const
       switch (role) {
         case Qt::DisplayRole:
         case Qt::ToolTipRole:
-          return Utilities::convertUnitToSymbol(mUnit);
+          return OMPlot::Plot::convertUnitToSymbol(mUnit);
         default:
           return QVariant();
       }
@@ -291,7 +291,7 @@ QVariant VariablesTreeItem::data(int column, int role) const
       switch (role) {
         case Qt::DisplayRole:
         case Qt::ToolTipRole:
-          return Utilities::convertUnitToSymbol(mDisplayUnit);
+          return OMPlot::Plot::convertUnitToSymbol(mDisplayUnit);
         default:
           return QVariant();
       }
@@ -456,11 +456,11 @@ bool VariablesTreeModel::setData(const QModelIndex &index, const QVariant &value
       }
     }
   } else if (index.column() == 3) { // display unit
-    if (!signalsBlocked() && displayUnit.compare(Utilities::convertSymbolToUnit(value.toString())) != 0) {
+    if (!signalsBlocked() && displayUnit.compare(value.toString()) != 0) {
       emit unitChanged(index);
     }
   }
-  updateVariablesTreeItem(pVariablesTreeItem);
+  updateVariablesTreeItem(pVariablesTreeItem, index.column());
   return result;
 }
 
@@ -553,15 +553,22 @@ VariablesTreeItem *VariablesTreeModel::findVariablesTreeItemFromClassNameTopLeve
  * Triggers a view update for the VariablesTreeItem in the Variable Browser.
  * \param pVariablesTreeItem
  */
-void VariablesTreeModel::updateVariablesTreeItem(VariablesTreeItem *pVariablesTreeItem)
+void VariablesTreeModel::updateVariablesTreeItem(VariablesTreeItem *pVariablesTreeItem, int column)
 {
-  QModelIndex index = variablesTreeItemIndex(pVariablesTreeItem);
+  QModelIndex index = variablesTreeItemIndex(pVariablesTreeItem, column);
+  // makesure we don't block signals when updating the model
+  bool state = blockSignals(false);
   emit dataChanged(index, index);
+  blockSignals(state);
 }
 
-QModelIndex VariablesTreeModel::variablesTreeItemIndex(const VariablesTreeItem *pVariablesTreeItem) const
+QModelIndex VariablesTreeModel::variablesTreeItemIndex(VariablesTreeItem *pVariablesTreeItem, int column) const
 {
-  return variablesTreeItemIndexHelper(pVariablesTreeItem, mpRootVariablesTreeItem, QModelIndex());
+  if (!pVariablesTreeItem || pVariablesTreeItem == mpRootVariablesTreeItem) {
+    return QModelIndex();
+  }
+
+  return createIndex(pVariablesTreeItem->row(), column, pVariablesTreeItem);
 }
 
 /*!
@@ -893,20 +900,19 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       variableData << type << value;
       /* set the variable unit */
       variableData << unit;
-      unit = variableData.at(VariableItemData::UNIT).toString();
       /* set the variable displayUnit */
       variableData << displayUnit;
       /* set the variable displayUnits */
       if ((variableData.at(VariableItemData::TYPE).toString().compare(QStringLiteral("String")) != 0) && !unit.isEmpty()) {
-        QStringList displayUnits, displayUnitOptions;
+        QStringList displayUnits;
         displayUnits << unit;
-        if (!variableData.at(VariableItemData::DISPLAYUNIT).toString().isEmpty()) {
-          displayUnitOptions << variableData.at(VariableItemData::DISPLAYUNIT).toString();
+        if (!displayUnit.isEmpty()) {
+          displayUnits << displayUnit;
           /* convert value to displayUnit */
-          OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(unit, variableData.at(VariableItemData::DISPLAYUNIT).toString());
+          OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(unit, displayUnit);
           if (convertUnit.unitsCompatible) {
             bool ok = true;
-            qreal realValue = variableData.at(VariableItemData::VALUE).toDouble(&ok);
+            qreal realValue = value.toDouble(&ok);
             if (ok) {
               realValue = Utilities::convertUnit(realValue, convertUnit.offset, convertUnit.scaleFactor);
               variableData[VariableItemData::VALUE] = StringHandler::number(realValue);
@@ -915,9 +921,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
         } else { /* use unit as displayUnit */
           variableData[VariableItemData::DISPLAYUNIT] = unit;
         }
-        Utilities::addDefaultDisplayUnit(unit, displayUnitOptions);
-        displayUnitOptions.removeDuplicates();
-        displayUnits << displayUnitOptions;
+        Utilities::addDefaultDisplayUnit(unit, displayUnits);
         variableData << displayUnits;
       } else {
         variableData << QStringList();
@@ -1037,31 +1041,6 @@ void VariablesTreeModel::plotAllVariables(VariablesTreeItem *pVariablesTreeItem,
       plotAllVariables(variablesTreeItems[i], pPlotWindow);
     }
   }
-}
-
-/*!
- * \brief VariablesTreeModel::variablesTreeItemIndexHelper
- * Helper function for VariablesTreeModel::variablesTreeItem()
- * \param pVariablesTreeItem
- * \param pParentVariablesTreeItem
- * \param parentIndex
- * \return
- */
-QModelIndex VariablesTreeModel::variablesTreeItemIndexHelper(const VariablesTreeItem *pVariablesTreeItem, const VariablesTreeItem *pParentVariablesTreeItem,
-                                                             const QModelIndex &parentIndex) const
-{
-  if (pVariablesTreeItem == pParentVariablesTreeItem) {
-    return parentIndex;
-  }
-  for (int i = pParentVariablesTreeItem->mChildren.size(); --i >= 0; ) {
-    const VariablesTreeItem *childItem = pParentVariablesTreeItem->mChildren.at(i);
-    QModelIndex childIndex = index(i, 0, parentIndex);
-    QModelIndex index = variablesTreeItemIndexHelper(pVariablesTreeItem, childItem, childIndex);
-    if (index.isValid()) {
-      return index;
-    }
-  }
-  return QModelIndex();
 }
 
 void VariablesTreeModel::filterVariableTreeItem(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem)
@@ -1599,12 +1578,15 @@ void VariablesWidget::variablesUpdated()
       foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
         if (pPlotWindow->isPlot() || pPlotWindow->isPlotArray()) {
           QString curveNameStructure = pPlotCurve->getNameStructure();
-          VariablesTreeItem *pVariableTreeItem;
-          pVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(curveNameStructure, mpVariablesTreeModel->getRootVariablesTreeItem());
-          if (pVariableTreeItem) {
+          VariablesTreeItem *pVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(curveNameStructure, mpVariablesTreeModel->getRootVariablesTreeItem());
+          if (pVariablesTreeItem) {
             pPlotCurve->detach();
             bool state = mpVariablesTreeModel->blockSignals(true);
-            QModelIndex index = mpVariablesTreeModel->variablesTreeItemIndex(pVariableTreeItem);
+            updateDisplayUnitAndValue(pPlotCurve->getYUnitPrefix(), pPlotCurve->getYDisplayUnit(), pVariablesTreeItem);
+            pPlotCurve->setYUnit(pVariablesTreeItem->getUnit());
+            pPlotCurve->setYDisplayUnit(pVariablesTreeItem->getDisplayUnit());
+            pPlotCurve->resetPrefixUnit(false);
+            QModelIndex index = mpVariablesTreeModel->variablesTreeItemIndex(pVariablesTreeItem);
             mpVariablesTreeModel->setData(index, Qt::Checked, Qt::CheckStateRole);
             plotVariables(index, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), false, pPlotCurve, pPlotWindow);
             mpVariablesTreeModel->blockSignals(state);
@@ -1614,18 +1596,24 @@ void VariablesWidget::variablesUpdated()
           }
         } else if (pPlotWindow->isPlotParametric() || pPlotWindow->isPlotArrayParametric()) {
           QString xVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getXVariable());
-          VariablesTreeItem *pXVariableTreeItem;
-          pXVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(xVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
+          VariablesTreeItem *pXVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(xVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
           QString yVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getYVariable());
-          VariablesTreeItem *pYVariableTreeItem;
-          pYVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(yVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
-          if (pXVariableTreeItem && pYVariableTreeItem) {
+          VariablesTreeItem *pYVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(yVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
+          if (pXVariablesTreeItem && pYVariablesTreeItem) {
             pPlotCurve->detach();
             bool state = mpVariablesTreeModel->blockSignals(true);
-            QModelIndex xIndex = mpVariablesTreeModel->variablesTreeItemIndex(pXVariableTreeItem);
+            updateDisplayUnitAndValue(pPlotCurve->getXUnitPrefix(), pPlotCurve->getXDisplayUnit(), pXVariablesTreeItem);
+            pPlotCurve->setXUnit(pXVariablesTreeItem->getUnit());
+            pPlotCurve->setXDisplayUnit(pXVariablesTreeItem->getDisplayUnit());
+            pPlotCurve->resetPrefixUnit(false);
+            QModelIndex xIndex = mpVariablesTreeModel->variablesTreeItemIndex(pXVariablesTreeItem);
             mpVariablesTreeModel->setData(xIndex, Qt::Checked, Qt::CheckStateRole);
             plotVariables(xIndex, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), true, pPlotCurve, pPlotWindow);
-            QModelIndex yIndex = mpVariablesTreeModel->variablesTreeItemIndex(pYVariableTreeItem);
+            updateDisplayUnitAndValue(pPlotCurve->getYUnitPrefix(), pPlotCurve->getYDisplayUnit(), pYVariablesTreeItem);
+            pPlotCurve->setYUnit(pYVariablesTreeItem->getUnit());
+            pPlotCurve->setYDisplayUnit(pYVariablesTreeItem->getDisplayUnit());
+            // No need to call pPlotCurve->resetPrefixUnit(false); again, is already done above
+            QModelIndex yIndex = mpVariablesTreeModel->variablesTreeItemIndex(pYVariablesTreeItem);
             mpVariablesTreeModel->setData(yIndex, Qt::Checked, Qt::CheckStateRole);
             plotVariables(yIndex, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), false, pPlotCurve, pPlotWindow);
             mpVariablesTreeModel->blockSignals(state);
@@ -2007,6 +1995,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
       unCheckVariableAndErrorMessage(index, tr("No plot window is active for plotting. Please select a plot window or open a new."));
       return;
     }
+    connect(pPlotWindow, SIGNAL(prefixUnitsChanged()), this, SLOT(updatePlottedVariablesDisplayUnitAndValue()), Qt::UniqueConnection);
     // if plottype is PLOT or PLOTARRAY then
     if (pPlotWindow->isPlot() || pPlotWindow->isPlotArray()) {
       // check the item checkstate
@@ -2024,8 +2013,8 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
         pPlotWindow->setCurveWidth(curveThickness);
         pPlotWindow->setCurveStyle(curveStyle);
         pPlotWindow->setVariablesList(QStringList(pVariablesTreeItem->getPlotVariable()));
-        pPlotWindow->setYUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getUnit()));
-        pPlotWindow->setYDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
+        pPlotWindow->setYUnit(pVariablesTreeItem->getUnit());
+        pPlotWindow->setYDisplayUnit(pVariablesTreeItem->getDisplayUnit());
         if (pPlotWindow->isPlot()) {
           pPlotWindow->plot(pPlotCurve);
           /* Ticket:5839
@@ -2039,17 +2028,6 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           double timePercent = mpTimeTextBox->text().toDouble();
           pPlotWindow->plotArray(timePercent, pPlotCurve);
         }
-        /* Ticket:4231
-         * Only update the variable browser value and unit when updating some curve not when checking/unchecking variable.
-         */
-        if (pPlotCurve) {
-          /* Ticket:2250
-           * Update the value of Variable Browser display unit according to the display unit of already plotted curve.
-           */
-          pVariablesTreeItem->setData(3, pPlotCurve->getYDisplayUnit(), Qt::EditRole);
-          QString value = pVariablesTreeItem->getValue(pVariablesTreeItem->getPreviousUnit(), pVariablesTreeItem->getDisplayUnit()).toString();
-          pVariablesTreeItem->setData(1, value, Qt::EditRole);
-        }
         if (!pPlotCurve) {
           pPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().last();
         }
@@ -2057,26 +2035,19 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
         if (pPlotCurve && !pVariablesTreeItem->isString() && pVariablesTreeItem->getUnit().compare(pVariablesTreeItem->getDisplayUnit()) != 0) {
           OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pVariablesTreeItem->getUnit(), pVariablesTreeItem->getDisplayUnit());
           if (convertUnit.unitsCompatible) {
-            pPlotCurve->resetPrefixUnit();
             requiresUpdate = true;
             for (int i = 0 ; i < pPlotCurve->mYAxisVector.size() ; i++) {
               pPlotCurve->updateYAxisValue(i, Utilities::convertUnit(pPlotCurve->mYAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
             }
           } else {
-            pPlotCurve->setYDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
+            pPlotCurve->setYDisplayUnit(pVariablesTreeItem->getDisplayUnit());
           }
         }
         // update the time values if time unit is different then s
         if (pPlotCurve && pPlotWindow->getTimeUnit().compare("s") != 0) {
           OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits("s", pPlotWindow->getTimeUnit());
-          /* if requiresUpdate = false then call pPlotCurve->resetPrefixUnit() and set it to true.
-           * otherwise avoid calling pPlotCurve->resetPrefixUnit() since it is already called above.
-           */
-          if (!requiresUpdate) {
-            pPlotCurve->resetPrefixUnit();
-            requiresUpdate = true;
-          }
           if (convertUnit.unitsCompatible) {
+            requiresUpdate = true;
             for (int i = 0 ; i < pPlotCurve->mXAxisVector.size() ; i++) {
               pPlotCurve->updateXAxisValue(i, Utilities::convertUnit(pPlotCurve->mXAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
             }
@@ -2086,6 +2057,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           pPlotCurve->plotData();
         }
         pPlotWindow->updatePlot();
+        updateDisplayUnitAndValue(pPlotCurve->getYUnitPrefix(), pPlotCurve->getYDisplayUnit(), pVariablesTreeItem);
       } else if (!pVariablesTreeItem->isChecked()) {  // if user unchecks the variable then remove it from the plot
         foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
           QString curveTitle = pPlotCurve->getNameStructure();
@@ -2150,10 +2122,10 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             pPlotWindow->setCurveWidth(curveThickness);
             pPlotWindow->setCurveStyle(curveStyle);
             pPlotWindow->setVariablesList(QStringList() << plotParametricCurve.xVariable.variableName << plotParametricVariable.variableName);
-            pPlotWindow->setXUnit(Utilities::convertUnitToSymbol(plotParametricCurve.xVariable.unit));
-            pPlotWindow->setXDisplayUnit(Utilities::convertUnitToSymbol(plotParametricCurve.xVariable.displayUnit));
-            pPlotWindow->setYUnit(Utilities::convertUnitToSymbol(plotParametricVariable.unit));
-            pPlotWindow->setYDisplayUnit(Utilities::convertUnitToSymbol(plotParametricVariable.displayUnit));
+            pPlotWindow->setXUnit(plotParametricCurve.xVariable.unit);
+            pPlotWindow->setXDisplayUnit(plotParametricCurve.xVariable.displayUnit);
+            pPlotWindow->setYUnit(plotParametricVariable.unit);
+            pPlotWindow->setYDisplayUnit(plotParametricVariable.displayUnit);
             if (pPlotWindow->isPlotParametric()) {
               pPlotWindow->plotParametric(pPlotCurve);
               /* Ticket:5839
@@ -2175,37 +2147,42 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             if (pPlotCurve && !plotParametricCurve.xVariable.isString && plotParametricCurve.xVariable.unit.compare(plotParametricCurve.xVariable.displayUnit) != 0) {
               OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(plotParametricCurve.xVariable.unit, plotParametricCurve.xVariable.displayUnit);
               if (convertUnit.unitsCompatible) {
-                pPlotCurve->resetPrefixUnit();
                 requiresUpdate = true;
                 for (int i = 0 ; i < pPlotCurve->mXAxisVector.size() ; i++) {
                   pPlotCurve->updateXAxisValue(i, Utilities::convertUnit(pPlotCurve->mXAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
                 }
               } else {
-                pPlotCurve->setXDisplayUnit(Utilities::convertUnitToSymbol(plotParametricCurve.xVariable.displayUnit));
+                pPlotCurve->setXDisplayUnit(plotParametricCurve.xVariable.displayUnit);
               }
             }
             // convert y value
             if (pPlotCurve && !plotParametricVariable.isString && plotParametricVariable.unit.compare(plotParametricVariable.displayUnit) != 0) {
               OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(plotParametricVariable.unit, plotParametricVariable.displayUnit);
               if (convertUnit.unitsCompatible) {
-                /* if requiresUpdate = false then call pPlotCurve->resetPrefixUnit() and set it to true.
-                 * otherwise avoid calling pPlotCurve->resetPrefixUnit() since it is already called above.
-                 */
-                if (!requiresUpdate) {
-                  pPlotCurve->resetPrefixUnit();
-                  requiresUpdate = true;
-                }
+                requiresUpdate = true;
                 for (int i = 0 ; i < pPlotCurve->mYAxisVector.size() ; i++) {
                   pPlotCurve->updateYAxisValue(i, Utilities::convertUnit(pPlotCurve->mYAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
                 }
               } else {
-                pPlotCurve->setYDisplayUnit(Utilities::convertUnitToSymbol(plotParametricVariable.displayUnit));
+                pPlotCurve->setYDisplayUnit(plotParametricVariable.displayUnit);
               }
             }
             if (requiresUpdate) {
               pPlotCurve->plotData();
             }
             pPlotWindow->updatePlot();
+            // update unit and value for x variable
+            QString xVariable = pPlotCurve->getFileName() % "." % pPlotCurve->getXVariable();
+            VariablesTreeItem *pXVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(xVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
+            if (pXVariablesTreeItem) {
+              updateDisplayUnitAndValue(pPlotCurve->getXUnitPrefix(), pPlotCurve->getXDisplayUnit(), pXVariablesTreeItem);
+            }
+            // update unit and value for y variable
+            QString yVariable = pPlotCurve->getFileName() % "." % pPlotCurve->getYVariable();
+            VariablesTreeItem *pYVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(yVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
+            if (pYVariablesTreeItem) {
+              updateDisplayUnitAndValue(pPlotCurve->getYUnitPrefix(), pPlotCurve->getYDisplayUnit(), pYVariablesTreeItem);
+            }
           }
         }
       } else if (!pVariablesTreeItem->isChecked()) {  // if user unchecks the variable then remove it from the plot
@@ -2289,8 +2266,8 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             pPlotWindow->setCurveStyle(curveStyle);
             QString plotVariable = pVariablesTreeItem->getPlotVariable();
             pPlotWindow->setVariablesList(QStringList(plotVariable));
-            pPlotWindow->setYUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getUnit()));
-            pPlotWindow->setYDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
+            pPlotWindow->setYUnit(pVariablesTreeItem->getUnit());
+            pPlotWindow->setYDisplayUnit(pVariablesTreeItem->getDisplayUnit());
             pPlotWindow->setInteractiveModelName(pVariablesTreeItem->getFileName());
             OpcUaClient *pOpcUaClient = MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port);
             if (pOpcUaClient) {
@@ -2365,12 +2342,12 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
         const QString yVariableName = QString("%1.%2").arg(pPlotCurve->getFileName(), pPlotCurve->getYVariable());
         if (yVariableName.compare(pVariablesTreeItem->getVariableName()) == 0) {
           // reset prefix unit
-          pPlotCurve->resetPrefixUnit();
+          pPlotCurve->resetPrefixUnit(false);
           requiresUpdate = true;
           for (int i = 0 ; i < pPlotCurve->mYAxisVector.size() ; i++) {
             pPlotCurve->updateYAxisValue(i, Utilities::convertUnit(pPlotCurve->mYAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
           }
-          pPlotCurve->setYDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
+          pPlotCurve->setYDisplayUnit(pVariablesTreeItem->getDisplayUnit());
         }
         if (pPlotWindow->isPlotParametric() || pPlotWindow->isPlotArrayParametric()) {
           const QString xVariableName = QString("%1.%2").arg(pPlotCurve->getFileName(), pPlotCurve->getXVariable());
@@ -2379,24 +2356,58 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
              * otherwise avoid calling pPlotCurve->resetPrefixUnit() since it is already called above.
              */
             if (!requiresUpdate) {
-              pPlotCurve->resetPrefixUnit();
+              pPlotCurve->resetPrefixUnit(false);
               requiresUpdate = true;
             }
             for (int i = 0 ; i < pPlotCurve->mXAxisVector.size() ; i++) {
               pPlotCurve->updateXAxisValue(i, Utilities::convertUnit(pPlotCurve->mXAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
             }
-            pPlotCurve->setXDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
+            pPlotCurve->setXDisplayUnit(pVariablesTreeItem->getDisplayUnit());
           }
         }
         if (requiresUpdate) {
           // update plot data and do not break the loop as the variable can be used in multiple curves in the case of parametric plot.
+          // we disable the automatic prefix unit calculation since user explicitly changed the display unit.
+          bool state = pPlotWindow->getPrefixUnits();
+          pPlotWindow->setPrefixUnits(false);
           pPlotCurve->plotData();
+          pPlotWindow->setPrefixUnits(state);
         }
       }
       pPlotWindow->updatePlot();
     }
   } catch (PlotException &e) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), e.what(), QMessageBox::Ok);
+  }
+}
+
+/*!
+ * \brief VariablesWidget::updatePlottedVariablesDisplayUnitAndValue
+ * Updates the display unit and value for the variables that belong to plotted curves.
+ */
+void VariablesWidget::updatePlottedVariablesDisplayUnitAndValue()
+{
+  OMPlot::PlotWindow *pPlotWindow = qobject_cast<OMPlot::PlotWindow*>(sender());
+  if (!pPlotWindow) {
+    return;
+  }
+
+  foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
+    if (pPlotWindow->isPlotParametric() || pPlotWindow->isPlotArrayParametric()) {
+      // update unit and value for x variable
+      QString xVariable = pPlotCurve->getFileName() % "." % pPlotCurve->getXVariable();
+      VariablesTreeItem *pXVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(xVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
+      if (pXVariablesTreeItem) {
+        updateDisplayUnitAndValue(pPlotCurve->getXUnitPrefix(), pPlotCurve->getXDisplayUnit(), pXVariablesTreeItem);
+      }
+    }
+
+    // update unit and value for y variable
+    QString yVariable = pPlotCurve->getFileName() % "." % pPlotCurve->getYVariable();
+    VariablesTreeItem *pYVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItem(yVariable, mpVariablesTreeModel->getRootVariablesTreeItem());
+    if (pYVariablesTreeItem) {
+      updateDisplayUnitAndValue(pPlotCurve->getYUnitPrefix(), pPlotCurve->getYDisplayUnit(), pYVariablesTreeItem);
+    }
   }
 }
 
@@ -2707,7 +2718,40 @@ void VariablesWidget::unCheckCurveVariable(const QString &variable)
   }
   mpVariablesTreeModel->blockSignals(state);
   if (pVariablesTreeItem) {
-    mpVariablesTreeModel->updateVariablesTreeItem(pVariablesTreeItem);
+    mpVariablesTreeModel->updateVariablesTreeItem(pVariablesTreeItem, 0);
+  }
+}
+
+/*!
+ * \brief VariablesWidget::updateDisplayUnitAndValue
+ * Updates the display unit and value in the VariablesTreeView.
+ * This function is called when the automatic prefix is applied on the variable.
+ * We pass the unitPrefix and displayUnit from the plot to update the display unit and value in the VariablesTreeView.
+ * \param unitPrefix
+ * \param displayUnit
+ * \param pVariablesTreeItem
+ */
+void VariablesWidget::updateDisplayUnitAndValue(const QString &unitPrefix, const QString &displayUnit, VariablesTreeItem *pVariablesTreeItem)
+{
+  if (pVariablesTreeItem) {
+    QString unit;
+    if (unitPrefix.isEmpty()) {
+      unit = displayUnit;
+    } else {
+      unit = unitPrefix % displayUnit;
+    }
+
+    if (unit.compare(pVariablesTreeItem->getDisplayUnit()) != 0) {
+      // first update the display unit in the variables tree
+      bool state = mpVariablesTreeModel->blockSignals(true);
+      mpVariablesTreeModel->setData(mpVariablesTreeModel->variablesTreeItemIndex(pVariablesTreeItem, 3), QVariant::fromValue(unit), Qt::EditRole);
+      mpVariablesTreeModel->blockSignals(state);
+      // then update the value in the variables tree
+      QString value = pVariablesTreeItem->getValue(pVariablesTreeItem->getPreviousUnit(), pVariablesTreeItem->getDisplayUnit()).toString();
+      state = mpVariablesTreeModel->blockSignals(true);
+      mpVariablesTreeModel->setData(mpVariablesTreeModel->variablesTreeItemIndex(pVariablesTreeItem, 1), value, Qt::EditRole);
+      mpVariablesTreeModel->blockSignals(state);
+    }
   }
 }
 

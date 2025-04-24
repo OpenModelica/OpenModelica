@@ -652,8 +652,9 @@ private:
   void drawOMSElement(LibraryTreeItem *pLibraryTreeItem, const QString &annotation);
   void drawOMSModelConnections();
   void associateBusWithConnectors(Element *pBusComponent, GraphicsView *pGraphicsView);
-  bool dependsOnModel(const QString &modelName);
+  bool dependsOnModel(const QString &modelName, bool unload);
   void updateElementModeButtons();
+  void reDrawModelWidgetHelper();
 private slots:
   void showIconView(bool checked);
   void showDiagramView(bool checked);
@@ -667,7 +668,7 @@ public slots:
   void showDocumentationView();
   void handleCanUndoChanged(bool canUndo);
   void handleCanRedoChanged(bool canRedo);
-  void updateModelIfDependsOn(const QString &modelName);
+  void updateModelIfDependsOn(const QString &modelName, bool unload);
 protected:
   virtual void closeEvent(QCloseEvent *event) override;
 };

@@ -154,8 +154,8 @@ public:
   VariablesTreeItem* findVariablesTreeItem(const QString &name, VariablesTreeItem *pVariablesTreeItem, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   VariablesTreeItem* findVariablesTreeItemOneLevel(const QString &name, VariablesTreeItem *pVariablesTreeItem = 0, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   VariablesTreeItem* findVariablesTreeItemFromClassNameTopLevel(const QString &className) const;
-  void updateVariablesTreeItem(VariablesTreeItem *pVariablesTreeItem);
-  QModelIndex variablesTreeItemIndex(const VariablesTreeItem *pVariablesTreeItem) const;
+  void updateVariablesTreeItem(VariablesTreeItem *pVariablesTreeItem, int column);
+  QModelIndex variablesTreeItemIndex(VariablesTreeItem *pVariablesTreeItem, int column = 0) const;
   bool insertVariablesItems(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
   void parseInitXml(QXmlStreamReader &xmlReader, SimulationOptions simulationOptions, QStringList *variablesList);
   bool removeVariableTreeItem(QString variable, bool closeInteractivePlotWindow);
@@ -166,7 +166,6 @@ private:
   VariablesTreeItem *mpRootVariablesTreeItem;
   VariablesTreeItem *mpActiveVariablesTreeItem;
   QHash<QString, QHash<QString,QString> > mScalarVariablesHash;
-  QModelIndex variablesTreeItemIndexHelper(const VariablesTreeItem *pVariablesTreeItem, const VariablesTreeItem *pParentVariablesTreeItem, const QModelIndex &parentIndex) const;
   void filterVariableTreeItem(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem);
   void insertVariablesItems(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem);
   QHash<QString, QString> parseScalarVariable(QXmlStreamReader &xmlReader);
@@ -265,9 +264,11 @@ private:
   void checkVariable(const QModelIndex &index, bool checkState);
   void unCheckVariableAndErrorMessage(const QModelIndex &index, const QString &errorMessage);
   void unCheckCurveVariable(const QString &variable);
+  void updateDisplayUnitAndValue(const QString &unitPrefix, const QString &displayUnit, VariablesTreeItem *pVariablesTreeItem);
 public slots:
   void plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, bool shiftKey, OMPlot::PlotCurve *pPlotCurve = 0, OMPlot::PlotWindow *pPlotWindow = 0);
   void unitChanged(const QModelIndex &index);
+  void updatePlottedVariablesDisplayUnitAndValue();
   void simulationTimeChanged(int value);
   void valueEntered(const QModelIndex &index);
   void timeUnitChanged(int index);
