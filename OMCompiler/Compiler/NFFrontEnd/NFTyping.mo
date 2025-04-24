@@ -1447,17 +1447,7 @@ algorithm
 
     case Expression.MULTARY() then typeExp(SimplifyExp.splitMultary(exp), context, info, retype);
 
-    case Expression.CLKCONST() then (exp, Expression.typeOf(exp), Expression.variability(exp), Expression.purity(exp));
-
-    // maybe need  to retype the body of these?
-    case Expression.TUPLE_ELEMENT() then (exp, Expression.typeOf(exp), Expression.variability(exp), Expression.purity(exp));
-    case Expression.RECORD_ELEMENT() then (exp, Expression.typeOf(exp), Expression.variability(exp), Expression.purity(exp));
-
-    else
-      algorithm
-        Error.assertion(false, getInstanceName() + " got unknown expression: " + Expression.toString(exp), sourceInfo());
-      then
-        fail();
+    else (exp, Expression.typeOf(exp), Expression.variability(exp), Expression.purity(exp));
 
   end match;
 
