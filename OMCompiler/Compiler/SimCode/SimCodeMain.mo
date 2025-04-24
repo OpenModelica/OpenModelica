@@ -857,24 +857,19 @@ algorithm
         copyFiles(RuntimeSources.simrt_c_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
         // The simrt C source files are installed to the folder specified by RuntimeSources.fmu_sources_dir. Copy them from there.
         copyFiles(RuntimeSources.simrt_c_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-
-        if varInfo.numLinearSystems > 0 or varInfo.numNonLinearSystems > 0 then
-          // The dgesv headers are in the RuntimeSources.fmu_sources_dir for now since they are not properly installed in the include folder
-          copyFiles(RuntimeSources.dgesv_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-          copyFiles(RuntimeSources.dgesv_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-          dgesv_sources := RuntimeSources.dgesv_sources;
-        else
-          dgesv_sources := {};
-        end if;
+        /*
+        * fix issue https://github.com/OpenModelica/OpenModelica/issues/13719
+        * copy the fmu runtime external solver sources to support source code cross compilation
+        */
+        // The dgesv headers are in the RuntimeSources.fmu_sources_dir for now since they are not properly installed in the include folder
+        copyFiles(RuntimeSources.dgesv_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+        copyFiles(RuntimeSources.dgesv_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+        dgesv_sources := RuntimeSources.dgesv_sources;
 
         // Add CMinpack sources to FMU
-        if varInfo.numNonLinearSystems > 0 then
-          copyFiles(RuntimeSources.cminpack_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-          copyFiles(RuntimeSources.cminpack_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-          cminpack_sources := RuntimeSources.cminpack_sources;
-        else
-          cminpack_sources := {};
-        end if;
+        copyFiles(RuntimeSources.cminpack_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+        copyFiles(RuntimeSources.cminpack_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+        cminpack_sources := RuntimeSources.cminpack_sources;
 
         // Check if the sundials files are needed
         if SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) then
