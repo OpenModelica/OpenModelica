@@ -693,7 +693,7 @@ void residual_DIRK_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *r
     sData->realVars[i] = xloc[ii];
   }
   // Evaluate right hand side of ODE
-  gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), FALSE);
+  gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), TRUE);
 
   // Evaluate residuals
   for (ii = 0; ii < nFastStates; ii++) {

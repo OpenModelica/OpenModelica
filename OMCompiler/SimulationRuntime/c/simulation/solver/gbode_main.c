@@ -1020,7 +1020,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     if (!gbfData->tableau->isKRightAvailable) {
       sData->timeValue = gbfData->timeRight;
       memcpy(sData->realVars, gbfData->yRight, data->modelData->nStates * sizeof(double));
-      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), FALSE);
+      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), TRUE);
     }
     memcpy(gbfData->kRight, fODE, nStates * sizeof(double));
 
