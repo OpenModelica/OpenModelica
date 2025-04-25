@@ -203,7 +203,7 @@ void BitmapAnnotation::drawAnnotation(QPainter *painter)
   QRectF target(centerPoint.x(), centerPoint.y(), image.width(), image.height());
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
-  painter->drawImage(target, mImage.flipped())
+  painter->drawImage(target, mImage.flipped());
 #else
   painter->drawImage(target, mImage.mirrored());
 #endif
