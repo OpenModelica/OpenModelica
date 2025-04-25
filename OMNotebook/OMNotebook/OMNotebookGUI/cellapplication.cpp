@@ -124,17 +124,24 @@ namespace IAEX
       exit(1);
     }
 
-    QString translationDirectory = installationDirectoryPath + QString("/share/omnotebook/nls");
-    // install Qt's default translations
-  #ifdef Q_OS_WIN
-    qtTranslator.load("qt_" + QLocale::system().name(), translationDirectory);
+    QString locale = QLocale::system().name();
+
+  #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QString qtTranslationDirectory = QLibraryInfo::path(QLibraryInfo::TranslationsPath);
   #else
-    qtTranslator.load("qt_" + QLocale::system().name(), QLibraryInfo::location(QLibraryInfo::TranslationsPath));
+    QString qtTranslationDirectory = QLibraryInfo::location(QLibraryInfo::TranslationsPath);
   #endif
-    app_->installTranslator(&qtTranslator);
+
+    // install Qt's default translations
+    if (qtTranslator.load("qt_" + locale, qtTranslationDirectory)) {
+      app_->installTranslator(&qtTranslator);
+    }
+
+    QString translationDirectory = installationDirectoryPath + QString("/share/omnotebook/nls");
     // install application translations
-    translator.load("OMNotebook_" + QLocale::system().name(), translationDirectory);
-    app_->installTranslator(&translator);
+    if (translator.load("OMNotebook_" + QLocale::system().name(), translationDirectory)) {
+      app_->installTranslator(&translator);
+    }
 
     mainWindow = new QMainWindow();
     QDir dir;
