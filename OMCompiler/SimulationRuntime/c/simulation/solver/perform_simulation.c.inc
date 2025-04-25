@@ -31,6 +31,7 @@
 #include "solver_main.h"
 #include "events.h"
 #include "dassl.h"
+#include "sym_solver_ssc.h"
 
 #include "../simulation_runtime.h"
 #include "../results/simulation_result.h"
@@ -99,7 +100,8 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
   prefixedName_updateContinuousSystem(data, threadData);
 
   if (solverInfo->solverMethod == S_SYM_SOLVER_SSC) {
-    data->simulationInfo->inlineData->dt = solverInfo->solverStepSize;
+    DATA_SYM_SOLVER_SSC* solverData = (DATA_SYM_SOLVER_SSC*) solverInfo->solverData;
+    data->simulationInfo->inlineData->dt = solverData->solverStepSize;
     //data->callback->symbolicInlineSystems(data, threadData);
   }
 

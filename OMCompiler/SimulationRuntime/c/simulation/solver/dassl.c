@@ -283,7 +283,7 @@ int dassl_initial(DATA* data, threadData_t *threadData,
   if (omc_flag[FLAG_NOEQUIDISTANT_GRID])
   {
     dasslData->dasslSteps = 1; /* TRUE */
-    solverInfo->solverNoEquidistantGrid = 1;
+    solverInfo->solverNoEquidistantGrid = TRUE;
   }
   else
   {

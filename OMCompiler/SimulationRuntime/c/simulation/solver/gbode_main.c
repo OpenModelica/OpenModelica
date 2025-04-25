@@ -54,19 +54,16 @@
 #include <string.h>
 
 #include "external_input.h"
-#include "jacobianSymbolical.h"
 #include "kinsolSolver.h"
-#include "model_help.h"
 #include "newtonIteration.h"
 #include "nonlinearSystem.h"
 #include "omc_math.h"
-#include "simulation/options.h"
-#include "simulation/results/simulation_result.h"
-#include "simulation/jacobian_util.h"
-#include "util/omc_error.h"
-#include "util/omc_file.h"
-#include "util/simulation_options.h"
-#include "util/varinfo.h"
+#include "../options.h"
+#include "../results/simulation_result.h"
+#include "../jacobian_util.h"
+#include "../../util/omc_error.h"
+#include "../../util/omc_file.h"
+#include "../../util/simulation_options.h"
 #include "epsilon.h"
 
 extern void communicateStatus(const char *phase, double completionPercent, double currentTime, double currentStepSize);
@@ -87,8 +84,6 @@ void gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter)
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
   data->callback->functionODE(data, threadData);
-
-  return;
 }
 
 /**
@@ -271,7 +266,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
     snprintf(filename, bufSize, "%s_ActiveStates.txt", data->modelData->modelFilePrefix);
     gbfData->fastStatesDebugFile = omc_fopen(filename, "w");
     warningStreamPrint(OMC_LOG_STDOUT, 0, "LOG_GBODE_STATES sets -noEquidistantTimeGrid for emitting results!");
-    solverInfo->integratorSteps = TRUE;
+    solverInfo->solverNoEquidistantGrid = TRUE;
   } else {
     gbfData->fastStatesDebugFile = NULL;
   }
@@ -1027,8 +1022,8 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       dumpFastStates_gbf(gbData, gbfData->time, 0);
     }
 
-    /* emit step, if integratorSteps is selected */
-    if (solverInfo->integratorSteps) {
+    /* emit step, if solverNoEquidistantGrid is selected */
+    if (solverInfo->solverNoEquidistantGrid) {
       sData->timeValue = gbfData->time;
       solverInfo->currentTime = sData->timeValue;
       memcpy(sData->realVars, gbfData->y, nStates * sizeof(double));
@@ -1055,7 +1050,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   // copy error and values of the fast states to the outer integrator routine if outer integration time is reached
   //gbData->err_fast = gbfData->errValues[0];
 
-  if (!solverInfo->integratorSteps && gbfData->time >= targetTime) {
+  if (!solverInfo->solverNoEquidistantGrid && gbfData->time >= targetTime) {
     /* Integrator does large steps and needs to interpolate results with respect to the output grid */
     /* Here, only the fast states get updated */
     sData->timeValue = solverInfo->currentTime + solverInfo->currentStepSize;
@@ -1115,7 +1110,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
   /* Calculate steps until targetTime is reached */
   // 1 => emit result at integrator step points; 0 => equidistant grid
-  if (solverInfo->integratorSteps) {
+  if (solverInfo->solverNoEquidistantGrid) {
     if (data->simulationInfo->nextSampleEvent < data->simulationInfo->stopTime) {
       targetTime = data->simulationInfo->nextSampleEvent;
     } else {
@@ -1360,7 +1355,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         messageClose(OMC_LOG_GBODE_V);
       }
       if (gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
-        if (gbData->err_int> err) {
+        if (gbData->err_int > err) {
           gbData->errValues[0] = gbData->err_int;
           gbData->stepSize = gbData->lastStepSize * gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
           if (gbData->maxStepSize > 0 && gbData->maxStepSize < gbData->stepSize)
@@ -1517,8 +1512,8 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       dumpFastStates_gb(gbData, FALSE, gbData->time, 0);
     }
 
-    /* emit step, if integratorSteps is selected */
-    if (solverInfo->integratorSteps && gbData->gbfData->time<gbData->time) {
+    /* emit step, if solverNoEquidistantGrid is selected */
+    if (solverInfo->solverNoEquidistantGrid && gbData->gbfData->time<gbData->time) {
       sData->timeValue = gbData->time;
       solverInfo->currentTime = sData->timeValue;
       memcpy(sData->realVars, gbData->y, nStates * sizeof(double));
@@ -1546,7 +1541,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   }
   // end of while-loop (gbData->time < targetTime)
 
-  if (!solverInfo->integratorSteps) {
+  if (!solverInfo->solverNoEquidistantGrid) {
     /* Integrator does large steps and needs to interpolate results with respect to the output grid */
     sData->timeValue = solverInfo->currentTime + solverInfo->currentStepSize;
     solverInfo->currentTime = sData->timeValue;
@@ -1634,7 +1629,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
 
   /* Calculate steps until targetTime is reached */
   // 1 => emit result at integrator step points; 0 => equidistant grid
-  if (solverInfo->integratorSteps) {
+  if (solverInfo->solverNoEquidistantGrid) {
     if (data->simulationInfo->nextSampleEvent < data->simulationInfo->stopTime) {
       targetTime = data->simulationInfo->nextSampleEvent;
     } else {
@@ -1912,8 +1907,8 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     infoStreamPrint(OMC_LOG_SOLVER, 0, "Accept step from %10g to %10g, error %10g interpolation error %10g, new stepsize %10g",
                     gbData->timeLeft, gbData->timeRight, err, gbData->err_int, gbData->stepSize);
 
-    /* emit step, if integratorSteps is selected */
-    if (solverInfo->integratorSteps) {
+    /* emit step, if solverNoEquidistantGrid is selected */
+    if (solverInfo->solverNoEquidistantGrid) {
       solverInfo->currentTime = sData->timeValue;
       /*
        * to emit consistent value we need to update the whole
@@ -1938,7 +1933,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     // reduce step size with respect to the simulation stop time, if necessary
     gbData->stepSize = fmin(gbData->stepSize, stopTime - gbData->time);
 
-    if (omc_flag[FLAG_PORT] && solverInfo->integratorSteps) {
+    if (omc_flag[FLAG_PORT] && solverInfo->solverNoEquidistantGrid) {
       if (0 != strcmp("ia", data->simulationInfo->outputFormat)) {
         communicateStatus("Running", (solverInfo->currentTime - data->simulationInfo->startTime)/(data->simulationInfo->stopTime - data->simulationInfo->startTime), solverInfo->currentTime, solverInfo->currentStepSize);
       }
@@ -1947,7 +1942,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
   }
   // end of while-loop (gbData->time < targetTime)
 
-  if (!solverInfo->integratorSteps) {
+  if (!solverInfo->solverNoEquidistantGrid) {
     /* Integrator does large steps and needs to interpolate results with respect to the output grid */
     sData->timeValue = solverInfo->currentTime + solverInfo->currentStepSize;
     solverInfo->currentTime = sData->timeValue;

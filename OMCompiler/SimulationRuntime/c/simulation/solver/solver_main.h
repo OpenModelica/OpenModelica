@@ -46,11 +46,11 @@
  * @brief Solver statistics.
  */
 typedef struct SOLVERSTATS {
-  unsigned int nStepsTaken;                 /* Number of steps taken by the solver */
-  unsigned int nCallsODE;                   /* Number of calls on functionODE */
-  unsigned int nCallsJacobian;              /* Number of evaluations of Jacobian */
-  unsigned int nErrorTestFailures;          /* Number of error test failures */
-  unsigned int nConvergenveTestFailures;    /* Number of convergence test failures */
+  unsigned int nStepsTaken;             /* Number of steps taken by the solver */
+  unsigned int nCallsODE;               /* Number of calls on functionODE */
+  unsigned int nCallsJacobian;          /* Number of evaluations of Jacobian */
+  unsigned int nErrorTestFailures;      /* Number of error test failures */
+  unsigned int nConvergenveTestFailures;  /* Number of convergence test failures */
 } SOLVERSTATS;
 
 /**
@@ -61,31 +61,25 @@ typedef struct SOLVER_INFO
   double currentTime;
   double currentStepSize;
   double laststep;
-  enum SOLVER_METHOD solverMethod;            /* ODE/DAE solver method */
-  double solverStepSize;                      /* used by implicit radau solver */
-                                              // TODO: This should be in radau solverData
+  enum SOLVER_METHOD solverMethod;      /* ODE/DAE solver method */
 
-  modelica_boolean solverRootFinding;         /* Set by solver if an internal root finding method is activated  */
-  modelica_boolean solverNoEquidistantGrid;   /* Set by solver if output points are set by step size control */
+  modelica_boolean solverRootFinding;   /* Set by solver if an internal root finding method is activated  */
+  modelica_boolean solverNoEquidistantGrid; /* Set by solver if output points are set by step size control */
   double lastdesiredStep;
 
   /* events */
-  LIST* eventLst;         /* List with long indices from data->simulationInfo->zeroCrossingIndex */
-  int didEventStep;       /* Boolean stating if during the last step an event was encountered,
-                           * Used to reinitialize ODE/DAE solver after event iteration */
+  LIST* eventLst;                       /* List with long indices from data->simulationInfo->zeroCrossingIndex */
+  int didEventStep;                     /* Boolean stating if during the last step an event was encountered,
+                                         * Used to reinitialize ODE/DAE solver after event iteration */
 
   /* stats */
   unsigned long stateEvents;
   unsigned long sampleEvents;
   /* integrator stats */
-  SOLVERSTATS solverStats;            /* Statistic for integrator */
-  SOLVERSTATS solverStatsTmp;         /* tmp solver stats to update solverStats with */
+  SOLVERSTATS solverStats;              /* Statistic for integrator */
+  SOLVERSTATS solverStatsTmp;           /* tmp solver stats to update solverStats with */
 
-  /* further options */
-  int integratorSteps;              /* 1 => stepSizeControl; 0 => equidistant grid */
-                                    // TODO: This is a duplicate of solverNoEquidistantGrid set in DASSL/IDA/...
-
-  void* solverData;     /* ODE/DAE solver data */
+  void* solverData;                     /* ODE/DAE solver data */
 }SOLVER_INFO;
 
 #ifdef __cplusplus

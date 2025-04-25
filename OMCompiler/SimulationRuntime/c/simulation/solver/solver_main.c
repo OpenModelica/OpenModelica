@@ -219,7 +219,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   solverInfo->currentStepSize = simInfo->stepSize;
   solverInfo->laststep = 0;
   solverInfo->solverRootFinding = 0;
-  solverInfo->solverNoEquidistantGrid = 0;
+  solverInfo->solverNoEquidistantGrid = omc_flag[FLAG_NOEQUIDISTANT_GRID];
   solverInfo->lastdesiredStep = solverInfo->currentTime + solverInfo->currentStepSize;
   solverInfo->eventLst = allocList(eventListAlloc, eventListFree, eventListCopy);
   solverInfo->didEventStep = 0;
@@ -227,16 +227,6 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   solverInfo->sampleEvents = 0;
   resetSolverStats(&solverInfo->solverStats);
   resetSolverStats(&solverInfo->solverStatsTmp);
-
-  /* if FLAG_NOEQUIDISTANT_GRID is set, choose integrator step method */
-  if (omc_flag[FLAG_NOEQUIDISTANT_GRID])
-  {
-    solverInfo->integratorSteps = 1; /* TRUE */
-  }
-  else
-  {
-    solverInfo->integratorSteps = 0;
-  }
 
   /* Deprecation warnings */
   deprecationWarningGBODE(solverInfo->solverMethod);
