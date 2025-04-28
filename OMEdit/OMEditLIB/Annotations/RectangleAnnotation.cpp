@@ -126,6 +126,9 @@ RectangleAnnotation::RectangleAnnotation(GraphicsView *pGraphicsView)
   setLineColor(QColor(0, 0, 0));
   setFillColor(QColor(240, 240, 240));
   setFillPattern(StringHandler::FillSolid);
+  QVector<QPointF> extents;
+  extents << QPointF(-100, -100) << QPointF(100, 100);
+  setExtents(extents);
   setPos(mOrigin);
   setRotation(mRotation);
   setShapeFlags(true);
