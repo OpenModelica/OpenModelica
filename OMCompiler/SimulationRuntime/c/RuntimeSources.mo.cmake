@@ -34,7 +34,7 @@ encapsulated package RuntimeSources
 
   constant list<String> dgesv_sources={@SOURCE_FMU_DGESV_FILES@};
 
-  constant list<String> cminpack_headers = {"./external_solvers/cminpack.h", "./external_solvers/minpack.h"};
+  constant list<String> cminpack_headers = {"./external_solvers/cminpack.h", "./external_solvers/minpack.h", "./external_solvers/minpackP.h"};
 
   constant list<String> cminpack_sources = {@SOURCE_FMU_CMINPACK_FILES@};
 
