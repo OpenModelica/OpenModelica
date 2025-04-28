@@ -80,7 +80,7 @@ if test -z "$USINGPRESETBUILDDIR"; then
   # exact same command running outside of autoconf
   LDFLAGS_SAVE="$LDFLAGS"
   LDFLAGS="$LDFLAGS -L$OPENMODELICAHOME/lib/$host_short/omc -lOpenModelicaCompiler"
-  AC_TRY_LINK([], [], [AC_MSG_RESULT([ok])], [AC_MSG_ERROR([failed])])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])], [AC_MSG_RESULT([ok])], [AC_MSG_ERROR([failed])])
   LDFLAGS="$LDFLAGS_SAVE"
   AC_LANG_POP([C])
 fi

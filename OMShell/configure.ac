@@ -68,5 +68,6 @@ else
   fi
 fi
 
-AC_OUTPUT(Makefile OMShell/OMShellGUI/Makefile.unix OMShell/OMShellGUI/OMShell.config mosh/src/Makefile OMShell/OMShellGUI/omc_config.h mosh/src/omc_config.h)
+AC_CONFIG_FILES([Makefile OMShell/OMShellGUI/Makefile.unix OMShell/OMShellGUI/OMShell.config mosh/src/Makefile OMShell/OMShellGUI/omc_config.h mosh/src/omc_config.h])
+AC_OUTPUT
 # AC_CONFIG_COMMANDS([Clean qmake stuff],[make clean])

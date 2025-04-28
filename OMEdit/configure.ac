@@ -158,7 +158,7 @@ exit(1);
 for flag in -Wno-clobbered; do
   OLD_CXXFLAGS="$CXXFLAGS"
   CXXFLAGS="$CXXFLAGS $flag -Werror"
-  AC_TRY_LINK([], [return 0;], [CXXFLAGS="$OLD_CXXFLAGS $flag"],[CXXFLAGS="$OLD_CXXFLAGS"])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])],[CXXFLAGS="$OLD_CXXFLAGS $flag"],[CXXFLAGS="$OLD_CXXFLAGS"])
 done
 
 AC_MSG_CHECKING([for LSB description])
@@ -173,4 +173,5 @@ fi
 m4_include([common/m4/semver.m4])
 SOURCE_REVISION="$SOURCE_REVISION$NON_FREE_VERSION"
 
-AC_OUTPUT(Makefile.unix omedit_config.h OMEditLIB/OMEditLIB.unix.config.pri OMEditLIB/Debugger/Parser/Makefile.unix OMEditLIB/Debugger/Parser/Makefile.lib.unix OMEditGUI/OMEditGUI.unix.config.pri Testsuite/Makefile.unix)
+AC_CONFIG_FILES([Makefile.unix omedit_config.h OMEditLIB/OMEditLIB.unix.config.pri OMEditLIB/Debugger/Parser/Makefile.unix OMEditLIB/Debugger/Parser/Makefile.lib.unix OMEditGUI/OMEditGUI.unix.config.pri Testsuite/Makefile.unix])
+AC_OUTPUT

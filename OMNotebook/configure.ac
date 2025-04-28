@@ -38,4 +38,5 @@ DRMODELICADIR=`pwd`/DrModelica
 AC_SUBST([DRCONTROLDIR])
 AC_SUBST([DRMODELICADIR])
 
-AC_OUTPUT(Makefile OMNotebook/OMNotebookGUI/Makefile.unix OMNotebook/OMNotebookGUI/OMNotebook.config OMNotebook/OMNotebookGUI/omc_config.h)
+AC_CONFIG_FILES([Makefile OMNotebook/OMNotebookGUI/Makefile.unix OMNotebook/OMNotebookGUI/OMNotebook.config OMNotebook/OMNotebookGUI/omc_config.h])
+AC_OUTPUT
