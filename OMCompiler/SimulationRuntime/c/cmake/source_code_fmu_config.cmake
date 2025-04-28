@@ -61,8 +61,15 @@ set(SOURCE_FMU_COMMON_FILES_LIST ./gc/memory_pool.c
 foreach(source_file ${SOURCE_FMU_COMMON_FILES_LIST})
   list(APPEND SOURCE_FMU_COMMON_FILES_LIST_QUOTED \"${source_file}\")
   get_filename_component(DEST_DIR ${source_file} DIRECTORY)
+  if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.20")
+    cmake_path(APPEND SOURCE_FMU_SOURCES_DEST_DIR "${SOURCE_FMU_SOURCES_DIR}" "${DEST_DIR}")
+    cmake_path(NORMAL_PATH SOURCE_FMU_SOURCES_DEST_DIR)
+  else()
+    set(SOURCE_FMU_SOURCES_DEST_DIR "${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR}")
+  endif()
+
   install(FILES ${source_file}
-          DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR}
+          DESTINATION ${SOURCE_FMU_SOURCES_DEST_DIR}
           COMPONENT fmu)
 endforeach()
 string(REPLACE ";" ",\n                                         " SOURCE_FMU_COMMON_FILES "${SOURCE_FMU_COMMON_FILES_LIST_QUOTED}")
