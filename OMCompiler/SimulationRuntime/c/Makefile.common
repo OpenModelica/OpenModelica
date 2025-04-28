@@ -377,7 +377,7 @@ sourcedist_internal:
 	 $(LIBF2C_OBJS:%=$(LAPACKDIR)/libf2c/%.c) \
 	 "./external_solvers/"
 	cp -p \
-	 "$(CMINPACKDIR)/minpack.h" "$(CMINPACKDIR)/cminpack.h" \
+	 "$(CMINPACKDIR)/minpack.h" "$(CMINPACKDIR)/minpackP.h" "$(CMINPACKDIR)/cminpack.h" \
 	 "$(LAPACKDIR)/include/blaswrap.h" \
 	 "$(LAPACKDIR)/include/clapack.h" \
 	 "$(LAPACKDIR)/include/f2c.h" \
