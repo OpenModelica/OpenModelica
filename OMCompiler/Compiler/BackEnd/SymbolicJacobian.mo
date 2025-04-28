@@ -1777,10 +1777,13 @@ try
   // independent varibales states + inputs
   indepVars := listAppend(states, inputvars);
   if  Flags.isSet(Flags.FMI20_PARAMETER_JACOBIAN) then
-    // also derive w.r.t. parameters (without calcualted parameters)
-    // BackendVariable.isChangeable equivalent to v != calculatedParameter
-    paramvars := list(v for v guard BackendVariable.isChangeable(v) in knvarlst);
+    // also derive w.r.t. parameters (without calculated parameters)
+    // BackendVariable.isChangeable(v) is true when v is not a calculatedParameter
+    // this works for now but maybe not for other cases
+    paramvars := list(v for v guard BackendVariable.isParam(v) and BackendVariable.isChangeable(v) in knvarlst);
+    print(BackendDump.varListString(paramvars, "paramvars"));
     indepVars := listAppend(paramvars, indepVars);
+    print(BackendDump.varListString(indepVars, "indepVars"));
   end if;
 
   // dependent varibales der(states) + outputs
