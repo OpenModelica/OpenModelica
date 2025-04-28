@@ -18,7 +18,7 @@ AC_DEFUN([OMC_AC_LAPACK], [
     LAPACK_LINKER_FLAGS=""
     for flag in -Wl,--no-undefined; do
       LIBS="$LAPACK_LINKER_FLAGS $flag"
-      AC_TRY_LINK([], [return 0;], [LAPACK_LINKER_FLAGS="$LIBS"],[])
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])], [LAPACK_LINKER_FLAGS="$LIBS"],[])
     done
     LIBS=""
 

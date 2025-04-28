@@ -176,4 +176,5 @@ fi
 AC_ARG_WITH(build-type,  [  --with-build-type=[Release|Debug|RelWithDebInfo]       (set the cmake build type)],[CMAKE_BUILDTYPE="$withval"],[])
 AC_MSG_RESULT([Build type is set to $CMAKE_BUILDTYPE])
 
-AC_OUTPUT(Makefile)
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
