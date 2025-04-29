@@ -1821,7 +1821,7 @@ extern struct record_description Absyn_Within_WITHIN__desc;
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Class_CLASS__desc_added
 #define Absyn_Class_CLASS__desc_added
-ADD_METARECORD_DEFINITIONS const char* Absyn_Class_CLASS__desc__fields[7] = {"name","partialPrefix","finalPrefix","encapsulatedPrefix","restriction","body","info"};
+ADD_METARECORD_DEFINITIONS const char* Absyn_Class_CLASS__desc__fields[9] = {"name","partialPrefix","finalPrefix","encapsulatedPrefix","restriction","body","commentsBeforeEnd","commentsAfterEnd","info"};
 ADD_METARECORD_DEFINITIONS struct record_description Absyn_Class_CLASS__desc = {
   "Absyn_Class_CLASS",
   "Absyn.Class.CLASS",
@@ -1831,8 +1831,8 @@ ADD_METARECORD_DEFINITIONS struct record_description Absyn_Class_CLASS__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Class_CLASS__desc;
 #endif
-#define Absyn__CLASS_3dBOX7 3
-#define Absyn__CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,body,info) (mmc_mk_box8(3,&Absyn_Class_CLASS__desc,name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,body,info))
+#define Absyn__CLASS_3dBOX9 3
+#define Absyn__CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,body,commentsBeforeEnd,commentsAfterEnd,info) (mmc_mk_box(10, 3,&Absyn_Class_CLASS__desc,name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,body,commentsBeforeEnd,commentsAfterEnd,info))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_ClassDef_PDER__desc_added
 #define Absyn_ClassDef_PDER__desc_added
