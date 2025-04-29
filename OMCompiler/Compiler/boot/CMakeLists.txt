@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.14)
 project(bomc)
 
 # fetch the sources from the OM server, maybe we should put them in git someplace
+option(OM_FETCH_BOOTSTRAP_SOURCES "Update bootstrap sources" ON)
+if (OM_FETCH_BOOTSTRAP_SOURCES)
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/bomc/sources.tar.gz")
 # do nothing!
 else()
@@ -25,6 +27,7 @@ endif()
 message(STATUS "downloading bootstrapping sources ... done")
 execute_process(COMMAND tar xzf sources.tar.gz --strip-components=1
                  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bomc/)
+endif()
 endif()
 
 # OpenModelicaBootstrappingHeader.h should probably be added to source control and
