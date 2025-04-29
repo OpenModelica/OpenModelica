@@ -858,23 +858,19 @@ algorithm
         // The simrt C source files are installed to the folder specified by RuntimeSources.fmu_sources_dir. Copy them from there.
         copyFiles(RuntimeSources.simrt_c_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
 
-        if varInfo.numLinearSystems > 0 or varInfo.numNonLinearSystems > 0 then
-          // The dgesv headers are in the RuntimeSources.fmu_sources_dir for now since they are not properly installed in the include folder
-          copyFiles(RuntimeSources.dgesv_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-          copyFiles(RuntimeSources.dgesv_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-          dgesv_sources := RuntimeSources.dgesv_sources;
-        else
-          dgesv_sources := {};
-        end if;
+        /*
+        * fix issue https://github.com/OpenModelica/OpenModelica/issues/13719
+        * copy the fmu runtime external solver sources to support source code cross compilation
+        */
+        // The dgesv headers are in the RuntimeSources.fmu_sources_dir for now since they are not properly installed in the include folder
+        copyFiles(RuntimeSources.dgesv_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+        copyFiles(RuntimeSources.dgesv_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+        dgesv_sources := RuntimeSources.dgesv_sources;
 
         // Add CMinpack sources to FMU
-        if varInfo.numNonLinearSystems > 0 then
-          copyFiles(RuntimeSources.cminpack_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-          copyFiles(RuntimeSources.cminpack_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-          cminpack_sources := RuntimeSources.cminpack_sources;
-        else
-          cminpack_sources := {};
-        end if;
+        copyFiles(RuntimeSources.cminpack_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+        copyFiles(RuntimeSources.cminpack_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+        cminpack_sources := RuntimeSources.cminpack_sources;
 
         // Check if the sundials files are needed
         if SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) then
@@ -908,18 +904,15 @@ algorithm
         */
         fmi2HeaderFiles := {"fmi/fmi2Functions.h","fmi/fmi2FunctionTypes.h", "fmi/fmi2TypesPlatform.h", "fmi/fmiModelFunctions.h", "fmi/fmiModelTypes.h"};
         copyFiles(fmi2HeaderFiles, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+
         /*
         * fix issue fhttps://github.com/OpenModelica/OpenModelica/issues/13260
         * Check if modelicaStandardTables source files are needed
         * this is not clear as of now, may be we should copy all the external C sources by default
         */
-        if not listEmpty(simCode.makefileParams.libs) and listMember("-lModelicaStandardTables", simCode.makefileParams.libs)  then
-          copyFiles(RuntimeSources.modelica_external_c_sources, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
-          copyFiles(RuntimeSources.modelica_external_c_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
-          modelica_standard_table_sources := RuntimeSources.modelica_external_c_sources;
-        else
-          modelica_standard_table_sources := {};
-        end if;
+        copyFiles(RuntimeSources.modelica_external_c_sources, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+        copyFiles(RuntimeSources.modelica_external_c_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+        modelica_standard_table_sources := RuntimeSources.modelica_external_c_sources;
 
         System.writeFile(fmutmp+"/sources/isfmi" + (if FMUVersion=="1.0" then "1" else "2"), "");
 

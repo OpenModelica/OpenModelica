@@ -338,9 +338,10 @@ endif
 
 ifneq ($(OMC_NUM_LINEAR_SYSTEMS)$(OMC_NUM_NONLINEAR_SYSTEMS),00)
 ifneq ($(NEED_DGESV),)
-LAPACK_OBJS = dgesv dgetrf dlamch ilaenv xerbla dgetf2 dgetrs dlaswp ieeeck iparmq
-BLAS_OBJS = dgemm dger dscal dswap dtrsm idamax lsame
-LIBF2C_OBJS = i_nint pow_di s_cmp s_copy
+LAPACK_OBJS = dgesv dgetrf dgetri dtrtri dtrti2 dlamch ilaenv xerbla dgetf2 dgetrs dlaswp ieeeck iparmq
+BLAS_OBJS = dgemm dger dgemv dscal dswap dtrsm dtrmm dtrmv idamax lsame
+## order matters exit_.c should be last
+LIBF2C_OBJS = i_nint pow_di s_cmp s_copy s_cat F77_aloc exit_
 DGESV_OBJS = $(LAPACK_OBJS) $(BLAS_OBJS) $(LIBF2C_OBJS)
 endif
 endif
