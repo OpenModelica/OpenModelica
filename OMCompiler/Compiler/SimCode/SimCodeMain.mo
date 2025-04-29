@@ -857,6 +857,7 @@ algorithm
         copyFiles(RuntimeSources.simrt_c_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
         // The simrt C source files are installed to the folder specified by RuntimeSources.fmu_sources_dir. Copy them from there.
         copyFiles(RuntimeSources.simrt_c_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+
         /*
         * fix issue https://github.com/OpenModelica/OpenModelica/issues/13719
         * copy the fmu runtime external solver sources to support source code cross compilation
@@ -903,18 +904,15 @@ algorithm
         */
         fmi2HeaderFiles := {"fmi/fmi2Functions.h","fmi/fmi2FunctionTypes.h", "fmi/fmi2TypesPlatform.h", "fmi/fmiModelFunctions.h", "fmi/fmiModelTypes.h"};
         copyFiles(fmi2HeaderFiles, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+
         /*
         * fix issue fhttps://github.com/OpenModelica/OpenModelica/issues/13260
         * Check if modelicaStandardTables source files are needed
         * this is not clear as of now, may be we should copy all the external C sources by default
         */
-        if not listEmpty(simCode.makefileParams.libs) and listMember("-lModelicaStandardTables", simCode.makefileParams.libs)  then
-          copyFiles(RuntimeSources.modelica_external_c_sources, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
-          copyFiles(RuntimeSources.modelica_external_c_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
-          modelica_standard_table_sources := RuntimeSources.modelica_external_c_sources;
-        else
-          modelica_standard_table_sources := {};
-        end if;
+        copyFiles(RuntimeSources.modelica_external_c_sources, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+        copyFiles(RuntimeSources.modelica_external_c_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+        modelica_standard_table_sources := RuntimeSources.modelica_external_c_sources;
 
         System.writeFile(fmutmp+"/sources/isfmi" + (if FMUVersion=="1.0" then "1" else "2"), "");
 
