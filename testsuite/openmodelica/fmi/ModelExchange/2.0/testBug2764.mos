@@ -164,6 +164,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"ModelicaExternalC/ModelicaMatIO.c\" />
 //       <File name=\"ModelicaExternalC/ModelicaIO.c\" />
 //       <File name=\"ModelicaExternalC/ModelicaStandardTablesDummyUsertab.c\" />
+//       <File name=\"ModelicaExternalC/snprintf.c\" />
 //     </SourceFiles>
 //   </ModelExchange>
 //   <LogCategories>
