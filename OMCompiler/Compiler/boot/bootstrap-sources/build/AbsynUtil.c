@@ -18915,3 +18915,19 @@ _outTpl = tmpMeta[0];
 _return: OMC_LABEL_UNUSED
 return _outTpl;
 }
+
+DLLDirection
+modelica_metatype omc_AbsynUtil_setClassCommentsAfterEnd(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fcl, modelica_metatype _comments)
+{
+  modelica_metatype _cl = NULL;
+  modelica_metatype tmpMeta1;
+  MMC_SO();
+  _tailrecursive: OMC_LABEL_UNUSED
+  _cl = __omcQ_24in_5Fcl;
+  tmpMeta1 = MMC_TAGPTR(mmc_alloc_words(11));
+  memcpy(MMC_UNTAGPTR(tmpMeta1), MMC_UNTAGPTR(_cl), 11*sizeof(modelica_metatype));
+  ((modelica_metatype*)MMC_UNTAGPTR(tmpMeta1))[9] = _comments;
+  _cl = tmpMeta1;
+  _return: OMC_LABEL_UNUSED
+  return _cl;
+}

@@ -1450,6 +1450,13 @@ modelica_metatype omc_AbsynUtil_traverseEquation(threadData_t *threadData, model
 #define boxptr_AbsynUtil_traverseEquation omc_AbsynUtil_traverseEquation
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseEquation,2,0) {(void*) boxptr_AbsynUtil_traverseEquation,0}};
 #define boxvar_AbsynUtil_traverseEquation MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseEquation)
+
+DLLDirection
+modelica_metatype omc_AbsynUtil_setClassCommentsAfterEnd(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fcl, modelica_metatype _comments);
+#define boxptr_AbsynUtil_setClassCommentsAfterEnd omc_AbsynUtil_setClassCommentsAfterEnd
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_setClassCommentsAfterEnd,2,0) {(void*) boxptr_AbsynUtil_setClassCommentsAfterEnd,0}};
+#define boxvar_AbsynUtil_setClassCommentsAfterEnd MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_setClassCommentsAfterEnd)
+
 #ifdef __cplusplus
 }
 #endif
