@@ -1769,20 +1769,16 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
 
 
   /* clear out the seeds */
-  // seedVars (or the whole jacobian) needs to be bigger (one extra column for each parameter)
-  // why not sizeCols instead of independent?
   for (i=0;i<independent; i++) {
     comp->fmiDerJac->seedVars[i]=0;
   }
+
   for (i=0;i<nKnown; i++) {
     int idx = vKnown_ref[i];
     /* if idx > nStates + nInputs its a parameter so we need a mapping*/
     // first parameter -> 0 + nStates + nInputs (first seed after states and inputs)
+    // second parameter -> 1 + nStates + nInputs (second seed after states and inputs)
     // ...
-    // if parameters come after states and inputs then this would work?
-    // -> they do but parameters and calculatedParameters are not distinguished and we only want to differentiate wrt. parameters
-    // so i think we need to distinguish between them and sort parameters before calculatedParameters in value references
-    // then this should work
     if (idx >= modelData->nStates + modelData->nInputVars){
       printf("im param case %d\n", idx);
       /*so irgendwie?*/
@@ -1793,8 +1789,8 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
     }
     /* if idx is > nStates it's an input so we need a mapping */
     // if after states and before params its an input
-    // first input -> 0 + nStates (first seed after inputs)
-    // second input -> 1 + nStates (second seed after inputs)
+    // first input -> 0 + nStates (first seed after states)
+    // second input -> 1 + nStates (second seed after states)
     // ...
     else if (idx >= modelData->nStates){
       printf("im input case %d\n", idx);

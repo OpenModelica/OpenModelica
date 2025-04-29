@@ -1733,7 +1733,7 @@ public function createFMIModelDerivatives
   output BackendDAE.SymbolicJacobians outJacobianMatrices = {};
   output DAE.FunctionTree outFunctionTree;
 protected
-  BackendDAE.BackendDAE backendDAE,emptyBDAE;
+  BackendDAE.BackendDAE backendDAE,emptyBDAE,paramJacDAE;
   BackendDAE.EqSystem eqSyst;
   Option<BackendDAE.SymbolicJacobian> outJacobian;
 
@@ -1781,9 +1781,10 @@ try
     // BackendVariable.isChangeable(v) is true when v is not a calculatedParameter
     // this works for now but maybe not for other cases
     paramvars := list(v for v guard BackendVariable.isParam(v) and BackendVariable.isChangeable(v) in knvarlst);
-    print(BackendDump.varListString(paramvars, "paramvars"));
+    //print(BackendDump.varListString(paramvars, "paramvars"));
     indepVars := listAppend(paramvars, indepVars);
-    print(BackendDump.varListString(indepVars, "indepVars"));
+    //print(BackendDump.varListString(indepVars, "indepVars"));
+    // paramJacDAE := generateSymbolicSensitivities(backendDAE);
   end if;
 
   // dependent varibales der(states) + outputs
@@ -1806,7 +1807,8 @@ try
     outFunctionTree := inBackendDAE.shared.functionTree;
   else
     // prepare more needed variables
-    paramvars := List.select(knvarlst, BackendVariable.isParam);
+    // paramvars := List.select(knvarlst, BackendVariable.isParam);
+    paramvars := list(v for v guard BackendVariable.isParam(v) and BackendVariable.isChangeable(v) in knvarlst);
     statesarr := BackendVariable.listVar1(states);
     inputvarsarr := BackendVariable.listVar1(inputvars);
     paramvarsarr := BackendVariable.listVar1(paramvars);
@@ -2182,7 +2184,7 @@ algorithm
   try
     outFunctionTree := shared.functionTree;
     if not onlySparsePattern then
-      (symbolicJacobian, outFunctionTree) := createJacobian(inBackendDAE,inDiffVars, inStateVars, inInputVars, inParameterVars, inDifferentiatedVars, inVars, inName, daeMode);
+      (symbolicJacobian, outFunctionTree) := createJacobian(inBackendDAE, inDiffVars, inStateVars, inInputVars, inParameterVars, inDifferentiatedVars, inVars, inName, daeMode);
       true := checkForNonLinearStrongComponents(symbolicJacobian);
       outJacobian := SOME(symbolicJacobian);
       // nonlinear pattern is the same as the sparse pattern of the jacobian
@@ -2239,7 +2241,9 @@ algorithm
         reducedDAE = BackendDAEUtil.reduceEqSystemsInDAE(inBackendDAE, diffedVars);
 
         indepVars = createInDepVars(inDiffVars, false);
+        //print(BackendDump.varListString(indepVars, "independent variables in createJacobian"));
         comref_vars = List.map(inDiffVars, BackendVariable.varCref);
+        //print(BackendDump.varListString(indepVars, "comref_vars in createJacobian"));
         seedlst = List.map1(comref_vars, createSeedVars, inName);
 
         if Flags.isSet(Flags.JAC_DUMP) then
@@ -2438,8 +2442,10 @@ algorithm
       diffData.allVars = SOME(orderedVars);
       diffData.diffCrefs = comref_diffvars;
       diffData.matrixName = SOME(matrixName);
+      
       eqns = BackendEquation.equationList(orderedEqs);
       if Flags.isSet(Flags.JAC_DUMP2) then
+        //print(BackendDump.varListString(diffVars, "independent variables in generateSymbolicJacobian"));
         print("*** analytical Jacobians -> before derive all equation: " + realString(clock()) + "\n");
       end if;
       (derivedEquations, functions) = deriveAll(eqns, arrayList(ass2), x, diffData, functions, daeMode);
