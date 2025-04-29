@@ -33,7 +33,8 @@ encapsulated package RuntimeSources
   constant list<String> modelica_external_c_sources={"ModelicaExternalC/ModelicaStandardTables.c",
                                                      "ModelicaExternalC/ModelicaMatIO.c",
                                                      "ModelicaExternalC/ModelicaIO.c",
-                                                     "ModelicaExternalC/ModelicaStandardTablesDummyUsertab.c"};
+                                                     "ModelicaExternalC/ModelicaStandardTablesDummyUsertab.c",
+                                                     "ModelicaExternalC/snprintf.c"};
 
   constant list<String> modelica_external_c_headers={"ModelicaExternalC/ModelicaStandardTables.h",
                                                      "ModelicaExternalC/ModelicaMatIO.h",
