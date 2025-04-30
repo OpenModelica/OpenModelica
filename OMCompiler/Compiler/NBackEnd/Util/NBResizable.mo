@@ -28,7 +28,7 @@
 * See the full OSMC Public License conditions for more details.
 *
 */
-encapsulated uniontype NBResizable<T>
+encapsulated uniontype NBResizable
 " file:         NBResizable.mo
   package:      NBResizable
   description:  This file contains util functions for resizable parameters.
@@ -227,6 +227,18 @@ public
     input EvalOrder eo;
     output Boolean b = eo == EvalOrder.FAILED;
   end orderFailed;
+
+  function orderString
+    input EvalOrder eo;
+    output String str;
+  algorithm
+    str := match eo
+      case EvalOrder.INDEPENDENT then "INDEPENDENT";
+      case EvalOrder.FORWARD then "FORWARD";
+      case EvalOrder.BACKWARD then "BACKWARD";
+      else "FAILED";
+    end match;
+  end orderString;
 
 protected
   type ParameterList = list<ComponentRef>;

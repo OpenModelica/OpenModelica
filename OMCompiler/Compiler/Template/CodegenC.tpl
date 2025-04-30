@@ -6363,7 +6363,7 @@ case eqn as SES_RESIZABLE_ASSIGN() then
   <<
     <%forIter%>
     <%preExp%>
-    genericCall_<%call_index%>(data, threadData<%jac%>, <%forNames%>); /*<%symbolName(modelNamePrefix,"genericCall")%>*/
+    genericCall_<%call_index%>(data, threadData<%jac%>, equationIndexes, <%forNames%>); /*<%symbolName(modelNamePrefix,"genericCall")%>*/
     <%forTail%>
   >>
 case eqn as SES_GENERIC_ASSIGN() then
@@ -6372,7 +6372,7 @@ case eqn as SES_GENERIC_ASSIGN() then
   <<
   const int idx_lst[<%idx_len%>] = {<%(scal_indices |> idx => '<%idx%>';separator=", ")%>};
   for(int i=0; i<<%idx_len%>; i++)
-    genericCall_<%call_index%>(data, threadData<%jac%>, idx_lst[i]); /*<%symbolName(modelNamePrefix,"genericCall")%>*/
+    genericCall_<%call_index%>(data, threadData<%jac%>, equationIndexes, idx_lst[i]); /*<%symbolName(modelNamePrefix,"genericCall")%>*/
   >>
 %>
 <%endModelicaLine()%>
@@ -6434,7 +6434,7 @@ case eqn as SES_GENERIC_ASSIGN() then
   let jac = match context case JACOBIAN_CONTEXT() then ", jacobian" else ""
   <<
     case <%call_index%>:
-      genericCall_<%call_index%>(data, threadData<%jac%>, idx_lst_<%call_index%>[call_indices[<%i0%>]]);
+      genericCall_<%call_index%>(data, threadData<%jac%>, equationIndexes, idx_lst_<%call_index%>[call_indices[<%i0%>]]);
       call_indices[<%i0%>]++;
       break;
   >>
@@ -6930,7 +6930,7 @@ end simulationLiteralsFile;
   %>
 
   <%functionBodies(functions,true)%>
-  <%genericCallBodies(genericCalls, contextOther)%>
+  <%genericCallBodies(genericCalls, contextSimulationNonDiscrete)%>
 
   #ifdef __cplusplus
   }
@@ -7467,10 +7467,10 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       let lhs_ = daeExp(lhs, context, &preExp, &varDecls, &auxFunction)
       let rhs_ = daeExp(rhs, context, &preExp, &varDecls, &auxFunction)
       let iter_ = if resizable then (iters |> iter => resizableIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n") else (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
-      let idx_ = if resizable then (iters |> it => 'int <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
+      let idx_ = if resizable then (iters |> it => 'modelica_integer <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
       let idx_copy = if resizable then "" else "int tmp = idx;"
       <<
-      void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, <%idx_%>)
+      void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, const int equationIndexes[2], <%idx_%>)
       {
         <%idx_copy%>
         <%varDecls%>
@@ -7484,10 +7484,10 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
     case IF_GENERIC_CALL() then
       let iter_ = (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
       let branches_ = (branches |> branch => genericBranch(branch, context, &preExp, &varDecls, &auxFunction, &sub); separator = " else ")
-      let idx_ = if resizable then (iters |> it => 'int <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
+      let idx_ = if resizable then (iters |> it => 'modelica_integer <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
       let idx_copy = if resizable then "" else "int tmp = idx;"
       <<
-      void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, <%idx_%>)
+      void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, const int equationIndexes[2], <%idx_%>)
       {
         <%idx_copy%>
         <%varDecls%>
@@ -7501,10 +7501,10 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
     case WHEN_GENERIC_CALL() then
       let iter_ = (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
       let branches_ = (branches |> branch => genericBranch(branch, context, &preExp, &varDecls, &auxFunction, &sub); separator = " else ")
-      let idx_ = if resizable then (iters |> it => 'int <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
+      let idx_ = if resizable then (iters |> it => 'modelica_integer <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
       let idx_copy = if resizable then "" else "int tmp = idx;"
       <<
-      void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, <%idx_%>)
+      void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, const int equationIndexes[2], <%idx_%>)
       {
         <%idx_copy%>
         <%varDecls%>
@@ -7587,10 +7587,9 @@ template forIterator(SimIterator iter, Context context, Text &preExp, Text &varD
 ::= match iter
   case SIM_ITERATOR_RANGE() then
     let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
-    let rel = if intGt(step, 0) then "<" else ">"
-    let sign = if intGt(step, 0) then "+" else "-"
+    let rel = if intGt(step, 0) then "<=" else ">="
     <<
-    for(int <%iter_%>=<%start%>; <%iter_%><%rel%><%stop%>; <%iter_%>+=<%step%>){
+    for(modelica_integer <%iter_%>=<%start%>; <%iter_%><%rel%><%stop%>; <%iter_%>+=<%step%>){
     >>
   case SIM_ITERATOR_LIST() then
     let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
@@ -7598,7 +7597,7 @@ template forIterator(SimIterator iter, Context context, Text &preExp, Text &varD
     <<
     static const int <%iter_%>_lst[<%size%>] = {<%arr%>};
     for(int <%iter_%>_=0; <%iter_%>_<<%size%>; <%iter_%>_++){
-      int <%iter_%> = <%iter_%>_lst[<%iter_%>_];
+      modelica_integer <%iter_%> = <%iter_%>_lst[<%iter_%>_];
     >>
 end forIterator;
 
@@ -7645,8 +7644,8 @@ template genericCallHeaders(list<SimGenericCall> genericCalls, Context context)
       let &preExp = buffer ""
       let &varDecls = buffer ""
       let &auxFunction = buffer ""
-      let idx_ = if resizable then (iters |> it => 'int <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
-      <<void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, <%idx_%>);>>;
+      let idx_ = if resizable then (iters |> it => 'modelica_integer <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
+      <<void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, const int equationIndexes[2], <%idx_%>);>>;
   separator="\n\n")
 end genericCallHeaders;
 
