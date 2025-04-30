@@ -7639,8 +7639,14 @@ template genericCallHeaders(list<SimGenericCall> genericCalls, Context context)
 ::=
   let jac = match context case JACOBIAN_CONTEXT() then ", JACOBIAN *jacobian" else ""
   (genericCalls |> call => match call
-    case SINGLE_GENERIC_CALL() then <<void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, int idx);>>
-    case IF_GENERIC_CALL() then <<void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, int idx);>>;
+    case SINGLE_GENERIC_CALL()
+    case IF_GENERIC_CALL() then
+      let &sub = buffer ""
+      let &preExp = buffer ""
+      let &varDecls = buffer ""
+      let &auxFunction = buffer ""
+      let idx_ = if resizable then (iters |> it => 'int <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
+      <<void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, <%idx_%>);>>;
   separator="\n\n")
 end genericCallHeaders;
 
