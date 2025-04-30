@@ -586,7 +586,7 @@ void Parameter::setEnabled(bool enable)
  */
 void Parameter::update()
 {
-  mEnable.evaluate(mpModelInstanceElement->getParentModel());
+  mEnable.evaluate(mpElementParameters->getGraphicsView()->getModelWidget()->getModelInstance());
   setEnabled(mEnable);
 }
 
