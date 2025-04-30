@@ -1725,6 +1725,75 @@ algorithm
   outCrefs := listReverse(outCrefs);
 end createInDepVars;
 
+
+public function generateFMIParameterJacobian
+  input BackendDAE.BackendDAE inBackendDAE;
+  input list<BackendDAE.Var> paramvars;
+  // output BackendDAE.BackendDAE outBackendDAE;
+  output Option<BackendDAE.SymbolicJacobian> symJacS;
+  output DAE.FunctionTree functionTree;
+  output BackendDAE.SparsePattern sparsePattern;
+  output BackendDAE.SparseColoring sparseColoring;
+  output BackendDAE.NonlinearPattern nonlinearPattern;
+protected
+  BackendDAE.EqSystems eqs;
+  BackendDAE.Shared shared;
+  // Option<BackendDAE.SymbolicJacobian> symJacS;
+  // BackendDAE.SparsePattern sparsePattern;
+  // BackendDAE.SparseColoring sparseColoring;
+  // BackendDAE.NonlinearPattern nonlinearPattern;
+  DAE.FunctionTree funcs; //, functionTree;
+algorithm
+  System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
+  BackendDAE.DAE(eqs=eqs,shared=shared) := inBackendDAE;
+  (symJacS, funcs, sparsePattern, sparseColoring, nonlinearPattern) := createSymbolicJacobianforParameters1(inBackendDAE, paramvars);
+  shared := addBackendDAESharedJacobian(symJacS, sparsePattern, sparseColoring, nonlinearPattern, shared);
+  functionTree := BackendDAEUtil.getFunctions(shared);
+  functionTree := DAE.AvlTreePathFunction.join(functionTree, funcs);
+  shared := BackendDAEUtil.setSharedFunctionTree(shared, functionTree);
+  // outBackendDAE := BackendDAE.DAE(eqs,shared);
+  System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
+end generateFMIParameterJacobian;
+
+protected function createSymbolicJacobianforParameters1
+"all functionODE equation are differentiated with respect to the parameters."
+  input BackendDAE.BackendDAE inBackendDAE;
+  input list<BackendDAE.Var> paramvars;
+  output Option<BackendDAE.SymbolicJacobian> outJacobian;
+  output DAE.FunctionTree outFunctionTree;
+  output BackendDAE.SparsePattern outSparsePattern;
+  output BackendDAE.SparseColoring outSparseColoring;
+  output BackendDAE.NonlinearPattern outNonlinearPattern;
+protected
+  BackendDAE.BackendDAE backendDAE2;
+  list<BackendDAE.Var>  varlst, knvarlst, states, inputvars; //, paramvars;
+  BackendDAE.Variables v, globalKnownVars;
+algorithm
+  if Flags.isSet(Flags.JAC_DUMP2) then
+    print("analytical Jacobians -> start generate system for matrix S time : " + realString(clock()) + "\n");
+  end if;
+
+  backendDAE2 := BackendDAEUtil.copyBackendDAE(inBackendDAE);
+  backendDAE2 := BackendDAEOptimize.collapseIndependentBlocks(backendDAE2);
+  backendDAE2 := BackendDAEUtil.transformBackendDAE(backendDAE2,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
+  BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)},BackendDAE.SHARED(globalKnownVars = globalKnownVars)) := backendDAE2;
+
+  // Prepare all needed variables
+  varlst := BackendVariable.varList(v);
+  knvarlst := BackendVariable.varList(globalKnownVars);
+  states := BackendVariable.getAllStateVarFromVariables(v);
+  inputvars := List.select(knvarlst,BackendVariable.isInput);
+  //paramvars := List.select(knvarlst, BackendVariable.isParam);
+
+  if Flags.isSet(Flags.JAC_DUMP2) then
+    print("analytical Jacobians -> prepared vars for symbolic matrix S time: " + realString(clock()) + "\n");
+  end if;
+  if Flags.isSet(Flags.JAC_DUMP2) then
+    BackendDump.bltdump("System to create symbolic jacobian of: ",backendDAE2);
+  end if;
+  (outJacobian, outFunctionTree, outSparsePattern, outSparseColoring, outNonlinearPattern) := generateGenericJacobian(backendDAE2,paramvars,BackendVariable.listVar1(states),BackendVariable.listVar1(inputvars),BackendVariable.listVar1(states),BackendVariable.listVar1(states),varlst,"FMIDER",false);
+end createSymbolicJacobianforParameters1;
+
 public function createFMIModelDerivatives
 "This function genererate the stucture output and the
  partial derivatives for FMI, which are basically the jacobian matrices.
@@ -1735,17 +1804,17 @@ public function createFMIModelDerivatives
 protected
   BackendDAE.BackendDAE backendDAE,emptyBDAE,paramJacDAE;
   BackendDAE.EqSystem eqSyst;
-  Option<BackendDAE.SymbolicJacobian> outJacobian;
+  Option<BackendDAE.SymbolicJacobian> outJacobian, outJacobianParams;
 
   list<BackendDAE.Var> varlst, knvarlst, states, inputvars, outputvars, paramvars, indepVars, depVars;
 
   BackendDAE.Variables v,globalKnownVars,statesarr,inputvarsarr,paramvarsarr,outputvarsarr, depVarsArr;
 
-  BackendDAE.SparsePattern sparsePattern;
-  BackendDAE.SparseColoring sparseColoring;
-  BackendDAE.NonlinearPattern nonlinearPattern;
+  BackendDAE.SparsePattern sparsePattern, sparsePatternParams;
+  BackendDAE.SparseColoring sparseColoring, sparseColoringParams;
+  BackendDAE.NonlinearPattern nonlinearPattern, nonlinearPatternParams;
 
-  DAE.FunctionTree funcs, functionTree;
+  DAE.FunctionTree funcs, functionTree, functionTreeParams, FunctionTree_;
 
   BackendDAE.ExtraInfo ei;
   FCore.Cache cache;
@@ -1778,13 +1847,19 @@ try
   indepVars := listAppend(states, inputvars);
   if  Flags.isSet(Flags.FMI20_PARAMETER_JACOBIAN) then
     // also derive w.r.t. parameters (without calculated parameters)
+    // for now this only works when no calc params are there / they are diffed too
+
     // BackendVariable.isChangeable(v) is true when v is not a calculatedParameter
     // this works for now but maybe not for other cases
     paramvars := list(v for v guard BackendVariable.isParam(v) and BackendVariable.isChangeable(v) in knvarlst);
     //print(BackendDump.varListString(paramvars, "paramvars"));
     indepVars := listAppend(paramvars, indepVars);
     //print(BackendDump.varListString(indepVars, "indepVars"));
-    // paramJacDAE := generateSymbolicSensitivities(backendDAE);
+
+    // set outFunctionTree to this functionTree
+    (outJacobianParams, outFunctionTree, sparsePatternParams, sparseColoringParams, nonlinearPatternParams) := generateFMIParameterJacobian(backendDAE, paramvars);
+    outJacobianMatrices := (outJacobianParams, sparsePatternParams, sparseColoringParams, nonlinearPatternParams)::outJacobianMatrices;
+    // outFunctionTree := DAE.AvlTreePathFunction.join(inBackendDAE.shared.functionTree, functionTreeParams);
   end if;
 
   // dependent varibales der(states) + outputs
@@ -1814,11 +1889,18 @@ try
     paramvarsarr := BackendVariable.listVar1(paramvars);
     depVarsArr := BackendVariable.listVar1(depVars);
 
-    (outJacobian, outFunctionTree, sparsePattern, sparseColoring, nonlinearPattern) := generateGenericJacobian(backendDAE,indepVars,statesarr,inputvarsarr,paramvarsarr,depVarsArr,varlst,"FMIDER", Flags.isSet(Flags.DIS_SYMJAC_FMI20));
+    (outJacobian, FunctionTree_, sparsePattern, sparseColoring, nonlinearPattern) := generateGenericJacobian(backendDAE,indepVars,statesarr,inputvarsarr,paramvarsarr,depVarsArr,varlst,"FMIDER", Flags.isSet(Flags.DIS_SYMJAC_FMI20));
     if Flags.isSet(Flags.JAC_DUMP2) then
       BackendDump.dumpSparsityPattern(sparsePattern, "FMI sparsity");
     end if;
     outJacobianMatrices := (outJacobian, sparsePattern, sparseColoring, nonlinearPattern)::outJacobianMatrices;
+    if Flags.isSet(Flags.FMI20_PARAMETER_JACOBIAN) then
+      // already something in outFunctionTree
+      outFunctionTree := DAE.AvlTreePathFunction.join(FunctionTree_, outFunctionTree);
+    else
+      // nothing in the outFunctionTree
+      outFunctionTree := FunctionTree_;
+    end if;
     outFunctionTree := DAE.AvlTreePathFunction.join(inBackendDAE.shared.functionTree, outFunctionTree);
   end if;
 else
