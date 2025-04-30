@@ -562,7 +562,7 @@ protected function differentiateExp
   output DAE.Exp outDiffedExp;
   output DAE.FunctionTree outFunctionTree;
 protected
-  constant Boolean debug = true;
+  constant Boolean debug = false;
 algorithm
   if debug then print("\nDifferentiate Exp: "+ExpressionDump.printExpStr(inExp)+
                       " w.r.t. "+ComponentReference.printComponentRefStr(inDiffwrtCref)+"\n"); end if;
