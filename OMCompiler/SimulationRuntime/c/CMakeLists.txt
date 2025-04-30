@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.6...3.14)
 
 # if OPENMODELICA_NEW_CMAKE_BUILD is defined (in OMCompiler/CMakeLists.txt)
 # then we pick up the new cmake source.
