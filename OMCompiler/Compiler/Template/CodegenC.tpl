@@ -7549,6 +7549,9 @@ template genericIterator(SimIterator iter, Context context, Text &preExp, Text &
     let iter_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
     let sub_iter_ = (sub_iter |> sub_i => subIterator(sub_i, iter_, context, &preExp, &varDecls, &auxFunction, &sub); separator="\n")
     <<
+    int <%iter_%>_loc = tmp % <%size%>;
+    int <%iter_%> = <%step%> * <%iter_%>_loc + <%start%>;
+    tmp /= <%size%>;
     <%sub_iter_%>
     >>
   case SIM_ITERATOR_LIST() then
