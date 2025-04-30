@@ -1,6 +1,10 @@
 set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/ParModelica/auto)
 
-find_package(Boost COMPONENTS graph chrono REQUIRED)
+if(CMAKE_VERSION VERSION_LESS "3.30")
+  find_package(Boost COMPONENTS graph chrono REQUIRED)
+else()
+  find_package(Boost CONFIG COMPONENTS graph chrono REQUIRED)
+endif()
 
 set(PARMODAUTO_SOURCES om_pm_equation.cpp om_pm_interface.cpp om_pm_model.cpp pm_utility.cpp)
 
