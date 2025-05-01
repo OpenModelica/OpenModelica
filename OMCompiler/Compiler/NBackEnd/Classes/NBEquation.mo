@@ -886,8 +886,11 @@ public
       protected
         EvalOrder eo = UnorderedMap.getOrDefault(name, order, NBResizable.EvalOrder.INDEPENDENT);
         Expression step, res;
+        list<Integer> elements;
       algorithm
         range := match range
+
+            // revert a range if needed
             case Expression.RANGE() algorithm
               step := Util.getOptionOrDefault(range.step, Expression.INTEGER(1));
               if (Expression.isNegative(step) and eo == NBResizable.EvalOrder.FORWARD) or (Expression.isPositive(step) and eo == NBResizable.EvalOrder.BACKWARD) then
@@ -896,8 +899,21 @@ public
                 res := range;
               end if;
             then res;
+
+            // revert an array/list if needed
+            case Expression.ARRAY(literal = true) algorithm
+              if eo == NBResizable.EvalOrder.FORWARD then
+                elements := list(Expression.getInteger(e) for e in range.elements);
+                range.elements := listArray(list(Expression.INTEGER(e) for e in List.sort(elements, intGt)));
+              elseif eo == NBResizable.EvalOrder.BACKWARD then
+                elements := list(Expression.getInteger(e) for e in range.elements);
+                range.elements := listArray(list(Expression.INTEGER(e) for e in List.sort(elements, intLt)));
+              end if;
+            then range;
+
+            // no other allowed
             else algorithm
-             //
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for unhandled range expression: " + Expression.toString(range)});
             then fail();
           end match;
       end applySingleOrder;
