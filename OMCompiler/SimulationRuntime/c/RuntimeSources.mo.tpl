@@ -29,7 +29,7 @@ encapsulated package RuntimeSources
   constant list<String> dgesv_headers={"./external_solvers/blaswrap.h", "./external_solvers/clapack.h", "./external_solvers/f2c.h"};
   constant list<String> dgesv_sources={DGESV_FILES};
 
-  constant list<String> cminpack_headers = {"./external_solvers/cminpack.h", "./external_solvers/minpack.h"};
+  constant list<String> cminpack_headers = {"./external_solvers/cminpack.h", "./external_solvers/minpack.h", "./external_solvers/minpackP.h"};
   constant list<String> cminpack_sources = {CMINPACK_FILES};
 
   constant list<String> simrt_linear_solver_sources={LS_FILES};
