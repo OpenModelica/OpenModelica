@@ -7481,7 +7481,7 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       >>
 
     case IF_GENERIC_CALL() then
-      let iter_ = (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
+      let iter_ = if resizable then (iters |> iter => resizableIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n") else (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
       let branches_ = (branches |> branch => genericBranch(branch, context, &preExp, &varDecls, &auxFunction, &sub); separator = " else ")
       let idx_ = if resizable then (iters |> it => 'modelica_integer <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
       let idx_copy = if resizable then "" else "int tmp = idx;"
@@ -7498,7 +7498,7 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       >>
 
     case WHEN_GENERIC_CALL() then
-      let iter_ = (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
+      let iter_ = if resizable then (iters |> iter => resizableIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n") else (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
       let branches_ = (branches |> branch => genericBranch(branch, context, &preExp, &varDecls, &auxFunction, &sub); separator = " else ")
       let idx_ = if resizable then (iters |> it => 'modelica_integer <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
       let idx_copy = if resizable then "" else "int tmp = idx;"
