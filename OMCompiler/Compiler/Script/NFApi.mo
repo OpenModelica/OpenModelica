@@ -637,7 +637,7 @@ algorithm
     flat_model.variables := List.filterOnFalse(flat_model.variables, Variable.isEmptyArray);
   end if;
 
-  VerifyModel.verify(flat_model);
+  VerifyModel.verify(flat_model, InstNode.isPartial(inst_cls));
 
   // Convert the flat model to a DAE.
   (dae, daeFuncs) := ConvertDAE.convert(flat_model, funcs);

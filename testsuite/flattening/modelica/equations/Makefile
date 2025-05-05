@@ -54,6 +54,7 @@ WhenEquation.mo \
 WhenNestedEquation.mo \
 WhenNotInitial.mo \
 WhenNotValid.mo \
+WhenPartial1.mos \
 WhenValidResult.mo \
 WhenSemantics1.mo \
 WhenVectorPredicateEquation.mo \

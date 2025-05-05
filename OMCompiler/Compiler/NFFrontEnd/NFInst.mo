@@ -254,7 +254,7 @@ algorithm
     execStat("replaceArrayConstructors");
   end if;
 
-  VerifyModel.verify(flatModel);
+  VerifyModel.verify(flatModel, InstNode.isPartial(inst_cls));
 
   (flatModel, functions) := InstUtil.expandSlicedCrefs(flatModel, functions);
 
