@@ -28,25 +28,11 @@
  #
  #/
 
-TEMPLATE = subdirs
+include(../Common/Testsuite.pri)
+include(../Common/Util.pri)
 
-SUBDIRS = Util \
-  BrowseMSL \
-  Diagram \
-  Transformation \
-  Homotopy \
-  Expression \
-  ModelInstance \
-  Utilities \
-  StringHandler \
-  DynamicAnnotation
+TARGET = DynamicAnnotation
 
-BrowseMSL.depends = Util
-Diagram.depends = Util
-Transformation.depends = Util
-Homotopy.depends = Util
-Expression.depends = Util
-ModelInstance.depends = Util
-Utilities.depends = Util
-StringHandler.depends = Util
-DynamicAnnotation.depends = Util
+SOURCES += DynamicAnnotationTest.cpp
+
+HEADERS += DynamicAnnotationTest.h

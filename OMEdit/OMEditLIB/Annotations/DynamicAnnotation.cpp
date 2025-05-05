@@ -91,6 +91,13 @@ auto& evaluate_helper(QString vname, ModelInstance::Model *pModel)
   // the instance api returns the qualified cref
   // we need variable name relative to Element
   // get full name of Element
+  /*! @todo We should remove the following code that adjusts vname.
+   *  That is only needed because we are calling the function with wrong ModelInstance::Model *pModel
+   *  See issue #13816. We changed from mEnable.evaluate(mpModelInstanceElement->getParentModel());
+   *  to mEnable.evaluate(mpElementParameters->getGraphicsView()->getModelWidget()->getModelInstance());
+   *  Basically pass the ModelInstance::Model of the class that is being modified.
+   *  So once we fix everywhere that function is called then we should remove this code.
+   */
   QString curPath;
   if (pModel->getParentElement()) {
     curPath = pModel->getParentElement()->getQualifiedName();
@@ -98,7 +105,7 @@ auto& evaluate_helper(QString vname, ModelInstance::Model *pModel)
   vname = StringHandler::makeClassNameRelative(vname, curPath);
   auto exp = pModel->getVariableBinding(vname);
   if (!exp) {
-    throw std::runtime_error(vname.toStdString() + " could not be found.");
+    throw std::runtime_error(vname.toStdString() + " could not be found in " + pModel->getName().toStdString());
   }
   return *exp;
 }
