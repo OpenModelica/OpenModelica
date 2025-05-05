@@ -836,7 +836,7 @@ bool isUnmeasuredVariables(DATA* data, const char* name)
  * and stores the initial measured value X and HalfWidth confidence
  * interval Wx and also the input variable names
  */
-csvData readMeasurementInputFile(ofstream & logfile, DATA * data, bool boundaryConditions = false)
+csvData readMeasurementInputFile(ofstream & logfile, DATA * data, threadData_t * threadData, bool boundaryConditions = false)
 {
   char * filename = NULL;
   filename = (char*) omc_flagValue[FLAG_DATA_RECONCILE_Sx];
@@ -858,8 +858,15 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data, bool boundaryC
     createErrorHtmlReportForBoundaryConditions(data);
     exit(1);
   }
+  /*
+  * fix issue https://github.com/OpenModelica/OpenModelica/issues/13797
+  * check if filepath uses uri format and convert it to absolute path
+  * eg: modelica://Modelica/Resources/Files/filename.csv => /absolute/path/to/filename.csv
+  */
+  modelica_string uri = OpenModelica_uriToFilename(mmc_mk_scon(filename));
+  std::string filenameStr = MMC_STRINGDATA(uri);
 
-  ifstream ip(filename);
+  ifstream ip(filenameStr.c_str());
   string line;
   vector<double> xdata;
   vector<double> sxdata;
@@ -1759,7 +1766,7 @@ void validateCorelationInputsSquareMatrix(DATA * data, ofstream &logfile, vector
  * Function which reads the correlation coefficient input file
  * and stores the correlation coefficient matrix Cx for DataReconciliation
  */
-correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & logfile, DATA * data, bool boundaryConditions = false)
+correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & logfile, DATA * data, threadData_t * threadData, bool boundaryConditions = false)
 {
   char * filename = NULL;
   filename = (char*) omc_flagValue[FLAG_DATA_RECONCILE_Cx];
@@ -1785,8 +1792,16 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
     exit(1);
   }
 
+  /*
+  * fix issue https://github.com/OpenModelica/OpenModelica/issues/13797
+  * check if filepath uses uri format and convert it to absolute path
+  * eg: modelica://Modelica/Resources/Files/filename.csv => /absolute/path/to/filename.csv
+  */
+  modelica_string uri = OpenModelica_uriToFilename(mmc_mk_scon(filename));
+  std::string filenameStr = MMC_STRINGDATA(uri);
+
   // read the file
-  ifstream ip(filename);
+  ifstream ip(filenameStr.c_str());
   string line;
   if (!ip.good() && !boundaryConditions)
   {
@@ -2980,7 +2995,7 @@ int dataReconciliation(DATA * data, threadData_t * threadData, int status)
   }
 
   // read the measurement input data provide by user
-  csvData csvdata = readMeasurementInputFile(logfile, data);
+  csvData csvdata = readMeasurementInputFile(logfile, data, threadData);
 
   // validate the input data read from measurement input file
   csvData Sx_data = validateMeasurementInputs(csvdata, data, logfile);
@@ -2989,7 +3004,7 @@ int dataReconciliation(DATA * data, threadData_t * threadData, int status)
   inputData x = getInputData(Sx_data, logfile);
 
   // read the correlation coefficient input data provide by user
-  correlationData Cx_data = readCorrelationCoefficientFile(Sx_data, logfile, data);
+  correlationData Cx_data = readCorrelationCoefficientFile(Sx_data, logfile, data, threadData);
 
   // Compute the covariance matrix (Sx) from csvData
   matrixData Sx = computeCovarianceMatrixSx(Sx_data, Cx_data, logfile, data);
@@ -3073,7 +3088,7 @@ int boundaryConditions(DATA * data, threadData_t * threadData, int status)
   logfile << "|  info    |   " << data->modelData->modelName << "\n";
 
   // read the measurement input data provide by user
-  csvData csvdata = readMeasurementInputFile(logfile, data, true);
+  csvData csvdata = readMeasurementInputFile(logfile, data, threadData, true);
 
   // validate the input data read from measurement input file
   csvData Sx_data = validateMeasurementInputs(csvdata, data, logfile, true);
@@ -3082,7 +3097,7 @@ int boundaryConditions(DATA * data, threadData_t * threadData, int status)
   inputData reconciled_x = getReconciledX(Sx_data, logfile);
 
   // read the reconciled covariance matrix input file provided by user
-  correlationData cx_data = readCorrelationCoefficientFile(Sx_data, logfile, data, true);
+  correlationData cx_data = readCorrelationCoefficientFile(Sx_data, logfile, data, threadData, true);
 
   // create the column matrix from the covariance matrix
   int rowsize = cx_data.rowHeaders.size();
