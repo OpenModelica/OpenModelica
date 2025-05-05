@@ -7464,8 +7464,7 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
 
     match call
     case SINGLE_GENERIC_CALL() then
-      let lhs_ = daeExp(lhs, context, &preExp, &varDecls, &auxFunction)
-      let rhs_ = daeExp(rhs, context, &preExp, &varDecls, &auxFunction)
+      let body_ = genericCallLhsRhs(lhs, rhs, context, &preExp, &varDecls, &auxFunction)
       let iter_ = if resizable then (iters |> iter => resizableIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n") else (iters |> iter => genericIterator(iter, context, &preExp, &varDecls, &auxFunction, &sub); separator = "\n")
       let idx_ = if resizable then (iters |> it => 'modelica_integer <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
       let idx_copy = if resizable then "" else "int tmp = idx;"
@@ -7477,7 +7476,7 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
         <%auxFunction%>
         <%preExp%>
         <%iter_%>
-        <%lhs_%> = <%rhs_%>;
+        <%body_%>;
       }
       >>
 
@@ -7516,6 +7515,21 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       >>
   ; separator="\n\n")
 end genericCallBodies;
+
+template genericCallLhsRhs(DAE.Exp lhs, DAE.Exp rhs, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+::= match lhs
+    case CREF(componentRef=cr, ty = T_ARRAY()) then
+      let rhs_ = daeExp(rhs, context, &preExp, &varDecls, &auxFunction)
+      <<
+      <%algStmtAssignArrWithRhsExpStr(lhs, rhs_, context, &preExp, &varDecls, &auxFunction)%>
+      >>
+    else
+      let lhs_ = daeExp(lhs, context, &preExp, &varDecls, &auxFunction)
+      let rhs_ = daeExp(rhs, context, &preExp, &varDecls, &auxFunction)
+      <<
+      <%lhs_%> = <%rhs_%>;
+      >>
+end genericCallLhsRhs;
 
 template genericBranch(SimBranch branch, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
 ::= match branch
