@@ -356,11 +356,14 @@ clean:
 	(! test -f $(EXTERNALCBUILDDIR)/Makefile) || make -C $(EXTERNALCBUILDDIR) clean
 	(! test -f $(EXTERNALCBUILDDIR)/Makefile) || make -C $(EXTERNALCBUILDDIR) distclean
 
-sourcedist: sourcedist1 sourcedist2
+sourcedist: sourcedist1 sourcedist2 sourcedist3
 sourcedist1:
 	$(MAKE) -f $(LIBMAKEFILE) OMC_MINIMAL_RUNTIME=1 OMC_FMI_RUNTIME=1 sourcedist_internal
 sourcedist2:
 	$(MAKE) -C ../fmi/export/buildproject -f $(defaultMakefileTarget)
+sourcedist3:
+	mkdir -p $(builddir_inc)/c/ModelicaExternalC
+	cp -p ../ModelicaExternalC/C-Sources/*.h ../ModelicaExternalC/C-Sources/*.c $(builddir_inc)/c/ModelicaExternalC
 
 # Copied files need to preserve the time-stamp or the external solvers builds
 # over and over again
