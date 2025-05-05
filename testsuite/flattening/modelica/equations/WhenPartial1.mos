@@ -1,0 +1,26 @@
+// name:     WhenPartial1
+// keywords: when
+// status:   correct
+//
+// Discrete variables in a partial model does not need to be assigned in a when-equation.
+//
+
+loadString("
+  partial model M
+    Real x;
+    discrete Real xd;
+  equation
+    x = xd;
+  end M;
+");
+
+checkModel(M);
+getErrorString();
+
+// Result:
+// true
+// "Check of M completed successfully.
+// Class M has 1 equation(s) and 2 variable(s).
+// 1 of these are trivial equation(s)."
+// ""
+// endResult

@@ -133,6 +133,7 @@ MatrixRowIndexing.mo \
 MatrixSubtraction.mo \
 modelica_1_1_Array9.mo \
 NestedSubscriptFor.mo \
+OutOfBoundsPartial1.mos \
 PolynomialEvaluator1.mo \
 PolynomialEvaluator2.mo \
 PolynomialEvaluator3.mo \
