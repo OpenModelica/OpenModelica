@@ -2364,6 +2364,7 @@ end getElementAttributeValues;
 public function qualifyPath
   input GraphicEnvCache inEnv;
   input Absyn.Path inPath;
+  input Boolean failOnError = false;
   output Absyn.Path outPath;
 protected
   String n;
@@ -2378,12 +2379,16 @@ algorithm
       algorithm
         try
           if Flags.isSet(Flags.NF_API) then
-            (_, outPath) := Interactive.mkFullyQual(inEnv, inPath);
+            (_, outPath) := Interactive.mkFullyQual(inEnv, inPath, failOnError);
           else
             outPath := qualifyType(Interactive.envFromGraphicEnvCache(inEnv), inPath);
           end if;
         else
-          outPath := inPath;
+          if failOnError then
+            fail();
+          else
+            outPath := inPath;
+          end if;
         end try;
       then
         outPath;
@@ -3864,9 +3869,10 @@ algorithm
 
   try
     genv := createEnvironment(inProgram, NONE(), inParentClass);
-    fqpath := qualifyPath(genv, inClass);
+    fqpath := qualifyPath(genv, inClass, failOnError = true);
   else
-    fqpath := inClass;
+    paths := {};
+    return;
   end try;
 
   paths := {};
