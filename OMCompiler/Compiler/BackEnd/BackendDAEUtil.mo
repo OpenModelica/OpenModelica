@@ -601,7 +601,7 @@ protected
   Integer local_size;
 algorithm
   for iter in iters loop
-    local_size := match iter case BackendDAE.SIM_ITERATOR_RANGE() then iter.size; case BackendDAE.SIM_ITERATOR_LIST() then iter.size; end match;
+    local_size := match iter case BackendDAE.SIM_ITERATOR_RANGE() then iter.non_resizable_size; case BackendDAE.SIM_ITERATOR_LIST() then iter.size; end match;
     size := size * local_size;
   end for;
 end getSimIteratorSize;

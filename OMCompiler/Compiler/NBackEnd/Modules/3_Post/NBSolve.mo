@@ -259,6 +259,7 @@ public
           // ToDo 1: resolve the eval order
           // ToDo 2: resolve potential equation slicing
           (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(Pointer.access(Slice.getT(comp.eqn)), comp.var_cref, funcTree, kind, implicit_index, slicing_map);
+          eqn := Equation.applyForOrder(eqn, comp.order);
           comp.eqn := Slice.SLICE(Pointer.create(eqn), comp.eqn.indices);
           comp.status := solve_status;
         then ({comp}, solve_status);
@@ -315,6 +316,7 @@ public
 
       // ToDo: make these actually resizable inside entwined equations (?)
       case StrongComponent.RESIZABLE_COMPONENT(var = var_slice, eqn = eqn_slice) guard(Equation.isForEquation(Slice.getT(eqn_slice))) algorithm
+        eqn_slice := Slice.apply(eqn_slice, function Pointer.apply(func = function Equation.applyForOrder(order = comp.order)));
         (comp, solve_status, funcTree, implicit_index) := solveGenericEquationSlice(var_slice, eqn_slice, comp.var_cref,  funcTree, kind, implicit_index, slicing_map);
       then (comp, solve_status);
 

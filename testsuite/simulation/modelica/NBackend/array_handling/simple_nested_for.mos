@@ -262,7 +262,7 @@ val(x[2,1], 0.5);
 // 	x[$i1, $i2]
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_2)
-// [----] for {$i1 in 1:3, $i2 in 1:3} loop
+// [----] for {$i1 in 3:(-1):1, $i2 in 1:3} loop
 // [----]   [SCAL] (1) x[$i1, $i2] = x[1 + $i1, $i2] + $i1 * $FUN_1[$i2] ($RES_SIM_3)
 // [----] end for;
 //
@@ -309,7 +309,7 @@ val(x[2,1], 0.5);
 // 	x[$i1, $i2]
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_2)
-// [----] for {$i1 in 1:3, $i2 in 1:3} loop
+// [----] for {$i1 in 3:(-1):1, $i2 in 1:3} loop
 // [----]   [SCAL] (1) x[$i1, $i2] = x[1 + $i1, $i2] + $i1 * $FUN_1[$i2] ($RES_SIM_3)
 // [----] end for;
 //
@@ -321,5 +321,5 @@ val(x[2,1], 0.5);
 // "
 // end SimulationResult;
 // ""
-// 3.2617487142083013
+// 3.274710254911388
 // endResult

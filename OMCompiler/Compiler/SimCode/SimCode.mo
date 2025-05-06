@@ -443,6 +443,15 @@ uniontype SimEqSystem
     BackendDAE.EquationAttributes eqAttr;
   end SES_ARRAY_CALL_ASSIGN;
 
+  record SES_RESIZABLE_ASSIGN
+    "a resizable assignment calling a for loop body function."
+    Integer index;
+    Integer call_index;
+    list<BackendDAE.SimIterator> iters;
+    DAE.ElementSource source;
+    BackendDAE.EquationAttributes eqAttr;
+  end SES_RESIZABLE_ASSIGN;
+
   record SES_GENERIC_ASSIGN
     "a generic assignment calling a for loop body function with an index list."
     Integer index;
@@ -573,18 +582,21 @@ public uniontype SimGenericCall
     list<BackendDAE.SimIterator> iters;
     DAE.Exp lhs;
     DAE.Exp rhs;
+    Boolean resizable;
   end SINGLE_GENERIC_CALL;
 
   record IF_GENERIC_CALL
     Integer index;
     list<BackendDAE.SimIterator> iters;
     list<SimBranch> branches;
+    Boolean resizable;
   end IF_GENERIC_CALL;
 
   record WHEN_GENERIC_CALL
     Integer index;
     list<BackendDAE.SimIterator> iters;
     list<SimBranch> branches;
+    Boolean resizable;
   end WHEN_GENERIC_CALL;
 end SimGenericCall;
 

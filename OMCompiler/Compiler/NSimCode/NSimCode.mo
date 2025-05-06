@@ -132,11 +132,12 @@ public
     record IDENTIFIER
       Pointer<Equation> eqn;
       ComponentRef var_cref;
+      Boolean resizable;
     end IDENTIFIER;
 
     function toString
       input Identifier ident;
-      output String str = "cref: " + ComponentRef.toString(ident.var_cref) + "\neqn: " + Equation.pointerToString(ident.eqn);
+      output String str = "cref: " + ComponentRef.toString(ident.var_cref) + "\neqn: " + Equation.pointerToString(ident.eqn) + "\n(resizable="+boolString(ident.resizable)+")";
     end toString;
 
     function hash
