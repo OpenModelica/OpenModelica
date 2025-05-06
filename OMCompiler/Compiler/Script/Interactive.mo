@@ -3537,6 +3537,7 @@ end removeExtendsModifiersInElement;
 public function mkFullyQual
   input GraphicEnvCache env;
   input Absyn.Path ipath;
+  input Boolean failOnError = false;
   output FCore.Cache ocache;
   output Absyn.Path opath;
 protected
@@ -3546,7 +3547,7 @@ algorithm
   if Flags.isSet(Flags.NF_API) then
     ocache := cacheFromGraphicEnvCache(env);
     (program, cpath) := cacheProgramAndPath(env);
-    opath := NFApi.mkFullyQual(program, cpath, ipath);
+    opath := NFApi.mkFullyQual(program, cpath, ipath, failOnError);
   else
     (ocache, opath) := Inst.makeFullyQualified(cacheFromGraphicEnvCache(env), envFromGraphicEnvCache(env), ipath);
   end if;

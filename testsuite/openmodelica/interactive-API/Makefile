@@ -48,6 +48,7 @@ ForStatement8.mos \
 GetAllSubtypeOf1.mos \
 GetAllSubtypeOf2.mos \
 GetAllSubtypeOf3.mos \
+GetAllSubtypeOf4.mos \
 getClassComment.mos \
 getClassNames.mos \
 getCommandLineOptions.mos \
