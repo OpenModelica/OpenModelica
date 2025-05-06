@@ -5057,8 +5057,8 @@ public
     end match;
   end logicNegate;
 
-  function invertRange
-    "inverts the direction of a range"
+  function revertRange
+    "reverts the direction of a range"
     input output Expression range;
   algorithm
     range := match range
@@ -5071,7 +5071,7 @@ public
           + toString(range)});
       then fail();
     end match;
-  end invertRange;
+  end revertRange;
 
   function sliceRange
     "slices the range with a given zero-based start and one-based step"

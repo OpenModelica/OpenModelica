@@ -66,6 +66,7 @@ public
 
   // New Backend imports
   import DetectStates = NBDetectStates;
+  import NBResizable.EvalOrder;
   import Evaluation = NBEvaluation;
   import Inline = NBInline;
   import Replacements = NBReplacements;
@@ -831,6 +832,61 @@ public
         then fail();
       end match;
     end adaptArray;
+
+    function applyOrder
+      input output Iterator iter;
+      input UnorderedMap<ComponentRef, EvalOrder> order;
+      function applySingleOrder
+        input ComponentRef name;
+        input output Expression range;
+        input UnorderedMap<ComponentRef, EvalOrder> order;
+      protected
+        EvalOrder eo = UnorderedMap.getOrDefault(name, order, NBResizable.EvalOrder.INDEPENDENT);
+        Expression step, res;
+        list<Integer> elements;
+      algorithm
+        range := match range
+
+            // revert a range if needed
+            case Expression.RANGE() algorithm
+              step := Util.getOptionOrDefault(range.step, Expression.INTEGER(1));
+              if (Expression.isNegative(step) and eo == NBResizable.EvalOrder.FORWARD) or (Expression.isPositive(step) and eo == NBResizable.EvalOrder.BACKWARD) then
+                res := Expression.revertRange(range);
+              else
+                res := range;
+              end if;
+            then res;
+
+            // revert an array/list if needed
+            case Expression.ARRAY(literal = true) algorithm
+              if eo == NBResizable.EvalOrder.FORWARD then
+                elements := list(Expression.getInteger(e) for e in range.elements);
+                range.elements := listArray(list(Expression.INTEGER(e) for e in List.sort(elements, intGt)));
+              elseif eo == NBResizable.EvalOrder.BACKWARD then
+                elements := list(Expression.getInteger(e) for e in range.elements);
+                range.elements := listArray(list(Expression.INTEGER(e) for e in List.sort(elements, intLt)));
+              end if;
+            then range;
+
+            // no other allowed
+            else algorithm
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for unhandled range expression: " + Expression.toString(range)});
+            then fail();
+          end match;
+      end applySingleOrder;
+    algorithm
+      iter := match iter
+        case SINGLE() algorithm
+          iter.range := applySingleOrder(iter.name, iter.range, order);
+        then iter;
+        case NESTED() algorithm
+          for i in 1:arrayLength(iter.names) loop
+            iter.ranges[i] := applySingleOrder(iter.names[i], iter.ranges[i], order);
+          end for;
+        then iter;
+        else iter;
+      end match;
+    end applyOrder;
 
     function toString
       input Iterator iter;
@@ -2025,6 +2081,18 @@ public
         else {};
       end match;
     end getForFrames;
+
+    function applyForOrder
+      input output Equation eqn;
+      input UnorderedMap<ComponentRef, EvalOrder> order;
+    algorithm
+      eqn := match eqn
+        case FOR_EQUATION() algorithm
+          eqn.iter := Iterator.applyOrder(eqn.iter, order);
+        then eqn;
+        else eqn;
+      end match;
+    end applyForOrder;
 
     function isDummy
       input Equation eqn;

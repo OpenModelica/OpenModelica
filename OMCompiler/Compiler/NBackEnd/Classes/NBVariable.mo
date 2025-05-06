@@ -660,6 +660,20 @@ public
     end match;
   end updateResizableParameter;
 
+  function getResizableValue
+    input Pointer<Variable> var_ptr;
+    output Integer val;
+  protected
+    Variable var = Pointer.access(var_ptr);
+  algorithm
+    _ := match var.backendinfo
+      case BackendExtension.BACKEND_INFO(varKind = VariableKind.PARAMETER(resize_value = SOME(val))) then val;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because following variable is not a resizable parameter: " + toString(var)});
+      then fail();
+    end match;
+  end getResizableValue;
+
   function isResidual
     extends checkVar;
   algorithm
