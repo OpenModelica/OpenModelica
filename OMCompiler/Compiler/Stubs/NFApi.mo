@@ -57,6 +57,7 @@ function mkFullyQual
   input Absyn.Program absynProgram;
   input Absyn.Path classPath;
   input Absyn.Path pathToQualify;
+  input Boolean failOnError = false;
   output Absyn.Path qualPath = pathToQualify;
 end mkFullyQual;
 

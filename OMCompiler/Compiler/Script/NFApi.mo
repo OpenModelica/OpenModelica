@@ -395,6 +395,7 @@ function mkFullyQual
   input Absyn.Program absynProgram;
   input Absyn.Path classPath;
   input Absyn.Path pathToQualify;
+  input Boolean failOnError = false;
   output Absyn.Path qualPath = pathToQualify;
 protected
   InstNode top, expanded_cls, cls;
@@ -442,15 +443,19 @@ algorithm
     FlagsUtil.set(Flags.SCODE_INST, b);
     FlagsUtil.set(Flags.NF_SCALARIZE, s);
   else
-    // do not fail, just return the Absyn path
-    qualPath := pathToQualify;
-
     if not Flags.isSet(Flags.NF_API_NOISE) then
       ErrorExt.rollBack("NFApi.mkFullyQual");
     end if;
 
     FlagsUtil.set(Flags.SCODE_INST, b);
     FlagsUtil.set(Flags.NF_SCALARIZE, s);
+
+    if failOnError then
+      fail();
+    else
+      // do not fail, just return the Absyn path
+      qualPath := pathToQualify;
+    end if;
   end try;
 
   if Flags.isSet(Flags.EXEC_STAT) then
@@ -712,10 +717,15 @@ algorithm
   name := AbsynUtil.pathString(classPath);
 
   (program, top) := mkTop(absynProgram, name);
-  cls := Inst.lookupRootClass(classPath, top, FAST_CONTEXT);
 
-  // Expand the class.
-  expanded_cls := NFInst.expand(cls, FAST_CONTEXT);
+  if AbsynUtil.pathEqual(classPath, Absyn.IDENT("AllLoadedClasses")) then
+    expanded_cls := top;
+  else
+    cls := Inst.lookupRootClass(classPath, top, FAST_CONTEXT);
+
+    // Expand the class.
+    expanded_cls := NFInst.expand(cls, FAST_CONTEXT);
+  end if;
 
   if Flags.isSet(Flags.EXEC_STAT) then
     execStat("NFApi.frontEndLookup_dispatch("+ name +")");
