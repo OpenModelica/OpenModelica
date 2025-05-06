@@ -45,6 +45,8 @@ protected
   import ComponentRef = NFComponentRef;
   import ConvertDAE = NFConvertDAE;
   import Expression = NFExpression;
+  import Operator = NFOperator;
+  import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
 
   // old backend import
@@ -170,10 +172,10 @@ public
   uniontype SimIterator
     record SIM_ITERATOR_RANGE
       ComponentRef name;
-      Integer start;
-      Integer step;
-      Integer stop;
-      Integer size;
+      Expression start;
+      Expression step;
+      Expression stop;
+      Expression size;
       list<DependentIterator> sub_iter;
     end SIM_ITERATOR_RANGE;
 
@@ -193,7 +195,7 @@ public
       end subIterString;
     algorithm
       str := match iter
-        case SIM_ITERATOR_RANGE() then "{" + ComponentRef.toString(iter.name) + " | start:" + intString(iter.start) + ", step:" + intString(iter.step) + ", stop:" + intString(iter.stop) + ", size: " + intString(iter.size) + "}" + subIterString(iter.sub_iter);
+        case SIM_ITERATOR_RANGE() then "{" + ComponentRef.toString(iter.name) + " | start:" + Expression.toString(iter.start) + ", step:" + Expression.toString(iter.step) + ", stop:" + Expression.toString(iter.stop) + ", size: " + Expression.toString(iter.size) + "}" + subIterString(iter.sub_iter);
         case SIM_ITERATOR_LIST()  then "{" + ComponentRef.toString(iter.name) + " | list: " + List.toString(iter.lst, intString, "", "{", ", ", "}", true, 10) + "}" + subIterString(iter.sub_iter);
       end match;
     end toString;
@@ -206,9 +208,9 @@ public
       list<Expression> ranges;
       list<Option<Iterator>> maps;
       ComponentRef name;
-      Expression range;
+      Operator addOp, mulOp;
+      Expression range, step, size;
       Option<Iterator> map;
-      Integer start, step, stop;
       list<Integer> lst;
       list<DependentIterator> sub_iter;
     algorithm
@@ -217,11 +219,16 @@ public
         (name, range, map) := tpl;
         sim_iter := match range
           case Expression.RANGE() algorithm
-            start     := Expression.integerValue(range.start);
-            step      := Util.applyOptionOrDefault(range.step, Expression.integerValue, 1);
-            stop      := Expression.integerValue(range.stop);
+            step      := Util.getOptionOrDefault(range.step, Expression.INTEGER(1));
+            addOp     := Operator.makeAdd(Expression.typeOf(range.start));
+            mulOp     := Operator.makeMul(Expression.typeOf(range.start));
+            // build the size expression (stop-start)/step+1
+            size      := Expression.MULTARY({range.stop}, {range.start}, addOp);
+            size      := Expression.MULTARY({size}, {step}, mulOp);
+            size      := Expression.MULTARY({size, Expression.INTEGER(1)}, {}, addOp);
+            size      := SimplifyExp.simplify(size);
             sub_iter  := if Util.isSome(map) then subIterators(Util.getOption(map)) else {};
-          then SIM_ITERATOR_RANGE(name, start, step, stop, intDiv(stop-start,step)+1, sub_iter) :: sim_iter;
+          then SIM_ITERATOR_RANGE(name, range.start, step, range.stop, size, sub_iter) :: sim_iter;
 
           case Expression.ARRAY() guard(range.literal) algorithm
             lst       := list(Expression.integerValue(e) for e in range.elements);
@@ -267,7 +274,7 @@ public
       end convertSubIterator;
     algorithm
       old_iter := match iter
-        case SIM_ITERATOR_RANGE() then OldBackendDAE.SIM_ITERATOR_RANGE(ComponentRef.toDAE(iter.name), iter.start, iter.step, iter.stop, iter.size, list(convertSubIterator(si) for si in iter.sub_iter));
+        case SIM_ITERATOR_RANGE() then OldBackendDAE.SIM_ITERATOR_RANGE(ComponentRef.toDAE(iter.name), Expression.toDAE(iter.start), Expression.toDAE(iter.step), Expression.toDAE(iter.stop), Expression.toDAE(iter.size), Expression.getInteger(iter.size), list(convertSubIterator(si) for si in iter.sub_iter));
         case SIM_ITERATOR_LIST()  then OldBackendDAE.SIM_ITERATOR_LIST(ComponentRef.toDAE(iter.name), iter.lst, iter.size, list(convertSubIterator(si) for si in iter.sub_iter));
       end match;
     end convert;

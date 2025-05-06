@@ -54,6 +54,7 @@ import DAEUtil;
 import Error;
 import Expression;
 import ExpressionDump;
+import ExpressionSimplify;
 import Flags;
 import HashTableExpToIndex;
 import List;
@@ -1950,14 +1951,20 @@ protected function createIterator
 algorithm
   iter := match red_iter.exp
     local
-      DAE.Exp exp;
-      Integer start, step, stop;
+      DAE.Exp exp, step, size;
+      DAE.Type ty;
+      Integer non_resizable_size;
 
     case exp as DAE.RANGE() algorithm
-      start := DAEUtil.getInteger(exp.start);
-      step  := DAEUtil.getInteger(Util.getOptionOrDefault(exp.step, DAE.ICONST(1)));
-      stop  := DAEUtil.getInteger(exp.stop);
-    then BackendDAE.SIM_ITERATOR_RANGE(DAE.CREF_IDENT(red_iter.id, DAE.T_INTEGER_DEFAULT, {}), start, step, stop, intDiv(stop-start, step) + 1, {});
+      ty    := Expression.typeof(exp.start);
+      step  := Util.getOptionOrDefault(exp.step, DAE.ICONST(1));
+      // build the size expression (stop-start)/step+1
+      size  := DAE.BINARY(exp.stop, DAE.SUB(ty), exp.start);
+      size  := DAE.BINARY(size, DAE.DIV(ty), step);
+      size  := DAE.BINARY(size, DAE.ADD(ty), DAE.ICONST(1));
+      size  := ExpressionSimplify.simplify(size);
+      non_resizable_size := Expression.getEvaluatedConstInteger(size);
+    then BackendDAE.SIM_ITERATOR_RANGE(DAE.CREF_IDENT(red_iter.id, DAE.T_INTEGER_DEFAULT, {}), exp.start, step, exp.stop, size, non_resizable_size, {});
 
     case exp as DAE.ARRAY() algorithm
     then BackendDAE.SIM_ITERATOR_LIST(DAE.CREF_IDENT(red_iter.id, DAE.T_INTEGER_DEFAULT, {}), list(DAEUtil.getInteger(e) for e in exp.array), listLength(exp.array), {});

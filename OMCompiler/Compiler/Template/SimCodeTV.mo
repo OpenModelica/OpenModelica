@@ -1694,10 +1694,11 @@ package BackendDAE
   uniontype SimIterator
     record SIM_ITERATOR_RANGE
       DAE.ComponentRef name;
-      Integer start;
-      Integer step;
-      Integer stop;
-      Integer size;
+      DAE.Exp start;
+      DAE.Exp step;
+      DAE.Exp stop;
+      DAE.Exp size;
+      Integer non_resizable_size;
       list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iter;
     end SIM_ITERATOR_RANGE;
     record SIM_ITERATOR_LIST
