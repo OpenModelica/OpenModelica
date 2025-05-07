@@ -1278,7 +1278,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     <%eqFunctions(allEquations, modelNamePrefixStr)%>
 
-    <%getVarToEqMap(simCode, allEquations, modelNamePrefixStr)%>
+    <%getDependency(simCode, allEquations, modelNamePrefixStr)%>
 
     /* forward the main in the simulation runtime */
     extern int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData);
@@ -1304,7 +1304,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <%symbolName(modelNamePrefixStr,"eqFunctions")%>,
       <%varInfo.numEquations%>,
       NULL,
-      <%symbolName(modelNamePrefixStr,"getVarToEqMap")%>,
+      <%symbolName(modelNamePrefixStr,"getDependency")%>,
       <%symbolName(modelNamePrefixStr,"functionODE")%>,
       <%symbolName(modelNamePrefixStr,"functionAlgebraics")%>,
       <%symbolName(modelNamePrefixStr,"functionDAE")%>,
@@ -4831,10 +4831,10 @@ template eqFunctions(list<SimEqSystem> eqs, String modelNamePrefix)
   >>
 end eqFunctions;
 
-template getVarToEqMap(SimCode simCode, list<SimEqSystem> allEquations, String modelNamePrefix)
+template getDependency(SimCode simCode, list<SimEqSystem> allEquations, String modelNamePrefix)
 ::=
   <<
-  void <%symbolName(modelNamePrefix,"getVarToEqMap")%>(size_t* mapVarToEqNode, size_t* realVarsIndex, size_t* nEqDependency, size_t** eqDependency)
+  void <%symbolName(modelNamePrefix,"getDependency")%>(size_t* mapVarToEqNode, size_t* realVarsIndex, size_t* nEqDependency, size_t** eqDependency)
   {
     TRACE_PUSH
 
@@ -4844,15 +4844,13 @@ template getVarToEqMap(SimCode simCode, list<SimEqSystem> allEquations, String m
     <%allEquations |> eq =>
       let eqIdx = equationIndexGeneral(eq)
       <<<%getSimEqSystemSimVarsLHS(eq, simCode) |> var =>
-      match var
-      case SIMVAR(__) then
-      <<
-      for (i = realVarsIndex[<%index%>]; i < realVarsIndex[<%index%>+1]; i++) {
-        mapVarToEqNode[i] = <%eqIdx%>; <%crefCCommentWithVariability(var)%>
-      }<%\n%>
+        match var
+        case SIMVAR(__) then
+        <<
+        for (i = realVarsIndex[<%index%>]; i < realVarsIndex[<%index%>+1]; i++)
+          mapVarToEqNode[i] = <%eqIdx%>; <%crefCCommentWithVariability(var)%><%\n%>
+        >>; separator="\n"%>
       >>; separator="\n"%>
-      >>
-      ; separator="\n"%>
 
     /* eqDependency */
     <%allEquations |> eq =>
@@ -4860,7 +4858,7 @@ template getVarToEqMap(SimCode simCode, list<SimEqSystem> allEquations, String m
       let n = listLength(getSimEqSystemSimVarsRHSIndex(eq, simCode))
       <<
       nEqDependency[<%eqIdx%>] = <%n%>; i = 0;
-      eqDependency[<%eqIdx%>] = malloc(<%n%> * sizeof(size_t));
+      eqDependency[<%eqIdx%>] = <%if stringEq(n, "0") then 'NULL' else 'malloc(<%n%> * sizeof(size_t))'%>;
       <%getSimEqSystemSimVarsRHSIndex(eq, simCode) |> varIdx =>
         <<
         eqDependency[<%eqIdx%>][i++] = mapVarToEqNode[<%varIdx%>];
@@ -4871,7 +4869,7 @@ template getVarToEqMap(SimCode simCode, list<SimEqSystem> allEquations, String m
     TRACE_POP
   }
   >>
-end getVarToEqMap;
+end getDependency;
 
 template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer nAuxVars, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
   "Generates initialization function for daeMode."
