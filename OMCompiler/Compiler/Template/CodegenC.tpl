@@ -1295,7 +1295,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     <%eqFunctions(allEquations, modelNamePrefixStr)%>
 
-    <%getVarToEqMap(simCode, allEquations, modelNamePrefixStr)%>
+    <%getDependency(simCode, allEquations, modelNamePrefixStr)%>
 
     /* forward the main in the simulation runtime */
     extern int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData);
@@ -1321,7 +1321,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <%symbolName(modelNamePrefixStr,"eqFunctions")%>,
       <%varInfo.numEquations%>,
       NULL,
-      <%symbolName(modelNamePrefixStr,"getVarToEqMap")%>,
+      <%symbolName(modelNamePrefixStr,"getDependency")%>,
       <%symbolName(modelNamePrefixStr,"functionODE")%>,
       <%symbolName(modelNamePrefixStr,"functionAlgebraics")%>,
       <%symbolName(modelNamePrefixStr,"functionDAE")%>,
@@ -4835,10 +4835,10 @@ template eqFunctions(list<SimEqSystem> eqs, String modelNamePrefix)
   >>
 end eqFunctions;
 
-template getVarToEqMap(SimCode simCode, list<SimEqSystem> allEquations, String modelNamePrefix)
+template getDependency(SimCode simCode, list<SimEqSystem> allEquations, String modelNamePrefix)
 ::=
   <<
-  void <%symbolName(modelNamePrefix,"getVarToEqMap")%>(size_t* mapVarToEqNode, size_t* realVarsIndex, size_t* nEqDependency, size_t** eqDependency)
+  void <%symbolName(modelNamePrefix,"getDependency")%>(size_t* mapVarToEqNode, size_t* realVarsIndex, size_t* nEqDependency, size_t** eqDependency)
   {
     TRACE_PUSH
 
@@ -4848,15 +4848,13 @@ template getVarToEqMap(SimCode simCode, list<SimEqSystem> allEquations, String m
     <%allEquations |> eq =>
       let eqIdx = equationIndexGeneral(eq)
       <<<%getSimEqSystemSimVarsLHS(eq, simCode) |> var =>
-      match var
-      case SIMVAR(__) then
-      <<
-      for (i = realVarsIndex[<%index%>]; i < realVarsIndex[<%index%>+1]; i++) {
-        mapVarToEqNode[i] = <%eqIdx%>; <%crefCCommentWithVariability(var)%>
-      }<%\n%>
+        match var
+        case SIMVAR(__) then
+        <<
+        for (i = realVarsIndex[<%index%>]; i < realVarsIndex[<%index%>+1]; i++)
+          mapVarToEqNode[i] = <%eqIdx%>; <%crefCCommentWithVariability(var)%><%\n%>
+        >>; separator="\n"%>
       >>; separator="\n"%>
-      >>
-      ; separator="\n"%>
 
     /* eqDependency */
     <%allEquations |> eq =>
@@ -4864,7 +4862,7 @@ template getVarToEqMap(SimCode simCode, list<SimEqSystem> allEquations, String m
       let n = listLength(getSimEqSystemSimVarsRHSIndex(eq, simCode))
       <<
       nEqDependency[<%eqIdx%>] = <%n%>; i = 0;
-      eqDependency[<%eqIdx%>] = malloc(<%n%> * sizeof(size_t));
+      eqDependency[<%eqIdx%>] = <%if stringEq(n, "0") then 'NULL' else 'malloc(<%n%> * sizeof(size_t))'%>;
       <%getSimEqSystemSimVarsRHSIndex(eq, simCode) |> varIdx =>
         <<
         eqDependency[<%eqIdx%>][i++] = mapVarToEqNode[<%varIdx%>];
@@ -4875,7 +4873,7 @@ template getVarToEqMap(SimCode simCode, list<SimEqSystem> allEquations, String m
     TRACE_POP
   }
   >>
-end getVarToEqMap;
+end getDependency;
 
 template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer nAuxVars, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
   "Generates initialization function for daeMode."
@@ -5722,15 +5720,14 @@ template genVector(String name, String num, Integer numI, Integer flag) "templat
   end match
 end genVector;
 
-template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices,String modelNamePrefix, String fileNamePrefix) "template functionAnalyticJacobians
+template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String modelNamePrefix, String fileNamePrefix) "template functionAnalyticJacobians
   This template generates source code for all given jacobians."
 ::=
-  let initialjacMats = (JacobianMatrices |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, sparsity=sparsepattern, coloredCols=colorList, maxColorCols=maxColor) =>
-    initialAnalyticJacobians(mat, vars, name, sparsepattern, colorList, maxColor, modelNamePrefix, fileNamePrefix); separator="\n")
-  let jacMats = (JacobianMatrices |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, partitionIndex=partIdx, crefsHT=crefsHT) =>
-    generateMatrix(mat, vars, name, partIdx, crefsHT, modelNamePrefix) ;separator="\n")
-  let jacGenericCalls = (JacobianMatrices |> jac as JAC_MATRIX() => genericCallBodies(jac.generic_loop_calls, createJacContext(jac.crefsHT)) ;separator="\n")
-
+  let initialjacMats = (JacobianMatrices |> JAC_MATRIX() =>
+    initialAnalyticJacobians(columns, seedVars, matrixName, sparsity, coloredCols, maxColorCols, modelNamePrefix, fileNamePrefix); separator="\n")
+  let jacMats = (JacobianMatrices |> JAC_MATRIX() =>
+    generateMatrix(columns, seedVars, matrixName, partitionIndex, crefsHT, modelNamePrefix) ;separator="\n")
+  let jacGenericCalls = (JacobianMatrices |> JAC_MATRIX() => genericCallBodies(generic_loop_calls, createJacContext(crefsHT)) ;separator="\n")
   <<
   <%jacMats%>
 
@@ -5751,17 +5748,15 @@ match sparsepattern
     int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
     {
       TRACE_PUSH
-      TRACE_POP
       jacobian->availability = JACOBIAN_NOT_AVAILABLE;
+      TRACE_POP
       return 1;
     }
     >>
   case _ then
-    let &eachCrefParts = buffer ""
     let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
     let sizeleadindex = listLength(sparsepattern)
     let fileName = '<%fileNamePrefix%>_Jac<%matrixname%>.bin'
-    let colorString = readSPColors(colorList, "jacobian->sparsePattern->colorCols", sizeleadindex)
     let availability = if SimCodeUtil.jacobianColumnsAreEmpty(jacobianColumn) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
     let sizeRows = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=nRows) => '<%nRows%>';separator="\n")
     let tmpvarsSize = (jacobianColumn |> JAC_COLUMN(columnVars=vars) => listLength(vars);separator="\n")
@@ -5796,7 +5791,7 @@ match sparsepattern
       }
 
       /* write color array */
-      <%colorString%>
+      <%readSPColors(colorList, "jacobian->sparsePattern->colorCols", sizeleadindex)%>
 
       omc_fclose(pFile);
 

@@ -1034,7 +1034,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->modelData->mapVarToEqNode = (size_t*) calloc(data->modelData->nVariablesReal, sizeof(size_t));
   data->modelData->nEqDependency = (size_t*) calloc(data->callback->eqFunctionsSize, sizeof(size_t));
   data->modelData->eqDependency = (size_t**) calloc(data->callback->eqFunctionsSize, sizeof(size_t*));
-  data->callback->getVarToEqMap(data->modelData->mapVarToEqNode, data->simulationInfo->realVarsIndex, data->modelData->nEqDependency, data->modelData->eqDependency);
+  data->callback->getDependency(data->modelData->mapVarToEqNode, data->simulationInfo->realVarsIndex, data->modelData->nEqDependency, data->modelData->eqDependency);
 
   /* prepare RingBuffer */
   for(i=0; i<SIZERINGBUFFER; i++)
