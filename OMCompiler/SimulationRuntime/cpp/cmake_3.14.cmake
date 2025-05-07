@@ -14,8 +14,12 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME simrtcpp)
 
 
 # Boost and a threading library are required for the CPP-runtime.
-if(CMAKE_VERSION VERSION_LESS "3.30")
-  find_package(Boost COMPONENTS program_options filesystem REQUIRED)
+if(APPLE)
+ # MacPorts installs the Boost configuration file in a non-standard location,
+ # keep using the old FindBoost module for now.
+ find_package(Boost COMPONENTS program_options filesystem REQUIRED)
+elseif(CMAKE_VERSION VERSION_LESS "3.30")
+ find_package(Boost COMPONENTS program_options filesystem REQUIRED)
 else()
   find_package(Boost CONFIG COMPONENTS program_options filesystem REQUIRED)
 endif()
