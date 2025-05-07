@@ -234,6 +234,19 @@ public
     end match;
   end applySimpleVar;
 
+  function replaceVarPtr
+    "replaces a pointer if there is a name replacement in the map"
+    input output Pointer<Variable> var_ptr;
+    input UnorderedMap<ComponentRef, ComponentRef> replacements;
+  protected
+    Option<ComponentRef> cref;
+  algorithm
+    cref := UnorderedMap.get(BVariable.getVarName(var_ptr), replacements);
+    if Util.isSome(cref) then
+      var_ptr := BVariable.getVarPointer(Util.getOption(cref));
+    end if;
+  end replaceVarPtr;
+
   function simpleToString
     input UnorderedMap<ComponentRef, Expression> replacements;
     output String str = "";
