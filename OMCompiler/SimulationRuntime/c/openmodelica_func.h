@@ -111,8 +111,8 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   size_t eqFunctionsSize;               /* highest index of eqFunction */
   eq_func_ptr* eqFunctions;             /* array of all eqFunctions by index */
 
-  /* sets the var to eqNode map */
-  void (*getVarToEqMap)(size_t* mapVarToEqNode, size_t* realVarsIndex, size_t* nEqDependency, size_t** eqDependency);
+  /* sets the var to eqNode map and dependency graph */
+  void (*getDependency)(size_t* mapVarToEqNode, size_t* realVarsIndex, size_t* nEqDependency, size_t** eqDependency);
 
   /* functionODE contains those equations that are needed
   * to calculate the dynamic part of the system */
