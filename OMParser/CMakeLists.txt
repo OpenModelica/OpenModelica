@@ -10,7 +10,6 @@ set(OMAntlr4_ANTLRJAR ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/antlr4/tool/antlr-4.8
 
 add_custom_command(
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/modelica.g4
-    SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/modelica.g4
     COMMAND ${Java_JAVA_EXECUTABLE}
     ARGS -cp ${OMAntlr4_ANTLRJAR}
           org.antlr.v4.Tool -Dlanguage=Cpp -package openmodelica -listener -visitor
