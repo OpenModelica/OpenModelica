@@ -1835,8 +1835,6 @@ void TLMConnectionDialog::addTLMConnection()
     mpConnectionLineAnnotation->setZfr(mpAngularImpedanceTextBox->text());
     mpConnectionLineAnnotation->setOMSConnectionType(oms_connection_tlm);
 
-    mpConnectionLineAnnotation->drawCornerItems();
-    mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
     mpGraphicsView->addConnectionToView(mpConnectionLineAnnotation, false);
     if (mpGraphicsView->addConnectionToClass(mpConnectionLineAnnotation)) {
       mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Add TLM Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartElementName(),

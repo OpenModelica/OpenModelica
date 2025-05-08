@@ -130,17 +130,6 @@ private:
   GraphicsView *mpGraphicsView;
 };
 
-class AddConnectionCommand : public UndoCommand
-{
-public:
-  AddConnectionCommand(LineAnnotation *pConnectionLineAnnotation, bool addConnection, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-private:
-  LineAnnotation *mpConnectionLineAnnotation;
-  bool mAddConnection;
-};
-
 class UpdateConnectionCommand : public UndoCommand
 {
 public:
@@ -152,27 +141,6 @@ private:
   LineAnnotation *mpConnectionLineAnnotation;
   QString mOldAnnotation;
   QString mNewAnnotation;
-};
-
-class DeleteConnectionCommand : public UndoCommand
-{
-public:
-  DeleteConnectionCommand(LineAnnotation *pConnectionLineAnnotation, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-private:
-  LineAnnotation *mpConnectionLineAnnotation;
-};
-
-class AddTransitionCommand : public UndoCommand
-{
-public:
-  AddTransitionCommand(LineAnnotation *pTransitionLineAnnotation, bool addTransition, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-private:
-  LineAnnotation *mpTransitionLineAnnotation;
-  bool mAddTransition;
 };
 
 class UpdateTransitionCommand : public UndoCommand
@@ -202,27 +170,6 @@ private:
   QString mNewAnnotation;
 };
 
-class DeleteTransitionCommand : public UndoCommand
-{
-public:
-  DeleteTransitionCommand(LineAnnotation *pTransitionLineAnnotation, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-private:
-  LineAnnotation *mpTransitionLineAnnotation;
-};
-
-class AddInitialStateCommand : public UndoCommand
-{
-public:
-  AddInitialStateCommand(LineAnnotation *pInitialStateLineAnnotation, bool addInitialState, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-private:
-  LineAnnotation *mpInitialStateLineAnnotation;
-  bool mAddInitialState;
-};
-
 class UpdateInitialStateCommand : public UndoCommand
 {
 public:
@@ -234,16 +181,6 @@ private:
   LineAnnotation *mpInitialStateLineAnnotation;
   QString mOldAnnotation;
   QString mNewAnnotation;
-};
-
-class DeleteInitialStateCommand : public UndoCommand
-{
-public:
-  DeleteInitialStateCommand(LineAnnotation *pInitialStateLineAnnotation, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-private:
-  LineAnnotation *mpInitialStateLineAnnotation;
 };
 
 class UpdateCoordinateSystemCommand : public UndoCommand
