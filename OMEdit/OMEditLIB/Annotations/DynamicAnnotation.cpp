@@ -255,6 +255,16 @@ QString DynamicAnnotation::toQString() const
   return mExp.toQString();
 }
 
+/*!
+ * \brief DynamicAnnotation::serialize
+ * Unparses the Annotation into a JSON value.
+ * \return
+ */
+QJsonValue DynamicAnnotation::serialize() const
+{
+  return mExp.serialize();
+}
+
 void DynamicAnnotation::setExp()
 {
   if (mState == State::None) {

@@ -83,6 +83,7 @@ class DynamicAnnotation
     virtual FlatModelica::Expression toExp() const = 0;
     bool isDynamicSelectExpression() const;
     QString toQString() const;
+    QJsonValue serialize() const;
 
   protected:
     virtual void fromExp(const FlatModelica::Expression &exp) = 0;

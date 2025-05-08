@@ -66,6 +66,7 @@ public:
   QString getOMCShapeAnnotation() override;
   QString getOMCShapeAnnotationWithShapeName() override;
   QString getShapeAnnotation() override;
+  QJsonObject getShapeAnnotationJSON();
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
   ModelInstance::Extend *getExtend() const override;
   void setText(ModelInstance::Text *pText) {mpText = pText;}

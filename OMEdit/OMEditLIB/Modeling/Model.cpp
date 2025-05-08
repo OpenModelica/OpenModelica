@@ -1404,7 +1404,7 @@ namespace ModelInstance
 
   /*!
    * \brief Model::removeElement
-   * Removes the element.
+   * Removes the element from the model and deletes it.
    * \param name
    */
   void Model::removeElement(const QString &name)
@@ -1435,6 +1435,55 @@ namespace ModelInstance
     }
 
     return comps;
+  }
+
+  /*!
+   * \brief Model::removeConnection
+   * Removes the connection from the model and deletes it.
+   * \param pConnection
+   */
+  void Model::removeConnection(const QString &startConnectorName, const QString &endConnectorName)
+  {
+    foreach (auto pConnection, mConnections) {
+      if (pConnection->getStartConnector()->getName().compare(startConnectorName) == 0 && pConnection->getEndConnector()->getName().compare(endConnectorName) == 0) {
+        mConnections.removeOne(pConnection);
+        delete pConnection;
+        break;
+      }
+    }
+  }
+
+  /*!
+   * \brief Model::removeTransition
+   * Removes the transition from the model and deletes it.
+   * \param startConnectorName
+   * \param endConnectorName
+   */
+  void Model::removeTransition(const QString &startConnectorName, const QString &endConnectorName)
+  {
+    foreach (auto pTransition, mTransitions) {
+      if (pTransition->getStartConnector()->getName().compare(startConnectorName) == 0 && pTransition->getEndConnector()->getName().compare(endConnectorName) == 0) {
+        mTransitions.removeOne(pTransition);
+        delete pTransition;
+        break;
+      }
+    }
+  }
+
+  /*!
+   * \brief Model::removeInitialState
+   * Removes the initial state from the model and deletes it.
+   * \param startConnectorName
+   */
+  void Model::removeInitialState(const QString &startConnectorName)
+  {
+    foreach (auto pInitialSate, mInitialStates) {
+      if (pInitialSate->getStartConnector()->getName().compare(startConnectorName) == 0) {
+        mInitialStates.removeOne(pInitialSate);
+        delete pInitialSate;
+        break;
+      }
+    }
   }
 
   bool Model::isParameterConnectorSizing(const QString &parameter)
@@ -2625,6 +2674,18 @@ namespace ModelInstance
     mKind = "";
   }
 
+  /*!
+   * \brief Connector::Connector
+   * Constructor for Connector.
+   * \param kind
+   * \param name
+   */
+  Connector::Connector(const QString &kind, const QString &name)
+  {
+    mKind = kind;
+    mName = name;
+  }
+
   void Connector::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("$kind")) {
@@ -2660,6 +2721,23 @@ namespace ModelInstance
   Connection::Connection(Model *pParentModel)
   {
     mpParentModel = pParentModel;
+  }
+
+  /*!
+   * \brief Connection::Connection
+   * Constructor for Connection.
+   * \param pParentModel
+   * \param startConnector
+   * \param endConnector
+   * \param annotationJsonObject
+   */
+  Connection::Connection(Model *pParentModel, const QString &startConnector, const QString &endConnector, const QJsonObject &annotationJsonObject)
+  {
+    mpParentModel = pParentModel;
+    mpStartConnector = std::make_unique<Connector>("cref", startConnector);
+    mpEndConnector = std::make_unique<Connector>("cref", endConnector);
+    mpAnnotation = std::make_unique<Annotation>(mpParentModel);
+    mpAnnotation->deserialize(annotationJsonObject);
   }
 
   void Connection::deserialize(const QJsonObject &jsonObject)
@@ -2698,6 +2776,34 @@ namespace ModelInstance
     mReset = true;
     mSynchronize = false;
     mPriority = 1;
+  }
+
+  /*!
+   * \brief Transition::Transition
+   * Constructor for Transition.
+   * \param pParentModel
+   * \param startConnector
+   * \param endConnector
+   * \param condition
+   * \param immediate
+   * \param reset
+   * \param synchronize
+   * \param priority
+   * \param annotationJsonObject
+   */
+  Transition::Transition(Model *pParentModel, const QString &startConnector, const QString &endConnector, bool condition, bool immediate, bool reset,
+                         bool synchronize, int priority, const QJsonObject &annotationJsonObject)
+  {
+    mpParentModel = pParentModel;
+    mpStartConnector = std::make_unique<Connector>("cref", startConnector);
+    mpEndConnector = std::make_unique<Connector>("cref", endConnector);
+    mCondition = condition;
+    mImmediate = immediate;
+    mReset = reset;
+    mSynchronize = synchronize;
+    mPriority = priority;
+    mpAnnotation = std::make_unique<Annotation>(mpParentModel);
+    mpAnnotation->deserialize(annotationJsonObject);
   }
 
   void Transition::deserialize(const QJsonObject &jsonObject)
@@ -2751,6 +2857,21 @@ namespace ModelInstance
   InitialState::InitialState(Model *pParentModel)
   {
     mpParentModel = pParentModel;
+  }
+
+  /*!
+   * \brief InitialState::InitialState
+   * Constructor for InitialState.
+   * \param pParentModel
+   * \param startConnector
+   * \param annotationJsonObject
+   */
+  InitialState::InitialState(Model *pParentModel, const QString &startConnector, const QJsonObject &annotationJsonObject)
+  {
+    mpParentModel = pParentModel;
+    mpStartConnector = std::make_unique<Connector>("cref", startConnector);
+    mpAnnotation = std::make_unique<Annotation>(mpParentModel);
+    mpAnnotation->deserialize(annotationJsonObject);
   }
 
   void InitialState::deserialize(const QJsonObject &jsonObject)
