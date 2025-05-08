@@ -91,6 +91,7 @@ public:
   QString getOMCShapeAnnotation() override;
   QString getOMCShapeAnnotationWithShapeName() override;
   QString getShapeAnnotation() override;
+  QJsonObject getShapeAnnotationJSON();
   void addPoint(QPointF point) override;
   void addGeometry();
   void removePoint(int index);
@@ -146,7 +147,7 @@ public:
   void updateOMSConnection();
   void updateToolTip();
   void showOMSConnection();
-  void updateTransistion(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority);
+  void updateTransistion();
   void setProperties(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority);
 
   static QColor findLineColorForConnection(Element *pComponent);

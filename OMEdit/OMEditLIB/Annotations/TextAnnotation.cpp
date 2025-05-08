@@ -520,6 +520,24 @@ QString TextAnnotation::getShapeAnnotation()
   return QString("Text(").append(annotationString.join(",")).append(")");
 }
 
+/*!
+ * \brief TextAnnotation::getShapeAnnotationJSON
+ * Returns Text annotation in JSON format.
+ * \return
+ */
+QJsonObject TextAnnotation::getShapeAnnotationJSON()
+{
+  QJsonObject jsonObject;
+  jsonObject.insert("extent", mExtent.serialize());
+  jsonObject.insert("textString", mTextString.serialize());
+  jsonObject.insert("fontSize", mFontSize.serialize());
+  jsonObject.insert("textColor", mLineColor.serialize());
+  jsonObject.insert("fontName", mFontName.serialize());
+  jsonObject.insert("textStyle", mTextStyles.serialize());
+  jsonObject.insert("horizontalAlignment", mHorizontalAlignment.serialize());
+  return jsonObject;
+}
+
 void TextAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 {
   // set the default values
