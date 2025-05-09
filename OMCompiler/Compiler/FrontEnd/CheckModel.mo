@@ -549,7 +549,7 @@ algorithm
     local
       DAE.Exp e, exp, e1, e2;
       HashSet.HashSet ht;
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr, first_cref;
       list<DAE.ComponentRef> crlst;
       list<DAE.Subscript> subs;
       DAE.Expand expand;
@@ -590,8 +590,13 @@ algorithm
     case (e as DAE.CREF(componentRef=cr), (expand,ht))
       equation
         cr = ComponentReference.crefStripSubsExceptModelSubs(cr);
-        crlst = ComponentReference.expandCref(cr, true);
-        ht = List.fold(crlst, BaseHashSet.add, ht);
+        // check if first element already is in the set and only expand if not (saves a lot of expand work)
+        // ticket #7832
+        first_cref = ComponentReference.crefArrayGetFirstCref(cr);
+        if not BaseHashSet.has(first_cref, ht) then
+          crlst = ComponentReference.expandCref(cr, true);
+          ht = List.fold(crlst, BaseHashSet.add, ht);
+        end if;
       then (e, false, (expand,ht));
 
     case (e as DAE.ASUB(exp=exp), _)

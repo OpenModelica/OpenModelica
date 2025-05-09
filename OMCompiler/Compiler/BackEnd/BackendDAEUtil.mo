@@ -2734,17 +2734,21 @@ algorithm
           Discrete output variables that do not occur get computed by pre().
           Ticket #5659
         */
-        if indexTypeSolvable(inIndexType) then
-          crefLst := CheckModel.algorithmStatementListOutputs(statementLst, DAE.EXPAND()); // expand as we're in an algorithm
-          for cr in crefLst loop
-            try
-              (varslst, p) := BackendVariable.getVar(cr, vars);
-              res := adjacencyRowExp1Discrete(varslst, p, res);
-            else
-              /* Nothing to do, BackendVariable.getVar fails for $START, $PRE, time etc. */
-            end try;
-          end for;
-        end if;
+        crefLst := CheckModel.algorithmStatementListOutputs(statementLst, DAE.EXPAND()); // expand as we're in an algorithm
+        for cr in crefLst loop
+          try
+            (varslst, p) := BackendVariable.getVar(cr, vars);
+            res := adjacencyRowExp1DiscreteOrArray(varslst, p, res);
+          else
+            /* Nothing to do, BackendVariable.getVar fails for $START, $PRE, time etc. */
+          end try;
+          try
+            (varslst, p) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
+            res := adjacencyRowExp1DiscreteOrArray(varslst, p, res);
+          else
+            /* Nothing to do, BackendVariable.getVar fails for $START, $PRE, time etc. */
+          end try;
+        end for;
       then
         (res,size);
 
@@ -3624,7 +3628,7 @@ algorithm
   end match;
 end adjacencyRowExp1;
 
-protected function adjacencyRowExp1Discrete
+protected function adjacencyRowExp1DiscreteOrArray
   "Adds an adjacency matrix entry for all variables in the inVarLst, if they are discrete."
   input list<BackendDAE.Var> inVarLst;
   input list<Integer> inIntegerLst;
@@ -3638,14 +3642,14 @@ algorithm
        AvlSetInt.Tree vars;
        Integer i;
     case ({}, {}) then inVarIndxLst;
-    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())::rest, i::irest)
+    case (BackendDAE.VAR()::rest, i::irest)
       equation
         vars = AvlSetInt.add(inVarIndxLst, i);
-      then adjacencyRowExp1Discrete(rest,irest,vars);
+      then adjacencyRowExp1DiscreteOrArray(rest,irest,vars);
     case (_::rest, _::irest)
-      then adjacencyRowExp1Discrete(rest,irest,inVarIndxLst);
+      then adjacencyRowExp1DiscreteOrArray(rest,irest,inVarIndxLst);
   end match;
-end adjacencyRowExp1Discrete;
+end adjacencyRowExp1DiscreteOrArray;
 
 public function traversingadjacencyRowExpFinderwithInput "Helper for statesAndVarsExp"
   input DAE.Exp inExp;
@@ -4317,21 +4321,6 @@ protected function traverseStmts<ArgT> "Author: Frenkel TUD 2012-06
   end FuncExpType;
 
 protected
-  function removeSubscripts
-    "kabdelhak: remove left hand side subscripts
-     (Modelica Specification v3.5 : 11.1.2)
-     Fix: Do not do if it is a scalar variable with all constant subscripts.
-          It leads to a massive number of hash table accesses for big tensors."
-    input output DAE.Exp exp;
-  algorithm
-    exp := match exp
-      case DAE.CREF() guard(not ComponentReference.crefIsScalarWithAllConstSubs(exp.componentRef)) algorithm
-        exp.componentRef := ComponentReference.crefStripSubsExceptModelSubs(exp.componentRef);
-      then exp;
-      else exp;
-    end match;
-  end removeSubscripts;
-
   DAE.Exp e,e2;
   list<DAE.Exp> expl1;
   DAE.ComponentRef cr;
@@ -4350,7 +4339,7 @@ algorithm
           // (Modelica Specification v3.5 : 11.1.2)
           // solves ticket #7832
           extraArg = func(e, extraArg);
-          extraArg = func(removeSubscripts(e2), extraArg);
+          extraArg = func(e2, extraArg);
         then
           extraArg;
 
@@ -4360,7 +4349,7 @@ algorithm
           // (Modelica Specification v3.5 : 11.1.2)
           // solves ticket #7832
           extraArg = func(e, extraArg);
-          extraArg = List.fold(list(removeSubscripts(ex) for ex in expl1),func,extraArg);
+          extraArg = List.fold(expl1,func,extraArg);
         then
           extraArg;
 
@@ -4370,7 +4359,7 @@ algorithm
           // (Modelica Specification v3.5 : 11.1.2)
           // solves ticket #7832
           extraArg = func(e, extraArg);
-          extraArg = func(removeSubscripts(e2), extraArg);
+          extraArg = func(e2, extraArg);
         then
           extraArg;
 
@@ -10321,16 +10310,6 @@ algorithm
     else (inExp, inHomotopy, true);
   end match;
 end containsHomotopyCall2;
-
-protected function indexTypeSolvable
-  input BackendDAE.IndexType indexType;
-  output Boolean b;
-algorithm
-  b := match indexType
-    case BackendDAE.SOLVABLE() then true;
-    else false;
-  end match;
-end indexTypeSolvable;
 
 public function doIndexReduction
   input BackendDAE.MatchingOptions opt;
