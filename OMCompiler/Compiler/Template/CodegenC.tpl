@@ -7457,6 +7457,7 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
 ::=
   let jac = match context case JACOBIAN_CONTEXT() then ", JACOBIAN *jacobian" else ""
   (genericCalls |> call =>
+    let comment = escapeCComments(simGenericCallString(call))
     let &sub = buffer ""
     let &preExp = buffer ""
     let &varDecls = buffer ""
@@ -7469,11 +7470,14 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       let idx_ = if resizable then (iters |> it => 'modelica_integer <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
       let idx_copy = if resizable then "" else "int tmp = idx;"
       <<
+      /*
+      <%comment%>
+      */
+      <%auxFunction%>
       void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, const int equationIndexes[2], <%idx_%>)
       {
         <%idx_copy%>
         <%varDecls%>
-        <%auxFunction%>
         <%preExp%>
         <%iter_%>
         <%body_%>;
@@ -7486,11 +7490,14 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       let idx_ = if resizable then (iters |> it => 'modelica_integer <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
       let idx_copy = if resizable then "" else "int tmp = idx;"
       <<
+      /*
+      <%comment%>
+      */
+      <%auxFunction%>
       void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, const int equationIndexes[2], <%idx_%>)
       {
         <%idx_copy%>
         <%varDecls%>
-        <%auxFunction%>
         <%preExp%>
         <%iter_%>
         <%branches_%>
@@ -7503,11 +7510,14 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       let idx_ = if resizable then (iters |> it => 'modelica_integer <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
       let idx_copy = if resizable then "" else "int tmp = idx;"
       <<
+      /*
+      <%comment%>
+      */
+      <%auxFunction%>
       void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, const int equationIndexes[2], <%idx_%>)
       {
         <%idx_copy%>
         <%varDecls%>
-        <%auxFunction%>
         <%preExp%>
         <%iter_%>
         <%branches_%>

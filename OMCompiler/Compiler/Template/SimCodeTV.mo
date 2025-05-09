@@ -1471,6 +1471,11 @@ package SimCodeUtil
     input DAE.Exp exp;
     output DAE.Exp nom;
   end getExpNominal;
+
+  function simGenericCallString
+    input SimCode.SimGenericCall call;
+    output String str;
+  end simGenericCallString;
 end SimCodeUtil;
 
 package SimCodeFunctionUtil
