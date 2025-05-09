@@ -1633,7 +1633,7 @@ public
         Dependency.addListFull(inputs, 0, dep_map, rep_set);
         Dependency.addListFull(outputs, 0, dep_map, rep_set);
         // make inputs unsolvable and outputs solvable (maybe check if algorithm can be reversed)
-        Solvability.updateList(inputs, Solvability.UNSOLVABLE(), sol_map);
+        Solvability.updateList(inputs, Solvability.IMPLICIT(), sol_map);
         Solvability.updateList(outputs, Solvability.EXPLICIT_LINEAR(NONE(), NONE()), sol_map);
       then UnorderedSet.fromList(listAppend(inputs, outputs), ComponentRef.hash, ComponentRef.isEqual);
 

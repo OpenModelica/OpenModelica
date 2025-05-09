@@ -1223,15 +1223,14 @@ public
         algorithm
           // get the variable pointer from the old cref to later on link back to it
           old_var_ptr := BVariable.getVarPointer(cref);
-          // prepend the seed str and the matrix name and create the new cref
+          // prepend the start str
           qual.name := START_STR;
           start_cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
           var := fromCref(start_cref, Variable.attributes(getVar(cref)));
-          // update the variable to be a seed and pass the pointer to the original variable
+          // update the variable to be a start variable and pass the pointer to the original variable
           var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.START(old_var_ptr));
           // create the new variable pointer and safe it to the component reference
-          var_ptr := Pointer.create(var);
-          start_cref := BackendDAE.lowerComponentReferenceInstNode(start_cref, var_ptr);
+          (var_ptr, start_cref) := makeVarPtrCyclic(var, start_cref);
       then ();
 
       else algorithm
@@ -1370,6 +1369,39 @@ public
     (der_cref, der_var) := makeDerVar(cref);
     setStateDerivativeVar(var_ptr, der_var);
   end makeAuxStateVar;
+
+  function makeTmpVar
+    "Creates a tmp variable pointer from a cref. Used in NBInitialization.
+    e.g: angle -> $START.angle"
+    input ComponentRef cref           "old component reference";
+    output ComponentRef tmp_cref    "new component reference";
+  protected
+    Pointer<Variable> var_ptr  "pointer to new variable";
+  algorithm
+    () := match ComponentRef.node(cref)
+      local
+        InstNode qual;
+        Pointer<Variable> old_var_ptr;
+        Variable var;
+      case qual as InstNode.VAR_NODE()
+        algorithm
+          // get the variable pointer from the old cref to later on link back to it
+          old_var_ptr := BVariable.getVarPointer(cref);
+          // prepend the tmp str
+          qual.name := TEMPORARY_STR;
+          tmp_cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
+          var := fromCref(tmp_cref, Variable.attributes(getVar(cref)));
+          // update the variable to be a start variable and pass the pointer to the original variable
+          var.backendinfo := BackendInfo.setVarKind(var.backendinfo, getVarKind(old_var_ptr));
+          // create the new variable pointer and safe it to the component reference
+          (var_ptr, tmp_cref) := makeVarPtrCyclic(var, tmp_cref);
+      then ();
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
+      then fail();
+    end match;
+  end makeTmpVar;
 
   function makeClockVar
     "Creates a clock variable if an unnamed clock is used in the system"
