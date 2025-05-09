@@ -8536,15 +8536,48 @@ algorithm
 
     case SimCode.IF_GENERIC_CALL() algorithm
       str := "if generic call " + intString(call.index) + " " + List.toString(call.iters, BackendDump.simIteratorString);
+      str := str + List.toString(call.branches, simBranchString, "", "", "\n", "");
     then str;
 
     case SimCode.WHEN_GENERIC_CALL() algorithm
       str := "when generic call " + intString(call.index) + " " + List.toString(call.iters, BackendDump.simIteratorString);
+      str := str + List.toString(call.branches, simBranchString, "", "", "\n", "");
     then str;
 
     else "";
   end match;
 end simGenericCallString;
+
+function simBranchString
+  input SimCode.SimBranch branch;
+  output String str;
+protected
+  function simBranchBodyString
+    input tuple<DAE.Exp, DAE.Exp> tpl;
+    output String str = ExpressionDump.printExpStr(Util.tuple21(tpl)) + " = " + ExpressionDump.printExpStr(Util.tuple22(tpl)) + ";";
+  end simBranchBodyString;
+algorithm
+  str := match branch
+    local
+      Boolean b;
+
+    case SimCode.SIM_BRANCH() algorithm
+      b := Util.isSome(branch.condition);
+      str := if b then "if " + ExpressionDump.printExpStr(Util.getOption(branch.condition)) + " then\n" else "else\n";
+      str := str + List.toString(branch.body, simBranchBodyString, "  ", "  ", "\n", "");
+      str := if b then str + "end if;" else str;
+    then str;
+
+    case SimCode.SIM_BRANCH_STMT() algorithm
+      b := Util.isSome(branch.condition);
+      str := if b then "if " + ExpressionDump.printExpStr(Util.getOption(branch.condition)) + " then\n" else "else\n";
+      str := str + List.toString(branch.body, DAEDump.ppStatementStr, "  ", "  ", "\n", "");
+      str := if b then str + "\nend if;" else str;
+    then str;
+
+    else "";
+  end match;
+end simBranchString;
 
 // one dlow var can result in multiple simvars: input and output are a subset
 // of algvars for example
