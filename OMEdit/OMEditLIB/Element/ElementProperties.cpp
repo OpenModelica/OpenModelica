@@ -1581,7 +1581,13 @@ void ElementParameters::setUpDialog()
   pModifiersTabLayout->addWidget(mpModifiersLabel);
   pModifiersTabLayout->addWidget(mpModifiersTextBox);
   pModifiersTab->setLayout(pModifiersTabLayout);
-  mpParametersTabWidget->addTab(pModifiersTab, "Modifiers");
+  /* Do not add Modifiers tab when we are modifying top level parameters.
+   * We don't know yet how to set the modifiers in the top level parameter editing.
+   * For now simply hide the Modifiers tab in that case.
+   */
+  if (hasElement()) {
+    mpParametersTabWidget->addTab(pModifiersTab, "Modifiers");
+  }
   // Issue #7494. Hide any empty tab. We start the loop from 1 since we don't want to remove General tab which is always the first tab.
   for (int i = 1; i < mpParametersTabWidget->count(); ++i) {
     ParametersScrollArea *pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(i));
@@ -2033,32 +2039,8 @@ void ElementParameters::updateElementParameters()
       elementModifiersList.append(elementModifier);
     }
   }
-  // any new modifier is added
-  if (!mpModifiersTextBox->text().isEmpty()) {
-    QString regexp ("\\s*([A-Za-z0-9._]+\\s*)\\(\\s*([A-Za-z0-9._]+)\\s*=\\s*([A-Za-z0-9._]+)\\s*\\)$");
-    QRegExp modifierRegExp (regexp);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-    QStringList modifiers = mpModifiersTextBox->text().split(",", Qt::SkipEmptyParts);
-#else // QT_VERSION_CHECK
-    QStringList modifiers = mpModifiersTextBox->text().split(",", QString::SkipEmptyParts);
-#endif // QT_VERSION_CHECK
-    foreach (QString modifier, modifiers) {
-      ElementModifier elementModifier;
-      modifier = modifier.trimmed();
-      if (modifierRegExp.exactMatch(modifier)) {
-        valueChanged = true;
-        elementModifier.mKey = modifier.mid(0, modifier.indexOf("("));
-        elementModifier.mValue = modifier.mid(modifier.indexOf("("));
-        elementModifier.mIsReplaceable = false;
-        elementModifiersList.append(elementModifier);
-      } else {
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::WRONG_MODIFIER).arg(modifier),
-                                                              Helper::scriptingKind, Helper::errorLevel));
-      }
-    }
-  }
   // if valueChanged is true then put the change in the undo stack.
-  if (valueChanged) {
+  if (valueChanged || !mpModifiersTextBox->text().isEmpty()) {
     // apply the new Component modifiers if any
     QList<Modifier> modifiersList;
     foreach (ElementModifier elementModifier, elementModifiersList) {
@@ -2109,6 +2091,12 @@ void ElementParameters::updateElementParameters()
       }
     } else {
       if (hasElement()) {
+        // add custom modifiers added by user. See issue #5105
+        if (!mpModifiersTextBox->text().isEmpty()) {
+          Modifier modifier;
+          modifier.mValue = mpModifiersTextBox->text();
+          modifiersList.append(modifier);
+        }
         QString modifiers = modifiersJoin(modifiersList, ", ");
         if (!modifiers.isEmpty()) {
           // if the element is inherited then add the modifier value into the extends.
