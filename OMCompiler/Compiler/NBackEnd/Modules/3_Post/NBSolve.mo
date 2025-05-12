@@ -197,7 +197,7 @@ public
           list<StrongComponent> tmp, inner_comps = {};
 
           Algorithm alg;
-          list<ComponentRef> solved_crefs;
+          list<ComponentRef> solved_crefs, inputs, outputs;
           UnorderedSet<ComponentRef> output_crefs, input_crefs, solved_inputs;
           list<tuple<ComponentRef, ComponentRef>> tmp_crefs;
           list<Pointer<Variable>> tmp_vars;
@@ -221,7 +221,8 @@ public
               solved_crefs := list(BVariable.getVarName(Slice.getT(var)) for var in comp.vars);
 
               // Y = set of inputs
-              input_crefs := UnorderedSet.fromList(alg.inputs, ComponentRef.hash, ComponentRef.isEqual);
+              inputs := List.flatten(list(BVariable.getRecordChildrenCref(i) for i in alg.inputs));
+              input_crefs := UnorderedSet.fromList(inputs, ComponentRef.hash, ComponentRef.isEqual);
               // Y^ <- Y U X set of inputs that are solved (iteration vars, no need to create temporary variables)
               solved_inputs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
               for solved_cref in solved_crefs loop
@@ -231,7 +232,8 @@ public
               end for;
 
               // Z = set of outputs
-              output_crefs := UnorderedSet.fromList(alg.outputs, ComponentRef.hash, ComponentRef.isEqual);
+              outputs := List.flatten(list(BVariable.getRecordChildrenCref(o) for o in alg.outputs));
+              output_crefs := UnorderedSet.fromList(outputs, ComponentRef.hash, ComponentRef.isEqual);
               // Z^ <- Z \ X set of outputs that are not solved
               for solved_cref in solved_crefs loop
                 UnorderedSet.remove(solved_cref, output_crefs);
