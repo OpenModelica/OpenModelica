@@ -6,6 +6,7 @@ ManyEventsManyConditions.mos \
 TransmissionLineModelica.mos \
 DistributionSystemModelicaIndividual.mos \
 Table.mos \
+TimeTable.mos \
 Verification_Table.mos \
 CascadedFirstOrder.mos \
 HarmonicOscillatorNetwork.mos \

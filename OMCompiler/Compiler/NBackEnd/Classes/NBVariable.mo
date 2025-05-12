@@ -1029,8 +1029,15 @@ public
   algorithm
     subscripts    := ComponentRef.subscriptsAllFlat(cref);
     arg_children  := BVariable.getRecordChildren(getVarPointer(cref));
-    children      := list(ComponentRef.mergeSubscripts(subscripts, getVarName(child))  for child in arg_children);
+    children      := list(ComponentRef.mergeSubscripts(subscripts, getVarName(child)) for child in arg_children);
   end getRecordChildrenCref;
+
+  function getRecordChildrenCrefOrSelf
+    input ComponentRef cref;
+    output list<ComponentRef> children = getRecordChildrenCref(cref);
+  algorithm
+    children := if listEmpty(children) then {cref} else children;
+  end getRecordChildrenCrefOrSelf;
 
   function makeDummyState
     input Pointer<Variable> varPointer;
