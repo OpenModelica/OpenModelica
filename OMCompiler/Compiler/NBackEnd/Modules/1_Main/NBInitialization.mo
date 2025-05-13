@@ -98,8 +98,17 @@ public
         case BackendDAE.MAIN( varData = varData as VarData.VAR_DATA_SIM(variables = variables, initials = initialVars),
                               eqData = eqData as EqData.EQ_DATA_SIM(equations = equations, initials = initialEqs))
           algorithm
+            // clone all simulation equations and add them to the initial equations.
+            clonedEqns := EquationPointers.clone(equations, false);
+            initialEqs := EquationPointers.addList(EquationPointers.toList(initialEqs), clonedEqns);
+            EquationPointers.mapRemovePtr(initialEqs, Equation.isClocked);
+            EquationPointers.mapPtr(initialEqs, replaceClockedFunctionsEqn);
+
+            //remove/replace when equations and clocked equations and remove clocked functions
+            initialEqs := EquationPointers.map(initialEqs, function removeWhenEquation(iter = Iterator.EMPTY(), cref_map = cref_map));
+            (equations, initialEqs) := createWhenReplacementEquations(cref_map, equations, initialEqs, eqData.uniqueIndex);
+
             // collect algorithm outputs and do not create start equations for them
-            EquationPointers.map(equations, function collectAlgorithmOutputs(outputs = algorithm_outputs));
             EquationPointers.map(initialEqs, function collectAlgorithmOutputs(outputs = algorithm_outputs));
 
             // create the equations from fixed variables.
@@ -112,15 +121,6 @@ public
             (equations, initialEqs, initialVars) := createParameterEquations(varData.records, equations, initialEqs, initialVars, new_iters, eqData.uniqueIndex, " Record ");
             (equations, initialEqs, initialVars) := createParameterEquations(varData.external_objects, equations, initialEqs, initialVars, new_iters, eqData.uniqueIndex, " External Object ");
 
-            // clone all simulation equations and add them to the initial equations.
-            clonedEqns := EquationPointers.clone(equations, false);
-            initialEqs := EquationPointers.addList(EquationPointers.toList(initialEqs), clonedEqns);
-            //also remove/replace when equations and clocked equations and remove clocked functions
-            initialEqs := EquationPointers.map(initialEqs, function removeWhenEquation(iter = Iterator.EMPTY(), cref_map = cref_map));
-            EquationPointers.mapRemovePtr(initialEqs, Equation.isClocked);
-            EquationPointers.mapPtr(initialEqs, replaceClockedFunctionsEqn);
-
-            (equations, initialEqs) := createWhenReplacementEquations(cref_map, equations, initialEqs, eqData.uniqueIndex);
 
             // clone all initial variables and remove clocked variables
             clonedVars := VariablePointers.clone(initialVars, false);
@@ -842,6 +842,7 @@ public
         for cr in out_crefs loop
           UnorderedSet.add(cr, outputs);
         end for;
+
       then ();
       else ();
     end match;
