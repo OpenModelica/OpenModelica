@@ -1281,7 +1281,7 @@ algorithm
         json := dumpJSONSCodeMod(elem.modifications, scope, json);
         json := JSON.addPair("condition", JSON.makeBoolean(false), json);
         json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes, scope), json);
-        json := dumpJSONCommentOpt(SOME(elem.comment), scope, json);
+        json := dumpJSONComment(elem.comment, scope, json);
       then
         ();
 
@@ -1292,7 +1292,7 @@ algorithm
         json := JSON.addPair("type", dumpJSONComponentType(cls, node, Component.getType(comp)), json);
         json := dumpJSONSCodeMod(elem.modifications, scope, json);
         json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes, scope), json);
-        json := dumpJSONCommentOpt(SOME(elem.comment), scope, json);
+        json := dumpJSONComment(elem.comment, scope, json);
         json := JSON.addPair("$error", JSON.makeString(comp.errors), json);
       then
         ();
@@ -1321,7 +1321,7 @@ algorithm
         end if;
 
         json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes, scope), json);
-        json := dumpJSONCommentOpt(comp.comment, scope, json);
+        json := dumpJSONComment(comp.comment, scope, json);
       then
         ();
 
@@ -1412,7 +1412,7 @@ function dumpJSONEnumTypeLiteral
 algorithm
   json := JSON.addPair("$kind", JSON.makeString("component"), json);
   json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
-  json := dumpJSONCommentOpt(Component.comment(InstNode.component(node)), scope, json);
+  json := dumpJSONComment(Component.comment(InstNode.component(node)), scope, json);
 end dumpJSONEnumTypeLiteral;
 
 function dumpJSONTypeName
@@ -1625,21 +1625,28 @@ function dumpJSONCommentOpt
   input Boolean dumpComment = true;
   input Boolean dumpAnnotation = true;
   input Boolean failOnError = false;
-protected
-  SCode.Comment cmt;
 algorithm
   if isSome(cmtOpt) then
-    SOME(cmt) := cmtOpt;
-
-    if isSome(cmt.comment) and dumpComment then
-      json := JSON.addPair("comment", JSON.makeString(Util.getOption(cmt.comment)), json);
-    end if;
-
-    if dumpAnnotation then
-      json := dumpJSONAnnotationOpt(cmt.annotation_, scope, {}, failOnError, json);
-    end if;
+    json := dumpJSONComment(Util.getOption(cmtOpt), scope, json, dumpComment, dumpAnnotation, failOnError);
   end if;
 end dumpJSONCommentOpt;
+
+function dumpJSONComment
+  input SCode.Comment cmt;
+  input InstNode scope;
+  input output JSON json;
+  input Boolean dumpComment = true;
+  input Boolean dumpAnnotation = true;
+  input Boolean failOnError = false;
+algorithm
+  if isSome(cmt.comment) and dumpComment then
+    json := JSON.addPair("comment", JSON.makeString(Util.getOption(cmt.comment)), json);
+  end if;
+
+  if dumpAnnotation then
+    json := dumpJSONAnnotationOpt(cmt.annotation_, scope, {}, failOnError, json);
+  end if;
+end dumpJSONComment;
 
 function dumpJSONCommentAnnotation
   input Option<SCode.Comment> cmtOpt;
@@ -2219,7 +2226,7 @@ algorithm
           json := JSON.addPair("condition", dumpJSONAbsynExpression(Util.getOption(element.condition)), json);
         end if;
 
-        json := dumpJSONCommentOpt(SOME(element.comment), scope, json);
+        json := dumpJSONComment(element.comment, scope, json);
       then
         json;
 
@@ -2247,7 +2254,7 @@ algorithm
           JSON.makeString(SCodeDump.restrictionStringPP(element.restriction)), json);
         json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(element, scope), json);
         json := dumpJSONSCodeClassDef(element.classDef, scope, isRedeclare, json);
-        json := dumpJSONCommentOpt(SOME(element.cmt), scope, json, dumpAnnotation = not isRedeclare);
+        json := dumpJSONComment(element.cmt, scope, json, dumpAnnotation = not isRedeclare);
 
         if isRedeclare then
           json := dumpJSONCommentAnnotation(SOME(element.cmt), scope, json,

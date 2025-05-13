@@ -896,7 +896,7 @@ uniontype Function
       s := IOStream.append(s, Util.makeQuotedIdentifier(AbsynUtil.pathString(getDerivedFunctionName(fn))));
       s := IOStream.append(s, ", ");
       s := IOStream.append(s, stringDelimitList(getDerivedInputNames(fn), ", "));
-      s := FlatModelicaUtil.appendComment(SCodeUtil.getElementComment(InstNode.definition(fn.node)),
+      s := FlatModelicaUtil.appendCommentOpt(SCodeUtil.getElementComment(InstNode.definition(fn.node)),
         NFFlatModelicaUtil.ElementType.FUNCTION, s);
       s := IOStream.append(s, ")");
     else
@@ -911,7 +911,7 @@ uniontype Function
 
       s := IOStream.append(s, "function ");
       s := IOStream.append(s, fn_name);
-      s := FlatModelicaUtil.appendCommentString(SOME(cmt), s);
+      s := FlatModelicaUtil.appendCommentString(cmt, s);
       s := IOStream.append(s, "\n");
 
       for i in fn.inputs loop
@@ -952,7 +952,7 @@ uniontype Function
 
       if not SCodeUtil.emptyModOrEquality(annMod) then
         cmt := SCode.COMMENT(SOME(SCode.ANNOTATION(annMod)), NONE());
-        s := FlatModelicaUtil.appendCommentAnnotation(SOME(cmt),
+        s := FlatModelicaUtil.appendCommentAnnotation(cmt,
           NFFlatModelicaUtil.ElementType.FUNCTION, indent + "  ", ";\n", s);
       end if;
 

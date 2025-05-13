@@ -68,7 +68,7 @@ public
     Attributes attributes;
     list<tuple<String, Binding>> typeAttributes;
     list<Variable> children;
-    Option<SCode.Comment> comment;
+    SCode.Comment comment;
     SourceInfo info;
     BackendInfo backendinfo "NFBackendExtension.DUMMY_BACKEND_INFO for all of frontend. Only used in Backend.";
   end VARIABLE;
@@ -86,7 +86,7 @@ public
     Binding binding;
     Visibility vis;
     Attributes attr;
-    Option<SCode.Comment> cmt;
+    SCode.Comment cmt;
     SourceInfo info;
     BackendInfo binfo = NFBackendExtension.DUMMY_BACKEND_INFO;
     array<InstNode> child_nodes;
@@ -449,7 +449,7 @@ public
           binding     = NONE(),
           comment     = NONE(),
           info        = sourceInfo()));
-        var.comment := SCodeUtil.appendAnnotationToCommentOption(anno, var.comment, true);
+        var.comment := SCodeUtil.appendAnnotationToComment(anno, var.comment, true);
       end if;
     end if;
   end propagateAnnotation;

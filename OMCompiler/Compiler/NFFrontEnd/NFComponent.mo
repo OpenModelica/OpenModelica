@@ -72,7 +72,7 @@ public
     Binding binding;
     Binding condition;
     Attributes attributes;
-    Option<SCode.Comment> comment;
+    SCode.Comment comment;
     ComponentState state;
     SourceInfo info;
   end COMPONENT;
@@ -322,16 +322,16 @@ public
   end setAttributes;
 
   function setComment
-    input Option<SCode.Comment> comment;
+    input SCode.Comment comment;
     input output Component component;
   algorithm
     () := match component
-        case COMPONENT()
-          algorithm
-            component.comment := comment;
+      case COMPONENT()
+        algorithm
+          component.comment := comment;
         then
           ();
-  end match;
+    end match;
   end setComment;
 
   function getBinding
@@ -874,13 +874,13 @@ public
 
   function comment
     input Component component;
-    output Option<SCode.Comment> comment;
+    output SCode.Comment comment;
   algorithm
     comment := match component
-      case COMPONENT_DEF() then SCodeUtil.getElementComment(component.definition);
+      case COMPONENT_DEF() then Util.getOption(SCodeUtil.getElementComment(component.definition));
       case COMPONENT() then component.comment;
-      case ENUM_LITERAL() then SOME(component.comment);
-      else NONE();
+      case ENUM_LITERAL() then component.comment;
+      else SCode.noComment;
     end match;
   end comment;
 

@@ -3359,6 +3359,11 @@ algorithm
   end match;
 end hasBooleanNamedAnnotationInComponent;
 
+public function commentAnnotation
+  input SCode.Comment cmt;
+  output Option<SCode.Annotation> ann = cmt.annotation_;
+end commentAnnotation;
+
 public function optCommentAnnotation
   input Option<SCode.Comment> cmt;
   output Option<SCode.Annotation> ann;
@@ -3451,14 +3456,14 @@ end hasBooleanNamedAnnotationFalse;
 public function getEvaluateAnnotation
   "Looks up the Evaluate annotation and returns the value if the annotation
    exists and has a boolean value, otherwise NONE()."
-  input Option<SCode.Comment> cmt;
+  input SCode.Comment cmt;
   output Option<Boolean> value;
 protected
   SCode.Annotation ann;
   Option<Absyn.Exp> binding;
 algorithm
   value := match cmt
-    case SOME(SCode.COMMENT(annotation_ = SOME(ann)))
+    case SCode.COMMENT(annotation_ = SOME(ann))
       then lookupBooleanAnnotation(ann, "Evaluate");
     else NONE();
   end match;

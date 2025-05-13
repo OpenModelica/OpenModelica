@@ -1179,7 +1179,7 @@ uniontype InstNode
     Option<SCode.Annotation> ann;
   algorithm
     while InstNode.isComponent(scope) loop
-      ann := SCodeUtil.optCommentAnnotation(Component.comment(InstNode.component(scope)));
+      ann := SCodeUtil.commentAnnotation(Component.comment(InstNode.component(scope)));
 
       if isSome(ann) then
         mod := SCodeUtil.lookupAnnotation(Util.getOption(ann), name);
