@@ -1970,7 +1970,7 @@ algorithm
         // is created by instClass. To break the circle we leave the class node
         // empty here, and let instClass set it for us instead.
         inst_comp := Component.COMPONENT(InstNode.EMPTY_NODE(), Type.UNKNOWN(),
-          binding, condition, attr, SOME(component.comment),
+          binding, condition, attr, component.comment,
           ComponentState.PartiallyInstantiated, info);
         InstNode.updateComponent(inst_comp, node);
 
@@ -1991,7 +1991,7 @@ algorithm
           */
           elementDefinition := InstNode.definition(ty_node);
           if (Restriction.isType(res) and SCodeUtil.optCommentHasBooleanNamedAnnotationFalse(SCodeUtil.getElementComment(elementDefinition), "absoluteValue")) then
-            InstNode.componentApply(node, Component.setComment, SCodeUtil.getElementComment(elementDefinition));
+            InstNode.componentApply(node, Component.setComment, Util.getOption(SCodeUtil.getElementComment(elementDefinition)));
           end if;
 
           if not InstContext.inRedeclared(context) then
@@ -2162,7 +2162,7 @@ protected
   Binding binding, condition;
   Attributes attr;
   Type orig_ty, rdcl_ty;
-  Option<SCode.Comment> cmt;
+  SCode.Comment cmt;
   InstNode orig_node, rdcl_node;
   InstNodeType rdcl_type;
 algorithm

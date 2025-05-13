@@ -749,7 +749,7 @@ public
     input ObfuscationMap obfuscationMap;
   algorithm
     var.name := obfuscateCref(var.name, obfuscationMap);
-    var.comment := obfuscateCommentOpt(var.comment, ComponentRef.node(var.name),
+    var.comment := obfuscateComment(var.comment, ComponentRef.node(var.name),
       obfuscationMap, stripComment = not Variable.isAccessible(var));
     var := Variable.mapExpShallow(var, function obfuscateExp(obfuscationMap = obfuscationMap));
   end obfuscateVariable;

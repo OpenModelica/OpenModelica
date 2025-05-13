@@ -164,7 +164,7 @@ algorithm
   // Create the output record element, using the instance created above as both parent and type.
   out_comp := Component.COMPONENT(ctor_node, Type.UNTYPED(node, listArray({})),
                 NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-                NFAttributes.OUTPUT_ATTR, NONE(),
+                NFAttributes.OUTPUT_ATTR, SCode.noComment,
                 ComponentState.FullyInstantiated, AbsynUtil.dummyInfo);
   out_rec := InstNode.fromComponent("$out" + InstNode.name(ctor_node), out_comp, ctor_node);
 

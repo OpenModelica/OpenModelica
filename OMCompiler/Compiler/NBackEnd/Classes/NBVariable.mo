@@ -86,15 +86,15 @@ public
   // ==========================================================================
   constant Variable DUMMY_VARIABLE = Variable.VARIABLE(ComponentRef.EMPTY(), Type.ANY(),
     NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PUBLIC, NFAttributes.DEFAULT_ATTR,
-    {}, {}, NONE(), SCodeUtil.dummyInfo, NFBackendExtension.DUMMY_BACKEND_INFO);
+    {}, {}, SCode.noComment, SCodeUtil.dummyInfo, NFBackendExtension.DUMMY_BACKEND_INFO);
 
   constant Variable SUBST_VARIABLE = Variable.VARIABLE(NFBuiltin.SUBST_CREF, Type.ANY(),
     NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PUBLIC, NFAttributes.DEFAULT_ATTR,
-    {}, {}, NONE(), SCodeUtil.dummyInfo, NFBackendExtension.DUMMY_BACKEND_INFO);
+    {}, {}, SCode.noComment, SCodeUtil.dummyInfo, NFBackendExtension.DUMMY_BACKEND_INFO);
 
   constant Variable TIME_VARIABLE = Variable.VARIABLE(NFBuiltin.TIME_CREF, Type.REAL(),
     NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PUBLIC, NFAttributes.DEFAULT_ATTR,
-    {}, {}, NONE(), SCodeUtil.dummyInfo, BackendInfo.BACKEND_INFO(
+    {}, {}, SCode.noComment, SCodeUtil.dummyInfo, BackendInfo.BACKEND_INFO(
     VariableKind.TIME(), NFBackendExtension.EMPTY_VAR_ATTR_REAL, NFBackendExtension.EMPTY_ANNOTATIONS, NONE(), NONE(), NONE(), NONE()));
 
   constant String DERIVATIVE_STR          = "$DER";
@@ -194,7 +194,7 @@ public
       end match;
     end if;
 
-    variable := Variable.VARIABLE(cref, ty, binding, vis, attr, {}, children, NONE(), info, NFBackendExtension.DUMMY_BACKEND_INFO);
+    variable := Variable.VARIABLE(cref, ty, binding, vis, attr, {}, children, SCode.noComment, info, NFBackendExtension.DUMMY_BACKEND_INFO);
   end fromCref;
 
   function makeVarPtrCyclic

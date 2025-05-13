@@ -148,7 +148,7 @@ function makeDAEVar
   input Attributes attr;
   input Visibility vis;
   input Option<DAE.VariableAttributes> vattr;
-  input Option<SCode.Comment> comment;
+  input SCode.Comment comment;
   input VariableConversionSettings settings;
   input SourceInfo info;
   input Boolean encrypted;
@@ -182,7 +182,7 @@ algorithm
           ConnectorType.toDAE(attr.connectorType),
           source,
           vattr,
-          comment,
+          SOME(comment),
           Absyn.NOT_INNER_OUTER(),
           encrypted
         );
@@ -190,7 +190,7 @@ algorithm
     else
       DAE.VAR(dcref, DAE.VarKind.VARIABLE(), DAE.VarDirection.BIDIR(),
         DAE.VarParallelism.NON_PARALLEL(), Prefixes.visibilityToDAE(vis), dty,
-        binding, {}, DAE.ConnectorType.NON_CONNECTOR(), source, vattr, comment,
+        binding, {}, DAE.ConnectorType.NON_CONNECTOR(), source, vattr, SOME(comment),
         Absyn.NOT_INNER_OUTER(),encrypted);
 
   end match;

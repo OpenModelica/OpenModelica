@@ -671,7 +671,7 @@ protected
   ComponentRef name;
   Binding binding;
   Type ty;
-  Option<SCode.Comment> cmt;
+  SCode.Comment cmt;
   SourceInfo info;
   Attributes comp_attr;
   Visibility vis;

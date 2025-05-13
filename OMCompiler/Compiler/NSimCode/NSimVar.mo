@@ -432,11 +432,11 @@ public
     end parseAttributes;
 
     function parseComment
-      input Option<SCode.Comment> absynComment;
+      input SCode.Comment absynComment;
       output String commentStr;
     algorithm
       commentStr := match (absynComment)
-        case (SOME(SCode.COMMENT(_, SOME(commentStr)))) then commentStr;
+        case SCode.COMMENT(comment = SOME(commentStr)) then commentStr;
         else "";
       end match;
     end parseComment;

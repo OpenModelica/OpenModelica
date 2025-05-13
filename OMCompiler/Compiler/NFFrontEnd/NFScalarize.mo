@@ -97,7 +97,7 @@ protected
   Visibility vis;
   Attributes attr;
   list<tuple<String, Binding>> ty_attr;
-  Option<SCode.Comment> cmt;
+  SCode.Comment cmt;
   SourceInfo info;
   ExpressionIterator binding_iter;
   list<ComponentRef> crefs;
