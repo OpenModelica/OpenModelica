@@ -302,7 +302,7 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   /*
   * This function fills a buffer with all set control variable indices.
   */
-  void (*getInputVarIndicesInOptimization)(DATA* data, int* input_var_indices);
+  int (*getInputVarIndicesInOptimization)(DATA* data, int* input_var_indices);
 
   /*
   * This function is used only for optimization purpose
