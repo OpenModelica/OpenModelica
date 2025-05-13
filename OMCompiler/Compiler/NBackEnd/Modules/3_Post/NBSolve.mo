@@ -221,7 +221,7 @@ public
               solved_crefs := list(BVariable.getVarName(Slice.getT(var)) for var in comp.vars);
 
               // Y = set of inputs
-              inputs := List.flatten(list(BVariable.getRecordChildrenCref(i) for i in alg.inputs));
+              inputs := List.flatten(list(BVariable.getRecordChildrenCrefOrSelf(i) for i in alg.inputs));
               input_crefs := UnorderedSet.fromList(inputs, ComponentRef.hash, ComponentRef.isEqual);
               // Y^ <- Y U X set of inputs that are solved (iteration vars, no need to create temporary variables)
               solved_inputs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
@@ -232,7 +232,7 @@ public
               end for;
 
               // Z = set of outputs
-              outputs := List.flatten(list(BVariable.getRecordChildrenCref(o) for o in alg.outputs));
+              outputs := List.flatten(list(BVariable.getRecordChildrenCrefOrSelf(o) for o in alg.outputs));
               output_crefs := UnorderedSet.fromList(outputs, ComponentRef.hash, ComponentRef.isEqual);
               // Z^ <- Z \ X set of outputs that are not solved
               for solved_cref in solved_crefs loop
@@ -280,7 +280,6 @@ public
                 strict := Tearing.TEARING_SET(list(Slice.SLICE(BVariable.getVarPointer(c), {}) for c in UnorderedSet.toList(solved_inputs)), list(Slice.SLICE(e, {}) for e in tmp_eqns), listArray({comp}), NONE());
                 // ToDo: set all the booleans correctly
                 solved_comp := StrongComponent.ALGEBRAIC_LOOP(implicit_index, strict, NONE(), false, false, false, solve_status);
-                print(StrongComponent.toString(solved_comp));
 
                 // add new equations and new variables
                 EqData.addTypedList(eqData, tmp_eqns, NBEquation.EqData.EqType.CONTINUOUS);

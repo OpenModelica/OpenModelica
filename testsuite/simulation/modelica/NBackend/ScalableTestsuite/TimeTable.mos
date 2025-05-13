@@ -1,0 +1,27 @@
+// name: ScalableTestSuite.Elementary.Tables.Models.TimeTable
+// keywords: NewBackend
+// status: correct
+// cflags: --newBackend
+
+loadModel(ScalableTestSuite); getErrorString();
+
+simulate(ScalableTestSuite.Elementary.Tables.Models.TimeTable); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("ScalableTestSuite.Elementary.Tables.Models.TimeTable_res.mat",
+  "ReferenceFiles/ScalableTestSuite.Elementary.Tables.Models.TimeTable_res.mat",
+  "ScalableTestSuite.Elementary.Tables.Models.TimeTable_diff.csv",0.01,0.0001,
+  {"timeTable.y"});
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ScalableTestSuite.Elementary.Tables.Models.TimeTable_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ScalableTestSuite.Elementary.Tables.Models.TimeTable', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

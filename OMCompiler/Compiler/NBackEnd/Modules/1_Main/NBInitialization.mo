@@ -91,31 +91,36 @@ public
           EqData eqData;
           EquationPointers clonedEqns;
           VariablePointers clonedVars;
+          UnorderedSet<ComponentRef> algorithm_outputs = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
           UnorderedSet<VariablePointer> new_iters = UnorderedSet.new(BVariable.hash, BVariable.equalName);
           UnorderedMap<ComponentRef, Iterator> cref_map = UnorderedMap.new<Iterator>(ComponentRef.hash, ComponentRef.isEqual);
 
         case BackendDAE.MAIN( varData = varData as VarData.VAR_DATA_SIM(variables = variables, initials = initialVars),
                               eqData = eqData as EqData.EQ_DATA_SIM(equations = equations, initials = initialEqs))
           algorithm
+            // clone all simulation equations and add them to the initial equations.
+            clonedEqns := EquationPointers.clone(equations, false);
+            initialEqs := EquationPointers.addList(EquationPointers.toList(initialEqs), clonedEqns);
+            EquationPointers.mapRemovePtr(initialEqs, Equation.isClocked);
+            EquationPointers.mapPtr(initialEqs, replaceClockedFunctionsEqn);
+
+            //remove/replace when equations and clocked equations and remove clocked functions
+            initialEqs := EquationPointers.map(initialEqs, function removeWhenEquation(iter = Iterator.EMPTY(), cref_map = cref_map));
+            (equations, initialEqs) := createWhenReplacementEquations(cref_map, equations, initialEqs, eqData.uniqueIndex);
+
+            // collect algorithm outputs and do not create start equations for them
+            EquationPointers.map(initialEqs, function collectAlgorithmOutputs(outputs = algorithm_outputs));
+
             // create the equations from fixed variables.
-            (variables, equations, initialEqs) := createStartEquations(varData.states, variables, equations, initialEqs, eqData.uniqueIndex, "State");
-            (variables, equations, initialEqs) := createStartEquations(varData.algebraics, variables, equations, initialEqs, eqData.uniqueIndex, "Algebraic");
-            (variables, equations, initialEqs) := createStartEquations(varData.discretes, variables, equations, initialEqs, eqData.uniqueIndex, "Discrete");
-            (variables, equations, initialEqs) := createStartEquations(varData.discrete_states, variables, equations, initialEqs, eqData.uniqueIndex, "Discrete State");
-            (variables, equations, initialEqs) := createStartEquations(varData.clocked_states, variables, equations, initialEqs, eqData.uniqueIndex, "Clocked State");
+            (variables, equations, initialEqs) := createStartEquations(varData.states, variables, equations, initialEqs, eqData.uniqueIndex, algorithm_outputs, "State");
+            (variables, equations, initialEqs) := createStartEquations(varData.algebraics, variables, equations, initialEqs, eqData.uniqueIndex, algorithm_outputs, "Algebraic");
+            (variables, equations, initialEqs) := createStartEquations(varData.discretes, variables, equations, initialEqs, eqData.uniqueIndex, algorithm_outputs, "Discrete");
+            (variables, equations, initialEqs) := createStartEquations(varData.discrete_states, variables, equations, initialEqs, eqData.uniqueIndex, algorithm_outputs, "Discrete State");
+            (variables, equations, initialEqs) := createStartEquations(varData.clocked_states, variables, equations, initialEqs, eqData.uniqueIndex, algorithm_outputs, "Clocked State");
             (equations, initialEqs, initialVars) := createParameterEquations(varData.parameters, equations, initialEqs, initialVars, new_iters, eqData.uniqueIndex, " ");
             (equations, initialEqs, initialVars) := createParameterEquations(varData.records, equations, initialEqs, initialVars, new_iters, eqData.uniqueIndex, " Record ");
             (equations, initialEqs, initialVars) := createParameterEquations(varData.external_objects, equations, initialEqs, initialVars, new_iters, eqData.uniqueIndex, " External Object ");
 
-            // clone all simulation equations and add them to the initial equations.
-            clonedEqns := EquationPointers.clone(equations, false);
-            initialEqs := EquationPointers.addList(EquationPointers.toList(initialEqs), clonedEqns);
-            //also remove/replace when equations and clocked equations and remove clocked functions
-            initialEqs := EquationPointers.map(initialEqs, function removeWhenEquation(iter = Iterator.EMPTY(), cref_map = cref_map));
-            EquationPointers.mapRemovePtr(initialEqs, Equation.isClocked);
-            EquationPointers.mapPtr(initialEqs, replaceClockedFunctionsEqn);
-
-            (equations, initialEqs) := createWhenReplacementEquations(cref_map, equations, initialEqs, eqData.uniqueIndex);
 
             // clone all initial variables and remove clocked variables
             clonedVars := VariablePointers.clone(initialVars, false);
@@ -171,6 +176,7 @@ public
     input output EquationPointers equations;
     input output EquationPointers initialEqs;
     input Pointer<Integer> idx;
+    input UnorderedSet<ComponentRef> algorithm_outputs;
     input String str "only for debugging dump";
   protected
     Pointer<list<Pointer<Variable>>> ptr_start_vars = Pointer.create({});
@@ -178,7 +184,7 @@ public
     list<Pointer<Variable>> start_vars;
     list<Pointer<Equation>> start_eqs;
   algorithm
-    _ := VariablePointers.mapPtr(states, function createStartEquation(ptr_start_vars = ptr_start_vars, ptr_start_eqs = ptr_start_eqs, idx = idx));
+    _ := VariablePointers.mapPtr(states, function createStartEquation(ptr_start_vars = ptr_start_vars, ptr_start_eqs = ptr_start_eqs, idx = idx, algorithm_outputs = algorithm_outputs));
     start_vars := Pointer.access(ptr_start_vars);
     start_eqs := Pointer.access(ptr_start_eqs);
 
@@ -193,48 +199,51 @@ public
   end createStartEquations;
 
   function createStartEquation
-    "creates a start equation for a fixed state or discrete state."
-    input Pointer<Variable> state;
+    "creates a start equation for a fixed variable."
+    input Pointer<Variable> var;
     input Pointer<list<Pointer<Variable>>> ptr_start_vars;
     input Pointer<list<Pointer<Equation>>> ptr_start_eqs;
     input Pointer<Integer> idx;
+    input UnorderedSet<ComponentRef> algorithm_outputs;
   algorithm
-    () := match Pointer.access(state)
-      local
-        ComponentRef name, start_name;
-        Pointer<Variable> start_var;
-        Pointer<Equation> start_eq;
-        EquationKind kind;
-        Expression start_exp;
+    if not UnorderedSet.contains(BVariable.getVarName(var), algorithm_outputs) then
+      () := match Pointer.access(var)
+        local
+          ComponentRef name, start_name;
+          Pointer<Variable> start_var;
+          Pointer<Equation> start_eq;
+          EquationKind kind;
+          Expression start_exp;
 
-      // if it is an array create for equation
-      case Variable.VARIABLE() guard BVariable.isFixed(state) and BVariable.isArray(state) algorithm
-        createStartEquationSlice(Slice.SLICE(state, {}), ptr_start_vars, ptr_start_eqs, idx);
-      then ();
+        // if it is an array create for equation
+        case Variable.VARIABLE() guard BVariable.isFixed(var) and BVariable.isArray(var) algorithm
+          createStartEquationSlice(Slice.SLICE(var, {}), ptr_start_vars, ptr_start_eqs, idx);
+        then ();
 
-      // create scalar equation
-      case Variable.VARIABLE() guard BVariable.isFixed(state) algorithm
-        name := BVariable.getVarName(state);
-        start_exp := match BVariable.getStartAttribute(state)
-          local
-            Expression e;
-          // use the start attribute itself if it is not a literal
-          case SOME(e) guard not Expression.isLiteral(e) then e;
-          else algorithm
-            // create a start variable if it is a literal
-            (_, name, start_var, start_name) := createStartVar(state, name, {});
-            Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
-          then Expression.fromCref(start_name);
-        end match;
+        // create scalar equation
+        case Variable.VARIABLE() guard BVariable.isFixed(var) algorithm
+          name := BVariable.getVarName(var);
+          start_exp := match BVariable.getStartAttribute(var)
+            local
+              Expression e;
+            // use the start attribute itself if it is not a literal
+            case SOME(e) guard not Expression.isLiteral(e) then e;
+            else algorithm
+              // create a start variable if it is a literal
+              (_, name, start_var, start_name) := createStartVar(var, name, {});
+              Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
+            then Expression.fromCref(start_name);
+          end match;
 
-        // make the new start equation
-        kind := if BVariable.isContinuous(state, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
-        start_eq := Equation.makeAssignment(Expression.fromCref(name), start_exp, idx, NBEquation.START_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
-        Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
-      then ();
+          // make the new start equation
+          kind := if BVariable.isContinuous(var, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
+          start_eq := Equation.makeAssignment(Expression.fromCref(name), start_exp, idx, NBEquation.START_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
+          Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
+        then ();
 
-      else ();
-    end match;
+        else ();
+      end match;
+    end if;
   end createStartEquation;
 
   function createWhenReplacementEquations
@@ -818,6 +827,26 @@ public
       else false;
     end match;
   end isInitialCall;
+
+  function collectAlgorithmOutputs
+    input output Equation eqn;
+    input UnorderedSet<ComponentRef> outputs;
+  algorithm
+    _ := match eqn
+      local
+        Algorithm alg;
+        list<ComponentRef> out_crefs;
+
+      case Equation.ALGORITHM(alg = alg) algorithm
+        out_crefs := List.flatten(list(BVariable.getRecordChildrenCrefOrSelf(o) for o in alg.outputs));
+        for cr in out_crefs loop
+          UnorderedSet.add(cr, outputs);
+        end for;
+
+      then ();
+      else ();
+    end match;
+  end collectAlgorithmOutputs;
 
   annotation(__OpenModelica_Interface="backend");
 end NBInitialization;
