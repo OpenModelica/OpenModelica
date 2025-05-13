@@ -185,6 +185,7 @@ end translateModel;
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>(void);
     extern int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res, short *);
     extern int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res, short *, short *);
+    extern int <%symbolName(modelNamePrefixStr,"getInputVarIndicesInOptimization")%>(DATA* data, int* input_var_indices);
     extern int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt);
     extern int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data, const modelica_boolean file);
     extern int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_real**t);
@@ -980,6 +981,7 @@ template simulationFile_opt_header(SimCode simCode)
     #endif
       int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res, short*);
       int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res, short *, short *);
+      int <%symbolName(modelNamePrefixStr,"getInputVarIndicesInOptimization")%>(DATA* data, int* input_var_indices);
       int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt);
       int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data, const modelica_boolean file);
       int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_real**t);
@@ -1298,87 +1300,88 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     #include "<%simCode.fileNamePrefix%>_13opt.h"
 
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
-       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>'%>,    /* performSimulation */
-       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>'%>,    /* performQSSSimulation */
-       <% if isModelExchangeFMU then "NULL" else '<%symbolName(modelNamePrefixStr,"updateContinuousSystem")%>'%>,    /* updateContinuousSystem */
-       <%symbolName(modelNamePrefixStr,"callExternalObjectDestructors")%>,    /* callExternalObjectDestructors */
-       <%if intEq(varInfo.numNonLinearSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialNonLinearSystem")%>,    /* initialNonLinearSystem */
-       <%if intEq(varInfo.numLinearSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialLinearSystem")%>,    /* initialLinearSystem */
-       <%if intEq(varInfo.numMixedSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialMixedSystem")%>,    /* initialMixedSystem */
-       #if !defined(OMC_NO_STATESELECTION)
-       <%symbolName(modelNamePrefixStr,"initializeStateSets")%>,
-       #else
-       NULL,
-       #endif    /* initializeStateSets */
-       <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>,
-       <%symbolName(modelNamePrefixStr,"computeVarIndices")%>,
-       <%symbolName(modelNamePrefixStr,"functionODE")%>,
-       <%symbolName(modelNamePrefixStr,"functionAlgebraics")%>,
-       <%symbolName(modelNamePrefixStr,"functionDAE")%>,
-       <%symbolName(modelNamePrefixStr,"functionLocalKnownVars")%>,
-       <%symbolName(modelNamePrefixStr,"input_function")%>,
-       <%symbolName(modelNamePrefixStr,"input_function_init")%>,
-       <%symbolName(modelNamePrefixStr,"input_function_updateStartValues")%>,
-       <%symbolName(modelNamePrefixStr,"data_function")%>,
-       <%symbolName(modelNamePrefixStr,"output_function")%>,
-       <%symbolName(modelNamePrefixStr,"setc_function")%>,
-       <%symbolName(modelNamePrefixStr,"setb_function")%>,
-       <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>,
-       <%symbolName(modelNamePrefixStr,"function_storeSpatialDistribution")%>,
-       <%symbolName(modelNamePrefixStr,"function_initSpatialDistribution")%>,
-       <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>,
-       <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>,
-       <%if Config.adaptiveHomotopy() then (if Config.globalHomotopy() then '2' else '3') else (if Config.globalHomotopy() then '1' else '0')%>, /* useHomotopy - 0: local homotopy (equidistant lambda), 1: global homotopy (equidistant lambda), 2: new global homotopy approach (adaptive lambda), 3: new local homotopy approach (adaptive lambda)*/
-       <%if intEq(listLength(initialEquations_lambda0), 0) then "NULL" else '<%symbolName(modelNamePrefixStr,"functionInitialEquations_lambda0")%>'%>,
-       <%symbolName(modelNamePrefixStr,"functionRemovedInitialEquations")%>,
-       <%symbolName(modelNamePrefixStr,"updateBoundParameters")%>,
-       <%symbolName(modelNamePrefixStr,"checkForAsserts")%>,
-       <%symbolName(modelNamePrefixStr,"function_ZeroCrossingsEquations")%>,
-       <%symbolName(modelNamePrefixStr,"function_ZeroCrossings")%>,
-       <%symbolName(modelNamePrefixStr,"function_updateRelations")%>,
-       <%symbolName(modelNamePrefixStr,"zeroCrossingDescription")%>,
-       <%symbolName(modelNamePrefixStr,"relationDescription")%>,
-       <%symbolName(modelNamePrefixStr,"function_initSample")%>,
-       <%symbolName(modelNamePrefixStr,"INDEX_JAC_A")%>,
-       <%symbolName(modelNamePrefixStr,"INDEX_JAC_B")%>,
-       <%symbolName(modelNamePrefixStr,"INDEX_JAC_C")%>,
-       <%symbolName(modelNamePrefixStr,"INDEX_JAC_D")%>,
-       <%symbolName(modelNamePrefixStr,"INDEX_JAC_F")%>,
-       <%symbolName(modelNamePrefixStr,"INDEX_JAC_H")%>,
-       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianA")%>,
-       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianB")%>,
-       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianC")%>,
-       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianD")%>,
-       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianF")%>,
-       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianH")%>,
-       <%symbolName(modelNamePrefixStr,"functionJacA_column")%>,
-       <%symbolName(modelNamePrefixStr,"functionJacB_column")%>,
-       <%symbolName(modelNamePrefixStr,"functionJacC_column")%>,
-       <%symbolName(modelNamePrefixStr,"functionJacD_column")%>,
-       <%symbolName(modelNamePrefixStr,"functionJacF_column")%>,
-       <%symbolName(modelNamePrefixStr,"functionJacH_column")%>,
-       <%symbolName(modelNamePrefixStr,"linear_model_frame")%>,
-       <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>,
-       <%symbolName(modelNamePrefixStr,"mayer")%>,
-       <%symbolName(modelNamePrefixStr,"lagrange")%>,
-       <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>,
-       <%symbolName(modelNamePrefixStr,"setInputData")%>,
-       <%symbolName(modelNamePrefixStr,"getTimeGrid")%>,
-       <%symbolName(modelNamePrefixStr,"symbolicInlineSystem")%>,
-       <%symbolName(modelNamePrefixStr,"function_initSynchronous")%>,
-       <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>,
-       <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>,
-       <%symbolName(modelNamePrefixStr,"inputNames")%>,
-       <%symbolName(modelNamePrefixStr,"dataReconciliationInputNames")%>,
-       <%symbolName(modelNamePrefixStr,"dataReconciliationUnmeasuredVariables")%>,
-       <% if isModelExchangeFMU then symbolName(modelNamePrefixStr,"read_simulation_info") else "NULL" %>,
-       <% if isModelExchangeFMU then symbolName(modelNamePrefixStr,"read_input_fmu") else "NULL" %>,
-       <% match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"initialAnalyticJacobianFMIDER") else "NULL"%>,
-       <% match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"functionJacFMIDER_column") else "NULL"%>,
-       <% match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDER") else "-1"%>,
-       <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"initialAnalyticJacobianFMIDERINIT") else "NULL"%>,
-       <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"functionJacFMIDERINIT_column") else "NULL"%>,
-       <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDERINIT") else "-1"%>
+      <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>'%>,    /* performSimulation */
+      <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>'%>,    /* performQSSSimulation */
+      <% if isModelExchangeFMU then "NULL" else '<%symbolName(modelNamePrefixStr,"updateContinuousSystem")%>'%>,    /* updateContinuousSystem */
+      <%symbolName(modelNamePrefixStr,"callExternalObjectDestructors")%>,    /* callExternalObjectDestructors */
+      <%if intEq(varInfo.numNonLinearSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialNonLinearSystem")%>,    /* initialNonLinearSystem */
+      <%if intEq(varInfo.numLinearSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialLinearSystem")%>,    /* initialLinearSystem */
+      <%if intEq(varInfo.numMixedSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialMixedSystem")%>,    /* initialMixedSystem */
+      #if !defined(OMC_NO_STATESELECTION)
+      <%symbolName(modelNamePrefixStr,"initializeStateSets")%>,
+      #else
+      NULL,
+      #endif    /* initializeStateSets */
+      <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>,
+      <%symbolName(modelNamePrefixStr,"computeVarIndices")%>,
+      <%symbolName(modelNamePrefixStr,"functionODE")%>,
+      <%symbolName(modelNamePrefixStr,"functionAlgebraics")%>,
+      <%symbolName(modelNamePrefixStr,"functionDAE")%>,
+      <%symbolName(modelNamePrefixStr,"functionLocalKnownVars")%>,
+      <%symbolName(modelNamePrefixStr,"input_function")%>,
+      <%symbolName(modelNamePrefixStr,"input_function_init")%>,
+      <%symbolName(modelNamePrefixStr,"input_function_updateStartValues")%>,
+      <%symbolName(modelNamePrefixStr,"data_function")%>,
+      <%symbolName(modelNamePrefixStr,"output_function")%>,
+      <%symbolName(modelNamePrefixStr,"setc_function")%>,
+      <%symbolName(modelNamePrefixStr,"setb_function")%>,
+      <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>,
+      <%symbolName(modelNamePrefixStr,"function_storeSpatialDistribution")%>,
+      <%symbolName(modelNamePrefixStr,"function_initSpatialDistribution")%>,
+      <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>,
+      <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>,
+      <%if Config.adaptiveHomotopy() then (if Config.globalHomotopy() then '2' else '3') else (if Config.globalHomotopy() then '1' else '0')%>, /* useHomotopy - 0: local homotopy (equidistant lambda), 1: global homotopy (equidistant lambda), 2: new global homotopy approach (adaptive lambda), 3: new local homotopy approach (adaptive lambda)*/
+      <%if intEq(listLength(initialEquations_lambda0), 0) then "NULL" else '<%symbolName(modelNamePrefixStr,"functionInitialEquations_lambda0")%>'%>,
+      <%symbolName(modelNamePrefixStr,"functionRemovedInitialEquations")%>,
+      <%symbolName(modelNamePrefixStr,"updateBoundParameters")%>,
+      <%symbolName(modelNamePrefixStr,"checkForAsserts")%>,
+      <%symbolName(modelNamePrefixStr,"function_ZeroCrossingsEquations")%>,
+      <%symbolName(modelNamePrefixStr,"function_ZeroCrossings")%>,
+      <%symbolName(modelNamePrefixStr,"function_updateRelations")%>,
+      <%symbolName(modelNamePrefixStr,"zeroCrossingDescription")%>,
+      <%symbolName(modelNamePrefixStr,"relationDescription")%>,
+      <%symbolName(modelNamePrefixStr,"function_initSample")%>,
+      <%symbolName(modelNamePrefixStr,"INDEX_JAC_A")%>,
+      <%symbolName(modelNamePrefixStr,"INDEX_JAC_B")%>,
+      <%symbolName(modelNamePrefixStr,"INDEX_JAC_C")%>,
+      <%symbolName(modelNamePrefixStr,"INDEX_JAC_D")%>,
+      <%symbolName(modelNamePrefixStr,"INDEX_JAC_F")%>,
+      <%symbolName(modelNamePrefixStr,"INDEX_JAC_H")%>,
+      <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianA")%>,
+      <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianB")%>,
+      <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianC")%>,
+      <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianD")%>,
+      <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianF")%>,
+      <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianH")%>,
+      <%symbolName(modelNamePrefixStr,"functionJacA_column")%>,
+      <%symbolName(modelNamePrefixStr,"functionJacB_column")%>,
+      <%symbolName(modelNamePrefixStr,"functionJacC_column")%>,
+      <%symbolName(modelNamePrefixStr,"functionJacD_column")%>,
+      <%symbolName(modelNamePrefixStr,"functionJacF_column")%>,
+      <%symbolName(modelNamePrefixStr,"functionJacH_column")%>,
+      <%symbolName(modelNamePrefixStr,"linear_model_frame")%>,
+      <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>,
+      <%symbolName(modelNamePrefixStr,"mayer")%>,
+      <%symbolName(modelNamePrefixStr,"lagrange")%>,
+      <%symbolName(modelNamePrefixStr,"getInputVarIndicesInOptimization")%>,
+      <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>,
+      <%symbolName(modelNamePrefixStr,"setInputData")%>,
+      <%symbolName(modelNamePrefixStr,"getTimeGrid")%>,
+      <%symbolName(modelNamePrefixStr,"symbolicInlineSystem")%>,
+      <%symbolName(modelNamePrefixStr,"function_initSynchronous")%>,
+      <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>,
+      <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>,
+      <%symbolName(modelNamePrefixStr,"inputNames")%>,
+      <%symbolName(modelNamePrefixStr,"dataReconciliationInputNames")%>,
+      <%symbolName(modelNamePrefixStr,"dataReconciliationUnmeasuredVariables")%>,
+      <% if isModelExchangeFMU then symbolName(modelNamePrefixStr,"read_simulation_info") else "NULL" %>,
+      <% if isModelExchangeFMU then symbolName(modelNamePrefixStr,"read_input_fmu") else "NULL" %>,
+      <% match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"initialAnalyticJacobianFMIDER") else "NULL"%>,
+      <% match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"functionJacFMIDER_column") else "NULL"%>,
+      <% match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDER") else "-1"%>,
+      <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"initialAnalyticJacobianFMIDERINIT") else "NULL"%>,
+      <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"functionJacFMIDERINIT_column") else "NULL"%>,
+      <% match modelStructure case SOME(FMIMODELSTRUCTURE(initialPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDERINIT") else "-1"%>
     <%\n%>
     };
 
@@ -7235,28 +7238,31 @@ end eqEval;
 template optimizationComponents( list<DAE.ClassAttributes> classAttributes ,SimCode simCode, String modelNamePrefixStr)
   "Generates C for Objective Functions."
 ::=
-    match classAttributes
-    case{} then
-        let fail = 'throwStreamPrint(NULL, "The model was not compiled with -g=Optimica and the corresponding goal function. The optimization solver cannot be used.");<%\n%>return 0;'
-        <<
-        int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res,short *i) {
-          <%fail%>
-        }
-        int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res, short * i1, short*i2) {
-          <%fail%>
-        }
-        int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt) {
-          <%fail%>
-        }
-        int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data, const modelica_boolean file) {
-          <%fail%>
-        }
-        int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_real**t) {
-          <%fail%>
-        }
-        >>
-      else
-        (classAttributes |> classAttribute => optimizationComponents1(classAttribute,simCode, modelNamePrefixStr); separator="\n")
+  match classAttributes
+    case {} then
+      let fail = 'throwStreamPrint(NULL, "The model was not compiled with -g=Optimica and the corresponding goal function. The optimization solver cannot be used.");<%\n%>return 0;'
+      <<
+      int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res,short *i) {
+        <%fail%>
+      }
+      int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res, short * i1, short*i2) {
+        <%fail%>
+      }
+      int <%symbolName(modelNamePrefixStr,"getInputVarIndicesInOptimization")%>(DATA* data, int* input_var_indices) {
+        <%fail%>
+      }
+      int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt) {
+        <%fail%>
+      }
+      int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data, const modelica_boolean file) {
+        <%fail%>
+      }
+      int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_real**t) {
+        <%fail%>
+      }
+      >>
+    else
+      (classAttributes |> classAttribute => optimizationComponents1(classAttribute, simCode, modelNamePrefixStr); separator="\n")
 end optimizationComponents;
 
 template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode, String modelNamePrefixStr)
@@ -7274,12 +7280,12 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
       let objectiveFunction = match objetiveE
         case SOME(exp) then
           let setMayerIndex = if stringEq(crefToIndex(createDifferentiatedCrefName(makeUntypedCrefIdent(BackendDAE.optimizationMayerTermName), makeUntypedCrefIdent("dummyVarC"), "C")), "-2") then '' else
+            <<
+            *index_Dres = <%crefToIndex(createDifferentiatedCrefName(makeUntypedCrefIdent(BackendDAE.optimizationMayerTermName), makeUntypedCrefIdent("dummyVarC"), "C"))%>;
+            return 0;
+            >>
           <<
-          *index_Dres = <%crefToIndex(createDifferentiatedCrefName(makeUntypedCrefIdent(BackendDAE.optimizationMayerTermName), makeUntypedCrefIdent("dummyVarC"), "C"))%>;
-          return 0;
-          >>
-          <<
-          *res =  &<%cref(makeUntypedCrefIdent(BackendDAE.optimizationMayerTermName), &sub)%>;
+          *res = &<%cref(makeUntypedCrefIdent(BackendDAE.optimizationMayerTermName), &sub)%>;
           <%setMayerIndex%>
           >>
 
@@ -7293,11 +7299,11 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
       let objectiveIntegrand = match objectiveIntegrandE
         case SOME(exp) then
           let setLagrangeIndex = if stringEq(crefToIndex(createDifferentiatedCrefName(makeUntypedCrefIdent(BackendDAE.optimizationLagrangeTermName), makeUntypedCrefIdent("dummyVarB"), "B")), "-2") then '' else
-          <<
-          *index_DresB = <%crefToIndex(createDifferentiatedCrefName(makeUntypedCrefIdent(BackendDAE.optimizationLagrangeTermName), makeUntypedCrefIdent("dummyVarB"), "B"))%>;
-          *index_DresC = <%crefToIndex(createDifferentiatedCrefName(makeUntypedCrefIdent(BackendDAE.optimizationLagrangeTermName), makeUntypedCrefIdent("dummyVarC"), "C"))%>;
-          return 0;
-          >>
+            <<
+            *index_DresB = <%crefToIndex(createDifferentiatedCrefName(makeUntypedCrefIdent(BackendDAE.optimizationLagrangeTermName), makeUntypedCrefIdent("dummyVarB"), "B"))%>;
+            *index_DresC = <%crefToIndex(createDifferentiatedCrefName(makeUntypedCrefIdent(BackendDAE.optimizationLagrangeTermName), makeUntypedCrefIdent("dummyVarC"), "C"))%>;
+            return 0;
+            >>
           <<
           *res =  &<%cref(makeUntypedCrefIdent(BackendDAE.optimizationLagrangeTermName), &sub)%>;
           <%setLagrangeIndex%>
@@ -7307,9 +7313,9 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
         case simCode as SIMCODE(__) then
           match modelInfo
             case MODELINFO(vars=SIMVARS(__)) then
-            <<
+              <<
               if(file){
-              <%vars.inputVars |> SIMVAR(varKind = OPT_LOOP_INPUT(replaceExp=cr)) hasindex i0 =>
+              <%vars.inputVars |> SIMVAR(varKind = OPT_LOOP_INPUT(replaceExp=cr)) =>
               '<%cref(name, &sub)%> = <%cref(cr, &sub)%> ;'
               ;separator="\n"
               %>
@@ -7318,21 +7324,21 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
               'data->simulationInfo->inputVars[<%i0%>] = <%cref(name, &sub)%>;'
               ;separator="\n"
               %>
-            >>
+              >>
 
       let getTG = match simCode
         case simCode as SIMCODE(__) then
           match modelInfo
             case MODELINFO(vars=SIMVARS(__)) then
-            <<
-              *nsi=(-1 <%vars.paramVars |> SIMVAR(varKind=OPT_TGRID(__)) hasindex i0 => '+1'
-               ;separator=" "%>);
+              <<
+              *nsi=(-1 <%vars.paramVars |> SIMVAR(varKind=OPT_TGRID(__)) => '+1'
+                ;separator=" "%>);
               *t = (modelica_real*) malloc((*nsi+1)*sizeof(modelica_real));
               <%vars.paramVars |> SIMVAR(varKind=OPT_TGRID(__)) hasindex i0 =>
               '(*t)[<%i0%>] = <%cref(name, &sub)%>;'
               ;separator="\n"
               %>
-            >>
+              >>
 
       let inputBounds = match simCode
         case simCode as SIMCODE(__) then
@@ -7343,46 +7349,63 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
               'min[<%i0%>] = <%crefAttributes(name)%>.min;<%\n%>max[<%i0%>] = <%crefAttributes(name)%>.max;<%\n%>nominal[<%i0%>] = <%crefAttributes(name)%>.nominal;<%\n%>useNominal[<%i0%>] = <%crefAttributes(name)%>.useNominal;<%\n%>name[<%i0%>] =(char *) <%crefVarInfo(name)%>.name;<%\n%>start[<%i0%>] = <%crefAttributes(name)%>.start;'
               ;separator="\n"%>
               >>
-           <<
-           <%auxFunction%>
-           /* objectiveFunction */
-           int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res, short * index_Dres)
-           {
-             <%varDecls%>
-             <%preExp%>
-             <%objectiveFunction%>
-             return  -1;
-           }
-           /* objectiveIntegrand */
-           int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res, short * index_DresB, short *index_DresC)
-           {
-             <%varDecls1%>
-             <%preExp1%>
-             <%objectiveIntegrand%>
-             return -1;
-           }
 
-           /* opt vars  */
-           int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real* startTimeOpt)
-           {
-             <%inputBounds%>
-             *startTimeOpt = data->simulationInfo->startTime - 1.0;
-             <%startTimeOpt%>
-             return 0;
-           }
+      let inputIndices = match simCode
+        case simCode as SIMCODE(__) then
+          match modelInfo
+            case MODELINFO(vars=SIMVARS(__)) then
+              <<
+              <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
+              'input_var_indices[<%i0%>] = <%crefIndexWithComment(name)%>;'
+              ;separator="\n"%>
+              >>
+      <<
+      <%auxFunction%>
+      /* objectiveFunction */
+      int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res, short * index_Dres)
+      {
+        <%varDecls%>
+        <%preExp%>
+        <%objectiveFunction%>
+        return  -1;
+      }
+      /* objectiveIntegrand */
+      int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res, short * index_DresB, short *index_DresC)
+      {
+        <%varDecls1%>
+        <%preExp1%>
+        <%objectiveIntegrand%>
+        return -1;
+      }
 
-           int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data, const modelica_boolean file)
-           {
-            TRACE_PUSH
-            <%setInput%>
-            TRACE_POP
-            return 0;
-           }
-           int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_real**t){
-            <%getTG%>
-            return 0;
-           }
-           >>
+      /* fill buffer with optimization input indices */
+      int <%symbolName(modelNamePrefixStr,"getInputVarIndicesInOptimization")%>(DATA* data, int* input_var_indices)
+      {
+        <%inputIndices%>
+        return 0;
+      }
+
+      /* opt vars  */
+      int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real* startTimeOpt)
+      {
+        <%inputBounds%>
+        *startTimeOpt = data->simulationInfo->startTime - 1.0;
+        <%startTimeOpt%>
+        return 0;
+      }
+
+      int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data, const modelica_boolean file)
+      {
+        TRACE_PUSH
+        <%setInput%>
+        TRACE_POP
+        return 0;
+      }
+      int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_real**t){
+        <%getTG%>
+        return 0;
+      }
+      >>
     else error(sourceInfo(), 'Unknown Constraint List')
 end optimizationComponents1;
 

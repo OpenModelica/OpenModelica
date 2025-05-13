@@ -7898,6 +7898,13 @@ template varIndexWithComment(SimVar var)
   case SIMVAR(__) then '<%index%> /* <%crefCComment(var, crefStrNoUnderscore(name))%> */'
 end varIndexWithComment;
 
+template crefIndexWithComment(ComponentRef cr)
+::=
+  match cref2simvar(crefRemovePrePrefix(cr), getSimCode())
+    case SIMVAR(index=-1) then crefIndexWithComment(crefRemovePrePrefix(name))
+    case var as SIMVAR(__) then '<%index%> /* <%crefCComment(var, crefStrNoUnderscore(name))%> */'
+end crefIndexWithComment;
+
 template varAttributes(SimVar var, Text &sub)
 ::=
   let arr = '<%if stringEq(&sub, "") then "" else "&" %>'

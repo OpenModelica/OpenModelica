@@ -300,6 +300,11 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   int (*lagrange)(DATA* data, modelica_real** res, short *, short *);
 
   /*
+  * This function fills a buffer with all set control variable indices.
+  */
+  int (*getInputVarIndicesInOptimization)(DATA* data, int* input_var_indices);
+
+  /*
   * This function is used only for optimization purpose
   * and pick up the bounds of inputs. In case it's not present
   * a dummy function is added which return -1.
