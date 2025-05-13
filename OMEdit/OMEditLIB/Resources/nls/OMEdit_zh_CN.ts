@@ -5896,22 +5896,22 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5343"/>
         <source>Specifies the maximum number of rows the message browser may have. If there are more rows then the rows are removed from the beginning.</source>
-        <translation type="unfinished"></translation>
+        <translation>指定消息浏览器可显示的最大行数。若超出该限制，将从起始处移除多余行。</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5351"/>
         <source>Reset messages number before checking, instantiation, and simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>在校验、实例化及仿真前重置消息数量</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5354"/>
         <source>Clear message browser before checking, instantiation, and simulation</source>
-        <translation type="unfinished"></translation>
+        <translation>在校验、实例化及仿真前清空消息浏览器</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5356"/>
         <source>Do not automatically enlarge message browser when a new message is available</source>
-        <translation type="unfinished"></translation>
+        <translation>新消息到达时不自动扩展消息浏览器</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5382"/>
@@ -5958,18 +5958,18 @@ Please check the Messages browser for error messages and possibly undo the lates
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5805"/>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5807"/>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>后退</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5813"/>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5815"/>
         <source>Forward</source>
-        <translation type="unfinished"></translation>
+        <translation>前进</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5821"/>
         <source>Exit</source>
-        <translation type="unfinished">退出</translation>
+        <translation>退出</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5823"/>
@@ -6018,12 +6018,12 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="8336"/>
         <source>Adapting extent to diagram</source>
-        <translation type="unfinished"></translation>
+        <translation>调整范围以适应图表</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="8395"/>
         <source>adapting extent to diagram</source>
-        <translation type="unfinished"></translation>
+        <translation>调整范围以适应图表</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="8232"/>
@@ -6085,7 +6085,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Editors/ModelicaEditor.cpp" line="617"/>
         <source>&lt;b&gt;Warning: &lt;/b&gt;Cannot modify the text in the element mode. Your changes will not be saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;警告：&lt;/b&gt;元素模式下不可修改文本，更改将不被保存。</translation>
     </message>
     <message>
         <location filename="../../Editors/ModelicaEditor.cpp" line="620"/>
@@ -6164,7 +6164,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5532"/>
         <source>Always ask for the dragged/duplicated component name</source>
-        <translation type="unfinished"></translation>
+        <translation>始终询问拖放/复制组件的名称</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5535"/>
@@ -6202,18 +6202,18 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../OMC/OMCProxy.cpp" line="773"/>
         <source>Skip loading &lt;b&gt;%1&lt;/b&gt; version &lt;b&gt;%2&lt;/b&gt; since latest version is already loaded because of the setting &lt;b&gt;Load latest Modelica version on startup&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>跳过加载 &lt;b&gt;%1&lt;/b&gt; 版本 &lt;b&gt;%2&lt;/b&gt;（由于已设置 &lt;b&gt;启动时加载最新 Modelica 版本&lt;/b&gt;，最新版已加载）。</translation>
     </message>
     <message>
         <location filename="../../OMC/OMCProxy.cpp" line="1052"/>
         <source>Unable to set the parameter value using command &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>无法通过命令 &lt;b&gt;%1&lt;/b&gt; 设置参数值</translation>
     </message>
     <message>
         <location filename="../../OMC/OMCProxy.cpp" line="1119"/>
         <location filename="../../OMC/OMCProxy.cpp" line="1150"/>
         <source>Unable to set the element modifier value using command &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>无法通过命令 &lt;b&gt;%1&lt;/b&gt; 设置元素修饰值</translation>
     </message>
     <message>
         <location filename="../../OMC/OMCProxy.cpp" line="1233"/>
@@ -6224,7 +6224,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../OMC/OMCProxy.cpp" line="1924"/>
         <source>Could not preserve the formatting of the model instead internal pretty-printing algorithm is used.</source>
-        <translation type="unfinished"></translation>
+        <translation>未能保留模型原始格式，已改用内部美化打印算法。</translation>
     </message>
 </context>
 <context>
@@ -6232,17 +6232,17 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../OMEditApplication.cpp" line="207"/>
         <source>You have enabled old frontend for code generation which is not recommended. Do you want to switch to new frontend?</source>
-        <translation type="unfinished"></translation>
+        <translation>您已启用不推荐的旧版前端代码生成功能，是否切换至新版前端？</translation>
     </message>
     <message>
         <location filename="../../OMEditApplication.cpp" line="208"/>
         <source>Switch to new frontend</source>
-        <translation type="unfinished"></translation>
+        <translation>切换至新版前端</translation>
     </message>
     <message>
         <location filename="../../OMEditApplication.cpp" line="209"/>
         <source>Keep using old frontend</source>
-        <translation type="unfinished"></translation>
+        <translation>继续使用旧版前端</translation>
     </message>
 </context>
 <context>
@@ -6283,18 +6283,18 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../OMS/OMSSimulationOutputWidget.cpp" line="543"/>
         <source>Simulation process finished successfully.</source>
-        <translation type="unfinished"></translation>
+        <translation>仿真进程已成功完成。</translation>
     </message>
     <message>
         <location filename="../../OMS/OMSSimulationOutputWidget.cpp" line="544"/>
         <source>Simulation of %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 仿真已完成。</translation>
     </message>
     <message>
         <location filename="../../OMS/OMSSimulationOutputWidget.cpp" line="547"/>
         <location filename="../../OMS/OMSSimulationOutputWidget.cpp" line="550"/>
         <source>Simulation of %1 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 仿真失败。</translation>
     </message>
     <message>
         <location filename="../../OMS/OMSSimulationOutputWidget.cpp" line="580"/>
@@ -6333,7 +6333,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Simulation/OpcUaClient.cpp" line="102"/>
         <source>Could not connect to the embedded server. Status code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法连接至内嵌服务器，状态码 %1。</translation>
     </message>
 </context>
 <context>
@@ -6384,7 +6384,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3138"/>
         <source>Modelica Script Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelica 脚本编辑器</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3142"/>
@@ -6394,12 +6394,12 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3146"/>
         <source>SSP Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>SSP 编辑器</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3150"/>
         <source>CRML Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML 编辑器</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3154"/>
@@ -6444,17 +6444,17 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3206"/>
         <source>OMSimulator/SSP</source>
-        <translation type="unfinished"></translation>
+        <translation>OMSimulator/SSP</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3355"/>
         <source>Reset to default</source>
-        <translation type="unfinished"></translation>
+        <translation>重置为默认设置</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3356"/>
         <source>Are you sure that you want to reset OMEdit? This operation cannot be undone. </source>
-        <translation type="unfinished"></translation>
+        <translation>确认要重置 OMEdit 吗？此操作不可撤销。 </translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3210"/>
@@ -6472,7 +6472,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Element/ElementProperties.cpp" line="866"/>
         <source>Unable to find the redeclare class.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法找到重声明类。</translation>
     </message>
     <message>
         <location filename="../../Element/ElementProperties.cpp" line="943"/>
@@ -6518,7 +6518,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Plotting/PlotWindowContainer.cpp" line="571"/>
         <source>Name Plot Tab</source>
-        <translation type="unfinished"></translation>
+        <translation>命名绘图标签</translation>
     </message>
     <message>
         <location filename="../../Plotting/PlotWindowContainer.cpp" line="572"/>
@@ -6538,7 +6538,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Plotting/PlotWindowContainer.cpp" line="615"/>
         <source>Cannot export parametric plot.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法导出参数化绘图。</translation>
     </message>
     <message>
         <location filename="../../Plotting/PlotWindowContainer.cpp" line="619"/>
@@ -6548,7 +6548,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Plotting/PlotWindowContainer.cpp" line="637"/>
         <source>Not possible to export variables from different result files.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法从不同结果文件导出变量。</translation>
     </message>
     <message>
         <location filename="../../Plotting/PlotWindowContainer.cpp" line="679"/>
@@ -6563,7 +6563,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Plotting/PlotWindowContainer.cpp" line="711"/>
         <source>Renames the plot tab</source>
-        <translation type="unfinished"></translation>
+        <translation>重命名绘图标签</translation>
     </message>
 </context>
 <context>
@@ -6581,12 +6581,12 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5820"/>
         <source>Prefix Units</source>
-        <translation type="unfinished"></translation>
+        <translation>单位前缀</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5822"/>
         <source>Automatically pick the right prefix for units.</source>
-        <translation type="unfinished"></translation>
+        <translation>自动为计量单位选择合适的前缀。</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5829"/>
@@ -6606,7 +6606,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5866"/>
         <source>Curve styles are used for new curves. Use plot setup window to update the existing curves.</source>
-        <translation type="unfinished"></translation>
+        <translation>曲线样式将应用于新曲线。如需更新现有曲线，请使用绘图设置窗口。</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5873"/>
@@ -6638,7 +6638,7 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5930"/>
         <source>Font sizes are used for new plot windows. Use plot setup window to update the existing plots.</source>
-        <translation type="unfinished"></translation>
+        <translation>字体大小将应用于新曲线。如需更新现有曲线，请使用绘图设置窗口。</translation>
     </message>
 </context>
 <context>
@@ -6659,27 +6659,27 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <location filename="../../Util/NetworkAccessManager.cpp" line="99"/>
         <source>Proxy Authentication</source>
-        <translation type="unfinished"></translation>
+        <translation>代理认证</translation>
     </message>
     <message>
         <location filename="../../Util/NetworkAccessManager.cpp" line="105"/>
         <source>Save Credentials</source>
-        <translation type="unfinished"></translation>
+        <translation>保存凭据</translation>
     </message>
     <message>
         <location filename="../../Util/NetworkAccessManager.cpp" line="119"/>
         <source>The proxy %1 requires a username and password.</source>
-        <translation type="unfinished"></translation>
+        <translation>代理服务器 %1 需要用户名和密码认证。</translation>
     </message>
     <message>
         <location filename="../../Util/NetworkAccessManager.cpp" line="120"/>
         <source>Username:</source>
-        <translation type="unfinished"></translation>
+        <translation>用户名：</translation>
     </message>
     <message>
         <location filename="../../Util/NetworkAccessManager.cpp" line="122"/>
         <source>Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>密码：</translation>
     </message>
 </context>
 <context>
@@ -6725,7 +6725,7 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <location filename="../../Animation/FMUWrapper.cpp" line="224"/>
         <source>fmi1_import_get_state_value_references returned failure code %1</source>
-        <translation type="unfinished"></translation>
+        <translation>fmi1_import_get_state_value_references返回失败代码%1</translation>
     </message>
     <message>
         <location filename="../../Animation/FMUWrapper.cpp" line="231"/>
@@ -6750,7 +6750,7 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <location filename="../../Animation/Visualization.cpp" line="253"/>
         <source>Could not open the visual XML file %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法打开可视化XML文件 %1。</translation>
     </message>
     <message>
         <location filename="../../Animation/Visualization.cpp" line="316"/>
@@ -6766,13 +6766,15 @@ Set the value to 0 if you don&apos;t want any delay.</source>
         <location filename="../../Animation/Visualization.cpp" line="534"/>
         <source>Something went wrong in OMVisualBase::setFmuVarRefInVisObjects:
 %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>OMVisualBase::setFmuVarRefInVisObjects 执行过程中发生错误：
+%1。</translation>
     </message>
     <message>
         <location filename="../../Animation/Visualization.cpp" line="657"/>
         <source>Error in OMVisualBase::updateVisObjects at time point %1
 %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>在 OMVisualBase::updateVisObjects 中更新时间点 %1 时出现错误
+%2。</translation>
     </message>
     <message>
         <location filename="../../Animation/Visualization.cpp" line="1296"/>
@@ -6820,7 +6822,7 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <location filename="../../Util/Utilities.cpp" line="1369"/>
         <source>Chinese</source>
-        <translation type="unfinished">简体中文</translation>
+        <translation>中文</translation>
     </message>
     <message>
         <location filename="../../Util/Utilities.cpp" line="1370"/>
@@ -6886,12 +6888,12 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <location filename="../../OMS/ModelDialog.cpp" line="473"/>
         <source>dryRun = true will not replace the subModel, you can see the list of warnings and dryRun = false will replace the SubModel</source>
-        <translation type="unfinished"></translation>
+        <translation>当 dryRun = true 时不替换子模型（可查看警告列表），dryRun = false 时将执行子模型替换</translation>
     </message>
     <message>
         <location filename="../../OMS/ModelDialog.cpp" line="527"/>
         <source>ReplaceSubModel</source>
-        <translation type="unfinished"></translation>
+        <translation>替换子模型</translation>
     </message>
     <message>
         <location filename="../../OMS/ModelDialog.cpp" line="533"/>
@@ -6901,7 +6903,7 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <location filename="../../OMS/ModelDialog.cpp" line="566"/>
         <source>Failed to replace submodel. %1</source>
-        <translation type="unfinished"></translation>
+        <translation>替换子模型失败。%1</translation>
     </message>
 </context>
 <context>
@@ -6960,7 +6962,7 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1967"/>
         <source>Save changes to the following items?</source>
-        <translation type="unfinished"></translation>
+        <translation>是否保存对以下项目的更改？</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1974"/>
@@ -6993,12 +6995,12 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1306"/>
         <source>Use simplified heuristic</source>
-        <translation type="unfinished"></translation>
+        <translation>使用简化启发式</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1307"/>
         <source>Use a simplified identifier-based heuristic that results in larger models but can succeed when the normal method fails.</source>
-        <translation type="unfinished"></translation>
+        <translation>采用基于标识符的简化启发式（可能生成较大模型，但在常规方法失败时仍可成功）。</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1335"/>
@@ -7145,7 +7147,7 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="267"/>
         <source>Color</source>
-        <translation type="unfinished"></translation>
+        <translation>颜色</translation>
     </message>
     <message>
         <location filename="../../Annotations/ShapePropertiesDialog.cpp" line="322"/>
@@ -7396,22 +7398,22 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="506"/>
         <source>Protected Variables if not encrypted</source>
-        <translation type="unfinished"></translation>
+        <translation>受保护的变量（如果未加密）</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="603"/>
         <source>Simulation of model &lt;b&gt;%1&lt;/b&gt; is already running. Please wait for it to finish or cancel it before running another simulation of the same model.</source>
-        <translation type="unfinished"></translation>
+        <translation>模型&lt;b&gt;%1&lt;/b&gt;的仿真已在运行中，请等待完成或取消当前仿真后再运行。</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="843"/>
         <source>Ignoring unknown simulation flag: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>忽略未知仿真标志：%1</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="1396"/>
         <source>Port &lt;b&gt;%1&lt;/b&gt; is already in use for interactive simulation of &lt;b&gt;%2&lt;/b&gt;. Cannot run the interactive simulation.</source>
-        <translation type="unfinished"></translation>
+        <translation>端口&lt;b&gt;%1&lt;/b&gt;已被&lt;b&gt;%2&lt;/b&gt;的交互式仿真占用，无法启动交互式仿真。</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="1753"/>
@@ -7511,12 +7513,12 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="503"/>
         <source>Variable Filter help</source>
-        <translation type="unfinished"></translation>
+        <translation>变量筛选器帮助</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="508"/>
         <source>Ignore HideResult</source>
-        <translation type="unfinished"></translation>
+        <translation>忽略隐藏结果</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="514"/>
@@ -7586,38 +7588,39 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="628"/>
         <source>Post compiling %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>正在执行%1的编译后命令。</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="681"/>
         <source>Post compilation process failed. Exited with code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>编译后处理失败，退出代码%1。</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="683"/>
         <source>Post compilation process finished successfully.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>编译后处理成功完成。
+</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="705"/>
         <source>Post compilation of %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1的编译后处理完成。</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="708"/>
         <source>Post compilation of %1 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1的编译后处理失败。</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="805"/>
         <source>Compilation of %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1编译完成。</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="808"/>
         <source>Compilation of %1 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1编译失败。</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="892"/>
@@ -7627,17 +7630,17 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="899"/>
         <source>Simulation of %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1仿真完成。</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="920"/>
         <source>Simulation of %1 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1仿真失败。</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="959"/>
         <source>Post compilation of %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1的编译后处理已取消。</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="1064"/>
@@ -7673,7 +7676,8 @@ Can cause high overhead but values will not be missed.</source>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="1128"/>
         <source>Compilation process finished successfully.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>编译过程成功完成。
+</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationOutputWidget.cpp" line="1259"/>
@@ -7706,17 +7710,17 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5191"/>
         <source>Use static Linking</source>
-        <translation type="unfinished"></translation>
+        <translation>使用静态链接</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5192"/>
         <source>Enables static linking for the simulation executable. Default is dynamic linking.</source>
-        <translation type="unfinished"></translation>
+        <translation>为仿真可执行文件启用静态链接（默认为动态链接）。</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5197"/>
         <source>Post compilation command:</source>
-        <translation type="unfinished"></translation>
+        <translation>编译后命令：</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5200"/>
@@ -7850,7 +7854,7 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Util/StringHandler.cpp" line="235"/>
         <source>Internal Error</source>
-        <translation type="unfinished"></translation>
+        <translation>内部错误</translation>
     </message>
     <message>
         <location filename="../../Util/StringHandler.cpp" line="237"/>
@@ -7997,22 +8001,22 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="4182"/>
         <source>Byte Order Mark (BOM):</source>
-        <translation>字节次序码（BOM）：</translation>
+        <translation>字节顺序标记（BOM）：</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="4185"/>
         <source>Always add a BOM when saving a file.</source>
-        <translation type="unfinished"></translation>
+        <translation>保存文件时，始终添加字节顺序标记（BOM）。</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="4186"/>
         <source>Save the file with a BOM if it already had one when it was loaded.</source>
-        <translation type="unfinished"></translation>
+        <translation>若文件加载时已包含字节顺序标记（BOM），则保存时保留BOM。</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="4187"/>
         <source>Never write a BOM, possibly deleting a pre-existing one.</source>
-        <translation type="unfinished"></translation>
+        <translation>绝不写入字节顺序标记（BOM），并移除文件已有的BOM。</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="4188"/>
@@ -8032,7 +8036,7 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="4192"/>
         <source>Note that BOMs are uncommon and treated incorrectly by some editors, so it usually makes little sense to add any</source>
-        <translation type="unfinished"></translation>
+        <translation>请注意：字节顺序标记（BOM）并不常见，且部分编辑器对其处理不当，因此通常无需添加</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="4202"/>
@@ -8242,12 +8246,12 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Simulation/TranslationFlagsWidget.cpp" line="66"/>
         <source>Evaluate all parameters (faster simulation, cannot change them at runtime, does not work with old frontend)</source>
-        <translation type="unfinished"></translation>
+        <translation>评估所有参数（可加速仿真，但运行时无法修改，且不兼容旧前端）</translation>
     </message>
     <message>
         <location filename="../../Simulation/TranslationFlagsWidget.cpp" line="70"/>
         <source>Enable FMU Import</source>
-        <translation type="unfinished"></translation>
+        <translation>启用FMU导入功能</translation>
     </message>
     <message>
         <location filename="../../Simulation/TranslationFlagsWidget.cpp" line="67"/>
@@ -8257,7 +8261,7 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Simulation/TranslationFlagsWidget.cpp" line="69"/>
         <source>Enable old frontend for code generation</source>
-        <translation type="unfinished"></translation>
+        <translation>启用旧前端代码生成模式</translation>
     </message>
     <message>
         <location filename="../../Simulation/TranslationFlagsWidget.cpp" line="68"/>
@@ -8300,7 +8304,7 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Util/Utilities.cpp" line="79"/>
         <source>Scroll to Active</source>
-        <translation type="unfinished"></translation>
+        <translation>滚动至活动项</translation>
     </message>
     <message>
         <location filename="../../Util/Utilities.cpp" line="117"/>
@@ -8328,27 +8332,27 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Modeling/InstallLibraryDialog.cpp" line="266"/>
         <source>Upgrade the installed libraries that have been registered by the package manager.</source>
-        <translation type="unfinished"></translation>
+        <translation>升级已通过包管理器注册的安装库。</translation>
     </message>
     <message>
         <location filename="../../Modeling/InstallLibraryDialog.cpp" line="268"/>
         <source>Install Newest Versions (may install the latest non-compatible versions)</source>
-        <translation type="unfinished"></translation>
+        <translation>安装最新版本（可能安装不兼容的最新版本）</translation>
     </message>
     <message>
         <location filename="../../Modeling/InstallLibraryDialog.cpp" line="270"/>
         <source>&lt;b&gt;Upgrading installed libraries. Please wait.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;正在升级已安装的库，请稍候...&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../../Modeling/InstallLibraryDialog.cpp" line="273"/>
         <source>Upgrade</source>
-        <translation type="unfinished"></translation>
+        <translation>升级</translation>
     </message>
     <message>
         <location filename="../../Modeling/InstallLibraryDialog.cpp" line="311"/>
         <source>Failed to upgrade libraries. See message browser for any possible messages.</source>
-        <translation type="unfinished"></translation>
+        <translation>库升级失败。请查看消息浏览器获取可能的错误信息。</translation>
     </message>
 </context>
 <context>
@@ -8428,7 +8432,7 @@ Variability: %4</source>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="1433"/>
         <source>Rewind the visualization to the start</source>
-        <translation type="unfinished"></translation>
+        <translation>将可视化回退至起始状态</translation>
     </message>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="1437"/>
@@ -8448,7 +8452,7 @@ Variability: %4</source>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="1546"/>
         <source>Loading simulation result variables</source>
-        <translation type="unfinished"></translation>
+        <translation>正在加载仿真结果变量</translation>
     </message>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="1781"/>
@@ -8463,7 +8467,7 @@ Variability: %4</source>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="1860"/>
         <source>Enabled for %1</source>
-        <translation type="unfinished"></translation>
+        <translation>已为 %1 启用</translation>
     </message>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="1995"/>
@@ -8473,67 +8477,67 @@ Variability: %4</source>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="2008"/>
         <source>Cannot be attached to a plot window.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法附加至绘图窗口。</translation>
     </message>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="2086"/>
         <source>Cannot be attached to a parametric plot window.</source>
-        <translation type="unfinished"></translation>
+        <translation>法附加至参数化绘图窗口。</translation>
     </message>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="2095"/>
         <source>Cannot select two consecutive x-axis variables. &lt;b&gt;%1&lt;/b&gt; is already selected as x-axis variable.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法选择两个连续的X轴变量。&lt;b&gt;%1&lt;/b&gt;已被选为X轴变量。</translation>
     </message>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="2109"/>
         <source>Select the x-axis variable first. Press and hold the shift key and then check the variable.</source>
-        <translation type="unfinished"></translation>
+        <translation>请先选择X轴变量。按住Shift键并勾选变量。</translation>
     </message>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="2267"/>
         <source>Cannot be attached to an interactive plot window.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法附加至交互式绘图窗口。</translation>
     </message>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="2817"/>
         <source>Enable Time Controls</source>
-        <translation type="unfinished"></translation>
+        <translation>启用时间控制</translation>
     </message>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="2819"/>
         <source>Enables the time controls</source>
-        <translation type="unfinished"></translation>
+        <translation>激活时间控制功能</translation>
     </message>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="2836"/>
         <source>Show only direct dependencies</source>
-        <translation type="unfinished"></translation>
+        <translation>仅显示直接依赖关系</translation>
     </message>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="2841"/>
         <source>Show only variables that depend on this variable</source>
-        <translation type="unfinished"></translation>
+        <translation>仅显示依赖此变量的变量</translation>
     </message>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="2843"/>
         <source>Show only direct dependencies (initial)</source>
-        <translation type="unfinished"></translation>
+        <translation>仅显示直接依赖关系（初始状态）</translation>
     </message>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="2848"/>
         <source>Show only variables that depend on this variable in the initial system of equations</source>
-        <translation type="unfinished"></translation>
+        <translation>在初始方程系统中仅显示依赖此变量的变量</translation>
     </message>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="2861"/>
         <source>Open debugger (equation %1 - %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>启动调试器（方程 %1 - %2）</translation>
     </message>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="2866"/>
         <source>Open debugger for the equation</source>
-        <translation type="unfinished"></translation>
+        <translation>为方程开启调试器</translation>
     </message>
 </context>
 <context>
@@ -8556,22 +8560,22 @@ Variability: %4</source>
     <message>
         <location filename="../../Animation/ViewerWidget.cpp" line="305"/>
         <source>Reset Visual Properties</source>
-        <translation type="unfinished"></translation>
+        <translation>重置视觉属性</translation>
     </message>
     <message>
         <location filename="../../Animation/ViewerWidget.cpp" line="307"/>
         <source>Make Visualizer Invisible</source>
-        <translation type="unfinished"></translation>
+        <translation>使可视化工具不可见</translation>
     </message>
     <message>
         <location filename="../../Animation/ViewerWidget.cpp" line="309"/>
         <source>Change Specularity</source>
-        <translation type="unfinished"></translation>
+        <translation>更改高光效果</translation>
     </message>
     <message>
         <location filename="../../Animation/ViewerWidget.cpp" line="310"/>
         <source>Apply Checker Texture</source>
-        <translation type="unfinished"></translation>
+        <translation>应用棋盘格纹理</translation>
     </message>
     <message>
         <location filename="../../Animation/ViewerWidget.cpp" line="311"/>
@@ -8588,7 +8592,7 @@ Variability: %4</source>
         <location filename="../../Animation/ViewerWidget.cpp" line="446"/>
         <location filename="../../Animation/ViewerWidget.cpp" line="474"/>
         <source>Texture feature is not applicable for %1 files.</source>
-        <translation type="unfinished"></translation>
+        <translation>纹理功能不适用于 %1 文件。</translation>
     </message>
 </context>
 <context>
@@ -8611,7 +8615,7 @@ Variability: %4</source>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5224"/>
         <source>Latest News &amp; Events</source>
-        <translation type="unfinished"></translation>
+        <translation>最新动态与活动</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5238"/>
@@ -8621,7 +8625,7 @@ Variability: %4</source>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5288"/>
         <source>System Libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>系统库</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5374"/>
