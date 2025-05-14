@@ -6381,14 +6381,18 @@ void ModelWidget::reDrawModelWidget(const ModelInfo &modelInfo)
     mpDiagramGraphicsView->resetCoordinateSystem();
   }
   // reset if we are inside element mode
-  clearGraphicsViewsExceptOutOfSceneItems();
-  mModelInstanceList.clear();
-  mModelInstancesPos = -1;
-  mpElementModeLabel->setText("");
-  mPreservedIconShapesList.clear();
-  mPreservedDiagramShapesList.clear();
-  setComponentModified(false);
-  updateElementModeButtons();
+  if (isElementMode()) {
+    clearGraphicsViewsExceptOutOfSceneItems();
+    mModelInstanceList.clear();
+    mModelInstancesPos = -1;
+    mpElementModeLabel->setText("");
+    mpIconGraphicsView->setShapesList(mPreservedIconShapesList);
+    mPreservedIconShapesList.clear();
+    mpDiagramGraphicsView->setShapesList(mPreservedDiagramShapesList);
+    mPreservedDiagramShapesList.clear();
+    setComponentModified(false);
+    updateElementModeButtons();
+  }
   loadModelInstance(false, modelInfo);
   // update the coordinate system according to new values
   mpIconGraphicsView->resetZoom();
