@@ -1697,8 +1697,8 @@ algorithm
   rdcl_node := Mutable.access(redeclareComp);
   repl_node := Mutable.access(replaceableComp);
   instComponent(repl_node, NFAttributes.DEFAULT_ATTR, Modifier.NOMOD(), true, instLevel, context);
-  redeclareComponent(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD(), {}, NFAttributes.DEFAULT_ATTR, rdcl_node, instLevel, context);
-  outComp := Mutable.create(rdcl_node);
+  redeclareComponent(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD(), {}, NFAttributes.DEFAULT_ATTR, instLevel, context);
+  outComp := Mutable.create(repl_node);
 end redeclareComponentElement;
 
 function redeclareClass
@@ -1901,7 +1901,7 @@ algorithm
 
     outer_mod := Modifier.merge(InstNode.getModifier(rdcl_node), outer_mod);
     InstNode.setModifier(outer_mod, rdcl_node);
-    redeclareComponent(rdcl_node, node, Modifier.NOMOD(), cc_mod, propagated_subs, attributes, node, instLevel, context);
+    redeclareComponent(rdcl_node, node, Modifier.NOMOD(), cc_mod, propagated_subs, attributes, instLevel, context);
   else
     instComponentDef(def, outer_mod, innerMod, attributes, useBinding, comp_node, parent, instLevel, originalAttr, propagatedSubs, context);
   end if;
@@ -2154,7 +2154,6 @@ function redeclareComponent
   input Modifier constrainingMod;
   input list<Subscript> propagatedSubs;
   input Attributes outerAttr;
-  input InstNode redeclaredNode;
   input Integer instLevel;
   input InstContext.Type context;
 protected
@@ -2231,7 +2230,7 @@ algorithm
 
   end match;
 
-  InstNode.updateComponent(new_comp, InstNode.resolveInner(redeclaredNode));
+  InstNode.updateComponent(new_comp, rdcl_node);
 end redeclareComponent;
 
 function checkOuterComponentMod
