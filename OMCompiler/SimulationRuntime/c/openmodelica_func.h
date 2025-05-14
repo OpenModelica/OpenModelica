@@ -53,8 +53,6 @@ extern "C" {
 #include "util/division.h"
 #include "util/utility.h"
 
-typedef void (*eq_func_ptr)(DATA*, threadData_t*);
-
 struct OpenModelicaGeneratedFunctionCallbacks {
   /* Defined in perform_simulation.c and omp_perform_simulation.c */
   int (*performSimulation)(DATA* data, threadData_t*, void* solverInfo);
@@ -108,11 +106,9 @@ struct OpenModelicaGeneratedFunctionCallbacks {
 
   /* array of equation super nodes of the system */
   void (*setEqFunctions)(DATA*, threadData_t*);
-  size_t eqFunctionsSize;               /* highest index of eqFunction */
-  eq_func_ptr* eqFunctions;             /* array of all eqFunctions by index */
 
   /* sets the var to eqNode map and dependency graph */
-  void (*getDependency)(size_t* mapVarToEqNode, size_t* realVarsIndex, size_t* nEqDependency, size_t** eqDependency);
+  void (*getDependency)(EVAL_DAG* dag, size_t* realVarsIndex);
 
   /* functionODE contains those equations that are needed
   * to calculate the dynamic part of the system */
