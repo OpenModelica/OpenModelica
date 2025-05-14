@@ -52,6 +52,7 @@
 #include "stateset.h"
 #include "spatialDistribution.h"
 #include "../../meta/meta_modelica.h"
+#include "../eval_dep.h"
 
 #ifdef USE_PARJAC
   #include <omp.h>
@@ -1023,22 +1024,17 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->modelData->nVariablesBoolean  = data->simulationInfo->booleanVarsIndex[data->modelData->nVariablesBooleanArray];
   data->modelData->nVariablesString   = data->simulationInfo->stringVarsIndex[data->modelData->nVariablesStringArray];
 
-  data->callback->eqFunctions = (eq_func_ptr*) calloc(data->callback->eqFunctionsSize, sizeof(eq_func_ptr));
-  data->simulationInfo->eqEvalIndexStatic = (size_t*) calloc(data->callback->eqFunctionsSize, sizeof(size_t));
-  data->simulationInfo->eqEvalIndexAdaptive = (size_t*) calloc(data->callback->eqFunctionsSize, sizeof(size_t));
-  data->simulationInfo->eqEvalSelect = (modelica_boolean*) calloc(data->callback->eqFunctionsSize, sizeof(modelica_boolean));
+  /* init eval selection for functionODE */
+  data->modelData->eqFunctions = (eq_func_ptr*) calloc(data->modelData->eqFunctionsSize, sizeof(eq_func_ptr));
+  data->modelData->dag = allocEvalDAG(data->modelData->nVariablesReal, data->modelData->eqFunctionsSize);
+  data->simulationInfo->evalSelectionFull = allocEvalSelection(data->modelData->dag);
+  data->simulationInfo->evalSelectionFast = allocEvalSelection(data->modelData->dag);
+  data->simulationInfo->evalSelection = data->simulationInfo->evalSelectionFull;
   data->callback->setEqFunctions(data, threadData);
-  data->simulationInfo->eqEvalN = data->simulationInfo->eqEvalNStatic;
-  data->simulationInfo->eqEvalIndex = data->simulationInfo->eqEvalIndexStatic;
-
-  data->modelData->mapVarToEqNode = (size_t*) calloc(data->modelData->nVariablesReal, sizeof(size_t));
-  data->modelData->nEqDependency = (size_t*) calloc(data->callback->eqFunctionsSize, sizeof(size_t));
-  data->modelData->eqDependency = (size_t**) calloc(data->callback->eqFunctionsSize, sizeof(size_t*));
-  data->callback->getDependency(data->modelData->mapVarToEqNode, data->simulationInfo->realVarsIndex, data->modelData->nEqDependency, data->modelData->eqDependency);
+  data->callback->getDependency(data->modelData->dag, data->simulationInfo->realVarsIndex);
 
   /* prepare RingBuffer */
-  for(i=0; i<SIZERINGBUFFER; i++)
-  {
+  for (i = 0; i < SIZERINGBUFFER; i++) {
     /* set time value */
     /*
     * fix issue #11855, always take the startTime provided in modeldescription.xml
@@ -1355,15 +1351,12 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->stringVarsIndex);
 
   /* free buffer for eqFunctions */
-  free(data->callback->eqFunctions);
+  free(data->modelData->eqFunctions);
 
   /* free buffer for adaptive eval */
-  free(data->modelData->mapVarToEqNode);
-  for (i = 0; i < data->callback->eqFunctionsSize; i++)
-    free(data->modelData->eqDependency[i]);
-  free(data->modelData->eqDependency);
-  free(data->simulationInfo->eqEvalIndexStatic);
-  free(data->simulationInfo->eqEvalIndexAdaptive);
+  freeEvalSelection(data->simulationInfo->evalSelectionFull);
+  freeEvalSelection(data->simulationInfo->evalSelectionFast);
+  freeEvalDAG(data->modelData->dag);
 
   /* free buffer for old state variables */
   free(data->simulationInfo->realVarsOld);

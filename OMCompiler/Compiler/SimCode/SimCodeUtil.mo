@@ -13476,6 +13476,58 @@ algorithm
   simVarIndices := UnorderedSet.unique_list(list(var.index for var in simVars), Util.id, intEq);
 end getSimEqSystemSimVarsRHSIndex;
 
+public function getSimEqSystemSimVarsLHSJac
+  input SimCode.SimEqSystem simEqSys;
+  input Option<HashTableCrefSimVar.HashTable> opt_crefsHT;
+  output list<SimCodeVar.SimVar> simVars = {};
+protected
+  HashTableCrefSimVar.HashTable crefsHT;
+algorithm
+  if isSome(opt_crefsHT) then
+    crefsHT := Util.getOption(opt_crefsHT);
+    for cr in getSimEqSystemCrefsLHS(simEqSys) loop
+      try
+        simVars := simVarFromHTOrFail(cr, crefsHT) :: simVars;
+      else
+      end try;
+    end for;
+  end if;
+end getSimEqSystemSimVarsLHSJac;
+
+public function getSimEqSystemSimVarsRHSIndexJac
+  input SimCode.SimEqSystem simEqSys;
+  input Option<HashTableCrefSimVar.HashTable> opt_crefsHT;
+  output list<SimCodeVar.SimVar> simVarIndices = {};
+protected
+  SimCodeVar.SimVar var;
+  HashTableCrefSimVar.HashTable crefsHT;
+
+  function keep
+    input SimCodeVar.SimVar var;
+    output Boolean b;
+  algorithm
+    b := match var
+      case SimCodeVar.SIMVAR(varKind = BackendDAE.JAC_VAR())      then true;
+      case SimCodeVar.SIMVAR(varKind = BackendDAE.JAC_TMP_VAR())  then true;
+      else false;
+    end match;
+  end keep;
+algorithm
+  if isSome(opt_crefsHT) then
+    crefsHT := Util.getOption(opt_crefsHT);
+    for cr in getSimEqSystemCrefsRHS(simEqSys) loop
+      try
+        var := simVarFromHTOrFail(cr, crefsHT);
+        if keep(var) then
+          simVarIndices := var :: simVarIndices;
+        end if;
+      else
+      end try;
+    end for;
+    //simVarIndices := UnorderedSet.unique_list(simVarIndices, Util.id, intEq);
+  end if;
+end getSimEqSystemSimVarsRHSIndexJac;
+
 protected function getSimEqSystemCrefsLHS "gets the crefs of the vars that are assigned (the lhs) for a simEqSystem
 author:Waurich TUD 2014-05"
   input SimCode.SimEqSystem simEqSys;
@@ -15474,11 +15526,54 @@ algorithm
     end match;
   else
     //print("cref2simvar: " + ComponentReference.printComponentRefStr(inCref) + " not found!\n");
-    badcref := ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed " + ComponentReference.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
+    badcref := ComponentReference.makeCrefIdent("ERROR_simVarFromHT_failed " + ComponentReference.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
     sv := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false);
   end try;
   outSimVar := sv;
 end simVarFromHT;
+
+public function simVarFromHTOrFail
+  input DAE.ComponentRef inCref;
+  input HashTableCrefSimVar.HashTable crefToSimVarHT;
+  output SimCodeVar.SimVar outSimVar;
+protected
+  DAE.ComponentRef cref;
+  SimCodeVar.SimVar sv;
+  list<DAE.Subscript> subs;
+algorithm
+  if BaseHashTable.hasKey(inCref, crefToSimVarHT) then
+    sv := BaseHashTable.get(inCref, crefToSimVarHT);
+  else
+    // lookup array variable and add offset for array element
+    if Flags.isSet(Flags.NF_SCALARIZE) then
+      sv := BaseHashTable.get(ComponentReference.crefStripLastSubs(inCref), crefToSimVarHT);
+      subs := ComponentReference.crefLastSubs(inCref);
+      sv.name := ComponentReference.crefSetLastSubs(sv.name, subs);
+    else
+      sv := BaseHashTable.get(ComponentReference.crefStripSubs(inCref), crefToSimVarHT);
+      subs := ComponentReference.crefSubs(inCref);
+      sv.name := ComponentReference.crefApplySubs(ComponentReference.crefStripSubs(sv.name), subs);
+    end if;
+
+    sv.variable_index := match sv.variable_index
+      local Integer index;
+      case SOME(index)
+      then SOME(index + getScalarElementIndex(subs, List.map(sv.numArrayElement, stringInt)) - 1);
+    end match;
+    // fix fmi_index when using nfScalarize
+    sv.fmi_index := match sv.fmi_index
+      local Integer fmiIndex;
+      case SOME(fmiIndex)
+      then SOME(fmiIndex + getScalarElementIndex(subs, List.map(sv.numArrayElement, stringInt)) - 1);
+    end match;
+  end if;
+  sv := match sv.aliasvar
+    case SimCodeVar.NOALIAS() then sv;
+    case SimCodeVar.ALIAS(varName=cref) then simVarFromHT(cref, crefToSimVarHT); /* Possibly not needed; can't really hurt that much though */
+    case SimCodeVar.NEGATEDALIAS() then sv;
+  end match;
+  outSimVar := sv;
+end simVarFromHTOrFail;
 
 public function createJacContext
   input Option<HashTableCrefSimVar.HashTable> jacHT;

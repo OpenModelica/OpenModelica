@@ -84,11 +84,9 @@ void gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter, mod
   (*counter)++;
 
   if (fast) {
-    info->eqEvalN     = info->eqEvalNAdaptive;
-    info->eqEvalIndex = info->eqEvalIndexAdaptive;
+    info->evalSelection = info->evalSelectionFast;
   } else {
-    info->eqEvalN     = info->eqEvalNStatic;
-    info->eqEvalIndex = info->eqEvalIndexStatic;
+    info->evalSelection = info->evalSelectionFull;
   }
 
   externalInputUpdate(data);
@@ -733,38 +731,22 @@ void gbode_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
  */
 static void updateEqEval(DATA* data, DATA_GBODE* gbData)
 {
-  size_t i, k, nEq;
+  size_t k;
+  EVAL_DAG* dag = data->simulationInfo->evalSelectionFast->dag;
 
   /* clear selection */
-  for (k = 0; k < data->callback->eqFunctionsSize; k++) {
-    data->simulationInfo->eqEvalSelect[k] = FALSE;
-  }
+  clearEvalSelection(data->simulationInfo->evalSelectionFast);
+
   /* set equations for fast derivatives */
   for (k = 0; k < gbData->nFastStates; k++) {
     size_t derIdx = gbData->fastStatesIdx[k] + gbData->nStates;
-    size_t eqnIdx = data->modelData->mapVarToEqNode[derIdx];
-    data->simulationInfo->eqEvalSelect[eqnIdx] = TRUE;
+    size_t eqnIdx = dag->mapVarToEqNode[derIdx];
+    dag->select[eqnIdx] = TRUE;
   }
-  /* Set dependencies! Since we have a DAG we can just go backwards and look at
-   * direct dependency only, because indirect dependencies will be handled when
-   * we get to the direct dependency node which sets its direct dependency and
-   * so on... */
-  for (k = data->callback->eqFunctionsSize-1; k+1 > 0 /* careful: count down with unsigned */; k--) {
-    if (data->simulationInfo->eqEvalSelect[k]) {
-      for (i = 0; i < data->modelData->nEqDependency[k]; i ++) {
-        size_t dep = data->modelData->eqDependency[k][i];
-        data->simulationInfo->eqEvalSelect[dep] = TRUE;
-      }
-    }
-  }
-  /* get the indices in correct order */
-  nEq = 0;
-  for (k = 0; k < data->callback->eqFunctionsSize; k++) {
-    if (data->simulationInfo->eqEvalSelect[k]) {
-      data->simulationInfo->eqEvalIndexAdaptive[nEq++] = k;
-    }
-  }
-  data->simulationInfo->eqEvalNAdaptive = nEq;
+
+  /* select all dependencies */
+  activateEvalDependencies(data->simulationInfo->evalSelectionFast);
+
 
   /* debug print */
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
@@ -772,8 +754,8 @@ static void updateEqEval(DATA* data, DATA_GBODE* gbData)
     unsigned int bufSize = 40960;
     unsigned int ct;
     ct = snprintf(row_to_print, bufSize, "%s =\t", "eqFunctions:");
-    for (k = 0; k < data->simulationInfo->eqEvalNAdaptive; k++) {
-      ct += snprintf(row_to_print+ct, bufSize-ct, "%zu ", data->simulationInfo->eqEvalIndexAdaptive[k]);
+    for (k = 0; k < data->simulationInfo->evalSelectionFast->n; k++) {
+      ct += snprintf(row_to_print+ct, bufSize-ct, "%zu ", data->simulationInfo->evalSelectionFast->idx[k]);
     }
     infoStreamPrint(OMC_LOG_GBODE_V, 0, "%s", row_to_print);
   }

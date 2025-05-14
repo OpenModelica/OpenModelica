@@ -46,6 +46,11 @@
 #include "../jacobian_util.h"
 #include "../../util/rtclock.h"
 
+/* forward declarations */
+int jacobian_SR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian);
+int jacobian_MR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian);
+int jacobian_IRK_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian);
+
 /**
  * @brief Specific error handling of kinsol for gbode
  *

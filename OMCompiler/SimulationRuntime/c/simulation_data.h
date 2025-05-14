@@ -45,6 +45,7 @@
 #include "util/rtclock.h"
 #include "util/simulation_options.h"
 #include "util/context.h"
+#include "simulation/eval_dep.h"
 
 #define omc_dummyVarInfo {-1,-1,"","",omc_dummyFileInfo_val}
 #define omc_dummyEquationInfo {-1,0,0,-1,NULL}
@@ -66,6 +67,10 @@
 typedef struct DATA DATA;
 typedef struct VALUES_LIST VALUES_LIST;
 typedef struct JACOBIAN JACOBIAN;
+
+typedef void (*eq_func_ptr)(DATA*, threadData_t*);
+typedef int (*jacobianColumn_func_ptr)(DATA* data, threadData_t* threadData, JACOBIAN* thisJacobian, JACOBIAN* parentJacobian);
+typedef int (*initialAnalyticalJacobian_func_ptr)(DATA* data, threadData_t* threadData, JACOBIAN* jacobian);
 
 /* Model info structures */
 typedef struct VAR_INFO
@@ -182,10 +187,6 @@ typedef struct NONLINEAR_PATTERN
   unsigned int* rows;                  // size: numberOfNonlinear - all rows appended in one vector
 } NONLINEAR_PATTERN;
 
-
-typedef int (*jacobianColumn_func_ptr)(DATA* data, threadData_t* threadData, JACOBIAN* thisJacobian, JACOBIAN* parentJacobian);
-typedef int (*initialAnalyticalJacobian_func_ptr)(DATA* data, threadData_t* threadData, JACOBIAN* jacobian);
-
 /**
  * @brief Analytic jacobian struct
  *
@@ -201,6 +202,8 @@ typedef struct JACOBIAN
   modelica_real* tmpVars;
   modelica_real* resultVars;            /* Result column for given seed vector */
   modelica_real dae_cj;                 /* Is the scalar in the system Jacobian, proportional to the inverse of the step size. From User Documentation for ida v5.4.0 equation (2.5). */
+  EVAL_DAG* dag;                        /* dependency of rows and inner partial derivatives */
+  EVAL_SELECTION* selectionColor;       /* selections for each color */
   jacobianColumn_func_ptr evalColumn;   /* symbolic jacobian column based on seed vector */
   jacobianColumn_func_ptr constantEqns; /* Constant equations independent of seed vector */
 } JACOBIAN;
@@ -609,9 +612,9 @@ typedef struct MODEL_DATA
   long nInputVars;
   long nOutputVars;
 
-  size_t* mapVarToEqNode;               /* map from var index to super node index (size is nVariablesReal) */
-  size_t* nEqDependency;                /* number of dependencies for each superNode (size is data->callback->eqFunctionsSize) */
-  size_t** eqDependency;                /* index of dependent eqFunctions (DAG) */
+  size_t eqFunctionsSize;               /* highest index of eqFunction */
+  eq_func_ptr* eqFunctions;             /* array of all eqFunctions by index */
+  EVAL_DAG* dag;                        /* dependency of functionODE */
 
   long nZeroCrossings;
   long nRelations;
@@ -792,14 +795,10 @@ typedef struct SIMULATION_INFO
   size_t* booleanVarsIndex;
   size_t* stringVarsIndex;
 
-  /* adaptive eval of functionXXX */
-  size_t eqEvalNStatic;                 /* number of all eqNodes in functionXXX */
-  size_t eqEvalNAdaptive;               /* number of eqNodes to evaluate in functionXXX, set by gbode fast states */
-  size_t eqEvalN;                       /* number of eqNodes to evaluate in functionXXX, equals one of the above */
-  size_t* eqEvalIndexStatic;            /* all indices of eqNodes in functionXXX */
-  size_t* eqEvalIndexAdaptive;          /* indices of eqNodes to evaluate in functionXXX, set by gbode fast states */
-  size_t* eqEvalIndex;                  /* indices of eqNodes to evaluate in functionXXX, points to one of the above */
-  modelica_boolean* eqEvalSelect;       /* boolean array selecting eqNodes to evaluate in functionXXX (size is data->callback->eqFunctionsSize) */
+  /* adaptive eval of functionODE */
+  EVAL_SELECTION* evalSelection;        /* selection for functionODE (don't allocate, only set to other pointer) */
+  EVAL_SELECTION* evalSelectionFull;    /* default full selection for functionODE */
+  EVAL_SELECTION* evalSelectionFast;    /* TODO remove me after debug */
 
   /* old vars for event handling */
   modelica_real timeValueOld;
