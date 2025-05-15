@@ -13451,13 +13451,11 @@ algorithm
   simVars := list(cref2simvar(cr, simCode) for cr in getSimEqSystemCrefsLHS(simEqSys));
 end getSimEqSystemSimVarsLHS;
 
-public function getSimEqSystemSimVarsRHSIndex
+public function getSimEqSystemSimVarsRHS
   input SimCode.SimEqSystem simEqSys;
   input SimCode.SimCode simCode;
-  output list<Integer> simVarIndices;
+  output list<SimCodeVar.SimVar> simVars;
 protected
-  list<SimCodeVar.SimVar> simVars;
-
   function keep
     input SimCodeVar.SimVar var;
     output Boolean b;
@@ -13473,8 +13471,7 @@ protected
 algorithm
   simVars := list(cref2simvar(cr, simCode) for cr in getSimEqSystemCrefsRHS(simEqSys));
   simVars := list(var for var guard keep(var) in simVars);
-  simVarIndices := UnorderedSet.unique_list(list(var.index for var in simVars), Util.id, intEq);
-end getSimEqSystemSimVarsRHSIndex;
+end getSimEqSystemSimVarsRHS;
 
 public function getSimEqSystemSimVarsLHSJac
   input SimCode.SimEqSystem simEqSys;
@@ -13494,10 +13491,10 @@ algorithm
   end if;
 end getSimEqSystemSimVarsLHSJac;
 
-public function getSimEqSystemSimVarsRHSIndexJac
+public function getSimEqSystemSimVarsRHSJac
   input SimCode.SimEqSystem simEqSys;
   input Option<HashTableCrefSimVar.HashTable> opt_crefsHT;
-  output list<SimCodeVar.SimVar> simVarIndices = {};
+  output list<SimCodeVar.SimVar> simVars = {};
 protected
   SimCodeVar.SimVar var;
   HashTableCrefSimVar.HashTable crefsHT;
@@ -13519,14 +13516,13 @@ algorithm
       try
         var := simVarFromHTOrFail(cr, crefsHT);
         if keep(var) then
-          simVarIndices := var :: simVarIndices;
+          simVars := var :: simVars;
         end if;
       else
       end try;
     end for;
-    //simVarIndices := UnorderedSet.unique_list(simVarIndices, Util.id, intEq);
   end if;
-end getSimEqSystemSimVarsRHSIndexJac;
+end getSimEqSystemSimVarsRHSJac;
 
 protected function getSimEqSystemCrefsLHS "gets the crefs of the vars that are assigned (the lhs) for a simEqSystem
 author:Waurich TUD 2014-05"
