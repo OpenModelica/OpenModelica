@@ -4839,14 +4839,16 @@ template getDependency(SimCode simCode, list<SimEqSystem> allEquations, String f
     /* eqDependency */
     <%allEquations |> eq =>
       let eqIdx = equationIndexGeneral(eq)
-      let n = listLength(getSimEqSystemSimVarsRHSIndex(eq, simCode))
+      let n = listLength(getSimEqSystemSimVarsRHS(eq, simCode))
       if stringEq(n, "0") then 'dag->nEqDep[<%eqIdx%>] = <%n%>;'
       else
       <<
       dag->nEqDep[<%eqIdx%>] = <%n%>;
       dag->eqDep[<%eqIdx%>] = malloc(<%n%> * sizeof(size_t));
       i = 0;
-      <%getSimEqSystemSimVarsRHSIndex(eq, simCode) |> varIdx => 'dag->eqDep[<%eqIdx%>][i++] = dag->mapVarToEqNode[<%varIdx%>];'; separator="\n"%>
+      <%getSimEqSystemSimVarsRHS(eq, simCode) |> var => match var
+        case SIMVAR() then
+        'dag->eqDep[<%eqIdx%>][i++] = dag->mapVarToEqNode[<%index%>]; <%crefCCommentWithVariability(var)%>'; separator="\n"%>
       >>; separator="\n\n"%>
     TRACE_POP
   }
@@ -4882,14 +4884,14 @@ template getDependencyJacobian(JacobianMatrix jac, String modelNamePrefix)
     <%columns |> col => match col
     case JAC_COLUMN() then (columnEqns |> eq =>
       let eqIdx = equationIndexGeneral(eq)
-      let n = listLength(getSimEqSystemSimVarsRHSIndexJac(eq, crefsHT))
+      let n = listLength(getSimEqSystemSimVarsRHSJac(eq, crefsHT))
       if stringEq(n, "0") then 'dag->nEqDep[<%eqIdx%>] = <%n%>;'
       else
       <<
       dag->nEqDep[<%eqIdx%>] = <%n%>;
       dag->eqDep[<%eqIdx%>] = malloc(<%n%> * sizeof(size_t));
       i = 0;
-      <%getSimEqSystemSimVarsRHSIndexJac(eq, crefsHT) |> var => match var
+      <%getSimEqSystemSimVarsRHSJac(eq, crefsHT) |> var => match var
         case SIMVAR() then
         'dag->eqDep[<%eqIdx%>][i++] = dag->mapVarToEqNode[<%index%>]; <%crefCCommentWithVariability(var)%>'; separator="\n"%>
       >>; separator="\n\n")%>
