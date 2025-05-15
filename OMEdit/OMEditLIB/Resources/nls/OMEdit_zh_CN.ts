@@ -115,7 +115,7 @@
     <message>
         <location filename="../../OMS/ModelDialog.cpp" line="439"/>
         <source>Failed to add submodel. %1</source>
-        <translation type="unfinished"></translation>
+        <translation>添加子模型失败。%1</translation>
     </message>
 </context>
 <context>
@@ -389,12 +389,12 @@
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6736"/>
         <source>Compiler Jar:</source>
-        <translation type="unfinished"></translation>
+        <translation>编译器JAR包：</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6742"/>
         <source>Compiler Arguments:</source>
-        <translation type="unfinished"></translation>
+        <translation>编译器参数：</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6745"/>
@@ -409,7 +409,7 @@
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6754"/>
         <source>Modelica Library Paths:</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelica库路径：</translation>
     </message>
 </context>
 <context>
@@ -417,17 +417,17 @@
     <message>
         <location filename="../../CRML/CRMLTranslateAsDialog.cpp" line="64"/>
         <source>Select the output directory:</source>
-        <translation type="unfinished"></translation>
+        <translation>选择输出目录：</translation>
     </message>
     <message>
         <location filename="../../CRML/CRMLTranslateAsDialog.cpp" line="71"/>
         <source>Insert in class - within (optional):</source>
-        <translation type="unfinished"></translation>
+        <translation>插入类中 - within（可选）：</translation>
     </message>
     <message>
         <location filename="../../CRML/CRMLTranslateAsDialog.cpp" line="129"/>
         <source>Output directory does not exist.</source>
-        <translation type="unfinished"></translation>
+        <translation>输出目录不存在。</translation>
     </message>
 </context>
 <context>
@@ -435,87 +435,87 @@
     <message>
         <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="57"/>
         <source>Cancel</source>
-        <translation type="unfinished">取消</translation>
+        <translation>取消</translation>
     </message>
     <message>
         <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="245"/>
         <source>Translation of the CRML file %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML文件 %1 的转换已取消。</translation>
     </message>
     <message>
         <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="251"/>
         <source>Testsuite run in directory %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>目录 %1 中的测试套件运行已取消。</translation>
     </message>
     <message>
         <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="256"/>
         <source>Translation of the CRML file %1 with output directory %2 and within %3 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML文件 %1（输出目录：%2，范围：%3）的转换已取消。</translation>
     </message>
     <message>
         <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="259"/>
         <source>Translation of the CRML file %1 with output directory %2 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML文件 %1（输出目录：%2）的转换已取消。</translation>
     </message>
     <message>
         <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="262"/>
         <source>Translation of the CRML file %1 with within %2 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML文件 %1（范围：%2）的转换已取消。</translation>
     </message>
     <message>
         <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="286"/>
         <source>CRML translator is running. Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML转换器运行中，请稍候。</translation>
     </message>
     <message>
         <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="341"/>
         <source>Translation of the CRML file %1 failed. Exit code %2</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML文件 %1 转换失败，退出代码：%2</translation>
     </message>
     <message>
         <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="343"/>
         <source>Translation of CRML file %1 finished. Now loading specified CRML Modelica libraries...</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML文件 %1 转换完成，正在加载指定的CRML Modelica库...</translation>
     </message>
     <message>
         <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="345"/>
         <source>Testsuite run in directory %1 failed. Exit code %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>目录 %1 中的测试套件运行失败，退出代码：%2。</translation>
     </message>
     <message>
         <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="346"/>
         <source>Testsuite run in directory %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>目录 %1 中的测试套件运行完成。</translation>
     </message>
     <message>
         <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="352"/>
         <source>Translation of the CRML file %1 with output directory %2 and within %3 failed. Exit code %4.</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML文件 %1（输出目录：%2，范围：%3）转换失败，退出代码：%4。</translation>
     </message>
     <message>
         <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="355"/>
         <source>Translation of CRML file %1 with output directory %2 and within %3 finished. Now loading specified CRML Modelica libraries...</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML文件 %1（输出目录：%2，范围：%3）转换完成，正在加载指定的CRML Modelica库...</translation>
     </message>
     <message>
         <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="358"/>
         <source>Translation of the CRML file %1 with output directory %2 failed. Exit code %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML文件 %1（输出目录：%2）转换失败，退出代码：%3。</translation>
     </message>
     <message>
         <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="360"/>
         <source>Translation of CRML file %1 with output directory %2 finished. Now loading specified CRML Modelica libraries...</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML文件 %1（输出目录：%2）转换完成，正在加载指定的CRML Modelica库...</translation>
     </message>
     <message>
         <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="363"/>
         <source>Translation of the CRML file %1 with within %2 failed. Exit code %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML文件 %1（范围：%2）转换失败，退出代码：%3。</translation>
     </message>
     <message>
         <location filename="../../CRML/CRMLTranslatorOutputWidget.cpp" line="365"/>
         <source>Translation of CRML file %1 with within %2 finished. Now loading specified CRML Modelica libraries...</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML文件 %1（范围：%2）转换完成，正在加载指定的CRML Modelica库...</translation>
     </message>
 </context>
 <context>
@@ -660,37 +660,37 @@
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1475"/>
         <source>&lt;b&gt;Running conversion(s). Please wait.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;正在执行转换，请稍候...&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1492"/>
         <source>No new versions of the used libraries are found or there is no uses annotation.</source>
-        <translation type="unfinished"></translation>
+        <translation>未找到所用库的新版本，或缺少uses注解。</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1494"/>
         <source>Following libraries from the uses annotation have new versions available.</source>
-        <translation type="unfinished"></translation>
+        <translation>以下uses注解中的库有新版本可用。</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1497"/>
         <source>Note: If the library that you want to convert to is missing then please install it using File-&gt;Manage Libraries-&gt;Install Library.</source>
-        <translation type="unfinished"></translation>
+        <translation>注：如需转换的目标库缺失，请通过&quot;文件-&gt;管理库-&gt;安装库&quot;进行安装。</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1498"/>
         <source>The converted class and used library might be reloaded.</source>
-        <translation type="unfinished"></translation>
+        <translation>转换后的类及使用的库可能需要重新加载。</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1499"/>
         <source>This operation can take sometime depending on the conversions.</source>
-        <translation type="unfinished"></translation>
+        <translation>此操作耗时取决于转换规模。</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1500"/>
         <source>Backup your work before starting the conversion.</source>
-        <translation type="unfinished"></translation>
+        <translation>开始转换前请备份工作内容。</translation>
     </message>
 </context>
 <context>
@@ -723,7 +723,7 @@
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="138"/>
         <source>The program crashed unexpectedly. Please report the issue.</source>
-        <translation type="unfinished"></translation>
+        <translation>程序意外崩溃，请报告该问题。</translation>
     </message>
     <message>
         <location filename="../../CrashReport/CrashReportDialog.cpp" line="200"/>
@@ -804,27 +804,27 @@
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="2244"/>
         <source>Algorithm:</source>
-        <translation type="unfinished"></translation>
+        <translation>算法：</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="2246"/>
         <source>Data Reconciliation</source>
-        <translation type="unfinished"></translation>
+        <translation>数据协调</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="2247"/>
         <source>Boundary Conditions</source>
-        <translation type="unfinished"></translation>
+        <translation>边界条件</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="2251"/>
         <source>Measurement Input File:</source>
-        <translation type="unfinished"></translation>
+        <translation>测量输入文件：</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="2256"/>
         <source>Correlation Matrix Input File:</source>
-        <translation type="unfinished"></translation>
+        <translation>相关矩阵输入文件：</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="2261"/>
@@ -834,22 +834,22 @@
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="2268"/>
         <source>Reconciled Measurement File:</source>
-        <translation type="unfinished"></translation>
+        <translation>协调后测量文件：</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="2273"/>
         <source>Reconciled Correlation Matrix File:</source>
-        <translation type="unfinished"></translation>
+        <translation>协调后相关矩阵文件：</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="2280"/>
         <source>Save Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>保存设置</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="2282"/>
         <source>Calculate</source>
-        <translation type="unfinished"></translation>
+        <translation>计算</translation>
     </message>
 </context>
 <context>
@@ -981,7 +981,7 @@
     <message>
         <location filename="../../Util/DirectoryOrFileSelector.h" line="48"/>
         <source>List</source>
-        <translation type="unfinished"></translation>
+        <translation>列表</translation>
     </message>
 </context>
 <context>
@@ -989,7 +989,7 @@
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6589"/>
         <source>Discard Local Translation Flags</source>
-        <translation type="unfinished"></translation>
+        <translation>丢弃本地转换标志</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6591"/>
@@ -999,18 +999,24 @@ The models listed below are currently open and have different local translation 
 
 Select the models for which you want to discard the local translation flag and apply the new global flags (*).All other models will retain the current local settings until you close OMEdit.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>您刚刚修改了全局转换标志。
+
+以下模型当前已打开，且存在通过仿真设置对话框选择的不同本地转换标志。
+
+选择需要丢弃本地转换标志并应用新全局标志的模型(*)。其他模型将保留当前本地设置直至关闭OMEdit。
+</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6596"/>
         <source>(*) If you discard local settings, the new global settings will first be applied, and then any further settingssaved in the model annotations will be applied. This is the same behaviour you would get if you closed OMEdit,restarted it and reopened all models.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>(*) 丢弃本地设置后，将先应用新全局设置，再应用模型注解中保存的其他设置。此行为与关闭OMEdit后重启并重新打开所有模型的效果相同。
+</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6606"/>
         <source>Select/Unselect All</source>
-        <translation type="unfinished"></translation>
+        <translation>全选/取消全选</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6611"/>
@@ -1358,7 +1364,7 @@ Select the models for which you want to discard the local translation flag and a
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="845"/>
         <source>Select file type for &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>选择&lt;b&gt;%1&lt;/b&gt;的文件类型</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="849"/>
@@ -1408,7 +1414,7 @@ Select the models for which you want to discard the local translation flag and a
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1126"/>
         <source>class</source>
-        <translation type="unfinished"></translation>
+        <translation>类</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelicaClassDialog.cpp" line="1163"/>
@@ -1441,17 +1447,17 @@ Select the models for which you want to discard the local translation flag and a
     <message>
         <location filename="../../Element/Element.cpp" line="1653"/>
         <source>Shows the element</source>
-        <translation type="unfinished"></translation>
+        <translation>显示元件</translation>
     </message>
     <message>
         <location filename="../../Element/Element.cpp" line="1674"/>
         <source>Replaces the SubModel, but retains the connections and parameters if valid</source>
-        <translation type="unfinished"></translation>
+        <translation>替换子模型，但保留有效的连接和参数</translation>
     </message>
     <message>
         <location filename="../../Element/Element.cpp" line="1946"/>
         <source>&lt;b&gt;%1&lt;/b&gt; %2&lt;br/&gt;%3&lt;br /&gt;&lt;br /&gt;Element declared in %4</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; %2&lt;br/&gt;%3&lt;br /&gt;&lt;br /&gt;元件声明于 %4</translation>
     </message>
     <message>
         <location filename="../../Element/Element.cpp" line="1950"/>
@@ -1461,7 +1467,7 @@ Select the models for which you want to discard the local translation flag and a
     <message>
         <location filename="../../Element/Element.cpp" line="2432"/>
         <source>Opening %1 %2 parameters window</source>
-        <translation type="unfinished"></translation>
+        <translation>正在打开 %1 %2 参数窗口</translation>
     </message>
     <message>
         <location filename="../../Element/Element.cpp" line="2450"/>
@@ -1479,7 +1485,7 @@ Select the models for which you want to discard the local translation flag and a
     <message>
         <location filename="../../Element/ElementProperties.cpp" line="2202"/>
         <source>Element Attributes</source>
-        <translation type="unfinished"></translation>
+        <translation>元件属性</translation>
     </message>
     <message>
         <location filename="../../Element/ElementProperties.cpp" line="2225"/>
@@ -1502,12 +1508,12 @@ Select the models for which you want to discard the local translation flag and a
     <message>
         <location filename="../../Element/ElementProperties.cpp" line="1225"/>
         <source>Element Parameters</source>
-        <translation type="unfinished"></translation>
+        <translation>元件参数</translation>
     </message>
     <message>
         <location filename="../../Element/ElementProperties.cpp" line="1227"/>
         <source>%1 - %2 - %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - %2 - %3</translation>
     </message>
     <message>
         <location filename="../../Element/ElementProperties.cpp" line="1455"/>
@@ -1647,42 +1653,42 @@ A source-code only FMU is generated if no platform is selected.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6311"/>
         <source>Comma separated list of additional platforms</source>
-        <translation type="unfinished"></translation>
+        <translation>附加平台列表（逗号分隔）</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6318"/>
         <source>Explicit Euler</source>
-        <translation type="unfinished"></translation>
+        <translation>显式欧拉法</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6319"/>
         <source>CVODE</source>
-        <translation type="unfinished"></translation>
+        <translation>CVODE算法</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6328"/>
         <source>Include Modelica based resources via loadResource</source>
-        <translation type="unfinished"></translation>
+        <translation>通过loadResource包含Modelica资源</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6330"/>
         <source>Include Source Code (model description filter &quot;blackBox&quot; will override this, because black box FMUs do never contain their source code.)</source>
-        <translation type="unfinished"></translation>
+        <translation>包含源代码（&quot;blackBox&quot;模型描述过滤器将覆盖此选项，因黑盒FMU从不包含源码。）</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6334"/>
         <source>Generate Debug Symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>生成调试符号</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6346"/>
         <source>Solver for Co-Simulation:</source>
-        <translation type="unfinished"></translation>
+        <translation>联合仿真求解器：</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6348"/>
         <source>Model Description Filters:</source>
-        <translation type="unfinished"></translation>
+        <translation>模型描述过滤器：</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6355"/>
@@ -1787,109 +1793,111 @@ A source-code only FMU is generated if no platform is selected.</source>
         <location filename="../../FMI/FMUExportOutputWidget.cpp" line="432"/>
         <location filename="../../FMI/FMUExportOutputWidget.cpp" line="598"/>
         <source>Cancel Compilation</source>
-        <translation type="unfinished">取消编译</translation>
+        <translation>取消编译</translation>
     </message>
     <message>
         <location filename="../../FMI/FMUExportOutputWidget.cpp" line="89"/>
         <source>Configure</source>
-        <translation type="unfinished"></translation>
+        <translation>配置</translation>
     </message>
     <message>
         <location filename="../../FMI/FMUExportOutputWidget.cpp" line="93"/>
         <source>Build</source>
-        <translation type="unfinished"></translation>
+        <translation>构建</translation>
     </message>
     <message>
         <location filename="../../FMI/FMUExportOutputWidget.cpp" line="150"/>
         <source>Generating cmake target files of %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>已取消生成 %1 的cmake目标文件。</translation>
     </message>
     <message>
         <location filename="../../FMI/FMUExportOutputWidget.cpp" line="158"/>
         <source>Building of %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>已取消构建 %1。</translation>
     </message>
     <message>
         <location filename="../../FMI/FMUExportOutputWidget.cpp" line="164"/>
         <source>Zipping of FMU %1 is cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>已取消FMU %1的压缩。</translation>
     </message>
     <message>
         <location filename="../../FMI/FMUExportOutputWidget.cpp" line="284"/>
         <source>Generating cmake target files of %1. Please wait for a while.</source>
-        <translation type="unfinished"></translation>
+        <translation>正在生成 %1 的cmake目标文件，请稍候。</translation>
     </message>
     <message>
         <location filename="../../FMI/FMUExportOutputWidget.cpp" line="303"/>
         <source>Generated cmake target files failed. Exited with code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>生成cmake目标文件失败，退出代码：%1。</translation>
     </message>
     <message>
         <location filename="../../FMI/FMUExportOutputWidget.cpp" line="305"/>
         <source>Generated cmake target files successfully.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>成功生成cmake目标文件。
+</translation>
     </message>
     <message>
         <location filename="../../FMI/FMUExportOutputWidget.cpp" line="330"/>
         <source>Generating cmake target files of %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>已完成 %1 的cmake目标文件生成。</translation>
     </message>
     <message>
         <location filename="../../FMI/FMUExportOutputWidget.cpp" line="333"/>
         <source>Generating cmake target files of %1 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 的cmake目标文件生成失败。</translation>
     </message>
     <message>
         <location filename="../../FMI/FMUExportOutputWidget.cpp" line="423"/>
         <source>Building %1</source>
-        <translation type="unfinished"></translation>
+        <translation>正在构建 %1</translation>
     </message>
     <message>
         <location filename="../../FMI/FMUExportOutputWidget.cpp" line="492"/>
         <source>Post compilation process failed. Exited with code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>后编译过程失败，退出代码：%1。</translation>
     </message>
     <message>
         <location filename="../../FMI/FMUExportOutputWidget.cpp" line="494"/>
         <source>Build finished successfully.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>构建成功完成。
+</translation>
     </message>
     <message>
         <location filename="../../FMI/FMUExportOutputWidget.cpp" line="518"/>
         <source>Build of %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 构建完成。</translation>
     </message>
     <message>
         <location filename="../../FMI/FMUExportOutputWidget.cpp" line="520"/>
         <source>Build of %1 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 构建失败。</translation>
     </message>
     <message>
         <location filename="../../FMI/FMUExportOutputWidget.cpp" line="593"/>
         <source>Zipping of %1</source>
-        <translation type="unfinished"></translation>
+        <translation>正在压缩 %1</translation>
     </message>
     <message>
         <location filename="../../FMI/FMUExportOutputWidget.cpp" line="645"/>
         <source>Zip compilation process failed. Exited with code %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>压缩过程失败，退出代码：%1。</translation>
     </message>
     <message>
         <location filename="../../FMI/FMUExportOutputWidget.cpp" line="647"/>
         <source>The FMU is generated at: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>FMU生成路径：%1</translation>
     </message>
     <message>
         <location filename="../../FMI/FMUExportOutputWidget.cpp" line="679"/>
         <source>Export of FMU %1 finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>FMU %1 导出完成。</translation>
     </message>
     <message>
         <location filename="../../FMI/FMUExportOutputWidget.cpp" line="682"/>
         <source>Export of FMU %1 failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>FMU %1 导出失败。</translation>
     </message>
 </context>
 <context>
@@ -1989,22 +1997,22 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="795"/>
         <source>A component with the name &lt;b&gt;%1&lt;/b&gt; already exists or is a Modelica keyword. Please choose another name.</source>
-        <translation type="unfinished"></translation>
+        <translation>名称 &lt;b&gt;%1&lt;/b&gt; 已存在或是Modelica关键字，请选择其他名称。</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="817"/>
         <source>Could not find installation directory path. Please make sure OpenModelica is installed properly.</source>
-        <translation type="unfinished"></translation>
+        <translation>未找到安装目录路径，请确保OpenModelica已正确安装。</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="825"/>
         <source>Please make sure you are not using any OpenModelica/Modelica Keywords like model, package, record, class etc.</source>
-        <translation type="unfinished"></translation>
+        <translation>请勿使用OpenModelica/Modelica关键字（如model、package、record、class等）。</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="827"/>
         <source>Unable to create class &lt;b&gt;%1&lt;/b&gt;. Invalid name.&lt;br /&gt;&lt;br /&gt;%2</source>
-        <translation type="unfinished"></translation>
+        <translation>无法创建类 &lt;b&gt;%1&lt;/b&gt;，名称无效。&lt;br /&gt;&lt;br /&gt;%2</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="835"/>
@@ -2020,7 +2028,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="847"/>
         <source>Only single nonstructured entity is allowed to be stored in the file.&lt;br /&gt;If the file was generated by the API function &lt;b&gt;saveTotalModel()&lt;/b&gt;, you can only load it with the API function &lt;b&gt;loadFile()&lt;/b&gt; in a script or in the interactive environment, not in OMEdit.&lt;br /&gt;&lt;br /&gt;&lt;b&gt;%1&lt;/b&gt; contains following classes &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>文件中仅允许存储单个非结构化实体。&lt;br /&gt;如果文件由API函数&lt;b&gt;saveTotalModel()&lt;/b&gt;生成，则只能通过脚本或交互环境中的&lt;b&gt;loadFile()&lt;/b&gt;函数加载（在OMEdit中不能加载）。&lt;br /&gt;&lt;br /&gt;&lt;b&gt;%1&lt;/b&gt; 包含以下类 &lt;b&gt;%2&lt;/b&gt;。</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="853"/>
@@ -2122,7 +2130,7 @@ You can choose between waiting longer or abort debugging.</source>
         <location filename="../../Util/Helper.cpp" line="917"/>
         <location filename="../../Util/Helper.cpp" line="921"/>
         <source>Unable to find component %1 while parsing %2 in %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>在 %3 中解析 %2 时找不到组件 %1。</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="931"/>
@@ -2137,12 +2145,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="937"/>
         <source>Please enter a script file.</source>
-        <translation type="unfinished"></translation>
+        <translation>请输入脚本文件。</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="939"/>
         <source>Library index file &lt;b&gt;%1&lt;/b&gt; doesn&apos;t exist.</source>
-        <translation type="unfinished"></translation>
+        <translation>库索引文件 &lt;b&gt;%1&lt;/b&gt; 不存在。</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="815"/>
@@ -2152,12 +2160,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="793"/>
         <source>Please check the message browser for more error specific details.</source>
-        <translation type="unfinished"></translation>
+        <translation>请查看消息浏览器获取错误详情。</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="797"/>
         <source>Connectors &lt;b&gt;%1&lt;/b&gt; and &lt;b&gt;%2&lt;/b&gt; are not compatible.</source>
-        <translation type="unfinished"></translation>
+        <translation>连接器 &lt;b&gt;%1&lt;/b&gt; 和 &lt;b&gt;%2&lt;/b&gt; 不兼容。</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="819"/>
@@ -2207,7 +2215,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="863"/>
         <source>&lt;b&gt;%1&lt;/b&gt; is defined as &lt;b&gt;partial&lt;/b&gt;.&lt;br /&gt;The component will be added as a &lt;b&gt;replaceable&lt;/b&gt; component.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; 被定义为&lt;b&gt;partial&lt;/b&gt;。&lt;br /&gt;该组件将作为&lt;b&gt;replaceable&lt;/b&gt;组件添加。</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="867"/>
@@ -2237,7 +2245,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="883"/>
         <source>Are you sure you want to reload &lt;b&gt;%1&lt;/b&gt;? Any unsaved changes to the class and its containing classes will be lost.</source>
-        <translation type="unfinished"></translation>
+        <translation>确定要重新加载 &lt;b&gt;%1&lt;/b&gt; 吗？该类及其包含的类的未保存更改将丢失。</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="893"/>
@@ -2247,12 +2255,12 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Util/Helper.cpp" line="941"/>
         <source>Automatically-adjusted vector length scales zoomed out the scene too much. Home position will be reset as if adjustable-length vectors were not drawn.</source>
-        <translation type="unfinished"></translation>
+        <translation>自动调整的矢量长度缩放过度，初始位置将重置（如同未绘制可调长度矢量）。</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="944"/>
         <source>CRML support is not enabled. Please enable it in &lt;b&gt;%1-&gt;General-&gt;Enable CRML Support&lt;/b&gt; and restart OMEdit.</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML支持未启用，请在&lt;b&gt;%1-&gt;常规-&gt;启用CRML支持&lt;/b&gt;中启用并重启OMEdit。</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="909"/>
@@ -2320,17 +2328,17 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3495"/>
         <source>Activates the access annotations even for the non-encrypted libraries.</source>
-        <translation type="unfinished"></translation>
+        <translation>始终激活访问注解（包括未加密库）。</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3496"/>
         <source>Activates the access annotations even if the .mol contains a non-encrypted library.</source>
-        <translation type="unfinished"></translation>
+        <translation>即使.mol包含未加密库也激活访问注解。</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3497"/>
         <source>Deactivates access annotations except for encrypted libraries.</source>
-        <translation type="unfinished"></translation>
+        <translation>停用访问注解（加密库除外）。</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3498"/>
@@ -2350,22 +2358,22 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3509"/>
         <source>Enable CRML Support *</source>
-        <translation type="unfinished"></translation>
+        <translation>启用CRML支持 *</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3535"/>
         <source>Library Browser</source>
-        <translation type="unfinished"></translation>
+        <translation>库浏览器</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3549"/>
         <source>Show Hidden Classes if not encrypted</source>
-        <translation type="unfinished"></translation>
+        <translation>显示未加密的隐藏类</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3551"/>
         <source>Synchronize with Model Widget</source>
-        <translation type="unfinished"></translation>
+        <translation>与模型部件同步</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3600"/>
@@ -2375,17 +2383,17 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3603"/>
         <source>Recent Files and Latest News &amp; Events Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>最近文件与最新动态显示大小：</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3504"/>
         <source>Create a model.bak-mo backup file when deleting a model.</source>
-        <translation type="unfinished"></translation>
+        <translation>删除模型时创建model.bak-mo备份文件。</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3507"/>
         <source>Display errors/warnings when instantiating the graphical annotations</source>
-        <translation type="unfinished"></translation>
+        <translation>实例化图形注解时显示错误/警告</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3542"/>
@@ -2440,17 +2448,17 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3488"/>
         <source>Autohide Variable Browser</source>
-        <translation type="unfinished"></translation>
+        <translation>自动隐藏变量浏览器</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3489"/>
         <source>Automatically hide the variable browser when switching away from plotting perspective.</source>
-        <translation type="unfinished"></translation>
+        <translation>切换出绘图视图时自动隐藏变量浏览器。</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3502"/>
         <source>Options for handling of access annotations</source>
-        <translation type="unfinished"></translation>
+        <translation>访问注解处理选项</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3537"/>
@@ -2527,17 +2535,17 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="908"/>
         <source>Failed to add component &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>添加组件 &lt;b&gt;%1&lt;/b&gt; 失败。</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1323"/>
         <source>Connection connect(%1, %2) already exists.</source>
-        <translation type="unfinished"></translation>
+        <translation>连接 connect(%1, %2) 已存在。</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2706"/>
         <source>Shows the class parameters</source>
-        <translation type="unfinished"></translation>
+        <translation>显示类参数</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2721"/>
@@ -2637,22 +2645,22 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2796"/>
         <source>Create Connector</source>
-        <translation type="unfinished"></translation>
+        <translation>创建连接器</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2797"/>
         <source>Creates a connector</source>
-        <translation type="unfinished"></translation>
+        <translation>创建新连接器</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2800"/>
         <source>Cancel Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>取消连接</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2801"/>
         <source>Cancels the current connection</source>
-        <translation type="unfinished"></translation>
+        <translation>取消当前连接</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2804"/>
@@ -2682,13 +2690,14 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="4035"/>
         <source>Opening %1 parameters window</source>
-        <translation type="unfinished"></translation>
+        <translation>正在打开 %1 参数窗口</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="4206"/>
         <source>The Modelica code of this model is invalid, so the graphics cannot be displayed.
 Please check the Messages browser for error messages and possibly undo the latest changes with ctrl-z.</source>
-        <translation type="unfinished"></translation>
+        <translation>该模型的Modelica代码无效，因此无法显示图形。
+请检查消息浏览器中的错误信息，或使用 Ctrl-Z 撤销最近更改。</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2778"/>
@@ -2899,17 +2908,17 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Util/Helper.cpp" line="105"/>
         <source>OMEdit-&gt;Preferences</source>
-        <translation type="unfinished"></translation>
+        <translation>OMEdit-&gt;首选项</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="107"/>
         <source>Tools-&gt;Options</source>
-        <translation type="unfinished"></translation>
+        <translation>工具-&gt;选项</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="463"/>
         <source>Modelica Class</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelica类</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="464"/>
@@ -2929,22 +2938,22 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Util/Helper.cpp" line="468"/>
         <source>CRML Model</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML模型</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="469"/>
         <source>Creates a new CRML Model</source>
-        <translation type="unfinished"></translation>
+        <translation>创建新CRML模型</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="470"/>
         <source>Modelica Script</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelica脚本</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="471"/>
         <source>Creates a new Modelca Script</source>
-        <translation type="unfinished"></translation>
+        <translation>创建新Modelca脚本</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="472"/>
@@ -2954,7 +2963,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Util/Helper.cpp" line="473"/>
         <source>Elements</source>
-        <translation type="unfinished"></translation>
+        <translation>元件</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="474"/>
@@ -2994,22 +3003,22 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Util/Helper.cpp" line="485"/>
         <source>Percentage:</source>
-        <translation type="unfinished"></translation>
+        <translation>百分比：</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="486"/>
         <source>Choose Transparency</source>
-        <translation type="unfinished"></translation>
+        <translation>选择透明度</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="487"/>
         <source>Choose Specularity</source>
-        <translation type="unfinished"></translation>
+        <translation>选择光泽度</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="488"/>
         <source>Choose Color</source>
-        <translation type="unfinished"></translation>
+        <translation>选择颜色</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="490"/>
@@ -3066,12 +3075,12 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Util/Helper.cpp" line="505"/>
         <source>Add Path</source>
-        <translation type="unfinished"></translation>
+        <translation>添加路径</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="506"/>
         <source>Remove Path</source>
-        <translation type="unfinished"></translation>
+        <translation>移除路径</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="510"/>
@@ -3186,7 +3195,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Util/Helper.cpp" line="557"/>
         <source>Fit to Diagram</source>
-        <translation type="unfinished"></translation>
+        <translation>适应图表</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="561"/>
@@ -3211,22 +3220,22 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Util/Helper.cpp" line="566"/>
         <source>Reload the Modelica class</source>
-        <translation type="unfinished"></translation>
+        <translation>重新加载Modelica类</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="567"/>
         <source>Unloads the file without deleting it from the file system</source>
-        <translation type="unfinished"></translation>
+        <translation>卸载文件（不从文件系统中删除）</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="568"/>
         <source>Unload the CRML file</source>
-        <translation type="unfinished"></translation>
+        <translation>卸载CRML文件</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="569"/>
         <source>Unload the Modelica Script file</source>
-        <translation type="unfinished"></translation>
+        <translation>卸载Modelica脚本文件</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="571"/>
@@ -3286,32 +3295,32 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Util/Helper.cpp" line="592"/>
         <source>Translate</source>
-        <translation type="unfinished"></translation>
+        <translation>转换</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="593"/>
         <source>Translates the CRML model to Modelica</source>
-        <translation type="unfinished"></translation>
+        <translation>将CRML模型转换为Modelica</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="594"/>
         <source>Translate As</source>
-        <translation type="unfinished"></translation>
+        <translation>转换另存为</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="595"/>
         <source>Translates As the CRML model to Modelica</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML模型转换另存为Modelica</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="596"/>
         <source>Run</source>
-        <translation type="unfinished"></translation>
+        <translation>运行</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="597"/>
         <source>Runs the Modelica Script</source>
-        <translation type="unfinished"></translation>
+        <translation>运行Modelica脚本</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="598"/>
@@ -3396,47 +3405,47 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Util/Helper.cpp" line="636"/>
         <source>CRML</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="648"/>
         <source>Filter Elements</source>
-        <translation type="unfinished"></translation>
+        <translation>过滤元件</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="706"/>
         <source>Report Issue</source>
-        <translation type="unfinished"></translation>
+        <translation>报告问题</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="707"/>
         <source>Crash Test</source>
-        <translation type="unfinished"></translation>
+        <translation>崩溃测试</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="711"/>
         <source>Version:</source>
-        <translation type="unfinished"></translation>
+        <translation>版本：</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="783"/>
         <source>Replace SubModel</source>
-        <translation type="unfinished"></translation>
+        <translation>替换子模型</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="784"/>
         <source>List of paths searched while loading a library. Paths are separated by ; on Windows and : on Linux and macOS.</source>
-        <translation type="unfinished"></translation>
+        <translation>库加载搜索路径列表（Windows用;分隔，Linux/macOS用:分隔）。</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="785"/>
         <source>Select Parent Class</source>
-        <translation type="unfinished">选择父类</translation>
+        <translation>选择父类</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="729"/>
         <source>Creates a new SSP Model</source>
-        <translation type="unfinished"></translation>
+        <translation>创建新SSP模型</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="748"/>
@@ -3491,22 +3500,22 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Util/Helper.cpp" line="779"/>
         <source>Install Library</source>
-        <translation type="unfinished"></translation>
+        <translation>安装库</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="780"/>
         <source>Upgrade Installed Libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>升级已安装库</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="781"/>
         <source>Update Library Index</source>
-        <translation type="unfinished"></translation>
+        <translation>更新库索引</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="782"/>
         <source>Data Reconciliation</source>
-        <translation type="unfinished"></translation>
+        <translation>数据协调</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="622"/>
@@ -3521,7 +3530,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Util/Helper.cpp" line="514"/>
         <source>Start Script:</source>
-        <translation type="unfinished"></translation>
+        <translation>启动脚本：</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="521"/>
@@ -3596,7 +3605,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Util/Helper.cpp" line="606"/>
         <source>Element</source>
-        <translation type="unfinished"></translation>
+        <translation>元件</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="623"/>
@@ -3988,12 +3997,12 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Util/Helper.cpp" line="722"/>
         <source>Repeat</source>
-        <translation type="unfinished"></translation>
+        <translation>重复</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="723"/>
         <source>Repeat the animation</source>
-        <translation type="unfinished"></translation>
+        <translation>重复动画</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="724"/>
@@ -4028,7 +4037,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Util/Helper.cpp" line="728"/>
         <source>SSP Model</source>
-        <translation type="unfinished"></translation>
+        <translation>SSP模型</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="731"/>
@@ -4356,7 +4365,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../FMI/ImportFMUDialog.cpp" line="75"/>
         <source>Name of the generated model. If empty then the name is auto generated using FMU information.</source>
-        <translation type="unfinished"></translation>
+        <translation>生成模型的名称。若留空则使用FMU信息自动生成名称。</translation>
     </message>
     <message>
         <location filename="../../FMI/ImportFMUDialog.cpp" line="77"/>
@@ -4462,12 +4471,12 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Modeling/InstallLibraryDialog.cpp" line="54"/>
         <source>The library will be installed using the &lt;u&gt;&lt;a href=&quot;https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/packagemanager.html#the-package-manager&quot;&gt;package manager&lt;/a&gt;&lt;/u&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>该库将通过&lt;u&gt;&lt;a href=&quot;https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/packagemanager.html#the-package-manager&quot;&gt;包管理器&lt;/a&gt;&lt;/u&gt;进行安装。</translation>
     </message>
     <message>
         <location filename="../../Modeling/InstallLibraryDialog.cpp" line="58"/>
         <source>Full</source>
-        <translation type="unfinished"></translation>
+        <translation>完整</translation>
     </message>
     <message>
         <location filename="../../Modeling/InstallLibraryDialog.cpp" line="61"/>
@@ -4477,12 +4486,12 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Modeling/InstallLibraryDialog.cpp" line="64"/>
         <source>Experimental</source>
-        <translation type="unfinished"></translation>
+        <translation>实验性</translation>
     </message>
     <message>
         <location filename="../../Modeling/InstallLibraryDialog.cpp" line="66"/>
         <source>Obsolete</source>
-        <translation type="unfinished"></translation>
+        <translation>已废弃</translation>
     </message>
     <message>
         <location filename="../../Modeling/InstallLibraryDialog.cpp" line="68"/>
@@ -4492,22 +4501,22 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Modeling/InstallLibraryDialog.cpp" line="70"/>
         <source>Level of support by OpenModelica</source>
-        <translation type="unfinished"></translation>
+        <translation>OpenModelica支持等级</translation>
     </message>
     <message>
         <location filename="../../Modeling/InstallLibraryDialog.cpp" line="104"/>
         <source>Exact Match (Install only the specified version of dependencies)</source>
-        <translation type="unfinished"></translation>
+        <translation>精确匹配（仅安装指定版本的依赖项）</translation>
     </message>
     <message>
         <location filename="../../Modeling/InstallLibraryDialog.cpp" line="107"/>
         <source>&lt;b&gt;Installing library. Please wait.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;正在安装库，请稍候。&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../../Modeling/InstallLibraryDialog.cpp" line="247"/>
         <source>The library &lt;b&gt;%1&lt;/b&gt; is not installed. See message browser for any possible messages.</source>
-        <translation type="unfinished"></translation>
+        <translation>库&lt;b&gt;%1&lt;/b&gt;未安装。请查看消息浏览器获取详细信息。</translation>
     </message>
 </context>
 <context>
@@ -4515,7 +4524,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3729"/>
         <source>System libraries loaded automatically on startup *</source>
-        <translation type="unfinished"></translation>
+        <translation>系统库已在启动时自动加载 *</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3731"/>
@@ -4525,7 +4534,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3734"/>
         <source>Load latest Modelica version on startup</source>
-        <translation type="unfinished"></translation>
+        <translation>启动时加载最新Modelica版本</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3743"/>
@@ -4535,7 +4544,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3770"/>
         <source>User libraries loaded automatically on startup *</source>
-        <translation type="unfinished"></translation>
+        <translation>用户库已在启动时自动加载 *</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3778"/>
@@ -4572,12 +4581,12 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2807"/>
         <source>Copy Path</source>
-        <translation type="unfinished"></translation>
+        <translation>复制路径</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2809"/>
         <source>Copy the class path</source>
-        <translation type="unfinished"></translation>
+        <translation>复制类路径</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2814"/>
@@ -4646,12 +4655,12 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2938"/>
         <source>Convert to newer versions of used libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>转换至更新的库版本</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2939"/>
         <source>Updates the class to use the newer versions of the uses annotation libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>更新类以使用 uses annotation 库的新版本</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2958"/>
@@ -4701,12 +4710,12 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3307"/>
         <source>Date Modified : %1</source>
-        <translation type="unfinished"></translation>
+        <translation>修改日期：%1</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3308"/>
         <source>RevisionId : %1</source>
-        <translation type="unfinished"></translation>
+        <translation>修订ID：%1</translation>
     </message>
 </context>
 <context>
@@ -4715,12 +4724,12 @@ Please check the Messages browser for error messages and possibly undo the lates
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4084"/>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="5148"/>
         <source>Unable to load %1. See messages above for more details.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法加载 %1。详见上方消息。</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3959"/>
         <source>Expanding the Library Browser is a time consuming and non-responsive operation so this button is disabled intentionally.</source>
-        <translation type="unfinished"></translation>
+        <translation>展开库浏览器是耗时且无响应的操作，故该按钮已被禁用。</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4474"/>
@@ -4739,12 +4748,12 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4531"/>
         <source>It is not possible to save as a Modelica package saved in a directory hierarchy Mapping.</source>
-        <translation type="unfinished"></translation>
+        <translation>无法另存为目录层级映射中的Modelica包。</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4577"/>
         <source>Failed to find the class &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>未找到类 &lt;b&gt;%1&lt;/b&gt;。</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4694"/>
@@ -4759,17 +4768,17 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="5037"/>
         <source>The loaded class(es) &lt;b&gt;%1&lt;/b&gt; uses versions of already loaded libraries which are not compatible with the required ones.&lt;br /&gt;&lt;br /&gt;&lt;b&gt;Cancel Operation&lt;/b&gt; does not load class &lt;b&gt;%1&lt;/b&gt; and its dependencies.&lt;br /&gt;&lt;b&gt;Unload All &amp; Reload %1&lt;/b&gt; unloads all previously loaded classes and loads &lt;b&gt;%1&lt;/b&gt; starting from a clean environment. Make sure to save your work.</source>
-        <translation type="unfinished"></translation>
+        <translation>已加载的类 &lt;b&gt;%1&lt;/b&gt; 使用了与所需版本不兼容的库。&lt;br /&gt;&lt;br /&gt;&lt;b&gt;取消操作&lt;/b&gt;将不加载类 &lt;b&gt;%1&lt;/b&gt; 及其依赖项。&lt;br /&gt;&lt;b&gt;全部卸载并重载 %1&lt;/b&gt; 会卸载所有已加载的类，并重新加载 &lt;b&gt;%1&lt;/b&gt;（全新环境）。请确保保存工作进度。</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="5041"/>
         <source>Cancel Operation</source>
-        <translation type="unfinished"></translation>
+        <translation>取消操作</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="5042"/>
         <source>Unload all &amp;&amp; Reload %1</source>
-        <translation type="unfinished"></translation>
+        <translation>部卸载并重载 %1</translation>
     </message>
 </context>
 <context>
@@ -4856,12 +4865,12 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="2993"/>
         <source>Failed to load OMSens plugin. %1</source>
-        <translation type="unfinished"></translation>
+        <translation>加载 OMSens 插件失败。%1</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3006"/>
         <source>Please open a model before starting the OMSens plugin.</source>
-        <translation type="unfinished"></translation>
+        <translation>请先打开模型，再启动 OMSens 插件。</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3678"/>
@@ -4936,22 +4945,22 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="4023"/>
         <source>OpenModelica User&apos;s Guide</source>
-        <translation type="unfinished"></translation>
+        <translation>OpenModelica 用户指南</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4024"/>
         <source>Opens the OpenModelica User&apos;s Guide</source>
-        <translation type="unfinished"></translation>
+        <translation>打开 OpenModelica 用户指南</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4028"/>
         <source>OpenModelica User&apos;s Guide (PDF)</source>
-        <translation type="unfinished"></translation>
+        <translation>OpenModelica 用户指南（PDF）</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4029"/>
         <source>Opens the OpenModelica User&apos;s Guide (PDF)</source>
-        <translation type="unfinished"></translation>
+        <translation>打开 OpenModelica 用户指南（PDF）</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4036"/>
@@ -4976,12 +4985,12 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="4044"/>
         <source>OMSimulator User&apos;s Guide</source>
-        <translation type="unfinished"></translation>
+        <translation>OMSimulator 用户指南</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4045"/>
         <source>Opens the OMSimulator User&apos;s Guide</source>
-        <translation type="unfinished"></translation>
+        <translation>打开 OMSimulator 用户指南</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4048"/>
@@ -5082,7 +5091,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="2143"/>
         <source>Are you sure you want to clear recent files?</source>
-        <translation type="unfinished"></translation>
+        <translation>确定要清除最近打开的文件吗？</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2581"/>
@@ -5102,7 +5111,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="2653"/>
         <source>Unable to run command &lt;b&gt;%1&lt;/b&gt; with arguments &lt;b&gt;%2&lt;/b&gt;. Process failed with error &lt;b&gt;%3&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>无法运行命令 &lt;b&gt;%1&lt;/b&gt;（参数：&lt;b&gt;%2&lt;/b&gt;）。进程执行失败，错误：&lt;b&gt;%3&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2683"/>
@@ -5112,12 +5121,12 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="2743"/>
         <source>Updating library index</source>
-        <translation type="unfinished"></translation>
+        <translation>正在更新库索引</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2747"/>
         <source>Failed to update the library index. This could be because of bad internet connection.</source>
-        <translation type="unfinished"></translation>
+        <translation>更新库索引失败，可能是网络连接问题导致。</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2767"/>
@@ -5137,12 +5146,12 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="2956"/>
         <source>Unable to run terminal command &lt;b&gt;%1&lt;/b&gt; with arguments &lt;b&gt;%2&lt;/b&gt;. Process failed with error &lt;b&gt;%3&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>无法执行终端命令 &lt;b&gt;%1&lt;/b&gt;（参数：&lt;b&gt;%2&lt;/b&gt;）。进程执行失败，错误：&lt;b&gt;%3&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2982"/>
         <source>OMSens is not supported on MacOS</source>
-        <translation type="unfinished"></translation>
+        <translation>OMSens 不支持 macOS 系统</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3682"/>
@@ -5282,52 +5291,52 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="190"/>
         <source>Messages</source>
-        <translation type="unfinished">信息</translation>
+        <translation>消息</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="276"/>
         <source>Search</source>
-        <translation type="unfinished">查找</translation>
+        <translation>查找</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="287"/>
         <source>Stack Frames</source>
-        <translation type="unfinished"></translation>
+        <translation>栈帧</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="294"/>
         <source>Breakpoints</source>
-        <translation type="unfinished"></translation>
+        <translation>断点</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="302"/>
         <source>Locals</source>
-        <translation type="unfinished"></translation>
+        <translation>局部</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="309"/>
         <source>Console Output</source>
-        <translation type="unfinished"></translation>
+        <translation>控制台输出</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="325"/>
         <source>Documentation</source>
-        <translation type="unfinished"></translation>
+        <translation>文档</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="1184"/>
         <source>Target Language &lt;b&gt;%1&lt;/b&gt; is not supported for FMU Export. Only &lt;b&gt;C&lt;/b&gt; and &lt;b&gt;Cpp&lt;/b&gt; are supported</source>
-        <translation type="unfinished"></translation>
+        <translation>FMU 导出不支持目标语言 &lt;b&gt;%1&lt;/b&gt;，仅支持 &lt;b&gt;C&lt;/b&gt; 和 &lt;b&gt;Cpp&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="1185"/>
         <source>FMU_EXPORT Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>FMU_EXPORT 失败</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="1196"/>
         <source>Translating model %1 as FMU</source>
-        <translation type="unfinished"></translation>
+        <translation>正在将模型 %1 转换为 FMU</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="2610"/>
@@ -5337,7 +5346,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="3533"/>
         <source>CRML Testsuite</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML 测试套件</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3689"/>
@@ -5352,12 +5361,12 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="3702"/>
         <source>Unload All</source>
-        <translation type="unfinished"></translation>
+        <translation>全部卸载</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3703"/>
         <source>Unloads all loaded classes</source>
-        <translation type="unfinished"></translation>
+        <translation>卸载所有已加载的类</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3706"/>
@@ -5412,17 +5421,17 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="3780"/>
         <source>Opens the install library window</source>
-        <translation type="unfinished"></translation>
+        <translation>打开库安装窗口</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3784"/>
         <source>Upgrades the installed libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>升级已安装的库</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3788"/>
         <source>Updates the library index</source>
-        <translation type="unfinished"></translation>
+        <translation>更新库索引</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3805"/>
@@ -5457,27 +5466,27 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="3926"/>
         <source>Shows the list of archived simulations</source>
-        <translation type="unfinished"></translation>
+        <translation>显示已归档仿真的列表</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3930"/>
         <source>Calculate Data Reconciliation</source>
-        <translation type="unfinished"></translation>
+        <translation>计算数据协调</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3931"/>
         <source>Calculates the data reconciliation</source>
-        <translation type="unfinished"></translation>
+        <translation>执行数据协调计算</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3936"/>
         <source>Run CRML Testsuite</source>
-        <translation type="unfinished"></translation>
+        <translation>运行CRML测试套件</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3937"/>
         <source>Runs the CRML Testsuite and display report</source>
-        <translation type="unfinished"></translation>
+        <translation>运行CRML测试套件并显示报告</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3986"/>
@@ -5492,7 +5501,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="3991"/>
         <source>Open OpenModelica command prompt</source>
-        <translation type="unfinished"></translation>
+        <translation>打开OpenModelica命令提示符</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3996"/>
@@ -5507,12 +5516,12 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="4001"/>
         <source>Open Temporary Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>打开临时目录</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4002"/>
         <source>Opens the temporary directory</source>
-        <translation type="unfinished"></translation>
+        <translation>打开临时目录</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4005"/>
@@ -5537,12 +5546,12 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="4018"/>
         <source>Run Sensitivity Analysis and Optimization</source>
-        <translation type="unfinished"></translation>
+        <translation>运行灵敏度分析与优化</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4019"/>
         <source>Runs the sensitivity analysis and optimization</source>
-        <translation type="unfinished"></translation>
+        <translation>执行灵敏度分析和优化计算</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4032"/>
@@ -5667,7 +5676,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="4227"/>
         <source>&amp;Manage Libraries</source>
-        <translation type="unfinished"></translation>
+        <translation>库管理(&amp;M)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4236"/>
@@ -5702,32 +5711,32 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="4351"/>
         <source>&amp;Data Reconciliation</source>
-        <translation type="unfinished"></translation>
+        <translation>数据协调(&amp;D)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4359"/>
         <source>&amp;CRML</source>
-        <translation type="unfinished"></translation>
+        <translation>CRML(&amp;C)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4401"/>
         <source>&amp;Debug</source>
-        <translation>调试（&amp;D）</translation>
+        <translation>调试(&amp;D)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4316"/>
         <source>&amp;SSP</source>
-        <translation type="unfinished"></translation>
+        <translation>SSP(&amp;S)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4368"/>
         <source>Sensitivity Optimization</source>
-        <translation type="unfinished"></translation>
+        <translation>灵敏度优化</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4827"/>
         <source>SSP Toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation>SSP 工具栏</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4376"/>
@@ -5762,7 +5771,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="4683"/>
         <source>&amp;New</source>
-        <translation type="unfinished"></translation>
+        <translation>新建(&amp;N)</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4706"/>
@@ -5845,7 +5854,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="5124"/>
         <source>Click to open message browser.</source>
-        <translation type="unfinished"></translation>
+        <translation>点击打开消息浏览器。</translation>
     </message>
 </context>
 <context>
@@ -5974,7 +5983,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5823"/>
         <source>Exit Element</source>
-        <translation type="unfinished"></translation>
+        <translation>退出元件</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5840"/>
@@ -5995,7 +6004,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="6839"/>
         <source>Showing element &lt;b&gt;%1&lt;/b&gt; in &lt;b&gt;%2&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>在&lt;b&gt;%2&lt;/b&gt;中显示元件 &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../../Modeling/ModelWidgetContainer.cpp" line="7463"/>
@@ -6085,7 +6094,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Editors/ModelicaEditor.cpp" line="617"/>
         <source>&lt;b&gt;Warning: &lt;/b&gt;Cannot modify the text in the element mode. Your changes will not be saved.</source>
-        <translation>&lt;b&gt;警告：&lt;/b&gt;元素模式下不可修改文本，更改将不被保存。</translation>
+        <translation>&lt;b&gt;警告：&lt;/b&gt;元件模式下不可修改文本，更改将不被保存。</translation>
     </message>
     <message>
         <location filename="../../Editors/ModelicaEditor.cpp" line="620"/>
@@ -6213,7 +6222,7 @@ Please check the Messages browser for error messages and possibly undo the lates
         <location filename="../../OMC/OMCProxy.cpp" line="1119"/>
         <location filename="../../OMC/OMCProxy.cpp" line="1150"/>
         <source>Unable to set the element modifier value using command &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation>无法通过命令 &lt;b&gt;%1&lt;/b&gt; 设置元素修饰值</translation>
+        <translation>无法通过命令 &lt;b&gt;%1&lt;/b&gt; 设置元件修饰值</translation>
     </message>
     <message>
         <location filename="../../OMC/OMCProxy.cpp" line="1233"/>
@@ -7834,7 +7843,7 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Util/StringHandler.cpp" line="203"/>
         <source>Translation</source>
-        <translation>翻译</translation>
+        <translation>转换</translation>
     </message>
     <message>
         <location filename="../../Util/StringHandler.cpp" line="205"/>
