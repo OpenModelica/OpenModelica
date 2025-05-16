@@ -2664,6 +2664,14 @@ algorithm
     fail();
   end if;
 
+  // Evaluate the if-expression if exactly one branch contains a der call,
+  // since this can affect the number of state variables.
+  if Expression.contains(tb2, function Expression.isCallNamed(name = "der")) <>
+     Expression.contains(fb2, function Expression.isCallNamed(name = "der")) and
+     Flags.getConfigString(Flags.EVALUATE_STRUCTURAL_PARAMETERS) == "all" then
+    Structural.markExp(cond);
+  end if;
+
   ifExp := Expression.IF(ty, cond, tb2, fb2);
   var := Prefixes.variabilityMax(cond_var, Prefixes.variabilityMax(tb_var, fb_var));
   purity := Prefixes.purityMin(cond_pur, Prefixes.purityMin(tb_pur, fb_pur));
