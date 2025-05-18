@@ -5426,7 +5426,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="3770"/>
         <source>Figaro</source>
-        <translation>费加罗</translation>
+        <translation>Figaro</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3775"/>
