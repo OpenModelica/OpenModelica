@@ -320,7 +320,7 @@
     <message>
         <location filename="../../Debugger/Breakpoints/BreakpointDialog.cpp" line="84"/>
         <source>Enabled:</source>
-        <translation>激活：</translation>
+        <translation>启用：</translation>
     </message>
     <message>
         <location filename="../../Debugger/Breakpoints/BreakpointDialog.cpp" line="87"/>
@@ -973,7 +973,7 @@
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6160"/>
         <source>Generate Operations</source>
-        <translation>一般操作</translation>
+        <translation>生成操作</translation>
     </message>
 </context>
 <context>
@@ -1734,7 +1734,7 @@ A source-code only FMU is generated if no platform is selected.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6035"/>
         <source>Tree generation options:</source>
-        <translation>树生产选项：</translation>
+        <translation>树形结构生成选项：</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="6041"/>
@@ -2383,7 +2383,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3603"/>
         <source>Recent Files and Latest News &amp; Events Size:</source>
-        <translation>最近文件与最新动态显示大小：</translation>
+        <translation>最近文件与最新动态显示数量：</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3504"/>
@@ -2438,7 +2438,7 @@ You can choose between waiting longer or abort debugging.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3700"/>
         <source>(%1 minute(s))</source>
-        <translation>（%1分钟（s)）</translation>
+        <translation>（%1分钟（s））</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3450"/>
@@ -3520,7 +3520,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Util/Helper.cpp" line="622"/>
         <source>Font Family:</source>
-        <translation>字体：</translation>
+        <translation>字体族：</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="512"/>
@@ -4665,7 +4665,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2958"/>
         <source>Figaro</source>
-        <translation>费加罗</translation>
+        <translation>Figaro</translation>
     </message>
     <message>
         <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2962"/>
@@ -6647,7 +6647,7 @@ Set the value to 0 if you don&apos;t want any delay.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5930"/>
         <source>Font sizes are used for new plot windows. Use plot setup window to update the existing plots.</source>
-        <translation>字体大小将应用于新曲线。如需更新现有曲线，请使用绘图设置窗口。</translation>
+        <translation>字体大小设置仅对新绘图窗口生效。如需更新现有绘图，请使用绘图设置窗口。</translation>
     </message>
 </context>
 <context>
@@ -7392,12 +7392,12 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="405"/>
         <source>Profiling (enable performance measurements)</source>
-        <translation>分析（激活性能测试）</translation>
+        <translation>分析（启用性能测试）</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="414"/>
         <source>Enable All Warnings</source>
-        <translation>激活全部警告</translation>
+        <translation>启用全部警告</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="489"/>
@@ -7704,7 +7704,7 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5151"/>
         <source>Target Build:</source>
-        <translation>生成目标：</translation>
+        <translation>目标构建：</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5169"/>
@@ -7774,7 +7774,7 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5220"/>
         <source>Structured</source>
-        <translation>结构化的</translation>
+        <translation>结构化</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5221"/>
@@ -8050,7 +8050,7 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="4202"/>
         <source>Tabs and Indentation</source>
-        <translation>制表键缩进制表符与缩进</translation>
+        <translation>制表符与缩进</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="4204"/>
@@ -8085,12 +8085,12 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="4231"/>
         <source>Enable Syntax Highlighting</source>
-        <translation>激活语法高亮</translation>
+        <translation>启用语法高亮</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="4235"/>
         <source>Enable Code Folding</source>
-        <translation>激活代码折叠</translation>
+        <translation>启用代码折叠</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="4238"/>
@@ -8100,7 +8100,7 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="4245"/>
         <source>Enable Line Wrapping</source>
-        <translation>激活自动换行</translation>
+        <translation>启用自动换行</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="4253"/>
@@ -8110,7 +8110,7 @@ Can cause high overhead but values will not be missed.</source>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="4255"/>
         <source>Enable Autocomplete</source>
-        <translation>激活自动完成</translation>
+        <translation>启用自动完成</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="4261"/>
@@ -8516,7 +8516,7 @@ Variability: %4</source>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="2819"/>
         <source>Enables the time controls</source>
-        <translation>激活时间控制功能</translation>
+        <translation>启用时间控制功能</translation>
     </message>
     <message>
         <location filename="../../Plotting/VariablesWidget.cpp" line="2836"/>
