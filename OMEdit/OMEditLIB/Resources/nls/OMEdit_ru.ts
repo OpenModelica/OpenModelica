@@ -4,12 +4,12 @@
 <context>
     <name>AboutOMEditDialog</name>
     <message>
-        <location filename="../../MainWindow.cpp" line="4961"/>
+        <location filename="../../MainWindow.cpp" line="4962"/>
         <source>About %1</source>
         <translation>О %1</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4964"/>
+        <location filename="../../MainWindow.cpp" line="4965"/>
         <source>&lt;h2&gt;%1 - %2&lt;/h2&gt;&lt;b&gt;Connected to %3 %4 encryption support&lt;/b&gt;&lt;br /&gt;&lt;b&gt;Connected to %5&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Installation path &lt;b&gt;%6&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Copyright &lt;b&gt;Open Source Modelica Consortium (OSMC)&lt;/b&gt;.&lt;br /&gt;Distributed under OSMC-PL and GPL, see &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;.&lt;br /&gt;&lt;em&gt;Compiled without 3D animation support&lt;/em&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -763,7 +763,7 @@
 <context>
     <name>CreateConnectionDialog</name>
     <message>
-        <location filename="../../Annotations/LineAnnotation.cpp" line="2015"/>
+        <location filename="../../Annotations/LineAnnotation.cpp" line="2043"/>
         <source>Specify the indexes below to connect to the parts of the connectors.</source>
         <translation>Укажите внизу индексы для соединения с частями соединителей.</translation>
     </message>
@@ -802,52 +802,52 @@
 <context>
     <name>DataReconciliationDialog</name>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="2244"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="2252"/>
         <source>Algorithm:</source>
         <translation>Алгоритм:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="2246"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="2254"/>
         <source>Data Reconciliation</source>
         <translation>Согласование данных</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="2247"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="2255"/>
         <source>Boundary Conditions</source>
         <translation>Граничные условия</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="2251"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="2259"/>
         <source>Measurement Input File:</source>
         <translation>Входной файл измерений:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="2256"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="2264"/>
         <source>Correlation Matrix Input File:</source>
         <translation>Входной файл корреляционной матрицы:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="2261"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="2269"/>
         <source>Epsilon:</source>
         <translation>Эпсилон:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="2268"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="2276"/>
         <source>Reconciled Measurement File:</source>
         <translation>Согласованный файл измерений:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="2273"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="2281"/>
         <source>Reconciled Correlation Matrix File:</source>
         <translation>Согласованный файл корреляционной матрицы:</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="2280"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="2288"/>
         <source>Save Settings</source>
         <translation>Сохранять параметры</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="2282"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="2290"/>
         <source>Calculate</source>
         <translation>Рассчитать</translation>
     </message>
@@ -1478,22 +1478,22 @@ Select the models for which you want to discard the local translation flag and a
 <context>
     <name>ElementAttributes</name>
     <message>
-        <location filename="../../Element/ElementProperties.cpp" line="2202"/>
+        <location filename="../../Element/ElementProperties.cpp" line="2190"/>
         <source>%1 - %2 - %3 in %4</source>
         <translation>%1 — %2 — %3 в %4</translation>
     </message>
     <message>
-        <location filename="../../Element/ElementProperties.cpp" line="2202"/>
+        <location filename="../../Element/ElementProperties.cpp" line="2190"/>
         <source>Element Attributes</source>
         <translation>Атрибуты элемента</translation>
     </message>
     <message>
-        <location filename="../../Element/ElementProperties.cpp" line="2225"/>
+        <location filename="../../Element/ElementProperties.cpp" line="2213"/>
         <source>Dimensions:</source>
         <translation>Размерности:</translation>
     </message>
     <message>
-        <location filename="../../Element/ElementProperties.cpp" line="2227"/>
+        <location filename="../../Element/ElementProperties.cpp" line="2215"/>
         <source>Array of dimensions e.g [1, 5, 2]</source>
         <translation>Массив размерностей, например [1, 5, 2]</translation>
     </message>
@@ -1572,7 +1572,7 @@ Select the models for which you want to discard the local translation flag and a
 <context>
     <name>ExpandableConnectorTreeModel</name>
     <message>
-        <location filename="../../Annotations/LineAnnotation.cpp" line="1746"/>
+        <location filename="../../Annotations/LineAnnotation.cpp" line="1774"/>
         <source>Connector</source>
         <translation>Соединитель</translation>
     </message>
@@ -2523,183 +2523,198 @@ You can choose between waiting longer or abort debugging.</source>
 <context>
     <name>GraphicsView</name>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2727"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2876"/>
         <source>Deletes the item</source>
         <translation>Удаляет элемент</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2732"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2881"/>
         <source>Cut</source>
         <translation>Вырезать</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2741"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2890"/>
         <source>Paste</source>
         <translation>Вставить</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2752"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2901"/>
         <source>Bring to Front</source>
         <translation>Перенести на передний план</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2753"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2902"/>
         <source>Brings the item to front</source>
         <translation>Переносит элемент на передний план</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2757"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2906"/>
         <source>Bring Forward</source>
         <translation>Вывести вперед</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2758"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2907"/>
         <source>Brings the item one level forward</source>
         <translation>Выносит элемент на один уровень вперед</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2762"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2911"/>
         <source>Send to Back</source>
         <translation>Перенести на задний план</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2763"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2912"/>
         <source>Sends the item to back</source>
         <translation>Переносит элемент на задний план</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2767"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2916"/>
         <source>Send Backward</source>
         <translation>Перенести назад</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2768"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2917"/>
         <source>Sends the item one level backward</source>
         <translation>Переносит элемент на один уровень назад</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2772"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2921"/>
         <source>Rotate Clockwise</source>
         <translation>Повернуть по часовой стрелке</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2773"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2922"/>
         <source>Rotates the item clockwise</source>
         <translation>Поворачивает элемент по часовой стрелке</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2779"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2928"/>
         <source>Rotates the item anticlockwise</source>
         <translation>Поворачивает элемент против часовой стрелки</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2784"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2933"/>
         <source>Flip Horizontal</source>
         <translation>Отразить горизонтально</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2785"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2934"/>
         <source>Flips the item horizontally</source>
         <translation>Отражает элемент горизонтально</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2790"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2939"/>
         <source>Flip Vertical</source>
         <translation>Отразить вертикально</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2791"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2940"/>
         <source>Flips the item vertically</source>
         <translation>Отражает элемент вертикально</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="4022"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="4165"/>
         <source>Error in class annotation %1</source>
         <translation>Ошибка в аннотации класса %1</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="4035"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="4178"/>
         <source>Opening %1 parameters window</source>
         <translation type="unfinished">Открытие окна параметров %1 %2 {1 ?}</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="4206"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="4349"/>
         <source>The Modelica code of this model is invalid, so the graphics cannot be displayed.
 Please check the Messages browser for error messages and possibly undo the latest changes with ctrl-z.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2778"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2927"/>
         <source>Rotate Anticlockwise</source>
         <translation>Повернуть против часовой стрелки</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="882"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="876"/>
         <source>You can only drag &amp; drop Modelica models.</source>
         <translation>Перетаскивание возможно только для моделей Modelica.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="908"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="902"/>
         <source>Failed to add component &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1323"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1335"/>
+        <source>Failed to add connection &lt;b&gt;connect(%1, %2)&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1364"/>
         <source>Connection connect(%1, %2) already exists.</source>
         <translation>Соединение connect(%1, %2) уже существует.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2706"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1785"/>
+        <source>Failed to add transition &lt;b&gt;transition(%1, %2)&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="1819"/>
+        <source>Failed to update transition &lt;b&gt;transition(%1, %2)&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2855"/>
         <source>Shows the class parameters</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2721"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2870"/>
         <source>Manhattanize</source>
         <translation>Манхэттенизировать</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2722"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2871"/>
         <source>Manhattanize the lines</source>
         <translation>Манхэттенизировать линии</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2796"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2945"/>
         <source>Create Connector</source>
         <translation>Создать соединитель</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2797"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2946"/>
         <source>Creates a connector</source>
         <translation>Создаёт соединитель</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2800"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2949"/>
         <source>Cancel Connection</source>
         <translation>Отменить соединение</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2801"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2950"/>
         <source>Cancels the current connection</source>
         <translation>Отменяет текущее соединение</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2804"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2953"/>
         <source>Set Initial State</source>
         <translation>Установить исходное состояние</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2805"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2954"/>
         <source>Sets the state as initial state</source>
         <translation>Устанавливает исходное состояние</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2808"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2957"/>
         <source>Cancel Transition</source>
         <translation>Отменить транзакцию</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2809"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="2958"/>
         <source>Cancels the current transition</source>
         <translation>Отменяет текущую транзакцию</translation>
     </message>
@@ -4565,8 +4580,8 @@ Please check the Messages browser for error messages and possibly undo the lates
 <context>
     <name>LibraryTreeModel</name>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1713"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1992"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1717"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="1996"/>
         <source> while deleting </source>
         <translation> при удалении </translation>
     </message>
@@ -4574,146 +4589,146 @@ Please check the Messages browser for error messages and possibly undo the lates
 <context>
     <name>LibraryTreeView</name>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2788"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2791"/>
         <source>Opens the class information dialog</source>
         <translation>Открывает диалоговое окно информации о классе</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2807"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2810"/>
         <source>Copy Path</source>
         <translation>Копировать путь</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2809"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2812"/>
         <source>Copy the class path</source>
         <translation>Копировать путь класса</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2814"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2817"/>
         <source>Moves the class one level up</source>
         <translation>Перемещает путь на уровень выше</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2819"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2822"/>
         <source>Moves the class one level down</source>
         <translation>Перемещает путь на уровень ниже</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2822"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2825"/>
         <source>Move to Top</source>
         <translation>Переместить наверх</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2824"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2827"/>
         <source>Moves the class to top</source>
         <translation>Перемещает класс на самый верхний уровень</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2827"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2830"/>
         <source>Move to Bottom</source>
         <translation>Переместить вниз</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2829"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2832"/>
         <source>Moves the class to bottom</source>
         <translation>Перемещает класс на самый нижний уровень</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2832"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2835"/>
         <source>Order</source>
         <translation>Порядок</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2913"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2917"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2916"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2920"/>
         <source>New File</source>
         <translation>Новый файл</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2914"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2918"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2917"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2921"/>
         <source>Creates a new file</source>
         <translation>Создаёт новый файл</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2921"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2925"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2924"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2928"/>
         <source>New Folder</source>
         <translation>Новая папка</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2922"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2926"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2925"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2929"/>
         <source>Creates a new folder</source>
         <translation>Создаёт новую папку</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2935"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2938"/>
         <source>Deletes the file</source>
         <translation>Удаляет файл</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2938"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2941"/>
         <source>Convert to newer versions of used libraries</source>
         <translation>Преобразовать для использования более новой версии применяемых библиотек</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2939"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2942"/>
         <source>Updates the class to use the newer versions of the uses annotation libraries</source>
         <translation>Обновляет класс для использования более новых версией библиотек в аннотациях</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2958"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2961"/>
         <source>Figaro</source>
         <translation>Figaro</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2962"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2965"/>
         <source>Update Bindings</source>
         <translation>Обновить привязки</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2963"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2966"/>
         <source>updates the bindings</source>
         <translation>Обновляет привязки</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2966"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2969"/>
         <source>Generate Verification Scenarios</source>
         <translation>Генерировать сценарии проверки</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2967"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="2970"/>
         <source>Generates the verification scenarios</source>
         <translation>Генерирует сценарии проверки</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3194"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3197"/>
         <source>Deletes the Modelica class</source>
         <translation>Удаляет класс Modelica</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3304"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3307"/>
         <source>Version : %1</source>
         <translation>Версия: %1</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3305"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3308"/>
         <source>Version Date : %1</source>
         <translation>Дата версии: %1</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3306"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3309"/>
         <source>Version Build : %1</source>
         <translation>Сборка версии: %1</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3307"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3310"/>
         <source>Date Modified : %1</source>
         <translation>Дата изменения: %1</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3308"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3311"/>
         <source>RevisionId : %1</source>
         <translation>ID ревизии: %1</translation>
     </message>
@@ -4721,62 +4736,62 @@ Please check the Messages browser for error messages and possibly undo the lates
 <context>
     <name>LibraryWidget</name>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4084"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="5148"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4087"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="5197"/>
         <source>Unable to load %1. See messages above for more details.</source>
         <translation>Не удалось загрузить %1. Более подробная информация доступна в сообщениях выше.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3959"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="3962"/>
         <source>Expanding the Library Browser is a time consuming and non-responsive operation so this button is disabled intentionally.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4474"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4558"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4690"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4782"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4477"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4561"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4722"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4814"/>
         <source>Saving %1</source>
         <translation>Сохранение %1</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4497"/>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4545"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4500"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4548"/>
         <source>Unable to save the file, unknown library type.</source>
         <translation>Не удалось сохранить файл, неизвестный тип библиотеки.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4531"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4534"/>
         <source>It is not possible to save as a Modelica package saved in a directory hierarchy Mapping.</source>
         <translation>Не удалось сохранить в качестве пакета Modelica, сохраняемого в составе иерархии каталога.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4577"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4580"/>
         <source>Failed to find the class &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4694"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4726"/>
         <source>%1 - Save %2 %3 as Modelica File</source>
         <translation>%1 — Сохранение %2 %3 в виде файла Modelica</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4787"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="4819"/>
         <source>%1 - Save %2 %3 as Modelica Directory</source>
         <translation>%1 — Сохранение %2 %3 в виде каталога Modelica</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="5037"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="5069"/>
         <source>The loaded class(es) &lt;b&gt;%1&lt;/b&gt; uses versions of already loaded libraries which are not compatible with the required ones.&lt;br /&gt;&lt;br /&gt;&lt;b&gt;Cancel Operation&lt;/b&gt; does not load class &lt;b&gt;%1&lt;/b&gt; and its dependencies.&lt;br /&gt;&lt;b&gt;Unload All &amp; Reload %1&lt;/b&gt; unloads all previously loaded classes and loads &lt;b&gt;%1&lt;/b&gt; starting from a clean environment. Make sure to save your work.</source>
         <translation>Загруженный класс (классы) &lt;b&gt;%1&lt;/b&gt; использует версии уже загруженных библиотек, несовместимых с библиотеками, которые необходимо загрузить.&lt;br /&gt;&lt;br /&gt;&lt;b&gt;Отменить операцию&lt;/b&gt; для отмены загрузки класса &lt;b&gt;%1&lt;/b&gt; и его зависимостей.&lt;br /&gt;&lt;b&gt;Выгрузить всё и перезагрузить %1&lt;/b&gt; выгружает все прежде загруженные классы и загружает &lt;b&gt;%1&lt;/b&gt;, выполняя полную чистку рабочей среды. Сохраните резервную копию работы.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="5041"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="5073"/>
         <source>Cancel Operation</source>
         <translation>Отмена операции</translation>
     </message>
     <message>
-        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="5042"/>
+        <location filename="../../Modeling/LibraryTreeWidget.cpp" line="5074"/>
         <source>Unload all &amp;&amp; Reload %1</source>
         <translation>Выгрузить всё и перезагрузить %1</translation>
     </message>
@@ -4833,1018 +4848,1018 @@ Please check the Messages browser for error messages and possibly undo the lates
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../MainWindow.cpp" line="202"/>
+        <location filename="../../MainWindow.cpp" line="203"/>
         <source>Reading Settings</source>
         <translation>Чтение параметров</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="210"/>
+        <location filename="../../MainWindow.cpp" line="211"/>
         <source>Loading Widgets</source>
         <translation>Загрузка виджетов</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2143"/>
+        <location filename="../../MainWindow.cpp" line="2144"/>
         <source>Are you sure you want to clear recent files?</source>
         <translation>Очистить список последних файлов?</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2653"/>
+        <location filename="../../MainWindow.cpp" line="2654"/>
         <source>Unable to run command &lt;b&gt;%1&lt;/b&gt; with arguments &lt;b&gt;%2&lt;/b&gt;. Process failed with error &lt;b&gt;%3&lt;/b&gt;</source>
         <translation>Не удалось запустить команду &lt;b&gt;%1&lt;/b&gt; с параметрами &lt;b&gt;%2&lt;/b&gt;. Процесс завершён с ошибкой &lt;b&gt;%3&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2743"/>
+        <location filename="../../MainWindow.cpp" line="2744"/>
         <source>Updating library index</source>
         <translation>Обновление индекса библиотеки</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2747"/>
+        <location filename="../../MainWindow.cpp" line="2748"/>
         <source>Failed to update the library index. This could be because of bad internet connection.</source>
         <translation>Не удалось обновить индекс библиотеки. Это могло произойти по причине неустойчивого соединения с Интернетом.</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2956"/>
+        <location filename="../../MainWindow.cpp" line="2957"/>
         <source>Unable to run terminal command &lt;b&gt;%1&lt;/b&gt; with arguments &lt;b&gt;%2&lt;/b&gt;. Process failed with error &lt;b&gt;%3&lt;/b&gt;</source>
         <translation>Не удалось запустить команду терминала &lt;b&gt;%1&lt;/b&gt; с параметрами &lt;b&gt;%2&lt;/b&gt;. Процесс завершился с ошибкой &lt;b&gt;%3&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2982"/>
+        <location filename="../../MainWindow.cpp" line="2983"/>
         <source>OMSens is not supported on MacOS</source>
         <translation>OMSens не поддерживается на MacOS</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3682"/>
+        <location filename="../../MainWindow.cpp" line="3683"/>
         <source>Opens and converts the Modelica file(s) with encoding</source>
         <translation>Открывает и конвертирует Modelica-файл(ы) с кодированием</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3685"/>
+        <location filename="../../MainWindow.cpp" line="3686"/>
         <source>Load Library</source>
         <translation>Загрузить библиотеку</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3686"/>
+        <location filename="../../MainWindow.cpp" line="3687"/>
         <source>Loads the Modelica library</source>
         <translation>Загружает библиотеку Modelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3719"/>
+        <location filename="../../MainWindow.cpp" line="3720"/>
         <source>Save All</source>
         <translation>Сохранить всё</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3720"/>
+        <location filename="../../MainWindow.cpp" line="3721"/>
         <source>Save All Files</source>
         <translation>Сохранить все файлы</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3820"/>
+        <location filename="../../MainWindow.cpp" line="3821"/>
         <source>Grid Lines</source>
         <translation>Линии сетки</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3821"/>
+        <location filename="../../MainWindow.cpp" line="3822"/>
         <source>Show/Hide the grid lines</source>
         <translation>Показать/скрыть линии сетки</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3865"/>
+        <location filename="../../MainWindow.cpp" line="3866"/>
         <source>Tile Windows Horizontally</source>
         <translation>Расположить окна горизонтально сверху вниз</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3866"/>
+        <location filename="../../MainWindow.cpp" line="3867"/>
         <source>Arranges all child windows in a horizontally tiled pattern</source>
         <translation>Расположить все дочерние окна в горизонтальном порядке сверху вниз</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3869"/>
+        <location filename="../../MainWindow.cpp" line="3870"/>
         <source>Tile Windows Vertically</source>
         <translation>Расположить окна вертикально слева направо</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3870"/>
+        <location filename="../../MainWindow.cpp" line="3871"/>
         <source>Arranges all child windows in a vertically tiled pattern</source>
         <translation>Расположить все дочерние окна в вертикальном порядке слева направо</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4014"/>
+        <location filename="../../MainWindow.cpp" line="4015"/>
         <source>Shows the options window</source>
         <translation>Вывод окна параметров</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4023"/>
+        <location filename="../../MainWindow.cpp" line="4024"/>
         <source>OpenModelica User&apos;s Guide</source>
         <translation>Руководство пользователя OpenModelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4024"/>
+        <location filename="../../MainWindow.cpp" line="4025"/>
         <source>Opens the OpenModelica User&apos;s Guide</source>
         <translation>Открывает руководство пользователя OpenModelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4028"/>
+        <location filename="../../MainWindow.cpp" line="4029"/>
         <source>OpenModelica User&apos;s Guide (PDF)</source>
         <translation>Руководство пользователя OpenModelica (PDF)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4029"/>
+        <location filename="../../MainWindow.cpp" line="4030"/>
         <source>Opens the OpenModelica User&apos;s Guide (PDF)</source>
         <translation>Открывает руководство пользователя OpenModelica (PDF)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4044"/>
+        <location filename="../../MainWindow.cpp" line="4045"/>
         <source>OMSimulator User&apos;s Guide</source>
         <translation>Руководство пользователя OMSimulator</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4045"/>
+        <location filename="../../MainWindow.cpp" line="4046"/>
         <source>Opens the OMSimulator User&apos;s Guide</source>
         <translation>Открывает руководство пользователя OMSimulator</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4048"/>
+        <location filename="../../MainWindow.cpp" line="4049"/>
         <source>About OMEdit</source>
         <translation>О программе OMEdit</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4049"/>
+        <location filename="../../MainWindow.cpp" line="4050"/>
         <source>Information about OMEdit</source>
         <translation>Информация о программе OMEdit</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4062"/>
+        <location filename="../../MainWindow.cpp" line="4063"/>
         <source>Polygon</source>
         <translation>Многоугольник</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4067"/>
+        <location filename="../../MainWindow.cpp" line="4068"/>
         <source>Rectangle</source>
         <translation>Прямоугольник</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4072"/>
+        <location filename="../../MainWindow.cpp" line="4073"/>
         <source>Ellipse</source>
         <translation>Эллипс</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4082"/>
+        <location filename="../../MainWindow.cpp" line="4083"/>
         <source>Bitmap</source>
         <translation>Изображение</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4088"/>
+        <location filename="../../MainWindow.cpp" line="4089"/>
         <source>Changes to/from connect mode</source>
         <translation>Включает/отключает режим соединения</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="231"/>
+        <location filename="../../MainWindow.cpp" line="232"/>
         <source>Modeling</source>
         <translation>Моделирование</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="236"/>
+        <location filename="../../MainWindow.cpp" line="237"/>
         <source>Plotting</source>
         <translation>Вывод графика</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="352"/>
+        <location filename="../../MainWindow.cpp" line="353"/>
         <source>Creating Widgets</source>
         <translation>Создание виджетов</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="226"/>
+        <location filename="../../MainWindow.cpp" line="227"/>
         <source>Welcome</source>
         <translation>Приветствие</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="186"/>
+        <location filename="../../MainWindow.cpp" line="187"/>
         <source>Initializing</source>
         <translation>Инициализация</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="229"/>
+        <location filename="../../MainWindow.cpp" line="230"/>
         <source>Changes to welcome perspective (%1)</source>
         <translation>Отображает окно приветствия (%1)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="234"/>
+        <location filename="../../MainWindow.cpp" line="235"/>
         <source>Changes to modeling perspective (%1)</source>
         <translation>Отображает окно моделирования (%1)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="239"/>
+        <location filename="../../MainWindow.cpp" line="240"/>
         <source>Changes to plotting perspective (%1)</source>
         <translation>Отображает окно вывода графика (%1)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="241"/>
+        <location filename="../../MainWindow.cpp" line="242"/>
         <source>Debugging</source>
         <translation>Отладка</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="244"/>
+        <location filename="../../MainWindow.cpp" line="245"/>
         <source>Changes to debugging perspective (%1)</source>
         <translation>Отображает окно отладки (%1)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="316"/>
+        <location filename="../../MainWindow.cpp" line="317"/>
         <source>Debugger CLI</source>
         <translation>Интерфейс командной строки отладчика</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1295"/>
+        <location filename="../../MainWindow.cpp" line="1296"/>
         <source>Exporting the package as encrypted package</source>
         <translation>Экспорт зашифрованного пакета</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1332"/>
+        <location filename="../../MainWindow.cpp" line="1333"/>
         <source>Exporting the package as read-only package</source>
         <translation>Экспорт пакета только для чтения</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1360"/>
+        <location filename="../../MainWindow.cpp" line="1361"/>
         <source>Exporting model as XML</source>
         <translation>Экспорт модели как XML</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1550"/>
+        <location filename="../../MainWindow.cpp" line="1551"/>
         <source>Unable to find the file &lt;b&gt;%1&lt;/b&gt; with line number &lt;b&gt;%2&lt;/b&gt;</source>
         <translation>Не удалось найти файл &lt;b&gt;%1&lt;/b&gt; с номером строки &lt;b&gt;%2&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2476"/>
+        <location filename="../../MainWindow.cpp" line="2477"/>
         <source>instantiating</source>
         <translation>создания экземпляра</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2454"/>
-        <location filename="../../MainWindow.cpp" line="2465"/>
+        <location filename="../../MainWindow.cpp" line="2455"/>
+        <location filename="../../MainWindow.cpp" line="2466"/>
         <source>checking</source>
         <translation>проверки</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2581"/>
+        <location filename="../../MainWindow.cpp" line="2582"/>
         <source>making FMU</source>
         <translation>создания FMU</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1285"/>
+        <location filename="../../MainWindow.cpp" line="1286"/>
         <source>making encrypted package</source>
         <translation>создания зашифрованного пакета</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="190"/>
+        <location filename="../../MainWindow.cpp" line="191"/>
         <source>Messages</source>
         <translation type="unfinished">Сообщения</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="276"/>
+        <location filename="../../MainWindow.cpp" line="277"/>
         <source>Search</source>
         <translation type="unfinished">Поиск</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="287"/>
+        <location filename="../../MainWindow.cpp" line="288"/>
         <source>Stack Frames</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="294"/>
+        <location filename="../../MainWindow.cpp" line="295"/>
         <source>Breakpoints</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="302"/>
+        <location filename="../../MainWindow.cpp" line="303"/>
         <source>Locals</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="309"/>
+        <location filename="../../MainWindow.cpp" line="310"/>
         <source>Console Output</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="325"/>
+        <location filename="../../MainWindow.cpp" line="326"/>
         <source>Documentation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1184"/>
+        <location filename="../../MainWindow.cpp" line="1185"/>
         <source>Target Language &lt;b&gt;%1&lt;/b&gt; is not supported for FMU Export. Only &lt;b&gt;C&lt;/b&gt; and &lt;b&gt;Cpp&lt;/b&gt; are supported</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1185"/>
+        <location filename="../../MainWindow.cpp" line="1186"/>
         <source>FMU_EXPORT Failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1196"/>
+        <location filename="../../MainWindow.cpp" line="1197"/>
         <source>Translating model %1 as FMU</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2610"/>
+        <location filename="../../MainWindow.cpp" line="2611"/>
         <source>making read-only package</source>
         <translation>создания пакета только для чтения</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2622"/>
+        <location filename="../../MainWindow.cpp" line="2623"/>
         <source>making XML</source>
         <translation>создания XML</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2634"/>
+        <location filename="../../MainWindow.cpp" line="2635"/>
         <source>exporting to Figaro</source>
         <translation>экспорта в Figaro</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2683"/>
+        <location filename="../../MainWindow.cpp" line="2684"/>
         <source>exporting to OMNotebook</source>
         <translation>экспорта в OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2767"/>
+        <location filename="../../MainWindow.cpp" line="2768"/>
         <source>Importing model(s) from OMNotebook</source>
         <translation>Импорт модели (моделей) из OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2816"/>
+        <location filename="../../MainWindow.cpp" line="2817"/>
         <source>Importing ngspice netlist and converting to Modelica code</source>
         <translation>Импорт списка соединений ngspice и конвертация в код Modelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2895"/>
+        <location filename="../../MainWindow.cpp" line="2896"/>
         <source>exporting to Image</source>
         <translation>экспорта в изображение</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2993"/>
+        <location filename="../../MainWindow.cpp" line="2994"/>
         <source>Failed to load OMSens plugin. %1</source>
         <translation>Не удалось загрузить подключаемый модуль OMSens. %1</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3006"/>
+        <location filename="../../MainWindow.cpp" line="3007"/>
         <source>Please open a model before starting the OMSens plugin.</source>
         <translation>Откройте модель до запуска подключаемого модуля OMSens.</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3533"/>
+        <location filename="../../MainWindow.cpp" line="3534"/>
         <source>CRML Testsuite</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3678"/>
+        <location filename="../../MainWindow.cpp" line="3679"/>
         <source>Opens the Modelica file(s)</source>
         <translation>Открывает файл(ы) Modelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3689"/>
+        <location filename="../../MainWindow.cpp" line="3690"/>
         <source>Load Encrypted Library</source>
         <translation>Загрузить зашифрованную библиотеку</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3690"/>
+        <location filename="../../MainWindow.cpp" line="3691"/>
         <source>Loads the encrypted Modelica library</source>
         <translation>Загружает зашифрованную библиотеку Modelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3693"/>
+        <location filename="../../MainWindow.cpp" line="3694"/>
         <source>Open Result File(s)</source>
         <translation>Открыть выходной файл(ы)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3695"/>
+        <location filename="../../MainWindow.cpp" line="3696"/>
         <source>Opens the OpenModelica Result file</source>
         <translation>Открывает выходной файл OpenModelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3698"/>
+        <location filename="../../MainWindow.cpp" line="3699"/>
         <source>Open Transformations File</source>
         <translation>Открыть файл трансформаций</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3699"/>
+        <location filename="../../MainWindow.cpp" line="3700"/>
         <source>Opens the class transformations file</source>
         <translation>Открывает файл трансформаций класса</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3702"/>
+        <location filename="../../MainWindow.cpp" line="3703"/>
         <source>Unload All</source>
         <translation>Выгрузить всё</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3703"/>
+        <location filename="../../MainWindow.cpp" line="3704"/>
         <source>Unloads all loaded classes</source>
         <translation>Выгружает все загруженные классы</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3706"/>
+        <location filename="../../MainWindow.cpp" line="3707"/>
         <source>Open Directory</source>
         <translation>Открыть каталог</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3707"/>
+        <location filename="../../MainWindow.cpp" line="3708"/>
         <source>Opens the directory</source>
         <translation>Открывает каталог</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3731"/>
+        <location filename="../../MainWindow.cpp" line="3732"/>
         <source>FMU Model Description</source>
         <translation>Описание модели FMU</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3732"/>
+        <location filename="../../MainWindow.cpp" line="3733"/>
         <source>Imports the model from Functional Mockup Interface (FMU) model description</source>
         <translation>Импортирует модель из описания интерфейса функциональной модели (FMU)</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3735"/>
+        <location filename="../../MainWindow.cpp" line="3736"/>
         <source>From OMNotebook</source>
         <translation>Из OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3739"/>
+        <location filename="../../MainWindow.cpp" line="3740"/>
         <source>Ngspice netlist</source>
         <translation>Список соединений ngspice</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3743"/>
+        <location filename="../../MainWindow.cpp" line="3744"/>
         <source>To Clipboard</source>
         <translation>В буфер обмена</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3747"/>
+        <location filename="../../MainWindow.cpp" line="3748"/>
         <source>Image</source>
         <translation>Изображение</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3769"/>
+        <location filename="../../MainWindow.cpp" line="3770"/>
         <source>Figaro</source>
         <translation>Figaro</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3774"/>
+        <location filename="../../MainWindow.cpp" line="3775"/>
         <source>To OMNotebook</source>
         <translation>В OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3780"/>
+        <location filename="../../MainWindow.cpp" line="3781"/>
         <source>Opens the install library window</source>
         <translation>Открывает окно установки библиотеки</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3784"/>
+        <location filename="../../MainWindow.cpp" line="3785"/>
         <source>Upgrades the installed libraries</source>
         <translation>Обновляет установленные библиотеки</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3788"/>
+        <location filename="../../MainWindow.cpp" line="3789"/>
         <source>Updates the library index</source>
         <translation>Обновляет индекс библиотеки</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3792"/>
+        <location filename="../../MainWindow.cpp" line="3793"/>
         <source>Clears the recent files list</source>
         <translation>Очищает список последних файлов</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3795"/>
+        <location filename="../../MainWindow.cpp" line="3796"/>
         <source>Print...</source>
         <translation>Печать…</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3798"/>
+        <location filename="../../MainWindow.cpp" line="3799"/>
         <source>Quit</source>
         <translation>Выход</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3799"/>
+        <location filename="../../MainWindow.cpp" line="3800"/>
         <source>Quit the </source>
         <translation>Выход из </translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3805"/>
+        <location filename="../../MainWindow.cpp" line="3806"/>
         <source>Undo</source>
         <translation>Отменить</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3810"/>
+        <location filename="../../MainWindow.cpp" line="3811"/>
         <source>Redo</source>
         <translation>Повторить</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3849"/>
+        <location filename="../../MainWindow.cpp" line="3850"/>
         <source>Close Window</source>
         <translation>Закрыть окно</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3850"/>
+        <location filename="../../MainWindow.cpp" line="3851"/>
         <source>Closes the active window</source>
         <translation>Закрывает активное окно</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3853"/>
+        <location filename="../../MainWindow.cpp" line="3854"/>
         <source>Close All Windows</source>
         <translation>Закрыть все окна</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3854"/>
+        <location filename="../../MainWindow.cpp" line="3855"/>
         <source>Closes all windows</source>
         <translation>Закрывает все окна</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3857"/>
+        <location filename="../../MainWindow.cpp" line="3858"/>
         <source>Close All Windows But This</source>
         <translation>Закрыть все окна, кроме данного</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3858"/>
+        <location filename="../../MainWindow.cpp" line="3859"/>
         <source>Closes all windows except active window</source>
         <translation>Закрывает все окна, кроме активного окна</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3861"/>
+        <location filename="../../MainWindow.cpp" line="3862"/>
         <source>Cascade Windows</source>
         <translation>Расположить окна каскадом</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3862"/>
+        <location filename="../../MainWindow.cpp" line="3863"/>
         <source>Arranges all the child windows in a cascade pattern</source>
         <translation>Расположить все дочерние окна каскадом</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3873"/>
+        <location filename="../../MainWindow.cpp" line="3874"/>
         <source>Toggle Tab/Sub-window View</source>
         <translation>Переключение вида вкладки/подокна</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3874"/>
+        <location filename="../../MainWindow.cpp" line="3875"/>
         <source>Toggle between tab or sub-window view mode</source>
         <translation>Переключение вида на вкладки или подокна</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3888"/>
+        <location filename="../../MainWindow.cpp" line="3889"/>
         <source>Instantiate Model</source>
         <translation>Создать экземпляр модели</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3889"/>
+        <location filename="../../MainWindow.cpp" line="3890"/>
         <source>Instantiates the modelica model</source>
         <translation>Создать экземпляр модели modelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3926"/>
+        <location filename="../../MainWindow.cpp" line="3927"/>
         <source>Shows the list of archived simulations</source>
         <translation>Отображает архивные моделирования</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3930"/>
+        <location filename="../../MainWindow.cpp" line="3931"/>
         <source>Calculate Data Reconciliation</source>
         <translation>Выполнить согласование данных</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3931"/>
+        <location filename="../../MainWindow.cpp" line="3932"/>
         <source>Calculates the data reconciliation</source>
         <translation>Выполняет расчёт для согласования данных</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3936"/>
+        <location filename="../../MainWindow.cpp" line="3937"/>
         <source>Run CRML Testsuite</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3937"/>
+        <location filename="../../MainWindow.cpp" line="3938"/>
         <source>Runs the CRML Testsuite and display report</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3986"/>
+        <location filename="../../MainWindow.cpp" line="3987"/>
         <source>Shows OpenModelica Compiler CLI</source>
         <translation>Открывает интерфейс командной строки компилятора OpenModelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3990"/>
+        <location filename="../../MainWindow.cpp" line="3991"/>
         <source>OpenModelica Command Prompt</source>
         <translation>Командная строка OpenModelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3991"/>
+        <location filename="../../MainWindow.cpp" line="3992"/>
         <source>Open OpenModelica command prompt</source>
         <translation>Открыть командную строку OpenModelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3996"/>
+        <location filename="../../MainWindow.cpp" line="3997"/>
         <source>OpenModelica Compiler Diff</source>
         <translation>Diff-файл компилятора OpenModelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="3997"/>
+        <location filename="../../MainWindow.cpp" line="3998"/>
         <source>Shows OpenModelica Compiler Diff</source>
         <translation>Отображает diff-файл компилятора OpenModelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4001"/>
+        <location filename="../../MainWindow.cpp" line="4002"/>
         <source>Open Temporary Directory</source>
         <translation>Открыть каталог временных файлов</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4002"/>
+        <location filename="../../MainWindow.cpp" line="4003"/>
         <source>Opens the temporary directory</source>
         <translation>Открывает каталог временных файлов</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4005"/>
+        <location filename="../../MainWindow.cpp" line="4006"/>
         <source>Open Working Directory</source>
         <translation>Открыть рабочий каталог</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4006"/>
+        <location filename="../../MainWindow.cpp" line="4007"/>
         <source>Opens the current working directory</source>
         <translation>Открывает текущий рабочий каталог</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4009"/>
+        <location filename="../../MainWindow.cpp" line="4010"/>
         <source>Open Terminal</source>
         <translation>Открыть терминал</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4010"/>
+        <location filename="../../MainWindow.cpp" line="4011"/>
         <source>Opens the terminal</source>
         <translation>Открывает терминал</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4013"/>
+        <location filename="../../MainWindow.cpp" line="4014"/>
         <source>Options</source>
         <translation>Параметры</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4018"/>
+        <location filename="../../MainWindow.cpp" line="4019"/>
         <source>Run Sensitivity Analysis and Optimization</source>
         <translation>Запустить анализ и оптимизацию чувствительности</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4019"/>
+        <location filename="../../MainWindow.cpp" line="4020"/>
         <source>Runs the sensitivity analysis and optimization</source>
         <translation>Запускает анализ и оптимизацию чувствительности</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4032"/>
+        <location filename="../../MainWindow.cpp" line="4033"/>
         <source>OpenModelica System Documentation</source>
         <translation>Документация по системе OpenModelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4033"/>
+        <location filename="../../MainWindow.cpp" line="4034"/>
         <source>Opens the OpenModelica System Documentation</source>
         <translation>Открывает документацию по системе OpenModelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4036"/>
+        <location filename="../../MainWindow.cpp" line="4037"/>
         <source>OpenModelica Scripting Documentation</source>
         <translation>Документация по сценариям OpenModelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4037"/>
+        <location filename="../../MainWindow.cpp" line="4038"/>
         <source>Opens the OpenModelica Scripting Documentation</source>
         <translation>Открывает документацию по сценариям OpenModelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4040"/>
+        <location filename="../../MainWindow.cpp" line="4041"/>
         <source>Modelica Documentation</source>
         <translation>Документация Modelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4041"/>
+        <location filename="../../MainWindow.cpp" line="4042"/>
         <source>Opens the Modelica Documentation</source>
         <translation>Открывает документацию Modelica</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4058"/>
+        <location filename="../../MainWindow.cpp" line="4059"/>
         <source>Draws a line shape</source>
         <translation>Рисует линию</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4063"/>
+        <location filename="../../MainWindow.cpp" line="4064"/>
         <source>Draws a polygon shape</source>
         <translation>Рисует многоугольник</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4068"/>
+        <location filename="../../MainWindow.cpp" line="4069"/>
         <source>Draws a rectangle shape</source>
         <translation>Рисует прямоугольник</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4073"/>
+        <location filename="../../MainWindow.cpp" line="4074"/>
         <source>Draws an ellipse shape</source>
         <translation>Рисует эллипс</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4077"/>
+        <location filename="../../MainWindow.cpp" line="4078"/>
         <source>Text</source>
         <translation>Текст</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4078"/>
+        <location filename="../../MainWindow.cpp" line="4079"/>
         <source>Draws a text shape</source>
         <translation>Рисует текст</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4083"/>
+        <location filename="../../MainWindow.cpp" line="4084"/>
         <source>Inserts a bitmap</source>
         <translation>Вставляет растровое изображение</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4087"/>
+        <location filename="../../MainWindow.cpp" line="4088"/>
         <source>Connect/Unconnect Mode</source>
         <translation>Включение/отключение режима соединения</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4093"/>
+        <location filename="../../MainWindow.cpp" line="4094"/>
         <source>Transition Mode</source>
         <translation>Режим перехода</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4094"/>
+        <location filename="../../MainWindow.cpp" line="4095"/>
         <source>Changes to/from transition mode</source>
         <translation>Меняет направление режима перехода</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4112"/>
+        <location filename="../../MainWindow.cpp" line="4113"/>
         <source>New Plot Window</source>
         <translation>Новое окно вывода графика</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4113"/>
+        <location filename="../../MainWindow.cpp" line="4114"/>
         <source>Inserts new plot window</source>
         <translation>Добавляет новое окно вывода графика</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4120"/>
+        <location filename="../../MainWindow.cpp" line="4121"/>
         <source>New Array Plot Window</source>
         <translation>Новое окно графика массивов</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4121"/>
+        <location filename="../../MainWindow.cpp" line="4122"/>
         <source>Inserts new array plot window</source>
         <translation>Добавляет новое окно графика массивов</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4124"/>
+        <location filename="../../MainWindow.cpp" line="4125"/>
         <source>New Array Parametric Plot Window</source>
         <translation>Новое окно параметрического графика массивов</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4125"/>
+        <location filename="../../MainWindow.cpp" line="4126"/>
         <source>Inserts new array parametric plot window</source>
         <translation>Добавляет новое окно параметрического графика массивов</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4129"/>
+        <location filename="../../MainWindow.cpp" line="4130"/>
         <source>New Animation Window</source>
         <translation>Новое окно анимации</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4130"/>
+        <location filename="../../MainWindow.cpp" line="4131"/>
         <source>Inserts new animation window</source>
         <translation>Добавляет новое окно анимации</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4134"/>
+        <location filename="../../MainWindow.cpp" line="4135"/>
         <source>Diagram Window</source>
         <translation>Окно диаграммы</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4135"/>
+        <location filename="../../MainWindow.cpp" line="4136"/>
         <source>Inserts a diagram window</source>
         <translation>Добавляет окно диаграммы</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4139"/>
+        <location filename="../../MainWindow.cpp" line="4140"/>
         <source>Exports the plotted variables to a CSV file</source>
         <translation>Экспортирует переменные на графике в CSV-файл</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4142"/>
+        <location filename="../../MainWindow.cpp" line="4143"/>
         <source>Clear Plot Window</source>
         <translation>Очистить окно вывода графика</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4143"/>
+        <location filename="../../MainWindow.cpp" line="4144"/>
         <source>Clears all the curves from the plot window</source>
         <translation>Удаляет все кривые в окне вывода графика</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4176"/>
+        <location filename="../../MainWindow.cpp" line="4177"/>
         <source>&amp;File</source>
         <translation>&amp;Файл</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4221"/>
+        <location filename="../../MainWindow.cpp" line="4222"/>
         <source>&amp;System Libraries</source>
         <translation>&amp;Системные библиотеки</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4227"/>
+        <location filename="../../MainWindow.cpp" line="4228"/>
         <source>&amp;Manage Libraries</source>
         <translation>&amp;Управление библиотеками</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4236"/>
+        <location filename="../../MainWindow.cpp" line="4237"/>
         <source>Recent &amp;Files</source>
         <translation>Последние &amp;файлы</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4248"/>
+        <location filename="../../MainWindow.cpp" line="4249"/>
         <source>&amp;Edit</source>
         <translation>&amp;Правка</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4258"/>
+        <location filename="../../MainWindow.cpp" line="4259"/>
         <source>&amp;View</source>
         <translation>&amp;Вид</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4262"/>
+        <location filename="../../MainWindow.cpp" line="4263"/>
         <source>Toolbars</source>
         <translation>Панели инструментов</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4266"/>
+        <location filename="../../MainWindow.cpp" line="4267"/>
         <source>Windows</source>
         <translation>Окна</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4332"/>
+        <location filename="../../MainWindow.cpp" line="4333"/>
         <source>&amp;Simulation</source>
         <translation>&amp;Моделирование</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4351"/>
+        <location filename="../../MainWindow.cpp" line="4352"/>
         <source>&amp;Data Reconciliation</source>
         <translation>&amp;Выверка данных</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4359"/>
+        <location filename="../../MainWindow.cpp" line="4360"/>
         <source>&amp;CRML</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4401"/>
+        <location filename="../../MainWindow.cpp" line="4402"/>
         <source>&amp;Debug</source>
         <translation>&amp;Отладка</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4316"/>
+        <location filename="../../MainWindow.cpp" line="4317"/>
         <source>&amp;SSP</source>
         <translation>&amp;SSP</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4368"/>
+        <location filename="../../MainWindow.cpp" line="4369"/>
         <source>Sensitivity Optimization</source>
         <translation>Оптимизация чувствительности</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4376"/>
+        <location filename="../../MainWindow.cpp" line="4377"/>
         <source>&amp;Git</source>
         <translation>&amp;Git</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4379"/>
+        <location filename="../../MainWindow.cpp" line="4380"/>
         <source>TraceabilityMenu</source>
         <translation>Меню отслеживания</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4380"/>
+        <location filename="../../MainWindow.cpp" line="4381"/>
         <source>Traceability</source>
         <translation>Отслеживание</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4409"/>
+        <location filename="../../MainWindow.cpp" line="4410"/>
         <source>&amp;Tools</source>
         <translation>&amp;Сервис</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4428"/>
+        <location filename="../../MainWindow.cpp" line="4429"/>
         <source>&amp;Help</source>
         <translation>&amp;Справка</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4675"/>
+        <location filename="../../MainWindow.cpp" line="4676"/>
         <source>File Toolbar</source>
         <translation>Панель инструментов «Файл»</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4683"/>
+        <location filename="../../MainWindow.cpp" line="4684"/>
         <source>&amp;New</source>
         <translation>&amp;Создать</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4706"/>
+        <location filename="../../MainWindow.cpp" line="4707"/>
         <source>Edit Toolbar</source>
         <translation>Панель инструментов «Правка»</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4714"/>
+        <location filename="../../MainWindow.cpp" line="4715"/>
         <source>View Toolbar</source>
         <translation>Панель инструментов «Вид»</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4727"/>
+        <location filename="../../MainWindow.cpp" line="4728"/>
         <source>Shapes Toolbar</source>
         <translation>Панель инструментов «Фигуры»</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4761"/>
+        <location filename="../../MainWindow.cpp" line="4762"/>
         <source>Check Toolbar</source>
         <translation>Панель инструментов «Проверка»</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4770"/>
+        <location filename="../../MainWindow.cpp" line="4771"/>
         <source>Simulation Toolbar</source>
         <translation>Панель инструментов «Моделирование»</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4827"/>
+        <location filename="../../MainWindow.cpp" line="4828"/>
         <source>SSP Toolbar</source>
         <translation>Панель инструментов «SSP»</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4743"/>
+        <location filename="../../MainWindow.cpp" line="4744"/>
         <source>ModelSwitcher Toolbar</source>
         <translation>Панель инструментов «Переключение модели»</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4811"/>
+        <location filename="../../MainWindow.cpp" line="4812"/>
         <source>Debugger Toolbar</source>
         <translation>Панель инструментов «Отладчик»</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4820"/>
+        <location filename="../../MainWindow.cpp" line="4821"/>
         <source>Run the debugger</source>
         <translation>Запуск отладчика</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="1406"/>
+        <location filename="../../MainWindow.cpp" line="1407"/>
         <source>Exporting model to OMNotebook</source>
         <translation>Экспорт модели в OMNotebook</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2848"/>
+        <location filename="../../MainWindow.cpp" line="2849"/>
         <source>Exporting model as an Image</source>
         <translation>Экспорт модели в виде изображения</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4116"/>
+        <location filename="../../MainWindow.cpp" line="4117"/>
         <source>New Parametric Plot Window</source>
         <translation>Новое окно параметрического графика</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4117"/>
+        <location filename="../../MainWindow.cpp" line="4118"/>
         <source>Inserts new parametric plot window</source>
         <translation>Добавляет новое окно параметрического графика</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4149"/>
+        <location filename="../../MainWindow.cpp" line="4150"/>
         <source>Add/Edit Icon</source>
         <translation>Добавить/изменить значок</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4150"/>
+        <location filename="../../MainWindow.cpp" line="4151"/>
         <source>Adds/Edits an icon</source>
         <translation>Добавляет/изменяет значок</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4152"/>
+        <location filename="../../MainWindow.cpp" line="4153"/>
         <source>Delete Icon</source>
         <translation>Удалить значок</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4153"/>
+        <location filename="../../MainWindow.cpp" line="4154"/>
         <source>Deletes an icon</source>
         <translation>Удаляет значок</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4197"/>
+        <location filename="../../MainWindow.cpp" line="4198"/>
         <source>Import</source>
         <translation>Импорт</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4784"/>
+        <location filename="../../MainWindow.cpp" line="4785"/>
         <source>Re-simulation Toolbar</source>
         <translation>Панель управления повторного моделирования</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="4793"/>
+        <location filename="../../MainWindow.cpp" line="4794"/>
         <source>Plot Toolbar</source>
         <translation>Панель инструментов «График»</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2784"/>
+        <location filename="../../MainWindow.cpp" line="2785"/>
         <source>Error reading the xml file</source>
         <translation>Ошибка при чтении XML-файла</translation>
     </message>
     <message>
-        <location filename="../../MainWindow.cpp" line="2884"/>
+        <location filename="../../MainWindow.cpp" line="2885"/>
         <source>Error saving the image file</source>
         <translation>Ошибка при сохранении файла изображения</translation>
     </message>
@@ -5852,7 +5867,7 @@ Please check the Messages browser for error messages and possibly undo the lates
 <context>
     <name>MessageTab</name>
     <message>
-        <location filename="../../MainWindow.cpp" line="5124"/>
+        <location filename="../../MainWindow.cpp" line="5125"/>
         <source>Click to open message browser.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5964,55 +5979,55 @@ Please check the Messages browser for error messages and possibly undo the lates
 <context>
     <name>ModelWidget</name>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5805"/>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5807"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5957"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5959"/>
         <source>Back</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5813"/>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5815"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5965"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5967"/>
         <source>Forward</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5821"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5973"/>
         <source>Exit</source>
         <translation type="unfinished">Выйти</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5823"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5975"/>
         <source>Exit Element</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5840"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5992"/>
         <source>Writable</source>
         <translation>Доступный для записи</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5849"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="6001"/>
         <source>Make writable</source>
         <translation>Сделать доступным для записи</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5849"/>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="7467"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="6001"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="7654"/>
         <source>File is writable</source>
         <translation>Файл доступен для записи</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="6839"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="6998"/>
         <source>Showing element &lt;b&gt;%1&lt;/b&gt; in &lt;b&gt;%2&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="7463"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="7650"/>
         <source>Cannot Set Permissions</source>
         <translation>Не удалось задать разрешения</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="7463"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="7650"/>
         <source>Cannot set permissions to writable.</source>
         <translation>Не удалось задать разрешения на запись.</translation>
     </message>
@@ -6020,23 +6035,23 @@ Please check the Messages browser for error messages and possibly undo the lates
 <context>
     <name>ModelWidgetContainer</name>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="8249"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="8438"/>
         <source>save as</source>
         <translation>сохранения как</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="8336"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="8525"/>
         <source>Adapting extent to diagram</source>
         <translation>Применение предела к диаграмме</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="8395"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="8584"/>
         <source>adapting extent to diagram</source>
         <translation>применения предела к диаграмме</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="8232"/>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="8266"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="8421"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="8455"/>
         <source>saving</source>
         <translation>сохранения</translation>
     </message>
@@ -6520,57 +6535,57 @@ Please check the Messages browser for error messages and possibly undo the lates
 <context>
     <name>PlotWindowContainer</name>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="428"/>
+        <location filename="../../Plotting/PlotWindowContainer.cpp" line="429"/>
         <source>Interactive Plot : %1</source>
         <translation>Интерактивный график: %1</translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="571"/>
+        <location filename="../../Plotting/PlotWindowContainer.cpp" line="572"/>
         <source>Name Plot Tab</source>
         <translation>Имя вкладки графика</translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="572"/>
+        <location filename="../../Plotting/PlotWindowContainer.cpp" line="573"/>
         <source>Name:</source>
         <translation>Имя:</translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="595"/>
+        <location filename="../../Plotting/PlotWindowContainer.cpp" line="596"/>
         <source>No plot window is active for clearing curves.</source>
         <translation>Отсутствует активное окно графика для удаления кривых.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="611"/>
+        <location filename="../../Plotting/PlotWindowContainer.cpp" line="612"/>
         <source>No plot window is active for exporting variables.</source>
         <translation>Отсутствует активное окно графика для экспорта переменных.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="615"/>
+        <location filename="../../Plotting/PlotWindowContainer.cpp" line="616"/>
         <source>Cannot export parametric plot.</source>
         <translation>Не удалось экспортировать параметрический график.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="619"/>
+        <location filename="../../Plotting/PlotWindowContainer.cpp" line="620"/>
         <source>No variables are selected for exporting.</source>
         <translation>Не выбраны переменные для экспорта.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="637"/>
+        <location filename="../../Plotting/PlotWindowContainer.cpp" line="638"/>
         <source>Not possible to export variables from different result files.</source>
         <translation>Невозможно экспортировать переменные из различных файлов вывода.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="679"/>
+        <location filename="../../Plotting/PlotWindowContainer.cpp" line="680"/>
         <source>Exported variables in %1</source>
         <translation>Переменные экспортированы в %1</translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="710"/>
+        <location filename="../../Plotting/PlotWindowContainer.cpp" line="711"/>
         <source>Rename</source>
         <translation>Переименовать</translation>
     </message>
     <message>
-        <location filename="../../Plotting/PlotWindowContainer.cpp" line="711"/>
+        <location filename="../../Plotting/PlotWindowContainer.cpp" line="712"/>
         <source>Renames the plot tab</source>
         <translation>Переименовывает вкладку графика</translation>
     </message>
@@ -6643,6 +6658,41 @@ Set the value to 0 if you don&apos;t want any delay.</source>
         <location filename="../../Options/OptionsDialog.cpp" line="5890"/>
         <source>Font Size</source>
         <translation>Размер шрифта</translation>
+    </message>
+    <message>
+        <location filename="../../Options/OptionsDialog.cpp" line="5891"/>
+        <source>Title:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Options/OptionsDialog.cpp" line="5897"/>
+        <source>Vertical Axis Title:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Options/OptionsDialog.cpp" line="5902"/>
+        <source>Vertical Axis Numbers:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Options/OptionsDialog.cpp" line="5907"/>
+        <source>Horizontal Axis Title:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Options/OptionsDialog.cpp" line="5912"/>
+        <source>Horizontal Axis Numbers:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Options/OptionsDialog.cpp" line="5917"/>
+        <source>Footer:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Options/OptionsDialog.cpp" line="5922"/>
+        <source>Legend:</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="5930"/>
@@ -7475,7 +7525,12 @@ Can cause high overhead but values will not be missed.</source>
         <translation>Генерируемый код для целевой сборки &lt;b&gt;%1&lt;/b&gt; в %2.</translation>
     </message>
     <message>
-        <location filename="../../Simulation/SimulationDialog.cpp" line="1970"/>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="1772"/>
+        <source>Translation of &lt;b&gt;%1&lt;/b&gt; failed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Simulation/SimulationDialog.cpp" line="1978"/>
         <source>Animation is only supported with mat result files.</source>
         <translation>Анимация поддерживается только с помощью mat-файлов вывода.</translation>
     </message>
@@ -8378,43 +8433,43 @@ Can cause high overhead but values will not be missed.</source>
 <context>
     <name>VariablesTreeModel</name>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="364"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="365"/>
         <source>Value</source>
         <translation>Значение</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="364"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="365"/>
         <source>Unit</source>
         <translation>Единица</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="364"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="365"/>
         <source>Display Unit</source>
         <translation>Отображаемая величина</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="669"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="670"/>
         <source>Interactive Simulation
 Port: %1</source>
         <translation>Интерактивное моделирование
 Порт: %1</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="671"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="672"/>
         <source>Simulation Result File: %1
 %2: %3/%4</source>
         <translation>Выходной файл моделирования: %1
 %2: %3/%4</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="933"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="934"/>
         <source>Variable: %1
 Variability: %2</source>
         <translation>Переменная: %1
 Вариативность: %2</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="935"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="936"/>
         <source>File: %1/%2
 Variable: %3
 Variability: %4</source>
@@ -8426,137 +8481,137 @@ Variability: %4</source>
 <context>
     <name>VariablesWidget</name>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2811"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="2832"/>
         <source>Delete Result</source>
         <translation>Удалить результат</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2814"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="2835"/>
         <source>Delete the result</source>
         <translation>Удаление результата</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1762"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1763"/>
         <source>You must select a class to re-simulate.</source>
         <translation>Необходимо выбрать класс для повторного моделирования.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1414"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1415"/>
         <source>Simulation Time Unit</source>
         <translation>Единица времени моделирования</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1432"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1433"/>
         <source>Rewind</source>
         <translation>Назад</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1433"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1434"/>
         <source>Rewind the visualization to the start</source>
         <translation>Перемотать визуализацию к началу</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1437"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1438"/>
         <source>Play the visualization</source>
         <translation>Воспроизвести визуализацию</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1441"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1442"/>
         <source>Pause the visualization</source>
         <translation>Остановить визуализацию</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1447"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1448"/>
         <source>Time:</source>
         <translation>Время:</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1546"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1547"/>
         <source>Loading simulation result variables</source>
         <translation>Загрузка переменных результата моделирования</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1781"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1782"/>
         <source>You cannot re-simulate this class.&lt;br /&gt;This is just a result file loaded via menu &lt;b&gt;File-&gt;Open Result File(s)&lt;/b&gt;.</source>
         <translation>Невозможно повторно моделировать данный класс. &lt;br /&gt; Это всего лишь выходной файл, загруженный с помощью меню &lt;b&gt;Файл-&gt;Открыть выходной файл(ы)&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1806"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1807"/>
         <source>Unable to set the content of QDomDocument from file %1</source>
         <translation>Не удалось задать содержимое QDomDocument из файла %1</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1860"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1861"/>
         <source>Enabled for %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="1995"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="1996"/>
         <source>No plot window is active for plotting. Please select a plot window or open a new.</source>
         <translation>Нет активных окон для вывода графика. Выберите окно для вывода графика или откройте новое.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2008"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="2009"/>
         <source>Cannot be attached to a plot window.</source>
         <translation>Невозможно прикрепить к окну вывода графика.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2086"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="2081"/>
         <source>Cannot be attached to a parametric plot window.</source>
         <translation>Невозможно прикрепить к окну вывода параметрического графика.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2095"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="2090"/>
         <source>Cannot select two consecutive x-axis variables. &lt;b&gt;%1&lt;/b&gt; is already selected as x-axis variable.</source>
         <translation>Невозможно выбрать две последовательные переменные на оси x. &lt;b&gt;%1&lt;/b&gt; уже выбрана в качестве переменной оси x.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2109"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="2104"/>
         <source>Select the x-axis variable first. Press and hold the shift key and then check the variable.</source>
         <translation>Сначала выберите переменную на оси x. Нажмите и удерживайте клавишу shift, а затем отметьте переменную.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2267"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="2258"/>
         <source>Cannot be attached to an interactive plot window.</source>
         <translation>Невозможно прикрепить к окну вывода интерактивного графика.</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2817"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="2838"/>
         <source>Enable Time Controls</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2819"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="2840"/>
         <source>Enables the time controls</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2836"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="2857"/>
         <source>Show only direct dependencies</source>
         <translation>Показывать только прямые зависимости</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2841"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="2862"/>
         <source>Show only variables that depend on this variable</source>
         <translation>Показывать только переменные, которые зависят от этой переменной</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2843"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="2864"/>
         <source>Show only direct dependencies (initial)</source>
         <translation>Показывать только прямые зависимости (исходные)</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2848"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="2869"/>
         <source>Show only variables that depend on this variable in the initial system of equations</source>
         <translation>Показывать только переменные, которые зависят от этой переменной в исходной системе уравнений</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2861"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="2882"/>
         <source>Open debugger (equation %1 - %2)</source>
         <translation>Открыть отладчик (уравнение %1 — %2)</translation>
     </message>
     <message>
-        <location filename="../../Plotting/VariablesWidget.cpp" line="2866"/>
+        <location filename="../../Plotting/VariablesWidget.cpp" line="2887"/>
         <source>Open debugger for the equation</source>
         <translation>Открыть отладчик для уравнения</translation>
     </message>
@@ -8619,37 +8674,37 @@ Variability: %4</source>
 <context>
     <name>WelcomePageWidget</name>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5191"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5342"/>
         <source>Recent Files</source>
         <translation>Последние файлы</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5192"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5343"/>
         <source>No recent files found.</source>
         <translation>Последние файлы не обнаружены.</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5203"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5354"/>
         <source>Clear Recent Files</source>
         <translation>Очистить последние файлы</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5224"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5375"/>
         <source>Latest News &amp; Events</source>
         <translation>Последние новости и события</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5238"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5389"/>
         <source>For more details visit our website &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;</source>
         <translation>Подробности доступны на нашем веб-сайте &lt;u&gt;&lt;a href=&quot;http://www.openmodelica.org&quot;&gt;www.openmodelica.org&lt;/a&gt;&lt;/u&gt;</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5288"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5439"/>
         <source>System Libraries</source>
         <translation>Системные библиотеки</translation>
     </message>
     <message>
-        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5374"/>
+        <location filename="../../Modeling/ModelWidgetContainer.cpp" line="5525"/>
         <source>Sorry, no internet no news items.</source>
         <translation>Отсутствует интернет, отсутствуют и новости.</translation>
     </message>
