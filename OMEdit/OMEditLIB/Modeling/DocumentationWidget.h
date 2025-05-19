@@ -92,6 +92,9 @@ public:
 #ifndef OM_DISABLE_DOCUMENTATION
   void execCommand(const QString &commandName);
   void execCommand(const QString &commandName, const QString &valueArgument);
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  QVariant runJavaScript(const QString &javaScript);
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   bool queryCommandState(const QString &commandName);
   QString queryCommandValue(const QString &commandName);
   void saveScrollPosition();

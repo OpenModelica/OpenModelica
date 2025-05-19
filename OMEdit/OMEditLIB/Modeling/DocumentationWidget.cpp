@@ -559,6 +559,40 @@ void DocumentationWidget::execCommand(const QString &command, const QString &val
 #endif
 }
 
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+struct JavaScriptResult {
+  QVariant result;
+  bool finished;
+  JavaScriptResult() : result(QVariant("")), finished(false) {}
+  JavaScriptResult(JavaScriptResult *pJavaScriptResult) : result(pJavaScriptResult->result), finished(pJavaScriptResult->finished) {}
+  ~JavaScriptResult() {}
+  bool isFinished() {return finished;}
+};
+
+struct JavascriptResultFunctor {
+  JavaScriptResult *mpJavaScriptResult;
+  JavascriptResultFunctor(JavaScriptResult *pJavaScriptResult) : mpJavaScriptResult(pJavaScriptResult) {}
+  void operator()(const QVariant &result) {
+    mpJavaScriptResult->result.setValue(result);
+    mpJavaScriptResult->finished = true;
+  }
+};
+
+QVariant DocumentationWidget::runJavaScript(const QString &javaScript)
+{
+  JavaScriptResult *pJavaScriptResult = new JavaScriptResult();
+  QDeadlineTimer deadline(10000); // 10 seconds
+  QWebEnginePage *pWebPage = mpHTMLEditor->page();
+  pWebPage->runJavaScript(javaScript, JavascriptResultFunctor(pJavaScriptResult));
+  while (!pJavaScriptResult->isFinished() && !deadline.hasExpired()) {
+    QCoreApplication::processEvents();
+  }
+  QVariant result = pJavaScriptResult->result;
+  delete pJavaScriptResult;
+  return result;
+}
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+
 /*!
  * \brief DocumentationWidget::queryCommandState
  * Calls the document.queryCommandState API.\n
@@ -571,9 +605,8 @@ bool DocumentationWidget::queryCommandState(const QString &commandName)
   QString javaScript = QString("document.queryCommandState(\"%1\")").arg(commandName);
   QVariant result;
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  QWebEnginePage *pWebPage = mpHTMLEditor->page();
-  pWebPage->runJavaScript(javaScript, [&](const QVariant & arg){ result = arg; });
-#else
+  result = runJavaScript(javaScript);
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
   result = pWebFrame->evaluateJavaScript(javaScript);
 #endif
@@ -592,9 +625,8 @@ QString DocumentationWidget::queryCommandValue(const QString &commandName)
   QString javaScript = QString("document.queryCommandValue(\"%1\")").arg(commandName);
   QVariant result;
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  QWebEnginePage *pWebPage = mpHTMLEditor->page();
-  pWebPage->runJavaScript(javaScript, [&](const QVariant & arg){ result = arg; });
-#else
+  result = runJavaScript(javaScript);
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
   result = pWebFrame->evaluateJavaScript(javaScript);
 #endif
@@ -1062,11 +1094,12 @@ void DocumentationWidget::updateActions()
     mpFontSizeSpinBox->blockSignals(state);
   }
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  mpBoldAction->setChecked(mpHTMLEditor->pageAction(QWebEnginePage::ToggleBold)->isChecked());
-  mpItalicAction->setChecked(mpHTMLEditor->pageAction(QWebEnginePage::ToggleItalic)->isChecked());
-  mpUnderlineAction->setChecked(mpHTMLEditor->pageAction(QWebEnginePage::ToggleUnderline)->isChecked());
-  mpStrikethroughAction->setChecked(mpHTMLEditor->pageAction(QWebEnginePage::ToggleStrikethrough)->isChecked());
-  // TODO: ToggleSubscript/ToggleSuperscript
+  mpBoldAction->setChecked(queryCommandState("bold"));
+  mpItalicAction->setChecked(queryCommandState("italic"));
+  mpUnderlineAction->setChecked(queryCommandState("underline"));
+  mpStrikethroughAction->setChecked(queryCommandState("strikeThrough"));
+  mpSubscriptAction->setChecked(queryCommandState("subscript"));
+  mpSubscriptAction->setChecked(queryCommandState("superscript"));
 #else
   mpBoldAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleBold)->isChecked());
   mpItalicAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleItalic)->isChecked());
@@ -1311,8 +1344,7 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pDocumentationWidg
   settings()->setDefaultTextEncoding(Helper::utf8.toUtf8().constData());
   // set DocumentationViewer web page policy
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  if (isContentEditable)
-    page()->runJavaScript("document.documentElement.contentEditable = true");
+  // Set the contenteditable="true" in pageLoaded()
   // TODO: DelegateAllLinks, linkClicked
   connect(page(), SIGNAL(linkHovered(QString)), SLOT(processLinkHover(QString)));
 #else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
@@ -1322,9 +1354,7 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pDocumentationWidg
   connect(page(), SIGNAL(linkHovered(QString,QString,QString)), SLOT(processLinkHover(QString,QString,QString)));
 #endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   createActions();
-  if (!isContentEditable) {
-    connect(this, SIGNAL(loadFinished(bool)), SLOT(pageLoaded(bool)));
-  }
+  connect(this, SIGNAL(loadFinished(bool)), SLOT(pageLoaded(bool)));
 #endif // #ifndef OM_DISABLE_DOCUMENTATION
 }
 
@@ -1479,12 +1509,18 @@ void DocumentationViewer::showContextMenu(QPoint point)
 void DocumentationViewer::pageLoaded(bool ok)
 {
   Q_UNUSED(ok);
-  const QPoint scrollPosition = mpDocumentationWidget->getScrollPosition();
+  if (!mIsContentEditable) {
+    const QPoint scrollPosition = mpDocumentationWidget->getScrollPosition();
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  page()->runJavaScript(QString("window.scrollTo(%1, %2);").arg(scrollPosition.x()).arg(scrollPosition.y()));
+    page()->runJavaScript(QString("window.scrollTo(%1, %2);").arg(scrollPosition.x()).arg(scrollPosition.y()));
 #else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  page()->mainFrame()->scroll(scrollPosition.x(), scrollPosition.y());
+    page()->mainFrame()->scroll(scrollPosition.x(), scrollPosition.y());
 #endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  } else {
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+    page()->runJavaScript("document.documentElement.contentEditable = true");
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  }
 }
 
 /*!
