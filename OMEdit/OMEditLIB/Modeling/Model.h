@@ -629,8 +629,14 @@ private:
     QList<Element *> getComponents() const;
     size_t componentCount() const;
     const QList<Import> &getImports() const {return mImports;}
+    void addConnection(Connection *pConnection) {mConnections.append(pConnection);}
+    void removeConnection(const QString &startConnectorName, const QString &endConnectorName);
     const QList<Connection *> &getConnections() const {return mConnections;}
+    void addTransition(Transition *pTransition) {mTransitions.append(pTransition);}
+    void removeTransition(const QString &startConnectorName, const QString &endConnectorName);
     const QList<Transition *> &getTransitions() const {return mTransitions;}
+    void addInitialState(InitialState *pInitialState) {mInitialStates.append(pInitialState);}
+    void removeInitialState(const QString &startConnectorName);
     const QList<InitialState *> &getInitialStates() const {return mInitialStates;}
     const Source &getSource() const {return mSource;}
 
@@ -845,6 +851,7 @@ private:
   {
   public:
     Connector();
+    Connector(const QString &kind, const QString &name);
     void deserialize(const QJsonObject &jsonObject);
 
     QString getName() const;
@@ -870,6 +877,7 @@ private:
   {
   public:
     Connection(Model *pParentModel);
+    Connection(Model *pParentModel, const QString &startConnector, const QString &endConnector, const QJsonObject &annotationJsonObject);
     void deserialize(const QJsonObject &jsonObject);
 
     Model *getParentModel() const {return mpParentModel;}
@@ -888,16 +896,23 @@ private:
   {
   public:
     Transition(Model *pParentModel);
+    Transition(Model *pParentModel, const QString &startConnector, const QString &endConnector, bool condition, bool immediate, bool reset,
+               bool synchronize, int priority, const QJsonObject &annotationJsonObject);
     void deserialize(const QJsonObject &jsonObject);
 
     Model *getParentModel() const {return mpParentModel;}
     Connector *getStartConnector() const {return mpStartConnector.get();}
     Connector *getEndConnector() const {return mpEndConnector.get();}
     bool getCondition() const {return mCondition;}
+    void setCondition(bool condition) {mCondition = condition;}
     bool getImmediate() const {return mImmediate;}
+    void setImmediate(bool immediate) {mImmediate = immediate;}
     bool getReset() const {return mReset;}
+    void setReset(bool reset) {mReset = reset;}
     bool getSynchronize() const {return mSynchronize;}
+    void setSynchronize(bool synchronize) {mSynchronize = synchronize;}
     int getPriority() const {return mPriority;}
+    void setPriority(int priority) {mPriority = priority;}
     Annotation *getAnnotation() const;
     QString toString() const;
   private:
@@ -916,6 +931,7 @@ private:
   {
   public:
     InitialState(Model *pParentModel);
+    InitialState(Model *pParentModel, const QString &startConnector, const QJsonObject &annotationJsonObject);
     void deserialize(const QJsonObject &jsonObject);
 
     Model *getParentModel() const {return mpParentModel;}

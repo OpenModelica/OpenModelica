@@ -373,43 +373,6 @@ void DeleteComponentCommand::undo()
   mpGraphicsView->addElementToClass(mpComponent);
 }
 
-AddConnectionCommand::AddConnectionCommand(LineAnnotation *pConnectionLineAnnotation, bool addConnection, UndoCommand *pParent)
-  : UndoCommand(pParent)
-{
-  mpConnectionLineAnnotation = pConnectionLineAnnotation;
-  mAddConnection = addConnection;
-  setText(QString("Add Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartElementName(), mpConnectionLineAnnotation->getEndElementName()));
-
-  mpConnectionLineAnnotation->drawCornerItems();
-  mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
-}
-
-/*!
- * \brief AddConnectionCommand::redoInternal
- * redoInternal the AddConnectionCommand.
- */
-void AddConnectionCommand::redoInternal()
-{
-  mpConnectionLineAnnotation->getGraphicsView()->addConnectionToView(mpConnectionLineAnnotation, false);
-  if (mAddConnection) {
-    if (!mpConnectionLineAnnotation->getGraphicsView()->addConnectionToClass(mpConnectionLineAnnotation)) {
-      setFailed(true);
-      return;
-    }
-  }
-  mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->setHandleCollidingConnectionsNeeded(true);
-}
-
-/*!
- * \brief AddConnectionCommand::undo
- * Undo the AddConnectionCommand.
- */
-void AddConnectionCommand::undo()
-{
-  mpConnectionLineAnnotation->getGraphicsView()->deleteConnectionFromClass(mpConnectionLineAnnotation);
-  mpConnectionLineAnnotation->getGraphicsView()->getModelWidget()->setHandleCollidingConnectionsNeeded(true);
-}
-
 UpdateConnectionCommand::UpdateConnectionCommand(LineAnnotation *pConnectionLineAnnotation, QString oldAnnotaton, QString newAnnotation, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
@@ -441,66 +404,6 @@ void UpdateConnectionCommand::redrawConnectionWithAnnotation(QString const& anno
 {
   auto updateFunction = std::bind(&LineAnnotation::updateConnectionAnnotation, mpConnectionLineAnnotation);
   mpConnectionLineAnnotation->redraw(annotation, updateFunction);
-}
-
-DeleteConnectionCommand::DeleteConnectionCommand(LineAnnotation *pConnectionLineAnnotation, UndoCommand *pParent)
-  : UndoCommand(pParent)
-{
-  mpConnectionLineAnnotation = pConnectionLineAnnotation;
-  setText(QString("Delete Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartElementName(), mpConnectionLineAnnotation->getEndElementName()));
-}
-
-/*!
- * \brief DeleteConnectionCommand::redoInternal
- * redoInternal the DeleteConnectionCommand.
- */
-void DeleteConnectionCommand::redoInternal()
-{
-  mpConnectionLineAnnotation->getGraphicsView()->deleteConnectionFromClass(mpConnectionLineAnnotation);
-}
-
-/*!
- * \brief DeleteConnectionCommand::undo
- * Undo the DeleteConnectionCommand.
- */
-void DeleteConnectionCommand::undo()
-{
-  mpConnectionLineAnnotation->getGraphicsView()->addConnectionToView(mpConnectionLineAnnotation, false);
-  mpConnectionLineAnnotation->getGraphicsView()->addConnectionToClass(mpConnectionLineAnnotation, true);
-}
-
-AddTransitionCommand::AddTransitionCommand(LineAnnotation *pTransitionLineAnnotation, bool addTransition, UndoCommand *pParent)
-  : UndoCommand(pParent)
-{
-  mpTransitionLineAnnotation = pTransitionLineAnnotation;
-  mAddTransition = addTransition;
-  setText(QString("Add Transition transition(%1, %2)").arg(mpTransitionLineAnnotation->getStartElementName(), mpTransitionLineAnnotation->getEndElementName()));
-
-  mpTransitionLineAnnotation->updateToolTip();
-  mpTransitionLineAnnotation->drawCornerItems();
-  mpTransitionLineAnnotation->setCornerItemsActiveOrPassive();
-}
-
-/*!
- * \brief AddTransitionCommand::redoInternal
- * redoInternal the AddTransitionCommand.
- */
-void AddTransitionCommand::redoInternal()
-{
-  mpTransitionLineAnnotation->getGraphicsView()->addTransitionToView(mpTransitionLineAnnotation, false);
-  if (mAddTransition) {
-    mpTransitionLineAnnotation->getGraphicsView()->addTransitionToClass(mpTransitionLineAnnotation);
-  }
-}
-
-/*!
- * \brief AddTransitionCommand::undo
- * Undo the AddTransitionCommand.
- */
-void AddTransitionCommand::undo()
-{
-  mpTransitionLineAnnotation->getGraphicsView()->removeTransitionFromView(mpTransitionLineAnnotation);
-  mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromClass(mpTransitionLineAnnotation);
 }
 
 UpdateTransitionCommand::UpdateTransitionCommand(LineAnnotation *pTransitionLineAnnotation, QString oldCondition, bool oldImmediate,
@@ -552,73 +455,15 @@ void UpdateTransitionCommand::redrawTransitionWithUpdateFunction(const QString& 
 void UpdateTransitionCommand::updateTransistionWithNewConditions()
 {
   mpTransitionLineAnnotation->setProperties(mNewCondition, mNewImmediate, mNewReset, mNewSynchronize, mNewPriority);
-  mpTransitionLineAnnotation->updateTransistion(mOldCondition, mOldImmediate, mOldReset, mOldSynchronize, mOldPriority);
+  mpTransitionLineAnnotation->updateTransistion();
+  mpTransitionLineAnnotation->updateTransitionAnnotation(mOldCondition, mOldImmediate, mOldReset, mOldSynchronize, mOldPriority);
 }
 
 void UpdateTransitionCommand::updateTransistionWithOldConditions()
 {
   mpTransitionLineAnnotation->setProperties(mOldCondition, mOldImmediate, mOldReset, mOldSynchronize, mOldPriority);
-  mpTransitionLineAnnotation->updateTransistion(mNewCondition, mNewImmediate, mNewReset, mNewSynchronize, mNewPriority);
-}
-
-DeleteTransitionCommand::DeleteTransitionCommand(LineAnnotation *pTransitionLineAnnotation, UndoCommand *pParent)
-  : UndoCommand(pParent)
-{
-  mpTransitionLineAnnotation = pTransitionLineAnnotation;
-}
-
-/*!
- * \brief DeleteTransitionCommand::redoInternal
- * redoInternal the DeleteTransitionCommand.
- */
-void DeleteTransitionCommand::redoInternal()
-{
-  mpTransitionLineAnnotation->getGraphicsView()->removeTransitionFromView(mpTransitionLineAnnotation);
-  mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromClass(mpTransitionLineAnnotation);
-}
-
-/*!
- * \brief DeleteTransitionCommand::undo
- * Undo the DeleteTransitionCommand.
- */
-void DeleteTransitionCommand::undo()
-{
-  mpTransitionLineAnnotation->getGraphicsView()->addTransitionToView(mpTransitionLineAnnotation, false);
-  mpTransitionLineAnnotation->getGraphicsView()->addTransitionToClass(mpTransitionLineAnnotation);
-}
-
-AddInitialStateCommand::AddInitialStateCommand(LineAnnotation *pInitialStateLineAnnotation, bool addInitialState, UndoCommand *pParent)
-  : UndoCommand(pParent)
-{
-  mpInitialStateLineAnnotation = pInitialStateLineAnnotation;
-  mAddInitialState = addInitialState;
-  setText(QString("Add InitialState initialState(%1)").arg(mpInitialStateLineAnnotation->getStartElementName()));
-
-  mpInitialStateLineAnnotation->setToolTip(QString("<b>initialState</b>(%1)").arg(mpInitialStateLineAnnotation->getStartElementName()));
-  mpInitialStateLineAnnotation->drawCornerItems();
-  mpInitialStateLineAnnotation->setCornerItemsActiveOrPassive();
-}
-
-/*!
- * \brief AddInitialStateCommand::redoInternal
- * redoInternal the AddInitialStateCommand.
- */
-void AddInitialStateCommand::redoInternal()
-{
-  mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToView(mpInitialStateLineAnnotation, false);
-  if (mAddInitialState) {
-    mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToClass(mpInitialStateLineAnnotation);
-  }
-}
-
-/*!
- * \brief AddInitialStateCommand::undo
- * Undo the AddInitialStateCommand.
- */
-void AddInitialStateCommand::undo()
-{
-  mpInitialStateLineAnnotation->getGraphicsView()->removeInitialStateFromView(mpInitialStateLineAnnotation);
-  mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromClass(mpInitialStateLineAnnotation);
+  mpTransitionLineAnnotation->updateTransistion();
+  mpTransitionLineAnnotation->updateTransitionAnnotation(mNewCondition, mNewImmediate, mNewReset, mNewSynchronize, mNewPriority);
 }
 
 UpdateInitialStateCommand::UpdateInitialStateCommand(LineAnnotation *pInitialStateLineAnnotation, QString oldAnnotaton, QString newAnnotation, UndoCommand *pParent)
@@ -652,32 +497,6 @@ void UpdateInitialStateCommand::redrawInitialStateWithAnnotation(const QString& 
 {
   auto updateFunction = std::bind(&LineAnnotation::updateInitialStateAnnotation ,mpInitialStateLineAnnotation);
   mpInitialStateLineAnnotation->redraw(annotation, updateFunction);
-}
-
-DeleteInitialStateCommand::DeleteInitialStateCommand(LineAnnotation *pInitialStateLineAnnotation, UndoCommand *pParent)
-  : UndoCommand(pParent)
-{
-  mpInitialStateLineAnnotation = pInitialStateLineAnnotation;
-}
-
-/*!
- * \brief DeleteInitialStateCommand::redoInternal
- * redoInternal the DeleteInitialStateCommand.
- */
-void DeleteInitialStateCommand::redoInternal()
-{
-  mpInitialStateLineAnnotation->getGraphicsView()->removeInitialStateFromView(mpInitialStateLineAnnotation);
-  mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromClass(mpInitialStateLineAnnotation);
-}
-
-/*!
- * \brief DeleteInitialStateCommand::undo
- * Undo the DeleteInitialStateCommand.
- */
-void DeleteInitialStateCommand::undo()
-{
-  mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToView(mpInitialStateLineAnnotation, false);
-  mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToClass(mpInitialStateLineAnnotation);
 }
 
 UpdateCoordinateSystemCommand::UpdateCoordinateSystemCommand(GraphicsView *pGraphicsView, const ModelInstance::CoordinateSystem oldCoordinateSystem,

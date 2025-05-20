@@ -1031,6 +1031,34 @@ QString LineAnnotation::getShapeAnnotation()
   return QString("Line(").append(annotationString.join(",")).append(")");
 }
 
+/*!
+ * \brief LineAnnotation::getShapeAnnotationJSON
+ * Returns Line annotation in JSON format.
+ * \return
+ */
+QJsonObject LineAnnotation::getShapeAnnotationJSON()
+{
+  QJsonObject lineAttributes;
+  lineAttributes.insert("points", mPoints.serialize());
+  lineAttributes.insert("color", mLineColor.serialize());
+  lineAttributes.insert("pattern", mLinePattern.serialize());
+  lineAttributes.insert("thickness", mLineThickness.serialize());
+  lineAttributes.insert("arrow", mArrow.serialize());
+  lineAttributes.insert("arrowSize", mArrowSize.serialize());
+  lineAttributes.insert("smooth", mSmooth.serialize());
+
+  QJsonObject shapeAnnotationJson;
+  shapeAnnotationJson.insert("Line", lineAttributes);
+
+  if (mpTextAnnotation) {
+    QJsonObject textAnnotationJson = mpTextAnnotation->getShapeAnnotationJSON();
+    if (!textAnnotationJson.isEmpty()) {
+      shapeAnnotationJson.insert("Text", textAnnotationJson);
+    }
+  }
+  return shapeAnnotationJson;
+}
+
 void LineAnnotation::addPoint(QPointF point)
 {
   prepareGeometryChange();
@@ -2450,16 +2478,9 @@ void CreateConnectionDialog::createConnection()
      * We know for sure that both connectors are compatible in this case so its okay not to check for validity.
      */
   if (mCreateConnector) {
-    mpConnectionLineAnnotation->drawCornerItems();
-    mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
     mpGraphicsView->addConnectionToView(mpConnectionLineAnnotation, false);
     mpGraphicsView->addConnectionToClass(mpConnectionLineAnnotation);
-  } else if (mpGraphicsView->getModelWidget()->getModelInstance()->isValidConnection(startElementName, endElementName)) {
-    mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
-    mpGraphicsView->getModelWidget()->updateModelText();
-  } else {
-    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::MISMATCHED_CONNECTORS_IN_CONNECT).arg(startElementName, endElementName), QMessageBox::Ok);
+  } else if (!mpGraphicsView->addConnectionHelper(mpConnectionLineAnnotation)) {
     reject();
   }
   accept();
@@ -2568,20 +2589,17 @@ void CreateOrEditTransitionDialog::createOrEditTransition()
   mpTransitionLineAnnotation->setPriority(mpPrioritySpinBox->value());
   mpTransitionLineAnnotation->getTextAnnotation()->setVisible(true);
   if (mEditCase) {
-    mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateTransitionCommand(mpTransitionLineAnnotation, oldCondition, oldImmediate,
-                                                                                       oldReset, oldSynchronize, oldPriority,
-                                                                                       mpTransitionLineAnnotation->getOMCShapeAnnotation(),
-                                                                                       mpConditionTextBox->text(),
-                                                                                       mpImmediateCheckBox->isChecked(),
-                                                                                       mpResetCheckBox->isChecked(),
-                                                                                       mpSynchronizeCheckBox->isChecked(),
-                                                                                       mpPrioritySpinBox->value(),
-                                                                                       mpTransitionLineAnnotation->getOMCShapeAnnotation()));
+    mpTransitionLineAnnotation->updateTransistion();
+    mpTransitionLineAnnotation->updateTransitionAnnotation(oldCondition, oldImmediate, oldReset, oldSynchronize, oldPriority);
+    if (!mpGraphicsView->updateTransition(mpTransitionLineAnnotation)) {
+      reject();
+    }
   } else {
-    mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddTransitionCommand(mpTransitionLineAnnotation, true));
-    //mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpTransitionLineAnnotation);
+    mpTransitionLineAnnotation->updateTransistion();
+    if (!mpGraphicsView->addTransitionHelper(mpTransitionLineAnnotation)) {
+      reject();
+    }
   }
-  mpGraphicsView->getModelWidget()->updateModelText();
   accept();
 }
 
@@ -2595,10 +2613,9 @@ void LineAnnotation::setProperties(const QString& condition, const bool immediat
   getTextAnnotation()->setTextString("%condition");
 }
 
-void LineAnnotation::updateTransistion(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority)
+void LineAnnotation::updateTransistion()
 {
   getTextAnnotation()->updateTextString();
   updateTransitionTextPosition();
-  updateTransitionAnnotation(condition, immediate, rest, synchronize, priority);
   updateToolTip();
 }
