@@ -460,7 +460,7 @@ void projVector_gbf(double* a, double* b, int nIndx, int* indx)
  * @param nStates  Number of states
  * @param size     Size of buffer
  */
-void debugRingBufferSteps(enum OMC_LOG_STREAM stream, double* x, double* k, double *t, int nStates, int size)
+void debugRingBufferSteps_gb(enum OMC_LOG_STREAM stream, double* x, double* k, double *t, int nStates, int size)
 {
   // If stream is not active do nothing
   if (!OMC_ACTIVE_STREAM(stream)) return;
@@ -483,6 +483,40 @@ void debugRingBufferSteps(enum OMC_LOG_STREAM stream, double* x, double* k, doub
 /**
  * @brief Output debug information of the states and derivatives
  *
+ * that have been evaluated at the past accepted time points.
+ *
+ * @param stream   Prints only, if stream is active
+ * @param x        States at the past accepted time points
+ * @param k        Derivatives at the past accepted time points
+ * @param t        Past accepted time points
+ * @param nStates  Number of states
+ * @param size     Size of buffer
+ * @param nIndx    Size of index vector
+ * @param indx     Index vector
+ */
+void debugRingBufferSteps_gbf(enum OMC_LOG_STREAM stream, double* x, double* k, double *t, int nStates, int size, int nIndx, int* indx)
+{
+  // If stream is not active do nothing
+  if (!OMC_ACTIVE_STREAM(stream)) return;
+
+  infoStreamPrint(stream, 1, "States and derivatives at past accepted time steps (inner integration):");
+
+  int i;
+
+  infoStreamPrint(stream, 0, "states:");
+  for (i = 0; i < size; i++) {
+    printVector_gbf(stream, "x", x + i * nStates, nStates, t[i], nIndx, indx);
+  }
+  infoStreamPrint(stream, 0, "derivatives:");
+  for (i = 0; i < size; i++) {
+    printVector_gbf(stream, "k", k + i * nStates, nStates, t[i], nIndx, indx);
+  }
+  messageClose(stream);
+}
+
+/**
+ * @brief Output debug information of the states and derivatives
+ *
  * that have been evaluated at the intermediate points given by the
  * Butcher tableau.
  *
@@ -494,7 +528,7 @@ void debugRingBufferSteps(enum OMC_LOG_STREAM stream, double* x, double* k, doub
  * @param time     Current time of the inegrator (left hand side)
  * @param stepSize Current step size of the integrator
  */
-void debugRingBuffer(enum OMC_LOG_STREAM stream, double* x, double* k, int nStates, BUTCHER_TABLEAU* tableau, double time, double stepSize)
+void debugRingBuffer_gb(enum OMC_LOG_STREAM stream, double* x, double* k, int nStates, BUTCHER_TABLEAU* tableau, double time, double stepSize)
 {
   // If stream is not active do nothing
   if (!OMC_ACTIVE_STREAM(stream)) return;
@@ -508,6 +542,39 @@ void debugRingBuffer(enum OMC_LOG_STREAM stream, double* x, double* k, int nStat
   infoStreamPrint(stream, 0, "derivatives:");
   for (int stage_ = 0; stage_ < nStages; stage_++) {
     printVector_gb(stream, "k", k + stage_ * nStates, nStates, time + tableau->c[stage_] * stepSize);
+  }
+}
+
+/**
+ * @brief Output debug information of the states and derivatives
+ *
+ * that have been evaluated at the intermediate points given by the
+ * Butcher tableau.
+ *
+ * @param stream   Prints only, if stream is active
+ * @param x        States at the intermediate time points
+ * @param k        Derivatives at the intermediate time points
+ * @param nStates  Number of states
+ * @param tableau  Tableau of the Runge Kutta method
+ * @param time     Current time of the inegrator (left hand side)
+ * @param stepSize Current step size of the integrator
+ * @param nIndx    Size of index vector
+ * @param indx     Index vector
+ */
+void debugRingBuffer_gbf(enum OMC_LOG_STREAM stream, double* x, double* k, int nStates, BUTCHER_TABLEAU* tableau, double time, double stepSize, int nIndx, int* indx)
+{
+  // If stream is not active do nothing
+  if (!OMC_ACTIVE_STREAM(stream)) return;
+
+  int nStages = tableau->nStages, stage_;
+
+  infoStreamPrint(stream, 0, "states:");
+  for (int stage_ = 0; stage_ < nStages; stage_++) {
+    printVector_gbf(stream, "x", x + stage_ * nStates, nStates, time + tableau->c[stage_] * stepSize, nIndx, indx);
+  }
+  infoStreamPrint(stream, 0, "derivatives:");
+  for (int stage_ = 0; stage_ < nStages; stage_++) {
+    printVector_gbf(stream, "k", k + stage_ * nStates, nStates, time + tableau->c[stage_] * stepSize, nIndx, indx);
   }
 }
 

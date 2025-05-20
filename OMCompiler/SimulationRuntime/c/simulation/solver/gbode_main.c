@@ -843,8 +843,8 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     // debug the changes of the states and derivatives during integration
     if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) {
       infoStreamPrint(OMC_LOG_GBODE, 1, "states and derivatives at left hand side (inner integration):");
-      printVector_gb(OMC_LOG_GBODE, "yL", gbfData->yLeft, nStates, gbfData->timeLeft);
-      printVector_gb(OMC_LOG_GBODE, "kL", gbfData->kLeft, nStates, gbfData->timeLeft);
+      printVector_gbf(OMC_LOG_GBODE, "yL", gbfData->yLeft, nStates, gbfData->timeLeft, gbData->nFastStates, gbData->fastStatesIdx);
+      printVector_gbf(OMC_LOG_GBODE, "kL", gbfData->kLeft, nStates, gbfData->timeLeft, gbData->nFastStates, gbData->fastStatesIdx);
       messageClose(OMC_LOG_GBODE);
     }
 
@@ -911,10 +911,10 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
         infoStreamPrint(OMC_LOG_GBODE_V, 1, "ring buffer during steps of inner integration");
         infoStreamPrint(OMC_LOG_GBODE_V, 0, "old value:");
-        printVector_gb(OMC_LOG_GBODE_V, "y", gbfData->yOld, nStates, gbfData->time);
-        debugRingBuffer(OMC_LOG_GBODE_V, gbfData->x, gbfData->k, nStates, gbfData->tableau, gbfData->time, gbfData->lastStepSize);
+        printVector_gbf(OMC_LOG_GBODE_V, "y", gbfData->yOld, nStates, gbfData->time, gbData->nFastStates, gbData->fastStatesIdx);
+        debugRingBuffer_gbf(OMC_LOG_GBODE_V, gbfData->x, gbfData->k, nStates, gbfData->tableau, gbfData->time, gbfData->lastStepSize, gbData->nFastStates, gbData->fastStatesIdx);
         infoStreamPrint(OMC_LOG_GBODE_V, 0, "new value:");
-        printVector_gb(OMC_LOG_GBODE_V, "y", gbfData->y, nStates, gbfData->time + gbfData->lastStepSize);
+        printVector_gbf(OMC_LOG_GBODE_V, "y", gbfData->y, nStates, gbfData->time + gbfData->lastStepSize, gbData->nFastStates, gbData->fastStatesIdx);
         messageClose(OMC_LOG_GBODE_V);
       }
 
@@ -975,7 +975,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       // log the emitted result
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)){
         infoStreamPrint(OMC_LOG_GBODE, 1, "Emit result (inner integration):");
-        printVector_gb(OMC_LOG_GBODE, " y", sData->realVars, nStates, sData->timeValue);
+        printVector_gbf(OMC_LOG_GBODE, " y", sData->realVars, nStates, sData->timeValue, gbData->nFastStates, gbData->fastStatesIdx);
         messageClose(OMC_LOG_GBODE);
       }
 
@@ -994,8 +994,8 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     // debug the changes of the states and derivatives during integration
     if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) {
       infoStreamPrint(OMC_LOG_GBODE, 1, "States and derivatives at right hand side (inner integration):");
-      printVector_gb(OMC_LOG_GBODE, "yR", gbfData->yRight, nStates, gbfData->timeRight);
-      printVector_gb(OMC_LOG_GBODE, "kR", gbfData->kRight, nStates, gbfData->timeRight);
+      printVector_gbf(OMC_LOG_GBODE, "yR", gbfData->yRight, nStates, gbfData->timeRight, gbData->nFastStates, gbData->fastStatesIdx);
+      printVector_gbf(OMC_LOG_GBODE, "kR", gbfData->kRight, nStates, gbfData->timeRight, gbData->nFastStates, gbData->fastStatesIdx);
       messageClose(OMC_LOG_GBODE);
     }
 
@@ -1010,7 +1010,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     memcpy(gbfData->yv, gbfData->yRight, nStates * sizeof(double));
     memcpy(gbfData->kv, gbfData->kRight, nStates * sizeof(double));
 
-    debugRingBufferSteps(OMC_LOG_GBODE, gbfData->yv, gbfData->kv, gbfData->tv, nStates,  gbfData->ringBufferSize);
+    debugRingBufferSteps_gbf(OMC_LOG_GBODE, gbfData->yv, gbfData->kv, gbfData->tv, nStates,  gbfData->ringBufferSize, gbData->nFastStates, gbData->fastStatesIdx);
 
     /* step is accepted and yOld needs to be updated */
     //  copyVector_gbf(gbfData->yOld, gbfData->y, nFastStates, gbData->fastStates);
@@ -1036,7 +1036,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       // log the emitted result
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)){
         infoStreamPrint(OMC_LOG_GBODE, 1, "Emit result (inner integration):");
-        printVector_gb(OMC_LOG_GBODE, " y", sData->realVars, nStates, sData->timeValue);
+        printVector_gbf(OMC_LOG_GBODE, " y", sData->realVars, nStates, sData->timeValue, gbData->nFastStates, gbData->fastStatesIdx);
         messageClose(OMC_LOG_GBODE);
       }
     }
@@ -1066,7 +1066,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   if (!gbfData->isExplicit)
     gbfData->stats.nCallsJacobian = gbfData->nlsData->numberOfJEval;
 
-  infoStreamPrint(OMC_LOG_SOLVER, 0, "gbodef finished  (inner steps).");
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "gbodef finished (inner steps).");
   messageClose(OMC_LOG_SOLVER);
 
   return 0;
@@ -1347,10 +1347,10 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
         // debug the changes of the state values during integration
         infoStreamPrint(OMC_LOG_GBODE_V, 1, "Interpolation error of slow states at midpoint:");
-        printVector_gb(OMC_LOG_GBODE_V, "yL", gbData->yLeft, nStates, gbData->timeLeft);
-        printVector_gb(OMC_LOG_GBODE_V, "kL", gbData->kLeft, nStates, gbData->timeLeft);
-        printVector_gb(OMC_LOG_GBODE_V, "yR", gbData->yRight, nStates, gbData->timeRight);
-        printVector_gb(OMC_LOG_GBODE_V, "kR", gbData->kRight, nStates, gbData->timeRight);
+        printVector_gbf(OMC_LOG_GBODE_V, "yL", gbData->yLeft, nStates, gbData->timeLeft, gbData->nSlowStates, gbData->slowStatesIdx);
+        printVector_gbf(OMC_LOG_GBODE_V, "kL", gbData->kLeft, nStates, gbData->timeLeft, gbData->nSlowStates, gbData->slowStatesIdx);
+        printVector_gbf(OMC_LOG_GBODE_V, "yR", gbData->yRight, nStates, gbData->timeRight, gbData->nSlowStates, gbData->slowStatesIdx);
+        printVector_gbf(OMC_LOG_GBODE_V, "kR", gbData->kRight, nStates, gbData->timeRight, gbData->nSlowStates, gbData->slowStatesIdx);
         printVector_gbf(OMC_LOG_GBODE_V, "e", gbData->errest, nStates, (gbData->timeLeft + gbData->timeRight)/2, gbData->nSlowStates, gbData->slowStatesIdx);
         messageClose(OMC_LOG_GBODE_V);
       }
@@ -1442,7 +1442,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         infoStreamPrint(OMC_LOG_GBODE_V, 1, "Ring buffer after inner steps of integration");
         infoStreamPrint(OMC_LOG_GBODE_V, 0, "Old value:");
         printVector_gb(OMC_LOG_GBODE_V, "y", gbData->yOld, nStates, gbData->time);
-        debugRingBuffer(OMC_LOG_GBODE_V, gbData->x, gbData->k, nStates, gbData->tableau, gbData->time, gbData->lastStepSize);
+        debugRingBuffer_gb(OMC_LOG_GBODE_V, gbData->x, gbData->k, nStates, gbData->tableau, gbData->time, gbData->lastStepSize);
         infoStreamPrint(OMC_LOG_GBODE_V, 0, "New value:");
         printVector_gb(OMC_LOG_GBODE_V, "y", gbData->y, nStates, gbData->time + gbData->lastStepSize);
         messageClose(OMC_LOG_GBODE_V);
@@ -1500,7 +1500,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     memcpy(gbData->yv, gbData->yRight, nStates * sizeof(double));
     memcpy(gbData->kv, gbData->kRight, nStates * sizeof(double));
 
-    debugRingBufferSteps(OMC_LOG_GBODE, gbData->yv, gbData->kv, gbData->tv, nStates,  gbData->ringBufferSize);
+    debugRingBufferSteps_gb(OMC_LOG_GBODE, gbData->yv, gbData->kv, gbData->tv, nStates,  gbData->ringBufferSize);
 
     /* step is accepted and yOld needs to be updated */
     memcpy(gbData->yOld, gbData->y, gbData->nStates * sizeof(double));
@@ -1658,7 +1658,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     solverInfo->didEventStep = FALSE;
   }
 
-  debugRingBufferSteps(OMC_LOG_GBODE, gbData->yv, gbData->kv, gbData->tv, nStates,  gbData->ringBufferSize);
+  debugRingBufferSteps_gb(OMC_LOG_GBODE, gbData->yv, gbData->kv, gbData->tv, nStates,  gbData->ringBufferSize);
 
   // Constant step size
   if (gbData->ctrl_method == GB_CTRL_CNST) {
@@ -1818,7 +1818,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
         infoStreamPrint(OMC_LOG_GBODE_V, 1, "Ring buffer during steps of integration");
         infoStreamPrint(OMC_LOG_GBODE_V, 0, "Old value:");
         printVector_gb(OMC_LOG_GBODE_V, "y", gbData->yOld, nStates, gbData->time);
-        debugRingBuffer(OMC_LOG_GBODE_V, gbData->x, gbData->k, nStates, gbData->tableau, gbData->time, gbData->lastStepSize);
+        debugRingBuffer_gb(OMC_LOG_GBODE_V, gbData->x, gbData->k, nStates, gbData->tableau, gbData->time, gbData->lastStepSize);
         infoStreamPrint(OMC_LOG_GBODE_V, 0, "New value:");
         printVector_gb(OMC_LOG_GBODE_V, "y", gbData->y, nStates, gbData->time + gbData->lastStepSize);
         messageClose(OMC_LOG_GBODE_V);
@@ -1855,7 +1855,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
     memcpy(gbData->yv, gbData->yRight, nStates * sizeof(double));
     memcpy(gbData->kv, gbData->kRight, nStates * sizeof(double));
 
-    debugRingBufferSteps(OMC_LOG_GBODE, gbData->yv, gbData->kv, gbData->tv, nStates,  gbData->ringBufferSize);
+    debugRingBufferSteps_gb(OMC_LOG_GBODE, gbData->yv, gbData->kv, gbData->tv, nStates,  gbData->ringBufferSize);
 
     // check for events, if event is detected stop integrator and trigger event iteration
     eventTime = checkForEvents(data, threadData, solverInfo, gbData->timeLeft, gbData->yLeft, gbData->timeRight, gbData->yRight, FALSE, &foundEvent);
