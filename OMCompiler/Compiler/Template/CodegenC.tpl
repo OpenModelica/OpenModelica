@@ -174,6 +174,7 @@ end translateModel;
     extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianD")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
     extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianF")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
     extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianH")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
+    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianS")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacG_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacA_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacB_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
@@ -181,6 +182,7 @@ end translateModel;
     extern int <%symbolName(modelNamePrefixStr,"functionJacD_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacF_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacH_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
+    extern int <%symbolName(modelNamePrefixStr,"functionJacS_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_frame")%>(void);
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>(void);
     extern int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res, short *);
@@ -1347,18 +1349,21 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <%symbolName(modelNamePrefixStr,"INDEX_JAC_D")%>,
       <%symbolName(modelNamePrefixStr,"INDEX_JAC_F")%>,
       <%symbolName(modelNamePrefixStr,"INDEX_JAC_H")%>,
+      <%symbolName(modelNamePrefixStr,"INDEX_JAC_S")%>,
       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianA")%>,
       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianB")%>,
       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianC")%>,
       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianD")%>,
       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianF")%>,
       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianH")%>,
+      <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianS")%>,
       <%symbolName(modelNamePrefixStr,"functionJacA_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacB_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacC_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacD_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacF_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacH_column")%>,
+      <%symbolName(modelNamePrefixStr,"functionJacS_column")%>,
       <%symbolName(modelNamePrefixStr,"linear_model_frame")%>,
       <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>,
       <%symbolName(modelNamePrefixStr,"mayer")%>,
@@ -1691,7 +1696,7 @@ template variableDefinitions(ModelInfo modelInfo, list<BackendDAE.TimeEvent> tim
   if true then "" else
   let () = System.tmpTickReset(1000)
   match modelInfo
-    case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars, numDiscreteReal=numDiscreteReal, numOptimizeConstraints=numOptimizeConstraints, numOptimizeFinalConstraints=numOptimizeFinalConstraints), vars=SIMVARS(__)) then
+    case MODELINFO(vars=SIMVARS(__)) then
       <<
       /* States */
       <%vars.stateVars |> var =>

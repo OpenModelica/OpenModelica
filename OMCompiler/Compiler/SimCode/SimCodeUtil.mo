@@ -5027,6 +5027,9 @@ algorithm
         else
            matrixnames := {"A", "B", "C", "D", "F", "H"};
         end if;
+        if List.contains(FlagsUtil.getConfigOptionsStringList(Flags.POST_OPT_MODULES), "generateSymbolicSensitivities", stringEq) then
+          matrixnames := "S" :: matrixnames;
+        end if;
         (res, ouniqueEqIndex) := createSymbolicJacobianssSimCode(inSymjacs, crefSimVarHT, iuniqueEqIndex, matrixnames, {});
         // _ := FlagsUtil.set(Flags.EXEC_STAT, b);
       then (res,ouniqueEqIndex);
@@ -14171,7 +14174,7 @@ algorithm
     // discreteStates
     if not checkForEmptyBDAE(optcontPartDer) then
       contPartDer := {(optcontPartDer,spPattern,spColors, nlPattern)};
-      ({contSimJac}, uniqueEqIndex) := createSymbolicJacobianssSimCode(contPartDer, crefSimVarHT, uniqueEqIndex, {"FMIDer"}, {});
+      ({contSimJac}, uniqueEqIndex) := createSymbolicJacobianssSimCode(contPartDer, crefSimVarHT, uniqueEqIndex, {"FMIDER"}, {});
       // collect algebraic loops and symjacs for FMIDer
       ({contSimJac}, outModelInfo, symJacs) := addAlgebraicLoopsModelInfoSymJacs({contSimJac}, inModelInfo);
       contPartSimDer := SOME(contSimJac);

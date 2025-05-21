@@ -1126,7 +1126,7 @@ algorithm
         (zero, inFunctionTree);
 
     // Constants, known variables, parameters and discrete variables have a 0-derivative, not the inputs
-    case ((DAE.CREF(componentRef = cr, ty = tp)), _, BackendDAE.DIFFINPUTDATA(knownVars=SOME(knvars)), _, _)
+    case ((DAE.CREF(componentRef = cr, ty = tp)), _, BackendDAE.DIFFINPUTDATA(knownVars=SOME(knvars)), BackendDAE.DIFFERENTIATION_TIME(), _)
       equation
         //print("\nExp-Cref\n known vars: " + ExpressionDump.printExpStr(e));
         (var,_) = BackendVariable.getVarSingle(cr, knvars);
@@ -1201,7 +1201,7 @@ algorithm
     //
     case (DAE.CREF(componentRef = cr,ty=tp), DAE.CREF_IDENT(ident="$"), _, BackendDAE.GENERIC_GRADIENT(), _)
       equation
-          (res,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+        (res,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
         (res, inFunctionTree);
 
