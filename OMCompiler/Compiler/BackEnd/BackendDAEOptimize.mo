@@ -2409,6 +2409,13 @@ protected function simplifyIfEquation1
   input BackendDAE.EquationAttributes inEqAttr;
   output list<BackendDAE.Equation> outEqns;
 algorithm
+  outEqns := BackendDAE.IF_EQUATION(conditions,theneqns,elseenqs,source,inEqAttr)::inEqns;
+
+  // ticket #13927
+  // temporarily disable this simplification as it is not correct.
+  // TODO fix the simplification
+
+  /*
   outEqns := matchcontinue(conditions,theneqns,elseenqs,source,globalKnownVars,inEqns,inEqAttr)
     local
       list<DAE.Exp> fbsExp;
@@ -2444,6 +2451,7 @@ algorithm
 
     else BackendDAE.IF_EQUATION(conditions,theneqns,elseenqs,source,inEqAttr)::inEqns;
   end matchcontinue;
+  */
 end simplifyIfEquation1;
 
 protected function simplifySolvedIfEqns2
