@@ -4,6 +4,8 @@
 #include <memory>
 #include <unordered_map>
 
+#include "MetaModelica.h"
+
 namespace OpenModelica
 {
   namespace Absyn
@@ -39,6 +41,8 @@ namespace OpenModelica
       virtual InstNodeType* derivedType() const { return nullptr; }
 
       virtual Absyn::Element* definition() const { return nullptr; }
+
+      virtual MetaModelica::Value toMetaModelica() const = 0;
   };
 
   // A class with no specific characteristics.
@@ -47,6 +51,8 @@ namespace OpenModelica
     public:
       bool isUserdefinedClass() const override { return true; }
       bool hasName() const override { return true; }
+
+      MetaModelica::Value toMetaModelica() const override;
   };
 
   // A base class extended by another class.
@@ -66,6 +72,8 @@ namespace OpenModelica
       InstNode* derivedParent() const override { return _parent; }
 
       Absyn::Element* definition() const override { return _definition; }
+
+      MetaModelica::Value toMetaModelica() const override;
 
     private:
       InstNode *_parent;
@@ -89,6 +97,8 @@ namespace OpenModelica
 
       InstNodeType* derivedType() const override { return _ty.get(); }
 
+      MetaModelica::Value toMetaModelica() const override;
+
     private:
       std::unique_ptr<InstNodeType> _ty; // The base node type not considering that it's a derived class.
   };
@@ -99,6 +109,8 @@ namespace OpenModelica
     public:
       bool isBuiltin() const override { return true; }
       bool hasName() const override { return true; }
+
+      MetaModelica::Value toMetaModelica() const override;
   };
 
   // The unnamed class containing all the top-level classes.
@@ -112,6 +124,8 @@ namespace OpenModelica
 
       void setAnnotationScope(std::unique_ptr<InstNode> annotationScope) const;
       InstNode* annotationScope() const override { return _annotationScope.get(); }
+
+      MetaModelica::Value toMetaModelica() const override;
 
     private:
       std::unique_ptr<InstNode> _annotationScope;
@@ -133,6 +147,8 @@ namespace OpenModelica
       InstNode* parent() const override { return _parent; }
       InstNode* rootParent() const override { return _parent; }
 
+      MetaModelica::Value toMetaModelica() const override;
+
     private:
       InstNode *_parent;
   };
@@ -140,7 +156,8 @@ namespace OpenModelica
   // A normal component.
   class NormalComponentType : public InstNodeType
   {
-
+    public:
+      MetaModelica::Value toMetaModelica() const override;
   };
 
   // A redeclared component.
@@ -156,6 +173,8 @@ namespace OpenModelica
 
       InstNode* parent() const override { return _parent; }
       InstNode* redeclaredParent() const override { return _parent; }
+
+      MetaModelica::Value toMetaModelica() const override;
 
     private:
       InstNode *_parent;
@@ -176,6 +195,8 @@ namespace OpenModelica
 
       InstNode* parent() const override { return _parent; }
 
+      MetaModelica::Value toMetaModelica() const override;
+
     private:
       InstNode *_parent;
       std::unique_ptr<InstNodeType> _ty;
@@ -186,6 +207,8 @@ namespace OpenModelica
   {
     public:
       bool isGeneratedInner() const override { return true; }
+
+      MetaModelica::Value toMetaModelica() const override;
   };
 
   // An implicit scope that's ignored when e.g. constructing a scope path.
@@ -193,7 +216,8 @@ namespace OpenModelica
   // implicitly implicit), but by e.g. the annotation scope.
   class ImplicitScopeType : public InstNodeType
   {
-
+    public:
+      MetaModelica::Value toMetaModelica() const override;
   };
 }
 

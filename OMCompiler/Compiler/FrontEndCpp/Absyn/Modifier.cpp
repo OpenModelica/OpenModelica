@@ -109,7 +109,8 @@ BindingModifier::BindingModifier(MetaModelica::Record value)
       return Modifier::SubMod{v[0].toString(), v[1]};
     })},
     _binding{value[3].mapOptional<Expression>()},
-    _info{value[4]}
+    _comment{value[4].toOptional<std::string>()},
+    _info{value[5]}
 {
 
 }
@@ -133,6 +134,7 @@ MetaModelica::Value BindingModifier::toSCode() const noexcept
       });
     }),
     MetaModelica::Option(_binding, [](const auto &b) { return b.toAbsyn(); }),
+    MetaModelica::Option(_comment),
     _info
   });
 }

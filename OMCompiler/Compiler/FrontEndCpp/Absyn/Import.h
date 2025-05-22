@@ -19,6 +19,8 @@ namespace OpenModelica::Absyn
 
       MetaModelica::Value toSCode() const noexcept override;
 
+      const ImportPath& importPath() const noexcept;
+
       std::unique_ptr<Element> clone() const noexcept override;
       void print(std::ostream &os, Each each) const noexcept override;
 
