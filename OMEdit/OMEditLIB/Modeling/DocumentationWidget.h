@@ -162,6 +162,7 @@ private:
   void writeDocumentationFile(QString documentation);
   bool isLinkSelected();
   bool removeDocumentationHistory(LibraryTreeItem *pLibraryTreeItem);
+  void updateActionsHelper();
 public slots:
   void previousDocumentation();
   void nextDocumentation();

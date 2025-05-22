@@ -393,6 +393,11 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpEditorToolBar->addAction(mpUnLinkAction);
   // update the actions whenever the selectionChanged signal is raised.
   connect(mpHTMLEditor->page(), SIGNAL(selectionChanged()), SLOT(updateActions()));
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  // Qt webengine editing works only when we have a selection.
+  // Call updateActions() to disable all actions since there is not selection yet.
+  updateActions();
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   // add a layout to html editor widget
   QVBoxLayout *pHTMLWidgetLayout = new QVBoxLayout;
   pHTMLWidgetLayout->setAlignment(Qt::AlignTop);
@@ -756,8 +761,7 @@ bool DocumentationWidget::isLinkSelected()
                                "isLinkSelected()");
   QVariant result;
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  QWebEnginePage *pWebPage = mpHTMLEditor->page();
-  pWebPage->runJavaScript(javaScript, [&](const QVariant & arg){ result = arg; });
+  result = runJavaScript(javaScript);
 #else
   QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
   result = pWebFrame->evaluateJavaScript(javaScript);
@@ -793,6 +797,70 @@ bool DocumentationWidget::removeDocumentationHistory(LibraryTreeItem *pLibraryTr
   } while (index > -1);
 
   return removed;
+}
+
+/*!
+ * \brief DocumentationWidget::updateActionsHelper
+ * Helper function for DocumentationWidget::updateActions
+ */
+void DocumentationWidget::updateActionsHelper()
+{
+  bool state = mpStyleComboBox->blockSignals(true);
+  QString format = queryCommandValue("formatBlock");
+  int currentIndex = mpStyleComboBox->findData(format);
+  if (currentIndex > -1) {
+    mpStyleComboBox->setCurrentIndex(currentIndex);
+  } else {
+    mpStyleComboBox->setCurrentIndex(0);
+  }
+  mpStyleComboBox->blockSignals(state);
+  state = mpFontComboBox->blockSignals(true);
+  QString fontName = queryCommandValue("fontName");
+  // font name has extra single quote around it so remove it.
+  fontName = StringHandler::removeFirstLastSingleQuotes(fontName);
+  /* Issue #13038
+   * We get the current font name by calling `document.queryCommandValue("fontName")` via JavaScript on current cursor position.
+   * The webkit returns `-webkit-standard` for default font name instead of the actual font name.
+   * When we get `-webkit-standard` convert it to default system font name.
+   */
+  if (fontName.compare(QStringLiteral("-webkit-standard")) == 0) {
+    fontName = Helper::systemFontInfo.family();
+  }
+  currentIndex = mpFontComboBox->findText(fontName, Qt::MatchExactly);
+  if (currentIndex > -1) {
+    mpFontComboBox->setCurrentIndex(currentIndex);
+  }
+  mpFontComboBox->blockSignals(state);
+  bool ok;
+  int fontSize = queryCommandValue("fontSize").toInt(&ok);
+  if (ok) {
+    state = mpFontSizeSpinBox->blockSignals(true);
+    mpFontSizeSpinBox->setValue(fontSize);
+    mpFontSizeSpinBox->blockSignals(state);
+  }
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  mpBoldAction->setChecked(queryCommandState("bold"));
+  mpItalicAction->setChecked(queryCommandState("italic"));
+  mpUnderlineAction->setChecked(queryCommandState("underline"));
+  mpStrikethroughAction->setChecked(queryCommandState("strikeThrough"));
+  mpSubscriptAction->setChecked(queryCommandState("subscript"));
+  mpSubscriptAction->setChecked(queryCommandState("superscript"));
+#else
+  mpBoldAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleBold)->isChecked());
+  mpItalicAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleItalic)->isChecked());
+  mpUnderlineAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleUnderline)->isChecked());
+  mpStrikethroughAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleStrikethrough)->isChecked());
+  mpSubscriptAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSubscript)->isChecked());
+  mpSuperscriptAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript)->isChecked());
+#endif
+  mpAlignLeftToolButton->setChecked(queryCommandState("justifyLeft"));
+  mpAlignCenterToolButton->setChecked(queryCommandState("justifyCenter"));
+  mpAlignRightToolButton->setChecked(queryCommandState("justifyRight"));
+  mpJustifyToolButton->setChecked(queryCommandState("justifyFull"));
+  mpBulletListAction->setChecked(queryCommandState("insertUnorderedList"));
+  mpNumberedListAction->setChecked(queryCommandState("insertOrderedList"));
+  mpLinkAction->setEnabled(!mpHTMLEditor->page()->selectedText().isEmpty());
+  mpUnLinkAction->setEnabled(!mpHTMLEditor->page()->selectedText().isEmpty() && isLinkSelected());
 }
 
 /*!
@@ -1060,62 +1128,62 @@ void DocumentationWidget::toggleEditor(int tabIndex)
  */
 void DocumentationWidget::updateActions()
 {
-  bool state = mpStyleComboBox->blockSignals(true);
-  QString format = queryCommandValue("formatBlock");
-  int currentIndex = mpStyleComboBox->findData(format);
-  if (currentIndex > -1) {
-    mpStyleComboBox->setCurrentIndex(currentIndex);
-  } else {
-    mpStyleComboBox->setCurrentIndex(0);
-  }
-  mpStyleComboBox->blockSignals(state);
-  state = mpFontComboBox->blockSignals(true);
-  QString fontName = queryCommandValue("fontName");
-  // font name has extra single quote around it so remove it.
-  fontName = StringHandler::removeFirstLastSingleQuotes(fontName);
-  /* Issue #13038
-   * We get the current font name by calling `document.queryCommandValue("fontName")` via JavaScript on current cursor position.
-   * The webkit returns `-webkit-standard` for default font name instead of the actual font name.
-   * When we get `-webkit-standard` convert it to default system font name.
-   */
-  if (fontName.compare(QStringLiteral("-webkit-standard")) == 0) {
-    fontName = Helper::systemFontInfo.family();
-  }
-  currentIndex = mpFontComboBox->findText(fontName, Qt::MatchExactly);
-  if (currentIndex > -1) {
-    mpFontComboBox->setCurrentIndex(currentIndex);
-  }
-  mpFontComboBox->blockSignals(state);
-  bool ok;
-  int fontSize = queryCommandValue("fontSize").toInt(&ok);
-  if (ok) {
-    state = mpFontSizeSpinBox->blockSignals(true);
-    mpFontSizeSpinBox->setValue(fontSize);
-    mpFontSizeSpinBox->blockSignals(state);
-  }
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  mpBoldAction->setChecked(queryCommandState("bold"));
-  mpItalicAction->setChecked(queryCommandState("italic"));
-  mpUnderlineAction->setChecked(queryCommandState("underline"));
-  mpStrikethroughAction->setChecked(queryCommandState("strikeThrough"));
-  mpSubscriptAction->setChecked(queryCommandState("subscript"));
-  mpSubscriptAction->setChecked(queryCommandState("superscript"));
-#else
-  mpBoldAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleBold)->isChecked());
-  mpItalicAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleItalic)->isChecked());
-  mpUnderlineAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleUnderline)->isChecked());
-  mpStrikethroughAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleStrikethrough)->isChecked());
-  mpSubscriptAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSubscript)->isChecked());
-  mpSuperscriptAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript)->isChecked());
-#endif
-  mpAlignLeftToolButton->setChecked(queryCommandState("justifyLeft"));
-  mpAlignCenterToolButton->setChecked(queryCommandState("justifyCenter"));
-  mpAlignRightToolButton->setChecked(queryCommandState("justifyRight"));
-  mpJustifyToolButton->setChecked(queryCommandState("justifyFull"));
-  mpBulletListAction->setChecked(queryCommandState("insertUnorderedList"));
-  mpNumberedListAction->setChecked(queryCommandState("insertOrderedList"));
-  mpLinkAction->setEnabled(!mpHTMLEditor->page()->selectedText().isEmpty());
-  mpUnLinkAction->setEnabled(!mpHTMLEditor->page()->selectedText().isEmpty() && isLinkSelected());
+  if (!mpHTMLEditor->page()->hasSelection()) {
+    mpStyleComboBox->setEnabled(false);
+    mpFontComboBox->setEnabled(false);
+    mpFontSizeSpinBox->setEnabled(false);
+    mpBoldAction->setEnabled(false);
+    mpBoldAction->setChecked(false);
+    mpItalicAction->setEnabled(false);
+    mpItalicAction->setChecked(false);
+    mpUnderlineAction->setEnabled(false);
+    mpUnderlineAction->setChecked(false);
+    mpStrikethroughAction->setEnabled(false);
+    mpStrikethroughAction->setChecked(false);
+    mpSubscriptAction->setEnabled(false);
+    mpSubscriptAction->setChecked(false);
+    mpSuperscriptAction->setEnabled(false);
+    mpSuperscriptAction->setChecked(false);
+    mpAlignLeftToolButton->setEnabled(false);
+    mpAlignLeftToolButton->setChecked(false);
+    mpAlignCenterToolButton->setEnabled(false);
+    mpAlignCenterToolButton->setChecked(false);
+    mpAlignRightToolButton->setEnabled(false);
+    mpAlignRightToolButton->setChecked(false);
+    mpJustifyToolButton->setEnabled(false);
+    mpJustifyToolButton->setChecked(false);
+    mpBulletListAction->setEnabled(false);
+    mpBulletListAction->setChecked(false);
+    mpNumberedListAction->setEnabled(false);
+    mpNumberedListAction->setChecked(false);
+    mpLinkAction->setEnabled(false);
+    mpLinkAction->setChecked(false);
+    mpUnLinkAction->setEnabled(false);
+    mpUnLinkAction->setChecked(false);
+  } else {
+    mpStyleComboBox->setEnabled(true);
+    mpFontComboBox->setEnabled(true);
+    mpFontSizeSpinBox->setEnabled(true);
+    mpBoldAction->setEnabled(true);
+    mpItalicAction->setEnabled(true);
+    mpUnderlineAction->setEnabled(true);
+    mpStrikethroughAction->setEnabled(true);
+    mpSubscriptAction->setEnabled(true);
+    mpSuperscriptAction->setEnabled(true);
+    mpAlignLeftToolButton->setEnabled(true);
+    mpAlignCenterToolButton->setEnabled(true);
+    mpAlignRightToolButton->setEnabled(true);
+    mpJustifyToolButton->setEnabled(true);
+    mpBulletListAction->setEnabled(true);
+    mpNumberedListAction->setEnabled(true);
+    mpLinkAction->setEnabled(true);
+    mpUnLinkAction->setEnabled(true);
+    updateActionsHelper();
+  }
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  updateActionsHelper();
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 }
 
 /*!
@@ -1348,7 +1416,7 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pDocumentationWidg
   // TODO: DelegateAllLinks, linkClicked
   connect(page(), SIGNAL(linkHovered(QString)), SLOT(processLinkHover(QString)));
 #else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  page()->setContentEditable(isContentEditable);
+  page()->setContentEditable(mIsContentEditable);
   page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
   connect(page(), SIGNAL(linkClicked(QUrl)), SLOT(processLinkClick(QUrl)));
   connect(page(), SIGNAL(linkHovered(QString,QString,QString)), SLOT(processLinkHover(QString,QString,QString)));
