@@ -42,6 +42,7 @@
 #ifndef OM_DISABLE_DOCUMENTATION
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 #include <QWebEngineView>
+#include <QWebEnginePage>
 #else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 #include <QWebView>
 #endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
@@ -194,6 +195,21 @@ public slots:
 
 #ifndef OM_DISABLE_DOCUMENTATION
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+class DocumentationPage : public QWebEnginePage
+{
+  Q_OBJECT
+private:
+  QUrl mUrl;
+public:
+  DocumentationPage(QObject *parent = nullptr);
+protected:
+  virtual bool acceptNavigationRequest(const QUrl &url, NavigationType type, bool isMainFrame) override;
+signals:
+  void linkClicked(const QUrl &url);
+private slots:
+  void emitLinkClicked();
+};
+
 class DocumentationViewer : public QWebEngineView
 #else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 class DocumentationViewer : public QWebView
@@ -205,6 +221,9 @@ class DocumentationViewer : public QWidget
   Q_OBJECT
 private:
   DocumentationWidget *mpDocumentationWidget;
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  DocumentationPage *mpDocumentationPage;
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 public:
   DocumentationViewer(DocumentationWidget *pDocumentationWidget, bool isContentEditable = false);
 #ifndef OM_DISABLE_DOCUMENTATION

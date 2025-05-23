@@ -1380,10 +1380,10 @@ void DocumentationWidget::createLink()
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   QWebEnginePage *pWebPage = mpHTMLEditor->page();
   pWebPage->runJavaScript(javaScript, [&](const QVariant & arg){ href = arg.toString(); });
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
   href = pWebFrame->evaluateJavaScript(javaScript).toString();
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   href = QInputDialog::getText(this, tr("Create Link"), "Enter URL", QLineEdit::Normal, href);
   execCommand("createLink", href);
 }
@@ -1397,6 +1397,58 @@ void DocumentationWidget::removeLink()
   execCommand("unlink");
 }
 #endif // #ifndef OM_DISABLE_DOCUMENTATION
+
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+DocumentationPage::DocumentationPage(QObject *parent)
+  : QWebEnginePage(parent)
+{
+
+}
+
+/*!
+ * \brief DocumentationPage::acceptNavigationRequest
+ * Reimplementation of acceptNavigationRequest.
+ * Because you can not delegate all links in QtWebEngine we must override
+ * here and generate our own link requests
+
+ * BUT a loadStarted signal is emitted by this page **before** this is called
+ * Even **before** it knows how we want to handle it!
+ * Once we "return false" from this a loadFinished with okay **false** is generated.
+
+ * These false loadStart and LoadFinished greatly confuse our model
+
+ * Therefore do NOT emit a signal from this method as it can create huge delays in when
+ * loadFinished(okay) returns (with okay as false)
+ */
+bool DocumentationPage::acceptNavigationRequest(const QUrl &url, NavigationType type, bool isMainFrame)
+{
+  if ((type == QWebEnginePage::NavigationTypeLinkClicked) || (type == QWebEnginePage::NavigationTypeOther)) {
+    // qDebug() << "acceptNavigationRequest " << url.toString() << " , " << type << " , " << isMainFrame;
+    if (isMainFrame) {
+        mUrl = url;
+        QTimer::singleShot(20,this,SLOT(emitLinkClicked()));
+        return false;
+    }
+    // allow secondary frames such as iframes to be loaded automatically
+    return true;
+  }
+  if (type == QWebEnginePage::NavigationTypeTyped) {
+    // qDebug() << "acceptNavigationRequest from scheme handler load" << url.toString();
+    return true;
+  }
+  if (type == QWebEnginePage::NavigationTypeRedirect) {
+    // qDebug() << "acceptNavigationRequest from scheme handler redirect" << url.toString();
+    return true;
+  }
+  qDebug() << " Unhandled acceptNavigationRequest with type: " << type;
+  return true;
+}
+
+void DocumentationPage::emitLinkClicked()
+{
+  emit linkClicked(mUrl);
+}
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 
 /*!
  * \class DocumentationViewer
@@ -1426,6 +1478,9 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pDocumentationWidg
   resetZoom();
   // set DocumentationViewer settings
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  // create a new QWebEnginePage so we can handle link clicks
+  mpDocumentationPage = new DocumentationPage(this);
+  setPage(mpDocumentationPage);
   settings()->setFontFamily(QWebEngineSettings::StandardFont, Helper::systemFontInfo.family());
   settings()->setFontSize(QWebEngineSettings::DefaultFontSize, Helper::systemFontInfo.pointSize());
   settings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
@@ -1438,7 +1493,10 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pDocumentationWidg
   // set DocumentationViewer web page policy
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   // Set the contenteditable="true" in pageLoaded()
-  // TODO: DelegateAllLinks, linkClicked
+  /* Qt WebEngine doesn't support DelegateAllLinks, linkClicked
+   * We created an object of QWebEnginePage which overrides acceptNavigationRequest to handle link clicks
+   */
+  connect(page(), SIGNAL(linkClicked(QUrl)), SLOT(processLinkClick(QUrl)));
   connect(page(), SIGNAL(linkHovered(QString)), SLOT(processLinkHover(QString)));
 #else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   page()->setContentEditable(mIsContentEditable);
