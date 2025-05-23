@@ -233,7 +233,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpSubscriptAction->setStatusTip(tr("Type very small letters just below the line of text"));
   mpSubscriptAction->setCheckable(true);
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  // TODO: ToggleSubscript
+  connect(mpSubscriptAction, SIGNAL(triggered()), SLOT(subscript()));
 #else
   connect(mpSubscriptAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::ToggleSubscript), SLOT(trigger()));
 #endif
@@ -242,7 +242,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpSuperscriptAction->setStatusTip(tr("Type very small letters just above the line of text"));
   mpSuperscriptAction->setCheckable(true);
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  // TODO: ToggleSuperscript
+  connect(mpSuperscriptAction, SIGNAL(triggered()), SLOT(superscript()));
 #else
   connect(mpSuperscriptAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript), SLOT(trigger()));
 #endif
@@ -868,7 +868,7 @@ void DocumentationWidget::updateActionsHelper()
   mpUnderlineAction->setChecked(queryCommandState("underline"));
   mpStrikethroughAction->setChecked(queryCommandState("strikeThrough"));
   mpSubscriptAction->setChecked(queryCommandState("subscript"));
-  mpSubscriptAction->setChecked(queryCommandState("superscript"));
+  mpSuperscriptAction->setChecked(queryCommandState("superscript"));
 #else
   mpBoldAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleBold)->isChecked());
   mpItalicAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleItalic)->isChecked());
@@ -1259,6 +1259,24 @@ void DocumentationWidget::fontSize(int size)
 //  execCommand("styleWithCSS", "true");
   execCommand("fontSize", QString::number(size));
 //  execCommand("styleWithCSS", "false");
+}
+
+/*!
+ * \brief DocumentationWidget::subscript
+ * Subscript the text by executing command subscript.
+ */
+void DocumentationWidget::subscript()
+{
+  execCommand("subscript");
+}
+
+/*!
+ * \brief DocumentationWidget::superscript
+ * Superscript the text by executing command superscript.
+ */
+void DocumentationWidget::superscript()
+{
+  execCommand("superscript");
 }
 
 /*!

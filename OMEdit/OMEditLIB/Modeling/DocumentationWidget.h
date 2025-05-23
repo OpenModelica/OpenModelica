@@ -178,6 +178,8 @@ public slots:
   void formatBlock(int index);
   void fontName(QFont font);
   void fontSize(int size);
+  void subscript();
+  void superscript();
   void applyTextColor();
   void applyTextColor(QColor color);
   void applyBackgroundColor();
