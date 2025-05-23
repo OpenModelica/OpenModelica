@@ -530,7 +530,7 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
 
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
     cpu_time_used = rt_ext_tp_tock(&clock);
-    infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "Time needed for solving the NLS:  %20.16g", cpu_time_used);
+    infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "Time needed for solving the NLS:  %20.16g", cpu_time_used);
   }
 
   return solved;
