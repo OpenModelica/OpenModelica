@@ -162,7 +162,7 @@ private:
   void writeDocumentationFile(QString documentation);
   bool isLinkSelected();
   bool removeDocumentationHistory(LibraryTreeItem *pLibraryTreeItem);
-  void updateActionsHelper();
+  void updateHTMLSourceEditor();
 public slots:
   void previousDocumentation();
   void nextDocumentation();
@@ -173,6 +173,7 @@ public slots:
   void cancelDocumentation();
   void toggleEditor(int tabIndex);
   void updateActions();
+  void updateActionsHelper();
   void formatBlock(int index);
   void fontName(QFont font);
   void fontSize(int size);
@@ -188,7 +189,6 @@ public slots:
   void numberedList();
   void createLink();
   void removeLink();
-  void updateHTMLSourceEditor();
 #endif // #ifndef OM_DISABLE_DOCUMENTATION
 };
 

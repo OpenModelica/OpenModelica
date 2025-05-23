@@ -409,11 +409,6 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   // create the HTMLEditor
   mpHTMLSourceEditor = new HTMLEditor(this);
   mpHTMLSourceEditor->hide();
-#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  // TODO: contentsChanged
-#else
-  connect(mpHTMLEditor->page(), SIGNAL(contentsChanged()), SLOT(updateHTMLSourceEditor()));
-#endif
   HTMLHighlighter *pHTMLHighlighter = new HTMLHighlighter(OptionsDialog::instance()->getHTMLEditorPage(), mpHTMLSourceEditor->getPlainTextEdit());
   connect(OptionsDialog::instance(), SIGNAL(HTMLEditorSettingsChanged()), pHTMLHighlighter, SLOT(settingsChanged()));
   // eidtors widget layout
@@ -800,6 +795,35 @@ bool DocumentationWidget::removeDocumentationHistory(LibraryTreeItem *pLibraryTr
 }
 
 /*!
+ * \brief DocumentationWidget::updateHTMLSourceEditor
+ * Updates the contents of the HTML source editor.
+ */
+void DocumentationWidget::updateHTMLSourceEditor()
+{
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  QEventLoop eventLoop;
+  QTimer timer;
+  connect(&timer, SIGNAL(timeout()), &eventLoop, SLOT(quit()));
+  PlainTextEdit *textEdit = mpHTMLSourceEditor->getPlainTextEdit();
+  mpHTMLEditor->page()->toHtml([&](const QString &result){
+    textEdit->setPlainText(result);
+    eventLoop.quit();
+  });
+  /* Just in case toHtml response doesn't arrive for some reason we don't want to stay in blocked state.
+   * So we start a timer which will quit the event loop after 5 secs.
+   */
+  timer.start(5000);
+  eventLoop.exec();
+  // Remove contenteditable="true".
+  QString contents = textEdit->toPlainText();
+  contents.remove(" contenteditable=\"true\"");
+  textEdit->setPlainText(contents);
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  mpHTMLSourceEditor->getPlainTextEdit()->setPlainText(mpHTMLEditor->page()->mainFrame()->toHtml());
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+}
+
+/*!
  * \brief DocumentationWidget::updateActionsHelper
  * Helper function for DocumentationWidget::updateActions
  */
@@ -1118,6 +1142,9 @@ void DocumentationWidget::toggleEditor(int tabIndex)
       if (mpHTMLSourceEditor->getPlainTextEdit()->document()->isModified()) {
         writeDocumentationFile(mpHTMLSourceEditor->getPlainTextEdit()->toPlainText());
         mpHTMLEditor->setUrl(QUrl::fromLocalFile(mDocumentationFile.fileName()));
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+        updateActions();
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
       }
       mpHTMLSourceEditor->hide();
       mpHTMLEditorWidget->show();
@@ -1360,21 +1387,6 @@ void DocumentationWidget::createLink()
 void DocumentationWidget::removeLink()
 {
   execCommand("unlink");
-}
-
-/*!
- * \brief DocumentationWidget::updateHTMLSourceEditor
- * Slot activated when QWebView::page() contentsChanged SIGNAL is raised.\n
- * Updates the contents of the HTML source editor.
- */
-void DocumentationWidget::updateHTMLSourceEditor()
-{
-#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  PlainTextEdit *textEdit = mpHTMLSourceEditor->getPlainTextEdit();
-  mpHTMLEditor->page()->toHtml([textEdit](const QString &result){ textEdit->setPlainText(result); });
-#else
-  mpHTMLSourceEditor->getPlainTextEdit()->setPlainText(mpHTMLEditor->page()->mainFrame()->toHtml());
-#endif
 }
 #endif // #ifndef OM_DISABLE_DOCUMENTATION
 
