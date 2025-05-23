@@ -1401,8 +1401,7 @@ void DocumentationWidget::createLink()
                                "getLinkHref()");
   QString href;
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  QWebEnginePage *pWebPage = mpHTMLEditor->page();
-  pWebPage->runJavaScript(javaScript, [&](const QVariant & arg){ href = arg.toString(); });
+  href = runJavaScript(javaScript).toString();
 #else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
   href = pWebFrame->evaluateJavaScript(javaScript).toString();
