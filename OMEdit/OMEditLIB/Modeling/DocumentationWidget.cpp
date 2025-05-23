@@ -1177,6 +1177,8 @@ void DocumentationWidget::updateActions()
     mpSubscriptAction->setChecked(false);
     mpSuperscriptAction->setEnabled(false);
     mpSuperscriptAction->setChecked(false);
+    mpTextColorToolButton->setEnabled(false);
+    mpBackgroundColorToolButton->setEnabled(false);
     mpAlignLeftToolButton->setEnabled(false);
     mpAlignLeftToolButton->setChecked(false);
     mpAlignCenterToolButton->setEnabled(false);
@@ -1185,6 +1187,8 @@ void DocumentationWidget::updateActions()
     mpAlignRightToolButton->setChecked(false);
     mpJustifyToolButton->setEnabled(false);
     mpJustifyToolButton->setChecked(false);
+    mpDecreaseIndentAction->setEnabled(false);
+    mpIncreaseIndentAction->setEnabled(false);
     mpBulletListAction->setEnabled(false);
     mpBulletListAction->setChecked(false);
     mpNumberedListAction->setEnabled(false);
@@ -1203,10 +1207,14 @@ void DocumentationWidget::updateActions()
     mpStrikethroughAction->setEnabled(true);
     mpSubscriptAction->setEnabled(true);
     mpSuperscriptAction->setEnabled(true);
+    mpTextColorToolButton->setEnabled(true);
+    mpBackgroundColorToolButton->setEnabled(true);
     mpAlignLeftToolButton->setEnabled(true);
     mpAlignCenterToolButton->setEnabled(true);
     mpAlignRightToolButton->setEnabled(true);
     mpJustifyToolButton->setEnabled(true);
+    mpDecreaseIndentAction->setEnabled(true);
+    mpIncreaseIndentAction->setEnabled(true);
     mpBulletListAction->setEnabled(true);
     mpNumberedListAction->setEnabled(true);
     mpLinkAction->setEnabled(true);
