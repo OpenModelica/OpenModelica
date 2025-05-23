@@ -1027,6 +1027,10 @@ void DocumentationWidget::saveDocumentation(LibraryTreeItem *pNextLibraryTreeIte
         oldDocAnnotationList.append(QString("__OpenModelica_infoHeader=\"%1\"").arg(StringHandler::escapeStringQuotes(documentation.at(2))));
       }
       QString oldDocAnnotationString = QString("annotate=Documentation(%1)").arg(oldDocAnnotationList.join(","));
+      // if we are on html editor tab then update the source before saving the documentation
+      if (mpTabBar->currentIndex() == 0) {
+        updateHTMLSourceEditor();
+      }
       // new documentation annotation
       QList<QString> newDocAnnotationList;
       if (mEditType == EditType::Info) { // if editing the info section
@@ -1104,6 +1108,7 @@ void DocumentationWidget::toggleEditor(int tabIndex)
 {
   switch (tabIndex) {
     case 1:
+      updateHTMLSourceEditor();
       mpHTMLEditorWidget->hide();
       mpHTMLSourceEditor->show();
       mpHTMLSourceEditor->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
