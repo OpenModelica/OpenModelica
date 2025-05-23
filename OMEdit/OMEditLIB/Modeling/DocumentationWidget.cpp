@@ -840,8 +840,13 @@ void DocumentationWidget::updateActionsHelper()
   mpStyleComboBox->blockSignals(state);
   state = mpFontComboBox->blockSignals(true);
   QString fontName = queryCommandValue("fontName");
-  // font name has extra single quote around it so remove it.
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  // Remove quotes around the font name.
+  fontName = StringHandler::removeFirstLastQuotes(fontName);
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  // Remove single quote around the font name.
   fontName = StringHandler::removeFirstLastSingleQuotes(fontName);
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   /* Issue #13038
    * We get the current font name by calling `document.queryCommandValue("fontName")` via JavaScript on current cursor position.
    * The webkit returns `-webkit-standard` for default font name instead of the actual font name.
@@ -869,14 +874,14 @@ void DocumentationWidget::updateActionsHelper()
   mpStrikethroughAction->setChecked(queryCommandState("strikeThrough"));
   mpSubscriptAction->setChecked(queryCommandState("subscript"));
   mpSuperscriptAction->setChecked(queryCommandState("superscript"));
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   mpBoldAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleBold)->isChecked());
   mpItalicAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleItalic)->isChecked());
   mpUnderlineAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleUnderline)->isChecked());
   mpStrikethroughAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleStrikethrough)->isChecked());
   mpSubscriptAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSubscript)->isChecked());
   mpSuperscriptAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript)->isChecked());
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   mpAlignLeftToolButton->setChecked(queryCommandState("justifyLeft"));
   mpAlignCenterToolButton->setChecked(queryCommandState("justifyCenter"));
   mpAlignRightToolButton->setChecked(queryCommandState("justifyRight"));
