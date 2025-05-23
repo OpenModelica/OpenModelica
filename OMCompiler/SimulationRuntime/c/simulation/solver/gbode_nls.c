@@ -515,9 +515,9 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
     solved = solveNLS(data, threadData, nlsData);
   }
 
-  if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
+  if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS_V)) {
     cpu_time_used = rt_ext_tp_tock(&clock);
-    infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "Time needed for solving the NLS:  %20.16g", cpu_time_used);
+    infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "Time needed for solving the NLS:  %20.16g", cpu_time_used);
   }
 
   return solved;
@@ -664,8 +664,11 @@ void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res,
  * @brief Residual function for non-linear system for diagonal implicit Runge-Kutta methods.
  *
  * For the fast states:
- * Based on the Butcher tableau the following nonlinear residuals will be calculated:
- * res = f(tOld + c[i]*h, yOld + h*sum(A[i,j]*k[j], j=1..act_stage))
+ * Based on the Butcher tableau the following nonlinear residuals will be
+ * calculated:
+ *  y[j] = yOld + h*sum(A[i,j]*k[j], j=1..act_stage)
+ *  res_const[j] = yOld + h*sum(A[i,j]*k[j], j=1..act_stage-1)
+ * res = res_const[j] - y[j] + f(tOld + c[i]*h, y[j])
  * When calling, the following is already calculated:
  *  sData->timeValue = tOld + c[i]*h
  *  res_const = yOld + h*sum(A[i,j]*k[j], j=1..act_stage-1)

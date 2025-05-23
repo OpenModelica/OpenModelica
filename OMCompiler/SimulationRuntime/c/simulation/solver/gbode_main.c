@@ -725,11 +725,11 @@ void gbode_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   }
 }
 
-/*! \fn updateEqEval
+/*! \fn updateEvalSelection
  *
  *  updates eqEvalIndexAdaptive for evaluating gbode_fODE
  */
-static void updateEqEval(DATA* data, DATA_GBODE* gbData)
+static void updateEvalSelection(DATA* data, DATA_GBODE* gbData)
 {
   size_t k;
   EVAL_DAG* dag = data->simulationInfo->evalSelectionFast->dag;
@@ -753,7 +753,7 @@ static void updateEqEval(DATA* data, DATA_GBODE* gbData)
     char row_to_print[40960];
     unsigned int bufSize = 40960;
     unsigned int ct;
-    ct = snprintf(row_to_print, bufSize, "%s =\t", "eqFunctions:");
+    ct = snprintf(row_to_print, bufSize, "%s (time=%g): =\t", "eqFunctions", data->localData[0]->timeValue);
     for (k = 0; k < data->simulationInfo->evalSelectionFast->n; k++) {
       ct += snprintf(row_to_print+ct, bufSize-ct, "%zu ", data->simulationInfo->evalSelectionFast->idx[k]);
     }
@@ -792,7 +792,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   modelica_boolean foundEvent;
 
   // This is the target time of the main integrator
-  double innerTargetTime = fmin(targetTime, gbData->timeRight);
+  const double innerTargetTime = fmin(targetTime, gbData->timeRight);
 
   /* The inner integrator needs to be initialzed, at start time, when an event occured,
   *  and if outer integrations have been done with all states involved
@@ -802,12 +802,11 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     gbodef_init(data, threadData, solverInfo);
   }
 
-
   fastStatesChange = checkFastStatesChange(gbData);
 
-  // update eqEval for fast states
   if (fastStatesChange) {
-    updateEqEval(data, gbData);
+    // update evalSelectionFast for fast states
+    updateEvalSelection(data, gbData);
   }
 
   if (fastStatesChange && !gbfData->isExplicit) {
