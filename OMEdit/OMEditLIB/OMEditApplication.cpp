@@ -36,8 +36,6 @@
 #include "Util/Helper.h"
 #include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
-//! @todo Remove this once new frontend is used as default and old frontend is removed.
-#include "Options/OptionsDialog.h"
 #include "Simulation/TranslationFlagsWidget.h"
 
 #include <locale.h>
@@ -197,27 +195,6 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
     pMainwindow->show();
     // hide the splash screen
     SplashScreen::instance()->finish(pMainwindow);
-    //! @todo Remove this once new frontend is used as default and old frontend is removed.
-    //! Fixes issue #7456
-    if (OptionsDialog::instance()->getSimulationPage()->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->isChecked()) {
-      QMessageBox *pMessageBox = new QMessageBox;
-      pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::question));
-      pMessageBox->setIcon(QMessageBox::Question);
-      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-      pMessageBox->setText(tr("You have enabled old frontend for code generation which is not recommended. Do you want to switch to new frontend?"));
-      pMessageBox->addButton(tr("Switch to new frontend"), QMessageBox::AcceptRole);
-      pMessageBox->addButton(tr("Keep using old frontend"), QMessageBox::RejectRole);
-      int answer = pMessageBox->exec();
-      switch (answer) {
-        case QMessageBox::AcceptRole:
-          OptionsDialog::instance()->getSimulationPage()->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->setChecked(false);
-          OptionsDialog::instance()->saveSimulationSettings();
-          break;
-        case QMessageBox::RejectRole:
-        default:
-          break;
-      }
-    }
   }
 }
 

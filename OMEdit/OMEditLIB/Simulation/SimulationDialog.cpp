@@ -651,7 +651,6 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
       mpTranslationFlagsWidget->getEvaluateAllParametersCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getEvaluateAllParametersCheckBox()->isChecked());
       mpTranslationFlagsWidget->getNLSanalyticJacobianCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getNLSanalyticJacobianCheckBox()->isChecked());
       mpTranslationFlagsWidget->getParmodautoCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getParmodautoCheckBox()->isChecked());
-      mpTranslationFlagsWidget->getOldInstantiationCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getOldInstantiationCheckBox()->isChecked());
       mpTranslationFlagsWidget->getEnableFMUImportCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getEnableFMUImportCheckBox()->isChecked());
       mpTranslationFlagsWidget->getAdditionalTranslationFlagsTextBox()->setText(pGlobalTranslationFlagsWidget->getAdditionalTranslationFlagsTextBox()->text());
       // if ignoreCommandLineOptionsAnnotation flag is not set then read the __OpenModelica_commandLineOptions annotation
@@ -711,8 +710,6 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
                 mpTranslationFlagsWidget->getEvaluateAllParametersCheckBox()->setChecked(true);
               } else if (commandLineOptionValue.compare("NLSanalyticJacobian") == 0) {
                 mpTranslationFlagsWidget->getNLSanalyticJacobianCheckBox()->setChecked(true);
-              } else if (commandLineOptionValue.compare("newInst") == 0) {
-                mpTranslationFlagsWidget->getOldInstantiationCheckBox()->setChecked(false);
               } else {
                 additionalDebugFlagsList.append(commandLineOptionValue);
               }

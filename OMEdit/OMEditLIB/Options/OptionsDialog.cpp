@@ -836,13 +836,6 @@ void OptionsDialog::readSimulationSettings()
     mpSimulationPage->getTranslationFlagsWidget()->getParmodautoCheckBox()->setChecked(simulationOptions.getParmodauto());
   }
   mParmodauto = mpSimulationPage->getTranslationFlagsWidget()->getParmodautoCheckBox()->isChecked();
-  // read old instantiation
-  if (mpSettings->contains("simulation/newInst")) {
-    mpSimulationPage->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->setChecked(!mpSettings->value("simulation/newInst").toBool());
-  } else {
-    mpSimulationPage->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->setChecked(simulationOptions.getOldInstantiation());
-  }
-  mOldInstantiation = !mpSimulationPage->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->isChecked();
   // read enable FMU import
   if (mpSettings->contains("simulation/enableFMUImport")) {
     mpSimulationPage->getTranslationFlagsWidget()->getEnableFMUImportCheckBox()->setChecked(mpSettings->value("simulation/enableFMUImport").toBool());
@@ -2267,17 +2260,6 @@ void OptionsDialog::saveSimulationSettings()
     mpSettings->remove("simulation/parmodauto");
   } else {
     mpSettings->setValue("simulation/parmodauto", parmodauto);
-  }
-  // save old instantiation
-  bool newInst = !mpSimulationPage->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->isChecked();
-  if (mOldInstantiation != newInst) {
-    mOldInstantiation = newInst;
-    changed = true;
-  }
-  if (newInst == !simulationOptions.getOldInstantiation()) {
-    mpSettings->remove("simulation/newInst");
-  } else {
-    mpSettings->setValue("simulation/newInst", newInst);
   }
   // save enable FMU Import
   bool enableFMUImport = mpSimulationPage->getTranslationFlagsWidget()->getEnableFMUImportCheckBox()->isChecked();

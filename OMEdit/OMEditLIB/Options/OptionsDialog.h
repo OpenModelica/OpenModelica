@@ -208,7 +208,6 @@ private:
   bool mEvaluateAllParameters;
   bool mNLSanalyticJacobian;
   bool mParmodauto;
-  bool mOldInstantiation;
   bool mEnableFMUImport;
   QString mAdditionalTranslationFlags;
   MessagesPage *mpMessagesPage;

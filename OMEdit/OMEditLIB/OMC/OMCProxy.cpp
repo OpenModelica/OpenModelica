@@ -2652,16 +2652,6 @@ bool OMCProxy::clearCommandLineOptions()
   }
 }
 
-bool OMCProxy::enableNewInstantiation()
-{
-  return mpOMCInterface->enableNewInstantiation();
-}
-
-bool OMCProxy::disableNewInstantiation()
-{
-  return mpOMCInterface->disableNewInstantiation();
-}
-
 /*!
  * \brief OMCProxy::makeDocumentationUriToFileName
  * Helper function for getDocumentationAnnotation. Takes the documentation html and replaces the modelica links with absolute pahts.\n

@@ -225,8 +225,6 @@ public:
   QList<QString> getCommandLineOptions();
   bool setCommandLineOptions(QString options);
   bool clearCommandLineOptions();
-  bool enableNewInstantiation();
-  bool disableNewInstantiation();
   QString makeDocumentationUriToFileName(QString documentation);
   QString uriToFilename(QString uri);
   bool setModelicaPath(const QString &path);

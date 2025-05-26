@@ -66,7 +66,6 @@ TranslationFlagsWidget::TranslationFlagsWidget(QWidget *pParent)
   mpEvaluateAllParametersCheckBox = new QCheckBox(tr("Evaluate all parameters (faster simulation, cannot change them at runtime)"));
   mpNLSanalyticJacobianCheckBox = new QCheckBox(tr("Enable analytical jacobian for non-linear strong components"));
   mpParmodautoCheckBox = new QCheckBox(tr("Enable parallelization of independent systems of equations (Experimental)"));
-  mpOldInstantiationCheckBox = new QCheckBox(tr("Enable old frontend for code generation"));
   mpEnableFMUImportCheckBox = new QCheckBox(tr("Enable FMU Import"));
   mpAdditionalTranslationFlagsLabel = new Label(tr("Additional Translation Flags:"));
   mpAdditionalTranslationFlagsLabel->setToolTip(Helper::translationFlagsTip);
@@ -89,7 +88,6 @@ TranslationFlagsWidget::TranslationFlagsWidget(QWidget *pParent)
   pMainLayout->addWidget(mpEvaluateAllParametersCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpNLSanalyticJacobianCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpParmodautoCheckBox, row++, 0, 1, 3);
-  pMainLayout->addWidget(mpOldInstantiationCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpEnableFMUImportCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpAdditionalTranslationFlagsLabel, row, 0);
   pMainLayout->addWidget(mpAdditionalTranslationFlagsTextBox, row, 1);
@@ -116,7 +114,6 @@ void TranslationFlagsWidget::applySimulationOptions(const SimulationOptions &sim
   mpEvaluateAllParametersCheckBox->setChecked(simulationOptions.getEvaluateAllParameters());
   mpNLSanalyticJacobianCheckBox->setChecked(simulationOptions.getNLSanalyticJacobian());
   mpParmodautoCheckBox->setChecked(simulationOptions.getParmodauto());
-  mpOldInstantiationCheckBox->setChecked(simulationOptions.getOldInstantiation());
   mpEnableFMUImportCheckBox->setChecked(simulationOptions.getEnableFMUImport());
   mpAdditionalTranslationFlagsTextBox->setText(simulationOptions.getAdditionalTranslationFlags());
 }
@@ -134,7 +131,6 @@ void TranslationFlagsWidget::createSimulationOptions(SimulationOptions *pSimulat
   pSimulationOptions->setEvaluateAllParameters(mpEvaluateAllParametersCheckBox->isChecked());
   pSimulationOptions->setNLSanalyticJacobian(mpNLSanalyticJacobianCheckBox->isChecked());
   pSimulationOptions->setParmodauto(mpParmodautoCheckBox->isChecked());
-  pSimulationOptions->setOldInstantiation(mpOldInstantiationCheckBox->isChecked());
   pSimulationOptions->setEnableFMUImport(mpEnableFMUImportCheckBox->isChecked());
   pSimulationOptions->setAdditionalTranslationFlags(mpAdditionalTranslationFlagsTextBox->text());
 }
@@ -181,10 +177,6 @@ QString TranslationFlagsWidget::commandLineOptions()
   // parmodauto
   if (mpParmodautoCheckBox->isChecked()) {
     configFlags.append("--parmodauto");
-  }
-  // enable new instantiation
-  if (mpOldInstantiationCheckBox->isChecked()) {
-    debugFlags.append("nonewInst");
   }
   // enable FMU Import
   if (mpEnableFMUImportCheckBox->isChecked()) {
