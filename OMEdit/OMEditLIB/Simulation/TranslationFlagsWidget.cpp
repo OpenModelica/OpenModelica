@@ -63,7 +63,7 @@ TranslationFlagsWidget::TranslationFlagsWidget(QWidget *pParent)
   mpIndexReductionMethodComboBox->addItems(indexReductionMethods.allChoices);
   Utilities::setToolTip(mpIndexReductionMethodComboBox, "Index Reduction Methods", indexReductionMethods.allComments);
   mpInitializationCheckBox = new QCheckBox(tr("Show additional information from the initialization process"));
-  mpEvaluateAllParametersCheckBox = new QCheckBox(tr("Evaluate all parameters (faster simulation, cannot change them at runtime, does not work with old frontend)"));
+  mpEvaluateAllParametersCheckBox = new QCheckBox(tr("Evaluate all parameters (faster simulation, cannot change them at runtime)"));
   mpNLSanalyticJacobianCheckBox = new QCheckBox(tr("Enable analytical jacobian for non-linear strong components"));
   mpParmodautoCheckBox = new QCheckBox(tr("Enable parallelization of independent systems of equations (Experimental)"));
   mpOldInstantiationCheckBox = new QCheckBox(tr("Enable old frontend for code generation"));

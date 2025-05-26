@@ -27,6 +27,8 @@ namespace OpenModelica
       virtual ~Class();
 
       virtual const ClassTree* classTree() const noexcept { return nullptr; }
+
+      virtual MetaModelica::Value toMetaModelica() const = 0;
   };
 
   class PartialClass : public Class
@@ -35,6 +37,8 @@ namespace OpenModelica
       PartialClass(const Absyn::ClassParts &definition, bool isClassExtends, InstNode *scope);
 
       const ClassTree* classTree() const noexcept override { return &_elements; }
+
+      MetaModelica::Value toMetaModelica() const override;
 
     private:
       ClassTree _elements;

@@ -42,6 +42,7 @@
 #ifndef OM_DISABLE_DOCUMENTATION
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 #include <QWebEngineView>
+#include <QWebEnginePage>
 #else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 #include <QWebView>
 #endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
@@ -92,6 +93,9 @@ public:
 #ifndef OM_DISABLE_DOCUMENTATION
   void execCommand(const QString &commandName);
   void execCommand(const QString &commandName, const QString &valueArgument);
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  QVariant runJavaScript(const QString &javaScript);
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   bool queryCommandState(const QString &commandName);
   QString queryCommandValue(const QString &commandName);
   void saveScrollPosition();
@@ -159,6 +163,7 @@ private:
   void writeDocumentationFile(QString documentation);
   bool isLinkSelected();
   bool removeDocumentationHistory(LibraryTreeItem *pLibraryTreeItem);
+  void updateHTMLSourceEditor();
 public slots:
   void previousDocumentation();
   void nextDocumentation();
@@ -169,9 +174,12 @@ public slots:
   void cancelDocumentation();
   void toggleEditor(int tabIndex);
   void updateActions();
+  void updateActionsHelper();
   void formatBlock(int index);
   void fontName(QFont font);
   void fontSize(int size);
+  void subscript();
+  void superscript();
   void applyTextColor();
   void applyTextColor(QColor color);
   void applyBackgroundColor();
@@ -184,12 +192,26 @@ public slots:
   void numberedList();
   void createLink();
   void removeLink();
-  void updateHTMLSourceEditor();
 #endif // #ifndef OM_DISABLE_DOCUMENTATION
 };
 
 #ifndef OM_DISABLE_DOCUMENTATION
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+class DocumentationPage : public QWebEnginePage
+{
+  Q_OBJECT
+private:
+  QUrl mUrl;
+public:
+  DocumentationPage(QObject *parent = nullptr);
+protected:
+  virtual bool acceptNavigationRequest(const QUrl &url, NavigationType type, bool isMainFrame) override;
+signals:
+  void linkClicked(const QUrl &url);
+private slots:
+  void emitLinkClicked();
+};
+
 class DocumentationViewer : public QWebEngineView
 #else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 class DocumentationViewer : public QWebView
@@ -201,6 +223,9 @@ class DocumentationViewer : public QWidget
   Q_OBJECT
 private:
   DocumentationWidget *mpDocumentationWidget;
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  DocumentationPage *mpDocumentationPage;
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 public:
   DocumentationViewer(DocumentationWidget *pDocumentationWidget, bool isContentEditable = false);
 #ifndef OM_DISABLE_DOCUMENTATION
