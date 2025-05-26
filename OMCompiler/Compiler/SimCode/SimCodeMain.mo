@@ -1663,7 +1663,7 @@ algorithm
       else
         matrixnames := {"B", "C", "D", "F", "H"};
       end if;
-      if List.contains(FlagsUtil.getConfigOptionsStringList(Flags.POST_OPT_MODULES), "generateSymbolicSensitivities", stringEq) then
+      if List.contains(Flags.getConfigStringList(Flags.POST_OPT_MODULES), "generateSymbolicSensitivities", stringEq) then
         matrixnames := "S" :: matrixnames;
       end if;
       (daeModeSP, uniqueEqIndex, tempVars) := SimCodeUtil.createSymbolicSimulationJacobian(
@@ -1693,7 +1693,7 @@ algorithm
       else
         matrixnames := {"A", "B", "C", "D", "F", "H"};
       end if;
-      if List.contains(FlagsUtil.getConfigOptionsStringList(Flags.POST_OPT_MODULES), "generateSymbolicSensitivities", stringEq) then
+      if List.contains(Flags.getConfigStringList(Flags.POST_OPT_MODULES), "generateSymbolicSensitivities", stringEq) then
         matrixnames := "S" :: matrixnames;
       end if;
       (symJacs, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({}, crefToSimVarHT, uniqueEqIndex, matrixnames, {});

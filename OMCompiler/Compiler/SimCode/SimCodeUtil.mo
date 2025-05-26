@@ -5027,9 +5027,16 @@ algorithm
         else
            matrixnames := {"A", "B", "C", "D", "F", "H"};
         end if;
-        if List.contains(FlagsUtil.getConfigOptionsStringList(Flags.POST_OPT_MODULES), "generateSymbolicSensitivities", stringEq) then
+        // check if the POST_OPT_MODULE "generateSymbolicSensitivities" is set via getConfigStringList not getConfigOptionsStringList
+        if List.contains(Flags.getConfigStringList(Flags.POST_OPT_MODULES), "generateSymbolicSensitivities", stringEq) then
           matrixnames := "S" :: matrixnames;
         end if;
+        // if Flags.isSet(Flags.DUMP_SIMCODE) then
+        //   print("matrixnames: " + stringDelimitList(matrixnames, ", ") + "\n");
+        //   print("all postoptmodules: " + stringDelimitList(FlagsUtil.getConfigOptionsStringList(Flags.POST_OPT_MODULES), ", ") + "\n");
+        //   print(boolString(List.contains(FlagsUtil.getConfigOptionsStringList(Flags.POST_OPT_MODULES), "generateSymbolicSensitivities", stringEq)) + "\n");
+        // end if;
+        
         (res, ouniqueEqIndex) := createSymbolicJacobianssSimCode(inSymjacs, crefSimVarHT, iuniqueEqIndex, matrixnames, {});
         // _ := FlagsUtil.set(Flags.EXEC_STAT, b);
       then (res,ouniqueEqIndex);
