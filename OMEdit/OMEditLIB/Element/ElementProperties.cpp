@@ -361,6 +361,26 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
   }
   if (defaultValue) {
     mDefaultValue = value;
+    /* Issue #11847
+     * Show the default values as arrays, either as {0, 0, 0} or fill(0, 3).
+     * Use first version if the number of dimensions is small (say, <= 4, which works for 3-phase, 3D mechanics and quaternions).
+     * Use the second version for larger arrays, to avoid overbloating it.
+     */
+    if (Utilities::isValueLiteralConstant(value) && mpElementParameters->hasElement() && mpElementParameters->isElementArray()) {
+      bool ok;
+      int dims = mpElementParameters->getElementDimensions().toInt(&ok);
+      if (ok) {
+        if (dims <= 4) {
+          QStringList valueList;
+          for (int i = 0; i < dims; ++i) {
+            valueList.append(value);
+          }
+          value = "{" % valueList.join(",") % "}";
+        } else {
+          value = "fill(" % value % ", " % mpElementParameters->getElementDimensions() % ")";
+        }
+      }
+    }
   }
   QFontMetrics fm = QFontMetrics(QFont());
   // Allow to take 70% of screen width
@@ -1455,7 +1475,14 @@ void ElementParameters::setUpDialog()
   mpComponentGroupBox = new QGroupBox(tr("Component"));
   // Component name
   mpComponentNameLabel = new Label(Helper::name);
-  mpComponentNameTextBox = new Label(hasElement() ? mpElement->getQualifiedName() : "");
+  QString name;
+  if (hasElement()) {
+    name = mpElement->getQualifiedName();
+    if (isElementArray()) {
+      name.append("[" % getElementDimensions() % "]");
+    }
+  }
+  mpComponentNameTextBox = new Label(name);
   mpComponentCommentLabel = new Label(Helper::comment);
   mpComponentCommentTextBox = new Label(hasElement() ? mpElement->getComment() : "");
   QGridLayout *pComponentGroupBoxLayout = new QGridLayout;
