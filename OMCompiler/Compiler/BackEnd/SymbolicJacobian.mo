@@ -362,8 +362,8 @@ public function generateSymbolicSensitivities
 protected
   BackendDAE.EqSystems eqs;
   BackendDAE.Shared shared;
-  Option<BackendDAE.SymbolicJacobian> symJacS;
-  BackendDAE.SymbolicJacobians symjacs;
+  Option<BackendDAE.SymbolicJacobian> symJacS; // the symbolic jacobian with name "S"
+  BackendDAE.SymbolicJacobians symjacs; // multiple smybolic jacobians
   BackendDAE.SparsePattern sparsePattern;
   BackendDAE.SparseColoring sparseColoring;
   BackendDAE.NonlinearPattern nonlinearPattern;
