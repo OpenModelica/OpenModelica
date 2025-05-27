@@ -1203,6 +1203,14 @@ template simulationFile_inl(SimCode simCode)
       >>
 end simulationFile_inl;
 
+template hasJacobianMatrix(list<JacobianMatrix> jacobianMatrices, String name)
+::=
+  jacobianMatrices |> jac as JAC_MATRIX(matrixName=matrixName) =>
+    if stringEq(matrixName, name) then "true" else ""
+  ;separator=""
+end hasJacobianMatrix;
+
+
 template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
   "Generates code for main C file for simulation target."
 ::=
@@ -1349,21 +1357,21 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <%symbolName(modelNamePrefixStr,"INDEX_JAC_D")%>,
       <%symbolName(modelNamePrefixStr,"INDEX_JAC_F")%>,
       <%symbolName(modelNamePrefixStr,"INDEX_JAC_H")%>,
-      <%symbolName(modelNamePrefixStr,"INDEX_JAC_S")%>,
+      <% if hasJacobianMatrix(simCode.jacobianMatrices, "S") then symbolName(modelNamePrefixStr,"INDEX_JAC_S") + "," %>
       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianA")%>,
       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianB")%>,
       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianC")%>,
       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianD")%>,
       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianF")%>,
       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianH")%>,
-      <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianS")%>,
+      <% if hasJacobianMatrix(simCode.jacobianMatrices, "S") then symbolName(modelNamePrefixStr,"initialAnalyticJacobianS") + "," %>
       <%symbolName(modelNamePrefixStr,"functionJacA_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacB_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacC_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacD_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacF_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacH_column")%>,
-      <%symbolName(modelNamePrefixStr,"functionJacS_column")%>,
+      <% if hasJacobianMatrix(simCode.jacobianMatrices, "S") then symbolName(modelNamePrefixStr,"functionJacS_column") + "," %>
       <%symbolName(modelNamePrefixStr,"linear_model_frame")%>,
       <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>,
       <%symbolName(modelNamePrefixStr,"mayer")%>,
