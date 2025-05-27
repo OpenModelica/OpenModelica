@@ -2011,13 +2011,6 @@ algorithm
 
     case ComponentRef.CREF(node = InstNode.COMPONENT_NODE())
       algorithm
-        if Component.hasCondition(InstNode.component(cref.node)) and
-           not Config.languageStandardAtLeast(Config.LanguageStandard.experimental) and
-           (not InstContext.inConnect(context) or InstContext.inSubscript(context)) and not InstContext.inRelaxed(context) then
-          Error.addStrictMessage(Error.CONDITIONAL_COMPONENT_INVALID_CONTEXT,
-            {InstNode.name(cref.node)}, info);
-        end if;
-
         // The context used when typing a component node depends on where the
         // component was declared, not where it's used. This can be different to
         // the given context, e.g. for package constants used in a function.
