@@ -7,7 +7,6 @@ using namespace OpenModelica;
 extern record_description NFInstNode_InstNode_CLASS__NODE__desc;
 
 extern record_description NFClass_NOT__INSTANTIATED__desc;
-const MetaModelica::Value noClass = MetaModelica::Record(0, NFClass_NOT__INSTANTIATED__desc);
 
 constexpr int NAME_INDEX = 0;
 constexpr int DEFINITION_INDEX = 1;
@@ -18,7 +17,6 @@ constexpr int PARENT_SCOPE_INDEX = 5;
 constexpr int NODE_TYPE_INDEX = 6;
 
 extern record_description NFInstNode_CachedData_NO__CACHE__desc;
-const MetaModelica::Value noCache = MetaModelica::Record(0, NFInstNode_CachedData_NO__CACHE__desc);
 
 ClassNode::ClassNode(Absyn::Class *cls, InstNode *parent)
   : ClassNode(cls, parent, std::make_unique<NormalClassType>())
@@ -68,6 +66,9 @@ void ClassNode::instantiate()
 
 MetaModelica::Value ClassNode::toMetaModelica() const
 {
+  static const MetaModelica::Value noClass = MetaModelica::Record(0, NFClass_NOT__INSTANTIATED__desc);
+  static const MetaModelica::Value noCache = MetaModelica::Record(0, NFInstNode_CachedData_NO__CACHE__desc);
+
   // Nodes need to be cached to deal with the cyclical dependencies between nodes.
   if (!_mmCache) {
     auto cls_ptr = MetaModelica::Pointer();
