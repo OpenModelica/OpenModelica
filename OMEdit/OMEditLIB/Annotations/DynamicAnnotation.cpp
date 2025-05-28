@@ -86,7 +86,7 @@ bool DynamicAnnotation::deserialize(const QJsonValue &value)
   return true;
 }
 
-auto& evaluate_helper(QString vname, ModelInstance::Model *pModel)
+FlatModelica::Expression& evaluate_helper(QString vname, ModelInstance::Model *pModel)
 {
   // the instance api returns the qualified cref
   // we need variable name relative to Element
@@ -106,6 +106,10 @@ auto& evaluate_helper(QString vname, ModelInstance::Model *pModel)
   auto exp = pModel->getVariableBinding(vname);
   if (!exp) {
     throw std::runtime_error(vname.toStdString() + " could not be found in " + pModel->getName().toStdString());
+  } else if (!exp->isLiteral()) {
+    // if the expression is not literal then we need to further evaluate
+    // qDebug() << exp->toQString() << "is not a literal";
+    exp = &evaluate_helper(exp->toQString(), pModel);
   }
   return *exp;
 }
