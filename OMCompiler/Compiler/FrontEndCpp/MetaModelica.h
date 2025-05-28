@@ -472,7 +472,7 @@ namespace OpenModelica
       public:
         explicit Record(void *value) noexcept;
         Record(Value value);
-        Record(int index, record_description &desc, std::initializer_list<Value> values = {});
+        Record(int index, record_description &desc, std::initializer_list<Value> values = {}, bool is_const_data = false);
 
         operator Value() const noexcept { return Value{_value}; }
 

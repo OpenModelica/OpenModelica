@@ -743,9 +743,15 @@ Record::Record(Value value)
 
 }
 
-Record::Record(int index, record_description &desc, std::initializer_list<Value> values)
+Record::Record(int index, record_description &desc, std::initializer_list<Value> values, bool is_const_data)
 {
-  mmc_struct *p = static_cast<mmc_struct*>(mmc_alloc_words(values.size() + 2));
+  mmc_struct *p = NULL;
+  if (is_const_data) {
+    p = static_cast<mmc_struct*>(malloc((values.size() + 2)*sizeof(void*)));
+  } else {
+    p = static_cast<mmc_struct*>(mmc_alloc_words(values.size() + 2));
+  }
+
   p->header = MMC_STRUCTHDR(values.size() + 1, index + 3);
 
   void **data = p->data;
