@@ -24,7 +24,7 @@ namespace OpenModelica
       static constexpr int VAR_NODE = 7;
       static constexpr int EMPTY_NODE = 8;
 
-      static const MetaModelica::Value emptyMMNode;
+      static MetaModelica::Value emptyMMNode();
 
     public:
       virtual ~InstNode() = default;
