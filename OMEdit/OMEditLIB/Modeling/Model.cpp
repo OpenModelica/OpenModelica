@@ -2315,7 +2315,10 @@ namespace ModelInstance
     if (jsonObject.contains("value")) {
       QJsonObject valueObject = jsonObject.value("value").toObject();
 
-      if (valueObject.contains("value")) {
+      /* Use "binding" instead of "value"
+       * The binding can either contain the literal value or expression.
+       */
+      /*if (valueObject.contains("value")) {
         try {
           mBinding.deserialize(valueObject.value("value"));
           mBindingForReset = mBinding;
@@ -2323,7 +2326,7 @@ namespace ModelInstance
           qDebug() << "Failed to deserialize json: " << valueObject.value("value");
           qDebug() << e.what();
         }
-      } else if (valueObject.contains("binding")) {
+      } else */if (valueObject.contains("binding")) {
         try {
           mBinding.deserialize(valueObject.value("binding"));
           mBindingForReset = mBinding;
