@@ -17,6 +17,8 @@ constexpr int TYPED_DERIVED = 7;
 constexpr int DAE_TYPE = 8;
 
 extern record_description NFModifier_Modifier_NOMOD__desc;
+const MetaModelica::Record emptyMod(2, NFModifier_Modifier_NOMOD__desc, {}, true);
+
 extern record_description NFClass_Prefixes_PREFIXES__desc;
 
 std::unique_ptr<Class> Class::fromAbsyn(const Absyn::Class &cls, InstNode *scope)
@@ -57,8 +59,6 @@ PartialClass::PartialClass(const Absyn::ClassParts &definition, bool isClassExte
 
 MetaModelica::Value PartialClass::toMetaModelica() const
 {
-  static const MetaModelica::Record emptyMod(2, NFModifier_Modifier_NOMOD__desc, {});
-
   return MetaModelica::Record(PARTIAL_CLASS, NFClass_PARTIAL__CLASS__desc, {
     _elements.toNF(),
     emptyMod,
