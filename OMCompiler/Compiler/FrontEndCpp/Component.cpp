@@ -20,7 +20,6 @@ constexpr int INVALID_COMPONENT = 5;
 constexpr int WILD = 6;
 
 extern record_description NFModifier_Modifier_NOMOD__desc;
-const MetaModelica::Record emptyMod(2, NFModifier_Modifier_NOMOD__desc, {});
 
 Component::Component(Absyn::Component *definition)
   : _definition{definition}
@@ -36,6 +35,8 @@ ComponentDef::ComponentDef(Absyn::Component *definition)
 
 MetaModelica::Value ComponentDef::toNF() const noexcept
 {
+  static const MetaModelica::Record emptyMod(2, NFModifier_Modifier_NOMOD__desc, {});
+
   return MetaModelica::Record{COMPONENT_DEF, NFComponent_COMPONENT__DEF__desc, {
     _definition->toSCode(),
     emptyMod
