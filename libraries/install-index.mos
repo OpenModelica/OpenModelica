@@ -7,12 +7,10 @@ setModelicaPath(OpenModelica.Scripting.cd() + "/.openmodelica/libraries/");
 getModelicaPath();
 echo(false);
 OpenModelica.Scripting.mkdir(".openmodelica");
-if not OpenModelica.Scripting.directoryExists(".openmodelica/libraries/") then
-  if not OpenModelica.Scripting.mkdir(".openmodelica/libraries/") then
-    print("\nmkdir failed\n");
-    print(getErrorString());
-    exit(1);
-  end if;
+if not OpenModelica.Scripting.mkdir(".openmodelica/libraries/") then
+  print("\nmkdir failed\n");
+  print(getErrorString());
+  exit(1);
 end if;
 vers:=OpenModelica.Scripting.getAvailablePackageVersions(Modelica, "3.2.3");
 if size(vers,1) <> 1 then
@@ -67,4 +65,4 @@ if not installPackage(ModelicaReference, "4.0.0+maint.om", exactMatch=true) then
 else
   print("Installed: ModelicaReference 4.0.0+maint.om\n");
 end if;
-system("touch .openmodelica/20221102135323.stamp")
+system("touch .openmodelica/20250529001707.stamp")
