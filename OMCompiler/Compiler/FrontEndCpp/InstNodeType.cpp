@@ -61,7 +61,7 @@ bool BaseClassType::isBuiltin() const
 MetaModelica::Value BaseClassType::toMetaModelica() const
 {
   return MetaModelica::Record(BASE_CLASS, NFInstNode_InstNodeType_BASE__CLASS__desc, {
-    _parent ? _parent->toMetaModelica() : InstNode::emptyMMNode,
+    _parent ? _parent->toMetaModelica() : InstNode::emptyMMNode(),
     _definition->toSCode(),
     // TODO: Use actual node type.
     NormalClassType().toMetaModelica()
@@ -97,7 +97,7 @@ MetaModelica::Value TopScopeType::toMetaModelica() const
 MetaModelica::Value RootClassType::toMetaModelica() const
 {
   return MetaModelica::Record(ROOT_CLASS, NFInstNode_InstNodeType_ROOT__CLASS__desc, {
-    _parent ? _parent->toMetaModelica() : InstNode::emptyMMNode
+    _parent ? _parent->toMetaModelica() : InstNode::emptyMMNode()
   });
 }
 
@@ -109,14 +109,14 @@ MetaModelica::Value NormalComponentType::toMetaModelica() const
 MetaModelica::Value RedeclaredComponentType::toMetaModelica() const
 {
   return MetaModelica::Record(REDECLARED_COMP, NFInstNode_InstNodeType_REDECLARED__COMP__desc, {
-    _parent ? _parent->toMetaModelica() : InstNode::emptyMMNode
+    _parent ? _parent->toMetaModelica() : InstNode::emptyMMNode()
   });
 }
 
 MetaModelica::Value RedeclaredClassType::toMetaModelica() const
 {
   return MetaModelica::Record(REDECLARED_CLASS, NFInstNode_InstNodeType_REDECLARED__CLASS__desc, {
-    _parent ? _parent->toMetaModelica() : InstNode::emptyMMNode
+    _parent ? _parent->toMetaModelica() : InstNode::emptyMMNode()
   });
 }
 

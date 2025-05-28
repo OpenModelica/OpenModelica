@@ -55,7 +55,7 @@ MetaModelica::Value ComponentNode::toMetaModelica() const
       _definition->toSCode(),
       _visibility.toSCode(),
       comp_ptr,
-      InstNode::emptyMMNode,
+      InstNode::emptyMMNode(),
       MetaModelica::Value(static_cast<int64_t>(0))
     }};
 

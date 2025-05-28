@@ -80,7 +80,7 @@ MetaModelica::Value ClassNode::toMetaModelica() const
       _visibility.toSCode(),
       cls_ptr,
       MetaModelica::Array{3, noCache},
-      InstNode::emptyMMNode,
+      InstNode::emptyMMNode(),
       MetaModelica::Value(static_cast<int64_t>(0))
     });
 
