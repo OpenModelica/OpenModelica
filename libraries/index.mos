@@ -30,26 +30,12 @@ if not installPackage(BioChem, "1.0.1+msl.3.2.1", exactMatch=true) then
 else
   print("Installed: BioChem 1.0.1+msl.3.2.1\n");
 end if;
-if not installPackage(Complex, "3.2.1+maint.om", exactMatch=true) then
-  print("Complex 3.2.1+maint.om failed.\n");
-  print(getErrorString());
-  exit(1);
-else
-  print("Installed: Complex 3.2.1+maint.om\n");
-end if;
 if not installPackage(Complex, "3.2.2+maint.om", exactMatch=true) then
   print("Complex 3.2.2+maint.om failed.\n");
   print(getErrorString());
   exit(1);
 else
   print("Installed: Complex 3.2.2+maint.om\n");
-end if;
-if not installPackage(Complex, "4.0.0+maint.om", exactMatch=true) then
-  print("Complex 4.0.0+maint.om failed.\n");
-  print(getErrorString());
-  exit(1);
-else
-  print("Installed: Complex 4.0.0+maint.om\n");
 end if;
 if not installPackage(Complex, "3.2.3+maint.om", exactMatch=true) then
   print("Complex 3.2.3+maint.om failed.\n");
@@ -58,26 +44,26 @@ if not installPackage(Complex, "3.2.3+maint.om", exactMatch=true) then
 else
   print("Installed: Complex 3.2.3+maint.om\n");
 end if;
-if not installPackage(Modelica, "3.1.0+maint.om", exactMatch=true) then
-  print("Modelica 3.1.0+maint.om failed.\n");
+if not installPackage(Complex, "4.1.0+maint.om", exactMatch=true) then
+  print("Complex 4.1.0+maint.om failed.\n");
   print(getErrorString());
   exit(1);
 else
-  print("Installed: Modelica 3.1.0+maint.om\n");
+  print("Installed: Complex 4.1.0+maint.om\n");
 end if;
-if not installPackage(Modelica, "2.2.2+maint.om", exactMatch=true) then
-  print("Modelica 2.2.2+maint.om failed.\n");
+if not installPackage(Complex, "4.0.0+maint.om", exactMatch=true) then
+  print("Complex 4.0.0+maint.om failed.\n");
   print(getErrorString());
   exit(1);
 else
-  print("Installed: Modelica 2.2.2+maint.om\n");
+  print("Installed: Complex 4.0.0+maint.om\n");
 end if;
-if not installPackage(Modelica, "3.2.2+maint.om", exactMatch=true) then
-  print("Modelica 3.2.2+maint.om failed.\n");
+if not installPackage(Complex, "3.2.1+maint.om", exactMatch=true) then
+  print("Complex 3.2.1+maint.om failed.\n");
   print(getErrorString());
   exit(1);
 else
-  print("Installed: Modelica 3.2.2+maint.om\n");
+  print("Installed: Complex 3.2.1+maint.om\n");
 end if;
 if not installPackage(Modelica, "3.2.3+maint.om", exactMatch=true) then
   print("Modelica 3.2.3+maint.om failed.\n");
@@ -86,12 +72,19 @@ if not installPackage(Modelica, "3.2.3+maint.om", exactMatch=true) then
 else
   print("Installed: Modelica 3.2.3+maint.om\n");
 end if;
-if not installPackage(Modelica, "3.2.1+maint.om", exactMatch=true) then
-  print("Modelica 3.2.1+maint.om failed.\n");
+if not installPackage(Modelica, "3.2.2+maint.om", exactMatch=true) then
+  print("Modelica 3.2.2+maint.om failed.\n");
   print(getErrorString());
   exit(1);
 else
-  print("Installed: Modelica 3.2.1+maint.om\n");
+  print("Installed: Modelica 3.2.2+maint.om\n");
+end if;
+if not installPackage(Modelica, "3.1.0+maint.om", exactMatch=true) then
+  print("Modelica 3.1.0+maint.om failed.\n");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: Modelica 3.1.0+maint.om\n");
 end if;
 if not installPackage(Modelica, "4.0.0+maint.om", exactMatch=true) then
   print("Modelica 4.0.0+maint.om failed.\n");
@@ -99,6 +92,27 @@ if not installPackage(Modelica, "4.0.0+maint.om", exactMatch=true) then
   exit(1);
 else
   print("Installed: Modelica 4.0.0+maint.om\n");
+end if;
+if not installPackage(Modelica, "4.1.0+maint.om", exactMatch=true) then
+  print("Modelica 4.1.0+maint.om failed.\n");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: Modelica 4.1.0+maint.om\n");
+end if;
+if not installPackage(Modelica, "2.2.2+maint.om", exactMatch=true) then
+  print("Modelica 2.2.2+maint.om failed.\n");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: Modelica 2.2.2+maint.om\n");
+end if;
+if not installPackage(Modelica, "3.2.1+maint.om", exactMatch=true) then
+  print("Modelica 3.2.1+maint.om failed.\n");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: Modelica 3.2.1+maint.om\n");
 end if;
 if not installPackage(ModelicaServices, "1.0.0", exactMatch=true) then
   print("ModelicaServices 1.0.0 failed.\n");
@@ -121,13 +135,6 @@ if not installPackage(ModelicaServices, "3.2.3+maint.om", exactMatch=true) then
 else
   print("Installed: ModelicaServices 3.2.3+maint.om\n");
 end if;
-if not installPackage(ModelicaServices, "3.2.1+maint.om", exactMatch=true) then
-  print("ModelicaServices 3.2.1+maint.om failed.\n");
-  print(getErrorString());
-  exit(1);
-else
-  print("Installed: ModelicaServices 3.2.1+maint.om\n");
-end if;
 if not installPackage(ModelicaServices, "4.0.0+maint.om", exactMatch=true) then
   print("ModelicaServices 4.0.0+maint.om failed.\n");
   print(getErrorString());
@@ -135,12 +142,40 @@ if not installPackage(ModelicaServices, "4.0.0+maint.om", exactMatch=true) then
 else
   print("Installed: ModelicaServices 4.0.0+maint.om\n");
 end if;
+if not installPackage(ModelicaServices, "4.1.0+maint.om", exactMatch=true) then
+  print("ModelicaServices 4.1.0+maint.om failed.\n");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: ModelicaServices 4.1.0+maint.om\n");
+end if;
+if not installPackage(ModelicaServices, "3.2.1+maint.om", exactMatch=true) then
+  print("ModelicaServices 3.2.1+maint.om failed.\n");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: ModelicaServices 3.2.1+maint.om\n");
+end if;
 if not installPackage(ModelicaTest, "3.2.3+maint.om", exactMatch=true) then
   print("ModelicaTest 3.2.3+maint.om failed.\n");
   print(getErrorString());
   exit(1);
 else
   print("Installed: ModelicaTest 3.2.3+maint.om\n");
+end if;
+if not installPackage(ModelicaTest, "4.0.0+maint.om", exactMatch=true) then
+  print("ModelicaTest 4.0.0+maint.om failed.\n");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: ModelicaTest 4.0.0+maint.om\n");
+end if;
+if not installPackage(ModelicaTest, "4.1.0+maint.om", exactMatch=true) then
+  print("ModelicaTest 4.1.0+maint.om failed.\n");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: ModelicaTest 4.1.0+maint.om\n");
 end if;
 if not installPackage(ModelicaCompliance, "3.2.0-master", exactMatch=true) then
   print("ModelicaCompliance 3.2.0-master failed.\n");
@@ -170,19 +205,19 @@ if not installPackage(ScalableTestSuite, "2.2.0", exactMatch=true) then
 else
   print("Installed: ScalableTestSuite 2.2.0\n");
 end if;
-if not installPackage(SiemensPower, "2.2.0", exactMatch=true) then
-  print("SiemensPower 2.2.0 failed.\n");
-  print(getErrorString());
-  exit(1);
-else
-  print("Installed: SiemensPower 2.2.0\n");
-end if;
 if not installPackage(SiemensPower, "2.1.0-beta", exactMatch=true) then
   print("SiemensPower 2.1.0-beta failed.\n");
   print(getErrorString());
   exit(1);
 else
   print("Installed: SiemensPower 2.1.0-beta\n");
+end if;
+if not installPackage(SiemensPower, "2.2.0", exactMatch=true) then
+  print("SiemensPower 2.2.0 failed.\n");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: SiemensPower 2.2.0\n");
 end if;
 if not installPackage(SiemensPower, "OMCtest", exactMatch=true) then
   print("SiemensPower OMCtest failed.\n");
@@ -212,4 +247,4 @@ if not installPackage(WasteWater, "2.1.0", exactMatch=true) then
 else
   print("Installed: WasteWater 2.1.0\n");
 end if;
-system("touch .openmodelica/20231121140110.stamp")
+system("touch .openmodelica/20250529001707.stamp")
