@@ -903,7 +903,7 @@ algorithm
           //print("RHS EXP:\n");
           //ExpressionDump.dumpExp(exp);
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("Finish evaluation:\n of: \n"+ExpressionDump.printExpStr(rhsExpIn)+"\nto:\n"+ExpressionDump.printExpStr(outputExp)+" := "+ExpressionDump.printExpStr(exp)+"\n");
+          print("Finish evaluation of:\n"+ExpressionDump.printExpStr(lhsExpIn)+" := "+ExpressionDump.printExpStr(rhsExpIn)+"\nto:\n"+ExpressionDump.printExpStr(outputExp)+" := "+ExpressionDump.printExpStr(exp)+"\n");
           if not listEmpty(constEqs) then
             BackendDump.dumpEquationList(constEqs,"including the additional equations:\n");
           end if;

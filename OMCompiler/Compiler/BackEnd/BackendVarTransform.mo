@@ -761,6 +761,7 @@ algorithm
       DAE.Ident ident;
       CrefExpTable derConst;
       list<String> fields;
+      list<DAE.Dimension> dims;
 
       // Note: Most of these functions check if a subexpression did a replacement.
       // If it did not, we do not create a new copy of the expression (to save some memory).
@@ -777,9 +778,13 @@ algorithm
         e2 = avoidDoubleHashLookup(e1,t);
       then
         (e2,true);
-    case ((e as DAE.CREF(componentRef = cr)),repl,cond)
+    case ((e as DAE.CREF(componentRef = cr, ty = t)),repl,cond)
         guard replaceExpCond(cond, e)
       equation
+        // only expand cref if dimensions are fixed
+        (_, dims) = Types.flattenArrayType(t);
+        true = List.none(list(Types.dimNotFixed(dim) for dim in dims), Util.id);
+
         (cr,_) = replaceCrefSubs(cr,repl,cond);
         true = hasExtendReplacement(repl, cr);
         (e2,true) = Expression.extendArrExp(e,false);
