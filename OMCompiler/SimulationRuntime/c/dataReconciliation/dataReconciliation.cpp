@@ -303,12 +303,6 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   std::string nonReconciledVarsFilename = string(data->modelData->modelFilePrefix) +  "_NonReconcilcedVars.txt";
   vector<std::string> nonReconciledVars;
 
-  if (omc_flag[FLAG_OUTPUT_PATH])
-  {
-    nonReconciledVarsFilename = string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + nonReconciledVarsFilename;
-    copyReferenceFile(data, "_NonReconcilcedVars.txt");
-  }
-
   ifstream nonreconcilevarsip(nonReconciledVarsFilename);
   string line;
   if (nonreconcilevarsip.good())
@@ -2784,12 +2778,6 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputDat
   // check for BoundaryConditionVars.txt file exists to generate the html report
   std::string boundaryConditionsVarsFilename = std::string(data->modelData->modelFilePrefix) +  "_BoundaryConditionVars.txt";
   vector<std::string> boundaryConditionVars;
-
-  if (omc_flag[FLAG_OUTPUT_PATH])
-  {
-    boundaryConditionsVarsFilename = string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + boundaryConditionsVarsFilename;
-    copyReferenceFile(data, "_BoundaryConditionVars.txt");
-  }
 
   ifstream boundaryConditionVarsip(boundaryConditionsVarsFilename);
   std::string line;
