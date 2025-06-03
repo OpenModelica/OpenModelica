@@ -2474,16 +2474,18 @@ void CreateConnectionDialog::createConnection()
   mpConnectionLineAnnotation->setStartElementName(startElementName);
   mpConnectionLineAnnotation->setEndElementName(endElementName);
   /* Issue #12163. Do not check connection validity when called from GraphicsView::createConnector
-     * GraphicsView::createConnector creates an incomplete connector. We do this for performance reasons. Avoid calling getModelInstance API.
-     * We know for sure that both connectors are compatible in this case so its okay not to check for validity.
-     */
+   * GraphicsView::createConnector creates an incomplete connector. We do this for performance reasons. Avoid calling getModelInstance API.
+   * We know for sure that both connectors are compatible in this case so its okay not to check for validity.
+   */
   if (mCreateConnector) {
     mpGraphicsView->addConnectionToView(mpConnectionLineAnnotation, false);
     mpGraphicsView->addConnectionToClass(mpConnectionLineAnnotation);
+    accept();
   } else if (!mpGraphicsView->addConnectionHelper(mpConnectionLineAnnotation)) {
     reject();
+  } else {
+    accept();
   }
-  accept();
 }
 
 /*!
