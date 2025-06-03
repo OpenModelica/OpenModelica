@@ -258,7 +258,7 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   /* Matrix F and H are generated for DataReconciliation*/
   const int INDEX_JAC_F;
   const int INDEX_JAC_H;
-  // const int INDEX_JAC_S;
+  const int INDEX_JAC_S;
 
   /*
   * These functions initialize specific jacobians.
@@ -271,7 +271,7 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   initialAnalyticalJacobian_func_ptr initialAnalyticJacobianD;
   initialAnalyticalJacobian_func_ptr initialAnalyticJacobianF;
   initialAnalyticalJacobian_func_ptr initialAnalyticJacobianH;
-  // initialAnalyticalJacobian_func_ptr initialAnalyticJacobianS;
+  initialAnalyticalJacobian_func_ptr initialAnalyticJacobianS;
 
   /*
   * These functions calculate specific jacobian column.
@@ -282,7 +282,7 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   jacobianColumn_func_ptr functionJacD_column;
   jacobianColumn_func_ptr functionJacF_column;
   jacobianColumn_func_ptr functionJacH_column;
-  // jacobianColumn_func_ptr functionJacS_column;
+  jacobianColumn_func_ptr functionJacS_column;
   /*#endif*/
 
   const char *(*linear_model_frame)(void); /* printf format-string with holes for 6 strings */
