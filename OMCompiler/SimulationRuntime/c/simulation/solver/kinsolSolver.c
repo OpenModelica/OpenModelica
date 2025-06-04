@@ -600,7 +600,7 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
   assertStreamPrint(threadData, NULL != sp, "sp is NULL");
   double *xScaling = NV_DATA_S(kinsolData->xScale);
-  long int color, column, row, nz;
+  long int column, nz;
 
   if (SUNMatGetID(Jac) != SUNMATRIX_SPARSE || SM_SPARSETYPE_S(Jac) == CSR_MAT) {
     errorStreamPrint(OMC_LOG_STDOUT, 0,
@@ -612,8 +612,8 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   rt_ext_tp_tick(&nlsData->jacobianTimeClock);
 
   /* call generic sparse Jacobian with CSC buffer "SM_DATA_S(Jac)" */
-  evalJacobianSparse(data, threadData, jacobian, NULL, SM_DATA_S(Jac));
-  setSundialSparsePattern(jacobian, Jac);
+  evalJacobian(data, threadData, jacobian, NULL, SM_DATA_S(Jac), FALSE);
+  setSundialsSparsePattern(jacobian, Jac);
 
   /* scaling */
   if (kinsolData->nominalJac) {

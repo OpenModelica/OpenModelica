@@ -44,8 +44,7 @@ void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRo
 JACOBIAN* copyJacobian(JACOBIAN* source);
 void freeJacobian(JACOBIAN* jac);
 
-void evalJacobianSparse(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jacCSC);
-void evalJacobianDense(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jacDense);
+void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense);
 
 SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int numberOfNonZeros, unsigned int maxColors);
 void freeSparsePattern(SPARSE_PATTERN *spp);

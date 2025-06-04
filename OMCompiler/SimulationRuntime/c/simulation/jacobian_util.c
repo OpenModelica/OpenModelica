@@ -104,20 +104,20 @@ void freeJacobian(JACOBIAN *jac)
   free(jac->sparsePattern); jac->sparsePattern = NULL;
 }
 
-/* TODO: only use evalJacobianDense and evalJacobianSparse, make them parallel, add scalings */
-
-/*! \fn evalJacobianSparse
+/*! \fn evalJacobian
  *
- *  compute entries of Jacobian in sparse CSC format
+ *  compute entries of Jacobian in sparse CSC or dense format 
  *  uses coloring (sparsePattern non NULL)
  *
  *  \param [ref] [data]
  *  \param [ref] [threadData]
  *  \param [ref] [jacobian]        Pointer to Jacobian
  *  \param [ref] [parentJacobian]  Pointer to parent Jacobian
- *  \param [out] [jacCSC]          Sparse output buffer, size nnz, can be non zero initialized (values will be overwritten)
+ *  \param [out] [jac]             Output buffer, size nnz (sparse) or #rows * #cols (dense),
+ *                                 sparse: can be non zero initialized (values will be overwritten), dense: all zeros must be zero when calling
+ *  \param [ref] [isDense]         Flag to set dense / sparse output
  */
-void evalJacobianSparse(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jacCSC)
+void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense)
 {
   int color, column, row, nz;
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
@@ -141,52 +141,14 @@ void evalJacobianSparse(DATA* data, threadData_t *threadData, JACOBIAN* jacobian
       if (sp->colorCols[column]-1 == color) {
         for (nz = sp->leadindex[column]; nz < sp->leadindex[column+1]; nz++) {
           row = sp->index[nz];
-          jacCSC[nz] = jacobian->resultVars[row]; //* solverData->xScaling[j];
-        }
-        /* de-activate seed variable for the corresponding color */
-        jacobian->seedVars[column] = 0.0;
-      }
-    }
-  }
-}
-
-/*! \fn evalJacobianDense
- *
- *  compute entries of Jacobian in dense column-major
- *  uses coloring (from sparsity pattern) if available
- *
- *  \param [ref] [data]
- *  \param [ref] [threadData]
- *  \param [ref] [jacobian]        Pointer to Jacobian
- *  \param [ref] [parentJacobian]  Pointer to parent Jacobian
- *  \param [out] [jacDense]        Dense output buffer, assumed to be zero initialized (for all nonzero entries), column-major
- */
-void evalJacobianDense(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jacDense)
-{
-  // TODO: for now assumes present sparse pattern; add case for sp == NULL
-  int color, column, row, nz;
-  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
-
-  /* evaluate constant equations of Jacobian */
-  if (jacobian->constantEqns != NULL) {
-    jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
-  }
-
-  /* evaluate Jacobian */
-  for (color = 0; color < sp->maxColors; color++) {
-    /* activate seed variable for the corresponding color */
-    for (column = 0; column < jacobian->sizeCols; column++)
-      if (sp->colorCols[column]-1 == color)
-        jacobian->seedVars[column] = 1.0;
-
-    /* evaluate Jacobian column */
-    jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
-
-    for (column = 0; column < jacobian->sizeCols; column++) {
-      if (sp->colorCols[column]-1 == color) {
-        for (nz = sp->leadindex[column]; nz < sp->leadindex[column+1]; nz++) {
-          row = sp->index[nz];
-          jacDense[column * jacobian->sizeRows + row] = jacobian->resultVars[row]; //* solverData->xScaling[j];
+          if (!isDense) {
+            /* sparse case */
+            jac[nz] = jacobian->resultVars[row]; //* solverData->xScaling[j];
+          }
+          else {
+            /* dense case */
+            jac[column * jacobian->sizeRows + row] = jacobian->resultVars[row]; //* solverData->xScaling[j];
+          }
         }
         /* de-activate seed variable for the corresponding color */
         jacobian->seedVars[column] = 0.0;

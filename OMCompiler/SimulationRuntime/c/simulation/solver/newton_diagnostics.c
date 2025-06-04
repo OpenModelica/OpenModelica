@@ -136,7 +136,7 @@ double** getJacobian( DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DAT
     assertStreamPrint(threadData, NULL != jac, "out of memory");
 
     /* call generic dense Jacobian */
-    evalJacobianDense(data, threadData, jacobian, NULL, jac);
+    evalJacobian(data, threadData, jacobian, NULL, jac, TRUE);
 
     /* copy jacobian from column-major to row-major */
     for (i = 0; i < jacobian->sizeRows; ++i)

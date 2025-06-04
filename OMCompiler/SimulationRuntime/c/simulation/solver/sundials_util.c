@@ -84,7 +84,7 @@ void setJacElementSundialsSparse(int row, int column, int nth, double value, voi
  * @param jacobian  Jacobian
  * @param Jac       Sundials Matrix
  */
-void setSundialSparsePattern(JACOBIAN* jacobian, SUNMatrix Jac) {
+void setSundialsSparsePattern(JACOBIAN* jacobian, SUNMatrix Jac) {
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
   long int column, row, nz;
 
