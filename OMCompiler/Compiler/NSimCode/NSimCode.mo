@@ -610,6 +610,7 @@ public
       String license;
       String copyright;
       String directory;
+      String fileName;
       SimVars vars;
       VarInfo varInfo;
       list<SimCodeFunction.Function> functions;
@@ -656,6 +657,7 @@ public
         license                         = "",
         copyright                       = "",
         directory                       = directory,
+        fileName                        = "",
         vars                            = vars,
         varInfo                         = info,
         functions                       = functions,
@@ -702,6 +704,7 @@ public
         license                         = modelInfo.license,
         copyright                       = modelInfo.copyright,
         directory                       = modelInfo.directory,
+        fileName                        = modelInfo.fileName,
         varInfo                         = VarInfo.convert(modelInfo.varInfo),
         vars                            = SimVar.SimVars.convert(modelInfo.vars),
         functions                       = modelInfo.functions,
