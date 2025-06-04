@@ -600,7 +600,7 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
   assertStreamPrint(threadData, NULL != sp, "sp is NULL");
   double *xScaling = NV_DATA_S(kinsolData->xScale);
-  long int i, j, ii, l;
+  long int color, column, row, nz;
 
   if (SUNMatGetID(Jac) != SUNMATRIX_SPARSE || SM_SPARSETYPE_S(Jac) == CSR_MAT) {
     errorStreamPrint(OMC_LOG_STDOUT, 0,
@@ -611,36 +611,15 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   /* performance measurement */
   rt_ext_tp_tick(&nlsData->jacobianTimeClock);
 
-  /* reset matrix */
-  SUNMatZero(Jac);
+  /* call generic sparse Jacobian with CSC buffer "SM_DATA_S(Jac)" */
+  evalJacobianSparse(data, threadData, jacobian, NULL, SM_DATA_S(Jac));
+  setSundialSparsePattern(jacobian, Jac);
 
-  /* Evaluate constant equations of Jacobian */
-  if (jacobian->constantEqns != NULL) {
-    jacobian->constantEqns(data, threadData, jacobian, NULL);
-  }
-
-  /* Evaluate Jacobian */
-  for (i = 0; i < sp->maxColors; i++) {
-    /* Set seed variables */
-    for (j = 0; j < jacobian->sizeCols; j++)
-      if (sp->colorCols[j] - 1 == i)
-        jacobian->seedVars[j] = 1.0;
-
-    /* Evaluate Jacobian column */
-    jacobian->evalColumn(data, threadData, jacobian, NULL);
-
-    /* Save column in Jac and unset seed variables */
-    for (j = 0; j < jacobian->sizeCols; j++) {
-      if (sp->colorCols[j] - 1 == i) {
-        for (ii = sp->leadindex[j]; ii < sp->leadindex[j + 1]; ii++) {
-          l = sp->index[ii];
-          if (kinsolData->nominalJac) {
-            setJacElementSundialsSparse(l, j, ii, jacobian->resultVars[l] / xScaling[j], Jac, SM_CONTENT_S(Jac)->M);
-          } else {
-            setJacElementSundialsSparse(l, j, ii, jacobian->resultVars[l], Jac, SM_CONTENT_S(Jac)->M);
-          }
-        }
-        jacobian->seedVars[j] = 0.0;
+  /* scaling */
+  if (kinsolData->nominalJac) {
+    for (column = 0; column < jacobian->sizeCols; column++) {
+      for (nz = sp->leadindex[column]; nz < sp->leadindex[column + 1]; nz++) {
+        SM_DATA_S(Jac)[nz] / xScaling[column];
       }
     }
   }

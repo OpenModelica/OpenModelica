@@ -188,7 +188,8 @@ static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsig
 
   modelica_real* jac = data->simulationInfo->stateSetData[index].J;
 
-  evalJacobian(data, threadData, jacobian, NULL, jac);
+  /* call generic dense Jacobian */
+  evalJacobianDense(data, threadData, jacobian, NULL, jac);
 
   if(OMC_ACTIVE_STREAM(OMC_LOG_DSS_JAC))
   {

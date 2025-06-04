@@ -96,7 +96,8 @@ int wrapper_fvec_newton(int n, double* x, double* fvec, NLS_USERDATA* userData, 
     rt_ext_tp_tick(&nlsData->jacobianTimeClock);
 
     if(nlsData->jacobianIndex != -1 && jacobian != NULL ) {
-      evalJacobian(data, threadData, jacobian, NULL, solverData->fjac);
+      /* call generic dense Jacobian */
+      evalJacobianDense(data, threadData, jacobian, NULL, solverData->fjac);
     } else {
       double delta_h = sqrt(solverData->epsfcn);
       double delta_hh;

@@ -79,6 +79,28 @@ void setJacElementSundialsSparse(int row, int column, int nth, double value, voi
 }
 
 /**
+ * @brief Set Sundials sparse pattern from SimRuntime SPARSE_PATTERN
+ *
+ * @param jacobian  Jacobian
+ * @param Jac       Sundials Matrix
+ */
+void setSundialSparsePattern(JACOBIAN* jacobian, SUNMatrix Jac) {
+  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
+  long int column, row, nz;
+
+  for (column = 0; column < jacobian->sizeCols; column++) {
+    for (nz = sp->leadindex[column]; nz < sp->leadindex[column + 1]; nz++) {
+      /* set row, col */
+      row = sp->index[nz];
+      if (column > 0 && SM_INDEXPTRS_S(Jac)[column] == 0) {
+        SM_INDEXPTRS_S(Jac)[column] = nz;
+      }
+      SM_INDEXVALS_S(Jac)[nz] = row;
+    }
+  }
+}
+
+/**
  * @brief             Scaling of a sparse matrix column-wise by a vector
  *
  * @param A           Sparse matrix in CSC. Will be scaled on return.

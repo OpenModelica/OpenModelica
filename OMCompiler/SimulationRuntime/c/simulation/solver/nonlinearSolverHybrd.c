@@ -265,7 +265,8 @@ static int getAnalyticalJacobian(NLS_USERDATA* hybrdUserData, double* jac)
   DATA_HYBRD* solverData = (DATA_HYBRD*)(systemData->solverData);
   JACOBIAN* jacobian = hybrdUserData->analyticJacobian;
 
-  evalJacobian(data, threadData, jacobian, NULL, jac);
+  /* call generic dense Jacobian */
+  evalJacobianDense(data, threadData, jacobian, NULL, jac);
 
   memcpy(solverData->fjacobian, jac, (jacobian->sizeRows) * (jacobian->sizeCols) * sizeof(modelica_real));
 

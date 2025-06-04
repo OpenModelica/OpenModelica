@@ -832,7 +832,8 @@ int getAnalyticalJacobianHomotopy(DATA_HOMOTOPY* solverData, double* jac)
   JACOBIAN* jacobian = solverData->userData->analyticJacobian;
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
 
-  evalJacobian(data, threadData, jacobian, NULL, jac);
+  /* call generic dense Jacobian */
+  evalJacobianDense(data, threadData, jacobian, NULL, jac);
 
   /* apply scaling to each column */
   for (j = 0; j < jacobian->sizeCols; j++) {

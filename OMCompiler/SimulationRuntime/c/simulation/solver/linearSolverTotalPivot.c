@@ -341,7 +341,8 @@ void getAnalyticalJacobianTotalPivot(DATA* data, threadData_t *threadData, LINEA
   JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
   JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
 
-  evalJacobian(data, threadData, jacobian, parentJacobian, jac);
+  /* call generic dense Jacobian */
+  evalJacobianDense(data, threadData, jacobian, parentJacobian, jac);
 }
 
 /*! \fn wrapper_fvec_hybrd for the residual Function
