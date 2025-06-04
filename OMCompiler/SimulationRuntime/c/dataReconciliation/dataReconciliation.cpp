@@ -192,11 +192,11 @@ void createErrorHtmlReport(DATA * data, int status = 0)
   std::stringstream htmlfile;
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    htmlfile << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << ".html";
+    htmlfile << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelFilePrefix << ".html";
   }
   else
   {
-    htmlfile << data->modelData->modelName << ".html";
+    htmlfile << data->modelData->modelFilePrefix << ".html";
   }
   string html = htmlfile.str();
   myfile.open(html.c_str());
@@ -205,7 +205,7 @@ void createErrorHtmlReport(DATA * data, int status = 0)
   myfile << "<!DOCTYPE html><html>\n <head> <h1> Data Reconciliation Report</h1></head> \n <body> \n ";
   myfile << "<h2> Overview: </h2>\n";
   myfile << "<table> \n";
-  myfile << "<tr> \n" << "<th align=right> Model file: </th> \n" << "<td>" << data->modelData->modelFilePrefix << ".mo" << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Model file: </th> \n" << "<td>" << data->modelData->modelFileName << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Model name: </th> \n" << "<td>" << data->modelData->modelName << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Model directory: </th> \n" << "<td>" << data->modelData->modelDir << "</td> </tr>\n";
   if (omc_flagValue[FLAG_DATA_RECONCILE_Sx])
@@ -256,7 +256,7 @@ void createErrorHtmlReport(DATA * data, int status = 0)
   // debug log
   if (status == 0)
   {
-    myfile << "<h2> <a href=" << data->modelData->modelName << "_debug.txt" << " target=_blank> Debug log </a> </h2>\n";
+    myfile << "<h2> <a href=" << data->modelData->modelFilePrefix << "_debug.txt" << " target=_blank> Debug log </a> </h2>\n";
   }
 
   myfile << "</table>\n";
@@ -275,11 +275,11 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   std::stringstream htmlfile;
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    htmlfile << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << ".html";
+    htmlfile << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelFilePrefix << ".html";
   }
   else
   {
-    htmlfile << data->modelData->modelName << ".html";
+    htmlfile << data->modelData->modelFilePrefix << ".html";
   }
   string html = htmlfile.str();
   myfile.open(html.c_str());
@@ -289,11 +289,11 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   std::stringstream csv_file;
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    csv_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_Outputs.csv";
+    csv_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelFilePrefix << "_Outputs.csv";
   }
   else
   {
-    csv_file << data->modelData->modelName << "_Outputs.csv";
+    csv_file << data->modelData->modelFilePrefix << "_Outputs.csv";
   }
 
   string tmpcsv = csv_file.str();
@@ -324,7 +324,7 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   myfile << "<!DOCTYPE html><html>\n <head> <h1> Data Reconciliation Report</h1></head> \n <body> \n ";
   myfile << "<h2> Overview: </h2>\n";
   myfile << "<table> \n";
-  myfile << "<tr> \n" << "<th align=right> Model file: </th> \n" << "<td>" << data->modelData->modelFilePrefix << ".mo" << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Model file: </th> \n" << "<td>" << data->modelData->modelFileName << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Model name: </th> \n" << "<td>" << data->modelData->modelName << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Model directory: </th> \n" << "<td>" << data->modelData->modelDir << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Measurement input file: </th> \n" << "<td>" << omc_flagValue[FLAG_DATA_RECONCILE_Sx] << "</td> </tr>\n";
@@ -389,22 +389,22 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
     myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_relatedBoundaryConditionsEquations.html" << " target=_blank> Related boundary conditions </a> </h3>\n";
 
   // Debug log
-  myfile << "<h3> <a href=" << data->modelData->modelName << "_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
+  myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
 
   // create a warning log for correlation input file
   if (!warningCorrelationData.aboveDiagonalEntry.empty() || !warningCorrelationData.diagonalEntry.empty())
   {
-    myfile << "<h3> <a href=" << data->modelData->modelName << "_warning.txt" << " target=_blank> Warnings </a> </h3>\n";
+    myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_warning.txt" << " target=_blank> Warnings </a> </h3>\n";
     /* create a warning log file */
     ofstream warningfile;
     std::stringstream warning_file;
     if (omc_flag[FLAG_OUTPUT_PATH])
     {
-      warning_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_warning.txt";
+      warning_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelFilePrefix << "_warning.txt";
     }
     else
     {
-      warning_file << data->modelData->modelName << "_warning.txt";
+      warning_file << data->modelData->modelFilePrefix << "_warning.txt";
     }
 
     warningfile.open(warning_file.str().c_str());
@@ -593,11 +593,11 @@ void createErrorHtmlReportForBoundaryConditions(DATA * data, int status = 0)
   std::stringstream htmlfile;
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    htmlfile << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_BoundaryConditions.html";
+    htmlfile << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelFilePrefix << "_BoundaryConditions.html";
   }
   else
   {
-    htmlfile << data->modelData->modelName << "_BoundaryConditions.html";
+    htmlfile << data->modelData->modelFilePrefix << "_BoundaryConditions.html";
   }
   string html = htmlfile.str();
   myfile.open(html.c_str());
@@ -606,7 +606,7 @@ void createErrorHtmlReportForBoundaryConditions(DATA * data, int status = 0)
   myfile << "<!DOCTYPE html><html>\n <head> <h1> Boundary Conditions Report </h1></head> \n <body> \n ";
   myfile << "<h2> Overview: </h2>\n";
   myfile << "<table> \n";
-  myfile << "<tr> \n" << "<th align=right> Model file: </th> \n" << "<td>" << data->modelData->modelFilePrefix << ".mo" << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Model file: </th> \n" << "<td>" << data->modelData->modelFileName << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Model name: </th> \n" << "<td>" << data->modelData->modelName << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Model directory: </th> \n" << "<td>" << data->modelData->modelDir << "</td> </tr>\n";
   // Sx input file
@@ -653,7 +653,7 @@ void createErrorHtmlReportForBoundaryConditions(DATA * data, int status = 0)
   // debug log
   if (status == 0)
   {
-    myfile << "<h2> <a href=" << data->modelData->modelName << "_BoundaryConditions_debug.txt" << " target=_blank> Debug log </a> </h2>\n";
+    myfile << "<h2> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditions_debug.txt" << " target=_blank> Debug log </a> </h2>\n";
   }
 
   myfile << "</table>\n";
@@ -672,11 +672,11 @@ void createHtmlReportForBoundaryConditions(DATA * data, std::vector<std::string>
   std::stringstream htmlfile;
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    htmlfile << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_BoundaryConditions.html";
+    htmlfile << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelFilePrefix << "_BoundaryConditions.html";
   }
   else
   {
-    htmlfile << data->modelData->modelName << "_BoundaryConditions.html";
+    htmlfile << data->modelData->modelFilePrefix << "_BoundaryConditions.html";
   }
   string html = htmlfile.str();
   myfile.open(html.c_str());
@@ -686,11 +686,11 @@ void createHtmlReportForBoundaryConditions(DATA * data, std::vector<std::string>
   std::stringstream csv_file;
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    csv_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_BoundaryConditions_Outputs.csv";
+    csv_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelFilePrefix << "_BoundaryConditions_Outputs.csv";
   }
   else
   {
-    csv_file << data->modelData->modelName << "_BoundaryConditions_Outputs.csv";
+    csv_file << data->modelData->modelFilePrefix << "_BoundaryConditions_Outputs.csv";
   }
 
   string tmpcsv = csv_file.str();
@@ -700,7 +700,7 @@ void createHtmlReportForBoundaryConditions(DATA * data, std::vector<std::string>
   myfile << "<!DOCTYPE html><html>\n <head> <h1> Boundary Conditions Report </h1></head> \n <body> \n ";
   myfile << "<h2> Overview: </h2>\n";
   myfile << "<table> \n";
-  myfile << "<tr> \n" << "<th align=right> Model file: </th> \n" << "<td>" << data->modelData->modelFilePrefix << ".mo" << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Model file: </th> \n" << "<td>" << data->modelData->modelFileName << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Model name: </th> \n" << "<td>" << data->modelData->modelName << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Model directory: </th> \n" << "<td>" << data->modelData->modelDir << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Reconciled values input file: </th> \n" << "<td>" << omc_flagValue[FLAG_DATA_RECONCILE_Sx] << "</td> </tr>\n";
@@ -729,7 +729,7 @@ void createHtmlReportForBoundaryConditions(DATA * data, std::vector<std::string>
   myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditionIntermediateEquations.html" << " target=_blank> Intermediate equations </a> </h3>\n";
 
   // Debug log
-  myfile << "<h3> <a href=" << data->modelData->modelName << "_BoundaryConditions_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
+  myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditions_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
 
   /* Add Results data */
   myfile << "<h2> Results: </h2>\n";
@@ -1146,11 +1146,11 @@ void dumpReconciledSxToCSV(double * matrix, int rows, int cols, vector<string> h
   std::stringstream csv_file;
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    csv_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_Reconciled_Sx.csv";
+    csv_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelFilePrefix << "_Reconciled_Sx.csv";
   }
   else
   {
-    csv_file << data->modelData->modelName << "_Reconciled_Sx.csv";
+    csv_file << data->modelData->modelFilePrefix << "_Reconciled_Sx.csv";
   }
 
   string tmpcsv = csv_file.str();
@@ -2940,11 +2940,11 @@ int dataReconciliation(DATA * data, threadData_t * threadData, int status)
   std::stringstream logfilename;
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    logfilename << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << "_debug.txt";
+    logfilename << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelFilePrefix << "_debug.txt";
   }
   else
   {
-    logfilename << data->modelData->modelName << "_debug.txt";
+    logfilename << data->modelData->modelFilePrefix << "_debug.txt";
   }
 
   string tmplogfilename = logfilename.str();
@@ -3048,11 +3048,11 @@ int boundaryConditions(DATA * data, threadData_t * threadData, int status)
   std::stringstream logfilename;
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    logfilename << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << "_BoundaryConditions_debug.txt";
+    logfilename << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelFilePrefix << "_BoundaryConditions_debug.txt";
   }
   else
   {
-    logfilename << data->modelData->modelName << "_BoundaryConditions_debug.txt";
+    logfilename << data->modelData->modelFilePrefix << "_BoundaryConditions_debug.txt";
   }
 
   string tmplogfilename = logfilename.str();

@@ -794,6 +794,7 @@ package SimCode
       String license;
       String copyright;
       String directory;
+      String fileName;
       VarInfo varInfo;
       SimCodeVar.SimVars vars;
       list<SimCodeFunction.Function> functions;
