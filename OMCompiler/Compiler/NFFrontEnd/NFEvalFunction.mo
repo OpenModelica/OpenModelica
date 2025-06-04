@@ -344,8 +344,13 @@ algorithm
   ty := Type.mapDims(ty, function applyReplacementsDim(map = map));
 
   result := match ty
-    case Type.ARRAY() guard buildArrayBinding and Type.hasKnownSize(ty)
-      then Expression.fillType(ty, Expression.EMPTY(Type.arrayElementType(ty)));
+    case Type.ARRAY() guard buildArrayBinding
+      then
+        if Type.hasKnownSize(ty) then
+          Expression.fillType(ty, Expression.EMPTY(Type.arrayElementType(ty)))
+        else
+          Expression.makeEmptyArray(ty);
+
     case Type.COMPLEX() then buildRecordBinding(node, map, mutableParams);
     else Expression.EMPTY(ty);
   end match;

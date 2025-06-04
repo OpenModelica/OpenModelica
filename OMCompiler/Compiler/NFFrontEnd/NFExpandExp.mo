@@ -281,7 +281,7 @@ public
     Type ty;
   algorithm
     Expression.RANGE(ty = ty) := exp;
-    expanded := Type.hasKnownSize(ty);
+    expanded := Expression.isLiteral(exp);
 
     if expanded then
       outExp := Ceval.evalExp(exp);
