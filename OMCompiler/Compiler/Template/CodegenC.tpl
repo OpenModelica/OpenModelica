@@ -1203,14 +1203,6 @@ template simulationFile_inl(SimCode simCode)
       >>
 end simulationFile_inl;
 
-// template hasJacobianMatrix(list<JacobianMatrix> jacobianMatrices, String name)
-// ::=
-//   jacobianMatrices |> jac as JAC_MATRIX(matrixName=matrixName) =>
-//     if stringEq(matrixName, name) then "true" else ""
-//   ;separator=""
-// end hasJacobianMatrix;
-
-
 template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
   "Generates code for main C file for simulation target."
 ::=
