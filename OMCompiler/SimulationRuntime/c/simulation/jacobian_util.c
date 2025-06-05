@@ -113,8 +113,7 @@ void freeJacobian(JACOBIAN *jac)
  *  \param [ref] [threadData]
  *  \param [ref] [jacobian]        Pointer to Jacobian
  *  \param [ref] [parentJacobian]  Pointer to parent Jacobian
- *  \param [out] [jac]             Output buffer, size nnz (sparse) or #rows * #cols (dense),
- *                                 sparse: can be non zero initialized (values will be overwritten), dense: all zeros must be zero when calling
+ *  \param [out] [jac]             Output buffer, size nnz (sparse) or #rows * #cols (dense), non zero-initialized
  *  \param [ref] [isDense]         Flag to set dense / sparse output
  */
 void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACOBIAN* parentJacobian, modelica_real* jac, modelica_boolean isDense)
@@ -125,6 +124,12 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
   /* evaluate constant equations of Jacobian */
   if (jacobian->constantEqns != NULL) {
     jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
+  }
+
+  if (isDense) {
+    /* memset to zero for dense, since solvers might destroy "hard zeros"
+     * does not apply for sparse, since the values are overwritten */
+    memset(jac, 0.0, jacobian->sizeRows * jacobian->sizeCols * sizeof(modelica_real));
   }
 
   /* evaluate Jacobian */
