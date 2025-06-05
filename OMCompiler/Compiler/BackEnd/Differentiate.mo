@@ -1128,7 +1128,7 @@ algorithm
     // Constants, known variables, parameters and discrete variables have a 0-derivative, not the inputs
     // Only return zero for knownVars if symbolic sensitivities are NOT enabled
     case ((DAE.CREF(componentRef = cr, ty = tp)), _, BackendDAE.DIFFINPUTDATA(knownVars=SOME(knvars)), BackendDAE.DIFFERENTIATION_TIME(), _)
-      guard not List.contains(Flags.getConfigStringList(Flags.POST_OPT_MODULES), "generateSymbolicSensitivities", stringEq)
+      guard not List.contains(Flags.getConfigStringList(Flags.POST_OPT_MODULES_ADD), "generateSymbolicSensitivities", stringEq)
       equation
         (var,_) = BackendVariable.getVarSingle(cr, knvars);
         false = BackendVariable.isVarOnTopLevelAndInput(var);
