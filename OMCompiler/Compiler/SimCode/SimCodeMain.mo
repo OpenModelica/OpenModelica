@@ -1711,7 +1711,6 @@ algorithm
 
     //(_, modelInfo, symJacs) := SimCodeUtil.addAlgebraicLoopsModelInfoSymJacs(inBackendDAE.shared.symjacs, modelInfo);
     (SymbolicJacs, modelInfo, SymbolicJacsTemp) := SimCodeUtil.addAlgebraicLoopsModelInfoSymJacs(symJacs, modelInfo);
-    print("0\n");
 
     // collect jacobian equation only for equantion info file
     jacobianEquations := SimCodeUtil.collectAllJacobianEquations(SymbolicJacs);

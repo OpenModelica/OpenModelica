@@ -576,10 +576,8 @@ algorithm
       if (Util.isSome(dataReconJacH)) then
         (SOME(dataReconSimJacH), uniqueEqIndex, tempvars) := createSymbolicSimulationJacobian(Util.getOption(dataReconJacH), uniqueEqIndex, tempvars);
         (SymbolicJacsdatarecon, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs({dataReconSimJac, dataReconSimJacH}, modelInfo);
-        print("1\n");
       else
         (SymbolicJacsdatarecon, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs({dataReconSimJac}, modelInfo);
-        print("2\n");
       end if;
       SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
       //SymbolicJacsNLS := dataReconSimJac::SymbolicJacsNLS;
@@ -604,19 +602,12 @@ algorithm
     // collect symbolic jacobians in linear loops of the overall jacobians
     (LinearMatrices, uniqueEqIndex) := createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex, shared);
     (SymbolicJacs, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs(LinearMatrices, modelInfo);
-    print("3\n");
     // append datareconciliation jacobians equation to SymbolicJacs for correct generation of equations in model_info.json
     SymbolicJacs := List.flatten({SymbolicJacsFMI, SymbolicJacs, SymbolicJacsStateSelect, SymbolicJacsdatarecon});
     (delayedExps, maxDelayedExpIndex, SymbolicJacsNLS) := extractJacobianDelayedExpressions(delayedExps, maxDelayedExpIndex, SymbolicJacsNLS);
     (delayedExps, maxDelayedExpIndex, SymbolicJacs) := extractJacobianDelayedExpressions(delayedExps, maxDelayedExpIndex, SymbolicJacs);
     (delayedExps, maxDelayedExpIndex, SymbolicJacsTemp) := extractJacobianDelayedExpressions(delayedExps, maxDelayedExpIndex, SymbolicJacsTemp);
     (delayedExps, maxDelayedExpIndex, SymbolicJacsStateSelectInternal) := extractJacobianDelayedExpressions(delayedExps, maxDelayedExpIndex, SymbolicJacsStateSelectInternal);
-
-
-    for symjac in SymbolicJacs loop
-      print("Collect Jacobian outside " + symjac.matrixName + " and set index to: " + intString(symjac.jacobianIndex) + "\n");
-    end for;
-
 
     // collect jacobian equation only for equantion info file
     jacobianEquations := collectAllJacobianEquations(SymbolicJacs);
@@ -1342,7 +1333,6 @@ algorithm
     // not just the sparsty pattern
     if not listEmpty(tmpSymJac.columns) then
       ({tmpSymJac}, modelInfo, tmpSymJacs) := addAlgebraicLoopsModelInfoSymJacs({tmpSymJac}, modelInfo);
-      print("4\n");
       inSyst.jacobianMatrix := SOME(tmpSymJac);
       allSymJacs := listAppend(tmpSymJacs, allSymJacs);
       allSymJacs := tmpSymJac::allSymJacs;
@@ -1386,7 +1376,6 @@ algorithm
     // not just the sparsty pattern
     if not listEmpty(tmpSymJac.columns) then
       ({tmpSymJac}, modelInfo, tmpSymJacs) := addAlgebraicLoopsModelInfoSymJacs({tmpSymJac}, modelInfo);
-      print("6\n");
       inSyst.jacobianMatrix := SOME(tmpSymJac);
       allSymJacs := listAppend(tmpSymJacs, allSymJacs);
       allSymJacs := tmpSymJac::allSymJacs;
@@ -1416,7 +1405,7 @@ protected
   SimCode.VarInfo varInfo;
   list<SimCode.JacobianMatrix> tmpSymJacs;
   list<SimCode.JacobianMatrix> outSymJacs = {};
-  constant Boolean debug = true;
+  constant Boolean debug = false;
 algorithm
   for symjac in symjacs loop
     varInfo := modelInfo.varInfo;
@@ -1458,7 +1447,6 @@ protected
 algorithm
   for set in inSets loop
     ({symJac}, modelInfo, tmpSymJacs) := addAlgebraicLoopsModelInfoSymJacs({set.jacobianMatrix}, modelInfo);
-    print("7\n");
     outSymJacsInternal := listAppend(tmpSymJacs, outSymJacsInternal);
     set.jacobianMatrix := symJac;
     outSymJacs := symJac::outSymJacs;
@@ -14203,7 +14191,6 @@ algorithm
       ({contSimJac}, uniqueEqIndex) := createSymbolicJacobianssSimCode(contPartDer, crefSimVarHT, uniqueEqIndex, {"FMIDER"}, {});
       // collect algebraic loops and symjacs for FMIDer
       ({contSimJac}, outModelInfo, symJacs) := addAlgebraicLoopsModelInfoSymJacs({contSimJac}, inModelInfo);
-      print("8\n");
       contPartSimDer := SOME(contSimJac);
       // set partition index to number of clocks (max index) for now
       // TODO: use actual clock indices to support multirate systems
@@ -14247,7 +14234,6 @@ algorithm
         ({initSimJac}, uniqueEqIndex) := createSymbolicJacobianssSimCode(initPartDer, crefSimVarHT, uniqueEqIndex, {"FMIDERINIT"}, {});
         // collect algebraic loops and symjacs for FMIDer
         ({initSimJac}, _, symJacsInit) := addAlgebraicLoopsModelInfoSymJacs({initSimJac}, inModelInfo);
-        print("9\n");
         initPartSimDer := SOME(initSimJac);
         // set partition index to number of clocks (max index) for now
         // TODO: use actual clock indices to support multirate systems

@@ -21,4 +21,141 @@ setCommandLineOptions("-d=dumpSimCode --postOptModules+=generateSymbolicSensitiv
 buildModel(TestModel); getErrorString();
 
 // Result:
+// true
+// ""
+// true
+// ""
+//
+//
+// *********************
+// * SimCode Equations *
+// *********************
+//
+//
+// allEquations:
+// ========================================
+//
+// 5: $DER.x=k * x [Real]
+// 6: $DER.v=c * v + m [Real]
+// ========================================
+//
+//
+//
+// odeEquations (1 systems):
+// ========================================
+// 6: $DER.v=c * v + m [Real]
+// 5: $DER.x=k * x [Real]
+// ========================================
+//
+//
+//
+// algebraicEquations (0 systems):
+// ========================================
+// ========================================
+//
+//
+// clockPartitions (0 systems):
+//
+// ========================================
+//
+//
+//
+// initialEquations: (4)
+// ========================================
+// 1: x=$START.x [Real]
+// 2: alias of 5
+// 3: v=$START.v [Real]
+// 4: alias of 6
+// ========================================
+//
+//
+//
+// initialEquations_lambda0: (0)
+// ========================================
+//
+// removedInitialEquations:
+// ========================================
+//
+// startValueEquations:
+// ========================================
+//
+// nominalValueEquations:
+// ========================================
+//
+// minValueEquations:
+// ========================================
+//
+// maxValueEquations:
+// ========================================
+//
+// parameterEquations:
+// ========================================
+//
+// removedEquations:
+// ========================================
+//
+// algorithmAndEquationAsserts:
+// ========================================
+//
+// equationsForZeroCrossings:
+// ========================================
+//
+// generic calls:
+// ========================================
+//
+// jacobianEquations:
+// ========================================
+// 7: $DER.v.$pDERS.dummyVarS=c.SeedS * v + m.SeedS [Real]
+// 8: $DER.x.$pDERS.dummyVarS=k.SeedS * x [Real]
+//
+// jacobianMatrices:
+// ========================================
+// 	Jacobian idx: 0
+// 		Jacobian name: H
+// 	
+// 	Jacobian idx: 1
+// 		Jacobian name: F
+// 	
+// 	Jacobian idx: 2
+// 		Jacobian name: D
+// 	
+// 	Jacobian idx: 3
+// 		Jacobian name: C
+// 	
+// 	Jacobian idx: 4
+// 		Jacobian name: B
+// 	
+// 	Jacobian idx: 5
+// 		Jacobian name: A
+// 	
+// 	Jacobian idx: 6
+// 		Jacobian name: S
+// 	7: $DER.v.$pDERS.dummyVarS=c.SeedS * v + m.SeedS [Real]
+// 	8: $DER.x.$pDERS.dummyVarS=k.SeedS * x [Real]
+// 	
+// columnVars(2)
+// ----------------------
+// index:0: $DER.v.$pDERS.dummyVarS (no alias)  initial: 	no arrCref index:() []
+// index:1: $DER.x.$pDERS.dummyVarS (no alias)  initial: 	no arrCref index:() []
+//
+// modelInfo:
+// ========================================
+// stateVars (2)
+// ----------------------
+// index:0: v (no alias)  initial: 1.0	no arrCref index:(1) []
+// index:1: x (no alias)  initial: 1.0	no arrCref index:(2) []
+// derivativeVars
+// ----------------------
+// index:2: $DER.v (no alias)  initial: 	no arrCref index:(3) []
+// index:3: $DER.x (no alias)  initial: 	no arrCref index:(4) []
+// paramVars
+// ----------------------
+// index:0: c (no alias)  initial: 2.0	no arrCref index:(5) []
+// index:1: k (no alias)  initial: 1.0	no arrCref index:(6) []
+// index:2: m (no alias)  initial: 1.0	no arrCref index:(7) []
+// functions:
+// -----------
+//
+// {"TestModel", "TestModel_init.xml"}
+// ""
 // endResult
