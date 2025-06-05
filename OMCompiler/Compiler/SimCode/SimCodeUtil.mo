@@ -5033,21 +5033,16 @@ algorithm
         if Util.isSome(shared.dataReconciliationData) then
           BackendDAE.DATA_RECON(_, _, _, _, jacH) := Util.getOption(shared.dataReconciliationData);
           if isSome(jacH) then // check for matrix H is present which means state estimation algorithm is choosed and jacobian F and H are generated earlier
-            matrixnames := {"A", "B", "C", "D"};
+            matrixnames := {"S", "A", "B", "C", "D"};
           else
-            matrixnames := {"A", "B", "C", "D", "H"};
+            matrixnames := {"S", "A", "B", "C", "D", "H"};
           end if;
         else
-           matrixnames := {"A", "B", "C", "D", "F", "H"};
+           matrixnames := {"S", "A", "B", "C", "D", "F", "H"};
         end if;
         // check if the POST_OPT_MODULE "generateSymbolicSensitivities" is set via getConfigStringList not getConfigOptionsStringList
-        if List.contains(Flags.getConfigStringList(Flags.POST_OPT_MODULES_ADD), "generateSymbolicSensitivities", stringEq) then
-          matrixnames := "S" :: matrixnames;
-        end if;
-        // if Flags.isSet(Flags.DUMP_SIMCODE) then
-        //   print("matrixnames: " + stringDelimitList(matrixnames, ", ") + "\n");
-        //   print("all postoptmodules: " + stringDelimitList(FlagsUtil.getConfigOptionsStringList(Flags.POST_OPT_MODULES), ", ") + "\n");
-        //   print(boolString(List.contains(FlagsUtil.getConfigOptionsStringList(Flags.POST_OPT_MODULES), "generateSymbolicSensitivities", stringEq)) + "\n");
+        // if List.contains(Flags.getConfigStringList(Flags.POST_OPT_MODULES_ADD), "generateSymbolicSensitivities", stringEq) then
+        //   matrixnames := "S" :: matrixnames;
         // end if;
         
         (res, ouniqueEqIndex) := createSymbolicJacobianssSimCode(inSymjacs, crefSimVarHT, iuniqueEqIndex, matrixnames, {});
@@ -5096,7 +5091,7 @@ algorithm
       Integer uniqueEqIndex, nRows;
 
       list<String> restnames;
-      String name, dummyVar;
+      String name, dummyVar, jac_name;
 
       SimCodeVar.SimVars simvars;
       list<SimCode.SimEqSystem> allEquations = {}, constantEqns = {};
@@ -5129,7 +5124,7 @@ algorithm
         tmpJac.matrixName = name;
         linearModelMatrices = tmpJac::inJacobianMatrices;
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode({}, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
-     then
+      then
         (linearModelMatrices, uniqueEqIndex);
 
     // if nothing is generated
@@ -5139,7 +5134,17 @@ algorithm
         tmpJac.matrixName = name;
         linearModelMatrices = tmpJac::inJacobianMatrices;
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
-     then
+      then
+        (linearModelMatrices, uniqueEqIndex);
+
+    case ((SOME((_, jac_name, _, _, _, _)), _, _, _) :: _, _, _, name::restnames)
+      guard  not jac_name == name
+      equation
+        tmpJac = SimCode.emptyJacobian;
+        tmpJac.matrixName = name;
+        linearModelMatrices = tmpJac::inJacobianMatrices;
+        (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(inSymJacobians, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
+      then
         (linearModelMatrices, uniqueEqIndex);
 
     // if only sparsity pattern is generated

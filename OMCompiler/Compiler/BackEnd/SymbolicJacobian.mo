@@ -2445,6 +2445,11 @@ algorithm
       diffData = BackendDAE.emptyInputData;
       diffData.independenentVars = SOME(diffVarsArr);
       diffData.dependenentVars = SOME(diffedVars);
+      if matrixName == "S" then
+        // when generating the S matrix, we need to remove the parameters from the known vars
+        // so they are not differentiated to zero
+        globalKnownVars = BackendVariable.listVar(list(v for v guard not BackendVariable.isParam(v) in BackendVariable.varList(globalKnownVars)));
+      end if;
       diffData.knownVars = SOME(globalKnownVars);
       diffData.allVars = SOME(orderedVars);
       diffData.diffCrefs = comref_diffvars;

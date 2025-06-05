@@ -1,7 +1,8 @@
 TEST = ../../../rtest -v
 
 TESTFILES=\
-reuseConstantPartsJac1.mos
+reuseConstantPartsJac1.mos \
+parameterizedJacobian.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

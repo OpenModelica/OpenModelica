@@ -1,0 +1,24 @@
+// name: parameterJacobian
+// keywords: symbolic jacobian parameter derivative
+// status: correct
+// cflags:
+//
+// generate jacobian w.r.t. parameters of the model.
+
+loadString("
+model TestModel
+  parameter Real k = 1;
+  parameter Real m = 1;
+  parameter Real c = 2;
+  Real x(start = 1, fixed = true);
+  Real v(start = 1, fixed = true);
+equation
+  der(x) = k * x;
+  der(v) = c * v + m;
+end TestModel;
+"); getErrorString();
+setCommandLineOptions("-d=dumpSimCode --postOptModules+=generateSymbolicSensitivities"); getErrorString();
+buildModel(TestModel); getErrorString();
+
+// Result:
+// endResult
