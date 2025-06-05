@@ -37,7 +37,7 @@ simulate(record_inlining); getErrorString();
 // [NBReplacements.applyFuncExp] Inlining: Complex.'*'.multiply(a, b)
 // -- Result: Complex.'constructor'.fromReal(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re)
 //
-// [NBReplacements.applyFuncExp] Inlining: Complex.'^'(a, b)
+// [NBReplacements.applyFuncExp] Inlining: Complex.'^'.complexPower(a, b)
 // -- Result: Complex.'constructor'.fromReal(exp(0.5 * log(a.re * a.re + a.im * a.im) * b.re - atan2(a.im, a.re) * b.im) * cos(0.5 * log(a.re * a.re + a.im * a.im) * b.im + atan2(a.im, a.re) * b.re), exp(0.5 * log(a.re * a.re + a.im * a.im) * b.re - atan2(a.im, a.re) * b.im) * sin(0.5 * log(a.re * a.re + a.im * a.im) * b.im + atan2(a.im, a.re) * b.re))
 //
 // [NBInline.inlineRecordEquation] Inlining: [RECD] (2) a = Complex.'constructor'.fromReal($FUN_1, $FUN_2) ($RES_SIM_7)
@@ -70,7 +70,7 @@ simulate(record_inlining); getErrorString();
 //
 // record SimulationResult
 //     resultFile = "record_inlining_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'record_inlining', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'record_inlining', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

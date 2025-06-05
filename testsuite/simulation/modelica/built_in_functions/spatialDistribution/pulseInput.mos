@@ -5,7 +5,7 @@
 //
 // Moble with spatialDistribution with constant velocity and pulse input.
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"4.0.0"}); getErrorString();
 loadString("model pulseInputSpatialDistribution
   \"Single conveyor belt with constant positive velocity
   and pulse input from the left side.\"

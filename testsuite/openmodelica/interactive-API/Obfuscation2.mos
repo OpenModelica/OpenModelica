@@ -4067,7 +4067,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   protected parameter Boolean pipe1.n13 = true \"= false to hide the arrow in the model icon\";
 //   parameter Real pipe1.nParallel(min = 1.0) = 1.0 \"Number of identical parallel pipes\";
 //   final parameter Real pipe1.length(quantity = \"Length\", unit = \"m\") = 50.0 \"Length\";
-//   parameter Boolean pipe1.isCircular = true \"= true if cross sectional area is circular\";
+//   final parameter Boolean pipe1.isCircular = true \"= true if cross sectional area is circular\";
 //   parameter Real pipe1.diameter(quantity = \"Length\", unit = \"m\", min = 0.0) = 0.0254 \"Diameter of circular pipe\";
 //   parameter Real pipe1.crossArea(quantity = \"Area\", unit = \"m2\") = 3.141592653589793 * pipe1.diameter * pipe1.diameter / 4.0 \"Inner cross section area\";
 //   parameter Real pipe1.perimeter(quantity = \"Length\", unit = \"m\", min = 0.0) = 3.141592653589793 * pipe1.diameter \"Inner perimeter\";
@@ -4664,7 +4664,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   protected parameter Boolean pipe2.n38 = true \"= false to hide the arrow in the model icon\";
 //   parameter Real pipe2.nParallel(min = 1.0) = 1.0 \"Number of identical parallel pipes\";
 //   final parameter Real pipe2.length(quantity = \"Length\", unit = \"m\") = 50.0 \"Length\";
-//   parameter Boolean pipe2.isCircular = true \"= true if cross sectional area is circular\";
+//   final parameter Boolean pipe2.isCircular = true \"= true if cross sectional area is circular\";
 //   parameter Real pipe2.diameter(quantity = \"Length\", unit = \"m\", min = 0.0) = 0.0254 \"Diameter of circular pipe\";
 //   parameter Real pipe2.crossArea(quantity = \"Area\", unit = \"m2\") = 3.141592653589793 * pipe2.diameter * pipe2.diameter / 4.0 \"Inner cross section area\";
 //   parameter Real pipe2.perimeter(quantity = \"Length\", unit = \"m\", min = 0.0) = 3.141592653589793 * pipe2.diameter \"Inner perimeter\";
@@ -5267,7 +5267,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   protected parameter Boolean pipe3.n68 = true \"= false to hide the arrow in the model icon\";
 //   parameter Real pipe3.nParallel(min = 1.0) = 1.0 \"Number of identical parallel pipes\";
 //   final parameter Real pipe3.length(quantity = \"Length\", unit = \"m\") = 25.0 \"Length\";
-//   parameter Boolean pipe3.isCircular = true \"= true if cross sectional area is circular\";
+//   final parameter Boolean pipe3.isCircular = true \"= true if cross sectional area is circular\";
 //   parameter Real pipe3.diameter(quantity = \"Length\", unit = \"m\", min = 0.0) = 0.0254 \"Diameter of circular pipe\";
 //   parameter Real pipe3.crossArea(quantity = \"Area\", unit = \"m2\") = 3.141592653589793 * pipe3.diameter * pipe3.diameter / 4.0 \"Inner cross section area\";
 //   parameter Real pipe3.perimeter(quantity = \"Length\", unit = \"m\", min = 0.0) = 3.141592653589793 * pipe3.diameter \"Inner perimeter\";
@@ -5864,7 +5864,7 @@ instantiateModel(Modelica.Fluid.Examples.BranchingDynamicPipes); getErrorString(
 //   protected parameter Boolean pipe4.n93 = true \"= false to hide the arrow in the model icon\";
 //   parameter Real pipe4.nParallel(min = 1.0) = 1.0 \"Number of identical parallel pipes\";
 //   final parameter Real pipe4.length(quantity = \"Length\", unit = \"m\") = 50.0 \"Length\";
-//   parameter Boolean pipe4.isCircular = true \"= true if cross sectional area is circular\";
+//   final parameter Boolean pipe4.isCircular = true \"= true if cross sectional area is circular\";
 //   parameter Real pipe4.diameter(quantity = \"Length\", unit = \"m\", min = 0.0) = 0.0254 \"Diameter of circular pipe\";
 //   parameter Real pipe4.crossArea(quantity = \"Area\", unit = \"m2\") = 3.141592653589793 * pipe4.diameter * pipe4.diameter / 4.0 \"Inner cross section area\";
 //   parameter Real pipe4.perimeter(quantity = \"Length\", unit = \"m\", min = 0.0) = 3.141592653589793 * pipe4.diameter \"Inner perimeter\";

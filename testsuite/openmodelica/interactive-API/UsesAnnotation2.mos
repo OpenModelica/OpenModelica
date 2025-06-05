@@ -69,11 +69,11 @@ instantiateModel('0.8.1');getErrorString();
 // true
 // ""
 // true
-// "Warning: Requested package Modelica of version 0.8.1, but this package was already loaded with version 4.0.0. There are no conversion annotations and 0.8.1 is older than 4.0.0, so the libraries are probably incompatible.
+// "Warning: Requested package Modelica of version 0.8.1, but this package was already loaded with version 4.1.0. There are no conversion annotations and 0.8.1 is older than 4.1.0, so the libraries are probably incompatible.
 // "
 // "class '0.8.1'
 // end '0.8.1';
 // "
-// "Warning: Requested package Modelica of version 0.8.1, but this package was already loaded with version 4.0.0. There are no conversion annotations and 0.8.1 is older than 4.0.0, so the libraries are probably incompatible.
+// "Warning: Requested package Modelica of version 0.8.1, but this package was already loaded with version 4.1.0. There are no conversion annotations and 0.8.1 is older than 4.1.0, so the libraries are probably incompatible.
 // "
 // endResult

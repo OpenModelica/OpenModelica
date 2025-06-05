@@ -41,8 +41,8 @@ simulate(boolEventClock, simflags="-lv=LOG_SYNCHRONOUS"); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Notification: Automatically loaded package Complex 4.0.0 due to uses annotation from Modelica.
-// Notification: Automatically loaded package ModelicaServices 4.0.0 due to uses annotation from Modelica.
-// Notification: Automatically loaded package Modelica 4.0.0 due to usage.
+// "Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package Modelica 4.1.0 due to usage.
 // "
 // endResult
