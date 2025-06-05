@@ -10084,7 +10084,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = BackendVariable.isProtected(dlowVar);
-        hideResult = getHideResult(hideResultExp);
+        hideResult = getHideResult(hideResultExp, cr, source);
         initVal = dlowVar.bindExp;
         isFixed = BackendVariable.varFixed(dlowVar);
         type_ = tp;
@@ -10120,7 +10120,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = BackendVariable.isProtected(dlowVar);
-        hideResult = getHideResult(hideResultExp);
+        hideResult = getHideResult(hideResultExp, cr, source);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
@@ -10166,7 +10166,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = BackendVariable.isProtected(dlowVar);
-        hideResult = getHideResult(hideResultExp);
+        hideResult = getHideResult(hideResultExp, cr, source);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
@@ -10213,7 +10213,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = BackendVariable.isProtected(dlowVar);
-        hideResult = getHideResult(hideResultExp);
+        hideResult = getHideResult(hideResultExp, cr, source);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
@@ -12218,6 +12218,8 @@ end eqSystemWCET;
 protected function getHideResult
   "Returns the value of the hideResult attribute."
   input Option<DAE.Exp> hideResultExp;
+  input DAE.ComponentRef name;
+  input DAE.ElementSource source;
   output Option<Boolean> hideResult;
 algorithm
   hideResult := match(hideResultExp)
@@ -12226,7 +12228,8 @@ algorithm
     case(SOME(DAE.BCONST(true))) then SOME(true);
     else
       equation
-        Error.addCompilerWarning("The hideResult annotation could not be evaluated, probably due to missing annotation(Evaluate=true). It is removed.");
+        Error.addSourceMessage(Error.HIDE_RESULT_NOT_EVALUATED,
+          {ComponentReference.printComponentRefStr(name)}, ElementSource.getInfo(source));
      then NONE();
   end match;
 end getHideResult;
