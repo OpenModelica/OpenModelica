@@ -317,7 +317,7 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
       }
     }
     nonreconcilevarsip.close();
-    omc_unlink(nonReconciledVarsFilename.c_str());
+    //omc_unlink(nonReconciledVarsFilename.c_str());
   }
 
   /* Add Overview Data */
@@ -2808,7 +2808,7 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputDat
       }
     }
     boundaryConditionVarsip.close();
-    omc_unlink(boundaryConditionsVarsFilename.c_str());
+    //omc_unlink(boundaryConditionsVarsFilename.c_str());
   }
   else
   {
