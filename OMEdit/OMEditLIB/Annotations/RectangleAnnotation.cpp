@@ -150,15 +150,16 @@ void RectangleAnnotation::parseShapeAnnotation(QString annotation)
 
 void RectangleAnnotation::parseShapeAnnotation()
 {
-  GraphicItem::parseShapeAnnotation(mpRectangle);
-  FilledShape::parseShapeAnnotation(mpRectangle);
+  GraphicsView *pGraphicsView = getGraphicsView();
+  GraphicItem::parseShapeAnnotation(mpRectangle, pGraphicsView);
+  FilledShape::parseShapeAnnotation(mpRectangle, pGraphicsView);
 
   mBorderPattern = mpRectangle->getBorderPattern();
-  mBorderPattern.evaluate(mpRectangle->getParentModel());
+  mBorderPattern.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mExtent = mpRectangle->getExtent();
-  mExtent.evaluate(mpRectangle->getParentModel());
+  mExtent.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mRadius = mpRectangle->getRadius();
-  mRadius.evaluate(mpRectangle->getParentModel());
+  mRadius.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
 }
 
 QRectF RectangleAnnotation::boundingRect() const

@@ -86,24 +86,16 @@ bool DynamicAnnotation::deserialize(const QJsonValue &value)
   return true;
 }
 
+/*!
+ * \brief evaluate_helper
+ * Helper function for DynamicAnnotation::evaluate and DynamicAnnotation::update.
+ * \param vname
+ * \param pModel
+ * \return
+ */
 FlatModelica::Expression& evaluate_helper(QString vname, ModelInstance::Model *pModel)
 {
-  // the instance api returns the qualified cref
-  // we need variable name relative to Element
-  // get full name of Element
-  /*! @todo We should remove the following code that adjusts vname.
-   *  That is only needed because we are calling the function with wrong ModelInstance::Model *pModel
-   *  See issue #13816. We changed from mEnable.evaluate(mpModelInstanceElement->getParentModel());
-   *  to mEnable.evaluate(mpElementParameters->getGraphicsView()->getModelWidget()->getModelInstance());
-   *  Basically pass the ModelInstance::Model of the class that is being modified.
-   *  So once we fix everywhere that function is called then we should remove this code.
-   */
-  QString curPath;
-  if (pModel->getParentElement()) {
-    curPath = pModel->getParentElement()->getQualifiedName();
-  }
-  vname = StringHandler::makeClassNameRelative(vname, curPath);
-  auto exp = pModel->getVariableBinding(vname);
+  auto exp = pModel ? pModel->getVariableBinding(vname) : nullptr;
   if (!exp) {
     throw std::runtime_error(vname.toStdString() + " could not be found in " + pModel->getName().toStdString());
   } else if (!exp->isLiteral()) {
@@ -129,44 +121,22 @@ bool DynamicAnnotation::update(double time, ModelInstance::Model *pModel)
   if (isDynamicSelectExpression()) {
     mState = State::Dynamic;
 
-    fromExp(mExp.arg(1).evaluate([&] (std::string name) {
-      auto vname = QString::fromStdString(name);
-      QPair<double, bool> value = MainWindow::instance()->getVariablesWidget()->readVariableValue(vname, time, false);
-      if (value.second) {
-        return FlatModelica::Expression(value.first);
-      } else {
-        return evaluate_helper(vname, pModel);
+    try {
+      fromExp(mExp.arg(1).evaluate([&] (std::string name) {
+        auto vname = QString::fromStdString(name);
+        QPair<double, bool> value = MainWindow::instance()->getVariablesWidget()->readVariableValue(vname, time, false);
+        if (value.second) {
+          return FlatModelica::Expression(value.first);
+        } else {
+          return evaluate_helper(vname, pModel);
+        }
+      }));
+    } catch (const std::exception &e) {
+      if (MainWindow::instance()->isDebug()) {
+        qDebug() << "Failed to evaluate expression.";
+        qDebug() << e.what();
       }
-    }));
-    return true;
-  }
-
-  return false;
-}
-
-/*!
- * \brief DynamicAnnotation::update
- * Evaluates the second argument for a given time point if the stored expression
- * is a DynamicSelect call, then passes the evaluated expression to the derived
- * class via fromExp. If the stored expression is not a DynamicSelect call then
- * nothing is done.
- * \param time
- * \param parent
- * \return true if the expression was updated, otherwise false.
- */
-bool DynamicAnnotation::update(double time, Element *parent)
-{
-  if (isDynamicSelectExpression()) {
-    mState = State::Dynamic;
-
-    fromExp(mExp.arg(1).evaluate([&] (std::string name) {
-              auto vname = QString::fromStdString(name);
-              if (parent) {
-                vname = QString("%1.%2").arg(parent->getName(), vname);
-              }
-              QPair<double, bool> value = MainWindow::instance()->getVariablesWidget()->readVariableValue(vname, time);
-              return FlatModelica::Expression(value.first);
-            }));
+    }
     return true;
   }
 
