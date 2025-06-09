@@ -154,10 +154,11 @@ void BitmapAnnotation::parseShapeAnnotation(QString annotation)
 
 void BitmapAnnotation::parseShapeAnnotation()
 {
-  GraphicItem::parseShapeAnnotation(mpBitmap);
+  GraphicsView *pGraphicsView = getGraphicsView();
+  GraphicItem::parseShapeAnnotation(mpBitmap, pGraphicsView);
 
   mExtent = mpBitmap->getExtent();
-  mExtent.evaluate(mpBitmap->getParentModel());
+  mExtent.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   setFileName(StringHandler::removeFirstLastQuotes(stripDynamicSelect(mpBitmap->getFileName())));
   mImageSource = StringHandler::removeFirstLastQuotes(stripDynamicSelect(mpBitmap->getImageSource()));
   if (!mImageSource.isEmpty()) {

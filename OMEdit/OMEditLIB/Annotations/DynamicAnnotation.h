@@ -75,7 +75,6 @@ class DynamicAnnotation
     bool parse(const QString &str);
     bool deserialize(const QJsonValue &value);
     bool update(double time, ModelInstance::Model *pModel);
-    bool update(double time, Element *parent);
     void evaluate(ModelInstance::Model *pModel);
     void reset();
     void resetDynamicToStatic();
