@@ -102,17 +102,17 @@ void EllipseAnnotation::parseShapeAnnotation(QString annotation)
 
 void EllipseAnnotation::parseShapeAnnotation()
 {
-  GraphicItem::parseShapeAnnotation(mpEllipse);
-  FilledShape::parseShapeAnnotation(mpEllipse);
+  GraphicsView *pGraphicsView = getGraphicsView();
+  FilledShape::parseShapeAnnotation(mpEllipse, pGraphicsView);
 
   mExtent = mpEllipse->getExtent();
-  mExtent.evaluate(mpEllipse->getParentModel());
+  mExtent.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mStartAngle = mpEllipse->getStartAngle();
-  mStartAngle.evaluate(mpEllipse->getParentModel());
+  mStartAngle.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mEndAngle = mpEllipse->getEndAngle();
-  mEndAngle.evaluate(mpEllipse->getParentModel());
+  mEndAngle.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mClosure = mpEllipse->getClosure();
-  mClosure.evaluate(mpEllipse->getParentModel());
+  mClosure.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
 }
 
 QRectF EllipseAnnotation::boundingRect() const

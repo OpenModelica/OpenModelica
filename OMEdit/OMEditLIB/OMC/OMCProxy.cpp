@@ -756,7 +756,7 @@ void OMCProxy::loadSystemLibraries(const QVector<QPair<QString, QString> > libra
   if (MainWindow::instance()->isTestsuiteRunning()) {
     QPair<QString, QString> library;
     foreach (library, libraries) {
-      loadModel(library.first, library.second);
+      loadModel(library.first, library.second, true, "", true);
     }
   } else {
     const bool loadLatestModelica = OptionsDialog::instance()->getLibrariesPage()->getLoadLatestModelicaCheckbox()->isChecked();
@@ -765,9 +765,9 @@ void OMCProxy::loadSystemLibraries(const QVector<QPair<QString, QString> > libra
     }
     QSettings *pSettings = Utilities::getApplicationSettings();
     pSettings->beginGroup("libraries");
-    QStringList libraries = pSettings->childKeys();
+    const QStringList librariesList = pSettings->childKeys();
     pSettings->endGroup();
-    foreach (QString lib, libraries) {
+    foreach (QString lib, librariesList) {
       QString version = pSettings->value("libraries/" + lib).toString();
       if (loadLatestModelica && (lib.compare(QStringLiteral("Modelica")) == 0 || lib.compare(QStringLiteral("ModelicaServices")) == 0 || lib.compare(QStringLiteral("Complex")) == 0)) {
         QString msg = tr("Skip loading <b>%1</b> version <b>%2</b> since latest version is already loaded because of the setting <b>Load latest Modelica version on startup</b>.").arg(lib, version);
@@ -782,7 +782,7 @@ void OMCProxy::loadSystemLibraries(const QVector<QPair<QString, QString> > libra
             pLibraryTreeModel->createLibraryTreeItem(lib, pLibraryTreeModel->getRootLibraryTreeItem(), true, true, true);
           }
         } else {
-          loadModel(lib, version);
+          loadModel(lib, version, true, "", true);
         }
       }
     }
