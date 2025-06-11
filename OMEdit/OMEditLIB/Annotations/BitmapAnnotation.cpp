@@ -154,7 +154,7 @@ void BitmapAnnotation::parseShapeAnnotation(QString annotation)
 
 void BitmapAnnotation::parseShapeAnnotation()
 {
-  GraphicsView *pGraphicsView = getGraphicsView();
+  GraphicsView *pGraphicsView = getContainingGraphicsView();
   GraphicItem::parseShapeAnnotation(mpBitmap, pGraphicsView);
 
   mExtent = mpBitmap->getExtent();

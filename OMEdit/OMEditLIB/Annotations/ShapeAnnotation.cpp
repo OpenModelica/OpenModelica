@@ -771,11 +771,11 @@ void ShapeAnnotation::setOriginItemPos(const QPointF point)
 }
 
 /*!
- * \brief ShapeAnnotation::getGraphicsView
- * Returns the GraphicsView of shape.
+ * \brief ShapeAnnotation::getContainingGraphicsView
+ * Returns the GraphicsView of shape where is contained.
  * \return
  */
-GraphicsView *ShapeAnnotation::getGraphicsView()
+GraphicsView *ShapeAnnotation::getContainingGraphicsView()
 {
   if (mpGraphicsView) {
     return mpGraphicsView;
@@ -1078,7 +1078,7 @@ void ShapeAnnotation::updateDynamicSelect(double time)
   if ((mpGraphicsView && mpGraphicsView->isVisualizationView())
       || (mpParentComponent && mpParentComponent->getGraphicsView() && mpParentComponent->getGraphicsView()->isVisualizationView())) {
     bool updated = false;
-    GraphicsView *pGraphicsView = getGraphicsView();
+    GraphicsView *pGraphicsView = getContainingGraphicsView();
 
     updated |= mVisible.update(time, pGraphicsView->getModelWidget()->getModelInstance());
     updated |= mOrigin.update(time, pGraphicsView->getModelWidget()->getModelInstance());

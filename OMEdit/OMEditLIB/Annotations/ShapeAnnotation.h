@@ -157,7 +157,8 @@ public:
   virtual void replaceExtent(const int index, const QPointF point);
   void updateExtent(const int index, const QPointF point);
   void setOriginItemPos(const QPointF point);
-  GraphicsView* getGraphicsView();
+  GraphicsView* getGraphicsView() {return mpGraphicsView;}
+  GraphicsView* getContainingGraphicsView();
   Element* getParentComponent() const {return mpParentComponent;}
   OriginItem* getOriginItem() {return mpOriginItem;}
   void setPoints(QVector<QPointF> points) {mPoints = points;}
