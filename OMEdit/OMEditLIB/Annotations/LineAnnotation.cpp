@@ -576,7 +576,7 @@ void LineAnnotation::parseShapeAnnotation(QString annotation)
 
 void LineAnnotation::parseShapeAnnotation()
 {
-  GraphicsView *pGraphicsView = getGraphicsView();
+  GraphicsView *pGraphicsView = getContainingGraphicsView();
   GraphicItem::parseShapeAnnotation(mpLine, pGraphicsView);
 
   mPoints = mpLine->getPoints();
