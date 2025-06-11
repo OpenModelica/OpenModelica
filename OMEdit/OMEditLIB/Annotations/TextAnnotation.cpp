@@ -252,7 +252,7 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
 
 void TextAnnotation::parseShapeAnnotation()
 {
-  GraphicsView *pGraphicsView = getGraphicsView();
+  GraphicsView *pGraphicsView = getContainingGraphicsView();
   GraphicItem::parseShapeAnnotation(mpText, pGraphicsView);
   FilledShape::parseShapeAnnotation(mpText, pGraphicsView);
 

@@ -102,7 +102,8 @@ void EllipseAnnotation::parseShapeAnnotation(QString annotation)
 
 void EllipseAnnotation::parseShapeAnnotation()
 {
-  GraphicsView *pGraphicsView = getGraphicsView();
+  GraphicsView *pGraphicsView = getContainingGraphicsView();
+  GraphicItem::parseShapeAnnotation(mpEllipse, pGraphicsView);
   FilledShape::parseShapeAnnotation(mpEllipse, pGraphicsView);
 
   mExtent = mpEllipse->getExtent();

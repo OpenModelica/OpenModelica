@@ -150,7 +150,7 @@ void RectangleAnnotation::parseShapeAnnotation(QString annotation)
 
 void RectangleAnnotation::parseShapeAnnotation()
 {
-  GraphicsView *pGraphicsView = getGraphicsView();
+  GraphicsView *pGraphicsView = getContainingGraphicsView();
   GraphicItem::parseShapeAnnotation(mpRectangle, pGraphicsView);
   FilledShape::parseShapeAnnotation(mpRectangle, pGraphicsView);
 
