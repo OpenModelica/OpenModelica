@@ -159,14 +159,14 @@ void Transformation::parseTransformation(const ModelInstance::PlacementAnnotatio
 
   // transformation
   mVisible = placementAnnotation.getVisible();
-  mVisible.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : nullptr);
+  mVisible.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : placementAnnotation.getParentModel());
   ModelInstance::Transformation transformation = placementAnnotation.getTransformation();
   mOriginDiagram = transformation.getOrigin();
-  mOriginDiagram.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : nullptr);
+  mOriginDiagram.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : placementAnnotation.getParentModel());
   mExtentDiagram = transformation.getExtent();
-  mExtentDiagram.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : nullptr);
+  mExtentDiagram.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : placementAnnotation.getParentModel());
   mRotateAngleDiagram = transformation.getRotation();
-  mRotateAngleDiagram.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : nullptr);
+  mRotateAngleDiagram.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : placementAnnotation.getParentModel());
   // map values from element coordinate system to DiagramMap extent
   if (pExtend && pExtend->getIconDiagramMapHasExtent(false)) {
     ExtentAnnotation extendsCoOrdinateExtents = pExtend->getIconDiagramMapExtent(false);
@@ -202,14 +202,14 @@ void Transformation::parseTransformation(const ModelInstance::PlacementAnnotatio
   }
   // icon transformation
   mVisibleIcon = placementAnnotation.getIconVisible();
-  mVisibleIcon.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : nullptr);
+  mVisibleIcon.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : placementAnnotation.getParentModel());
   ModelInstance::Transformation iconTransformation = placementAnnotation.getIconTransformation();
   mOriginIcon = iconTransformation.getOrigin();
-  mOriginIcon.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : nullptr);
+  mOriginIcon.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : placementAnnotation.getParentModel());
   mExtentIcon = iconTransformation.getExtent();
-  mExtentIcon.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : nullptr);
+  mExtentIcon.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : placementAnnotation.getParentModel());
   mRotateAngleIcon = iconTransformation.getRotation();
-  mRotateAngleIcon.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : nullptr);
+  mRotateAngleIcon.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : placementAnnotation.getParentModel());
   // map values from element coordinate system to IconMap extent.
   if (pExtend && pExtend->getIconDiagramMapHasExtent(true)) {
     ExtentAnnotation extendsCoOrdinateExtents = pExtend->getIconDiagramMapExtent(true);

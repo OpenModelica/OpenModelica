@@ -130,7 +130,7 @@ void PolygonAnnotation::parseShapeAnnotation(QString annotation)
 
 void PolygonAnnotation::parseShapeAnnotation()
 {
-  GraphicsView *pGraphicsView = getGraphicsView();
+  GraphicsView *pGraphicsView = getContainingGraphicsView();
   GraphicItem::parseShapeAnnotation(mpPolygon, pGraphicsView);
   FilledShape::parseShapeAnnotation(mpPolygon, pGraphicsView);
 
