@@ -111,25 +111,18 @@ buildModel(TestModel); getErrorString();
 // jacobianMatrices:
 // ========================================
 // 	Jacobian idx: 0
-// 		Jacobian name: H
 // 	
 // 	Jacobian idx: 1
-// 		Jacobian name: F
 // 	
 // 	Jacobian idx: 2
-// 		Jacobian name: D
 // 	
 // 	Jacobian idx: 3
-// 		Jacobian name: C
 // 	
 // 	Jacobian idx: 4
-// 		Jacobian name: B
 // 	
 // 	Jacobian idx: 5
-// 		Jacobian name: A
 // 	
 // 	Jacobian idx: 6
-// 		Jacobian name: S
 // 	7: $DER.v.$pDERS.dummyVarS=c.SeedS * v + m.SeedS [Real]
 // 	8: $DER.x.$pDERS.dummyVarS=k.SeedS * x [Real]
 // 	
