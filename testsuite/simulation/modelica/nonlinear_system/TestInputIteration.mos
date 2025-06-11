@@ -270,17 +270,19 @@ simulate(TestInputIteration, stopTime=0, simflags="-output=x1[1],x1[2],z1,x2[1],
 // jacobianMatrices:
 // ========================================
 // 	Jacobian idx: 0
-//
+// 	
 // 	Jacobian idx: 1
-//
+// 	
 // 	Jacobian idx: 2
-//
+// 	
 // 	Jacobian idx: 3
-//
+// 	
 // 	Jacobian idx: 4
-//
+// 	
 // 	Jacobian idx: 5
-//
+// 	
+// 	Jacobian idx: 6
+// 	
 //
 // modelInfo:
 // ========================================
@@ -329,17 +331,17 @@ simulate(TestInputIteration, stopTime=0, simflags="-output=x1[1],x1[2],z1,x2[1],
 // -----------
 //
 // Function: f1
-// 	outVars: x1 (Real, )  , x2 (Real, )  ,
-// 	functionArguments: z (Real, )  ,
-// 	variableDeclarations: x1 (Real, )  , x2 (Real, )  ,
+// 	outVars: x1 (Real, )  , x2 (Real, )  , 
+// 	functionArguments: z (Real, )  , 
+// 	variableDeclarations: x1 (Real, )  , x2 (Real, )  , 
 // Function: f3
-// 	outVars: y (Real, )  , x (Real, )  ,
-// 	functionArguments: z (Real, )  ,
-// 	variableDeclarations: y (Real, )  , x (Real, )  ,
+// 	outVars: y (Real, )  , x (Real, )  , 
+// 	functionArguments: z (Real, )  , 
+// 	variableDeclarations: y (Real, )  , x (Real, )  , 
 // Function: f4
-// 	outVars: x (Real, )  , y (Real, )  ,
-// 	functionArguments: z (Real, )  ,
-// 	variableDeclarations: x (Real, )  , y (Real, )  ,
+// 	outVars: x (Real, )  , y (Real, )  , 
+// 	functionArguments: z (Real, )  , 
+// 	variableDeclarations: x (Real, )  , y (Real, )  , 
 // record SimulationResult
 //     resultFile = "TestInputIteration_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TestInputIteration', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output=x1[1],x1[2],z1,x2[1],x2[2],y2,z2,x3[1],x3[2],y3,z3,x4[1],x4[2],x4[3],x4[4],x4[5],y4,z4,x5,y5,z5'",

@@ -54,9 +54,9 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // strict set:
 // 39:  (LINEAR) index:1 jacobian: true
 // 	variables:
-// 	index:-1: x7 (no alias)  initial: 	no arrCref index:() []
-// index:-1: x5 (no alias)  initial: 	no arrCref index:() []
-// index:-1: x3 (no alias)  initial: 	no arrCref index:() []
+// 	index:-1: x7 (no alias)  initial: 	no arrCref index:() []	
+// index:-1: x5 (no alias)  initial: 	no arrCref index:() []	
+// index:-1: x3 (no alias)  initial: 	no arrCref index:() []	
 // index:-1: x2 (no alias)  initial: 	no arrCref index:() []
 // 	b-vector:
 // 	24: x1=(-x2) - $cse4 [Real]
@@ -78,7 +78,7 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // 	36: $res_LSJac1_2.$pDERLSJac1.dummyVarLSJac1=x7.SeedLSJac1 + (-7.0) * x8.$pDERLSJac1.dummyVarLSJac1 [Real]
 // 	37: $res_LSJac1_3.$pDERLSJac1.dummyVarLSJac1=x5.SeedLSJac1 + x6.$pDERLSJac1.dummyVarLSJac1 + 0.5 * $cse6 * x7.SeedLSJac1 [Real]
 // 	38: $res_LSJac1_4.$pDERLSJac1.dummyVarLSJac1=x3.SeedLSJac1 + (-2.0) * x4.$pDERLSJac1.dummyVarLSJac1 - $cse5 * x5.SeedLSJac1 [Real]
-//
+// 	
 // columnVars(8)
 // ----------------------
 // index:3: x8.$pDERLSJac1.dummyVarLSJac1 (no alias)  initial: 	no arrCref index:() []
@@ -100,7 +100,7 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // 	45: x7=(-2.0) * (x5 + x6) / $cse6 [constraints: abs($cse6) > 1e-12 (global)] [Real]
 // 	46: x8=$cse5 * x6 + x7 [Real]
 // 	47: (-7.0) * x8 - $cse4 + x7 (RESIDUAL)
-//
+// 	
 // 	simJac:
 //
 // 	Jacobian idx: 2
@@ -111,7 +111,7 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // 	52: x7.$pDERLSJac2.dummyVarLSJac2=(-2.0) * (x5.$pDERLSJac2.dummyVarLSJac2 + x6.$pDERLSJac2.dummyVarLSJac2) / $cse6 [Real]
 // 	53: x8.$pDERLSJac2.dummyVarLSJac2=$cse5 * x6.$pDERLSJac2.dummyVarLSJac2 + x7.$pDERLSJac2.dummyVarLSJac2 [Real]
 // 	54: $res_LSJac2_1.$pDERLSJac2.dummyVarLSJac2=x7.$pDERLSJac2.dummyVarLSJac2 + (-7.0) * x8.$pDERLSJac2.dummyVarLSJac2 [Real]
-//
+// 	
 // columnVars(8)
 // ----------------------
 // index:6: x8.$pDERLSJac2.dummyVarLSJac2 (no alias)  initial: 	no arrCref index:() []
@@ -141,9 +141,9 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // strict set:
 // 39:  (LINEAR) index:1 jacobian: true
 // 	variables:
-// 	index:-1: x7 (no alias)  initial: 	no arrCref index:() []
-// index:-1: x5 (no alias)  initial: 	no arrCref index:() []
-// index:-1: x3 (no alias)  initial: 	no arrCref index:() []
+// 	index:-1: x7 (no alias)  initial: 	no arrCref index:() []	
+// index:-1: x5 (no alias)  initial: 	no arrCref index:() []	
+// index:-1: x3 (no alias)  initial: 	no arrCref index:() []	
 // index:-1: x2 (no alias)  initial: 	no arrCref index:() []
 // 	b-vector:
 // 	24: x1=(-x2) - $cse4 [Real]
@@ -165,7 +165,7 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // 	36: $res_LSJac1_2.$pDERLSJac1.dummyVarLSJac1=x7.SeedLSJac1 + (-7.0) * x8.$pDERLSJac1.dummyVarLSJac1 [Real]
 // 	37: $res_LSJac1_3.$pDERLSJac1.dummyVarLSJac1=x5.SeedLSJac1 + x6.$pDERLSJac1.dummyVarLSJac1 + 0.5 * $cse6 * x7.SeedLSJac1 [Real]
 // 	38: $res_LSJac1_4.$pDERLSJac1.dummyVarLSJac1=x3.SeedLSJac1 + (-2.0) * x4.$pDERLSJac1.dummyVarLSJac1 - $cse5 * x5.SeedLSJac1 [Real]
-//
+// 	
 // columnVars(8)
 // ----------------------
 // index:3: x8.$pDERLSJac1.dummyVarLSJac1 (no alias)  initial: 	no arrCref index:() []
@@ -187,7 +187,7 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // 	45: x7=(-2.0) * (x5 + x6) / $cse6 [constraints: abs($cse6) > 1e-12 (global)] [Real]
 // 	46: x8=$cse5 * x6 + x7 [Real]
 // 	47: (-7.0) * x8 - $cse4 + x7 (RESIDUAL)
-//
+// 	
 // 	simJac:
 //
 // 	Jacobian idx: -1
@@ -198,7 +198,7 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // 	52: x7.$pDERLSJac2.dummyVarLSJac2=(-2.0) * (x5.$pDERLSJac2.dummyVarLSJac2 + x6.$pDERLSJac2.dummyVarLSJac2) / $cse6 [Real]
 // 	53: x8.$pDERLSJac2.dummyVarLSJac2=$cse5 * x6.$pDERLSJac2.dummyVarLSJac2 + x7.$pDERLSJac2.dummyVarLSJac2 [Real]
 // 	54: $res_LSJac2_1.$pDERLSJac2.dummyVarLSJac2=x7.$pDERLSJac2.dummyVarLSJac2 + (-7.0) * x8.$pDERLSJac2.dummyVarLSJac2 [Real]
-//
+// 	
 // columnVars(8)
 // ----------------------
 // index:6: x8.$pDERLSJac2.dummyVarLSJac2 (no alias)  initial: 	no arrCref index:() []
@@ -248,7 +248,7 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // 	17: $res_LSJac0_2.$pDERLSJac0.dummyVarLSJac0=$cse1 * x2.SeedLSJac0 + (-2.0) * x3.SeedLSJac0 + 4.0 * x4.$pDERLSJac0.dummyVarLSJac0 [Real]
 // 	18: $res_LSJac0_3.$pDERLSJac0.dummyVarLSJac0=x1.$pDERLSJac0.dummyVarLSJac0 + x2.SeedLSJac0 [Real]
 // 	19: $res_LSJac0_4.$pDERLSJac0.dummyVarLSJac0=$cse1 * x6.$pDERLSJac0.dummyVarLSJac0 + x7.SeedLSJac0 - x8.$pDERLSJac0.dummyVarLSJac0 [Real]
-//
+// 	
 // columnVars(11)
 // ----------------------
 // index:6: x1.$pDERLSJac0.dummyVarLSJac0 (no alias)  initial: 	no arrCref index:() []
@@ -319,7 +319,7 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // 	17: $res_LSJac0_2.$pDERLSJac0.dummyVarLSJac0=$cse1 * x2.SeedLSJac0 + (-2.0) * x3.SeedLSJac0 + 4.0 * x4.$pDERLSJac0.dummyVarLSJac0 [Real]
 // 	18: $res_LSJac0_3.$pDERLSJac0.dummyVarLSJac0=x1.$pDERLSJac0.dummyVarLSJac0 + x2.SeedLSJac0 [Real]
 // 	19: $res_LSJac0_4.$pDERLSJac0.dummyVarLSJac0=$cse1 * x6.$pDERLSJac0.dummyVarLSJac0 + x7.SeedLSJac0 - x8.$pDERLSJac0.dummyVarLSJac0 [Real]
-//
+// 	
 // columnVars(11)
 // ----------------------
 // index:6: x1.$pDERLSJac0.dummyVarLSJac0 (no alias)  initial: 	no arrCref index:() []
@@ -341,7 +341,7 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // 	36: $res_LSJac1_2.$pDERLSJac1.dummyVarLSJac1=x7.SeedLSJac1 + (-7.0) * x8.$pDERLSJac1.dummyVarLSJac1 [Real]
 // 	37: $res_LSJac1_3.$pDERLSJac1.dummyVarLSJac1=x5.SeedLSJac1 + x6.$pDERLSJac1.dummyVarLSJac1 + 0.5 * $cse6 * x7.SeedLSJac1 [Real]
 // 	38: $res_LSJac1_4.$pDERLSJac1.dummyVarLSJac1=x3.SeedLSJac1 + (-2.0) * x4.$pDERLSJac1.dummyVarLSJac1 - $cse5 * x5.SeedLSJac1 [Real]
-//
+// 	
 // columnVars(8)
 // ----------------------
 // index:3: x8.$pDERLSJac1.dummyVarLSJac1 (no alias)  initial: 	no arrCref index:() []
@@ -360,7 +360,7 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // 	52: x7.$pDERLSJac2.dummyVarLSJac2=(-2.0) * (x5.$pDERLSJac2.dummyVarLSJac2 + x6.$pDERLSJac2.dummyVarLSJac2) / $cse6 [Real]
 // 	53: x8.$pDERLSJac2.dummyVarLSJac2=$cse5 * x6.$pDERLSJac2.dummyVarLSJac2 + x7.$pDERLSJac2.dummyVarLSJac2 [Real]
 // 	54: $res_LSJac2_1.$pDERLSJac2.dummyVarLSJac2=x7.$pDERLSJac2.dummyVarLSJac2 + (-7.0) * x8.$pDERLSJac2.dummyVarLSJac2 [Real]
-//
+// 	
 // columnVars(8)
 // ----------------------
 // index:6: x8.$pDERLSJac2.dummyVarLSJac2 (no alias)  initial: 	no arrCref index:() []
@@ -372,17 +372,19 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // index:0: x1.$pDERLSJac2.dummyVarLSJac2 (no alias)  initial: 	no arrCref index:() []
 // index:0: $res_LSJac2_1.$pDERLSJac2.dummyVarLSJac2 (no alias)  initial: 	no arrCref index:() []
 // 	Jacobian idx: 3
-//
+// 	
 // 	Jacobian idx: 4
-//
+// 	
 // 	Jacobian idx: 5
-//
+// 	
 // 	Jacobian idx: 6
-//
+// 	
 // 	Jacobian idx: 7
-//
+// 	
 // 	Jacobian idx: 8
-//
+// 	
+// 	Jacobian idx: 9
+// 	
 //
 // modelInfo:
 // ========================================
