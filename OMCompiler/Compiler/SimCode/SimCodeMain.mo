@@ -1656,12 +1656,15 @@ algorithm
       if Util.isSome(inBackendDAE.shared.dataReconciliationData) then
         BackendDAE.DATA_RECON(_, _, _, _, jacH) := Util.getOption(inBackendDAE.shared.dataReconciliationData);
         if isSome(jacH) then
-          matrixnames := {"S", "B", "C", "D"};
+          matrixnames := {"B", "C", "D"};
         else
-          matrixnames := {"S", "B", "C", "D", "H"};
+          matrixnames := {"B", "C", "D", "H"};
         end if;
       else
-        matrixnames := {"S", "B", "C", "D", "F", "H"};
+        matrixnames := {"B", "C", "D", "F", "H"};
+      end if;
+      if List.contains(Flags.getConfigStringList(Flags.POST_OPT_MODULES_ADD), "generateSymbolicSensitivities", stringEq) then
+        matrixnames := "S" :: matrixnames;
       end if;
       (daeModeSP, uniqueEqIndex, tempVars) := SimCodeUtil.createSymbolicSimulationJacobian(
         inJacobian      = BackendDAE.GENERIC_JACOBIAN(daeModeJac, daeModeSparsity, daeModeColoring, nonlinearPattern),
@@ -1683,12 +1686,15 @@ algorithm
       if Util.isSome(inBackendDAE.shared.dataReconciliationData) then
         BackendDAE.DATA_RECON(_, _, _, _, jacH) := Util.getOption(inBackendDAE.shared.dataReconciliationData);
         if isSome(jacH) then
-          matrixnames := {"S", "A", "B", "C", "D"};
+          matrixnames := {"A", "B", "C", "D"};
         else
-          matrixnames := {"S", "A", "B", "C", "D", "H"};
+          matrixnames := {"A", "B", "C", "D", "H"};
         end if;
       else
-        matrixnames := {"S", "A", "B", "C", "D", "F", "H"};
+        matrixnames := {"A", "B", "C", "D", "F", "H"};
+      end if;
+      if List.contains(Flags.getConfigStringList(Flags.POST_OPT_MODULES_ADD), "generateSymbolicSensitivities", stringEq) then
+        matrixnames := "S" :: matrixnames;
       end if;
       (symJacs, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({}, crefToSimVarHT, uniqueEqIndex, matrixnames, {});
     end if;
