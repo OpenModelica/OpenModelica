@@ -9437,7 +9437,6 @@ algorithm
         colEqs  = List.flatten(list(a.columnEqns for a in cols));
         colVars = List.flatten(list(a.columnVars for a in cols));
         print("\tJacobian idx: "+intString(idx)+"\n\t");
-        print("\tJacobian name: "+name+"\n\t");
         dumpSimEqSystemLst(colEqs,"\n\t");
         print("\n");
         dumpVarLst(colVars,"columnVars("+intString(listLength(colVars))+")");
