@@ -72,20 +72,25 @@ desired = {
   }
 } if args.test else {
   "Complex": {
-    "4.0.0+maint.om"
+    "4.0.0+maint.om",
+    "4.1.0+maint.om"
   },
   "Modelica": {
     "3.2.3+maint.om",
-    "4.0.0+maint.om"
+    "4.0.0+maint.om",
+    "4.1.0+maint.om"
   },
   "ModelicaServices": {
-    "4.0.0+maint.om"
+    "4.0.0+maint.om",
+    "4.1.0+maint.om",
   },
   "ObsoleteModelica4": { # Used by MSL 3 to 4 conversion scripts
-    "4.0.0+maint.om"
+    "4.0.0+maint.om",
+    "4.1.0+maint.om"
   },
   "ModelicaReference": {
-    "4.0.0+maint.om"
+    "4.0.0+maint.om",
+    "4.1.0+maint.om"
   }
 }
 newdata = {}

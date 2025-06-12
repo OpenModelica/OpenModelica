@@ -23,6 +23,13 @@ if vers[1] <> "3.2.3+maint.om" then
   print(getErrorString());
   exit(1);
 end if;
+if not installPackage(Complex, "4.1.0+maint.om", exactMatch=true) then
+  print("Complex 4.1.0+maint.om failed.\n");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: Complex 4.1.0+maint.om\n");
+end if;
 if not installPackage(Complex, "4.0.0+maint.om", exactMatch=true) then
   print("Complex 4.0.0+maint.om failed.\n");
   print(getErrorString());
@@ -37,12 +44,26 @@ if not installPackage(Modelica, "3.2.3+maint.om", exactMatch=true) then
 else
   print("Installed: Modelica 3.2.3+maint.om\n");
 end if;
+if not installPackage(Modelica, "4.1.0+maint.om", exactMatch=true) then
+  print("Modelica 4.1.0+maint.om failed.\n");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: Modelica 4.1.0+maint.om\n");
+end if;
 if not installPackage(Modelica, "4.0.0+maint.om", exactMatch=true) then
   print("Modelica 4.0.0+maint.om failed.\n");
   print(getErrorString());
   exit(1);
 else
   print("Installed: Modelica 4.0.0+maint.om\n");
+end if;
+if not installPackage(ModelicaServices, "4.1.0+maint.om", exactMatch=true) then
+  print("ModelicaServices 4.1.0+maint.om failed.\n");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: ModelicaServices 4.1.0+maint.om\n");
 end if;
 if not installPackage(ModelicaServices, "4.0.0+maint.om", exactMatch=true) then
   print("ModelicaServices 4.0.0+maint.om failed.\n");
@@ -51,12 +72,26 @@ if not installPackage(ModelicaServices, "4.0.0+maint.om", exactMatch=true) then
 else
   print("Installed: ModelicaServices 4.0.0+maint.om\n");
 end if;
+if not installPackage(ObsoleteModelica4, "4.1.0+maint.om", exactMatch=true) then
+  print("ObsoleteModelica4 4.1.0+maint.om failed.\n");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: ObsoleteModelica4 4.1.0+maint.om\n");
+end if;
 if not installPackage(ObsoleteModelica4, "4.0.0+maint.om", exactMatch=true) then
   print("ObsoleteModelica4 4.0.0+maint.om failed.\n");
   print(getErrorString());
   exit(1);
 else
   print("Installed: ObsoleteModelica4 4.0.0+maint.om\n");
+end if;
+if not installPackage(ModelicaReference, "4.1.0+maint.om", exactMatch=true) then
+  print("ModelicaReference 4.1.0+maint.om failed.\n");
+  print(getErrorString());
+  exit(1);
+else
+  print("Installed: ModelicaReference 4.1.0+maint.om\n");
 end if;
 if not installPackage(ModelicaReference, "4.0.0+maint.om", exactMatch=true) then
   print("ModelicaReference 4.0.0+maint.om failed.\n");
@@ -65,4 +100,4 @@ if not installPackage(ModelicaReference, "4.0.0+maint.om", exactMatch=true) then
 else
   print("Installed: ModelicaReference 4.0.0+maint.om\n");
 end if;
-system("touch .openmodelica/20250529001707.stamp")
+system("touch .openmodelica/20250613010610.stamp")
