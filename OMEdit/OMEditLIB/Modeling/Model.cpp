@@ -1109,6 +1109,9 @@ namespace ModelInstance
 
   Model::~Model()
   {
+    qDeleteAll(mGeneratedInnerComponents);
+    mGeneratedInnerComponents.clear();
+
     qDeleteAll(mElements);
     mElements.clear();
 
@@ -1220,7 +1223,12 @@ namespace ModelInstance
       if (kind.compare(QStringLiteral("extends")) == 0) {
         mElements.append(new Extend(this, elementObject));
       } else if (kind.compare(QStringLiteral("component")) == 0) {
-        mElements.append(new Component(this, elementObject));
+        // store generated inner components separately
+        if (elementObject.contains("generated") && elementObject.value("generated").toBool(false)) {
+          mGeneratedInnerComponents.append(new Component(this, elementObject));
+        } else {
+          mElements.append(new Component(this, elementObject));
+        }
       } else if (kind.compare(QStringLiteral("class")) == 0) {
         mElements.append(new ReplaceableClass(this, elementObject));
       } else {
@@ -1686,7 +1694,16 @@ namespace ModelInstance
       last = true;
     }
 
-    foreach (auto pElement, mElements) {
+    /* https://github.com/OpenModelica/OpenModelica/issues/13992#issuecomment-2969807849
+     * We need the generated inner component to be able to evaluate the expressions.
+     * We don't store the generated inner components together with the other components
+     * So we need to add it here.
+     */
+    QList<Element*> elements;
+    elements.append(mGeneratedInnerComponents);
+    elements.append(mElements);
+
+    foreach (auto pElement, elements) {
       if (pElement->isComponent()) {
         if (pElement->getName().compare(curName) == 0) {
           if (last) {
@@ -1755,6 +1772,7 @@ namespace ModelInstance
     mMissing = false;
     mRestriction = "";
     mComment = "";
+    mGeneratedInnerComponents.clear();
     mElements.clear();
     mConnections.clear();
     mTransitions.clear();

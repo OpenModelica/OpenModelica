@@ -219,6 +219,7 @@ FlatModelica::Expression DynamicAnnotation::evaluate_helper(FlatModelica::Expres
           return FlatModelica::Expression(value.first);
         }
       }
+      // qDebug() << "Evaluating variable:" << vname << "from model:" << (pModel ? pModel->getName() : "null");
       auto bindingExpression = pModel ? pModel->getVariableBinding(vname) : nullptr;
       if (!bindingExpression) {
         throw std::runtime_error(vname.toStdString() + " could not be found in " + pModel->getName().toStdString());
