@@ -664,6 +664,7 @@ private:
     std::unique_ptr<Prefixes> mpPrefixes;
     QString mComment;
     std::unique_ptr<Annotation> mpAnnotation;
+    QList<Element*> mGeneratedInnerComponents;
     QList<Element*> mElements;
     QList<Import> mImports;
     QList<Connection*> mConnections;
