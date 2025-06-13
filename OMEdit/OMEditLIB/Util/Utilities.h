@@ -476,9 +476,10 @@ namespace Utilities {
   QSettings* getApplicationSettings();
   QString generateHash(const QString &input);
   qreal convertUnit(qreal value, qreal offset, qreal scaleFactor);
+  QStringList extractArrayParts(const QString &value);
   bool isValueLiteralConstant(QString value);
   bool isValueScalarLiteralConstant(QString value);
-  QString arrayExpressionUnitConversion(OMCProxy *pOMCProxy, QString modifierValue, QString fromUnit, QString toUnit);
+  QString arrayExpressionUnitConversion(OMCProxy *pOMCProxy, QString value, QString fromUnit, QString toUnit);
   Label* getHeadingLabel(QString heading);
   QFrame* getHeadingLine();
   bool detectBOM(QString fileName);
