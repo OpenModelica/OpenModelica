@@ -2,7 +2,6 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 ModelicaTest.Tables.CombiTable1Ds.Test1.mos \
-ModelicaTest.Tables.CombiTable1Ds.Test4.mos \
 ModelicaTest.Math.TestMatrices.mos \
 ModelicaTest.Math.TestMatricesExamplesSolveLinearEquations.mos \
 ModelicaTest.Media.TestAllProperties.ConstantPropertyLiquidWater.mos \

@@ -19,7 +19,8 @@ desired = {
     "3.2.1+maint.om",
     "3.2.2+maint.om",
     "3.2.3+maint.om",
-    "4.0.0+maint.om"
+    "4.0.0+maint.om",
+    "4.1.0+maint.om"
   },
   "Modelica": {
     "2.2.2+maint.om",
@@ -27,17 +28,21 @@ desired = {
     "3.2.1+maint.om",
     "3.2.2+maint.om",
     "3.2.3+maint.om",
-    "4.0.0+maint.om"
+    "4.0.0+maint.om",
+    "4.1.0+maint.om"
   },
   "ModelicaServices": {
     "1.0.0",
     "3.2.1+maint.om",
     "3.2.2+maint.om",
     "3.2.3+maint.om",
-    "4.0.0+maint.om"
+    "4.0.0+maint.om",
+    "4.1.0+maint.om"
   },
   "ModelicaTest": {
-    "3.2.3+maint.om"
+    "3.2.3+maint.om",
+    "4.0.0+maint.om",
+    "4.1.0+maint.om"
   },
   "ModelicaCompliance": {
     "3.2.0-master"
@@ -67,20 +72,25 @@ desired = {
   }
 } if args.test else {
   "Complex": {
-    "4.0.0+maint.om"
+    "4.0.0+maint.om",
+    "4.1.0+maint.om"
   },
   "Modelica": {
     "3.2.3+maint.om",
-    "4.0.0+maint.om"
+    "4.0.0+maint.om",
+    "4.1.0+maint.om"
   },
   "ModelicaServices": {
-    "4.0.0+maint.om"
+    "4.0.0+maint.om",
+    "4.1.0+maint.om",
   },
   "ObsoleteModelica4": { # Used by MSL 3 to 4 conversion scripts
-    "4.0.0+maint.om"
+    "4.0.0+maint.om",
+    "4.1.0+maint.om"
   },
   "ModelicaReference": {
-    "4.0.0+maint.om"
+    "4.0.0+maint.om",
+    "4.1.0+maint.om"
   }
 }
 newdata = {}
