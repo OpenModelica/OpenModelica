@@ -341,11 +341,13 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
   if (!unitComboBoxChanged && !defaultValue) {
     enableDisableUnitComboBox(value);
   }
-  if (Utilities::isValueLiteralConstant(value)) {
-    // convert the value to display unit
-    if (!fromUnit.isEmpty() && mpUnitComboBox->itemData(mpUnitComboBox->currentIndex()).toString().compare(fromUnit) != 0) {
+
+  QStringList valueParts = Utilities::extractArrayParts(value);
+  // convert the value to display unit
+  if (!fromUnit.isEmpty() && mpUnitComboBox->itemData(mpUnitComboBox->currentIndex()).toString().compare(fromUnit) != 0) {
+    if (valueParts.size() == 1) {
       bool ok = true;
-      qreal realValue = value.toDouble(&ok);
+      qreal realValue = valueParts.at(0).toDouble(&ok);
       // if the modifier is a literal constant
       if (ok) {
         OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
@@ -354,11 +356,12 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
           realValue = Utilities::convertUnit(realValue, convertUnit.offset, convertUnit.scaleFactor);
           value = StringHandler::number(realValue);
         }
-      } else { // if expression
-        value = Utilities::arrayExpressionUnitConversion(MainWindow::instance()->getOMCProxy(), value, fromUnit, mpUnitComboBox->itemData(mpUnitComboBox->currentIndex()).toString());
       }
+    } else { // if array expression
+      value = Utilities::arrayExpressionUnitConversion(MainWindow::instance()->getOMCProxy(), value, fromUnit, mpUnitComboBox->itemData(mpUnitComboBox->currentIndex()).toString());
     }
   }
+
   if (defaultValue) {
     mDefaultValue = value;
     /* Issue #11847
@@ -366,7 +369,7 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
      * Use first version if the number of dimensions is small (say, <= 4, which works for 3-phase, 3D mechanics and quaternions).
      * Use the second version for larger arrays, to avoid overbloating it.
      */
-    if (Utilities::isValueLiteralConstant(value) && mpElementParameters->hasElement() && mpElementParameters->isElementArray()) {
+    if (Utilities::isValueScalarLiteralConstant(value) && mpElementParameters->hasElement() && mpElementParameters->isElementArray()) {
       bool ok;
       int dims = mpElementParameters->getElementDimensions().toInt(&ok);
       if (ok) {
@@ -769,7 +772,7 @@ void Parameter::enableDisableUnitComboBox(const QString &value)
     resetUnitCombobox();
   }
   /* Issue #13636
-   * Set each is value is scalar or remove it if value is not scalar.
+   * Set each if value is scalar or remove it if value is not scalar.
    */
   if (mpFinalEachMenuButton->hasEach()) {
     mpFinalEachMenuButton->setEach(Utilities::isValueScalarLiteralConstant(value));
@@ -818,13 +821,11 @@ bool Parameter::isValueModifiedHelper() const
  */
 void Parameter::resetUnitCombobox()
 {
-  bool state = mpUnitComboBox->blockSignals(true);
   int index = mpUnitComboBox->findData(mUnit);
   if (index > -1 && index != mpUnitComboBox->currentIndex()) {
     mpUnitComboBox->setCurrentIndex(index);
     mPreviousUnit = mpUnitComboBox->itemData(mpUnitComboBox->currentIndex()).toString();
   }
-  mpUnitComboBox->blockSignals(state);
 }
 
 /*!
