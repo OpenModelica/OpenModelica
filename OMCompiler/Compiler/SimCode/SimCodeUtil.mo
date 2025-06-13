@@ -240,6 +240,7 @@ protected
   BackendDAE.EquationArray removedEqs;
   BackendDAE.EventInfo eventInfo;
   BackendDAE.Shared shared;
+  BackendDAE.SymbolicJacobian symjac;
   BackendDAE.SymbolicJacobians symJacs;
   BackendDAE.Variables globalKnownVars;
   Boolean ifcpp;
@@ -5021,13 +5022,18 @@ algorithm
         if Util.isSome(shared.dataReconciliationData) then
           BackendDAE.DATA_RECON(_, _, _, _, jacH) := Util.getOption(shared.dataReconciliationData);
           if isSome(jacH) then // check for matrix H is present which means state estimation algorithm is choosed and jacobian F and H are generated earlier
-            matrixnames := {"A", "B", "C", "D"};
+            matrixnames := {"S", "A", "B", "C", "D"};
           else
-            matrixnames := {"A", "B", "C", "D", "H"};
+            matrixnames := {"S", "A", "B", "C", "D", "H"};
           end if;
         else
-           matrixnames := {"A", "B", "C", "D", "F", "H"};
+           matrixnames := {"S", "A", "B", "C", "D", "F", "H"};
         end if;
+        // check if the POST_OPT_MODULE "generateSymbolicSensitivities" is set via getConfigStringList not getConfigOptionsStringList
+        // if List.contains(Flags.getConfigStringList(Flags.POST_OPT_MODULES_ADD), "generateSymbolicSensitivities", stringEq) then
+        //   matrixnames := "S" :: matrixnames;
+        // end if;
+        
         (res, ouniqueEqIndex) := createSymbolicJacobianssSimCode(inSymjacs, crefSimVarHT, iuniqueEqIndex, matrixnames, {});
         // _ := FlagsUtil.set(Flags.EXEC_STAT, b);
       then (res,ouniqueEqIndex);
@@ -5074,7 +5080,7 @@ algorithm
       Integer uniqueEqIndex, nRows;
 
       list<String> restnames;
-      String name, dummyVar;
+      String name, dummyVar, jac_name;
 
       SimCodeVar.SimVars simvars;
       list<SimCode.SimEqSystem> allEquations = {}, constantEqns = {};
@@ -5107,7 +5113,7 @@ algorithm
         tmpJac.matrixName = name;
         linearModelMatrices = tmpJac::inJacobianMatrices;
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode({}, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
-     then
+      then
         (linearModelMatrices, uniqueEqIndex);
 
     // if nothing is generated
@@ -5117,7 +5123,17 @@ algorithm
         tmpJac.matrixName = name;
         linearModelMatrices = tmpJac::inJacobianMatrices;
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
-     then
+      then
+        (linearModelMatrices, uniqueEqIndex);
+
+    case ((SOME((_, jac_name, _, _, _, _)), _, _, _) :: _, _, _, name::restnames)
+      guard  not jac_name == name
+      equation
+        tmpJac = SimCode.emptyJacobian;
+        tmpJac.matrixName = name;
+        linearModelMatrices = tmpJac::inJacobianMatrices;
+        (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(inSymJacobians, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
+      then
         (linearModelMatrices, uniqueEqIndex);
 
     // if only sparsity pattern is generated
@@ -9413,14 +9429,14 @@ algorithm
   _ := match(jacOpt)
     local
       Integer idx;
-      String s;
+      String s, name;
       SimCode.JacobianMatrix jac;
       list<SimCode.JacobianColumn> cols;
       list<SimCode.SimEqSystem> colEqs;
       list<SimCodeVar.SimVar> colVars;
     case(SOME(jac))
       equation
-        SimCode.JAC_MATRIX(columns=cols, jacobianIndex=idx) = jac;
+        SimCode.JAC_MATRIX(columns=cols, jacobianIndex=idx, matrixName=name) = jac;
         colEqs  = List.flatten(list(a.columnEqns for a in cols));
         colVars = List.flatten(list(a.columnVars for a in cols));
         print("\tJacobian idx: "+intString(idx)+"\n\t");
@@ -14161,7 +14177,7 @@ algorithm
     // discreteStates
     if not checkForEmptyBDAE(optcontPartDer) then
       contPartDer := {(optcontPartDer,spPattern,spColors, nlPattern)};
-      ({contSimJac}, uniqueEqIndex) := createSymbolicJacobianssSimCode(contPartDer, crefSimVarHT, uniqueEqIndex, {"FMIDer"}, {});
+      ({contSimJac}, uniqueEqIndex) := createSymbolicJacobianssSimCode(contPartDer, crefSimVarHT, uniqueEqIndex, {"FMIDER"}, {});
       // collect algebraic loops and symjacs for FMIDer
       ({contSimJac}, outModelInfo, symJacs) := addAlgebraicLoopsModelInfoSymJacs({contSimJac}, inModelInfo);
       contPartSimDer := SOME(contSimJac);
