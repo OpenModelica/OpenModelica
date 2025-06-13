@@ -1027,6 +1027,12 @@ uniontype InstNode
         then
           ();
 
+      case COMPONENT_NODE()
+        algorithm
+          node.definition := SOME(definition);
+        then
+          ();
+
     end match;
   end setDefinition;
 
