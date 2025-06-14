@@ -10,7 +10,7 @@ AC_ARG_WITH(qt6,  [  --with-qt6       (build with qt6)],[WITH_QT6="$withval"],[W
 # maybe we should check if qt5webkit exists and if not activate qt6
 # but I have no idea how to do that
 
-if "lsb_release -cs" | grep plucky; then
+if "lsb_release" -cs | grep plucky; then
   WITH_QT6="yes"
   AC_MSG_RESULT([Forcing qt6 as we don't have webkit in plucky distro])
 fi
