@@ -533,8 +533,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     }
 
     infoStreamPrint(OMC_LOG_STATS_V, 1, "function calls");
-    if (compiledInDAEMode)
-    {
+    if (compiledInDAEMode) {
       infoStreamPrint(OMC_LOG_STATS_V, 1, "%5u calls of functionDAE", rt_ncall(SIM_TIMER_DAE));
       infoStreamPrint(OMC_LOG_STATS_V, 0, "%12gs [%5.1f%%]", rt_accumulated(SIM_TIMER_DAE), rt_accumulated(SIM_TIMER_DAE)/total100);
       messageClose(OMC_LOG_STATS_V);
@@ -557,16 +556,20 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       messageClose(OMC_LOG_STATS_V);
     }
 
-    infoStreamPrint(OMC_LOG_STATS_V, 1, "%5d evaluations of jacobian", rt_ncall(SIM_TIMER_JACOBIAN));
-    infoStreamPrint(OMC_LOG_STATS_V, 0, "%12gs [%5.1f%%]", rt_accumulated(SIM_TIMER_JACOBIAN), rt_accumulated(SIM_TIMER_JACOBIAN)/total100);
-    messageClose(OMC_LOG_STATS_V);
+    if (rt_ncall(SIM_TIMER_JACOBIAN)) {
+      infoStreamPrint(OMC_LOG_STATS_V, 1, "%5d evaluations of jacobian", rt_ncall(SIM_TIMER_JACOBIAN));
+      infoStreamPrint(OMC_LOG_STATS_V, 0, "%12gs [%5.1f%%]", rt_accumulated(SIM_TIMER_JACOBIAN), rt_accumulated(SIM_TIMER_JACOBIAN)/total100);
+      messageClose(OMC_LOG_STATS_V);
+    }
 
     infoStreamPrint(OMC_LOG_STATS_V, 0, "%5ld calls of updateDiscreteSystem", data->simulationInfo->callStatistics.updateDiscreteSystem);
     infoStreamPrint(OMC_LOG_STATS_V, 0, "%5ld calls of functionZeroCrossingsEquations", data->simulationInfo->callStatistics.functionZeroCrossingsEquations);
 
-    infoStreamPrint(OMC_LOG_STATS_V, 1, "%5ld calls of functionZeroCrossings", data->simulationInfo->callStatistics.functionZeroCrossings);
-    infoStreamPrint(OMC_LOG_STATS_V, 0, "%12gs [%5.1f%%]", rt_accumulated(SIM_TIMER_ZC), rt_accumulated(SIM_TIMER_ZC)/total100);
-    messageClose(OMC_LOG_STATS_V);
+    if (data->simulationInfo->callStatistics.functionZeroCrossings) {
+      infoStreamPrint(OMC_LOG_STATS_V, 1, "%5ld calls of functionZeroCrossings", data->simulationInfo->callStatistics.functionZeroCrossings);
+      infoStreamPrint(OMC_LOG_STATS_V, 0, "%12gs [%5.1f%%]", rt_accumulated(SIM_TIMER_ZC), rt_accumulated(SIM_TIMER_ZC)/total100);
+      messageClose(OMC_LOG_STATS_V);
+    }
 
     messageClose(OMC_LOG_STATS_V);  // closes section "function calls"
 
