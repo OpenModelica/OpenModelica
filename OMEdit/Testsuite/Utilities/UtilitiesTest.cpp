@@ -45,6 +45,26 @@ extern "C" {
 
 OMEDITTEST_MAIN(UtilitiesTest)
 
+void UtilitiesTest::extractArrayParts()
+{
+  QFETCH(QString, input);
+  QFETCH(QStringList, expected);
+
+  QCOMPARE(Utilities::extractArrayParts(input), expected);
+}
+
+void UtilitiesTest::extractArrayParts_data()
+{
+  QTest::addColumn<QString>("input");
+  QTest::addColumn<QStringList>("expected");
+
+  QTest::newRow("Simple array") << "{1, 2, 3}" << (QStringList{"1", "2", "3"});
+  QTest::newRow("Quoted strings") << "{\"one\", \"two, three\"}" << (QStringList{"one", "two, three"});
+  QTest::newRow("Mixed values") << "{1.2, \"hello\", var}" << (QStringList{"1.2", "hello", "var"});
+  QTest::newRow("Non-array string") << "hello" << (QStringList{"hello"});
+  QTest::newRow("Exponential form") << "{1e-09 , 2e-3 , 0.456e7}" << (QStringList{"1e-09", "2e-3", "0.456e7"});
+}
+
 void UtilitiesTest::literalConstant()
 {
   QFETCH(QString, string);
