@@ -1149,7 +1149,7 @@ algorithm
                 fail();
           end match;
         then
-          InstNode.replaceComponent(comp, node);
+          InstNode.replaceComponent(comp, InstNode.setDefinition(def, node));
 
       else
         algorithm
