@@ -750,7 +750,6 @@ static void updateEvalSelection(DATA* data, DATA_GBODE* gbData)
   /* select all dependencies */
   activateEvalDependencies(data->simulationInfo->evalSelectionFast);
 
-
   /* debug print */
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
     char row_to_print[40960];
@@ -1096,6 +1095,18 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       gbfData->time = gbData->timeRight;
       break;
     }
+  }
+
+  /* update last two entries of ringbuffer with missing values of new fast derivatives */
+  for (i = 0; i < 2; i++) {
+    // TODO actually we only need fast derivatives, but at this point we don't
+    // yet know which states will become fast so we compute everything.
+    sData->timeValue = gbfData->tv[i];
+    memcpy(sData->realVars, gbfData->yv + i * nStates, data->modelData->nStates * sizeof(double));
+    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), FALSE);
+
+    for (j = 0; j < gbData->nSlowStates; j++)
+      (gbfData->kv + i * nStates)[gbData->slowStatesIdx[j]] = fODE[gbData->slowStatesIdx[j]];
   }
 
   // copy error and values of the fast states to the outer integrator routine if outer integration time is reached
