@@ -32,6 +32,7 @@
  */
 
 #include "jacobian_util.h"
+#include "eval_dep.h"
 #include "options.h"
 #include "../util/omc_file.h"
 
@@ -61,6 +62,7 @@ void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRo
   jacobian->sparsePattern = sparsePattern;
   jacobian->availability = JACOBIAN_UNKNOWN;
   jacobian->dae_cj = 0;
+  jacobian->selectionColor = (EVAL_SELECTION*) calloc(sparsePattern->maxColors, sizeof(EVAL_SELECTION));
 }
 
 /**

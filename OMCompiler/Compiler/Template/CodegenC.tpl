@@ -181,6 +181,12 @@ end translateModel;
     extern int <%symbolName(modelNamePrefixStr,"functionJacD_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacF_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacH_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
+    extern void <%symbolName(modelNamePrefixStr,"getDependencyJacA")%>(EVAL_DAG* dag, size_t* realVarsIndex);
+    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacB")%>(EVAL_DAG* dag, size_t* realVarsIndex);
+    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacC")%>(EVAL_DAG* dag, size_t* realVarsIndex);
+    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacD")%>(EVAL_DAG* dag, size_t* realVarsIndex);
+    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacF")%>(EVAL_DAG* dag, size_t* realVarsIndex);
+    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacH")%>(EVAL_DAG* dag, size_t* realVarsIndex);
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_frame")%>(void);
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>(void);
     extern int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res, short *);
@@ -1348,6 +1354,12 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <%symbolName(modelNamePrefixStr,"functionJacD_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacF_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacH_column")%>,
+      <%symbolName(modelNamePrefixStr,"getDependencyJacA")%>,
+      //<%symbolName(modelNamePrefixStr,"getDependencyJacB")%>,
+      //<%symbolName(modelNamePrefixStr,"getDependencyJacC")%>,
+      //<%symbolName(modelNamePrefixStr,"getDependencyJacD")%>,
+      //<%symbolName(modelNamePrefixStr,"getDependencyJacF")%>,
+      //<%symbolName(modelNamePrefixStr,"getDependencyJacH")%>,
       <%symbolName(modelNamePrefixStr,"linear_model_frame")%>,
       <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>,
       <%symbolName(modelNamePrefixStr,"mayer")%>,
