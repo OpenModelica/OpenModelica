@@ -181,12 +181,12 @@ end translateModel;
     extern int <%symbolName(modelNamePrefixStr,"functionJacD_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacF_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacH_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
-    extern void <%symbolName(modelNamePrefixStr,"getDependencyJacA")%>(EVAL_DAG* dag, size_t* realVarsIndex);
-    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacB")%>(EVAL_DAG* dag, size_t* realVarsIndex);
-    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacC")%>(EVAL_DAG* dag, size_t* realVarsIndex);
-    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacD")%>(EVAL_DAG* dag, size_t* realVarsIndex);
-    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacF")%>(EVAL_DAG* dag, size_t* realVarsIndex);
-    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacH")%>(EVAL_DAG* dag, size_t* realVarsIndex);
+    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacA")%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex);
+    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacB")%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex);
+    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacC")%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex);
+    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacD")%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex);
+    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacF")%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex);
+    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacH")%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex);
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_frame")%>(void);
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>(void);
     extern int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res, short *);
@@ -1354,7 +1354,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <%symbolName(modelNamePrefixStr,"functionJacD_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacF_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacH_column")%>,
-      <%symbolName(modelNamePrefixStr,"getDependencyJacA")%>,
+      //<%symbolName(modelNamePrefixStr,"getDependencyJacA")%>,
       //<%symbolName(modelNamePrefixStr,"getDependencyJacB")%>,
       //<%symbolName(modelNamePrefixStr,"getDependencyJacC")%>,
       //<%symbolName(modelNamePrefixStr,"getDependencyJacD")%>,
@@ -4884,11 +4884,19 @@ end getDependency;
 template getDependencyJacobian(JacobianMatrix jac, String modelNamePrefix)
 ::=
   match jac
-  case JAC_MATRIX(columns = {}) then ''
+  case JAC_MATRIX(columns = {}) then
+  let funcName = 'getDependencyJac<%matrixName%>'
+  <<
+  void <%symbolName(modelNamePrefix, funcName)%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex)
+  {
+    TRACE_PUSH
+    TRACE_POP
+  }
+  >>
   case JAC_MATRIX(crefsHT=crefsHT) then
   let funcName = 'getDependencyJac<%matrixName%>'
   <<
-  void <%symbolName(modelNamePrefix, funcName)%>(EVAL_DAG* dag, size_t* realVarsIndex)
+  void <%symbolName(modelNamePrefix, funcName)%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex)
   {
     TRACE_PUSH
 
@@ -4900,11 +4908,9 @@ template getDependencyJacobian(JacobianMatrix jac, String modelNamePrefix)
       let eqIdx = equationIndexGeneral(eq)
       '<%getSimEqSystemSimVarsLHSJac(eq, crefsHT) |> var =>
         match var
-        case SIMVAR() then
-        <<
-        for (i = realVarsIndex[<%index%>]; i < realVarsIndex[<%index%>+1]; i++)
-          dag->mapVarToEqNode[i] = <%eqIdx%>; <%crefCCommentWithVariability(var)%><%\n%>
-        >>; separator="\n"%>'); separator="\n"%>
+        case SIMVAR(varKind = JAC_VAR()) then 'dag->mapVarToEqNode[<%index%>] = <%eqIdx%>; <%crefCCommentWithVariability(var)%><%\n%>'
+        case SIMVAR(varKind = JAC_TMP_VAR()) then 'dag->mapVarToEqNode[<%index%>+nRows] = <%eqIdx%>; <%crefCCommentWithVariability(var)%><%\n%>'
+        ; separator="\n"%>'); separator="\n"%>
 
     /* eqDependency */
     <%columns |> col => match col
@@ -5780,8 +5786,8 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
     generateMatrix(columns, seedVars, matrixName, partitionIndex, crefsHT, modelNamePrefix) ;separator="\n")
   let jacGenericCalls = (JacobianMatrices |> JAC_MATRIX() =>
     genericCallBodies(generic_loop_calls, createJacContext(crefsHT)) ;separator="\n")
-  let jacDependency = (JacobianMatrices |> jac as JAC_MATRIX() =>
-    if stringEq(matrixName, "A") then getDependencyJacobian(jac, modelNamePrefix) ;separator="\n")
+  let jacDependency = (JacobianMatrices |> jac as JAC_MATRIX() => '' ;separator="\n")
+    //getDependencyJacobian(jac, modelNamePrefix) ;separator="\n")
   <<
   <%jacMats%>
 
@@ -5832,6 +5838,7 @@ match sparsepattern
       initJacobian(jacobian, <%sizeCols%>, <%sizeRows%>, <%tmpvarsSize%>, <%evalColumn%>, <%constantEqns%>, NULL);
       jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
       jacobian->availability = <%availability%>;
+      //<%symbolName(modelNamePrefix,"getDependencyJac")%><%matrixname%>(jacobian->dag, jacobian->sizeRows, data->simulationInfo->realVarsIndex);
 
       /* read lead index of compressed sparse column */
       count = omc_fread(jacobian->sparsePattern->leadindex, sizeof(unsigned int), <%sizeleadindex%>+1, pFile, FALSE);
