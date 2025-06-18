@@ -162,7 +162,7 @@ const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX] = {
 #ifdef USE_DEBUG_TRACE
   "enables additional output to trace call stack",                              /* OMC_LOG_TRACE */
 #endif
-  "additional information about the zerocrossings",                             /* OMC_LOG_ZEROCROSSINGS */
+  "additional information about the zerocrossings"                              /* OMC_LOG_ZEROCROSSINGS */
 };
 
 const char *OMC_LOG_TYPE_DESC[OMC_LOG_TYPE_MAX] = {
