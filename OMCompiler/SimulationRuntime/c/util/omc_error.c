@@ -84,6 +84,7 @@ const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX] = {
   "LOG_NLS_JAC",
   "LOG_NLS_JAC_TEST",
   "LOG_NLS_NEWTON_DIAGNOSTICS",
+  "LOG_NLS_DERIVATIVE_TEST",
   "LOG_NLS_RES",
   "LOG_NLS_EXTRAPOLATE",
   "LOG_RES_INIT",
@@ -102,7 +103,6 @@ const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX] = {
   "LOG_TRACE",
 #endif
   "LOG_ZEROCROSSINGS",
-  "LOG_NLS_DERIVATIVE_TEST",
 };
 
 const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX] = {
@@ -144,6 +144,7 @@ const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX] = {
   "outputs the jacobian of nonlinear systems",                                  /* OMC_LOG_NLS_JAC */
   "tests the analytical jacobian of nonlinear systems",                         /* OMC_LOG_NLS_JAC_TEST */
   "newton diagnostics (see: https://doi.org/10.1016/j.amc.2021.125991)",        /* OMC_LOG_NLS_NEWTON_DIAGNOSTICS */
+  "test derivatives in KINSOL nonlinear systems",                               /* OMC_LOG_NLS_DERIVATIVE_TEST */
   "outputs every evaluation of the residual function",                          /* OMC_LOG_NLS_RES */
   "outputs debug information about extrapolate process",                        /* OMC_LOG_NLS_EXTRAPOLATE */
   "outputs residuals of the initialization",                                    /* OMC_LOG_RES_INIT */
@@ -161,8 +162,7 @@ const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX] = {
 #ifdef USE_DEBUG_TRACE
   "enables additional output to trace call stack",                              /* OMC_LOG_TRACE */
 #endif
-  "additional information about the zerocrossings",                              /* OMC_LOG_ZEROCROSSINGS */
-  "test derivatives in nonlinear systems"                                        /* OMC_LOG_NLS_DERIVATIVE_TEST */
+  "additional information about the zerocrossings",                             /* OMC_LOG_ZEROCROSSINGS */
 };
 
 const char *OMC_LOG_TYPE_DESC[OMC_LOG_TYPE_MAX] = {

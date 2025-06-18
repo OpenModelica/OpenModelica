@@ -597,104 +597,108 @@ static int nlsKinsolDenseDerivativeTest(DATA *data, NONLINEAR_SYSTEM_DATA *nlsDa
                                         NLS_KINSOL_DATA *kinsolData,
                                         SUNMatrix Jsym, double tol)
 {
-    int row, col, nz, errorCount, numericalErrorCount, structuralErrorCount;
-    const int size = nlsData->size;
-    int ret = 0;
+  int row, col, nz, errorCount, numericalErrorCount, structuralErrorCount;
+  const int size = nlsData->size;
+  int ret = 0;
 
-    modelica_real symValue, numValue, relError;
-    modelica_real maxError = 0.0;
+  modelica_real symValue, numValue, relError;
+  modelica_real maxError = 0.0;
 
-    long int *colPointers = SM_INDEXPTRS_S(Jsym);
-    long int *rowIndices = SM_INDEXVALS_S(Jsym);
-    realtype *symValues = SM_DATA_S(Jsym);
+  long int *colPointers = SM_INDEXPTRS_S(Jsym);
+  long int *rowIndices = SM_INDEXVALS_S(Jsym);
+  realtype *symValues = SM_DATA_S(Jsym);
 
-    // allocate temporary memory for dense finite-diff matrix
-    N_Vector vecX = N_VNew_Serial(size);
-    N_Vector vecFX = N_VNew_Serial(size);
-    N_Vector tmp1 = N_VNew_Serial(size);
-    N_Vector tmp2 = N_VNew_Serial(size);
-    SUNMatrix Jnum = SUNDenseMatrix(size, size);
+  // allocate temporary memory for dense finite-diff matrix
+  N_Vector vecX = N_VNew_Serial(size);
+  N_Vector vecFX = N_VNew_Serial(size);
+  N_Vector tmp1 = N_VNew_Serial(size);
+  N_Vector tmp2 = N_VNew_Serial(size);
+  SUNMatrix Jnum = SUNDenseMatrix(size, size);
 
-    // copy current x into new vector, compute f(x) and corresponding dense finite-diff Jacobian
-    SUNMatZero(Jnum);
-    N_VScale(1.0, kinsolData->initialGuess, vecX);
-    nlsKinsolResiduals(vecX, vecFX, kinsolData->userData);
-    if (nlsDenseJac(size, vecX, vecFX, Jnum, kinsolData->userData, tmp1, tmp2) != 0)
-    {
-        errorStreamPrint(OMC_LOG_STDOUT, 0, "Numerical Jacobian computation failed");
-        ret = -1;
-        goto cleanup;
-    }
+  // copy current x into new vector, compute f(x) and corresponding dense finite-diff Jacobian
+  SUNMatZero(Jnum);
+  N_VScale(1.0, kinsolData->initialGuess, vecX);
+  nlsKinsolResiduals(vecX, vecFX, kinsolData->userData);
+  if (nlsDenseJac(size, vecX, vecFX, Jnum, kinsolData->userData, tmp1, tmp2) != 0)
+  {
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "Numerical Jacobian computation failed");
+      ret = -1;
+      SUNMatDestroy(Jnum);
+      N_VDestroy_Serial(vecX);
+      N_VDestroy_Serial(vecFX);
+      N_VDestroy_Serial(tmp1);
+      N_VDestroy_Serial(tmp2);
+      return ret;
+  }
 
-    infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "KINSOL: Derivative test (tol=%.5e, scaling=%d):", tol, kinsolData->nominalJac);
-    infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "Anomalies");
-    infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0,
-        "%-12s %-6s %-6s %-15s %-15s %-8s",
-        "Type", "Col", "Row", "Symbolic", "Numerical", "RelError");
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "KINSOL: Derivative test (tol=%.5e, scaling=%d):", tol, kinsolData->nominalJac);
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "Anomalies");
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0,
+      "%-12s %-6s %-6s %-15s %-15s %-8s",
+      "Type", "Col", "Row", "Symbolic", "Numerical", "RelError");
 
-    nz = 0;
-    errorCount = 0;
-    numericalErrorCount = 0;
-    structuralErrorCount = 0;
+  nz = 0;
+  errorCount = 0;
+  numericalErrorCount = 0;
+  structuralErrorCount = 0;
 
-    for (col = 0; col < size; col++)
-    {
-        for (row = 0; row < size; row++)
-        {
-            numValue = SM_ELEMENT_D(Jnum, row, col);
+  for (col = 0; col < size; col++)
+  {
+      for (row = 0; row < size; row++)
+      {
+          numValue = SM_ELEMENT_D(Jnum, row, col);
 
-            if (colPointers[col] <= nz && nz < colPointers[col+1] && rowIndices[nz] == row)
-            {
-                // structural non-zero -> compare values
-                symValue = symValues[nz++];
-                relError = fabs(symValue - numValue) / fmax(fabs(numValue), tol);
+          if (colPointers[col] <= nz && nz < colPointers[col+1] && rowIndices[nz] == row)
+          {
+              // structural non-zero -> compare values
+              symValue = symValues[nz++];
+              relError = fabs(symValue - numValue) / fmax(fabs(numValue), tol);
 
-                if (relError > maxError)
-                {
-                    maxError = relError;
-                }
+              if (relError > maxError)
+              {
+                  maxError = relError;
+              }
 
-                if (relError > tol)
-                {
-                    infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "%-12s %-6d %-6d %-15.5e %-15.5e %-11.5e",
-                                    "Numerical", col, row, symValue, numValue, relError);
-                    numericalErrorCount++;
-                }
-            }
-            else if (fabs(numValue) > tol)
-            {
-                // structural error and tolerance exceeded -> non-zero in numerical Jacobian but zero in symbolic
-                infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "%-12s %-6d %-6d %-15.5e %-15.5e %-11.5e",
-                                "Structural", col, row, 0.0, numValue, 1.0);
-                structuralErrorCount++;
-            }
-        }
-    }
+              if (relError > tol)
+              {
+                  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "%-12s %-6d %-6d %-15.5e %-15.5e %-11.5e",
+                                  "Numerical", col, row, symValue, numValue, relError);
+                  numericalErrorCount++;
+              }
+          }
+          else if (fabs(numValue) > tol)
+          {
+              // structural error and tolerance exceeded -> non-zero in numerical Jacobian but zero in symbolic
+              infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "%-12s %-6d %-6d %-15.5e %-15.5e %-11.5e",
+                              "Structural", col, row, 0.0, numValue, 1.0);
+              structuralErrorCount++;
+          }
+      }
+  }
 
-    messageClose(OMC_LOG_NLS_DERIVATIVE_TEST);
+  messageClose(OMC_LOG_NLS_DERIVATIVE_TEST);
 
-    infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "Summary:");
-    infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Numerical errors:  %d (values mismatch w.r.t. reference)", numericalErrorCount);
-    infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Structural errors: %d (non-zero not in sparsity pattern)", structuralErrorCount);
-    infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Max relative error: %.3e", maxError);
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "Summary:");
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Numerical errors:  %d (values mismatch w.r.t. reference)", numericalErrorCount);
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Structural errors: %d (non-zero not in sparsity pattern)", structuralErrorCount);
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Max relative error: %.3e", maxError);
 
-    if (numericalErrorCount + structuralErrorCount > 0)
-    {
-      warningStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0,
-                         "Derivative test failed (%d numerical, %d structural errors)",
-                         numericalErrorCount, structuralErrorCount);
-      ret = 1;
-    }
-    messageClose(OMC_LOG_NLS_DERIVATIVE_TEST);
-    messageClose(OMC_LOG_NLS_DERIVATIVE_TEST);
+  if (numericalErrorCount + structuralErrorCount > 0)
+  {
+    warningStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0,
+                        "Derivative test failed (%d numerical, %d structural errors)",
+                        numericalErrorCount, structuralErrorCount);
+    ret = 1;
+  }
+  messageClose(OMC_LOG_NLS_DERIVATIVE_TEST);
+  messageClose(OMC_LOG_NLS_DERIVATIVE_TEST);
 
-cleanup:
-    SUNMatDestroy(Jnum);
-    N_VDestroy_Serial(vecX);
-    N_VDestroy_Serial(vecFX);
-    N_VDestroy_Serial(tmp1);
-    N_VDestroy_Serial(tmp2);
-    return ret;
+  SUNMatDestroy(Jnum);
+  N_VDestroy_Serial(vecX);
+  N_VDestroy_Serial(vecFX);
+  N_VDestroy_Serial(tmp1);
+  N_VDestroy_Serial(tmp2);
+  return ret;
 }
 
 /**
