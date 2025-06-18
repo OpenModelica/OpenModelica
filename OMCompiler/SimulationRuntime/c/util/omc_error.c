@@ -102,6 +102,7 @@ const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX] = {
   "LOG_TRACE",
 #endif
   "LOG_ZEROCROSSINGS",
+  "LOG_NLS_DERIVATIVE_TEST",
 };
 
 const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX] = {
@@ -160,7 +161,8 @@ const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX] = {
 #ifdef USE_DEBUG_TRACE
   "enables additional output to trace call stack",                              /* OMC_LOG_TRACE */
 #endif
-  "additional information about the zerocrossings"                              /* OMC_LOG_ZEROCROSSINGS */
+  "additional information about the zerocrossings",                              /* OMC_LOG_ZEROCROSSINGS */
+  "test derivatives in nonlinear systems"                                        /* OMC_LOG_NLS_DERIVATIVE_TEST */
 };
 
 const char *OMC_LOG_TYPE_DESC[OMC_LOG_TYPE_MAX] = {
