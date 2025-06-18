@@ -62,7 +62,6 @@ void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRo
   jacobian->sparsePattern = sparsePattern;
   jacobian->availability = JACOBIAN_UNKNOWN;
   jacobian->dae_cj = 0;
-  jacobian->selectionColor = (EVAL_SELECTION*) calloc(sparsePattern->maxColors, sizeof(EVAL_SELECTION));
 }
 
 /**
