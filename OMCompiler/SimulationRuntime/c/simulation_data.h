@@ -202,8 +202,8 @@ typedef struct JACOBIAN
   modelica_real* tmpVars;
   modelica_real* resultVars;            /* Result column for given seed vector */
   modelica_real dae_cj;                 /* Is the scalar in the system Jacobian, proportional to the inverse of the step size. From User Documentation for ida v5.4.0 equation (2.5). */
-  EVAL_DAG* dag;                        /* dependency of rows and inner partial derivatives */
-  EVAL_SELECTION* selectionColor;       /* selections for each color */
+  // EVAL_DAG* dag;                        /* dependency of rows and inner partial derivatives */
+  // EVAL_SELECTION* selectionColor;       /* selections for each color */
   jacobianColumn_func_ptr evalColumn;   /* symbolic jacobian column based on seed vector */
   jacobianColumn_func_ptr constantEqns; /* Constant equations independent of seed vector */
 } JACOBIAN;

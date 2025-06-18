@@ -290,12 +290,12 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   /*
   * These functions initialize the jacobian dependency.
   */
-  void (*getDependencyJacA)(EVAL_DAG* dag, size_t* realVarsIndex);
-  //void (*getDependencyJacB)(EVAL_DAG* dag, size_t* realVarsIndex);
-  //void (*getDependencyJacC)(EVAL_DAG* dag, size_t* realVarsIndex);
-  //void (*getDependencyJacD)(EVAL_DAG* dag, size_t* realVarsIndex);
-  //void (*getDependencyJacF)(EVAL_DAG* dag, size_t* realVarsIndex);
-  //void (*getDependencyJacH)(EVAL_DAG* dag, size_t* realVarsIndex);
+  // void (*getDependencyJacA)(EVAL_DAG* dag, size_t* realVarsIndex);
+  // void (*getDependencyJacB)(EVAL_DAG* dag, size_t* realVarsIndex);
+  // void (*getDependencyJacC)(EVAL_DAG* dag, size_t* realVarsIndex);
+  // void (*getDependencyJacD)(EVAL_DAG* dag, size_t* realVarsIndex);
+  // void (*getDependencyJacF)(EVAL_DAG* dag, size_t* realVarsIndex);
+  // void (*getDependencyJacH)(EVAL_DAG* dag, size_t* realVarsIndex);
   /*#endif*/
 
   const char *(*linear_model_frame)(void); /* printf format-string with holes for 6 strings */
