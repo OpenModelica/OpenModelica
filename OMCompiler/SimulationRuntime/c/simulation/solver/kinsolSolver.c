@@ -609,8 +609,8 @@ static int nlsKinsolDenseDerivativeTest(DATA *data, NONLINEAR_SYSTEM_DATA *nlsDa
   sunindextype columns = SUNSparseMatrix_Columns(Jsym);
   sunindextype rows = SUNSparseMatrix_Rows(Jsym);
 
-  long int *colPointers = SM_INDEXPTRS_S(Jsym);
-  long int *rowIndices = SM_INDEXVALS_S(Jsym);
+  sunindextype *colPointers = SM_INDEXPTRS_S(Jsym);
+  sunindextype *rowIndices = SM_INDEXVALS_S(Jsym);
   realtype *symValues = SM_DATA_S(Jsym);
 
   // allocate temporary memory for dense finite-diff matrix
