@@ -32,6 +32,7 @@
  */
 
 #include "jacobian_util.h"
+#include "eval_dep.h"
 #include "options.h"
 #include "../util/omc_file.h"
 
@@ -106,7 +107,7 @@ void freeJacobian(JACOBIAN *jac)
 
 /*! \fn evalJacobian
  *
- *  compute entries of Jacobian in sparse CSC or dense format 
+ *  compute entries of Jacobian in sparse CSC or dense format
  *  uses coloring (sparsePattern non NULL)
  *
  *  \param [ref] [data]

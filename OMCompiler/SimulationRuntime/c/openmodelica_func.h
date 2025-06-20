@@ -104,6 +104,12 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   /* computes index map with the sizes of all (resizable) variables */
   void (*computeVarIndices)(size_t* realIndex, size_t* integerIndex, size_t* booleanIndex, size_t* stringIndex);
 
+  /* array of equation super nodes of the system */
+  void (*setEqFunctions)(DATA*, threadData_t*);
+
+  /* sets the var to eqNode map and dependency graph */
+  void (*getDependency)(EVAL_DAG* dag, size_t* realVarsIndex);
+
   /* functionODE contains those equations that are needed
   * to calculate the dynamic part of the system */
   int (*functionODE)(DATA *data, threadData_t*);
@@ -280,6 +286,16 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   jacobianColumn_func_ptr functionJacD_column;
   jacobianColumn_func_ptr functionJacF_column;
   jacobianColumn_func_ptr functionJacH_column;
+
+  /*
+  * These functions initialize the jacobian dependency.
+  */
+  // void (*getDependencyJacA)(EVAL_DAG* dag, size_t* realVarsIndex);
+  // void (*getDependencyJacB)(EVAL_DAG* dag, size_t* realVarsIndex);
+  // void (*getDependencyJacC)(EVAL_DAG* dag, size_t* realVarsIndex);
+  // void (*getDependencyJacD)(EVAL_DAG* dag, size_t* realVarsIndex);
+  // void (*getDependencyJacF)(EVAL_DAG* dag, size_t* realVarsIndex);
+  // void (*getDependencyJacH)(EVAL_DAG* dag, size_t* realVarsIndex);
   /*#endif*/
 
   const char *(*linear_model_frame)(void); /* printf format-string with holes for 6 strings */

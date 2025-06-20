@@ -280,7 +280,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       if (!gbData->tableau->isKLeftAvailable || (stage > 0)) {
         // Calculate the fODE values for the explicit stage
         memcpy(sData->realVars, gbData->res_const, nStates*sizeof(double));
-        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), FALSE);
       } else {
         memcpy(fODE, gbData->kLeft, nStates*sizeof(double));
       }
@@ -373,7 +373,6 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
                    gbfData->time,      gbfData->yOld,
                    gbData->nSlowStates, gbData->slowStatesIdx, nStates, gbData->tableau, gbData->x, gbData->k);
 
-
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
     infoStreamPrint(OMC_LOG_GBODE_NLS, 1, "NLS - used values for extrapolation:");
     printVector_gbf(OMC_LOG_GBODE_NLS, "xL", gbfData->yv + nStates, nStates, gbfData->tv[1], gbData->nFastStates, gbData->fastStatesIdx);
@@ -387,7 +386,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     gbfData->act_stage = stage;
     // k[i] = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i))
     // residual constant part:
-    // res = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i-i))
+    // res = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i-1))
     // yOld from integrator is correct for the fast states
 
     for (i=0; i < nStates; i++) {
@@ -395,16 +394,17 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       for (stage_ = 0; stage_ < stage; stage_++)
         gbfData->res_const[i] += gbfData->stepSize * gbfData->tableau->A[stage * nStages + stage_] * gbfData->k[stage_ * nStates + i];
     }
+    // TODO can be streamlined by taking res_const[i-1] instead of the whole sum.
 
     // set simulation time with respect to the current stage
+    // t = t_0 + c[j]*h
     sData->timeValue = gbfData->time + gbfData->tableau->c[stage]*gbfData->stepSize;
 
     // index of diagonal element of A
     if (gbfData->tableau->A[stage * nStages + stage_] == 0) {
       // Calculate the fODE values for the explicit stage
       memcpy(sData->realVars, gbfData->res_const, nStates*sizeof(double));
-
-      gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
+      gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), TRUE);
     } else {
       // interpolate the slow states on the time of the current stage
       gb_interpolation(gbData->interpolation,
@@ -420,7 +420,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       projVector_gbf(nlsData->nlsx, gbfData->yOld, nFastStates, gbData->fastStatesIdx);
       memcpy(nlsData->nlsxOld, nlsData->nlsx, nFastStates*sizeof(modelica_real));
 
-      // use help vector gbData->y1 for scurity reasons
+      // use help vector gbData->y1 for security reasons
       extrapolation_gbf(gbData, gbData->y1, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
       projVector_gbf(nlsData->nlsxExtrapolation, gbData->y1, nFastStates, gbData->fastStatesIdx);
 
@@ -600,7 +600,7 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     if (!gbfData->isExplicit) {
       sData->timeValue = gbfData->time;
       memcpy(sData->realVars, gbfData->y, nStates*sizeof(double));
-      gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
+      gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), TRUE);
       gbfData->tv[1] = gbfData->tv[0];
       memcpy(gbfData->yv + nStates, gbfData->yv, nStates * sizeof(double));
       memcpy(gbfData->kv + nStates, gbfData->kv, nStates * sizeof(double));
@@ -628,7 +628,7 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       if (!gbfData->isExplicit) {
         sData->timeValue = gbfData->time + gbfData->stepSize;
         memcpy(sData->realVars, gbfData->y, nStates*sizeof(double));
-        gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
+        gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), TRUE);
         gbfData->tv[0] = gbfData->time;
         memcpy(gbfData->yv, gbfData->y, nStates * sizeof(double));
         memcpy(gbfData->kv, fODE, nStates * sizeof(double));
@@ -734,7 +734,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     if (!gbData->isExplicit) {
       sData->timeValue = gbData->time;
       memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
-      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), FALSE);
       gbData->tv[1] = gbData->tv[0];
       memcpy(gbData->yv + nStates, gbData->yv, nStates * sizeof(double));
       memcpy(gbData->kv + nStates, gbData->kv, nStates * sizeof(double));
@@ -762,7 +762,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
       if (!gbData->isExplicit) {
         sData->timeValue = gbData->time + gbData->stepSize;
         memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
-        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), FALSE);
         gbData->tv[0] = gbData->time;
         memcpy(gbData->yv, gbData->y, nStates * sizeof(double));
         memcpy(gbData->kv, fODE, nStates * sizeof(double));

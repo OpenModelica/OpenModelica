@@ -181,6 +181,12 @@ end translateModel;
     extern int <%symbolName(modelNamePrefixStr,"functionJacD_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacF_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacH_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
+    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacA")%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex);
+    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacB")%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex);
+    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacC")%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex);
+    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacD")%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex);
+    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacF")%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex);
+    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacH")%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex);
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_frame")%>(void);
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>(void);
     extern int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res, short *);
@@ -633,8 +639,7 @@ template simulationFile_exo(SimCode simCode)
     <%functionCallExternalObjectDestructors(extObjInfo, modelNamePrefix(simCode))%>
     #if defined(__cplusplus)
     }
-    #endif
-    <%\n%>
+    #endif<%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
   end match
@@ -660,8 +665,7 @@ template simulationFile_nls(SimCode simCode)
 
     #if defined(__cplusplus)
     }
-    #endif
-    <%\n%>
+    #endif<%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
   end match
@@ -687,8 +691,7 @@ template simulationFile_lsy(SimCode simCode)
 
     #if defined(__cplusplus)
     }
-    #endif
-    <%\n%>
+    #endif<%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
   end match
@@ -711,8 +714,7 @@ template simulationFile_set(SimCode simCode)
 
     #if defined(__cplusplus)
     }
-    #endif
-    <%\n%>
+    #endif<%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
   end match
@@ -738,8 +740,7 @@ template simulationFile_evt(SimCode simCode)
 
     #if defined(__cplusplus)
     }
-    #endif
-    <%\n%>
+    #endif<%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
   end match
@@ -768,8 +769,7 @@ template simulationFile_inz(SimCode simCode)
 
     #if defined(__cplusplus)
     }
-    #endif
-    <%\n%>
+    #endif<%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
   end match
@@ -791,8 +791,7 @@ template simulationFile_dly(SimCode simCode)
 
     #if defined(__cplusplus)
     }
-    #endif
-    <%\n%>
+    #endif<%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
   end match
@@ -816,8 +815,7 @@ template simulationFile_spd(SimCode simCode)
 
     #if defined(__cplusplus)
     }
-    #endif
-    <%\n%>
+    #endif<%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
   end match
@@ -841,8 +839,7 @@ template simulationFile_bnd(SimCode simCode)
 
     #if defined(__cplusplus)
     }
-    #endif
-    <%\n%>
+    #endif<%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
   end match
@@ -887,8 +884,7 @@ template simulationFile_asr(SimCode simCode)
 
     #if defined(__cplusplus)
     }
-    #endif
-    <%\n%>
+    #endif<%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
   end match
@@ -904,9 +900,7 @@ template simulationFile_mix(SimCode simCode, Text &header)
     /* Mixed Systems */
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "<%simCode.fileNamePrefix%>_11mix.h"
-    <%functionSetupMixedSystems(initialEquations, initialEquations_lambda0, parameterEquations, allEquations, jacobianMatrices, &header, modelNamePrefixStr)%>
-
-    <%\n%>
+    <%functionSetupMixedSystems(initialEquations, initialEquations_lambda0, parameterEquations, allEquations, jacobianMatrices, &header, modelNamePrefixStr)%><%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
   end match
@@ -923,9 +917,7 @@ template simulationFile_jac(SimCode simCode)
     #include "<%fileNamePrefix%>_12jac.h"
     #include "simulation/jacobian_util.h"
     #include "util/omc_file.h"
-    <%functionAnalyticJacobians(jacobianMatrices, modelNamePrefix(simCode), simCode.fileNamePrefix)%>
-
-    <%\n%>
+    <%functionAnalyticJacobians(jacobianMatrices, modelNamePrefix(simCode), simCode.fileNamePrefix)%><%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
   end match
@@ -940,8 +932,7 @@ template simulationFile_jac_header(SimCode simCode)
     /* Jacobians */
     static const REAL_ATTRIBUTE dummyREAL_ATTRIBUTE = omc_dummyRealAttribute;
 
-    <%symJacDefinition(jacobianMatrices, modelNamePrefix(simCode))%>
-    <%\n%>
+    <%symJacDefinition(jacobianMatrices, modelNamePrefix(simCode))%><%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
   end match
@@ -963,7 +954,7 @@ template simulationFile_opt(SimCode simCode)
     <%optimizationComponents(classAttributes, simCode, modelNamePrefixStr)%>
     #if defined(__cplusplus)
     }
-    #endif
+    #endif<%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
   end match
@@ -987,7 +978,7 @@ template simulationFile_opt_header(SimCode simCode)
       int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_real**t);
     #if defined(__cplusplus)
     }
-    #endif
+    #endif<%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
   end match
@@ -1032,8 +1023,7 @@ template simulationFile_lnz(SimCode simCode)
     %>
     #if defined(__cplusplus)
     }
-    #endif
-    <%\n%>
+    #endif<%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
   end match
@@ -1077,15 +1067,14 @@ template simulationFile_dae_header(SimCode simCode)
     /* auxiliary variable define for daeMode */
     <%auxiliaryVars |> var =>
       defineSimVarArray(var, "auxiliaryVars")
-    ;separator="\n"%>
+    ;separator="\n"%><%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
     case simCode as SIMCODE(__) then
     <<
     #ifndef <%fileNamePrefix%>_16DAE_H
     #define <%fileNamePrefix%>_16DAE_H
-    #endif
-    <%\n%>
+    #endif<%\n%>
     >>
   end match
 end simulationFile_dae_header;
@@ -1293,6 +1282,10 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     <%computeVarIndices(modelInfo.vars, modelNamePrefixStr)%>
 
+    <%setEqFunctions(allEquations, modelNamePrefixStr)%>
+
+    <%getDependency(simCode, allEquations, "getDependency", modelNamePrefixStr)%>
+
     /* forward the main in the simulation runtime */
     extern int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData);
 
@@ -1314,6 +1307,8 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       #endif    /* initializeStateSets */
       <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>,
       <%symbolName(modelNamePrefixStr,"computeVarIndices")%>,
+      <%symbolName(modelNamePrefixStr,"setEqFunctions")%>,
+      <%symbolName(modelNamePrefixStr,"getDependency")%>,
       <%symbolName(modelNamePrefixStr,"functionODE")%>,
       <%symbolName(modelNamePrefixStr,"functionAlgebraics")%>,
       <%symbolName(modelNamePrefixStr,"functionDAE")%>,
@@ -1359,6 +1354,12 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <%symbolName(modelNamePrefixStr,"functionJacD_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacF_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacH_column")%>,
+      //<%symbolName(modelNamePrefixStr,"getDependencyJacA")%>,
+      //<%symbolName(modelNamePrefixStr,"getDependencyJacB")%>,
+      //<%symbolName(modelNamePrefixStr,"getDependencyJacC")%>,
+      //<%symbolName(modelNamePrefixStr,"getDependencyJacD")%>,
+      //<%symbolName(modelNamePrefixStr,"getDependencyJacF")%>,
+      //<%symbolName(modelNamePrefixStr,"getDependencyJacH")%>,
       <%symbolName(modelNamePrefixStr,"linear_model_frame")%>,
       <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>,
       <%symbolName(modelNamePrefixStr,"mayer")%>,
@@ -1576,6 +1577,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nAliasInteger = <%varInfo.numIntAliasVars%>;
     data->modelData->nAliasBoolean = <%varInfo.numBoolAliasVars%>;
     data->modelData->nAliasString = <%varInfo.numStringAliasVars%>;
+    data->modelData->eqFunctionsSize = <%varInfo.numEquations%>;
     data->modelData->nZeroCrossings = <%varInfo.numZeroCrossings%>;
     data->modelData->nSamples = <%varInfo.numTimeEvents%>;
     data->modelData->nRelations = <%varInfo.numRelations%>;
@@ -4430,19 +4432,12 @@ template functionXXX_system(list<SimEqSystem> eqs, String name, Integer n, Strin
 
   static void function<%name%>_system<%n%>(DATA *data, threadData_t *threadData)
   {
-    int id;
+    int i, eqId;
 
-    static void (*const eqFunctions[<%nFuncs%>])(DATA*, threadData_t*) = {
-      <%eqs |> eq => '<%symbolName(modelNamePrefix, "eqFunction")%>_<%equationIndexGeneral(eq)%>'; separator=",\n"%>
-    };
-
-    static const int eqIndices[<%nFuncs%>] = {
-      <%eqs |> eq => equationIndexGeneral(eq); separator=",\n"%>
-    };
-
-    for (id = 0; id < <%nFuncs%>; id++) {
-      eqFunctions[id](data, threadData);
-      threadData->lastEquationSolved = eqIndices[id];
+    for (i = 0; i < data->simulationInfo->evalSelection->n; i++) {
+      eqId = data->simulationInfo->evalSelection->idx[i];
+      data->modelData->eqFunctions[eqId](data, threadData);
+      threadData->lastEquationSolved = eqId;
     }
   }
   >>
@@ -4808,6 +4803,120 @@ template computeVarIndicesList(list<SimVar> vars)
       <%ty%>Index[<%i%>+1] = <%ty%>Index[<%i%>] + <%size%>; <%i%>++; <%crefCCommentWithVariability(var)%>>>; separator="")
 end computeVarIndicesList;
 
+template setEqFunctions(list<SimEqSystem> eqs, String modelNamePrefix)
+::=
+  <<
+  void <%symbolName(modelNamePrefix,"setEqFunctions")%>(DATA *data, threadData_t *threadData)
+  {
+    TRACE_PUSH
+
+    size_t i = 0;
+
+    <%eqs |> eq =>
+      'data->simulationInfo->evalSelectionFull->idx[i++] = <%equationIndexGeneral(eq)%>;'; separator="\n"%>
+    data->simulationInfo->evalSelectionFull->n = i;
+
+    <%eqs |> eq =>
+      let ix = equationIndexGeneral(eq)
+      <<
+      data->modelData->eqFunctions[<%ix%>] = <%symbolName(modelNamePrefix, "eqFunction")%>_<%ix%>;
+      >>; separator="\n"
+    %>
+
+    TRACE_POP
+  }
+  >>
+end setEqFunctions;
+
+template getDependency(SimCode simCode, list<SimEqSystem> allEquations, String funcName, String modelNamePrefix)
+::=
+  <<
+  void <%symbolName(modelNamePrefix, funcName)%>(EVAL_DAG* dag, size_t* realVarsIndex)
+  {
+    TRACE_PUSH
+
+    size_t i;
+
+    /* mapVarToEqNode */
+    <%allEquations |> eq =>
+      let eqIdx = equationIndexGeneral(eq)
+      '<%getSimEqSystemSimVarsLHS(eq, simCode) |> var =>
+        match var
+        case SIMVAR(__) then
+        <<
+        for (i = realVarsIndex[<%index%>]; i < realVarsIndex[<%index%>+1]; i++)
+          dag->mapVarToEqNode[i] = <%eqIdx%>; <%crefCCommentWithVariability(var)%><%\n%>
+        >>; separator="\n"%>'; separator="\n"%>
+
+    /* eqDependency */
+    <%allEquations |> eq =>
+      let eqIdx = equationIndexGeneral(eq)
+      let n = listLength(getSimEqSystemSimVarsRHS(eq, simCode))
+      if stringEq(n, "0") then 'dag->nEqDep[<%eqIdx%>] = <%n%>;'
+      else
+      <<
+      dag->nEqDep[<%eqIdx%>] = <%n%>;
+      dag->eqDep[<%eqIdx%>] = malloc(<%n%> * sizeof(size_t));
+      i = 0;
+      <%getSimEqSystemSimVarsRHS(eq, simCode) |> var => match var
+        case SIMVAR() then
+        'dag->eqDep[<%eqIdx%>][i++] = dag->mapVarToEqNode[<%index%>]; <%crefCCommentWithVariability(var)%>'; separator="\n"%>
+      >>; separator="\n\n"%>
+    TRACE_POP
+  }
+  >>
+end getDependency;
+
+template getDependencyJacobian(JacobianMatrix jac, String modelNamePrefix)
+::=
+  match jac
+  case JAC_MATRIX(columns = {}) then
+  let funcName = 'getDependencyJac<%matrixName%>'
+  <<
+  void <%symbolName(modelNamePrefix, funcName)%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex)
+  {
+    TRACE_PUSH
+    TRACE_POP
+  }
+  >>
+  case JAC_MATRIX(crefsHT=crefsHT) then
+  let funcName = 'getDependencyJac<%matrixName%>'
+  <<
+  void <%symbolName(modelNamePrefix, funcName)%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex)
+  {
+    TRACE_PUSH
+
+    size_t i;
+
+    /* mapVarToEqNode */
+    <%columns |> col => match col
+    case JAC_COLUMN() then (columnEqns |> eq =>
+      let eqIdx = equationIndexGeneral(eq)
+      '<%getSimEqSystemSimVarsLHSJac(eq, crefsHT) |> var =>
+        match var
+        case SIMVAR(varKind = JAC_VAR()) then 'dag->mapVarToEqNode[<%index%>] = <%eqIdx%>; <%crefCCommentWithVariability(var)%><%\n%>'
+        case SIMVAR(varKind = JAC_TMP_VAR()) then 'dag->mapVarToEqNode[<%index%>+nRows] = <%eqIdx%>; <%crefCCommentWithVariability(var)%><%\n%>'
+        ; separator="\n"%>'); separator="\n"%>
+
+    /* eqDependency */
+    <%columns |> col => match col
+    case JAC_COLUMN() then (columnEqns |> eq =>
+      let eqIdx = equationIndexGeneral(eq)
+      let n = listLength(getSimEqSystemSimVarsRHSJac(eq, crefsHT))
+      if stringEq(n, "0") then 'dag->nEqDep[<%eqIdx%>] = <%n%>;'
+      else
+      <<
+      dag->nEqDep[<%eqIdx%>] = <%n%>;
+      dag->eqDep[<%eqIdx%>] = malloc(<%n%> * sizeof(size_t));
+      i = 0;
+      <%getSimEqSystemSimVarsRHSJac(eq, crefsHT) |> var => match var
+        case SIMVAR() then
+        'dag->eqDep[<%eqIdx%>][i++] = dag->mapVarToEqNode[<%index%>]; <%crefCCommentWithVariability(var)%>'; separator="\n"%>
+      >>; separator="\n\n")%>
+    TRACE_POP
+  }
+  >>
+end getDependencyJacobian;
 
 template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer nAuxVars, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
   "Generates initialization function for daeMode."
@@ -5654,21 +5763,25 @@ template genVector(String name, String num, Integer numI, Integer flag) "templat
   end match
 end genVector;
 
-template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices,String modelNamePrefix, String fileNamePrefix) "template functionAnalyticJacobians
+template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String modelNamePrefix, String fileNamePrefix) "template functionAnalyticJacobians
   This template generates source code for all given jacobians."
 ::=
-  let initialjacMats = (JacobianMatrices |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, sparsity=sparsepattern, coloredCols=colorList, maxColorCols=maxColor) =>
-    initialAnalyticJacobians(mat, vars, name, sparsepattern, colorList, maxColor, modelNamePrefix, fileNamePrefix); separator="\n")
-  let jacMats = (JacobianMatrices |> JAC_MATRIX(columns=mat, seedVars=vars, matrixName=name, partitionIndex=partIdx, crefsHT=crefsHT) =>
-    generateMatrix(mat, vars, name, partIdx, crefsHT, modelNamePrefix) ;separator="\n")
-  let jacGenericCalls = (JacobianMatrices |> jac as JAC_MATRIX() => genericCallBodies(jac.generic_loop_calls, createJacContext(jac.crefsHT)) ;separator="\n")
-
+  let initialjacMats = (JacobianMatrices |> JAC_MATRIX() =>
+    initialAnalyticJacobians(columns, seedVars, matrixName, sparsity, coloredCols, maxColorCols, modelNamePrefix, fileNamePrefix); separator="\n")
+  let jacMats = (JacobianMatrices |> JAC_MATRIX() =>
+    generateMatrix(columns, seedVars, matrixName, partitionIndex, crefsHT, modelNamePrefix) ;separator="\n")
+  let jacGenericCalls = (JacobianMatrices |> JAC_MATRIX() =>
+    genericCallBodies(generic_loop_calls, createJacContext(crefsHT)) ;separator="\n")
+  let jacDependency = (JacobianMatrices |> jac as JAC_MATRIX() => '' ;separator="\n")
+    //getDependencyJacobian(jac, modelNamePrefix) ;separator="\n")
   <<
   <%jacMats%>
 
   <%initialjacMats%>
 
   <%jacGenericCalls%>
+
+  <%jacDependency%>
   >>
 end functionAnalyticJacobians;
 
@@ -5683,17 +5796,15 @@ match sparsepattern
     int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
     {
       TRACE_PUSH
-      TRACE_POP
       jacobian->availability = JACOBIAN_NOT_AVAILABLE;
+      TRACE_POP
       return 1;
     }
     >>
   case _ then
-    let &eachCrefParts = buffer ""
     let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
     let sizeleadindex = listLength(sparsepattern)
     let fileName = '<%fileNamePrefix%>_Jac<%matrixname%>.bin'
-    let colorString = readSPColors(colorList, "jacobian->sparsePattern->colorCols", sizeleadindex)
     let availability = if SimCodeUtil.jacobianColumnsAreEmpty(jacobianColumn) then 'JACOBIAN_ONLY_SPARSITY' else 'JACOBIAN_AVAILABLE'
     let sizeRows = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=nRows) => '<%nRows%>';separator="\n")
     let tmpvarsSize = (jacobianColumn |> JAC_COLUMN(columnVars=vars) => listLength(vars);separator="\n")
@@ -5714,6 +5825,7 @@ match sparsepattern
       initJacobian(jacobian, <%sizeCols%>, <%sizeRows%>, <%tmpvarsSize%>, <%evalColumn%>, <%constantEqns%>, NULL);
       jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
       jacobian->availability = <%availability%>;
+      //<%symbolName(modelNamePrefix,"getDependencyJac")%><%matrixname%>(jacobian->dag, jacobian->sizeRows, data->simulationInfo->realVarsIndex);
 
       /* read lead index of compressed sparse column */
       count = omc_fread(jacobian->sparsePattern->leadindex, sizeof(unsigned int), <%sizeleadindex%>+1, pFile, FALSE);
@@ -5728,7 +5840,7 @@ match sparsepattern
       }
 
       /* write color array */
-      <%colorString%>
+      <%readSPColors(colorList, "jacobian->sparsePattern->colorCols", sizeleadindex)%>
 
       omc_fclose(pFile);
 
@@ -5801,7 +5913,6 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimEqSystem> constantE
   "This template generates functions for each column of a single jacobian.
    This is a helper of generateMatrix."
 ::=
-  let constantEqns2 = generateConstantEqns(constantEqns, matrixName, modelNamePrefix)
   <<
   /* constant equations */
   <%(constantEqns |> eq hasindex sub_idx =>
@@ -5810,7 +5921,7 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimEqSystem> constantE
   <%(jacEquations |> eq hasindex sub_idx =>
     equation_impl(base_idx, sub_idx, eq, createJacContext(jacHT), modelNamePrefix, false); separator="\n")%>
 
-  <%constantEqns2%>
+  <%generateConstantEqns(constantEqns, matrixName, modelNamePrefix)%>
 
   int <%symbolName(modelNamePrefix,"functionJac")%><%matrixName%>_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian)
   {
@@ -6999,7 +7110,6 @@ end simulationParModelicaKernelsFile;
   }
   #endif
   #endif<%\n%>
-  <%\n%>
   >>
   /* adrpo: leave a newline at the end of file to get rid of the warning */
 end simulationFunctionsHeaderFile;

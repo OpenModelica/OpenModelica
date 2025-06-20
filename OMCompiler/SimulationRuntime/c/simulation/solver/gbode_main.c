@@ -76,10 +76,18 @@ extern void communicateStatus(const char *phase, double completionPercent, doubl
  * @param data        Runtime data struct.
  * @param threadData  Thread data for error handling.
  * @param counter     Counter for function calls. Incremented by 1.
+ * @param fast        Flag tells if we evaluate fast derivatives only.
  */
-void gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter)
+void gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter, modelica_boolean fast)
 {
+  SIMULATION_INFO* info = data->simulationInfo;
   (*counter)++;
+
+  if (fast) {
+    info->evalSelection = info->evalSelectionFast;
+  } else {
+    info->evalSelection = info->evalSelectionFull;
+  }
 
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
@@ -717,6 +725,41 @@ void gbode_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   }
 }
 
+/*! \fn updateEvalSelection
+ *
+ *  updates eqEvalIndexAdaptive for evaluating gbode_fODE
+ */
+static void updateEvalSelection(DATA* data, DATA_GBODE* gbData)
+{
+  size_t k;
+  EVAL_DAG* dag = data->simulationInfo->evalSelectionFast->dag;
+
+  /* clear selection */
+  clearEvalSelection(data->simulationInfo->evalSelectionFast);
+
+  /* set equations for fast derivatives */
+  for (k = 0; k < gbData->nFastStates; k++) {
+    size_t derIdx = gbData->fastStatesIdx[k] + gbData->nStates;
+    size_t eqnIdx = dag->mapVarToEqNode[derIdx];
+    dag->select[eqnIdx] = TRUE;
+  }
+
+  /* select all dependencies */
+  activateEvalDependencies(data->simulationInfo->evalSelectionFast);
+
+  /* debug print */
+  if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
+    char row_to_print[40960];
+    unsigned int bufSize = 40960;
+    unsigned int ct;
+    ct = snprintf(row_to_print, bufSize, "%s (time=%g): =\t", "eqFunctions", data->localData[0]->timeValue);
+    for (k = 0; k < data->simulationInfo->evalSelectionFast->n; k++) {
+      ct += snprintf(row_to_print+ct, bufSize-ct, "%zu ", data->simulationInfo->evalSelectionFast->idx[k]);
+    }
+    infoStreamPrint(OMC_LOG_GBODE_V, 0, "%s", row_to_print);
+  }
+}
+
 /*! \fn gbodef_main
  *
  *  function does one integration step and calculates
@@ -748,7 +791,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   modelica_boolean foundEvent;
 
   // This is the target time of the main integrator
-  double innerTargetTime = fmin(targetTime, gbData->timeRight);
+  const double innerTargetTime = fmin(targetTime, gbData->timeRight);
 
   /* The inner integrator needs to be initialzed, at start time, when an event occured,
   *  and if outer integrations have been done with all states involved
@@ -758,8 +801,12 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     gbodef_init(data, threadData, solverInfo);
   }
 
-
   fastStatesChange = checkFastStatesChange(gbData);
+
+  if (fastStatesChange) {
+    // update evalSelectionFast for fast states
+    updateEvalSelection(data, gbData);
+  }
 
   if (fastStatesChange && !gbfData->isExplicit) {
     struct dataSolver *solverData = gbfData->nlsData->solverData;
@@ -953,7 +1000,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     if (!gbfData->tableau->isKRightAvailable) {
       sData->timeValue = gbfData->timeRight;
       memcpy(sData->realVars, gbfData->yRight, data->modelData->nStates * sizeof(double));
-      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), TRUE);
     }
     memcpy(gbfData->kRight, fODE, nStates * sizeof(double));
 
@@ -1045,6 +1092,18 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       gbfData->time = gbData->timeRight;
       break;
     }
+  }
+
+  /* update last two entries of ringbuffer with missing values of new fast derivatives */
+  for (i = 0; i < 2; i++) {
+    // TODO actually we only need fast derivatives, but at this point we don't
+    // yet know which states will become fast so we compute everything.
+    sData->timeValue = gbfData->tv[i];
+    memcpy(sData->realVars, gbfData->yv + i * nStates, data->modelData->nStates * sizeof(double));
+    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), FALSE);
+
+    for (j = 0; j < gbData->nSlowStates; j++)
+      (gbfData->kv + i * nStates)[gbData->slowStatesIdx[j]] = fODE[gbData->slowStatesIdx[j]];
   }
 
   // copy error and values of the fast states to the outer integrator routine if outer integration time is reached
@@ -1338,7 +1397,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       if (!gbData->tableau->isKRightAvailable) {
         sData->timeValue = gbData->timeRight;
         memcpy(sData->realVars, gbData->y, data->modelData->nStates * sizeof(double));
-        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), FALSE);
       }
       memcpy(gbData->kRight, fODE, nStates * sizeof(double));
 
@@ -1415,7 +1474,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
           memcpy(gbData->err, gbData->gbfData->err, nStates * sizeof(double));
           sData->timeValue = gbData->timeRight;
           memcpy(sData->realVars, gbData->yRight, data->modelData->nStates * sizeof(double));
-          gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+          gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), FALSE);
           memcpy(gbData->kRight, fODE, nStates * sizeof(double));
         }
         infoStreamPrint(OMC_LOG_SOLVER, 0, "Refined step from %10g to %10g, error fast states %10g, error interpolation %10g, new stepsize %10g",
@@ -1770,7 +1829,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       if (!gbData->tableau->isKRightAvailable) {
         sData->timeValue = gbData->timeRight;
         memcpy(sData->realVars, gbData->y, data->modelData->nStates * sizeof(double));
-        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), FALSE);
       }
       memcpy(gbData->kRight, fODE, nStates * sizeof(double));
 
@@ -1899,7 +1958,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
         gbData->timeRight = sData->timeValue;
         gbData->time = gbData->timeRight;
         memcpy(gbData->yRight, sData->realVars, gbData->nStates * sizeof(double));
-        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), FALSE);
         memcpy(gbData->kRight, fODE, nStates * sizeof(double));
       }
     }
