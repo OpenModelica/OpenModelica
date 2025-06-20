@@ -758,7 +758,6 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     gbodef_init(data, threadData, solverInfo);
   }
 
-
   fastStatesChange = checkFastStatesChange(gbData);
 
   if (fastStatesChange && !gbfData->isExplicit) {

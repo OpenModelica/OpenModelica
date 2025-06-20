@@ -4632,7 +4632,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
   {
     TRACE_PUSH
   #if !defined(OMC_MINIMAL_RUNTIME)
-    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_tick(SIM_TIMER_FUNCTION_ODE);
+    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_push(SIM_TIMER_FUNCTION_ODE);
   #endif
 
     <%varDecls%>
@@ -4644,7 +4644,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
     else fncalls %>
 
   #if !defined(OMC_MINIMAL_RUNTIME)
-    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_accumulate(SIM_TIMER_FUNCTION_ODE);
+    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_pop(SIM_TIMER_FUNCTION_ODE);
   #endif
 
     TRACE_POP
@@ -4668,7 +4668,7 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
     <%varDecls%>
 
   #if !defined(OMC_MINIMAL_RUNTIME)
-    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_tick(SIM_TIMER_ALGEBRAICS);
+    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_push(SIM_TIMER_ALGEBRAICS);
   #endif
     data->simulationInfo->callStatistics.functionAlgebraics++;
 
@@ -4677,7 +4677,7 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
     <%fncalls %>
 
   #if !defined(OMC_MINIMAL_RUNTIME)
-    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_accumulate(SIM_TIMER_ALGEBRAICS);
+    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_pop(SIM_TIMER_ALGEBRAICS);
   #endif
 
     TRACE_POP
@@ -4707,13 +4707,13 @@ template evaluateDAEResiduals(list<list<SimEqSystem>> resEquations, String fileN
     data->simulationInfo->callStatistics.functionEvalDAE++;
 
   #if !defined(OMC_MINIMAL_RUNTIME)
-    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_tick(SIM_TIMER_DAE);
+    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_push(SIM_TIMER_DAE);
   #endif
 
     <%eqCalls%>
 
   #if !defined(OMC_MINIMAL_RUNTIME)
-    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_accumulate(SIM_TIMER_DAE);
+    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_pop(SIM_TIMER_DAE);
   #endif
 
     TRACE_POP
@@ -4889,7 +4889,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
     int equationIndexes[1] = {0};<%/*reinits may use equation indexes, even though it has no equation...*/%>
     <%addRootsTempArray()%>
   #if !defined(OMC_MINIMAL_RUNTIME)
-    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_tick(SIM_TIMER_DAE);
+    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_push(SIM_TIMER_DAE);
   #endif
 
     data->simulationInfo->needToIterate = 0;
@@ -4899,7 +4899,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
     data->simulationInfo->discreteCall = 0;
 
   #if !defined(OMC_MINIMAL_RUNTIME)
-    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_accumulate(SIM_TIMER_DAE);
+    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_pop(SIM_TIMER_DAE);
   #endif
     TRACE_POP
     return 0;
@@ -4996,14 +4996,14 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
     modelica_integer start_index;
 
   #if !defined(OMC_MINIMAL_RUNTIME)
-    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_tick(SIM_TIMER_ZC);
+    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_push(SIM_TIMER_ZC);
   #endif
     data->simulationInfo->callStatistics.functionZeroCrossings++;
 
     <%zeroCrossingsCode%>
 
   #if !defined(OMC_MINIMAL_RUNTIME)
-    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_accumulate(SIM_TIMER_ZC);
+    <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_pop(SIM_TIMER_ZC);
   #endif
 
     TRACE_POP
