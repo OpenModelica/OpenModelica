@@ -600,9 +600,8 @@ void printVector_gb(enum OMC_LOG_STREAM stream, char name[], double* a, int n, d
   unsigned int bufSize = 40960;
   unsigned int ct;
   ct = snprintf(row_to_print, bufSize, "%s(%8g) =\t", name, time);
-  for (int i=0;i<n;i++) {
-    ct += snprintf(row_to_print+ct, bufSize-ct, "%18.12g", a[i]);
-  }
+  for (int i=0;i<n;i++)
+    ct += snprintf(row_to_print+ct, bufSize-ct, " %16.12g", a[i]);
   infoStreamPrint(stream, 0, "%s", row_to_print);
 }
 
@@ -626,7 +625,7 @@ void printIntVector_gb(enum OMC_LOG_STREAM stream, char name[], int* a, int n, d
   unsigned int ct;
   ct = snprintf(row_to_print, bufSize, "%s(%8g) =\t", name, time);
   for (int i=0;i<n;i++)
-    ct += snprintf(row_to_print+ct, bufSize-ct, "%d ", a[i]);
+    ct += snprintf(row_to_print+ct, bufSize-ct, " %d", a[i]);
   infoStreamPrint(stream, 0, "%s", row_to_print);
 }
 
@@ -654,7 +653,7 @@ void printVector_gbf(enum OMC_LOG_STREAM stream, char name[], double* a, int n, 
   unsigned int ct;
   ct = snprintf(row_to_print, bufSize, "%s(%8g) =\t", name, time);
   for (int i=0;i<nIndx;i++)
-    ct += snprintf(row_to_print+ct, bufSize-ct, "%16.12g", a[indx[i]]);
+    ct += snprintf(row_to_print+ct, bufSize-ct, " %16.12g", a[indx[i]]);
   infoStreamPrint(stream, 0, "%s", row_to_print);
 }
 
