@@ -7738,7 +7738,7 @@ protected
   String description, directory, version, author, license, copyright;
   SimCode.VarInfo varInfo;
   SimCodeVar.SimVars vars;
-  Integer nx, ny, ndy, np, na, next, numOutVars, numInVars, ny_int, np_int, na_int, ny_bool, np_bool, dim_1, dim_2, numOptimizeConstraints, numOptimizeFinalConstraints, numRealInputVars;
+  Integer nx, ny, ndy, np, npcalc, na, next, numOutVars, numInVars, ny_int, np_int, na_int, ny_bool, np_bool, dim_1, dim_2, numOptimizeConstraints, numOptimizeFinalConstraints, numRealInputVars;
   Integer na_bool, ny_string, np_string, na_string;
   list<SimCodeVar.SimVar> states1, states_lst, states_lst2, der_states_lst;
   list<SimCodeVar.SimVar> states_2, derivatives_2;
@@ -7771,6 +7771,7 @@ algorithm
     na_int := getNumScalars(vars.intAliasVars);
     na_bool := getNumScalars(vars.boolAliasVars);
     np := getNumScalars(vars.paramVars);
+    npcalc := getNumScalars(list(v for v guard isCalcParam(v) in vars.paramVars));
     np_int := getNumScalars(vars.intParamVars);
     np_bool := getNumScalars(vars.boolParamVars);
     ny_string := getNumScalars(vars.stringAlgVars);
@@ -7781,7 +7782,7 @@ algorithm
     numOptimizeFinalConstraints := getNumScalars(vars.realOptimizeFinalConstraintsVars);
     numRealInputVars := getNumberOfRealInputs(vars.inputVars);
     if debug then execStat("simCode: get lengths"); end if;
-    varInfo := createVarInfo(dlow, nx, ny, ndy, np, na, next, numOutVars, numInVars,
+    varInfo := createVarInfo(dlow, nx, ny, ndy, np, npcalc,  na, next, numOutVars, numInVars,
                              ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,
                              numStateSets, numOptimizeConstraints, numOptimizeFinalConstraints, numRealInputVars);
     if debug then execStat("simCode: createVarInfo"); end if;
@@ -7807,6 +7808,7 @@ protected function createVarInfo
   input Integer ny;
   input Integer ndy;
   input Integer np;
+  input Integer npcalc;
   input Integer na;
   input Integer next;
   input Integer numOutVars;
@@ -7829,7 +7831,7 @@ protected
   Integer numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions;
 algorithm
   (numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions) := BackendDAEUtil.numberOfZeroCrossings(dlow);
-  varInfo := SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, nx, ny, ndy, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
+  varInfo := SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, nx, ny, ndy, ny_int, ny_bool, na, na_int, na_bool, np, npcalc, np_int, np_bool, numOutVars, numInVars,
           next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets,0,numOptimizeConstraints, numOptimizeFinalConstraints, 0, 0, 0, numRealInputVars, 0, 0);
 end createVarInfo;
 
@@ -7854,6 +7856,15 @@ algorithm
     case SimCodeVar.SIMVAR(type_ = DAE.T_REAL()) then true; else false;
   end match;
 end isRealInput;
+
+protected function isCalcParam
+  input SimCodeVar.SimVar var;
+  output Boolean isReal;
+algorithm
+  isReal := match var
+    case SimCodeVar.SIMVAR(causality = SOME(SimCodeVar.Causality.CALCULATED_PARAMETER())) then true; else false;
+  end match;
+end isCalcParam;
 
 protected function evaluateStartValues"evaluates functions in the start values in the variableAttributes"
   input BackendDAE.Var inVar;

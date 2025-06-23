@@ -1714,19 +1714,21 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
     const fmi2ValueReference vKnown_ref[] , size_t nKnown,
     const fmi2Real dvKnown[], fmi2Real dvUnknown[])
 {
-  ModelInstance *comp = (ModelInstance *)c;
-  DATA* fmudata = (DATA *) comp->fmuData;
-  SIMULATION_INFO* simInfo = (SIMULATION_INFO*) fmudata->simulationInfo;
-  MODEL_DATA* modelData = (MODEL_DATA*) fmudata->modelData;
+  ModelInstance *comp = (ModelInstance *)c; // in model_interface (fmi component?)
+  DATA* fmudata = (DATA *) comp->fmuData; // contains dynamic and static model data
+  SIMULATION_INFO* simInfo = (SIMULATION_INFO*) fmudata->simulationInfo; // dynamic part (can change during simulation?)
+  MODEL_DATA* modelData = (MODEL_DATA*) fmudata->modelData; // static part (cant change during simulation?), contains parameters
   threadData_t* td = comp->threadData;
 
   int i,j;
 
-  int independent = modelData->nStates+modelData->nInputVars;
-  int dependent = modelData->nStates+modelData->nOutputVars;
+  int independent = modelData->nStates + modelData->nInputVars + (modelData->nParametersReal - modelData->nCalcParametersReal); // its possible to diff wrt.: states, inputs, params (without calculatedParameters)
+  int dependent = modelData->nStates + modelData->nOutputVars; // its possible to diff: state ders, outputs
 
+  // comp in the wrong state or not
   if (invalidState(comp, "fmi2GetDirectionalDerivative", model_state_initialization_mode|model_state_me_event_mode|model_state_me_continuous_time_mode|model_state_terminated|model_state_error, model_state_initialization_mode|model_state_cs_step_complete|model_state_cs_step_failed|model_state_cs_step_canceled|model_state_terminated|model_state_error))
     return fmi2Error;
+  // needs jacobian
   if (!comp->_has_jacobian)
     return unsupportedFunction(comp, "fmi2GetDirectionalDerivative");
 
@@ -1735,6 +1737,7 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
   if (updateIfNeeded(comp, "fmi2GetDirectionalDerivative") != fmi2OK)
     return fmi2Error;
 
+  // does this case need a change?
   if (model_state_initialization_mode == comp->state)
   {
     // directional derivative in initialization mode
@@ -1750,21 +1753,51 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
   */
   /* eval constant part of jacobian */
   /* TODO: Evaluate only once for one evaluation of jacobian */
+
   if (comp->fmiDerJac->constantEqns != NULL) {
     comp->fmiDerJac->constantEqns(fmudata, td, comp->fmiDerJac, NULL);
   }
+
+  printf("sizeCols: %d \n", comp->fmiDerJac->sizeCols);
+  printf("sizeRows: %d \n", comp->fmiDerJac->sizeRows);
+  printf("independent: %d \n", independent);
+  printf("dependent: %d \n", dependent);
+  printf("nStates: %ld \n", modelData->nStates);
+  printf("nInputs: %ld \n", modelData->nInputVars);
+  printf("nParametersReal: %ld \n", modelData->nParametersReal);
+  printf("nCalcParametersReal: %ld \n", modelData->nCalcParametersReal);
+
 
   /* clear out the seeds */
   for (i=0;i<independent; i++) {
     comp->fmiDerJac->seedVars[i]=0;
   }
+
   for (i=0;i<nKnown; i++) {
     int idx = vKnown_ref[i];
+    /* if idx > nStates + nInputs its a parameter so we need a mapping*/
+    // first parameter -> 0 + nStates + nInputs (first seed after states and inputs)
+    // second parameter -> 1 + nStates + nInputs (second seed after states and inputs)
+    // ...
+    if (idx >= modelData->nStates + modelData->nInputVars){
+      printf("im param case %d\n", idx);
+      /*so irgendwie?*/
+      idx = mapParameterReference2ParameterNumber(vKnown_ref[i]);
+      printf("im param case nach map %d\n", idx);
+      idx = modelData->nStates + modelData->nInputVars + idx;
+      printf("im param case nach map u. add %d\n", idx);
+    }
     /* if idx is > nStates it's an input so we need a mapping */
-    if (idx >= modelData->nStates){
+    // if after states and before params its an input
+    // first input -> 0 + nStates (first seed after states)
+    // second input -> 1 + nStates (second seed after states)
+    // ...
+    else if (idx >= modelData->nStates){
+      printf("im input case %d\n", idx);
       idx = mapInputReference2InputNumber(vKnown_ref[i]);
       idx = modelData->nStates + idx;
     }
+    
     if (vrOutOfRange(comp, "fmi2GetDirectionalDerivative input index", idx, independent))
       return fmi2Error;
     /* Put the supplied value in the seeds */

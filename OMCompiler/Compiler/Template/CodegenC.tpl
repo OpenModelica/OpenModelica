@@ -1571,6 +1571,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nVariablesBooleanArray = <%varInfo.numBoolAlgVars%>;
     data->modelData->nVariablesStringArray = <%varInfo.numStringAlgVars%>;
     data->modelData->nParametersReal = <%varInfo.numParams%>;
+    data->modelData->nCalcParametersReal = <%varInfo.numCalcParams%>;
     data->modelData->nParametersInteger = <%varInfo.numIntParams%>;
     data->modelData->nParametersBoolean = <%varInfo.numBoolParams%>;
     data->modelData->nParametersString = <%varInfo.numStringParamVars%>;

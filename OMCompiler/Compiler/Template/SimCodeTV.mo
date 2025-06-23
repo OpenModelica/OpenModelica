@@ -863,6 +863,7 @@ package SimCode
       Integer numIntAliasVars;
       Integer numBoolAliasVars;
       Integer numParams;
+      Integer numCalcParams;
       Integer numIntParams;
       Integer numBoolParams;
       Integer numOutVars;
