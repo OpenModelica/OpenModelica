@@ -1350,7 +1350,6 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
 
     if (omc_useStream[OMC_LOG_NLS_DERIVATIVE_TEST])
     {
-      // when adding the Jacobian evaluation itself here, everything works fine!!
       nlsKinsolDenseDerivativeTest(data, nlsData, kinsolData, kinsolData->J, FALSE);
     }
 
