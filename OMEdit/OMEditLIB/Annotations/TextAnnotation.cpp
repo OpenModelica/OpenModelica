@@ -583,13 +583,14 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
           QString textValue = parameterValue.first;
           QPair<QString, bool> unit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "unit");
           QPair<QString, bool> displayUnit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "displayUnit");
-          ModelInstance::Component* pModelComponent = Element::getModelComponentByName(mpElement->getRootParentElement()->getModel(), variable);
-          if (pModelComponent) {
+          // Look for unit and displayUnit in the variable element.
+          auto pElement = mpElement->getRootParentElement()->getModel()->lookupElement(variable);
+          if (pElement) {
             if (!displayUnit.second) {
-              displayUnit = pModelComponent->getModifierValueFromType(QStringList() << "displayUnit");
+              displayUnit = pElement->getModifierValueFromType(QStringList() << "displayUnit");
             }
             if (!unit.second) {
-              unit = pModelComponent->getModifierValueFromType(QStringList() << "unit");
+              unit = pElement->getModifierValueFromType(QStringList() << "unit");
             }
           }
           // if display unit is still empty then use unit

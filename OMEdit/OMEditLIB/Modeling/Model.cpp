@@ -1631,50 +1631,33 @@ namespace ModelInstance
     return true;
   }
 
-  QPair<QString, bool> Model::getParameterValue(const QString &parameter, QString &typeName)
+  QPair<QString, bool> Model::getVariableValue(QStringList variables)
   {
     QPair<QString, bool> value("", false);
     foreach (auto pElement, mElements) {
-      if (pElement->isComponent()) {
-        auto pComponent = dynamic_cast<Component*>(pElement);
-        if (pComponent->getName().compare(StringHandler::getFirstWordBeforeDot(parameter)) == 0) {
-          if (pComponent->getModifier() && pComponent->getModifier()->isValueDefined()) {
-            value = qMakePair(pComponent->getModifier()->getValueWithoutQuotes(), true);
-          }
-          // Fixes issue #7493. Handles the case where value is from instance name e.g., %instanceName.parameterName
-          if (!value.second && pComponent->getModel()) {
-            value = pComponent->getModel()->getParameterValue(StringHandler::getLastWordAfterDot(parameter), typeName);
-          }
-          typeName = pComponent->getType();
-          break;
-        }
+      value = pElement->getVariableValue(variables);
+      if (value.second) { // If we found the value, break the loop.
+        break;
       }
     }
     return value;
   }
 
-  QPair<QString, bool> Model::getParameterValueFromExtendsModifiers(const QStringList &parameter)
+  QString Model::getVariableType(QStringList variables)
   {
-    QPair<QString, bool> value("", false);
+    QString value;
     foreach (auto pElement, mElements) {
-      if (pElement->isExtend()) {
-        auto pExtend = dynamic_cast<Extend*>(pElement);
-        if (pExtend->getModifier()) {
-          value = pExtend->getModifier()->getModifierValue(parameter);
-        }
-        if (value.second) {
-          return value;
+      if (!variables.isEmpty() && pElement->getName().compare(variables.at(0)) == 0) {
+        variables.removeFirst();
+        if (variables.isEmpty()) {
+          return pElement->getType();
+        } else if (pElement->getModel()) {
+          return pElement->getModel()->getVariableType(variables);
         } else {
-          if (pExtend->getModel()) {
-            value = pExtend->getModel()->getParameterValueFromExtendsModifiers(parameter);
-            if (value.second) {
-              return value;
-            }
-          }
+          return "";
         }
       }
     }
-
     return value;
   }
 
@@ -2004,6 +1987,36 @@ namespace ModelInstance
     }
 
     return pElement;
+  }
+
+  QPair<QString, bool> Element::getVariableValue(QStringList variables)
+  {
+    QPair<QString, bool> value("", false);
+
+    if (isComponent() && variables.size() > 1 && getName().compare(variables.at(0)) == 0) {
+      variables.removeFirst();
+    }
+
+    if (mpModifier) {
+      // if we found the variable in the modifier and its value is defined then use it.
+      if (mpModifier->isValueDefined() && variables.size() == 1 && getName().compare(variables.at(0)) == 0) {
+        value = qMakePair(mpModifier->getValueWithoutQuotes(), true);
+      } else {
+        value = mpModifier->getModifierValue(variables);
+      }
+      if (value.second) {
+        return value;
+      }
+    }
+
+    if (mpModel) {
+      value = mpModel->getVariableValue(variables);
+      if (value.second) {
+        return value;
+      }
+    }
+
+    return value;
   }
 
   /*!

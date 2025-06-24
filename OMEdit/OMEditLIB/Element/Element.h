@@ -191,7 +191,6 @@ public:
   bool isInBus() {return mpBusComponent != 0;}
   void setBusComponent(Element *pBusComponent);
   Element* getBusComponent() {return mpBusComponent;}
-  static ModelInstance::Component *getModelComponentByName(ModelInstance::Model *pModel, const QString &name);
   void reDrawConnector(QPainter *painter);
 
   Transformation mTransformation;
@@ -257,9 +256,6 @@ private:
   void hideResizerItems();
   void getScale(qreal *sx, qreal *sy);
   void updateConnections();
-  QPair<QString, bool> getParameterDisplayStringFromExtendsModifiers(QString parameterName);
-  QPair<QString, bool> getParameterDisplayStringFromExtendsParameters(QString parameterName, QPair<QString, bool> modifierString);
-  static QPair<QString, bool> getParameterDisplayStringFromExtendsParameters(ModelInstance::Model *pModel, QString parameterName, QPair<QString, bool> modifierString);
   static bool checkEnumerationDisplayString(QString &displayString, const QString &typeName);
   void updateToolTip();
   bool canUseDiagramAnnotation() const;
