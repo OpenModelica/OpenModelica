@@ -690,6 +690,18 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
     }
   }
 
+  /* allocate memory for parameter Jacobian */
+  comp->_has_jacobian_S = 0;
+  comp->fmiDerJacS = NULL;
+  if (comp->fmuData->callback->initialAnalyticJacobianS != NULL)
+  {
+    comp->fmiDerJacS = (JACOBIAN*) functions->allocateMemory(1, sizeof(JACOBIAN));
+    if (! comp->fmuData->callback->initialAnalyticJacobianS(comp->fmuData, comp->threadData, comp->fmiDerJacS))
+    {
+      comp->_has_jacobian_S = 1;
+    }
+  }
+
   // int cols = comp->fmiDerJac->sizeCols;
   // int rows = comp->fmiDerJac->sizeRows;
   // printf("\nFMIDER number of rows and colums");
@@ -1722,7 +1734,8 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
 
   int i,j;
 
-  int independent = modelData->nStates + modelData->nInputVars + (modelData->nParametersReal - modelData->nCalcParametersReal); // its possible to diff wrt.: states, inputs, params (without calculatedParameters)
+  int independent = modelData->nStates + modelData->nInputVars; // its possible to diff wrt.: states, inputs
+  int independentS = modelData->nParametersReal - modelData->nCalcParametersReal; // and params (without calculatedParameters)
   int dependent = modelData->nStates + modelData->nOutputVars; // its possible to diff: state ders, outputs
 
   // comp in the wrong state or not
@@ -1757,71 +1770,100 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
   if (comp->fmiDerJac->constantEqns != NULL) {
     comp->fmiDerJac->constantEqns(fmudata, td, comp->fmiDerJac, NULL);
   }
+  if (comp->_has_jacobian_S && comp->fmiDerJacS->constantEqns)
+    comp->fmiDerJacS->constantEqns(fmudata, td, comp->fmiDerJacS, NULL);
 
-  printf("sizeCols: %d \n", comp->fmiDerJac->sizeCols);
-  printf("sizeRows: %d \n", comp->fmiDerJac->sizeRows);
-  printf("independent: %d \n", independent);
-  printf("dependent: %d \n", dependent);
-  printf("nStates: %ld \n", modelData->nStates);
-  printf("nInputs: %ld \n", modelData->nInputVars);
-  printf("nParametersReal: %ld \n", modelData->nParametersReal);
-  printf("nCalcParametersReal: %ld \n", modelData->nCalcParametersReal);
+  // printf("sizeColsfmi: %d \n", comp->fmiDerJac->sizeCols);
+  // printf("sizeRowsfmi: %d \n", comp->fmiDerJac->sizeRows);
+  // printf("sizeColsS: %d \n", comp->fmiDerJacS->sizeCols);
+  // printf("sizeRowsS: %d \n", comp->fmiDerJacS->sizeRows);
+  // printf("independent: %d \n", independent);
+  // printf("independentS: %d \n", independentS);
+  // printf("dependent: %d \n", dependent);
+  // printf("nStates: %ld \n", modelData->nStates);
+  // printf("nInputs: %ld \n", modelData->nInputVars);
+  // printf("nParametersReal: %ld \n", modelData->nParametersReal);
+  // printf("nCalcParametersReal: %ld \n", modelData->nCalcParametersReal);
 
-
+  // old behaviour
   /* clear out the seeds */
   for (i=0;i<independent; i++) {
     comp->fmiDerJac->seedVars[i]=0;
   }
-
+  if (comp->_has_jacobian_S) {
+    for (i=0;i<independentS; i++) {
+      comp->fmiDerJacS->seedVars[i]=0;
+    }
+  }
   for (i=0;i<nKnown; i++) {
     int idx = vKnown_ref[i];
-    /* if idx > nStates + nInputs its a parameter so we need a mapping*/
-    // first parameter -> 0 + nStates + nInputs (first seed after states and inputs)
-    // second parameter -> 1 + nStates + nInputs (second seed after states and inputs)
-    // ...
-    if (idx >= modelData->nStates + modelData->nInputVars){
-      printf("im param case %d\n", idx);
-      /*so irgendwie?*/
-      idx = mapParameterReference2ParameterNumber(vKnown_ref[i]);
-      printf("im param case nach map %d\n", idx);
-      idx = modelData->nStates + modelData->nInputVars + idx;
-      printf("im param case nach map u. add %d\n", idx);
-    }
     /* if idx is > nStates it's an input so we need a mapping */
     // if after states and before params its an input
     // first input -> 0 + nStates (first seed after states)
     // second input -> 1 + nStates (second seed after states)
     // ...
-    else if (idx >= modelData->nStates){
-      printf("im input case %d\n", idx);
-      idx = mapInputReference2InputNumber(vKnown_ref[i]);
-      idx = modelData->nStates + idx;
+    if (idx < modelData->nStates + modelData->nInputVars) {
+      if (idx >= modelData->nStates) {
+        idx = mapInputReference2InputNumber(vKnown_ref[i]);
+        idx = modelData->nStates + idx;
+      }
+      if (vrOutOfRange(comp, "fmi2GetDirectionalDerivative input index", idx, independent))
+        return fmi2Error;
+      /* Put the supplied value in the seeds */
+      comp->fmiDerJac->seedVars[idx]=dvKnown[i];
     }
-    
-    if (vrOutOfRange(comp, "fmi2GetDirectionalDerivative input index", idx, independent))
-      return fmi2Error;
-    /* Put the supplied value in the seeds */
-    comp->fmiDerJac->seedVars[idx]=dvKnown[i];
+    else if (idx >= modelData->nStates + modelData->nInputVars && comp->_has_jacobian_S) {
+      // if after inputs its a parameter so we need a mapping
+      idx = mapParameterReference2ParameterNumber(vKnown_ref[i]);
+      if (vrOutOfRange(comp, "fmi2GetDirectionalDerivative input index (S)", idx, independentS))
+        return fmi2Error;
+      /* Put the supplied value in the seeds */
+      comp->fmiDerJacS->seedVars[idx] = dvKnown[i];
+    }
   }
+
+  // Evaluate Jacobians if any seeds are set
+  int evalJac = 0, evalJacS = 0;
+  for (i = 0; i < independent; i++) if (comp->fmiDerJac->seedVars[i] != 0) { evalJac = 1; break; }
+  if (comp->_has_jacobian_S)
+    for (i = 0; i < independentS; i++) if (comp->fmiDerJacS->seedVars[i] != 0) { evalJacS = 1; break; }
+
   /* Call the Jacobian evaluation function. This function evaluates the whole column of the Jacobian.
    * More efficient code could only evaluate the equations needed for the
    * known variables only */
   setThreadData(comp);
-  fmudata->callback->functionJacFMIDER_column(fmudata, td, comp->fmiDerJac, NULL);
+  if (evalJac)
+    fmudata->callback->functionJacFMIDER_column(fmudata, td, comp->fmiDerJac, NULL);
+  if (evalJacS)
+    fmudata->callback->functionJacS_column(fmudata, td, comp->fmiDerJacS, NULL);
   resetThreadData(comp);
 
+  // assumes that either one or the other was evaluated, not both
   /* Write the results to dvUnknown array */
-  for (i=0;i<nUnknown; i++) {
-    /* derivatives are behind the states */
-    int idx = vUnknown_ref[i] - modelData->nStates;
-    /* if idx is > nStates it's an output so we need a mapping */
-    if (idx >= modelData->nStates){
-      idx = mapOutputReference2OutputNumber(vUnknown_ref[i]);
-      idx = modelData->nStates + idx;
+  if (evalJac) {
+    for (i = 0; i < nUnknown; i++) {
+      int idx = vUnknown_ref[i] - modelData->nStates;
+      if (idx >= modelData->nStates) {
+        idx = mapOutputReference2OutputNumber(vUnknown_ref[i]);
+        idx = modelData->nStates + idx;
+      }
+      if (vrOutOfRange(comp, "fmi2GetDirectionalDerivative output index", idx, dependent))
+        return fmi2Error;
+      dvUnknown[i] = comp->fmiDerJac->resultVars[idx];
     }
-    if (vrOutOfRange(comp, "fmi2GetDirectionalDerivative output index", idx, dependent))
-      return fmi2Error;
-    dvUnknown[i] = comp->fmiDerJac->resultVars[idx];
+  } else if (evalJacS) {
+    for (i = 0; i < nUnknown; i++) {
+      int idx = vUnknown_ref[i] - modelData->nStates;
+      if (idx >= modelData->nStates) {
+        idx = mapOutputReference2OutputNumber(vUnknown_ref[i]);
+        idx = modelData->nStates + idx;
+      }
+      if (vrOutOfRange(comp, "fmi2GetDirectionalDerivative output index (S)", idx, dependent))
+        return fmi2Error;
+      dvUnknown[i] = comp->fmiDerJacS->resultVars[idx];
+    }
+  } else {
+    return fmi2Error;
   }
   /***************************************/
   return fmi2OK;
