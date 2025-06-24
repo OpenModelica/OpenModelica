@@ -636,7 +636,7 @@ algorithm
       algorithm
         exp := makeRecordFieldBindingFromParent(cref, target);
       then
-        Binding.CEVAL_BINDING(exp);
+        if Expression.isEmpty(exp) then NFBinding.EMPTY_BINDING else Binding.CEVAL_BINDING(exp);
 
     // A record component without an explicit binding, create one from its children.
     case Component.COMPONENT(ty = Type.COMPLEX(complexTy = ComplexType.RECORD(rec_node)))
