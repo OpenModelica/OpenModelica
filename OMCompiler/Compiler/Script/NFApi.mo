@@ -912,6 +912,10 @@ algorithm
     case (_, ClassTree.INSTANTIATED_TREE())
       algorithm
         elems := buildInstanceTreeElements(InstNode.definition(cls_node), cls_tree);
+
+        if InstNode.isRootClass(node) then
+          elems := buildInstanceTreeGeneratedInners(cls_tree, elems);
+        end if;
       then
         InstanceTree.CLASS(node, elems, isDerived);
 
@@ -986,6 +990,32 @@ algorithm
 
   elements := listReverseInPlace(elements);
 end buildInstanceTreeElements;
+
+function buildInstanceTreeGeneratedInners
+  input ClassTree classTree;
+  input list<InstanceTree> elements;
+  output list<InstanceTree> outElements;
+protected
+  array<Mutable<InstNode>> comps;
+  InstNode comp;
+  list<InstanceTree> elems = {};
+algorithm
+  ClassTree.INSTANTIATED_TREE(components = comps) := classTree;
+
+  for i in arrayLength(comps):-1:1 loop
+    if InstNode.isGeneratedInner(Mutable.access(comps[i])) then
+      elems := buildInstanceTreeComponent(comps[i]) :: elems;
+    else
+      break;
+    end if;
+  end for;
+
+  if listEmpty(elems) then
+    outElements := elements;
+  else
+    outElements := listAppend(elements, elems);
+  end if;
+end buildInstanceTreeGeneratedInners;
 
 function buildInstanceTreeComponent
   input Mutable<InstNode> compNode;
@@ -1261,12 +1291,6 @@ protected
   JSON j;
 algorithm
   node := InstNode.resolveInner(component);
-
-  // Skip dumping inner elements that were added by the compiler itself.
-  if InstNode.isGeneratedInner(node) then
-    return;
-  end if;
-
   comp := InstNode.component(node);
   elem := InstNode.definition(node);
   scope := InstNode.parent(node);
@@ -1322,6 +1346,10 @@ algorithm
 
         json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes, scope), json);
         json := dumpJSONComment(comp.comment, scope, json);
+
+        if InstNode.isGeneratedInner(node) then
+          json := JSON.addPair("generated", JSON.makeBoolean(true), json);
+        end if;
       then
         ();
 

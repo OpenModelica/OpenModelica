@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-testcases=( "BrowseMSL" "Diagram" "Transformation" "Homotopy" "Expression" "ModelInstance" "Utilities" "StringHandler"
-            "DynamicAnnotation" )
+testcases=( "BrowseMSL" "Diagram" "Transformation" "Homotopy" "Expression"
+            "ModelInstance" "VariableValue" "Utilities" "StringHandler" "DynamicAnnotation" )
 OMEditTestResults="$PWD/OMEditTestResult"
 
 for testcase in "${testcases[@]}"

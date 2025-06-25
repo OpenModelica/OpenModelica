@@ -5186,7 +5186,7 @@ void LibraryWidget::loadSystemLibrary(const QString &library, QString version, b
 
     setLoadingLibraries(true);
     QStringList classes = MainWindow::instance()->getOMCProxy()->getClassNames();
-    if (MainWindow::instance()->getOMCProxy()->loadModel(library, version)) {
+    if (MainWindow::instance()->getOMCProxy()->loadModel(library, version, true, "", true)) {
       if (MainWindow::instance()->getOMCProxy()->isLoadModelError()) {
         if (secondAttempt) {
           // clear loadModelCallback classes

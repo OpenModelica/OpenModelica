@@ -1509,6 +1509,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     OpenModelica_updateUriMapping(threadData, MMC_REFSTRUCTLIT(_OMC_LIT_RESOURCES));
     data->modelData->modelName = "<%dotPath(name)%>";
     data->modelData->modelFilePrefix = "<%fileNamePrefix%>";
+    data->modelData->modelFileName = "<%fileName%>";
     data->modelData->resultFileName = NULL;
     data->modelData->modelDir = "<%directory%>";
     data->modelData->modelGUID = "{<%guid%>}";

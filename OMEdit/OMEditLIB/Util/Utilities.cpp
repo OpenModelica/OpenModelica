@@ -683,6 +683,44 @@ qreal Utilities::convertUnit(qreal value, qreal offset, qreal scaleFactor)
 }
 
 /*!
+ * \brief Utilities::extractArrayParts
+ * Parses the input string and extracts the parts of an array.
+ * \param input
+ * \return
+ */
+QStringList Utilities::extractArrayParts(const QString &input) {
+  QString trimmed = input.trimmed();
+  // If input is NOT an array (doesn't start with { and end with }), return it as single element
+  if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
+    return QStringList{ trimmed };
+  }
+
+  // Remove outer braces
+  QString content = trimmed.mid(1, trimmed.length() - 2);
+  // Regex matches:
+  // 1) quoted strings in group 1
+  // 2) numbers in group 2
+  // 3) unquoted strings in group 3
+  QRegularExpression regex("\"([^\"]*)\"|(-?\\d+(?:\\.\\d+)?(?:[eE][-+]?\\d+)?)|([a-zA-Z_][a-zA-Z0-9_]*)");
+
+  QStringList parts;
+  QRegularExpressionMatchIterator i = regex.globalMatch(content);
+
+  while (i.hasNext()) {
+    QRegularExpressionMatch match = i.next();
+    if (!match.captured(1).isNull()) {
+      parts << match.captured(1);  // quoted string without quotes
+    } else if (!match.captured(2).isNull()) {
+      parts << match.captured(2);  // number
+    } else if (!match.captured(3).isNull()) {
+      parts << match.captured(3);  // unquoted string
+    }
+  }
+
+  return parts;
+}
+
+/*!
  * \brief Utilities::isValueLiteralConstant
  * \param value
  * \return
@@ -715,34 +753,33 @@ bool Utilities::isValueScalarLiteralConstant(QString value)
  * \brief Utilities::arrayExpressionUnitConversion
  * If the expression is like an array of constants see ticket:4840
  * \param pOMCProxy
- * \param modifierValue
+ * \param value
  * \param fromUnit
  * \param toUnit
  * \return
  */
-QString Utilities::arrayExpressionUnitConversion(OMCProxy *pOMCProxy, QString modifierValue, QString fromUnit, QString toUnit)
+QString Utilities::arrayExpressionUnitConversion(OMCProxy *pOMCProxy, QString value, QString fromUnit, QString toUnit)
 {
-  QStringList modifierValuesArray = StringHandler::removeFirstLastCurlBrackets(modifierValue).split(",");
-  QStringList modifierConvertedValuesArray;
+  QStringList values = Utilities::extractArrayParts(value);
+  QStringList convertedValues;
   OMCInterface::convertUnits_res convertUnit;
   int i = 0;
   bool ok = true;
-  foreach (QString modifierValueArrayElement, modifierValuesArray) {
-    qreal modifierRealValueArrayElement = modifierValueArrayElement.toDouble(&ok);
+  foreach (QString value, values) {
+    qreal realValue = value.toDouble(&ok);
     if (ok) {
       if (i == 0) {
         convertUnit = pOMCProxy->convertUnits(fromUnit, toUnit);
       }
       if (convertUnit.unitsCompatible) {
-        modifierRealValueArrayElement = Utilities::convertUnit(modifierRealValueArrayElement, convertUnit.offset, convertUnit.scaleFactor);
-        modifierConvertedValuesArray.append(StringHandler::number(modifierRealValueArrayElement));
+        realValue = Utilities::convertUnit(realValue, convertUnit.offset, convertUnit.scaleFactor);
+        convertedValues.append(StringHandler::number(realValue));
       }
+    } else {
+      convertedValues.append(value);
     }
   }
-  if (ok) {
-    modifierValue = QString("{%1}").arg(modifierConvertedValuesArray.join(","));
-  }
-  return modifierValue;
+  return QString("{%1}").arg(convertedValues.join(","));
 }
 
 Label* Utilities::getHeadingLabel(QString heading)

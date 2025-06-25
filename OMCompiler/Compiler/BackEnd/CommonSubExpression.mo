@@ -66,6 +66,7 @@ import List;
 import ResolveLoops;
 import StringUtil;
 import Types;
+import UnorderedSet;
 
 uniontype CSE_Equation
   record CSE_EQUATION
@@ -407,7 +408,7 @@ algorithm
       id2 := BaseHashTable.get(call, ht);
       CSE_EQUATION(cse=cse2, call=call2, dependencies=dependencies2) := ExpandableArray.get(id2, exarray);
       cse2 := mergeCSETuples(cse, cse2);
-      ExpandableArray.update(id2, CSE_EQUATION(cse2, call, List.unique(listAppend(dependencies,dependencies2))), exarray);
+      ExpandableArray.update(id2, CSE_EQUATION(cse2, call, UnorderedSet.unique_list(listAppend(dependencies,dependencies2), Util.id, intEq)), exarray);
       ExpandableArray.update(id, CSE_EQUATION(cse, cse2, {}), exarray);
 
 
@@ -2050,7 +2051,7 @@ algorithm
     (_, eqIdcs) := List.filter1OnTrueSync(lengthLst, intEq, 2, range);
     (eqLst, eqIdcs) := List.filterOnTrueSync(BackendEquation.getList(eqIdcs, eqsIn),BackendEquation.isNotAlgorithm,eqIdcs); // no algorithms
     eqs := BackendEquation.listEquation(eqLst);
-    varIdcs := List.unique(List.flatten(List.map1(eqIdcs, Array.getIndexFirst, mIn)));
+    varIdcs := UnorderedSet.unique_list(List.flatten(List.map1(eqIdcs, Array.getIndexFirst, mIn)), Util.id, intEq);
     varLst := List.map1(varIdcs, BackendVariable.getVarAtIndexFirst, varsIn);
     //(varLst,varIdcs) := List.filterOnTrueSync(varLst,BackendVariable.isVarNonDiscrete,varIdcs);// no discrete vars
     vars := BackendVariable.listVar1(varLst);

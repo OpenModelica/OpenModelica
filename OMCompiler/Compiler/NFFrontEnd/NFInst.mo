@@ -321,7 +321,9 @@ function resetGlobalFlags
   "Resets the global flags that the frontend uses."
 algorithm
   if Flags.getConfigBool(Flags.NEW_BACKEND) then
-    FlagsUtil.set(Flags.NF_SCALARIZE, false);
+    if not Flags.isSet(Flags.FORCE_SCALARIZE) then
+      FlagsUtil.set(Flags.NF_SCALARIZE, false);
+    end if;
     FlagsUtil.set(Flags.VECTORIZE_BINDINGS, true);
   end if;
 

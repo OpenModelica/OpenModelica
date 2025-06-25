@@ -252,30 +252,31 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
 
 void TextAnnotation::parseShapeAnnotation()
 {
-  GraphicItem::parseShapeAnnotation(mpText);
-  FilledShape::parseShapeAnnotation(mpText);
+  GraphicsView *pGraphicsView = getContainingGraphicsView();
+  GraphicItem::parseShapeAnnotation(mpText, pGraphicsView);
+  FilledShape::parseShapeAnnotation(mpText, pGraphicsView);
 
   mExtent = mpText->getExtent();
-  mExtent.evaluate(mpText->getParentModel());
+  mExtent.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mTextString = mpText->getTextString();
-  mTextString.evaluate(mpText->getParentModel());
+  mTextString.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mOriginalTextString = mTextString;
   initUpdateTextString();
 
   mFontSize = mpText->getFontSize();
-  mFontSize.evaluate(mpText->getParentModel());
+  mFontSize.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   if (mpText->getTextColor().isValid()) {
     mLineColor = mpText->getTextColor();
-    mLineColor.evaluate(mpText->getParentModel());
+    mLineColor.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   }
   if (!mpText->getFontName().isEmpty()) {
     mFontName = mpText->getFontName();
-    mFontName.evaluate(mpText->getParentModel());
+    mFontName.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   }
   mTextStyles = mpText->getTextStyle();
-  mTextStyles.evaluate(mpText->getParentModel());
+  mTextStyles.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mHorizontalAlignment = mpText->getHorizontalAlignment();
-  mHorizontalAlignment.evaluate(mpText->getParentModel());
+  mHorizontalAlignment.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
 }
 
 /*!
@@ -582,13 +583,14 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
           QString textValue = parameterValue.first;
           QPair<QString, bool> unit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "unit");
           QPair<QString, bool> displayUnit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "displayUnit");
-          ModelInstance::Component* pModelComponent = Element::getModelComponentByName(mpElement->getRootParentElement()->getModel(), variable);
-          if (pModelComponent) {
+          // Look for unit and displayUnit in the variable element.
+          auto pElement = mpElement->getRootParentElement()->getModel()->lookupElement(variable);
+          if (pElement) {
             if (!displayUnit.second) {
-              displayUnit = pModelComponent->getModifierValueFromType(QStringList() << "displayUnit");
+              displayUnit = pElement->getModifierValueFromType(QStringList() << "displayUnit");
             }
             if (!unit.second) {
-              unit = pModelComponent->getModifierValueFromType(QStringList() << "unit");
+              unit = pElement->getModifierValueFromType(QStringList() << "unit");
             }
           }
           // if display unit is still empty then use unit

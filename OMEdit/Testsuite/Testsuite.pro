@@ -37,6 +37,7 @@ SUBDIRS = Util \
   Homotopy \
   Expression \
   ModelInstance \
+  VariableValue \
   Utilities \
   StringHandler \
   DynamicAnnotation
@@ -47,6 +48,7 @@ Transformation.depends = Util
 Homotopy.depends = Util
 Expression.depends = Util
 ModelInstance.depends = Util
+VariableValue.depends = Util
 Utilities.depends = Util
 StringHandler.depends = Util
 DynamicAnnotation.depends = Util

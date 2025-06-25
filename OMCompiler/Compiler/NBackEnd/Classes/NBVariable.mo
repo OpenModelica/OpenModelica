@@ -747,8 +747,6 @@ public
   algorithm
     b := match var.backendinfo.varKind
       case VariableKind.STATE()          then not isFixed(var_ptr);
-      case VariableKind.ALGEBRAIC()      then not isFixed(var_ptr) and hasStartAttr(var_ptr);
-      case VariableKind.DISCRETE()       then not isFixed(var_ptr) or hasPre(var_ptr);
       case VariableKind.DISCRETE_STATE() then not isFixed(var_ptr) or hasPre(var_ptr);
       case VariableKind.PARAMETER()      then not isFixed(var_ptr);
       case VariableKind.PREVIOUS()       then true;
