@@ -43,7 +43,7 @@ extern "C" {
  * @brief DAG of evaluation dependency
  *
  * map from vars to eqns
- * DAG between eqns
+ * directed acyclic graph between eqns
  */
 typedef struct EVAL_DAG
 {
