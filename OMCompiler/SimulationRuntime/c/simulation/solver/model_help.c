@@ -1028,7 +1028,6 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->callback->setEqFunctions(data, threadData);
   data->modelData->dag = allocEvalDAG(data->modelData->nVariablesReal, data->modelData->nEqFunctions);
   data->callback->getDependency(data->modelData->dag, data->simulationInfo->realVarsIndex);
-  data->simulationInfo->evalSelectionFast = allocEvalSelection(data->modelData->dag);
   data->simulationInfo->evalSelection = NULL;
 
   /* prepare RingBuffer */
@@ -1352,7 +1351,6 @@ void deInitializeDataStruc(DATA *data)
   free(data->modelData->eqFunctions);
 
   /* free buffer for adaptive eval */
-  freeEvalSelection(data->simulationInfo->evalSelectionFast);
   freeEvalDAG(data->modelData->dag);
 
   /* free buffer for old state variables */
