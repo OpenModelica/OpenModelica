@@ -555,7 +555,7 @@ constant DebugFlag DUMP_SOLVE = DEBUG_FLAG(195, "dumpSolve", false,
   Gettext.gettext("Dumps information about equation solving."));
 constant DebugFlag FMI20_PARAMETER_JACOBIAN = DEBUG_FLAG(196, "fmiParameterJacobian", false,
   Gettext.gettext("Include Parameter Derivatives in Jacobian."));
-constant DebugFlag FORCE_SCALARIZE = DEBUG_FLAG(196, "forceScalarize", false,
+constant DebugFlag FORCE_SCALARIZE = DEBUG_FLAG(197, "forceScalarize", false,
   Gettext.gettext("Forces scalarization to be done when it would normally be automatically disabled."));
 
 public
