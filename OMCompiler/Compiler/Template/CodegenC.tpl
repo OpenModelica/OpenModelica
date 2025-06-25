@@ -181,12 +181,6 @@ end translateModel;
     extern int <%symbolName(modelNamePrefixStr,"functionJacD_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacF_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacH_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
-    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacA")%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex);
-    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacB")%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex);
-    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacC")%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex);
-    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacD")%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex);
-    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacF")%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex);
-    //extern void <%symbolName(modelNamePrefixStr,"getDependencyJacH")%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex);
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_frame")%>(void);
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>(void);
     extern int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res, short *);
@@ -1354,12 +1348,6 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <%symbolName(modelNamePrefixStr,"functionJacD_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacF_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacH_column")%>,
-      //<%symbolName(modelNamePrefixStr,"getDependencyJacA")%>,
-      //<%symbolName(modelNamePrefixStr,"getDependencyJacB")%>,
-      //<%symbolName(modelNamePrefixStr,"getDependencyJacC")%>,
-      //<%symbolName(modelNamePrefixStr,"getDependencyJacD")%>,
-      //<%symbolName(modelNamePrefixStr,"getDependencyJacF")%>,
-      //<%symbolName(modelNamePrefixStr,"getDependencyJacH")%>,
       <%symbolName(modelNamePrefixStr,"linear_model_frame")%>,
       <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>,
       <%symbolName(modelNamePrefixStr,"mayer")%>,
@@ -1577,7 +1565,6 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nAliasInteger = <%varInfo.numIntAliasVars%>;
     data->modelData->nAliasBoolean = <%varInfo.numBoolAliasVars%>;
     data->modelData->nAliasString = <%varInfo.numStringAliasVars%>;
-    data->modelData->eqFunctionsSize = <%varInfo.numEquations%>;
     data->modelData->nZeroCrossings = <%varInfo.numZeroCrossings%>;
     data->modelData->nSamples = <%varInfo.numTimeEvents%>;
     data->modelData->nRelations = <%varInfo.numRelations%>;
@@ -4435,10 +4422,17 @@ template functionXXX_system(list<SimEqSystem> eqs, String name, Integer n, Strin
   {
     int i, eqId;
 
-    for (i = 0; i < data->simulationInfo->evalSelection->n; i++) {
-      eqId = data->simulationInfo->evalSelection->idx[i];
-      data->modelData->eqFunctions[eqId](data, threadData);
-      threadData->lastEquationSolved = eqId;
+    if (data->simulationInfo->evalSelection) {
+      for (i = 0; i < data->simulationInfo->evalSelection->n; i++) {
+        eqId = data->simulationInfo->evalSelection->idx[i];
+        data->modelData->eqFunctions[eqId](data, threadData);
+        //threadData->lastEquationSolved = eqId;
+      }
+    } else {
+      for (eqId = 0; eqId < data->modelData->nEqFunctions; eqId++) {
+        data->modelData->eqFunctions[eqId](data, threadData);
+        //threadData->lastEquationSolved = eqId;
+      }
     }
   }
   >>
@@ -4824,18 +4818,11 @@ template setEqFunctions(list<SimEqSystem> eqs, String modelNamePrefix)
   {
     TRACE_PUSH
 
-    size_t i = 0;
-
-    <%eqs |> eq =>
-      'data->simulationInfo->evalSelectionFull->idx[i++] = <%equationIndexGeneral(eq)%>;'; separator="\n"%>
-    data->simulationInfo->evalSelectionFull->n = i;
-
-    <%eqs |> eq =>
-      let ix = equationIndexGeneral(eq)
-      <<
-      data->modelData->eqFunctions[<%ix%>] = <%symbolName(modelNamePrefix, "eqFunction")%>_<%ix%>;
-      >>; separator="\n"
-    %>
+    data->modelData->nEqFunctions = <%listLength(eqs)%>;
+    data->modelData->eqFunctions = (eq_func_ptr*) calloc(data->modelData->nEqFunctions, sizeof(eq_func_ptr));
+    <%eqs |> eq hasindex i =>
+      'data->modelData->eqFunctions[<%i%>] = <%symbolName(modelNamePrefix, "eqFunction")%>_<%equationIndexGeneral(eq)%>;';
+    separator="\n"%>
 
     TRACE_POP
   }
@@ -4852,85 +4839,29 @@ template getDependency(SimCode simCode, list<SimEqSystem> allEquations, String f
     size_t i;
 
     /* mapVarToEqNode */
-    <%allEquations |> eq =>
-      let eqIdx = equationIndexGeneral(eq)
-      '<%getSimEqSystemSimVarsLHS(eq, simCode) |> var =>
-        match var
-        case SIMVAR(__) then
-        <<
-        for (i = realVarsIndex[<%index%>]; i < realVarsIndex[<%index%>+1]; i++)
-          dag->mapVarToEqNode[i] = <%eqIdx%>; <%crefCCommentWithVariability(var)%><%\n%>
-        >>; separator="\n"%>'; separator="\n"%>
+    <%allEquations |> eq hasindex i =>
+      (getSimEqSystemSimVarsLHS(eq, simCode) |> var as SIMVAR(__) =>
+        'dag->mapVarToEqNode[<%index%>] = <%i%>; /* equation index: <%equationIndexGeneral(eq)%> */ <%crefCCommentWithVariability(var)%><%\n%>'
+        ; separator="\n"); separator="\n"%>
 
     /* eqDependency */
-    <%allEquations |> eq =>
-      let eqIdx = equationIndexGeneral(eq)
+    <%allEquations |> eq hasindex i =>
       let n = listLength(getSimEqSystemSimVarsRHS(eq, simCode))
-      if stringEq(n, "0") then 'dag->nEqDep[<%eqIdx%>] = <%n%>;'
+      if stringEq(n, "0") then 'dag->nEqDep[<%i%>] = 0; /* equation index: <%equationIndexGeneral(eq)%> */'
       else
       <<
-      dag->nEqDep[<%eqIdx%>] = <%n%>;
-      dag->eqDep[<%eqIdx%>] = malloc(<%n%> * sizeof(size_t));
+      dag->nEqDep[<%i%>] = <%n%>; /* equation index: <%equationIndexGeneral(eq)%> */
+      dag->eqDep[<%i%>] = (size_t*) malloc(dag->nEqDep[<%i%>] * sizeof(size_t));
       i = 0;
-      <%getSimEqSystemSimVarsRHS(eq, simCode) |> var => match var
-        case SIMVAR() then
-        'dag->eqDep[<%eqIdx%>][i++] = dag->mapVarToEqNode[<%index%>]; <%crefCCommentWithVariability(var)%>'; separator="\n"%>
+      <%getSimEqSystemSimVarsRHS(eq, simCode) |> var as SIMVAR() =>
+        'dag->eqDep[<%i%>][i++] = dag->mapVarToEqNode[<%index%>]; <%crefCCommentWithVariability(var)%>'; separator="\n"%>
       >>; separator="\n\n"%>
+
     TRACE_POP
   }
   >>
 end getDependency;
 
-template getDependencyJacobian(JacobianMatrix jac, String modelNamePrefix)
-::=
-  match jac
-  case JAC_MATRIX(columns = {}) then
-  let funcName = 'getDependencyJac<%matrixName%>'
-  <<
-  void <%symbolName(modelNamePrefix, funcName)%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex)
-  {
-    TRACE_PUSH
-    TRACE_POP
-  }
-  >>
-  case JAC_MATRIX(crefsHT=crefsHT) then
-  let funcName = 'getDependencyJac<%matrixName%>'
-  <<
-  void <%symbolName(modelNamePrefix, funcName)%>(EVAL_DAG* dag, size_t nRows, size_t* realVarsIndex)
-  {
-    TRACE_PUSH
-
-    size_t i;
-
-    /* mapVarToEqNode */
-    <%columns |> col => match col
-    case JAC_COLUMN() then (columnEqns |> eq =>
-      let eqIdx = equationIndexGeneral(eq)
-      '<%getSimEqSystemSimVarsLHSJac(eq, crefsHT) |> var =>
-        match var
-        case SIMVAR(varKind = JAC_VAR()) then 'dag->mapVarToEqNode[<%index%>] = <%eqIdx%>; <%crefCCommentWithVariability(var)%><%\n%>'
-        case SIMVAR(varKind = JAC_TMP_VAR()) then 'dag->mapVarToEqNode[<%index%>+nRows] = <%eqIdx%>; <%crefCCommentWithVariability(var)%><%\n%>'
-        ; separator="\n"%>'); separator="\n"%>
-
-    /* eqDependency */
-    <%columns |> col => match col
-    case JAC_COLUMN() then (columnEqns |> eq =>
-      let eqIdx = equationIndexGeneral(eq)
-      let n = listLength(getSimEqSystemSimVarsRHSJac(eq, crefsHT))
-      if stringEq(n, "0") then 'dag->nEqDep[<%eqIdx%>] = <%n%>;'
-      else
-      <<
-      dag->nEqDep[<%eqIdx%>] = <%n%>;
-      dag->eqDep[<%eqIdx%>] = malloc(<%n%> * sizeof(size_t));
-      i = 0;
-      <%getSimEqSystemSimVarsRHSJac(eq, crefsHT) |> var => match var
-        case SIMVAR() then
-        'dag->eqDep[<%eqIdx%>][i++] = dag->mapVarToEqNode[<%index%>]; <%crefCCommentWithVariability(var)%>'; separator="\n"%>
-      >>; separator="\n\n")%>
-    TRACE_POP
-  }
-  >>
-end getDependencyJacobian;
 
 template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer nAuxVars, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
   "Generates initialization function for daeMode."
@@ -5786,16 +5717,12 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
     generateMatrix(columns, seedVars, matrixName, partitionIndex, crefsHT, modelNamePrefix) ;separator="\n")
   let jacGenericCalls = (JacobianMatrices |> JAC_MATRIX() =>
     genericCallBodies(generic_loop_calls, createJacContext(crefsHT)) ;separator="\n")
-  let jacDependency = (JacobianMatrices |> jac as JAC_MATRIX() => '' ;separator="\n")
-    //getDependencyJacobian(jac, modelNamePrefix) ;separator="\n")
   <<
   <%jacMats%>
 
   <%initialjacMats%>
 
   <%jacGenericCalls%>
-
-  <%jacDependency%>
   >>
 end functionAnalyticJacobians;
 
@@ -5838,7 +5765,6 @@ match sparsepattern
       initJacobian(jacobian, <%sizeCols%>, <%sizeRows%>, <%tmpvarsSize%>, <%evalColumn%>, <%constantEqns%>, NULL);
       jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
       jacobian->availability = <%availability%>;
-      //<%symbolName(modelNamePrefix,"getDependencyJac")%><%matrixname%>(jacobian->dag, jacobian->sizeRows, data->simulationInfo->realVarsIndex);
 
       /* read lead index of compressed sparse column */
       count = omc_fread(jacobian->sparsePattern->leadindex, sizeof(unsigned int), <%sizeleadindex%>+1, pFile, FALSE);
