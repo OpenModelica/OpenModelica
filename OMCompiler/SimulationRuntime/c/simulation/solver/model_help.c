@@ -1025,13 +1025,11 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->modelData->nVariablesString   = data->simulationInfo->stringVarsIndex[data->modelData->nVariablesStringArray];
 
   /* init eval selection for functionODE */
-  data->modelData->eqFunctions = (eq_func_ptr*) calloc(data->modelData->eqFunctionsSize, sizeof(eq_func_ptr));
-  data->modelData->dag = allocEvalDAG(data->modelData->nVariablesReal, data->modelData->eqFunctionsSize);
-  data->simulationInfo->evalSelectionFull = allocEvalSelection(data->modelData->dag);
-  data->simulationInfo->evalSelectionFast = allocEvalSelection(data->modelData->dag);
-  data->simulationInfo->evalSelection = data->simulationInfo->evalSelectionFull;
   data->callback->setEqFunctions(data, threadData);
+  data->modelData->dag = allocEvalDAG(data->modelData->nVariablesReal, data->modelData->nEqFunctions);
   data->callback->getDependency(data->modelData->dag, data->simulationInfo->realVarsIndex);
+  data->simulationInfo->evalSelectionFast = allocEvalSelection(data->modelData->dag);
+  data->simulationInfo->evalSelection = NULL;
 
   /* prepare RingBuffer */
   for (i = 0; i < SIZERINGBUFFER; i++) {
@@ -1354,7 +1352,6 @@ void deInitializeDataStruc(DATA *data)
   free(data->modelData->eqFunctions);
 
   /* free buffer for adaptive eval */
-  freeEvalSelection(data->simulationInfo->evalSelectionFull);
   freeEvalSelection(data->simulationInfo->evalSelectionFast);
   freeEvalDAG(data->modelData->dag);
 

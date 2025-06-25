@@ -202,8 +202,6 @@ typedef struct JACOBIAN
   modelica_real* tmpVars;               /* Partial derivatives used to compute resultVars */
   modelica_real* resultVars;            /* Result column for given seed vector */
   modelica_real dae_cj;                 /* Is the scalar in the system Jacobian, proportional to the inverse of the step size. From User Documentation for ida v5.4.0 equation (2.5). */
-  // EVAL_DAG* dag;                        /* dependency of rows and inner partial derivatives */
-  // EVAL_SELECTION* selectionColor;       /* selections for each color */
   jacobianColumn_func_ptr evalColumn;   /* symbolic jacobian column based on seed vector */
   jacobianColumn_func_ptr constantEqns; /* Constant equations independent of seed vector */
 } JACOBIAN;
@@ -612,7 +610,7 @@ typedef struct MODEL_DATA
   long nInputVars;
   long nOutputVars;
 
-  size_t eqFunctionsSize;               /* highest index of eqFunction */
+  size_t nEqFunctions;                  /* size of eqFunctions */
   eq_func_ptr* eqFunctions;             /* array of all eqFunctions by index */
   EVAL_DAG* dag;                        /* dependency of functionODE */
 
@@ -796,9 +794,8 @@ typedef struct SIMULATION_INFO
   size_t* stringVarsIndex;
 
   /* adaptive eval of functionODE */
-  EVAL_SELECTION* evalSelection;        /* selection for functionODE (don't allocate, only set to other pointer) */
-  EVAL_SELECTION* evalSelectionFull;    /* default full selection for functionODE */
-  EVAL_SELECTION* evalSelectionFast;    /* TODO remove me after debug */
+  EVAL_SELECTION* evalSelection;        /* selection for functionODE (don't allocate, only point to other selection) */
+  EVAL_SELECTION* evalSelectionFast;    /* TODO: move to GBODE */
 
   /* old vars for event handling */
   modelica_real timeValueOld;
