@@ -83,11 +83,7 @@ void gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter, mod
   SIMULATION_INFO* info = data->simulationInfo;
   (*counter)++;
 
-  if (fast) {
-    info->evalSelection = info->evalSelectionFast;
-  } else {
-    info->evalSelection = info->evalSelectionFull;
-  }
+  info->evalSelection = fast ? info->evalSelectionFast : NULL;
 
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
