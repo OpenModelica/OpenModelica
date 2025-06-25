@@ -4829,6 +4829,34 @@ template setEqFunctions(list<SimEqSystem> eqs, String modelNamePrefix)
   >>
 end setEqFunctions;
 
+template setEqFunctionsJacobian(JacobianMatrix jac, String modelNamePrefix)
+::=
+  match jac
+  case JAC_MATRIX() then
+  let funcName = 'setEqFunctionsJac<%matrixName%>'
+  let body = match columns
+    case {} then ''
+    else
+    <<
+
+    jacobian->nEqFunctions = <%(columns |> JAC_COLUMN() => listLength(columnEqns); separator="")%>;
+    jacobian->eqFunctions = (jacobian_eq_func_ptr*) calloc(jacobian->nEqFunctions, sizeof(jacobian_eq_func_ptr));
+    <%columns |> JAC_COLUMN() => (columnEqns |> eq hasindex i =>
+      'jacobian->eqFunctions[<%i%>] = <%symbolName(modelNamePrefix, "eqFunction")%>_<%equationIndexGeneral(eq)%>;'
+      ; separator="\n"); separator="\n"
+    %>
+
+    >>
+  <<
+  void <%symbolName(modelNamePrefix, funcName)%>(JACOBIAN* jacobian)
+  {
+    TRACE_PUSH
+    <%body%>
+    TRACE_POP
+  }
+  >>
+end setEqFunctionsJacobian;
+
 template getDependency(SimCode simCode, list<SimEqSystem> allEquations, String funcName, String modelNamePrefix)
 ::=
   <<
@@ -4862,6 +4890,52 @@ template getDependency(SimCode simCode, list<SimEqSystem> allEquations, String f
   >>
 end getDependency;
 
+template getDependencyJacobian(JacobianMatrix jac, String modelNamePrefix)
+::=
+  match jac
+  case JAC_MATRIX(crefsHT=crefsHT) then
+  let funcName = 'getDependencyJac<%matrixName%>'
+  let body = match columns
+    case {} then ''
+    else
+    <<
+
+      size_t i;
+
+      /* mapVarToEqNode */
+      <%columns |> JAC_COLUMN() => (columnEqns |> eq hasindex i =>
+        let eqIdx = equationIndexGeneral(eq)
+        '<%getSimEqSystemSimVarsLHSJac(eq, crefsHT) |> var as SIMVAR() =>
+          let shift = match varKind case JAC_TMP_VAR() then '+nRows'
+          'dag->mapVarToEqNode[<%index%><%shift%>] = <%i%>; /* equation index: <%eqIdx%> */ <%crefCCommentWithVariability(var)%><%\n%>'
+          ; separator="\n"%>'); separator="\n<%index%>"%>
+
+      /* eqDependency */
+      <%columns |> JAC_COLUMN() => (columnEqns |> eq hasindex i =>
+        let eqIdx = equationIndexGeneral(eq)
+        let n = listLength(getSimEqSystemSimVarsRHSJac(eq, crefsHT))
+        if stringEq(n, "0") then 'dag->nEqDep[<%i%>] = 0; /* equation index: <%eqIdx%> */'
+        else
+        <<
+        dag->nEqDep[<%i%>] = <%n%>; /* equation index: <%eqIdx%> */
+        dag->eqDep[<%i%>] = (size_t*) malloc(dag->nEqDep[<%i%>] * sizeof(size_t));
+        i = 0;
+        <%getSimEqSystemSimVarsRHSJac(eq, crefsHT) |> var as SIMVAR(index=index) =>
+          let shift = match varKind case JAC_TMP_VAR() then '+nRows'
+          'dag->eqDep[<%i%>][i++] = dag->mapVarToEqNode[<%index%><%shift%>]; <%crefCCommentWithVariability(var)%>'
+          ; separator="\n"%>
+        >>; separator="\n\n")%>
+
+    >>
+  <<
+  void <%symbolName(modelNamePrefix, funcName)%>(EVAL_DAG* dag, size_t nRows)
+  {
+    TRACE_PUSH
+    <%body%>
+    TRACE_POP
+  }
+  >>
+end getDependencyJacobian;
 
 template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer nAuxVars, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
   "Generates initialization function for daeMode."
@@ -5717,8 +5791,16 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
     generateMatrix(columns, seedVars, matrixName, partitionIndex, crefsHT, modelNamePrefix) ;separator="\n")
   let jacGenericCalls = (JacobianMatrices |> JAC_MATRIX() =>
     genericCallBodies(generic_loop_calls, createJacContext(crefsHT)) ;separator="\n")
+  let jacEqFunctions = (JacobianMatrices |> jac as JAC_MATRIX() =>
+    setEqFunctionsJacobian(jac, modelNamePrefix) ;separator="\n")
+  let jacDependency = (JacobianMatrices |> jac as JAC_MATRIX() =>
+    getDependencyJacobian(jac, modelNamePrefix) ;separator="\n")
   <<
   <%jacMats%>
+
+  <%jacEqFunctions%>
+
+  <%jacDependency%>
 
   <%initialjacMats%>
 
@@ -5762,9 +5844,13 @@ match sparsepattern
 
       FILE* pFile = openSparsePatternFile(data, threadData, "<%fileNamePrefix%>_Jac<%matrixname%>.bin");
 
-      initJacobian(jacobian, <%sizeCols%>, <%sizeRows%>, <%tmpvarsSize%>, <%evalColumn%>, <%constantEqns%>, NULL);
+      initJacobian(jacobian, <%sizeCols%>, <%sizeRows%>, <%tmpvarsSize%>, NULL, <%evalColumn%>, <%constantEqns%>, NULL);
       jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
       jacobian->availability = <%availability%>;
+
+      <%symbolName(modelNamePrefix,"setEqFunctionsJac")%><%matrixname%>(jacobian);
+      jacobian->dag = allocEvalDAG(jacobian->sizeRows + jacobian->sizeTmpVars, jacobian->nEqFunctions);
+      <%symbolName(modelNamePrefix,"getDependencyJac")%><%matrixname%>(jacobian->dag, jacobian->sizeRows);
 
       /* read lead index of compressed sparse column */
       count = omc_fread(jacobian->sparsePattern->leadindex, sizeof(unsigned int), <%sizeleadindex%>+1, pFile, FALSE);
@@ -5867,7 +5953,23 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimEqSystem> constantE
     TRACE_PUSH
 
     int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%matrixName%>;
-    <%(jacEquations |> eq => equation_callJacobian(eq, modelNamePrefix); separator="")%>
+    int i, eqId;
+
+    if (jacobian->evalSelection) {
+      for (i = 0; i < jacobian->evalSelection->n; i++) {
+        eqId = jacobian->evalSelection->idx[i];
+        <% if profileAll() then '//SIM_PROF_TICK_EQ(eqId);' %>
+        jacobian->eqFunctions[eqId](data, threadData, jacobian, parentJacobian);
+        <% if profileAll() then '//SIM_PROF_ACC_EQ(eqId);' %>
+      }
+    } else {
+      for (eqId = 0; eqId < jacobian->nEqFunctions; eqId++) {
+        <% if profileAll() then '//SIM_PROF_TICK_EQ(eqId);' %>
+        jacobian->eqFunctions[eqId](data, threadData, jacobian, parentJacobian);
+        <% if profileAll() then '//SIM_PROF_ACC_EQ(eqId);' %>
+      }
+    }
+
     TRACE_POP
     return 0;
   }

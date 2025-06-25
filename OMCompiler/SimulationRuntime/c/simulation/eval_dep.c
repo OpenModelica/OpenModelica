@@ -59,9 +59,8 @@ EVAL_DAG* allocEvalDAG(size_t nVars, size_t nEqns)
 void freeEvalDAG(EVAL_DAG* dag)
 {
   free(dag->select);
-  for(size_t i = 0; i < dag->nEqns; i++){
+  for (size_t i = 0; i < dag->nEqns; i++)
     free(dag->eqDep[i]);
-  }
   free(dag->eqDep);
   free(dag->nEqDep);
   free(dag->mapVarToEqNode);
@@ -107,9 +106,9 @@ void freeEvalSelection(EVAL_SELECTION* selection)
 void clearEvalSelection(EVAL_SELECTION* selection)
 {
   /* clear work array */
-  for (size_t k = 0; k < selection->dag->nEqns; k++) {
+  for (size_t k = 0; k < selection->dag->nEqns; k++)
     selection->dag->select[k] = FALSE;
-  }
+
   /* set selected equations to zero just to be safe */
   selection->n = 0;
   // don't clear idx as that would be O(n) work,
@@ -135,11 +134,10 @@ void activateEvalDependencies(EVAL_SELECTION* selection)
       }
     }
   }
+
   /* get the indices in correct order */
   selection->n = 0;
-  for (size_t i = 0; i < dag->nEqns; i++) {
-    if (dag->select[i]) {
+  for (size_t i = 0; i < dag->nEqns; i++)
+    if (dag->select[i])
       selection->idx[selection->n++] = i;
-    }
-  }
 }

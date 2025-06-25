@@ -76,17 +76,16 @@ extern void communicateStatus(const char *phase, double completionPercent, doubl
  * @param data        Runtime data struct.
  * @param threadData  Thread data for error handling.
  * @param counter     Counter for function calls. Incremented by 1.
- * @param fast        Flag tells if we evaluate fast derivatives only.
+ * @param selection   Equations to evaluate.
  */
-void gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter, modelica_boolean fast)
+void gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter, EVAL_SELECTION* selection)
 {
-  SIMULATION_INFO* info = data->simulationInfo;
   (*counter)++;
-
-  info->evalSelection = fast ? info->evalSelectionFast : NULL;
 
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
+
+  data->simulationInfo->evalSelection = selection;
   data->callback->functionODE(data, threadData);
 }
 
@@ -188,6 +187,9 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
 
   printButcherTableau(gbfData->tableau);
 
+  /* allocate selective RHS evaluation */
+  gbfData->evalSelectionFast = allocEvalSelection(data->modelData->dag);
+
   /* initialize analytic Jacobian, if available and needed */
   if (!gbfData->isExplicit) {
     // Allocate Jacobian, if !gbfData->isExplcit and gbData->isExplicit
@@ -195,7 +197,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
     if (gbData->isExplicit) {
       jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
       data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
-      if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
+      if (jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
         infoStreamPrint(OMC_LOG_SOLVER, 1, "Initialized Jacobian:");
         infoStreamPrint(OMC_LOG_SOLVER, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
         infoStreamPrint(OMC_LOG_SOLVER, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
@@ -534,11 +536,14 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
  */
 void gbodef_freeData(DATA_GBODEF *gbfData)
 {
+  freeEvalSelection(gbfData->evalSelectionFast);
+
   /* Free non-linear system data */
   freeRK_NLS_DATA(gbfData->nlsData);
 
   /* Free Jacobian */
-  freeJacobian(gbfData->jacobian);
+  freeEvalSelection(gbfData->jacobian->evalSelection);
+  freeJacobianCopy(gbfData->jacobian);
   free(gbfData->jacobian); gbfData->jacobian = NULL;
 
   /* Free sparsity pattern */
@@ -592,7 +597,7 @@ void gbode_freeData(DATA* data, DATA_GBODE *gbData)
   freeRK_NLS_DATA(gbData->nlsData);
 
   /* Free Jacobian */
-  freeJacobian(gbData->jacobian);
+  freeJacobianCopy(gbData->jacobian);
   free(gbData->jacobian); gbData->jacobian = NULL;
 
   /* Free Butcher tableau */
@@ -723,36 +728,75 @@ void gbode_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
 
 /*! \fn updateEvalSelection
  *
- *  updates eqEvalIndexAdaptive for evaluating gbode_fODE
+ *  updates evalSelectionFast for evaluating gbode_fODE
  */
 static void updateEvalSelection(DATA* data, DATA_GBODE* gbData)
 {
   size_t k;
-  EVAL_DAG* dag = data->simulationInfo->evalSelectionFast->dag;
+  EVAL_SELECTION* selection = gbData->gbfData->evalSelectionFast;
 
   /* clear selection */
-  clearEvalSelection(data->simulationInfo->evalSelectionFast);
+  clearEvalSelection(selection);
 
   /* set equations for fast derivatives */
   for (k = 0; k < gbData->nFastStates; k++) {
     size_t derIdx = gbData->fastStatesIdx[k] + gbData->nStates;
-    size_t eqnIdx = dag->mapVarToEqNode[derIdx];
-    dag->select[eqnIdx] = TRUE;
+    size_t eqnIdx = selection->dag->mapVarToEqNode[derIdx];
+    selection->dag->select[eqnIdx] = TRUE;
   }
 
   /* select all dependencies */
-  activateEvalDependencies(data->simulationInfo->evalSelectionFast);
+  activateEvalDependencies(selection);
 
   /* debug print */
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
+    infoStreamPrint(OMC_LOG_GBODE_V, 1, "updateEvalSelection");
     char row_to_print[40960];
     unsigned int bufSize = 40960;
     unsigned int ct;
-    ct = snprintf(row_to_print, bufSize, "%s (time=%g): =\t", "eqFunctions", data->localData[0]->timeValue);
-    for (k = 0; k < data->simulationInfo->evalSelectionFast->n; k++) {
-      ct += snprintf(row_to_print+ct, bufSize-ct, "%zu ", data->simulationInfo->evalSelectionFast->idx[k]);
+    ct = snprintf(row_to_print, bufSize, "%s (time=%g): =", "eqFunctions", data->localData[0]->timeValue);
+    for (k = 0; k < selection->n; k++) {
+      ct += snprintf(row_to_print+ct, bufSize-ct, " %zu", selection->idx[k]);
     }
     infoStreamPrint(OMC_LOG_GBODE_V, 0, "%s", row_to_print);
+    messageClose(OMC_LOG_GBODE_V);
+  }
+}
+
+/*! \fn updateEvalSelectionJacobian
+ *
+ *  updates evalSelection for evaluating Jacobian_ODE
+ */
+static void updateEvalSelectionJacobian(DATA* data, DATA_GBODE* gbData)
+{
+  size_t k;
+  EVAL_SELECTION* selection = gbData->gbfData->jacobian->evalSelection;
+
+  /* clear selection */
+  clearEvalSelection(selection);
+
+  /* set equations for fast derivatives */
+  for (k = 0; k < gbData->nFastStates; k++) {
+    size_t derIdx = gbData->fastStatesIdx[k];
+    size_t eqnIdx = selection->dag->mapVarToEqNode[derIdx];
+    selection->dag->select[eqnIdx] = TRUE;
+  }
+
+  /* select all dependencies */
+  activateEvalDependencies(selection);
+
+  /* debug print */
+  if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
+    infoStreamPrint(OMC_LOG_GBODE_V, 1, "updateEvalSelectionJacobian");
+    char row_to_print[40960];
+    unsigned int bufSize = 40960;
+    unsigned int ct;
+    ct = snprintf(row_to_print, bufSize, "%s (time=%g): =", "Jacobian eqFunctions", data->localData[0]->timeValue);
+    for (k = 0; k < selection->n; k++) {
+      ct += snprintf(row_to_print+ct, bufSize-ct, " %zu", selection->idx[k]);
+    }
+    infoStreamPrint(OMC_LOG_GBODE_V, 0, "%s", row_to_print);
+    messageClose(OMC_LOG_GBODE_V);
   }
 }
 
@@ -838,6 +882,9 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       default:
         throwStreamPrint(NULL, "NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbfData->nlsSolverMethod]);
       }
+
+      // update evalSelection
+      updateEvalSelectionJacobian(data, gbData);
     }
   }
 
@@ -996,7 +1043,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     if (!gbfData->tableau->isKRightAvailable) {
       sData->timeValue = gbfData->timeRight;
       memcpy(sData->realVars, gbfData->yRight, data->modelData->nStates * sizeof(double));
-      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), TRUE);
+      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), gbfData->evalSelectionFast);
     }
     memcpy(gbfData->kRight, fODE, nStates * sizeof(double));
 
@@ -1096,7 +1143,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     // yet know which states will become fast so we compute everything.
     sData->timeValue = gbfData->tv[i];
     memcpy(sData->realVars, gbfData->yv + i * nStates, data->modelData->nStates * sizeof(double));
-    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), FALSE);
+    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
 
     for (j = 0; j < gbData->nSlowStates; j++)
       (gbfData->kv + i * nStates)[gbData->slowStatesIdx[j]] = fODE[gbData->slowStatesIdx[j]];
@@ -1420,7 +1467,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       if (!gbData->tableau->isKRightAvailable) {
         sData->timeValue = gbData->timeRight;
         memcpy(sData->realVars, gbData->y, data->modelData->nStates * sizeof(double));
-        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), FALSE);
+        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
       }
       memcpy(gbData->kRight, fODE, nStates * sizeof(double));
 
