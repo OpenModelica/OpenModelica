@@ -1072,90 +1072,33 @@ void Element::emitTransformHasChanged()
  */
 QPair<QString, bool> Element::getParameterDisplayString(QString parameterName)
 {
-  /* How to get the display value,
-   * 0. If the component is inherited component then check if the value is available in the class extends modifiers.
-   * 1. Check if the value is available in component modifier.
-   * 2. Check if the value is available in the component's class as a parameter or variable.
-   * 3. Find the value in extends classes and check if the value is present in extends modifier.
-   * 4. If there is no extends modifier then finally check if value is present in extends classes.
-   */
+  // Handles issues #4095, #7493 and #11699
   QPair<QString, bool> displayString("", false);
   QString typeName = "";
-  /* Ticket #4095
-   * Handle parameters display of inherited components.
-   */
-  /* case 0 */
-  if (isInheritedElement()) {
-    /* In case of element mode use the root parent ModelInstance::Element
-       * If the ModelInstance::Element is extend and has modifier.
-       */
-    ModelInstance::Element *pElement = mpGraphicsView->getModelWidget()->getModelInstance()->getRootParentElement();
-    if (pElement && pElement->isExtend() && pElement->getModifier()) {
-      QStringList nameList;
-      if (mpModelComponent) {
-        nameList = StringHandler::makeVariableParts(mpModelComponent->getQualifiedName());
-      }
-      displayString = pElement->getModifier()->getModifierValue(QStringList() << nameList << parameterName);
-      if (displayString.second) {
-        return displayString;
-      }
+
+  if (mpModelComponent && mpModelComponent->getModel()) {
+    ModelInstance::Element *pElement = mpModelComponent->getModel()->getRootParentElement();
+
+    QStringList nameList;
+    nameList = StringHandler::makeVariableParts(mpModelComponent->getQualifiedName());
+    // the first item is element name
+    if (!isInheritedElement() && !nameList.isEmpty()) {
+      nameList.removeFirst();
     }
-    displayString = mpGraphicsView->getModelWidget()->getModelInstance()->getParameterValueFromExtendsModifiers(QStringList() << getName() << parameterName);
+
+    displayString = pElement->getVariableValue(QStringList() << nameList << StringHandler::makeVariableParts(parameterName));
+    if (pElement->getModel()) {
+      typeName = pElement->getModel()->getVariableType(QStringList() << nameList << StringHandler::makeVariableParts(parameterName));
+    }
+
+    /* Ticket #4084
+     * Check for enumeration type and shorten display string.
+     */
     if (displayString.second) {
-      return displayString;
-    }
-  }
-  /* case 1 */
-  if (displayString.first.isEmpty()) {
-    /* In case of element mode use the root parent ModelInstance::Element
-       * If the ModelInstance::Element is component and has modifier.
-       */
-    ModelInstance::Element *pElement = mpGraphicsView->getModelWidget()->getModelInstance()->getRootParentElement();
-    if (pElement && pElement->isComponent() && pElement->getModifier()) {
-      QStringList nameList;
-      if (mpModelComponent) {
-        nameList = StringHandler::makeVariableParts(mpModelComponent->getQualifiedName());
-        // the first item is element name
-        if (!nameList.isEmpty()) {
-          nameList.removeFirst();
-        }
-      }
-      displayString = pElement->getModifier()->getModifierValue(QStringList() << nameList << parameterName);
-      if (displayString.second) {
-        return displayString;
-      }
-    }
-    if (mpModelComponent && mpModelComponent->getModifier()) {
-      displayString = mpModelComponent->getModifier()->getModifierValue(QStringList() << parameterName);
-      if (displayString.second) {
-        return displayString;
-      }
-    }
-  }
-  /* case 2 or check for enumeration type if case 1 */
-  if (displayString.first.isEmpty() || typeName.isEmpty()) {
-    if (mpModel) {
-      QPair<QString, bool> value = mpModel->getParameterValue(parameterName, typeName);
-      if (displayString.first.isEmpty()) {
-        displayString = value;
-      }
       Element::checkEnumerationDisplayString(displayString.first, typeName);
-      if (displayString.second) {
-        return displayString;
-      }
     }
   }
-  /* case 3 */
-  if (displayString.first.isEmpty()) {
-    displayString = getParameterDisplayStringFromExtendsModifiers(parameterName);
-    if (displayString.second) {
-      return displayString;
-    }
-  }
-  /* case 4 or check for enumeration type if case 3 */
-  if (displayString.first.isEmpty() || typeName.isEmpty()) {
-    displayString = getParameterDisplayStringFromExtendsParameters(parameterName, displayString);
-  }
+
   return displayString;
 }
 
@@ -1232,36 +1175,6 @@ void Element::setBusComponent(Element *pBusElement)
 {
   mpBusComponent = pBusElement;
   setVisible(!isInBus());
-}
-
-/*!
- * \brief Element::getModelComponentByName
- * Get the ModelInstance::Component by name.
- * \param name
- * \return
- */
-ModelInstance::Component* Element::getModelComponentByName(ModelInstance::Model *pModel, const QString &name)
-{
-  ModelInstance::Component *pModelComponentFound = 0;
-  if (pModel) {
-    QList<ModelInstance::Element*> elements = pModel->getElements();
-    foreach (auto pElement, elements) {
-      if (pElement->isComponent()) {
-        auto pComponent = dynamic_cast<ModelInstance::Component*>(pElement);
-        if (pComponent->getName().compare(name) == 0) {
-          pModelComponentFound = pComponent;
-          return pModelComponentFound;
-        }
-      } else if (pElement->isExtend() && pElement->getModel()) {
-        auto pExtend = dynamic_cast<ModelInstance::Extend*>(pElement);
-        pModelComponentFound = Element::getModelComponentByName(pExtend->getModel(), name);
-        if (pModelComponentFound) {
-          return pModelComponentFound;
-        }
-      }
-    }
-  }
-  return pModelComponentFound;
 }
 
 /*!
@@ -1835,71 +1748,6 @@ void Element::updateConnections()
       pConnectionLineAnnotation->setEndElement(mpGraphicsView->getModelWidget()->getConnectorElement(this, endElementName));
     }
   }
-}
-
-/*!
- * \brief Element::getParameterDisplayStringFromExtendsModifiers
- * Gets the display string for Element from extends modifiers
- * \param parameterName
- * \return
- */
-QPair<QString, bool> Element::getParameterDisplayStringFromExtendsModifiers(QString parameterName)
-{
-  QPair<QString, bool> displayString("", false);
-  if (mpModel) {
-    displayString = mpModel->getParameterValueFromExtendsModifiers(QStringList() << parameterName);
-  }
-  return displayString;
-}
-
-/*!
- * \brief Element::getParameterDisplayStringFromExtendsParameters
- * Gets the display string for components from extends parameters.
- * \param parameterName
- * \param modifierString an existing extends modifier or an empty string
- * \return
- */
-QPair<QString, bool> Element::getParameterDisplayStringFromExtendsParameters(QString parameterName, QPair<QString, bool> modifierString)
-{
-  QPair<QString, bool> displayString = modifierString;
-  if (mpModel) {
-    displayString = Element::getParameterDisplayStringFromExtendsParameters(mpModel, parameterName, modifierString);
-  }
-  return displayString;
-}
-
-/*!
- * \brief Element::getParameterDisplayStringFromExtendsParameters
- * Gets the display string for components from extends parameters.
- * \param pModel
- * \param parameterName
- * \param modifierString
- * \return
- */
-QPair<QString, bool> Element::getParameterDisplayStringFromExtendsParameters(ModelInstance::Model *pModel, QString parameterName, QPair<QString, bool> modifierString)
-{
-  QPair<QString, bool> displayString = modifierString;
-  QString typeName = "";
-
-  QList<ModelInstance::Element*> elements = pModel->getElements();
-  foreach (auto pElement, elements) {
-    if (pElement->isExtend() && pElement->getModel()) {
-      auto pExtend = dynamic_cast<ModelInstance::Extend*>(pElement);
-      QPair<QString, bool> value = pExtend->getModel()->getParameterValue(parameterName, typeName);
-      if (displayString.first.isEmpty()) {
-        displayString = value;
-      }
-      Element::checkEnumerationDisplayString(displayString.first, typeName);
-      if (displayString.second) {
-        return displayString;
-      }
-      displayString = Element::getParameterDisplayStringFromExtendsParameters(pExtend->getModel(), parameterName, displayString);
-      if (displayString.second) {
-        return displayString;
-      }
-    }
-  }
-  return displayString;
 }
 
 /*!

@@ -643,8 +643,8 @@ private:
     bool isParameterConnectorSizing(const QString &parameter);
     bool isValidConnection(const Name &lhsConnector, const Name &rhsConnector) const;
     bool isTypeCompatibleWith(const Model &other, bool lhsOutside, bool rhsOutside) const;
-    QPair<QString, bool> getParameterValue(const QString &parameter, QString &typeName);
-    QPair<QString, bool> getParameterValueFromExtendsModifiers(const QStringList &parameter);
+    QPair<QString, bool> getVariableValue(QStringList variables);
+    QString getVariableType(QStringList variables);
 
     FlatModelica::Expression* getVariableBinding(const QString &variableName);
     const Element *lookupElement(const QString &name) const;
@@ -664,6 +664,7 @@ private:
     std::unique_ptr<Prefixes> mpPrefixes;
     QString mComment;
     std::unique_ptr<Annotation> mpAnnotation;
+    QList<Element*> mGeneratedInnerComponents;
     QList<Element*> mElements;
     QList<Import> mImports;
     QList<Connection*> mConnections;
@@ -685,6 +686,7 @@ private:
     void setModel(Model *pModel) {mpModel = pModel;}
     Model *getModel() const {return mpModel;}
     Modifier *getModifier() const {return mpModifier;}
+    QPair<QString, bool> getVariableValue(QStringList variables);
     QPair<QString, bool> getModifierValueFromType(QStringList modifierNames);
     const Dimensions &getDimensions() const {return mDims;}
     bool isPublic() const;

@@ -137,6 +137,15 @@ getModelInstance(M, prettyPrint = true);
 //         \"public\": false,
 //         \"variability\": \"parameter\"
 //       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"z\",
+//       \"type\": \"Real\",
+//       \"prefixes\": {
+//         \"inner\": true
+//       },
+//       \"generated\": true
 //     }
 //   ],
 //   \"source\": {

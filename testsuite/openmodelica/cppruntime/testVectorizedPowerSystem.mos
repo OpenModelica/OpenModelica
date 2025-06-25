@@ -169,7 +169,7 @@ val(fixedVoltageSource1.p[1], 1.0);
 //
 // Equations (5, 5)
 // ========================================
-// 1/1 (1): system.thetaRef / time = system.omega_internal   [dynamic |0|0|0|0|]
+// 1/1 (1): system.theta / time = system.omega_internal   [dynamic |0|0|0|0|]
 // 2/2 (1): system.omega = 314.1592653589793   [dynamic |0|0|0|0|]
 // 3/3 (1): system.thetaRef = system.omega * time   [dynamic |0|0|0|0|]
 // 4/4 (1): 0.0 = -system.thetaRel   [unknown |0|0|0|0|]
@@ -427,7 +427,7 @@ val(fixedVoltageSource1.p[1], 1.0);
 //
 // Equations (5, 5)
 // ========================================
-// 1/1 (1): system.omega_internal = system.thetaRef / time   [dynamic |0|0|0|0|]
+// 1/1 (1): system.omega_internal = system.theta / time   [dynamic |0|0|0|0|]
 // 2/2 (1): system.omega = 314.1592653589793   [dynamic |0|0|0|0|]
 // 3/3 (1): system.thetaRef = system.omega * time   [dynamic |0|0|0|0|]
 // 4/4 (1): system.thetaRel = 0.0   [unknown |0|0|0|0|]

@@ -576,26 +576,27 @@ void LineAnnotation::parseShapeAnnotation(QString annotation)
 
 void LineAnnotation::parseShapeAnnotation()
 {
-  GraphicItem::parseShapeAnnotation(mpLine);
+  GraphicsView *pGraphicsView = getContainingGraphicsView();
+  GraphicItem::parseShapeAnnotation(mpLine, pGraphicsView);
 
   mPoints = mpLine->getPoints();
   // add geometries for points
   for (int i = 0 ; i < mPoints.size() ; i++) {
     addGeometry();
   }
-  mPoints.evaluate(mpLine->getParentModel());
+  mPoints.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mLineColor = mpLine->getColor();
-  mLineColor.evaluate(mpLine->getParentModel());
+  mLineColor.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mLinePattern = mpLine->getPattern();
-  mLinePattern.evaluate(mpLine->getParentModel());
+  mLinePattern.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mLineThickness = mpLine->getThickness();
-  mLineThickness.evaluate(mpLine->getParentModel());
+  mLineThickness.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mArrow = mpLine->getArrow();
-  mArrow.evaluate(mpLine->getParentModel());
+  mArrow.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mArrowSize = mpLine->getArrowSize();
-  mArrowSize.evaluate(mpLine->getParentModel());
+  mArrowSize.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mSmooth = mpLine->getSmooth();
-  mSmooth.evaluate(mpLine->getParentModel());
+  mSmooth.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
 }
 
 QPainterPath LineAnnotation::getShape() const
@@ -2474,16 +2475,18 @@ void CreateConnectionDialog::createConnection()
   mpConnectionLineAnnotation->setStartElementName(startElementName);
   mpConnectionLineAnnotation->setEndElementName(endElementName);
   /* Issue #12163. Do not check connection validity when called from GraphicsView::createConnector
-     * GraphicsView::createConnector creates an incomplete connector. We do this for performance reasons. Avoid calling getModelInstance API.
-     * We know for sure that both connectors are compatible in this case so its okay not to check for validity.
-     */
+   * GraphicsView::createConnector creates an incomplete connector. We do this for performance reasons. Avoid calling getModelInstance API.
+   * We know for sure that both connectors are compatible in this case so its okay not to check for validity.
+   */
   if (mCreateConnector) {
     mpGraphicsView->addConnectionToView(mpConnectionLineAnnotation, false);
     mpGraphicsView->addConnectionToClass(mpConnectionLineAnnotation);
+    accept();
   } else if (!mpGraphicsView->addConnectionHelper(mpConnectionLineAnnotation)) {
     reject();
+  } else {
+    accept();
   }
-  accept();
 }
 
 /*!

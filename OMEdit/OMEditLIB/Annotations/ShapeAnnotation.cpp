@@ -89,17 +89,17 @@ void GraphicItem::parseShapeAnnotation(QString annotation)
   mRotation.parse(list.at(2));
 }
 
-void GraphicItem::parseShapeAnnotation(ModelInstance::Shape *pShape)
+void GraphicItem::parseShapeAnnotation(ModelInstance::Shape *pShape, GraphicsView *pGraphicsView)
 {
   // if first item of list is true then the shape should be visible.
   mVisible = pShape->getVisible();
-  mVisible.evaluate(pShape->getParentModel());
+  mVisible.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   // 2nd item is the origin
   mOrigin = pShape->getOrigin();
-  mOrigin.evaluate(pShape->getParentModel());
+  mOrigin.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   // 3rd item is the rotation
   mRotation = pShape->getRotation();
-  mRotation.evaluate(pShape->getParentModel());
+  mRotation.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
 }
 
 /*!
@@ -192,18 +192,18 @@ void FilledShape::parseShapeAnnotation(QString annotation)
   mLineThickness.parse(list.at(7));
 }
 
-void FilledShape::parseShapeAnnotation(ModelInstance::Shape *pShape)
+void FilledShape::parseShapeAnnotation(ModelInstance::Shape *pShape, GraphicsView *pGraphicsView)
 {
   mLineColor = pShape->getLineColor();
-  mLineColor.evaluate(pShape->getParentModel());
+  mLineColor.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mFillColor = pShape->getFillColor();
-  mFillColor.evaluate(pShape->getParentModel());
+  mFillColor.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mLinePattern = pShape->getPattern();
-  mLinePattern.evaluate(pShape->getParentModel());
+  mLinePattern.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mFillPattern = pShape->getFillPattern();
-  mFillPattern.evaluate(pShape->getParentModel());
+  mFillPattern.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mLineThickness = pShape->getLineThickness();
-  mLineThickness.evaluate(pShape->getParentModel());
+  mLineThickness.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
 }
 
 /*!
@@ -771,6 +771,20 @@ void ShapeAnnotation::setOriginItemPos(const QPointF point)
 }
 
 /*!
+ * \brief ShapeAnnotation::getContainingGraphicsView
+ * Returns the GraphicsView of shape where is contained.
+ * \return
+ */
+GraphicsView *ShapeAnnotation::getContainingGraphicsView()
+{
+  if (mpGraphicsView) {
+    return mpGraphicsView;
+  } else {
+    return mpParentComponent->getGraphicsView();
+  }
+}
+
+/*!
   Sets the text string.
   \return textString - the string to set.
   */
@@ -1064,20 +1078,21 @@ void ShapeAnnotation::updateDynamicSelect(double time)
   if ((mpGraphicsView && mpGraphicsView->isVisualizationView())
       || (mpParentComponent && mpParentComponent->getGraphicsView() && mpParentComponent->getGraphicsView()->isVisualizationView())) {
     bool updated = false;
+    GraphicsView *pGraphicsView = getContainingGraphicsView();
 
-    updated |= mVisible.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-    updated |= mOrigin.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-    updated |= mRotation.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-    updated |= mLineColor.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-    updated |= mFillColor.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-    updated |= mLineThickness.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-    updated |= mArrowSize.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-    updated |= mExtent.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-    updated |= mRadius.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-    updated |= mStartAngle.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-    updated |= mEndAngle.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-    updated |= mFontSize.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
-    updated |= mTextString.update(time, mpParentComponent ? mpParentComponent->getModel() : mpGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mVisible.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mOrigin.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mRotation.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mLineColor.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mFillColor.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mLineThickness.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mArrowSize.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mExtent.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mRadius.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mStartAngle.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mEndAngle.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mFontSize.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mTextString.update(time, pGraphicsView->getModelWidget()->getModelInstance());
 
     if (updated) {
       applyTransformation();

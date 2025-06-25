@@ -47,7 +47,7 @@ compareSimulationResults("simpleLoop_OMS_res.mat",
 // ""
 // record SimulationResult
 //     resultFile = "simpleLoop_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'simpleLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'simpleLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -62,8 +62,8 @@ compareSimulationResults("simpleLoop_OMS_res.mat",
 // "info:    maximum step size for 'model.root': 0.002000
 // info:    Result file: simpleLoop_OMS_res.mat (bufferSize=1)
 // info:    Final Statistics for 'model.root':
-//          NumSteps = 527 NumRhsEvals  = 586 NumLinSolvSetups = 57
-//          NumNonlinSolvIters = 585 NumNonlinSolvConvFails = 0 NumErrTestFails = 16
+//          NumSteps = 502 NumRhsEvals  = 505 NumLinSolvSetups = 27
+//          NumNonlinSolvIters = 504 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "
 // {"Files Equal!"}
 // endResult

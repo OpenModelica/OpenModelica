@@ -123,6 +123,7 @@ import ReduceDAE;
 import Settings;
 import UnorderedSet;
 import Interactive;
+import InteractiveUtil;
 
 protected constant String UNDERLINE = "========================================";
 
@@ -7731,7 +7732,7 @@ public function createModelInfo
   input list<SimCodeVar.SimVar> tempVars;
   output SimCode.ModelInfo modelInfo;
 protected
-  String description, directory, version, author, license, copyright;
+  String description, directory, version, author, license, copyright, fileName;
   SimCode.VarInfo varInfo;
   SimCodeVar.SimVars vars;
   Integer nx, ny, ndy, np, npcalc, na, next, numOutVars, numInVars, ny_int, np_int, na_int, ny_bool, np_bool, dim_1, dim_2, numOptimizeConstraints, numOptimizeFinalConstraints, numRealInputVars;
@@ -7752,6 +7753,8 @@ algorithm
     license := System.trim(Interactive.getNamedAnnotationExp(class_, program, Absyn.IDENT("__OpenModelica_license"), SOME(""), Interactive.getDefaultComponentPrefixesModStr), "\"");
     copyright := System.trim(Interactive.getNamedAnnotationExp(class_, program, Absyn.IDENT("__OpenModelica_copyright"), SOME(""), Interactive.getDefaultComponentPrefixesModStr), "\"");
 
+    // get fileName as the filename and model name can be different which will be used in dataReconciliation Report
+    fileName := System.basename(AbsynUtil.classFilename(InteractiveUtil.getPathedClassInProgram(class_, program)));
     (vars, unitDefinitions) := createVars(dlow, inInitDAE, tempVars);
 
     if debug then execStat("simCode: createVars"); end if;
@@ -7784,7 +7787,7 @@ algorithm
     if debug then execStat("simCode: createVarInfo"); end if;
     hasLargeEqSystems := hasLargeEquationSystems(dlow, inInitDAE);
     if debug then execStat("simCode: hasLargeEquationSystems"); end if;
-    modelInfo := SimCode.MODELINFO(class_, dlow.shared.info.description, version, author, license, copyright, directory, varInfo, vars, functions,
+    modelInfo := SimCode.MODELINFO(class_, dlow.shared.info.description, version, author, license, copyright, directory, fileName, varInfo, vars, functions,
                                    labels,
                                    if Flags.getConfigBool(Flags.BUILDING_FMU) then getResources(program.classes, dlow, inInitDAE) else {},
                                    List.sort(program.classes, AbsynUtil.classNameGreater),
@@ -10104,7 +10107,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = BackendVariable.isProtected(dlowVar);
-        hideResult = getHideResult(hideResultExp);
+        hideResult = getHideResult(hideResultExp, cr, source);
         initVal = dlowVar.bindExp;
         isFixed = BackendVariable.varFixed(dlowVar);
         type_ = tp;
@@ -10140,7 +10143,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = BackendVariable.isProtected(dlowVar);
-        hideResult = getHideResult(hideResultExp);
+        hideResult = getHideResult(hideResultExp, cr, source);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
@@ -10186,7 +10189,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = BackendVariable.isProtected(dlowVar);
-        hideResult = getHideResult(hideResultExp);
+        hideResult = getHideResult(hideResultExp, cr, source);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
@@ -10233,7 +10236,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = BackendVariable.isProtected(dlowVar);
-        hideResult = getHideResult(hideResultExp);
+        hideResult = getHideResult(hideResultExp, cr, source);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
@@ -12238,6 +12241,8 @@ end eqSystemWCET;
 protected function getHideResult
   "Returns the value of the hideResult attribute."
   input Option<DAE.Exp> hideResultExp;
+  input DAE.ComponentRef name;
+  input DAE.ElementSource source;
   output Option<Boolean> hideResult;
 algorithm
   hideResult := match(hideResultExp)
@@ -12246,85 +12251,70 @@ algorithm
     case(SOME(DAE.BCONST(true))) then SOME(true);
     else
       equation
-        Error.addCompilerWarning("The hideResult annotation could not be evaluated, probably due to missing annotation(Evaluate=true). It is removed.");
+        Error.addSourceMessage(Error.HIDE_RESULT_NOT_EVALUATED,
+          {ComponentReference.printComponentRefStr(name)}, ElementSource.getInfo(source));
      then NONE();
   end match;
 end getHideResult;
 
-public function createVarToArrayIndexMapping "author: marcusw
-  Creates a mapping for each array-cref to the array dimensions (int list) and to the indices (for the code generation) used to store the array content."
+public function createVarToArrayIndexMapping
+  "Creates a mapping for each array-cref to the array dimensions (int list) and to the indices (for the code generation) used to store the array content."
   input SimCode.ModelInfo iModelInfo;
   output HashTableCrIListArray.HashTable oVarToArrayIndexMapping;
   output HashTableCrILst.HashTable oVarToIndexMapping; //same as oVarToArrayIndexMapping, but does not merge array variables into one list
 protected
-  list<SimCodeVar.SimVar> stateVars;
-  list<SimCodeVar.SimVar> derivativeVars;
-  list<SimCodeVar.SimVar> algVars;
-  list<SimCodeVar.SimVar> discreteAlgVars;
-  list<SimCodeVar.SimVar> intAlgVars;
-  list<SimCodeVar.SimVar> boolAlgVars;
-  list<SimCodeVar.SimVar> inputVars;
-  list<SimCodeVar.SimVar> outputVars;
-  list<SimCodeVar.SimVar> aliasVars;
-  list<SimCodeVar.SimVar> intAliasVars;
-  list<SimCodeVar.SimVar> boolAliasVars;
-  list<SimCodeVar.SimVar> paramVars;
-  list<SimCodeVar.SimVar> intParamVars;
-  list<SimCodeVar.SimVar> boolParamVars;
-  list<SimCodeVar.SimVar> stringAlgVars;
-  list<SimCodeVar.SimVar> stringParamVars;
-  list<SimCodeVar.SimVar> stringAliasVars;
-  //list<SimCodeVar.SimVar> extObjVars;
-  list<SimCodeVar.SimVar> constVars;
-  list<SimCodeVar.SimVar> intConstVars;
-  list<SimCodeVar.SimVar> boolConstVars;
-  list<SimCodeVar.SimVar> stringConstVars;
-  //list<SimCodeVar.SimVar> jacobianVars;
-  //list<SimCodeVar.SimVar> seedVars;
-  list<SimCodeVar.SimVar> realOptimizeConstraintsVars;
-  list<SimCodeVar.SimVar> realOptimizeFinalConstraintsVars;
-  HashTableCrILst.HashTable varIndexMappingHashTable;
-  HashTableCrIListArray.HashTable varArrayIndexMappingHashTable;
+  SimCodeVar.SimVars sim_vars;
+  list<tuple<list<SimCodeVar.SimVar>, Integer>> vars;
+  Integer table_size = 0;
+  list<SimCodeVar.SimVar> var_lst;
+  Integer var_type;
   array<Integer> currentVarIndices; //current variable index real,int,bool,string
 algorithm
-  (oVarToArrayIndexMapping,oVarToIndexMapping) := match(iModelInfo)
-    case(SimCode.MODELINFO(vars = SimCodeVar.SIMVARS(stateVars=stateVars,derivativeVars=derivativeVars,algVars=algVars,discreteAlgVars=discreteAlgVars,
-        intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,stringAlgVars=stringAlgVars,aliasVars=aliasVars,intAliasVars=intAliasVars,boolAliasVars=boolAliasVars,stringAliasVars=stringAliasVars,paramVars=paramVars,
-        intParamVars=intParamVars,boolParamVars=boolParamVars,stringParamVars=stringParamVars,inputVars=inputVars,outputVars=outputVars, constVars=constVars, intConstVars=intConstVars, boolConstVars=boolConstVars,
-        stringConstVars=stringConstVars,realOptimizeConstraintsVars=realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars=realOptimizeFinalConstraintsVars)))
-      equation
-        varArrayIndexMappingHashTable = HashTableCrIListArray.emptyHashTableSized(BaseHashTable.biggerBucketSize);
-        varIndexMappingHashTable = HashTableCrILst.emptyHashTableSized(BaseHashTable.biggerBucketSize);
-        currentVarIndices = arrayCreate(4,1); //0 is reserved for unused variables
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(stateVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(derivativeVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+  // Collect the variable lists into a list for easier handling.
+  sim_vars := iModelInfo.vars;
+  vars := {
+    (sim_vars.stateVars, 1),
+    (sim_vars.derivativeVars, 1),
+    (sim_vars.algVars, 1),
+    (sim_vars.discreteAlgVars, 1),
+    (sim_vars.intAlgVars, 2),
+    (sim_vars.boolAlgVars, 3),
+    (sim_vars.stringAlgVars, 4),
+    (sim_vars.paramVars, 1),
+    (sim_vars.intParamVars, 2),
+    (sim_vars.boolParamVars, 3),
+    (sim_vars.stringParamVars, 4),
+    //(sim_vars.inputVars, 1),
+    //(sim_vars.utputVars, 1),
+    (sim_vars.constVars, 1),
+    (sim_vars.intConstVars, 2),
+    (sim_vars.boolConstVars, 3),
+    (sim_vars.stringConstVars, 4),
+    (sim_vars.realOptimizeConstraintsVars, 1),
+    (sim_vars.realOptimizeFinalConstraintsVars, 1),
+    (sim_vars.aliasVars, 1),
+    (sim_vars.intAliasVars, 2),
+    (sim_vars.boolAliasVars, 3),
+    (sim_vars.stringAliasVars, 4)
+  };
 
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(algVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(discreteAlgVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(intAlgVars, 2, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(boolAlgVars, 3, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(stringAlgVars, 4, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(paramVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(intParamVars, 2, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(boolParamVars, 3, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(stringParamVars, 4, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        //(currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTabl) = addVarToArrayIndexMappings(inputVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        //(currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTabl) = addVarToArrayIndexMappings(outputVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(constVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(intConstVars, 2, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(boolConstVars, 3, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(stringConstVars, 4, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(realOptimizeConstraintsVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(realOptimizeFinalConstraintsVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+  // Count the number of variables to determine an appropriate size for the hash tables.
+  for vl in vars loop
+    (var_lst, _) := vl;
+    table_size := table_size + listLength(var_lst);
+  end for;
+  table_size := Util.nextPrime(realInt(table_size * 1.4));
 
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(aliasVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(intAliasVars, 2, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(boolAliasVars, 3, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(stringAliasVars, 4, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-      then (varArrayIndexMappingHashTable, varIndexMappingHashTable);
-    else
-      then (HashTableCrIListArray.emptyHashTableSized(0), HashTableCrILst.emptyHashTableSized(0));
-  end match;
+  oVarToArrayIndexMapping := HashTableCrIListArray.emptyHashTableSized(table_size);
+  oVarToIndexMapping := HashTableCrILst.emptyHashTableSized(table_size);
+  currentVarIndices := arrayCreate(4, 1); //0 is reserved for unused variables
+
+  // Add the variables to the tables.
+  for vl in vars loop
+    (var_lst, var_type) := vl;
+    (currentVarIndices, oVarToArrayIndexMapping, oVarToIndexMapping) :=
+      addVarToArrayIndexMappings(var_lst, var_type, currentVarIndices, oVarToArrayIndexMapping, oVarToIndexMapping);
+  end for;
 end createVarToArrayIndexMapping;
 
 public function addVarToArrayIndexMappings
