@@ -252,7 +252,7 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DUMP_EVENTS,
   Flags.DUMP_RESIZABLE,
   Flags.DUMP_SOLVE,
-  Flags.FMI20_PARAMETER_JACOBIAN
+  Flags.FMI20_PARAMETER_JACOBIAN,
   Flags.FORCE_SCALARIZE
 };
 
