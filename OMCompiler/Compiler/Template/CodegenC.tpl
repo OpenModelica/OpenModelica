@@ -4726,7 +4726,7 @@ template computeVarIndices(SimVars vars, String modelNamePrefix)
   match vars
   case SIMVARS(__) then
     <<
-    void <%symbolName(modelNamePrefix,"computeVarIndices")%>(size_t* realIndex, size_t* integerIndex, size_t* booleanIndex, size_t* stringIndex)
+    void <%symbolName(modelNamePrefix,"computeVarIndices")%>(DATA* data, size_t* realIndex, size_t* integerIndex, size_t* booleanIndex, size_t* stringIndex)
     {
       TRACE_PUSH
 
@@ -4739,6 +4739,16 @@ template computeVarIndices(SimVars vars, String modelNamePrefix)
       integerIndex[0] = 0;
       booleanIndex[0] = 0;
       stringIndex[0] = 0;
+
+      /* temporary fix for https://github.com/OpenModelica/OpenModelica/issues/13999 */
+      for (i_real = 0; i_real < data->modelData->nVariablesRealArray + 1; i_real++)
+        realIndex[i_real] = i_real;
+      for (i_integer = 0; i_integer < data->modelData->nVariablesIntegerArray + 1; i_integer++)
+        integerIndex[i_integer] = i_integer;
+      for (i_boolean = 0; i_boolean < data->modelData->nVariablesBooleanArray + 1; i_boolean++)
+        booleanIndex[i_boolean] = i_boolean;
+      for (i_string = 0; i_string < data->modelData->nVariablesStringArray + 1; i_string++)
+        stringIndex[i_string] = i_string;
 
       /* stateVars */
       <%computeVarIndicesList(stateVars)%>
@@ -4775,6 +4785,8 @@ end computeVarIndices;
 
 template computeVarIndicesList(list<SimVar> vars)
 ::=
+  '/* skip for #13999 */'
+  /*
   (vars |> var => match var
     case SIMVAR(__)
     then
@@ -4789,6 +4801,7 @@ template computeVarIndicesList(list<SimVar> vars)
       <%varDecls%>
       <%auxFunction%>
       <%ty%>Index[<%i%>+1] = <%ty%>Index[<%i%>] + <%size%>; <%i%>++; <%crefCCommentWithVariability(var)%>>>; separator="")
+  */
 end computeVarIndicesList;
 
 
