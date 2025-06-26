@@ -20,36 +20,34 @@ pipeline {
         }
       }
     }
-    stage('build') {
-      stage('Ubuntu-Noble') {
-        agent {
-          docker {
-            image 'docker.openmodelica.org/build-deps:noble.nightly.amd64'
-            label 'linux'
-            alwaysPull true
-            args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                  "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-          }
+    stage('Ubuntu-Noble') {
+      agent {
+        docker {
+          image 'docker.openmodelica.org/build-deps:noble.nightly.amd64'
+          label 'linux'
+          alwaysPull true
+          args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
         }
-        steps {
-          script {
-            common.buildOMC('clang', 'clang++', 'CFLAGS=-g', true, false)
-            common.buildGUI('', 'qt5')
-            common.makeLibsAndCache()
-          }
-          sh 'tar -zcf omdebug.tar.gz ./build/'
-          script {
-            def remote = [:]
-            remote.name = "build"
-            remote.host = "build.openmodelica.org"
-            remote.allowAnyHosts = true
-            withCredentials([sshUserPrivateKey(credentialsId: 'Hudson-SSH-Key', keyFileVariable: 'identity')]) {
-              remote.user = 'hudson'
-              remote.identityFile = identity
-              dir('../') {
-                findFiles(glob: 'omdebug.tar.gz' ).each {
-                  sshPut remote: remote, from: it.toString(), into: "/var/www/build.openmodelica.org/linux/releases/debug/"
-                }
+      }
+      steps {
+        script {
+          common.buildOMC('clang', 'clang++', 'CFLAGS=-g', true, false)
+          common.buildGUI('', 'qt5')
+          common.makeLibsAndCache()
+        }
+        sh 'tar -zcf omdebug.tar.gz ./build/'
+        script {
+          def remote = [:]
+          remote.name = "build"
+          remote.host = "build.openmodelica.org"
+          remote.allowAnyHosts = true
+          withCredentials([sshUserPrivateKey(credentialsId: 'Hudson-SSH-Key', keyFileVariable: 'identity')]) {
+            remote.user = 'hudson'
+            remote.identityFile = identity
+            dir('../') {
+              findFiles(glob: 'omdebug.tar.gz' ).each {
+                sshPut remote: remote, from: it.toString(), into: "/var/www/build.openmodelica.org/linux/releases/debug/"
               }
             }
           }
