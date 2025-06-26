@@ -1092,7 +1092,15 @@ void ShapeAnnotation::updateDynamicSelect(double time)
     updated |= mStartAngle.update(time, pGraphicsView->getModelWidget()->getModelInstance());
     updated |= mEndAngle.update(time, pGraphicsView->getModelWidget()->getModelInstance());
     updated |= mFontSize.update(time, pGraphicsView->getModelWidget()->getModelInstance());
-    updated |= mTextString.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    bool textStringUpdated = mTextString.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= textStringUpdated;
+    if (textStringUpdated) {
+      // Update the text string in the TextAnnotation. See issue #11621 case 3.
+      TextAnnotation *pTextAnnotation = dynamic_cast<TextAnnotation*>(this);
+      if (pTextAnnotation) {
+        pTextAnnotation->updateTextString(mTextString);
+      }
+    }
 
     if (updated) {
       applyTransformation();
@@ -1120,6 +1128,11 @@ void ShapeAnnotation::resetDynamicSelect()
   mEndAngle.resetDynamicToStatic();
   mFontSize.resetDynamicToStatic();
   mTextString.resetDynamicToStatic();
+  // reset the text string in the TextAnnotation.
+  TextAnnotation *pTextAnnotation = dynamic_cast<TextAnnotation*>(this);
+  if (pTextAnnotation) {
+    pTextAnnotation->updateTextString();
+  }
 
   update();
 }
