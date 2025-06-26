@@ -174,7 +174,8 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
   mpFixedCheckBox = new FixedCheckBox;
   connect(mpFixedCheckBox, SIGNAL(clicked()), SLOT(showFixedMenu()));
   setFixedState("", true);
-  mpFixedFinalEachMenuButton = new FinalEachToolButton(mpElementParameters->hasElement() && mpElementParameters->isElementArray());
+  mpFixedFinalEachMenuButton = new FinalEachToolButton((mpElementParameters->hasElement() && mpElementParameters->isElementArray())
+                                                       || mpModelInstanceElement->getDimensions().isArray());
   // set the value type based on element type.
   if (mpModelInstanceElement->getRootType().compare(QStringLiteral("Boolean")) == 0) {
     if (mpModelInstanceElement->getAnnotation()->getChoices()
@@ -206,7 +207,8 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
     mValueType = Parameter::Normal;
   }
   // final and each menu
-  mpFinalEachMenuButton = new FinalEachToolButton(mpElementParameters->hasElement() && mpElementParameters->isElementArray());
+  mpFinalEachMenuButton = new FinalEachToolButton((mpElementParameters->hasElement() && mpElementParameters->isElementArray())
+                                                  || mpModelInstanceElement->getDimensions().isArray());
   connect(mpFinalEachMenuButton, SIGNAL(breakToggled(bool)), SLOT(setBreakValue(bool)));
   mValueCheckBoxModified = false;
   mDefaultValue = "";
@@ -369,7 +371,8 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
      * Use first version if the number of dimensions is small (say, <= 4, which works for 3-phase, 3D mechanics and quaternions).
      * Use the second version for larger arrays, to avoid overbloating it.
      */
-    if (Utilities::isValueScalarLiteralConstant(value) && mpElementParameters->hasElement() && mpElementParameters->isElementArray()) {
+    if (Utilities::isValueScalarLiteralConstant(value) && ((mpElementParameters->hasElement() && mpElementParameters->isElementArray())
+                                                           || mpModelInstanceElement->getDimensions().isArray())) {
       bool ok;
       int dims = mpElementParameters->getElementDimensions().toInt(&ok);
       if (ok) {
@@ -2042,7 +2045,7 @@ void ElementParameters::updateElementParameters()
       /* Issue #11715 and #11839
        * Add each prefix if element is an array OR parameter is an array.
        */
-      if ((hasElement() && mpElement->getDimensions().isArray()) || pParameter->getModelInstanceElement()->getDimensions().isArray()) {
+      if ((hasElement() && isElementArray()) || pParameter->getModelInstanceElement()->getDimensions().isArray()) {
         displayUnitModifier.append("each ");
       }
       if (pParameter->getDisplayUnitFinalEachMenu()->isFinal()) {
