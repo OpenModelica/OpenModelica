@@ -67,6 +67,9 @@ typedef struct DATA DATA;
 typedef struct VALUES_LIST VALUES_LIST;
 typedef struct JACOBIAN JACOBIAN;
 
+typedef int (*jacobianColumn_func_ptr)(DATA* data, threadData_t* threadData, JACOBIAN* thisJacobian, JACOBIAN* parentJacobian);
+typedef int (*initialAnalyticalJacobian_func_ptr)(DATA* data, threadData_t* threadData, JACOBIAN* jacobian);
+
 /* Model info structures */
 typedef struct VAR_INFO
 {
@@ -182,10 +185,6 @@ typedef struct NONLINEAR_PATTERN
   unsigned int* rows;                  // size: numberOfNonlinear - all rows appended in one vector
 } NONLINEAR_PATTERN;
 
-
-typedef int (*jacobianColumn_func_ptr)(DATA* data, threadData_t* threadData, JACOBIAN* thisJacobian, JACOBIAN* parentJacobian);
-typedef int (*initialAnalyticalJacobian_func_ptr)(DATA* data, threadData_t* threadData, JACOBIAN* jacobian);
-
 /**
  * @brief Analytic jacobian struct
  *
@@ -198,7 +197,7 @@ typedef struct JACOBIAN
   size_t sizeTmpVars;                   /* Length of vector tmpVars */
   SPARSE_PATTERN* sparsePattern;        /* Contain sparse pattern including coloring */
   modelica_real* seedVars;              /* Seed vector for specifying which columns to evaluate */
-  modelica_real* tmpVars;
+  modelica_real* tmpVars;               /* Partial derivatives used to compute resultVars */
   modelica_real* resultVars;            /* Result column for given seed vector */
   modelica_real dae_cj;                 /* Is the scalar in the system Jacobian, proportional to the inverse of the step size. From User Documentation for ida v5.4.0 equation (2.5). */
   jacobianColumn_func_ptr evalColumn;   /* symbolic jacobian column based on seed vector */

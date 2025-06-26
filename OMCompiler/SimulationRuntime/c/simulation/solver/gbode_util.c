@@ -371,8 +371,8 @@ double error_interpolation_gb(DATA_GBODE* gbData, int nIdx, int* idx, double tol
 void extrapolation_gbf(DATA_GBODE* gbData, double* nlsxExtrapolation, double time)
 {
   DATA_GBODEF* gbfData = gbData->gbfData;
-  int nStates = gbData->nStates;
-  int nFastStates = gbData->nFastStates;
+  const int nStates = gbData->nStates;
+  const int nFastStates = gbData->nFastStates;
 
   if (fabs(gbfData->tv[1]-gbfData->tv[0]) <= GBODE_EPSILON) {
     addSmultVec_gbf(nlsxExtrapolation, gbfData->yv, gbfData->kv, time - gbfData->tv[0], nFastStates, gbData->fastStatesIdx);

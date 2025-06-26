@@ -104,7 +104,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   memcpy(gbData->kv + stage * nStates, fODE, nStates*sizeof(double));
 
-  /* Corrector Schritt */
+  /* Corrector step */
   for (i = 0; i < nStates; i++) {
     gbData->y[i] = 0;
     for (stage = 0; stage < nStages-1; stage++) {
@@ -142,7 +142,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   int nStages = gbfData->tableau->nStages;
   NLS_SOLVER_STATUS solved = NLS_FAILED;
 
-  /* Predictor Schritt */
+  /* Predictor step */
   for (ii = 0; ii < gbData->nFastStates; ii++)
   {
     i = gbData->fastStatesIdx[ii];
@@ -199,7 +199,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
 
   memcpy(gbfData->kv + stage * nStates, fODE, nStates*sizeof(double));
 
-  /* Corrector Schritt */
+  /* Corrector step */
   for (ii = 0; ii < gbData->nFastStates; ii++)
   {
     i = gbData->fastStatesIdx[ii];
@@ -373,7 +373,6 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
                    gbfData->time,      gbfData->yOld,
                    gbData->nSlowStates, gbData->slowStatesIdx, nStates, gbData->tableau, gbData->x, gbData->k);
 
-
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
     infoStreamPrint(OMC_LOG_GBODE_NLS, 1, "NLS - used values for extrapolation:");
     printVector_gbf(OMC_LOG_GBODE_NLS, "xL", gbfData->yv + nStates, nStates, gbfData->tv[1], gbData->nFastStates, gbData->fastStatesIdx);
@@ -387,7 +386,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     gbfData->act_stage = stage;
     // k[i] = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i))
     // residual constant part:
-    // res = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i-i))
+    // res = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i-1))
     // yOld from integrator is correct for the fast states
 
     for (i=0; i < nStates; i++) {
@@ -395,15 +394,16 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       for (stage_ = 0; stage_ < stage; stage_++)
         gbfData->res_const[i] += gbfData->stepSize * gbfData->tableau->A[stage * nStages + stage_] * gbfData->k[stage_ * nStates + i];
     }
+    // TODO can be streamlined by taking res_const[i-1] instead of the whole sum.
 
     // set simulation time with respect to the current stage
+    // t = t_0 + c[j]*h
     sData->timeValue = gbfData->time + gbfData->tableau->c[stage]*gbfData->stepSize;
 
     // index of diagonal element of A
     if (gbfData->tableau->A[stage * nStages + stage_] == 0) {
       // Calculate the fODE values for the explicit stage
       memcpy(sData->realVars, gbfData->res_const, nStates*sizeof(double));
-
       gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
     } else {
       // interpolate the slow states on the time of the current stage
@@ -420,7 +420,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       projVector_gbf(nlsData->nlsx, gbfData->yOld, nFastStates, gbData->fastStatesIdx);
       memcpy(nlsData->nlsxOld, nlsData->nlsx, nFastStates*sizeof(modelica_real));
 
-      // use help vector gbData->y1 for scurity reasons
+      // use help vector gbData->y1 for security reasons
       extrapolation_gbf(gbData, gbData->y1, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
       projVector_gbf(nlsData->nlsxExtrapolation, gbData->y1, nFastStates, gbData->fastStatesIdx);
 

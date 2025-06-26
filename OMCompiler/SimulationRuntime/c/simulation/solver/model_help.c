@@ -999,8 +999,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   /* RingBuffer */
   data->simulationData = 0;
   data->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
-  if(!data->simulationData)
-  {
+  if (!data->simulationData) {
     throwStreamPrint(threadData, "Your memory is not strong enough for our ringbuffer!");
   }
 
@@ -1024,8 +1023,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->modelData->nVariablesString   = data->simulationInfo->stringVarsIndex[data->modelData->nVariablesStringArray];
 
   /* prepare RingBuffer */
-  for(i=0; i<SIZERINGBUFFER; i++)
-  {
+  for (i = 0; i < SIZERINGBUFFER; i++) {
     /* set time value */
     /*
     * fix issue #11855, always take the startTime provided in modeldescription.xml
