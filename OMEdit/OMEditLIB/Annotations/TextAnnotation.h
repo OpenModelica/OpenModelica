@@ -77,7 +77,7 @@ private:
   void initUpdateTextString();
   void updateTextStringHelper(QRegExp regExp);
 public slots:
-  void updateTextString();
+  void updateTextString(const QString &textString = QString());
 };
 
 #endif // TEXTANNOTATION_H

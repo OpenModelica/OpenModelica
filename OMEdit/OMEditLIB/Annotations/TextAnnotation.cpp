@@ -631,8 +631,9 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
 /*!
  * \brief TextAnnotation::updateTextString
  * Updates the text to display.
+ * \param textString
  */
-void TextAnnotation::updateTextString()
+void TextAnnotation::updateTextString(const QString &textString)
 {
   /* From Modelica Spec 32revision2,
    * There are a number of common macros that can be used in the text, and they should be replaced when displaying
@@ -644,7 +645,15 @@ void TextAnnotation::updateTextString()
    * - %name replaced by the name of the element (i.e. the identifier for it in in the enclosing class).
    * - %class replaced by the name of the class.
    */
-  mTextString = mOriginalTextString;
+  /* if textString is empty then use the original text string.
+   * otherwise use the one passed by the user. This is used during DynamicSelect.
+   */
+  if (textString.isEmpty()) {
+    mTextString = mOriginalTextString;
+  } else {
+    mTextString = textString;
+  }
+
   LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(parentItem());
   if (pLineAnnotation) {
     if (mTextString.toLower().contains("%condition")) {
