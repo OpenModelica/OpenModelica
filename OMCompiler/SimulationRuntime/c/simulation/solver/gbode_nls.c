@@ -477,7 +477,7 @@ void get_kinsol_statistics(NLS_KINSOL_DATA* kin_mem)
  * @param gbData              Runge-Kutta method.
  * @return NLS_SOLVER_STATUS  Return NLS_SOLVED on success and NLS_FAILED otherwise.
  */
-NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData, DATA_GBODE* gbData)
+NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData, DATA_GBODE* gbData, modelica_boolean fast)
 {
   struct dataSolver * solverData = (struct dataSolver *)nlsData->solverData;
   NLS_SOLVER_STATUS solved;
@@ -495,7 +495,24 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
     // Get kinsol data object
     NLS_KINSOL_DATA* kin_mem = ((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory;
 
-    set_kinsol_parameters(kin_mem, newtonMaxSteps, SUNTRUE, 10, newtonTol);
+    if (fast) {
+      set_kinsol_parameters(kin_mem, newtonMaxSteps, gbData->gbfData->updateJacobian ? SUNFALSE : SUNTRUE, 10, newtonTol);
+      if (!gbData->gbfData->updateJacobian) {
+        gbData->gbfData->updateJacobianODE = TRUE;
+        infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODEF: same step size = %g.", gbData->gbfData->stepSize);
+      } else {
+        infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODEF: different step size = %g.", gbData->gbfData->stepSize);
+      }
+    } else {
+      set_kinsol_parameters(kin_mem, newtonMaxSteps, gbData->updateJacobian ? SUNFALSE : SUNTRUE, 1, newtonTol);
+      if (!gbData->updateJacobian) {
+        gbData->updateJacobianODE = TRUE;
+        infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: skip Jacobian at time %g.", data->localData[0]->timeValue);
+      } else {
+        infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: compute Jacobian at time %g.", data->localData[0]->timeValue);
+      }
+    }
+
     solved = solveNLS(data, threadData, nlsData);
     /* Retry solution process with updated Jacobian */
     if (!solved) {
@@ -514,6 +531,7 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
       set_kinsol_parameters(kin_mem, newtonMaxSteps, SUNFALSE, 1, 10*newtonTol);
       solved = solveNLS(data, threadData, nlsData);
     }
+
     if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) get_kinsol_statistics(kin_mem);
   } else {
     solved = solveNLS(data, threadData, nlsData);
@@ -521,6 +539,12 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
 
   if (solved)
     infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "GBODE: NLS solved.");
+
+  if (fast) {
+    gbData->gbfData->updateJacobianODE = FALSE;
+  } else {
+    gbData->updateJacobianODE = FALSE;
+  }
 
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
     cpu_time_used = rt_ext_tp_tock(&clock);
@@ -815,9 +839,25 @@ int jacobian_SR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian,
 
   JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
 
-  /* Evaluate column of Jacobian ODE */
-  memcpy(jacobian_ODE->seedVars, jacobian->seedVars, sizeof(modelica_real)*jacobian->sizeCols);
-  data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
+  static int numberOfEval = 0;
+  numberOfEval++;
+
+  if (gbData->updateJacobianODE) {
+    /* Evaluate column of Jacobian ODE */
+    memcpy(jacobian_ODE->seedVars, jacobian->seedVars, sizeof(modelica_real)*jacobian->sizeCols);
+    data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
+    infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: computed ODE Jacobian color at time %g, step size %g, color %d of %d.", data->localData[0]->timeValue, gbData->stepSize, numberOfEval, jacobian->sparsePattern->maxColors);
+  } else {
+    infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: skipped ODE Jacobian color at time %g, step size %g, color %d of %d.", data->localData[0]->timeValue, gbData->stepSize, numberOfEval, jacobian->sparsePattern->maxColors);
+    if (numberOfEval == jacobian->sparsePattern->maxColors) {
+      gbData->updateJacobianODE = TRUE;
+      infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: set updateJacobianODE to TRUE.");
+    }
+  }
+  if (numberOfEval == jacobian->sparsePattern->maxColors) {
+    infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: evaluated Jacobian.");
+    numberOfEval = 0;
+  }
 
   /* Update resultVars array */
   if (gbData->type == MS_TYPE_IMPLICIT) {
@@ -858,19 +898,21 @@ int jacobian_MR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian,
   const int stage_ = gbfData->act_stage;
   modelica_real fac;
 
-  for (i = 0; i < jacobian_ODE->sizeCols; i++) {
-    jacobian_ODE->seedVars[i] = 0;
-  }
+  if (gbfData->updateJacobianODE) {
+    for (i = 0; i < jacobian_ODE->sizeCols; i++) {
+      jacobian_ODE->seedVars[i] = 0;
+    }
 
-  // Map the jacobian->seedVars to the jacobian_ODE->seedVars
-  for (ii = 0; ii < nFastStates; ii++) {
-    i = gbData->fastStatesIdx[ii];
-    if (jacobian->seedVars[ii])
-      jacobian_ODE->seedVars[i] = 1;
-  }
+    // Map the jacobian->seedVars to the jacobian_ODE->seedVars
+    for (ii = 0; ii < nFastStates; ii++) {
+      i = gbData->fastStatesIdx[ii];
+      if (jacobian->seedVars[ii])
+        jacobian_ODE->seedVars[i] = 1;
+    }
 
-  // call jacobian_ODE with the mapped seedVars
-  data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
+    // call jacobian_ODE with the mapped seedVars
+    data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
+  }
 
   /* Update resultVars array */
   if (gbfData->type == MS_TYPE_IMPLICIT) {

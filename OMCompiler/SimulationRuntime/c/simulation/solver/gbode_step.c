@@ -95,7 +95,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
 
-  solved = solveNLS_gb(data, threadData, nlsData, gbData);
+  solved = solveNLS_gb(data, threadData, nlsData, gbData, FALSE);
 
   if (solved != NLS_SOLVED) {
     warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_MS at time t=%g", gbData->time);
@@ -190,7 +190,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
 
-  solved = solveNLS_gb(data, threadData, nlsData, gbData);
+  solved = solveNLS_gb(data, threadData, nlsData, gbData, TRUE);
 
   if (solved != NLS_SOLVED) {
     warningStreamPrint(OMC_LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in full_implicit_MS_MR at time t=%g", gbfData->time);
@@ -301,7 +301,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
         extrapolation_gb(gbData, nlsData->nlsxExtrapolation, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
       }
 
-      solved = solveNLS_gb(data, threadData, nlsData, gbData);
+      solved = solveNLS_gb(data, threadData, nlsData, gbData, FALSE);
 
       if (solved != NLS_SOLVED) {
         warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage %d at time t=%g", stage_, gbData->time);
@@ -320,6 +320,10 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     }
     // copy last calculation of fODE, which should coincide with k[i], here, it yields stage == stage_
     memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
+
+    /* setStepSizeChanged to false, if stages have the same diagonal element, because they have the same step size */
+    if (stage < nStages -1)
+      gbData->updateJacobian = gbData->tableau->A[stage * nStages + stage] != gbData->tableau->A[(stage+1) * nStages + (stage+1)];
   }
   infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "GBODE: all stages done.");
 
@@ -431,7 +435,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       extrapolation_gbf(gbData, gbData->y1, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
       projVector_gbf(nlsData->nlsxExtrapolation, gbData->y1, nFastStates, gbData->fastStatesIdx);
 
-      solved = solveNLS_gb(data, threadData, nlsData, gbData);
+      solved = solveNLS_gb(data, threadData, nlsData, gbData, TRUE);
 
       if (solved != NLS_SOLVED) {
         warningStreamPrint(OMC_LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in expl_diag_impl_RK_MR in stage %d at time t=%g", stage_, gbfData->time);
@@ -514,7 +518,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     extrapolation_gb(gbData, nlsData->nlsxExtrapolation + stage_*nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
   }
 
-  solved = solveNLS_gb(data, threadData, nlsData, gbData);
+  solved = solveNLS_gb(data, threadData, nlsData, gbData, FALSE);
 
   if (solved != NLS_SOLVED) {
     gbData->stats.nConvergenveTestFailures++;

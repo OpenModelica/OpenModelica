@@ -236,6 +236,8 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
     gbfData->nlsData = NULL;
     gbfData->jacobian = NULL;
   }
+  gbfData->updateJacobianODE = TRUE;
+  gbfData->updateJacobian = TRUE;
 
   gbfData->interpolation = getInterpolationMethod(FLAG_MR_INT);
   if (!gbfData->tableau->withDenseOutput) {
@@ -451,6 +453,8 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     gbData->nlsData = NULL;
     gbData->jacobian = NULL;
   }
+  gbData->updateJacobianODE = TRUE;
+  gbData->updateJacobian = TRUE;
 
   gbData->percentage = getGBRatio();
   gbData->multi_rate = gbData->percentage > 0 && gbData->percentage < 1;
@@ -1719,6 +1723,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
           return -1;
         } else {
           gbData->stepSize *= 0.5;
+          gbData->updateJacobian = TRUE;
           infoStreamPrint(OMC_LOG_SOLVER, 0, "Try half of the step size = %g", gbData->stepSize);
           if (gbData->stepSize < GB_MINIMAL_STEP_SIZE) {
             errorStreamPrint(OMC_LOG_STDOUT, 0, "Simulation aborted! Minimum step size %g reached, but error still to large.", GB_MINIMAL_STEP_SIZE);
@@ -1750,6 +1755,9 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       // Call the step size control
       gbData->lastStepSize = gbData->stepSize;
       gbData->stepSize *= gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
+      gbData->updateJacobian = gbData->stepSize != gbData->lastStepSize;
+      infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: step sizes new %g, old %g, changed %s.", gbData->stepSize, gbData->lastStepSize, gbData->updateJacobian? "TRUE" : "FALSE");
+
       if (gbData->maxStepSize > 0 && gbData->maxStepSize < gbData->stepSize)
         gbData->stepSize = gbData->maxStepSize;
       gbData->optStepSize = gbData->stepSize;
