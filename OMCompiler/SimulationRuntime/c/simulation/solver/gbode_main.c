@@ -238,6 +238,8 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
   }
   gbfData->updateJacobianODE = TRUE;
   gbfData->updateJacobian = TRUE;
+  gbfData->numberOfEvalJacobianODE = 0;
+
 
   gbfData->interpolation = getInterpolationMethod(FLAG_MR_INT);
   if (!gbfData->tableau->withDenseOutput) {
@@ -455,6 +457,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   }
   gbData->updateJacobianODE = TRUE;
   gbData->updateJacobian = TRUE;
+  gbData->numberOfEvalJacobianODE = 0;
 
   gbData->percentage = getGBRatio();
   gbData->multi_rate = gbData->percentage > 0 && gbData->percentage < 1;
@@ -1766,6 +1769,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       if ((err > 1) && gbData->ctrl_method != GB_CTRL_CNST) {
         // count failed steps and output information on the solver status
         gbData->stats.nErrorTestFailures++;
+        gbData->updateJacobian = TRUE;
         infoStreamPrint(OMC_LOG_SOLVER, 0, "Reject step from %10g to %10g, error %10g, new stepsize %10g",
                         gbData->time, gbData->time + gbData->lastStepSize, gbData->errValues[0], gbData->stepSize);
       }
@@ -1807,6 +1811,7 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       if ((gbData->err_int > 1 ) && gbData->ctrl_method != GB_CTRL_CNST &&
           ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
         err = 100;
+        gbData->updateJacobian = TRUE;
         // gbData->stepSize = gbData->lastStepSize*IController(&(gbData->err_int), &(gbData->lastStepSize), 1);
         if (gbData->stepSize < GB_MINIMAL_STEP_SIZE) {
           errorStreamPrint(OMC_LOG_STDOUT, 0, "Simulation aborted! Minimum step size %g reached, but interpolation error still to large.", GB_MINIMAL_STEP_SIZE);
@@ -1999,6 +2004,8 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
   /* Write statistics to the solverInfo data structure */
   logSolverStats(OMC_LOG_SOLVER_V, "gb_singlerate", solverInfo->currentTime, gbData->time, gbData->stepSize, &gbData->stats);
   memcpy(&solverInfo->solverStatsTmp, &gbData->stats, sizeof(SOLVERSTATS));
+
+  infoStreamPrint(OMC_LOG_STDOUT, 0, "evaluation of Jacobian ODE: %d", gbData->numberOfEvalJacobianODE);
 
   messageClose(OMC_LOG_SOLVER);
   return 0;

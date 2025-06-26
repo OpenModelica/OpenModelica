@@ -322,7 +322,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
 
     /* setStepSizeChanged to false, if stages have the same diagonal element, because they have the same step size */
-    if (stage < nStages -1)
+    if (stage < nStages -1 && gbData->tableau->A[stage * nStages + stage]!=0)
       gbData->updateJacobian = gbData->tableau->A[stage * nStages + stage] != gbData->tableau->A[(stage+1) * nStages + (stage+1)];
   }
   infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "GBODE: all stages done.");

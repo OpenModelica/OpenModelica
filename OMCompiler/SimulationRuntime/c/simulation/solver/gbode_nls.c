@@ -504,7 +504,7 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
         infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODEF: different step size = %g.", gbData->gbfData->stepSize);
       }
     } else {
-      set_kinsol_parameters(kin_mem, newtonMaxSteps, gbData->updateJacobian ? SUNFALSE : SUNTRUE, 1, newtonTol);
+      set_kinsol_parameters(kin_mem, newtonMaxSteps, gbData->updateJacobian ? SUNFALSE : SUNTRUE, 10, newtonTol);
       if (!gbData->updateJacobian) {
         gbData->updateJacobianODE = TRUE;
         infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: skip Jacobian at time %g.", data->localData[0]->timeValue);
@@ -847,6 +847,9 @@ int jacobian_SR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian,
     memcpy(jacobian_ODE->seedVars, jacobian->seedVars, sizeof(modelica_real)*jacobian->sizeCols);
     data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
     infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: computed ODE Jacobian color at time %g, step size %g, color %d of %d.", data->localData[0]->timeValue, gbData->stepSize, numberOfEval, jacobian->sparsePattern->maxColors);
+    if (numberOfEval == jacobian->sparsePattern->maxColors) {
+      gbData->numberOfEvalJacobianODE++;
+    }
   } else {
     infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: skipped ODE Jacobian color at time %g, step size %g, color %d of %d.", data->localData[0]->timeValue, gbData->stepSize, numberOfEval, jacobian->sparsePattern->maxColors);
     if (numberOfEval == jacobian->sparsePattern->maxColors) {

@@ -76,6 +76,7 @@ typedef struct DATA_GBODEF{
                                                      * */
   JACOBIAN* jacobian;                               /* Jacobian of non-linear system of implicit Runge-Kutta method */
   modelica_boolean updateJacobianODE;               /* indicate whether to update the ODE Jacobian or not */
+  int numberOfEvalJacobianODE;                      /* number of calls to the Jacobian of the ODE*/
   SPARSE_PATTERN* sparsePattern_DIRK;               /* Sparsity pattern for the DIRK methd, will be reduced based on the fast states selection */
 
   double *y;                                        /* State vector of the current Runge-Kutta step */
@@ -131,6 +132,7 @@ typedef struct DATA_GBODE{
                                                      * */
   JACOBIAN* jacobian;                               /* Jacobian of non-linear system of implicit Runge-Kutta method */
   modelica_boolean updateJacobianODE;               /* indicate whether to update the ODE Jacobian or not */
+  int numberOfEvalJacobianODE;                      /* number of calls to the Jacobian of the ODE*/
   double *y;                                        /* State vector of the current Runge-Kutta step */
   double *yt, *y1;                                  /* Result vector of the states of embedded RK step */
   double *yLeft, *kLeft, *yRight, *kRight;          /* Needed for interpolation of the slow states and emitting to the result files */
