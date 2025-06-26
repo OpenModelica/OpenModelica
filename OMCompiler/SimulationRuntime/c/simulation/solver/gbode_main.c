@@ -748,7 +748,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   modelica_boolean foundEvent;
 
   // This is the target time of the main integrator
-  double innerTargetTime = fmin(targetTime, gbData->timeRight);
+  const double innerTargetTime = fmin(targetTime, gbData->timeRight);
 
   /* The inner integrator needs to be initialzed, at start time, when an event occured,
   *  and if outer integrations have been done with all states involved
@@ -757,7 +757,6 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   if (gbfData->didEventStep || gbfData->timeRight < gbData->timeLeft) {
     gbodef_init(data, threadData, solverInfo);
   }
-
 
   fastStatesChange = checkFastStatesChange(gbData);
 

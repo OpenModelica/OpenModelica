@@ -46,6 +46,11 @@
 #include "../jacobian_util.h"
 #include "../../util/rtclock.h"
 
+/* forward declarations */
+int jacobian_SR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian);
+int jacobian_MR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian);
+int jacobian_IRK_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian);
+
 /**
  * @brief Specific error handling of kinsol for gbode
  *
@@ -660,7 +665,9 @@ void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res,
  *
  * For the fast states:
  * Based on the Butcher tableau the following nonlinear residuals will be calculated:
- * res = f(tOld + c[i]*h, yOld + h*sum(A[i,j]*k[j], j=1..act_stage))
+ *   y[j] = yOld + h*sum(A[i,j]*k[j], j=1..act_stage)
+ *   res_const[j] = yOld + h*sum(A[i,j]*k[j], j=1..act_stage-1)
+ * res = res_const[j] - y[j] + f(tOld + c[i]*h, y[j])
  * When calling, the following is already calculated:
  *  sData->timeValue = tOld + c[i]*h
  *  res_const = yOld + h*sum(A[i,j]*k[j], j=1..act_stage-1)

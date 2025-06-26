@@ -351,7 +351,7 @@ int dassl_initial(DATA* data, threadData_t *threadData,
   data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
   if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
     infoStreamPrint(OMC_LOG_SIMULATION, 1, "Initialized Jacobian:");
-    infoStreamPrint(OMC_LOG_SIMULATION, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
+    infoStreamPrint(OMC_LOG_SIMULATION, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
     infoStreamPrint(OMC_LOG_SIMULATION, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
     messageClose(OMC_LOG_SIMULATION);
   }

@@ -106,7 +106,7 @@ void freeJacobian(JACOBIAN *jac)
 
 /*! \fn evalJacobian
  *
- *  compute entries of Jacobian in sparse CSC or dense format 
+ *  compute entries of Jacobian in sparse CSC or dense format
  *  uses coloring (sparsePattern non NULL)
  *
  *  \param [ref] [data]

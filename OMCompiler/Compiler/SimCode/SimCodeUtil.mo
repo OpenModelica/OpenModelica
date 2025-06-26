@@ -15398,7 +15398,7 @@ algorithm
     end match;
   else
     //print("cref2simvar: " + ComponentReference.printComponentRefStr(inCref) + " not found!\n");
-    badcref := ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed " + ComponentReference.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
+    badcref := ComponentReference.makeCrefIdent("ERROR_simVarFromHT_failed " + ComponentReference.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
     sv := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false);
   end try;
   outSimVar := sv;
