@@ -1014,7 +1014,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   assertStreamPrint(threadData, NULL != data->simulationInfo->stringVarsIndex, "out of memory");
 
   /* compute index map */
-  data->callback->computeVarIndices(data->simulationInfo->realVarsIndex, data->simulationInfo->integerVarsIndex, data->simulationInfo->booleanVarsIndex, data->simulationInfo->stringVarsIndex);
+  data->callback->computeVarIndices(data, data->simulationInfo->realVarsIndex, data->simulationInfo->integerVarsIndex, data->simulationInfo->booleanVarsIndex, data->simulationInfo->stringVarsIndex);
 
   /* compute scalar number of variables */
   data->modelData->nVariablesReal     = data->simulationInfo->realVarsIndex[data->modelData->nVariablesRealArray];
