@@ -689,8 +689,8 @@ protected
     "partitions all individual partitions and collects the clocked partitions and clocks/subclocks"
     extends Module.partitioningInterface;
   protected
-    DisjointSetForest eqn_dsf = DisjointSetForest.new(equations.eqArr.lastUsedIndex[1]);
-    array<Integer> var_map = arrayCreate(variables.varArr.lastUsedIndex[1], -1);
+    DisjointSetForest eqn_dsf = DisjointSetForest.new(ExpandableArray.getLastUsedIndex(equations.eqArr));
+    array<Integer> var_map = arrayCreate(ExpandableArray.getLastUsedIndex(variables.varArr), -1);
     Pointer<Equation> eqn;
     Pointer<Variable> var;
     UnorderedSet<ComponentRef> var_crefs;
