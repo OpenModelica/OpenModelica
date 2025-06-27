@@ -236,10 +236,6 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
     gbfData->nlsData = NULL;
     gbfData->jacobian = NULL;
   }
-  gbfData->updateJacobianODE = TRUE;
-  gbfData->updateJacobian = TRUE;
-  gbfData->numberOfEvalJacobianODE = 0;
-
 
   gbfData->interpolation = getInterpolationMethod(FLAG_MR_INT);
   if (!gbfData->tableau->withDenseOutput) {
@@ -1312,6 +1308,7 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       // Call the step size control
       gbData->lastStepSize = gbData->stepSize;
       gbData->stepSize *= gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
+      gbData->updateJacobian = gbData->stepSize != gbData->lastStepSize;
       if (gbData->maxStepSize > 0 && gbData->maxStepSize < gbData->stepSize)
         gbData->stepSize = gbData->maxStepSize;
 
@@ -1595,6 +1592,8 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   /* Write statistics to the solverInfo data structure */
   logSolverStats(OMC_LOG_SOLVER_V, "gb_singlerate", solverInfo->currentTime, gbData->time, gbData->stepSize, &gbData->stats);
   memcpy(&solverInfo->solverStatsTmp, &gbData->stats, sizeof(SOLVERSTATS));
+
+  infoStreamPrint(OMC_LOG_STATS, 0, "Evaluation of ODE Jacobian: %d", gbData->numberOfEvalJacobianODE);
 
   messageClose(OMC_LOG_SOLVER);
   return 0;

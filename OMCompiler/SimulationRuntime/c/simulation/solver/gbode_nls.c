@@ -497,13 +497,7 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
     NLS_KINSOL_DATA* kin_mem = ((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory;
 
     if (fast) {
-      set_kinsol_parameters(kin_mem, newtonMaxSteps, gbData->gbfData->updateJacobian ? SUNFALSE : SUNTRUE, 10, newtonTol);
-      if (!gbData->gbfData->updateJacobian) {
-        gbData->gbfData->updateJacobianODE = TRUE;
-        infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODEF: same step size = %g.", gbData->gbfData->stepSize);
-      } else {
-        infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODEF: different step size = %g.", gbData->gbfData->stepSize);
-      }
+      set_kinsol_parameters(kin_mem, newtonMaxSteps, SUNTRUE, 10, newtonTol);
     } else {
       set_kinsol_parameters(kin_mem, newtonMaxSteps, gbData->updateJacobian ? SUNFALSE : SUNTRUE, 10, newtonTol);
       if (!gbData->updateJacobian) {
@@ -542,11 +536,8 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
   if (solved)
     infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "GBODE: NLS solved.");
 
-  if (fast) {
-    gbData->gbfData->updateJacobianODE = FALSE;
-  } else {
+  if (!fast)
     gbData->updateJacobianODE = FALSE;
-  }
 
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
     cpu_time_used = rt_ext_tp_tock(&clock);
@@ -903,21 +894,19 @@ int jacobian_MR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian,
   const int stage_ = gbfData->act_stage;
   modelica_real fac;
 
-  if (gbfData->updateJacobianODE) {
-    for (i = 0; i < jacobian_ODE->sizeCols; i++) {
-      jacobian_ODE->seedVars[i] = 0;
-    }
-
-    // Map the jacobian->seedVars to the jacobian_ODE->seedVars
-    for (ii = 0; ii < nFastStates; ii++) {
-      i = gbData->fastStatesIdx[ii];
-      if (jacobian->seedVars[ii])
-        jacobian_ODE->seedVars[i] = 1;
-    }
-
-    // call jacobian_ODE with the mapped seedVars
-    data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
+  for (i = 0; i < jacobian_ODE->sizeCols; i++) {
+    jacobian_ODE->seedVars[i] = 0;
   }
+
+  // Map the jacobian->seedVars to the jacobian_ODE->seedVars
+  for (ii = 0; ii < nFastStates; ii++) {
+    i = gbData->fastStatesIdx[ii];
+    if (jacobian->seedVars[ii])
+      jacobian_ODE->seedVars[i] = 1;
+  }
+
+  // call jacobian_ODE with the mapped seedVars
+  data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
 
   /* Update resultVars array */
   if (gbfData->type == MS_TYPE_IMPLICIT) {

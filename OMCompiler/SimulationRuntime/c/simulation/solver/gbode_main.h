@@ -75,8 +75,6 @@ typedef struct DATA_GBODEF{
                                                      *  0 = yold-x + h*(sum(A[i,j]*k[j], j=1..i-1) + A[i,i]*f(t + c[i]*h, x))
                                                      * */
   JACOBIAN* jacobian;                               /* Jacobian of non-linear system of implicit Runge-Kutta method */
-  modelica_boolean updateJacobianODE;               /* indicate whether to update the ODE Jacobian or not */
-  int numberOfEvalJacobianODE;                      /* number of calls to the Jacobian of the ODE*/
   SPARSE_PATTERN* sparsePattern_DIRK;               /* Sparsity pattern for the DIRK methd, will be reduced based on the fast states selection */
 
   double *y;                                        /* State vector of the current Runge-Kutta step */
@@ -96,7 +94,6 @@ typedef struct DATA_GBODEF{
 
   double time, timeLeft, timeRight;                 /* actual time values and the time values of the current interpolation interval */
   double stepSize, lastStepSize;                    /* actual and last step size of integration */
-  modelica_boolean updateJacobian;                  /* has step size changed in this step? */
   int act_stage;                                    /* Current stage of Runge-Kutta method. */
   enum GB_CTRL_METHOD ctrl_method;                  /* Step size control algorithm */
   modelica_boolean isExplicit;                      /* Boolean stating if the RK method is explicit */
@@ -131,8 +128,9 @@ typedef struct DATA_GBODE{
                                                      *  0 = yold-x + h*(sum(A[i,j]*k[j], j=1..i-1) + A[i,i]*f(t + c[i]*h, x))
                                                      * */
   JACOBIAN* jacobian;                               /* Jacobian of non-linear system of implicit Runge-Kutta method */
+  modelica_boolean updateJacobian;                  /* indicate whether to update the Jacobian or not */
   modelica_boolean updateJacobianODE;               /* indicate whether to update the ODE Jacobian or not */
-  int numberOfEvalJacobianODE;                      /* number of calls to the Jacobian of the ODE*/
+  int numberOfEvalJacobianODE;                      /* number of calls to the Jacobian of the ODE */
   double *y;                                        /* State vector of the current Runge-Kutta step */
   double *yt, *y1;                                  /* Result vector of the states of embedded RK step */
   double *yLeft, *kLeft, *yRight, *kRight;          /* Needed for interpolation of the slow states and emitting to the result files */
@@ -155,7 +153,6 @@ typedef struct DATA_GBODE{
   double stepSize, lastStepSize, optStepSize;       /* actual, last, and optimal step size of integration */
   double maxStepSize;                               /* maximal step size of integration */
   double initialStepSize;                           /* initial step size of integration */
-  modelica_boolean updateJacobian;                  /* has step size changed in this step? */
   modelica_boolean noRestart;                       /* Flag for omitting re-start after an event occured */
   int act_stage;                                    /* Current stage of Runge-Kutta method. */
   enum GB_CTRL_METHOD ctrl_method;                  /* Step size control algorithm */
