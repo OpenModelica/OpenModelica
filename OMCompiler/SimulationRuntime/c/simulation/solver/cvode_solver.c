@@ -142,22 +142,13 @@ int cvodeRightHandSideODEFunction(realtype time, N_Vector y, N_Vector ydot, void
     messageClose(OMC_LOG_SOLVER_V);
   }
 
-  /* Read input vars (exclude from timer) */
-  if (measure_time_flag)
-    rt_accumulate(SIM_TIMER_SOLVER);
 #ifndef OMC_FMI_RUNTIME
+  /* Read input vars */
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
 #endif
-  if (measure_time_flag)
-    rt_tick(SIM_TIMER_SOLVER);
-
-  /* eval function ODE (exclude from timer) */
-  if (measure_time_flag)
-    rt_accumulate(SIM_TIMER_SOLVER);
+  /* eval function ODE */
   data->callback->functionODE(data, threadData);
-  if (measure_time_flag)
-    rt_tick(SIM_TIMER_SOLVER);
 
   /* Update ydot */
   for (i = 0; i < cvodeData->N; i++)
@@ -197,8 +188,6 @@ int cvodeRightHandSideODEFunction(realtype time, N_Vector y, N_Vector ydot, void
     unsetContext(data);
   }
   messageClose(OMC_LOG_SOLVER_V);
-  if (measure_time_flag)
-    rt_accumulate(SIM_TIMER_SOLVER);
 
   return retVal;
 }
@@ -255,10 +244,7 @@ static int callDenseJacobian(double t, N_Vector y, N_Vector fy,
   data = cvodeData->simData->data;
   threadData = cvodeData->simData->threadData;
 
-  /* profiling */
-  if (measure_time_flag)
-    rt_accumulate(SIM_TIMER_SOLVER);
-  rt_tick(SIM_TIMER_JACOBIAN);
+  if (measure_time_flag) rt_push(SIM_TIMER_JACOBIAN);
 
   if (cvodeData->config.jacobianMethod == COLOREDNUMJAC || cvodeData->config.jacobianMethod == NUMJAC)
   {
@@ -277,10 +263,7 @@ static int callDenseJacobian(double t, N_Vector y, N_Vector fy,
     _omc_destroyMatrix(dumpJac);
   }
 
-  /* profiling */
-  rt_accumulate(SIM_TIMER_JACOBIAN);
-  if (measure_time_flag)
-    rt_tick(SIM_TIMER_SOLVER);
+  if (measure_time_flag) rt_pop(SIM_TIMER_JACOBIAN);
 
   return retVal;
 }
@@ -317,18 +300,14 @@ int rootsFunctionCVODE(double time, N_Vector y, double *gout, void *userData)
 
   data->localData[0]->timeValue = time;
 
-  /* Read input vars (exclude from timer) */
-  if (measure_time_flag)
-    rt_accumulate(SIM_TIMER_SOLVER);
 #ifndef OMC_FMI_RUNTIME
+  /* Read input vars */
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
 #endif
-  /* eval needed equations (exclude from timer) */
+  /* eval needed equations */
   data->callback->function_ZeroCrossingsEquations(data, threadData);
   data->callback->function_ZeroCrossings(data, threadData, gout);
-  if (measure_time_flag)
-    rt_tick(SIM_TIMER_SOLVER);
 
   threadData->currentErrorStage = saveJumpState;
 
@@ -339,8 +318,6 @@ int rootsFunctionCVODE(double time, N_Vector y, double *gout, void *userData)
     unsetContext(data);
   }
   messageClose(OMC_LOG_SOLVER_V);
-  if (measure_time_flag)
-    rt_tick(SIM_TIMER_SOLVER);
 
   TRACE_POP
   return 0;
@@ -558,11 +535,6 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   cvodeData->cvode_mem = CVodeCreate(cvodeData->config.lmm);
   assertStreamPrint(threadData, NULL != cvodeData->cvode_mem, "CVODE_ERROR: CVodeCreate failed - returned NULL pointer.");
 
-  if (measure_time_flag)
-  {
-    rt_tick(SIM_TIMER_SOLVER); /* Maybe use SIM_TIMER_OVERHEAD instead? */
-  }
-
   /* Provide problem and solution specifications, allocate internal memory and initializes CVODE */
   flag = CVodeInit(cvodeData->cvode_mem,
                    cvodeRightHandSideODEFunction,
@@ -712,11 +684,6 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
 
   /* Log cvode_initial */
   infoStreamPrint(OMC_LOG_SOLVER_V, 0, "### Finished initialize of CVODE solver successfully ###");
-
-  if (measure_time_flag)
-  {
-    rt_clear(SIM_TIMER_SOLVER); /* Initialization should not add to this timer... */
-  }
 
   return 0;
 }
@@ -879,9 +846,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   MODEL_DATA *modelData;
   SIMULATION_INFO *simulationInfo;
 
-  /* Measure time */
-  if (measure_time_flag)
-    rt_tick(SIM_TIMER_SOLVER);
+  if (measure_time_flag) rt_push(SIM_TIMER_SOLVER);
 
   /* Access data */
   cvodeData = (CVODE_SOLVER *)solverInfo->solverData;
@@ -917,10 +882,10 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
     /* Constant extrapolation */
     /* TODO: Interpolate linear solution */
     simulationData->timeValue = solverInfo->currentTime + solverInfo->currentStepSize;
-    if (measure_time_flag)
-      rt_accumulate(SIM_TIMER_SOLVER);
     data->callback->functionODE(data, threadData);
     solverInfo->currentTime = simulationData->timeValue;
+
+    if (measure_time_flag) rt_pop(SIM_TIMER_SOLVER);
 
     return 0;
   }
@@ -934,15 +899,11 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   {
     infoStreamPrint(OMC_LOG_SOLVER, 1, "##CVODE## new step from %.15g to %.15g", solverInfo->currentTime, tout);
 
-    /* Read input vars (exclude from timer) */
-    if (measure_time_flag)
-      rt_accumulate(SIM_TIMER_SOLVER);
 #ifndef OMC_FMI_RUNTIME
+    /* Read input vars */
     externalInputUpdate(data);
     data->callback->input_function(data, threadData);
 #endif
-    if (measure_time_flag)
-      rt_tick(SIM_TIMER_SOLVER);
 
     /* TODO: Add scaling */
 
@@ -994,9 +955,8 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   cvode_save_statistics(cvodeData->cvode_mem, &solverInfo->solverStatsTmp, threadData);
 
   infoStreamPrint(OMC_LOG_SOLVER, 0, "##CVODE## Finished Integrator step.");
-  /* Measure time */
-  if (measure_time_flag)
-    rt_accumulate(SIM_TIMER_SOLVER);
+
+  if (measure_time_flag) rt_pop(SIM_TIMER_SOLVER);
 
   return retVal;
 }
