@@ -1279,6 +1279,10 @@ algorithm
       then
         NFModifier.NOMOD();
 
+    // Modifier that has already been typed.
+    case Modifier.MODIFIER(binding = Binding.TYPED_BINDING())
+      then attribute;
+
     // Normal modifier with no submodifiers.
     case Modifier.MODIFIER(name = name, binding = binding)
       algorithm
