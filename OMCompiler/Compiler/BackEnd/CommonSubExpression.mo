@@ -2116,11 +2116,10 @@ author:Waurich TUD 2016-05"
   output list<CommonSubExp> cseOut;
 protected
   BackendDAE.AdjacencyMatrix m, mT;
-  BackendDAE.AdjacencyMatrixEnhanced me,meT;
   BackendDAE.EqSystem eqSys;
   BackendDAE.Variables vars, pathVars;
   list<BackendDAE.Var> varLst;
-  list<BackendDAE.Equation> eqLst, eqLst_all;
+  list<BackendDAE.Equation> eqLst;
   BackendDAE.EquationArray eqs;
   list<tuple<Boolean, String>> varAtts, eqAtts;
   Integer numVars, varIdx;
@@ -2135,14 +2134,13 @@ algorithm
     pathVars := BackendVariable.listVar1(List.map1(pathVarIdcs, BackendVariable.getVarAtIndexFirst, allVars));
     pathVarIdxMap := listArray(List.map1(pathVarIdcs,Array.getIndexFirst,varMap));
     cses := cseIn;
-    eqLst_all := BackendEquation.equationList(allEqs);
     if BackendVariable.varsSize(pathVars) > 0 then
       for partition in allPartitions loop
         //print("partition "+stringDelimitList(List.map(partition, intString), ", ")+"\n");
         //print("pathVarIdxMap "+stringDelimitList(List.map(List.map1(pathVarIdcs,Array.getIndexFirst,varMap), intString), ", ")+"\n");
 
         //get only the partition equations
-        eqLst := List.map1(partition,List.getIndexFirst,eqLst_all);
+        eqLst := list(BackendEquation.get(allEqs, i) for i in partition);
         eqs := BackendEquation.listEquation(eqLst);
 
         eqSys := BackendDAEUtil.createEqSystem(pathVars, eqs);
@@ -2155,7 +2153,7 @@ algorithm
           //BackendDump.dumpBipartiteGraphStrongComponent2(pathVars, eqs, m, varAtts, eqAtts, "shortenPaths"+stringDelimitList(List.map(partition,intString),"_"));
 
        for idx in 1:arrayLength(mT) loop
-         adjEqs := arrayGet(mT,idx);
+         adjEqs := MetaModelica.Dangerous.arrayGetNoBoundsChecking(mT,idx);
 
          if listLength(adjEqs)==2 then
          //print("varIdx1 "+intString(varIdx)+"\n");
