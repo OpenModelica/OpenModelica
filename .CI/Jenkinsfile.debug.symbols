@@ -34,7 +34,6 @@ pipeline {
         script {
           common.buildOMC('clang', 'clang++', 'CFLAGS=-g', true, false)
           common.buildGUI('', 'qt5')
-          common.makeLibsAndCache()
         }
         sh 'tar -zcf omdebug.tar.gz ./build/'
         script {
