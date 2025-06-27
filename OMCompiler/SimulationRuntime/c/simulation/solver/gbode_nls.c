@@ -37,6 +37,7 @@
 #include "gbode_sparse.h"
 
 #include "../../simulation_data.h"
+#include "model_help.h"
 
 #include "solver_main.h"
 #include "kinsolSolver.h"
@@ -279,7 +280,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     } else {
       nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     }
-    solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsUserData, TRUE, nlsData->isPatternAvailable);
+    solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
 
@@ -376,7 +377,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     } else {
       nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     }
-    solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsUserData, TRUE, nlsData->isPatternAvailable);
+    solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
@@ -516,6 +517,7 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
     solved = solveNLS(data, threadData, nlsData);
     /* Retry solution process with updated Jacobian */
     if (!solved) {
+      gbData->updateJacobianODE = TRUE;
       infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: Solution of NLS failedat time %g. Try with updated Jacobian.", gbData->time);
       set_kinsol_parameters(kin_mem, newtonMaxSteps, SUNFALSE, 1, newtonTol);
       solved = solveNLS(data, threadData, nlsData);
