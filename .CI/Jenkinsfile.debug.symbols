@@ -44,7 +44,7 @@ pipeline {
           withCredentials([sshUserPrivateKey(credentialsId: 'Hudson-SSH-Key', keyFileVariable: 'identity')]) {
             remote.user = 'hudson'
             remote.identityFile = identity
-            dir('../') {
+            dir('./') {
               findFiles(glob: 'omdebug.tar.gz' ).each {
                 sshPut remote: remote, from: it.toString(), into: "/var/www/build.openmodelica.org/linux/releases/debug/"
               }
