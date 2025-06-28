@@ -1308,9 +1308,9 @@ int gbode_birate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       // Call the step size control
       gbData->lastStepSize = gbData->stepSize;
       gbData->stepSize *= gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
-      gbData->updateJacobian = gbData->stepSize != gbData->lastStepSize;
       if (gbData->maxStepSize > 0 && gbData->maxStepSize < gbData->stepSize)
         gbData->stepSize = gbData->maxStepSize;
+      gbData->updateJacobian = gbData->stepSize != gbData->lastStepSize;
 
       // reject step, if error is too large
       if ((err > 1 ) && gbData->ctrl_method != GB_CTRL_CNST) {
@@ -1757,12 +1757,10 @@ int gbode_singlerate(DATA *data, threadData_t *threadData, SOLVER_INFO *solverIn
       // Call the step size control
       gbData->lastStepSize = gbData->stepSize;
       gbData->stepSize *= gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
-      gbData->updateJacobian = gbData->stepSize != gbData->lastStepSize;
-      infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: step sizes new %g, old %g, changed %s.", gbData->stepSize, gbData->lastStepSize, gbData->updateJacobian? "TRUE" : "FALSE");
-
       if (gbData->maxStepSize > 0 && gbData->maxStepSize < gbData->stepSize)
         gbData->stepSize = gbData->maxStepSize;
       gbData->optStepSize = gbData->stepSize;
+      gbData->updateJacobian = gbData->stepSize != gbData->lastStepSize;
 
       // reject step, if error is too large
       if ((err > 1) && gbData->ctrl_method != GB_CTRL_CNST) {

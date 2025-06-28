@@ -839,19 +839,19 @@ int jacobian_SR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian,
     /* Evaluate column of Jacobian ODE */
     memcpy(jacobian_ODE->seedVars, jacobian->seedVars, sizeof(modelica_real)*jacobian->sizeCols);
     data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
-    infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: computed ODE Jacobian color at time %g, step size %g, color %d of %d.", data->localData[0]->timeValue, gbData->stepSize, numberOfEval, jacobian->sparsePattern->maxColors);
+    infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "GBODE: computed ODE Jacobian color at time %g, step size %g, color %d of %d.", data->localData[0]->timeValue, gbData->stepSize, numberOfEval, jacobian->sparsePattern->maxColors);
     if (numberOfEval == jacobian->sparsePattern->maxColors) {
       gbData->numberOfEvalJacobianODE++;
     }
   } else {
-    infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: skipped ODE Jacobian color at time %g, step size %g, color %d of %d.", data->localData[0]->timeValue, gbData->stepSize, numberOfEval, jacobian->sparsePattern->maxColors);
+    infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "GBODE: skipped ODE Jacobian color at time %g, step size %g, color %d of %d.", data->localData[0]->timeValue, gbData->stepSize, numberOfEval, jacobian->sparsePattern->maxColors);
     if (numberOfEval == jacobian->sparsePattern->maxColors) {
       gbData->updateJacobianODE = TRUE;
-      infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: set updateJacobianODE to TRUE.");
+      infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "GBODE: set updateJacobianODE to TRUE.");
     }
   }
   if (numberOfEval == jacobian->sparsePattern->maxColors) {
-    infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: evaluated Jacobian.");
+    infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "GBODE: evaluated Jacobian.");
     numberOfEval = 0;
   }
 
