@@ -128,6 +128,9 @@ typedef struct DATA_GBODE{
                                                      *  0 = yold-x + h*(sum(A[i,j]*k[j], j=1..i-1) + A[i,i]*f(t + c[i]*h, x))
                                                      * */
   JACOBIAN* jacobian;                               /* Jacobian of non-linear system of implicit Runge-Kutta method */
+  modelica_boolean updateJacobian;                  /* indicate whether to update the Jacobian or not */
+  modelica_boolean updateJacobianODE;               /* indicate whether to update the ODE Jacobian or not */
+  int numberOfEvalJacobianODE;                      /* number of calls to the Jacobian of the ODE */
   double *y;                                        /* State vector of the current Runge-Kutta step */
   double *yt, *y1;                                  /* Result vector of the states of embedded RK step */
   double *yLeft, *kLeft, *yRight, *kRight;          /* Needed for interpolation of the slow states and emitting to the result files */
