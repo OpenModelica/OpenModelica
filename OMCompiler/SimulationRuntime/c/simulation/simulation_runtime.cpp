@@ -1166,6 +1166,11 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     infoStreamPrint(OMC_LOG_STDOUT, 0, "Tolerance for accepting accuracy in Newton solver changed to %g", newtonFTol);
   }
 
+  if(omc_flag[FLAG_NEWTON_MAX_STEPS]) {
+    newtonMaxSteps = atoi(omc_flagValue[FLAG_NEWTON_MAX_STEPS]);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Maximum number of Newton steps for GBODE changed to %d", newtonMaxSteps);
+  }
+
   if(omc_flag[FLAG_NEWTON_MAX_STEP_FACTOR]) {
     maxStepFactor = atof(omc_flagValue[FLAG_NEWTON_MAX_STEP_FACTOR]);
     infoStreamPrint(OMC_LOG_STDOUT, 0, "Maximum step size factor for a Newton step changed to %g", newtonFTol);
