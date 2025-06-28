@@ -43,6 +43,7 @@ extern double nonlinearSparseSolverMaxDensity;
 extern int nonlinearSparseSolverMinSize;
 extern double newtonXTol;
 extern double newtonFTol;
+extern int newtonMaxSteps;
 extern double maxStepFactor;
 extern double steadyStateTol;
 extern const size_t SIZERINGBUFFER;

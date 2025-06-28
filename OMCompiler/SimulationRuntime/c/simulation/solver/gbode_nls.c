@@ -485,9 +485,7 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
   // Debug nonlinear solution process
   rtclock_t clock;
   double cpu_time_used;
-  int numIter;
-
-  numIter = 20;
+  double newtonTol = fmax(newtonFTol, newtonXTol);
 
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
     rt_ext_tp_tick(&clock);
@@ -497,16 +495,16 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
     // Get kinsol data object
     NLS_KINSOL_DATA* kin_mem = ((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory;
 
-    set_kinsol_parameters(kin_mem, numIter, SUNTRUE, 10, 100*DBL_EPSILON);
+    set_kinsol_parameters(kin_mem, newtonMaxSteps, SUNTRUE, 10, newtonTol);
     solved = solveNLS(data, threadData, nlsData);
     /* Retry solution process with updated Jacobian */
     if (!solved) {
-      infoStreamPrint(OMC_LOG_STDOUT, 0, "GBODE: Solution of NLS failed, Try with updated Jacobian at time %g. Number of Iterations %d", gbData->time, numIter);
-      set_kinsol_parameters(kin_mem, numIter, SUNFALSE, 10, 100*DBL_EPSILON);
+      infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: Solution of NLS failedat time %g. Try with updated Jacobian.", gbData->time);
+      set_kinsol_parameters(kin_mem, newtonMaxSteps, SUNFALSE, 1, newtonTol);
       solved = solveNLS(data, threadData, nlsData);
       if (!solved) {
-        infoStreamPrint(OMC_LOG_STDOUT, 0, "GBODE: Solution of NLS failed, Try with less accuracy.");
-        set_kinsol_parameters(kin_mem, numIter, SUNFALSE, 10, 1000*DBL_EPSILON);
+        infoStreamPrint(OMC_LOG_STDOUT, 0, "GBODE: Solution of NLS failed at time %g, Try with less accuracy.", gbData->time);
+        set_kinsol_parameters(kin_mem, newtonMaxSteps, SUNFALSE, 1, 10*newtonTol);
         solved = solveNLS(data, threadData, nlsData);
       }
     }
@@ -789,8 +787,9 @@ int jacobian_SR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian,
   const int stage = gbData->act_stage;
   modelica_real fac;
 
-  /* Evaluate column of Jacobian ODE */
   JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+
+  /* Evaluate column of Jacobian ODE */
   memcpy(jacobian_ODE->seedVars, jacobian->seedVars, sizeof(modelica_real)*jacobian->sizeCols);
   data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
 

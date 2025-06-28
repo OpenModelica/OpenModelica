@@ -207,7 +207,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
     for (stage = 0; stage < nStages-1; stage++)
     {
       gbfData->y[i] += -gbfData->yv[stage * nStates + i] * gbfData->tableau->c[stage] +
-                        gbfData->kv[stage * nStates + i] * gbfData->tableau->b[stage] *  gbfData->stepSize;
+                        gbfData->kv[stage * nStates + i] * gbfData->tableau->b[stage] * gbfData->stepSize;
     }
     gbfData->y[i] += gbfData->kv[stage * nStates + i] * gbfData->tableau->b[stage] * gbfData->stepSize;
     gbfData->y[i] /= gbfData->tableau->c[stage];
