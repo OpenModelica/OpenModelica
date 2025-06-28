@@ -292,8 +292,14 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
       // Set start vector
       memcpy(nlsData->nlsx,    gbData->yOld, nStates*sizeof(modelica_real));
-      memcpy(nlsData->nlsxOld, gbData->yOld, nStates*sizeof(modelica_real));
-      extrapolation_gb(gbData, nlsData->nlsxExtrapolation, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+      addSmultVec_gb(nlsData->nlsxOld, gbData->yv, gbData->kv, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize - gbData->tv[0], nStates);
+
+      if (stage>1) {
+        extrapolation_hermite_gb(nlsData->nlsxExtrapolation, gbData->nStates, gbData->time + gbData->tableau->c[stage_-2] * gbData->stepSize, gbData->x + (stage_-2) * nStates, gbData->k + (stage_-2) * nStates,
+                             gbData->time + gbData->tableau->c[stage_-1] * gbData->stepSize, gbData->x + (stage_-1) * nStates, gbData->k + (stage_-1) * nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+      } else {
+        extrapolation_gb(gbData, nlsData->nlsxExtrapolation, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+      }
 
       solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
@@ -315,6 +321,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     // copy last calculation of fODE, which should coincide with k[i], here, it yields stage == stage_
     memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
   }
+  infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "GBODE: all stages done.");
 
   // Apply RK-scheme for determining the approximations at (gbData->time + gbData->stepSize)
   // y       = yold+h*sum(b[stage_]  * k[stage_], stage_=1..nStages);

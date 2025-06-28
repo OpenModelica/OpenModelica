@@ -55,6 +55,7 @@ void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double*
                         int nIdx, int* idx, int nStates, BUTCHER_TABLEAU* tableau, double* x, double *k);
 double error_interpolation_gb(DATA_GBODE* gbData, int nIdx, int* idx, double tol);
 void extrapolation_gb(DATA_GBODE* gbData, double* nlsxExtrapolation, double time);
+void extrapolation_hermite_gb(double* nlsxExtrapolation, int nStates, double t0, double *x0, double* k0, double t1, double *x1, double* k1, double time);
 void extrapolation_gbf(DATA_GBODE* gbData, double* nlsxExtrapolation, double time);
 
 // Copy only specific values referenced by an index vector
