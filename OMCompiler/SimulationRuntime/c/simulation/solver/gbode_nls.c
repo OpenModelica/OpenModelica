@@ -37,7 +37,6 @@
 #include "gbode_sparse.h"
 
 #include "../../simulation_data.h"
-#include "model_help.h"
 
 #include "solver_main.h"
 #include "kinsolSolver.h"
@@ -527,7 +526,6 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
       set_kinsol_parameters(kin_mem, newtonMaxSteps, SUNFALSE, 1, 10*newtonTol);
       solved = solveNLS(data, threadData, nlsData);
     }
-
     if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) get_kinsol_statistics(kin_mem);
   } else {
     solved = solveNLS(data, threadData, nlsData);

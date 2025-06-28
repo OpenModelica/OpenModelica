@@ -321,7 +321,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     // copy last calculation of fODE, which should coincide with k[i], here, it yields stage == stage_
     memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
 
-    /* setStepSizeChanged to false, if stages have the same diagonal element, because they have the same step size */
+    /* reuse Jacobian if stages have the same diagonal element */
     if (stage < nStages -1 && gbData->tableau->A[stage * nStages + stage]!=0)
       gbData->updateJacobian = gbData->tableau->A[stage * nStages + stage] != gbData->tableau->A[(stage+1) * nStages + (stage+1)];
   }
