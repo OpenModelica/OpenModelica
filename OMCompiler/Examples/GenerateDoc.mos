@@ -231,30 +231,37 @@ algorithm
 end toHtml;
 ");
 
-"Start calculate items";
-echo(false);
-items:={Item(
-      filename(OpenModelica.Scripting.typeNameString(c))+".html",
-      head(OpenModelica.Scripting.typeNameStrings(c),filename(OpenModelica.Scripting.typeNameString(c))+".svg",rmSymlinks=rmSymlinks),
-      OpenModelica.Scripting.getDocumentationAnnotation(c),
-      preSuffixIfNotEmpty(
-        "<h2>Contents</h2>\n<table><tr><th>Name</th><th>Description</th></tr>",
-        sum("<tr><td>"+ svgIcon("Icons/" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".svg",filename(OpenModelica.Scripting.typeNameString(cl)) + ".html","svgiconsmall",rmSymlinks=rmSymlinks) +"<a href=\"" + uriEncode(filename(OpenModelica.Scripting.typeNameString(cl))) + ".html\">" +
-             last(OpenModelica.Scripting.typeNameStrings(cl)) + "</a></td>" + "<td>" +
-             toHtml(OpenModelica.Scripting.getClassComment(cl)) +
-             "</td></tr>\n"
-             for cl in OpenModelica.Scripting.getClassNames(c,qualified=true,sort=false)),
-        "</table>"
-        ),
-      toHtml(OpenModelica.Scripting.getClassComment(c)),
-      preSuffixIfNotEmpty("\n<h4><a name=\"interface\">Interface</a></h4>\n<blockquote><pre>",toHtml(OpenModelica.Scripting.list(c,interfaceOnly=true)),"</pre></blockquote>"),
-      preSuffixIfNotEmpty("\n<h4><a name=\"definition\">Definition</a></h4>\n<blockquote><pre>",toHtml(OpenModelica.Scripting.list(c,shortOnly=true)),"</pre></blockquote>")
-    ) for c in allClassNames};
+"Start calculate items"  + String(size(allClassNames, 1));
+
+for c in allClassNames loop
+
+  items:={Item(
+        filename(OpenModelica.Scripting.typeNameString(c))+".html",
+        head(OpenModelica.Scripting.typeNameStrings(c),filename(OpenModelica.Scripting.typeNameString(c))+".svg",rmSymlinks=rmSymlinks),
+        OpenModelica.Scripting.getDocumentationAnnotation(c),
+        preSuffixIfNotEmpty(
+          "<h2>Contents</h2>\n<table><tr><th>Name</th><th>Description</th></tr>",
+          sum("<tr><td>"+ svgIcon("Icons/" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".svg",filename(OpenModelica.Scripting.typeNameS\
+  tring(cl)) + ".html","svgiconsmall",rmSymlinks=rmSymlinks) +"<a href=\"" + uriEncode(filename(OpenModelica.Scripting.typeNameString(cl))) + ".htm\
+  l\">" +
+               last(OpenModelica.Scripting.typeNameStrings(cl)) + "</a></td>" + "<td>" +
+               toHtml(OpenModelica.Scripting.getClassComment(cl)) +
+               "</td></tr>\n"
+               for cl in OpenModelica.Scripting.getClassNames(c,qualified=true,sort=false)),
+               "</table>"),
+        toHtml(OpenModelica.Scripting.getClassComment(c)),
+        preSuffixIfNotEmpty("\n<h4><a name=\"interface\">Interface</a></h4>\n<blockquote><pre>",toHtml(OpenModelica.Scripting.list(c,interfaceOnly=\
+  true)),"</pre></blockquote>"),
+        preSuffixIfNotEmpty("\n<h4><a name=\"definition\">Definition</a></h4>\n<blockquote><pre>",toHtml(OpenModelica.Scripting.list(c,shortOnly=tr\
+  ue)),"</pre></blockquote>")
+      )};
+
+  writeFile(itemFile(items) /* Vector of filenames */,itemString(items,version) /* Vector of file contents */);
+  getErrorString();
+
+end for;
 
 echo(shouldEcho);
-"Start writing items to file";
-writeFile(itemFile(items) /* Vector of filenames */,itemString(items,version) /* Vector of file contents */);
-getErrorString();
 "Finished writing " + String(size(items,1)) + " items";
 echo(false);
 
