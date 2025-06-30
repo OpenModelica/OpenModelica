@@ -352,6 +352,9 @@ simulationnewbackend-basics.log: omc-diff
 simulationnewbackend-clocked.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/clocked/ -f Makefile test > $@
 	@echo $@ done
+simulationnewbackend-daemode.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/daemode/ -f Makefile test > $@
+	@echo $@ done
 simulationnewbackend-differentation.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/differentation/ -f Makefile test > $@
 	@echo $@ done

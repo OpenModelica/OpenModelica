@@ -404,12 +404,6 @@ public
             (libs, libPaths, _, includeDirs, recordDecls, functions, _) := OldSimCodeUtil.createFunctions(program, ConvertDAE.convertFunctionTree(funcTree));
             makefileParams := OldSimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
 
-            // This needs to be done after the variables have been created by ModelInfo.create()
-            // for now do not allow dae mode -- this has to be fixed and redesigned to fit before modelInfo!
-            //if isSome(bdae.dae) then
-              //(daeModeData, modelInfo, jacA, simcode_map, simCodeIndices) := DaeModeData.createSparsityJacobian(daeModeData, modelInfo, Util.getOption(bdae.dae), simcode_map, simCodeIndices);
-            //else
-
             (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := collectAlgebraicLoops(init, init_0, ode, algebraic, daeModeData, simCodeIndices, simcode_map);
 
             for jac in jacobians loop
@@ -419,6 +413,10 @@ public
             end for;
 
             (jacA, simCodeIndices) := SimJacobian.createSimulationJacobian(bdae.ode, bdae.ode_event, simCodeIndices, simcode_map);
+            if isSome(daeModeData) then
+              daeModeData := DaeModeData.addJacobian(daeModeData, jacA);
+            end if;
+
             (jacB, simCodeIndices) := SimJacobian.empty("B", simCodeIndices);
             (jacC, simCodeIndices) := SimJacobian.empty("C", simCodeIndices);
             (jacD, simCodeIndices) := SimJacobian.empty("D", simCodeIndices);
@@ -758,13 +756,24 @@ public
     protected
       list<list<SimStrongComponent.Block>> blcks;
       list<SimVar> residualVars, algebraicVars;
-      Option<SimJacobian> daeModeJac;
     algorithm
       (blcks, residualVars, simCodeIndices) := SimStrongComponent.Block.createDAEModeBlocks(systems, simCodeIndices, simcode_map, equation_map);
-      //(daeModeJac, simCodeIndices) := SimJacobian.fromSystems(systems, simCodeIndices);
-      //data := SOME(DAE_MODE_DATA(blcks, daeModeJac, residualVars, {}, {}, DaeModeConfig.ALL));
-      data := NONE();
+      data := SOME(DAE_MODE_DATA(blcks, NONE(), residualVars, {}, {}, DaeModeConfig.ALL));
     end create;
+
+    function addJacobian
+      input output Option<DaeModeData> data;
+      input SimJacobian daeModeJac;
+    algorithm
+      data := match data
+        local
+          DaeModeData dmd;
+        case SOME(dmd) algorithm
+          dmd.sparsityPattern := SOME(daeModeJac);
+        then SOME(dmd);
+        else NONE();
+      end match;
+    end addJacobian;
 
     function convert
       input DaeModeData data;

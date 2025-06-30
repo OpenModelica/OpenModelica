@@ -43,7 +43,7 @@ protected
 
   // Backend imports
   import BackendDAE = NBackendDAE;
-  import BEquation = NBEquation;
+  import NBEquation.{Equation, EquationPointers};
   import BVariable = NBVariable;
   import Causalize = NBCausalize;
   import Partition = NBPartition;
@@ -100,13 +100,15 @@ protected
     list<Partition.Partition> new_partitions = {};
   algorithm
     for part in partitions loop
+      // clone equations
+      part.equations := EquationPointers.clone(part.equations, false);
       // move unknowns
       part.daeUnknowns := SOME(part.unknowns);
       // convert all algebraic variables to algebraic states
       // BVariable.VariablePointers.mapPtr(part.unknowns, function BVariable.makeAlgStateVar());
       // convert all residual equations to dae residuals
-      BEquation.EquationPointers.mapPtr(part.equations, function BEquation.Equation.createResidual(new = false));
-      part.unknowns := BEquation.EquationPointers.getResiduals(part.equations);
+      EquationPointers.mapPtr(part.equations, function Equation.createResidual(new = false));
+      part.unknowns := EquationPointers.getResiduals(part.equations);
       new_partitions := part :: new_partitions;
     end for;
     partitions := listReverse(new_partitions);
