@@ -147,8 +147,7 @@ public
 
       case MAIN()
         algorithm
-          if (listEmpty(bdae.ode) and listEmpty(bdae.algebraic) and listEmpty(bdae.ode_event) and listEmpty(bdae.alg_event) and listEmpty(bdae.clocked))
-             or not Flags.isSet(Flags.BLT_DUMP) then
+          if not Flags.isSet(Flags.BLT_DUMP) or (listEmpty(bdae.ode) and listEmpty(bdae.algebraic) and listEmpty(bdae.ode_event) and listEmpty(bdae.alg_event) and listEmpty(bdae.clocked) and not isSome(bdae.dae)) then
             tmp := StringUtil.headline_1("BackendDAE: " + str) + "\n";
             tmp := tmp +  VarData.toString(bdae.varData, 2) + "\n" +
                           EqData.toString(bdae.eqData, 1);
@@ -291,16 +290,19 @@ public
       (Events.main,        "Events")
     };
 
-    mainModules := {
+    if Flags.getConfigBool(Flags.DAE_MODE) then
+      mainModules := {(DAEMode.main, "DAE-Mode")};
+    else
+      mainModules := {};
+    end if;
+
+    mainModules := listAppend({
       (function Partitioning.main(kind = NBPartition.Kind.ODE),             "Partitioning"),
       (function Causalize.main(kind = NBPartition.Kind.ODE),                "Causalize"),
       (function Inline.main(inline_types = {DAE.AFTER_INDEX_RED_INLINE()}, init = false), "After Index Reduction Inline"),
       (Initialization.main,                                                 "Initialization")
-    };
+    }, mainModules);
 
-    if Flags.getConfigBool(Flags.DAE_MODE) then
-      mainModules := (DAEMode.main, "DAE-Mode") :: mainModules;
-    end if;
 
     // (do not change order SOLVE -> JACOBIAN)
     postOptModules := {
