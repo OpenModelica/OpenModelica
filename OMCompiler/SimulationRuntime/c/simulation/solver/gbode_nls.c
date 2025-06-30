@@ -490,7 +490,7 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
   if(omc_flag[FLAG_NEWTON_FTOL] || omc_flag[FLAG_NEWTON_XTOL]) {
     newtonTol = fmax(newtonFTol, newtonXTol);
   } else {
-    newtonTol = data->simulationInfo->tolerance*1e-2;
+    newtonTol = data->simulationInfo->tolerance*1e-3;
   }
 
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
