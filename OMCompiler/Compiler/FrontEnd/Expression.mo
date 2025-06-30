@@ -7502,7 +7502,7 @@ algorithm
   end match;
 end traverseExpBidirSubs;
 
-protected function traverseExpTopDownSubs
+public function traverseExpTopDownSubs
   input list<DAE.Subscript> inSubscript;
   input FuncType rel;
   input Argument iarg;
