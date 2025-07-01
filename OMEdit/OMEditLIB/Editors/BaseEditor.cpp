@@ -2136,6 +2136,21 @@ bool BaseEditor::isModelicaModelInPackageOneFile()
 }
 
 /*!
+ * \brief BaseEditor::completerItemsToStringList
+ * Converts the CompleterItem list to QStringList using the CompleterItem::mValue.
+ * \param items
+ * \return
+ */
+QStringList BaseEditor::completerItemsToStringList(const QList<CompleterItem> &items)
+{
+  QStringList list;
+  for (const CompleterItem &item : items) {
+    list.append(item.mValue);
+  }
+  return list;
+}
+
+/*!
  * \brief BaseEditor::initialize
  * Initializes the editor with default values.
  */

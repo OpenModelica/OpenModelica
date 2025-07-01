@@ -351,7 +351,8 @@ protected
     list<Variable> illegal_discrete_vars = {};
     String err_str = "";
   algorithm
-    discrete_reals := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    // use hash and equality that ignores subscripts to handle arrays
+    discrete_reals := UnorderedSet.new(ComponentRef.hashStrip, ComponentRef.isEqualStrip);
 
     // collect all lhs crefs that are discrete and real from equations
     for eqn in flatModel.equations loop
@@ -368,8 +369,6 @@ protected
     // check if all discrete real variables are assigned in when bodys
     for variable in flatModel.variables loop
       // check variability and not type for discrete variables
-      // remove all subscripts to handle arrays
-      variable.name := ComponentRef.stripSubscriptsAll(variable.name);
       if Variable.variability(variable) == Variability.DISCRETE and Type.isReal(Type.arrayElementType(variable.ty)) and
          not UnorderedSet.contains(variable.name, discrete_reals) then
         illegal_discrete_vars := variable :: illegal_discrete_vars;
@@ -379,7 +378,8 @@ protected
     // report error if there are any
     if not listEmpty(illegal_discrete_vars) then
       for var in illegal_discrete_vars loop
-        Error.addSourceMessage(Error.DISCRETE_REAL_UNDEFINED, {ComponentRef.toString(var.name)}, var.info);
+        Error.addSourceMessage(Error.DISCRETE_REAL_UNDEFINED,
+          {ComponentRef.toString(ComponentRef.stripSubscriptsAll(var.name))}, var.info);
       end for;
       fail();
     end if;
@@ -544,8 +544,7 @@ protected
       case Expression.CREF(ty = ty, cref = cref)
         guard(Type.isReal(Type.arrayElementType(ty)))
         algorithm
-          // remove all subscripts to handle arrays
-          UnorderedSet.add(ComponentRef.stripSubscriptsAll(cref), discreteReals);
+          UnorderedSet.add(cref, discreteReals);
         then
           ();
 
@@ -576,13 +575,12 @@ protected
     ComponentRef element;
     list<InstNode> inputs;
   algorithm
-    // remove all subscripts to handle arrays
-    UnorderedSet.add(ComponentRef.stripSubscriptsAll(cref), discreteReals);
+    UnorderedSet.add(cref, discreteReals);
     // also add all record elements
     (inputs, _, _) := Record.collectRecordParams(cls);
     for node in inputs loop
       element := ComponentRef.prefixCref(node, InstNode.getType(node), {}, cref);
-      UnorderedSet.add(ComponentRef.stripSubscriptsAll(element), discreteReals);
+      UnorderedSet.add(element, discreteReals);
     end for;
   end checkDiscreteRealRecord;
 
