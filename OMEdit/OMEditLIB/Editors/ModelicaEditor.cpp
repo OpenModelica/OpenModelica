@@ -78,7 +78,7 @@ void ModelicaEditor::popUpCompleter()
   mpPlainTextEdit->clearCompleter();
 
   QList<CompleterItem> annotations;
-  bool inAnnotation = getCompletionAnnotations(stringAfterWord("annotation"), annotations);
+  bool inAnnotation = ModelicaEditor::getCompletionAnnotations(stringAfterWord("annotation"), annotations);
   mpPlainTextEdit->insertCompleterSymbols(annotations, ":/Resources/icons/completerAnnotation.svg");
 
   bool startsWithUpperCase = !word.isEmpty() && word[0].isUpper();
@@ -97,13 +97,7 @@ void ModelicaEditor::popUpCompleter()
   }
   if (!inAnnotation) {
     QList<CompleterItem> classes, components;
-    getCompletionSymbols(word, classes, components);
-
-    std::sort(classes.begin(), classes.end());
-    classes.erase(std::unique(classes.begin(), classes.end()), classes.end());
-
-    std::sort(components.begin(), components.end());
-    components.erase(std::unique(components.begin(), components.end()), components.end());
+    ModelicaEditor::getCompletionSymbols(getModelWidget()->getLibraryTreeItem(), word, classes, components);
 
     mpPlainTextEdit->insertCompleterSymbols(classes, ":/Resources/icons/completerClass.svg");
     mpPlainTextEdit->insertCompleterSymbols(components, ":/Resources/icons/completerComponent.svg");
@@ -149,14 +143,20 @@ LibraryTreeItem *ModelicaEditor::deepResolve(LibraryTreeItem *pItem, QStringList
   return pCurrentItem;
 }
 
-QList<LibraryTreeItem*> ModelicaEditor::getCandidateContexts(QStringList nameComponents)
+/*!
+ * \brief ModelicaEditor::getCandidateContexts
+ * \param pLibraryTreeItem
+ * \param nameComponents
+ * \return
+ */
+QList<LibraryTreeItem*> ModelicaEditor::getCandidateContexts(LibraryTreeItem *pLibraryTreeItem, QStringList nameComponents)
 {
   QList<LibraryTreeItem*> result;
   QList<LibraryTreeItem*> roots;
-  LibraryTreeItem *pItem = getModelWidget()->getLibraryTreeItem();
-  while (pItem) {
-    roots.append(pItem->getInheritedClassesDeepList());
-    pItem = pItem->parent();
+
+  while (pLibraryTreeItem) {
+    roots.append(pLibraryTreeItem->getInheritedClassesDeepList());
+    pLibraryTreeItem = pLibraryTreeItem->parent();
   }
 
   for (int i = 0; i < roots.size(); ++i) {
@@ -235,7 +235,14 @@ QString ModelicaEditor::stringAfterWord(const QString &word)
     return plainText.mid(index, pos - index);
 }
 
-void ModelicaEditor::getCompletionSymbols(QString word, QList<CompleterItem> &classes, QList<CompleterItem> &components)
+/*!
+ * \brief ModelicaEditor::getCompletionSymbols
+ * \param pLibraryTreeItem
+ * \param word
+ * \param classes
+ * \param components
+ */
+void ModelicaEditor::getCompletionSymbols(LibraryTreeItem *pLibraryTreeItem, QString word, QList<CompleterItem> &classes, QList<CompleterItem> &components)
 {
   QStringList nameComponents = word.split('.');
   QString lastPart;
@@ -246,11 +253,17 @@ void ModelicaEditor::getCompletionSymbols(QString word, QList<CompleterItem> &cl
     lastPart = "";
   }
 
-  QList<LibraryTreeItem*> contexts = getCandidateContexts(nameComponents);
+  QList<LibraryTreeItem*> contexts = ModelicaEditor::getCandidateContexts(pLibraryTreeItem, nameComponents);
 
   for (int i = 0; i < contexts.size(); ++i) {
     contexts[i]->tryToComplete(classes, components, lastPart);
   }
+
+  std::sort(classes.begin(), classes.end());
+  classes.erase(std::unique(classes.begin(), classes.end()), classes.end());
+
+  std::sort(components.begin(), components.end());
+  components.erase(std::unique(components.begin(), components.end()), components.end());
 }
 
 /*!
@@ -264,6 +277,7 @@ LibraryTreeItem *ModelicaEditor::getAnnotationCompletionRoot()
   for (int i = 0; i < pLibraryRoot->childrenSize(); ++i) {
     if (pLibraryRoot->childAt(i)->getName() == "OpenModelica") {
       pModelicaReference = pLibraryRoot->childAt(i);
+      break;
     }
   }
 
@@ -281,7 +295,7 @@ LibraryTreeItem *ModelicaEditor::getAnnotationCompletionRoot()
  */
 void ModelicaEditor::getCompletionAnnotations(const QStringList &stack, QList<CompleterItem> &annotations)
 {
-  LibraryTreeItem *pReference = getAnnotationCompletionRoot();
+  LibraryTreeItem *pReference = ModelicaEditor::getAnnotationCompletionRoot();
   if (pReference) {
     LibraryTreeItem *pAnnotation = deepResolve(pReference, stack);
     if (pAnnotation) {
@@ -323,13 +337,16 @@ bool ModelicaEditor::getCompletionAnnotations(const QString &str, QList<Complete
 
     // First, handle string literals
     if (ch == '"') {
-      for (++i; i < str.size() && str[i] != '"'; ++i) {
-        if (str[i] == '\\')
-          ++i;
+      ++i;
+      while (i < str.size()) {
+        if (str[i] == '\\') {
+          ++i; // skip escaped character
+        } else if (str[i] == '"') {
+          break; // end of quoted string
+        }
+        ++i;
       }
-      // skipped, restarting as usual
-      --i;
-      continue;
+      continue; // don't treat quoted string contents as syntax
     }
 
     // Now, handle the stack of annotations
@@ -355,7 +372,7 @@ bool ModelicaEditor::getCompletionAnnotations(const QString &str, QList<Complete
     return false;
   }
   stack.pop_front(); // pop 'annotation'
-  getCompletionAnnotations(stack, annotations);
+  ModelicaEditor::getCompletionAnnotations(stack, annotations);
   return true;
 }
 

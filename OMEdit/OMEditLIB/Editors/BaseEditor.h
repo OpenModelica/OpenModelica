@@ -336,6 +336,7 @@ public:
   virtual QString wordUnderCursor();
   virtual void symbolAtPosition(const QPoint &pos);
   bool isModelicaModelInPackageOneFile();
+  static QStringList completerItemsToStringList(const QList<CompleterItem> &items);
 private:
   void initialize();
   void createActions();
