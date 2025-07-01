@@ -639,7 +639,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 1, "Values of relevant indicators");
 
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
-
+  modelica_integer sizeOfTorns;
   unsigned i, j, k;
   double eps = 1e-2;
 
@@ -925,6 +925,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
   infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "------  ------    ----------------");
   for (l = 0; l < n_gt_eps; l++) {
     printedIdx[nPrinted] = -1;
+    sizeOfTorns = systemData->torn_plus_residual_size - systemData->size;
     if (0 <= index_alpha[l] && index_alpha[l] < p) {
       // Check if equation l referenced by alpha has already been printed for Gamma
       unsigned alreadyPrinted = 0;
@@ -934,9 +935,11 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
       if (!alreadyPrinted) {
         // Print equation l referenced by alpha and the value of alpha_i
         if (alpha[index_alpha[l]] < 1.e3)
-          infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%6d  %6d  %5.2f", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
+          infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%6d  %6d  %5.2f", n_idx[index_alpha[l]]+1,
+                          systemData->eqn_simcode_indices[sizeOfTorns + n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
         else
-          infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%6d  %6d  %5.2e", n_idx[index_alpha[l]]+1, systemData->eqn_simcode_indices[n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
+          infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%6d  %6d  %5.2e", n_idx[index_alpha[l]]+1,
+                          systemData->eqn_simcode_indices[sizeOfTorns + n_idx[index_alpha[l]]], alpha[index_alpha[l]]);
         printedIdx[nPrinted++] = index_alpha[l];
       }
     } else if (0 <= index_Gamma_i[l] && index_Gamma_i[l] < p &&
@@ -951,7 +954,7 @@ void PrintResults( DATA* data, unsigned sysNumber, unsigned m, unsigned p, unsig
       if (!alreadyPrinted) {
         // Print equation l referenced by Gamma and the value of Gamma_ljk
         infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "%6d  %6d  %5.2f", n_idx[index_Gamma_i[l]]+1,
-          systemData->eqn_simcode_indices[n_idx[index_Gamma_i[l]]],
+          systemData->eqn_simcode_indices[sizeOfTorns + n_idx[index_Gamma_i[l]]],
           Gamma_ijk[index_Gamma_i[l]][index_Gamma_j[l]][index_Gamma_k[l]]);
         printedIdx[nPrinted++] = index_Gamma_i[l];
       }
