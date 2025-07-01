@@ -168,6 +168,7 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               gbode_util$(OBJ_EXT) \
               ida_solver$(OBJ_EXT) \
               irksco$(OBJ_EXT) \
+              jacobian_svd$(OBJ_EXT) \
               jacobianSymbolical$(OBJ_EXT) \
               kinsolSolver$(OBJ_EXT) \
               linearSolverKlu$(OBJ_EXT) \

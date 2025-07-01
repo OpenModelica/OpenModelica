@@ -1353,6 +1353,11 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
       nlsKinsolDenseDerivativeTest(data, nlsData, kinsolData, kinsolData->J, FALSE);
     }
 
+    if (omc_useStream[OMC_LOG_NLS_SVD])
+    {
+      svd_compute(data, nlsData, SM_DATA_S(kinsolData->J), NV_DATA_S(kinsolData->xScale), NV_DATA_S(kinsolData->fScale));
+    }
+
     flag = KINSol(
         kinsolData->kinsolMemory,   /* KINSol memory block */
         kinsolData->initialGuess,   /* initial guess on input; solution vector */
