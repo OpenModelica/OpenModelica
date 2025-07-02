@@ -48,6 +48,19 @@ EVAL_DAG* allocEvalDAG(size_t nVars, size_t nEqns)
   dag->eqDep = (size_t**) calloc(nEqns, sizeof(size_t*));
   dag->select = (modelica_boolean*) calloc(nEqns, sizeof(modelica_boolean));
 
+  /*
+  workaround, some JACOBIAN_TMP_VAR variables seem to miss an equation in which
+  they are solved. This is probably because the derivative is zero and the
+  corresponding equation was removed from the system.
+
+  So we use the default -1 to mean there is no equation to evaluate.
+
+  A better solution would be to remove the variable as well and propagate the
+  zero symbolically.
+  */
+  for (size_t i = 0; i < nVars; i++)
+    dag->mapVarToEqNode[i] = (size_t)(-1);
+
   return dag;
 }
 
@@ -130,6 +143,20 @@ void activateEvalDependencies(EVAL_SELECTION* selection)
     if (dag->select[i]) {
       for (size_t j = 0; j < dag->nEqDep[i]; j ++) {
         size_t dep = dag->eqDep[i][j];
+
+        /*
+        workaround, some JACOBIAN_TMP_VAR variables seem to miss an equation in which
+        they are solved. This is probably because the derivative is zero and the
+        corresponding equation was removed from the system.
+
+        So we use the default -1 to mean there is no equation to evaluate.
+
+        A better solution would be to remove the variable as well and propagate the
+        zero symbolically.
+        */
+        if (dep == (size_t)(-1))
+          continue;
+
         dag->select[dep] = TRUE;
       }
     }
