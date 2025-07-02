@@ -346,6 +346,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
   modelica_boolean isPatternAvailable;
   NONLINEAR_PATTERN *nonlinearPattern;
   int *eqn_simcode_indices;
+  modelica_integer torn_plus_residual_size;
 
   void (*residualFunc)(RESIDUAL_USERDATA* userData, const double* x, double* res, const int* flag);
   int (*residualFuncConstraints)(RESIDUAL_USERDATA* userData, const double*, double*, const int*);
