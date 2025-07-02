@@ -71,6 +71,7 @@ double maxStepFactor = 1e12;
 double newtonXTol = 1e-12;
 double newtonFTol = 1e-12;
 int newtonMaxSteps = DEFAULT_FLAG_NEWTON_MAX_STEPS;
+int maxJacUpdate[4] = {10,3,1,1};
 double steadyStateTol = 1e-3;
 const size_t SIZERINGBUFFER = 3;
 int compiledInDAEMode = 0;
