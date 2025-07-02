@@ -485,13 +485,7 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
   // Debug nonlinear solution process
   rtclock_t clock;
   double cpu_time_used;
-  double newtonTol;
-
-  if(omc_flag[FLAG_NEWTON_FTOL] || omc_flag[FLAG_NEWTON_XTOL]) {
-    newtonTol = fmax(newtonFTol, newtonXTol);
-  } else {
-    newtonTol = data->simulationInfo->tolerance*1e-3;
-  }
+  double newtonTol = fmax(newtonFTol, newtonXTol);
 
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
     rt_ext_tp_tick(&clock);
