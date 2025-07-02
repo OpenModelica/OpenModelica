@@ -561,13 +561,11 @@ public
                 case InstNode.COMPONENT_NODE()
                   algorithm
                     // Set the component's parent and create a unique instance for it.
-                    node := InstNode.setParent(instance, c);
-                    comp := InstNode.component(node);
-                    node := InstNode.replaceComponent(comp, node);
+                    node := InstNode.cloneComponent(c, instance);
 
                     // If the component is outer, link it with the corresponding
                     // inner component.
-                    if Component.isOuter(comp) then
+                    if InstNode.isOuter(node) then
                       try
                         node := linkInnerOuter(node, inst_scope);
                       else
@@ -623,15 +621,7 @@ public
         case Class.PARTIAL_BUILTIN(elements = tree as FLAT_TREE(components = old_comps))
           algorithm
             instance := if InstNode.isEmpty(instance) then clsNode else instance;
-            old_comps := arrayCopy(old_comps);
-
-            for i in 1:arrayLength(old_comps) loop
-              node := old_comps[i];
-              node := InstNode.setParent(instance, node);
-              old_comps[i] := InstNode.replaceComponent(InstNode.component(node), node);
-            end for;
-
-            tree.components := old_comps;
+            tree.components := Array.map(old_comps, function InstNode.cloneComponent(newParent = instance));
             cls.elements := tree;
             compCount := arrayLength(old_comps);
           then
