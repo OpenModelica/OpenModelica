@@ -480,7 +480,7 @@ void get_kinsol_statistics(NLS_KINSOL_DATA* kin_mem)
 NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData, DATA_GBODE* gbData)
 {
   struct dataSolver * solverData = (struct dataSolver *)nlsData->solverData;
-  NLS_SOLVER_STATUS solved;
+  NLS_SOLVER_STATUS solved = NLS_FAILED;
 
   // Debug nonlinear solution process
   rtclock_t clock;
@@ -495,26 +495,30 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
     // Get kinsol data object
     NLS_KINSOL_DATA* kin_mem = ((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory;
 
-    set_kinsol_parameters(kin_mem, newtonMaxSteps, SUNTRUE, 10, newtonTol);
-    solved = solveNLS(data, threadData, nlsData);
-    /* Retry solution process with updated Jacobian */
-    if (!solved) {
-      infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: Solution of NLS failedat time %g. Try with updated Jacobian.", gbData->time);
-      set_kinsol_parameters(kin_mem, newtonMaxSteps, SUNFALSE, 1, newtonTol);
+    if (maxJacUpdate[0] > 0) {
+      set_kinsol_parameters(kin_mem, newtonMaxSteps, SUNTRUE, maxJacUpdate[0], newtonTol);
       solved = solveNLS(data, threadData, nlsData);
+      if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) get_kinsol_statistics(kin_mem);
     }
-    if (!solved) {
-      infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: Solution of NLS failed at time %g, Try with old start value.", gbData->time);
+    if (!solved && maxJacUpdate[1] > 0) {
+      infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: Solution of NLS failed. Try with updated Jacobian.");
+      set_kinsol_parameters(kin_mem, newtonMaxSteps, SUNFALSE, maxJacUpdate[1], newtonTol);
+      solved = solveNLS(data, threadData, nlsData);
+      if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) get_kinsol_statistics(kin_mem);
+    }
+    if (!solved && maxJacUpdate[2] > 0) {
+      infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: Solution of NLS failed, Try with old start value.");
       memcpy(nlsData->nlsx, nlsData->nlsxOld,  nlsData->size*sizeof(modelica_real));
-      set_kinsol_parameters(kin_mem, newtonMaxSteps, SUNFALSE, 1, newtonTol);
+      set_kinsol_parameters(kin_mem, newtonMaxSteps, SUNFALSE, maxJacUpdate[2], newtonTol);
       solved = solveNLS(data, threadData, nlsData);
+      if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) get_kinsol_statistics(kin_mem);
     }
-    if (!solved) {
-      infoStreamPrint(OMC_LOG_STDOUT, 0, "GBODE: Solution of NLS failed at time %g, Try with less accuracy.", gbData->time);
-      set_kinsol_parameters(kin_mem, newtonMaxSteps, SUNFALSE, 1, 10*newtonTol);
+    if (!solved && maxJacUpdate[3] > 0) {
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "GBODE: Solution of NLS failed, Try with less accuracy.");
+      set_kinsol_parameters(kin_mem, newtonMaxSteps, SUNFALSE, maxJacUpdate[3], 10*newtonTol);
       solved = solveNLS(data, threadData, nlsData);
+      if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) get_kinsol_statistics(kin_mem);
     }
-    if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) get_kinsol_statistics(kin_mem);
   } else {
     solved = solveNLS(data, threadData, nlsData);
   }

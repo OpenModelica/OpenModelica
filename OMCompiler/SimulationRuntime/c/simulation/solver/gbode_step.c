@@ -301,10 +301,11 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
         extrapolation_gb(gbData, nlsData->nlsxExtrapolation, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
       }
 
+      infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "Solving NLS of stage %d at time %g", stage_+1, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
       solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
       if (solved != NLS_SOLVED) {
-        warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage %d at time t=%g", stage_, gbData->time);
+        warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage %d at time t=%g", stage_, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
         return -1;
       }
 

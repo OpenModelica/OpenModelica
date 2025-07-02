@@ -113,6 +113,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_NEWTON_MAX_STEPS */             "newtonMaxSteps",
   /* FLAG_NEWTON_MAX_STEP_FACTOR */       "newtonMaxStepFactor",
   /* FLAG_NEWTON_XTOL */                  "newtonXTol",
+  /* FLAG_NEWTON_JAC_UPDATES */           "newtonJacUpdates",
   /* FLAG_NEWTON_STRATEGY */              "newton",
   /* FLAG_NLS */                          "nls",
   /* FLAG_NLS_INFO */                     "nlsInfo",
@@ -250,6 +251,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_NEWTON_MAX_STEPS */             "[int (default " EXPANDSTRING(DEFAULT_FLAG_NEWTON_MAX_STEPS) ")] maximal number of Newton steps used in GBODE",
   /* FLAG_NEWTON_MAX_STEP_FACTOR */       "[double (default 1e12)] maximum newton step factor mxnewtstep = maxStepFactor * norm2(xScaling). Used currently only by KINSOL.",
   /* FLAG_NEWTON_XTOL */                  "[double (default 1e-12)] tolerance respecting newton correction (delta_x) for updating solution vector in Newton solver",
+  /* FLAG_NEWTON_JAC_UPDATES */           "[int list (at most 4 entries)] Number of steps before Jacobian is recomputed. Zero to skip phase.",
   /* FLAG_NEWTON_STRATEGY */              "value specifies the damping strategy for the newton solver",
   /* FLAG_NLS */                          "value specifies the nonlinear solver",
   /* FLAG_NLS_INFO */                     "outputs detailed information about solving process of non-linear systems into csv files.",
@@ -515,6 +517,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Tolerance respecting newton correction (delta_x) for updating solution vector in Newton solver.\n"
   "  Solution is accepted if the (scaled) 2-norm of the residuals is smaller than the tolerance newtonFTol and the (scaled) newton correction (delta_x) is smaller than the tolerance newtonXTol.\n"
   "  The value is a Double with default value 1e-12.",
+  /* FLAG_NEWTON_JAC_UPDATES */
+  "  Number of steps before Jacobian is recomputed. If zero is chosen, the corresponding solution phase is skipped.",
   /* FLAG_NEWTON_STRATEGY */
   "  Value specifies the damping strategy for the newton solver.",
   /* FLAG_NLS */
@@ -729,6 +733,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_NEWTON_MAX_STEPS */             FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NEWTON_MAX_STEP_FACTOR */       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NEWTON_XTOL */                  FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_NEWTON_JAC_UPDATES */           FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NEWTON_STRATEGY */              FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NLS */                          FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NLS_INFO */                     FLAG_REPEAT_POLICY_FORBID,
@@ -865,6 +870,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_NEWTON_MAX_STEPS */             FLAG_TYPE_OPTION,
   /* FLAG_NEWTON_MAX_STEP_FACTOR */       FLAG_TYPE_OPTION,
   /* FLAG_NEWTON_XTOL */                  FLAG_TYPE_OPTION,
+  /* FLAG_NEWTON_JAC_UPDATES */           FLAG_TYPE_OPTION,
   /* FLAG_NEWTON_STRATEGY */              FLAG_TYPE_OPTION,
   /* FLAG_NLS */                          FLAG_TYPE_OPTION,
   /* FLAG_NLS_INFO */                     FLAG_TYPE_FLAG,
