@@ -1629,11 +1629,13 @@ void printButcherTableau(BUTCHER_TABLEAU* tableau)
       ct += snprintf(buffer+ct, buffSize-ct, "%10g", tableau->b[j]);
     }
     infoStreamPrint(OMC_LOG_SOLVER, 0, "%s", buffer);
-    ct = snprintf(buffer, buffSize, "%10s | ", "");
-    for (j = 0; j<tableau->nStages; j++) {
-      ct += snprintf(buffer+ct, buffSize-ct, "%10g", tableau->bt[j]);
+    if (!tableau->richardson){
+      ct = snprintf(buffer, buffSize, "%10s | ", "");
+      for (j = 0; j<tableau->nStages; j++) {
+        ct += snprintf(buffer+ct, buffSize-ct, "%10g", tableau->bt[j]);
+      }
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "%s", buffer);
     }
-    infoStreamPrint(OMC_LOG_SOLVER, 0, "%s", buffer);
     messageClose(OMC_LOG_SOLVER);
   }
 }
