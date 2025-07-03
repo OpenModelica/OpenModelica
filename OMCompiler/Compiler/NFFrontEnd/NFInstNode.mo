@@ -1952,6 +1952,18 @@ uniontype InstNode
     end match;
   end clone;
 
+  function cloneComponent
+    input InstNode component;
+    input InstNode newParent;
+    output InstNode outComponent;
+  algorithm
+    outComponent := match component
+      case COMPONENT_NODE()
+        then COMPONENT_NODE(component.name, component.definition, component.visibility,
+          Pointer.create(Pointer.access(component.component)), newParent, component.nodeType);
+    end match;
+  end cloneComponent;
+
   function getComments
     input InstNode node;
     input list<SCode.Comment> accumCmts = {};

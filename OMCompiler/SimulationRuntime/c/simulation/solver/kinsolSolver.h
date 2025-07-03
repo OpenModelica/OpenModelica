@@ -38,6 +38,7 @@
 extern "C" {
 #endif
 
+#include "jacobian_svd.h"
 #include "nonlinearSystem.h"
 #include "simulation_data.h"
 #include "sundials_error.h"

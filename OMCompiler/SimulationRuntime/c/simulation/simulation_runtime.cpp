@@ -1176,6 +1176,23 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     infoStreamPrint(OMC_LOG_STDOUT, 0, "Maximum step size factor for a Newton step changed to %g", newtonFTol);
   }
 
+  if(omc_flag[FLAG_NEWTON_JAC_UPDATES]) {
+    int j = 0;
+    const char* p = omc_flagValue[FLAG_NEWTON_JAC_UPDATES];
+    char* endptr;
+    do {
+      errno = 0;
+      int i = strtol(p, &endptr, 10);
+      if (errno == ERANGE) {
+        throwStreamPrint(threadData,
+          "newtonJacUpdates: takes non-negative integers (got '%s')", omc_flagValue[FLAG_NEWTON_JAC_UPDATES]);
+      }
+      assertStreamPrint(threadData, i >= 0, "jac update must be non-negative, got %d", i);
+      maxJacUpdate[j++] = i;
+      p = endptr;
+    } while(*(p++) == ',' && i < 4);
+  }
+
   if(omc_flag[FLAG_STEADY_STATE_TOL]) {
     steadyStateTol = atof(omc_flagValue[FLAG_STEADY_STATE_TOL]);
     infoStreamPrint(OMC_LOG_STDOUT, 0, "Tolerance for steady state detection changed to %g", steadyStateTol);
