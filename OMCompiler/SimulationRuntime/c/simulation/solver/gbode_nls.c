@@ -501,7 +501,8 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) get_kinsol_statistics(kin_mem);
     }
     if (!solved && maxJacUpdate[1] > 0) {
-      infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: Solution of NLS failed. Try with updated Jacobian.");
+      if (maxJacUpdate[0] > 0) 
+        infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: Solution of NLS failed. Try with updated Jacobian.");
       set_kinsol_parameters(kin_mem, newtonMaxSteps, SUNFALSE, maxJacUpdate[1], newtonTol);
       solved = solveNLS(data, threadData, nlsData);
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) get_kinsol_statistics(kin_mem);
