@@ -45,6 +45,7 @@
 #include "util/rtclock.h"
 #include "util/simulation_options.h"
 #include "util/context.h"
+#include "simulation/eval_dep.h"
 
 #define omc_dummyVarInfo {-1,-1,"","",omc_dummyFileInfo_val}
 #define omc_dummyEquationInfo {-1,0,0,-1,NULL}
@@ -67,7 +68,9 @@ typedef struct DATA DATA;
 typedef struct VALUES_LIST VALUES_LIST;
 typedef struct JACOBIAN JACOBIAN;
 
+typedef void (*eq_func_ptr)(DATA*, threadData_t*);
 typedef int (*jacobianColumn_func_ptr)(DATA* data, threadData_t* threadData, JACOBIAN* thisJacobian, JACOBIAN* parentJacobian);
+typedef void (*jacobian_eq_func_ptr)(DATA* data, threadData_t* threadData, JACOBIAN* thisJacobian, JACOBIAN* parentJacobian);
 typedef int (*initialAnalyticalJacobian_func_ptr)(DATA* data, threadData_t* threadData, JACOBIAN* jacobian);
 
 /* Model info structures */
@@ -200,6 +203,10 @@ typedef struct JACOBIAN
   modelica_real* tmpVars;               /* Partial derivatives used to compute resultVars */
   modelica_real* resultVars;            /* Result column for given seed vector */
   modelica_real dae_cj;                 /* Is the scalar in the system Jacobian, proportional to the inverse of the step size. From User Documentation for ida v5.4.0 equation (2.5). */
+  size_t nEqFunctions;                  /* size of eqFunctions */
+  jacobian_eq_func_ptr* eqFunctions;    /* array of all eqFunctions for evalColumn */
+  EVAL_DAG* dag;                        /* dependency of rows and inner partial derivatives */
+  EVAL_SELECTION* evalSelection;        /* selection for evalColumn (don't allocate, only set to other pointer) */
   jacobianColumn_func_ptr evalColumn;   /* symbolic jacobian column based on seed vector */
   jacobianColumn_func_ptr constantEqns; /* Constant equations independent of seed vector */
 } JACOBIAN;
@@ -609,6 +616,10 @@ typedef struct MODEL_DATA
   long nInputVars;
   long nOutputVars;
 
+  size_t nEqFunctions;                  /* size of eqFunctions */
+  eq_func_ptr* eqFunctions;             /* array of all eqFunctions by index */
+  EVAL_DAG* dag;                        /* dependency of functionODE */
+
   long nZeroCrossings;
   long nRelations;
   long nMathEvents;                    /* number of math triggering functions e.g. cail, floor, integer */
@@ -787,6 +798,9 @@ typedef struct SIMULATION_INFO
   size_t* integerVarsIndex;
   size_t* booleanVarsIndex;
   size_t* stringVarsIndex;
+
+  /* adaptive eval of functionODE */
+  EVAL_SELECTION* evalSelection;        /* selection for functionODE (don't allocate, only point to other selection) */
 
   /* old vars for event handling */
   modelica_real timeValueOld;
