@@ -63,7 +63,7 @@ install_bootstrapping:
 endif
 endif
 
-libomcbackendruntime.a: HpcOmSchedulerExt_omc.o HpcOmBenchmarkExt_omc.o TaskGraphResults_omc.o BackendDAEEXT_omc.o matching.o matching_cheap.o Dynload_omc$(OBJEXT) FMI_omc.o cJSON.o
+libomcbackendruntime.a: HpcOmSchedulerExt_omc.o HpcOmBenchmarkExt_omc.o TaskGraphResults_omc.o ASSCEXT_omc.o BackendDAEEXT_omc.o matching.o matching_cheap.o Dynload_omc$(OBJEXT) FMI_omc.o cJSON.o
 	rm -f $@
 	$(AR) -s -r "$@.tmp" $^
 	mv "$@.tmp" "$@"
@@ -117,6 +117,7 @@ serializer.o: serializer.cpp
 Socket_omc.o : socketimpl.c
 ZeroMQ_omc.o : zeromqimpl.c
 UnitParserExt_omc.o : unitparserext.cpp unitparser.h
+ASSCEXT_omc.o : ASSCEXT.cpp $(RML_COMPAT)
 BackendDAEEXT_omc.o : BackendDAEEXT.cpp $(RML_COMPAT) matching.c matchmaker.h matching_cheap.c
 OMSimulator_omc.o : OMSimulator_omc.c
 ffi_omc.o : ffi_omc.cpp

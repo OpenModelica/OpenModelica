@@ -52,6 +52,7 @@ protected
 
   // Backend imports
   import Adjacency = NBAdjacency;
+  import ASSC = NBASSC;
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
   import Differentiate = NBDifferentiate;
@@ -304,6 +305,11 @@ protected
 
         // create solvable adjacency matrix for matching
         adj_matching := Adjacency.Matrix.fromFull(full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.MATCHING);
+
+        // perform ASSC on the system
+        ASSC.main(adj_matching);
+
+        // perform matching
         (matching, adj_matching, full, variables, equations, funcTree, varData, eqData) := Matching.singular(NBMatching.EMPTY_MATCHING, adj_matching, full, variables, equations, funcTree, varData, eqData, kind, false);
 
         // create all occurence adjacency matrix for sorting, upgrading the matching matrix

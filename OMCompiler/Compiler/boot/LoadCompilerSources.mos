@@ -307,6 +307,7 @@ if true then /* Suppress output */
     "../NBackEnd/Modules/3_Post/NBEvaluation.mo",
   // "NBackend Util"
     "../NBackEnd/Util/NBAdjacency.mo",
+    "../NBackEnd/Util/NBASSC.mo",
     "../NBackEnd/Util/NBBackendUtil.mo",
     "../NBackEnd/Util/NBDifferentiate.mo",
     "../NBackEnd/Util/NBReplacements.mo",
