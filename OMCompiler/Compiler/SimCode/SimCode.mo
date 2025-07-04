@@ -315,6 +315,7 @@ uniontype VarInfo "Number of variables of various types in a Modelica model."
     Integer numIntAliasVars;
     Integer numBoolAliasVars;
     Integer numParams;
+    Integer numCalcParams;
     Integer numIntParams;
     Integer numBoolParams;
     Integer numOutVars;
