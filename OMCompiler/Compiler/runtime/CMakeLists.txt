@@ -139,6 +139,7 @@ set(OMC_BACKENDRUNTIIME_SOURCES
     HpcOmSchedulerExt_omc.cpp
     HpcOmBenchmarkExt_omc.cpp
     TaskGraphResults_omc.cpp
+    ASSCEXT_omc.cpp
     BackendDAEEXT_omc.cpp
     matching.c
     matching_cheap.c
