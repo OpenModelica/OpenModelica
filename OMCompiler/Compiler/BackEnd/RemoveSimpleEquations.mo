@@ -2032,7 +2032,7 @@ algorithm
         not Expression.isImpure(exp) and not Expression.containsRecordType(exp) // lochel: this is at least needed for impure functions
       equation
         //exp2 = Ceval.cevalSimpleWithFunctionTreeReturnExp(exp, functions);
-        exp2 = EvaluateFunctions.evaluateConstantFunctionCallExp(exp, functions, false);
+        exp2 = EvaluateFunctions.evaluateConstantFunctionCallExp(exp, functions, false, Flags.getConfigInt(Flags.EVAL_RECURSION_LIMIT));
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           BackendDump.debugStrCrefStrExpStr("Const Equation (through Ceval, case 1) ", cr, " = ", exp, " found.\n");
         end if;

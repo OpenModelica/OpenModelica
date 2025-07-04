@@ -1121,13 +1121,15 @@ static void nlsKinsolConfigPrint(NLS_KINSOL_DATA *kinsolData,
   _omc_initVector(&vecFScaling, kinsolData->size,
                   NV_DATA_S(kinsolData->fScale));
 
-  _omc_printVectorWithEquationInfo(
+  if (eqSystemNumber>0) {
+    _omc_printVectorWithEquationInfo(
       &vecStart, "Initial guess values", OMC_LOG_NLS_V,
       modelInfoGetEquation(&data->modelData->modelDataXml, eqSystemNumber));
 
-  _omc_printVectorWithEquationInfo(
+    _omc_printVectorWithEquationInfo(
       &vecXScaling, "xScaling", OMC_LOG_NLS_V,
       modelInfoGetEquation(&data->modelData->modelDataXml, eqSystemNumber));
+  }
 
   _omc_printVector(&vecFScaling, "fScaling", OMC_LOG_NLS_V);
 

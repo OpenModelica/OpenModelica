@@ -54,7 +54,6 @@ protected import DAEUtil;
 protected import Debug;
 protected import DoubleEnded;
 protected import ElementSource;
-protected import EvaluateFunctions;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
@@ -2489,20 +2488,6 @@ algorithm
   // Normal debugging, without type&dimension information on crefs.
   str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) + " -> " + ExpressionDump.printExpStr(Util.tuple22(tpl));
 end printReplacementTupleStr;
-
-public function simplifyReplacements"applies ExpressionSimplify.simplify on all replacement expressions"
-  input VariableReplacements replIn;
-  input DAE.FunctionTree functions;
-  output VariableReplacements replOut;
-protected
-  list<DAE.ComponentRef> crefs;
-  list<DAE.Exp> exps;
-algorithm
-  (crefs,exps) := getAllReplacements(replIn);
-  (exps,_) := List.map_2(exps,ExpressionSimplify.simplify);
-  exps := List.map2(exps, EvaluateFunctions.evaluateConstantFunctionCallExp, functions, false);
-  replOut := addReplacements(replIn,crefs,exps,NONE());
-end simplifyReplacements;
 
 public function getConstantReplacements"gets a clean replacement set containing only constant replacement rules"
   input VariableReplacements replIn;
