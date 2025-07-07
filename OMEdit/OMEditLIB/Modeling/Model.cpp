@@ -1867,6 +1867,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("showStartAttribute")) {
+      mHasShowStartAttribute = true;
       mShowStartAttribute.deserialize(jsonObject.value("showStartAttribute"));
     }
 
@@ -2070,6 +2071,16 @@ namespace ModelInstance
   bool Element::isOuter() const
   {
     return mpPrefixes ? mpPrefixes.get()->isOuter() : false;
+  }
+
+  bool Element::isParameter() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->getVariability().compare(QStringLiteral("parameter")) == 0 : false;
+  }
+
+  bool Element::isInput() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->getDirection().compare(QStringLiteral("input")) == 0 : false;
   }
 
   Replaceable *Element::getReplaceable() const

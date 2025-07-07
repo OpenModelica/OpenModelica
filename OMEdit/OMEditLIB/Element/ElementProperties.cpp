@@ -158,7 +158,8 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
   mConnectorSizing = dialogAnnotation.isConnectorSizing();
 
   // If mShowStartAttribute is not set then check for start modifier
-  if (!mShowStartAndFixed && !isParameter() && !isInput() && mpModelInstanceElement->getModifier()) {
+  if (!mShowStartAndFixed && !dialogAnnotation.hasShowStartAttribute()
+      && !mpModelInstanceElement->isParameter() && !mpModelInstanceElement->isInput() && mpModelInstanceElement->getModifier()) {
     mShowStartAndFixed = mpModelInstanceElement->getModifier()->hasModifier("start");
   }
   /* if mShowStartAndFixed and group name is empty then set group name to Initialization.
@@ -166,7 +167,8 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
    */
   if (mShowStartAndFixed && mGroup.isEmpty()) {
     mGroup = "Initialization";
-  } else if (mGroup.isEmpty() && (isParameter() || mpModelInstanceElement->getAnnotation()->hasDialogAnnotation() || mpModelInstanceElement->getReplaceable())) {
+  } else if (mGroup.isEmpty() && (mpModelInstanceElement->isParameter() || mpModelInstanceElement->getAnnotation()->hasDialogAnnotation()
+                                  || mpModelInstanceElement->getReplaceable())) {
     mGroup = "Parameters";
   }
 
@@ -277,34 +279,6 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
     mpElementParameters->applyFinalStartFixedAndDisplayUnitModifiers(this, mpModelInstanceElement->getModifier(), defaultValue, false);
   }
   update();
-}
-
-/*!
- * \brief Parameter::isParameter
- * Returns true if parameter
- * \return
- */
-bool Parameter::isParameter() const
-{
-  if (mpModelInstanceElement) {
-    return mpModelInstanceElement->getVariability().compare(QStringLiteral("parameter")) == 0;
-  } else {
-    return false;
-  }
-}
-
-/*!
- * \brief Parameter::isInput
- * Returns true if input
- * \return
- */
-bool Parameter::isInput() const
-{
-  if (mpModelInstanceElement) {
-    return mpModelInstanceElement->getDirectionPrefix().compare(QStringLiteral("input")) == 0;
-  } else {
-    return false;
-  }
 }
 
 /*!
@@ -1335,13 +1309,13 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
       if (MainWindow::instance()->getOMCProxy()->isBuiltinType(pParameter->getModelInstanceElement()->getRootType())) {
         const QString value = pModifier->getValue();
         // if value is not empty then use it otherwise try to read start and fixed modifiers
-        if (pParameter->isShowStartAttribute() || (value.isEmpty() && !pParameter->isParameter() && !pParameter->isInput())) {
+        if (pParameter->isShowStartAttribute() || (value.isEmpty() && !pParameter->getModelInstanceElement()->isParameter() && !pParameter->getModelInstanceElement()->isInput())) {
           bool hasStart = pModifier->hasModifier("start");
           bool isStartFinal = false;
           bool hasFixed = pModifier->hasModifier("fixed");
           bool isFixedFinal = false;
-          if (hasStart || hasFixed) {
-            if (!pParameter->isGroupDefined() && !pParameter->isParameter() && !pParameter->isInput()) {
+          if (hasStart) {
+            if (!pParameter->isGroupDefined() && !pParameter->getModelInstanceElement()->isParameter() && !pParameter->getModelInstanceElement()->isInput()) {
               pParameter->setGroup("Initialization");
             }
             pParameter->setShowStartAndFixed(true);
@@ -1688,8 +1662,16 @@ void ElementParameters::createTabsGroupBoxesAndParameters(ModelInstance::Model *
           continue;
         }
       }
+      auto &dialogAnnotation = pElement->getAnnotation()->getDialogAnnotation();
       // if connectorSizing is present then don't show the parameter
-      if (pElement->getAnnotation()->getDialogAnnotation().isConnectorSizing()) {
+      if (dialogAnnotation.isConnectorSizing()) {
+        continue;
+      }
+      /* Issue #13973
+       * if showStart is present and false then don't show the variable.
+       * annotation(Dialog(showStartAttribute = false))
+       */
+      if (!pElement->isParameter() && dialogAnnotation.hasShowStartAttribute() && !dialogAnnotation.getShowStartAttribute()) {
         continue;
       }
       // create the Parameter

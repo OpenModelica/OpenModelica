@@ -87,8 +87,6 @@ public:
   };
   Parameter(ModelInstance::Element *pElement, bool defaultValue, ElementParameters *pElementParameters);
   ModelInstance::Element* getModelInstanceElement() {return mpModelInstanceElement;}
-  bool isParameter() const;
-  bool isInput() const;
   void setTab(QString tab) {mTab = tab;}
   const StringAnnotation &getTab() {return mTab;}
   void setGroup(QString group) {mGroup = group;}
