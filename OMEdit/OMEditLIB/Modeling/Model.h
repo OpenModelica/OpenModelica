@@ -334,6 +334,7 @@ private:
     const StringAnnotation &getTab() const {return mTab;}
     const StringAnnotation &getGroup() const {return mGroup;}
     const BooleanAnnotation &isEnabled() const {return mEnable;}
+    bool hasShowStartAttribute() const {return mHasShowStartAttribute;}
     const BooleanAnnotation &getShowStartAttribute() const {return mShowStartAttribute;}
     const BooleanAnnotation &isColorSelector() const {return mColorSelector;}
     const Selector &getLoadSelector() const {return mLoadSelector;}
@@ -345,6 +346,7 @@ private:
     StringAnnotation mTab;
     StringAnnotation mGroup;
     BooleanAnnotation mEnable;
+    bool mHasShowStartAttribute = false;
     BooleanAnnotation mShowStartAttribute;
     BooleanAnnotation mColorSelector;
     Selector mLoadSelector;
@@ -693,6 +695,8 @@ private:
     bool isFinal() const;
     bool isInner() const;
     bool isOuter() const;
+    bool isParameter() const;
+    bool isInput() const;
     Replaceable *getReplaceable() const;
     bool isRedeclare() const;
     QString getConnector() const;
