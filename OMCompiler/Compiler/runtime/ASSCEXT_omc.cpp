@@ -92,6 +92,9 @@ extern void ASSC_freeMatrix()
   if (col_ptrs) free(col_ptrs);
   if (col_ids) free(col_ids);
   if (col_val) free(col_val);
+  col_ptrs=NULL;
+  col_ids=NULL;
+  col_val=NULL;
 }
 
 extern void ASSC_printMatrix()
