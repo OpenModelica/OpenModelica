@@ -53,10 +53,8 @@ extern void ASSC_setMatrix(modelica_integer nvars, modelica_integer neqns, model
   nnz = nz;
 
   int i=0;
-  mmc_sint_t adj_i, val_i;
   int j=0;
-  // ToDo: check if val and adj have same size
-  modelica_integer nelts = MMC_HDRSLOTS(MMC_GETHDR(adj));
+  mmc_sint_t adj_i, val_i;
 
   // initialize column pointers
   if (col_ptrs) free(col_ptrs);
@@ -82,7 +80,7 @@ extern void ASSC_setMatrix(modelica_integer nvars, modelica_integer neqns, model
       adj_col = MMC_CDR(adj_col);
       val_col = MMC_CDR(val_col);
     }
-    // add number of elements to last starting point to compute next starting point
+    // set next starting point
     col_ptrs[i+1] = j;
   }
 }

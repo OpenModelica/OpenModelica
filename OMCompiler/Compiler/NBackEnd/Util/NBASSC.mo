@@ -35,14 +35,51 @@ encapsulated package NBASSC
 "
 
 protected
-  import Adjacency = NBAdjacency;
+  import NBEquation.EquationPointers;
+  import NBVariable.VariablePointers;
 
 public
   function main
-    input Adjacency.Matrix matching;
+    input EquationPointers eqns;
+    input VariablePointers vars;
   protected
     array<list<Integer>> indices, values;
   algorithm
+    // ### pseudo code of what shall happen
+    // for eqn in eqns:
+    //   b = true
+    //   crefs = find all crefs of vars in eqn
+    //   for cref in crefs
+    //      diff = differentiate eqn for cref
+    //      simplify diff
+    //      if diff is integer
+    //          save (eqn, cref) -> diff to map (diffs)
+    //      else
+    //          eqn is not part of linear system (b=false)
+    //          break
+    //      end if
+    //    end for
+    //    if b then
+    //      save eqn to set (int_eqns)
+    //      save crefs to set (int_crefs)
+    //      save eqn -> crefs in map (rows)
+    //    end if
+    //  end for
+    //
+    //  enumerate sets int_eqns and int_crefs
+    //  initialize indices[] and values[] of size |int_eqns|
+    //
+    //  for eqn in int_eqns
+    //    for cref in rows(eqn)
+    //      eqn_index = get index of equation eqn in int_eqns
+    //      var_index = get index of variable cref in int_crefs
+    //      indices[eqn_index] += append var_index
+    //      values[eqn_index] += append diffs(eqn,cref)
+    //    end for
+    //  end for
+
+    // remove this dummy section
+    // ################################
     indices := arrayCreate(3, {});
     values := arrayCreate(3, {});
     indices[1] := {1,2};
@@ -51,6 +88,9 @@ public
     values[2] := {5};
     indices[3] := {1,3};
     values[3] := {8,-2};
+    // ################################
+
+
     setMatrix(3,3,5,indices,values);
     //printMatrix();
     freeMatrix();

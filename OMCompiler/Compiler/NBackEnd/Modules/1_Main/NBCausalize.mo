@@ -300,14 +300,14 @@ protected
         variables := VariablePointers.compress(partition.unknowns);
         equations := EquationPointers.compress(partition.equations);
 
+        // perform ASSC on the system
+        ASSC.main(equations, variables);
+
         // create full matrix
         full := Adjacency.Matrix.createFull(variables, equations);
 
         // create solvable adjacency matrix for matching
         adj_matching := Adjacency.Matrix.fromFull(full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.MATCHING);
-
-        // perform ASSC on the system
-        ASSC.main(adj_matching);
 
         // perform matching
         (matching, adj_matching, full, variables, equations, funcTree, varData, eqData) := Matching.singular(NBMatching.EMPTY_MATCHING, adj_matching, full, variables, equations, funcTree, varData, eqData, kind, false);
