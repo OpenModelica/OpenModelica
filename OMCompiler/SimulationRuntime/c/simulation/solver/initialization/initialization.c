@@ -265,7 +265,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   int kinsol = 0;
 
 #if !defined(OMC_MINIMAL_RUNTIME)
-  kinsol = (data->simulationInfo->nlsMethod == NLS_KINSOL);
+  kinsol = (data->simulationInfo->nlsMethod == NLS_KINSOL_B);
 #endif
 
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
