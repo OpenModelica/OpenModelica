@@ -43,12 +43,14 @@ protected
 
   // Backend imports
   import BackendDAE = NBackendDAE;
-  import NBEquation.{Equation, EquationPointers};
-  import BVariable = NBVariable;
   import Causalize = NBCausalize;
-  import Partition = NBPartition;
+  import NBEquation.{Equation, EquationPointers, EqData, Iterator};
+  import Inline = NBInline;
   import Jacobian = NBJacobian;
+  import Partition = NBPartition;
   import Tearing = NBTearing;
+  import BVariable = NBVariable;
+  import NBVariable.VariablePointer;
 
 public
   function main extends Module.wrapper;
@@ -61,10 +63,11 @@ public
       bdae := match bdae
         local
           list<Partition.Partition> ode;
+          EqData eqData;
 
-        case BackendDAE.MAIN(ode = ode)
+        case BackendDAE.MAIN(ode = ode, eqData = eqData as EqData.EQ_DATA_SIM())
           algorithm
-            bdae.dae := SOME(func(ode));
+            bdae.dae := SOME(func(ode, eqData.uniqueIndex));
         then bdae;
 
         else algorithm
@@ -98,18 +101,38 @@ protected
   function daeModeDefault extends Module.daeModeInterface;
   protected
     list<Partition.Partition> new_partitions = {};
+    Pointer<list<Pointer<Equation>>> new_eqns;
+    UnorderedSet<VariablePointer> dummy_set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
   algorithm
     for part in partitions loop
-      // clone equations
-      part.equations := EquationPointers.clone(part.equations, false);
-      // move unknowns
-      part.daeUnknowns := SOME(part.unknowns);
-      // convert all algebraic variables to algebraic states
-      // BVariable.VariablePointers.mapPtr(part.unknowns, function BVariable.makeAlgStateVar());
-      // convert all residual equations to dae residuals
-      EquationPointers.mapPtr(part.equations, function Equation.createResidual(new = false));
-      part.unknowns := EquationPointers.getResiduals(part.equations);
-      new_partitions := part :: new_partitions;
+      new_partitions := match part.association
+        local
+          Partition.Association association;
+        case association as Partition.Association.CONTINUOUS() algorithm
+          // update association to continuous -> dae
+          association.kind := NBPartition.Kind.DAE;
+          part.association := association;
+
+          // remove all discrete equations
+          part.equations := EquationPointers.fromList(list(eqn for eqn guard(not Equation.isDiscrete(eqn)) in EquationPointers.toList(part.equations)));
+          // deep clone equations
+          part.equations := EquationPointers.clone(part.equations, false);
+          // inline record and tuple equations and then create residuals
+          new_eqns := Pointer.create({});
+          EquationPointers.map(part.equations, function Inline.inlineRecordTupleArrayEquation(
+              iter = Iterator.EMPTY(), variables = part.unknowns, new_eqns = new_eqns, set = dummy_set, index = uniqueIndex, inlineSimple = true));
+          part.equations := EquationPointers.addList(Pointer.access(new_eqns), EquationPointers.compress(part.equations));
+          EquationPointers.mapPtr(part.equations, function Equation.createResidual(new = false));
+
+          // move unknowns
+          part.daeUnknowns := SOME(part.unknowns);
+          part.unknowns := EquationPointers.getResiduals(part.equations);
+          // remove strong components
+          part.strongComponents := NONE();
+          // accumulate new partitions
+          then part :: new_partitions;
+        else new_partitions;
+      end match;
     end for;
     partitions := listReverse(new_partitions);
   end daeModeDefault;
