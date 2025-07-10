@@ -31,8 +31,8 @@
 /*! \file kinsolSolver.h
  */
 
-#ifndef _KINSOL_SOLVER_H_
-#define _KINSOL_SOLVER_H_
+#ifndef _KINSOL_B_SOLVER_H_
+#define _KINSOL_B_SOLVER_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,22 +52,22 @@ extern "C" {
 #include <sunlinsol/sunlinsol_lapackdense.h> /* Lapack dense linear solver */
 
 /* constants */
-#define RETRY_MAX 5
-#define FTOL_WITH_LESS_ACCURACY 1.e-6
+#define B_RETRY_MAX 5
+#define B_FTOL_WITH_LESS_ACCURACY 1.e-6
 
 /* readability */
-typedef enum initialMode {
-  INITIAL_EXTRAPOLATION = 0,
-  INITIAL_OLDVALUES
-} initialMode;
+typedef enum B_initialMode {
+  B_INITIAL_EXTRAPOLATION = 0,
+  B_INITIAL_OLDVALUES
+} B_initialMode;
 
-typedef enum scalingMode {
-  SCALING_NOMINALSTART = 1,            /* Scale with nomian values */
-  SCALING_ONES,                        /* Scale with ones (no scaling) */
-  SCALING_JACOBIAN                     /* Scale jacobian */
-} scalingMode;
+typedef enum B_scalingMode {
+  B_SCALING_NOMINALSTART = 1,            /* Scale with nomian values */
+  B_SCALING_ONES,                        /* Scale with ones (no scaling) */
+  B_SCALING_JACOBIAN                     /* Scale jacobian */
+} B_scalingMode;
 
-typedef struct NLS_KINSOL_DATA {
+typedef struct B_NLS_KINSOL_DATA {
   /* ### configuration  ### */
   NLS_LS linearSolverMethod;           /* specifies the method to solve the
                                           underlying linear problem */
@@ -76,7 +76,7 @@ typedef struct NLS_KINSOL_DATA {
   modelica_boolean attemptRetry;       /* True if KINSOL should retry with different settings after solution failed.*/
   int retries;                         /* Number of retries after failed solve of KINSOL */
   NLS_SOLVER_STATUS solved;            /* If the system is once solved reuse linear matrix information */
-  int nominalJac;                      /* 0/1 for disabled/enabled scaling on Jacobian */
+  modelica_boolean useScaling;         /* 0/1 for disabled/enabled scaling on the system: variables, residual, matrix */
 
   /* ### tolerances ### */
   double fnormtol;                     /* function-norm stopping tolerance */
@@ -89,6 +89,8 @@ typedef struct NLS_KINSOL_DATA {
 
   /* ### work arrays ### */
   N_Vector initialGuess;
+  N_Vector ONES_xScale;                 /* x scaling vector */
+  N_Vector ONES_fScale;                 /* f(x) scaling vector */
   N_Vector xScale;                      /* x scaling vector */
   N_Vector fScale;                      /* f(x) scaling vector */
   N_Vector fRes;
@@ -115,14 +117,14 @@ typedef struct NLS_KINSOL_DATA {
   int size;                             /* Size of non-linear problem */
   int nnz;                              /* Number of non-zero elements */
 
-} NLS_KINSOL_DATA;
+} B_NLS_KINSOL_DATA;
 
-NLS_KINSOL_DATA* nlsKinsolAllocate(int size, NLS_USERDATA* userData, modelica_boolean attemptRetry, modelica_boolean isPatternAvailable);
-void nlsKinsolFree(NLS_KINSOL_DATA* kinsolData);
-NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DATA* nlsData);
+B_NLS_KINSOL_DATA* B_nlsKinsolAllocate(int size, NLS_USERDATA* userData, modelica_boolean attemptRetry, modelica_boolean isPatternAvailable);
+void B_nlsKinsolFree(B_NLS_KINSOL_DATA* kinsolData);
+NLS_SOLVER_STATUS B_nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DATA* nlsData);
 
 #ifdef __cplusplus
 };
 #endif
 
-#endif  /* _KINSOL_SOLVER_H_ */
+#endif  /* _KINSOL_B_SOLVER_H_ */
