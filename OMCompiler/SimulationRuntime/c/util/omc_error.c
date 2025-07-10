@@ -83,6 +83,7 @@ const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX] = {
   "LOG_NLS_HOMOTOPY",
   "LOG_NLS_JAC",
   "LOG_NLS_JAC_TEST",
+  "LOG_NLS_JAC_SUMS",
   "LOG_NLS_NEWTON_DIAGNOSTICS",
   "LOG_NLS_DERIVATIVE_TEST",
   "LOG_NLS_SVD",
@@ -144,6 +145,7 @@ const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX] = {
   "logging of homotopy solver for nonlinear systems",                           /* OMC_LOG_NLS_HOMOTOPY */
   "outputs the jacobian of nonlinear systems",                                  /* OMC_LOG_NLS_JAC */
   "tests the analytical jacobian of nonlinear systems",                         /* OMC_LOG_NLS_JAC_TEST */
+  "tests the absolute sums of rows and cols in Kinsol Jacobian",                /* OMC_LOG_NLS_JAC_SUMS */
   "newton diagnostics (see: https://doi.org/10.1016/j.amc.2021.125991)",        /* OMC_LOG_NLS_NEWTON_DIAGNOSTICS */
   "test derivatives in KINSOL nonlinear systems",                               /* OMC_LOG_NLS_DERIVATIVE_TEST */
   "perform a SVD analysis in KINSOL nonlinear systems",                         /* OMC_LOG_NLS_SVD */

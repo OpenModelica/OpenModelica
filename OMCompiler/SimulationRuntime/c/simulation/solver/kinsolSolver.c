@@ -454,6 +454,114 @@ static void finishSparseColPtr(SUNMatrix A, int nnz) {
   }
 }
 
+
+// quick struct + cmp operator, to sort the arrays of col / row sums and keep their respective index
+typedef struct {
+  modelica_real value;
+  int index;
+} IndexedValue;
+
+static int compare_desc(const void *a, const void *b) {
+  modelica_real diff = ((IndexedValue*)b)->value - ((IndexedValue*)a)->value;
+  return (diff > 0) - (diff < 0); // returns 1 if b > a, -1 if a > b
+}
+
+/**
+ * @brief analyze absolute row and column sums of a sparse KINSOL Jacobian matrix
+ *
+ * computes the absolute row and column sums of a sparse Jacobian (CSC format)
+ * and prints them sorted in descending order. This is useful for diagnosing
+ * scaling issues, structural sparsity, or ill-conditioning in nonlinear systems.
+ *
+ * @param data
+ * @param nlsData     pointer to nonlinear system data
+ * @param kinsolData  pointer to KINSOL solver-specific data
+ * @param J           sparse Jacobian matrix in CSC format
+ * @param newJac      boolean indicating if this was called during Jacobian evaluation (true),
+ *                    or from the solver entry point (false)
+ */
+static void nlsJacobianRowColSums(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData, NLS_KINSOL_DATA *kinsolData,
+                                  SUNMatrix J, modelica_boolean newJac)
+{
+  int i, row, col, nz;
+  modelica_real value;
+  const int size = (int)nlsData->size;
+  const int size_of_torns = (int)nlsData->torn_plus_residual_size - size;
+
+  sunindextype nnz = SUNSparseMatrix_NNZ(J);
+
+  sunindextype *colPointers = SM_INDEXPTRS_S(J);
+  sunindextype *rowIndices = SM_INDEXVALS_S(J);
+  realtype *values = SM_DATA_S(J);
+
+  modelica_real *rowSumsRaw = (modelica_real*)calloc(size, sizeof(modelica_real));
+  modelica_real *colSumsRaw = (modelica_real*)calloc(size, sizeof(modelica_real));
+  IndexedValue *rowSums = (IndexedValue*)malloc(size * sizeof(IndexedValue));
+  IndexedValue *colSums = (IndexedValue*)malloc(size * sizeof(IndexedValue));
+
+  for (col = 0; col < size; col++)
+  {
+    for (nz = colPointers[col]; nz < colPointers[col + 1]; nz++)
+    {
+      row = rowIndices[nz];
+      value = values[nz];
+
+      rowSumsRaw[row] += fabs(value);
+      colSumsRaw[col] += fabs(value);
+    }
+  }
+
+  for (int i = 0; i < size; i++)
+  {
+    rowSums[i].value = rowSumsRaw[i];
+    rowSums[i].index = i;
+
+    colSums[i].value = colSumsRaw[i];
+    colSums[i].index = i;
+  }
+
+  qsort(rowSums, size, sizeof(IndexedValue), compare_desc);
+  qsort(colSums, size, sizeof(IndexedValue), compare_desc);
+
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 1, "KINSOL: Jacobian absolute row & col sum analysis (scaled = %s, Caller: %s).",
+                  kinsolData->nominalJac ? "true" : "false", newJac ? "Jacobian Eval Func" : "KINSOL Entry Point");
+
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 1, "Matrix Info");
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "NLS eq index = %ld", nlsData->equationIndex);
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "Columns      = %d", size);
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "Rows         = %d", size);
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "NNZ          = %u", nlsData->sparsePattern->numberOfNonZeros);
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "Curr Time    = %-11.5e", data->localData[0]->timeValue);
+  messageClose(OMC_LOG_NLS_JAC_SUMS);
+
+  // row sums
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 1, "Jacobian Row abs sums (sorted by descending value):");
+  for (i = 0; i < size; i++)
+  {
+    row = rowSums[i].index;
+    modelica_integer eq_debug_idx = nlsData->eqn_simcode_indices[size_of_torns + row];
+    infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "fabs(Row[%d]) = %+.5e for NLS Eq ID (debugger): %ld", row + 1, rowSums[i].value, eq_debug_idx);
+  }
+  messageClose(OMC_LOG_NLS_JAC_SUMS);
+
+  // column sums
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 1, "Jacobian Column abs sums (sorted by descending value):");
+  for (i = 0; i < size; i++)
+  {
+    col = colSums[i].index;
+    const char *var_name = modelInfoGetEquation(&data->modelData->modelDataXml, nlsData->equationIndex).vars[col];
+    infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "fabs(Col[%d]) = %+.5e for Variable %d: %s", col + 1, colSums[i].value, col + 1, var_name);
+  }
+  messageClose(OMC_LOG_NLS_JAC_SUMS);
+
+  messageClose(OMC_LOG_NLS_JAC_SUMS);
+
+  free(rowSumsRaw);
+  free(colSumsRaw);
+  free(rowSums);
+  free(colSums);
+}
+
 /**
  * @brief Perform derivative test comparing symbolic and numerical Jacobians for KINSOL
  *
@@ -685,6 +793,11 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
     nlsKinsolDenseDerivativeTest(data, nlsData, kinsolData, Jac, TRUE);
   }
 
+  if (omc_useStream[OMC_LOG_NLS_JAC_SUMS])
+  {
+    nlsJacobianRowColSums(data, nlsData, kinsolData, Jac, TRUE);
+  }
+
   /* performance measurement and statistics */
   nlsData->jacobianTime += rt_ext_tp_tock(&(nlsData->jacobianTimeClock));
   nlsData->numberOfJEval++;
@@ -810,6 +923,11 @@ static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   if (omc_useStream[OMC_LOG_NLS_DERIVATIVE_TEST])
   {
     nlsKinsolDenseDerivativeTest(data, nlsData, kinsolData, Jac, TRUE);
+  }
+
+  if (omc_useStream[OMC_LOG_NLS_JAC_SUMS])
+  {
+    nlsJacobianRowColSums(data, nlsData, kinsolData, Jac, TRUE);
   }
 
   /* performance measurement and statistics */
@@ -1353,6 +1471,11 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
     if (omc_useStream[OMC_LOG_NLS_DERIVATIVE_TEST])
     {
       nlsKinsolDenseDerivativeTest(data, nlsData, kinsolData, kinsolData->J, FALSE);
+    }
+
+    if (omc_useStream[OMC_LOG_NLS_JAC_SUMS])
+    {
+      nlsJacobianRowColSums(data, nlsData, kinsolData, kinsolData->J, TRUE);
     }
 
     if (omc_useStream[OMC_LOG_NLS_SVD])
