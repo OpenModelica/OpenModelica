@@ -1785,7 +1785,7 @@ public
       local
         Expression exp1, exp2, diffExp1, diffExp2, e1, e2, e3, res;
         Operator operator, addOp, mulOp, powOp;
-        Operator.SizeClassification sizeClass;
+        Operator.SizeClassification sizeClass, powSizeClass;
 
       // Addition calculations (ADD, ADD_EW, ...)
       // (f + g)' = f' + g'
@@ -1835,10 +1835,11 @@ public
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
           // create subtraction and multiplication operator from the size classification of original division operator
           (_, sizeClass) := Operator.classify(operator);
+          // the frontend treats multiplication equally for element and nen elementwise, but pow needs to have the correct operator
+          powSizeClass := if Type.isArray(Expression.typeOf(exp2)) then NFOperator.SizeClassification.ARRAY_SCALAR else NFOperator.SizeClassification.SCALAR;
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
-          powOp := Operator.fromClassification((NFOperator.MathClassification.POWER,
-            Operator.combineSizeClassification(sizeClass, NFOperator.SizeClassification.SCALAR)), operator.ty);
+          powOp := Operator.fromClassification((NFOperator.MathClassification.POWER, powSizeClass), operator.ty);
       then (Expression.MULTARY(
               {Expression.MULTARY(
                 {Expression.BINARY(exp1, mulOp, diffExp2)},              // fg'
@@ -1920,7 +1921,7 @@ public
         list<Expression> inv_arguments, new_inv_arguments = {};
         list<Expression> diff_arguments, diff_inv_arguments;
         Operator operator, addOp, powOp;
-        Operator.SizeClassification sizeClass;
+        Operator.SizeClassification sizeClass, powSizeClass;
 
       // Dash calculations (ADD, SUB, ADD_EW, SUB_EW, ...)
       // NOTE: Multary always contains ADDITION
@@ -1966,9 +1967,10 @@ public
         algorithm
           // create addition and power operator
           (_, sizeClass) := Operator.classify(operator);
+          // the frontend treats multiplication equally for element and nen elementwise, but pow needs to have the correct operator
+          powSizeClass := if Type.isArray(Expression.typeOf(listHead(inv_arguments))) then NFOperator.SizeClassification.ARRAY_SCALAR else NFOperator.SizeClassification.SCALAR;
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
-          powOp := Operator.fromClassification((NFOperator.MathClassification.POWER,
-            Operator.combineSizeClassification(sizeClass, NFOperator.SizeClassification.SCALAR)), operator.ty);
+          powOp := Operator.fromClassification((NFOperator.MathClassification.POWER, powSizeClass), operator.ty);
           // f'
           (diff_arguments, diffArguments) := differentiateMultaryMultiplicationArgs(arguments, diffArguments, operator);
           diff_enumerator := Expression.MULTARY(diff_arguments, {}, addOp);
