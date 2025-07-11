@@ -1315,6 +1315,36 @@ algorithm
     else false;
   end match;
 end isStringParam;
+/*
+public function parseBinding
+  "returns the binding expression if the variable is a parameter and the binding is constant
+    returns the original start expression otherwise. Only if the binding is constant and used
+    as initial"
+  input BackendDAE.Var var;
+  output Boolean isCalculated;
+algorithm
+  isCalculated := match var
+    local
+      Expression bindingExp;
+
+    // 1. parameter with constant binding -> start value is updated to the binding value. Value can be changed after sim
+    case BackendDAE.VAR(binding = Binding.TYPED_BINDING(variability = NFPrefixes.Variability.CONSTANT, bindingExp = bindingExp),
+      backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER()))
+    then (SOME(bindingExp), true, Causality.PARAMETER);
+
+    // 2. just like 1. - FLAT_BINDING gets introduced by expanding/scalarizing
+    case BackendDAE.VAR(binding = Binding.FLAT_BINDING(variability = NFPrefixes.Variability.CONSTANT, bindingExp = bindingExp),
+      backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER()))
+    then (SOME(bindingExp), true, Causality.PARAMETER);
+
+    // 3. parameter with non constant binding -> normal start value. Value cannot be changed after simulation
+    case BackendDAE.VAR(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.PARAMETER()))
+    then true;
+
+    else false;
+  end match;
+end parseBinding;
+*/
 
 public function isExtObj
 "Return true if variable is an external object."
