@@ -56,6 +56,7 @@ import Flags;
 import Debug;
 import Array;
 import MetaModelica.Dangerous.listReverseInPlace;
+import UnorderedMap;
 
 public
 
@@ -784,7 +785,7 @@ end simplifySize;
 function simplifyMultary
   input output Expression exp;
 algorithm
-  exp := match exp
+  exp := match combineBinaries(exp)
     local
       Operator operator;
       list<Expression> arguments, inv_arguments, const_args, inv_const_args;
@@ -821,6 +822,9 @@ algorithm
 
       // combine the constants
       new_const := combineConstantNumbers(const_args, inv_const_args, mcl, Operator.typeOf(operator));
+
+      // remove expressions that are in both arguments and inv_arguments
+      (arguments, inv_arguments) := cancelTerms(arguments, inv_arguments);
 
       // return combined multary expression and check for trivial replacements
 
@@ -1478,6 +1482,55 @@ algorithm
     Error.addInternalError(getInstanceName() + " expression is not known to be a constant number: " + Expression.toString(exp), sourceInfo());
   end try;
 end getConstantValue;
+
+function cancelTerms
+  input list<Expression> inArguments;
+  input list<Expression> inInv_arguments;
+  output list<Expression> outArguments = {};
+  output list<Expression> outInv_arguments = {};
+protected
+  UnorderedMap<Expression, Integer> counter;
+  Expression arg;
+  Integer count;
+
+  function inc
+    input Option<Integer> oldValue;
+    input Integer step;
+    output Integer value;
+  algorithm
+    value := match oldValue
+      case SOME(value) then value + step;
+      else step;
+    end match;
+  end inc;
+algorithm
+  if listEmpty(inArguments) or listEmpty(inInv_arguments) then
+    // nothing can cancel
+    outArguments := inArguments;
+    outInv_arguments := inInv_arguments;
+    return;
+  end if;
+
+  counter := UnorderedMap.new<Integer>(Expression.hash, Expression.isEqual);
+  for arg in inArguments loop
+    UnorderedMap.addUpdate(arg, function inc(step = 1), counter);
+  end for;
+  for arg in inInv_arguments loop
+    UnorderedMap.addUpdate(arg, function inc(step = -1), counter);
+  end for;
+  for tpl in UnorderedMap.toList(counter) loop
+    (arg, count) := tpl;
+    if count >= 0 then
+      for i in 1:count loop
+        outArguments := arg :: outArguments;
+      end for;
+    else
+      for i in 1:-count loop
+        outInv_arguments := arg :: outInv_arguments;
+      end for;
+    end if;
+  end for;
+end cancelTerms;
 
 public function combineBinaries
   "just a wrapper to remove the interface for traversal"
