@@ -206,7 +206,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
 
       // Compare user flag to availabe Jacobian methods
       const char* flagValue;
-      if(omc_flag[FLAG_JACOBIAN]){
+      if (omc_flag[FLAG_JACOBIAN]) {
         flagValue = omc_flagValue[FLAG_JACOBIAN];
       } else {
         flagValue = NULL;
@@ -735,7 +735,6 @@ static void updateEvalSelection(DATA* data, DATA_GBODE* gbData)
   size_t k;
   EVAL_SELECTION* selection = gbData->gbfData->evalSelectionFast;
 
-  /* clear selection */
   clearEvalSelection(selection);
 
   /* set equations for fast derivatives */
@@ -745,7 +744,6 @@ static void updateEvalSelection(DATA* data, DATA_GBODE* gbData)
     selection->dag->select[eqnIdx] = TRUE;
   }
 
-  /* select all dependencies */
   activateEvalDependencies(selection);
 
   /* debug print */
@@ -772,7 +770,6 @@ static void updateEvalSelectionJacobian(DATA* data, DATA_GBODE* gbData)
   size_t k;
   EVAL_SELECTION* selection = gbData->gbfData->jacobian->evalSelection;
 
-  /* clear selection */
   clearEvalSelection(selection);
 
   /* set equations for fast derivatives */
@@ -782,7 +779,6 @@ static void updateEvalSelectionJacobian(DATA* data, DATA_GBODE* gbData)
     selection->dag->select[eqnIdx] = TRUE;
   }
 
-  /* select all dependencies */
   activateEvalDependencies(selection);
 
   /* debug print */
@@ -844,7 +840,6 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   fastStatesChange = checkFastStatesChange(gbData);
 
   if (fastStatesChange) {
-    // update evalSelectionFast for fast states
     updateEvalSelection(data, gbData);
   }
 
@@ -883,9 +878,9 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         throwStreamPrint(NULL, "NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbfData->nlsSolverMethod]);
       }
 
-      // update evalSelection
-      updateEvalSelectionJacobian(data, gbData);
     }
+    if (gbfData->jacobian->availability == JACOBIAN_AVAILABLE)
+      updateEvalSelectionJacobian(data, gbData);
   }
 
   // print informations on the calling details
@@ -1566,7 +1561,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
             memcpy(gbData->err, gbData->gbfData->err, nStates * sizeof(double));
             sData->timeValue = gbData->timeRight;
             memcpy(sData->realVars, gbData->yRight, data->modelData->nStates * sizeof(double));
-            gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), FALSE);
+            gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
             memcpy(gbData->kRight, fODE, nStates * sizeof(double));
           }
           infoStreamPrint(OMC_LOG_SOLVER, 0, "Refined step from %10g to %10g, error fast states %10g, error interpolation %10g, new stepsize %10g",
@@ -1718,7 +1713,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
           gbData->timeRight = sData->timeValue;
           gbData->time = gbData->timeRight;
           memcpy(gbData->yRight, sData->realVars, gbData->nStates * sizeof(double));
-          gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), FALSE);
+          gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
           memcpy(gbData->kRight, fODE, nStates * sizeof(double));
         }
       }
