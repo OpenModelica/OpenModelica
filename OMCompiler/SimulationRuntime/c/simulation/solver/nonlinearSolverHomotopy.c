@@ -2234,7 +2234,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
       /* Try to get out of here!!! */
       error_f_sqrd        = vec2NormSqrd(homotopyData->n, homotopyData->f1);
 
-      if (error_f_sqrd < newtonFTol)
+      if (error_f_sqrd < newtonFTol*newtonFTol)
       {
         success = NLS_SOLVED;
         /* take the solution */
