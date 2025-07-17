@@ -35,8 +35,8 @@ runScript(modelTesting);getErrorString();
 // |                 | |       | ((overflow.flowModel.states[1].p >= 0.0 and overflow.flowModel.states[1].p <= 1e8)) --> "Variable violating min/max constraint: 0.0 <= overflow.flowModel.states[1].p <= 1e8, has value: -93465.5"
 // LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
 // LOG_ASSERT        | info    | [Modelica 3.2.1+maint.om/Fluid/Interfaces.mo:15:5-15:79:writable]
-// |                 | |       | The following assertion has been violated at time 0.325042
-// |                 | |       | ((lowerTank.ports[2].p >= 0.0 and lowerTank.ports[2].p <= 1e8)) --> "Variable violating min/max constraint: 0.0 <= lowerTank.ports[2].p <= 1e8, has value: -419515"
+// |                 | |       | The following assertion has been violated at time 0.027176
+// |                 | |       | ((lowerTank.ports[2].p >= 0.0 and lowerTank.ports[2].p <= 1e8)) --> "Variable violating min/max constraint: 0.0 <= lowerTank.ports[2].p <= 1e8, has value: -4.72999e+07"
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // "true
