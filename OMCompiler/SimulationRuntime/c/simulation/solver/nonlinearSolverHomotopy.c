@@ -2129,7 +2129,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
 
   int i, j;
   NLS_SOLVER_STATUS success = NLS_FAILED;
-  double error_f_sqrd, error_f1_sqrd;
+  double error_f_sqrd, error_f_sqrd_scaled, error_f1_sqrd;
 
   int assert = 1;
   int giveUp = 0;
@@ -2233,8 +2233,10 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
 
       /* Try to get out of here!!! */
       error_f_sqrd        = vec2NormSqrd(homotopyData->n, homotopyData->f1);
+      vecDivScaling(homotopyData->n, homotopyData->f1, homotopyData->resScaling, homotopyData->fvecScaled);
+      error_f_sqrd_scaled = vec2NormSqrd(homotopyData->n, homotopyData->fvecScaled);
 
-      if (error_f_sqrd < newtonFTol*newtonFTol)
+      if (error_f_sqrd < homotopyData->ftol_sqrd*1e-4 || error_f_sqrd_scaled < homotopyData->ftol_sqrd*1e-4)
       {
         success = NLS_SOLVED;
         /* take the solution */
