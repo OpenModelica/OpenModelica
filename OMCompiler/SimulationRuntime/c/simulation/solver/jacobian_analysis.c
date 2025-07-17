@@ -30,7 +30,7 @@ static int cmp_fabs_desc(const void *a, const void *b)
  *
  * @return Pointer to an allocated SVD_DATA structure, or NULL on allocation failure.
  */
-static SVD_DATA *svd_create(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, modelica_real *values, modelica_boolean scaled)
+static SVD_DATA *svd_create(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, modelica_real *values, modelica_boolean scaled, SolverCaller caller)
 {
     SVD_DATA *svd_data = calloc(1, sizeof(SVD_DATA));
     if (!svd_data) return NULL;
@@ -49,6 +49,7 @@ static SVD_DATA *svd_create(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, modelic
     svd_data->sp_values      = values;
     svd_data->min_rows_cols  = rows < cols ? rows : cols;
     svd_data->scaled         = scaled;
+    svd_data->caller         = caller;
 
     svd_data->A_dense = calloc(rows * cols, sizeof(modelica_real));
 
@@ -210,7 +211,9 @@ static void svd_dump_statistics(const SVD_DATA *svd_data)
     }
     else
     {
-        infoStreamPrint(OMC_LOG_NLS_SVD, 1, "%s: SVD analysis (scaled = %s).", NLS_NAME[solver], (svd_data->scaled ? "true" : "false"));
+        infoStreamPrint(OMC_LOG_NLS_SVD, 1, "%s: SVD analysis (scaled = %s, Caller: %s).",
+                  SolverCaller_callerString(svd_data->caller), svd_data->scaled ? "true" : "false", SolverCaller_toString(svd_data->caller));
+
         infoStreamPrint(OMC_LOG_NLS_SVD, 1, "Matrix Info");
         infoStreamPrint(OMC_LOG_NLS_SVD, 0, "NLS eq index = %ld", nls_data->equationIndex);
         infoStreamPrint(OMC_LOG_NLS_SVD, 0, "Columns      = %ld", nls_data->size);
@@ -370,7 +373,7 @@ static void svd_dump_statistics(const SVD_DATA *svd_data)
  * @param f_scale    Optional scaling factors for functions (can be NULL).
  * @return return code: 0 = success
  */
-int svd_compute(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, modelica_real *values, modelica_boolean scaled)
+int svd_compute(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, modelica_real *values, modelica_boolean scaled, SolverCaller caller)
 {
     int ret = 0;
 
@@ -390,7 +393,7 @@ int svd_compute(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, modelica_real *valu
     */
 
     // unscaled
-    SVD_DATA *svd_data = svd_create(data, nls_data, values, scaled);
+    SVD_DATA *svd_data = svd_create(data, nls_data, values, scaled, caller);
     ret = svd_compute_lapack(svd_data);
     if (ret != 0) return ret;
     svd_calculate_statistics(svd_data);

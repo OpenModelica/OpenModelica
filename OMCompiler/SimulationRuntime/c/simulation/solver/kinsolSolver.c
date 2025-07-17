@@ -454,6 +454,9 @@ static void finishSparseColPtr(SUNMatrix A, int nnz) {
   }
 }
 
+// TODO: unify this up to a generic level, such that we can use this from pretty much every solver and
+// it does not take kinsolData and the matrix only as flat buffer + SPARSE_PATTERN
+
 /**
  * @brief Perform derivative test comparing symbolic and numerical Jacobians for KINSOL
  *
@@ -473,7 +476,7 @@ static void finishSparseColPtr(SUNMatrix A, int nnz) {
  *                         -1 internal error
  */
 static int nlsKinsolDenseDerivativeTest(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData,
-                                        NLS_KINSOL_DATA *kinsolData, SUNMatrix Jsym, modelica_boolean newJac)
+                                        NLS_KINSOL_DATA *kinsolData, SUNMatrix Jsym, SolverCaller caller)
 {
   int row, col, nz, errorCount, numericalErrorCount, structuralErrorCount;
   const int size = nlsData->size;
@@ -519,8 +522,8 @@ static int nlsKinsolDenseDerivativeTest(DATA *data, NONLINEAR_SYSTEM_DATA *nlsDa
     return ret;
   }
 
-  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "KINSOL: Derivative test (atol=%.5e, rtol=%.5e, scaling=%d, Caller: %s):",
-                  Atol, Rtol, kinsolData->nominalJac, newJac ? "Jacobian Eval Func" : "KINSOL Entry Point");
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "%s: Derivative test (atol=%.5e, rtol=%.5e, scaled = %s, Caller: %s):",
+                  SolverCaller_callerString(caller), Atol, Rtol, kinsolData->nominalJac ? "true" : "false", SolverCaller_toString(caller));
   infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "Matrix Info");
   infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "NLS index = %ld", nlsData->equationIndex);
   infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Columns   = %li", columns);
@@ -682,7 +685,7 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
 
   if (omc_useStream[OMC_LOG_NLS_DERIVATIVE_TEST])
   {
-    nlsKinsolDenseDerivativeTest(data, nlsData, kinsolData, Jac, TRUE /* called at evaluation */);
+    nlsKinsolDenseDerivativeTest(data, nlsData, kinsolData, Jac, KINSOL_JAC_EVAL);
   }
 
   if (omc_useStream[OMC_LOG_NLS_JAC_SUMS])
@@ -814,7 +817,7 @@ static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
 
   if (omc_useStream[OMC_LOG_NLS_DERIVATIVE_TEST])
   {
-    nlsKinsolDenseDerivativeTest(data, nlsData, kinsolData, Jac, TRUE /* called at evaluation */);
+    nlsKinsolDenseDerivativeTest(data, nlsData, kinsolData, Jac, KINSOL_JAC_EVAL);
   }
 
   if (omc_useStream[OMC_LOG_NLS_JAC_SUMS])
@@ -1360,10 +1363,16 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
     /* Dump configuration */
     nlsKinsolConfigPrint(kinsolData, nlsData);
 
+    /* TODO: This should be another flag, e.g. LOG_NLS_JAC_UPDATE and not OMC_LOG_NLS_DERIVATIVE_TEST
+             only in some cases this derivative test makes sense, since the scaled Jacobian is outdated frequently!
+             in most cases, we use an outdated jacobian here, such that errors explode and it detects wrong Jacobian mismatches
+             that are due to the dense Jacobian evaluated at the new point x_new.
+
     if (omc_useStream[OMC_LOG_NLS_DERIVATIVE_TEST])
     {
-      nlsKinsolDenseDerivativeTest(data, nlsData, kinsolData, kinsolData->J, FALSE /* called at entry point */);
+      nlsKinsolDenseDerivativeTest(data, nlsData, kinsolData, kinsolData->J, KINSOL_ENTRY_POINT);
     }
+    */
 
     if (omc_useStream[OMC_LOG_NLS_JAC_SUMS])
     {
@@ -1372,7 +1381,7 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
 
     if (omc_useStream[OMC_LOG_NLS_SVD])
     {
-      svd_compute(data, nlsData, SM_DATA_S(kinsolData->J), FALSE /* scaled */);
+      svd_compute(data, nlsData, SM_DATA_S(kinsolData->J), FALSE /* scaled */, KINSOL_ENTRY_POINT /* called at entry point */);
     }
 
     flag = KINSol(

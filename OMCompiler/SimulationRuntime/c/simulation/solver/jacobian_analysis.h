@@ -67,10 +67,10 @@ typedef enum SolverCaller {
 
 static inline const char* SolverCaller_toString(SolverCaller caller) {
     switch (caller) {
-        case KINSOL_JAC_EVAL:     return "kinsol JAC_EVAL";
-        case KINSOL_ENTRY_POINT:  return "kinsol ENTRY_POINT";
-        case KINSOL_B_JAC_EVAL:   return "experimental-kinsol JAC_EVAL";
-        case KINSOL_B_ENTRY_POINT:return "experimental-kinsol ENTRY_POINT";
+        case KINSOL_JAC_EVAL:     return "kinsol: Jacobian eval";
+        case KINSOL_ENTRY_POINT:  return "kinsol: Kinsol entry point";
+        case KINSOL_B_JAC_EVAL:   return "experimental-kinsol: Jacobian eval";
+        case KINSOL_B_ENTRY_POINT:return "experimental-kinsol: Kinsol entry point";
         default:                  return "UNKNOWN_SOLVER_CALLER";
     }
 }
@@ -93,6 +93,7 @@ typedef struct SVD_Component {
 typedef struct SVD_DATA {
     DATA *data;
     NONLINEAR_SYSTEM_DATA *nls_data;
+    SolverCaller caller;
 
     modelica_boolean scaled;        // NLS is scaled
 
@@ -118,7 +119,7 @@ typedef struct SVD_DATA {
 static inline modelica_real _svd_max2(modelica_real a, modelica_real b) { return (a > b ? a : b); };
 
 // entry point for svd analysis
-int svd_compute(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, modelica_real *values, modelica_boolean scaled);
+int svd_compute(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, modelica_real *values, modelica_boolean scaled, SolverCaller caller);
 
 // entry point for jacobian sums of abs rows and cols
 void nlsJacobianRowColSums(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData, SUNMatrix J,
