@@ -328,6 +328,7 @@ protected
     end if;
   end inlineRecordsTuplesArrays;
 
+public
   function inlineRecordTupleArrayEquation
     input output Equation eqn;
     input Iterator iter;
@@ -403,6 +404,7 @@ protected
     end try;
   end inlineRecordTupleArrayEquation;
 
+protected
   function inlineRecordTupleArrayIfEquation
     "Documentation"
     input output Equation eqn;

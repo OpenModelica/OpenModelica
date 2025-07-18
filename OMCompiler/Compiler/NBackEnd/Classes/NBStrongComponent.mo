@@ -90,7 +90,7 @@ public
 
     function hash
       input AliasInfo info;
-      output Integer i = Partition.kindToInteger(info.kind) + info.partitionIndex*13 + info.componentIndex*31;
+      output Integer i = stringHashDjb2(toString(info));
     end hash;
 
     function isEqual

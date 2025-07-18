@@ -2000,9 +2000,19 @@ public
       input Boolean new = false               "set to true if the resulting pointer should be a new one";
     protected
       Equation eqn = Pointer.access(eqn_ptr);
+      EquationAttributes attr;
       ComponentRef residualCref;
       Expression lhs, rhs;
     algorithm
+      // leave immediately if its already in residual form
+      if isResidual(eqn_ptr) then
+        return;
+      else
+        attr := getAttributes(eqn);
+        attr.residual := true;
+        eqn := setAttributes(eqn, attr);
+      end if;
+
       // TODO: future improvement - save the residual in [INI] -> re-use for [ODE] tearing
       // get name cref which is the residual
       residualCref := match eqn
@@ -2143,6 +2153,14 @@ public
     algorithm
       b := match eqn case DUMMY_EQUATION() then true; else false; end match;
     end isDummy;
+
+    function isResidual extends checkEqn;
+    protected
+      EquationAttributes attr;
+    algorithm
+      attr := getAttributes(Pointer.access(eqn_ptr));
+      b := attr.residual;
+    end isResidual;
 
     function isDiscrete extends checkEqn;
     protected
@@ -3812,6 +3830,7 @@ public
       Option<Pointer<Equation>> derivative  "if the equation has been differentiated w.r.t time already";
       Option<Pointer<Variable>> residualVar "also used to represent the equation itself";
       Option<Integer> clock_idx             "only set if clocked eq";
+      Boolean residual                      "true if in residual form";
       Boolean exclusively_initial           "true if in initial equation block";
       Evaluation.Stages evalStages          "evaluation stages (prior used for DAE mode, still necessary?)";
       EquationKind kind                     "continuous, clocked, discrete, empty";
@@ -3879,6 +3898,7 @@ public
       derivative          = NONE(),
       residualVar         = NONE(),
       clock_idx           = clock_idx,
+      residual            = false,
       exclusively_initial = exclusively_initial,
       evalStages          = NBEvaluation.DEFAULT_STAGES,
       kind                = kind);
