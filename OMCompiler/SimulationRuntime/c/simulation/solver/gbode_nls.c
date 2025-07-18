@@ -283,15 +283,6 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
-
-    int flag;
-    void* kin_mem = ((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory;
-    flag = KINSetNumMaxIters(kin_mem, nlsData->size * 4);
-    checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetNumMaxIters");
-    flag = KINSetMaxSetupCalls(kin_mem, 10);
-    checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetMaxSetupCalls");
-    flag = KINSetErrHandlerFn(kin_mem, GB_KINErrHandler, NULL);
-    checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetErrHandlerFn");
     break;
   case GB_NLS_KINSOL_B:
     nlsData->nlsMethod = NLS_KINSOL_B;
@@ -303,15 +294,6 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     solverData->ordinaryData = (void*) B_nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
-
-    int B_flag;
-    void* B_kin_mem = ((B_NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory;
-    B_flag = KINSetNumMaxIters(B_kin_mem, nlsData->size * 4);
-    checkReturnFlag_SUNDIALS(B_flag, SUNDIALS_KIN_FLAG, "KINSetNumMaxIters");
-    B_flag = KINSetMaxSetupCalls(B_kin_mem, 10);
-    checkReturnFlag_SUNDIALS(B_flag, SUNDIALS_KIN_FLAG, "KINSetMaxSetupCalls");
-    B_flag = KINSetErrHandlerFn(B_kin_mem, GB_KINErrHandler, NULL);
-    checkReturnFlag_SUNDIALS(B_flag, SUNDIALS_KIN_FLAG, "KINSetErrHandlerFn");
     break;
   default:
     throwStreamPrint(NULL, "Memory allocation for NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbData->nlsSolverMethod]);
