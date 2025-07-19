@@ -40,6 +40,7 @@
 
 #include "solver_main.h"
 #include "kinsolSolver.h"
+#include "kinsol_b.h"
 #include "newtonIteration.h"
 #include "nonlinearSystem.h"
 
@@ -282,15 +283,17 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     solverData->ordinaryData = (void*) nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
-
-    int flag;
-    NLS_KINSOL_DATA* kin_mem = ((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory;
-    flag = KINSetNumMaxIters(kin_mem, nlsData->size * 4);
-    checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetNumMaxIters");
-    flag = KINSetMaxSetupCalls(kin_mem, 10);
-    checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetMaxSetupCalls");
-    flag = KINSetErrHandlerFn(kin_mem, GB_KINErrHandler, NULL);
-    checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINSetErrHandlerFn");
+    break;
+  case GB_NLS_KINSOL_B:
+    nlsData->nlsMethod = NLS_KINSOL_B;
+    if (nlsData->isPatternAvailable) {
+      nlsData->nlsLinearSolver = NLS_LS_KLU;
+    } else {
+      nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
+    }
+    solverData->ordinaryData = (void*) B_nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable);
+    solverData->initHomotopyData = NULL;
+    nlsData->solverData = solverData;
     break;
   default:
     throwStreamPrint(NULL, "Memory allocation for NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbData->nlsSolverMethod]);
@@ -380,6 +383,17 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
+  case GB_NLS_KINSOL_B:
+    nlsData->nlsMethod = NLS_KINSOL_B;
+    if (nlsData->isPatternAvailable) {
+      nlsData->nlsLinearSolver = NLS_LS_KLU;
+    } else {
+      nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
+    }
+    solverData->ordinaryData = (void*) B_nlsKinsolAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable);
+    solverData->initHomotopyData = NULL;
+    nlsData->solverData = solverData;
+    break;
   default:
     throwStreamPrint(NULL, "Memory allocation for NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbfData->nlsSolverMethod]);
   }
@@ -407,6 +421,9 @@ void freeRK_NLS_DATA(NONLINEAR_SYSTEM_DATA* nlsData)
   case NLS_KINSOL:
     nlsKinsolFree(dataSolver->ordinaryData);
     break;
+  case NLS_KINSOL_B:
+    B_nlsKinsolFree(dataSolver->ordinaryData);
+    break;
   default:
     throwStreamPrint(NULL, "Not handled NONLINEAR_SOLVER in gbode_freeData. Are we leaking memroy?");
   }
@@ -422,7 +439,7 @@ void freeRK_NLS_DATA(NONLINEAR_SYSTEM_DATA* nlsData)
  * @param jacUpdate     Update of jacobian necessary (SUNFALSE => yes)
  * @param maxJacUpdate  Maximal number of constant jacobian
  */
-void set_kinsol_parameters(NLS_KINSOL_DATA* kin_mem, int numIter, int jacUpdate, int maxJacUpdate, double tolerance)
+void set_kinsol_parameters(void* kin_mem, int numIter, int jacUpdate, int maxJacUpdate, double tolerance)
 {
     int flag;
 
@@ -491,10 +508,15 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
     rt_ext_tp_tick(&clock);
   }
 
-  if (gbData->nlsSolverMethod == GB_NLS_KINSOL) {
+  if (gbData->nlsSolverMethod == GB_NLS_KINSOL || gbData->nlsSolverMethod == GB_NLS_KINSOL_B) {
     // Get kinsol data object
-    NLS_KINSOL_DATA* kin_mem = ((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory;
-
+    void* kin_mem;
+    if (gbData->nlsSolverMethod == GB_NLS_KINSOL){
+       kin_mem = ((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory;
+    }
+    else {
+       kin_mem = ((B_NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory;
+    }
     if (maxJacUpdate[0] > 0) {
       set_kinsol_parameters(kin_mem, newtonMaxSteps, SUNTRUE, maxJacUpdate[0], newtonTol);
       solved = solveNLS(data, threadData, nlsData);

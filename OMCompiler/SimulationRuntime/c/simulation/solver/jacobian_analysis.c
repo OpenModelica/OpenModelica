@@ -1,4 +1,4 @@
-#include "jacobian_svd.h"
+#include "jacobian_analysis.h"
 
 // LAPACK dense SVD routine
 extern void dgesvd_(char *jobu, char *jobvt, int *m, int *n,
@@ -30,8 +30,7 @@ static int cmp_fabs_desc(const void *a, const void *b)
  *
  * @return Pointer to an allocated SVD_DATA structure, or NULL on allocation failure.
  */
-static SVD_DATA *svd_create(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, modelica_real *values,
-                            modelica_real *x_scale, modelica_real *f_scale)
+static SVD_DATA *svd_create(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, modelica_real *values, modelica_boolean scaled, SolverCaller caller)
 {
     SVD_DATA *svd_data = calloc(1, sizeof(SVD_DATA));
     if (!svd_data) return NULL;
@@ -49,6 +48,8 @@ static SVD_DATA *svd_create(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, modelic
     svd_data->sparse_pattern = sparse_pattern;
     svd_data->sp_values      = values;
     svd_data->min_rows_cols  = rows < cols ? rows : cols;
+    svd_data->scaled         = scaled;
+    svd_data->caller         = caller;
 
     svd_data->A_dense = calloc(rows * cols, sizeof(modelica_real));
 
@@ -63,8 +64,7 @@ static SVD_DATA *svd_create(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, modelic
             for (nz = lead[column]; nz < lead[column + 1]; nz++)
             {
                 row = index[nz];
-                modelica_real scaling = (f_scale && x_scale) ? f_scale[row] / x_scale[column] : 1.0;
-                svd_data->A_dense[column * rows + row] = values[nz] * scaling;
+                svd_data->A_dense[column * rows + row] = values[nz];
             }
         }
     }
@@ -195,13 +195,14 @@ static void svd_calculate_statistics(SVD_DATA* svd_data)
  * @param svd_data Pointer to the structure containing SVD results and statistics.
  * @param scaled If true: statistics are marked as scaled.
  */
-static void svd_dump_statistics(const SVD_DATA *svd_data, modelica_boolean scaled)
+static void svd_dump_statistics(const SVD_DATA *svd_data)
 {
     int i, u, v, var_idx, eq_idx, start, end, count;
     modelica_real val;
     modelica_integer size_of_torns;
     SVD_Component *entries = (SVD_Component*)malloc(svd_data->rows * sizeof(SVD_Component));
     NONLINEAR_SYSTEM_DATA *nls_data = svd_data->nls_data;
+    NONLINEAR_SOLVER solver = nls_data->nlsMethod;
 
     if (!svd_data || !svd_data->S) {
         infoStreamPrint(OMC_LOG_NLS_SVD, 1, "No SVD data available.");
@@ -210,7 +211,9 @@ static void svd_dump_statistics(const SVD_DATA *svd_data, modelica_boolean scale
     }
     else
     {
-        infoStreamPrint(OMC_LOG_NLS_SVD, 1, "KINSOL: SVD analysis (scaled = %s).", (scaled ? "true" : "false"));
+        infoStreamPrint(OMC_LOG_NLS_SVD, 1, "%s: SVD analysis (scaled = %s, Caller: %s).",
+                  SolverCaller_callerString(svd_data->caller), svd_data->scaled ? "true" : "false", SolverCaller_toString(svd_data->caller));
+
         infoStreamPrint(OMC_LOG_NLS_SVD, 1, "Matrix Info");
         infoStreamPrint(OMC_LOG_NLS_SVD, 0, "NLS eq index = %ld", nls_data->equationIndex);
         infoStreamPrint(OMC_LOG_NLS_SVD, 0, "Columns      = %ld", nls_data->size);
@@ -370,8 +373,7 @@ static void svd_dump_statistics(const SVD_DATA *svd_data, modelica_boolean scale
  * @param f_scale    Optional scaling factors for functions (can be NULL).
  * @return return code: 0 = success
  */
-int svd_compute(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, modelica_real *values,
-                modelica_real *x_scale, modelica_real *f_scale)
+int svd_compute(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, modelica_real *values, modelica_boolean scaled, SolverCaller caller)
 {
     int ret = 0;
 
@@ -391,12 +393,169 @@ int svd_compute(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, modelica_real *valu
     */
 
     // unscaled
-    SVD_DATA *svd_data = svd_create(data, nls_data, values, NULL /* x_scale */, NULL /* f_scale */);
+    SVD_DATA *svd_data = svd_create(data, nls_data, values, scaled, caller);
     ret = svd_compute_lapack(svd_data);
     if (ret != 0) return ret;
     svd_calculate_statistics(svd_data);
-    svd_dump_statistics(svd_data, FALSE /* scaled */);
+    svd_dump_statistics(svd_data);
     svd_free(svd_data);
 
     return ret;
+}
+
+// ================================ Sums of absolute values of Jacobian Columns and Rows ================================ //
+
+// quick struct + cmp operator, to sort the arrays of col / row sums and keep their respective index
+typedef struct {
+  modelica_real value;
+  int index;
+} IndexedValue;
+
+static int compare_desc(const void *a, const void *b) {
+  modelica_real diff = ((IndexedValue*)b)->value - ((IndexedValue*)a)->value;
+  return (diff > 0) - (diff < 0); // returns 1 if b > a, -1 if a > b
+}
+
+/**
+ * @brief analyze absolute row and column sums of a sparse KINSOL Jacobian matrix
+ *
+ * computes the absolute row and column sums of a sparse Jacobian (CSC format)
+ * and prints them sorted in descending order. This is useful for diagnosing
+ * scaling issues, structural sparsity, or ill-conditioning in nonlinear systems.
+ *
+ * @param data
+ * @param nlsData     pointer to nonlinear system data
+ * @param J           sparse Jacobian matrix in CSC format
+ * @param caller      caller of the method (solver + where in the code it was called)
+ * @param scaled      boolean indicating if the passed Jacobian is scaled (only used for printout)
+ */
+void nlsJacobianRowColSums(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData, SUNMatrix J,
+                           SolverCaller caller, modelica_boolean scaled)
+{
+  int i, row, col, nz, count;
+  modelica_real value;
+  const int size = (int)nlsData->size;
+  const int size_of_torns = (int)nlsData->torn_plus_residual_size - size;
+
+  sunindextype nnz = SUNSparseMatrix_NNZ(J);
+
+  sunindextype *colPointers = SM_INDEXPTRS_S(J);
+  sunindextype *rowIndices = SM_INDEXVALS_S(J);
+  realtype *values = SM_DATA_S(J);
+
+  modelica_real *rowSumsRaw = (modelica_real*)calloc(size, sizeof(modelica_real));
+  modelica_real *colSumsRaw = (modelica_real*)calloc(size, sizeof(modelica_real));
+  IndexedValue *rowSums = (IndexedValue*)malloc(size * sizeof(IndexedValue));
+  IndexedValue *colSums = (IndexedValue*)malloc(size * sizeof(IndexedValue));
+
+  for (col = 0; col < size; col++)
+  {
+    for (nz = colPointers[col]; nz < colPointers[col + 1]; nz++)
+    {
+      row = rowIndices[nz];
+      value = values[nz];
+
+      rowSumsRaw[row] += fabs(value);
+      colSumsRaw[col] += fabs(value);
+    }
+  }
+
+  for (int i = 0; i < size; i++)
+  {
+    rowSums[i].value = rowSumsRaw[i];
+    rowSums[i].index = i;
+
+    colSums[i].value = colSumsRaw[i];
+    colSums[i].index = i;
+  }
+
+  qsort(rowSums, size, sizeof(IndexedValue), compare_desc);
+  qsort(colSums, size, sizeof(IndexedValue), compare_desc);
+
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 1, "%s: Jacobian absolute row & col sum analysis (scaled = %s, Caller: %s).",
+                  SolverCaller_callerString(caller), scaled ? "true" : "false", SolverCaller_toString(caller));
+
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 1, "Matrix Info");
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "NLS eq index = %ld", nlsData->equationIndex);
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "Columns      = %d", size);
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "Rows         = %d", size);
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "NNZ          = %u", nlsData->sparsePattern->numberOfNonZeros);
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "Curr Time    = %-11.5e", data->localData[0]->timeValue);
+  messageClose(OMC_LOG_NLS_JAC_SUMS);
+
+  int print_count = (size < 5) ? size : 5;
+
+  // top row sums
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 1, "Top %d Jacobian row abs sums (sorted by descending value):", print_count);
+  for (i = 0; i < print_count; i++)
+  {
+    row = rowSums[i].index;
+    modelica_integer eq_debug_idx = nlsData->eqn_simcode_indices[size_of_torns + row];
+    infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "fabs(Row[%d]) = %+.5e for NLS Eq ID (debugger): %ld", row + 1, rowSums[i].value, eq_debug_idx);
+  }
+  messageClose(OMC_LOG_NLS_JAC_SUMS);
+
+  // bottom row sums
+  if (size > 5)
+  {
+    infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 1, "Bottom %d Jacobian row abs sums (sorted by descending value):", print_count);
+    for (i = size - print_count; i < size; i++)
+    {
+      row = rowSums[i].index;
+      modelica_integer eq_debug_idx = nlsData->eqn_simcode_indices[size_of_torns + row];
+      infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "fabs(Row[%d]) = %+.5e for NLS Eq ID (debugger): %ld", row + 1, rowSums[i].value, eq_debug_idx);
+    }
+    messageClose(OMC_LOG_NLS_JAC_SUMS);
+  }
+
+
+  // top column sums
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 1, "Top %d Jacobian column abs sums (sorted by descending value):", print_count);
+  for (i = 0; i < print_count; i++)
+  {
+    col = colSums[i].index;
+    const char *var_name = modelInfoGetEquation(&data->modelData->modelDataXml, nlsData->equationIndex).vars[col];
+    infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "fabs(Col[%d]) = %+.5e for Variable %d: %s", col + 1, colSums[i].value, col + 1, var_name);
+  }
+  messageClose(OMC_LOG_NLS_JAC_SUMS);
+
+  // bottom column sums
+  if (size > 5)
+  {
+    infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 1, "Bottom %d Jacobian column abs sums (sorted by descending value):", print_count);
+    for (i = size - print_count; i < size; i++)
+    {
+      col = colSums[i].index;
+      const char *var_name = modelInfoGetEquation(&data->modelData->modelDataXml, nlsData->equationIndex).vars[col];
+      infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "fabs(Col[%d]) = %+.5e for Variable %d: %s", col + 1, colSums[i].value, col + 1, var_name);
+    }
+    messageClose(OMC_LOG_NLS_JAC_SUMS);
+  }
+
+  // row sums
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 1, "All Jacobian row abs sums (sorted by descending value):");
+  for (i = 0; i < size; i++)
+  {
+    row = rowSums[i].index;
+    modelica_integer eq_debug_idx = nlsData->eqn_simcode_indices[size_of_torns + row];
+    infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "fabs(Row[%d]) = %+.5e for NLS Eq ID (debugger): %ld", row + 1, rowSums[i].value, eq_debug_idx);
+  }
+  messageClose(OMC_LOG_NLS_JAC_SUMS);
+
+  // column sums
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 1, "All Jacobian column abs sums (sorted by descending value):");
+  for (i = 0; i < size; i++)
+  {
+    col = colSums[i].index;
+    const char *var_name = modelInfoGetEquation(&data->modelData->modelDataXml, nlsData->equationIndex).vars[col];
+    infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "fabs(Col[%d]) = %+.5e for Variable %d: %s", col + 1, colSums[i].value, col + 1, var_name);
+  }
+  messageClose(OMC_LOG_NLS_JAC_SUMS);
+
+  messageClose(OMC_LOG_NLS_JAC_SUMS);
+
+  free(rowSumsRaw);
+  free(colSumsRaw);
+  free(rowSums);
+  free(colSums);
 }

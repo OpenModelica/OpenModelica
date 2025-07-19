@@ -42,6 +42,7 @@
 #include "nonlinearValuesList.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
 #include "kinsolSolver.h"
+#include "kinsol_b.h"
 #include "nonlinearSolverHybrd.h"
 #include "nonlinearSolverNewton.h"
 #include "newtonIteration.h"
@@ -478,7 +479,7 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
   nonlinsys->nlsMethod = data->simulationInfo->nlsMethod;
   nonlinsys->nlsLinearSolver = data->simulationInfo->nlsLinearSolver;
 #if !defined(OMC_MINIMAL_RUNTIME)
-  if (nonlinsys->isPatternAvailable && data->simulationInfo->nlsMethod != NLS_KINSOL)
+  if (nonlinsys->isPatternAvailable && !(data->simulationInfo->nlsMethod == NLS_KINSOL || data->simulationInfo->nlsMethod == NLS_KINSOL_B))
   {
     nnz = nonlinsys->sparsePattern->numberOfNonZeros;
 
@@ -515,6 +516,17 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
   /* Set NLS user data */
   NLS_USERDATA* nlsUserData = initNlsUserData(data, threadData, sysNum, nonlinsys, jacobian);
 
+// FIXME: add generation of scalar system (total system size = 1) to codegen
+#if !defined(OMC_MINIMAL_RUNTIME)
+  /* check for trivial sparsity pattern (is not always generated) */
+  if (nonlinsys->size == 1 && !nonlinsys->isPatternAvailable && (nonlinsys->nlsMethod == NLS_KINSOL || nonlinsys->nlsMethod == NLS_KINSOL_B)) {
+    nonlinsys->nlsMethod = NLS_HYBRID;
+    nonlinsys->nlsLinearSolver = NLS_LS_DEFAULT;
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Sparsity pattern for non-linear system %d with size 1x1 (nnz = 1) does not exist. "
+                                           "Can not use the set sparse NLS solver - changing the method to Hybrid.", sysNum);
+  }
+#endif
+
   /* allocate stuff depending on the chosen method */
   switch(nonlinsys->nlsMethod)
   {
@@ -536,6 +548,16 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
       solverData->initHomotopyData = (void*) allocateHomotopyData(size-1, nlsUserData);
     } else {
       nonlinsys->solverData = (void*) nlsKinsolAllocate(size, nlsUserData, TRUE, nonlinsys->isPatternAvailable);
+      solverData->ordinaryData = nonlinsys->solverData;
+    }
+    nonlinsys->solverData = (void*) solverData;
+    break;
+  case NLS_KINSOL_B:
+    solverData = (struct dataSolver*) malloc(sizeof(struct dataSolver));
+    if (nonlinsys->homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
+      solverData->initHomotopyData = (void*) allocateHomotopyData(size-1, nlsUserData);
+    } else {
+      nonlinsys->solverData = (void*) B_nlsKinsolAllocate(size, nlsUserData, TRUE, nonlinsys->isPatternAvailable);
       solverData->ordinaryData = nonlinsys->solverData;
     }
     nonlinsys->solverData = (void*) solverData;
@@ -605,7 +627,7 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
 #if !defined(OMC_MINIMAL_RUNTIME)
     /* kinsol works best with KLU,
        they are both sparse so it makes sense to use them together */
-    if (data->simulationInfo->nlsMethod == NLS_KINSOL) {
+    if (data->simulationInfo->nlsMethod == NLS_KINSOL || data->simulationInfo->nlsMethod == NLS_KINSOL_B) {
       data->simulationInfo->nlsLinearSolver = NLS_LS_KLU;
     } else {
       data->simulationInfo->nlsLinearSolver = NLS_LS_LAPACK;
@@ -727,6 +749,14 @@ void freeNonlinearSyst(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DA
       freeHomotopyData(((struct dataSolver*) nonlinsys->solverData)->initHomotopyData);
     } else {
       nlsKinsolFree(((struct dataSolver*) nonlinsys->solverData)->ordinaryData);
+    }
+    free(nonlinsys->solverData);
+    break;
+  case NLS_KINSOL_B:
+    if (nonlinsys->homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
+      freeHomotopyData(((struct dataSolver*) nonlinsys->solverData)->initHomotopyData);
+    } else {
+      B_nlsKinsolFree(((struct dataSolver*) nonlinsys->solverData)->ordinaryData);
     }
     free(nonlinsys->solverData);
     break;
@@ -1040,6 +1070,20 @@ NLS_SOLVER_STATUS solveNLS(DATA *data, threadData_t *threadData, NONLINEAR_SYSTE
     #endif
     nonlinsys->solverData = solverData;
     break;
+  case NLS_KINSOL_B:
+    solverData = nonlinsys->solverData;
+    nonlinsys->solverData = solverData->ordinaryData;
+    /* try */
+    #ifndef OMC_EMCC
+      MMC_TRY_INTERNAL(simulationJumpBuffer)
+    #endif
+    solver_status = B_nlsKinsolSolve(data, threadData, nonlinsys);
+    /*catch */
+    #ifndef OMC_EMCC
+      MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    #endif
+    nonlinsys->solverData = solverData;
+    break;
   case NLS_NEWTON:
     solverData = nonlinsys->solverData;
     nonlinsys->solverData = solverData->ordinaryData;
@@ -1132,6 +1176,7 @@ NLS_SOLVER_STATUS solveWithInitHomotopy(DATA *data, threadData_t *threadData, NO
 #if !defined(OMC_MINIMAL_RUNTIME)
   case NLS_HYBRID:
   case NLS_KINSOL:
+  case NLS_KINSOL_B:
   case NLS_NEWTON:
     solverData = nonlinsys->solverData;
     nonlinsys->solverData = solverData->initHomotopyData;
@@ -1180,7 +1225,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   int homotopyDeactivated = 0;
   int j;
   int nlsLs;
-  int kinsol = 0;
+  modelica_boolean kinsol = FALSE;
   int res;
   struct dataSolver *solverData;
   struct dataMixedSolver *mixedSolverData;
@@ -1193,7 +1238,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   }
 
 #if !defined(OMC_MINIMAL_RUNTIME)
-  kinsol = (nonlinsys->nlsMethod == NLS_KINSOL);
+  kinsol = (nonlinsys->nlsMethod == NLS_KINSOL) || (nonlinsys->nlsMethod == NLS_KINSOL_B);
 #endif
 
   /* enable to avoid division by zero */

@@ -28,11 +28,11 @@
  *
  */
 
-/*! \file jacobian_svd.h
+/*! \file jacobian_analysis.h
  */
 
-#ifndef _JACOBIAN_SVD_H
-#define _JACOBIAN_SVD_H
+#ifndef _JACOBIAN_ANALYSIS_H
+#define _JACOBIAN_ANALYSIS_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,10 +41,49 @@
 #include "../simulation_info_json.h"
 #include "../jacobian_util.h"
 #include "../options.h"
+#include "sundials_util.h"
+#include "nonlinearSystem.h"
+#include "simulation_data.h"
+#include "sundials_error.h"
+#include "simulation_data.h"
+#include "util/simulation_options.h"
+
+#include <kinsol/kinsol.h>
+#include <nvector/nvector_serial.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// TODO: add the derivative test here, so we only have one code with all the analysis methods 
+// unify all the debug messages of them
+
+typedef enum SolverCaller {
+    KINSOL_JAC_EVAL,
+    KINSOL_ENTRY_POINT,
+    KINSOL_B_JAC_EVAL,
+    KINSOL_B_ENTRY_POINT
+} SolverCaller;
+
+static inline const char* SolverCaller_toString(SolverCaller caller) {
+    switch (caller) {
+        case KINSOL_JAC_EVAL:     return "kinsol: Jacobian eval";
+        case KINSOL_ENTRY_POINT:  return "kinsol: Kinsol entry point";
+        case KINSOL_B_JAC_EVAL:   return "experimental-kinsol: Jacobian eval";
+        case KINSOL_B_ENTRY_POINT:return "experimental-kinsol: Kinsol entry point";
+        default:                  return "UNKNOWN_SOLVER_CALLER";
+    }
+}
+
+static inline const char* SolverCaller_callerString(SolverCaller caller) {
+    switch (caller) {
+        case KINSOL_JAC_EVAL:     return "kinsol";
+        case KINSOL_ENTRY_POINT:  return "kinsol";
+        case KINSOL_B_JAC_EVAL:   return "experimental-kinsol";
+        case KINSOL_B_ENTRY_POINT:return "experimental-kinsol";
+        default:                  return "UNKNOWN_SOLVER";
+    }
+}
 
 typedef struct SVD_Component {
     int index;
@@ -54,6 +93,9 @@ typedef struct SVD_Component {
 typedef struct SVD_DATA {
     DATA *data;
     NONLINEAR_SYSTEM_DATA *nls_data;
+    SolverCaller caller;
+
+    modelica_boolean scaled;        // NLS is scaled
 
     int rows;                       // #rows
     int cols;                       // #columns
@@ -76,12 +118,15 @@ typedef struct SVD_DATA {
 
 static inline modelica_real _svd_max2(modelica_real a, modelica_real b) { return (a > b ? a : b); };
 
-// only entry point
-int svd_compute(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, modelica_real *values,
-                modelica_real *x_scale, modelica_real *f_scale);
+// entry point for svd analysis
+int svd_compute(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, modelica_real *values, modelica_boolean scaled, SolverCaller caller);
+
+// entry point for jacobian sums of abs rows and cols
+void nlsJacobianRowColSums(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData, SUNMatrix J,
+                           SolverCaller caller, modelica_boolean scaled);
 
 #ifdef __cplusplus
 };
 #endif
 
-#endif // _JACOBIAN_SVD_H
+#endif // _JACOBIAN_ANALYSIS_H
