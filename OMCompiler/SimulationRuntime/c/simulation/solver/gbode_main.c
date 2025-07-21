@@ -1357,8 +1357,9 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         continue;
       }
 
-      // store right hand values for latter interpolation
+      // store right hand values for latter interpolation (also in case of an event)
       gbData->timeRight = gbData->time + gbData->lastStepSize;
+      gbData->timeDense = gbData->timeRight;
       memcpy(gbData->yRight, gbData->y, nStates * sizeof(double));
       // update kRight
       if (!gbData->tableau->isKRightAvailable) {
@@ -1512,7 +1513,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       // check for events, if event is detected stop integrator and trigger event iteration
       eventTime = checkForEvents(data, threadData, solverInfo, gbData->timeLeft, gbData->yLeft, gbData->timeRight, gbData->yRight, FALSE, &foundEvent);
       if (foundEvent) {
-        if (eventTime < targetTime + 10*GB_MINIMAL_STEP_SIZE) {
+        if (eventTime < targetTime + 10*MINIMAL_STEP_SIZE) {
           listClear(solverInfo->eventLst);
           solverInfo->currentTime = eventTime;
           sData->timeValue = eventTime;
@@ -1520,7 +1521,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
           // sData->realVars are the "numerical" values on the right hand side of the event (hopefully)
           if (!gbData->noRestart) {
             gbData->time = eventTime;
-            gbData->timeDense = eventTime;
             gbData->timeRight = eventTime;
             memcpy(gbData->yOld, sData->realVars, gbData->nStates * sizeof(double));
             memcpy(gbData->yRight, sData->realVars, gbData->nStates * sizeof(double));
@@ -1546,8 +1546,9 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
           // Current solution: Step back to the communication interval before the event and event detection
           // needs to be repeated
           listClear(solverInfo->eventLst);
-          gbData->lastStepSize = (eventTime - 10*GB_MINIMAL_STEP_SIZE) - gbData->timeLeft;
-          sData->timeValue = (eventTime - 10*GB_MINIMAL_STEP_SIZE);
+          gbData->lastStepSize = (eventTime - 10*MINIMAL_STEP_SIZE) - gbData->timeLeft;
+          gbData->stepSize = 20*MINIMAL_STEP_SIZE;
+          sData->timeValue = (eventTime - 10*MINIMAL_STEP_SIZE);
           gb_interpolation(gbData->interpolation,
                           gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                           gbData->timeRight, gbData->yRight, gbData->kRight,
@@ -1578,7 +1579,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
    /* update time with performed stepSize */
 
     gbData->time += gbData->lastStepSize;
-    gbData->timeDense = gbData->time;
 
     /* step is accepted and yOld needs to be updated */
     memcpy(gbData->yOld, gbData->y, nStates * sizeof(double));
@@ -1598,7 +1598,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     debugRingBufferSteps_gb(OMC_LOG_GBODE_V, gbData->yv, gbData->kv, gbData->tv, nStates,  gbData->ringBufferSize);
 
     /* emit step, if solverNoEquidistantGrid is selected */
-    if (solverInfo->solverNoEquidistantGrid && (gbData->multi_rate && gbData->gbfData->time<gbData->time)) {
+    if (solverInfo->solverNoEquidistantGrid && (!gbData->multi_rate || (gbData->multi_rate && gbData->gbfData->time<gbData->time))) {
       sData->timeValue = gbData->time;
       solverInfo->currentTime = sData->timeValue;
       memcpy(sData->realVars, gbData->y, nStates * sizeof(double));
