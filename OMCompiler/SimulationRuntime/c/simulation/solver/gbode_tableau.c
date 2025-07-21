@@ -1570,7 +1570,7 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag)
       getButcherTableau_GAUSS6(tableau);
       break;
     default:
-      throwStreamPrint(NULL, "Error: Unknown Runge Kutta method %i.", method);
+      throwStreamPrint(NULL, "Error: Unknown Runge Kutta method.");
   }
 
   return tableau;
