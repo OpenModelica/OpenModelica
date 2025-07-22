@@ -1022,13 +1022,15 @@ const char *GB_METHOD_DESC[RK_MAX] = {
 const char *GB_NLS_METHOD_NAME[GB_NLS_MAX] = {
   /* GB_NLS_UNKNOWN = 0*/ "unknown",
   /* GB_NLS_NEWTON */     "newton",
-  /* GB_NLS_KINSOL */     "kinsol"
+  /* GB_NLS_KINSOL */     "kinsol",
+  /* GB_NLS_KINSOL_B */   "experimental-kinsol"
 };
 
 const char *GB_NLS_METHOD_DESC[GB_NLS_MAX] = {
   /* GB_NLS_UNKNOWN = 0*/ "unknown",
   /* GB_NLS_NEWTON */     "Newton method, dense",
-  /* GB_NLS_KINSOL */     "SUNDIALS KINSOL: Inexact Newton, sparse"
+  /* GB_NLS_KINSOL */     "SUNDIALS KINSOL: Inexact Newton, sparse",
+  /* GB_NLS_KINSOL_B */   "experimental kinsol"
 };
 
 const char *GB_CTRL_METHOD_NAME[GB_CTRL_MAX] = {
@@ -1181,11 +1183,13 @@ const char *NLS_NAME[NLS_MAX] = {
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* NLS_HYBRID */       "hybrid",
   /* NLS_KINSOL */       "kinsol",
+  /* NLS_KINSOL_B */     "experimental-kinsol",
   /* NLS_NEWTON */       "newton",
   /* NLS_MIXED */        "mixed",
 #else
   /* NLS_HYBRID */       "hybrid-not-available",
   /* NLS_KINSOL */       "kinsol-not-available",
+  /* NLS_KINSOL_B */     "kinsol-experimental-not-available",
   /* NLS_NEWTON */       "newton-not-available",
   /* NLS_MIXED */        "mixed-not-available",
 #endif
@@ -1198,11 +1202,13 @@ const char *NLS_DESC[NLS_MAX] = {
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* NLS_HYBRID */       "Modification of the Powell hybrid method from minpack - former default solver",
   /* NLS_KINSOL */       "SUNDIALS/KINSOL includes an interface to the sparse direct solver, KLU. See simulation option -nlsLS for more information.",
+  /* NLS_KINSOL_B */     "SUNDIALS/KINSOL (with internal scaling) includes an interface to the sparse direct solver, KLU. See simulation option -nlsLS for more information.",
   /* NLS_NEWTON */       "Newton Raphson - prototype implementation",
   /* NLS_MIXED */        "Mixed strategy. First the homotopy solver is tried and then as fallback the hybrid solver.",
 #else
   /* NLS_HYBRID */       "Modification of the Powell hybrid method from minpack - former default solver. Not available in minimal runtime.",
   /* NLS_KINSOL */       "SUNDIALS/KINSOL includes interface to the sparse direct solver, KLU. See simulation option -nlsLS for more information."
+  /* NLS_KINSOL_B */     "SUNDIALS/KINSOL (with internal scaling) includes interface to the sparse direct solver, KLU. See simulation option -nlsLS for more information."
   /* NLS_NEWTON */       "Newton Raphson - prototype implementation. Not available in minimal runtime.",
   /* NLS_MIXED */        "Mixed strategy. First the homotopy solver is tried and then as fallback the hybrid solver. Not available in minimal runtime.",
 #endif
