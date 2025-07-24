@@ -2380,26 +2380,26 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
 ::=
   let &sub = buffer ""
   (linearSystems |> eqn => (match eqn
-     case eq as SES_MIXED(__) then functionSetupLinearSystems(fill(eq.cont,1), modelNamePrefix)
-     // no dynamic tearing
-     case eq as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing=NONE()) then
-     match ls.jacobianMatrix
-       case SOME(__) then
-         let &varDeclsRes = buffer "" /*BUFD*/
-         let &auxFunction = buffer ""
-         let &tmp = buffer ""
-         let xlocs = (ls.vars |> var hasindex i0 => '<%cref(varName(var), &sub)%> = xloc[<%i0%>];' ;separator="\n")
-         let prebody = (match ls.partOfJac
-           case true then
-             (ls.residual |> eq2 =>
-               functionExtraResidualsPreBodyJacobian(eq2, &tmp, modelNamePrefix)
-             ;separator="\n")
-           case false then
-             (ls.residual |> eq2 =>
-               functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
-             ;separator="\n")
-           end match)
-         let body = (ls.residual |> eq2 hasindex i0 => match eq2
+    case eq as SES_MIXED(__) then functionSetupLinearSystems(fill(eq.cont,1), modelNamePrefix)
+    // no dynamic tearing
+    case eq as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing=NONE()) then
+      match ls.jacobianMatrix
+        case SOME(__) then
+          let &varDeclsRes = buffer "" /*BUFD*/
+          let &auxFunction = buffer ""
+          let &tmp = buffer ""
+          let xlocs = (ls.vars |> var hasindex i0 => '<%cref(varName(var), &sub)%> = xloc[<%i0%>];' ;separator="\n")
+          let prebody = (match ls.partOfJac
+            case true then
+              (ls.residual |> eq2 =>
+                functionExtraResidualsPreBodyJacobian(eq2, &tmp, modelNamePrefix)
+              ;separator="\n")
+            case false then
+              (ls.residual |> eq2 =>
+                functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
+              ;separator="\n")
+            end match)
+          let body = (ls.residual |> eq2 hasindex i0 => match eq2
             case SES_RESIDUAL(__) then
               let &preExp = buffer "" /*BUFD*/
               let expPart = daeExp(exp, contextSimulationDiscrete,
@@ -2411,37 +2411,38 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
               >>
             case SES_FOR_RESIDUAL(__) then "case 1"
           ;separator="\n")
-       <<
-       <%auxFunction%>
-       <%tmp%>
+          let eqnbody =
+          <<
+          <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%ls.index%>).profileBlockIndex,1);' %>
+          <%xlocs%>
+          <%prebody%>
+          <%body%>
+          >>
+          <<
+          <%auxFunction%>
+          <%tmp%>
 
-       void residualFunc<%ls.index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag)
-       {
-         TRACE_PUSH
-         DATA *data = userData->data;
-         threadData_t *threadData = userData->threadData;
-         const int equationIndexes[2] = {1,<%ls.index%>};
-         <% if ls.partOfJac then
-           'JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
-         %>
-         JACOBIAN* jacobian = NULL;
-         <%varDeclsRes%>
-         <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ls.index%>);' %>
-         <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%ls.index%>).profileBlockIndex,1);' %>
-         <%xlocs%>
-         <%prebody%>
-         <%body%>
-         <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ls.index%>);' %>
-         threadData->lastEquationSolved = <%ls.index%>;
-         TRACE_POP
-       }
-       OMC_DISABLE_OPT
-       <%initializeStaticLSVars(ls.vars, ls.index)%>
-       >>
-       else
-         let &varDecls = buffer "" /*BUFD*/
-         let &auxFunction = buffer ""
-         let MatrixA = (ls.simJac |> (row, col, eq) hasindex i0 => match eq
+          void residualFunc<%ls.index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag)
+          {
+            TRACE_PUSH
+            DATA *data = userData->data;
+            threadData_t *threadData = userData->threadData;
+            const int equationIndexes[2] = {1,<%ls.index%>};
+            <% if ls.partOfJac then
+              'JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
+            %>
+            JACOBIAN* jacobian = NULL;
+            <%varDeclsRes%>
+            <%equation_profile(ls.index, eqnbody)%>
+            TRACE_POP
+          }
+          OMC_DISABLE_OPT
+          <%initializeStaticLSVars(ls.vars, ls.index)%>
+          >>
+        else
+          let &varDecls = buffer "" /*BUFD*/
+          let &auxFunction = buffer ""
+          let MatrixA = (ls.simJac |> (row, col, eq) hasindex i0 => match eq
             case SES_RESIDUAL(__) then
               let &preExp = buffer "" /*BUFD*/
               let expPart = daeExp(exp, contextSimulationDiscrete, &preExp,  &varDecls, &auxFunction)
@@ -2449,44 +2450,38 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
             case SES_FOR_RESIDUAL(__) then "case 2"
           ;separator="\n")
 
-         let &varDecls2 = buffer "" /*BUFD*/
-         let vectorb = (ls.beqs |> exp hasindex i0 =>
-           let &preExp = buffer "" /*BUFD*/
-           let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls2, &auxFunction)
-             '<%preExp%>linearSystemData->setBElement(<%i0%>, <%expPart%>, linearSystemData, threadData);'
+          let &varDecls2 = buffer "" /*BUFD*/
+          let vectorb = (ls.beqs |> exp hasindex i0 =>
+            let &preExp = buffer "" /*BUFD*/
+            let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls2, &auxFunction)
+              '<%preExp%>linearSystemData->setBElement(<%i0%>, <%expPart%>, linearSystemData, threadData);'
           ;separator="\n")
-       <<
-       <%auxFunction%>
-       OMC_DISABLE_OPT
-       void setLinearMatrixA<%ls.index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData)
-       {
-         const int equationIndexes[2] = {1,<%ls.index%>};
-         <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
-         <%varDecls%>
-         <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ls.index%>);' %>
-         <%MatrixA%>
-         <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ls.index%>);' %>
-         threadData->lastEquationSolved = <%ls.index%>;
-       }
-       OMC_DISABLE_OPT
-       void setLinearVectorb<%ls.index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData)
-       {
-         const int equationIndexes[2] = {1,<%ls.index%>};
-         <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
-         <%varDecls2%>
-         <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ls.index%>);' %>
-         <%vectorb%>
-         <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ls.index%>);' %>
-         threadData->lastEquationSolved = <%ls.index%>;
-       }
-       OMC_DISABLE_OPT
-       <%initializeStaticLSVars(ls.vars, ls.index)%>
-       >>
-     end match
+          <<
+          <%auxFunction%>
+          OMC_DISABLE_OPT
+          void setLinearMatrixA<%ls.index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData)
+          {
+            const int equationIndexes[2] = {1,<%ls.index%>};
+            <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
+            <%varDecls%>
+            <%equation_profile(ls.index, MatrixA)%>
+          }
+          OMC_DISABLE_OPT
+          void setLinearVectorb<%ls.index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData)
+          {
+            const int equationIndexes[2] = {1,<%ls.index%>};
+            <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
+            <%varDecls2%>
+            <%equation_profile(ls.index, vectorb)%>
+          }
+          OMC_DISABLE_OPT
+          <%initializeStaticLSVars(ls.vars, ls.index)%>
+          >>
+      end match
 
-     // dynamic tearing
-     case eq as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(at as LINEARSYSTEM(__))) then
-     match ls.jacobianMatrix
+    // dynamic tearing
+    case eq as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(at as LINEARSYSTEM(__))) then
+      match ls.jacobianMatrix
        case SOME(__) then
          // for strict tearing set
          let &sub = buffer ""
@@ -2753,36 +2748,30 @@ end generateNonLinearSystemData;
 template createGlobalConstraintsFunction(SimEqSystem system)
   "Creates a function which is called before each evaluation of the casual set to make sure that the constraints are not violated."
 ::=
-   match system
-     case SES_NONLINEAR(alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
-       let constraints = createGlobalConstraints(at.eqs)
-       <<
-       int checkConstraints<%at.index%>(DATA *data, threadData_t *threadData)
-       {
-         const int equationIndexes[2] = {1,<%at.index%>};
-         <% if profileAll() then 'SIM_PROF_TICK_EQ(<%at.index%>);' %>
-         <%constraints%>
-         <% if profileAll() then 'SIM_PROF_ACC_EQ(<%at.index%>);' %>
-         threadData->lastEquationSolved = <%at.index%>;
-         return 1;
-       }
+  match system
+    case SES_NONLINEAR(alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
+      let constraints = createGlobalConstraints(at.eqs)
+      <<
+      int checkConstraints<%at.index%>(DATA *data, threadData_t *threadData)
+      {
+        const int equationIndexes[2] = {1,<%at.index%>};
+        <%equation_profile(at.index, constraints)%>
+        return 1;
+      }
 
-       >>
+      >>
 
-     case SES_LINEAR(alternativeTearing = SOME(at as LINEARSYSTEM(__))) then
-       let constraints = createGlobalConstraints(at.residual)
-       <<
-       int checkConstraints<%at.index%>(DATA *data, threadData_t *threadData)
-       {
-         const int equationIndexes[2] = {1,<%at.index%>};
-         <% if profileAll() then 'SIM_PROF_TICK_EQ(<%at.index%>);' %>
-         <%constraints%>
-         <% if profileAll() then 'SIM_PROF_ACC_EQ(<%at.index%>);' %>
-         threadData->lastEquationSolved = <%at.index%>;
-         return 1;
-       }
+    case SES_LINEAR(alternativeTearing = SOME(at as LINEARSYSTEM(__))) then
+      let constraints = createGlobalConstraints(at.residual)
+      <<
+      int checkConstraints<%at.index%>(DATA *data, threadData_t *threadData)
+      {
+        const int equationIndexes[2] = {1,<%at.index%>};
+        <%equation_profile(at.index, constraints)%>
+        return 1;
+      }
 
-       >>
+      >>
 end createGlobalConstraintsFunction;
 
 template createGlobalConstraints(list<SimEqSystem> innerEqns)
@@ -3384,31 +3373,31 @@ end getIterationVars;
 template functionInitialStateSets(SimCode simCode, list<StateSet> stateSets, String modelNamePrefix)
   "Generates functions in simulation file to initialize the stateset data."
 ::=
-     let body = (stateSets |> set hasindex i1 fromindex 0 => (match set
-       case set as SES_STATESET(__) then
-       let generatedJac = match jacobianMatrix case JAC_MATRIX(matrixName=name) then '<%symbolName(modelNamePrefix,"functionJac")%><%name%>_column'
-       let initialJac =  match jacobianMatrix case JAC_MATRIX(matrixName=name) then '<%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>'
-       let jacIndex = match jacobianMatrix case JAC_MATRIX(jacobianIndex=jacindex) then '<%jacindex%>'
-       let statesvars = (states |> s hasindex i2 fromindex 0 => 'statesetData[<%i1%>].states[<%i2%>] = &<%crefVarInfo( s)%>;' ;separator="\n")
-       let statescandidatesvars = (statescandidates |> cstate hasindex i2 fromindex 0 => 'statesetData[<%i1%>].statescandidates[<%i2%>] = &<%crefVarInfo( cstate)%>;' ;separator="\n")
-       <<
-       assertStreamPrint(NULL, nStateSets > <%i1%>, "Internal Error: nStateSets mismatch!");
-       statesetData[<%i1%>].nCandidates = <%nCandidates%>;
-       statesetData[<%i1%>].nStates = <%nStates%>;
-       statesetData[<%i1%>].nDummyStates = <%nCandidates%>-<%nStates%>;
-       statesetData[<%i1%>].states = (VAR_INFO**) calloc(<%nStates%>,sizeof(VAR_INFO));
-       <%statesvars%>
-       statesetData[<%i1%>].statescandidates = (VAR_INFO**) calloc(<%nCandidates%>,sizeof(VAR_INFO));
-       <%statescandidatesvars%>
-       statesetData[<%i1%>].A = &<%crefVarInfo( crA)%>;
-       statesetData[<%i1%>].rowPivot = (modelica_integer*) calloc(<%nCandidates%>-<%nStates%>,sizeof(modelica_integer));
-       statesetData[<%i1%>].colPivot = (modelica_integer*) calloc(<%nCandidates%>,sizeof(modelica_integer));
-       statesetData[<%i1%>].J = (modelica_real*) calloc(<%nCandidates%>*(<%nCandidates%>-<%nStates%>),sizeof(modelica_real));
-       statesetData[<%i1%>].analyticalJacobianColumn = <%generatedJac%>;
-       statesetData[<%i1%>].initialAnalyticalJacobian = <%initialJac%>;
-       statesetData[<%i1%>].jacobianIndex = <%jacIndex%>;
+  let body = (stateSets |> set hasindex i1 fromindex 0 => (match set
+    case set as SES_STATESET(__) then
+      let generatedJac = match jacobianMatrix case JAC_MATRIX(matrixName=name) then '<%symbolName(modelNamePrefix,"functionJac")%><%name%>_column'
+      let initialJac =  match jacobianMatrix case JAC_MATRIX(matrixName=name) then '<%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>'
+      let jacIndex = match jacobianMatrix case JAC_MATRIX(jacobianIndex=jacindex) then '<%jacindex%>'
+      let statesvars = (states |> s hasindex i2 fromindex 0 => 'statesetData[<%i1%>].states[<%i2%>] = &<%crefVarInfo( s)%>;' ;separator="\n")
+      let statescandidatesvars = (statescandidates |> cstate hasindex i2 fromindex 0 => 'statesetData[<%i1%>].statescandidates[<%i2%>] = &<%crefVarInfo( cstate)%>;' ;separator="\n")
+      <<
+      assertStreamPrint(NULL, nStateSets > <%i1%>, "Internal Error: nStateSets mismatch!");
+      statesetData[<%i1%>].nCandidates = <%nCandidates%>;
+      statesetData[<%i1%>].nStates = <%nStates%>;
+      statesetData[<%i1%>].nDummyStates = <%nCandidates%>-<%nStates%>;
+      statesetData[<%i1%>].states = (VAR_INFO**) calloc(<%nStates%>,sizeof(VAR_INFO));
+      <%statesvars%>
+      statesetData[<%i1%>].statescandidates = (VAR_INFO**) calloc(<%nCandidates%>,sizeof(VAR_INFO));
+      <%statescandidatesvars%>
+      statesetData[<%i1%>].A = &<%crefVarInfo( crA)%>;
+      statesetData[<%i1%>].rowPivot = (modelica_integer*) calloc(<%nCandidates%>-<%nStates%>,sizeof(modelica_integer));
+      statesetData[<%i1%>].colPivot = (modelica_integer*) calloc(<%nCandidates%>,sizeof(modelica_integer));
+      statesetData[<%i1%>].J = (modelica_real*) calloc(<%nCandidates%>*(<%nCandidates%>-<%nStates%>),sizeof(modelica_real));
+      statesetData[<%i1%>].analyticalJacobianColumn = <%generatedJac%>;
+      statesetData[<%i1%>].initialAnalyticalJacobian = <%initialJac%>;
+      statesetData[<%i1%>].jacobianIndex = <%jacIndex%>;
 
-       >>
+      >>
    )
    ;separator="\n\n")
   <<
@@ -3496,10 +3485,7 @@ template functionUpdateBoundVariableAttributesFunctions(SimEqSystem eq, String a
         TRACE_PUSH
         const int equationIndexes[2] = {1,<%ix%>};
         <%&varDecls%>
-        <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
-        <%body%>
-        <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix%>);' %>
-        threadData->lastEquationSolved = <%ix%>;
+        <%equation_profile(ix, body)%>
         TRACE_POP
       }
 
@@ -4395,8 +4381,7 @@ template equationNamesHPCOM_Thread_(Integer idx, list<SimEqSystem> derivativEqua
 match context
 case SIMULATION_CONTEXT(genDiscrete=true) then
  match getSimCodeEqByIndex(derivativEquations, idx)
-  case e as SES_ALGORITHM(statements={})
-  then ""
+  case SES_ALGORITHM(statements={}) then ""
   else
   let ix = equationIndex(getSimCodeEqByIndex(derivativEquations, idx))
   <<
@@ -4404,8 +4389,7 @@ case SIMULATION_CONTEXT(genDiscrete=true) then
   >>
 else
  match getSimCodeEqByIndex(derivativEquations, idx)
-  case e as SES_ALGORITHM(statements={})
-  then ""
+  case SES_ALGORITHM(statements={}) then ""
   else
   let ix = equationIndex(getSimCodeEqByIndex(derivativEquations, idx))
   <<
@@ -4533,8 +4517,7 @@ template equationNamesArrayFormat(SimEqSystem eq, Context context, String name, 
 match context
 case SIMULATION_CONTEXT(genDiscrete=true) then
  match eq
-  case e as SES_ALGORITHM(statements={})
-  then ""
+  case SES_ALGORITHM(statements={}) then ""
   else
   let ix = equationIndex(eq)
   let &arrayEqs += '<%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>,<%\n%>'
@@ -4546,8 +4529,7 @@ case SIMULATION_CONTEXT(genDiscrete=true) then
   >>
 else
  match eq
-  case e as SES_ALGORITHM(statements={})
-  then ""
+  case SES_ALGORITHM(statements={}) then ""
   else
   let ix = equationIndex(eq)
   let &arrayEqs += '<%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>,<%\n%>'
@@ -4563,15 +4545,15 @@ end equationNamesArrayFormat;
 template functionXXX_systems_arrayFormat(list<list<SimEqSystem>> eqlstlst, String name, Text &fncalls, Text &nrfuncs, Text &varDecls, String modelNamePrefixStr)
 ::=
 match eqlstlst
-  case ({})
-  case ({{}}) then
+  case {}
+  case {{}} then
   let &nrfuncs += "0"
   <<
   /* no <%name%> systems */
   static void (**function<%name%>_systems)(DATA *,  threadData_t *) = NULL;
   >>
 
-  case eqlstlst as ({eqlst}) then
+  case {eqlst} then
     let &nrfuncs += listLength(eqlst)
     let &arrayEqs = buffer ""
     let &forwardEqs = buffer ""
@@ -4585,9 +4567,7 @@ match eqlstlst
     };
 
     >>
-
-  case eqlstlst as ({eqlst::_}) then
-  error(sourceInfo(), 'TODO more than ODE list in <%name%> systems')
+  else error(sourceInfo(), 'TODO more than ODE list in <%name%> systems')
 end functionXXX_systems_arrayFormat;
 
 template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Option<tuple<Schedule,Schedule,Schedule>> hpcOmSchedules, String modelNamePrefix)
@@ -5871,8 +5851,7 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
   Residual equations are handled differently."
 ::=
   match eq
-  case e as SES_ALGORITHM(statements={})
-  then ""
+  case SES_ALGORITHM(statements={}) then ""
   else
   (
   let ix = equationIndex(eq) /*System.tmpTickIndex(10)*/
@@ -5942,10 +5921,7 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
     TRACE_PUSH
     const int equationIndexes[2] = {1,<%ix%>};
     <%&varD%>
-    <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
-    <%x%>
-    <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix%>);' %>
-    threadData->lastEquationSolved = <%ix%>;
+    <%equation_profile(ix, x)%>
     TRACE_POP
   }
   >>
@@ -5973,13 +5949,13 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
   match eq
 
     case SES_ALIAS(__) then 'extern void <%symbolName(modelNamePrefix,"eqFunction")%>_<%aliasOf%>(DATA *data, threadData_t *threadData);<%\n%>'
-    case e as SES_ALGORITHM(statements={}) then ""
+    case SES_ALGORITHM(statements={}) then ""
     else
     (
     let ix = equationIndex(eq) /*System.tmpTickIndex(10)*/
     let ix2 = match eq
-        case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(at as LINEARSYSTEM(__)))
-        case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__)))
+        case SES_LINEAR(lSystem=LINEARSYSTEM(__), alternativeTearing = SOME(LINEARSYSTEM(__)))
+        case SES_NONLINEAR(nlSystem=NONLINEARSYSTEM(__), alternativeTearing = SOME(NONLINEARSYSTEM(__)))
         then equationIndexAlternativeTearing(eq)
         else  ""
     let &tmp = buffer ""
@@ -6077,10 +6053,7 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
           <%subClockIndex_%>
           const int equationIndexes[2] = {1,<%ix%>};
           <%&varD%>
-          <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
-          <%x%>
-          <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix%>);' %>
-          threadData->lastEquationSolved = <%ix%>;
+          <%equation_profile(ix, x)%>
           TRACE_POP
         }
 
@@ -6095,10 +6068,7 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
           <%subClockIndex_%>
           const int equationIndexes[2] = {1,<%ix2%>};
           <%&varD%>
-          <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix2%>);' %>
-          <%x2%>
-          <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix2%>);' %>
-          threadData->lastEquationSolved = <%ix2%>;
+          <%equation_profile(ix2, x2)%>
           TRACE_POP
         }
         >>
@@ -6121,10 +6091,7 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
           <%subClockIndex_%>
           const int equationIndexes[2] = {1,<%ix%>};
           <%&varD%>
-          <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
-          <%x%>
-          <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix%>);' %>
-          threadData->lastEquationSolved = <%ix%>;
+          <%equation_profile(ix, x)%>
           TRACE_POP
         }
         >>
@@ -6142,10 +6109,7 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
           <%subClockIndex_%>
           const int equationIndexes[2] = {1,<%ix%>};
           <%&varD%>
-          <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
-          <%x%>
-          <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix%>);' %>
-          threadData->lastEquationSolved = <%ix%>;
+          <%equation_profile(ix, x)%>
           TRACE_POP
         }
         >>
@@ -6157,8 +6121,7 @@ template equation_call(SimEqSystem eq, String modelNamePrefix, Context context)
    ToDo: add other cases?"
 ::=
   match eq
-  case SES_ALGORITHM(statements={})
-  then ""
+  case SES_ALGORITHM(statements={}) then ""
   else
     let args = match context
       case JACOBIAN_CONTEXT() then 'data, threadData, jacobian, parentJacobian'
@@ -6193,15 +6156,24 @@ template equations_call(list<SimEqSystem> eqs, String modelNamePrefix, Context c
     >>
 end equations_call;
 
+template equation_profile(String index, String body)
+  "Generates "
+::=
+  <<
+  <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
+  <%body%>
+  <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
+  threadData->lastEquationSolved = <%index%>;
+  >>
+end equation_profile;
 
 template equationForward_(SimEqSystem eq, Context context, String modelNamePrefixStr)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
 ::=
- match eq
-  case e as SES_ALGORITHM(statements={})
-  then ""
+  match eq
+  case SES_ALGORITHM(statements={}) then ""
   else
   let ix = equationIndexGeneral(eq)
   <<
@@ -6214,20 +6186,15 @@ template equationNames_(SimEqSystem eq, Context context, String modelNamePrefixS
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
 ::=
- match eq
-  case e as SES_ALGORITHM(statements={})
-  then ""
+  match eq
+  case SES_ALGORITHM(statements={}) then ""
   else
   let ix = equationIndexGeneral(eq)
-  let simEqAttrEval = match context case(DAE_MODE_CONTEXT()) then '<%simEqAttrEval(eq)%>'
-  let simEqAttrIsDiscreteKind = match context case(DAE_MODE_CONTEXT()) then '<%simEqAttrIsDiscreteKind(eq)%>'
+  let body = '<%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data, threadData);'
   <<
-  <% match simEqAttrEval case "" then '' else '<%simEqAttrEval%>' %>
-  <% match simEqAttrEval case "" then '{' else 'if ((evalStages & currentEvalStage) && !((currentEvalStage!=EVAL_DISCRETE)?(<%simEqAttrIsDiscreteKind%>):0)) {' %>
-    <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
-    <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data, threadData);
-    <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix%>);' %>
-    threadData->lastEquationSolved = <%ix%>;
+  <% match context case DAE_MODE_CONTEXT() then simEqAttrEval(eq) %>
+  <% match context case DAE_MODE_CONTEXT() then 'if ((evalStages & currentEvalStage) && !((currentEvalStage!=EVAL_DISCRETE)?(<%simEqAttrIsDiscreteKind(eq)%>):0)) {' else '{' %>
+    <%equation_profile(ix, body)%>
   }
   >>
 end equationNames_;
