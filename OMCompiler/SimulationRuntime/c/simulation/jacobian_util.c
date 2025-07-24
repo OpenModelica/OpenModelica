@@ -104,24 +104,6 @@ void freeJacobian(JACOBIAN *jac)
   free(jac->sparsePattern); jac->sparsePattern = NULL;
 }
 
-/**
- * @brief Free memory of analytic Jacobian.
- *
- * Does not free sparsity pattern and DAG.
- * Call this for Jacobians that were copied from another Jacobian.
- *
- * @param jac   Pointer to Jacobian.
- */
-void freeJacobianCopy(JACOBIAN *jac)
-{
-  if (jac == NULL) {
-    return;
-  }
-  free(jac->seedVars); jac->seedVars = NULL;
-  free(jac->tmpVars); jac->tmpVars = NULL;
-  free(jac->resultVars); jac->resultVars = NULL;
-}
-
 /*! \fn evalJacobian
  *
  *  compute entries of Jacobian in sparse CSC or dense format

@@ -535,7 +535,7 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
   freeRK_NLS_DATA(gbfData->nlsData);
 
   /* Free Jacobian */
-  freeJacobianCopy(gbfData->jacobian);
+  freeJacobian(gbfData->jacobian);
   free(gbfData->jacobian); gbfData->jacobian = NULL;
 
   /* Free sparsity pattern */
@@ -589,7 +589,7 @@ void gbode_freeData(DATA* data, DATA_GBODE *gbData)
   freeRK_NLS_DATA(gbData->nlsData);
 
   /* Free Jacobian */
-  freeJacobianCopy(gbData->jacobian);
+  freeJacobian(gbData->jacobian);
   free(gbData->jacobian); gbData->jacobian = NULL;
 
   /* Free Butcher tableau */
