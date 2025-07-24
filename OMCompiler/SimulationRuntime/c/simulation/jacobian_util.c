@@ -262,7 +262,7 @@ void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int
 JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILITY availability, const char* flagValue)
 {
   JACOBIAN_METHOD jacobianMethod = JAC_UNKNOWN;
-  assertStreamPrint(threadData, availability != JACOBIAN_UNKNOWN, "Jacobian availablity status is unknown.");
+  assertStreamPrint(threadData, availability != JACOBIAN_UNKNOWN, "Jacobian availability status is unknown.");
 
   /* if FLAG_JACOBIAN is set, choose jacobian calculation method */
   if (flagValue) {

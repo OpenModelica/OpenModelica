@@ -192,7 +192,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
     if (gbData->isExplicit) {
       jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
       data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
-      if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
+      if (jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
         infoStreamPrint(OMC_LOG_SOLVER, 1, "Initialized Jacobian:");
         infoStreamPrint(OMC_LOG_SOLVER, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
         infoStreamPrint(OMC_LOG_SOLVER, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
@@ -201,7 +201,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
 
       // Compare user flag to availabe Jacobian methods
       const char* flagValue;
-      if(omc_flag[FLAG_JACOBIAN]){
+      if (omc_flag[FLAG_JACOBIAN]) {
         flagValue = omc_flagValue[FLAG_JACOBIAN];
       } else {
         flagValue = NULL;
@@ -1099,10 +1099,10 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   double stopTime = data->simulationInfo->stopTime;
   double Atol = data->simulationInfo->tolerance;
   double Rtol = Atol;
- 
+
   int nStates = gbData->nStates;
   int nStages = gbData->tableau->nStages;
- 
+
   double targetTime, eventTime, err;
 
   int gb_step_info;
@@ -1128,11 +1128,11 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   }
 
   if (gbData->multi_rate) {
-     infoStreamPrint(OMC_LOG_SOLVER, 1, "Start gbode (birate integration)  from %g to %g",
-                  solverInfo->currentTime, targetTime);
+    infoStreamPrint(OMC_LOG_SOLVER, 1, "Start gbode (birate integration)  from %g to %g",
+                    solverInfo->currentTime, targetTime);
   } else {
-     infoStreamPrint(OMC_LOG_SOLVER, 1, "Start gbode (single-rate integration)  from %g to %g",
-                  solverInfo->currentTime, targetTime);
+    infoStreamPrint(OMC_LOG_SOLVER, 1, "Start gbode (single-rate integration)  from %g to %g",
+                    solverInfo->currentTime, targetTime);
   }
 
   // (Re-)initialize after events or at first call of gbode_sinlerate
@@ -1154,7 +1154,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       gbData->gbfData->didEventStep = TRUE;
     }
   }
-    
+
   debugRingBufferSteps_gb(OMC_LOG_GBODE, gbData->yv, gbData->kv, gbData->tv, nStates,  gbData->ringBufferSize);
 
   // Constant step size
@@ -1165,10 +1165,10 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   if (gbData->multi_rate) {
     // Check if multirate step is necessary, otherwise the correct values are already stored in sData
     if (gbData->nFastStates > 0 && gbData->gbfData->time < gbData->timeRight && !gbData->gbfData->didEventStep) {
-        // run multirate step
-        gb_step_info = gbodef_main(data, threadData, solverInfo, targetTime);
-        // synchronize y, yRight , kRight and buffer
-        if (fabs(gbData->timeRight - gbData->gbfData->timeRight) < GB_MINIMAL_STEP_SIZE) {
+      // run multirate step
+      gb_step_info = gbodef_main(data, threadData, solverInfo, targetTime);
+      // synchronize y, yRight , kRight and buffer
+      if (fabs(gbData->timeRight - gbData->gbfData->timeRight) < GB_MINIMAL_STEP_SIZE) {
         gbData->time = gbData->timeRight;
         memcpy(gbData->y, gbData->gbfData->y, nStates * sizeof(double));
         memcpy(gbData->yOld, gbData->y, nStates * sizeof(double));
@@ -1186,18 +1186,18 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
                         gbData->time - gbData->lastStepSize, gbData->time, gbData->errValues[0], gbData->stepSize);
 
         if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_STATES)) {
-            // dump fast states in file
-            dumpFastStates_gb(gbData, FALSE, gbData->time, 0);
+          // dump fast states in file
+          dumpFastStates_gb(gbData, FALSE, gbData->time, 0);
         }
-        }
-        if (gb_step_info !=0) {
+      }
+      if (gb_step_info !=0) {
         // get out of here, if an event has happend!
         messageClose(OMC_LOG_SOLVER);
         if (gb_step_info > 0)
-            return 0;
+          return 0;
         else
-            return gb_step_info;
-        }
+          return gb_step_info;
+      }
     }
   }
   /* Main integration loop, if gbData->time already greater than targetTime, only the
@@ -1257,11 +1257,11 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         } else {
           gbData->stepSize *= 0.5;
           if (gbData->multi_rate && OMC_ACTIVE_STREAM(OMC_LOG_GBODE_STATES)) {
-              gbData->err_slow = 0;
-              gbData->err_fast = 0;
-              gbData->err_int = 0;
-              // dump fast states in file
-              dumpFastStates_gb(gbData, FALSE, gbData->time + gbData->stepSize, 3);
+            gbData->err_slow = 0;
+            gbData->err_fast = 0;
+            gbData->err_int = 0;
+            // dump fast states in file
+            dumpFastStates_gb(gbData, FALSE, gbData->time + gbData->stepSize, 3);
           }
           infoStreamPrint(OMC_LOG_SOLVER, 0, "Try half of the step size = %g", gbData->stepSize);
           if (gbData->stepSize < GB_MINIMAL_STEP_SIZE) {
@@ -1282,8 +1282,8 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       }
       if (gbData->multi_rate) {
         if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
-            sortedStates = (int *)malloc(sizeof(int) * nStates);
-            memcpy(sortedStates, gbData->sortedStatesIdx, sizeof(int) * nStates);
+          sortedStates = (int *)malloc(sizeof(int) * nStates);
+          memcpy(sortedStates, gbData->sortedStatesIdx, sizeof(int) * nStates);
         }
 
         // The error estimation of slow states will be below the threshold
@@ -1291,13 +1291,13 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         err = err_threshold;
 
         if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
-            for (int k = 0; k < nStates; k++)
+          for (int k = 0; k < nStates; k++)
             if (sortedStates[k] - gbData->sortedStatesIdx[k]) {
-                printIntVector_gb(OMC_LOG_GBODE_V, "sortedStates before:", sortedStates, nStates, gbData->time);
-                printIntVector_gb(OMC_LOG_GBODE_V, "sortedStates after:", gbData->sortedStatesIdx, nStates, gbData->time);
-                break;
+              printIntVector_gb(OMC_LOG_GBODE_V, "sortedStates before:", sortedStates, nStates, gbData->time);
+              printIntVector_gb(OMC_LOG_GBODE_V, "sortedStates after:", gbData->sortedStatesIdx, nStates, gbData->time);
+              break;
             }
-            free(sortedStates);
+          free(sortedStates);
         }
 
         // Find fast and slow states based on the error threshold
@@ -1307,15 +1307,15 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         gbData->err_fast = 0;
         gbData->err_int = 0;
         for (i = 0; i < gbData->nStates; i++) {
-            if (gbData->err[i] >= 1) {
+          if (gbData->err[i] >= 1) {
             gbData->fastStatesIdx[gbData->nFastStates] = i;
             gbData->nFastStates++;
             gbData->err_fast = fmax(gbData->err_fast, gbData->err[i]);
-            } else {
+          } else {
             gbData->slowStatesIdx[gbData->nSlowStates] = i;
             gbData->nSlowStates++;
             gbData->err_slow = fmax(gbData->err_slow, gbData->err[i]);
-            }
+          }
         }
       }
       // err == threshold;
@@ -1508,7 +1508,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
     // count processed steps
     gbData->stats.nStepsTaken++;
-    
+
     // debug the changes of the state values during integration
     if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) {
       infoStreamPrint(OMC_LOG_GBODE, 1, "States and derivatives at right hand side:");
