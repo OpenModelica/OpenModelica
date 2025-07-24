@@ -3587,7 +3587,7 @@ template functionEquationsMultiFiles(list<SimEqSystem> inEqs, Integer numEqs, In
                   extern "C" {
                   #endif<%\n%>
                   >>)) +
-                  (eqs |> eq => equation_impl_options(-1, -1, eq, contextSimulationDiscrete, modelNamePrefix, static, noOpt, init) ; separator="\n") +
+                  (eqs |> eq => equation_impl2(-1, -1, eq, contextSimulationDiscrete, modelNamePrefix, static, noOpt, init) ; separator="\n") +
                   <<
                   <%\n%>
                   OMC_DISABLE_OPT
@@ -4482,7 +4482,7 @@ template functionDAEModeEquationsMultiFiles(list<SimEqSystem> inEqs, Integer num
                   extern "C" {
                   #endif<%\n%>
                   >>)) +
-                  (eqs |> eq => (equation_impl_options(-1, -1, eq, context, modelNamePrefix, static, noOpt, init); separator="\n")
+                  (eqs |> eq => (equation_impl2(-1, -1, eq, context, modelNamePrefix, static, noOpt, init); separator="\n")
                   ) +
                   <<
                   >>
@@ -5963,14 +5963,6 @@ template equation_impl(Integer base_idx, Integer sub_idx, SimEqSystem eq, Contex
 ::=
   equation_impl2(base_idx, sub_idx, eq, context, modelNamePrefix, false, false, init)
 end equation_impl;
-
-template equation_impl_options(Integer base_idx, Integer sub_idx, SimEqSystem eq, Context context, String modelNamePrefix, Boolean static, Boolean noOpt, Boolean init)
- "Generates an equation.
-  This template should not be used for a SES_RESIDUAL.
-  Residual equations are handled differently."
-::=
-  equation_impl2(base_idx, sub_idx, eq, context, modelNamePrefix, static, noOpt, init)
-end equation_impl_options;
 
 template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Context context, String modelNamePrefix, Boolean static, Boolean noOpt, Boolean init)
  "Generates an equation.
