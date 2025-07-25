@@ -182,6 +182,7 @@ public
         DifferentiationArguments diffArguments;
         Tearing strict;
         Option<Tearing> casual;
+        Boolean linear;
 
       case StrongComponent.SINGLE_COMPONENT() algorithm
         new_var := differentiateVariablePointer(comp.var, diffArguments_ptr);
@@ -221,7 +222,9 @@ public
       case StrongComponent.ALGEBRAIC_LOOP() algorithm
         strict := differentiateTearing(comp.strict, diffArguments_ptr, idx, context, name);
         casual := Util.applyOption(comp.casual, function differentiateTearing(diffArguments_ptr=diffArguments_ptr, idx=idx, context=context, name=name));
-      then StrongComponent.ALGEBRAIC_LOOP(-1, strict, casual, comp.linear, false, comp.homotopy, comp.status);
+        // if we differentiate for jacobian, the algebraic loops will always be linear
+        linear := match Pointer.access(diffArguments_ptr) case DIFFERENTIATION_ARGUMENTS(diffType = NBDifferentiate.DifferentiationType.JACOBIAN) then true; else comp.linear; end match;
+      then StrongComponent.ALGEBRAIC_LOOP(-1, strict, casual, linear, false, comp.homotopy, comp.status);
 
       case StrongComponent.ENTWINED_COMPONENT() algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " not implemented for entwined equation:\n" + StrongComponent.toString(comp)});

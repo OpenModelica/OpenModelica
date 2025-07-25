@@ -137,6 +137,7 @@ public
           () := match kind
             case NBPartition.Kind.ODE algorithm bdae.ode := newPartitions; then ();
             case NBPartition.Kind.DAE algorithm bdae.dae := SOME(newPartitions); then ();
+            else ();
           end match;
           bdae.ode_event := newEvents;
           bdae.funcTree := funcTree;
@@ -421,7 +422,7 @@ public
           // create row-wise sparsity pattern
           for cref in listReverse(partial_vars) loop
             // only create rows for derivatives
-            if jacType == JacobianType.NLS or BVariable.checkCref(cref, BVariable.isStateDerivative) then
+            if jacType == JacobianType.NLS or BVariable.checkCref(cref, BVariable.isStateDerivative) or BVariable.checkCref(cref, BVariable.isResidual) then
               if UnorderedMap.contains(cref, map) then
                 tmp := UnorderedSet.unique_list(UnorderedMap.getOrFail(cref, map), ComponentRef.hash, ComponentRef.isEqual);
                 rows := (cref, tmp) :: rows;
@@ -539,7 +540,8 @@ public
       if jacType == JacobianType.NLS then
         partials := listArray(sparsityPattern.partial_vars);
       else
-        partials := listArray(list(cref for cref guard(BVariable.checkCref(cref, BVariable.isStateDerivative)) in sparsityPattern.partial_vars));
+        partials := listArray(list(cref for cref guard(BVariable.checkCref(cref, BVariable.isStateDerivative) or
+          BVariable.checkCref(cref, BVariable.isResidual)) in sparsityPattern.partial_vars));
       end if;
 
       // create cref -> index maps
@@ -674,17 +676,23 @@ protected
     input String name                                     "Context name for jacobian";
     input Module.jacobianInterface func;
   protected
+    JacobianType jacType;
+    VariablePointers unknowns;
     list<Pointer<Variable>> derivative_vars, state_vars;
     VariablePointers seedCandidates, partialCandidates;
     Option<Jacobian> jacobian                             "Resulting jacobian";
     Partition.Kind kind = Partition.Partition.getKind(part);
   algorithm
     partialCandidates := part.unknowns;
-    derivative_vars := list(var for var guard(BVariable.isStateDerivative(var)) in VariablePointers.toList(part.unknowns));
+    unknowns  := if Partition.Partition.getKind(part) == NBPartition.Kind.DAE then Util.getOption(part.daeUnknowns) else part.unknowns;
+    jacType   := if Partition.Partition.getKind(part) == NBPartition.Kind.DAE then JacobianType.DAE else JacobianType.ODE;
+
+    derivative_vars := list(var for var guard(BVariable.isStateDerivative(var)) in VariablePointers.toList(unknowns));
     state_vars := list(Util.getOption(BVariable.getVarState(var)) for var in derivative_vars);
     seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
 
-    (jacobian, funcTree) := func(name, JacobianType.ODE, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcTree, kind ==  NBPartition.Kind.INI);
+    (jacobian, funcTree) := func(name, jacType, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcTree, kind ==  NBPartition.Kind.INI);
+
     part.association := Partition.Association.CONTINUOUS(kind, jacobian);
     if Flags.isSet(Flags.JAC_DUMP) then
       print(Partition.Partition.toString(part, 2));
@@ -821,14 +829,14 @@ protected
   end jacobianNone;
 
   function getTmpFilterFunction
-    " - ODE/DAE filter by state derivative / algebraic
-      - LS/NLS filter by residual / inner"
+    " - ODE filter by state derivative / algebraic
+      - LS/NLS/DAE filter by residual / inner"
     input JacobianType jacType;
     output BVariable.checkVar func;
   algorithm
     func := match jacType
       case JacobianType.ODE then BVariable.isStateDerivative;
-      case JacobianType.DAE then BVariable.isStateDerivative;
+      case JacobianType.DAE then BVariable.isResidual;
       case JacobianType.LS  then BVariable.isResidual;
       case JacobianType.NLS then BVariable.isResidual;
       else algorithm

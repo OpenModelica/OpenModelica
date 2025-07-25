@@ -149,7 +149,9 @@ public
           (partitions, funcTree) := tearingTraverser(partitions, funcs, funcTree, eq_index, kind);
           bdae.dae := SOME(partitions);
           bdae.funcTree := funcTree;
-      then bdae;
+          // recursively call this function to also apply to the ODE section (used for events)
+          // ToDo: only create event partitions, disregard rest
+      then main(bdae, NBPartition.Kind.ODE);
 
     // ToDo: all the other cases: e.g. Jacobian, Hessian
     end match;

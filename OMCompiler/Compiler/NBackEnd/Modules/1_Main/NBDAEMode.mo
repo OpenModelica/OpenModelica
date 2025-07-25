@@ -75,10 +75,8 @@ public
         then fail();
       end match;
 
-      // Modules
+      // fake causalize system to fulfill pipeline requirements
       bdae := Causalize.main(bdae, NBPartition.Kind.DAE);
-      bdae := Tearing.main(bdae, NBPartition.Kind.DAE);
-      bdae := Jacobian.main(bdae, NBPartition.Kind.DAE);
     else
       Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
     end try;
@@ -130,7 +128,7 @@ protected
           // remove strong components
           part.strongComponents := NONE();
           // accumulate new partitions
-          then part :: new_partitions;
+          then if Partition.Partition.isEmpty(part) then new_partitions else part :: new_partitions;
         else new_partitions;
       end match;
     end for;

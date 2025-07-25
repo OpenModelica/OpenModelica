@@ -406,15 +406,11 @@ public
 
             (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := collectAlgebraicLoops(init, init_0, ode, algebraic, daeModeData, simCodeIndices, simcode_map);
 
-            for jac in jacobians loop
-              if Util.isSome(jac.jac_map) then
-                vars := SimVars.addSeedAndJacobianVars(vars, UnorderedMap.toList(Util.getOption(jac.jac_map)));
-              end if;
-            end for;
-
-            (jacA, simCodeIndices) := SimJacobian.createSimulationJacobian(bdae.ode, bdae.ode_event, simCodeIndices, simcode_map);
             if isSome(daeModeData) then
+              (jacA, simCodeIndices) := SimJacobian.createSimulationJacobian(Util.getOption(bdae.dae), simCodeIndices, simcode_map);
               daeModeData := DaeModeData.addJacobian(daeModeData, jacA);
+            else
+              (jacA, simCodeIndices) := SimJacobian.createSimulationJacobian(listAppend(bdae.ode, bdae.ode_event), simCodeIndices, simcode_map);
             end if;
 
             (jacB, simCodeIndices) := SimJacobian.empty("B", simCodeIndices);
@@ -424,6 +420,13 @@ public
             (jacH, simCodeIndices) := SimJacobian.empty("H", simCodeIndices);
             //jacobians := jacA :: jacB :: jacC :: jacD :: jacF :: jacobians;
             jacobians := listReverse(jacH :: jacF :: jacD :: jacC :: jacB :: jacA :: jacobians);
+
+            for jac in jacobians loop
+              if Util.isSome(jac.jac_map) then
+                vars := SimVars.addSeedAndJacobianVars(vars, UnorderedMap.toList(Util.getOption(jac.jac_map)));
+              end if;
+            end for;
+
             // jacobian blocks only from simulation jacobians
             jac_blocks := SimJacobian.getJacobiansBlocks({jacA, jacB, jacC, jacD, jacF, jacH});
             (jac_blocks, simCodeIndices) := SimStrongComponent.Block.fixIndices(jac_blocks, {}, simCodeIndices);
