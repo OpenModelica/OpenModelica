@@ -4794,24 +4794,25 @@ template getDependency(SimCode simCode, list<SimEqSystem> allEquations, String f
     size_t i;
 
     data->modelData->dag = allocEvalDAG(data->modelData->nVariablesReal, <%listLength(allEquations)%>);
+    EVAL_DAG* dag = data->modelData->dag;
 
     /* mapVarToEqNode */
     <%allEquations |> eq hasindex i =>
       (getSimEqSystemSimVarsLHS(eq, simCode) |> var as SIMVAR(__) =>
-        'data->modelData->dag->mapVarToEqNode[<%index%>] = <%i%>; /* equation index: <%equationIndexGeneral(eq)%> */ <%crefCCommentWithVariability(var)%><%\n%>'
+        'dag->mapVarToEqNode[<%index%>] = <%i%>; /* equation index: <%equationIndexGeneral(eq)%> */ <%crefCCommentWithVariability(var)%><%\n%>'
         ; separator="\n"); separator="\n"%>
 
     /* eqDependency */
     <%allEquations |> eq hasindex i =>
       let n = listLength(getSimEqSystemSimVarsRHS(eq, simCode))
-      if stringEq(n, "0") then 'data->modelData->dag->nEqDep[<%i%>] = 0; /* equation index: <%equationIndexGeneral(eq)%> */'
+      if stringEq(n, "0") then 'dag->nEqDep[<%i%>] = 0; /* equation index: <%equationIndexGeneral(eq)%> */'
       else
       <<
-      data->modelData->dag->nEqDep[<%i%>] = <%n%>; /* equation index: <%equationIndexGeneral(eq)%> */
-      data->modelData->dag->eqDep[<%i%>] = (size_t*) malloc(data->modelData->dag->nEqDep[<%i%>] * sizeof(size_t));
+      dag->nEqDep[<%i%>] = <%n%>; /* equation index: <%equationIndexGeneral(eq)%> */
+      dag->eqDep[<%i%>] = (size_t*) malloc(dag->nEqDep[<%i%>] * sizeof(size_t));
       i = 0;
       <%getSimEqSystemSimVarsRHS(eq, simCode) |> var as SIMVAR() =>
-        'data->modelData->dag->eqDep[<%i%>][i++] = data->modelData->dag->mapVarToEqNode[<%index%>]; <%crefCCommentWithVariability(var)%>'; separator="\n"%>
+        'dag->eqDep[<%i%>][i++] = dag->mapVarToEqNode[<%index%>]; <%crefCCommentWithVariability(var)%>'; separator="\n"%>
       >>; separator="\n\n"%>
 
     TRACE_POP
@@ -4829,33 +4830,34 @@ template getDependencyJacobian(JacobianMatrix jac, String modelNamePrefix)
     else
     <<
 
-      size_t i;
+    size_t i;
 
-      jacobian->dag = allocEvalDAG(jacobian->sizeRows + jacobian->sizeTmpVars, <%columns |> JAC_COLUMN() => listLength(columnEqns)%>);
+    jacobian->dag = allocEvalDAG(jacobian->sizeRows + jacobian->sizeTmpVars, <%columns |> JAC_COLUMN() => listLength(columnEqns)%>);
+    EVAL_DAG* dag = jacobian->dag;
 
-      /* mapVarToEqNode */
-      <%columns |> JAC_COLUMN() => (columnEqns |> eq hasindex i =>
-        let eqIdx = equationIndexGeneral(eq)
-        '<%getSimEqSystemSimVarsLHSJac(eq, crefsHT) |> var as SIMVAR() =>
-          let shift = match varKind case JAC_TMP_VAR() then ' + jacobian->sizeRows'
-          'jacobian->dag->mapVarToEqNode[<%index%><%shift%>] = <%i%>; /* equation index: <%eqIdx%> */ <%crefCCommentWithVariability(var)%><%\n%>'
-          ; separator="\n"%>'); separator="\n<%index%>"%>
+    /* mapVarToEqNode */
+    <%columns |> JAC_COLUMN() => (columnEqns |> eq hasindex i =>
+      let eqIdx = equationIndexGeneral(eq)
+      '<%getSimEqSystemSimVarsLHSJac(eq, crefsHT) |> var as SIMVAR() =>
+        let shift = match varKind case JAC_TMP_VAR() then ' + jacobian->sizeRows'
+        'dag->mapVarToEqNode[<%index%><%shift%>] = <%i%>; /* equation index: <%eqIdx%> */ <%crefCCommentWithVariability(var)%><%\n%>'
+        ; separator="\n"%>'); separator="\n<%index%>"%>
 
-      /* eqDependency */
-      <%columns |> JAC_COLUMN() => (columnEqns |> eq hasindex i =>
-        let eqIdx = equationIndexGeneral(eq)
-        let n = listLength(getSimEqSystemSimVarsRHSJac(eq, crefsHT))
-        if stringEq(n, "0") then 'jacobian->dag->nEqDep[<%i%>] = 0; /* equation index: <%eqIdx%> */'
-        else
-        <<
-        jacobian->dag->nEqDep[<%i%>] = <%n%>; /* equation index: <%eqIdx%> */
-        jacobian->dag->eqDep[<%i%>] = (size_t*) malloc(jacobian->dag->nEqDep[<%i%>] * sizeof(size_t));
-        i = 0;
-        <%getSimEqSystemSimVarsRHSJac(eq, crefsHT) |> var as SIMVAR(index=index) =>
-          let shift = match varKind case JAC_TMP_VAR() then ' + jacobian->sizeRows'
-          'jacobian->dag->eqDep[<%i%>][i++] = jacobian->dag->mapVarToEqNode[<%index%><%shift%>]; <%crefCCommentWithVariability(var)%>'
-          ; separator="\n"%>
-        >>; separator="\n\n")%>
+    /* eqDependency */
+    <%columns |> JAC_COLUMN() => (columnEqns |> eq hasindex i =>
+      let eqIdx = equationIndexGeneral(eq)
+      let n = listLength(getSimEqSystemSimVarsRHSJac(eq, crefsHT))
+      if stringEq(n, "0") then 'dag->nEqDep[<%i%>] = 0; /* equation index: <%eqIdx%> */'
+      else
+      <<
+      dag->nEqDep[<%i%>] = <%n%>; /* equation index: <%eqIdx%> */
+      dag->eqDep[<%i%>] = (size_t*) malloc(dag->nEqDep[<%i%>] * sizeof(size_t));
+      i = 0;
+      <%getSimEqSystemSimVarsRHSJac(eq, crefsHT) |> var as SIMVAR(index=index) =>
+        let shift = match varKind case JAC_TMP_VAR() then ' + jacobian->sizeRows'
+        'dag->eqDep[<%i%>][i++] = dag->mapVarToEqNode[<%index%><%shift%>]; <%crefCCommentWithVariability(var)%>'
+        ; separator="\n"%>
+      >>; separator="\n\n")%>
 
     >>
   <<
