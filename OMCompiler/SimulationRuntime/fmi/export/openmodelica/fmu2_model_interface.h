@@ -96,8 +96,10 @@ typedef struct {
   int _need_update;
   int _has_jacobian;
   int _has_jacobian_intialization;
+  int _has_jacobian_S;
   JACOBIAN* fmiDerJac;
   JACOBIAN* fmiDerJacInitialization;
+  JACOBIAN* fmiDerJacS; /*contains parameter derivatives*/
 
   fmi2Real* states;
   fmi2Real* states_der;
