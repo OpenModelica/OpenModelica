@@ -325,13 +325,11 @@ public
     end create;
 
     function createSimulationJacobian
-      input list<Partition.Partition> ode;
-      input list<Partition.Partition> ode_event;
+      input list<Partition.Partition> partitions;
       output SimJacobian simJac;
       input output SimCode.SimCodeIndices simCodeIndices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
     protected
-      list<Partition.Partition> partitions = listAppend(ode, ode_event);
       list<BackendDAE> jacobians = {};
       BackendDAE simJacobian;
       Option<SimJacobian> simJac_opt;

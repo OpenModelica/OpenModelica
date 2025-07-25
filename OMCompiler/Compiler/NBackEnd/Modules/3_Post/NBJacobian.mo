@@ -137,6 +137,7 @@ public
           () := match kind
             case NBPartition.Kind.ODE algorithm bdae.ode := newPartitions; then ();
             case NBPartition.Kind.DAE algorithm bdae.dae := SOME(newPartitions); then ();
+            else ();
           end match;
           bdae.ode_event := newEvents;
           bdae.funcTree := funcTree;
