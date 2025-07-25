@@ -276,6 +276,16 @@ public
                   UnorderedMap.add(cref, var.index, idx_map);
                 end if;
               end for;
+
+              // also add residuals if its DAE Mode
+              if jacobian.jacType == NBJacobian.JacobianType.DAE then
+                for var in resVars loop
+                  cref := SimVar.getName(var);
+                  UnorderedMap.add(cref, var.index, idx_map);
+                  //cref := BVariable.getPartnerCref(cref, BVariable.getVarPDer);
+                  //UnorderedMap.add(cref, var.index, idx_map);
+                end for;
+              end if;
             else
               for var in seedVars loop
                 cref := SimVar.getName(var);
