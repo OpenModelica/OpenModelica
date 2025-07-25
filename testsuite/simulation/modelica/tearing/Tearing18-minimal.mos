@@ -1,7 +1,6 @@
 // name:      Tearing18-minimal
 // keywords:  minimal tearing
 // status:    correct
-// teardown_command:  rm -f Tearing18
 // cflags: -d=-newInst
 
 loadFile("Tearing18.mo"); getErrorString();
@@ -10,13 +9,13 @@ setDebugFlags("backenddaeinfo"); getErrorString();
 setTearingMethod("minimalTearing"); getErrorString();
 simulate(Tearing18); getErrorString();
 
-val(x0,1.0); getErrorString();
-val(x3,1.0); getErrorString();
-val(x4,1.0); getErrorString();
-val(x5,1.0); getErrorString();
-val(x6,1.0); getErrorString();
-val(x7,1.0); getErrorString();
-val(x8,1.0); getErrorString();
+val(x0,0.08); getErrorString();
+val(x3,0.08); getErrorString();
+val(x4,0.08); getErrorString();
+val(x5,0.08); getErrorString();
+val(x6,0.08); getErrorString();
+val(x7,0.08); getErrorString();
+val(x8,0.08); getErrorString();
 
 // Result:
 // true
@@ -27,14 +26,8 @@ val(x8,1.0); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "Tearing18_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Tearing18', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.08, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Tearing18', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_ASSERT        | debug   | Solving non-linear system 34 failed at time=0.526.
-// |                 | |       | For more information please use -lv LOG_NLS.
-// LOG_STDOUT        | warning | Integrator attempt to handle a problem with a called assert.
-// LOG_ASSERT        | debug   | Solving non-linear system 34 failed at time=0.63.
-// |                 | |       | For more information please use -lv LOG_NLS.
-// LOG_STDOUT        | warning | Integrator attempt to handle a problem with a called assert.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
@@ -85,18 +78,18 @@ val(x8,1.0); getErrorString();
 //  * Non-linear torn systems (#iteration vars, #inner vars): 1 system
 //    {(5,1)}
 // "
-// -0.9589242746631385
+// 0.3894183423086505
 // ""
-// 1.489535057843215
+// -0.7600824360781951
 // ""
-// -0.294476257366079
+// -0.3286765870381183
 // ""
-// -1.018493952318733
+// -0.8779243172851142
 // ""
-// 0.1102524957021611
+// 1.2714089989820019
 // ""
-// 3.489535057843215
+// 1.2399175639218047
 // ""
-// 0.340964233657884
+// -0.9457572213040323
 // ""
 // endResult

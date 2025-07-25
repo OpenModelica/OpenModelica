@@ -105,9 +105,6 @@ void freeJacobian(JACOBIAN *jac)
   free(jac->resultVars); jac->resultVars = NULL;
   freeSparsePattern(jac->sparsePattern);
   free(jac->sparsePattern); jac->sparsePattern = NULL;
-  if (jac->eqFunctions) {
-    free(jac->eqFunctions); jac->eqFunctions = NULL;
-  }
   freeEvalDAG(jac->dag); jac->dag = NULL;
 }
 

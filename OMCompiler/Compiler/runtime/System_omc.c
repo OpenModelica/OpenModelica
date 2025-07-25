@@ -747,6 +747,19 @@ extern const char* System_openModelicaPlatform()
   return CONFIG_OPENMODELICA_SPEC_PLATFORM;
 }
 
+/**
+ * @brief Returns the alternative platform OpenModelica is compiled for.
+ *
+ * Returns CONFIG_OPENMODELICA_SPEC_PLATFORM_ALTERNATIVE defined in omc_config.h
+ *
+ * @return const char* platform specifier
+ */
+extern const char* System_openModelicaPlatformAlternative()
+{
+  return CONFIG_OPENMODELICA_SPEC_PLATFORM_ALTERNATIVE;
+}
+
+
 extern const char* System_gccDumpMachine()
 {
   return CONFIG_GCC_DUMPMACHINE;

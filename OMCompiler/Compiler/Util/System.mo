@@ -1006,11 +1006,18 @@ end modelicaPlatform;
 
 public function openModelicaPlatform "
   Returns uname -sm (with spaces replaced by dashes and only lower-case letters) on Unix platforms
-  mingw32 or mingw64 is returned for OMDev mingw
+  ucrt64 or mingw32 or mingw64 is returned for OMDev mingw
   "
   output String platform;
   external "C" platform=System_openModelicaPlatform() annotation(Library = "omcruntime");
 end openModelicaPlatform;
+
+public function openModelicaPlatformAlternative "
+  in case openModelicaPlatform is ucrt64 then mingw64 is returned, else nothing
+  "
+  output String platform;
+  external "C" platform=System_openModelicaPlatformAlternative() annotation(Library = "omcruntime");
+end openModelicaPlatformAlternative;
 
 public function gccDumpMachine "
   Returns gcc -dumpmachine

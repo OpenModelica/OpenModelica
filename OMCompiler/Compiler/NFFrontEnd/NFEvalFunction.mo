@@ -1302,7 +1302,8 @@ algorithm
       paths := (dir + "/" + System.modelicaPlatform() + "/" + lib) :: paths;
 
       if Autoconf.os == "Windows_NT" then
-        paths := (dir + "/" + System.openModelicaPlatform() + "/" + lib) :: paths;
+        paths := (dir + "/" + System.openModelicaPlatform() + "/" + lib) ::
+                 (dir + "/" + System.openModelicaPlatformAlternative() + "/" + lib) :: paths;
       end if;
 
     end for;

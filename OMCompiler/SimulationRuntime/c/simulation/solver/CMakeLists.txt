@@ -27,7 +27,8 @@ SET(solver_sources  ../../../../3rdParty/Cdaskr/solver/daux.c
                     gbode_util.c
                     external_input.c
                     irksco.c
-                    jacobian_svd.c
+                    jacobian_analysis.c
+                    kinsol_b.c
                     kinsolSolver.c
                     linearSolverLapack.c
                     linearSolverLis.c
@@ -69,7 +70,8 @@ SET(solver_headers  ../../../../3rdParty/Cdaskr/solver/ddaskr_types.h
                     events.h
                     external_input.h
                     irksco.h
-                    jacobian_svd.h
+                    jacobian_analysis.h
+                    kinsol_b.h
                     kinsolSolver.h
                     linearSolverLapack.h
                     linearSolverLis.h

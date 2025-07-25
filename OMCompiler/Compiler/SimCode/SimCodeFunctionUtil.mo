@@ -1947,6 +1947,7 @@ algorithm
       libPaths := {uri,
                    uri + "/" + System.modelicaPlatform(),
                    uri + "/" + System.openModelicaPlatform(),
+                   uri + "/" + System.openModelicaPlatformAlternative(),
                    (Settings.getHomeDir(false) + "/.openmodelica/binaries/" + AbsynUtil.pathFirstIdent(path)),
                    (installationDir + "/lib/"),
                    (installationDir + "/lib/" + Autoconf.triple + "/omc")};
@@ -2029,7 +2030,7 @@ protected function generateExtFunctionLibraryDirectoryPaths
 algorithm
   outLibs := matchcontinue (program, path, inMod)
     local
-      String str, str1, str2, str3, platform1, platform2,target;
+      String str, str1, str2, str3, platform1, platform2, platform3, target;
       list<String> libs;
       Boolean isLinux;
     case (_, _, _)
@@ -2038,10 +2039,12 @@ algorithm
           Mod.getUnelabedSubMod(inMod, "LibraryDirectory");
         str = CevalScript.getFullPathFromUri(program, str, false);
         platform1 = System.openModelicaPlatform();
-        platform2 = System.modelicaPlatform();
+        platform2 = System.openModelicaPlatformAlternative();
+        platform3 = System.modelicaPlatform();
         isLinux = stringEq("linux",Autoconf.os);
         // please, take care about ordering these libraries, the most specific should go first (in reverse here)
         libs = generateExtFunctionLibraryDirectoryPaths2(true, str, isLinux, {} );
+        libs = generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform3,""), str + "/" + platform3, isLinux, libs);
         libs = generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform2,""), str + "/" + platform2, isLinux, libs);
         libs = generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform1,""), str + "/" + platform1, isLinux, libs);
       then libs;
@@ -2050,10 +2053,12 @@ algorithm
         str = "modelica://" + AbsynUtil.pathFirstIdent(path) + "/Resources/Library";
         str = CevalScript.getFullPathFromUri(program, str, false);
         platform1 = System.openModelicaPlatform();
-        platform2 = System.modelicaPlatform();
+        platform2 = System.openModelicaPlatformAlternative();
+        platform3 = System.modelicaPlatform();
         isLinux = stringEq("linux",Autoconf.os);
         // please, take care about ordering these libraries, the most specific should go first (in reverse here)
         libs = generateExtFunctionLibraryDirectoryPaths2(true, str, isLinux, {} );
+        libs = generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform3,""), str + "/" + platform3, isLinux, libs);
         libs = generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform2,""), str + "/" + platform2, isLinux, libs);
         libs = generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform1,""), str + "/" + platform1, isLinux, libs);
       then libs;

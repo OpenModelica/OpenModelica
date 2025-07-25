@@ -1004,6 +1004,50 @@ public
     end match;
   end hasDerVar;
 
+  function addRecordChild
+    "adds a child to the records children. use with care, only when creating new records!"
+    input Pointer<Variable> var_ptr;
+    input Pointer<Variable> child;
+  protected
+    Variable var = Pointer.access(var_ptr);
+  algorithm
+    var := match var
+      local
+        VariableKind varKind;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = varKind as VariableKind.RECORD())) algorithm
+        varKind.children := child :: varKind.children;
+        var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
+      then var;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed adding " + ComponentRef.toString(getVarName(child)) + " as a child to "
+          + ComponentRef.toString(getVarName(var_ptr)) + " because it is not a record."});
+      then fail();
+    end match;
+    Pointer.update(var_ptr, var);
+  end addRecordChild;
+
+  function setRecordChildren
+    "sets the records children. use with care, only when creating new records!"
+    input Pointer<Variable> var_ptr;
+    input list<Pointer<Variable>> children;
+  protected
+    Variable var = Pointer.access(var_ptr);
+  algorithm
+    var := match var
+      local
+        VariableKind varKind;
+      case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = varKind as VariableKind.RECORD())) algorithm
+        varKind.children := children;
+        var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
+      then var;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed adding new children to "
+          + ComponentRef.toString(getVarName(var_ptr)) + " because it is not a record."});
+      then fail();
+    end match;
+    Pointer.update(var_ptr, var);
+  end setRecordChildren;
+
   function getRecordChildren
     "returns all children of the variable if its a record, otherwise returns empty list"
     input Pointer<Variable> var;
@@ -1119,6 +1163,8 @@ public
         Pointer<Variable> old_var_ptr;
         Option<Pointer<Variable>> ovar;
         Variable var;
+        VariableKind varKind;
+
       case qual as InstNode.VAR_NODE() algorithm
         // get the variable pointer from the old cref to later on link back to it
         old_var_ptr := getVarPointer(cref);
@@ -1131,8 +1177,17 @@ public
           qual.name := SEED_STR + "_" + name;
           cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
           var := fromCref(cref, NFAttributes.IMPL_DISCRETE_ATTR);
+
           // update the variable to be a seed and pass the pointer to the original variable
-          var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.SEED_VAR());
+          // if it is a record, clear the children instead
+          varKind := match getVarKind(old_var_ptr)
+            case varKind as VariableKind.RECORD() algorithm
+              varKind.children := {};
+            then varKind;
+            else VariableKind.SEED_VAR();
+          end match;
+          var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
+
           // create the new variable pointer and safe it to the component reference
           (var_ptr, cref) := makeVarPtrCyclic(var, cref);
           connectPartners(old_var_ptr, var_ptr, BackendInfo.setVarSeed);
@@ -1170,13 +1225,22 @@ public
           var_ptr := Util.getOption(ovar);
           cref := getVarName(var_ptr);
         else
-          varKind := if isTmp then VariableKind.JAC_TMP_VAR() else VariableKind.JAC_VAR();
           // prepend the seed str and the matrix name and create the new cref_DIFF_DIFF
           qual.name := PARTIAL_DERIVATIVE_STR + "_" + name;
           cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
           var := fromCref(cref, Variable.attributes(Pointer.access(res_ptr)));
-          // update the variable kind and pass the pointer to the original variable
+
+          // update the variable to be a partial derivative and pass the pointer to the original variable
+          // if it is a record, clear the children instead
+          varKind := match getVarKind(res_ptr)
+            case varKind as VariableKind.RECORD() algorithm
+              varKind.children := {};
+            then varKind;
+            else if isTmp then VariableKind.JAC_TMP_VAR() else VariableKind.JAC_VAR();
+          end match;
           var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
+
+
           // create the new variable pointer and safe it to the component reference
           (var_ptr, cref) := makeVarPtrCyclic(var, cref);
           connectPartners(res_ptr, var_ptr, BackendInfo.setVarPDer);

@@ -57,11 +57,9 @@ end symbolName;
 template replaceDotAndUnderscore(String str)
  "Replace _ with __ and dot in identifiers with _"
 ::=
-  match str
-  case name then
-    let str_dots = System.stringReplace(name,".", "_")
-    let str_underscores = System.stringReplace(str_dots, "_", "__")
-    System.unquoteIdentifier(str_underscores)
+  let str_dots = System.stringReplace(str,".", "_")
+  let str_underscores = System.stringReplace(str_dots, "_", "__")
+  System.unquoteIdentifier(str_underscores)
 end replaceDotAndUnderscore;
 
 template getGeneralTarget(String str)

@@ -70,7 +70,7 @@ enum GB_METHOD getGB_method(enum _FLAG flag)
         return method;
       }
     }
-    errorStreamPrint(OMC_LOG_STDOUT, 0, "Unknown gbode method %s.", flag_value);
+    dumOptions(FLAG_NAME[flag], flag_value, GB_METHOD_NAME, RK_MAX);
     return GB_UNKNOWN;
   }
 

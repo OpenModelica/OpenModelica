@@ -696,8 +696,7 @@ protected
     list<StrongComponent> comps, diffed_comps;
     Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
     Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
-    Pointer<UnorderedMap<ComponentRef,ComponentRef>> diff_map = Pointer.create(UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual));
-    Option<UnorderedMap<ComponentRef,ComponentRef>> optHT;
+    UnorderedMap<ComponentRef,ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
     Differentiate.DifferentiationArguments diffArguments;
     Pointer<Integer> idx = Pointer.create(0);
 
@@ -717,7 +716,7 @@ protected
     end if;
 
     // create seed vars
-    VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, ht = diff_map, makeVar = BVariable.makeSeedVar, init = init));
+    VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map, makeVar = BVariable.makeSeedVar, init = init));
 
     // create pDer vars (also filters out discrete vars)
     (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
@@ -730,13 +729,11 @@ protected
     for v in tmp_vars loop makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), init = init); end for;
     tmp_vars := Pointer.access(pDer_vars_ptr);
 
-    optHT := SOME(Pointer.access(diff_map));
-
     // Build differentiation argument structure
     diffArguments := Differentiate.DIFFERENTIATION_ARGUMENTS(
-      diffCref        = ComponentRef.EMPTY(),   // no explicit cref necessary, rules are set by HT
+      diffCref        = ComponentRef.EMPTY(),   // no explicit cref necessary, rules are set by diff map
       new_vars        = {},
-      diff_map        = optHT,                  // seed and temporary cref hashtable
+      diff_map        = SOME(diff_map),         // seed and temporary cref map
       diffType        = NBDifferentiate.DifferentiationType.JACOBIAN,
       funcTree        = funcTree,
       scalarized      = seedCandidates.scalarized
@@ -844,27 +841,49 @@ protected
     input Pointer<Variable> var_ptr;
     input String name;
     input Pointer<list<Pointer<Variable>>> vars_ptr;
-    input Pointer<UnorderedMap<ComponentRef,ComponentRef>> ht;
+    input UnorderedMap<ComponentRef,ComponentRef> map;
     input Func makeVar;
     input Boolean init;
 
     partial function Func
       input output ComponentRef cref;
       input String name;
-      output Pointer<Variable> new_var_ptr;
+      output Pointer<Variable> diff_ptr;
     end Func;
   protected
     Variable var = Pointer.access(var_ptr);
-    ComponentRef cref;
-    Pointer<Variable> new_var_ptr;
+    ComponentRef diff, parent_name, diff_parent_name;
+    Pointer<Variable> diff_ptr, parent, diff_parent;
   algorithm
     // only create seed or pDer var if it is continuous
     if BVariable.isContinuous(var_ptr, init) then
-      (cref, new_var_ptr) := makeVar(var.name, name);
+      // make the new differentiated variable itself
+      (diff, diff_ptr) := makeVar(var.name, name);
       // add $<new>.x variable pointer to the variables
-      Pointer.update(vars_ptr, new_var_ptr :: Pointer.access(vars_ptr));
-      // add x -> $<new>.x to the hashTable for later lookup
-      UnorderedMap.add(var.name, cref, Pointer.access(ht));
+      Pointer.update(vars_ptr, diff_ptr :: Pointer.access(vars_ptr));
+      // add x -> $<new>.x to the map for later lookup
+      UnorderedMap.add(var.name, diff, map);
+
+      // differentiate parent and add to map
+      _ := match BVariable.getParent(var_ptr)
+        case SOME(parent) algorithm
+          parent_name := BVariable.getVarName(parent);
+          diff_parent := match UnorderedMap.get(parent_name, map)
+            case SOME(diff_parent_name) then BVariable.getVarPointer(diff_parent_name);
+            else algorithm
+              (diff_parent_name, _) := makeVar(parent_name, name);
+              UnorderedMap.add(parent_name, diff_parent_name, map);
+            then BVariable.getVarPointer(diff_parent_name);
+          end match;
+
+          // add the child to the list of children
+          BVariable.addRecordChild(diff_parent, diff_ptr);
+          // set the parent of the child
+          diff_ptr := BVariable.setParent(diff_ptr, diff_parent);
+        then ();
+
+        else ();
+      end match;
     end if;
   end makeVarTraverse;
 
