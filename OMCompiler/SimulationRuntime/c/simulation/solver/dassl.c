@@ -999,7 +999,6 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
 
   unsigned int columns = jac->sizeCols;
   unsigned int rows = jac->sizeRows;
-  unsigned int sizeTmpVars = jac->sizeTmpVars;
   SPARSE_PATTERN* spp = jac->sparsePattern;
 
   /* Evaluate constant equations if available */

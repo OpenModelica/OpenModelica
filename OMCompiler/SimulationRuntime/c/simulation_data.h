@@ -68,9 +68,7 @@ typedef struct DATA DATA;
 typedef struct VALUES_LIST VALUES_LIST;
 typedef struct JACOBIAN JACOBIAN;
 
-typedef void (*eq_func_ptr)(DATA*, threadData_t*);
 typedef int (*jacobianColumn_func_ptr)(DATA* data, threadData_t* threadData, JACOBIAN* thisJacobian, JACOBIAN* parentJacobian);
-typedef void (*jacobian_eq_func_ptr)(DATA* data, threadData_t* threadData, JACOBIAN* thisJacobian, JACOBIAN* parentJacobian);
 typedef int (*initialAnalyticalJacobian_func_ptr)(DATA* data, threadData_t* threadData, JACOBIAN* jacobian);
 
 /* Model info structures */
