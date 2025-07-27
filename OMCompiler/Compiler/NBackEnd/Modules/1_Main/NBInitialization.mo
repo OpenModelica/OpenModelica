@@ -752,11 +752,22 @@ public
 
   function removeWhenEquationAlgorithmBody
     input list<Statement> in_stmts;
-    output list<Statement> out_stmts = List.flatten(list(removeWhenEquationStatement(stmt) for stmt in in_stmts));
+    output list<Statement> out_stmts;
+  protected
+    UnorderedSet<Expression> condition_set = UnorderedSet.new(Expression.hash, Expression.isEqual);
+    Pointer<list<Statement>> tail_stmts_ptr = Pointer.create({});
+  algorithm
+    // stage 1: remove all when statements (that not have initial() conditions) and collect removed condtitions
+    out_stmts := List.flatten(list(removeWhenEquationStatement(stmt, condition_set) for stmt in in_stmts));
+    // stage 2: remove all statements computing removed conditions that use a pre() variable on the rhs
+    out_stmts := List.flatten(list(removeConditionEquation(stmt, condition_set, tail_stmts_ptr) for stmt in out_stmts));
+    // stage 3: add all removed statements to the end of the algorithm and add pre() := post() statements for the pre() of the rhs
+    out_stmts := listAppend(out_stmts, Pointer.access(tail_stmts_ptr)) annotation(__OpenModelica_DisableListAppendWarning=true);
   end removeWhenEquationAlgorithmBody;
 
   function removeWhenEquationStatement
     input Statement stmt;
+    input UnorderedSet<Expression> condition_set;
     output list<Statement> out_stmts = {};
   algorithm
     out_stmts := match stmt
@@ -770,14 +781,14 @@ public
           (cond, stmts) := tpl;
           if isInitialCall(cond) then
             out_stmts := stmts;
-            break;
           end if;
+          collectNonInitial(cond, condition_set);
         end for;
       then out_stmts;
 
       case Statement.FOR() algorithm
         for body_stmt in listReverse(stmt.body) loop
-          stmts_acc := removeWhenEquationStatement(body_stmt) :: stmts_acc;
+          stmts_acc := removeWhenEquationStatement(body_stmt, condition_set) :: stmts_acc;
         end for;
         stmts := List.flatten(stmts_acc);
         if not listEmpty(stmts) then
@@ -792,7 +803,50 @@ public
     end match;
   end removeWhenEquationStatement;
 
- function replaceClockedFunctionsEqn
+  function removeConditionEquation
+    input Statement stmt;
+    input UnorderedSet<Expression> condition_set;
+    input Pointer<list<Statement>> tail_stmts_ptr;
+    output list<Statement> out_stmts = {};
+  algorithm
+    out_stmts := match stmt
+      local
+        UnorderedSet<ComponentRef> pre_set;
+        ComponentRef post_cref;
+        list<Statement> tail_stmts;
+
+      case Statement.ASSIGNMENT() guard(UnorderedSet.contains(stmt.lhs, condition_set)) algorithm
+        // this is a cse statement. if it contains a pre variable on the RHS remove and add to tail statements
+        pre_set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+        Expression.map(stmt.rhs, function findPreVars(pre_set = pre_set));
+        if UnorderedSet.isEmpty(pre_set) then
+          out_stmts := {stmt};
+        else
+          tail_stmts := stmt :: Pointer.access(tail_stmts_ptr);
+          for pre_cref in UnorderedSet.toList(pre_set) loop
+            post_cref := BVariable.getPartnerCref(pre_cref, BVariable.getVarPre);
+            tail_stmts := Statement.ASSIGNMENT(Expression.fromCref(pre_cref), Expression.fromCref(post_cref), ComponentRef.getSubscriptedType(pre_cref), DAE.emptyElementSource) :: tail_stmts;
+          end for;
+          Pointer.update(tail_stmts_ptr, tail_stmts);
+        end if;
+      then out_stmts;
+      else {stmt};
+    end match;
+  end removeConditionEquation;
+
+  function findPreVars
+    input output Expression exp;
+    input UnorderedSet<ComponentRef> pre_set;
+  algorithm
+    _ := match exp
+      case Expression.CREF() guard(BVariable.isPrevious(BVariable.getVarPointer(exp.cref))) algorithm
+        UnorderedSet.add(exp.cref, pre_set);
+      then ();
+      else ();
+    end match;
+  end findPreVars;
+
+  function replaceClockedFunctionsEqn
     input output Pointer<Equation> eqn;
   algorithm
     Pointer.update(eqn, Equation.map(Pointer.access(eqn), replaceClockedFunctions));
@@ -827,6 +881,23 @@ public
       else false;
     end match;
   end isInitialCall;
+
+  function collectNonInitial
+    input Expression condition;
+    input UnorderedSet<Expression> condition_set;
+  algorithm
+    _ := match condition
+      case Expression.CREF() algorithm
+        UnorderedSet.add(condition, condition_set);
+      then ();
+      case Expression.ARRAY() algorithm
+        for elem in condition.elements loop
+          collectNonInitial(elem, condition_set);
+        end for;
+      then ();
+      else ();
+    end match;
+  end collectNonInitial;
 
   function collectAlgorithmOutputs
     input output Equation eqn;
