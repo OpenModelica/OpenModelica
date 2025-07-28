@@ -413,6 +413,17 @@ public
       output list<Dimension> dims = List.flatten(list(Type.arrayDims(t) for t in types(iter)));
     end dimensions;
 
+    function numDimensions
+      input Iterator iter;
+      output Integer num;
+    algorithm
+      num := match iter
+        case SINGLE() then 1;
+        case NESTED() then arrayLength(iter.names);
+        else 0;
+      end match;
+    end numDimensions;
+
     function dummy
       "creates a dummy iterator as a replacement for the actual correct one
       Used for solving the body to only evaluate a single frame location instead of all."
@@ -483,13 +494,11 @@ public
         local
           ComponentRef name;
           Expression arr;
-          Integer index;
 
         // only does something if the option is filled with an array
         // fail if there is something else?
         case SOME(SINGLE(name = name, range = arr as Expression.ARRAY())) algorithm
-          index := Expression.getInteger(arr.elements[location]);
-          UnorderedMap.add(name, Expression.INTEGER(index), replacements);
+          UnorderedMap.add(name, arr.elements[location], replacements);
         then ();
         else ();
       end match;
@@ -2021,6 +2030,7 @@ public
         case FOR_EQUATION() algorithm
           residualCref := getEqnName(eqn_ptr);
           subs := Iterator.normalizedSubscripts(eqn.iter);
+          subs := listAppend(List.fill(Subscript.WHOLE(), Type.dimensionCount(Equation.getType(listHead(eqn.body)))), subs);
           residualCref := ComponentRef.setSubscripts(subs, residualCref);
         then residualCref;
         else getEqnName(eqn_ptr);
