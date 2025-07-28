@@ -595,7 +595,7 @@ public
     eqn_idx := 1;
     // repeat the elements to fit the equation
     for i in 1:element_repeat loop
-      for tpl in scal_tpl_lst loop
+      for tpl in listReverse(scal_tpl_lst) loop
         (scal_cref, scal_lst) := tpl;
 
         // reverse the scalar index list to traverse it in the correct order
