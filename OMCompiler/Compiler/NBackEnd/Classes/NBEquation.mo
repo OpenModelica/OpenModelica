@@ -494,13 +494,11 @@ public
         local
           ComponentRef name;
           Expression arr;
-          Integer index;
 
         // only does something if the option is filled with an array
         // fail if there is something else?
         case SOME(SINGLE(name = name, range = arr as Expression.ARRAY())) algorithm
-          index := Expression.getInteger(arr.elements[location]);
-          UnorderedMap.add(name, Expression.INTEGER(index), replacements);
+          UnorderedMap.add(name, arr.elements[location], replacements);
         then ();
         else ();
       end match;
