@@ -530,7 +530,7 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) get_kinsol_statistics(kin_mem);
     }
     if (!solved && maxJacUpdate[2] > 0) {
-      infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: Solution of NLS failed, Try with old start value.");
+      infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: Solution of NLS failed, Try with extrapolated start value.");
       memcpy(nlsData->nlsxExtrapolation, nlsData->nlsxOld,  nlsData->size*sizeof(modelica_real));
       set_kinsol_parameters(kin_mem, newtonMaxSteps, SUNFALSE, maxJacUpdate[2], newtonTol);
       solved = solveNLS(data, threadData, nlsData);
