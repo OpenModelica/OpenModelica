@@ -54,21 +54,34 @@ enum GB_EXTRAPOL_METHOD{
 /**
  * @brief Variants of PI controller.
  */
-enum GB_PI_VARIANTS{
+typedef enum {
   GB_PI_UNKNOWN = 0,    /* Unknown method */
 
-  GB_PI_34,       /* PI34-Regler (Hairer) */
-  GB_PI_33,       /* PI33-Regler (Hairer) */
-  GB_PI_42        /* PI42-Regler (Soederlund) */
-};
+  GB_PI_34,             /* PI34-Regler (Hairer) */
+  GB_PI_33,             /* PI33-Regler (Hairer) */
+  GB_PI_42              /* PI42-Regler (Soederlind) */
+} GB_PI_VARIANTS;
 
-enum GB_PI_VARIANTS pi_type = GB_PI_34;
+typedef enum {
+    GB_PID_UNKNOWN = 0,
+
+    GB_PID_H312,
+    GB_PID_SOEDERLIND,
+    GB_PID_STIFF
+} GB_PID_VARIANTS;
+
+// Declaration only
+extern GB_PI_VARIANTS pi_type;
+extern GB_PID_VARIANTS pid_type;  
+extern unsigned int use_fhr;
+extern double use_filter;
 
 enum GB_METHOD getGB_method(enum _FLAG flag);
 enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag);
 enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag);
 enum GB_NLS_METHOD getGB_NLS_method(enum _FLAG flag);
 double getGBRatio();
+double getGBCtrlFilterValue();
 enum GB_EXTRAPOL_METHOD getGBErr(enum _FLAG flag);
 
 #ifdef __cplusplus

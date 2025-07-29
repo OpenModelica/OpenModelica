@@ -241,6 +241,31 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag)
 }
 
 /**
+ * @brief Use filter technic for step size control 
+ *
+ * Read flag FLAG_SR_CTRL_FILTER to get filter value.
+ * Defaults to 0.
+ *
+ * @return double   Percentage of fast states selection.
+ */
+double getGBCtrlFilterValue()
+{
+  double filter;
+  const char *flag_value = omc_flagValue[FLAG_SR_CTRL_FILTER];
+
+  if (flag_value) {
+    filter = atof(omc_flagValue[FLAG_SR_CTRL_FILTER]);
+    if (filter < 0 || filter > 1) {
+      throwStreamPrint(NULL, "Flag -gbratio has to be between 0 and 1.");
+    }
+  } else {
+    filter = 0;
+  }
+  return filter;
+}
+
+
+/**
  * @brief Get percentage of states for the fast states selection.
  *
  * Read flag FLAG_MR_PAR to get percentage.

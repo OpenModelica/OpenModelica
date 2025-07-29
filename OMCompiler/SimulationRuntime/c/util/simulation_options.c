@@ -145,6 +145,8 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_DATA_RECONCILE_STATE */         "reconcileState",
   /* FLAG_SR */                           "gbm",
   /* FLAG_SR_CTRL */                      "gbctrl",
+  /* FLAG_SR_CTRL_FILTER */               "gbctrl_filter",
+  /* FLAG_SR_CTRL_FHR */                  "gbctrl_fhr",
   /* FLAG_SR_ERR */                       "gberr",
   /* FLAG_SR_INT */                       "gbint",
   /* FLAG_SR_NLS */                       "gbnls",
@@ -283,6 +285,8 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_DATA_RECONCILE_STATE */         "Run the State Estimation numerical computation algorithm for constrained equations",
   /* FLAG_SR */                           "Value specifies the chosen solver of solver gbode (single-rate, slow states integrator)",
   /* FLAG_SR_CTRL */                      "Step size control of solver gbode (single-rate, slow states integrator)",
+  /* FLAG_SR_CTRL_FILTER */               "gbctrl_filter",
+  /* FLAG_SR_CTRL_FHR */                  "gbctrl_fhr",
   /* FLAG_SR_ERR */                       "Error estimation method for solver gbode (single-rate, slow states integrator).",
   /* FLAG_SR_INT */                       "Interpolation method of solver gbode (single-rate, slow states integrator)",
   /* FLAG_SR_NLS */                       "Non-linear solver method of solver gbode (single-rate, slow states integrator)",
@@ -598,6 +602,10 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies the chosen solver of solver gbode (single-rate, slow states integrator).",
   /* FLAG_SR_CTRL */
   "  Step size control of solver gbode (single-rate, slow states integrator).",
+  /* FLAG_SR_CTRL_FILTER */
+  " gbctrl_filter",
+  /* FLAG_SR_CTRL_FHR */
+  " gbctrl_fhr",
   /* FLAG_SR_ERR */
   "  Error estimation method for solver gbode (single-rate, slow states integrator)\n"
   "  Possible values:\n\n"
@@ -765,6 +773,8 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_DATA_RECONCILE_STATE  */        FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR */                           FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR_CTRL */                      FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_SR_CTRL_FILTER */               FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_SR_CTRL_FHR */                  FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR_ERR */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR_INT */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR_NLS */                       FLAG_REPEAT_POLICY_FORBID,
@@ -902,6 +912,8 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_DATA_RECONCILE_STATE */         FLAG_TYPE_FLAG,
   /* FLAG_SR */                           FLAG_TYPE_OPTION,
   /* FLAG_SR_CTRL */                      FLAG_TYPE_OPTION,
+  /* FLAG_SR_CTRL_FILTER */               FLAG_TYPE_OPTION,
+  /* FLAG_SR_CTRL_FHR */                  FLAG_TYPE_FLAG,
   /* FLAG_SR_ERR */                       FLAG_TYPE_OPTION,
   /* FLAG_SR_INT */                       FLAG_TYPE_OPTION,
   /* FLAG_SR_NLS */                       FLAG_TYPE_OPTION,
@@ -1034,19 +1046,27 @@ const char *GB_NLS_METHOD_DESC[GB_NLS_MAX] = {
 };
 
 const char *GB_CTRL_METHOD_NAME[GB_CTRL_MAX] = {
-  /* GB_CTRL_UNKNOWN */   "unknown",
-  /* GB_CTRL_I */         "i",
-  /* GB_CTRL_PI */        "pi",
-  /* GB_CTRL_PID */       "pid",
-  /* GB_CTRL_CNST */      "const"
+  /* GB_CTRL_UNKNOWN */         "unknown",
+  /* GB_CTRL_I */               "i",
+  /* GB_CTRL_PI_33 */           "pi_33",
+  /* GB_CTRL_PI_34 */           "pi_34",
+  /* GB_CTRL_PI_42 */           "pi_42",
+  /* GB_CTRL_PID_H312 */        "pid_h312",
+  /* GB_CTRL_PID_SOEDERLIND */  "pid_soederlind",
+  /* GB_CTRL_PID_STIFF */       "pid_stiff",
+  /* GB_CTRL_CNST */            "const"
 };
 
 const char *GB_CTRL_METHOD_DESC[GB_CTRL_MAX] = {
-  /* GB_CTRL_UNKNOWN */   "unknown",
-  /* GB_CTRL_I */         "I controller for step size",
-  /* GB_CTRL_PI */        "PI controller for step size",
-  /* GB_CTRL_PID */       "PID controller for step size",
-  /* GB_CTRL_CNST */      "Constant step size"
+  /* GB_CTRL_UNKNOWN */         "unknown",
+  /* GB_CTRL_I */               "I controller for step size (beta=1/k, k RK error order)",
+  /* GB_CTRL_PI_33 */           "PI controller for step size (beta1=0.7/k, beta2=-0.4/k)",
+  /* GB_CTRL_PI_34 */           "PI controller for step size (beta1=0.7/k, beta2=-0.4/k)",
+  /* GB_CTRL_PI_42 */           "PI controller for step size (beta1=0.7/k, beta2=-0.4/k)",
+  /* GB_CTRL_PID_H312 */        "PID controller for step size (alpha1=1/18/k, alpha2=1/9/k, alpha3=1/18/k)",
+  /* GB_CTRL_PID_SOEDERLIND */  "PID controller for step size (alpha1=1/18/k, alpha2=1/9/k, alpha3=1/18/k)",
+  /* GB_CTRL_PID_STIFF */       "PID controller for step size (alpha1=1/18/k, alpha2=1/9/k, alpha3=1/18/k)",
+  /* GB_CTRL_CNST */            "Constant step size"
 };
 
 const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX] = {
