@@ -286,7 +286,7 @@ public
     Pointer<Equation> eq;
   algorithm
     (cref, iter) := tpl;
-    var_ptr := BVariable.getVarPointer(cref);
+    var_ptr := BVariable.getVarPointer(cref, sourceInfo());
     var_pre := BVariable.getVarPre(var_ptr);
     if Util.isSome(var_pre) then
       subscripts := ComponentRef.subscriptsAllFlat(cref);
@@ -839,7 +839,7 @@ public
     input UnorderedSet<ComponentRef> pre_set;
   algorithm
     _ := match exp
-      case Expression.CREF() guard(BVariable.isPrevious(BVariable.getVarPointer(exp.cref))) algorithm
+      case Expression.CREF() guard(BVariable.isPrevious(BVariable.getVarPointer(exp.cref, sourceInfo()))) algorithm
         UnorderedSet.add(exp.cref, pre_set);
       then ();
       else ();

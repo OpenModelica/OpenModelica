@@ -266,12 +266,12 @@ public
             if Jacobian.isDynamic(jacobian.jacType) then
               for var in seedVars loop
                 cref := SimVar.getName(var);
-                if BVariable.checkCref(cref, BVariable.isSeed) then
+                if BVariable.checkCref(cref, BVariable.isSeed, sourceInfo()) then
                   // FIXME this should not happen, fix it when collecting seedVars!
                   cref := BVariable.getPartnerCref(cref, BVariable.getVarSeed);
                 end if;
                 UnorderedMap.add(cref, var.index, idx_map);
-                if BVariable.checkCref(cref, BVariable.isState) then
+                if BVariable.checkCref(cref, BVariable.isState, sourceInfo()) then
                   cref := BVariable.getPartnerCref(cref, BVariable.getVarDer);
                   UnorderedMap.add(cref, var.index, idx_map);
                 end if;

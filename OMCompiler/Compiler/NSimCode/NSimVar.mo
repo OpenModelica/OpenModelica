@@ -874,7 +874,7 @@ public
     algorithm
       for tpl in hash_tpl loop
         (cref, var) := tpl;
-        if BVariable.checkCref(cref, BVariable.isSeed) then
+        if BVariable.checkCref(cref, BVariable.isSeed, sourceInfo()) then
           seed_vars := var :: seed_vars;
         else
           jacobian_vars := var :: jacobian_vars;
@@ -1173,7 +1173,7 @@ public
         case StrongComponent.MULTI_COMPONENT()      then List.flatten(list(getVars(Slice.getT(v), simcode_map) for v in comp.vars));
         case StrongComponent.SLICED_COMPONENT()     then getVars(Slice.getT(comp.var), simcode_map);
         case StrongComponent.RESIZABLE_COMPONENT()  then getVars(Slice.getT(comp.var), simcode_map);
-        case StrongComponent.GENERIC_COMPONENT()    then getVars(BVariable.getVarPointer(comp.var_cref), simcode_map);
+        case StrongComponent.GENERIC_COMPONENT()    then getVars(BVariable.getVarPointer(comp.var_cref, sourceInfo()), simcode_map);
         case StrongComponent.ENTWINED_COMPONENT()   then List.flatten(list(getStrongComponentVars(c, simcode_map) for c in comp.entwined_slices));
         case StrongComponent.ALGEBRAIC_LOOP()       then List.flatten(list(getVars(Slice.getT(v), simcode_map) for v in comp.strict.iteration_vars));
         case StrongComponent.ALIAS()                then getStrongComponentVars(comp.original, simcode_map);

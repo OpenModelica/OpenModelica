@@ -178,7 +178,7 @@ protected
       algorithm
         vars := match exp
           case Expression.CREF(cref = ComponentRef.WILD()) then {};
-          case Expression.CREF()    then {BVariable.getVarPointer(exp.cref)};
+          case Expression.CREF()    then {BVariable.getVarPointer(exp.cref, sourceInfo())};
           case Expression.TUPLE()   then List.flatten(list(getVarsExp(elem) for elem in exp.elements));
           else algorithm
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because function alias auxilliary has a return type that currently cannot be parsed: " + Expression.toString(exp)});

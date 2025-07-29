@@ -1285,9 +1285,9 @@ public
       var := match eqn
         local
           ComponentRef cref;
-        case SCALAR_EQUATION(lhs = Expression.CREF(cref = cref))  then BVariable.getVar(cref);
-        case ARRAY_EQUATION(lhs = Expression.CREF(cref = cref))   then BVariable.getVar(cref);
-        case RECORD_EQUATION(lhs = Expression.CREF(cref = cref))  then BVariable.getVar(cref);
+        case SCALAR_EQUATION(lhs = Expression.CREF(cref = cref))  then BVariable.getVar(cref, sourceInfo());
+        case ARRAY_EQUATION(lhs = Expression.CREF(cref = cref))   then BVariable.getVar(cref, sourceInfo());
+        case RECORD_EQUATION(lhs = Expression.CREF(cref = cref))  then BVariable.getVar(cref, sourceInfo());
         else NBVariable.DUMMY_VARIABLE;
       end match;
     end getSolvedVar;
@@ -2318,7 +2318,7 @@ public
       input Pointer<Boolean> b_ptr;
     algorithm
       if Pointer.access(b_ptr) then
-        Pointer.update(b_ptr, BVariable.isParamOrConst(BVariable.getVarPointer(cref)));
+        Pointer.update(b_ptr, BVariable.isParamOrConst(BVariable.getVarPointer(cref, sourceInfo())));
       end if;
     end crefIsParamOrConst;
 
@@ -2691,8 +2691,8 @@ public
         then {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, eqn.ty, eqn.source)};
 
         case RECORD_EQUATION(lhs = Expression.CREF(cref = lhs_rec), rhs = Expression.CREF(cref = rhs_rec)) algorithm
-          lhs_lst := BVariable.getRecordChildren(BVariable.getVarPointer(lhs_rec));
-          rhs_lst := BVariable.getRecordChildren(BVariable.getVarPointer(rhs_rec));
+          lhs_lst := BVariable.getRecordChildren(BVariable.getVarPointer(lhs_rec, sourceInfo()));
+          rhs_lst := BVariable.getRecordChildren(BVariable.getVarPointer(rhs_rec, sourceInfo()));
           if List.compareLength(lhs_lst, rhs_lst) == 0 and not Type.isExternalObject(Type.arrayElementType(Expression.typeOf(eqn.lhs))) then
             for tpl in List.zip(lhs_lst, rhs_lst) loop
               (lhs, rhs) := tpl;
@@ -3450,7 +3450,7 @@ public
         case {WhenStatement.ASSIGN(lhs = Expression.TUPLE())} then true;
         case {WhenStatement.ASSIGN(lhs = Expression.RECORD())} then true;
         case {WhenStatement.ASSIGN(lhs = Expression.CREF(cref = cref))}
-          then BVariable.checkCref(cref, BVariable.isRecord);
+          then BVariable.checkCref(cref, BVariable.isRecord, sourceInfo());
         // multiple body equations -> tuple return
         case _ guard(List.count(body.when_stmts, WhenStatement.isAssign) > 1) then true;
         else false;
