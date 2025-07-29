@@ -669,6 +669,9 @@ public
     row_cref_scal := ComponentRef.scalarizeSlice(row_cref, slice, true);
     dependencies_scal := list(ComponentRef.scalarizeSlice(dep, slice, true) for dep in dependencies);
     if not listEmpty(dependencies_scal) then
+      // repeat lists that are too short to fit the equation size
+      dependencies_scal := list(List.repeat(d, realInt(listLength(row_cref_scal)/listLength(d))) for d in dependencies_scal);
+      // transpose it such that each list now represents one row
       dependencies_scal := List.transposeList(dependencies_scal);
       tpl_lst := List.zip(row_cref_scal, dependencies_scal);
     else
