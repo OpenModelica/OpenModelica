@@ -574,6 +574,33 @@ public
       end if;
     end createSingleReplacement;
 
+    function expand
+      "takes an iterator and expands it with the iterators of an array
+      constructor or a reduction."
+      input output Iterator iter;
+      input Call call;
+    protected
+      // dummy set for new variables. ToDo: save them to global variables
+      UnorderedSet<VariablePointer> new_iters = UnorderedSet.new(BVariable.hash, BVariable.equalName);
+    algorithm
+      iter := match call
+        local
+          list<ComponentRef> names;
+          list<Expression> ranges;
+          list<Option<Iterator>> maps;
+
+        case Call.TYPED_ARRAY_CONSTRUCTOR() algorithm
+          (names, ranges, maps) := getFrames(iter);
+        then fromFrames(listAppend(list(Inline.inlineArrayIterator(tpl, new_iters) for tpl in call.iters), List.zip3(names, ranges, maps)));
+
+        case Call.TYPED_REDUCTION() algorithm
+          (names, ranges, maps) := getFrames(iter);
+        then fromFrames(listAppend(list(Inline.inlineArrayIterator(tpl, new_iters) for tpl in call.iters), List.zip3(names, ranges, maps)));
+
+        else iter;
+      end match;
+    end expand;
+
     function extract
       "takes an expression and maps it to find all occuring iterators.
       returns an iterator if all iterators are equal, fails otherwise.
