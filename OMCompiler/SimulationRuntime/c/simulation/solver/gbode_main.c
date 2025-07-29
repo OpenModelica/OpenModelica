@@ -912,7 +912,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       // Store performed stepSize for adjusting the time in case of latter interpolation
       // Call the step size control
       gbfData->lastStepSize = gbfData->stepSize;
-      gbfData->stepSize *= gbfData->stepSize_control(gbfData->errValues, gbfData->stepSizeValues, gbfData->tableau->error_order);
+      gbfData->stepSize = gbfData->stepSize_control(gbfData->errValues, gbfData->stepSizeValues, gbfData->tableau->error_order);
 
       // debug ring buffer for the states and derviatives of the states
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
@@ -1332,7 +1332,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       // Store performed step size for latter interpolation
       // Call the step size control
       gbData->lastStepSize = gbData->stepSize;
-      gbData->stepSize *= gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
+      gbData->stepSize = gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
       if (gbData->maxStepSize > 0 && gbData->maxStepSize < gbData->stepSize)
         gbData->stepSize = gbData->maxStepSize;
       gbData->optStepSize = gbData->stepSize;
@@ -1405,7 +1405,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       if (gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
         if (gbData->err_int > err) {
           gbData->errValues[0] = gbData->err_int;
-          gbData->stepSize = gbData->lastStepSize * gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
+          gbData->stepSize = gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
           if (gbData->maxStepSize > 0 && gbData->maxStepSize < gbData->stepSize)
             gbData->stepSize = gbData->maxStepSize;
         }

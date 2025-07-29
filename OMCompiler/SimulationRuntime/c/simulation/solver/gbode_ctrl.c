@@ -31,6 +31,7 @@
 /*! \file gbode_ctrl.c
  */
 
+//#include "gbode_conf.h"
 #include "gbode_main.h"
 
 /**
@@ -66,24 +67,24 @@ double getErrorThreshold(DATA_GBODE* gbData)
  * @brief constant step size (given by solver main)
  *
  * @param err_values
- * @param stepSize_values
+ * @param step_values
  * @param err_order
  * @return double
  */
-double CController(double* err_values, double* stepSize_values, unsigned int err_order)
+double CController(double* err_values, double* step_values, unsigned int err_order)
 {
-  return 1.0;
+  return step_values[0];
 }
 
 /**
  * @brief simple step size control (see Hairer, etc.)
  *
  * @param err_values
- * @param stepSize_values
+ * @param step_values
  * @param err_order
  * @return double
  */
-double IController(double* err_values, double* stepSize_values, unsigned int err_order)
+double IController(double* err_values, double* step_values, unsigned int err_order)
 {
   double fac = 0.9;
   double facmax = 1.2;
@@ -91,75 +92,207 @@ double IController(double* err_values, double* stepSize_values, unsigned int err
   double beta = 1./(err_order+1);
 
   if (err_values[0] > 0)
-    return fmin(facmax, fmax(facmin, fac*pow(1./err_values[0], beta)));
+    return step_values[0]*fmin(facmax, fmax(facmin, fac*pow(1./err_values[0], beta)));
   else
-    return facmax;
+    return step_values[0]*facmax;
 }
 
 /**
  * @brief PI step size control (see Hairer, etc.)
  *
  * @param err_values
- * @param stepSize_values
+ * @param step_values
  * @param err_order
  * @return double
  */
-double PIController(double* err_values, double* stepSize_values, unsigned int err_order)
+double PIController(double* err_values, double* step_values, unsigned int err_order)
 {
   double fac = 0.9;
   double facmax = 3.5;
   double facmin = 0.5;
-  double beta  = 1./(err_order+1);
-  double beta1 = 0.7/(err_order+1);
-  double beta2 = -0.4/(err_order+1);
+  unsigned int k = err_order+1;
+  double beta  = 1./k;
+  double beta1, beta2;
+
+  // switch (pi_type) {
+  //     case GB_PI_34:
+  //         beta1 = 0.7 / k;
+  //         beta2 = -0.4 / k;
+  //         break;
+  //     case GB_PI_33:
+  //         beta1 = (2.0 / 3.0) / k;
+  //         beta2 = (-1.0 / 3.0) / k;
+  //         break;
+  //    case GB_PI_42:
+          beta1 = 0.6 / k;
+          beta2 = -0.2 / k;
+  //        break;
+  // }
 
   double estimate;
 
   if (err_values[0] < DBL_EPSILON)
-    return facmax;
+    return step_values[0]*facmax;
 
   if (err_values[1] < DBL_EPSILON)
     estimate = pow(1./err_values[0], beta);
   else
     estimate = pow(1./err_values[0], beta1)*pow(1./err_values[1], beta2);
 
-  return fmin(facmax, fmax(facmin, fac*estimate));
+  return step_values[0]*fmin(facmax, fmax(facmin, fac*estimate));
 }
 
 /**
  * @brief PID step size control (see Hairer, etc.)
  *
  * @param err_values
- * @param stepSize_values
+ * @param step_values
  * @param err_order
  * @return double
  */
-double PIDController(double* err_values, double* stepSize_values, unsigned int err_order)
+double PIDController(double* err_values, double* step_values, unsigned int err_order)
 {
   double fac = 0.9;
   double facmax = 3.5;
   double facmin = 0.5;
-  double beta  = 1./(err_order+1);
-  double beta1 = 0.7/(err_order+1);
-  double beta2 = -0.4/(err_order+1);
-  double alpha1 = 1./18/(err_order+1);
-  double alpha2 = 1./9/(err_order+1);
-  double alpha3 = 1./18/(err_order+1);
+  unsigned int k = err_order + 1;
+  double beta  = 1./k;
+  double beta1 = 0.7/k;
+  double beta2 = -0.4/k;
 
-  double estimate;
+  // H312-PID (Hairer)
+  double alpha1 = 1./18/k;  // current error (P)
+  double alpha2 = 1./9/k;   // previous error (I)
+  double alpha3 = 1./18/k;  // second previous error (D)
 
-  if (err_values[0] < DBL_EPSILON)
-    return facmax;
+  // H312-PID (Soederlind)
+  // double alpha1 = 0.1 / k;  // current error (P)
+  // double alpha2 = 0.2 / k;  // previous error (I)
+  // double alpha3 = 0.1 / k;  // second previous error (D)
 
-  if (err_values[1] < DBL_EPSILON)
-    estimate = pow(1./err_values[0], beta);
-  else
-    if (err_values[2] < DBL_EPSILON)
-      estimate = pow(1./err_values[0], beta1)*pow(1./err_values[1], beta2);
-    else
-      estimate = pow(1./err_values[0], alpha1)*pow(1./err_values[1], alpha2)*pow(1./err_values[2], alpha3);
+  // (Soederlind) - stiff systems
+  // double alpha1 = 0.58 / k;  // current error (P)
+  // double alpha2 = 0.21 / k;  // previous error (I)
+  // double alpha3 = 0.21 / k;  // second previous error (D)
 
-  return fmin(facmax, fmax(facmin, fac*estimate));
+    double err_n     = err_values[0];
+    double err_n1    = err_values[1];
+    double err_n2    = err_values[2];
+    double h_n       = step_values[0];
+
+    // Handle pathological zero error
+    if (err_n < DBL_EPSILON)
+        return facmax * h_n;
+
+    // Fallback for incomplete history
+    if (err_n1 < DBL_EPSILON || err_n2 < DBL_EPSILON) {
+        double beta = 1.0 / k;
+        double h_raw = h_n * fac * pow(1.0 / err_n, beta);
+        return fmin(facmax * h_n, fmax(facmin * h_n, h_raw));
+    }
+
+    return h_n * fac *
+        pow(1.0 / err_n,  alpha1) *
+        pow(1.0 / err_n1, alpha2) *
+        pow(1.0 / err_n2, alpha3);
+}
+
+/**
+ * @brief Compute adaptive gamma for FHR controller
+ *
+ * @param err_now   Current error estimate
+ * @param err_prev  Previous error estimate
+ * @param h_now     Current step size
+ * @param h_prev    Previous step size
+ * @param eta       Scaling factor (e.g. 0.1)
+ * @return double   Adaptive γ
+ */
+double computeGamma(double err_now, double err_prev, double h_now, double h_prev, double eta)
+{
+    double eps = 1e-14;
+    double log_h_ratio = log(h_now / h_prev);
+    double log_e_ratio = log((err_now + eps) / (err_prev + eps));  // avoid division by zero
+
+    return eta * log_h_ratio / (log_e_ratio + eps);
+}
+
+/**
+ * @brief FHR step size controller (Führer–Hofreither–Radu)
+ *
+ * @param err_values   Array with last 3 error values: [e_n, e_{n-1}, e_{n-2}]
+ * @param step_values  Array with last 3 step sizes: [h_n, h_{n-1}, h_{n-2}]
+ * @param err_order    Order of the embedded method (e.g., p - 1)
+ * @return double      New suggested step size (absolute, not factor)
+ */
+double FHRController(double* err_values, double* step_values, unsigned int err_order)
+{
+    unsigned int k = err_order + 1;
+
+    double fac = 0.9;
+    double facmax = 3.5;
+    double facmin = 0.5;
+
+    double alpha1 = 0.58 / k;
+    double alpha2 = 0.21 / k;
+
+    double err_now = err_values[0];
+    double err_prev = err_values[1];
+    double h_now = step_values[0];
+    double h_prev = step_values[1];
+
+    // If we don't have a valid previous step, fall back to simple I-controller
+    if (err_now < DBL_EPSILON || h_prev <= 0.0 || err_prev < DBL_EPSILON)
+        return fmin(facmax * h_now, fmax(facmin * h_now, fac * pow(1.0 / err_now, 1.0 / k)));
+
+    // Compute gamma adaptively
+    double eta = 0.1;
+    double gamma = computeGamma(err_now, err_prev, h_now, h_prev, eta);
+
+    // Compute new step size with FHR logic
+    double ratio_err = pow(1.0 / err_now, alpha1) * pow(1.0 / err_prev, alpha2);
+    double ratio_step = pow(h_now / h_prev, gamma);
+
+    double h_raw = h_now * fac * ratio_err * ratio_step;
+
+    // Apply safety bounds
+    return fmin(facmax * h_now, fmax(facmin * h_now, h_raw));
+}
+
+/**
+ * @brief Filtered PID (fPID) step size controller.
+ *
+ * This controller is a robust variant of the classical PID controller, where
+ * the step size is computed using three error estimates (current, previous,
+ * and second previous). Additionally, a low-pass filter is applied to reduce
+ * step size oscillations and improve numerical stability in stiff or noisy systems.
+ *
+ * Suggested for use with stiff problems or when smoother step size adaptation is desired.
+ *
+ * @param err_values        Array of recent error estimates: [err_n, err_n-1, err_n-2]
+ * @param step_values       Array of recent step sizes: [h_n, h_n-1, h_n-2]
+ * @param err_order         Order of the method used for error estimation (e.g., for embedded RK: min(p, q))
+ * @return                  Recommended new step size
+ */
+double fPIDController(double* err_values, double* step_values, unsigned int err_order)
+{
+    const double fac     = 0.9;
+    const double facmax  = 3.5;
+    const double facmin  = 0.5;
+
+    const unsigned int k = err_order + 1;
+    double h_n       = step_values[0];
+
+    // Filter weight (1 = no filtering, <1 = smoothing)
+    const double filter = 0.5;
+
+    // Compute raw PID-based step size estimate
+    double h_raw = PIDController(err_values, step_values, err_order);
+
+    // Apply smoothing (filtered PID)
+    double h_new = filter * h_raw + (1.0 - filter) * h_n;
+
+    // Clamp to [facmin * h_n, facmax * h_n]
+    return fmin(facmax * h_n, fmax(facmin * h_n, h_new));
 }
 
 /**
@@ -173,9 +306,9 @@ gm_stepSize_control_function getControllFunc(enum GB_CTRL_METHOD ctrl_method)
   switch (ctrl_method)
   {
   case GB_CTRL_I:
-    return IController;
+    return FHRController;
   case GB_CTRL_PI:
-    return PIController;
+    return fPIDController;
   case GB_CTRL_PID:
     return PIDController;
   case GB_CTRL_CNST:

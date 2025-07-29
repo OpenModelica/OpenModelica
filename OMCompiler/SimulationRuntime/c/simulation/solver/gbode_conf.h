@@ -47,9 +47,22 @@ enum GB_EXTRAPOL_METHOD{
   GB_EXT_UNKNOWN = 0,    /* Unknown method */
 
   GB_EXT_DEFAULT,        /* Default, depending on the Runge-Kutta method */
-  GB_EXT_RICHARDSON,     /* Richardson extrapolation*/
+  GB_EXT_RICHARDSON,     /* Richardson extrapolation */
   GB_EXT_EMBEDDED        /* Embedded scheme */
 };
+
+/**
+ * @brief Variants of PI controller.
+ */
+enum GB_PI_VARIANTS{
+  GB_PI_UNKNOWN = 0,    /* Unknown method */
+
+  GB_PI_34,       /* PI34-Regler (Hairer) */
+  GB_PI_33,       /* PI33-Regler (Hairer) */
+  GB_PI_42        /* PI42-Regler (Soederlund) */
+};
+
+enum GB_PI_VARIANTS pi_type = GB_PI_34;
 
 enum GB_METHOD getGB_method(enum _FLAG flag);
 enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag);
