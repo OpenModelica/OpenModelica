@@ -252,7 +252,7 @@ public
                 idx := Pointer.create(0);
                 // create temporary variables for all outputs that are not solved for
                 tmp_crefs := list((cref, BVariable.makeTmpVar(cref)) for cref in UnorderedSet.toList(output_crefs));
-                tmp_vars := list(BVariable.getVarPointer(Util.tuple22(tpl)) for tpl in tmp_crefs);
+                tmp_vars := list(BVariable.getVarPointer(Util.tuple22(tpl), sourceInfo()) for tpl in tmp_crefs);
 
                 // create equations equalizing the temporary variables and the real ones
                 // res = z - z^ for z^ in Z^
@@ -274,13 +274,13 @@ public
                 end for;
                 // replace z -> z^ in the algorithm outputs and set the solved variables to those outputs
                 alg.outputs := list(UnorderedMap.getOrDefault(c, cref_repl, c) for c in eqn.alg.outputs);
-                comp.vars   := list(Slice.SLICE(BVariable.getVarPointer(c), {}) for c in alg.outputs);
+                comp.vars   := list(Slice.SLICE(BVariable.getVarPointer(c, sourceInfo()), {}) for c in alg.outputs);
                 comp.status := Status.EXPLICIT;
                 eqn.alg     := alg;
                 // replace z -> z^  in the algorithm body
                 Pointer.update(eqn_ptr, Equation.map(eqn, function Replacements.applySimpleExp(replacements = exp_repl)));
                 // create the algebraic loop, already torn
-                strict := Tearing.TEARING_SET(list(Slice.SLICE(BVariable.getVarPointer(c), {}) for c in UnorderedSet.toList(solved_inputs)), list(Slice.SLICE(e, {}) for e in tmp_eqns), listArray({comp}), NONE());
+                strict := Tearing.TEARING_SET(list(Slice.SLICE(BVariable.getVarPointer(c, sourceInfo()), {}) for c in UnorderedSet.toList(solved_inputs)), list(Slice.SLICE(e, {}) for e in tmp_eqns), listArray({comp}), NONE());
                 // ToDo: set all the booleans correctly
                 solved_comp := StrongComponent.ALGEBRAIC_LOOP(implicit_index, strict, NONE(), false, false, false, solve_status);
 
@@ -560,7 +560,7 @@ public
       // For equations are expected to only have one body equation at this point
       case Equation.FOR_EQUATION(body = {body as Equation.IF_EQUATION()}) algorithm
         // create indexed variable to trick matching algorithm to solve for it
-        indexed_var := BVariable.makeVarPtrCyclic(BVariable.getVar(cref), cref);
+        indexed_var := BVariable.makeVarPtrCyclic(BVariable.getVar(cref, sourceInfo()), cref);
         dummy := Iterator.dummy(eqn.iter);
         (body_slice, funcTree, status, implicit_index) := solveMultiStrongComponent(Slice.SLICE(Pointer.create(body), {}), {Slice.SLICE(indexed_var, {})}, funcTree, kind, implicit_index, slicing_map, dummy, varData, eqData);
         eqn.body := {Pointer.access(Slice.getT(body_slice))};
@@ -762,8 +762,8 @@ protected
       then (Equation.updateLHSandRHS(eqn, Expression.logicNegate(rhs), Expression.logicNegate(lhs)), Status.EXPLICIT, RelationInversion.FALSE);
 
       // simple solve tuples
-      case (exp as Expression.TUPLE(), _) guard(tupleSolvable(exp.elements, {BVariable.getVarPointer(cref)})) then (eqn, Status.EXPLICIT, RelationInversion.FALSE);
-      case (_, exp as Expression.TUPLE()) guard(tupleSolvable(exp.elements, {BVariable.getVarPointer(cref)})) then (Equation.swapLHSandRHS(eqn), Status.EXPLICIT, RelationInversion.FALSE);
+      case (exp as Expression.TUPLE(), _) guard(tupleSolvable(exp.elements, {BVariable.getVarPointer(cref, sourceInfo())})) then (eqn, Status.EXPLICIT, RelationInversion.FALSE);
+      case (_, exp as Expression.TUPLE()) guard(tupleSolvable(exp.elements, {BVariable.getVarPointer(cref, sourceInfo())})) then (Equation.swapLHSandRHS(eqn), Status.EXPLICIT, RelationInversion.FALSE);
 
       else (eqn, Status.UNPROCESSED, RelationInversion.FALSE);
     end match;
@@ -1452,7 +1452,7 @@ protected
       solve_status := Status.UNPROCESSED;
     else
       // check if the record parents occur (todo: vice versa?)
-      record_parent := BVariable.getParent(BVariable.getVarPointer(var_cref));
+      record_parent := BVariable.getParent(BVariable.getVarPointer(var_cref, sourceInfo()));
       if Util.isSome(record_parent) then
         (var_cref, solve_status) := getVarSlice(BVariable.getVarName(Util.getOption(record_parent)), eqn);
       else

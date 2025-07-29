@@ -562,7 +562,7 @@ public
               ComponentRef cref;
 
             case Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref))
-            then createEquation(NBVariable.getVar(cref), eqn, NBSolve.Status.EXPLICIT, simCodeIndices, kind, simcode_map, equation_map);
+            then createEquation(NBVariable.getVar(cref, sourceInfo()), eqn, NBSolve.Status.EXPLICIT, simCodeIndices, kind, simcode_map, equation_map);
 
             case Equation.WHEN_EQUATION()
             then createEquation(NBVariable.DUMMY_VARIABLE, eqn, NBSolve.Status.EXPLICIT, simCodeIndices, kind, simcode_map, equation_map);
