@@ -259,7 +259,7 @@ double getGBCtrlFilterValue()
       throwStreamPrint(NULL, "Flag -gbratio has to be between 0 and 1.");
     }
   } else {
-    filter = 0;
+    filter = 1.0;
   }
   return filter;
 }

@@ -39,7 +39,7 @@ GB_PID_VARIANTS pid_type = GB_PID_H312;
 enum GB_CTRL_METHOD ctrl_type = GB_CTRL_I;
 
 unsigned int use_fhr = FALSE;
-double use_filter = 0.0;;
+double use_filter = 1.0;;
 
 /**
  * @brief Determine the error threshold depending on the percentage of fast states
@@ -80,28 +80,7 @@ double getErrorThreshold(DATA_GBODE* gbData)
  */
 double CController(double* err_values, double* step_values, unsigned int err_order)
 {
-  return step_values[0];
-}
-
-/**
- * @brief simple step size control (see Hairer, etc.)
- *
- * @param err_values
- * @param step_values
- * @param err_order
- * @return double
- */
-double IController(double* err_values, double* step_values, unsigned int err_order)
-{
-  double fac = 0.9;
-  double facmax = 1.2;
-  double facmin = 0.5;
-  double beta = 1./(err_order+1);
-
-  if (err_values[0] > 0)
-    return step_values[0]*fmin(facmax, fmax(facmin, fac*pow(1./err_values[0], beta)));
-  else
-    return step_values[0]*facmax;
+  return 1.0;
 }
 
 /**
@@ -114,12 +93,17 @@ double IController(double* err_values, double* step_values, unsigned int err_ord
  */
 double PIController(double* err_values, double* step_values, unsigned int err_order)
 {
-  double fac = 0.9;
-  double facmax = 3.5;
-  double facmin = 0.5;
   unsigned int k = err_order+1;
   double beta  = 1./k;
   double beta1, beta2;
+  double err_n     = err_values[0];
+  double err_n1    = err_values[1];
+
+  // Fallback for incomplete history
+  if (err_n1 < DBL_EPSILON) {
+      double beta = 1.0 / k;
+      return pow(1. / err_n, 1. / k);
+  }
 
   switch (pi_type) {
       case GB_PI_UNKNOWN:
@@ -137,18 +121,7 @@ double PIController(double* err_values, double* step_values, unsigned int err_or
           break;
   }
 
-  double estimate;
-
-  if (err_values[0] < DBL_EPSILON)
-    return step_values[0]*facmax;
-
-  if (err_values[1] < DBL_EPSILON)
-    estimate = pow(1./err_values[0], beta);
-  else
-    estimate = pow(1./err_values[0], beta1)*pow(1./err_values[1], beta2);
-
-//  return step_values[0]*fmin(facmax, fmax(facmin, fac*estimate));
-  return step_values[0]*fac*estimate;
+  return pow(1.0 / err_n, beta1) * pow(1.0 / err_n1, beta2);
 }
 
 /**
@@ -161,14 +134,17 @@ double PIController(double* err_values, double* step_values, unsigned int err_or
  */
 double PIDController(double* err_values, double* step_values, unsigned int err_order)
 {
-  double fac = 0.9;
-  double facmax = 3.5;
-  double facmin = 0.5;
   unsigned int k = err_order + 1;
-  double beta  = 1./k;
-  double beta1 = 0.7/k;
-  double beta2 = -0.4/k;
   double alpha1, alpha2, alpha3;
+
+  double err_n     = err_values[0];
+  double err_n1    = err_values[1];
+  double err_n2    = err_values[2];
+
+  // Fallback for incomplete history
+  if (err_n1 < DBL_EPSILON || err_n2 < DBL_EPSILON) {
+      return pow(1.0 / err_n, 1.0 / k);
+  }
 
   switch (pid_type) {
       case GB_PID_UNKNOWN:
@@ -188,26 +164,10 @@ double PIDController(double* err_values, double* step_values, unsigned int err_o
           alpha3 = 0.21 / k;  // second previous error (D)
           break;
   }
-  double err_n     = err_values[0];
-  double err_n1    = err_values[1];
-  double err_n2    = err_values[2];
-  double h_n       = step_values[0];
 
-  // Handle pathological zero error
-  if (err_n < DBL_EPSILON)
-      return facmax * h_n;
-
-  // Fallback for incomplete history
-  if (err_n1 < DBL_EPSILON || err_n2 < DBL_EPSILON) {
-      double beta = 1.0 / k;
-      double h_raw = h_n * fac * pow(1.0 / err_n, beta);
-      return fmin(facmax * h_n, fmax(facmin * h_n, h_raw));
-  }
-
-  return h_n * fac *
-      pow(1.0 / err_n,  alpha1) *
-      pow(1.0 / err_n1, alpha2) *
-      pow(1.0 / err_n2, alpha3);
+  return pow(1.0 / err_n,  alpha1) *
+         pow(1.0 / err_n1, alpha2) *
+         pow(1.0 / err_n2, alpha3);
 }
 
 /**
@@ -222,11 +182,10 @@ double PIDController(double* err_values, double* step_values, unsigned int err_o
  */
 double computeGamma(double err_now, double err_prev, double h_now, double h_prev, double eta)
 {
-    double eps = 1e-14;
     double log_h_ratio = log(h_now / h_prev);
-    double log_e_ratio = log((err_now + eps) / (err_prev + eps));  // avoid division by zero
+    double log_e_ratio = log((err_now + DBL_EPSILON) / (err_prev + DBL_EPSILON));  // avoid division by zero
 
-    return eta * log_h_ratio / (log_e_ratio + eps);
+    return eta * log_h_ratio / (log_e_ratio + DBL_EPSILON);
 }
 
 /**
@@ -239,45 +198,51 @@ double computeGamma(double err_now, double err_prev, double h_now, double h_prev
  */
 double GenericController(double* err_values, double* step_values, unsigned int err_order)
 {
-  double fac    = 0.9;
-  double facmax = 3.5;
-  double facmin = 0.5;
+  double fac    = 0.85;
+  double facmax = 2.5;
+  double facmin = 0.2;
+
+  unsigned int k = err_order + 1;
 
   double err_n     = err_values[0];
   double err_n1    = err_values[1];
-  double err_n2    = err_values[2];
+
   double h_n       = step_values[0];
   double h_n1      = step_values[1];
 
-  double estimate;
+  double h_fac;
+
+  // Handle pathological zero error
+  if (err_n < DBL_EPSILON)
+      return facmax;
 
   switch (ctrl_type) {
       case GB_CTRL_I:
-          estimate = IController(err_values, step_values, err_order);
+          h_fac = pow(1./err_n, 1./k);
           break;
       case GB_CTRL_PI_33:
           pi_type = GB_PI_33;
-          estimate = PIController(err_values, step_values, err_order);
+          h_fac = PIController(err_values, step_values, err_order);
           break;
       case GB_CTRL_PI_34:
           pi_type = GB_PI_34;
-          estimate = PIController(err_values, step_values, err_order);
+          h_fac = PIController(err_values, step_values, err_order);
           break;
       case GB_CTRL_PI_42:
           pi_type = GB_PI_42;
-          estimate = PIController(err_values, step_values, err_order);
+          h_fac = PIController(err_values, step_values, err_order);
           break;
       case GB_CTRL_PID_H312:
           pid_type = GB_PID_H312;
-          estimate = PIDController(err_values, step_values, err_order);
+          h_fac = PIDController(err_values, step_values, err_order);
           break;
       case GB_CTRL_PID_SOEDERLIND:
           pid_type = GB_PID_SOEDERLIND;
-          estimate = PIDController(err_values, step_values, err_order);
+          h_fac = PIDController(err_values, step_values, err_order);
           break;
       case GB_CTRL_PID_STIFF:
           pid_type = GB_PID_STIFF;
-          estimate = PIDController(err_values, step_values, err_order);
+          h_fac = PIDController(err_values, step_values, err_order);
           break;
       default:
         throwStreamPrint(NULL, "Unknown step size control method.");
@@ -285,26 +250,29 @@ double GenericController(double* err_values, double* step_values, unsigned int e
 
   // Führer step size rejection control (FHR)
   if (use_fhr && h_n1 > DBL_EPSILON) {
-      // Compute gamma adaptively
+      // Compute gamma adaptively (Needs to be looked up in the literature), not suitable for PID Controller?!
       double eta = 0.1;
       double gamma = computeGamma(err_n, err_n1, h_n, h_n1, eta);
-      estimate = estimate * pow(h_n / h_n1, gamma);
+      h_fac = h_fac * pow(h_n / h_n1, gamma);
   }
 
   // Filtered step size control
   if (use_filter>0) {
-     estimate = use_filter * estimate + (1.0 - use_filter) * h_n;
+     h_fac = use_filter * h_fac + (1.0 - use_filter);
   }
-
-  return fmin(facmax*h_n, fmax(facmin*h_n, estimate));
+  
+  // Keep step size constant, if there are only small changes
+  if ((0.95 < h_fac) && (h_fac < 1.05)) {
+    return 1.0;
+  } else
+    return fmin(facmax, fmax(facmin, fac*h_fac));
 }
 
-double IIController(double* err_values, double* step_values, unsigned int err_order)
+double IController(double* err_values, double* step_values, unsigned int err_order)
 {
     ctrl_type = GB_CTRL_I;
     return GenericController(err_values, step_values, err_order);
 }
-
 
 double PIController_33(double* err_values, double* step_values, unsigned int err_order)
 {
@@ -358,7 +326,7 @@ gm_stepSize_control_function getControllFunc(enum GB_CTRL_METHOD ctrl_method)
   case GB_CTRL_CNST:
     return CController;
   case GB_CTRL_I:
-    return IIController;
+    return IController;
   case GB_CTRL_PI_33:
      return PIController_33;
   case GB_CTRL_PI_34:
