@@ -674,8 +674,7 @@ public
         then (tmp, getIndex(tmp));
 
         case StrongComponent.RESIZABLE_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
-          // for now create algorithms
-          // ToDo: actually create resizable code
+          // create a resizable equation
           eqn_ptr := Slice.getT(comp.eqn);
           eqn     := Pointer.access(eqn_ptr);
           ident   := Identifier.IDENTIFIER(eqn_ptr, comp.var_cref, true);

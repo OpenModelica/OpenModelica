@@ -362,6 +362,7 @@ public
             start := {};
             discreteVars := {};
             jacobians := {};
+
             if isSome(bdae.dae) then
               // DAEMode
               ode := {};
@@ -381,13 +382,13 @@ public
               if not listEmpty(no_ret) then
                 algebraic := listReverse(no_ret :: listReverse(algebraic));
               end if;
-              no_ret    := listAppend(event_clocks, no_ret);
+              // append event_clocks to no_return after adding them to algebraic
+              no_ret := listAppend(event_clocks, no_ret);
               if not listEmpty(no_ret) then
                 // append them to the end, compiler won't let me do it unless i double reverse the lists
-                allSim    := listReverse(listAppend(no_ret, listReverse(allSim)));
+                allSim := listReverse(listAppend(no_ret, listReverse(allSim)));
               end if;
             end if;
-            // append event_clocks to no_return after adding them to algebraic
 
             // add all entwined equations to all sim
             allSim := listAppend(List.flatten(list(SimStrongComponent.Block.collectEntwinedEquations(blck) for blck in allSim)), allSim);

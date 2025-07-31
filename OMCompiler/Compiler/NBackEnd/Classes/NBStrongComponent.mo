@@ -361,6 +361,7 @@ public
     (first_eqn, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
     var_scal_indices := list(eqn_to_var[e] for e in eqn_scal_indices);
 
+    // check if the full variable occurs and its independent
     if independent and Equation.isArrayEquation(eqn_ptr) and listLength(eqn_scal_indices) == eqn_size and listLength(var_scal_indices) == var_size then
       var_slice := Slice.SLICE(var_ptr, {});
       eqn_slice := Slice.SLICE(eqn_ptr, {});
