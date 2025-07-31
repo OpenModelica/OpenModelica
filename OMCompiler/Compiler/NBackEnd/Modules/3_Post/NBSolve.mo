@@ -81,6 +81,7 @@ public
       case Status.EXPLICIT    then "Solve.EXPLICIT";
       case Status.IMPLICIT    then "Solve.IMPLICIT";
       case Status.UNSOLVABLE  then "Solve.UNSOLVABLE";
+                              else "Solve.FAILED";
     end match;
   end statusString;
 
@@ -426,17 +427,24 @@ public
   algorithm
     if listLength(eqn_slice.indices) == 1 then
       replacements    := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
-      (eqn, funcTree) := Equation.singleSlice(eqn_ptr, listHead(eqn_slice.indices), Equation.sizes(eqn_ptr), cref, replacements, funcTree);
+      (eqn, funcTree, solve_status) := Equation.singleSlice(eqn_ptr, listHead(eqn_slice.indices), Equation.sizes(eqn_ptr), cref, replacements, funcTree);
     else
       (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(Pointer.access(eqn_ptr), cref, funcTree, kind, implicit_index, slicing_map, varData, eqData);
     end if;
+
+    // ToDo: if solve_status not explicit -> algebraic loop with residual and Status.IMPLICIT
     if solve_status < Status.UNSOLVABLE then
       solved_slice := Slice.SLICE(Pointer.create(eqn), eqn_slice.indices);
     else
       (solved_slice, funcTree, implicit_index, solve_status) := solveForVarSlice(eqn_slice, var_slice, funcTree, kind, implicit_index, slicing_map, varData, eqData);
     end if;
-    // ToDo: if solve_status not explicit -> algebraic loop with residual and Status.IMPLICIT
-    comp := StrongComponent.GENERIC_COMPONENT(cref, solved_slice);
+
+    // create a generic component if its a for-equation, otherwise create a sliced component
+    if Equation.isForEquation(Slice.getT(solved_slice)) then
+      comp := StrongComponent.GENERIC_COMPONENT(cref, solved_slice);
+    else
+      comp := StrongComponent.SLICED_COMPONENT(cref, var_slice, solved_slice, solve_status);
+    end if;
   end solveGenericEquationSlice;
 
   function solveSingleStrongComponent

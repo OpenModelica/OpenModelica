@@ -2652,12 +2652,13 @@ public
       input UnorderedMap<ComponentRef, Expression> replacements   "prepared replacement map";
       output Equation sliced_eqn                                  "scalar sliced equation";
       input output FunctionTree funcTree                          "func tree for solving";
+      output Solve.Status solve_status                            "solve success status";
     protected
       Equation eqn;
       list<Integer> location;
     algorithm
       eqn := Pointer.access(eqn_ptr);
-      sliced_eqn := match eqn
+      (sliced_eqn, solve_status) := match eqn
 
         // slice the equation
         case FOR_EQUATION() algorithm
@@ -2669,14 +2670,14 @@ public
           sliced_eqn := map(listHead(eqn.body), function Replacements.applySimpleExp(replacements = replacements));
           // solve the body if necessary
           if not ComponentRef.isEmpty(cref_to_solve) then
-            (sliced_eqn, funcTree, _, _) := Solve.solveBody(sliced_eqn, cref_to_solve, funcTree);
+            (sliced_eqn, funcTree, solve_status, _) := Solve.solveBody(sliced_eqn, cref_to_solve, funcTree);
           end if;
-        then sliced_eqn;
+        then (sliced_eqn, solve_status);
 
         // ToDo: arrays 'n stuff
 
         // equation that does not need to be sliced
-        else eqn;
+        else (eqn, NBSolve.Status.UNPROCESSED);
       end match;
     end singleSlice;
 
