@@ -285,6 +285,7 @@ case SIMCODE(__) then
   fmi2Status setString(ModelInstance* comp, const fmi2ValueReference vr, fmi2String value);
   fmi2Status setExternalFunction(ModelInstance* c, const fmi2ValueReference vr, const void* value);
   fmi2ValueReference mapInputReference2InputNumber(const fmi2ValueReference vr);
+  fmi2ValueReference mapParameterReference2ParameterNumber(const fmi2ValueReference vr);
   fmi2ValueReference mapOutputReference2OutputNumber(const fmi2ValueReference vr);
   fmi2ValueReference mapOutputReference2RealOutputDerivatives(const fmi2ValueReference vr);
   fmi2ValueReference mapInitialUnknownsdependentIndex(const fmi2ValueReference vr);
@@ -1168,7 +1169,7 @@ template mapInputAndOutputs(SimCode simCode)
 ""
 ::=
 match simCode
-case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, outputVars=outputVars))) then
+case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, paramVars=paramVars, outputVars=outputVars))) then
     <<
     /* function maps input references to a input index used in partialDerivatives */
     fmi2ValueReference mapInputReference2InputNumber(const fmi2ValueReference vr) {
@@ -1179,6 +1180,17 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, outputVars=ou
             return -1;
         }
     }
+
+    /* function maps parameter references to a parameter index used in partialDerivatives */
+    fmi2ValueReference mapParameterReference2ParameterNumber(const fmi2ValueReference vr) {
+        switch (vr) {
+          <%paramVars |> var hasindex index0 =>  match var case SIMVAR(name=name, type_=T_REAL(), causality=SOME(PARAMETER())) then
+          'case <%lookupVR(name, simCode)%>: return <%index0%>; break;' ;separator="\n"%>
+          default:
+            return -1;
+        }
+    }
+    
     /* function maps output references to a input index used in partialDerivatives */
     fmi2ValueReference mapOutputReference2OutputNumber(const fmi2ValueReference vr) {
         switch (vr) {
