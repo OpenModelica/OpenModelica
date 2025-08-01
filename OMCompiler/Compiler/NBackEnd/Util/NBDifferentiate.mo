@@ -1020,7 +1020,7 @@ public
 
       // Functions with one argument that differentiate "through"
       // d/dz f(x) -> f(dx/dz)
-      case (Expression.CALL()) guard(List.contains({"sum", "pre", "noEvent"}, name, stringEqual))
+      case (Expression.CALL()) guard(List.contains({"sum", "pre", "noEvent", "scalar", "vector", "matrix", "diagonal", "transpose", "symmetric", "skew"}, name, stringEqual))
       algorithm
         arg1 := match Call.arguments(exp.call)
           case {arg1} then arg1;
@@ -1133,7 +1133,6 @@ public
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
           then fail();
         end match;
-
       then ret;
 
       // Builtin function call with one argument
