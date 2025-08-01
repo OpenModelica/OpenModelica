@@ -252,7 +252,7 @@ end buildLexerCode;
 
     stTime := copyright;
 
-    cp := "encapsulated package " + outFileName +" // " + stTime + " \n\nconstant Integer yy_limit = ";
+    cp := "encapsulated package " + outFileName +" // " + stTime + "\n\nconstant Integer yy_limit = ";
 
     resTable := cp::{};
 

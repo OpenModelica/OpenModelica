@@ -1158,7 +1158,7 @@ public
           then List.flatten(result);
 
           else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Partition.Partition.toString(partition)});
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + Partition.Partition.toString(partition)});
           then fail();
         end match;
     end getPartitionVars;
@@ -1178,7 +1178,7 @@ public
         case StrongComponent.ALGEBRAIC_LOOP()       then List.flatten(list(getVars(Slice.getT(v), simcode_map) for v in comp.strict.iteration_vars));
         case StrongComponent.ALIAS()                then getStrongComponentVars(comp.original, simcode_map);
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with unknown reason for \n" + StrongComponent.toString(comp)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with unknown reason for\n" + StrongComponent.toString(comp)});
         then fail();
       end match;
     end getStrongComponentVars;

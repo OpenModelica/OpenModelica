@@ -265,7 +265,7 @@ void print_integer_array(const integer_array * source)
                 printf("\n");
             }
             if((k + 1) < n) {
-                printf("\n ================= \n");
+                printf("\n =================\n");
             }
         }
     }

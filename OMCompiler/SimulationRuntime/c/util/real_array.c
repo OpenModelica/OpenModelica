@@ -244,7 +244,7 @@ void print_real_array(const real_array *source)
                 printf("\n");
             }
             if((k + 1) < n) {
-                printf("\n ================= \n");
+                printf("\n =================\n");
             }
         }
     }
