@@ -1059,7 +1059,7 @@ int jacA_sym(double *t, double *y, double *yprime, double *delta,
   }
   // Use thread local analytic Jacobians
   JACOBIAN* t_jac = &(dasslData->jacColumns[omc_get_thread_num()]);
-  //printf("index= %d, t_jac->sizeCols= %d, t_jac->sizeRows = %d, t_jac->sizeTmpVars = %d \n",index, t_jac->sizeCols , t_jac->sizeRows, t_jac->sizeTmpVars);
+  //printf("index= %d, t_jac->sizeCols= %d, t_jac->sizeRows = %d, t_jac->sizeTmpVars = %d\n",index, t_jac->sizeCols , t_jac->sizeRows, t_jac->sizeTmpVars);
 #else
   JACOBIAN* t_jac = jac;
 #endif

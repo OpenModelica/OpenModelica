@@ -1579,8 +1579,8 @@ case KERNEL_FUNCTION(__) then
   // This odd arrangment and call is to get the commas in the right places
   // between the argumetns.
   // This puts correct comma placment even when the 'outvar' list is empty
-  let argStr = (functionArguments |> var => '<%funArgDefinitionKernelFunctionBody(var)%>' ;separator=", \n    ")
-  //let &argStr += (outVars |> var => '<%parFunArgDefinition(var)%>' ;separator=", \n")
+  let argStr = (functionArguments |> var => '<%funArgDefinitionKernelFunctionBody(var)%>' ;separator=",\n    ")
+  //let &argStr += (outVars |> var => '<%parFunArgDefinition(var)%>' ;separator=",\n")
   let _ = (outVars |> var =>
      funArgDefinitionKernelFunctionBody2(var, &argStr) ;separator=",\n")
 
@@ -3371,7 +3371,7 @@ case STMT_PARFOR(range=rng as RANGE(__)) then
       reconstructKernelArraysFromLooptupleVars(var, &reconstrucedArrays)
     )
 
-  let argStr = (loopPrlVars |> var => '<%parFunArgDefinitionFromLooptupleVar(var)%>' ;separator=", \n")
+  let argStr = (loopPrlVars |> var => '<%parFunArgDefinitionFromLooptupleVar(var)%>' ;separator=",\n")
 
   <<
 
