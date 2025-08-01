@@ -105,6 +105,7 @@ protected
 
   // Util imports
   import MetaModelica.Dangerous;
+  import Slice = NBSlice;
   import StringUtil;
   import UnorderedMap;
   import UnorderedSet;
@@ -534,6 +535,7 @@ protected
         SetPtr set_ptr, set1_ptr, set2_ptr;
         AliasSet set, set1, set2;
         ComponentRef cr1, cr2;
+        Pointer<Equation> new_eq_ptr;
 
       // one variable is connected to a parameter or constant
       case CREF_TPL(cr_lst = {cr1}) algorithm
@@ -566,48 +568,58 @@ protected
           set1_ptr := UnorderedMap.getOrFail(cr1, map);
           set2_ptr := UnorderedMap.getOrFail(cr2, map);
           set1 := Pointer.access(set1_ptr);
-          set2 := Pointer.access(set2_ptr);
-          set := EMPTY_ALIAS_SET;
 
           if referenceEq(set1_ptr, set2_ptr) then
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
-                "because they would create a loop. This would create an underdetermined Set!:\n\n" +
+            // check if there is a constant binding
+            if isSome(set1.const_opt) then
+              set2 := Pointer.access(set2_ptr);
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
+                "because they would create a loop and both have a constant binding. This would create an underdetermined Set!:\n\n" +
                 "Trying to merge: " + Equation.toString(eq) + "\n\n" +
                 AliasSet.toString(set1) + "\n" + AliasSet.toString(set2)});
-            fail();
-          elseif (isSome(set1.const_opt) and isSome(set2.const_opt)) then
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
-                "because both have a constant binding. This would create an overdetermined Set!:\n\n" +
-                AliasSet.toString(set1) + "\n" + AliasSet.toString(set2)});
-            fail();
-          elseif isSome(set1.const_opt) then
-            set.const_opt := set1.const_opt;
-          elseif isSome(set2.const_opt) then
-            set.const_opt := set2.const_opt;
-          end if;
+            end if;
+            // add eq to set1
+            new_eq_ptr := Pointer.create(eq);
+            set1.simple_equations := new_eq_ptr :: set1.simple_equations;
+            // update pointer of set1 -> set1
+            Pointer.update(set1_ptr, set1);
 
-          // try to append the shorter to the longer lists
-          if List.compareLength(set1.simple_equations, set2.simple_equations) > 0 then
-            set.simple_equations := Pointer.create(eq) :: Dangerous.listAppendDestroy(set2.simple_equations, set1.simple_equations);
           else
-            set.simple_equations := Pointer.create(eq) :: Dangerous.listAppendDestroy(set1.simple_equations, set2.simple_equations);
-          end if;
+            set2 := Pointer.access(set2_ptr);
+            set := EMPTY_ALIAS_SET;
+            if (isSome(set1.const_opt) and isSome(set2.const_opt)) then
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
+                  "because both have a constant binding. This would create an overdetermined Set!:\n\n" +
+                  AliasSet.toString(set1) + "\n" + AliasSet.toString(set2)});
+              fail();
+            elseif isSome(set1.const_opt) then
+              set.const_opt := set1.const_opt;
+            elseif isSome(set2.const_opt) then
+              set.const_opt := set2.const_opt;
+            end if;
 
-          // try to change as few pointer entries as possible
-          if List.compareLength(set1.simple_variables, set2.simple_variables) > 0 then
-            set.simple_variables := Dangerous.listAppendDestroy(set2.simple_variables, set1.simple_variables);
-            Pointer.update(set1_ptr, set);
-            for cr in set2.simple_variables loop
-              UnorderedMap.add(cr, set1_ptr, map);
-            end for;
-          else
-            set.simple_variables := Dangerous.listAppendDestroy(set2.simple_variables, set1.simple_variables);
-            Pointer.update(set2_ptr, set);
-            for cr in set1.simple_variables loop
-              UnorderedMap.add(cr, set2_ptr, map);
-            end for;
-          end if;
+            // try to append the shorter to the longer lists
+            if List.compareLength(set1.simple_equations, set2.simple_equations) > 0 then
+              set.simple_equations := Pointer.create(eq) :: Dangerous.listAppendDestroy(set2.simple_equations, set1.simple_equations);
+            else
+              set.simple_equations := Pointer.create(eq) :: Dangerous.listAppendDestroy(set1.simple_equations, set2.simple_equations);
+            end if;
 
+            // try to change as few pointer entries as possible
+            if List.compareLength(set1.simple_variables, set2.simple_variables) > 0 then
+              set.simple_variables := Dangerous.listAppendDestroy(set2.simple_variables, set1.simple_variables);
+              Pointer.update(set1_ptr, set);
+              for cr in set2.simple_variables loop
+                UnorderedMap.add(cr, set1_ptr, map);
+              end for;
+            else
+              set.simple_variables := Dangerous.listAppendDestroy(set2.simple_variables, set1.simple_variables);
+              Pointer.update(set2_ptr, set);
+              for cr in set1.simple_variables loop
+                UnorderedMap.add(cr, set2_ptr, map);
+              end for;
+            end if;
+          end if;
         elseif UnorderedMap.contains(cr1, map) then
           // Update set
           set_ptr := UnorderedMap.getOrFail(cr1, map);
@@ -818,6 +830,14 @@ protected
     end for;
   end getSimpleSets;
 
+  /*function filter extends Slice.filterCref;
+    input Real x = 0;
+  algorithm
+    if x == 0 then
+      x := 1;
+    end if;
+  end filter;*/
+
   function createReplacementRules
     "Creates replacement rules from a simple set by causalizing it and replacing the expressions in order"
     input AliasSet set;
@@ -838,6 +858,17 @@ protected
         list<StrongComponent> comps;
         AttributeCollector collector;
         Pointer<Pointer<Variable>> var_to_keep = Pointer.create(Pointer.create(NBVariable.DUMMY_VARIABLE));
+        Status status;
+        // part from above
+        Expression res, diff_res, expr;
+        DifferentiationArguments args;
+        array<array<Real>> all_diffs;
+        array<Real> lhs, column;
+        Integer index_i, idx_j, idx_i = 1;
+        list<ComponentRef> cref_lst;
+        list<Integer>  lst_enum;
+        Slice.filterCref filter;
+        UnorderedMap<ComponentRef, Integer>  int_to_cref;
 
       case SOME(const_eq) algorithm
         // there is a constant binding -> no variable will be kept and all will be replaced by a constant
@@ -847,6 +878,77 @@ protected
         (_, comps) := Causalize.simple(vars, eqs, kind);
         // create replacements from strong components
         Replacements.simple(comps, replacements);
+      then replacements;
+
+      case NONE() guard(listLength(set.simple_variables) == listLength(set.simple_equations)) algorithm
+        vars := VariablePointers.fromList(list(BVariable.getVarPointer(cr) for cr in set.simple_variables), true);
+        eqs := EquationPointers.fromList(set.simple_equations);
+
+        /*// causalize the system
+        (_, comps) := Causalize.simple(vars, eqs);
+        for i in comps loop
+          print("comp"+StrongComponent.toString(i)+"\n");
+        end for;
+        // create replacements from strong components
+        Replacements.simple(comps, replacements);*/
+
+        replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+        // for loop creating -> replacements for each var
+
+        // step 0: initialize matrix and lhs vector with zeros
+        all_diffs := arrayCreate(listLength(set.simple_equations),arrayCreate(0,0.0));
+        for i in 1:arrayLength(all_diffs) loop
+          arrayUpdate(all_diffs, i, arrayCreate(listLength(set.simple_variables),0.0)); // unique array
+        end for;
+        lhs := arrayCreate(listLength(set.simple_equations),0.0);
+        // each cref corresponds to one integer
+        lst_enum := List.intRange(listLength(set.simple_variables));
+        int_to_cref := UnorderedMap.fromLists(set.simple_variables, lst_enum, ComponentRef.hash, ComponentRef.isEqual);
+        // residual exp of simple_equations
+        idx_i := 1;
+        for eq_ptr in set.simple_equations loop
+          res := Equation.getResidualExp(Pointer.access(eq_ptr));
+          // update lhs
+          expr := Expression.map(res, function Replacements.applySimpleExp(replacements = replacements));
+          print("expr1 "+Expression.toString(expr)+"\n" );
+          if not Expression.containsCrefSet(expr, UnorderedSet.fromList(set.simple_variables, ComponentRef.hash, ComponentRef.isEqual)) then
+            expr := Expression.negate(SimplifyExp.simplify(expr));
+            print("expr23 "+Expression.toString(expr)+"\n" );
+            //lhs[idx_i] := Expression.realValue(expr);
+            arrayUpdate(lhs, idx_i,Expression.realValue(expr));
+          end if;
+
+          print("here2 "+Expression.toString(res)+"\n" );
+          args := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE);
+          // collect all necessary crefs for this equation
+          cref_lst := Equation.collectCrefs(Pointer.access(eq_ptr), function Equation.collectFromMap(check_map = UnorderedMap.fromLists(set.simple_variables, set.simple_variables, ComponentRef.hash, ComponentRef.isEqual)));
+          for cref in cref_lst loop
+            print("cref "+BVariable.toString(BVariable.getVar(cref))+"\n");
+          end for;
+          // differentiate equation by each variable in cref_lst
+          column := all_diffs[idx_i];
+          for cr in cref_lst loop
+            print("here3"+BVariable.toString(BVariable.getVar(cr))+"\n");
+            args.diffCref := cr;
+            diff_res := SimplifyExp.simplify(Differentiate.differentiateExpression(res, args));
+            print("here5"+Expression.toString(diff_res)+"\n" );
+            idx_j := UnorderedMap.getSafe(cr, int_to_cref, sourceInfo());
+            print(intString(idx_j)+"\n");
+            //all_diffs[idx_i][idx_j] := Expression.realValue(diff_res);
+            print("column" + List.toString(arrayList(column),realString)+"\n"); // test
+            arrayUpdate(column,idx_j,Expression.realValue(diff_res));
+          end for;
+          idx_i := idx_i + 1;
+
+          for arr in all_diffs loop // test
+            print(List.toString(arrayList(arr),realString)+"\n");
+          end for;
+        end for;
+
+        // print each line of the matrix
+        for arr in all_diffs loop
+          print(List.toString(arrayList(arr),realString)+"\n");
+        end for;
       then replacements;
 
       else algorithm
