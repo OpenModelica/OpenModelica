@@ -50,12 +50,14 @@ public:
   bool eventFilter(QObject *object, QEvent *event);
 public slots:
   void toggleSign(bool checked);
+  void switchAxis(bool checked);
   void showSetupDialog();
   void legendMenu(const QPoint&);
 private:
   Plot *mpPlot;
   PlotCurve *mpPlotCurve;
   QAction *mpToggleSignAction;
+  QAction* mpToggleAxisAction;
   QAction *mpSetupAction;
 protected:
   virtual QWidget *createWidget(const QwtLegendData &data) const;

@@ -1085,6 +1085,8 @@ Plot Window Menu
 
       -  *Toggle Sign* - Toggles the sign of curve.
 
+      -  *Plot on Right Y-Axis* - Display curve on right-side y-axis.
+
   -  *Titles* - Plot, axes and footer titles settings.
 
   -  *Legend* - Sets legend position and font.
