@@ -57,6 +57,7 @@ private:
   PlotGrid *mpPlotGrid;
   ScaleDraw *mpXScaleDraw;
   ScaleDraw *mpYScaleDraw;
+  ScaleDraw* mpYRightScaleDraw;
   PlotZoomer *mpPlotZoomer;
   PlotPanner *mpPlotPanner;
   PlotPicker *mpPlotPicker;
@@ -74,6 +75,7 @@ public:
   PlotGrid* getPlotGrid();
   ScaleDraw *getXScaleDraw() const {return mpXScaleDraw;}
   ScaleDraw *getYScaleDraw() const {return mpYScaleDraw;}
+  ScaleDraw* getYRightScaleDraw() const {return mpYRightScaleDraw;}
   PlotZoomer* getPlotZoomer();
   PlotPanner* getPlotPanner();
   QList<PlotCurve*> getPlotCurvesList();
@@ -81,8 +83,9 @@ public:
   void addPlotCurve(PlotCurve *pCurve);
   void removeCurve(PlotCurve *pCurve);
   QColor getUniqueColor(int index, int total);
-  void setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, double verticalAxisNumbersFontSize, double horizontalAxisTitleFontSize,
-                    double horizontalAxisNumbersFontSize, double footerFontSize, double legendFontSize);
+  void setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, double verticalAxisNumbersFontSize,
+      double rightVerticalAxisTitleFontSize, double rightVerticalAxisNumbersFontSize, double horizontalAxisTitleFontSize,
+      double horizontalAxisNumbersFontSize, double footerFontSize, double legendFontSize);
   static bool prefixableUnit(const QString &unit);
   static QString convertUnitToSymbol(const QString &displayUnit);
   static QString convertSymbolToUnit(const QString &symbol);
