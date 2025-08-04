@@ -1980,7 +1980,7 @@ public
       ComponentRef. Fails if the component ref cannot be found."
       input VariablePointers variables;
       input ComponentRef cref;
-      input Boolean report = true;
+      input Option<SourceInfo> info = NONE();
       output Pointer<Variable> var_ptr;
     protected
       Integer index;
@@ -1988,8 +1988,8 @@ public
       var_ptr := match UnorderedMap.get(cref, variables.map)
         case SOME(index) guard(index > 0) then ExpandableArray.get(index, variables.varArr);
         else algorithm
-          if report then
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
+          if Util.isSome(info) then
+            Error.addInternalError(getInstanceName() + " failed for " + ComponentRef.toString(cref), Util.getOption(info));
           end if;
         then fail();
       end match;

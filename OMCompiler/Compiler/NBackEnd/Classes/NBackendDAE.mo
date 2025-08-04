@@ -844,7 +844,7 @@ protected
         BackendInfo binfo;
         VariableKind varKind;
       case Variable.VARIABLE(backendinfo = binfo as BackendInfo.BACKEND_INFO(varKind = varKind as VariableKind.RECORD())) algorithm
-        varKind.children := list(VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(child.name)) for child in var.children);
+        varKind.children := list(VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(child.name), SOME(sourceInfo())) for child in var.children);
         // set parent for all children
         varKind.children := list(BVariable.setParent(child, var_ptr) for child in varKind.children);
         binfo.varKind := varKind;
@@ -1412,7 +1412,7 @@ protected
   algorithm
     try
       if not ComponentRef.isWild(cref) then
-        var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref), complete);
+        var  := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref), if complete then SOME(sourceInfo()) else NONE());
         cref := lowerComponentReferenceInstNode(cref, var);
         cref := ComponentRef.mapSubscripts(cref, function Subscript.mapExp(func = function lowerComponentReferenceExp(variables = variables, complete = true)));
       end if;
@@ -1494,7 +1494,7 @@ protected
     ComponentRef cref = ComponentRef.fromNode(node, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR);
     Pointer<Variable> var;
   algorithm
-    var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref));
+    var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref), SOME(sourceInfo()));
     node := InstNode.VAR_NODE(InstNode.name(node), var);
   end lowerInstNode;
 
