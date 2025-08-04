@@ -55,7 +55,7 @@ public:
   /** \brief Standard assignment operator.
     */
   adaptable_factory& operator=(adaptable_factory<Interface> const& first) {
-    this->func_ = first->func_;
+    this->func_ = first.func_;
     return *this;
   }
 
