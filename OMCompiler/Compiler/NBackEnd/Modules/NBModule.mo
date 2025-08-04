@@ -153,6 +153,7 @@ public
     "DAEMode
      This function is only allowed to create a list of new partitions for dae Mode."
     input output list<Partition.Partition> partitions;
+    input VariablePointers variables;
     input Pointer<Integer> uniqueIndex;
   end daeModeInterface;
 
