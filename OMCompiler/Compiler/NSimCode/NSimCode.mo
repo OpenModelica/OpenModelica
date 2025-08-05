@@ -320,10 +320,9 @@ public
             simCodeIndices := EMPTY_SIM_CODE_INDICES();
             funcTree := BackendDAE.getFunctionTree(bdae);
 
-            // get and replace all literals
-            collect_literals := function Expression.fakeMap(func = function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
-            funcTree := FunctionTreeImpl.mapExp(funcTree, collect_literals);
-            literals := UnorderedMap.keyList(literals_map);
+            // get and replace all literals in functions
+            collect_literals    := function Expression.fakeMap(func = function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
+            funcTree            := FunctionTreeImpl.mapExp(funcTree, collect_literals);
 
             // create sim vars before everything else
             residual_vars                       := BackendDAE.getLoopResiduals(bdae);
@@ -362,6 +361,7 @@ public
             start := {};
             discreteVars := {};
             jacobians := {};
+
             if isSome(bdae.dae) then
               // DAEMode
               ode := {};
@@ -381,13 +381,13 @@ public
               if not listEmpty(no_ret) then
                 algebraic := listReverse(no_ret :: listReverse(algebraic));
               end if;
-              no_ret    := listAppend(event_clocks, no_ret);
+              // append event_clocks to no_return after adding them to algebraic
+              no_ret := listAppend(event_clocks, no_ret);
               if not listEmpty(no_ret) then
                 // append them to the end, compiler won't let me do it unless i double reverse the lists
-                allSim    := listReverse(listAppend(no_ret, listReverse(allSim)));
+                allSim := listReverse(listAppend(no_ret, listReverse(allSim)));
               end if;
             end if;
-            // append event_clocks to no_return after adding them to algebraic
 
             // add all entwined equations to all sim
             allSim := listAppend(List.flatten(list(SimStrongComponent.Block.collectEntwinedEquations(blck) for blck in allSim)), allSim);
@@ -406,15 +406,11 @@ public
 
             (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := collectAlgebraicLoops(init, init_0, ode, algebraic, daeModeData, simCodeIndices, simcode_map);
 
-            for jac in jacobians loop
-              if Util.isSome(jac.jac_map) then
-                vars := SimVars.addSeedAndJacobianVars(vars, UnorderedMap.toList(Util.getOption(jac.jac_map)));
-              end if;
-            end for;
-
-            (jacA, simCodeIndices) := SimJacobian.createSimulationJacobian(bdae.ode, bdae.ode_event, simCodeIndices, simcode_map);
             if isSome(daeModeData) then
+              (jacA, simCodeIndices) := SimJacobian.createSimulationJacobian(Util.getOption(bdae.dae), simCodeIndices, simcode_map);
               daeModeData := DaeModeData.addJacobian(daeModeData, jacA);
+            else
+              (jacA, simCodeIndices) := SimJacobian.createSimulationJacobian(listAppend(bdae.ode, bdae.ode_event), simCodeIndices, simcode_map);
             end if;
 
             (jacB, simCodeIndices) := SimJacobian.empty("B", simCodeIndices);
@@ -424,11 +420,21 @@ public
             (jacH, simCodeIndices) := SimJacobian.empty("H", simCodeIndices);
             //jacobians := jacA :: jacB :: jacC :: jacD :: jacF :: jacobians;
             jacobians := listReverse(jacH :: jacF :: jacD :: jacC :: jacB :: jacA :: jacobians);
+
+            for jac in jacobians loop
+              if Util.isSome(jac.jac_map) then
+                vars := SimVars.addSeedAndJacobianVars(vars, UnorderedMap.toList(Util.getOption(jac.jac_map)));
+              end if;
+            end for;
+
             // jacobian blocks only from simulation jacobians
             jac_blocks := SimJacobian.getJacobiansBlocks({jacA, jacB, jacC, jacD, jacF, jacH});
             (jac_blocks, simCodeIndices) := SimStrongComponent.Block.fixIndices(jac_blocks, {}, simCodeIndices);
 
-            generic_loop_calls := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));
+            // generate the generic loop calls and replace literal expressions
+            generic_loop_calls  := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(simCodeIndices.generic_call_map));
+            generic_loop_calls  := list(SimGenericCall.mapShallow(call, collect_literals) for call in generic_loop_calls);
+            literals            := UnorderedMap.keyList(literals_map);
 
             (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, bdae.clockedInfo, simCodeIndices);
 

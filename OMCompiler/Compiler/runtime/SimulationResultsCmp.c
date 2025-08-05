@@ -189,7 +189,7 @@ static double deltaData(ErrorMethod errMethod, DataField *time, DataField *refti
     //interpolate result value at time t
     else
     {
-      //printf("xl %f   xr %f    tl %f    tr %f  \n", data->data[i], data->data[i2], time->data[i], time->data[i2]);
+      //printf("xl %f   xr %f    tl %f    tr %f\n", data->data[i], data->data[i2], time->data[i], time->data[i2]);
       val = (data->data[i2] - data->data[i])/(time->data[i2] - time->data[i])*(t - time->data[i])+data->data[i];
     }
     switch(errMethod){

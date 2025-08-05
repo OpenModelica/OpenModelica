@@ -211,7 +211,7 @@ void print_string_array(const string_array *source)
                 printf("\n");
             }
             if((k + 1) < n) {
-                printf("\n ================= \n");
+                printf("\n =================\n");
             }
         }
     }

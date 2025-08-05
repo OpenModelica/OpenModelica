@@ -166,7 +166,7 @@ public
       case Expression.ENUM_LITERAL() then exp.index; // ty !!
       case Expression.CLKCONST() then 0; // clk !!
       case Expression.CREF() algorithm
-        var := BVariable.getVar(exp.cref);
+        var := BVariable.getVar(exp.cref, sourceInfo());
       then stringHashDjb2Mod(BackendInfo.toString(var.backendinfo), mod);
       case Expression.TYPENAME() then 1; // ty !!
       case Expression.ARRAY() algorithm // ty !!
@@ -277,7 +277,7 @@ public
   algorithm
     if b then
       b := match exp
-        case Expression.CREF() then ComponentRef.isTime(exp.cref) or BVariable.checkCref(exp.cref, BVariable.isParamOrConst);
+        case Expression.CREF() then ComponentRef.isTime(exp.cref) or BVariable.checkCref(exp.cref, BVariable.isParamOrConst, sourceInfo());
         else true;
       end match;
     end if;
@@ -298,7 +298,7 @@ public
   algorithm
     if b then
       b := match exp
-        case Expression.CREF() then BVariable.checkCref(exp.cref, function BVariable.isContinuous(init = init));
+        case Expression.CREF() then BVariable.checkCref(exp.cref, function BVariable.isContinuous(init = init), sourceInfo());
         else true;
       end match;
     end if;

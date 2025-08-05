@@ -237,7 +237,7 @@ protected
           // 5. save replacements in bindings of alias variables
           // -----------------------------------
           (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
-          alias_vars := list(BVariable.getVarPointer(cref) for cref in UnorderedMap.keyList(replacements));
+          alias_vars := list(BVariable.getVarPointer(cref, sourceInfo()) for cref in UnorderedMap.keyList(replacements));
 
           // save new equations and compress affected arrays(some might have been removed)
           eqData.simulation := EquationPointers.compress(newEquations);
@@ -392,7 +392,7 @@ protected
           // 5. save replacements in bindings of alias variables
           // -----------------------------------
           (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
-          alias_vars := list(BVariable.getVarPointer(cref) for cref in UnorderedMap.keyList(replacements));
+          alias_vars := list(BVariable.getVarPointer(cref, sourceInfo()) for cref in UnorderedMap.keyList(replacements));
 
           // save new equations and compress affected arrays(some might have been removed)
           eqData.clocked    := EquationPointers.compress(newEquations);
@@ -609,12 +609,12 @@ protected
 
       // time, parameter or constant found (nothing happens)
       case Expression.CREF()
-        guard(BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref)) or ComponentRef.isTime(exp.cref))
+        guard(BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref, sourceInfo())) or ComponentRef.isTime(exp.cref))
       then tpl;
 
       // fail for record elements for now
       case Expression.CREF()
-        guard(Util.isSome(BVariable.getParent(BVariable.getVarPointer(exp.cref))))
+        guard(Util.isSome(BVariable.getParent(BVariable.getVarPointer(exp.cref, sourceInfo()))))
       then FAILED_CREF_TPL;
 
       // variable found
@@ -791,7 +791,7 @@ protected
 
       case SOME(const_eq) algorithm
         // there is a constant binding -> no variable will be kept and all will be replaced by a constant
-        vars := VariablePointers.fromList(list(BVariable.getVarPointer(cr) for cr in set.simple_variables), true);
+        vars := VariablePointers.fromList(list(BVariable.getVarPointer(cr, sourceInfo()) for cr in set.simple_variables), true);
         eqs := EquationPointers.fromList(const_eq :: set.simple_equations);
         // causalize the system
         (_, comps) := Causalize.simple(vars, eqs);
@@ -801,7 +801,7 @@ protected
 
       else algorithm
         // there is no constant binding -> all others will be replaced by one variable
-        (alias_vars, collector) := chooseVariableToKeep(list(BVariable.getVarPointer(cr) for cr in set.simple_variables), var_to_keep);
+        (alias_vars, collector) := chooseVariableToKeep(list(BVariable.getVarPointer(cr, sourceInfo()) for cr in set.simple_variables), var_to_keep);
         vars := VariablePointers.fromList(alias_vars);
         eqs := EquationPointers.fromList(set.simple_equations);
         // causalize the system
@@ -863,7 +863,7 @@ protected
     fixed_start_map := setStartFixed(attrcollector.start_map, attrcollector.fixed_map, set);
     if UnorderedMap.size(fixed_start_map) == 1 then
       new_start := SOME(listHead(UnorderedMap.valueList(fixed_start_map)));
-      fixed_var := BVariable.getVarPointer(UnorderedMap.firstKey(fixed_start_map));
+      fixed_var := BVariable.getVarPointer(UnorderedMap.firstKey(fixed_start_map), sourceInfo());
       BVariable.setFixed(fixed_var, false, true); // avoid having two fixed variables
       UnorderedMap.add(BVariable.getVarName(fixed_var), Expression.BOOLEAN(false), attrcollector.fixed_map); // update attribute collector
       BVariable.setFixed(var_to_keep, overwrite=true);

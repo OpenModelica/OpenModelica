@@ -50,7 +50,7 @@ protected
   import Partition = NBPartition;
   import Tearing = NBTearing;
   import BVariable = NBVariable;
-  import NBVariable.VariablePointer;
+  import NBVariable.{VariablePointer, VariablePointers, VarData};
 
 public
   function main extends Module.wrapper;
@@ -64,10 +64,11 @@ public
         local
           list<Partition.Partition> ode;
           EqData eqData;
+          VariablePointers variables;
 
-        case BackendDAE.MAIN(ode = ode, eqData = eqData as EqData.EQ_DATA_SIM())
+        case BackendDAE.MAIN(ode = ode, eqData = eqData as EqData.EQ_DATA_SIM(), varData = VarData.VAR_DATA_SIM(variables = variables))
           algorithm
-            bdae.dae := SOME(func(ode, eqData.uniqueIndex));
+            bdae.dae := SOME(func(ode, variables, eqData.uniqueIndex));
         then bdae;
 
         else algorithm
@@ -75,10 +76,8 @@ public
         then fail();
       end match;
 
-      // Modules
+      // fake causalize system to fulfill pipeline requirements
       bdae := Causalize.main(bdae, NBPartition.Kind.DAE);
-      bdae := Tearing.main(bdae, NBPartition.Kind.DAE);
-      bdae := Jacobian.main(bdae, NBPartition.Kind.DAE);
     else
       Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
     end try;
@@ -119,8 +118,9 @@ protected
           part.equations := EquationPointers.clone(part.equations, false);
           // inline record and tuple equations and then create residuals
           new_eqns := Pointer.create({});
+
           EquationPointers.map(part.equations, function Inline.inlineRecordTupleArrayEquation(
-              iter = Iterator.EMPTY(), variables = part.unknowns, new_eqns = new_eqns, set = dummy_set, index = uniqueIndex, inlineSimple = true));
+              iter = Iterator.EMPTY(), variables = variables, new_eqns = new_eqns, set = dummy_set, index = uniqueIndex, inlineSimple = true));
           part.equations := EquationPointers.addList(Pointer.access(new_eqns), EquationPointers.compress(part.equations));
           EquationPointers.mapPtr(part.equations, function Equation.createResidual(new = false));
 
@@ -130,7 +130,7 @@ protected
           // remove strong components
           part.strongComponents := NONE();
           // accumulate new partitions
-          then part :: new_partitions;
+          then if Partition.Partition.isEmpty(part) then new_partitions else part :: new_partitions;
         else new_partitions;
       end match;
     end for;

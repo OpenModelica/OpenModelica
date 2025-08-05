@@ -266,16 +266,26 @@ public
             if Jacobian.isDynamic(jacobian.jacType) then
               for var in seedVars loop
                 cref := SimVar.getName(var);
-                if BVariable.checkCref(cref, BVariable.isSeed) then
+                if BVariable.checkCref(cref, BVariable.isSeed, sourceInfo()) then
                   // FIXME this should not happen, fix it when collecting seedVars!
                   cref := BVariable.getPartnerCref(cref, BVariable.getVarSeed);
                 end if;
                 UnorderedMap.add(cref, var.index, idx_map);
-                if BVariable.checkCref(cref, BVariable.isState) then
+                if BVariable.checkCref(cref, BVariable.isState, sourceInfo()) then
                   cref := BVariable.getPartnerCref(cref, BVariable.getVarDer);
                   UnorderedMap.add(cref, var.index, idx_map);
                 end if;
               end for;
+
+              // also add residuals if its DAE Mode
+              if jacobian.jacType == NBJacobian.JacobianType.DAE then
+                for var in resVars loop
+                  cref := SimVar.getName(var);
+                  UnorderedMap.add(cref, var.index, idx_map);
+                  //cref := BVariable.getPartnerCref(cref, BVariable.getVarPDer);
+                  //UnorderedMap.add(cref, var.index, idx_map);
+                end for;
+              end if;
             else
               for var in seedVars loop
                 cref := SimVar.getName(var);
@@ -325,13 +335,11 @@ public
     end create;
 
     function createSimulationJacobian
-      input list<Partition.Partition> ode;
-      input list<Partition.Partition> ode_event;
+      input list<Partition.Partition> partitions;
       output SimJacobian simJac;
       input output SimCode.SimCodeIndices simCodeIndices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
     protected
-      list<Partition.Partition> partitions = listAppend(ode, ode_event);
       list<BackendDAE> jacobians = {};
       BackendDAE simJacobian;
       Option<SimJacobian> simJac_opt;

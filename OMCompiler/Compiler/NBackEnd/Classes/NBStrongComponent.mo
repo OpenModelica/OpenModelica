@@ -355,12 +355,13 @@ public
     UnorderedMap<ComponentRef, EvalOrder> order;
   algorithm
     // get and save sliced variable and equation
-    var_ptr := BVariable.getVarPointer(cref_to_solve);
+    var_ptr := BVariable.getVarPointer(cref_to_solve, sourceInfo());
     eqn_ptr := EquationPointers.getEqnAt(eqns, eqn_arr_idx);
     (first_var, var_size) := mapping.var_AtS[var_arr_idx];
     (first_eqn, eqn_size) := mapping.eqn_AtS[eqn_arr_idx];
     var_scal_indices := list(eqn_to_var[e] for e in eqn_scal_indices);
 
+    // check if the full variable occurs and its independent
     if independent and Equation.isArrayEquation(eqn_ptr) and listLength(eqn_scal_indices) == eqn_size and listLength(var_scal_indices) == var_size then
       var_slice := Slice.SLICE(var_ptr, {});
       eqn_slice := Slice.SLICE(eqn_ptr, {});
@@ -494,10 +495,10 @@ public
     Pointer<Equation> eqn = Slice.getT(eqn_slice);
   algorithm
     comp := match Pointer.access(eqn)
-      case Equation.SCALAR_EQUATION() then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn)))), eqn, NBSolve.Status.EXPLICIT);
-      case Equation.ARRAY_EQUATION()  then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn)))), eqn, NBSolve.Status.EXPLICIT);
-      case Equation.RECORD_EQUATION() then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn)))), eqn, NBSolve.Status.EXPLICIT);
-      case Equation.IF_EQUATION()     then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn)))), eqn, NBSolve.Status.EXPLICIT);
+      case Equation.SCALAR_EQUATION() then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn))), sourceInfo()), eqn, NBSolve.Status.EXPLICIT);
+      case Equation.ARRAY_EQUATION()  then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn))), sourceInfo()), eqn, NBSolve.Status.EXPLICIT);
+      case Equation.RECORD_EQUATION() then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn))), sourceInfo()), eqn, NBSolve.Status.EXPLICIT);
+      case Equation.IF_EQUATION()     then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn))), sourceInfo()), eqn, NBSolve.Status.EXPLICIT);
       case Equation.FOR_EQUATION()    then SLICED_COMPONENT(ComponentRef.EMPTY(), Slice.SLICE(Pointer.create(NBVariable.DUMMY_VARIABLE), {}), eqn_slice, NBSolve.Status.EXPLICIT);
       // ToDo: the other types
       else algorithm
@@ -1003,7 +1004,7 @@ protected
     algorithm
       // if the dependency is a state add itself, otherwise add the dependencies already saved
       // (those are known to be states). ToDo: avoid this check by adding state self dependency beforehand?
-      if BVariable.checkCref(dep, BVariable.isState) then
+      if BVariable.checkCref(dep, BVariable.isState, sourceInfo()) then
         UnorderedSet.add(dep, set);
       else
         for tmp in UnorderedMap.getSafe(dep, map, sourceInfo()) loop

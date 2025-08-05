@@ -64,12 +64,12 @@ algorithm
           // call the translator
         if result then
           modast=Translate.transform(matstart);
-          //print("\n ********* Final Abstract Syntax tree ************ \n");
+          //print("\n ********* Final Abstract Syntax tree ************\n");
           //print(anyString(modast));
 
           unparsed=Dump.unparseStr(modast,false);
 
-          print("\n Translated Modelica Code \n");
+          print("\n Translated Modelica Code\n");
           print("\n");
           print(unparsed);
           print("\n");

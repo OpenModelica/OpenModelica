@@ -1464,7 +1464,7 @@ algorithm
   Print.printBuf(System.gettext("Copyright © 2019 Open Source Modelica Consortium (OSMC)\n"));
   Print.printBuf(System.gettext("Distributed under OMSC-PL and GPL, see www.openmodelica.org\n\n"));
   //Print.printBuf("Please check the System Guide for full information about flags.\n");
-  Print.printBuf(System.gettext("Usage: omc [Options] (Model.mo | Script.mos) [Libraries | .mo-files] \n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n             The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n"));
+  Print.printBuf(System.gettext("Usage: omc [Options] (Model.mo | Script.mos) [Libraries | .mo-files]\n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n             The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n"));
   Print.printBuf(System.gettext("\n* Options:\n"));
   Print.printBuf(printAllConfigFlags());
   Print.printBuf(System.gettext("\nFor more details on a specific topic, use --help=topics or help(\"topics\")\n\n"));
@@ -1477,10 +1477,10 @@ algorithm
   Print.printBuf(System.gettext("                            * Model_init.xml    The initial values.\n"));
   //Print.printBuf("\tomc Model.mof            will produce flattened Model on standard output\n");
   Print.printBuf(System.gettext("  omc Script.mos           will run the commands from Script.mos.\n"));
-  Print.printBuf(System.gettext("  omc Model.mo Modelica    will first load the Modelica library and then produce \n                            flattened Model on standard output.\n"));
-  Print.printBuf(System.gettext("  omc Model1.mo Model2.mo  will load both Model1.mo and Model2.mo, and produce \n                            flattened Model1 on standard output.\n"));
-  Print.printBuf(System.gettext("  *.mo (Modelica files) \n"));
-  //Print.printBuf("\t*.mof (Flat Modelica files) \n");
+  Print.printBuf(System.gettext("  omc Model.mo Modelica    will first load the Modelica library and then produce\n                            flattened Model on standard output.\n"));
+  Print.printBuf(System.gettext("  omc Model1.mo Model2.mo  will load both Model1.mo and Model2.mo, and produce\n                            flattened Model1 on standard output.\n"));
+  Print.printBuf(System.gettext("  *.mo (Modelica files)\n"));
+  //Print.printBuf("\t*.mof (Flat Modelica files)\n");
   Print.printBuf(System.gettext("  *.mos (Modelica Script files)\n\n"));
   Print.printBuf(System.gettext("For available simulation flags, use --help=simulation.\n\n"));
   Print.printBuf(System.gettext("Documentation is available in the built-in package OpenModelica.Scripting or\nonline <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.html>.\n"));

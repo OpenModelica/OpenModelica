@@ -178,7 +178,7 @@ public
     entries := UnorderedMap.toList(replacements);
     for entry in entries loop
       (aliasCref, replacement) := entry;
-      var_ptr := BVariable.getVarPointer(aliasCref);
+      var_ptr := BVariable.getVarPointer(aliasCref, sourceInfo());
       var := Pointer.access(var_ptr);
       var.binding := Binding.update(var.binding, replacement);
       Pointer.update(var_ptr, var);
@@ -243,7 +243,7 @@ public
   algorithm
     cref := UnorderedMap.get(BVariable.getVarName(var_ptr), replacements);
     if Util.isSome(cref) then
-      var_ptr := BVariable.getVarPointer(Util.getOption(cref));
+      var_ptr := BVariable.getVarPointer(Util.getOption(cref), sourceInfo());
     end if;
   end replaceVarPtr;
 

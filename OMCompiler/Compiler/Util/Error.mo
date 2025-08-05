@@ -581,7 +581,7 @@ public constant ErrorTypes.Message OPERATOR_FUNCTION_NOT_EXPECTED = ErrorTypes.M
 public constant ErrorTypes.Message OPERATOR_FUNCTION_EXPECTED = ErrorTypes.MESSAGE(253, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("'operator record' classes may only contain elements of type 'operator function'; %s has restriction '%s'."));
 public constant ErrorTypes.Message STRUCTURAL_SINGULAR_INITIAL_SYSTEM = ErrorTypes.MESSAGE(254, ErrorTypes.SYMBOLIC(), ErrorTypes.ERROR(),
-  Gettext.gettext("Initialization problem is structurally singular, error found sorting equations \n %s for variables \n %s"));
+  Gettext.gettext("Initialization problem is structurally singular, error found sorting equations\n %s for variables\n %s"));
 public constant ErrorTypes.Message UNFIXED_PARAMETER_WITH_BINDING = ErrorTypes.MESSAGE(255, ErrorTypes.SYMBOLIC(), ErrorTypes.WARNING(),
   Gettext.gettext("The parameter %s has fixed = false and a binding equation %s = %s, which is probably redundant.\nSetting fixed = false usually means there is an additional initial equation to determine the parameter value. The binding was ignored by old Modelica tools, but this is not according to the Modelica specification. Please remove the parameter binding, or bind the parameter to another parameter with fixed = false and no binding."));
 public constant ErrorTypes.Message UNFIXED_PARAMETER_WITH_BINDING_31 = ErrorTypes.MESSAGE(256, ErrorTypes.SYMBOLIC(), ErrorTypes.WARNING(),

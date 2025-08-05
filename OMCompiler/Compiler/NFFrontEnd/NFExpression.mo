@@ -1012,7 +1012,7 @@ public
     try
       INTEGER(value=value) := exp;
     else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because expression is not an integer: \n"
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because expression is not an integer:\n"
         + toString(exp)});
       fail();
     end try;
@@ -5072,7 +5072,7 @@ public
       case RANGE(step = SOME(step))  then RANGE(range.ty, range.stop, SOME(negate(step)), range.start);
       case RANGE()                   then RANGE(range.ty, range.stop, SOME(INTEGER(-1)), range.start);
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because expression is not a range: \n"
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because expression is not a range:\n"
           + toString(range)});
       then fail();
     end match;
@@ -5099,7 +5099,7 @@ public
       then retype(range);
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because expression is not a range: \n"
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because expression is not a range:\n"
           + toString(range)});
       then fail();
     end match;

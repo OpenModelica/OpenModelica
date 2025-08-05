@@ -78,6 +78,28 @@ public
     Boolean resizable;
   end WHEN_GENERIC_CALL;
 
+  function mapShallow
+    input output SimGenericCall call;
+    input mapExp func;
+    partial function mapExp
+      input output Expression exp;
+    end mapExp;
+  algorithm
+    call := match call
+      case SINGLE_GENERIC_CALL() algorithm
+        call.lhs := func(call.lhs);
+        call.rhs := func(call.rhs);
+      then call;
+      case IF_GENERIC_CALL() algorithm
+        call.branches := list(SimBranch.mapShallow(branch, func) for branch in call.branches);
+      then call;
+      case WHEN_GENERIC_CALL() algorithm
+        call.branches := list(SimBranch.mapShallow(branch, func) for branch in call.branches);
+      then call;
+      else call;
+    end match;
+  end mapShallow;
+
   function toString
     input SimGenericCall call;
     output String str;
@@ -292,6 +314,25 @@ public
       Expression condition;
       list<Statement> body;
     end SIM_BRANCH_STMT;
+
+    function mapShallow
+      input output SimBranch branch;
+      input mapExp func;
+    protected
+      partial function mapExp
+        input output Expression exp;
+      end mapExp;
+    algorithm
+      branch := match branch
+        case SIM_BRANCH() algorithm
+          branch.body := list((func(Util.tuple21(tpl)), func(Util.tuple22(tpl))) for tpl in branch.body);
+        then branch;
+        case SIM_BRANCH_STMT() algorithm
+          branch.body := list(Statement.mapExp(stmt, func) for stmt in branch.body);
+        then branch;
+        else branch;
+      end match;
+    end mapShallow;
 
     function toString
       input SimBranch branch;

@@ -6536,7 +6536,7 @@ algorithm
       equation
         allClassPaths = getAllClassPathsRecursive(className, b, SymbolTable.getAbsyn());
         print("Number of classes to check: " + intString(listLength(allClassPaths)) + "\n");
-        // print ("All paths: \n" + stringDelimitList(List.map(allClassPaths, AbsynUtil.pathString), "\n") + "\n");
+        // print ("All paths:\n" + stringDelimitList(List.map(allClassPaths, AbsynUtil.pathString), "\n") + "\n");
         failed = checkAll(cache, env, allClassPaths, msg, not Testsuite.isRunning(), 0);
         ret = "Number of classes checked / failed: " + intString(listLength(allClassPaths)) + "/" + intString(failed);
       then

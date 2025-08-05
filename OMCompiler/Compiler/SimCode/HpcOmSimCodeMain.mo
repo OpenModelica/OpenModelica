@@ -631,7 +631,7 @@ algorithm
       then tmpContractedTasks;
     case(_,_,_,_,_,(bigTaskIdx, bigTaskChilds, mergedGroupExecTime),tmpContractedTasks)
       equation
-        //print("applyGRSForLevelFixSchedulerLevel:In with current group size: " + realString(mergedGroupExecTime) + " \n");
+        //print("applyGRSForLevelFixSchedulerLevel:In with current group size: " + realString(mergedGroupExecTime) + "\n");
         mergedGroupExecTime = mergedGroupExecTime + HpcOmTaskGraph.getExeCostReqCycles(arrayGet(iSortedLevelTasks, iCurrentSmallTask), iTaskGraphMeta);
         if(realGe(mergedGroupExecTime, iCriticalSize)) then
           if not listEmpty(bigTaskChilds) then
@@ -648,7 +648,7 @@ algorithm
           tmpContractedTasks = applyGRSForLevelFixSchedulerLevel(iTaskGraphMeta, iContractedTasks, iCriticalSize, iSortedLevelTasks, iCurrentSmallTask, (bigTaskIdx-1, {}, mergedGroupExecTime), tmpContractedTasks);
         else
           //print("applyGRSForLevelFixSchedulerLevel: merging small node " + intString(arrayGet(iSortedLevelTasks ,iCurrentSmallTask)) + " with big task " + intString(arrayGet(iSortedLevelTasks ,bigTaskIdx)) + "\n");
-          //print("applyGRSForLevelFixSchedulerLevel: current group size: " + realString(mergedGroupExecTime) + " \n");
+          //print("applyGRSForLevelFixSchedulerLevel: current group size: " + realString(mergedGroupExecTime) + "\n");
           //merge small and big task into one
           tmpContractedTasks = applyGRSForLevelFixSchedulerLevel(iTaskGraphMeta, iContractedTasks, iCriticalSize, iSortedLevelTasks, iCurrentSmallTask+1, (bigTaskIdx, arrayGet(iSortedLevelTasks, iCurrentSmallTask)::bigTaskChilds, mergedGroupExecTime), tmpContractedTasks);
         end if;

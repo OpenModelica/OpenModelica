@@ -1,7 +1,7 @@
 package ParserGenerator
   import System;
   import Util;
-  import List; 
+  import List;
   import OMCC.copyright;
 /*
 
@@ -199,7 +199,7 @@ package ParserGenerator
           cp := "         then ();\n";
           resTable := cp::resTable;
       else
-        print("Rule "+intString(i)+" not found: \n");
+        print("Rule "+intString(i)+" not found:\n");
         print(regexError);
         print(rest);
         fail();
@@ -457,7 +457,7 @@ package ParserGenerator
   algorithm
 
     stTime := copyright;
-    cp := "encapsulated package " + outFileName +" // " + stTime + " \n\nconstant Integer YYFINAL = ";
+    cp := "encapsulated package " + outFileName +" // " + stTime + "\n\nconstant Integer YYFINAL = ";
     resTable := cp::{};
 
     // Insert YYFINAL

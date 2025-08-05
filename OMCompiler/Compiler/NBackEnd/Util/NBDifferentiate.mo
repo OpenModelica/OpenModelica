@@ -182,6 +182,7 @@ public
         DifferentiationArguments diffArguments;
         Tearing strict;
         Option<Tearing> casual;
+        Boolean linear;
 
       case StrongComponent.SINGLE_COMPONENT() algorithm
         new_var := differentiateVariablePointer(comp.var, diffArguments_ptr);
@@ -221,7 +222,9 @@ public
       case StrongComponent.ALGEBRAIC_LOOP() algorithm
         strict := differentiateTearing(comp.strict, diffArguments_ptr, idx, context, name);
         casual := Util.applyOption(comp.casual, function differentiateTearing(diffArguments_ptr=diffArguments_ptr, idx=idx, context=context, name=name));
-      then StrongComponent.ALGEBRAIC_LOOP(-1, strict, casual, comp.linear, false, comp.homotopy, comp.status);
+        // if we differentiate for jacobian, the algebraic loops will always be linear
+        linear := match Pointer.access(diffArguments_ptr) case DIFFERENTIATION_ARGUMENTS(diffType = NBDifferentiate.DifferentiationType.JACOBIAN) then true; else comp.linear; end match;
+      then StrongComponent.ALGEBRAIC_LOOP(-1, strict, casual, linear, false, comp.homotopy, comp.status);
 
       case StrongComponent.ENTWINED_COMPONENT() algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " not implemented for entwined equation:\n" + StrongComponent.toString(comp)});
@@ -616,7 +619,7 @@ public
       case _ guard(diffArguments.diffType == DifferentiationType.FUNCTION) then Pointer.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF(cref = ComponentRef.EMPTY()) then Pointer.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF(cref = ComponentRef.WILD())  then Pointer.create(NBVariable.DUMMY_VARIABLE);
-      case Expression.CREF() then BVariable.getVarPointer(exp.cref);
+      case Expression.CREF() then BVariable.getVarPointer(exp.cref, sourceInfo());
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
       then fail();
@@ -796,7 +799,7 @@ public
     diff_ptr := match crefExp
       case Expression.CREF(cref = ComponentRef.EMPTY()) then Pointer.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF(cref = ComponentRef.WILD())  then Pointer.create(NBVariable.DUMMY_VARIABLE);
-      case Expression.CREF() then BVariable.getVarPointer(crefExp.cref);
+      case Expression.CREF() then BVariable.getVarPointer(crefExp.cref, sourceInfo());
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Variable.toString(var)
           + " because the result is expected to be a variable but turned out to be " + Expression.toString(crefExp) + "."});
@@ -1017,7 +1020,7 @@ public
 
       // Functions with one argument that differentiate "through"
       // d/dz f(x) -> f(dx/dz)
-      case (Expression.CALL()) guard(List.contains({"sum", "pre", "noEvent"}, name, stringEqual))
+      case (Expression.CALL()) guard(List.contains({"sum", "pre", "noEvent", "scalar", "vector", "matrix", "diagonal", "transpose", "symmetric", "skew"}, name, stringEqual))
       algorithm
         arg1 := match Call.arguments(exp.call)
           case {arg1} then arg1;
@@ -1130,7 +1133,6 @@ public
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
           then fail();
         end match;
-
       then ret;
 
       // Builtin function call with one argument
@@ -2037,7 +2039,7 @@ public
          DIFFERENTIATION_ARGUMENTS(diff_map = SOME(diff_map), diffType = DifferentiationType.JACOBIAN))
         guard(UnorderedMap.contains(BVariable.getVarName(residualVar), diff_map))
         algorithm
-          diffedResidualVar := BVariable.getVarPointer(UnorderedMap.getOrFail(BVariable.getVarName(residualVar), diff_map));
+          diffedResidualVar := BVariable.getVarPointer(UnorderedMap.getOrFail(BVariable.getVarName(residualVar), diff_map), sourceInfo());
           attr.residualVar := SOME(diffedResidualVar);
       then attr;
 

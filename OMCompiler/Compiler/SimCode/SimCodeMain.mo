@@ -364,7 +364,7 @@ algorithm
 
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       true = numProc == 0;
-      print("hpcom computes the ideal number of processors. If you want to set the number manually, use the flag +n=_ \n");
+      print("hpcom computes the ideal number of processors. If you want to set the number manually, use the flag +n=_\n");
     then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths,program, simSettingsOpt, recordDecls, literals, args);
 
     case(_, _, _, _, _, _, _, _, _,_, _, _, _, _) equation
@@ -1089,7 +1089,7 @@ algorithm
   File.open(file, fileName, File.Mode.Write);
   File.write(file, infoHeader + "\n");
   File.write(file, "<h1>" + AbsynUtil.pathString(simCode.modelInfo.name) + "</h1>\n");
-  File.write(file, "<p> <i>" + simCode.modelInfo.description + "</i> </p> \n");
+  File.write(file, "<p> <i>" + simCode.modelInfo.description + "</i> </p>\n");
   File.write(file, "<h4> <u> Information </u> </h4>" + info + "\n");
   File.write(file, "<h4> <u> Revisions </u> </h4>" + revisions + "\n");
 end exportHTMLDocumentation;

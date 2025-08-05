@@ -2453,7 +2453,7 @@ algorithm
           else
             algStr :=  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg, source)});
             message := ComponentReference.printComponentRefStr(BackendVariable.varCref(v));
-            message := stringAppendList({"Inverse Algorithm needs to be solved for ", message, " in \n", algStr, "This has not been implemented yet.\n"});
+            message := stringAppendList({"Inverse Algorithm needs to be solved for ", message, " in\n", algStr, "This has not been implemented yet.\n"});
             Error.addInternalError(message, sourceInfo());
             fail();
           end try;
@@ -7051,7 +7051,7 @@ algorithm
     // inverse algorithms
     case (BackendDAE.ALGORITHM(alg=alg as DAE.ALGORITHM_STMTS(algStatements), source=source, expand=crefExpand, attr=eqAttr)::_, _) equation
       if debug then
-        print("createSingleAlgorithmCode -> \n");
+        print("createSingleAlgorithmCode ->\n");
         BackendDump.dumpAlgorithms({DAE.ALGORITHM_STMTS(algStatements)}, 0);
       end if;
 
@@ -9190,7 +9190,7 @@ algorithm
     // dynamic tearing
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,eqs=eqs, crefs=crefs), SOME(SimCode.NONLINEARSYSTEM())))
       equation
-        s = "strict set: \n"+intString(idx) +": "+ " (NONLINEAR) index:"+intString(idxNLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
+        s = "strict set:\n"+intString(idx) +": "+ " (NONLINEAR) index:"+intString(idxNLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
         s = s+"crefs: "+stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr)," , ")+"\n";
         s = s+"\t";
         s = s+stringDelimitList(List.map(eqs,simEqSystemString),"\n\t");
@@ -9502,7 +9502,7 @@ algorithm
     SimCode.DaeModeData dmd;
     SimCode.SparsityPattern sparsity, sparsityT;
   case(SOME(dmd)) algorithm
-    print("\ndaeMode: \n" + UNDERLINE + "\n");
+    print("\ndaeMode:\n" + UNDERLINE + "\n");
     str := "residual Equations:\n"+UNDERLINE+"\n";
     print(str);
     dumpSimEqSystemLst(List.flatten(dmd.daeEquations),"\n");
@@ -10776,7 +10776,7 @@ algorithm outOrder := matchcontinue(inDlow, inEqSystems)
     then variableIndex3;
   else
     equation
-      print(" Failure in setVariableDerIndex \n");
+      print(" Failure in setVariableDerIndex\n");
     then fail();
  end matchcontinue;
 end setVariableDerIndex;
@@ -10818,11 +10818,11 @@ algorithm outOrder := matchcontinue(inDlow, syst)
       // fcall(Flags.FAILTRACE, print, "filtered eq's " + eq_str + "\n");
       (variableIndex, firstOrderVars) = List.map2_2(derExps, locateDerAndSerachOtherSide, eqns, eqns);
       if Flags.isSet(Flags.FAILTRACE) then
-        print("united variables \n");
+        print("united variables\n");
       end if;
       firstOrderVarsFiltered = List.fold(firstOrderVars, List.union, {});
       if Flags.isSet(Flags.FAILTRACE) then
-        print("list fold variables \n");
+        print("list fold variables\n");
       end if;
       variableIndex = setFirstOrderInSecondOrderVarIndex(variableIndex, firstOrderVarsFiltered);
      // fcall(Flags.FAILTRACE, print, "Deriving Variable indexis:\n" + dumpVariableindex(variableIndex) + "\n");
@@ -10830,7 +10830,7 @@ algorithm outOrder := matchcontinue(inDlow, syst)
       variableIndex;
   else
       equation
-         print(" Failure in setVariableDerIndex2 \n");
+         print(" Failure in setVariableDerIndex2\n");
          then fail();
  end matchcontinue;
 end setVariableDerIndex2;
@@ -11003,7 +11003,7 @@ algorithm (out, sysOrdOneVars) := matchcontinue(derExp, inEqns, inEqnsOrg)
   case(_, (BackendDAE.IF_EQUATION())::eqs, _)
     equation
       if Flags.isSet(Flags.FAILTRACE) then
-        print("\nFound  if equation is not supported yet  searching for varibale index  \n");
+        print("\nFound  if equation is not supported yet  searching for varibale index\n");
       end if;
       (highestIndex, crefs) = locateDerAndSerachOtherSide(derExp, eqs, inEqnsOrg);
     then
@@ -11011,7 +11011,7 @@ algorithm (out, sysOrdOneVars) := matchcontinue(derExp, inEqns, inEqnsOrg)
  case(_, (BackendDAE.ALGORITHM())::eqs, _)
     equation
       if Flags.isSet(Flags.FAILTRACE) then
-        print("\nFound  algorithm is not supported yet  searching for varibale index  \n");
+        print("\nFound  algorithm is not supported yet  searching for varibale index\n");
       end if;
       (highestIndex, crefs) = locateDerAndSerachOtherSide(derExp, eqs, inEqnsOrg);
     then
@@ -11156,7 +11156,7 @@ algorithm (OutInteger1, OutInteger2):= matchcontinue(dae_low)
       then
         (nvar1, nvar2);
   else
-    equation print(" failure in dimensions  \n"); then fail();
+    equation print(" failure in dimensions\n"); then fail();
 end matchcontinue;
 end dimensions;
 
@@ -12735,7 +12735,7 @@ protected function createAllSCVarMapping0 "author: marcusw
 protected
   Integer simVarIdx;
 algorithm
-  //print("createAllSCVarMapping0: Mapping variable \n");
+  //print("createAllSCVarMapping0: Mapping variable\n");
   //dumpVar(iSimVar);
   //print(" to index " + intString(simVarIdx) + "\n");
   SimCodeVar.SIMVAR(index=simVarIdx) := iSimVar;

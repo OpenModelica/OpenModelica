@@ -223,11 +223,6 @@ OMS::OMS( QWidget* parent )
     QSizePolicy::Expanding, QSizePolicy::Expanding ));
   setCentralWidget( mainFrame_ );
 
-  // set frame backgroundcolor
-  QPalette palette;
-  palette.setColor( QPalette::Base, QColor(255,255,255) );
-  mainFrame_->setPalette( palette );
-
   layout_ = new QVBoxLayout( mainFrame_ );
   layout_->setContentsMargins(0, 0, 0, 0);
   layout_->setSpacing( 5 );

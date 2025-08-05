@@ -178,7 +178,7 @@ protected
       algorithm
         vars := match exp
           case Expression.CREF(cref = ComponentRef.WILD()) then {};
-          case Expression.CREF()    then {BVariable.getVarPointer(exp.cref)};
+          case Expression.CREF()    then {BVariable.getVarPointer(exp.cref, sourceInfo())};
           case Expression.TUPLE()   then List.flatten(list(getVarsExp(elem) for elem in exp.elements));
           else algorithm
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because function alias auxilliary has a return type that currently cannot be parsed: " + Expression.toString(exp)});
@@ -366,7 +366,7 @@ protected
 
     // do the function alias replacement
     if not stop then
-      eqn := Equation.map(eqn, function introduceFunctionAlias(map = map, aux_index = aux_index, iter = iter, init = init));
+      eqn := Equation.map(eqn, function introduceFunctionAlias(map = map, aux_index = aux_index, iter = iter, init = init), NONE(), Expression.fakeMap);
     end if;
   end introduceFunctionAliasEquation;
 
@@ -379,7 +379,17 @@ protected
     input Pointer<Integer> aux_index;
     input Iterator iter;
     input Boolean init;
+  protected
+    Iterator deep_iter;
   algorithm
+    // add local iterators to deep recursion
+    deep_iter := match exp
+      case Expression.CALL() then Iterator.expand(iter, exp.call);
+      else iter;
+    end match;
+    exp := Expression.mapShallow(exp, function introduceFunctionAlias(map = map, aux_index = aux_index, iter = deep_iter, init = init));
+
+    // use the original iterator for local analysis
     exp := match exp
       local
         Call call;
@@ -419,6 +429,7 @@ protected
   algorithm
     exp := match exp
       case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR()) then introduceAlias(exp, map, aux_index, iter, init);
+      case Expression.CALL(call = Call.TYPED_REDUCTION()) then introduceAlias(exp, map, aux_index, iter, init);
       else exp;
     end match;
   end introduceArrayConstructorAlias;

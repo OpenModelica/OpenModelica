@@ -732,7 +732,7 @@ public
                 sol := UnorderedMap.getSafe(var, full.solvabilities[eqn_idx], sourceInfo());
                 if Solvability.rank(sol) < Solvability.rank(Solvability.IMPLICIT()) then
                   // booleans or (todo: enumerations)
-                  if eqnIsDiscrete or not BVariable.checkCref(var, function BVariable.isContinuous(init = init)) then
+                  if eqnIsDiscrete or not BVariable.checkCref(var, function BVariable.isContinuous(init = init), sourceInfo()) then
                     // if the equation or cref type is boolean, it can only be solved if its isolated in the LHS or RHS
                     // Use solveSimple for this and check if status is EXPLICIT
                     (_, status, _) := Solve.solveSimple(Pointer.access(eqn_ptr), var);
@@ -754,8 +754,8 @@ public
                     else
                       // linear -> find all contained crefs and split them by kind. remove constants and save params / variables
                       linear_set  := Expression.extractCrefs(exp);
-                      linear_set  := UnorderedSet.filterOnFalse(linear_set, function BVariable.checkCref(func = BVariable.isConst));
-                      (param_set, var_set) := UnorderedSet.splitOnTrue(linear_set, function BVariable.checkCref(func = BVariable.isParamOrConst));
+                      linear_set  := UnorderedSet.filterOnFalse(linear_set, function BVariable.checkCref(func = BVariable.isConst, info = sourceInfo()));
+                      (param_set, var_set) := UnorderedSet.splitOnTrue(linear_set, function BVariable.checkCref(func = BVariable.isParamOrConst, info = sourceInfo()));
                       sol := Solvability.EXPLICIT_LINEAR(
                         pars = if UnorderedSet.isEmpty(param_set) then NONE() else SOME(param_set),
                         vars = if UnorderedSet.isEmpty(var_set) then NONE() else SOME(var_set));
@@ -1881,7 +1881,7 @@ public
       Solvability.update(cref, Solvability.EXPLICIT_LINEAR(NONE(), NONE()), sol_map);
       crefs := {cref};
     else
-      var := BVariable.getVarPointer(cref);
+      var := BVariable.getVarPointer(cref, sourceInfo());
       if BVariable.isRecord(var) then
         subs := ComponentRef.subscriptsAllFlat(cref);
         // get all Record children

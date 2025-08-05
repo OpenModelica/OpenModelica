@@ -1267,6 +1267,10 @@ algorithm
       equation
         File.write(file,"iteration variable for solving an algebraic loop");
       then ();
+    case BackendDAE.DAE_RESIDUAL_VAR()
+      equation
+        File.write(file,"residual variable for dae mode");
+      then ();
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"serializeVarKind failed for " + SimCodeUtil.simVarString(var)});

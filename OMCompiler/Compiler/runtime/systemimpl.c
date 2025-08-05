@@ -1715,7 +1715,7 @@ static int SystemImpl__getVariableValue(double timeStamp, void* timeValues, void
 
   if(valueFound == 0){
     // value could not be found in the dataset, what do we do?
-    printf("\n WARNING: timestamp(%f) outside simulation timeline \n", timeStamp);
+    printf("\n WARNING: timestamp(%f) outside simulation timeline\n", timeStamp);
     return 1;
   }
   return 0;
@@ -2713,7 +2713,7 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
       const char **flagName;
       const char **flagDesc;
       if (sphinx) {
-        cur += snprintf(cur, CHECK_NONNEGATIVE_BUFFER(), ":ref:`-%s=value <simflag-%s>` *or* -%s value \n%s\n", FLAG_NAME[i], FLAG_NAME[i], FLAG_NAME[i], desc[i]);
+        cur += snprintf(cur, CHECK_NONNEGATIVE_BUFFER(), ":ref:`-%s=value <simflag-%s>` *or* -%s value\n%s\n", FLAG_NAME[i], FLAG_NAME[i], FLAG_NAME[i], desc[i]);
       } else {
         cur += snprintf(cur, CHECK_NONNEGATIVE_BUFFER(), "<-%s=value> or <-%s value>\n%s\n", FLAG_NAME[i], FLAG_NAME[i], desc[i]);
       }

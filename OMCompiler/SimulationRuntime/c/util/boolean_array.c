@@ -268,7 +268,7 @@ void print_boolean_array(const boolean_array *source)
                 printf("\n");
             }
             if((k + 1) < n) {
-                printf("\n ================= \n");
+                printf("\n =================\n");
             }
         }
     }
