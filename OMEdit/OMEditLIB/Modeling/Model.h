@@ -694,6 +694,8 @@ private:
     bool isOuter() const;
     Replaceable *getReplaceable() const;
     bool isRedeclare() const;
+    bool isConnector() const;
+    bool isExpandableConnector() const;
     QString getConnector() const;
     QString getVariability() const;
     QString getDirectionPrefix() const;
