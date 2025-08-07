@@ -48,7 +48,7 @@ public:
   factory(factory<T> const& first) : func(first.func) {}
 
   factory& operator=(factory<T> const& first) {
-    this->func = first->func;
+    this->func = first.func;
     return *this;
   }
 

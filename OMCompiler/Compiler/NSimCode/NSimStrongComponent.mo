@@ -321,7 +321,7 @@ public
         case NONLINEAR()          then blck.system.index;
         case HYBRID()             then blck.index;
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(blck)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + toString(blck)});
         then fail();
       end match;
     end getIndex;
@@ -562,7 +562,7 @@ public
               ComponentRef cref;
 
             case Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref))
-            then createEquation(NBVariable.getVar(cref), eqn, NBSolve.Status.EXPLICIT, simCodeIndices, kind, simcode_map, equation_map);
+            then createEquation(NBVariable.getVar(cref, sourceInfo()), eqn, NBSolve.Status.EXPLICIT, simCodeIndices, kind, simcode_map, equation_map);
 
             case Equation.WHEN_EQUATION()
             then createEquation(NBVariable.DUMMY_VARIABLE, eqn, NBSolve.Status.EXPLICIT, simCodeIndices, kind, simcode_map, equation_map);
@@ -576,7 +576,7 @@ public
             /* ToDo: ARRAY_EQUATION ... */
 
             else algorithm
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Equation.toString(eqn)});
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + Equation.toString(eqn)});
             then fail();
           end match;
 
@@ -614,7 +614,7 @@ public
         then result;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Partition.Partition.toString(partition)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + Partition.Partition.toString(partition)});
         then fail();
       end match;
     end fromPartition;
@@ -674,8 +674,7 @@ public
         then (tmp, getIndex(tmp));
 
         case StrongComponent.RESIZABLE_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
-          // for now create algorithms
-          // ToDo: actually create resizable code
+          // create a resizable equation
           eqn_ptr := Slice.getT(comp.eqn);
           eqn     := Pointer.access(eqn_ptr);
           ident   := Identifier.IDENTIFIER(eqn_ptr, comp.var_cref, true);
@@ -768,7 +767,7 @@ public
         then fail();
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with unknown reason for \n" + StrongComponent.toString(comp)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with unknown reason for\n" + StrongComponent.toString(comp)});
         then fail();
       end match;
     end fromStrongComponent;
@@ -824,7 +823,7 @@ public
         // ToDo: add all other cases!
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Equation.toString(eqn)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + Equation.toString(eqn)});
         then fail();
 
       end match;
@@ -887,7 +886,7 @@ public
          then tmp;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with status " + Solve.statusString(status) + " for \n" + Equation.toString(eqn)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with status " + Solve.statusString(status) + " for\n" + Equation.toString(eqn)});
         then fail();
 
       end match;
@@ -1014,7 +1013,7 @@ public
         // ToDo: add all other cases!
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Equation.toString(eqn)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + Equation.toString(eqn)});
         then fail();
 
       end match;
@@ -1138,7 +1137,7 @@ public
         then fail();
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(blck)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + toString(blck)});
         then fail();
       end match;
     end convert;
@@ -1253,7 +1252,7 @@ public
         then blck;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(blck)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + toString(blck)});
         then fail();
       end match;
     end fixIndex;
@@ -1294,7 +1293,7 @@ public
         case RESIZABLE_ASSIGN() then blck.call_index;
         case GENERIC_ASSIGN() then blck.call_index;
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(blck)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + toString(blck)});
         then fail();
       end match;
     end getGenericAssignIndex;
@@ -1306,7 +1305,7 @@ public
       name := match comp
         case StrongComponent.GENERIC_COMPONENT() then Equation.getEqnName(Slice.getT(comp.eqn));
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + StrongComponent.toString(comp)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + StrongComponent.toString(comp)});
         then fail();
       end match;
     end getGenericEquationName;

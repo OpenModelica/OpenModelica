@@ -3074,7 +3074,7 @@ void MainWindow::openModelicaDocumentation()
  */
 void MainWindow::openOMSimulatorUsersGuide()
 {
-  QUrl OMSimulatorUsersGuideUrl("https://openmodelica.org/doc/OMSimulator/master/html/");
+  QUrl OMSimulatorUsersGuideUrl("https://openmodelica.org/doc/OMSimulator/master/OMSimulator/UsersGuide/html/");
   QDesktopServices::openUrl(OMSimulatorUsersGuideUrl);
 }
 

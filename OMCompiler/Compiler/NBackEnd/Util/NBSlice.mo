@@ -275,7 +275,7 @@ public
   algorithm
     // if causalized in pseudo array mode, the variables will only have subscript-free variables
     checkCref := if pseudo then ComponentRef.stripSubscriptsAll(cref) else cref;
-    record_children := BVariable.getRecordChildren(BVariable.getVarPointer(checkCref));
+    record_children := BVariable.getRecordChildren(BVariable.getVarPointer(checkCref, sourceInfo()));
     if listEmpty(record_children) then
       // not a record
       if UnorderedMap.contains(checkCref, map) then
@@ -303,7 +303,7 @@ public
   algorithm
     // always remove subscripts here, this analysis is for sparsity pattern -> currently always scalarized!
     checkCref := ComponentRef.stripSubscriptsAll(cref);
-    record_children := BVariable.getRecordChildren(BVariable.getVarPointer(checkCref));
+    record_children := BVariable.getRecordChildren(BVariable.getVarPointer(checkCref, sourceInfo()));
     if listEmpty(record_children) then
       // not a record
       if UnorderedSet.contains(checkCref, set) then
@@ -626,7 +626,7 @@ public
     "(jacobian) adds the variable of (var_idx) as a dependency to (eqn_idx)
     jacobian depencies are stored as component references"
     extends updateDependencies;
-    input array<list<ComponentRef>> accum_dep_arr; //mutable
+    input array<list<ComponentRef>> accum_dep_arr;
     input VariablePointers vars;
     input Mapping mapping;
   algorithm
@@ -669,6 +669,9 @@ public
     row_cref_scal := ComponentRef.scalarizeSlice(row_cref, slice, true);
     dependencies_scal := list(ComponentRef.scalarizeSlice(dep, slice, true) for dep in dependencies);
     if not listEmpty(dependencies_scal) then
+      // repeat lists that are too short to fit the equation size
+      dependencies_scal := list(List.repeat(d, realInt(listLength(row_cref_scal)/listLength(d))) for d in dependencies_scal);
+      // transpose it such that each list now represents one row
       dependencies_scal := List.transposeList(dependencies_scal);
       tpl_lst := List.zip(row_cref_scal, dependencies_scal);
     else
@@ -1168,7 +1171,7 @@ protected
       // skip to a record element
       case (Type.COMPLEX(complexTy = ComplexType.RECORD()), skip::rest) algorithm
         // get the children and skip to correct one
-        field := match BVariable.getParent(BVariable.getVarPointer(cref))
+        field := match BVariable.getParent(BVariable.getVarPointer(cref, sourceInfo()))
           case SOME(parent) algorithm
             subs := ComponentRef.subscriptsAllFlat(cref);
             crefs :=  list(BVariable.getVarName(child) for child in BVariable.getRecordChildren(parent));

@@ -706,10 +706,12 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
                       && intersectionPoint != lastPoint1
                       && intersectionPoint != firstPoint2
                       && intersectionPoint != lastPoint2) {
+                    // draw the intersection point node with 50% increased width
+                    int radii = qCeil(painter->pen().widthF() * 1.5);
                     painter->save();
                     painter->setPen(Qt::NoPen);
                     painter->setBrush(QBrush(mLineColor));
-                    painter->drawEllipse(intersectionPoint, 0.75, 0.75);
+                    painter->drawEllipse(intersectionPoint, radii, radii);
                     painter->restore();
                   }
                 }
@@ -1411,7 +1413,7 @@ void LineAnnotation::handleCollidingConnections()
   QList<QGraphicsItem*> items = collidingItems(Qt::IntersectsItemShape);
   for (int i = 0; i < items.size(); ++i) {
     if (Element *pElement = dynamic_cast<Element*>(items.at(i))) {
-      if ((pElement->getModel() && pElement->getModel()->isConnector())
+      if (pElement->isConnector()
           || (pElement->getLibraryTreeItem() && (pElement->getLibraryTreeItem()->getOMSConnector() || pElement->getLibraryTreeItem()->getOMSBusConnector()
                                                  || pElement->getLibraryTreeItem()->getOMSTLMBusConnector()))) {
         mCollidingConnectorElements.append(pElement);

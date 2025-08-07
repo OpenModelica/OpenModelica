@@ -795,7 +795,7 @@ algorithm
         // failure
     case (_, fn, _, _, _,_)
       equation
-        Error.addInternalError("function elaborateFunction failed for function: \n" + DAEDump.dumpFunctionStr(fn), sourceInfo());
+        Error.addInternalError("function elaborateFunction failed for function:\n" + DAEDump.dumpFunctionStr(fn), sourceInfo());
       then
         fail();
   end matchcontinue;

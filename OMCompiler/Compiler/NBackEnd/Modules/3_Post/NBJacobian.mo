@@ -422,7 +422,7 @@ public
           // create row-wise sparsity pattern
           for cref in listReverse(partial_vars) loop
             // only create rows for derivatives
-            if jacType == JacobianType.NLS or BVariable.checkCref(cref, BVariable.isStateDerivative) or BVariable.checkCref(cref, BVariable.isResidual) then
+            if jacType == JacobianType.NLS or BVariable.checkCref(cref, BVariable.isStateDerivative, sourceInfo()) or BVariable.checkCref(cref, BVariable.isResidual, sourceInfo()) then
               if UnorderedMap.contains(cref, map) then
                 tmp := UnorderedSet.unique_list(UnorderedMap.getOrFail(cref, map), ComponentRef.hash, ComponentRef.isEqual);
                 rows := (cref, tmp) :: rows;
@@ -437,7 +437,7 @@ public
 
           // create column-wise sparsity pattern
           for cref in listReverse(seed_vars) loop
-            if jacType == JacobianType.NLS or BVariable.checkCref(cref, BVariable.isState) then
+            if jacType == JacobianType.NLS or BVariable.checkCref(cref, BVariable.isState, sourceInfo()) then
               tmp := UnorderedSet.unique_list(UnorderedMap.getSafe(cref, map, sourceInfo()), ComponentRef.hash, ComponentRef.isEqual);
               cols := (cref, tmp) :: cols;
               col_vars := cref :: col_vars;
@@ -540,8 +540,8 @@ public
       if jacType == JacobianType.NLS then
         partials := listArray(sparsityPattern.partial_vars);
       else
-        partials := listArray(list(cref for cref guard(BVariable.checkCref(cref, BVariable.isStateDerivative) or
-          BVariable.checkCref(cref, BVariable.isResidual)) in sparsityPattern.partial_vars));
+        partials := listArray(list(cref for cref guard(BVariable.checkCref(cref, BVariable.isStateDerivative, sourceInfo()) or
+          BVariable.checkCref(cref, BVariable.isResidual, sourceInfo())) in sparsityPattern.partial_vars));
       end if;
 
       // create cref -> index maps
@@ -877,11 +877,11 @@ protected
         case SOME(parent) algorithm
           parent_name := BVariable.getVarName(parent);
           diff_parent := match UnorderedMap.get(parent_name, map)
-            case SOME(diff_parent_name) then BVariable.getVarPointer(diff_parent_name);
+            case SOME(diff_parent_name) then BVariable.getVarPointer(diff_parent_name, sourceInfo());
             else algorithm
               (diff_parent_name, _) := makeVar(parent_name, name);
               UnorderedMap.add(parent_name, diff_parent_name, map);
-            then BVariable.getVarPointer(diff_parent_name);
+            then BVariable.getVarPointer(diff_parent_name, sourceInfo());
           end match;
 
           // add the child to the list of children

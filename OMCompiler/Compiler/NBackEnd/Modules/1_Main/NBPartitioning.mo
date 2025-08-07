@@ -559,7 +559,7 @@ protected
       Integer var_idx, clock_idx = Pointer.access(index);
     algorithm
       // find all variables and equations
-      var_lst := list(BVariable.getVarPointer(cref) for cref in cvars);
+      var_lst := list(BVariable.getVarPointer(cref, sourceInfo()) for cref in cvars);
       filtered_vars := list(var for var guard(VariablePointers.contains(var, variables)) in var_lst);
       eqn_lst := list(EquationPointers.getEqnByName(equations, name) for name in cidnt);
 
@@ -813,9 +813,9 @@ protected
       then newExp;
 
       // get all variable crefs for this cref and add to set
-      case Expression.CREF() guard(not BVariable.isClock(BVariable.getVarPointer(exp.cref))) algorithm
+      case Expression.CREF() guard(not BVariable.isClock(BVariable.getVarPointer(exp.cref, sourceInfo()))) algorithm
         // extract potential record children
-        children := match BVariable.getVar(exp.cref)
+        children := match BVariable.getVar(exp.cref, sourceInfo())
           local
             list<Pointer<Variable>> children_vars;
           case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(varKind = VariableKind.RECORD(children = children_vars)))
@@ -826,7 +826,7 @@ protected
         for child in children loop
           // check if cref has to be considered as a dependency
           stripped := ComponentRef.stripSubscriptsAll(child);
-          if not BVariable.checkCref(stripped, BVariable.isParamOrConst) then
+          if not BVariable.checkCref(stripped, BVariable.isParamOrConst, sourceInfo()) then
             addCrefToSet(stripped, var_crefs);
           end if;
         end for;
@@ -840,7 +840,7 @@ protected
     input ComponentRef cref;
     input UnorderedSet<ComponentRef> set;
   protected
-    Pointer<Variable> var_ptr = BVariable.getVarPointer(cref);
+    Pointer<Variable> var_ptr = BVariable.getVarPointer(cref, sourceInfo());
   algorithm
     // states and there derivatives belong to one partition
     // discrete states and there pre value also

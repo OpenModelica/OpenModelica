@@ -574,6 +574,33 @@ public
       end if;
     end createSingleReplacement;
 
+    function expand
+      "takes an iterator and expands it with the iterators of an array
+      constructor or a reduction."
+      input output Iterator iter;
+      input Call call;
+    protected
+      // dummy set for new variables. ToDo: save them to global variables
+      UnorderedSet<VariablePointer> new_iters = UnorderedSet.new(BVariable.hash, BVariable.equalName);
+    algorithm
+      iter := match call
+        local
+          list<ComponentRef> names;
+          list<Expression> ranges;
+          list<Option<Iterator>> maps;
+
+        case Call.TYPED_ARRAY_CONSTRUCTOR() algorithm
+          (names, ranges, maps) := getFrames(iter);
+        then fromFrames(listAppend(list(Inline.inlineArrayIterator(tpl, new_iters) for tpl in call.iters), List.zip3(names, ranges, maps)));
+
+        case Call.TYPED_REDUCTION() algorithm
+          (names, ranges, maps) := getFrames(iter);
+        then fromFrames(listAppend(list(Inline.inlineArrayIterator(tpl, new_iters) for tpl in call.iters), List.zip3(names, ranges, maps)));
+
+        else iter;
+      end match;
+    end expand;
+
     function extract
       "takes an expression and maps it to find all occuring iterators.
       returns an iterator if all iterators are equal, fails otherwise.
@@ -1285,9 +1312,9 @@ public
       var := match eqn
         local
           ComponentRef cref;
-        case SCALAR_EQUATION(lhs = Expression.CREF(cref = cref))  then BVariable.getVar(cref);
-        case ARRAY_EQUATION(lhs = Expression.CREF(cref = cref))   then BVariable.getVar(cref);
-        case RECORD_EQUATION(lhs = Expression.CREF(cref = cref))  then BVariable.getVar(cref);
+        case SCALAR_EQUATION(lhs = Expression.CREF(cref = cref))  then BVariable.getVar(cref, sourceInfo());
+        case ARRAY_EQUATION(lhs = Expression.CREF(cref = cref))   then BVariable.getVar(cref, sourceInfo());
+        case RECORD_EQUATION(lhs = Expression.CREF(cref = cref))  then BVariable.getVar(cref, sourceInfo());
         else NBVariable.DUMMY_VARIABLE;
       end match;
     end getSolvedVar;
@@ -1937,7 +1964,7 @@ public
         then eqn;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(eqn)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + toString(eqn)});
         then fail();
       end match;
     end setResidualVar;
@@ -1994,7 +2021,7 @@ public
         then eqn;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(eqn)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + toString(eqn)});
         then fail();
 
       end match;
@@ -2318,7 +2345,7 @@ public
       input Pointer<Boolean> b_ptr;
     algorithm
       if Pointer.access(b_ptr) then
-        Pointer.update(b_ptr, BVariable.isParamOrConst(BVariable.getVarPointer(cref)));
+        Pointer.update(b_ptr, BVariable.isParamOrConst(BVariable.getVarPointer(cref, sourceInfo())));
       end if;
     end crefIsParamOrConst;
 
@@ -2540,7 +2567,7 @@ public
         then (sliced_eqn, slicing_status);
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because slicing is not yet supported for: \n" + toString(eqn)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because slicing is not yet supported for:\n" + toString(eqn)});
         then fail();
       end match;
     end slice;
@@ -2625,12 +2652,13 @@ public
       input UnorderedMap<ComponentRef, Expression> replacements   "prepared replacement map";
       output Equation sliced_eqn                                  "scalar sliced equation";
       input output FunctionTree funcTree                          "func tree for solving";
+      output Solve.Status solve_status                            "solve success status";
     protected
       Equation eqn;
       list<Integer> location;
     algorithm
       eqn := Pointer.access(eqn_ptr);
-      sliced_eqn := match eqn
+      (sliced_eqn, solve_status) := match eqn
 
         // slice the equation
         case FOR_EQUATION() algorithm
@@ -2642,14 +2670,14 @@ public
           sliced_eqn := map(listHead(eqn.body), function Replacements.applySimpleExp(replacements = replacements));
           // solve the body if necessary
           if not ComponentRef.isEmpty(cref_to_solve) then
-            (sliced_eqn, funcTree, _, _) := Solve.solveBody(sliced_eqn, cref_to_solve, funcTree);
+            (sliced_eqn, funcTree, solve_status, _) := Solve.solveBody(sliced_eqn, cref_to_solve, funcTree);
           end if;
-        then sliced_eqn;
+        then (sliced_eqn, solve_status);
 
         // ToDo: arrays 'n stuff
 
         // equation that does not need to be sliced
-        else eqn;
+        else (eqn, NBSolve.Status.UNPROCESSED);
       end match;
     end singleSlice;
 
@@ -2691,8 +2719,8 @@ public
         then {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, eqn.ty, eqn.source)};
 
         case RECORD_EQUATION(lhs = Expression.CREF(cref = lhs_rec), rhs = Expression.CREF(cref = rhs_rec)) algorithm
-          lhs_lst := BVariable.getRecordChildren(BVariable.getVarPointer(lhs_rec));
-          rhs_lst := BVariable.getRecordChildren(BVariable.getVarPointer(rhs_rec));
+          lhs_lst := BVariable.getRecordChildren(BVariable.getVarPointer(lhs_rec, sourceInfo()));
+          rhs_lst := BVariable.getRecordChildren(BVariable.getVarPointer(rhs_rec, sourceInfo()));
           if List.compareLength(lhs_lst, rhs_lst) == 0 and not Type.isExternalObject(Type.arrayElementType(Expression.typeOf(eqn.lhs))) then
             for tpl in List.zip(lhs_lst, rhs_lst) loop
               (lhs, rhs) := tpl;
@@ -2725,7 +2753,7 @@ public
         case WHEN_EQUATION() then {Statement.WHEN(WhenEquationBody.toStatement(eqn.body), eqn.source)};
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed it is not yet supported for: \n" + toString(eqn)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed it is not yet supported for:\n" + toString(eqn)});
         then fail();
       end match;
     end toStatement;
@@ -3450,7 +3478,7 @@ public
         case {WhenStatement.ASSIGN(lhs = Expression.TUPLE())} then true;
         case {WhenStatement.ASSIGN(lhs = Expression.RECORD())} then true;
         case {WhenStatement.ASSIGN(lhs = Expression.CREF(cref = cref))}
-          then BVariable.checkCref(cref, BVariable.isRecord);
+          then BVariable.checkCref(cref, BVariable.isRecord, sourceInfo());
         // multiple body equations -> tuple return
         case _ guard(List.count(body.when_stmts, WhenStatement.isAssign) > 1) then true;
         else false;
