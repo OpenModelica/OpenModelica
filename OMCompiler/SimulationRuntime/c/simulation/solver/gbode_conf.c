@@ -184,7 +184,7 @@ enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag)
       return getControllerMethod(FLAG_SR_CTRL);
     } else {
       infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode step size control: i [default]");
-      return GB_CTRL_I;
+      return GB_CTRL_PID_H312; // Default for single-rate method
     }
   }
 }
@@ -234,8 +234,8 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag)
       }
       return method;
     } else {
-      infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode interpolation method: dense_output [default]");
-      return GB_DENSE_OUTPUT;
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode interpolation method: dense_output_errctrl [default]");
+      return GB_DENSE_OUTPUT_ERRCTRL;
     }
   }
 }
