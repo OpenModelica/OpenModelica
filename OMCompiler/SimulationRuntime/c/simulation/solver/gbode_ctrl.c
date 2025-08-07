@@ -39,7 +39,7 @@ GB_PID_VARIANTS pid_type = GB_PID_H312;
 enum GB_CTRL_METHOD ctrl_type = GB_CTRL_I;
 
 unsigned int use_fhr = FALSE;
-double use_filter = 1.0;;
+double use_filter = 1.0;
 
 /**
  * @brief Determine the error threshold depending on the percentage of fast states
