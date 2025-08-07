@@ -159,6 +159,7 @@ public:
   QString getOMCPlacementAnnotation(QPointF position);
   QString getTransformationOrigin();
   QString getTransformationExtent();
+  bool isConnector() const;
   bool isExpandableConnector() const;
   bool isArray() const;
   QStringList getAbsynArrayIndexes() const;

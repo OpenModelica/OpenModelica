@@ -2360,6 +2360,11 @@ protected
   Absyn.Exp aexp;
   list<Absyn.Exp> args;
 algorithm
+  if InstContext.inRedeclared(context) then
+    // Don't update the binding if the parameter is being redeclared.
+    return;
+  end if;
+
   comp := InstNode.component(node);
 
   if not Component.isFixed(comp) or InstNode.hasBinding(node) then

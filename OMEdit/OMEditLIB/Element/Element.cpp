@@ -401,7 +401,7 @@ QRectF Element::boundingRect() const
   } else if (isPort()) {
     ExtentAnnotation extent;
     if (mpModelComponent) {
-      if (mpModelComponent->getModel()->isConnector() && (mpGraphicsView->isDiagramView()) && canUseDiagramAnnotation()) {
+      if (mpModelComponent->isConnector() && (mpGraphicsView->isDiagramView()) && canUseDiagramAnnotation()) {
         mpModelComponent->getAnnotation()->getPlacementAnnotation().getTransformation().getExtent();
       } else {
         mpModelComponent->getAnnotation()->getPlacementAnnotation().getIconTransformation().getExtent();
@@ -557,7 +557,7 @@ ModelInstance::CoordinateSystem Element::getCoordinateSystem() const
 {
   ModelInstance::CoordinateSystem coordinateSystem;
   if (mpModelComponent && mpModel) {
-    if (mpModelComponent->getModel()->isConnector() && (mpGraphicsView->isDiagramView()) && canUseDiagramAnnotation()) {
+    if (mpModelComponent->isConnector() && (mpGraphicsView->isDiagramView()) && canUseDiagramAnnotation()) {
       coordinateSystem = mpModel->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem;
     } else {
       coordinateSystem = mpModel->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem;
@@ -626,7 +626,7 @@ QString Element::getPlacementAnnotation(bool ModelicaSyntax)
       placementAnnotationString.append(QString("visible=%1,").arg(mTransformation.getVisible().toQString()));
     }
   }
-  if ((mpLibraryTreeItem && mpLibraryTreeItem->isConnector()) || (mpModelComponent && mpModelComponent->getModel()->isConnector())) {
+  if ((mpLibraryTreeItem && mpLibraryTreeItem->isConnector()) || (mpModelComponent && mpModelComponent->isConnector())) {
     if (mpGraphicsView->isIconView()) {
       // first get the component from diagram view and get the transformations
       Element *pElement = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getElementObject(getName());
@@ -692,7 +692,7 @@ QString Element::getOMCPlacementAnnotation(QPointF position)
   if (mTransformation.isValid()) {
     placementAnnotationString.append(mTransformation.getVisible() ? "true" : "false");
   }
-  if ((mpLibraryTreeItem && mpLibraryTreeItem->isConnector()) || (mpModelComponent && mpModelComponent->getModel()->isConnector())) {
+  if ((mpLibraryTreeItem && mpLibraryTreeItem->isConnector()) || (mpModelComponent && mpModelComponent->isConnector())) {
     if (mpGraphicsView->isIconView()) {
       // first get the component from diagram view and get the transformations
       Element *pElement;
@@ -744,6 +744,16 @@ QString Element::getTransformationExtent()
   transformationExtent.append(QString::number(extent2.x())).append(",");
   transformationExtent.append(QString::number(extent2.y())).append("}");
   return transformationExtent;
+}
+
+/*!
+ * \brief Element::isConnector
+ * Returns true if the Element class is connector.
+ * \return
+ */
+bool Element::isConnector() const
+{
+  return mpModel && mpModel->isConnector();
 }
 
 /*!
@@ -891,7 +901,7 @@ void Element::createClassElements()
     foreach (auto pElement, elements) {
       if (pElement->isComponent()) {
         auto pComponent = dynamic_cast<ModelInstance::Component*>(pElement);
-        if (pComponent->isPublic() && pComponent->getModel() && pComponent->getModel()->isConnector()) {
+        if (pComponent->isPublic() && pComponent->isConnector()) {
           mElementsList.append(new Element(pComponent, this, getRootParentElement()));
         }
       }
@@ -1079,23 +1089,25 @@ QPair<QString, bool> Element::getParameterDisplayString(QString parameterName)
   if (mpModelComponent && mpModelComponent->getModel()) {
     ModelInstance::Element *pElement = mpModelComponent->getModel()->getRootParentElement();
 
-    QStringList nameList;
-    nameList = StringHandler::makeVariableParts(mpModelComponent->getQualifiedName());
-    // the first item is element name
-    if (!isInheritedElement() && !nameList.isEmpty()) {
-      nameList.removeFirst();
-    }
+    if (pElement) {
+      QStringList nameList;
+      nameList = StringHandler::makeVariableParts(mpModelComponent->getQualifiedName());
+      // the first item is element name
+      if (!isInheritedElement() && !nameList.isEmpty()) {
+        nameList.removeFirst();
+      }
 
-    displayString = pElement->getVariableValue(QStringList() << nameList << StringHandler::makeVariableParts(parameterName));
-    if (pElement->getModel()) {
-      typeName = pElement->getModel()->getVariableType(QStringList() << nameList << StringHandler::makeVariableParts(parameterName));
-    }
+      displayString = pElement->getVariableValue(QStringList() << nameList << StringHandler::makeVariableParts(parameterName));
+      if (pElement->getModel()) {
+        typeName = pElement->getModel()->getVariableType(QStringList() << nameList << StringHandler::makeVariableParts(parameterName));
+      }
 
-    /* Ticket #4084
-     * Check for enumeration type and shorten display string.
-     */
-    if (displayString.second) {
-      Element::checkEnumerationDisplayString(displayString.first, typeName);
+      /* Ticket #4084
+       * Check for enumeration type and shorten display string.
+       */
+      if (displayString.second) {
+        Element::checkEnumerationDisplayString(displayString.first, typeName);
+      }
     }
   }
 
@@ -1530,11 +1542,11 @@ void Element::createClassShapes()
     // Always use the IconMap here. Only IconMap makes sense for drawing icons of Element.
     if (!(pExtendModel && !pExtendModel->getIconDiagramMapPrimitivesVisible(true))) {
       /* issue #12074
-       * Use mpModelComponent->getModel()->isConnector() here instead of mpModel->isConnector()
+       * Use mpModelComponent->isConnector() here instead of mpModel->isConnector()
        * So when called for extends we use the top level element restriction.
        * We use the same mpModelComponent for top level and extends elements. See Element constructor above for extends element type.
        */
-      if (mpModelComponent && mpModelComponent->getModel()->isConnector() && mpGraphicsView->isDiagramView() && canUseDiagramAnnotation()) {
+      if (mpModelComponent && mpModelComponent->isConnector() && mpGraphicsView->isDiagramView() && canUseDiagramAnnotation()) {
         shapes = mpModel->getAnnotation()->getDiagramAnnotation()->getGraphics();
       } else {
         shapes = mpModel->getAnnotation()->getIconAnnotation()->getGraphics();
