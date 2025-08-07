@@ -6557,7 +6557,7 @@ template equationNonlinear(SimEqSystem eq, Context context, String modelNamePref
         let &preExp = buffer ""
         let &varDecls = buffer ""
         let &auxFunction = buffer ""
-        let START = if init then crefOrStartCref(name, context, &preExp, &varDecls, &auxFunction) else cref(name, &sub)
+        let START = cref(name, &sub)
         let PREV = if stringEq(&preExp, "") then "" else &preExp + "\n"
         let DECL = if stringEq(&varDecls, "") then "" else &varDecls + "\n"
         let AUX = if stringEq(&auxFunction, "") then "" else &auxFunction + "\n"
@@ -6612,7 +6612,7 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, St
           let &preExp = buffer ""
           let &varDecls = buffer ""
           let &auxFunction = buffer ""
-          let START = if init then crefOrStartCref(name, context, &preExp, &varDecls, &auxFunction) else cref(name, &sub)
+          let START = cref(name, &sub)
           let PREV = if stringEq(&preExp, "") then "" else &preExp + "\n"
           let DECL = if stringEq(&varDecls, "") then "" else &varDecls + "\n"
           let AUX = if stringEq(&auxFunction, "") then "" else &auxFunction + "\n"
