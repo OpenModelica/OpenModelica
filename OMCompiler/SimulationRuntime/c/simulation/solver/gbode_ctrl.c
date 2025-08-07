@@ -108,16 +108,16 @@ double PIController(double* err_values, double* step_values, unsigned int err_or
   switch (pi_type) {
       case GB_PI_UNKNOWN:
       case GB_PI_34:
-          beta1 = 0.7 / k;
-          beta2 = -0.4 / k;
+          beta1 = 0.7 / k;            // current error (P)
+          beta2 = -0.4 / k;           // previous error (I)
           break;
       case GB_PI_33:
-          beta1 = (2.0 / 3.0) / k;
-          beta2 = (-1.0 / 3.0) / k;
+          beta1 = (2.0 / 3.0) / k;    // current error (P)
+          beta2 = (-1.0 / 3.0) / k;   // previous error (I)
           break;
       case GB_PI_42:
-          beta1 = 0.6 / k;
-          beta2 = -0.2 / k;
+          beta1 = 0.6 / k;            // current error (P)
+          beta2 = -0.2 / k;           // previous error (I)
           break;
   }
 
@@ -165,9 +165,7 @@ double PIDController(double* err_values, double* step_values, unsigned int err_o
           break;
   }
 
-  return pow(1.0 / err_n,  alpha1) *
-         pow(1.0 / err_n1, alpha2) *
-         pow(1.0 / err_n2, alpha3);
+  return pow(1.0 / err_n,  alpha1) * pow(1.0 / err_n1, alpha2) * pow(1.0 / err_n2, alpha3);
 }
 
 /**
@@ -178,7 +176,7 @@ double PIDController(double* err_values, double* step_values, unsigned int err_o
  * @param h_now     Current step size
  * @param h_prev    Previous step size
  * @param eta       Scaling factor (e.g. 0.1)
- * @return double   Adaptive γ
+ * @return double   Adaptive gamma value
  */
 double computeGamma(double err_now, double err_prev, double h_now, double h_prev, double eta)
 {
@@ -248,7 +246,10 @@ double GenericController(double* err_values, double* step_values, unsigned int e
         throwStreamPrint(NULL, "Unknown step size control method.");
   }
 
-  // Führer step size rejection control (FHR)
+  // Applies Fuehrer-style adaptive damping to the step size factor:
+  // If the last step was rejected, gamma > 0 increases conservatism by reducing h_fac.
+  // If accepted, gamma = 0 has little effect. The formula h_fac *= (h_n / h_n1)^gamma
+  // discourages oscillatory step behavior by penalizing instability in recent steps.
   if (use_fhr && h_n1 > DBL_EPSILON) {
       // Compute gamma adaptively (Needs to be looked up in the literature), not suitable for PID Controller?!
       double eta = 0.1;
@@ -256,11 +257,13 @@ double GenericController(double* err_values, double* step_values, unsigned int e
       h_fac = h_fac * pow(h_n / h_n1, gamma);
   }
 
-  // Filtered step size control
+  // Applies exponential smoothing to the step size factor:
+  // use_filter = 0 -> constant step size,
+  // use_filter = 1 -> full adaptation without smoothing.
   if (use_filter>0) {
      h_fac = use_filter * h_fac + (1.0 - use_filter);
   }
-  
+
   // Keep step size constant, if there are only small changes
   if ((0.95 < h_fac) && (h_fac < 1.05)) {
     return 1.0;

@@ -244,7 +244,9 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag)
  * @brief Use filter technic for step size control 
  *
  * Read flag FLAG_SR_CTRL_FILTER to get filter value.
- * Defaults to 0.
+ * Defaults to 1.
+ * gbctrl_filter = 0 -> constant step size,
+ * gbctrl_filter = 1 -> full adaptation without smoothing.
  *
  * @return double   Percentage of fast states selection.
  */
@@ -256,7 +258,7 @@ double getGBCtrlFilterValue()
   if (flag_value) {
     filter = atof(omc_flagValue[FLAG_SR_CTRL_FILTER]);
     if (filter < 0 || filter > 1) {
-      throwStreamPrint(NULL, "Flag -gbratio has to be between 0 and 1.");
+      throwStreamPrint(NULL, "Flag -gbctrl_filter has to be between 0 and 1.");
     }
   } else {
     filter = 1.0;

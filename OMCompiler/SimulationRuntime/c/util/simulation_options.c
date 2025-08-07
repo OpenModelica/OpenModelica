@@ -285,8 +285,8 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_DATA_RECONCILE_STATE */         "Run the State Estimation numerical computation algorithm for constrained equations",
   /* FLAG_SR */                           "Value specifies the chosen solver of solver gbode (single-rate, slow states integrator)",
   /* FLAG_SR_CTRL */                      "Step size control of solver gbode (single-rate, slow states integrator)",
-  /* FLAG_SR_CTRL_FILTER */               "gbctrl_filter",
-  /* FLAG_SR_CTRL_FHR */                  "gbctrl_fhr",
+  /* FLAG_SR_CTRL_FILTER */               "Applies exponential smoothing to the step size factor; gbctrl_filter = 0 yields constant step size, gbctrl_filter = 1 uses full adaptation without averaging.",
+  /* FLAG_SR_CTRL_FHR */                  "Applies adaptive damping to the step size factor using Führer’s approach, scaling it by h_fac *= (h_n / h_n1)^gamma to penalize repeated rejections or reward successful step acceptance.",
   /* FLAG_SR_ERR */                       "Error estimation method for solver gbode (single-rate, slow states integrator).",
   /* FLAG_SR_INT */                       "Interpolation method of solver gbode (single-rate, slow states integrator)",
   /* FLAG_SR_NLS */                       "Non-linear solver method of solver gbode (single-rate, slow states integrator)",
@@ -603,9 +603,9 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_SR_CTRL */
   "  Step size control of solver gbode (single-rate, slow states integrator).",
   /* FLAG_SR_CTRL_FILTER */
-  " gbctrl_filter",
+  "  Applies exponential smoothing to the step size factor; gbctrl_filter = 0 yields constant step size, gbctrl_filter = 1 uses full adaptation without averaging.",
   /* FLAG_SR_CTRL_FHR */
-  " gbctrl_fhr",
+  "  Applies adaptive damping to the step size factor using Führer’s approach, scaling it by h_fac *= (h_n / h_n1)^gamma to penalize repeated rejections or reward successful step acceptance.",
   /* FLAG_SR_ERR */
   "  Error estimation method for solver gbode (single-rate, slow states integrator)\n"
   "  Possible values:\n\n"
@@ -1061,11 +1061,11 @@ const char *GB_CTRL_METHOD_DESC[GB_CTRL_MAX] = {
   /* GB_CTRL_UNKNOWN */         "unknown",
   /* GB_CTRL_I */               "I controller for step size (beta=1/k, k RK error order)",
   /* GB_CTRL_PI_33 */           "PI controller for step size (beta1=0.7/k, beta2=-0.4/k)",
-  /* GB_CTRL_PI_34 */           "PI controller for step size (beta1=0.7/k, beta2=-0.4/k)",
-  /* GB_CTRL_PI_42 */           "PI controller for step size (beta1=0.7/k, beta2=-0.4/k)",
-  /* GB_CTRL_PID_H312 */        "PID controller for step size (alpha1=1/18/k, alpha2=1/9/k, alpha3=1/18/k)",
-  /* GB_CTRL_PID_SOEDERLIND */  "PID controller for step size (alpha1=1/18/k, alpha2=1/9/k, alpha3=1/18/k)",
-  /* GB_CTRL_PID_STIFF */       "PID controller for step size (alpha1=1/18/k, alpha2=1/9/k, alpha3=1/18/k)",
+  /* GB_CTRL_PI_34 */           "PI controller for step size (beta1=2./3./k, beta2=-1./3./k)",
+  /* GB_CTRL_PI_42 */           "PI controller for step size (beta1=0.6/k, beta2=-0.2/k)",
+  /* GB_CTRL_PID_H312 */        "PID controller for step size (alpha1=1./18./k, alpha2=1./9./k, alpha3=1./18./k)",
+  /* GB_CTRL_PID_SOEDERLIND */  "PID controller for step size (alpha1=0.1/k, alpha2=0.2/k, alpha3=0.1/k)",
+  /* GB_CTRL_PID_STIFF */       "PID controller for step size (alpha1=0.58/k, alpha2=0.21/k, alpha3=0.21/k)",
   /* GB_CTRL_CNST */            "Constant step size"
 };
 
