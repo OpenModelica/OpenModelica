@@ -706,10 +706,12 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
                       && intersectionPoint != lastPoint1
                       && intersectionPoint != firstPoint2
                       && intersectionPoint != lastPoint2) {
+                    // draw the intersection point node with 50% increased width
+                    int radii = qCeil(painter->pen().widthF() * 1.5);
                     painter->save();
                     painter->setPen(Qt::NoPen);
                     painter->setBrush(QBrush(mLineColor));
-                    painter->drawEllipse(intersectionPoint, 0.75, 0.75);
+                    painter->drawEllipse(intersectionPoint, radii, radii);
                     painter->restore();
                   }
                 }
