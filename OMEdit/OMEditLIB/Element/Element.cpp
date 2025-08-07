@@ -1089,23 +1089,25 @@ QPair<QString, bool> Element::getParameterDisplayString(QString parameterName)
   if (mpModelComponent && mpModelComponent->getModel()) {
     ModelInstance::Element *pElement = mpModelComponent->getModel()->getRootParentElement();
 
-    QStringList nameList;
-    nameList = StringHandler::makeVariableParts(mpModelComponent->getQualifiedName());
-    // the first item is element name
-    if (!isInheritedElement() && !nameList.isEmpty()) {
-      nameList.removeFirst();
-    }
+    if (pElement) {
+      QStringList nameList;
+      nameList = StringHandler::makeVariableParts(mpModelComponent->getQualifiedName());
+      // the first item is element name
+      if (!isInheritedElement() && !nameList.isEmpty()) {
+        nameList.removeFirst();
+      }
 
-    displayString = pElement->getVariableValue(QStringList() << nameList << StringHandler::makeVariableParts(parameterName));
-    if (pElement->getModel()) {
-      typeName = pElement->getModel()->getVariableType(QStringList() << nameList << StringHandler::makeVariableParts(parameterName));
-    }
+      displayString = pElement->getVariableValue(QStringList() << nameList << StringHandler::makeVariableParts(parameterName));
+      if (pElement->getModel()) {
+        typeName = pElement->getModel()->getVariableType(QStringList() << nameList << StringHandler::makeVariableParts(parameterName));
+      }
 
-    /* Ticket #4084
-     * Check for enumeration type and shorten display string.
-     */
-    if (displayString.second) {
-      Element::checkEnumerationDisplayString(displayString.first, typeName);
+      /* Ticket #4084
+       * Check for enumeration type and shorten display string.
+       */
+      if (displayString.second) {
+        Element::checkEnumerationDisplayString(displayString.first, typeName);
+      }
     }
   }
 
