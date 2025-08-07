@@ -508,7 +508,6 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   default:
     throwStreamPrint(NULL, "Unhandled interpolation case.");
   }
-  gbData->err_threshold = 0.1;
   gbData->err_int = 0;            // needed, if GB_INTERPOL_HERMITE_ERRCTRL or GB_DENSE_OUTPUT_ERRCTRL is used
 
   if (gbData->multi_rate) {
@@ -1110,7 +1109,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   modelica_boolean foundEvent;
 
   int *sortedStates;
-  double err_threshold;
+  double err_states; // error of the (slow, if multirate) states 
 
   // root finding will be done in gbode after each accepted step
   solverInfo->solverRootFinding = 1;
@@ -1271,7 +1270,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
             messageClose(OMC_LOG_SOLVER);
             return -1;
           }
-          err = 100;
           continue;
         }
       }
@@ -1289,8 +1287,8 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         }
 
         // The error estimation of slow states will be below the threshold
-        err_threshold = getErrorThreshold(gbData);
-        err = err_threshold;
+        err_states = getErrorThreshold(gbData);
+        err = err_states;
 
         if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
           for (int k = 0; k < nStates; k++)
@@ -1319,10 +1317,10 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
             gbData->err_slow = fmax(gbData->err_slow, gbData->err[i]);
           }
         }
+      } else {
+        err = _omc_gen_maximumVectorNorm(gbData->err, nStates);
+        err_states = err;
       }
-      // if bi-rate mode is active: err == threshold;
-      // update new values
-      if (!gbData->multi_rate) err = _omc_gen_maximumVectorNorm(gbData->err, nStates);
 
       // reject step, if error is too large
       if ((err > 1) && gbData->ctrl_method != GB_CTRL_CNST) {
@@ -1334,9 +1332,9 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
           // debug the error of the states and derivatives after outer integration
           if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER_V)) {
-            infoStreamPrint(OMC_LOG_SOLVER_V, 1, "Error of the states: threshold = %15.10g", err_threshold);
+            infoStreamPrint(OMC_LOG_SOLVER_V, 1, "Error of the states: threshold = %15.10g", err_states);
             printVector_gb(OMC_LOG_SOLVER_V, "y", gbData->y, nStates, gbData->time + gbData->stepSize);
-            printVector_gb(OMC_LOG_SOLVER_V, "er", gbData->err, nStates, gbData->time + gbData->stepSize * 0.5);
+            printVector_gb(OMC_LOG_SOLVER_V, "er", gbData->err, nStates, gbData->time + gbData->stepSize);
             messageClose(OMC_LOG_SOLVER_V);
           }
 
@@ -1392,10 +1390,9 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       }
 
       // reject step, if interpolaton error is too large
-      if (((gbData->multi_rate && gbData->nFastStates>0) && (gbData->err_int > 1 ) || (gbData->err_int > 1 )) && gbData->ctrl_method != GB_CTRL_CNST &&
-          ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
+      if (gbData->err_int > 1 && gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
         gbData->stats.nErrorTestFailures++;
-        err = 100;
+        gbData->stepSize *= 0.5;
         if (gbData->stepSize < GB_MINIMAL_STEP_SIZE) {
           errorStreamPrint(OMC_LOG_STDOUT, 0, "Simulation aborted! Minimum step size %g reached, but interpolation error still to large.", GB_MINIMAL_STEP_SIZE);
           messageClose(OMC_LOG_SOLVER);
@@ -1403,10 +1400,10 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         }
         if (gbData->multi_rate) {
           infoStreamPrint(OMC_LOG_SOLVER, 0, "Reject step from %10g to %10g, error slow states %10g, error interpolation %10g, new stepsize %10g",
-                          gbData->time, gbData->time + gbData->stepSize, gbData->err_slow, gbData->err_int, gbData->stepSize * 0.5);
+                          gbData->time, gbData->time + gbData->stepSize, gbData->err_slow, gbData->err_int, gbData->stepSize);
         } else {
           infoStreamPrint(OMC_LOG_SOLVER, 0, "Reject step from %10g to %10g, interpolation error %10g, new stepsize %10g",
-                          gbData->time, gbData->time + gbData->stepSize, gbData->err_int, gbData->stepSize * 0.5);
+                          gbData->time, gbData->time + gbData->stepSize, gbData->err_int, gbData->stepSize);
 
         }
 
@@ -1414,10 +1411,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
           // dump fast states in file
           dumpFastStates_gb(gbData, FALSE, gbData->time + gbData->stepSize, 2);
         }
-
-        // count failed steps and output information on the solver status
-        // gbData->errorTestFailures++;
-        gbData->stepSize *= 0.5;
         continue;
       }
 
@@ -1454,7 +1447,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         if (gbData->nFastStates > 0) {
           if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) {
             // debug the error of the states and derivatives after outer integration
-            infoStreamPrint(OMC_LOG_GBODE, 1, "Error of the states before inner integration: threshold = %15.10g", err_threshold);
+            infoStreamPrint(OMC_LOG_GBODE, 1, "Error of the states before inner integration: threshold = %15.10g", err_states);
             printVector_gb(OMC_LOG_GBODE, "er", gbData->err, nStates, gbData->timeRight);
             printIntVector_gb(OMC_LOG_GBODE, "sr", gbData->sortedStatesIdx, nStates, gbData->timeRight);
             messageClose(OMC_LOG_GBODE);
@@ -1491,7 +1484,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
         if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
           // debug the error of the states and derivatives after outer integration
-          infoStreamPrint(OMC_LOG_GBODE_V, 1, "Error of the states: threshold = %15.10g", err_threshold);
+          infoStreamPrint(OMC_LOG_GBODE_V, 1, "Error of the states: threshold = %15.10g", err_states);
           printVector_gb(OMC_LOG_GBODE_V, "er", gbData->err, nStates, gbData->timeRight);
           messageClose(OMC_LOG_GBODE_V);
         }
@@ -1576,14 +1569,14 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
     if (gbData->multi_rate) {
       infoStreamPrint(OMC_LOG_SOLVER, 0, "Accept step from %10g to %10g, error slow states %10g, error interpolation %10g, new stepsize %10g",
-                                gbData->timeLeft, gbData->timeRight, err, gbData->err_int, gbData->stepSize);
+                                gbData->timeLeft, gbData->timeRight, err_states, gbData->err_int, gbData->stepSize);
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_STATES)) {
         // dump fast states in file
         dumpFastStates_gb(gbData, FALSE, gbData->time, 0);
       }
     } else {
       infoStreamPrint(OMC_LOG_SOLVER, 0, "Accept step from %10g to %10g, error %10g interpolation error %10g, new stepsize %10g",
-                      gbData->timeLeft, gbData->timeRight, err, gbData->err_int, gbData->stepSize);
+                      gbData->timeLeft, gbData->timeRight, err_states, gbData->err_int, gbData->stepSize);
 
     }
    /* update time with performed stepSize */
