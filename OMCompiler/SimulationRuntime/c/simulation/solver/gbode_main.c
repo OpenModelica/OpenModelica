@@ -1364,7 +1364,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       memcpy(gbData->kRight, fODE, nStates * sizeof(double));
 
       if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER) || (gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL)))) {
-        if (gbData->multi_rate) {
+        if (gbData->multi_rate && gbData->nFastStates>0) {
           gbData->err_int = error_interpolation_gb(gbData, gbData->nSlowStates, gbData->slowStatesIdx, Rtol);
         } else {
           gbData->err_int = error_interpolation_gb(gbData, nStates, NULL, Rtol);
@@ -1389,8 +1389,13 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         messageClose(OMC_LOG_GBODE_V);
       }
 
+      // use interpolation error for step size control
+      if (gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
+          err = fmax(gbData->err_int, err);
+      }
+
       // reject step, if interpolaton error is too large
-      if (gbData->err_int > 1 && gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
+      if ((gbData->err_int > 1) && gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
         gbData->stats.nErrorTestFailures++;
         gbData->stepSize *= 0.5;
         if (gbData->stepSize < GB_MINIMAL_STEP_SIZE) {
@@ -1412,11 +1417,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
           dumpFastStates_gb(gbData, FALSE, gbData->time + gbData->stepSize, 2);
         }
         continue;
-      }
-
-      // use interpolation error for step size control
-      if (gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
-          err = fmax(gbData->err_int, err);
       }
 
       // Rotate and update buffer
