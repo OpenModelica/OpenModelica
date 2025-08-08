@@ -183,8 +183,8 @@ enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag)
     if (flag == FLAG_MR_CTRL) {
       return getControllerMethod(FLAG_SR_CTRL);
     } else {
-      infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode step size control: i [default]");
-      return GB_CTRL_I;
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode step size control: pid_h312 [default]");
+      return GB_CTRL_PID_H312; // Default for single-rate method
     }
   }
 }
@@ -234,11 +234,38 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag)
       }
       return method;
     } else {
-      infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode interpolation method: dense_output [default]");
-      return GB_DENSE_OUTPUT;
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode interpolation method: dense_output_errctrl [default]");
+      return GB_DENSE_OUTPUT_ERRCTRL;
     }
   }
 }
+
+/**
+ * @brief Use filter technic for step size control 
+ *
+ * Read flag FLAG_SR_CTRL_FILTER to get filter value.
+ * Defaults to 1.
+ * gbctrl_filter = 0 -> constant step size,
+ * gbctrl_filter = 1 -> full adaptation without smoothing.
+ *
+ * @return double   Percentage of fast states selection.
+ */
+double getGBCtrlFilterValue()
+{
+  double filter;
+  const char *flag_value = omc_flagValue[FLAG_SR_CTRL_FILTER];
+
+  if (flag_value) {
+    filter = atof(omc_flagValue[FLAG_SR_CTRL_FILTER]);
+    if (filter < 0 || filter > 1) {
+      throwStreamPrint(NULL, "Flag -gbctrl_filter has to be between 0 and 1.");
+    }
+  } else {
+    filter = 1.0;
+  }
+  return filter;
+}
+
 
 /**
  * @brief Get percentage of states for the fast states selection.

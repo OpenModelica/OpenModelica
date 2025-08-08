@@ -47,15 +47,20 @@ enum GB_EXTRAPOL_METHOD{
   GB_EXT_UNKNOWN = 0,    /* Unknown method */
 
   GB_EXT_DEFAULT,        /* Default, depending on the Runge-Kutta method */
-  GB_EXT_RICHARDSON,     /* Richardson extrapolation*/
+  GB_EXT_RICHARDSON,     /* Richardson extrapolation */
   GB_EXT_EMBEDDED        /* Embedded scheme */
 };
+
+// Declaration only
+extern unsigned int use_fhr;
+extern double use_filter;
 
 enum GB_METHOD getGB_method(enum _FLAG flag);
 enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag);
 enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag);
 enum GB_NLS_METHOD getGB_NLS_method(enum _FLAG flag);
 double getGBRatio();
+double getGBCtrlFilterValue();
 enum GB_EXTRAPOL_METHOD getGBErr(enum _FLAG flag);
 
 #ifdef __cplusplus

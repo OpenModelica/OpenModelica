@@ -32,6 +32,10 @@
  */
 
 #include "gbode_main.h"
+#include "gbode_conf.h"
+
+unsigned int use_fhr = FALSE;
+double use_filter = 1.0;
 
 /**
  * @brief Determine the error threshold depending on the percentage of fast states
@@ -61,128 +65,181 @@ double getErrorThreshold(DATA_GBODE* gbData)
   return gbData->err[gbData->sortedStatesIdx[i]];
 }
 
-
-/**
- * @brief constant step size (given by solver main)
- *
- * @param err_values
- * @param stepSize_values
- * @param err_order
- * @return double
- */
-double CController(double* err_values, double* stepSize_values, unsigned int err_order)
-{
-  return 1.0;
-}
-
-/**
- * @brief simple step size control (see Hairer, etc.)
- *
- * @param err_values
- * @param stepSize_values
- * @param err_order
- * @return double
- */
-double IController(double* err_values, double* stepSize_values, unsigned int err_order)
-{
-  double fac = 0.9;
-  double facmax = 1.2;
-  double facmin = 0.5;
-  double beta = 1./(err_order+1);
-
-  if (err_values[0] > 0)
-    return fmin(facmax, fmax(facmin, fac*pow(1./err_values[0], beta)));
-  else
-    return facmax;
-}
-
 /**
  * @brief PI step size control (see Hairer, etc.)
  *
  * @param err_values
- * @param stepSize_values
+ * @param step_values
  * @param err_order
  * @return double
  */
-double PIController(double* err_values, double* stepSize_values, unsigned int err_order)
+double PIController(double* err_values, double* step_values, unsigned int err_order, enum GB_CTRL_METHOD ctrl_method)
 {
-  double fac = 0.9;
-  double facmax = 3.5;
-  double facmin = 0.5;
-  double beta  = 1./(err_order+1);
-  double beta1 = 0.7/(err_order+1);
-  double beta2 = -0.4/(err_order+1);
+  unsigned int k = err_order+1;
+  double beta1, beta2;
+  double err_n     = err_values[0];
+  double err_n1    = err_values[1];
 
-  double estimate;
+  // Fallback for incomplete history
+  if (err_n1 < DBL_EPSILON) {
+      return pow(1. / err_n, 1. / k);
+  }
 
-  if (err_values[0] < DBL_EPSILON)
-    return facmax;
+  switch (ctrl_method) {
+      case GB_CTRL_PI_34:
+          beta1 = 0.7 / k;            // current error (P)
+          beta2 = -0.4 / k;           // previous error (I)
+          break;
+      case GB_CTRL_PI_33:
+          beta1 = (2.0 / 3.0) / k;    // current error (P)
+          beta2 = (-1.0 / 3.0) / k;   // previous error (I)
+          break;
+      case GB_CTRL_PI_42:
+          beta1 = 0.6 / k;            // current error (P)
+          beta2 = -0.2 / k;           // previous error (I)
+          break;
+      default:
+        throwStreamPrint(NULL, "Unknown step size control method.");
+  }
 
-  if (err_values[1] < DBL_EPSILON)
-    estimate = pow(1./err_values[0], beta);
-  else
-    estimate = pow(1./err_values[0], beta1)*pow(1./err_values[1], beta2);
-
-  return fmin(facmax, fmax(facmin, fac*estimate));
+  return pow(1.0 / err_n, beta1) * pow(1.0 / err_n1, beta2);
 }
 
 /**
  * @brief PID step size control (see Hairer, etc.)
  *
  * @param err_values
- * @param stepSize_values
+ * @param step_values
  * @param err_order
  * @return double
  */
-double PIDController(double* err_values, double* stepSize_values, unsigned int err_order)
+double PIDController(double* err_values, double* step_values, unsigned int err_order, enum GB_CTRL_METHOD ctrl_method)
 {
-  double fac = 0.9;
-  double facmax = 3.5;
-  double facmin = 0.5;
-  double beta  = 1./(err_order+1);
-  double beta1 = 0.7/(err_order+1);
-  double beta2 = -0.4/(err_order+1);
-  double alpha1 = 1./18/(err_order+1);
-  double alpha2 = 1./9/(err_order+1);
-  double alpha3 = 1./18/(err_order+1);
+  unsigned int k = err_order + 1;
+  double beta1, beta2, beta3;
 
-  double estimate;
+  double err_n     = err_values[0];
+  double err_n1    = err_values[1];
+  double err_n2    = err_values[2];
 
-  if (err_values[0] < DBL_EPSILON)
-    return facmax;
+  // Fallback for incomplete history
+  if (err_n1 < DBL_EPSILON || err_n2 < DBL_EPSILON) {
+      return pow(1.0 / err_n, 1.0 / k);
+  }
 
-  if (err_values[1] < DBL_EPSILON)
-    estimate = pow(1./err_values[0], beta);
-  else
-    if (err_values[2] < DBL_EPSILON)
-      estimate = pow(1./err_values[0], beta1)*pow(1./err_values[1], beta2);
-    else
-      estimate = pow(1./err_values[0], alpha1)*pow(1./err_values[1], alpha2)*pow(1./err_values[2], alpha3);
+  switch (ctrl_method) {
+      case GB_CTRL_PID_H312:
+          beta1 = 1./18/k;  // current error (P)
+          beta2 = 1./9/k;   // previous error (I)
+          beta3 = 1./18/k;  // second previous error (D)
+          break;
+      case GB_CTRL_PID_SOEDERLIND:
+          beta1 = 0.1 / k;  // current error (P)
+          beta2 = 0.2 / k;  // previous error (I)
+          beta3 = 0.1 / k;  // second previous error (D)
+          break;
+      case GB_CTRL_PID_STIFF:
+          beta1 = 0.58 / k;  // current error (P)
+          beta2 = 0.21 / k;  // previous error (I)
+          beta3 = 0.21 / k;  // second previous error (D)
+          break;
+      default:
+        throwStreamPrint(NULL, "Unknown step size control method.");
+  }
 
-  return fmin(facmax, fmax(facmin, fac*estimate));
+  return pow(1.0 / err_n,  beta1) * pow(1.0 / err_n1, beta2) * pow(1.0 / err_n2, beta3);
 }
 
 /**
- * @brief Get step size control function from method.
+ * @brief Compute adaptive gamma for FHR controller
  *
- * @param ctrl_method     Specifying method.
- * @return void*          Pointer to step size control function.
+ * @param err_now   Current error estimate
+ * @param err_prev  Previous error estimate
+ * @param h_now     Current step size
+ * @param h_prev    Previous step size
+ * @param eta       Scaling factor (e.g. 0.1)
+ * @return double   Adaptive gamma value
  */
-gm_stepSize_control_function getControllFunc(enum GB_CTRL_METHOD ctrl_method)
+double computeGamma(double err_now, double err_prev, double h_now, double h_prev, double eta)
 {
-  switch (ctrl_method)
-  {
-  case GB_CTRL_I:
-    return IController;
-  case GB_CTRL_PI:
-    return PIController;
-  case GB_CTRL_PID:
-    return PIDController;
-  case GB_CTRL_CNST:
-    return CController;
-  default:
-    throwStreamPrint(NULL, "Unknown step size control method.");
+    double log_h_ratio = log(h_now / h_prev);
+    double log_e_ratio = log((err_now + DBL_EPSILON) / (err_prev + DBL_EPSILON));  // avoid division by zero
+
+    return eta * log_h_ratio / (log_e_ratio + DBL_EPSILON);
+}
+
+/**
+ * @brief PID step size control (see Hairer, etc.)
+ *
+ * @param err_values
+ * @param step_values
+ * @param err_order
+ * @return double
+ */
+double GenericController(double* err_values, double* step_values, unsigned int err_order, enum GB_CTRL_METHOD ctrl_method)
+{
+  double fac    = 0.85;
+  double facmax = 2.5;
+  double facmin = 0.2;
+
+  unsigned int k = err_order + 1;
+
+  double err_n     = err_values[0];
+  double err_n1    = err_values[1];
+
+  double h_n       = step_values[0];
+  double h_n1      = step_values[1];
+
+  double h_fac;
+
+  // Handle pathological zero error
+  if (err_n < DBL_EPSILON)
+      return facmax;
+
+  switch (ctrl_method) {
+      case GB_CTRL_CNST:
+          h_fac = 1.0; // Constant step size
+          break;
+      case GB_CTRL_I:
+          h_fac = pow(1./err_n, 1./k);
+          break;
+      case GB_CTRL_PI_33:
+      case GB_CTRL_PI_34:
+      case GB_CTRL_PI_42:
+          h_fac = PIController(err_values, step_values, err_order, ctrl_method);
+          break;
+      case GB_CTRL_PID_H312:
+      case GB_CTRL_PID_SOEDERLIND:
+      case GB_CTRL_PID_STIFF:
+          h_fac = PIDController(err_values, step_values, err_order, ctrl_method);
+          break;
+      default:
+        throwStreamPrint(NULL, "Unknown step size control method.");
   }
+
+  // Applies Fuehrer-style adaptive damping to the step size factor:
+  // If the last step was rejected, gamma > 0 increases conservatism by reducing h_fac.
+  // If accepted, gamma = 0 has little effect. The formula h_fac *= (h_n / h_n1)^gamma
+  // discourages oscillatory step behavior by penalizing instability in recent steps.
+  if (use_fhr && h_n1 > DBL_EPSILON) {
+      // Compute gamma adaptively (Needs to be looked up in the literature), not suitable for PID Controller?!
+      double eta = 0.1;
+      double gamma = computeGamma(err_n, err_n1, h_n, h_n1, eta);
+      h_fac = h_fac * pow(h_n / h_n1, gamma);
+  }
+
+  // Applies exponential smoothing to the step size factor:
+  // use_filter = 0 -> constant step size,
+  // use_filter = 1 -> full adaptation without smoothing.
+  if (use_filter>0) {
+     h_fac = use_filter * h_fac + (1.0 - use_filter);
+  }
+
+  // Keep step size constant, if there are only small changes
+  if ((0.95 < h_fac) && (h_fac < 1.05)) {
+    return 1.0;
+  } else
+    return fmin(facmax, fmax(facmin, fac*h_fac));
 }
 
 

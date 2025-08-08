@@ -64,7 +64,6 @@ extern "C" {
  * @brief Function to compute single-rate step.
  */
 typedef int (*gm_step_function)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
-typedef double (*gm_stepSize_control_function)(double* err_values, double* stepSize_values, unsigned int err_order);
 
 typedef struct DATA_GBODEF{
   enum GB_METHOD GM_method;                         /* Method to use for integration. */
@@ -110,7 +109,6 @@ typedef struct DATA_GBODEF{
   unsigned int nlSystemSize;                        /* Size of non-linear system to solve in a RK step. */
   modelica_boolean symJacAvailable;                 /* Boolean stating if a symbolic Jacobian is available */
   gm_step_function step_fun;                        /* Step function of the integrator */
-  gm_stepSize_control_function stepSize_control;    /* Chosen step size control function (i, pi, const) */
 
   FILE *fastStatesDebugFile;                        /* File pointer for debugging the integration process with respect to slow and fast states */
 
@@ -169,7 +167,6 @@ typedef struct DATA_GBODE{
   unsigned int nlSystemSize;                        /* Size of non-linear system to solve in a RK step. */
   modelica_boolean symJacAvailable;                 /* Boolean stating if a symbolic Jacobian is available */
   gm_step_function step_fun;                        /* Step function of the integrator */
-  gm_stepSize_control_function stepSize_control;    /* Chosen step size control function (i, pi, const) */
 
   /* statistics */
   SOLVERSTATS stats;

@@ -1394,7 +1394,7 @@ void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* 
     tableau->order_bt = tableau->order_b + 1;
   }
   // set order for error control!
-  tableau->error_order = fmin(tableau->order_b, tableau->order_bt) + 1;
+  tableau->error_order = fmin(tableau->order_b, tableau->order_bt);
 }
 
 /**
