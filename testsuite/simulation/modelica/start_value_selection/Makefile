@@ -6,6 +6,9 @@ TESTFILES = \
 	MinimalModel.mos \
 	asmaFlow.mos \
 	ticket5807.mos \
+	overrideLiteralStartFromFile_alg.mos \
+	overrideParamStartFromFile_alg.mos \
+	overrideParamStartFromFile_param.mos \
 
 
 # test that currently fail. Move up when fixed. 

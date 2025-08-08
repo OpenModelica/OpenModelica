@@ -193,7 +193,6 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   *
   *  This function calculates bound parameters that depend on other parameters,
   *  e.g. parameter Real n=1/m;
-  *  obsolete: bound_parameters
   *
   *  \param [ref] [data]
   */
