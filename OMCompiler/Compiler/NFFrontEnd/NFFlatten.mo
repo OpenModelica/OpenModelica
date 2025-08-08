@@ -1349,7 +1349,7 @@ algorithm
       // wrap general equation into for loop
       else
         algorithm
-          (iters, ranges, subs) := makeIterators(Prefix.prefix(prefix), dimensions);
+          (iters, ranges, subs) := makeIterators(Prefix.prefix(prefix), dimensions, getEquationVectorizeIndex(eq) + 1);
           subs := listReverseInPlace(subs);
           eq := Equation.mapExp(eq, function addIterator(prefix = prefix, subscripts = subs));
           scope := Equation.scope(eqn);
@@ -1370,6 +1370,45 @@ algorithm
     end match;
   end for;
 end vectorizeEquation;
+
+function getIteratorVectorizeIndex
+  input InstNode iterator;
+  output Integer index;
+protected
+  String name;
+algorithm
+  name := InstNode.name(iterator);
+
+  if stringLength(name) > 2 and Util.strncmp(name, "$i", 2) then
+    index := stringInt(substring(name, 3, stringLength(name)));
+  else
+    index := 0;
+  end if;
+end getIteratorVectorizeIndex;
+
+function getEquationVectorizeIndex
+  "Returns the index of the equation if it's a vectorized for-loop,
+   e.g. for $i2 loop => 2, or 0 if the equation isn't vectorized."
+  input Equation eq;
+  output Integer index;
+algorithm
+  index := match eq
+    case Equation.FOR() then getIteratorVectorizeIndex(eq.iterator);
+    else 0;
+  end match;
+end getEquationVectorizeIndex;
+
+function getStatementVectorizeIndex
+  "Returns the index of the statement if it's a vectorized for-loop,
+   e.g. for $i2 loop => 2, or 0 if the statement isn't vectorized."
+  input Statement stmt;
+  output Integer index;
+algorithm
+  index := match stmt
+    case Statement.FOR() then getIteratorVectorizeIndex(stmt.iterator);
+    else 0;
+  end match;
+end getStatementVectorizeIndex;
 
 function vectorizeAlgorithms
   input list<Algorithm> algs;
@@ -1400,6 +1439,7 @@ algorithm
       list<Expression> ranges;
       list<Subscript> subs;
       list<Statement> body;
+      Integer index;
 
     // let simple assignment as is
     case Algorithm.ALGORITHM(statements = {Statement.ASSIGNMENT(lhs = Expression.CREF(), rhs = Expression.CREF())})
@@ -1408,7 +1448,9 @@ algorithm
     // wrap general algorithm into for loop
     else
       algorithm
-        (iters, ranges, subs) := makeIterators(Prefix.prefix(prefix), dimensions);
+        // Get the highest currently used vectorization index and start on the next.
+        index := List.applyAndFold(alg.statements, intMax, getStatementVectorizeIndex, 0) + 1;
+        (iters, ranges, subs) := makeIterators(Prefix.prefix(prefix), dimensions, index);
         subs := listReverseInPlace(subs);
         body := Statement.mapExpList(alg.statements, function addIterator(prefix = prefix, subscripts = subs));
 
@@ -1425,6 +1467,7 @@ end vectorizeAlgorithm;
 public function makeIterators
   input ComponentRef prefix;
   input list<Dimension> dimensions;
+  input Integer startIndex = 1;
   output list<InstNode> iterators = {};
   output list<Expression> ranges = {};
   output list<Subscript> subscripts = {};
@@ -1432,7 +1475,7 @@ protected
   Component iter_comp;
   InstNode prefix_node, iter;
   Expression range;
-  Integer index = 1;
+  Integer index = startIndex;
   Subscript sub;
 algorithm
   prefix_node := ComponentRef.node(prefix);
