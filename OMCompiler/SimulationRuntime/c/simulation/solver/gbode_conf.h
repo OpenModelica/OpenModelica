@@ -51,28 +51,7 @@ enum GB_EXTRAPOL_METHOD{
   GB_EXT_EMBEDDED        /* Embedded scheme */
 };
 
-/**
- * @brief Variants of PI controller.
- */
-typedef enum {
-  GB_PI_UNKNOWN = 0,    /* Unknown method */
-
-  GB_PI_34,             /* PI34-Controller (Hairer) */
-  GB_PI_33,             /* PI33-Controller (Hairer) */
-  GB_PI_42              /* PI42-Controller (Soederlind) */
-} GB_PI_VARIANTS;
-
-typedef enum {
-    GB_PID_UNKNOWN = 0, /* Unknown method */
-
-    GB_PID_H312,        /* PIDH312-Controller (Hairer) */
-    GB_PID_SOEDERLIND,  /* PID-Controller (Soederlind) */
-    GB_PID_STIFF        /* PID-Controller for stiff systems */
-} GB_PID_VARIANTS;
-
 // Declaration only
-extern GB_PI_VARIANTS pi_type;
-extern GB_PID_VARIANTS pid_type;
 extern unsigned int use_fhr;
 extern double use_filter;
 

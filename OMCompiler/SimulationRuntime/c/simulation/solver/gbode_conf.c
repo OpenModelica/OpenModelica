@@ -183,7 +183,7 @@ enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag)
     if (flag == FLAG_MR_CTRL) {
       return getControllerMethod(FLAG_SR_CTRL);
     } else {
-      infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode step size control: i [default]");
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode step size control: pid_h312 [default]");
       return GB_CTRL_PID_H312; // Default for single-rate method
     }
   }

@@ -150,8 +150,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
     warningStreamPrint(OMC_LOG_STDOUT, 0, "Constant step size not supported for inner integration. Using IController.");
     gbfData->ctrl_method = GB_CTRL_I;
   }
-  gbfData->stepSize_control = getControllFunc(gbfData->ctrl_method);
-
+  
   // allocate memory for the generic RK method
   gbfData->y    = malloc(gbData->nStates*sizeof(double));
   gbfData->yOld = malloc(gbData->nStates*sizeof(double));
@@ -338,10 +337,11 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     gbData->isExplicit = FALSE;
   }
 
-  // test of multi-step method
-
+  // detect controller method
   gbData->ctrl_method = getControllerMethod(FLAG_SR_CTRL);
-  gbData->stepSize_control = getControllFunc(gbData->ctrl_method);
+  use_fhr = omc_flag[FLAG_SR_CTRL_FHR];
+  use_filter = getGBCtrlFilterValue();
+  
    /* define maximum step size gbode is allowed to go */
   if (omc_flag[FLAG_MAX_STEP_SIZE]) {
     gbData->maxStepSize = atof(omc_flagValue[FLAG_MAX_STEP_SIZE]);
@@ -657,7 +657,7 @@ void gbodef_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   gbfData->didEventStep = FALSE;
 
   gbfData->time = gbData->time;
-  gbfData->stepSize = 0.1*gbData->stepSize*IController(&(gbData->err_fast), &(gbData->stepSize), 1);
+  gbfData->stepSize = 0.1*gbData->stepSize*GenericController(&(gbData->err_fast), &(gbData->stepSize), 1, GB_CTRL_I);
 
   memcpy(gbfData->yOld, gbData->yOld, sizeof(double) * nStates);
   memcpy(gbfData->y, gbData->y, sizeof(double) * nStates);
@@ -911,7 +911,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       // Store performed stepSize for adjusting the time in case of latter interpolation
       // Call the step size control
       gbfData->lastStepSize = gbfData->stepSize;
-      gbfData->stepSize *= gbfData->stepSize_control(gbfData->errValues, gbfData->stepSizeValues, gbfData->tableau->error_order);
+      gbfData->stepSize *= GenericController(gbfData->errValues, gbfData->stepSizeValues, gbfData->tableau->error_order, gbfData->ctrl_method);
 
       // debug ring buffer for the states and derviatives of the states
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
@@ -1434,7 +1434,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       // Store performed step size for latter interpolation
       // Call the step size control
       gbData->lastStepSize = gbData->stepSize;
-      gbData->stepSize *= gbData->stepSize_control(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order);
+      gbData->stepSize *= GenericController(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order, gbData->ctrl_method);
       if (gbData->maxStepSize > 0 && gbData->maxStepSize < gbData->stepSize)
         gbData->stepSize = gbData->maxStepSize;
       gbData->optStepSize = gbData->stepSize;

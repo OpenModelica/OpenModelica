@@ -34,10 +34,6 @@
 #include "gbode_main.h"
 #include "gbode_conf.h"
 
-GB_PI_VARIANTS  pi_type  = GB_PI_34;
-GB_PID_VARIANTS pid_type = GB_PID_H312;
-enum GB_CTRL_METHOD ctrl_type = GB_CTRL_I;
-
 unsigned int use_fhr = FALSE;
 double use_filter = 1.0;
 
@@ -69,20 +65,6 @@ double getErrorThreshold(DATA_GBODE* gbData)
   return gbData->err[gbData->sortedStatesIdx[i]];
 }
 
-
-/**
- * @brief constant step size (given by solver main)
- *
- * @param err_values
- * @param step_values
- * @param err_order
- * @return double
- */
-double CController(double* err_values, double* step_values, unsigned int err_order)
-{
-  return 1.0;
-}
-
 /**
  * @brief PI step size control (see Hairer, etc.)
  *
@@ -91,34 +73,33 @@ double CController(double* err_values, double* step_values, unsigned int err_ord
  * @param err_order
  * @return double
  */
-double PIController(double* err_values, double* step_values, unsigned int err_order)
+double PIController(double* err_values, double* step_values, unsigned int err_order, enum GB_CTRL_METHOD ctrl_method)
 {
   unsigned int k = err_order+1;
-  double beta  = 1./k;
   double beta1, beta2;
   double err_n     = err_values[0];
   double err_n1    = err_values[1];
 
   // Fallback for incomplete history
   if (err_n1 < DBL_EPSILON) {
-      double beta = 1.0 / k;
       return pow(1. / err_n, 1. / k);
   }
 
-  switch (pi_type) {
-      case GB_PI_UNKNOWN:
-      case GB_PI_34:
+  switch (ctrl_method) {
+      case GB_CTRL_PI_34:
           beta1 = 0.7 / k;            // current error (P)
           beta2 = -0.4 / k;           // previous error (I)
           break;
-      case GB_PI_33:
+      case GB_CTRL_PI_33:
           beta1 = (2.0 / 3.0) / k;    // current error (P)
           beta2 = (-1.0 / 3.0) / k;   // previous error (I)
           break;
-      case GB_PI_42:
+      case GB_CTRL_PI_42:
           beta1 = 0.6 / k;            // current error (P)
           beta2 = -0.2 / k;           // previous error (I)
           break;
+      default:
+        throwStreamPrint(NULL, "Unknown step size control method.");
   }
 
   return pow(1.0 / err_n, beta1) * pow(1.0 / err_n1, beta2);
@@ -132,10 +113,10 @@ double PIController(double* err_values, double* step_values, unsigned int err_or
  * @param err_order
  * @return double
  */
-double PIDController(double* err_values, double* step_values, unsigned int err_order)
+double PIDController(double* err_values, double* step_values, unsigned int err_order, enum GB_CTRL_METHOD ctrl_method)
 {
   unsigned int k = err_order + 1;
-  double alpha1, alpha2, alpha3;
+  double beta1, beta2, beta3;
 
   double err_n     = err_values[0];
   double err_n1    = err_values[1];
@@ -146,26 +127,27 @@ double PIDController(double* err_values, double* step_values, unsigned int err_o
       return pow(1.0 / err_n, 1.0 / k);
   }
 
-  switch (pid_type) {
-      case GB_PID_UNKNOWN:
-      case GB_PID_H312:
-          alpha1 = 1./18/k;  // current error (P)
-          alpha2 = 1./9/k;   // previous error (I)
-          alpha3 = 1./18/k;  // second previous error (D)
+  switch (ctrl_method) {
+      case GB_CTRL_PID_H312:
+          beta1 = 1./18/k;  // current error (P)
+          beta2 = 1./9/k;   // previous error (I)
+          beta3 = 1./18/k;  // second previous error (D)
           break;
-      case GB_PID_SOEDERLIND:
-          alpha1 = 0.1 / k;  // current error (P)
-          alpha2 = 0.2 / k;  // previous error (I)
-          alpha3 = 0.1 / k;  // second previous error (D)
+      case GB_CTRL_PID_SOEDERLIND:
+          beta1 = 0.1 / k;  // current error (P)
+          beta2 = 0.2 / k;  // previous error (I)
+          beta3 = 0.1 / k;  // second previous error (D)
           break;
-      case GB_PID_STIFF:
-          alpha1 = 0.58 / k;  // current error (P)
-          alpha2 = 0.21 / k;  // previous error (I)
-          alpha3 = 0.21 / k;  // second previous error (D)
+      case GB_CTRL_PID_STIFF:
+          beta1 = 0.58 / k;  // current error (P)
+          beta2 = 0.21 / k;  // previous error (I)
+          beta3 = 0.21 / k;  // second previous error (D)
           break;
+      default:
+        throwStreamPrint(NULL, "Unknown step size control method.");
   }
 
-  return pow(1.0 / err_n,  alpha1) * pow(1.0 / err_n1, alpha2) * pow(1.0 / err_n2, alpha3);
+  return pow(1.0 / err_n,  beta1) * pow(1.0 / err_n1, beta2) * pow(1.0 / err_n2, beta3);
 }
 
 /**
@@ -194,7 +176,7 @@ double computeGamma(double err_now, double err_prev, double h_now, double h_prev
  * @param err_order
  * @return double
  */
-double GenericController(double* err_values, double* step_values, unsigned int err_order)
+double GenericController(double* err_values, double* step_values, unsigned int err_order, enum GB_CTRL_METHOD ctrl_method)
 {
   double fac    = 0.85;
   double facmax = 2.5;
@@ -214,33 +196,22 @@ double GenericController(double* err_values, double* step_values, unsigned int e
   if (err_n < DBL_EPSILON)
       return facmax;
 
-  switch (ctrl_type) {
+  switch (ctrl_method) {
+      case GB_CTRL_CNST:
+          h_fac = 1.0; // Constant step size
+          break;
       case GB_CTRL_I:
           h_fac = pow(1./err_n, 1./k);
           break;
       case GB_CTRL_PI_33:
-          pi_type = GB_PI_33;
-          h_fac = PIController(err_values, step_values, err_order);
-          break;
       case GB_CTRL_PI_34:
-          pi_type = GB_PI_34;
-          h_fac = PIController(err_values, step_values, err_order);
-          break;
       case GB_CTRL_PI_42:
-          pi_type = GB_PI_42;
-          h_fac = PIController(err_values, step_values, err_order);
+          h_fac = PIController(err_values, step_values, err_order, ctrl_method);
           break;
       case GB_CTRL_PID_H312:
-          pid_type = GB_PID_H312;
-          h_fac = PIDController(err_values, step_values, err_order);
-          break;
       case GB_CTRL_PID_SOEDERLIND:
-          pid_type = GB_PID_SOEDERLIND;
-          h_fac = PIDController(err_values, step_values, err_order);
-          break;
       case GB_CTRL_PID_STIFF:
-          pid_type = GB_PID_STIFF;
-          h_fac = PIDController(err_values, step_values, err_order);
+          h_fac = PIDController(err_values, step_values, err_order, ctrl_method);
           break;
       default:
         throwStreamPrint(NULL, "Unknown step size control method.");
@@ -271,81 +242,6 @@ double GenericController(double* err_values, double* step_values, unsigned int e
     return fmin(facmax, fmax(facmin, fac*h_fac));
 }
 
-double IController(double* err_values, double* step_values, unsigned int err_order)
-{
-    ctrl_type = GB_CTRL_I;
-    return GenericController(err_values, step_values, err_order);
-}
-
-double PIController_33(double* err_values, double* step_values, unsigned int err_order)
-{
-    ctrl_type = GB_CTRL_PI_33;
-    return GenericController(err_values, step_values, err_order);
-}
-
-double PIController_34(double* err_values, double* step_values, unsigned int err_order)
-{
-    ctrl_type = GB_CTRL_PI_34;
-    return GenericController(err_values, step_values, err_order);
-}
-
-double PIController_42(double* err_values, double* step_values, unsigned int err_order)
-{
-    ctrl_type = GB_CTRL_PI_42;
-    return GenericController(err_values, step_values, err_order);
-}
-
-double PIDController_h312(double* err_values, double* step_values, unsigned int err_order)
-{
-    ctrl_type = GB_CTRL_PID_H312;
-    return GenericController(err_values, step_values, err_order);
-}
-
-double PIDController_Soederlind(double* err_values, double* step_values, unsigned int err_order)
-{
-    ctrl_type = GB_CTRL_PID_SOEDERLIND;
-    return GenericController(err_values, step_values, err_order);
-}
-
-double PIDController_Stiff(double* err_values, double* step_values, unsigned int err_order)
-{
-    ctrl_type = GB_CTRL_PID_STIFF;
-    return GenericController(err_values, step_values, err_order);
-}
-
-/**
- * @brief Get step size control function from method.
- *
- * @param ctrl_method     Specifying method.
- * @return void*          Pointer to step size control function.
- */
-gm_stepSize_control_function getControllFunc(enum GB_CTRL_METHOD ctrl_method)
-{
-  ctrl_type = ctrl_method;
-  use_fhr = omc_flag[FLAG_SR_CTRL_FHR];
-  use_filter = getGBCtrlFilterValue();
-  switch (ctrl_method)
-  {
-  case GB_CTRL_CNST:
-    return CController;
-  case GB_CTRL_I:
-    return IController;
-  case GB_CTRL_PI_33:
-     return PIController_33;
-  case GB_CTRL_PI_34:
-     return PIController_34;
-  case GB_CTRL_PI_42:
-     return PIController_42;
-  case GB_CTRL_PID_H312:
-     return PIDController_h312;
-  case GB_CTRL_PID_SOEDERLIND:
-     return PIDController_Soederlind;
-  case GB_CTRL_PID_STIFF:
-    return PIDController_Stiff;
-  default:
-    throwStreamPrint(NULL, "Unknown step size control method.");
-  }
-}
 
 /**
  * @brief Calculate initial step size.
