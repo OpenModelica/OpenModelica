@@ -746,51 +746,6 @@ void setAllVarsToStart(DATA *data)
   TRACE_POP
 }
 
-/*! \fn setAllStartToVars
- *
- *  This function sets the start-attribute of all variables to their current values.
- *
- *  \param [ref] [data]
- *
- *  \author lochel
- */
-void setAllStartToVars(DATA *data)
-{
-  TRACE_PUSH
-  SIMULATION_DATA *sData = data->localData[0];
-  MODEL_DATA      *mData = data->modelData;
-  long i;
-
-  debugStreamPrint(OMC_LOG_DEBUG, 1, "the start-attribute of all variables to their current values:");
-  for(i=0; i<mData->nVariablesReal; ++i)
-  {
-    mData->realVarsData[i].attribute.start = sData->realVars[i];
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "Real var %s(start=%g)", mData->realVarsData[i].info.name, sData->realVars[i]);
-  }
-  for(i=0; i<mData->nVariablesInteger; ++i)
-  {
-    mData->integerVarsData[i].attribute.start = sData->integerVars[i];
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "Integer var %s(start=%ld)", mData->integerVarsData[i].info.name, sData->integerVars[i]);
-  }
-  for(i=0; i<mData->nVariablesBoolean; ++i)
-  {
-    mData->booleanVarsData[i].attribute.start = sData->booleanVars[i];
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "Boolean var %s(start=%s)", mData->booleanVarsData[i].info.name, sData->booleanVars[i] ? "true" : "false");
-  }
-#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
-  for(i=0; i<mData->nVariablesString; ++i)
-  {
-    mData->stringVarsData[i].attribute.start = MMC_STRINGDATA(sData->stringVars[i]);
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "String var %s(start=%s)", mData->stringVarsData[i].info.name, MMC_STRINGDATA(sData->stringVars[i]));
-  }
-#endif
-  if (OMC_DEBUG_STREAM(OMC_LOG_DEBUG)) {
-    messageClose(OMC_LOG_DEBUG);
-  }
-
-  TRACE_POP
-}
-
 /*! \fn setAllParamsToStart
  *
  *  This function sets all parameters and their initial values to their start-attribute.

@@ -7313,7 +7313,7 @@ algorithm
   startValueEquations := matchcontinue (syst, shared, acc)
     local
       BackendDAE.Variables vars, av;
-      list<BackendDAE.Equation>  startValueEquationsTmp2;
+      list<BackendDAE.Equation> startValueEquationsTmp2;
       list<SimCode.SimEqSystem> simeqns, simeqns1;
       Integer uniqueEqIndex;
       BackendDAE.Variables globalKnownVars;
@@ -7525,6 +7525,7 @@ algorithm
 
   // Create SimCode Equation for special globalKnownVars
   if (BackendVariable.isParam(globalKnownVar) and BackendVariable.varFixed(globalKnownVar) and (BackendVariable.isFinalOrProtectedVar(globalKnownVar) or BackendVariable.varHasNonConstantBindExpOrStartValue(globalKnownVar)))
+    or ( /* parameter has non-trivial start equation - this is not the correct condition though */ BackendVariable.isParam(globalKnownVar) and BackendVariable.varHasNonConstantBindExpOrStartValue(globalKnownVar) and BackendVariable.varHasStartValue(globalKnownVar))
     or (BackendVariable.isVarAlg(globalKnownVar) and not BackendVariable.isInput(globalKnownVar)) and BackendVariable.varFixed(globalKnownVar)
     or (BackendVariable.isExtObj(globalKnownVar) and BackendVariable.varHasBindExp(globalKnownVar) and BackendVariable.varFixed(globalKnownVar))
    then

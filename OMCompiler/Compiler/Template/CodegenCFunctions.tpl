@@ -4801,19 +4801,6 @@ end contextIteratorName;
   else crefToCStr(cr, 0, false, false, &sub)
 end cref;
 
-/* public */ template crefOrStartCref(ComponentRef cr, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
- "Only during intialization and if the start expression cannot be
-  evaluated to a constant use the full expression. Otherwise return the
-  cref itself. Used to resolve Ticket: #5807"
-::=
-let &sub = buffer ""
-  match cref2simvar(cr, getSimCode())
-  case SIMVAR(initialValue = SOME(startExp)) then
-    if boolNot(Expression.isConst(startExp)) then daeExp(startExp, context, &preExp, &varDecls, &auxFunction)
-    else cref(cr, &sub)
-  else cref(cr, &sub)
-end crefOrStartCref;
-
 /* public */ template crefOld(ComponentRef cr, Integer ix)
  "Generates C equivalent name for component reference.
   used in Compiler/Template/CodegenFMU.tpl"
