@@ -1392,11 +1392,13 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
       // use interpolation error for step size control
       if (gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
-          err = fmax(gbData->err_int, err);
+          if (err>Rtol) {
+            err = fmax(gbData->err_int, err);
+          }
       }
 
       // reject step, if interpolaton error is too large
-      if ((gbData->err_int > 1) && gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
+      if ((err > 1) && gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
         gbData->stats.nErrorTestFailures++;
         gbData->stepSize *= 0.5;
         if (gbData->stepSize < GB_MINIMAL_STEP_SIZE) {
@@ -1408,8 +1410,8 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
           infoStreamPrint(OMC_LOG_SOLVER, 0, "Reject step from %10g to %10g, error slow states %10g, error interpolation %10g, new stepsize %10g",
                           gbData->time, gbData->time + gbData->stepSize, gbData->err_slow, gbData->err_int, gbData->stepSize);
         } else {
-          infoStreamPrint(OMC_LOG_SOLVER, 0, "Reject step from %10g to %10g, interpolation error %10g, new stepsize %10g",
-                          gbData->time, gbData->time + gbData->stepSize, gbData->err_int, gbData->stepSize);
+          infoStreamPrint(OMC_LOG_SOLVER, 0, "Reject step from %10g to %10g, error %10g, interpolation error %10g, new stepsize %10g",
+                          gbData->time, gbData->time + gbData->stepSize, err_states, gbData->err_int, gbData->stepSize);
 
         }
 

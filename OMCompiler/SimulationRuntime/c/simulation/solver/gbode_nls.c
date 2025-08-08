@@ -503,6 +503,7 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
   rtclock_t clock;
   double cpu_time_used;
   double newtonTol = fmax(newtonFTol, newtonXTol);
+  double newtonMaxStepsValue = fmax(newtonMaxSteps, 10*nlsData->size);
 
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
     rt_ext_tp_tick(&clock);
@@ -525,20 +526,21 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
     if (!solved && maxJacUpdate[1] > 0) {
       if (maxJacUpdate[0] > 0)
         infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: Solution of NLS failed. Try with updated Jacobian.");
-      set_kinsol_parameters(kin_mem, newtonMaxSteps, SUNFALSE, maxJacUpdate[1], newtonTol);
+      set_kinsol_parameters(kin_mem, newtonMaxStepsValue, SUNFALSE, maxJacUpdate[1], newtonTol);
       solved = solveNLS(data, threadData, nlsData);
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) get_kinsol_statistics(kin_mem);
     }
     if (!solved && maxJacUpdate[2] > 0) {
       infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "GBODE: Solution of NLS failed, Try with extrapolated start value.");
       memcpy(nlsData->nlsxExtrapolation, nlsData->nlsxOld,  nlsData->size*sizeof(modelica_real));
-      set_kinsol_parameters(kin_mem, newtonMaxSteps, SUNFALSE, maxJacUpdate[2], newtonTol);
+      set_kinsol_parameters(kin_mem, newtonMaxStepsValue, SUNFALSE, maxJacUpdate[2], newtonTol);
       solved = solveNLS(data, threadData, nlsData);
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) get_kinsol_statistics(kin_mem);
     }
     if (!solved && maxJacUpdate[3] > 0) {
       infoStreamPrint(OMC_LOG_STDOUT, 0, "GBODE: Solution of NLS failed, Try with less accuracy.");
-      set_kinsol_parameters(kin_mem, newtonMaxSteps, SUNFALSE, maxJacUpdate[3], 10*newtonTol);
+      memcpy(nlsData->nlsxExtrapolation,    nlsData->nlsx, nlsData->size*sizeof(modelica_real));
+      set_kinsol_parameters(kin_mem, newtonMaxStepsValue, SUNFALSE, maxJacUpdate[3], 10*newtonTol);
       solved = solveNLS(data, threadData, nlsData);
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) get_kinsol_statistics(kin_mem);
     }
