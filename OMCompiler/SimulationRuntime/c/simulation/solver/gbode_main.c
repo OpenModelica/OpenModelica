@@ -927,6 +927,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       // Re-do step, if error is larger than requested
       if (err > 1) {
         gbfData->stats.nErrorTestFailures++;
+        gbfData->stepSize *= 0.5;
         infoStreamPrint(OMC_LOG_SOLVER, 0, "Reject step from %10g to %10g, error %10g, new stepsize %10g",
                         gbfData->time, gbfData->time + gbfData->lastStepSize, err, gbfData->stepSize);
         if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_STATES)) {
