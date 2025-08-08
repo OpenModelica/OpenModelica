@@ -7524,7 +7524,8 @@ algorithm
   end if;
 
   // Create SimCode Equation for special globalKnownVars
-  if (BackendVariable.isParam(globalKnownVar) and (BackendVariable.isFinalOrProtectedVar(globalKnownVar) or BackendVariable.varHasNonConstantBindExpOrStartValue(globalKnownVar)))
+  if (BackendVariable.isParam(globalKnownVar) and BackendVariable.varFixed(globalKnownVar) and (BackendVariable.isFinalOrProtectedVar(globalKnownVar) or BackendVariable.varHasNonConstantBindExpOrStartValue(globalKnownVar)))
+    or ( /* parameter has non-trivial start equation - this is not the correct condition though */ BackendVariable.isParam(globalKnownVar) and BackendVariable.varHasNonConstantBindExpOrStartValue(globalKnownVar) and BackendVariable.varHasStartValue(globalKnownVar))
     or (BackendVariable.isVarAlg(globalKnownVar) and not BackendVariable.isInput(globalKnownVar)) and BackendVariable.varFixed(globalKnownVar)
     or (BackendVariable.isExtObj(globalKnownVar) and BackendVariable.varHasBindExp(globalKnownVar) and BackendVariable.varFixed(globalKnownVar))
    then
