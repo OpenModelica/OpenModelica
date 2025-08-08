@@ -1106,7 +1106,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   double targetTime, eventTime, err;
 
   int gb_step_info;
-  int i;
+  int i, retries = 0;
   modelica_boolean foundEvent;
 
   int *sortedStates;
@@ -1391,14 +1391,13 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       }
 
       // use interpolation error for step size control
-      if (gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
-          if (err>Rtol) {
+      if ((err > 1e-2) && (retries < 4) && gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
             err = fmax(gbData->err_int, err);
-          }
       }
 
       // reject step, if interpolaton error is too large
       if ((err > 1) && gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
+        retries++;
         gbData->stats.nErrorTestFailures++;
         gbData->stepSize *= 0.5;
         if (gbData->stepSize < GB_MINIMAL_STEP_SIZE) {
@@ -1420,6 +1419,8 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
           dumpFastStates_gb(gbData, FALSE, gbData->time + gbData->stepSize, 2);
         }
         continue;
+      } else {
+        retries = 0; // reset retries, if step is accepted
       }
 
       // Rotate and update buffer
