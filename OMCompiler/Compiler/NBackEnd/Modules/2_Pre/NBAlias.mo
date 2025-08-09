@@ -102,6 +102,7 @@ protected
   import StrongComponent = NBStrongComponent;
   import Tearing = NBTearing;
   import NBVariable.{VariablePointers, VariablePointer, VarData};
+  import ASSC = NBASSC;
 
   // Util imports
   import MetaModelica.Dangerous;
@@ -881,8 +882,9 @@ protected
       then replacements;
 
       case NONE() guard(listLength(set.simple_variables) == listLength(set.simple_equations)) algorithm
-        vars := VariablePointers.fromList(list(BVariable.getVarPointer(cr) for cr in set.simple_variables), true);
-        eqs := EquationPointers.fromList(set.simple_equations);
+        //vars := VariablePointers.fromList(list(BVariable.getVarPointer(cr, sourceInfo()) for cr in set.simple_variables), true);
+        //eqs := EquationPointers.fromList(set.simple_equations);
+        ASSC.main(set.simple_equations, set.simple_variables);
 
         /*// causalize the system
         (_, comps) := Causalize.simple(vars, eqs);
@@ -896,7 +898,7 @@ protected
         // for loop creating -> replacements for each var
 
         // step 0: initialize matrix and lhs vector with zeros
-        all_diffs := arrayCreate(listLength(set.simple_equations),arrayCreate(0,0.0));
+        all_diffs := arrayCreate(listLength(set.simple_equations),arrayCreate(0,0.0)); // -> indices /values
         for i in 1:arrayLength(all_diffs) loop
           arrayUpdate(all_diffs, i, arrayCreate(listLength(set.simple_variables),0.0)); // unique array
         end for;
@@ -923,12 +925,12 @@ protected
           // collect all necessary crefs for this equation
           cref_lst := Equation.collectCrefs(Pointer.access(eq_ptr), function Equation.collectFromMap(check_map = UnorderedMap.fromLists(set.simple_variables, set.simple_variables, ComponentRef.hash, ComponentRef.isEqual)));
           for cref in cref_lst loop
-            print("cref "+BVariable.toString(BVariable.getVar(cref))+"\n");
+            print("cref "+BVariable.toString(BVariable.getVar(cref, sourceInfo()))+"\n");
           end for;
           // differentiate equation by each variable in cref_lst
           column := all_diffs[idx_i];
           for cr in cref_lst loop
-            print("here3"+BVariable.toString(BVariable.getVar(cr))+"\n");
+            print("here3"+BVariable.toString(BVariable.getVar(cr, sourceInfo()))+"\n");
             args.diffCref := cr;
             diff_res := SimplifyExp.simplify(Differentiate.differentiateExpression(res, args));
             print("here5"+Expression.toString(diff_res)+"\n" );
