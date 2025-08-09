@@ -40,15 +40,34 @@ encapsulated package NBASSC
 "
 
 protected
-  import NBEquation.EquationPointers;
-  import NBVariable.VariablePointers;
+  // NF imports
+  import ComponentRef = NFComponentRef;
+  import Expression = NFExpression;
+  import SimplifyExp = NFSimplifyExp;
+  import Type = NFType;
+
+  // Backend imports
+  import Differentiate = NBDifferentiate;
+  import NBDifferentiate.{DifferentiationType, DifferentiationArguments};
+  import NBEquation.{Equation, EquationPointers};
+  import BVariable = NBVariable;
+  import NBVariable.{VariablePointers, VariablePointer, VarData};
 
 public
   function main
-    input EquationPointers eqns;
-    input VariablePointers vars;
+    input list<Pointer<Equation>> eqns;
+    input list<ComponentRef> vars;
   protected
     array<list<Integer>> indices, values;
+    Boolean b = true;
+    list<ComponentRef> cref_lst;
+    Expression res, diff_res;
+    DifferentiationArguments args;
+    Integer diff_res_int;
+    UnorderedMap<tuple<Pointer<Equation>,ComponentRef>,Integer> diffs;
+    UnorderedSet<Pointer<Equation>> int_eqns;
+    UnorderedSet<list<ComponentRef>> int_crefs;
+    UnorderedMap<Pointer<Equation>,list<ComponentRef>> rows;
   algorithm
     // ### pseudo code of what shall happen
     // for eqn in eqns:
@@ -83,6 +102,44 @@ public
     //    end for
     //  end for
 
+    //diffs := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+    for eq_ptr in eqns loop
+      cref_lst := Equation.collectCrefs(Pointer.access(eq_ptr), function Equation.collectFromMap(check_map = UnorderedMap.fromLists(vars, vars, ComponentRef.hash, ComponentRef.isEqual)));
+      for cref in cref_lst loop
+        print("cref "+BVariable.toString(BVariable.getVar(cref, sourceInfo()))+"\n");
+      end for;
+      res := Equation.getResidualExp(Pointer.access(eq_ptr));
+      print("here2 "+Expression.toString(res)+"\n" );
+      args := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE);
+
+      for cr in cref_lst loop
+        print("here3"+BVariable.toString(BVariable.getVar(cr, sourceInfo()))+"\n");
+        args.diffCref := cr;
+        diff_res := SimplifyExp.simplify(Differentiate.differentiateExpression(res, args));
+        print("here5"+Expression.toString(diff_res)+"\n" );
+        print(Type.toString(Expression.typeOf(diff_res))+"\n");
+        if Type.isReal(Expression.typeOf(diff_res)) then // if diff is real
+          diff_res_int := realInt(Expression.realValue(diff_res));
+          print("from Real "+intString(diff_res_int)+"\n");
+          UnorderedMap.add((eq_ptr, cr), diff_res_int, diffs);
+        elseif Type.isInteger(Expression.typeOf(diff_res)) then // if diff is integer
+          diff_res_int := Expression.integerValue(diff_res);
+          print("from Int "+intString(diff_res_int)+"\n");
+          UnorderedMap.add((eq_ptr, cr), diff_res_int, diffs);
+        else
+          b := false;
+          break;
+        end if;
+      end for;
+      //print(UnorderedMap.toString(diffs, tuple<EquationPointers.toString,ComponentRef.toString, intString));
+      if b then
+        UnorderedSet.add(eq_ptr, int_eqns);
+        UnorderedSet.add(cref_lst, int_crefs);
+        UnorderedMap.add(eq_ptr, cref_lst, rows);
+      end if;
+    end for;
+
+
     // remove this dummy section
     // ################################
     indices := arrayCreate(3, {});
@@ -97,7 +154,13 @@ public
 
 
     setMatrix(3,3,5,indices,values);
-    //printMatrix();
+    for cref in vars loop
+      print("cref "+BVariable.toString(BVariable.getVar(cref, sourceInfo()))+"\n");
+    end for;
+    for eq in eqns loop
+      print("eq "+ Equation.toString(Pointer.access(eq))+"\n");
+    end for;
+    printMatrix();
     freeMatrix();
   end main;
 
