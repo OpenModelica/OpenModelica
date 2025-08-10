@@ -264,75 +264,84 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
   modelica_real* fODE = &sData->realVars[nStates];
 
   int i;
-
-  double sc;
-  double d, d0 = 0.0, d1 = 0.0, d2 = 0.0;
+  double sc, safety = 0.01;
+  double d0 = 0.0;  // norm of y0 weighted
+  double d1 = 0.0;  // norm of f0 weighted
+  double d2 = 0.0;  // norm of slope difference weighted
+  
   double h0, h1;
   double absTol = data->simulationInfo->tolerance;
   double relTol = absTol;
 
-  // This flag will be used in order to reduce the step size for the first Euler step below
-  // Only used for subsequent calls, if an assert happens during the Euler step
+  // Increase initialFailures counter on repeated failures (for adaptive reduction)
   gbData->initialFailures++;
 
-  /* store values of the states and state derivatives at initial or event time */
+  // Store current time and state
   gbData->time = sData->timeValue;
-  memcpy(gbData->yOld, sData->realVars, nStates*sizeof(double));
+  memcpy(gbData->yOld, sData->realVars, nStates * sizeof(double));
+
+  // Compute f(t0, y0)
   gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
 
   if (gbData->initialStepSize < 0) {
-    memcpy(gbData->f, fODE, nStates*sizeof(double));
-    for (i=0; i<nStates; i++) {
-      sc = absTol + fabs(sDataOld->realVars[i])*relTol;
-      d0 += ((sDataOld->realVars[i] * sDataOld->realVars[i])/(sc*sc));
-      d1 += ((fODE[i] * fODE[i]) / (sc*sc));
+    memcpy(gbData->f, fODE, nStates * sizeof(double));
+
+    // Compute weighted norms of y0 and f0
+    for (i = 0; i < nStates; i++) {
+      sc = absTol + fabs(gbData->yOld[i]) * relTol;
+      d0 += (gbData->yOld[i] * gbData->yOld[i]) / (sc * sc);
+      d1 += (fODE[i] * fODE[i]) / (sc * sc);
     }
-    d0 /= nStates;
-    d1 /= nStates;
+    d0 = sqrt(d0 / nStates);
+    d1 = sqrt(d1 / nStates);
 
-    d0 = sqrt(d0);
-    d1 = sqrt(d1);
-
-    /* calculate first guess of the initial step size */
-    if (d0 < 1e-5 || d1 < 1e-5) {
+    // Initial guess for h0 based on ratio
+    if (d0 < 1e-10 || d1 < 1e-10) {
       h0 = 1e-6;
     } else {
-      h0 = 0.01 * d0/d1;
+      h0 = safety * d0 / d1;
     }
-    if (gbData->initialFailures>0)
-      h0 /= pow(10,gbData->initialFailures);
 
-    for (i=0; i<nStates; i++) {
+    // If repeated failures happened, reduce h0 accordingly
+    if (gbData->initialFailures > 0) {
+          h0 /= pow(10, gbData->initialFailures);
+    }
+
+    // Trial explicit Euler step: y1 = y0 + h0 * f0
+    for (i = 0; i < nStates; i++) {
       sData->realVars[i] = gbData->yOld[i] + fODE[i] * h0;
     }
-    sData->timeValue += h0;
+    sData->timeValue = gbData->time + h0;
 
+    // Compute f(t0+h0, y1)
     gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
 
-    for (i=0; i<nStates; i++) {
-      sc = absTol + fabs(gbData->yOld[i])*relTol;
-      d2 += ((fODE[i]-gbData->f[i])*(fODE[i]-gbData->f[i])/(sc*sc));
+    // Compute weighted norm of slope difference
+    for (i = 0; i < nStates; i++) {
+      sc = absTol + fabs(gbData->yOld[i]) * relTol;
+      double diff = fODE[i] - gbData->f[i];
+      d2 += (diff * diff) / (sc * sc);
     }
+    d2 = sqrt(d2 / nStates) / h0;
 
-    d2 /= h0;
-    d2 = sqrt(d2);
-
-
-    d = fmax(d1,d2);
+    // Combine the slopes to refine step size estimate
+    double d = fmax(d1, d2);
 
     if (d > 1e-15) {
-      h1 = sqrt(0.01/d);
+      h1 = sqrt(safety / d);
     } else {
-      h1 = fmax(1e-6, h0*1e-3);
+      h1 = fmax(1e-6, h0 * 1e-3);
     }
 
-    gbData->stepSize = 0.5*fmin(100*h0,h1);
+    // Final step size: blend h0 and h1 with some limits
+    gbData->stepSize = 0.5 * fmin(100.0 * h0, h1);
     gbData->optStepSize = gbData->stepSize;
     gbData->lastStepSize = 0.0;
 
+    // Restore original state and time
     sData->timeValue = gbData->time;
-    memcpy(sData->realVars, gbData->yOld, nStates*sizeof(double));
-    memcpy(fODE, gbData->f, nStates*sizeof(double));
+    memcpy(sData->realVars, gbData->yOld, nStates * sizeof(double));
+    memcpy(fODE, gbData->f, nStates * sizeof(double));
   } else {
     gbData->stepSize = gbData->initialStepSize;
     gbData->lastStepSize = 0.0;
@@ -340,6 +349,6 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
 
   infoStreamPrint(OMC_LOG_SOLVER, 0, "Initial step size = %e at time %g", gbData->stepSize, gbData->time);
 
-  // Set number of initialization failures back to -1 (intial step size determination was succesfull)
+  // Reset failure count on success
   gbData->initialFailures = -1;
 }
