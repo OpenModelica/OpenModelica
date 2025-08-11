@@ -1533,6 +1533,8 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
                   gbData->timeRight, gbData->yRight, gbData->kRight,
                   gbData->time,  gbData->yOld,
                   nStates, NULL, nStates, gbData->tableau, gbData->x, gbData->k);
+        
+        targetTime = fmin(targetTime, gbData->eventTime);
         break; // break while-loop, if event is detected
       }
     }
@@ -1593,12 +1595,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     // reduce step size with respect to the simulation stop time or nextSampleEvent time, if necessary
     gbData->stepSize = fmin(gbData->stepSize, data->simulationInfo->nextSampleEvent - gbData->time);
     gbData->stepSize = fmin(gbData->stepSize, stopTime - gbData->time);
-
-    if (omc_flag[FLAG_PORT] && solverInfo->solverNoEquidistantGrid) {
-      if (0 != strcmp("ia", data->simulationInfo->outputFormat)) {
-        communicateStatus("Running", (solverInfo->currentTime - data->simulationInfo->startTime)/(data->simulationInfo->stopTime - data->simulationInfo->startTime), solverInfo->currentTime, solverInfo->currentStepSize);
-      }
-    }
 
   }
   // end of while-loop (gbData->time < targetTime)
