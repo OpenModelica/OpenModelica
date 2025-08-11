@@ -1124,7 +1124,10 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     if (data->simulationInfo->nextSampleEvent < data->simulationInfo->stopTime) {
       targetTime = data->simulationInfo->nextSampleEvent;
     } else {
-      targetTime = data->simulationInfo->stopTime;
+      targetTime = fmin(gbData->eventTime, stopTime);
+      // reduce step size with respect to the simulation stop time or nextSampleEvent time, if necessary
+      gbData->stepSize = fmin(gbData->stepSize, data->simulationInfo->nextSampleEvent - gbData->time);
+      gbData->stepSize = fmin(gbData->stepSize, stopTime - gbData->time);
     }
   } else {
     targetTime = solverInfo->currentTime + solverInfo->currentStepSize;
@@ -1572,18 +1575,13 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       sData->timeValue = gbData->time;
       solverInfo->currentTime = sData->timeValue;
       memcpy(sData->realVars, gbData->y, nStates * sizeof(double));
-      /*
-       * to emit consistent value we need to update the whole
-       * continuous system with algebraic variables.
-       */
-      data->callback->updateContinuousSystem(data, threadData);
-      sim_result.emit(&sim_result, data, threadData);
       // log the emitted result
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)){
         infoStreamPrint(OMC_LOG_GBODE, 1, "Emit result:");
         printVector_gb(OMC_LOG_GBODE, " y", sData->realVars, nStates, sData->timeValue);
         messageClose(OMC_LOG_GBODE);
       }
+      break;
     }
 
     // stop, if simulation nearly reached stopTime
@@ -1679,6 +1677,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     // Integrator emits result on the simulation grid (see above)
     sData->timeValue = gbData->time;
     solverInfo->currentTime = gbData->time;
+    solverInfo->currentStepSize = gbData->stepSize;
   }
 
   /* if a state event occurs than no sample event does need to be activated  */
