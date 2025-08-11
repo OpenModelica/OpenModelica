@@ -33,8 +33,8 @@ end MergeComponents8;
 //   for $i1 in 1:2 loop
 //     der($A1[$i1].x) = $A1[$i1].u - $A1[$i1].p * $A1[$i1].x;
 //   end for;
-//   for $i1 in 1:2 loop
-//     $A1[$i1].y = 2.0 * $A1[$i1].p * $A1[$i1].x;
+//   for $i0 in 1:2 loop
+//     $A1[$i0].y = 2.0 * $A1[$i0].p * $A1[$i0].x;
 //   end for;
 // end MergeComponents8;
 // endResult

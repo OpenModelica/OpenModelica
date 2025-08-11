@@ -131,17 +131,17 @@ val(fixedVoltageSource1.p[1], 1.0);
 // Equations (13, 13)
 // ========================================
 // 1/1 (3): busBar1.terminal_n.v = fixedLoad1.terminal.v   [dynamic |0|0|0|0|]
-// 2/4 (3): for $i1 in 1 : 3 loop
-//     for $i2 in 1 : 1 loop
-//     busBar1.terminal_n[$i1].i[$i2] + fixedLoad1[$i1].terminal.i[$i2] = 0.0; end for; ; end for;    [dynamic |0|0|0|0|]
+// 2/4 (3): for $i3 in 1 : 3 loop
+//     for $i4 in 1 : 1 loop
+//     busBar1.terminal_n[$i3].i[$i4] + fixedLoad1[$i3].terminal.i[$i4] = 0.0; end for; ; end for;    [dynamic |0|0|0|0|]
 // 3/7 (1): fixedVoltageSource1.terminal.v = busBar1.terminal_p.v   [dynamic |0|0|0|0|]
-// 4/8 (1): for $i1 in 1 : 1 loop
-//     fixedVoltageSource1.terminal.i[$i1] + busBar1.terminal_p.i[$i1] = 0.0; end for;    [dynamic |0|0|0|0|]
+// 4/8 (1): for $i2 in 1 : 1 loop
+//     fixedVoltageSource1.terminal.i[$i2] + busBar1.terminal_p.i[$i2] = 0.0; end for;    [dynamic |0|0|0|0|]
 // 5/9 (1): fixedVoltageSource1.terminal.v = {fixedVoltageSource1.V}   [dynamic |0|0|0|0|]
 // 6/10 (3): for $i1 in 1 : 3 loop
 //     fixedLoad1[$i1].p = {fixedLoad1[$i1].terminal.v * fixedLoad1[$i1].terminal.i}; end for;    [dynamic |0|0|0|0|]
-// 7/13 (3): for $i1 in 1 : 3 loop
-//     fixedLoad1[$i1].terminal.v * fixedLoad1[$i1].terminal.i = fixedLoad1[$i1].P; end for;    [dynamic |0|0|0|0|]
+// 7/13 (3): for $i0 in 1 : 3 loop
+//     fixedLoad1[$i0].terminal.v * fixedLoad1[$i0].terminal.i = fixedLoad1[$i0].P; end for;    [dynamic |0|0|0|0|]
 // 8/16 (1): for i in 1 : 1 loop
 //     busBar1.terminal_p.i[i] = -sum(busBar1.terminal_n[:].i[i]); end for;    [dynamic |0|0|0|0|]
 // 9/17 (3): for i in 1 : 3 loop
@@ -476,17 +476,17 @@ val(fixedVoltageSource1.p[1], 1.0);
 // Equations (13, 13)
 // ========================================
 // 1/1 (3): busBar1.terminal_n.v = fixedLoad1.terminal.v   [dynamic |0|0|0|0|]
-// 2/4 (3): for $i1 in 1 : 3 loop
-//     for $i2 in 1 : 1 loop
-//     busBar1.terminal_n[$i1].i[$i2] + fixedLoad1[$i1].terminal.i[$i2] = 0.0; end for; ; end for;    [dynamic |0|0|0|0|]
+// 2/4 (3): for $i3 in 1 : 3 loop
+//     for $i4 in 1 : 1 loop
+//     busBar1.terminal_n[$i3].i[$i4] + fixedLoad1[$i3].terminal.i[$i4] = 0.0; end for; ; end for;    [dynamic |0|0|0|0|]
 // 3/7 (1): fixedVoltageSource1.terminal.v = busBar1.terminal_p.v   [dynamic |0|0|0|0|]
-// 4/8 (1): for $i1 in 1 : 1 loop
-//     fixedVoltageSource1.terminal.i[$i1] + busBar1.terminal_p.i[$i1] = 0.0; end for;    [dynamic |0|0|0|0|]
+// 4/8 (1): for $i2 in 1 : 1 loop
+//     fixedVoltageSource1.terminal.i[$i2] + busBar1.terminal_p.i[$i2] = 0.0; end for;    [dynamic |0|0|0|0|]
 // 5/9 (1): fixedVoltageSource1.terminal.v = {fixedVoltageSource1.V}   [dynamic |0|0|0|0|]
 // 6/10 (3): for $i1 in 1 : 3 loop
 //     fixedLoad1[$i1].p = {fixedLoad1[$i1].terminal.v * fixedLoad1[$i1].terminal.i}; end for;    [dynamic |0|0|0|0|]
-// 7/13 (3): for $i1 in 1 : 3 loop
-//     fixedLoad1[$i1].terminal.v * fixedLoad1[$i1].terminal.i = fixedLoad1[$i1].P; end for;    [dynamic |0|0|0|0|]
+// 7/13 (3): for $i0 in 1 : 3 loop
+//     fixedLoad1[$i0].terminal.v * fixedLoad1[$i0].terminal.i = fixedLoad1[$i0].P; end for;    [dynamic |0|0|0|0|]
 // 8/16 (1): for i in 1 : 1 loop
 //     busBar1.terminal_p.i[i] = -sum(busBar1.terminal_n[:].i[i]); end for;    [dynamic |0|0|0|0|]
 // 9/17 (3): for i in 1 : 3 loop

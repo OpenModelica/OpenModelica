@@ -33,8 +33,8 @@ end S;
 //   m[2].port.v = m[3].port.v;
 //   m[2].port.v = m[1].port.v;
 //   m[3].port.i + m[2].port.i + m[1].port.i = 0.0;
-//   for $i1 in 1:3 loop
-//     m[$i1].port.v = 10.0 * m[$i1].port.i;
+//   for $i0 in 1:3 loop
+//     m[$i0].port.v = 10.0 * m[$i0].port.i;
 //   end for;
 // end S;
 // endResult

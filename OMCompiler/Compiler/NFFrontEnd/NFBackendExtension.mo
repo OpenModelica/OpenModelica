@@ -540,7 +540,6 @@ public
       Option<Expression> step;
       InstNode iter_name;
       list<tuple<InstNode, Expression>> iterators = {};
-      Integer index = 1;
     algorithm
       // make array constructor if it is an array
       if Type.isArray(ty) then
@@ -548,10 +547,9 @@ public
         start         := Expression.INTEGER(1);
         step          := NONE();
         for stop in sizes loop
-          iter_name   := InstNode.newIndexedIterator(index);
+          iter_name   := InstNode.newUniqueIterator();
           iter_range  := Expression.RANGE(Type.INTEGER(), start, step, Expression.INTEGER(stop));
           iterators   := (iter_name, iter_range) :: iterators;
-          index       := index + 1;
         end for;
         binding := Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(ty, Expression.variability(binding), NFPrefixes.Purity.PURE, binding, listReverse(iterators)));
       end if;
