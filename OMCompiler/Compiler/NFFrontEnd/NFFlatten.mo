@@ -1432,15 +1432,13 @@ protected
   Component iter_comp;
   InstNode prefix_node, iter;
   Expression range;
-  Integer index = 1;
   Subscript sub;
 algorithm
   prefix_node := ComponentRef.node(prefix);
 
   for dim in dimensions loop
-    iter := InstNode.newIndexedIterator(index, "i", InstNode.info(prefix_node));
+    iter := InstNode.newUniqueIterator(InstNode.info(prefix_node));
     iterators := iter :: iterators;
-    index := index + 1;
 
     range := Expression.makeRange(Expression.INTEGER(1), NONE(), Dimension.sizeExp(dim));
     ranges := range :: ranges;

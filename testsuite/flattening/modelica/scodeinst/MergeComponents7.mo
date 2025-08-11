@@ -85,17 +85,17 @@ end MergeComponents7;
 //   a1.y = 2.0 * a1.p * a1.x;
 //   der(a2.x) = a2.u - a2.p * a2.x;
 //   a2.y = 2.0 * a2.p * a2.x;
-//   for $i1 in 1:2 loop
-//     der($B1[$i1].aa.x) = $B1[$i1].aa.u - $B1[$i1].aa.p * $B1[$i1].aa.x;
+//   for $i3 in 1:2 loop
+//     der($B1[$i3].aa.x) = $B1[$i3].aa.u - $B1[$i3].aa.p * $B1[$i3].aa.x;
 //   end for;
-//   for $i1 in 1:2 loop
-//     $B1[$i1].aa.y = 2.0 * $B1[$i1].aa.p * $B1[$i1].aa.x;
+//   for $i2 in 1:2 loop
+//     $B1[$i2].aa.y = 2.0 * $B1[$i2].aa.p * $B1[$i2].aa.x;
 //   end for;
 //   for $i1 in 1:2 loop
 //     der($B1[$i1].ab.x) = $B1[$i1].ab.u - $B1[$i1].ab.p * $B1[$i1].ab.x;
 //   end for;
-//   for $i1 in 1:2 loop
-//     $B1[$i1].ab.y = 2.0 * $B1[$i1].ab.p * $B1[$i1].ab.x;
+//   for $i0 in 1:2 loop
+//     $B1[$i0].ab.y = 2.0 * $B1[$i0].ab.p * $B1[$i0].ab.x;
 //   end for;
 //   $B1.aa.u = $B1.u;
 //   $B1.ab.u = $B1.aa.y;

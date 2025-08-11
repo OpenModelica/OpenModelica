@@ -38,8 +38,8 @@ end VectorizeBindings5;
 //     module[$i1].f.pOut = 1.0;
 //   end for;
 // equation
-//   for $i1 in 1:2 loop
-//     der(module[$i1].f.pOut) = sin(time);
+//   for $i0 in 1:2 loop
+//     der(module[$i0].f.pOut) = sin(time);
 //   end for;
 // end VectorizeBindings5;
 // endResult
