@@ -715,6 +715,7 @@ void gbode_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
     memcpy(gbData->yv + i * nStates, gbData->yRight, nStates * sizeof(double));
     memcpy(gbData->kv + i * nStates, gbData->kRight, nStates * sizeof(double));
   }
+  gbData->eventTime = DBL_MAX; // reset event time
 }
 
 /*! \fn gbodef_main
@@ -1103,7 +1104,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   int nStates = gbData->nStates;
   int nStages = gbData->tableau->nStages;
 
-  double targetTime, eventTime, err;
+  double targetTime, err;
 
   int gb_step_info;
   int i, retries = 0;
@@ -1124,7 +1125,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       targetTime = data->simulationInfo->stopTime;
     }
   } else {
-    targetTime = solverInfo->currentTime + solverInfo->currentStepSize;
+    targetTime = fmin(gbData->eventTime, solverInfo->currentTime + solverInfo->currentStepSize);
   }
 
   if (gbData->multi_rate) {
@@ -1354,7 +1355,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
       // store right hand values for latter interpolation (also in case of an event)
       gbData->timeRight = gbData->time + gbData->stepSize;
-      gbData->timeDense = gbData->timeRight;
       memcpy(gbData->yRight, gbData->y, nStates * sizeof(double));
       // update kRight
       if (!gbData->tableau->isKRightAvailable) {
@@ -1518,56 +1518,16 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
     if (!gbData->multi_rate || (gbData->multi_rate && gbData->gbfData->time < gbData->time)) {
       // check for events, if event is detected stop integrator and trigger event iteration
-      eventTime = checkForEvents(data, threadData, solverInfo, gbData->timeLeft, gbData->yLeft, gbData->timeRight, gbData->yRight, FALSE, &foundEvent);
+      gbData->eventTime = checkForEvents(data, threadData, solverInfo, gbData->timeLeft, gbData->yLeft, gbData->timeRight, gbData->yRight, FALSE, &foundEvent);
       if (foundEvent) {
-        if (eventTime < targetTime + 10*MINIMAL_STEP_SIZE) {
-          listClear(solverInfo->eventLst);
-          solverInfo->currentTime = eventTime;
-          sData->timeValue = eventTime;
-
-          // sData->realVars are the "numerical" values on the right hand side of the event (hopefully)
-          if (!gbData->noRestart) {
-            gbData->time = eventTime;
-            gbData->timeRight = eventTime;
-            memcpy(gbData->yOld, sData->realVars, gbData->nStates * sizeof(double));
-            memcpy(gbData->yRight, sData->realVars, gbData->nStates * sizeof(double));
-            gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
-            memcpy(gbData->kRight, fODE, nStates * sizeof(double));
-          }
-
-          /* write statistics to the solverInfo data structure */
-          memcpy(&solverInfo->solverStatsTmp, &gbData->stats, sizeof(SOLVERSTATS));
-
-          // log the emitted result
-          if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)){
-            infoStreamPrint(OMC_LOG_GBODE, 1, "Emit result (single-rate integration):");
-            printVector_gb(OMC_LOG_GBODE, " y", sData->realVars, nStates, sData->timeValue);
-            messageClose(OMC_LOG_GBODE);
-          }
-          // return to solver main routine for proper event handling (iteration)
-          messageClose(OMC_LOG_SOLVER);
-          return 0;
-        } else {
-          // ToDo: If the solver does large steps and finds an event, the interpolation is
-          // done in solver_main (linearly) and therefore the states are not very well approximated.
-          // Current solution: Step back to the communication interval before the event and event detection
-          // needs to be repeated
-          listClear(solverInfo->eventLst);
-          gbData->lastStepSize = (eventTime - 10*MINIMAL_STEP_SIZE) - gbData->timeLeft;
-          gbData->stepSize = 20*MINIMAL_STEP_SIZE;
-          sData->timeValue = (eventTime - 10*MINIMAL_STEP_SIZE);
-          gb_interpolation(gbData->interpolation,
-                          gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-                          gbData->timeRight, gbData->yRight, gbData->kRight,
-                                  sData->timeValue,  sData->realVars,
-                          nStates, NULL, nStates, gbData->tableau, gbData->x, gbData->k);
-          memcpy(gbData->y, sData->realVars, gbData->nStates * sizeof(double));
-          gbData->timeRight = sData->timeValue;
-          gbData->time = gbData->timeLeft;
-          memcpy(gbData->yRight, sData->realVars, gbData->nStates * sizeof(double));
-          gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
-          memcpy(gbData->kRight, fODE, nStates * sizeof(double));
-        }
+        listClear(solverInfo->eventLst);
+        gbData->time = gbData->eventTime;
+        gb_interpolation(gbData->interpolation,
+                  gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+                  gbData->timeRight, gbData->yRight, gbData->kRight,
+                  gbData->time,  gbData->yOld,
+                  nStates, NULL, nStates, gbData->tableau, gbData->x, gbData->k);
+        break; // break while-loop, if event is detected
       }
     }
 
@@ -1642,6 +1602,40 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   }
   // end of while-loop (gbData->time < targetTime)
 
+  if (gbData->eventTime == targetTime) {
+
+    
+    gbData->eventTime = checkForEvents(data, threadData, solverInfo, gbData->eventTime, gbData->yOld, gbData->eventTime, gbData->yOld, FALSE, &foundEvent);
+ 
+    solverInfo->currentTime = gbData->time;
+    sData->timeValue = gbData->time;
+    memcpy(sData->realVars, gbData->yOld, nStates * sizeof(double));
+
+    // if noRestart is set, the right hand side values are stored
+    if (gbData->noRestart) {
+      gbData->timeRight = gbData->time;
+      memcpy(gbData->yRight, gbData->yOld, nStates * sizeof(double));
+    }
+
+    /* write statistics to the solverInfo data structure */
+    memcpy(&solverInfo->solverStatsTmp, &gbData->stats, sizeof(SOLVERSTATS));
+
+    // log the emitted result
+    if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)){
+      infoStreamPrint(OMC_LOG_GBODE, 1, "Emit result (single-rate integration):");
+      printVector_gb(OMC_LOG_GBODE, " y", sData->realVars, nStates, sData->timeValue);
+      messageClose(OMC_LOG_GBODE);
+    }
+    // return to solver main routine for proper event handling (iteration)
+    messageClose(OMC_LOG_SOLVER);
+
+    listClear(solverInfo->eventLst);
+    gbData->eventTime = DBL_MAX; // reset event time, if eventTime is reached
+
+    return 0;
+  }
+
+
   if (!solverInfo->solverNoEquidistantGrid) {
     /* Integrator does large steps and needs to interpolate results with respect to the output grid */
     sData->timeValue = solverInfo->currentTime + solverInfo->currentStepSize;
@@ -1664,25 +1658,11 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       }
     } else {
       // use chosen interpolation for emitting equidistant output (default hermite)
-      if (solverInfo->currentStepSize > 0) {
-        if (gbData->timeDense > gbData->timeRight && (gbData->interpolation == GB_DENSE_OUTPUT || gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))
-        {
-          /* This case is needed, if an event has been detected during a large step (gbData->timeDense) of the integration
-          * and the integrator (gbData->timeRight) has been set back to the time just before the event. In this case the
-          * values in gbData->x and gbData->k are correct for the overall time intervall from gbData->timeLeft to gbData->timeDense */
-          gb_interpolation(gbData->interpolation,
-                      gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-                      gbData->timeDense, gbData->yRight, gbData->kRight,
-                      sData->timeValue,  sData->realVars,
-                      nStates, NULL, nStates, gbData->tableau, gbData->x, gbData->k);
-        } else {
-          gb_interpolation(gbData->interpolation,
+      gb_interpolation(gbData->interpolation,
                       gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                       gbData->timeRight, gbData->yRight, gbData->kRight,
                       sData->timeValue,  sData->realVars,
                       nStates, NULL, nStates, gbData->tableau, gbData->x, gbData->k);
-        }
-      }
     }
     // log the emitted result
     if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)){
