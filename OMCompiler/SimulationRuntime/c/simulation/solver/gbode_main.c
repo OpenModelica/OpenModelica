@@ -370,6 +370,8 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
  /* if FLAG_NO_RESTART is set, configure gbode */
   gbData->noRestart = omc_flag[FLAG_NO_RESTART];
 
+  gbData->eventTime = DBL_MAX; /* set to max value */
+
   infoStreamPrint(OMC_LOG_SOLVER, 0, "gbode performs a restart after an event occurs %s", gbData->noRestart?"NO":"YES");
 
   gbData->isFirstStep = TRUE;
@@ -1125,7 +1127,8 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       targetTime = data->simulationInfo->stopTime;
     }
   } else {
-    targetTime = fmin(gbData->eventTime, solverInfo->currentTime + solverInfo->currentStepSize);
+    targetTime = solverInfo->currentTime + solverInfo->currentStepSize;
+    targetTime = fmin(gbData->eventTime, targetTime);
   }
 
   if (gbData->multi_rate) {

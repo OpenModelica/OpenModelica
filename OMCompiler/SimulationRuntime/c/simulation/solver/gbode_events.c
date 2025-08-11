@@ -227,7 +227,7 @@ double checkForEvents(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
 
-  double eventTime = NAN;
+  double eventTime = DBL_MAX;
 
   static LIST *tmpEventList = NULL;
 
