@@ -1257,17 +1257,20 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     }
   }
 
-  /* 
-  * Limit the step size so we do not overshoot:
-  * 1. The next sample event time
-  * 2. The overall simulation stop time
-  */
-  gbData->stepSize = fmin(gbData->stepSize, data->simulationInfo->nextSampleEvent - gbData->time);
-  gbData->stepSize = fmin(gbData->stepSize, stopTime - gbData->time);
 
   /* Main integration loop, if gbData->time already greater than targetTime, only the
      interpolation is necessary for emitting the output variables (see below) */
   while (gbData->time < targetTime) {
+    /* 
+    * Limit the step size so we do not overshoot:
+    * 1. The next sample event time
+    * 2. The overall simulation stop time
+    */
+    gbData->stepSize = fmin(gbData->stepSize, data->simulationInfo->nextSampleEvent - gbData->time);
+    gbData->stepSize = fmin(gbData->stepSize, stopTime - gbData->time);
+
+    infoStreamPrint(OMC_LOG_STATS, 0, "Current time: %.16g, step size: %.20g", gbData->time, gbData->stepSize);
+
     // Store the “left-hand side” data from the current step
     // for later use during interpolation.
     // Copies time, states, and derivatives from the “right” (current step)
@@ -1774,14 +1777,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       gbData->time = stopTime;
       break;
     }
-
-    /* 
-    * Limit the step size so we do not overshoot:
-    * 1. The next sample event time
-    * 2. The overall simulation stop time
-    */
-    gbData->stepSize = fmin(gbData->stepSize, data->simulationInfo->nextSampleEvent - gbData->time);
-    gbData->stepSize = fmin(gbData->stepSize, stopTime - gbData->time);
 
   }
   // end of while-loop (gbData->time < targetTime)
