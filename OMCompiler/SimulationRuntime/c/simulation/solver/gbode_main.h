@@ -127,7 +127,7 @@ typedef struct DATA_GBODE{
                                                      * */
   JACOBIAN* jacobian;                               /* Jacobian of non-linear system of implicit Runge-Kutta method */
   double *y;                                        /* State vector of the current Runge-Kutta step */
-  double *yt, *y1;                                  /* Result vector of the states of embedded RK step */
+  double *yt, *y1, *y2;                             /* Result vector of the states of embedded RK step */
   double *yLeft, *kLeft, *yRight, *kRight;          /* Needed for interpolation of the slow states and emitting to the result files */
   double *yOld;                                     /* State vector of last Runge-Kutta step */
   double *f;                                        /* State derivatives of ODE for initialization */

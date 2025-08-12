@@ -61,7 +61,7 @@ void bisection_gb(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
   int gb_step_info;
   double timeValue, *y;
 
-  double TTOL = GB_MINIMAL_STEP_SIZE + GB_MINIMAL_STEP_SIZE*fabs(*b-*a); /* absTol + relTol*abs(b-a) */
+  double TTOL = MINIMAL_STEP_SIZE + MINIMAL_STEP_SIZE*fabs(*b-*a); /* absTol + relTol*abs(b-a) */
   double c;
   long i=0;
   /* n >= log(2)/log(2) + log(|b-a|/TOL)/log(2)*/
@@ -72,7 +72,7 @@ void bisection_gb(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
   infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "bisection method starts in interval [%e, %e]", *a, *b);
   infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "TTOL is set to %e and maximum number of intersections %d.", TTOL, n);
 
-  while(fabs(*b - *a) > GB_MINIMAL_STEP_SIZE && n-- > 0)
+  while(fabs(*b - *a) > MINIMAL_STEP_SIZE && n-- > 0)
   {
     c = 0.5 * (*a + *b);
     data->localData[0]->timeValue = c;
