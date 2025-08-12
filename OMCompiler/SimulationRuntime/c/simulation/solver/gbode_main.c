@@ -1117,10 +1117,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   int *sortedStates;
   double err_states; // error of the (slow, if multirate) states 
 
-  // If the current step size is zero, no integration step is needed,
-  // so exit the function early without performing any computations.
-  if (solverInfo->currentStepSize == 0) return 0;
-
   // root finding will be done in gbode after each accepted step
   solverInfo->solverRootFinding = 1;
 
@@ -1850,7 +1846,8 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       }
     } else {
       // use chosen interpolation for emitting equidistant output (default hermite)
-      gb_interpolation(gbData->interpolation,
+      if (solverInfo->currentStepSize>0)
+        gb_interpolation(gbData->interpolation,
                       gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                       gbData->timeRight, gbData->yRight, gbData->kRight,
                       sData->timeValue,  sData->realVars,
