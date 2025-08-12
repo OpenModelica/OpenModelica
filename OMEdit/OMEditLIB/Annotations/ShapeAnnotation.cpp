@@ -1087,6 +1087,7 @@ void ShapeAnnotation::updateDynamicSelect(double time)
     updated |= mFillColor.update(time, pGraphicsView->getModelWidget()->getModelInstance());
     updated |= mLineThickness.update(time, pGraphicsView->getModelWidget()->getModelInstance());
     updated |= mArrowSize.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mPoints.update(time, pGraphicsView->getModelWidget()->getModelInstance());
     updated |= mExtent.update(time, pGraphicsView->getModelWidget()->getModelInstance());
     updated |= mRadius.update(time, pGraphicsView->getModelWidget()->getModelInstance());
     updated |= mStartAngle.update(time, pGraphicsView->getModelWidget()->getModelInstance());
@@ -1122,6 +1123,7 @@ void ShapeAnnotation::resetDynamicSelect()
   mFillColor.resetDynamicToStatic();
   mLineThickness.resetDynamicToStatic();
   mArrowSize.resetDynamicToStatic();
+  mPoints.resetDynamicToStatic();
   mExtent.resetDynamicToStatic();
   mRadius.resetDynamicToStatic();
   mStartAngle.resetDynamicToStatic();
