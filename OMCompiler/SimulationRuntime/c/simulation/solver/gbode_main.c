@@ -1269,8 +1269,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     gbData->stepSize = fmin(gbData->stepSize, data->simulationInfo->nextSampleEvent - gbData->time);
     gbData->stepSize = fmin(gbData->stepSize, stopTime - gbData->time);
 
-    infoStreamPrint(OMC_LOG_STATS, 0, "Current time: %.16g, step size: %.20g", gbData->time, gbData->stepSize);
-
     // Store the “left-hand side” data from the current step
     // for later use during interpolation.
     // Copies time, states, and derivatives from the “right” (current step)
