@@ -4791,7 +4791,6 @@ template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer n
   let colPtr = genSPCRSPtr(listLength(sparsepattern), sparsepattern, "colPtrIndex")
   let rowIndex = genSPCRSRows(lengthListElements(unzipSecond(sparsepattern)), sparsepattern, "rowIndex")
   let colorString = genSPColors(colorList, "daeModeData->sparsePattern->colorCols")
-  let maxColorStr = '<%maxColor%>'
   let algIndexes = genVarIndexes(algVars, "algIndexes")
   <<
   /* initialize the daeMode variables */
@@ -6513,7 +6512,6 @@ match eq
 case eqn as SES_MIXED(__) then
   let &sub = buffer ""
   let &tmp += equation_impl(-1, -1, cont, context, modelNamePrefixStr, init)
-  let numDiscVarsStr = listLength(discVars)
   <<
   /* Continuous equation part */
   <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%index%>).profileBlockIndex);' %>
@@ -6530,14 +6528,6 @@ template equationNonlinear(SimEqSystem eq, Context context, String modelNamePref
 ::=
   match eq
     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = at) then
-      let size = listLength(nls.crefs)
-      let &tmp = buffer ""
-      let innerBody = (nls.eqs |> eq2 =>
-         functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
-       ;separator="\n")
-      let nonlinindx = nls.indexNonLinearSystem
-      let returnval = match at case at as SOME(__) then 'return 1;' case at as NONE() then ''
-      let returnval2 = match at case at as SOME(__) then 'return 0;' case at as NONE() then ''
       <<
       int retValue;
       if(OMC_ACTIVE_STREAM(OMC_LOG_DT))
@@ -6554,28 +6544,22 @@ template equationNonlinear(SimEqSystem eq, Context context, String modelNamePref
       /* get old value */
       <%nls.crefs |> name hasindex i0 =>
         let &sub = buffer ""
-        let &preExp = buffer ""
-        let &varDecls = buffer ""
-        let &auxFunction = buffer ""
-        let START = if init then crefOrStartCref(name, context, &preExp, &varDecls, &auxFunction) else cref(name, &sub)
-        let PREV = if stringEq(&preExp, "") then "" else &preExp + "\n"
-        let DECL = if stringEq(&varDecls, "") then "" else &varDecls + "\n"
-        let AUX = if stringEq(&auxFunction, "") then "" else &auxFunction + "\n"
-        '<%DECL%><%PREV%><%AUX%>data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%START%>;'
+        let START = cref(name, &sub)
+        'data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%START%>;'
       ;separator="\n"%>
       retValue = solve_nonlinear_system(data, threadData, <%nls.indexNonLinearSystem%>);
       /* check if solution process was successful */
       if (retValue > 0){
         const int indexes[2] = {1,<%nls.index%>};
         throwStreamPrintWithEquationIndexes(threadData, omc_dummyFileInfo, indexes, "Solving non-linear system <%nls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_NLS.", data->localData[0]->timeValue);
-        <%returnval2%>
+        <%match at case SOME(__) then 'return 0;'%>
       }
       /* write solution */
       <%nls.crefs |> name hasindex i0 =>
         let &sub = buffer ""
         '<%cref(name, &sub)%> = data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
       <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%nls.index%>).profileBlockIndex);' %>
-      <%returnval%>
+      <%match at case SOME(__) then 'return 1;'%>
       >>
 end equationNonlinear;
 
@@ -6584,12 +6568,6 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, St
 ::=
   match eq
     case eq as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
-      let size = listLength(at.crefs)
-      let &tmp = buffer ""
-      let innerBody = (at.eqs |> eq2 =>
-         functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
-       ;separator="\n")
-      let nonlinindx = at.indexNonLinearSystem
       <<
       int retValue;
       if(OMC_ACTIVE_STREAM(OMC_LOG_DT))
@@ -6609,14 +6587,8 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, St
         /* get old value */
         <%at.crefs |> name hasindex i0 =>
           let &sub = buffer ""
-          let &preExp = buffer ""
-          let &varDecls = buffer ""
-          let &auxFunction = buffer ""
-          let START = if init then crefOrStartCref(name, context, &preExp, &varDecls, &auxFunction) else cref(name, &sub)
-          let PREV = if stringEq(&preExp, "") then "" else &preExp + "\n"
-          let DECL = if stringEq(&varDecls, "") then "" else &varDecls + "\n"
-          let AUX = if stringEq(&auxFunction, "") then "" else &auxFunction + "\n"
-          '<%DECL%><%PREV%><%AUX%>data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%START%>;'
+          let START = cref(name, &sub)
+          'data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%START%>;'
         ;separator="\n"%>
         retValue = solve_nonlinear_system(data, threadData, <%at.indexNonLinearSystem%>);
         /* The casual tearing set found a solution */
