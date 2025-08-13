@@ -1085,14 +1085,19 @@ void ShapeAnnotation::updateDynamicSelect(double time)
     updated |= mRotation.update(time, pGraphicsView->getModelWidget()->getModelInstance());
     updated |= mLineColor.update(time, pGraphicsView->getModelWidget()->getModelInstance());
     updated |= mFillColor.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mLinePattern.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mFillPattern.update(time, pGraphicsView->getModelWidget()->getModelInstance());
     updated |= mLineThickness.update(time, pGraphicsView->getModelWidget()->getModelInstance());
-    updated |= mArrowSize.update(time, pGraphicsView->getModelWidget()->getModelInstance());
     updated |= mPoints.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mArrow.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mArrowSize.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mSmooth.update(time, pGraphicsView->getModelWidget()->getModelInstance());
     updated |= mExtent.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mBorderPattern.update(time, pGraphicsView->getModelWidget()->getModelInstance());
     updated |= mRadius.update(time, pGraphicsView->getModelWidget()->getModelInstance());
     updated |= mStartAngle.update(time, pGraphicsView->getModelWidget()->getModelInstance());
     updated |= mEndAngle.update(time, pGraphicsView->getModelWidget()->getModelInstance());
-    updated |= mFontSize.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mClosure.update(time, pGraphicsView->getModelWidget()->getModelInstance());
     bool textStringUpdated = mTextString.update(time, pGraphicsView->getModelWidget()->getModelInstance());
     updated |= textStringUpdated;
     if (textStringUpdated) {
@@ -1102,6 +1107,10 @@ void ShapeAnnotation::updateDynamicSelect(double time)
         pTextAnnotation->updateTextString(mTextString);
       }
     }
+    updated |= mFontSize.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mFontName.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mTextStyles.update(time, pGraphicsView->getModelWidget()->getModelInstance());
+    updated |= mHorizontalAlignment.update(time, pGraphicsView->getModelWidget()->getModelInstance());
 
     if (updated) {
       applyTransformation();
@@ -1121,20 +1130,29 @@ void ShapeAnnotation::resetDynamicSelect()
   mRotation.resetDynamicToStatic();
   mLineColor.resetDynamicToStatic();
   mFillColor.resetDynamicToStatic();
+  mLinePattern.resetDynamicToStatic();
+  mFillPattern.resetDynamicToStatic();
   mLineThickness.resetDynamicToStatic();
-  mArrowSize.resetDynamicToStatic();
   mPoints.resetDynamicToStatic();
+  mArrow.resetDynamicToStatic();
+  mArrowSize.resetDynamicToStatic();
+  mSmooth.resetDynamicToStatic();
   mExtent.resetDynamicToStatic();
+  mBorderPattern.resetDynamicToStatic();
   mRadius.resetDynamicToStatic();
   mStartAngle.resetDynamicToStatic();
   mEndAngle.resetDynamicToStatic();
-  mFontSize.resetDynamicToStatic();
-  mTextString.resetDynamicToStatic();
+  mClosure.resetDynamicToStatic();
   // reset the text string in the TextAnnotation.
   TextAnnotation *pTextAnnotation = dynamic_cast<TextAnnotation*>(this);
   if (pTextAnnotation) {
     pTextAnnotation->updateTextString();
   }
+  mTextString.resetDynamicToStatic();
+  mFontSize.resetDynamicToStatic();
+  mFontName.resetDynamicToStatic();
+  mTextStyles.resetDynamicToStatic();
+  mHorizontalAlignment.resetDynamicToStatic();
 
   update();
 }
