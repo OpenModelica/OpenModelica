@@ -150,7 +150,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
     warningStreamPrint(OMC_LOG_STDOUT, 0, "Constant step size not supported for inner integration. Using IController.");
     gbfData->ctrl_method = GB_CTRL_I;
   }
-  
+
   // allocate memory for the generic RK method
   gbfData->y    = malloc(gbData->nStates*sizeof(double));
   gbfData->yOld = malloc(gbData->nStates*sizeof(double));
@@ -341,7 +341,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   gbData->ctrl_method = getControllerMethod(FLAG_SR_CTRL);
   use_fhr = omc_flag[FLAG_SR_CTRL_FHR];
   use_filter = getGBCtrlFilterValue();
-  
+
    /* define maximum step size gbode is allowed to go */
   if (omc_flag[FLAG_MAX_STEP_SIZE]) {
     gbData->maxStepSize = atof(omc_flagValue[FLAG_MAX_STEP_SIZE]);
@@ -370,6 +370,8 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
  /* if FLAG_NO_RESTART is set, configure gbode */
   gbData->noRestart = omc_flag[FLAG_NO_RESTART];
 
+  gbData->eventTime = DBL_MAX;
+
   infoStreamPrint(OMC_LOG_SOLVER, 0, "gbode performs a restart after an event occurs %s", gbData->noRestart?"NO":"YES");
 
   gbData->isFirstStep = TRUE;
@@ -383,6 +385,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   gbData->kRight    = malloc(sizeof(double) * gbData->nStates);
   gbData->yt        = malloc(sizeof(double) * gbData->nStates);
   gbData->y1        = malloc(sizeof(double) * gbData->nStates);
+  gbData->y2        = malloc(sizeof(double) * gbData->nStates);
   gbData->f         = malloc(sizeof(double) * gbData->nStates);
   gbData->k         = malloc(sizeof(double) * gbData->nStates * gbData->tableau->nStages);
   gbData->x         = malloc(sizeof(double) * gbData->nStates * gbData->tableau->nStages);
@@ -622,6 +625,7 @@ void gbode_freeData(DATA* data, DATA_GBODE *gbData)
   free(gbData->kRight);
   free(gbData->yt);
   free(gbData->y1);
+  free(gbData->y2);
   free(gbData->f);
   free(gbData->k);
   free(gbData->x);
@@ -715,6 +719,7 @@ void gbode_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
     memcpy(gbData->yv + i * nStates, gbData->yRight, nStates * sizeof(double));
     memcpy(gbData->kv + i * nStates, gbData->kRight, nStates * sizeof(double));
   }
+  gbData->eventTime = DBL_MAX; // reset event time
 }
 
 /*! \fn gbodef_main
@@ -964,7 +969,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     }
     memcpy(gbfData->kRight, fODE, nStates * sizeof(double));
 
-    eventTime = checkForEvents(data, threadData, solverInfo, gbfData->time, gbfData->yOld, gbfData->time + gbfData->lastStepSize, gbfData->y, TRUE, &foundEvent);
+    foundEvent = checkForEvents(data, threadData, solverInfo, gbfData->time, gbfData->yOld, gbfData->time + gbfData->lastStepSize, gbfData->y, TRUE, &eventTime);
     if (foundEvent) {
       solverInfo->currentTime = eventTime;
       sData->timeValue = solverInfo->currentTime;
@@ -1103,28 +1108,42 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   int nStates = gbData->nStates;
   int nStages = gbData->tableau->nStages;
 
-  double targetTime, eventTime, err;
+  double targetTime, err;
+
+  const modelica_boolean noConst_intWithErrctrl = gbData->ctrl_method != GB_CTRL_CNST && (gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL || gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL);
 
   int gb_step_info;
   int i, retries = 0;
   modelica_boolean foundEvent;
 
   int *sortedStates;
-  double err_states; // error of the (slow, if multirate) states 
+  double err_states; // error of the (slow, if multirate) states
 
   // root finding will be done in gbode after each accepted step
   solverInfo->solverRootFinding = 1;
 
-  /* Calculate steps until targetTime is reached */
-  // 1 => emit result at integrator step points; 0 => equidistant grid
+  /*
+  * Determine the next target simulation time step.
+  *
+  * If the solver is using a non-equidistant grid:
+  *    → The target time is the minimum of the next sample event time
+  *      and the overall stop time.
+  * Otherwise (equidistant grid):
+  *    → Start from the current time plus the step size,
+  *      but cap it by the stop time and the next scheduled event time.
+  */
   if (solverInfo->solverNoEquidistantGrid) {
-    if (data->simulationInfo->nextSampleEvent < data->simulationInfo->stopTime) {
-      targetTime = data->simulationInfo->nextSampleEvent;
-    } else {
-      targetTime = data->simulationInfo->stopTime;
-    }
+    // Non-equidistant grid: next step is driven by the nearest sample event.
+    targetTime = fmin(data->simulationInfo->nextSampleEvent, stopTime);
   } else {
+    // Equidistant output grid: targetTime set to the next output time.
     targetTime = solverInfo->currentTime + solverInfo->currentStepSize;
+
+    // Ensure we don't run past the stop time.
+    targetTime = fmin(targetTime, stopTime);
+
+    // Also ensure we don't skip over an event time.
+    targetTime = fmin(gbData->eventTime, targetTime);
   }
 
   if (gbData->multi_rate) {
@@ -1135,32 +1154,56 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
                     solverInfo->currentTime, targetTime);
   }
 
-  // (Re-)initialize after events or at first call of gbode_sinlerate
+    /*
+  * Handle step initialization after an event step or at the very first solver step.
+  *
+  * This section ensures that the solver’s time, step size, and related buffers
+  * are correctly initialized before proceeding with integration.
+  */
   if (solverInfo->didEventStep || gbData->isFirstStep) {
-   if (gbData->noRestart && !gbData->isFirstStep) {
-      // just continue, if -noRestart is set
+    if (gbData->noRestart && !gbData->isFirstStep) {
+      /*
+        * Case: No restart requested after event (-noRestart flag set)
+        *       and we are not at the very first step.
+        * → Continue from the right boundary of the last interval
+        *   using the optimal step size determined earlier.
+        */
       gbData->time = gbData->timeRight;
       gbData->stepSize = gbData->optStepSize;
-      infoStreamPrint(OMC_LOG_SOLVER, 0, "Initial step size = %e at time %g", gbData->stepSize, gbData->time);
+      infoStreamPrint(OMC_LOG_SOLVER, 0,
+                      "Initial step size = %e at time %g",
+                      gbData->stepSize, gbData->time);
     } else {
-      // calculate initial step size and reset ring buffer and statistic counters
-      // initialize gbData->timeRight, gbData->yRight and gbData->kRight
+      /*
+      * Case: Either restart is allowed OR this is the very first solver step.
+      * → Recalculate the initial step size.
+      * → Reset the ring buffer and solver statistics.
+      * → Initialize gbData->timeRight, gbData->yRight, and gbData->kRight.
+      */
       getInitStepSize(data, threadData, gbData);
       gbode_init(data, threadData, solverInfo);
     }
+
+    // Mark initialization as complete for this step
     gbData->isFirstStep = FALSE;
     solverInfo->didEventStep = FALSE;
+
+    // For multi-rate solvers, propagate event-step flag to the fine-level solver
     if (gbData->multi_rate) {
       gbData->gbfData->didEventStep = TRUE;
     }
   }
 
-  debugRingBufferSteps_gb(OMC_LOG_GBODE, gbData->yv, gbData->kv, gbData->tv, nStates,  gbData->ringBufferSize);
+  debugRingBufferSteps_gb(OMC_LOG_GBODE, gbData->yv, gbData->kv, gbData->tv, nStates, gbData->ringBufferSize);
 
-  // Constant step size
+  /*
+  * Case: Constant step size control method.
+  * Use the solver's current step size directly without adjustment.
+  */
   if (gbData->ctrl_method == GB_CTRL_CNST) {
     gbData->stepSize = solverInfo->currentStepSize;
   }
+
 
   if (gbData->multi_rate) {
     // Check if multirate step is necessary, otherwise the correct values are already stored in sData
@@ -1200,10 +1243,26 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       }
     }
   }
+
+
   /* Main integration loop, if gbData->time already greater than targetTime, only the
      interpolation is necessary for emitting the output variables (see below) */
   while (gbData->time < targetTime) {
-    // store left hand data for later interpolation
+    /*
+    * Limit the step size so we do not overshoot:
+    * 1. The next sample event time
+    * 2. The overall simulation stop time
+    */
+    gbData->stepSize = fmin(gbData->stepSize, data->simulationInfo->nextSampleEvent - gbData->time);
+    gbData->stepSize = fmin(gbData->stepSize, stopTime - gbData->time);
+    // TODO maybe easier to use targetTime
+    //gbData->stepSize = fmin(gbData->stepSize, targetTime - gbData->time);
+
+    // Store the “left-hand side” data from the current step
+    // for later use during interpolation.
+    // Copies time, states, and derivatives from the “right” (current step)
+    // to the “left” (previous step).
+    // FIXME is this comment correct?
     gbData->timeLeft = gbData->timeRight;
     memcpy(gbData->yLeft, gbData->yRight, nStates * sizeof(double));
     memcpy(gbData->kLeft, gbData->kRight, nStates * sizeof(double));
@@ -1232,8 +1291,11 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         messageClose(OMC_LOG_SOLVER_V);
       }
 
-      // do one integration step resulting in two different approximations
-      // results are stored in gbData->y and gbData->yt
+      // Perform one integration step, producing two approximations:
+      // the updated states in gbData->y and a second approximation in gbData->yt.
+      // Choose the integration method based on the tableau:
+      // - If Richardson extrapolation is enabled, use gbode_richardson.
+      // - Otherwise, use the default step function stored in gbData->step_fun.
       if (gbData->tableau->richardson) {
         gb_step_info = gbode_richardson(data, threadData, solverInfo);
       } else {
@@ -1248,7 +1310,27 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         messageClose(OMC_LOG_GBODE);
       }
 
-      // error handling: try half of the step size!
+      // Error handling for failed integration step:
+      // If the step calculation failed (gb_step_info != 0), try reducing the step size by half and retry.
+      //
+      // Actions taken on failure:
+      // - Increment convergence failure statistics counter.
+      // - Print an informational message about the failure and the current simulation time.
+      //
+      // If the solver is using a constant step size control method:
+      // - Abort the simulation and print an error message since no step size adjustment is possible.
+      //
+      // Otherwise (adaptive step size control):
+      // - Halve the current step size.
+      // - If multi-rate integration is active and detailed logging is enabled:
+      //   - Reset error metrics for slow, fast, and internal components.
+      //   - Dump the fast states to a file for diagnostics.
+      // - Print the new reduced step size being tried.
+      //
+      // If the step size becomes smaller than the minimal allowed threshold:
+      // - Abort the simulation with an error indicating minimum step size reached without acceptable error.
+      //
+      // If none of the abort conditions occur, the loop continues to retry with the reduced step size.
       if (gb_step_info != 0) {
         gbData->stats.nConvergenveTestFailures++;
         infoStreamPrint(OMC_LOG_STDOUT, 0, "gbode_main: Failed to calculate step at time = %5g.", gbData->time + gbData->stepSize);
@@ -1275,38 +1357,60 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         }
       }
 
-      // calculate corresponding values for error estimator and step size control
+      // Calculate error estimators and tolerance scaling for each state variable
       for (i = 0; i < nStates; i++) {
+        // Compute error tolerance for the i-th state based on relative and absolute tolerances:
+        // errtol = Rtol * max(|current state|, |previous state|) + Atol
         gbData->errtol[i] = Rtol * fmax(fabs(gbData->y[i]), fabs(gbData->yOld[i])) + Atol;
+        // TODO make errtol and errest local variables
+
+        // Calculate the estimated local error as the absolute difference between
+        // the current state approximation and its second approximation.
         gbData->errest[i] = fabs(gbData->y[i] - gbData->yt[i]);
+
+        // Compute the scaled error using a tableau-specific factor, to be used in step size control.
         gbData->err[i] = gbData->tableau->fac * gbData->errest[i] / gbData->errtol[i];
       }
       if (gbData->multi_rate) {
+        // Multi-rate integration enabled:
+        //
+        // If verbose GBODE logging is active, allocate memory and copy the current sorted state indices
+        // for comparison and debugging purposes.
         if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
           sortedStates = (int *)malloc(sizeof(int) * nStates);
+          // FIXME avoid allocs during simulation, they are slow!
           memcpy(sortedStates, gbData->sortedStatesIdx, sizeof(int) * nStates);
         }
 
-        // The error estimation of slow states will be below the threshold
+        // Calculate the error threshold for slow states (used to separate slow and fast states).
         err_states = getErrorThreshold(gbData);
         err = err_states;
 
+        // If verbose logging is active, check if the sorted state indices have changed since the copy.
+        // If differences are detected, print the before and after sorted state vectors for debugging.
         if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
-          for (int k = 0; k < nStates; k++)
-            if (sortedStates[k] - gbData->sortedStatesIdx[k]) {
+          for (int k = 0; k < nStates; k++) {
+            if (sortedStates[k] != gbData->sortedStatesIdx[k]) {
               printIntVector_gb(OMC_LOG_GBODE_V, "sortedStates before:", sortedStates, nStates, gbData->time);
               printIntVector_gb(OMC_LOG_GBODE_V, "sortedStates after:", gbData->sortedStatesIdx, nStates, gbData->time);
               break;
             }
+          }
           free(sortedStates);
         }
 
-        // Find fast and slow states based on the error threshold
+        // Classify states into fast and slow based on the scaled error:
+        // - States with error >= 1 are considered fast.
+        // - States with error < 1 are considered slow.
+        //
+        // Keep track of the count of fast and slow states,
+        // and record the maximum error encountered for each group.
         gbData->nFastStates = 0;
         gbData->nSlowStates = 0;
         gbData->err_slow = 0;
         gbData->err_fast = 0;
         gbData->err_int = 0;
+
         for (i = 0; i < gbData->nStates; i++) {
           if (gbData->err[i] >= 1) {
             gbData->fastStatesIdx[gbData->nFastStates] = i;
@@ -1319,19 +1423,24 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
           }
         }
       } else {
-        err = _omc_gen_maximumVectorNorm(gbData->err, nStates);
-        err_states = err;
+        // If multi-rate is not enabled, use the maximum norm of the error vector over all states.
+        err_states = _omc_gen_maximumVectorNorm(gbData->err, nStates);
+        err = err_states;
       }
 
-      // reject step, if error is too large
-      if ((err > 1) && gbData->ctrl_method != GB_CTRL_CNST) {
-        // count failed steps and output information on the solver status
-        gbData->stats.nErrorTestFailures++;
-        if (gbData->multi_rate) {
-          infoStreamPrint(OMC_LOG_SOLVER, 0, "Reject step from %10g to %10g, error slow states %10g, new stepsize %10g",
-                          gbData->time, gbData->time + gbData->stepSize, err, gbData->stepSize * 0.5);
+      // Reject the current integration step if the estimated error exceeds the tolerance,
+      // and if the solver is not running with a fixed (constant) step size.
+      if (err > 1 && gbData->ctrl_method != GB_CTRL_CNST) {
 
-          // debug the error of the states and derivatives after outer integration
+        // Logging
+        if (gbData->multi_rate) {
+          // For multi-rate integration, print detailed info about the rejected step,
+          // including the slow states' error and the reduced step size.
+          infoStreamPrint(OMC_LOG_SOLVER, 0,
+            "Reject step from %.16g to %.16g, error slow states %.16g, new stepsize %.16g",
+            gbData->time, gbData->time + gbData->stepSize, err, gbData->stepSize * 0.5);
+
+          // If verbose solver logging is enabled, print detailed error information for debugging.
           if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER_V)) {
             infoStreamPrint(OMC_LOG_SOLVER_V, 1, "Error of the states: threshold = %15.10g", err_states);
             printVector_gb(OMC_LOG_SOLVER_V, "y", gbData->y, nStates, gbData->time + gbData->stepSize);
@@ -1339,22 +1448,44 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
             messageClose(OMC_LOG_SOLVER_V);
           }
 
+          // If GBODE state logging is active, dump fast state data to file for further analysis.
           if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_STATES)) {
-            // dump fast states in file
-            gbData->err_slow = err;
+            gbData->err_slow = err; // FIXME should this really only happen when logging is active?
             dumpFastStates_gb(gbData, FALSE, gbData->time + gbData->stepSize, 1);
           }
         } else {
-          infoStreamPrint(OMC_LOG_SOLVER, 0, "Reject step from %10g to %10g, error %10g, new stepsize %10g",
-                          gbData->time, gbData->time + gbData->stepSize, err, gbData->stepSize * 0.5);
+          // For single-rate integration, print basic rejection info with the error and new step size.
+          infoStreamPrint(OMC_LOG_SOLVER, 0,
+            "Reject step from %.16g to %.16g, error %.16g, new stepsize %.16g",
+            gbData->time, gbData->time + gbData->stepSize, err, gbData->stepSize * 0.5);
         }
+
+        // Increment the counter for error test failures.
+        gbData->stats.nErrorTestFailures++;
+
+        // Reduce the step size by half to attempt a more accurate integration in the next iteration.
         gbData->stepSize *= 0.5;
+
+        // Restart the integration loop with the smaller step size.
         continue;
       }
 
-      // store right hand values for latter interpolation (also in case of an event)
+      // Store right-hand side values for later interpolation, including event handling:
+      // - Update gbData->timeRight to the time at the end of the current step.
+      // - Copy current state values (gbData->y) to gbData->yRight.
+      //
+      // Update the derivative estimates gbData->kRight:
+      // - If the tableau does not provide kRight values directly,
+      //   compute them by evaluating the ODE function at timeRight and current states.
+      //
+      // Compute interpolation error estimate (gbData->err_int) if either:
+      // - Solver logging is enabled, or
+      // - The control method is not constant step size and
+      //   the interpolation method is one of the error-controlled Hermite or dense output.
+      //
+      // For multi-rate integration with fast states, compute the interpolation error only
+      // for the slow states subset; otherwise, consider all states.
       gbData->timeRight = gbData->time + gbData->stepSize;
-      gbData->timeDense = gbData->timeRight;
       memcpy(gbData->yRight, gbData->y, nStates * sizeof(double));
       // update kRight
       if (!gbData->tableau->isKRightAvailable) {
@@ -1364,7 +1495,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       }
       memcpy(gbData->kRight, fODE, nStates * sizeof(double));
 
-      if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER) || (gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL)))) {
+      if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER) || noConst_intWithErrctrl) {
         if (gbData->multi_rate && gbData->nFastStates>0) {
           gbData->err_int = error_interpolation_gb(gbData, gbData->nSlowStates, gbData->slowStatesIdx, Rtol);
         } else {
@@ -1390,53 +1521,92 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         messageClose(OMC_LOG_GBODE_V);
       }
 
-      // use interpolation error for step size control
-      if ((err > 1e-2) && (retries < 4) && gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
-            err = fmax(gbData->err_int, err);
+      // Adjust the error estimate for step size control by incorporating interpolation error.
+      // This is done only if:
+      // - The current error estimate is greater than 0.01,
+      // - The number of retries is less than 4,
+      // - The solver is not using a constant step size,
+      // - And the interpolation method supports error control (Hermite or dense output).
+      //
+      // The error used for step size control is set to the maximum of the interpolation error and the current error.
+      if ((err > 1e-2) && (retries < 4) && noConst_intWithErrctrl) {
+        err = fmax(gbData->err_int, err);
       }
 
-      // reject step, if interpolaton error is too large
-      if ((err > 1) && gbData->ctrl_method != GB_CTRL_CNST && ((gbData->interpolation == GB_INTERPOL_HERMITE_ERRCTRL)  || (gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))) {
+      // Reject the current integration step if the interpolation error exceeds the tolerance,
+      // provided that the solver is not running with a fixed step size and interpolation error control is enabled.
+      //
+      // On rejection:
+      // - Increment the retry counter and error test failure statistics.
+      // - Reduce the step size by half to attempt a more accurate integration.
+      // - Abort the simulation if the step size falls below the minimal allowed threshold.
+      //
+      // Logging differs for multi-rate and single-rate integration:
+      // - For multi-rate, log errors of slow states and interpolation error.
+      // - For single-rate, log the overall error and interpolation error.
+      //
+      // If multi-rate integration and GBODE state logging is active, dump fast states for diagnostics.
+      //
+      // If the step is accepted, reset the retry counter.
+      if (err > 1 && noConst_intWithErrctrl) {
+
         retries++;
         gbData->stats.nErrorTestFailures++;
         gbData->stepSize *= 0.5;
+
         if (gbData->stepSize < GB_MINIMAL_STEP_SIZE) {
-          errorStreamPrint(OMC_LOG_STDOUT, 0, "Simulation aborted! Minimum step size %g reached, but interpolation error still to large.", GB_MINIMAL_STEP_SIZE);
+          errorStreamPrint(OMC_LOG_STDOUT, 0,
+            "Simulation aborted! Minimum step size %g reached, but interpolation error still too large.",
+            GB_MINIMAL_STEP_SIZE);
           messageClose(OMC_LOG_SOLVER);
           return -1;
         }
-        if (gbData->multi_rate) {
-          infoStreamPrint(OMC_LOG_SOLVER, 0, "Reject step from %10g to %10g, error slow states %10g, error interpolation %10g, new stepsize %10g",
-                          gbData->time, gbData->time + gbData->stepSize, gbData->err_slow, gbData->err_int, gbData->stepSize);
-        } else {
-          infoStreamPrint(OMC_LOG_SOLVER, 0, "Reject step from %10g to %10g, error %10g, interpolation error %10g, new stepsize %10g",
-                          gbData->time, gbData->time + gbData->stepSize, err_states, gbData->err_int, gbData->stepSize);
 
+        if (gbData->multi_rate) {
+          infoStreamPrint(OMC_LOG_SOLVER, 0,
+            "Reject step from %.16g to %.16g, error slow states %.16g, error interpolation %.16g, new stepsize %.16g",
+            gbData->time, gbData->time + gbData->stepSize, gbData->err_slow, gbData->err_int, gbData->stepSize);
+        } else {
+          infoStreamPrint(OMC_LOG_SOLVER, 0,
+            "Reject step from %.16g to %.16g, error %.16g, interpolation error %.16g, new stepsize %.16g",
+            gbData->time, gbData->time + gbData->stepSize, err_states, gbData->err_int, gbData->stepSize);
         }
 
         if (gbData->multi_rate && OMC_ACTIVE_STREAM(OMC_LOG_GBODE_STATES)) {
-          // dump fast states in file
+          // Dump fast states to file for further analysis after step rejection.
           dumpFastStates_gb(gbData, FALSE, gbData->time + gbData->stepSize, 2);
         }
+
         continue;
       } else {
-        retries = 0; // reset retries, if step is accepted
+        // Reset retries counter if the step was accepted.
+        retries = 0;
       }
 
-      // Rotate and update buffer
-      for (i = (gbData->ringBufferSize - 1); i > 0 ; i--) {
+      // Rotate the error and step size ring buffers to make room for the latest values.
+      // The oldest entries are shifted one position towards the end,
+      // and the newest error and step size values are stored at the front (index 0).
+      // FIXME use actual ring buffer instead of moving data around!
+      for (i = (gbData->ringBufferSize - 1); i > 0; i--) {
         gbData->errValues[i] = gbData->errValues[i - 1];
         gbData->stepSizeValues[i] = gbData->stepSizeValues[i - 1];
       }
+      // Store the current error and step size at the beginning of the buffers.
       gbData->errValues[0] = err;
       gbData->stepSizeValues[0] = gbData->stepSize;
 
-      // Store performed step size for latter interpolation
-      // Call the step size control
-      gbData->lastStepSize = gbData->stepSize;
+      // Update the step size using the step size controller
+      gbData->lastStepSize = gbData->stepSize;  // Save the current step size before updating
+
+      // Calculate a new step size based on recent error and step size history,
+      // the method’s error order, and the control method in use
       gbData->stepSize *= GenericController(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order, gbData->ctrl_method);
+
+      // Ensure the new step size does not exceed the user-defined maximum step size (if set)
       if (gbData->maxStepSize > 0 && gbData->maxStepSize < gbData->stepSize)
         gbData->stepSize = gbData->maxStepSize;
+
+      // Store the optimized step size for further use
       gbData->optStepSize = gbData->stepSize;
 
       if (gbData->multi_rate) {
@@ -1503,7 +1673,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         printVector_gb(OMC_LOG_GBODE_V, "y", gbData->y, nStates, gbData->time + gbData->lastStepSize);
         messageClose(OMC_LOG_GBODE_V);
       }
-    } while ((err > 1) && gbData->ctrl_method != GB_CTRL_CNST);
+    } while (err > 1 && gbData->ctrl_method != GB_CTRL_CNST);
 
     // count processed steps
     gbData->stats.nStepsTaken++;
@@ -1516,79 +1686,56 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       messageClose(OMC_LOG_GBODE);
     }
 
+    // If not using multi-rate integration, or if multi-rate is active but the fast integration time
+    // is behind the main integrator time, then check for events.
     if (!gbData->multi_rate || (gbData->multi_rate && gbData->gbfData->time < gbData->time)) {
-      // check for events, if event is detected stop integrator and trigger event iteration
-      eventTime = checkForEvents(data, threadData, solverInfo, gbData->timeLeft, gbData->yLeft, gbData->timeRight, gbData->yRight, FALSE, &foundEvent);
+
+      // Check for any events occurring between the previous accepted time (timeLeft) and current time (timeRight).
+      // The function returns the event time if an event is detected, and sets foundEvent accordingly.
+      foundEvent = checkForEvents(data, threadData, solverInfo, gbData->timeLeft, gbData->yLeft, gbData->timeRight, gbData->yRight, FALSE, &(gbData->eventTime));
+
       if (foundEvent) {
-        if (eventTime < targetTime + 10*MINIMAL_STEP_SIZE) {
-          listClear(solverInfo->eventLst);
-          solverInfo->currentTime = eventTime;
-          sData->timeValue = eventTime;
+        // Clear any pending events in the solver's event list before handling the new event.
+        listClear(solverInfo->eventLst);
 
-          // sData->realVars are the "numerical" values on the right hand side of the event (hopefully)
-          if (!gbData->noRestart) {
-            gbData->time = eventTime;
-            gbData->timeRight = eventTime;
-            memcpy(gbData->yOld, sData->realVars, gbData->nStates * sizeof(double));
-            memcpy(gbData->yRight, sData->realVars, gbData->nStates * sizeof(double));
-            gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
-            memcpy(gbData->kRight, fODE, nStates * sizeof(double));
-          }
+        // Update the current integration time to the event time.
+        gbData->time = gbData->eventTime;
 
-          /* write statistics to the solverInfo data structure */
-          memcpy(&solverInfo->solverStatsTmp, &gbData->stats, sizeof(SOLVERSTATS));
+        // Perform interpolation at the event time to estimate states and derivatives accurately.
+        gb_interpolation(gbData->interpolation,
+                        gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+                        gbData->timeRight, gbData->yRight, gbData->kRight,
+                        gbData->time,      gbData->yOld,
+                        nStates, NULL, nStates, gbData->tableau,
+                        gbData->x, gbData->k);
 
-          // log the emitted result
-          if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)){
-            infoStreamPrint(OMC_LOG_GBODE, 1, "Emit result (single-rate integration):");
-            printVector_gb(OMC_LOG_GBODE, " y", sData->realVars, nStates, sData->timeValue);
-            messageClose(OMC_LOG_GBODE);
-          }
-          // return to solver main routine for proper event handling (iteration)
-          messageClose(OMC_LOG_SOLVER);
-          return 0;
-        } else {
-          // ToDo: If the solver does large steps and finds an event, the interpolation is
-          // done in solver_main (linearly) and therefore the states are not very well approximated.
-          // Current solution: Step back to the communication interval before the event and event detection
-          // needs to be repeated
-          listClear(solverInfo->eventLst);
-          gbData->lastStepSize = (eventTime - 10*MINIMAL_STEP_SIZE) - gbData->timeLeft;
-          gbData->stepSize = 20*MINIMAL_STEP_SIZE;
-          sData->timeValue = (eventTime - 10*MINIMAL_STEP_SIZE);
-          gb_interpolation(gbData->interpolation,
-                          gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-                          gbData->timeRight, gbData->yRight, gbData->kRight,
-                                  sData->timeValue,  sData->realVars,
-                          nStates, NULL, nStates, gbData->tableau, gbData->x, gbData->k);
-          memcpy(gbData->y, sData->realVars, gbData->nStates * sizeof(double));
-          gbData->timeRight = sData->timeValue;
-          gbData->time = gbData->timeLeft;
-          memcpy(gbData->yRight, sData->realVars, gbData->nStates * sizeof(double));
-          gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
-          memcpy(gbData->kRight, fODE, nStates * sizeof(double));
-        }
+        // Adjust targetTime to not exceed the detected event time,
+        // ensuring the integrator stops exactly at the event.
+        targetTime = fmin(targetTime, gbData->eventTime);
+
+        // Exit the integration loop early since an event was detected.
+        break;
       }
     }
 
     if (gbData->multi_rate) {
-      infoStreamPrint(OMC_LOG_SOLVER, 0, "Accept step from %10g to %10g, error slow states %10g, error interpolation %10g, new stepsize %10g",
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "Accept step from %.16g to %.16g, error slow states %.16g, error interpolation %.16g, new stepsize %.16g",
                                 gbData->timeLeft, gbData->timeRight, err_states, gbData->err_int, gbData->stepSize);
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_STATES)) {
         // dump fast states in file
         dumpFastStates_gb(gbData, FALSE, gbData->time, 0);
       }
     } else {
-      infoStreamPrint(OMC_LOG_SOLVER, 0, "Accept step from %10g to %10g, error %10g interpolation error %10g, new stepsize %10g",
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "Accept step from %.16g to %.16g, error %.16g interpolation error %.16g, new stepsize %16g",
                       gbData->timeLeft, gbData->timeRight, err_states, gbData->err_int, gbData->stepSize);
 
     }
-   /* update time with performed stepSize */
 
-    gbData->time += gbData->lastStepSize;
+    /* update time with performed stepSize */
+    gbData->time = gbData->timeRight;
 
     /* step is accepted and yOld needs to be updated */
-    memcpy(gbData->yOld, gbData->y, nStates * sizeof(double));
+    memcpy(gbData->yOld, gbData->yRight, nStates * sizeof(double));
 
     // Rotate ring buffer
     for (i = (gbData->ringBufferSize - 1); i > 0 ; i--) {
@@ -1609,42 +1756,62 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       sData->timeValue = gbData->time;
       solverInfo->currentTime = sData->timeValue;
       memcpy(sData->realVars, gbData->y, nStates * sizeof(double));
-      /*
-       * to emit consistent value we need to update the whole
-       * continuous system with algebraic variables.
-       */
-      data->callback->updateContinuousSystem(data, threadData);
-      sim_result.emit(&sim_result, data, threadData);
       // log the emitted result
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)){
         infoStreamPrint(OMC_LOG_GBODE, 1, "Emit result:");
         printVector_gb(OMC_LOG_GBODE, " y", sData->realVars, nStates, sData->timeValue);
         messageClose(OMC_LOG_GBODE);
       }
-    }
-
-    // stop, if simulation nearly reached stopTime
-    if ((stopTime - gbData->time) < GB_MINIMAL_STEP_SIZE) {
-      gbData->time = stopTime;
       break;
     }
 
-    // reduce step size with respect to the simulation stop time or nextSampleEvent time, if necessary
-    gbData->stepSize = fmin(gbData->stepSize, data->simulationInfo->nextSampleEvent - gbData->time);
-    gbData->stepSize = fmin(gbData->stepSize, stopTime - gbData->time);
+    // stop, if simulation nearly reached stopTime
+    if (stopTime - gbData->time < GB_MINIMAL_STEP_SIZE) {
+      gbData->time = stopTime;
+      break;
+    }
+  } // end of while-loop (gbData->time < targetTime)
 
-    if (omc_flag[FLAG_PORT] && solverInfo->solverNoEquidistantGrid) {
-      if (0 != strcmp("ia", data->simulationInfo->outputFormat)) {
-        communicateStatus("Running", (solverInfo->currentTime - data->simulationInfo->startTime)/(data->simulationInfo->stopTime - data->simulationInfo->startTime), solverInfo->currentTime, solverInfo->currentStepSize);
-      }
+  if (gbData->eventTime == targetTime) {
+
+    if (!solverInfo->solverNoEquidistantGrid) {
+      foundEvent = checkForEvents(data, threadData, solverInfo, gbData->eventTime, gbData->yOld, gbData->eventTime, gbData->yOld, FALSE, &(gbData->eventTime));
     }
 
+    solverInfo->currentTime = gbData->time;
+    sData->timeValue = gbData->time;
+    memcpy(sData->realVars, gbData->yOld, nStates * sizeof(double));
+
+    // if noRestart is set, the right hand side values are stored
+    if (gbData->noRestart) {
+      gbData->timeRight = gbData->time;
+      memcpy(gbData->yRight, gbData->yOld, nStates * sizeof(double));
+      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+      memcpy(gbData->kRight, fODE, nStates * sizeof(double));
+    }
+
+    /* write statistics to the solverInfo data structure */
+    memcpy(&solverInfo->solverStatsTmp, &gbData->stats, sizeof(SOLVERSTATS));
+
+    // log the emitted result
+    if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)){
+      infoStreamPrint(OMC_LOG_GBODE, 1, "Emit result (single-rate integration):");
+      printVector_gb(OMC_LOG_GBODE, " y", sData->realVars, nStates, sData->timeValue);
+      messageClose(OMC_LOG_GBODE);
+    }
+    // return to solver main routine for proper event handling (iteration)
+    messageClose(OMC_LOG_SOLVER);
+
+    listClear(solverInfo->eventLst);
+    gbData->eventTime = DBL_MAX; // reset event time, if eventTime is reached
+
+    return 0;
   }
-  // end of while-loop (gbData->time < targetTime)
 
   if (!solverInfo->solverNoEquidistantGrid) {
     /* Integrator does large steps and needs to interpolate results with respect to the output grid */
-    sData->timeValue = solverInfo->currentTime + solverInfo->currentStepSize;
+    sData->timeValue = fmin(solverInfo->currentTime + solverInfo->currentStepSize, gbData->eventTime);
+    sData->timeValue = fmin(sData->timeValue, stopTime);
     solverInfo->currentTime = sData->timeValue;
 
     if (gbData->multi_rate) {
@@ -1664,25 +1831,12 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       }
     } else {
       // use chosen interpolation for emitting equidistant output (default hermite)
-      if (solverInfo->currentStepSize > 0) {
-        if (gbData->timeDense > gbData->timeRight && (gbData->interpolation == GB_DENSE_OUTPUT || gbData->interpolation == GB_DENSE_OUTPUT_ERRCTRL))
-        {
-          /* This case is needed, if an event has been detected during a large step (gbData->timeDense) of the integration
-          * and the integrator (gbData->timeRight) has been set back to the time just before the event. In this case the
-          * values in gbData->x and gbData->k are correct for the overall time intervall from gbData->timeLeft to gbData->timeDense */
-          gb_interpolation(gbData->interpolation,
-                      gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-                      gbData->timeDense, gbData->yRight, gbData->kRight,
-                      sData->timeValue,  sData->realVars,
-                      nStates, NULL, nStates, gbData->tableau, gbData->x, gbData->k);
-        } else {
-          gb_interpolation(gbData->interpolation,
+      if (solverInfo->currentStepSize>0)
+        gb_interpolation(gbData->interpolation,
                       gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                       gbData->timeRight, gbData->yRight, gbData->kRight,
                       sData->timeValue,  sData->realVars,
                       nStates, NULL, nStates, gbData->tableau, gbData->x, gbData->k);
-        }
-      }
     }
     // log the emitted result
     if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)){
@@ -1694,6 +1848,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     // Integrator emits result on the simulation grid (see above)
     sData->timeValue = gbData->time;
     solverInfo->currentTime = gbData->time;
+    solverInfo->currentStepSize = gbData->stepSize;
   }
 
   /* if a state event occurs than no sample event does need to be activated  */
@@ -1703,7 +1858,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   /* Solver statistics */
   if (!gbData->isExplicit)
     gbData->stats.nCallsJacobian = gbData->nlsData->numberOfJEval;
-  if (fabs(targetTime - stopTime) < GB_MINIMAL_STEP_SIZE && OMC_ACTIVE_STREAM(OMC_LOG_STATS)) {
+  if (!solverInfo->solverNoEquidistantGrid && fabs(targetTime - stopTime) < GB_MINIMAL_STEP_SIZE && OMC_ACTIVE_STREAM(OMC_LOG_STATS)) {
     if (gbData->multi_rate) {
       infoStreamPrint(OMC_LOG_STATS, 0, "gbode (birate integration): slow: %s / fast: %s",
                       GB_METHOD_NAME[gbData->GM_method], GB_METHOD_NAME[gbData->gbfData->GM_method]);

@@ -296,7 +296,7 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
     d1 = sqrt(d1 / nStates);
 
     // Initial guess for h0 based on ratio
-    if (d0 < 1e-10 || d1 < 1e-10) {
+    if (d0 < 1e-5 || d1 < 1e-5) {
       h0 = 1e-6;
     } else {
       h0 = safety * d0 / d1;
@@ -306,6 +306,8 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
     if (gbData->initialFailures > 0) {
           h0 /= pow(10, gbData->initialFailures);
     }
+    // Security condition, if h0 is nonsense
+    h0 = fmin(h0, 0.1*data->simulationInfo->stepSize);
 
     // Trial explicit Euler step: y1 = y0 + h0 * f0
     for (i = 0; i < nStates; i++) {
@@ -334,7 +336,7 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
     }
 
     // Final step size: blend h0 and h1 with some limits
-    gbData->stepSize = 0.5 * fmin(100.0 * h0, h1);
+    gbData->stepSize = fmin(100.0 * h0, h1);
     gbData->optStepSize = gbData->stepSize;
     gbData->lastStepSize = 0.0;
 
