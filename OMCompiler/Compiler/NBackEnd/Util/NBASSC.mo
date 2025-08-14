@@ -64,10 +64,11 @@ public
     Expression res, diff_res;
     DifferentiationArguments args;
     Integer diff_res_int;
-    UnorderedMap<tuple<Pointer<Equation>,ComponentRef>,Integer> diffs;
-    UnorderedSet<Pointer<Equation>> int_eqns;
-    UnorderedSet<list<ComponentRef>> int_crefs;
-    UnorderedMap<Pointer<Equation>,list<ComponentRef>> rows;
+    Tuple_Id id;
+    UnorderedMap<Tuple_Id,Integer> diffs = UnorderedMap.new<Integer>(Tuple_Id.hash, Tuple_Id.isEqual);
+    UnorderedSet<Pointer<Equation>> int_eqns = UnorderedSet.new(Equation.hash, Equation.isEqual);
+    UnorderedSet<list<ComponentRef>> int_crefs;// = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedMap<Pointer<Equation>,list<ComponentRef>> rows = UnorderedMap.new<ParameterList>(Equation.hash, Equation.isEqual);
   algorithm
     // ### pseudo code of what shall happen
     // for eqn in eqns:
@@ -121,23 +122,28 @@ public
         if Type.isReal(Expression.typeOf(diff_res)) then // if diff is real
           diff_res_int := realInt(Expression.realValue(diff_res));
           print("from Real "+intString(diff_res_int)+"\n");
-          UnorderedMap.add((eq_ptr, cr), diff_res_int, diffs);
+          id := TUPLE_ID(eq_ptr, cr);
+          UnorderedMap.add(id, diff_res_int, diffs);
         elseif Type.isInteger(Expression.typeOf(diff_res)) then // if diff is integer
           diff_res_int := Expression.integerValue(diff_res);
           print("from Int "+intString(diff_res_int)+"\n");
-          UnorderedMap.add((eq_ptr, cr), diff_res_int, diffs);
+          id := TUPLE_ID(eq_ptr, cr);
+          UnorderedMap.add(id, diff_res_int, diffs);
         else
           b := false;
           break;
         end if;
       end for;
-      //print(UnorderedMap.toString(diffs, tuple<EquationPointers.toString,ComponentRef.toString, intString));
       if b then
         UnorderedSet.add(eq_ptr, int_eqns);
         UnorderedSet.add(cref_lst, int_crefs);
         UnorderedMap.add(eq_ptr, cref_lst, rows);
       end if;
     end for;
+
+    // enumerate ...
+    indices := arrayCreate(UnorderedSet.size(int_eqns), {});
+    values := arrayCreate(UnorderedSet.size(int_eqns), {});
 
 
     // remove this dummy section
@@ -180,6 +186,42 @@ public
   function printMatrix
     external "C" ASSC_printMatrix() annotation(Library = "omcruntime");
   end printMatrix;
+
+protected
+  type ParameterList = list<ComponentRef>;
+
+  uniontype Tuple_Id
+    "tuple as key for UnorderedMap"
+    record TUPLE_ID
+      Pointer<Equation> eq_ptr;
+      ComponentRef cref;
+    end TUPLE_ID;
+
+    function toString
+      input Tuple_Id id;
+      output String str;
+    algorithm
+      //str := if not Iterator.isEmpty(id.iter) then " [" + Iterator.toString(id.iter) + "]" else "";
+      str := Equation.toString(Pointer.access(id.eq_ptr));
+      str := BVariable.toString(BVariable.getVar(id.cref, sourceInfo())) + str;
+    end toString;
+
+    function hash
+      "just hashes the id based on its string representation"
+      input Tuple_Id id;
+      output Integer hash;
+    algorithm
+      hash := stringHashDjb2(toString(id));
+    end hash;
+
+    function isEqual
+      input Tuple_Id id1;
+      input Tuple_Id id2;
+      output Boolean b;
+    algorithm
+      b := Equation.isEqualPtr(id1.eq_ptr, id2.eq_ptr) and ComponentRef.isEqual(id1.cref, id2.cref);
+    end isEqual;
+  end Tuple_Id;
 
   annotation(__OpenModelica_Interface="nbackend");
 end NBASSC;
