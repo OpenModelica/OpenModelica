@@ -317,23 +317,22 @@ public
     array<Integer> eqn_to_var = arrayCreate(N, -1);
     UnorderedMap<Integer, Integer> eqn_loc = UnorderedMap.new<Integer>(Util.id, intEq, N) "global to local equation indices";
     UnorderedMap<Integer, Integer> var_loc = UnorderedMap.new<Integer>(Util.id, intEq, N) "global to local variable indices";
-    Integer var, eqn;
+    Integer j = 1;
   algorithm
     // map matching from full system
     map_back := arrayCreate(N, -1);
     for i in eqn_indices loop
       // set equation maps
-      eqn := UnorderedMap.size(eqn_loc) + 1;
-      UnorderedMap.addUnique(i, eqn, eqn_loc);
-      map_back[eqn] := i;
+      UnorderedMap.addUnique(i, j, eqn_loc);
+      map_back[j] := i;
 
-      // get var from matching
-      var := UnorderedMap.size(var_loc) + 1;
-      UnorderedMap.addUnique(matching.eqn_to_var[i], var, var_loc);
+      // set var from matching
+      UnorderedMap.addUnique(matching.eqn_to_var[i], j, var_loc);
 
       // set matching
-      eqn_to_var[eqn] := var;
-      var_to_eqn[var] := eqn;
+      eqn_to_var[j] := j;
+      var_to_eqn[j] := j;
+      j := j + 1;
     end for;
 
     // filter only local edges of adjacency matrix
