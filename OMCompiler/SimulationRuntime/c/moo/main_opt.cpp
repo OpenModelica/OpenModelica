@@ -41,7 +41,7 @@
 using namespace OpenModelica;
 
 /* entry point to the optimization runtime from OpenModelica generated code
- * this contains the glue code between MOO and the simulation runtime / code */
+ * this contains the glue code between MOO and the simulation runtime */
 extern "C"
 int _main_OptimizationRuntime(int argc, char** argv, DATA* data, threadData_t* threadData) {
     auto info = InfoGDOP(data, threadData, argc, argv);
