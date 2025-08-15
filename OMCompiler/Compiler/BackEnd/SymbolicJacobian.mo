@@ -2194,13 +2194,12 @@ algorithm
       // no jacobian -> no nonlinear pattern
       nonlinearPattern := BackendDAE.emptyNonlinearPattern;
     end if;
-    // generate sparse pattern
-    if (not stringEq(inName, "FMIDERINIT")) then
-      (outSparsePattern,outSparseColoring) := generateSparsePattern(inBackendDAE, inDiffVars, BackendVariable.varList(inDifferentiatedVars));
-    end if;
   else
-    fail();
+    outJacobian := NONE();
   end try;
+  if (not stringEq(inName, "FMIDERINIT")) then
+    (outSparsePattern,outSparseColoring) := generateSparsePattern(inBackendDAE, inDiffVars, BackendVariable.varList(inDifferentiatedVars));
+  end if;
 end generateGenericJacobian;
 
 protected function createJacobian "author: wbraun"
@@ -4261,15 +4260,27 @@ algorithm
       () := match (comp)
         local
           BackendDAE.JacobianType jacTp;
-        case BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_NONLINEAR())
-          then fail();
-        case BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_NO_ANALYTIC())
-          then fail();
-        case BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_GENERIC())
-          then fail();
-        case BackendDAE.TORNSYSTEM(linear=false)
-          then fail();
-         else ();
+        case BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_NONLINEAR()) algorithm
+          if Flags.isSet(Flags.JAC_DUMP) then
+            print("[symjacdump] Following strong component represents a nonlinear symbolic jacobian:\n" + BackendDump.printComponent(comp, SOME(syst)) + "\n");
+          end if;
+        then fail();
+        case BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_NO_ANALYTIC())algorithm
+          if Flags.isSet(Flags.JAC_DUMP) then
+            print("[symjacdump] Following strong component represents a no symbolic jacobian:\n" + BackendDump.printComponent(comp, SOME(syst)) + "\n");
+          end if;
+        then fail();
+        case BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_GENERIC())algorithm
+          if Flags.isSet(Flags.JAC_DUMP) then
+            print("[symjacdump] Following strong component represents a generic jacobian:\n" + BackendDump.printComponent(comp, SOME(syst)) + "\n");
+          end if;
+        then fail();
+        case BackendDAE.TORNSYSTEM(linear=false)algorithm
+          if Flags.isSet(Flags.JAC_DUMP) then
+            print("[symjacdump] Following (torn) strong component represents a nonlinear symbolic jacobian:\n" + BackendDump.printComponent(comp, SOME(syst)) + "\n");
+          end if;
+        then fail();
+        else ();
       end match;
     end for;
   else
