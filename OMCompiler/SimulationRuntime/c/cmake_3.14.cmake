@@ -121,7 +121,6 @@ if(OM_OMC_ENABLE_MOO)
   target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::moo)
 endif()
 
-
 install(TARGETS SimulationRuntimeC)
 
 
