@@ -355,7 +355,7 @@ void PlotWindow::setupToolbar(int toolbarIconSize)
   toolBar->addSeparator();
   //GRID
   mpGridComboBox = new QComboBox;
-  mpGridComboBox->addItems(QStringList() << tr("Grid") << tr("Detailed Grid") << tr("No Grid"));
+  mpGridComboBox->addItems(QStringList() << tr("Grid") << tr("Detailed Grid") << tr("No Grid") << tr("X Grid"));
   connect(mpGridComboBox, SIGNAL(currentIndexChanged(int)), SLOT(setGrid(int)));
   toolBar->addWidget(mpGridComboBox);
   toolBar->addSeparator();
@@ -1447,6 +1447,8 @@ void PlotWindow::setGrid(QString grid)
     mpGridComboBox->setCurrentIndex(1);
   } else if (grid.toLower().compare("none") == 0) {
     mpGridComboBox->setCurrentIndex(2);
+  } else if (grid.toLower().compare("xonly") == 0) {
+    mpGridComboBox->setCurrentIndex(3);
   } else {
     mpGridComboBox->setCurrentIndex(0);
   }
@@ -1503,6 +1505,25 @@ QString PlotWindow::getYRangeMin()
 QString PlotWindow::getYRangeMax()
 {
   return mYRangeMax;
+}
+
+void PlotWindow::setYRightRange(double min, double max)
+{
+    if (!(max == 0 && min == 0)) {
+        mpPlot->setAxisScale(QwtPlot::yRight, min, max);
+    }
+    mYRightRangeMin = QString::number(min);
+    mYRightRangeMax = QString::number(max);
+}
+
+QString PlotWindow::getYRightRangeMin()
+{
+    return mYRightRangeMin;
+}
+
+QString PlotWindow::getYRightRangeMax()
+{
+    return mYRightRangeMax;
 }
 
 void PlotWindow::setCurveWidth(double width)
@@ -1664,6 +1685,7 @@ void PlotWindow::fitInView()
 {
   mpPlot->getPlotZoomer()->zoom(0);
   mpPlot->setAxisAutoScale(QwtPlot::yLeft);
+  mpPlot->setAxisAutoScale(QwtPlot::yRight);
   mpPlot->setAxisAutoScale(QwtPlot::xBottom);
   mpPlot->replot();
   mpPlot->getPlotZoomer()->setZoomBase(false);
@@ -1802,6 +1824,11 @@ void PlotWindow::setGrid(int index)
       mGridType = "none";
       mpPlot->getPlotGrid()->detach();
       break;
+    case 3:
+      mGridType = "xonly";
+      mpPlot->getPlotGrid()->setXGrid();
+      mpPlot->getPlotGrid()->attach(mpPlot);
+      break;
     case 0:
     default:
       mGridType = "simple";
@@ -1835,13 +1862,17 @@ void PlotWindow::setLogY(bool on)
   if (on) {
 #if QWT_VERSION >= 0x060100
     mpPlot->setAxisScaleEngine(QwtPlot::yLeft, new LogScaleEngine);
+    mpPlot->setAxisScaleEngine(QwtPlot::yRight, new LogScaleEngine);
 #else
     mpPlot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLog10ScaleEngine);
+    mpPlot->setAxisScaleEngine(QwtPlot::yRight, new QwtLog10ScaleEngine);
 #endif
   } else {
     mpPlot->setAxisScaleEngine(QwtPlot::yLeft, new LinearScaleEngine);
+    mpPlot->setAxisScaleEngine(QwtPlot::yRight, new LinearScaleEngine);
   }
   mpPlot->setAxisAutoScale(QwtPlot::yLeft);
+  mpPlot->setAxisAutoScale(QwtPlot::yRight);
   bool state = mpLogYCheckBox->blockSignals(true);
   mpLogYCheckBox->setChecked(on);
   mpLogYCheckBox->blockSignals(state);
@@ -1868,6 +1899,12 @@ bool PlotWindow::toggleSign(PlotCurve *pPlotCurve, bool checked)
     toggleSign = true;
   }
   return toggleSign;
+}
+
+void PlotWindow::setYAxisRight(PlotCurve* pPlotCurve, bool right) {
+    if (pPlotCurve) {
+		pPlotCurve->setYAxisRight(right);
+    }
 }
 
 void PlotWindow::showSetupDialog()
@@ -1953,6 +1990,9 @@ VariablePageWidget::VariablePageWidget(PlotCurve *pPlotCurve, SetupDialog *pSetu
   // toggle sign
   mpToggleSignCheckBox = new QCheckBox(tr("Toggle Sign"));
   mpToggleSignCheckBox->setChecked(mpPlotCurve->getToggleSign());
+  // display on right y-axis
+  mpRightYAxisCheckBox = new QCheckBox(tr("Plot on Right Y-Axis"));
+  mpRightYAxisCheckBox->setChecked(mpPlotCurve->isYAxisRight());
   // appearance layout
   QGridLayout *pAppearanceGroupBoxGridLayout = new QGridLayout;
   pAppearanceGroupBoxGridLayout->addWidget(mpColorLabel, 0, 0);
@@ -1963,7 +2003,8 @@ VariablePageWidget::VariablePageWidget(PlotCurve *pPlotCurve, SetupDialog *pSetu
   pAppearanceGroupBoxGridLayout->addWidget(mpThicknessLabel, 2, 0);
   pAppearanceGroupBoxGridLayout->addWidget(mpThicknessSpinBox, 2, 1, 1, 2);
   pAppearanceGroupBoxGridLayout->addWidget(mpHideCheckBox, 3, 0, 1, 3);
-  pAppearanceGroupBoxGridLayout->addWidget(mpToggleSignCheckBox, 4, 0, 1, 3);
+  pAppearanceGroupBoxGridLayout->addWidget(mpToggleSignCheckBox, 4, 0, 1, 2);
+  pAppearanceGroupBoxGridLayout->addWidget(mpRightYAxisCheckBox, 4, 2, 1, 2);
   mpAppearanceGroupBox->setLayout(pAppearanceGroupBoxGridLayout);
   // set layout
   QGridLayout *pMainLayout = new QGridLayout;
@@ -2043,18 +2084,30 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   mpTitleFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
   mpTitleFontSizeSpinBox->setValue(mpPlotWindow->getPlot()->titleLabel()->font().pointSizeF());
   mpTitleFontSizeSpinBox->setSingleStep(1);
-  mpVerticalAxisLabel = new QLabel(tr("Vertical Axis Title"));
+  mpVerticalAxisLabel = new QLabel(tr("Left Vertical Axis Title"));
   mpVerticalAxisTextBox = new QLineEdit(mpPlotWindow->getYCustomLabel());
-  mpVerticalAxisTitleFontSizeLabel = new QLabel("Vertical Axis Title Font Size");
+  mpVerticalAxisTitleFontSizeLabel = new QLabel("Left Vertical Axis Title Font Size");
   mpVerticalAxisTitleFontSizeSpinBox = new QDoubleSpinBox;
   mpVerticalAxisTitleFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
   mpVerticalAxisTitleFontSizeSpinBox->setValue(mpPlotWindow->getPlot()->axisWidget(QwtPlot::yLeft)->title().font().pointSizeF());
   mpVerticalAxisTitleFontSizeSpinBox->setSingleStep(1);
-  mpVerticalAxisNumbersFontSizeLabel = new QLabel("Vertical Axis Numbers Font Size");
+  mpVerticalAxisNumbersFontSizeLabel = new QLabel("Left Vertical Axis Numbers Font Size");
   mpVerticalAxisNumbersFontSizeSpinBox = new QDoubleSpinBox;
   mpVerticalAxisNumbersFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
   mpVerticalAxisNumbersFontSizeSpinBox->setValue(mpPlotWindow->getPlot()->axisWidget(QwtPlot::yLeft)->font().pointSizeF());
   mpVerticalAxisNumbersFontSizeSpinBox->setSingleStep(1);
+  mpRightVerticalAxisLabel = new QLabel(tr("Right Vertical Axis Title"));
+  mpRightVerticalAxisTextBox = new QLineEdit(mpPlotWindow->getYRightCustomLabel());
+  mpRightVerticalAxisTitleFontSizeLabel = new QLabel("Right Vertical Axis Title Font Size");
+  mpRightVerticalAxisTitleFontSizeSpinBox = new QDoubleSpinBox;
+  mpRightVerticalAxisTitleFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
+  mpRightVerticalAxisTitleFontSizeSpinBox->setValue(mpPlotWindow->getPlot()->axisWidget(QwtPlot::yRight)->title().font().pointSizeF());
+  mpRightVerticalAxisTitleFontSizeSpinBox->setSingleStep(1);
+  mpRightVerticalAxisNumbersFontSizeLabel = new QLabel("Right Vertical Axis Numbers Font Size");
+  mpRightVerticalAxisNumbersFontSizeSpinBox = new QDoubleSpinBox;
+  mpRightVerticalAxisNumbersFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
+  mpRightVerticalAxisNumbersFontSizeSpinBox->setValue(mpPlotWindow->getPlot()->axisWidget(QwtPlot::yRight)->font().pointSizeF());
+  mpRightVerticalAxisNumbersFontSizeSpinBox->setSingleStep(1);
   mpHorizontalAxisLabel = new QLabel(tr("Horizontal Axis Title"));
   mpHorizontalAxisTextBox = new QLineEdit(mpPlotWindow->getXCustomLabel());
   mpHorizontalAxisTitleFontSizeLabel = new QLabel("Horizontal Axis Title Font Size");
@@ -2087,17 +2140,23 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   pTitlesTabGridLayout->addWidget(mpVerticalAxisTitleFontSizeSpinBox, 3, 1);
   pTitlesTabGridLayout->addWidget(mpVerticalAxisNumbersFontSizeLabel, 4, 0);
   pTitlesTabGridLayout->addWidget(mpVerticalAxisNumbersFontSizeSpinBox, 4, 1);
-  pTitlesTabGridLayout->addWidget(mpHorizontalAxisLabel, 5, 0);
-  pTitlesTabGridLayout->addWidget(mpHorizontalAxisTextBox, 5, 1);
-  pTitlesTabGridLayout->addWidget(mpHorizontalAxisTitleFontSizeLabel, 6, 0);
-  pTitlesTabGridLayout->addWidget(mpHorizontalAxisTitleFontSizeSpinBox, 6, 1);
-  pTitlesTabGridLayout->addWidget(mpHorizontalAxisNumbersFontSizeLabel, 7, 0);
-  pTitlesTabGridLayout->addWidget(mpHorizontalAxisNumbersFontSizeSpinBox, 7, 1);
+  pTitlesTabGridLayout->addWidget(mpRightVerticalAxisLabel, 5, 0);
+  pTitlesTabGridLayout->addWidget(mpRightVerticalAxisTextBox, 5, 1);
+  pTitlesTabGridLayout->addWidget(mpRightVerticalAxisTitleFontSizeLabel, 6, 0);
+  pTitlesTabGridLayout->addWidget(mpRightVerticalAxisTitleFontSizeSpinBox, 6, 1);
+  pTitlesTabGridLayout->addWidget(mpRightVerticalAxisNumbersFontSizeLabel, 7, 0);
+  pTitlesTabGridLayout->addWidget(mpRightVerticalAxisNumbersFontSizeSpinBox, 7, 1);
+  pTitlesTabGridLayout->addWidget(mpHorizontalAxisLabel, 8, 0);
+  pTitlesTabGridLayout->addWidget(mpHorizontalAxisTextBox, 8, 1);
+  pTitlesTabGridLayout->addWidget(mpHorizontalAxisTitleFontSizeLabel, 9, 0);
+  pTitlesTabGridLayout->addWidget(mpHorizontalAxisTitleFontSizeSpinBox, 9, 1);
+  pTitlesTabGridLayout->addWidget(mpHorizontalAxisNumbersFontSizeLabel, 10, 0);
+  pTitlesTabGridLayout->addWidget(mpHorizontalAxisNumbersFontSizeSpinBox, 10, 1);
 #if QWT_VERSION > 0x060000
-  pTitlesTabGridLayout->addWidget(mpPlotFooterLabel, 8, 0);
-  pTitlesTabGridLayout->addWidget(mpPlotFooterTextBox, 8, 1);
-  pTitlesTabGridLayout->addWidget(mpFooterFontSizeLabel, 9, 0);
-  pTitlesTabGridLayout->addWidget(mpFooterFontSizeSpinBox, 9, 1);
+  pTitlesTabGridLayout->addWidget(mpPlotFooterLabel, 11, 0);
+  pTitlesTabGridLayout->addWidget(mpPlotFooterTextBox, 11, 1);
+  pTitlesTabGridLayout->addWidget(mpFooterFontSizeLabel, 12, 0);
+  pTitlesTabGridLayout->addWidget(mpFooterFontSizeSpinBox, 12, 1);
 #endif
   mpTitlesTab->setLayout(pTitlesTabGridLayout);
   // legend tab
@@ -2144,7 +2203,7 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   mpXAxisGroupBox->setLayout(pXGridLayout);
   mpXAxisGroupBox->setEnabled(!mpAutoScaleCheckbox->isChecked());
   // y-axis
-  mpYAxisGroupBox = new QGroupBox(tr("Y-Axis"));
+  mpYAxisGroupBox = new QGroupBox(tr("Left Y-Axis"));
   mpYMinimumLabel = new QLabel(tr("Minimum"));
   mpYMinimumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yLeft).lowerBound()));
   mpYMaximumLabel = new QLabel(tr("Maximum"));
@@ -2156,11 +2215,26 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   pYGridLayout->addWidget(mpYMaximumTextBox, 1, 1);
   mpYAxisGroupBox->setLayout(pYGridLayout);
   mpYAxisGroupBox->setEnabled(!mpAutoScaleCheckbox->isChecked());
+  // right y-axis
+  mpYRightAxisGroupBox = new QGroupBox(tr("Right Y-Axis"));
+  mpYRightMinimumLabel = new QLabel(tr("Minimum"));
+  mpYRightMinimumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yRight).lowerBound()));
+  mpYRightMaximumLabel = new QLabel(tr("Maximum"));
+  mpYRightMaximumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yRight).upperBound()));
+  QGridLayout* pYRightGridLayout = new QGridLayout;
+  pYRightGridLayout->addWidget(mpYRightMinimumLabel, 0, 0);
+  pYRightGridLayout->addWidget(mpYRightMinimumTextBox, 0, 1);
+  pYRightGridLayout->addWidget(mpYRightMaximumLabel, 1, 0);
+  pYRightGridLayout->addWidget(mpYRightMaximumTextBox, 1, 1);
+  mpYRightAxisGroupBox->setLayout(pYRightGridLayout);
+  mpYRightAxisGroupBox->setEnabled(!mpAutoScaleCheckbox->isChecked());
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
   mpXMinimumTextBox->setValidator(pDoubleValidator);
   mpXMaximumTextBox->setValidator(pDoubleValidator);
   mpYMinimumTextBox->setValidator(pDoubleValidator);
-  mpXMaximumTextBox->setValidator(pDoubleValidator);
+  mpYMaximumTextBox->setValidator(pDoubleValidator);
+  mpYRightMinimumTextBox->setValidator(pDoubleValidator);
+  mpYRightMaximumTextBox->setValidator(pDoubleValidator);
   mpPrefixUnitsCheckbox = new QCheckBox(tr("Prefix Units"));
   mpPrefixUnitsCheckbox->setChecked(mpPlotWindow->getPrefixUnits());
   // range tab layout
@@ -2169,6 +2243,7 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   pRangeTabVerticalLayout->addWidget(mpAutoScaleCheckbox);
   pRangeTabVerticalLayout->addWidget(mpXAxisGroupBox);
   pRangeTabVerticalLayout->addWidget(mpYAxisGroupBox);
+  pRangeTabVerticalLayout->addWidget(mpYRightAxisGroupBox);
   pRangeTabVerticalLayout->addWidget(mpPrefixUnitsCheckbox);
   mpRangeTab->setLayout(pRangeTabVerticalLayout);
   // add tabs
@@ -2242,6 +2317,8 @@ void SetupDialog::setupPlotCurve(VariablePageWidget *pVariablePageWidget, bool p
     pPlotCurve->toggleVisibility(!pVariablePageWidget->getHideCheckBox()->isChecked());
     /* set the curve toggle sign */
     mpPlotWindow->toggleSign(pPlotCurve, pVariablePageWidget->getToggleSignCheckBox()->isChecked());
+    /* set the curve y-axis */
+    mpPlotWindow->setYAxisRight(pPlotCurve, pVariablePageWidget->getYRightAxisCheckBox()->isChecked());
     // if prefixunits value is changed
     if (prefixUnitsChanged) {
       pPlotCurve->plotData();
@@ -2268,6 +2345,7 @@ void SetupDialog::autoScaleChecked(bool checked)
 {
   mpXAxisGroupBox->setEnabled(!checked);
   mpYAxisGroupBox->setEnabled(!checked);
+  mpYRightAxisGroupBox->setEnabled(!checked);
 }
 
 void SetupDialog::saveSetup()
@@ -2287,11 +2365,13 @@ void SetupDialog::applySetup()
   }
   // set the font sizes. Don't move this line. We should set the font sizes before calling setLegendPosition
   mpPlotWindow->getPlot()->setFontSizes(mpTitleFontSizeSpinBox->value(), mpVerticalAxisTitleFontSizeSpinBox->value(), mpVerticalAxisNumbersFontSizeSpinBox->value(),
+                                        mpRightVerticalAxisTitleFontSizeSpinBox->value(), mpRightVerticalAxisNumbersFontSizeSpinBox->value(),
                                         mpHorizontalAxisTitleFontSizeSpinBox->value(), mpHorizontalAxisNumbersFontSizeSpinBox->value(), mpFooterFontSizeSpinBox->value(),
                                         mpLegendFontSizeSpinBox->value());
   // set the titles
   mpPlotWindow->getPlot()->setTitle(mpPlotTitleTextBox->text());
   mpPlotWindow->setYCustomLabel(mpVerticalAxisTextBox->text());
+  mpPlotWindow->setYRightCustomLabel(mpRightVerticalAxisTextBox->text());
   mpPlotWindow->setXCustomLabel(mpHorizontalAxisTextBox->text());
   mpPlotWindow->setFooter(mpPlotFooterTextBox->text());
   // set the legend
@@ -2302,9 +2382,11 @@ void SetupDialog::applySetup()
   if (mpAutoScaleCheckbox->isChecked()) {
     mpPlotWindow->getPlot()->setAxisAutoScale(QwtPlot::xBottom);
     mpPlotWindow->getPlot()->setAxisAutoScale(QwtPlot::yLeft);
+    mpPlotWindow->getPlot()->setAxisAutoScale(QwtPlot::yRight);
   } else {
     mpPlotWindow->setXRange(mpXMinimumTextBox->text().toDouble(), mpXMaximumTextBox->text().toDouble());
     mpPlotWindow->setYRange(mpYMinimumTextBox->text().toDouble(), mpYMaximumTextBox->text().toDouble());
+    mpPlotWindow->setYRightRange(mpYRightMinimumTextBox->text().toDouble(), mpYRightMaximumTextBox->text().toDouble());
   }
   // update plot
   mpPlotWindow->updatePlot();

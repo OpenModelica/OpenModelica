@@ -48,6 +48,7 @@ public:
   QPen getMinorPen() {return QPen(Qt::lightGray, 0.0, Qt::DotLine);}
   void setGrid();
   void setDetailedGrid();
+  void setXGrid();
 };
 }
 
