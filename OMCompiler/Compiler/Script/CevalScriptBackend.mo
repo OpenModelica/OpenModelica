@@ -6071,6 +6071,7 @@ algorithm
     // handle normal models
     case (env,_,_)
       equation
+        ExecStat.execStatReset();
         (cache,env,odae) = runFrontEnd(cache,env,className,false);
         SOME(dae) = odae;
         (varSize,eqnSize,simpleEqnSize) = CheckModel.checkModel(dae);
