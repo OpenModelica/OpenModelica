@@ -376,15 +376,15 @@ public
       end match;
     end toString;
 
-    function isNotArrayBucket
+    function isArrayBucket
       input SuperNode node;
       output Boolean b;
     algorithm
       b := match node
-        case ARRAY_BUCKET() then false;
-        else true;
+        case ARRAY_BUCKET() then true;
+        else false;
       end match;
-    end isNotArrayBucket;
+    end isArrayBucket;
 
     function getEqnIndices
       input SuperNode node;
@@ -560,7 +560,7 @@ public
         then StrongComponent.createPseudoSlice(var_arr_idx, eqn_arr_idx, node.cref_to_solve, sorted_body_indices, matching.eqn_to_var, eqns, mapping, indep);
 
         // entwined array equations
-        case _ guard(not List.any(node_comp, isNotArrayBucket)) algorithm
+        case _ guard(List.all(node_comp, isArrayBucket)) algorithm
           // sort local system to determine in what order the equations have to be solved
           (m_local, matching_local) := BackendUtil.getLocalSystem(m, matching, List.flatten(list(getEqnIndices(n) for n in node_comp)));
           sorted_body_components := tarjanScalar(m_local, matching_local);
