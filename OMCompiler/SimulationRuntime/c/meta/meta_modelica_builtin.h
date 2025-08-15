@@ -133,7 +133,7 @@ extern modelica_metatype listArrayLiteral(modelica_metatype);
 
 static inline modelica_metatype nobox_arrayGet(threadData_t *threadData,modelica_metatype arr,modelica_integer ix)
 {
-  int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));
+  int nelts = arrayLength(arr);
   if (ix < 1 || ix > nelts)
     MMC_THROW_INTERNAL();
   return MMC_STRUCTDATA(arr)[ix-1];
@@ -172,7 +172,7 @@ extern modelica_metatype boxptr_arrayGet(threadData_t *threadData,modelica_metat
 static inline modelica_metatype boxptr_arrayUpdate(threadData_t *threadData,modelica_metatype arr, modelica_metatype i, modelica_metatype val)
 {
   int ix = mmc_unbox_integer(i);
-  int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));
+  int nelts = arrayLength(arr);
   if (ix < 1 || ix > nelts)
     MMC_THROW_INTERNAL();
   MMC_STRUCTDATA(arr)[ix-1] = val;

@@ -982,7 +982,7 @@ public
 
       case Type.ANY() then "$ANY$";
       case Type.CONDITIONAL_ARRAY() then toString(ty.trueType) + "|" + toString(ty.falseType);
-      case Type.UNTYPED() then List.toString(arrayList(ty.dimensions), Dimension.toString, InstNode.name(ty.typeNode), "[", ", ", "]", false);
+      case Type.UNTYPED() then Array.toString(ty.dimensions, Dimension.toString, InstNode.name(ty.typeNode), "[", ", ", "]", false);
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown type: " + anyString(ty), sourceInfo());
@@ -1016,7 +1016,7 @@ public
       case Type.POLYMORPHIC() then "<" + ty.name + ">";
       case Type.ANY() then "$ANY$";
       case Type.CONDITIONAL_ARRAY() then toFlatString(ty.trueType, format) + "|" + toFlatString(ty.falseType, format);
-      case Type.UNTYPED() then List.toString(arrayList(ty.dimensions), function Dimension.toFlatString(format = format), InstNode.name(ty.typeNode), "[", ", ", "]", false);
+      case Type.UNTYPED() then Array.toString(ty.dimensions, function Dimension.toFlatString(format = format), InstNode.name(ty.typeNode), "[", ", ", "]", false);
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown type: " + anyString(ty), sourceInfo());
