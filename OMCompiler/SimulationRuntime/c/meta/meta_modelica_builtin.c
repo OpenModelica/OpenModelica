@@ -591,8 +591,7 @@ modelica_metatype boxptr_listHead(threadData_t *threadData, modelica_metatype ls
 
 modelica_metatype arrayList(modelica_metatype arr)
 {
-  modelica_metatype result;
-  int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr))-1;
+  int nelts = arrayLength(arr)-1;
   void **vecp = MMC_STRUCTDATA(arr);
   void *res = mmc_mk_nil();
   for(; nelts >= 0; --nelts) {
@@ -621,7 +620,7 @@ modelica_metatype listArrayLiteral(modelica_metatype lst)
 
 modelica_metatype arrayCopy(modelica_metatype arr)
 {
-  int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));
+  int nelts = arrayLength(arr);
   void* res = (struct mmc_struct*)mmc_mk_box_no_assign(nelts, MMC_ARRAY_TAG, MMC_IS_IMMEDIATE(MMC_STRUCTDATA(arr)[0]));
   void **arrp = MMC_STRUCTDATA(arr);
   void **resp = MMC_STRUCTDATA(res);
@@ -631,8 +630,8 @@ modelica_metatype arrayCopy(modelica_metatype arr)
 
 modelica_metatype arrayAppend(modelica_metatype arr1, modelica_metatype arr2)
 {
-  int nelts1 = MMC_HDRSLOTS(MMC_GETHDR(arr1));
-  int nelts2 = MMC_HDRSLOTS(MMC_GETHDR(arr2));
+  int nelts1 = arrayLength(arr1);
+  int nelts2 = arrayLength(arr2);
   void* res = (struct mmc_struct*)mmc_mk_box_no_assign(nelts1 + nelts2, MMC_ARRAY_TAG, MMC_IS_IMMEDIATE(MMC_STRUCTDATA(arr1)[0]));
   void **arr1p = MMC_STRUCTDATA(arr1);
   void **arr2p = MMC_STRUCTDATA(arr2);

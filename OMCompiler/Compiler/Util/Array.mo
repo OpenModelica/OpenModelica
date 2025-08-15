@@ -38,6 +38,7 @@ encapsulated package Array
 
 protected
 import MetaModelica.Dangerous.{arrayGetNoBoundsChecking, arrayUpdateNoBoundsChecking, arrayCreateNoInit};
+import List;
 
 public
 function mapNoCopy<T>
@@ -923,6 +924,64 @@ function arrayListsEmpty1<T>
 algorithm
   isEmptyOut := listEmpty(lst) and isEmptyIn;
 end arrayListsEmpty1;
+
+public function toString<T>
+  "Creates a string from an array and a function that maps an array element to a
+   string. It also takes several parameters that determine the formatting of
+   the string. Ex:
+     toString([1, 2, 3], intString, 'nums', '[', ';', ']', true) =>
+     'nums[1;2;3]'
+  "
+  input array<T> inArray;
+  input FuncType inPrintFunc;
+  input String inNameStr      = ""      "The name of the array.";
+  input String inBeginStr     = "["     "The start of the array";
+  input String inDelimitStr   = ", "    "The delimiter between array elements.";
+  input String inEndStr       = "]"     "The end of the array.";
+  input Boolean inPrintEmpty  = true    "If false, don't output begin and end if the array is empty.";
+  input Integer maxLength     = 0       "If > 0, only the first maxLength elements are printed";
+  output String outString;
+
+  partial function FuncType
+    input T inElement;
+    output String outString;
+  end FuncType;
+protected
+  list<T> lst;
+  String endStr = inEndStr;
+algorithm
+
+  // TODO implement stringDelimitArray and don't use arrayList
+
+  if maxLength > 0 and arrayLength(inArray) > maxLength then
+    lst := List.firstN(arrayList(inArray), maxLength);
+    endStr := stringAppendList({inDelimitStr, "...", inEndStr});
+  else
+    lst := arrayList(inArray);
+  end if;
+
+  outString := match(lst, inPrintEmpty)
+    local
+      String str;
+
+    // Empty list and inPrintEmpty true => concatenate the list name, begin
+    // string and end string.
+    case ({}, true)
+      then stringAppendList({inNameStr, inBeginStr, inEndStr});
+
+    // Empty list and inPrintEmpty false => output only list name.
+    case ({}, false)
+      then inNameStr;
+
+    else
+      algorithm
+        str := stringDelimitList(List.map(lst, inPrintFunc), inDelimitStr);
+        str := stringAppendList({inNameStr, inBeginStr, str, endStr});
+      then
+        str;
+
+  end match;
+end toString;
 
 function isEqual<T>
   "Checks if two arrays are equal."

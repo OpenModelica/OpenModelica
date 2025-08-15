@@ -5087,17 +5087,17 @@ public function toString<T>
   "Creates a string from a list and a function that maps a list element to a
    string. It also takes several parameters that determine the formatting of
    the string. Ex:
-     toString({1, 2, 3}, intString, 'nums', '{', ';', '}, true) =>
+     toString({1, 2, 3}, intString, 'nums', '{', ';', '}', true) =>
      'nums{1;2;3}'
   "
   input list<T> inList;
   input FuncType inPrintFunc;
-  input String inListNameStr  = ""      "The name of the list.";
+  input String inNameStr      = ""      "The name of the list.";
   input String inBeginStr     = "{"     "The start of the list";
   input String inDelimitStr   = ", "    "The delimiter between list elements.";
   input String inEndStr       = "}"     "The end of the list.";
   input Boolean inPrintEmpty  = true    "If false, don't output begin and end if the list is empty.";
-  input Integer maxLength = 0           "If > 0, only the first maxLength elements are printed";
+  input Integer maxLength     = 0       "If > 0, only the first maxLength elements are printed";
   output String outString;
 
   partial function FuncType
@@ -5120,16 +5120,16 @@ algorithm
     // Empty list and inPrintEmpty true => concatenate the list name, begin
     // string and end string.
     case ({}, true)
-      then stringAppendList({inListNameStr, inBeginStr, endStr});
+      then stringAppendList({inNameStr, inBeginStr, endStr});
 
     // Empty list and inPrintEmpty false => output only list name.
     case ({}, false)
-      then inListNameStr;
+      then inNameStr;
 
     else
-      equation
-        str = stringDelimitList(map(lst, inPrintFunc), inDelimitStr);
-        str = stringAppendList({inListNameStr, inBeginStr, str, endStr});
+      algorithm
+        str := stringDelimitList(map(lst, inPrintFunc), inDelimitStr);
+        str := stringAppendList({inNameStr, inBeginStr, str, endStr});
       then
         str;
 
