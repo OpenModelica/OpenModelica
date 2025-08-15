@@ -1223,8 +1223,12 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <%symbolName(modelNamePrefixStr,"setupDataStruc")%>(&data, threadData);
       res = _main_initRuntimeAndSimulation(argc, newargv, &data, threadData);
       if(res == 0) {
-        <%pminit%>
-        res = _main_SimulationRuntime(argc, newargv, &data, threadData);
+        if (omc_flag[FLAG_MOO_OPTIMIZATION]) {
+          res = _main_OptimizationRuntime(argc, newargv, &data, threadData);
+        } else {
+          <%pminit%>
+          res = _main_SimulationRuntime(argc, newargv, &data, threadData);
+        }
       }
       >>
     <<
@@ -1277,7 +1281,8 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     <%computeVarIndices(modelInfo.vars, modelNamePrefixStr)%>
 
     /* forward the main in the simulation runtime */
-    extern int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData);
+    extern int _main_SimulationRuntime(int argc, char **argv, DATA *data, threadData_t *threadData);
+    extern int _main_OptimizationRuntime(int argc, char **argv, DATA *data, threadData_t *threadData);
 
     #include "<%simCode.fileNamePrefix%>_12jac.h"
     #include "<%simCode.fileNamePrefix%>_13opt.h"

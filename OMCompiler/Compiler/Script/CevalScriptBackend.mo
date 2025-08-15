@@ -1606,6 +1606,51 @@ algorithm
       then
         ret_val;
 
+    case ("moo",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_))
+      equation
+        System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+
+        FlagsUtil.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION,true);
+        FlagsUtil.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
+        FlagsUtil.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,true);
+
+        (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,dirs) = buildModel(outCache,inEnv,vals,msg);
+        simflags = stringAppend(simflags, " -moo");
+        if b then
+          exeDir=compileDir;
+          (outCache,simSettings) = calculateSimulationSettings(outCache, vals);
+          SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) = simSettings;
+          result_file = stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
+          executableSuffixedExe = stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
+          logFile = stringAppend(executable,".log");
+          // adrpo: log file is deleted by buildModel! do NOT DELTE IT AGAIN!
+          // we should really have different log files for simulation/compilation!
+          // as the buildModel log file will be deleted here and that gives less information to the user!
+          if System.regularFileExists(logFile) then
+            0 = System.removeFile(logFile);
+          end if;
+          sim_call = stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
+          System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+          SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
+          resI = System.systemCallRestrictedEnv(sim_call, logFile);
+          timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+        else
+          result_file = "";
+          timeSimulation = 0.0;
+          resI = 1;
+        end if;
+        timeTotal = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+        (outCache,simValue) = createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,outCache,className,vals,result_file,logFile);
+      then
+        simValue;
+
+    case ("moo",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
+      equation
+        str = AbsynUtil.pathString(className);
+        res = "Failed to run the moo command: " + str;
+      then
+        createSimulationResultFailure(res, simOptionsAsString(vals));
+
     case ("importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(inputConnectors), Values.BOOL(outputConnectors), Values.CODE(Absyn.C_TYPENAME(classpath))})
       equation
         Error.clearMessages() "Clear messages";

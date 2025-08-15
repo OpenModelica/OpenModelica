@@ -454,6 +454,12 @@ algorithm
       then
         (cache,Expression.makePureBuiltinCall("optimize",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
 
+    case (cache,env,Absyn.CREF_IDENT(name = "moo"),{Absyn.CREF()},args,_,_,_) /* Fill in rest of defaults here */
+      equation
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "moo", info, NONE());
+        recordtype = CevalScriptBackend.getSimulationResultType();
+      then
+        (cache,Expression.makePureBuiltinCall("moo",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
 
     case (cache,env,Absyn.CREF_IDENT(name = "jacobian"),{Absyn.CREF(componentRef = cr)},_,impl,pre,_) /* Fill in rest of defaults here */
       equation

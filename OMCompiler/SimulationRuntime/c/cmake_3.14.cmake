@@ -28,6 +28,9 @@ file(GLOB_RECURSE OMC_SIMRT_DATA_RECONCILIATION_HEADERS ${CMAKE_CURRENT_SOURCE_D
 file(GLOB_RECURSE OMC_SIMRT_OPTIMIZATION_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/optimization/*.c)
 file(GLOB_RECURSE OMC_SIMRT_OPTIMIZATION_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/optimization/*.h)
 
+file(GLOB_RECURSE OMC_SIMRT_MOO_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/moo/*.cpp)
+file(GLOB_RECURSE OMC_SIMRT_MOO_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/moo/*.h)
+
 
 # ######################################################################################################################
 # Library: OpenModelicaRuntimeC
@@ -111,6 +114,13 @@ if(OM_OMC_ENABLE_IPOPT)
   target_compile_definitions(SimulationRuntimeC PRIVATE OMC_HAVE_IPOPT)
   target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::ipopt)
 endif()
+
+if(OM_OMC_ENABLE_MOO)
+  target_sources(SimulationRuntimeC PRIVATE ${OMC_SIMRT_MOO_SOURCES})
+  target_compile_definitions(SimulationRuntimeC PRIVATE OMC_HAVE_MOO)
+  target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::moo)
+endif()
+
 
 install(TARGETS SimulationRuntimeC)
 
