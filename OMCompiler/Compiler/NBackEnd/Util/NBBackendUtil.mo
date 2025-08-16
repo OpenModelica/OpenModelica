@@ -315,32 +315,31 @@ public
     constant Integer N = listLength(eqn_indices);
     array<Integer> var_to_eqn = arrayCreate(N, -1);
     array<Integer> eqn_to_var = arrayCreate(N, -1);
-    UnorderedMap<Integer, Integer> eqn_loc = UnorderedMap.new<Integer>(Util.id, intEq, N) "global to local equation indices";
     UnorderedMap<Integer, Integer> var_loc = UnorderedMap.new<Integer>(Util.id, intEq, N) "global to local variable indices";
     Integer j = 1;
   algorithm
-    // map matching from full system
+    // map matching from full system and save eqn map back
     map_back := arrayCreate(N, -1);
     for i in eqn_indices loop
-      // set equation maps
-      UnorderedMap.addUnique(i, j, eqn_loc);
+      // set equation map (local -> global)
       map_back[j] := i;
 
-      // set var from matching
+      // set var from matching (global -> local)
       UnorderedMap.addUnique(matching.eqn_to_var[i], j, var_loc);
 
-      // set matching
+      // set local matching
       eqn_to_var[j] := j;
       var_to_eqn[j] := j;
+
       j := j + 1;
     end for;
+    matching_loc := MATCHING(var_to_eqn, eqn_to_var);
 
     // filter only local edges of adjacency matrix
     m_loc := arrayCreate(N, {});
-    for i in eqn_indices loop
-      m_loc[i] := UnorderedMap.getList(m[i], var_loc);
+    for j in 1:N loop
+      m_loc[j] := UnorderedMap.getList(m[map_back[j]], var_loc);
     end for;
-    matching_loc := MATCHING(var_to_eqn, eqn_to_var);
   end getLocalSystem;
 
   annotation(__OpenModelica_Interface="backend");
