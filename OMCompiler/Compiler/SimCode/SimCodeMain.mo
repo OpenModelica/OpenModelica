@@ -1132,10 +1132,8 @@ protected
   NBackendDAE bdae;
   Boolean dumpValidFlatModelicaNF;
   String flatString = "", NFFlatString = "";
-  Flags.Flag flags;
-algorithm
-  flags := CevalScriptBackend.loadCommandLineOptions(className);
 
+algorithm
   FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, true);
 
   outLibs := {};
@@ -1151,7 +1149,6 @@ algorithm
     ExecStat.execStatReset();
 
     (flatModel, funcTree, NFFlatString) := CevalScriptBackend.runFrontEndWorkNF(className, false, dumpValidFlatModelicaNF);
-
     timeFrontend := System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
     ExecStat.execStat("FrontEnd");
 
@@ -1173,7 +1170,7 @@ algorithm
     // calculate stuff that we need to create SimCode data structure
     System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
     ExecStat.execStatReset();
-    (cache, env, odae, NFFlatString) := CevalScriptBackend.runFrontEnd(cache, inEnv, className, false, dumpValidFlatModelicaNF, readCommandLineOptions = false);
+    (cache, env, odae, NFFlatString) := CevalScriptBackend.runFrontEnd(cache, inEnv, className, false, dumpValidFlatModelicaNF);
     ExecStat.execStat("FrontEnd");
     SOME(dae) := odae;
 
@@ -1224,7 +1221,6 @@ algorithm
     print(flatString);
   end if;
 
-  FlagsUtil.saveFlags(flags);
   success := true;
 end translateModel;
 
