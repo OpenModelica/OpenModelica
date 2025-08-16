@@ -1406,7 +1406,7 @@ public
 
       case UNTYPED_CALL()
         algorithm
-          res := List.exist(call.arguments, func);
+          res := List.any(call.arguments, func);
 
           if not res then
             for arg in call.named_args loop
@@ -1439,7 +1439,7 @@ public
         then
           false;
 
-      case TYPED_CALL() then List.exist(call.arguments, func);
+      case TYPED_CALL() then List.any(call.arguments, func);
       case UNTYPED_ARRAY_CONSTRUCTOR() then func(call.exp);
       case TYPED_ARRAY_CONSTRUCTOR() then func(call.exp);
       case UNTYPED_REDUCTION() then func(call.exp);

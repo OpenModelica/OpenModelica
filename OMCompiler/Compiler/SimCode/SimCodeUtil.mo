@@ -623,8 +623,8 @@ algorithm
 
     // map index also odeEquations and algebraicEquations
     systemIndexMap := List.fold(allEquations, getSystemIndexMap, arrayCreate(uniqueEqIndex, -1));
-    odeEquations := List.mapList1_1(odeEquations, setSystemIndexMap, systemIndexMap);
-    algebraicEquations := List.mapList1_1(algebraicEquations, setSystemIndexMap, systemIndexMap);
+    odeEquations := List.map1List(odeEquations, setSystemIndexMap, systemIndexMap);
+    algebraicEquations := List.map1List(algebraicEquations, setSystemIndexMap, systemIndexMap);
     modelInfo := addNumEqns(modelInfo, uniqueEqIndex /* This is a *much* better estimate than the guessed number of equations */ );
 
     odeEquations := makeEqualLengthLists(odeEquations, Config.noProc());
@@ -869,7 +869,7 @@ algorithm
       crefs := List.fold(stmts,DAEUtil.getAssertConditionCrefs,{});
       (varLstLst,_) := List.map1_2(crefs,BackendVariable.getVar,vars);
       varLst := List.flatten(varLstLst);
-      true := List.exist(varLst,BackendVariable.isParam);
+      true := List.any(varLst,BackendVariable.isParam);
   then ((varDep,eqIn::paramDep));
   else
     algorithm
@@ -1746,9 +1746,9 @@ algorithm
     BackendDump.dumpVarList(varlst,"Variables:");
   end if;
   // skip is when equations
-  skip := List.mapBoolAnd(eqnlst, BackendEquation.isWhenEquation);
+  skip := List.all(eqnlst, BackendEquation.isWhenEquation);
   // skip is discrete
-  skip := skip or List.mapBoolAnd(varlst, BackendVariable.isVarDiscrete);
+  skip := skip or List.all(varlst, BackendVariable.isVarDiscrete);
 
   outFold := match comp
     local
@@ -6234,7 +6234,7 @@ algorithm
           _ :=  match stmt
             case BackendDAE.ASSIGN(left = DAE.CREF(componentRef = left)) equation
               crefs = List.map(inVars, BackendVariable.varCref);
-              List.map1rAllValue(crefs, ComponentReference.crefPrefixOf, true, left);
+              true = List.all(crefs, function ComponentReference.crefPrefixOf(prefixCref = left));
             then ();
             else ();
           end match;
@@ -6287,7 +6287,7 @@ algorithm
         _ :=  match stmt
           case BackendDAE.ASSIGN(left = DAE.CREF(componentRef = left)) equation
             crefs = List.map(inVars, BackendVariable.varCref);
-            List.map1rAllValue(crefs, ComponentReference.crefPrefixOf, true, left);
+            true = List.all(crefs, function ComponentReference.crefPrefixOf(prefixCref = left));
           then ();
           else ();
         end match;
@@ -6617,7 +6617,7 @@ algorithm
 
     case (_, e1 as DAE.CREF(componentRef = cr2), e2, _, _, _)
       equation
-        List.map1rAllValue(crefs, ComponentReference.crefPrefixOf, true, cr2);
+        true = List.all(crefs, function ComponentReference.crefPrefixOf(prefixCref = cr2));
         // ((e1_1, _)) = Expression.extendArrExp((e1, false));
         (e2_1, _) = Expression.extendArrExp(e2, false);
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
@@ -6628,7 +6628,7 @@ algorithm
 
     case (_, e1, e2 as DAE.CREF(componentRef = cr2), _, _, _)
       equation
-        List.map1rAllValue(crefs, ComponentReference.crefPrefixOf, true, cr2);
+        true = List.all(crefs, function ComponentReference.crefPrefixOf(prefixCref = cr2));
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         (e1_1, _) = Expression.extendArrExp(e1, false);
         // ((e2_1, _)) = Expression.extendArrExp((e2, false));
@@ -11099,7 +11099,7 @@ algorithm (outRefs) := matchcontinue(inRefs, firstOrderInSec)
   case({}, _) then {};
   case((cr, _)::rest, _)
     equation
-      true = List.map1BoolOr(firstOrderInSec, ComponentReference.crefEqual, cr);
+      true = List.any(firstOrderInSec, function ComponentReference.crefEqual(inComponentRef2 = cr));
       rest = setFirstOrderInSecondOrderVarIndex(rest, firstOrderInSec);
     then
       (cr, 2)::rest;
@@ -12912,7 +12912,7 @@ algorithm
   depVars := arrayGet(m,beq);
   depVars := List.filter1OnTrue(depVars,setUpEqTree_Help,assVar);
   preEqs := List.map1(depVars,Array.getIndexFirst,varMatch);
-  Array.updateElementListAppend(beq,preEqs,treeIn);
+  arrayUpdate(treeIn, beq, listAppend(treeIn[beq], preEqs));
   treeOut := treeIn;
 end setUpEqTree;
 

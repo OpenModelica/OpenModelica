@@ -1428,7 +1428,7 @@ protected
 algorithm
   tmpMappingArray := arrayCreate(iNumberOfSccs,-1);
   TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) := iTaskGraphMeta;
-  ((oMapping,_)) := Array.fold1(inComps, getSccNodeMapping0, nodeMark, (tmpMappingArray,1));
+  (oMapping,_) := Array.fold(inComps, function getSccNodeMapping0(iNodeMarks = nodeMark), (tmpMappingArray,1));
 end getSccNodeMapping;
 
 protected function getSccNodeMapping0 "author: marcusw
@@ -4524,7 +4524,7 @@ algorithm
         reqTimeOp = convertSimEqToSccCosts(reqTimeOpSimCode, iSimEqCompMapping, reqTimeOp);
         //print("createCosts: scc costs converted\n");
         commCosts = createCommCosts(commCosts,1,reqTimeCom);
-        ((_,tmpTaskGraphMeta)) = Array.fold4(inComps,createCosts0,(comps,shared),compMapping, reqTimeOp, reqTimeCom, (1,iTaskGraphMeta));
+        (_, tmpTaskGraphMeta) = Array.fold(inComps, function createCosts0(iComps_shared = (comps,shared), iCompMapping = compMapping, reqTimeOp = reqTimeOp, reqTimeCom = reqTimeCom), (1,iTaskGraphMeta));
       then tmpTaskGraphMeta;
     else
       equation
@@ -4783,7 +4783,7 @@ protected function convertSimEqToSccCosts
   input array<Real> iReqTimeOp;
   output array<Real> oReqTimeOp; //calcTime for each scc
 algorithm
-  ((_,oReqTimeOp)) := Array.fold1(iReqTimeOpSimCode, convertSimEqToSccCosts1, iSimeqCompMapping, (1,iReqTimeOp));
+  (_,oReqTimeOp) := Array.fold(iReqTimeOpSimCode, function convertSimEqToSccCosts1(iSimeqCompMapping = iSimeqCompMapping), (1,iReqTimeOp));
 end convertSimEqToSccCosts;
 
 protected function convertSimEqToSccCosts1
@@ -5135,8 +5135,8 @@ algorithm
   tmpComps := {};
   tmpMapping := {};
   TASKGRAPHMETA(inComps=inComps, nodeMark=nodeMarks) := iTaskGraphMeta;
-  ((tmpComps,tmpMapping)) := Array.fold2(inComps,getGraphComponents0,iSystComps,iCompEqSysMapping,(tmpComps,tmpMapping));
-  ((_,(tmpComps,tmpMapping))) := Array.fold2(nodeMarks,getGraphComponents2, iSystComps, iCompEqSysMapping, (1,(tmpComps,tmpMapping)));
+  ((tmpComps,tmpMapping)) := Array.fold(inComps, function getGraphComponents0(systComps = iSystComps, iCompEqSysMapping = iCompEqSysMapping),(tmpComps,tmpMapping));
+  ((_,(tmpComps,tmpMapping))) := Array.fold(nodeMarks, function getGraphComponents2(systComps = iSystComps, iCompEqSysMapping = iCompEqSysMapping), (1,(tmpComps,tmpMapping)));
   oComps := tmpComps;
   oCompEqGraphMapping := listArray(tmpMapping);
 end getGraphComponents;

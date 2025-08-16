@@ -2748,8 +2748,8 @@ algorithm
     case({}) then (false, false);
     case(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst=subModLst))))::t)
       equation
-        isApproximatedEquation = List.exist(subModLst, isEquationTaggedApproximated) or isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
-        isboundaryConditionEquation = List.exist(subModLst, isEquationTaggedBoundaryCondition) or isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
+        isApproximatedEquation = List.any(subModLst, isEquationTaggedApproximated) or isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
+        isboundaryConditionEquation = List.any(subModLst, isEquationTaggedBoundaryCondition) or isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
       then
         (isApproximatedEquation, isboundaryConditionEquation);
     case(_::t)

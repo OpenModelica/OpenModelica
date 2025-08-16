@@ -327,7 +327,7 @@ protected
 algorithm
   if System.getHasExpandableConnectors() then
     DAE.DAE(vars) := DAE;
-    hasExpandable := List.exist(vars, isVarExpandable);
+    hasExpandable := List.any(vars, isVarExpandable);
   else
     hasExpandable := false;
   end if;
@@ -624,7 +624,7 @@ protected
   OuterConnect new_oc;
 algorithm
   // Only add a new outer connection if it doesn't already exist in the list.
-  if not List.exist(sets.outerConnects, function outerConnectionMatches(cr1 = cr1, cr2 = cr2)) then
+  if not List.any(sets.outerConnects, function outerConnectionMatches(cr1 = cr1, cr2 = cr2)) then
     new_oc := OuterConnect.OUTERCONNECT(scope, cr1, io1, f1, cr2, io2, f2, source);
     sets.outerConnects := new_oc :: sets.outerConnects;
   end if;

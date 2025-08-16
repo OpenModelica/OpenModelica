@@ -325,8 +325,8 @@ algorithm
   outBoolean := match (inClass)
     local
       list<Absyn.ClassPart> parts;
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts))) then List.exist(parts,AbsynUtil.isExternalPart);
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))) then List.exist(parts,AbsynUtil.isExternalPart);
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts))) then List.any(parts,AbsynUtil.isExternalPart);
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))) then List.any(parts,AbsynUtil.isExternalPart);
     else false;
   end match;
 end containsExternalFuncDecl;
