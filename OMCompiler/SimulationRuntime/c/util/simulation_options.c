@@ -109,6 +109,10 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_MAX_ORDER */                    "maxIntegrationOrder",
   /* FLAG_MAX_STEP_SIZE */                "maxStepSize",
   /* FLAG_MEASURETIMEPLOTFORMAT */        "measureTimePlotFormat",
+  /* FLAG_MOO_OPTIMIZATION */             "moo",
+  /* FLAG_MOO_L2BN_P1_ITERATIONS */       "moo_l2bn_p1_it",
+  /* FLAG_MOO_L2BN_P2_ITERATIONS */       "moo_l2bn_p2_it",
+  /* FLAG_MOO_L2BN_P2_LEVEL */            "moo_l2bn_p2_lvl",
   /* FLAG_NEWTON_FTOL */                  "newtonFTol",
   /* FLAG_NEWTON_MAX_STEPS */             "newtonMaxSteps",
   /* FLAG_NEWTON_MAX_STEP_FACTOR */       "newtonMaxStepFactor",
@@ -249,6 +253,10 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_MAX_ORDER */                    "value specifies maximum integration order for supported solver",
   /* FLAG_MAX_STEP_SIZE */                "value specifies maximum absolute step size for supported solver",
   /* FLAG_MEASURETIMEPLOTFORMAT */        "value specifies the output format of the measure time functionality",
+  /* FLAG_MOO_OPTIMIZATION */             "perform dynamic optimization with MOO library",
+  /* FLAG_MOO_L2BN_P1_ITERATIONS */       "[int default: 0] value specifies the number of phase I iterations (full bisections) for L2-Boundary-Norm mesh refinement in MOO",
+  /* FLAG_MOO_L2BN_P2_ITERATIONS */       "[int default: 0] value specifies the number of phase II iterations (refinement) for L2-Boundary-Norm mesh refinement in MOO",
+  /* FLAG_MOO_L2BN_P2_LEVEL */            "[real default: 0.0] value specifies the phase II refinement aggressiveness for L2-Boundary-Norm mesh refinement in MOO",
   /* FLAG_NEWTON_FTOL */                  "[double (default 1e-12)] tolerance respecting residuals for updating solution vector in Newton solver",
   /* FLAG_NEWTON_MAX_STEPS */             "[int (default " EXPANDSTRING(DEFAULT_FLAG_NEWTON_MAX_STEPS) ")] maximal number of Newton steps used in GBODE",
   /* FLAG_NEWTON_MAX_STEP_FACTOR */       "[double (default 1e12)] maximum newton step factor mxnewtstep = maxStepFactor * norm2(xScaling). Used currently only by KINSOL.",
@@ -508,6 +516,14 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  * ps\n"
   "  * gif\n"
   "  * ...",
+  /* FLAG_MOO_OPTIMIZATION */
+  "  Perform dynamic optimization with MOO library",
+  /* FLAG_MOO_L2BN_P1_ITERATIONS */
+  "  Value specifies the number of phase I iterations (full bisections) for L2-Boundary-Norm mesh refinement in MOO",
+  /* FLAG_MOO_L2BN_P2_ITERATIONS */
+  "  Value specifies the number of phase II iterations (refinement) for L2-Boundary-Norm mesh refinement in MOO",
+  /* FLAG_MOO_L2BN_P2_LEVEL */
+  "  Value specifies the phase II refinement aggressiveness for L2-Boundary-Norm mesh refinement in MOO",
   /* FLAG_NEWTON_FTOL */
   "  Tolerance respecting residuals for updating solution vector in Newton solver.\n"
   "  Solution is accepted if the (scaled) 2-norm of the residuals is smaller than the tolerance newtonFTol and the (scaled) newton correction (delta_x) is smaller than the tolerance newtonXTol.\n"
@@ -655,6 +671,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_PARMODNUMTHREADS */
   "  Value specifies the number of threads for simulation using parmodauto. If not specified (or is 0) it will use the systems max number of threads. Note that this option is ignored if the model is not compiled with --parmodauto",
 
+
   "FLAG_MAX"
 };
 
@@ -737,6 +754,10 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_MAX_ORDER */                    FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MAX_STEP_SIZE */                FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MEASURETIMEPLOTFORMAT */        FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_MOO_OPTIMIZATION */             FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_MOO_L2BN_P1_ITERATIONS */       FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_MOO_L2BN_P2_ITERATIONS */       FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_MOO_L2BN_P2_LEVEL */            FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NEWTON_FTOL */                  FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NEWTON_MAX_STEPS */             FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_NEWTON_MAX_STEP_FACTOR */       FLAG_REPEAT_POLICY_FORBID,
@@ -876,6 +897,10 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_MAX_ORDER */                    FLAG_TYPE_OPTION,
   /* FLAG_MAX_STEP_SIZE */                FLAG_TYPE_OPTION,
   /* FLAG_MEASURETIMEPLOTFORMAT */        FLAG_TYPE_OPTION,
+  /* FLAG_MOO_OPTIMIZATION */             FLAG_TYPE_FLAG,
+  /* FLAG_MOO_L2BN_P1_ITERATIONS */       FLAG_TYPE_OPTION,
+  /* FLAG_MOO_L2BN_P2_ITERATIONS */       FLAG_TYPE_OPTION,
+  /* FLAG_MOO_L2BN_P2_LEVEL */            FLAG_TYPE_OPTION,
   /* FLAG_NEWTON_FTOL */                  FLAG_TYPE_OPTION,
   /* FLAG_NEWTON_MAX_STEPS */             FLAG_TYPE_OPTION,
   /* FLAG_NEWTON_MAX_STEP_FACTOR */       FLAG_TYPE_OPTION,

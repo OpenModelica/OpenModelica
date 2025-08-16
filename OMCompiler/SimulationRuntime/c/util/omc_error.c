@@ -78,6 +78,7 @@ const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX] = {
   "LOG_LS",
   "LOG_LS_V",
   "LOG_MIXED",
+  "LOG_MOO",
   "LOG_NLS",
   "LOG_NLS_V",
   "LOG_NLS_HOMOTOPY",
@@ -140,6 +141,7 @@ const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX] = {
   "logging for linear systems",                                                 /* OMC_LOG_LS */
   "verbose logging of linear systems",                                          /* OMC_LOG_LS_V */
   "logging for mixed systems",                                                  /* OMC_LOG_MIXED */
+  "logging for dynamic optimization library MOO",                               /* OMC_LOG_MOO */
   "logging for nonlinear systems",                                              /* OMC_LOG_NLS */
   "verbose logging of nonlinear systems",                                       /* OMC_LOG_NLS_V */
   "logging of homotopy solver for nonlinear systems",                           /* OMC_LOG_NLS_HOMOTOPY */
