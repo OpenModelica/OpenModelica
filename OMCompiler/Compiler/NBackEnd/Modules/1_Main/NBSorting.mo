@@ -554,9 +554,8 @@ public
 
           // check for independence of the element equations
           // if locally each variable occurs in only one equation, then they are all independent
-          for i in node.eqn_indices loop
-            indep := indep and List.hasOneElement(m_local[i]);
-          end for;
+          indep := Array.all(m_local, List.hasOneElement);
+
           eqn_arr_idx := mapping.eqn_StA[listHead(node.eqn_indices)];
           var_arr_idx := mapping.var_StA[matching.eqn_to_var[listHead(node.eqn_indices)]];
         then StrongComponent.createPseudoSlice(var_arr_idx, eqn_arr_idx, node.cref_to_solve, sorted_body_indices, matching.eqn_to_var, eqns, mapping, indep);
