@@ -538,7 +538,7 @@ algorithm
       list<DAE.Var> varLst;
 
     case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_),varLst = varLst))
-      then List.mapAllValueBool(List.map(varLst,getVarType),isReal,true);
+      then List.all(List.map(varLst, getVarType), isReal);
 
     // otherwise false
     else false;
@@ -8596,7 +8596,7 @@ public function arrayHasUnknownDims
 algorithm
   outUnknownDims := match(inType)
     case DAE.T_ARRAY()
-      then List.exist(inType.dims, Expression.dimensionUnknown) or
+      then List.any(inType.dims, Expression.dimensionUnknown) or
            arrayHasUnknownDims(inType.ty);
 
     else false;

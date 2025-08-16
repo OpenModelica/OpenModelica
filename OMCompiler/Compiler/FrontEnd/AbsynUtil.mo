@@ -3548,7 +3548,7 @@ public function allFieldsAreCrefs
   input list<Absyn.Exp> expLst;
   output Boolean b;
 algorithm
-  b := List.mapAllValueBool(expLst, complexIsCref, true);
+  b := List.all(expLst, complexIsCref);
 end allFieldsAreCrefs;
 
 public function complexIsCref
@@ -4184,7 +4184,7 @@ algorithm
         res := {};
         for arg1 in args1 loop
           Absyn.MODIFICATION(path=p) := arg1;
-          if List.exist(args2, function isModificationOfPath(path=p)) then
+          if List.any(args2, function isModificationOfPath(path=p)) then
             res := arg1::res;
           end if;
         end for;
@@ -5368,7 +5368,7 @@ algorithm
   res := match elementSpec
     case Absyn.ElementSpec.CLASSDEF() then isClassNamed(name, elementSpec.class_);
     case Absyn.ElementSpec.COMPONENTS()
-      then List.exist(elementSpec.components, function isComponentItemNamed(name = name));
+      then List.any(elementSpec.components, function isComponentItemNamed(name = name));
     else false;
   end match;
 end isElementSpecNamed;

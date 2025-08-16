@@ -3253,7 +3253,11 @@ algorithm
         eqns = inEquations;
         reqns = inREquations;
       else
-        (eqns, reqns) = List.consOnBool(intGt(size, 0), BackendDAE.ALGORITHM(size, alg, source, inCrefExpansion, eqAttributes), inEquations, inREquations);
+        if size > 0 then
+          eqns = BackendDAE.ALGORITHM(size, alg, source, inCrefExpansion, eqAttributes) :: inEquations;
+        else
+          reqns = BackendDAE.ALGORITHM(size, alg, source, inCrefExpansion, eqAttributes) :: inREquations;
+        end if;
         ieqns = inIEquations;
       end if;
     then (eqns, reqns, ieqns);

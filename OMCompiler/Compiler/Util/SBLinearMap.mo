@@ -53,7 +53,7 @@ public
     input array<Real> offset;
     output SBLinearMap map;
   algorithm
-    if Array.exist(gain, Util.realNegative) then
+    if Array.any(gain, Util.realNegative) then
       // Warning: All gains should be positive.
       map := newEmpty();
     elseif arrayLength(gain) == arrayLength(offset) then

@@ -1474,7 +1474,7 @@ algorithm
       equation
         crefs = Expression.getLhsCrefsFromStatements(stmts);
         // if there is no need for expanding the original equation, the replaced one shouldn't either
-        hasArrayCref = List.exist(crefs,ComponentReference.isArrayElement);
+        hasArrayCref = List.any(crefs,ComponentReference.isArrayElement);
         crefExpand = if hasArrayCref then crefExpand else DAE.NOT_EXPAND();
 
         (stmts1,true) = replaceStatementLst(stmts,repl,inFuncTypeExpExpToBooleanOption,{},false);

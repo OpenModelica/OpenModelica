@@ -248,7 +248,7 @@ algorithm
     // Split the mapping from inner crefs to outer output crefs in a "continuous" part and the rest
     for hashEntry in BaseHashTable.hashTableList(innerCrefToOuterOutputCrefs) loop
       (_, outerOutputCrefs) := hashEntry;
-      hasDer := List.exist(outerOutputCrefs, function BaseHashSet.has(hashSet=derCrefsSet));
+      hasDer := List.any(outerOutputCrefs, function BaseHashSet.has(hashSet=derCrefsSet));
       if hasDer then
         innerCrefToOuterOutputCrefs_der := hashEntry :: innerCrefToOuterOutputCrefs_der;
       else

@@ -847,7 +847,7 @@ algorithm
           crefs = List.map(fn,getInputCrefs);
           crefs = List.select(crefs,removeWilds);
           argmap = List.zip(crefs,args);
-          false = List.exist(fn,DAEUtil.isProtectedVar);
+          false = List.any(fn,DAEUtil.isProtectedVar);
           newExp = getRhsExp(fn);
           // compare types
           true = checkExpsTypeEquiv(e1, newExp);

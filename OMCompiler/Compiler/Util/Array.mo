@@ -91,7 +91,7 @@ protected
   Integer w = 2*v+1;
   Integer tmp;
 algorithm
-  while w<n loop
+  while w < n loop
     if w+1 < n then
       if inArray[w+2]>inArray[w+1] then
         w := w + 1;
@@ -284,20 +284,6 @@ algorithm
   end if;
 end map1Ind;
 
-function map0<T>
-  "Applies a non-returning function to all elements in an array."
-  input array<T> inArray;
-  input FuncType inFunc;
-
-  partial function FuncType
-    input T inElement;
-  end FuncType;
-algorithm
-  for e in inArray loop
-    inFunc(e);
-  end for;
-end map0;
-
 function mapList<TI, TO>
   "As map, but takes a list in and creates an array from the result."
   input list<TI> inList;
@@ -345,168 +331,6 @@ algorithm
     outResult := inFoldFunc(e, outResult);
   end for;
 end fold;
-
-function fold1<T, FoldT, ArgT>
-  "Takes an array, a function, and a start value. The function is applied to
-   each array element, and the start value is passed to the function and
-   updated."
-  input array<T> inArray;
-  input FoldFunc inFoldFunc;
-  input ArgT inArg;
-  input FoldT inStartValue;
-  output FoldT outResult = inStartValue;
-
-  partial function FoldFunc
-    input T inElement;
-    input ArgT inExtraArg;
-    input FoldT inFoldArg;
-    output FoldT outFoldArg;
-  end FoldFunc;
-algorithm
-  for e in inArray loop
-    outResult := inFoldFunc(e, inArg, outResult);
-  end for;
-end fold1;
-
-function fold2<T, FoldT, ArgT1, ArgT2>
-  "Takes an array, a function, a constant parameter, and a start value. The
-   function is applied to each array element, and the start value is passed to
-   the function and updated."
-  input array<T> inArray;
-  input FoldFunc inFoldFunc;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-  input FoldT inStartValue;
-  output FoldT outResult = inStartValue;
-
-  partial function FoldFunc
-    input T inElement;
-    input ArgT1 inExtraArg1;
-    input ArgT2 inExtraArg2;
-    input FoldT inFoldArg;
-    output FoldT outFoldArg;
-  end FoldFunc;
-algorithm
-  for e in inArray loop
-    outResult := inFoldFunc(e, inArg1, inArg2, outResult);
-  end for;
-end fold2;
-
-function fold3<T, FoldT, ArgT1, ArgT2, ArgT3>
-  "Takes an array, a function, a constant parameter, and a start value. The
-   function is applied to each array element, and the start value is passed to
-   the function and updated."
-  input array<T> inArray;
-  input FoldFunc inFoldFunc;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-  input ArgT3 inArg3;
-  input FoldT inStartValue;
-  output FoldT outResult = inStartValue;
-
-  partial function FoldFunc
-    input T inElement;
-    input ArgT1 inExtraArg1;
-    input ArgT2 inExtraArg2;
-    input ArgT3 inExtraArg3;
-    input FoldT inFoldArg;
-    output FoldT outFoldArg;
-  end FoldFunc;
-algorithm
-  for e in inArray loop
-    outResult := inFoldFunc(e, inArg1, inArg2, inArg3, outResult);
-  end for;
-end fold3;
-
-function fold4<T, FoldT, ArgT1, ArgT2, ArgT3, ArgT4>
-  "Takes an array, a function, four constant parameters, and a start value. The
-   function is applied to each array element, and the start value is passed to
-   the function and updated."
-  input array<T> inArray;
-  input FoldFunc inFoldFunc;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-  input ArgT3 inArg3;
-  input ArgT4 inArg4;
-  input FoldT inStartValue;
-  output FoldT outResult = inStartValue;
-
-  partial function FoldFunc
-    input T inElement;
-    input ArgT1 inExtraArg1;
-    input ArgT2 inExtraArg2;
-    input ArgT3 inExtraArg3;
-    input ArgT4 inExtraArg4;
-    input FoldT inFoldArg;
-    output FoldT outFoldArg;
-  end FoldFunc;
-algorithm
-  for e in inArray loop
-    outResult := inFoldFunc(e, inArg1, inArg2, inArg3, inArg4, outResult);
-  end for;
-end fold4;
-
-function fold5<T, FoldT, ArgT1, ArgT2, ArgT3, ArgT4, ArgT5>
-  "Takes an array, a function, four constant parameters, and a start value. The
-   function is applied to each array element, and the start value is passed to
-   the function and updated."
-  input array<T> inArray;
-  input FoldFunc inFoldFunc;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-  input ArgT3 inArg3;
-  input ArgT4 inArg4;
-  input ArgT5 inArg5;
-  input FoldT inStartValue;
-  output FoldT outResult = inStartValue;
-
-  partial function FoldFunc
-    input T inElement;
-    input ArgT1 inExtraArg1;
-    input ArgT2 inExtraArg2;
-    input ArgT3 inExtraArg3;
-    input ArgT4 inExtraArg4;
-    input ArgT5 inExtraArg5;
-    input FoldT inFoldArg;
-    output FoldT outFoldArg;
-  end FoldFunc;
-algorithm
-  for e in inArray loop
-    outResult := inFoldFunc(e, inArg1, inArg2, inArg3, inArg4, inArg5, outResult);
-  end for;
-end fold5;
-
-function fold6<T, FoldT, ArgT1, ArgT2, ArgT3, ArgT4, ArgT5, ArgT6>
-  "Takes an array, a function, four constant parameters, and a start value. The
-   function is applied to each array element, and the start value is passed to
-   the function and updated."
-  input array<T> inArray;
-  input FoldFunc inFoldFunc;
-  input ArgT1 inArg1;
-  input ArgT2 inArg2;
-  input ArgT3 inArg3;
-  input ArgT4 inArg4;
-  input ArgT5 inArg5;
-  input ArgT6 inArg6;
-  input FoldT inStartValue;
-  output FoldT outResult = inStartValue;
-
-  partial function FoldFunc
-    input T inElement;
-    input ArgT1 inExtraArg1;
-    input ArgT2 inExtraArg2;
-    input ArgT3 inExtraArg3;
-    input ArgT4 inExtraArg4;
-    input ArgT5 inExtraArg5;
-    input ArgT6 inExtraArg6;
-    input FoldT inFoldArg;
-    output FoldT outFoldArg;
-  end FoldFunc;
-algorithm
-  for e in inArray loop
-    outResult := inFoldFunc(e, inArg1, inArg2, inArg3, inArg4, inArg5, inArg6, outResult);
-  end for;
-end fold6;
 
 function foldIndex<T, FoldT>
 "Takes an array, a function, and a start value. The function is applied to
@@ -568,35 +392,6 @@ function getIndexFirst<T>
   input array<T> inArray;
   output T outElement = arrayGet(inArray, inIndex);
 end getIndexFirst;
-
-function updatewithArrayIndexFirst<T>
-  "Replaces the element with the given index in the second array with the value
-   of the corresponding element in the first array."
-  input Integer inIndex;
-  input array<T> inArraySrc;
-  input array<T> inArrayDest;
-algorithm
-  arrayUpdate(inArrayDest, inIndex, inArraySrc[inIndex]);
-end updatewithArrayIndexFirst;
-
-function updatewithListIndexFirst<T>
-  input list<Integer> inList;
-  input Integer inStartIndex;
-  input array<T> inArraySrc;
-  input array<T> inArrayDest;
-algorithm
-  for i in inStartIndex:inStartIndex+listLength(inList) loop
-    arrayUpdate(inArrayDest, i, inArraySrc[i]);
-  end for;
-end updatewithListIndexFirst;
-
-function updateElementListAppend<T>
-  input Integer inIndex;
-  input list<T> inValue;
-  input array<list<T>> inArray;
-algorithm
-  arrayUpdate(inArray, inIndex, listAppend(inArray[inIndex], inValue));
-end updateElementListAppend;
 
 function replaceAtWithFill<T>
   "Takes
@@ -910,21 +705,6 @@ algorithm
   end for;
 end reverse;
 
-function arrayListsEmpty<T>"output true if all lists in the array are empty"
-  input array<list<T>> arr;
-  output Boolean isEmpty;
-algorithm
-  isEmpty := fold(arr,arrayListsEmpty1,true);
-end arrayListsEmpty;
-
-function arrayListsEmpty1<T>
-  input list<T> lst;
-  input Boolean isEmptyIn;
-  output Boolean isEmptyOut;
-algorithm
-  isEmptyOut := listEmpty(lst) and isEmptyIn;
-end arrayListsEmpty1;
-
 public function toString<T>
   "Creates a string from an array and a function that maps an array element to a
    string. It also takes several parameters that determine the formatting of
@@ -1097,28 +877,6 @@ algorithm
   res := len1 < len2;
 end isLess;
 
-function exist<T>
-  "Returns true if a certain element exists in the given array as indicated by
-   the given predicate function."
-  input array<T> arr;
-  input PredFunc pred;
-  output Boolean exists;
-
-  partial function PredFunc
-    input T element;
-    output Boolean matches;
-  end PredFunc;
-algorithm
-  for e in arr loop
-    if pred(e) then
-      exists := true;
-      return;
-    end if;
-  end for;
-
-  exists := false;
-end exist;
-
 function insertList<T>
   input output array<T> arr;
   input list<T> lst;
@@ -1156,9 +914,11 @@ algorithm
 end remove;
 
 function all<T>
+  "Returns true if the given predicate function returns true for all elements in
+   the given array."
   input array<T> arr;
-  input PredFunc fn;
-  output Boolean res;
+  input PredFunc inFunc;
+  output Boolean outResult;
 
   partial function PredFunc
     input T e;
@@ -1166,14 +926,36 @@ function all<T>
   end PredFunc;
 algorithm
   for e in arr loop
-    if not fn(e) then
-      res := false;
+    if not inFunc(e) then
+      outResult := false;
       return;
     end if;
   end for;
 
-  res := true;
+  outResult := true;
 end all;
+
+function any<T>
+  "Returns true if the given predicate function returns true for any element in
+   the given array."
+  input array<T> arr;
+  input PredFunc inFunc;
+  output Boolean outResult;
+
+  partial function PredFunc
+    input T element;
+    output Boolean matches;
+  end PredFunc;
+algorithm
+  for e in arr loop
+    if inFunc(e) then
+      outResult := true;
+      return;
+    end if;
+  end for;
+
+  outResult := false;
+end any;
 
 function minElement<T>
   "Returns the smallest element in the array, or fails if the array is empty."
@@ -1292,27 +1074,6 @@ algorithm
   end if;
 end mapFold;
 
-function mapBoolAnd<T>
-  "Maps each element of a inList to Boolean type with inFunc.
-   Stops mapping at first occurrence of false return value."
-  input array<T> arr;
-  input MapFunc func;
-  output Boolean res = false;
-
-  partial function MapFunc
-    input T e;
-    output Boolean res;
-  end MapFunc;
-algorithm
-  for e in arr loop
-    if not func(e) then
-      return;
-    end if;
-  end for;
-
-  res := true;
-end mapBoolAnd;
-
 function transpose<T>
   "Transposes a two-dimensional array."
   input array<array<T>> arr;
@@ -1391,14 +1152,6 @@ algorithm
       func(arrayGetNoBoundsChecking(arr1, i), arrayGetNoBoundsChecking(arr2, i)));
   end for;
 end threadMap;
-
-function fromScalar<T>
-  "Creates an array of length 1 containing the given value."
-  input T e;
-  output array<T> arr;
-algorithm
-  arr := arrayCreate(1, e);
-end fromScalar;
 
 function generate<T>
   "Generates an array of length n and fills it by calling the given generator
