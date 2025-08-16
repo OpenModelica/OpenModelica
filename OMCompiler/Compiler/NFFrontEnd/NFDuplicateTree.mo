@@ -38,7 +38,7 @@ public
     output Boolean exists;
   algorithm
     exists := NFLookupTree.Entry.isEqual(id, entry.entry) or
-        List.exist(entry.children, function idExistsInEntry(id = id));
+        List.any(entry.children, function idExistsInEntry(id = id));
   end idExistsInEntry;
 
 import BaseAvlTree;

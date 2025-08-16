@@ -453,7 +453,7 @@ public
     output Boolean isEmpty;
   algorithm
     isEmpty := match ty
-      case ARRAY() then List.exist(ty.dimensions, Dimension.isZero);
+      case ARRAY() then List.any(ty.dimensions, Dimension.isZero);
       case CONDITIONAL_ARRAY() then isEmptyArray(ty.trueType);
       else false;
     end match;
@@ -874,7 +874,7 @@ public
     output Boolean hasZero;
   algorithm
     hasZero := match ty
-      case ARRAY() then List.exist(ty.dimensions, Dimension.isZero);
+      case ARRAY() then List.any(ty.dimensions, Dimension.isZero);
       case CONDITIONAL_ARRAY() then hasZeroDimension(ty.trueType) and hasZeroDimension(ty.falseType);
       else false;
     end match;

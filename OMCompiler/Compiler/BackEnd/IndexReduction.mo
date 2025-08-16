@@ -506,7 +506,7 @@ algorithm
         varlst = List.map(varlst,intAbs);
         vlst = List.map1r(varlst,BackendVariable.getVarAt,vars);
         // if there is a continuous variable then b is false
-        b = List.mapBoolAnd(vlst,BackendVariable.isVarDiscrete);
+        b = List.all(vlst,BackendVariable.isVarDiscrete);
         eqnsLst = List.consOnTrue(not b, eindx, eqnsLst);
         unassignedEqns = List.consOnTrue(ba and not b, eindx, unassignedEqns);
         discEqns = List.consOnTrue(b, eindx, discEqns);
@@ -856,7 +856,7 @@ algorithm
   oAcc := matchcontinue(state)
     case(_)
       equation
-        List.map1AllValue(mt[state], intLt, true, 0);
+        true = List.all(mt[state], function intLt(i2 = 0));
       then
         state::iAcc;
     else iAcc;
@@ -1319,7 +1319,7 @@ protected
   Integer numFreeStates,numNeverStates,numOrgEqs;
 algorithm
   (so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,_) := inArg;
-  if Array.arrayListsEmpty(orgEqnsLst) then
+  if Array.all(orgEqnsLst, listEmpty) then
     // no state selection necessary (OrgEqnsLst is Empty)
     osyst := inSystem;
     oshared := inShared;
@@ -1847,7 +1847,7 @@ algorithm
       HashTableCrIntToExp.HashTable ht;
       HashTable2.HashTable repl;
     case (_,_)
-      guard Array.arrayListsEmpty(iOrgEqnsLst)
+      guard Array.all(iOrgEqnsLst, listEmpty)
       then (inSystem,inShared,iHt,iSetIndex);
     case (BackendDAE.EQSYSTEM(orderedVars=vars,matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)),_)
       equation

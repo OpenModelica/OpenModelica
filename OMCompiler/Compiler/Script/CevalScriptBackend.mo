@@ -7682,7 +7682,7 @@ algorithm
     local
       list<Absyn.ElementArg> arglst;
     case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
-      then List.exist(arglst,hasStopTime2);
+      then List.any(arglst,hasStopTime2);
 
   end match;
 end hasStopTime;

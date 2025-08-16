@@ -115,7 +115,7 @@ algorithm
   assert(listLength(elementLst) == 1, "Internal compiler error: Handling of elementLst != 1 not supported\n");
   DAE.COMP(ident, dAElist, source, comment) := listHead(elementLst);
 
-  if not List.exist(dAElist, isFlatSm) then
+  if not List.any(dAElist, isFlatSm) then
     outDAElist := inDAElist;
     return;
   end if;
@@ -549,7 +549,7 @@ algorithm
     eqn := DAE.EQUATION(exp, scalarNew, source);
 
     // If it is an assigning state equation, transform equation 'a.x = e' to 'a.x = if a.active then e else a.x_previous'
-    if List.exist(stateVarCrefs, function ComponentReference.crefEqual(inComponentRef1=crefLHS)) then
+    if List.any(stateVarCrefs, function ComponentReference.crefEqual(inComponentRef1=crefLHS)) then
       // Transform equation 'a.x = e' to 'a.x = if a.active then e else a.x_previous'
       eqn1 := wrapInStateActivationConditional(eqn, enclosingStateRef, true);
 
@@ -1032,7 +1032,7 @@ algorithm
       DAE.CallAttributes attr;
       DAE.Type ty;
     case (DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(cr, ty)}, _), (crefs, _))
-      guard List.exist(crefs, function ComponentReference.crefEqual(inComponentRef1=cr))
+      guard List.any(crefs, function ComponentReference.crefEqual(inComponentRef1=cr))
       algorithm
         // print("StateMachineFlatten.traversingSubsPreviousCrefs: cr: "+ComponentReference.crefStr(cr)+", crefs: " + stringDelimitList(List.map(crefs, ComponentReference.crefStr), ",")+"\n");
         substituteRef := ComponentReference.appendStringLastIdent("_previous", cr);

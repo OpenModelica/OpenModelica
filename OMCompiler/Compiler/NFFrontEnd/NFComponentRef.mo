@@ -746,7 +746,7 @@ public
   algorithm
     res := match cref
       case CREF(origin = Origin.CREF)
-        then List.exist(cref.subscripts, Subscript.isSplitIndex) or
+        then List.any(cref.subscripts, Subscript.isSplitIndex) or
              hasSplitSubscripts(cref.restCref);
 
       else false;
@@ -1053,7 +1053,7 @@ public
 
       case CREF()
         algorithm
-          if List.exist(cref.subscripts, Subscript.isWhole) then
+          if List.any(cref.subscripts, Subscript.isWhole) then
             dims := Type.arrayDims(cref.ty);
             subs := {};
 
@@ -2262,7 +2262,7 @@ public
     if listEmpty(subs) then
       // do not do it for scalar variables
       arr := NONE();
-    elseif List.mapAllValueBool(subs, function Subscript.isEqual(subscript1 = Subscript.INDEX(Expression.INTEGER(1))), true) then
+    elseif List.all(subs, function Subscript.isEqual(subscript1 = Subscript.INDEX(Expression.INTEGER(1)))) then
       // if it is the first element, save the array var
       arr := SOME(stripSubscriptsAll(scal));
     else

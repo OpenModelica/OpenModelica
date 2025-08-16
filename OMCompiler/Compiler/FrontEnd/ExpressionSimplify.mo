@@ -2511,7 +2511,7 @@ algorithm
     // scalar operator array
     case (_, _, DAE.ARRAY(ty = tp, scalar = sc, array = es))
       equation
-        es = List.map2r(es, Expression.makeBinaryExp, inLhs, inOperator);
+        es = list(Expression.makeBinaryExp(inLhs, inOperator, e) for e in es);
       then
         DAE.ARRAY(tp, sc, es);
 
@@ -4730,7 +4730,7 @@ algorithm
          * Exponentation is very expensive compared to the inner expressions.
          */
         exp_lst as (_ :: _ :: _ :: _) = Expression.factors(e1);
-        true = List.exist(exp_lst, Expression.isEvaluatedConst);
+        true = List.any(exp_lst, Expression.isEvaluatedConst);
         (exp_lst, exp_lst_1) = List.splitOnTrue(exp_lst, Expression.isPositiveOrZero);
         exp_lst = simplifyBinaryDistributePow(exp_lst, e2);
         e = Expression.makeProductLst(exp_lst_1);
@@ -4746,7 +4746,7 @@ algorithm
          * Exponentation is very expensive compared to the inner expressions.
          */
         ((exp_lst as (_ :: _ :: _ :: _))) = Expression.factors(e1);
-        true = List.exist(exp_lst,Expression.isEvaluatedConst);
+        true = List.any(exp_lst,Expression.isEvaluatedConst);
         exp_lst_1 = simplifyBinaryDistributePow(exp_lst, e2);
       then Expression.makeProductLst(exp_lst_1);
 

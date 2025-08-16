@@ -659,7 +659,7 @@ protected
       priorities := (candidatePriority(candidate), candidate) :: priorities;
     end for;
     priorities := List.sort(priorities, BackendUtil.indexTplGt);
-    (_, candidates) := List.unzip(priorities);
+    candidates := List.unzipSecond(priorities);
   end sortCandidates;
 
   function toStringCandidatesConstraints

@@ -1702,7 +1702,7 @@ public
     end match;
 
     if not split then
-      split := List.exist(subscripts, Subscript.isSplitIndex);
+      split := List.any(subscripts, Subscript.isSplitIndex);
     end if;
 
     dim_count := Type.dimensionCount(ty);
@@ -4318,14 +4318,14 @@ public
     res := match exp
       case CLKCONST() then ClockKind.containsExpShallow(exp.clk, func);
       case CREF() then ComponentRef.containsExpShallow(exp.cref, func);
-      case ARRAY() then Array.exist(exp.elements, func);
+      case ARRAY() then Array.any(exp.elements, func);
 
       case MATRIX()
         algorithm
           res := false;
 
           for row in exp.elements loop
-            if List.exist(row, func) then
+            if List.any(row, func) then
               res := true;
               break;
             end if;
@@ -4338,8 +4338,8 @@ public
              Util.applyOptionOrDefault(exp.step, func, false) or
              func(exp.stop);
 
-      case TUPLE() then List.exist(exp.elements, func);
-      case RECORD() then List.exist(exp.elements, func);
+      case TUPLE() then List.any(exp.elements, func);
+      case RECORD() then List.any(exp.elements, func);
       case CALL() then Call.containsExpShallow(exp.call, func);
 
       case SIZE()
@@ -4410,9 +4410,9 @@ public
     allEqual := match arrayExp
       case ARRAY()
         guard not arrayEmpty(arrayExp.elements) and isArray(arrayGet(arrayExp.elements, 1))
-        then Array.mapBoolAnd(arrayExp.elements, function arrayAllEqual2(element = element));
+        then Array.all(arrayExp.elements, function arrayAllEqual2(element = element));
       case ARRAY()
-        then Array.mapBoolAnd(arrayExp.elements, function isEqual(exp2 = element));
+        then Array.all(arrayExp.elements, function isEqual(exp2 = element));
       else true;
     end match;
   end arrayAllEqual2;
