@@ -728,7 +728,7 @@ algorithm
         // check for partner
         //  BackendDump.debuglst((rlst, intString, ", ", "\n"));
         vlst = List.map1r(rlst, BackendVariable.getVarAt, vars);
-        constr = List.mapBoolAnd(vlst, BackendVariable.isFlowVar);
+        constr = List.all(vlst, BackendVariable.isFlowVar);
         constraints = List.consOnTrue(constr, o, iconstraints);
         //  print("Process Orphan " + intString(o) + "\n");
         //  BackendDump.debuglst((mt[o], intString, ", ", "\n"));
@@ -3303,7 +3303,7 @@ algorithm
         crlst = List.uniqueOnTrue(crlst, ComponentReference.crefEqualNoStringCompare);
         true = intEq(size, listLength(crlst));
         cr::crlst1 = crlst;
-        true = List.map1BoolAnd(crlst1, ComponentReference.crefEqualWithoutLastSubs, cr);
+        true = List.all(crlst1, function ComponentReference.crefEqualWithoutLastSubs(cr2 = cr));
         // check if crefs no on other side
         set = HashSet.emptyHashSet();
         crnosubs = ComponentReference.crefStripLastSubs(cr);
@@ -3326,7 +3326,7 @@ algorithm
         crlst = List.uniqueOnTrue(crlst, ComponentReference.crefEqualNoStringCompare);
         true = intEq(size, listLength(crlst));
         cr::crlst1 = crlst;
-        true = List.map1BoolAnd(crlst1, ComponentReference.crefEqualWithoutLastSubs, cr);
+        true = List.all(crlst1, function ComponentReference.crefEqualWithoutLastSubs(cr2 = cr));
         // check if crefs no on other side
         set = HashSet.emptyHashSet();
         crnosubs = ComponentReference.crefStripLastSubs(cr);

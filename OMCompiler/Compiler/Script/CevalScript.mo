@@ -2024,7 +2024,7 @@ protected
 algorithm
   skip := match cl
     case SCode.CLASS(classDef=SCode.CLASS_EXTENDS()) then false;
-    case SCode.CLASS(classDef=SCode.PARTS(elementLst=eltsTmp)) then not List.exist(eltsTmp, SCodeUtil.isElementExtendsOrClassExtends);
+    case SCode.CLASS(classDef=SCode.PARTS(elementLst=eltsTmp)) then not List.any(eltsTmp, SCodeUtil.isElementExtendsOrClassExtends);
     else true;
   end match;
   if not skip then
@@ -2661,7 +2661,7 @@ algorithm
       list<SCode.Element> elts;
       String name;
     case SCode.CLASS(restriction=SCode.R_PACKAGE(), encapsulatedPrefix=SCode.ENCAPSULATED(), classDef=SCode.PARTS(elementLst=elts))
-      then List.exist(elts, containsPublicInterface2);
+      then List.any(elts, containsPublicInterface2);
     else
       equation
         name = SCodeUtil.elementName(elt);

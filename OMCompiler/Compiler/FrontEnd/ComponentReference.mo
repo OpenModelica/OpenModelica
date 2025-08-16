@@ -1319,7 +1319,7 @@ algorithm
           ((subs as (_ :: _))) = crefSubs(cr);
         end if;
         // fails if any mapped functions returns false
-      then List.mapAllValueBool(subs, Expression.subscriptIsFirst, true);
+      then List.all(subs, Expression.subscriptIsFirst);
     else false;
   end matchcontinue;
 end crefIsFirstArrayElt;
@@ -1566,7 +1566,7 @@ algorithm
 
     case(_::ssl,DAE.T_ARRAY(tty,ad))
       equation
-        ad = List.stripFirst(ad);
+        ad = List.restOrEmpty(ad);
         b = containWholeDim2(ssl,DAE.T_ARRAY(tty,ad));
       then
         b;
@@ -3427,7 +3427,7 @@ algorithm
         // Expand the rest of the cref.
         crefs = expandCref_impl(cref,expandRecord);
         // Append the head of this cref to all of the generated crefs.
-        crefs = List.map3r(crefs, makeCrefQual, id, ty, subs);
+        crefs = list(makeCrefQual(id, ty, subs, c) for c in crefs);
       then
         crefs;
 

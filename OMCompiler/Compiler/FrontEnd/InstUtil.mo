@@ -7221,7 +7221,7 @@ algorithm
     case SCode.CLASS(restriction=restriction)
       equation
         inlineType = commentIsInlineFunc(inheritedComment);
-        hasOutVars = List.exist(vl,Types.isOutputVar);
+        hasOutVars = List.any(vl,Types.isOutputVar);
         isBuiltin = if SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
         isOpenModelicaPure = not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
         // In Modelica 3.2 and before, external functions with side-effects are not marked
@@ -8126,7 +8126,7 @@ algorithm
 
     case (dims :: _)
       equation
-        true = List.exist(dims, Expression.dimensionIsZero);
+        true = List.any(dims, Expression.dimensionIsZero);
       then
         true;
 

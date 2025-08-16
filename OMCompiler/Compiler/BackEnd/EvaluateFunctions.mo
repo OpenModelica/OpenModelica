@@ -598,7 +598,7 @@ algorithm
       list<DAE.Exp> eLst;
   case(DAE.TUPLE(PR = eLst))
     algorithm
-      then List.mapBoolOr(eLst,hasUnknownType);
+      then List.any(eLst,hasUnknownType);
   case(DAE.CREF(ty=DAE.T_UNKNOWN()))
     then true;
   else
@@ -618,7 +618,7 @@ algorithm
     list<DAE.Exp> eLst;
   case(DAE.TUPLE(PR = eLst))
     algorithm
-      then List.mapBoolOr(eLst,hasMultipleArrayDimensions);
+      then List.any(eLst,hasMultipleArrayDimensions);
   case(DAE.CREF(ty=ty))
     algorithm
     if Types.isArray(ty) then
@@ -3351,10 +3351,10 @@ protected
   list<DAE.Exp> expLst,rest;
 algorithm
   expLst := List.map1(expLstLst,listGet,idx);
-  b1 := List.mapBoolAnd(expLst,Expression.isConst);
+  b1 := List.all(expLst, Expression.isConst);
   if b1 then
     firstExp::rest := expLst;
-    b2 := List.map1BoolAnd(rest,Expression.expEqual,firstExp);
+    b2 := List.all(rest, function Expression.expEqual(inExp2 = firstExp));
     if b2 then
       pos := idx::pos;
     end if;

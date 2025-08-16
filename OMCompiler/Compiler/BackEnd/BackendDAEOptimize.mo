@@ -421,7 +421,7 @@ algorithm
     case (e as DAE.CREF(cr,_), (_,vars,globalKnownVars,b1,b2))
       equation
         (vlst,_::_)= BackendVariable.getVar(cr, globalKnownVars) "input variables stored in known variables are input on top level";
-        false = List.mapAllValueBool(vlst,toplevelInputOrUnfixed,false);
+        false = List.none(vlst, toplevelInputOrUnfixed);
       then (e,false,(true,vars,globalKnownVars,b1,b2));
     case (e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_,_}), (_,vars,globalKnownVars,b1,b2)) then (e,false,(true,vars,globalKnownVars,b1,b2));
     case (e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), (_,vars,globalKnownVars,b1,b2)) then (e,false,(true,vars,globalKnownVars,b1,b2));

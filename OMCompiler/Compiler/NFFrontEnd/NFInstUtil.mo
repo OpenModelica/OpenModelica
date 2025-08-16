@@ -767,7 +767,7 @@ public
       mod_bindings := lookupModBinding(name, mod) :: mod_bindings;
     end for;
 
-    bindings := List.threadMap(mod_bindings, bindings, cons);
+    bindings := list(cons(e1, e2) threaded for e1 in mod_bindings, e2 in bindings);
   end getModBindings;
 
   function lookupModBinding

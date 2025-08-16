@@ -1167,7 +1167,7 @@ protected
     "Returns whether a modifier with the same name exists in the given list."
     input Absyn.ElementArg mod;
     input list<Absyn.ElementArg> mods;
-    output Boolean res = List.exist(mods, function isEqualNameMod(mod2 = mod));
+    output Boolean res = List.any(mods, function isEqualNameMod(mod2 = mod));
   end isModifierInList;
 
   function isEqualNameMod

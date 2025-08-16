@@ -1579,12 +1579,12 @@ protected function priorizeEqsWithVarCrosses "author:Waurich TUD 2014-02
   output list<Integer> eqsOut;
 protected
   array<list<Integer>> priorities; //[0]eqs with no adjVarCross, [1] eqs with one adjVarCross, [2]rest
-  list<list<Integer>> priorityLst;
 algorithm
   priorities := arrayCreate(3,{});
-  List.map3_0(eqsIn,priorizeEqsWithVarCrosses2,mIn,varCrossLst,priorities);
-  priorityLst := arrayList(priorities);
-  eqsOut := List.flatten(priorityLst);
+  for eq in eqsIn loop
+    priorizeEqsWithVarCrosses2(eq, mIn, varCrossLst, priorities);
+  end for;
+  eqsOut := List.flatten(arrayList(priorities));
 end priorizeEqsWithVarCrosses;
 
 protected function priorizeEqsWithVarCrosses2

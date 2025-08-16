@@ -2150,7 +2150,7 @@ protected function isApproximatedEquation2
         then false;
     case(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst=subModLst))))::t)
       equation
-        ret = (List.exist(subModLst,isApproximatedEquation3)) or isApproximatedEquation2(t);
+        ret = (List.any(subModLst,isApproximatedEquation3)) or isApproximatedEquation2(t);
       then
         ret;
     case(_::t)
