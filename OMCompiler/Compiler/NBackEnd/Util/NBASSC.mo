@@ -49,9 +49,13 @@ protected
   // Backend imports
   import Differentiate = NBDifferentiate;
   import NBDifferentiate.{DifferentiationType, DifferentiationArguments};
-  import NBEquation.{Equation, EquationPointers};
+  import NBEquation.{Equation, EquationPointer, EquationPointers};
   import BVariable = NBVariable;
   import NBVariable.{VariablePointers, VariablePointer, VarData};
+
+  // Util imports
+  import UnorderedMap;
+  import UnorderedSet;
 
 public
   function main
@@ -63,12 +67,17 @@ public
     list<ComponentRef> cref_lst;
     Expression res, diff_res;
     DifferentiationArguments args;
-    Integer diff_res_int;
+    Integer diff_res_int, eqn_index, var_index;
     Tuple_Id id;
     UnorderedMap<Tuple_Id,Integer> diffs = UnorderedMap.new<Integer>(Tuple_Id.hash, Tuple_Id.isEqual);
-    UnorderedSet<Pointer<Equation>> int_eqns = UnorderedSet.new(Equation.hash, Equation.isEqual);
-    UnorderedSet<list<ComponentRef>> int_crefs;// = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-    UnorderedMap<Pointer<Equation>,list<ComponentRef>> rows = UnorderedMap.new<ParameterList>(Equation.hash, Equation.isEqual);
+    UnorderedSet<EquationPointer> int_eqns = UnorderedSet.new(Equation.hash, Equation.isEqualPtr);
+    UnorderedSet<ComponentRef> int_crefs = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedMap<EquationPointer,CrefLst> rows = UnorderedMap.new<CrefLst>(Equation.hash, Equation.isEqualPtr);
+    list<Integer>  lst_enum;
+    list<EquationPointer> lst_eqns;
+    list<ComponentRef> crefs_rows;
+    UnorderedMap<EquationPointer, Integer>  enum_eqns;
+    UnorderedMap<ComponentRef, Integer>  enum_crefs;
   algorithm
     // ### pseudo code of what shall happen
     // for eqn in eqns:
@@ -136,15 +145,34 @@ public
       end for;
       if b then
         UnorderedSet.add(eq_ptr, int_eqns);
-        UnorderedSet.add(cref_lst, int_crefs);
+        for cr in cref_lst loop
+          UnorderedSet.add(cr, int_crefs);
+        end for;
         UnorderedMap.add(eq_ptr, cref_lst, rows);
       end if;
     end for;
 
-    // enumerate ...
+    lst_enum := List.intRange(UnorderedSet.size(int_eqns));
+    enum_eqns := UnorderedMap.fromLists(UnorderedSet.toList(int_eqns), lst_enum, Equation.hash, Equation.isEqualPtr);
+    lst_enum := List.intRange(UnorderedSet.size(int_crefs));
+    enum_crefs := UnorderedMap.fromLists(UnorderedSet.toList(int_crefs), lst_enum, ComponentRef.hash, ComponentRef.isEqual);
     indices := arrayCreate(UnorderedSet.size(int_eqns), {});
     values := arrayCreate(UnorderedSet.size(int_eqns), {});
 
+    lst_eqns := UnorderedSet.toList(int_eqns);
+    for eq_ptr in lst_eqns loop
+      crefs_rows := UnorderedMap.getSafe(eq_ptr, rows, sourceInfo());
+      for cr in crefs_rows loop
+        eqn_index := UnorderedMap.getSafe(eq_ptr, enum_eqns, sourceInfo());
+        var_index := UnorderedMap.getSafe(cr, enum_crefs, sourceInfo());
+        indices[eqn_index] := {var_index};
+        values[eqn_index] := {UnorderedMap.getSafe(TUPLE_ID(eq_ptr,cr), diffs, sourceInfo())};
+      end for;
+    end for;
+
+    setMatrix(UnorderedSet.size(int_crefs),UnorderedSet.size(int_eqns),UnorderedMap.size(diffs),indices,values);
+    printMatrix();
+    freeMatrix();
 
     // remove this dummy section
     // ################################
@@ -188,7 +216,7 @@ public
   end printMatrix;
 
 protected
-  type ParameterList = list<ComponentRef>;
+  type CrefLst = list<ComponentRef>;
 
   uniontype Tuple_Id
     "tuple as key for UnorderedMap"
@@ -201,7 +229,6 @@ protected
       input Tuple_Id id;
       output String str;
     algorithm
-      //str := if not Iterator.isEmpty(id.iter) then " [" + Iterator.toString(id.iter) + "]" else "";
       str := Equation.toString(Pointer.access(id.eq_ptr));
       str := BVariable.toString(BVariable.getVar(id.cref, sourceInfo())) + str;
     end toString;
