@@ -14,7 +14,7 @@ equation
     x[i+1,j] = x[i,j] - y[j];
   end for;
   for j in 1:2 loop
-	y[j] = j*sin(time);
+    y[j] = j*sin(time);
     x[3,j] = j*cos(time);
   end for;
 end exemplary;
@@ -37,8 +37,8 @@ end exemplaryS;
 
 setCommandLineOptions("--newBackend -d=dumpSlice");
 simulate(exemplaryS); getErrorString();
-val(x[2,1],1);
-val(x[4,2],1);
+val(x[2,1],1);  // cos(1) + sin(1) = 1.3817732906760363
+val(x[4,2],1);  // 2*cos(1) - 2*sin(1) = -0.6023373578795135
 
 // Result:
 // true
@@ -52,6 +52,6 @@ val(x[4,2],1);
 // "
 // end SimulationResult;
 // ""
-// 19.35383265058162
-// 28.61001348346849
+// 1.3817732906760363
+// -0.6023373578795135
 // endResult
