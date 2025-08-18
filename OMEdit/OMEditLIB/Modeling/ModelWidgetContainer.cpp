@@ -7480,7 +7480,6 @@ void ModelWidget::showIconView(bool checked)
   if (pSubWindow) {
     pSubWindow->setWindowIcon(ResourceCache::getIcon(":/Resources/icons/model.svg"));
   }
-  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpIconGraphicsView->setFocus(Qt::ActiveWindowFocusReason);
   if (!checked || (checked && mpIconGraphicsView->isVisible())) {
     return;
@@ -7493,7 +7492,7 @@ void ModelWidget::showIconView(bool checked)
   mpIconGraphicsView->show();
   mpIconGraphicsView->setFocus();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::Icon);
-  updateUndoRedoActions();
+  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   MainWindow::instance()->getPositionLabel()->clear();
 }
 
@@ -7515,7 +7514,6 @@ void ModelWidget::showDiagramView(bool checked)
   if (pSubWindow) {
     pSubWindow->setWindowIcon(ResourceCache::getIcon(":/Resources/icons/modeling.png"));
   }
-  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpDiagramGraphicsView->setFocus(Qt::ActiveWindowFocusReason);
   if (!checked || (checked && mpDiagramGraphicsView->isVisible())) {
     return;
@@ -7530,7 +7528,7 @@ void ModelWidget::showDiagramView(bool checked)
   mpDiagramGraphicsView->show();
   mpDiagramGraphicsView->setFocus();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::Diagram);
-  updateUndoRedoActions();
+  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   MainWindow::instance()->getPositionLabel()->clear();
 }
 
@@ -7548,7 +7546,6 @@ void ModelWidget::showTextView(bool checked)
   if (QMdiSubWindow *pSubWindow = mpModelWidgetContainer->getCurrentMdiSubWindow()) {
     pSubWindow->setWindowIcon(ResourceCache::getIcon(":/Resources/icons/modeltext.svg"));
   }
-  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::ModelicaText));
   if (mpIconGraphicsView) {
     mpIconGraphicsView->hide();
@@ -7560,7 +7557,7 @@ void ModelWidget::showTextView(bool checked)
     mpEditor->getPlainTextEdit()->updateCursorPosition();
   }
   mpModelWidgetContainer->setPreviousViewType(StringHandler::ModelicaText);
-  updateUndoRedoActions();
+  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
 }
 
 /*!
@@ -8359,13 +8356,18 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     }
     // update the Undo/Redo actions
     pModelWidget->updateUndoRedoActions();
+    // We always hide DiagramGraphicsView here and then show it depending on the view type. See issue #14101.
+    if (pModelWidget->getDiagramGraphicsView()) {
+      pModelWidget->getDiagramGraphicsView()->hide();
+    }
     // set the focus when ModelWidget is changed so that the keyboard shortcuts can work e.g., ctrl+v
     if (pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) {
       pModelWidget->getIconGraphicsView()->setFocus(Qt::ActiveWindowFocusReason);
-    } else if (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()) {
-      pModelWidget->getDiagramGraphicsView()->setFocus(Qt::ActiveWindowFocusReason);
-    } else if (pModelWidget->getEditor() && pModelWidget->getEditor()) {
+    } else if (pModelWidget->getEditor() && pModelWidget->getEditor()->isVisible()) {
       pModelWidget->getEditor()->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
+    } else if (pModelWidget->getDiagramGraphicsView()) {
+      pModelWidget->getDiagramGraphicsView()->show();
+      pModelWidget->getDiagramGraphicsView()->setFocus(Qt::ActiveWindowFocusReason);
     }
   } else {
     MainWindow::instance()->getUndoAction()->setEnabled(false);
