@@ -23,6 +23,8 @@ model exemplaryS
   parameter Integer s = 20;
   Real x[5+s,2+s];
   Real y[2+s];
+  Real z[5+s,2+s] "reference solution for x";
+  Real e "accumulated error";
 equation
   for i in 1:4+s, j in 1:2+s loop
     x[i+1,j] = x[i,j] - y[j];
@@ -31,6 +33,12 @@ equation
     y[j] = j*sin(time);
     x[3,j] = j*cos(time);
   end for;
+
+  for i in 1:5+s, j in 1:2+s loop
+    z[i,j] = j*cos(time) + (3-i)*j*sin(time);
+  end for;
+
+  der(e) = sqrt(sum((x-z).^2)/(5+s)/(2+s));
 end exemplaryS;
 
 "); getErrorString();
