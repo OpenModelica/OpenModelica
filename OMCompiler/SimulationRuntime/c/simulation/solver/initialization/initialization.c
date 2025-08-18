@@ -727,17 +727,19 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   int initMethod = IIM_SYMBOLIC; /* default method */
   int retVal = -1;
   int i;
+  modelica_boolean read_init_from_file = (pInitFile && strcmp(pInitFile, ""));
+  modelica_boolean fmi_init_method = !strcmp(pInitMethod, "fmi");
 
   data->simulationInfo->homotopySteps = 0;
 
   infoStreamPrint(OMC_LOG_INIT, 0, "### START INITIALIZATION ###");
 
-  if (strcmp(pInitMethod, "fmi"))
+  if (!fmi_init_method)
     setAllParamsToStart(data);
 
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* import start values from extern mat-file */
-  if(pInitFile && strcmp(pInitFile, ""))
+  if(read_init_from_file)
   {
     data->callback->updateBoundParameters(data, threadData);
     data->callback->updateBoundVariableAttributes(data, threadData);
@@ -749,10 +751,10 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   }
 #endif
   /* set up all variables with their start-values */
-  if (strcmp(pInitMethod, "fmi"))
+  if (!fmi_init_method)
     setAllVarsToStart(data);
 
-  if(!(pInitFile && strcmp(pInitFile, ""))) {
+  if(!read_init_from_file) {
     data->callback->updateBoundParameters(data, threadData);
     data->callback->updateBoundVariableAttributes(data, threadData);
   }
@@ -764,7 +766,7 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   updateStaticDataOfNonlinearSystems(data, threadData);
 
   /* if there are user-specified options, use them! */
-  if (pInitMethod && (strcmp(pInitMethod, "") && strcmp(pInitMethod, "fmi"))) {
+  if (pInitMethod && (strcmp(pInitMethod, "") && !fmi_init_method)) {
     initMethod = IIM_UNKNOWN;
 
     for (i=1; i<IIM_MAX; ++i) {

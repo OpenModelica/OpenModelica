@@ -23,19 +23,19 @@ end ArrayConnect5;
 //   Real[2, 2] c2.f;
 // equation
 //   c1.e = c2.e;
-//   for $i1 in 1:2 loop
-//     for $i2 in 1:2 loop
-//       -(c1[$i1].f[$i2] + c2[$i1].f[$i2]) = 0.0;
+//   for $i4 in 1:2 loop
+//     for $i5 in 1:2 loop
+//       -(c1[$i4].f[$i5] + c2[$i4].f[$i5]) = 0.0;
 //     end for;
 //   end for;
-//   for $i1 in 1:2 loop
-//     for $i2 in 1:2 loop
-//       c1[$i1].f[$i2] = 0.0;
+//   for $i2 in 1:2 loop
+//     for $i3 in 1:2 loop
+//       c1[$i2].f[$i3] = 0.0;
 //     end for;
 //   end for;
-//   for $i1 in 1:2 loop
-//     for $i2 in 1:2 loop
-//       c2[$i1].f[$i2] = 0.0;
+//   for $i0 in 1:2 loop
+//     for $i1 in 1:2 loop
+//       c2[$i0].f[$i1] = 0.0;
 //     end for;
 //   end for;
 // end ArrayConnect5;

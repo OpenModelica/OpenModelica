@@ -50,6 +50,7 @@ import NFModifier.Modifier;
 import SCodeDump;
 import DAE;
 import Expression = NFExpression;
+import Global;
 
 protected
 import List;
@@ -329,6 +330,14 @@ uniontype InstNode
   algorithm
     iterator := fromComponent(name, Component.newIterator(ty, info), EMPTY_NODE());
   end newIterator;
+
+  function newUniqueIterator
+    input SourceInfo info = AbsynUtil.dummyInfo;
+    input Type ty = Type.INTEGER();
+    output InstNode iterator;
+  algorithm
+    iterator := newIterator("$i" + String(System.tmpTickIndex(Global.iteratorIndex)), ty, info);
+  end newUniqueIterator;
 
   function newIndexedIterator
     input Integer index;

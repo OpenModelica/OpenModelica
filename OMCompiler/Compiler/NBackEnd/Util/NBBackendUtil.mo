@@ -313,7 +313,7 @@ public
   protected
     array<Integer> var_to_eqn = arrayCreate(arrayLength(matching.var_to_eqn), -1);
     array<Integer> eqn_to_var = arrayCreate(arrayLength(matching.eqn_to_var), -1);
-    UnorderedSet<Integer> vars_set = UnorderedSet.new(Util.id, intEq, arrayLength(var_to_eqn));
+    UnorderedSet<Integer> vars_set = UnorderedSet.new(Util.id, intEq, listLength(eqn_indices));
   algorithm
     // TODO create smaller system with local indices and return a map to go back to global indices
     m_loc := arrayCreate(arrayLength(m), {});

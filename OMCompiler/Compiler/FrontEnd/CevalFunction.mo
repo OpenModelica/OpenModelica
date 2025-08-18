@@ -1914,7 +1914,7 @@ algorithm
     case (ty, DAE.DIM_INTEGER(dim_int) :: rest_dims, bind_dims, _, _)
       equation
         dim = DAE.DIM_INTEGER(dim_int);
-        bind_dims = List.stripFirst(bind_dims);
+        bind_dims = List.restOrEmpty(bind_dims);
         (cache, ty) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv);
       then
         (cache, DAE.T_ARRAY(ty, {dim}));
@@ -1922,7 +1922,7 @@ algorithm
     case (ty, DAE.DIM_BOOLEAN() :: rest_dims, bind_dims, _, _)
       equation
         dim = DAE.DIM_INTEGER(2);
-        bind_dims = List.stripFirst(bind_dims);
+        bind_dims = List.restOrEmpty(bind_dims);
         (cache, ty) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv);
       then
         (cache, DAE.T_ARRAY(ty, {dim}));
@@ -1930,7 +1930,7 @@ algorithm
     case (ty, DAE.DIM_ENUM(size = dim_int) :: rest_dims, bind_dims, _, _)
       equation
         dim = DAE.DIM_INTEGER(dim_int);
-        bind_dims = List.stripFirst(bind_dims);
+        bind_dims = List.restOrEmpty(bind_dims);
         (cache, ty) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv);
       then
         (cache, DAE.T_ARRAY(ty, {dim}));
@@ -1940,7 +1940,7 @@ algorithm
         (cache, dim_val) = cevalExp(dim_exp, inCache, inEnv);
         dim_int = ValuesUtil.valueInteger(dim_val);
         dim = DAE.DIM_INTEGER(dim_int);
-        bind_dims = List.stripFirst(bind_dims);
+        bind_dims = List.restOrEmpty(bind_dims);
         (cache, ty) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv);
       then
         (cache, DAE.T_ARRAY(ty, {dim}));

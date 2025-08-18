@@ -2658,7 +2658,7 @@ for de in inDiffExpl loop
       dexpLst = Expression.arrayElements(eArray);
       arrayArgs = prepareArgumentsExplArray(expl, dexpLst, 1, {});
       expLst = List.map2(arrayArgs, Expression.makeArray, tp, b);
-      arrayArgs = List.map2r(expLst, List.set, inDiffExplZero, i);
+      arrayArgs = list(List.set(inDiffExplZero, i, exp) for exp in expLst);
       arrayArgs = List.map1r(arrayArgs, listAppend, inOrginalExpl);
       e = createPartialSum(arrayArgs, expl, inCall, outExp);
     then e;

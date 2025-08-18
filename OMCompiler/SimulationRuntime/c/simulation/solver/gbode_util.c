@@ -340,19 +340,19 @@ double error_interpolation_gb(DATA_GBODE* gbData, int nIdx, int* idx, double tol
   }
   hermite_interpolation(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                         gbData->timeRight, gbData->yRight, gbData->kRight,
-                        (gbData->timeLeft + gbData->timeRight)/2, gbData->errest,
+                        (gbData->timeLeft + gbData->timeRight)/2, gbData->y2,
                          nIdx, idx);
   if (idx == NULL) {
     for (i=0; i<nIdx; i++) {
       errtol = tol * fmax(fabs(gbData->yLeft[i]), fabs(gbData->yRight[i])) + tol;
-      gbData->errest[i] = fabs(gbData->errest[i] - gbData->y1[i]) / errtol;
+      gbData->errest[i] = fabs(gbData->y2[i] - gbData->y1[i]) / errtol;
       errint = fmax(errint, gbData->errest[i]);
     }
   } else {
     for (ii=0; ii<nIdx; ii++) {
       i = idx[ii];
       errtol = tol * fmax(fabs(gbData->yLeft[i]), fabs(gbData->yRight[i])) + tol;
-      gbData->errest[i] = fabs(gbData->errest[i] - gbData->y1[i]) / errtol;
+      gbData->errest[i] = fabs(gbData->y2[i] - gbData->y1[i]) / errtol;
       errint = fmax(errint, gbData->errest[i]);
     }
   }

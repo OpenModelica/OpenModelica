@@ -163,6 +163,8 @@ enum _FLAG
   FLAG_DATA_RECONCILE_STATE,
   FLAG_SR,
   FLAG_SR_CTRL,
+  FLAG_SR_CTRL_FILTER,
+  FLAG_SR_CTRL_FHR,
   FLAG_SR_ERR,
   FLAG_SR_INT,
   FLAG_SR_NLS,
@@ -280,11 +282,15 @@ extern const char *GB_NLS_METHOD_DESC[GB_NLS_MAX];
  * @brief Step size controller method
  */
 enum GB_CTRL_METHOD {
-  GB_CTRL_UNKNOWN = 0,  /* Unknown controller */
-  GB_CTRL_I = 1,        /* I controller */
-  GB_CTRL_PI = 2,       /* PI controller */
-  GB_CTRL_PID = 3,       /* PID controller */
-  GB_CTRL_CNST = 4,     /* Constant step size */
+  GB_CTRL_UNKNOWN = 0,        /* Unknown controller */
+  GB_CTRL_I = 1,              /* I controller */
+  GB_CTRL_PI_33 = 2,          /* PI controller for step size */
+  GB_CTRL_PI_34 = 3,          /* PI controller for step size */
+  GB_CTRL_PI_42 = 4,          /* PI controller for step size */
+  GB_CTRL_PID_H312 = 5,       /* PID controller for step size */
+  GB_CTRL_PID_SOEDERLIND = 6, /* PID controller for step size */
+  GB_CTRL_PID_STIFF = 7,      /* PID controller for step size */
+  GB_CTRL_CNST = 8,           /* Constant step size */
 
   GB_CTRL_MAX
 };

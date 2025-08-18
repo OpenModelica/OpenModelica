@@ -54,8 +54,8 @@ val(grid.P_grid, 0.0);
 // 1/1 (1000): plant.term.v = grid.terms.v   [dynamic |0|0|0|0|]
 // 2/1001 (1000): for $i1 in 1 : 1000 loop
 //     plant[$i1].term.i + grid.terms[$i1].i = 0.0; end for;    [dynamic |0|0|0|0|]
-// 3/2001 (1000): for $i1 in 1 : 1000 loop
-//     plant[$i1].term.v * plant[$i1].term.i = if plant[$i1].on then plant[$i1].eta * plant[$i1].P_solar else 0.0; end for;    [dynamic |0|0|0|0|]
+// 3/2001 (1000): for $i0 in 1 : 1000 loop
+//     plant[$i0].term.v * plant[$i0].term.i = if plant[$i0].on then plant[$i0].eta * plant[$i0].P_solar else 0.0; end for;    [dynamic |0|0|0|0|]
 // 4/3001 (1000): for i in 1 : 1000 loop
 //     grid.terms[i].v = grid.V; end for;    [dynamic |0|0|0|0|]
 // 5/4001 (1): 0.0 = grid.P_grid + grid.terms.v * grid.terms.i   [dynamic |0|0|0|0|]
@@ -103,8 +103,8 @@ val(grid.P_grid, 0.0);
 // 1/1 (1000): plant.term.v = grid.terms.v   [dynamic |0|0|0|0|]
 // 2/1001 (1000): for $i1 in 1 : 1000 loop
 //     plant[$i1].term.i + grid.terms[$i1].i = 0.0; end for;    [dynamic |0|0|0|0|]
-// 3/2001 (1000): for $i1 in 1 : 1000 loop
-//     plant[$i1].term.v * plant[$i1].term.i = if plant[$i1].on then plant[$i1].eta * plant[$i1].P_solar else 0.0; end for;    [dynamic |0|0|0|0|]
+// 3/2001 (1000): for $i0 in 1 : 1000 loop
+//     plant[$i0].term.v * plant[$i0].term.i = if plant[$i0].on then plant[$i0].eta * plant[$i0].P_solar else 0.0; end for;    [dynamic |0|0|0|0|]
 // 4/3001 (1000): for i in 1 : 1000 loop
 //     grid.terms[i].v = grid.V; end for;    [dynamic |0|0|0|0|]
 // 5/4001 (1): grid.P_grid = -grid.terms.v * grid.terms.i   [dynamic |0|0|0|0|]

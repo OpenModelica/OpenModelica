@@ -28,18 +28,16 @@
  *
  */
 
-#include "simulation/solver/events.h"
-#include "util/omc_error.h"
-#include "simulation/options.h"
-#include "simulation_data.h"
-#include "simulation/results/simulation_result.h"
-#include "openmodelica.h"         /* for modelica types */
-#include "openmodelica_func.h"    /* for modelica functions */
-#include "simulation/simulation_runtime.h"
-#include "simulation/solver/solver_main.h"
-#include "simulation/solver/model_help.h"
-#include "simulation/solver/external_input.h"
-#include "simulation/solver/epsilon.h"
+#include "events.h"
+#include "../../util/omc_error.h"
+#include "../options.h"
+#include "../../simulation_data.h"
+#include "../../openmodelica.h"         /* for modelica types */
+#include "../../openmodelica_func.h"    /* for modelica functions */
+#include "solver_main.h"
+#include "model_help.h"
+#include "external_input.h"
+#include "epsilon.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -94,7 +92,7 @@ int checkForStateEvent(DATA* data, LIST *eventList)
   TRACE_PUSH
   long i=0;
 
-  debugStreamPrint(OMC_LOG_EVENTS, 1, "check state-event zerocrossing at time %g",  data->localData[0]->timeValue);
+  debugStreamPrint(OMC_LOG_EVENTS, 1, "check state-event zerocrossing at time %g", data->localData[0]->timeValue);
 
   for(i=0; i<data->modelData->nZeroCrossings; i++)
   {

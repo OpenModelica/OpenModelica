@@ -47,7 +47,7 @@ end SlicedCref2;
 //   input R3 r;
 //   output Real[:, :, :] x;
 // algorithm
-//   x := array(array(array(r.r2[$i3].r[$i2,$i1].x for $i1 in 1:3) for $i2 in 1:2) for $i3 in 1:4);
+//   x := array(array(array(r.r2[$i2].r[$i1,$i0].x for $i0 in 1:3) for $i1 in 1:2) for $i2 in 1:4);
 // end f;
 //
 // class SlicedCref2

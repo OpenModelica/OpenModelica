@@ -52,18 +52,18 @@ end ArrayConnect1;
 //   R[1].p.e = S.p.e;
 //   S.p.f + R[1].p.f = 0.0;
 //   G.p.e = S.n.e;
-//   for $i1 in 1:10 loop
-//     C[$i1].n.e = S.n.e;
+//   for $i0 in 1:10 loop
+//     C[$i0].n.e = S.n.e;
 //   end for;
 //   S.n.f + sum(C[:].n.f) + G.p.f = 0.0;
-//   for $i1 in 1:9 loop
-//     C[$i1].p.e = R[$i1 + 1].p.e;
+//   for $i0 in 1:9 loop
+//     C[$i0].p.e = R[$i0 + 1].p.e;
 //   end for;
-//   for $i1 in 1:9 loop
-//     R[$i1].n.e = R[$i1 + 1].p.e;
+//   for $i0 in 1:9 loop
+//     R[$i0].n.e = R[$i0 + 1].p.e;
 //   end for;
-//   for $i1 in 2:10 loop
-//     R[$i1].p.f + R[$i1 - 1].n.f + C[$i1 - 1].p.f = 0.0;
+//   for $i0 in 2:10 loop
+//     R[$i0].p.f + R[$i0 - 1].n.f + C[$i0 - 1].p.f = 0.0;
 //   end for;
 //   C[10].p.e = R[10].n.e;
 //   R[10].n.f + C[10].p.f = 0.0;

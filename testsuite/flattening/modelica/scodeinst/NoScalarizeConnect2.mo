@@ -26,8 +26,8 @@ end NoScalarizeConnect2;
 //   Real[3] c.s;
 //   Real x;
 // equation
-//   for $i1 in 1:3 loop
-//     c[$i1].f = 0.0;
+//   for $i0 in 1:3 loop
+//     c[$i0].f = 0.0;
 //   end for;
 //   x = c[1].s;
 //   x = c[2].s;

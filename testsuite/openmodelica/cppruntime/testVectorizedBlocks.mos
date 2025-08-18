@@ -76,8 +76,8 @@ val(y[10], 1.0);
 // 2/11 (10): assignClock1.y = integrator1.u   [dynamic |0|0|0|0|]
 // 3/21 (10): integrator1.y = y   [dynamic |0|0|0|0|]
 // 4/31 (10): assignClock1.y = assignClock1.u   [dynamic |0|0|0|0|]
-// 5/41 (10): for $i1 in 1 : 10 loop
-//     der(integrator1[$i1].y) = integrator1[$i1].k * integrator1[$i1].u; end for;    [dynamic |0|0|0|0|]
+// 5/41 (10): for $i0 in 1 : 10 loop
+//     der(integrator1[$i0].y) = integrator1[$i0].k * integrator1[$i0].u; end for;    [dynamic |0|0|0|0|]
 //
 //
 // no matching
@@ -140,8 +140,8 @@ val(y[10], 1.0);
 // 2/11 (10): assignClock1.y = integrator1.u   [dynamic |0|0|0|0|]
 // 3/21 (10): integrator1.y = y   [dynamic |0|0|0|0|]
 // 4/31 (10): assignClock1.y = assignClock1.u   [dynamic |0|0|0|0|]
-// 5/41 (10): for $i1 in 1 : 10 loop
-//     $DER.integrator1[$i1].y = integrator1[$i1].k * integrator1[$i1].u; end for;    [dynamic |0|0|0|0|]
+// 5/41 (10): for $i0 in 1 : 10 loop
+//     $DER.integrator1[$i0].y = integrator1[$i0].k * integrator1[$i0].u; end for;    [dynamic |0|0|0|0|]
 // 6/51 (10): for i in 1 : 10 loop
 //     (integrator1[i].y - previous(integrator1[i].y)) / interval() = if firstTick() then 0.0 else $DER.integrator1[i].y; end for;    [dynamic |0|0|0|0|]
 //

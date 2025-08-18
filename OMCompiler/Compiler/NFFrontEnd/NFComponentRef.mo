@@ -746,7 +746,7 @@ public
   algorithm
     res := match cref
       case CREF(origin = Origin.CREF)
-        then List.exist(cref.subscripts, Subscript.isSplitIndex) or
+        then List.any(cref.subscripts, Subscript.isSplitIndex) or
              hasSplitSubscripts(cref.restCref);
 
       else false;
@@ -1053,7 +1053,7 @@ public
 
       case CREF()
         algorithm
-          if List.exist(cref.subscripts, Subscript.isWhole) then
+          if List.any(cref.subscripts, Subscript.isWhole) then
             dims := Type.arrayDims(cref.ty);
             subs := {};
 
@@ -2262,7 +2262,7 @@ public
     if listEmpty(subs) then
       // do not do it for scalar variables
       arr := NONE();
-    elseif List.mapAllValueBool(subs, function Subscript.isEqual(subscript1 = Subscript.INDEX(Expression.INTEGER(1))), true) then
+    elseif List.all(subs, function Subscript.isEqual(subscript1 = Subscript.INDEX(Expression.INTEGER(1)))) then
       // if it is the first element, save the array var
       arr := SOME(stripSubscriptsAll(scal));
     else
@@ -2308,14 +2308,13 @@ public
        and returns a list of all iterators with the corresponding ranges."
       input output ComponentRef cref;
       input output list<tuple<InstNode, Expression>> iterators = {};
-      input Integer index = 1;
     protected
       ComponentRef rest_cref;
       Dimension dim;
       list<Dimension> dims;
       Integer dim_count, sub_count;
       list<Subscript> subs, isubs;
-      Integer dim_index, iter_index;
+      Integer dim_index;
       InstNode iterator;
       Expression range;
     algorithm
@@ -2327,7 +2326,6 @@ public
             sub_count := listLength(cref.subscripts);
             subs := List.consN(dim_count - sub_count, Subscript.WHOLE(), cref.subscripts);
             isubs := {};
-            iter_index := index;
             dim_index := dim_count;
 
             for s in listReverse(subs) loop
@@ -2344,10 +2342,9 @@ public
                                               Dimension.endExp(dim, Expression.CREF(cref.ty, cref), dim_index));
                 end match;
 
-                iterator := InstNode.newIndexedIterator(iter_index);
+                iterator := InstNode.newUniqueIterator();
                 iterators := (iterator, range) :: iterators;
                 dim_index := dim_index - 1;
-                iter_index := iter_index + 1;
 
                 s := Subscript.INDEX(Expression.fromCref(makeIterator(iterator, Type.INTEGER())));
               end if;
@@ -2356,7 +2353,7 @@ public
             end for;
 
             cref.subscripts := isubs;
-            (rest_cref, iterators) := iterate_impl(cref.restCref, iterators, iter_index);
+            (rest_cref, iterators) := iterate_impl(cref.restCref, iterators);
             cref.restCref := rest_cref;
           then
             ();

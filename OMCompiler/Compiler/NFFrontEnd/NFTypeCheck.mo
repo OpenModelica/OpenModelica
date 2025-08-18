@@ -2031,7 +2031,7 @@ algorithm
         ranges := Dimension.toRange(d) :: ranges;
       end if;
 
-      iter := InstNode.newIndexedIterator(i, "i", InstNode.info(node));
+      iter := InstNode.newUniqueIterator(InstNode.info(node));
       iters := iter :: iters;
       sub := Subscript.INDEX(Expression.CREF(Type.INTEGER(), ComponentRef.makeIterator(iter, Type.INTEGER())));
       subs := sub :: subs;

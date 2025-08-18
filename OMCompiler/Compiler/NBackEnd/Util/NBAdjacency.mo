@@ -1241,11 +1241,11 @@ public
       end kindString;
       String str1, str2;
     algorithm
-      str1 := List.toString(arrayList(dep.skips), function List.toString(
+      str1 := Array.toString(dep.skips, function List.toString(
         inPrintFunc   = intString,
-        inListNameStr = "",
+        inNameStr     = "",
         inBeginStr    = "{",
-        inDelimitStr   = ", ",
+        inDelimitStr  = ", ",
         inEndStr      = "}",
         inPrintEmpty  = false,
         maxLength     = 0), "", "", ", ", "");

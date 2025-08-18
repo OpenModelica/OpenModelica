@@ -462,7 +462,7 @@ public function hashTableKeyList
   input HashTable hashTable;
   output list<Key> valLst;
 algorithm
-  valLst := List.unzipFirst(hashTableList(hashTable));
+  valLst := List.unzip(hashTableList(hashTable));
 end hashTableKeyList;
 
 public function hashTableList

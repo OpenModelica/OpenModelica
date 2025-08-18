@@ -4451,7 +4451,7 @@ output Boolean res;
 algorithm
   res := matchcontinue(cr,exp)
     case(_,_) equation
-      res = List.map1BoolOr(Expression.extractCrefsFromExp(exp),ComponentReference.crefEqual,cr);
+      res = List.any(Expression.extractCrefsFromExp(exp), function ComponentReference.crefEqual(inComponentRef2 = cr));
     then res;
     else false;
   end matchcontinue;

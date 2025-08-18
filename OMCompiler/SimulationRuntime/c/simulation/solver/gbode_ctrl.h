@@ -44,10 +44,7 @@
 extern "C" {
 #endif
 
-double CController(double* err_values, double* stepSize_values, unsigned int err_order);
-double IController(double* err_values, double* stepSize_values, unsigned int err_order);
-double PIController(double* err_values, double* stepSize_values, unsigned int err_order);
-gm_stepSize_control_function getControllFunc(enum GB_CTRL_METHOD ctrl_method);
+double GenericController(double* err_values, double* stepSize_values, unsigned int err_order, enum GB_CTRL_METHOD ctrl_method);
 
 void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData);
 

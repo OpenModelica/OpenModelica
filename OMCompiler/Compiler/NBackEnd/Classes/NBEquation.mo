@@ -480,7 +480,7 @@ public
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " could not create replacements for location: "
-            + List.toString(arrayList(location), intString) + " and iterator: " + toString(iter) + "\n"});
+            + Array.toString(location, intString) + " and iterator: " + toString(iter) + "\n"});
         then fail();
       end match;
     end createLocationReplacements;

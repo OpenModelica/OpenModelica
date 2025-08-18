@@ -544,7 +544,7 @@ protected
   list<DAE.Exp> exps;
 algorithm
   eqs := List.map(jac, Util.tuple33);
-  isConst := not List.exist(eqs, variableResidual);
+  isConst := not List.any(eqs, variableResidual);
 end jacobianIsConstant;
 
 protected function variableResidual
@@ -3261,7 +3261,7 @@ algorithm
     case DAE.T_ARRAY(ty=ty) then isRecordInvoled(ty);
     case DAE.T_FUNCTION(funcResultType=ty) then isRecordInvoled(ty);
     case DAE.T_TUPLE(types)
-    then List.mapBoolOr(types, isRecordInvoled);
+    then List.any(types, isRecordInvoled);
     else false;
   end match;
 end isRecordInvoled;
