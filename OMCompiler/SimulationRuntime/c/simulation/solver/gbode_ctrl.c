@@ -278,7 +278,6 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
 
   // Store current time and state
   gbData->time = sData->timeValue;
-
   memcpy(gbData->yOld, sData->realVars, nStates * sizeof(double));
 
   // Compute f(t0, y0)

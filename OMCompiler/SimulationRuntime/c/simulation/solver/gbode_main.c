@@ -889,7 +889,6 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       default:
         throwStreamPrint(NULL, "NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbfData->nlsSolverMethod]);
       }
-
     }
     if (gbfData->jacobian->availability == JACOBIAN_AVAILABLE)
       updateEvalSelectionJacobian(data, gbData);
