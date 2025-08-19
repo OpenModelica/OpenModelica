@@ -13542,12 +13542,32 @@ algorithm
       equation
         print("implement SES_RESIDUAL in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
       then {};
+    case(SimCode.SES_FOR_RESIDUAL())
+      equation
+        print("implement SES_FOR_RESIDUAL in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+      then {};
+    case(SimCode.SES_GENERIC_RESIDUAL())
+      equation
+        print("implement SES_GENERIC_RESIDUAL in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+      then {};
     case(SimCode.SES_SIMPLE_ASSIGN(cref=cref))
       then {cref};
     case(SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(cref=cref))
       then {cref};
     case(SimCode.SES_ARRAY_CALL_ASSIGN(lhs=lhs))
       then {Expression.expCref(lhs)};
+    case(SimCode.SES_RESIZABLE_ASSIGN())
+      equation
+        print("implement SES_RESIZABLE_ASSIGN in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+      then {};
+    case(SimCode.SES_GENERIC_ASSIGN())
+      equation
+        print("implement SES_GENERIC_ASSIGN in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+      then {};
+    case(SimCode.SES_ENTWINED_ASSIGN())
+      equation
+        print("implement SES_ENTWINED_ASSIGN in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+      then {};
     case(SimCode.SES_IFEQUATION())
       equation
         print("implement SES_IFEQUATION in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
@@ -13570,6 +13590,26 @@ algorithm
       equation
         crefs = Expression.getAllCrefs(lhs);
       then crefs;
+    case(SimCode.SES_FOR_LOOP())
+      equation
+        print("implement SES_FOR_LOOP in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+      then {};
+    case(SimCode.SES_FOR_EQUATION())
+      equation
+        print("implement SES_FOR_EQUATION in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+      then {};
+    case(SimCode.SES_ALIAS())
+      equation
+        print("implement SES_ALIAS in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+      then {};
+    case(SimCode.SES_ALGEBRAIC_SYSTEM())
+      equation
+        print("implement SES_ALGEBRAIC_SYSTEM in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+      then {};
+    else
+      equation
+        print("implement unknown case in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+      then {};
   end match;
 end getSimEqSystemCrefsLHS;
 
@@ -13587,9 +13627,24 @@ algorithm
     case SimCode.SES_RESIDUAL() algorithm
       Error.addInternalError("failed for SES_RESIDUAL", sourceInfo());
     then fail();
+    case SimCode.SES_FOR_RESIDUAL() algorithm
+      Error.addInternalError("failed for SES_FOR_RESIDUAL", sourceInfo());
+    then fail();
+    case SimCode.SES_GENERIC_RESIDUAL() algorithm
+      Error.addInternalError("failed for SES_GENERIC_RESIDUAL", sourceInfo());
+    then fail();
     case SimCode.SES_SIMPLE_ASSIGN(exp=rhs) then Expression.getAllCrefs(rhs);
     case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(exp=rhs) then Expression.getAllCrefs(rhs);
     case SimCode.SES_ARRAY_CALL_ASSIGN(exp=rhs) then Expression.getAllCrefs(rhs);
+    case SimCode.SES_RESIZABLE_ASSIGN() algorithm
+      Error.addInternalError("failed for SES_RESIZABLE_ASSIGN", sourceInfo());
+    then fail();
+    case SimCode.SES_GENERIC_ASSIGN() algorithm
+      Error.addInternalError("failed for SES_GENERIC_ASSIGN", sourceInfo());
+    then fail();
+    case SimCode.SES_ENTWINED_ASSIGN() algorithm
+      Error.addInternalError("failed for SES_ENTWINED_ASSIGN", sourceInfo());
+    then fail();
     case SimCode.SES_IFEQUATION() algorithm
       Error.addInternalError("failed for SES_IFEQUATION", sourceInfo());
     then fail();
@@ -13610,6 +13665,18 @@ algorithm
     then fail();
     case SimCode.SES_WHEN(whenStmtLst={BackendDAE.ASSIGN(right=rhs)})
     then Expression.getAllCrefs(rhs);
+    case SimCode.SES_FOR_LOOP() algorithm
+      Error.addInternalError("failed for SES_FOR_LOOP", sourceInfo());
+    then fail();
+    case SimCode.SES_FOR_EQUATION() algorithm
+      Error.addInternalError("failed for SES_FOR_EQUATION", sourceInfo());
+    then fail();
+    case SimCode.SES_ALIAS() algorithm
+      Error.addInternalError("failed for SES_ALIAS", sourceInfo());
+    then fail();
+    case SimCode.SES_ALGEBRAIC_SYSTEM() algorithm
+      Error.addInternalError("failed for SES_ALGEBRAIC_SYSTEM", sourceInfo());
+    then fail();
     else algorithm
       Error.addInternalError("failed", sourceInfo());
     then fail();
