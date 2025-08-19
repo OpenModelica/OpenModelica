@@ -13552,9 +13552,8 @@ algorithm
       equation
         print("implement SES_IFEQUATION in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
       then {};
-    case(SimCode.SES_ALGORITHM()) equation
-      print("implement SES_ALGORITHM in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
-    then {};
+    case(SimCode.SES_ALGORITHM())
+      then CheckModel.algorithmStatementListOutputs(simEqSys.statements, DAE.EXPAND());
     case(SimCode.SES_INVERSE_ALGORITHM()) equation
       print("implement SES_INVERSE_ALGORITHM in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
     then {};
@@ -13595,8 +13594,8 @@ algorithm
       Error.addInternalError("failed for SES_IFEQUATION", sourceInfo());
     then fail();
     case SimCode.SES_ALGORITHM() algorithm
-      Error.addInternalError("failed for SES_ALGORITHM", sourceInfo());
-    then fail();
+      (_, crefs) := Expression.extractUniqueCrefsFromStatmentS(simEqSys.statements);
+    then crefs;
     case SimCode.SES_INVERSE_ALGORITHM() algorithm
       Error.addInternalError("failed for SES_INVERSE_ALGORITHM", sourceInfo());
     then fail();
