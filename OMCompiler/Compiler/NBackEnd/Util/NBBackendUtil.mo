@@ -308,26 +308,38 @@ public
     input array<list<Integer>> m          "global adjacency matrix";
     input Matching matching               "global matching";
     input list<Integer> eqn_indices       "global equation indices to keep";
-    output array<list<Integer>> m_loc;
-    output Matching matching_loc;
+    output array<list<Integer>> m_loc     "local adjacency matrix";
+    output Matching matching_loc          "local matching";
+    output array<Integer> map_back        "local to global equation indices";
   protected
-    array<Integer> var_to_eqn = arrayCreate(arrayLength(matching.var_to_eqn), -1);
-    array<Integer> eqn_to_var = arrayCreate(arrayLength(matching.eqn_to_var), -1);
-    UnorderedSet<Integer> vars_set = UnorderedSet.new(Util.id, intEq, listLength(eqn_indices));
+    constant Integer N = listLength(eqn_indices);
+    array<Integer> var_to_eqn = arrayCreate(N, -1);
+    array<Integer> eqn_to_var = arrayCreate(N, -1);
+    UnorderedMap<Integer, Integer> var_loc = UnorderedMap.new<Integer>(Util.id, intEq, N) "global to local variable indices";
+    Integer j = 1;
   algorithm
-    // TODO create smaller system with local indices and return a map to go back to global indices
-    m_loc := arrayCreate(arrayLength(m), {});
-    // copy matching from full system
+    // map matching from full system and save eqn map back
+    map_back := arrayCreate(N, -1);
     for i in eqn_indices loop
-      eqn_to_var[i] := matching.eqn_to_var[i];
-      var_to_eqn[eqn_to_var[i]] := matching.var_to_eqn[eqn_to_var[i]];
-      UnorderedSet.add(eqn_to_var[i], vars_set);
-    end for;
-    // filter only local edges of adjacency matrix
-    for i in eqn_indices loop
-      m_loc[i] := list(j for j guard UnorderedSet.contains(j, vars_set) in m[i]);
+      // set equation map (local -> global)
+      map_back[j] := i;
+
+      // set var from matching (global -> local)
+      UnorderedMap.addUnique(matching.eqn_to_var[i], j, var_loc);
+
+      // set local matching
+      eqn_to_var[j] := j;
+      var_to_eqn[j] := j;
+
+      j := j + 1;
     end for;
     matching_loc := MATCHING(var_to_eqn, eqn_to_var);
+
+    // filter only local edges of adjacency matrix
+    m_loc := arrayCreate(N, {});
+    for j in 1:N loop
+      m_loc[j] := UnorderedMap.getList(m[map_back[j]], var_loc);
+    end for;
   end getLocalSystem;
 
   annotation(__OpenModelica_Interface="backend");
