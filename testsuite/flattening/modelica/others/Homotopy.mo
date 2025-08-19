@@ -9,6 +9,5 @@
 model HomotopyTest
   parameter Real a = 20;
   parameter Real p = homotopy(a + 1, a);
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end HomotopyTest;
 

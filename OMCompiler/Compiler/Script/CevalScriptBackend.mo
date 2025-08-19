@@ -3616,96 +3616,43 @@ algorithm
 end runFrontEndWorkNF;
 
 public function translateModel
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
+  input FCore.Cache cache;
+  input FCore.Graph env;
   input Absyn.Path className "path for the model";
-  input String inFileNamePrefix;
+  input String fileNamePrefix;
   input Boolean runBackend "if true, run the backend as well. This will run SimCode and Codegen as well.";
   input Boolean runSilent "if true, flat modelica code will not be dumped to out stream";
-  input Option<SimCode.SimulationSettings> inSimSettingsOpt;
+  input Option<SimCode.SimulationSettings> simSettingsOpt;
   output Boolean success;
   output FCore.Cache outCache;
   output list<String> outLibs;
   output String outFileDir;
   output list<tuple<String,Values.Value>> resultValues;
+protected
+  Flags.Flag flags;
+  GlobalScript.SimulationOptions defaultSimOpt;
+  Option<SimCode.SimulationSettings> simSettings;
 algorithm
-  (outCache,outLibs,outFileDir,resultValues):=
-  match (inCache,inEnv,className,inFileNamePrefix,inSimSettingsOpt)
-    local
-      FCore.Cache cache;
-      FCore.Graph env;
-      list<String> libs;
-      String file_dir, fileNamePrefix;
-      Absyn.Program p;
-      Flags.Flag flags;
-      String commandLineOptions;
-      list<String> args;
-      Boolean haveAnnotation;
-      SimCode.SimulationSettings simSettings;
-      GlobalScript.SimulationOptions defaultSimOpt;
+  if isSome(simSettingsOpt)  then
+    simSettings := simSettingsOpt;
+  else
+    defaultSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, fileNamePrefix, SOME(defaultSimulationOptions));
+    simSettings := SOME(convertSimulationOptionsToSimCode(defaultSimOpt));
+  end if;
 
-    case (cache,env,_,fileNamePrefix,_)
-      algorithm
-        if isSome(inSimSettingsOpt)  then
-          SOME(simSettings) := inSimSettingsOpt;
-        else
-          defaultSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, fileNamePrefix, SOME(defaultSimulationOptions));
-          simSettings := convertSimulationOptionsToSimCode(defaultSimOpt);
-        end if;
+  flags := loadCommandLineOptionsFromModel(className);
 
-        if Config.ignoreCommandLineOptionsAnnotation() then
-          (success, cache, libs, file_dir, resultValues) :=
-            callTranslateModel(cache, env, className, fileNamePrefix, runBackend, runSilent, SOME(simSettings));
-        else
-          // read the __OpenModelica_commandLineOptions
-          Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotationExp(className, SymbolTable.getAbsyn(), Absyn.IDENT
-                          ("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
-          haveAnnotation := boolNot(stringEq(commandLineOptions, ""));
-          // backup the flags.
-          flags := if haveAnnotation then FlagsUtil.backupFlags() else FlagsUtil.loadFlags();
-          try
-            // apply if there are any new flags
-            if haveAnnotation then
-              args := System.strtok(commandLineOptions, " ");
-              FlagsUtil.readArgs(args);
-            end if;
-
-            (success, cache, libs, file_dir, resultValues) :=
-              callTranslateModel(cache, env, className, fileNamePrefix, runBackend, runSilent, SOME(simSettings));
-            // reset to the original flags
-            FlagsUtil.saveFlags(flags);
-          else
-            FlagsUtil.saveFlags(flags);
-            fail();
-          end try;
-        end if;
-      then
-        (cache,libs,file_dir,resultValues);
-
-  end match;
+  try
+    (success, outCache, outLibs, outFileDir, resultValues) :=
+      SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(), cache, env, className, fileNamePrefix,
+        runBackend, Flags.getConfigBool(Flags.DAE_MODE), runSilent, simSettings, Absyn.FUNCTIONARGS({},{}));
+    // reset to the original flags
+    FlagsUtil.saveFlags(flags);
+  else
+    FlagsUtil.saveFlags(flags);
+    fail();
+  end try;
 end translateModel;
-
-protected function callTranslateModel
-"Call the main translate function. This function
- distinguish between the modes. Now between DAEMode and ODEmode.
- The appropriate function create model code and writes also a makefile"
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input Absyn.Path className "path for the model";
-  input String inFileNamePrefix;
-  input Boolean runBackend "if true, run the backend as well. This will run SimCode and Codegen as well.";
-  input Boolean runSilent "if true, flat modelica code will not be dumped to out stream";
-  input Option<SimCode.SimulationSettings> inSimSettingsOpt;
-  output Boolean success;
-  output FCore.Cache outCache;
-  output list<String> outStringLst;
-  output String outFileDir;
-  output list<tuple<String,Values.Value>> resultValues;
-algorithm
-  (success, outCache, outStringLst, outFileDir, resultValues) :=
-    SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(), inCache, inEnv,
-      className, inFileNamePrefix, runBackend, Flags.getConfigBool(Flags.DAE_MODE), runSilent, inSimSettingsOpt, Absyn.FUNCTIONARGS({},{}));
-end callTranslateModel;
 
 protected function getProcsStr
   input Boolean isMake = false;
@@ -4159,9 +4106,6 @@ protected function translateModelFMU
 protected
   Absyn.Program p;
   Flags.Flag flags;
-  String commandLineOptions;
-  list<String> args;
-  Boolean haveAnnotation;
 algorithm
   // handle encryption
   // if AST contains encrypted class show nothing
@@ -4170,21 +4114,10 @@ algorithm
     Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
     cache := inCache;
     outValue := Values.STRING("");
-  elseif Config.ignoreCommandLineOptionsAnnotation() then
-    (success, cache, outValue) := callTranslateModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
   else
-    // read the __OpenModelica_commandLineOptions
-    Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotationExp(className, SymbolTable.getAbsyn(), Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
-    haveAnnotation := boolNot(stringEq(commandLineOptions, ""));
-    // backup the flags.
-    flags := if haveAnnotation then FlagsUtil.backupFlags() else FlagsUtil.loadFlags();
-    try
-      // apply if there are any new flags
-      if haveAnnotation then
-        args := System.strtok(commandLineOptions, " ");
-        FlagsUtil.readArgs(args);
-      end if;
+    flags := loadCommandLineOptionsFromModel(className);
 
+    try
       (success, cache, outValue) := callTranslateModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
       // reset to the original flags
       FlagsUtil.saveFlags(flags);
@@ -4279,9 +4212,6 @@ protected function buildModelFMU
 protected
   Absyn.Program p;
   Flags.Flag flags;
-  String commandLineOptions;
-  list<String> args;
-  Boolean haveAnnotation;
 algorithm
   // handle encryption
   // if AST contains encrypted class show nothing
@@ -4290,21 +4220,10 @@ algorithm
     Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
     cache := inCache;
     outValue := Values.STRING("");
-  elseif Config.ignoreCommandLineOptionsAnnotation() then
-    (cache, outValue) := callBuildModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
   else
-    // read the __OpenModelica_commandLineOptions
-    Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotationExp(className, SymbolTable.getAbsyn(), Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
-    haveAnnotation := boolNot(stringEq(commandLineOptions, ""));
-    // backup the flags.
-    flags := if haveAnnotation then FlagsUtil.backupFlags() else FlagsUtil.loadFlags();
-    try
-      // apply if there are any new flags
-      if haveAnnotation then
-        args := System.strtok(commandLineOptions, " ");
-        FlagsUtil.readArgs(args);
-      end if;
+    flags := loadCommandLineOptionsFromModel(className);
 
+    try
       (cache, outValue) := callBuildModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
       // reset to the original flags
       FlagsUtil.saveFlags(flags);
@@ -6115,40 +6034,40 @@ end getFileDir;
 
 public function checkModel " checks a model and returns number of variables and equations"
   input output FCore.Cache cache;
-  input FCore.Graph inEnv;
+  input FCore.Graph env;
   input Absyn.Path className;
-  output Values.Value outValue;
   input Absyn.Msg inMsg;
+        output Values.Value outValue;
 algorithm
-  outValue := matchcontinue (inEnv,className,inMsg)
+  outValue := matchcontinue ()
     local
       Option<DAE.DAElist> odae;
       DAE.DAElist dae;
-      FCore.Graph env;
-      Absyn.Program p;
-      Absyn.Msg msg;
       Integer eqnSize,varSize,simpleEqnSize;
-      String errorMsg,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr;
-      Boolean strEmpty;
-      Absyn.Restriction restriction;
-      Absyn.Class c;
+      String retStr,classNameStr;
+      Flags.Flag flags;
 
     // handle normal models
-    case (env,_,_)
-      equation
-        (cache,env,odae) = runFrontEnd(cache,env,className,false);
-        SOME(dae) = odae;
-        (varSize,eqnSize,simpleEqnSize) = CheckModel.checkModel(dae);
-        eqnSizeStr = intString(eqnSize);
-        varSizeStr = intString(varSize);
-        simpleEqnSizeStr = intString(simpleEqnSize);
+    case ()
+      algorithm
+        flags := loadCommandLineOptionsFromModel(className);
 
-        classNameStr = AbsynUtil.pathString(className);
-        retStr = stringAppendList({"Check of ",classNameStr," completed successfully.","\nClass ",classNameStr," has ",eqnSizeStr," equation(s) and ",
-          varSizeStr," variable(s).\n",simpleEqnSizeStr," of these are trivial equation(s)."});
+        try
+          (cache, _, odae) := runFrontEnd(cache, env, className, false);
+          SOME(dae) := odae;
+          (varSize, eqnSize, simpleEqnSize) := CheckModel.checkModel(dae);
+          FlagsUtil.saveFlags(flags);
+        else
+          FlagsUtil.saveFlags(flags);
+          fail();
+        end try;
+
+        classNameStr := AbsynUtil.pathString(className);
+        retStr := stringAppendList({"Check of ",classNameStr," completed successfully.\nClass ",classNameStr," has ",String(eqnSize)," equation(s) and ",
+          String(varSize)," variable(s).\n",String(simpleEqnSize)," of these are trivial equation(s)."});
       then Values.STRING(retStr);
 
-    case (_,_,_)
+    case ()
       equation
         false = Interactive.existClass(className, SymbolTable.getAbsyn());
         Error.addMessage(Error.LOOKUP_ERROR, {AbsynUtil.pathString(className), "<TOP>"});
@@ -6157,11 +6076,9 @@ algorithm
     // errors
     else
       equation
-        classNameStr = AbsynUtil.pathString(className);
-        strEmpty = Error.getNumMessages() == 0;
-        errorMsg = "Check of " + classNameStr + " failed with no error message";
-        if strEmpty then
-          Error.addMessage(Error.INTERNAL_ERROR, {errorMsg,"<TOP>"});
+        if Error.getNumMessages() == 0 then
+          Error.addMessage(Error.INTERNAL_ERROR,
+            {"Check of " + AbsynUtil.pathString(className) + " failed with no error message","<TOP>"});
         end if;
       then Values.STRING("");
 
@@ -8787,6 +8704,7 @@ protected
   Option<DAE.DAElist> odae;
   NFFlatModel flat_model;
   NFFlatten.FunctionTree funcs;
+  Flags.Flag flags;
 algorithm
   str := matchcontinue ()
     // handle encryption
@@ -8802,21 +8720,30 @@ algorithm
     case ()
       algorithm
         ExecStat.execStatReset();
-        (cache, _, odae, str) := runFrontEnd(cache, env, path, relaxedFrontEnd = false,
-          dumpFlat = Config.flatModelica() and not Config.silent());
-        ExecStat.execStat("runFrontEnd");
+        flags := loadCommandLineOptionsFromModel(path);
 
-        if not stringEmpty(str) then
-          // str already contains flat model.
-        elseif isNone(odae) then
-          str := "";
-        elseif Config.silent() then
-          str := "model " + AbsynUtil.pathString(path) + "\n  /* Silent mode */\nend" +
-            AbsynUtil.pathString(path) + ";\n"; // Not the empty string, so we can
+        try
+          (cache, _, odae, str) := runFrontEnd(cache, env, path, relaxedFrontEnd = false,
+            dumpFlat = Config.flatModelica() and not Config.silent());
+          ExecStat.execStat("runFrontEnd");
+
+          if not stringEmpty(str) then
+            // str already contains flat model.
+          elseif isNone(odae) then
+            str := "";
+          elseif Config.silent() then
+            str := "model " + AbsynUtil.pathString(path) + "\n  /* Silent mode */\nend" +
+              AbsynUtil.pathString(path) + ";\n"; // Not the empty string, so we can
+          else
+            str := DAEDump.dumpStr(Util.getOption(odae), FCore.getFunctionTree(cache));
+            ExecStat.execStat("DAEDump.dumpStr");
+          end if;
+
+          FlagsUtil.saveFlags(flags);
         else
-          str := DAEDump.dumpStr(Util.getOption(odae), FCore.getFunctionTree(cache));
-          ExecStat.execStat("DAEDump.dumpStr");
-        end if;
+          FlagsUtil.saveFlags(flags);
+          fail();
+        end try;
       then
         str;
 
@@ -9037,6 +8964,33 @@ algorithm
     scripts := Util.getOption(script) :: scripts;
   end if;
 end findConversionPath;
+
+public function loadCommandLineOptionsFromModel
+  "Applies flags from the __OpenModelica_commandLineOptions annotation of a given class and returns the old flags."
+  input Absyn.Path className;
+  output Flags.Flag oldFlags;
+protected
+  String opts;
+  list<String> args;
+algorithm
+  if Config.ignoreCommandLineOptionsAnnotation() then
+    oldFlags := FlagsUtil.loadFlags();
+    return;
+  end if;
+
+  // read the __OpenModelica_commandLineOptions
+  Absyn.STRING(opts) := Interactive.getNamedAnnotationExp(className, SymbolTable.getAbsyn(),
+    Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
+
+  if not stringEmpty(opts) then
+    // backup the current flags and apply the flags from the annotation
+    oldFlags := FlagsUtil.backupFlags();
+    args := System.strtok(opts, " ");
+    FlagsUtil.readArgs(args);
+  else
+    oldFlags := FlagsUtil.loadFlags();
+  end if;
+end loadCommandLineOptionsFromModel;
 
 annotation(__OpenModelica_Interface="backend");
 

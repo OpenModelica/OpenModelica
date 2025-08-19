@@ -361,7 +361,7 @@ public
   end getSafe;
 
   function getOrFail
-    "Return the value associated with the given key, or fails if no such value exists."
+    "Returns the value associated with the given key, or fails if no such value exists."
     input K key;
     input UnorderedMap<K, V> map;
     output V value = Vector.get(map.values, find(key, map));
@@ -377,6 +377,23 @@ public
   algorithm
     value := if index > 0 then Vector.getNoBounds(map.values, index) else default;
   end getOrDefault;
+
+  function getList
+    "Returns all values associated with the given keys, omits values for missing keys."
+    input list<K> keys;
+    input UnorderedMap<K, V> map;
+    output list<V> values = {};
+  protected
+    Integer index;
+  algorithm
+    for key in keys loop
+      index := find(key, map);
+      if index > 0 then
+        values := Vector.getNoBounds(map.values, index) :: values;
+      end if;
+    end for;
+    values := listReverseInPlace(values);
+  end getList;
 
   function getKey
     "Returns SOME(key) if the key exists in the map, otherwise NONE()."
