@@ -3,50 +3,40 @@
 // status: correct
 
 // from OpenModelica Workshop Presentation 2022 by kabdelhak
-// used for extreme scaling purposes with slicing, only scaled one is tested
+// used for extreme scaling purposes with slicing
 
 loadString("
-model exemplary
-  Real x[5,2];
-  Real y[2];
-equation
-  for i in 1:4, j in 1:2 loop
-    x[i+1,j] = x[i,j] - y[j];
-  end for;
-  for j in 1:2 loop
-    y[j] = j*sin(time);
-    x[3,j] = j*cos(time);
-  end for;
-end exemplary;
-
 model exemplaryS
   parameter Integer s = 20;
   Real x[5+s,2+s];
   Real y[2+s];
-  Real z[5+s,2+s] "reference solution for x";
-  Real e "accumulated error";
+  Real z[5+s,2+s] \"reference solution for x\";
+  Real e(start = 1, fixed = true) \"accumulated error, start at 1 for tolerance\";
 equation
+  // this for loop will be split, one part solved for x[i+1,j] and one for x[i,j]
   for i in 1:4+s, j in 1:2+s loop
     x[i+1,j] = x[i,j] - y[j];
   end for;
+
+  // this force splits the upper equation
   for j in 1:2+s loop
     y[j] = j*sin(time);
     x[3,j] = j*cos(time);
   end for;
 
+  // reference value for x (x=z)
   for i in 1:5+s, j in 1:2+s loop
     z[i,j] = j*cos(time) + (3-i)*j*sin(time);
   end for;
 
+  // error accumulation
   der(e) = sqrt(sum((x-z).^2)/(5+s)/(2+s));
 end exemplaryS;
-
 "); getErrorString();
 
-setCommandLineOptions("--newBackend -d=dumpSlice");
+setCommandLineOptions("--newBackend");
 simulate(exemplaryS); getErrorString();
-val(x[2,1],1);  // cos(1) + sin(1) = 1.3817732906760363
-val(x[4,2],1);  // 2*cos(1) - 2*sin(1) = -0.6023373578795135
+val(e,1); // should remain close to 1
 
 // Result:
 // true
@@ -60,6 +50,5 @@ val(x[4,2],1);  // 2*cos(1) - 2*sin(1) = -0.6023373578795135
 // "
 // end SimulationResult;
 // ""
-// 1.3817732906760363
-// -0.6023373578795135
+// 1.0
 // endResult

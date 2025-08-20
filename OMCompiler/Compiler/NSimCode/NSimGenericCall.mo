@@ -223,6 +223,8 @@ public
     end toString;
 
     function fromIterator
+      "create sim iterator from backend iterator.
+      Note: needs to reverse the order of iterators since it needs to be mapped inner first"
       input Iterator iter;
       output list<SimIterator> sim_iter = {};
     protected
@@ -237,7 +239,7 @@ public
       list<DependentIterator> sub_iter;
     algorithm
       (names, ranges, maps) := Iterator.getFrames(iter);
-      for tpl in listReverse(List.zip3(names, ranges, maps)) loop
+      for tpl in List.zip3(names, ranges, maps) loop
         (name, range, map) := tpl;
         sim_iter := match range
           case Expression.RANGE() algorithm
