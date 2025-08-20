@@ -1221,7 +1221,8 @@ protected
       then fail();
 
       // invalid skip
-      case (_, skip::_) algorithm
+      // skipping to the first element of any type that is not array, tuple or complex is technically allowed but does not do anything
+      case (_, skip::_) guard(skip <> 1) algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because skip of " + intString(skip)
           + " for type " + Type.toString(ty) + " is invalid."});
       then fail();
