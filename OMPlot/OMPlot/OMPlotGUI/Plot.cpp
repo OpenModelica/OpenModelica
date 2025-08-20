@@ -468,8 +468,7 @@ void Plot::replot()
 
   if (mpParentPlotWindow->getYRightCustomLabel().isEmpty()) {
     setAxisTitle(QwtPlot::yRight, "");
-  }
-  else {
+  } else {
     setAxisTitle(QwtPlot::yRight, mpParentPlotWindow->getYRightCustomLabel());
   }
 

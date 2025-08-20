@@ -155,10 +155,27 @@ void PlotWindow::initializePlot(QStringList arguments)
   setPrefixUnits(true);
   /* read variables */
   QStringList variablesToRead;
-  for(int i = 18; i < arguments.length(); i++)
+  for(int i = 19; i < arguments.length(); i++)
     variablesToRead.append(QString(arguments[i]));
 
   setVariablesList(variablesToRead);
+
+  /* assign y-axis to each variable, in order*/
+  int i=0;
+  QHash<QString, bool> plotRightYAxis;
+  foreach(QString yAxis, QString(arguments[18]).split(QChar(','), Qt::SkipEmptyParts)) {
+      if (i >= variablesToRead.size()) {  // ignore extra yAxis specifications
+          break;
+      } else if (yAxis == "2") {
+          plotRightYAxis.insert(variablesToRead[i], true);
+      } else if (yAxis == "1") {
+          plotRightYAxis.insert(variablesToRead[i], false);
+      } else {
+          throw PlotException("Invalid input" + arguments[18]);
+      }
+      i++;
+  }
+
   //Plot
   if(plotType.toLower().compare("plot") == 0)
   {
@@ -180,6 +197,16 @@ void PlotWindow::initializePlot(QStringList arguments)
     setPlotType(PlotWindow::PLOTINTERACTIVE);
     plotInteractive();
   }
+
+// assign y-axes appropriately to each curve, if specified
+  if (plotRightYAxis.size() > 0) {
+    foreach(PlotCurve* curve, getPlot()->getPlotCurvesList()) {
+        bool right = plotRightYAxis.value(curve->getYVariable(), false);
+        curve->setYAxisRight(right);
+    }
+    updatePlot();
+  }
+  
 }
 
 void PlotWindow::setVariablesList(QStringList variables)

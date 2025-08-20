@@ -1944,7 +1944,7 @@ QPair<double, bool> VariablesWidget::readVariableValue(QString variable, double 
  * \param index
  * \param curveThickness
  * \param curveStyle
- * \param shiftKey
+ * \param keyDown
  * \param pPlotCurve
  * \param pPlotWindow
  */
@@ -1998,6 +1998,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
       return;
     }
     connect(pPlotWindow, SIGNAL(prefixUnitsChanged()), this, SLOT(updatePlottedVariablesDisplayUnitAndValue()), Qt::UniqueConnection);
+    bool ctrl = Qt::KeyboardModifiers(keyDown).testFlag(Qt::ControlModifier);
     // if plottype is PLOT or PLOTARRAY then
     if (pPlotWindow->isPlot() || pPlotWindow->isPlotArray()) {
       // check the item checkstate
@@ -2054,6 +2055,10 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
               pPlotCurve->updateXAxisValue(i, Utilities::convertUnit(pPlotCurve->mXAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
             }
           }
+        }
+        if (ctrl && pPlotCurve) {
+          pPlotCurve->setYAxisRight(true);
+          requiresUpdate = true;
         }
         if (requiresUpdate) {
           pPlotCurve->plotData();
@@ -2168,6 +2173,10 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
               } else {
                 pPlotCurve->setYDisplayUnit(plotParametricVariable.displayUnit);
               }
+            }
+            if (ctrl && pPlotCurve) {
+                pPlotCurve->setYAxisRight(true);
+                requiresUpdate = true;
             }
             if (requiresUpdate) {
               pPlotCurve->plotData();

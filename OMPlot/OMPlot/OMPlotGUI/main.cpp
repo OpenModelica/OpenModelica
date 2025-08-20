@@ -83,6 +83,7 @@ void printUsage(bool shortDescription)
     printf("    --title=TITLE              Sets the TITLE of the plot window\n");
     printf("    --xlabel=LABEL             Use LABEL as the label of the x-axis\n");
     printf("    --xrange=LEFT:RIGHT        Sets the initial range of the x-axis to LEFT:RIGHT\n");
+    printf("    --yaxis=AXES               Sets the y-axis (1=left, 2=right) for each variable. Each axis in AXES should be separated by a comma i.e. 1,2,1,1\n");
     printf("    --ylabel=LABEL             Use LABEL as the label of the y-axis\n");
     printf("    --yrange=LEFT:RIGHT        Sets the initial range of the y-axis to LEFT:RIGHT\n");
   }
@@ -109,6 +110,7 @@ int main(int argc, char *argv[])
   QString legendPosition = "top";
   QString footer("");
   bool autoScale = true;
+  QString yaxisID("");
   QStringList vars;
   QString filename;
   for(int i = 1; i < argc; i++)
@@ -164,6 +166,15 @@ int main(int argc, char *argv[])
       footer = argv[i]+9;
     } else if (strncmp(argv[i], "--auto-scale=",13) == 0) {
       CONSUME_BOOL_ARG(i,13,autoScale);
+    } else if (strncmp(argv[i], "--yaxis=", 8) == 0) {
+      yaxisID = argv[i] + 8;
+      bool digit = true;
+      for (int j = 0; j < yaxisID.length(); j++, digit = !digit) {
+          if ((digit && !(yaxisID[j]=='1' || yaxisID[j]=='2')) || (!digit && yaxisID[j]!=',')) {
+              fprintf(stderr, "Error: each 'yaxis' should be '1' or '2', separated by commas (','), but got %s\n", argv[i]);
+              return 1;
+          }
+      }
     } else if (strncmp(argv[i], "--", 2) == 0) {
       fprintf(stderr, "Error: Unknown option: %s\n", argv[i]);
       return 1;
@@ -237,6 +248,7 @@ int main(int argc, char *argv[])
   arguments.append(legendPosition);
   arguments.append(footer);
   arguments.append(autoScale ? "true" : "false");
+  arguments.append(yaxisID);
   arguments.append(vars);
   // create the plot application object that is used to check that only one instance of application is running
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
