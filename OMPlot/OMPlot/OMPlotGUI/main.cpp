@@ -83,9 +83,11 @@ void printUsage(bool shortDescription)
     printf("    --title=TITLE              Sets the TITLE of the plot window\n");
     printf("    --xlabel=LABEL             Use LABEL as the label of the x-axis\n");
     printf("    --xrange=LEFT:RIGHT        Sets the initial range of the x-axis to LEFT:RIGHT\n");
-    printf("    --yaxis=AXES               Sets the y-axis (1=left, 2=right) for each variable. Each axis in AXES should be separated by a comma i.e. 1,2,1,1\n");
-    printf("    --ylabel=LABEL             Use LABEL as the label of the y-axis\n");
-    printf("    --yrange=LEFT:RIGHT        Sets the initial range of the y-axis to LEFT:RIGHT\n");
+    printf("    --yaxis=AXES               Sets the y-axis (L=left, R=right) for each variable. Each axis in AXES should be separated by a comma i.e. L,R,L,L\n");
+    printf("    --ylabel=LABEL             Use LABEL as the label of the left y-axis\n");
+    printf("    --yrange=LEFT:RIGHT        Sets the initial range of the left y-axis to LEFT:RIGHT\n");
+    printf("    --ylabel-right=LABEL       Use LABEL as the label of the right y-axis\n");
+    printf("    --yrange-right=LEFT:RIGHT  Sets the initial range of the right y-axis to LEFT:RIGHT\n");
   }
 }
 
@@ -101,10 +103,13 @@ int main(int argc, char *argv[])
   bool logy = false;
   QString xlabel("time");
   QString ylabel("");
+  QString ylabelRight("");
   double xrange1 = 0.0;
   double xrange2 = 0.0;
   double yrange1 = 0.0;
   double yrange2 = 0.0;
+  double yrange1right = 0.0;
+  double yrange2right = 0.0;
   double curveWidth = 1.0;
   int curveStyle = 1;
   QString legendPosition = "top";
@@ -137,8 +142,10 @@ int main(int argc, char *argv[])
     } else if (strncmp(argv[i], "--xlabel=",9) == 0) {
       xlabel = argv[i]+9;
     } else if (strncmp(argv[i], "--ylabel=",9) == 0) {
-      ylabel = argv[i]+9;
-    } else if (strncmp(argv[i], "--xrange=",9) == 0) {
+        ylabel = argv[i]+9;
+    } else if (strncmp(argv[i], "--ylabel-right=",15) == 0) {
+        ylabelRight = argv[i]+15;
+    } else if (strncmp(argv[i], "--xrange=", 9) == 0) {
       if (2 != sscanf(argv[i]+9, "%lf:%lf", &xrange1, &xrange2)) {
         fprintf(stderr, "Error: Expected format double:double, but got %s\n", argv[i]);
         return 1;
@@ -147,6 +154,11 @@ int main(int argc, char *argv[])
       if (2 != sscanf(argv[i]+9, "%lf:%lf", &yrange1, &yrange2)) {
         fprintf(stderr, "Error: Expected format double:double, but got %s\n", argv[i]);
         return 1;
+      }
+    } else if (strncmp(argv[i], "--yrange-right=",15) == 0) {
+      if (2 != sscanf(argv[i]+15, "%lf:%lf", &yrange1right, &yrange2right)) {
+         fprintf(stderr, "Error: Expected format double:double, but got %s\n", argv[i]);
+         return 1;
       }
     } else if (strncmp(argv[i], "--new-window=",13) == 0) {
       CONSUME_BOOL_ARG(i,13,newApplication);
@@ -170,8 +182,8 @@ int main(int argc, char *argv[])
       yaxisID = argv[i] + 8;
       bool digit = true;
       for (int j = 0; j < yaxisID.length(); j++, digit = !digit) {
-          if ((digit && !(yaxisID[j]=='1' || yaxisID[j]=='2')) || (!digit && yaxisID[j]!=',')) {
-              fprintf(stderr, "Error: each 'yaxis' should be '1' or '2', separated by commas (','), but got %s\n", argv[i]);
+          if ((digit && !(yaxisID[j]=='L' || yaxisID[j]=='R')) || (!digit && yaxisID[j]!=',')) {
+              fprintf(stderr, "Error: each 'yaxis' should be 'L' or 'R', separated by commas (','), but got %s\n", argv[i]);
               return 1;
           }
       }
@@ -249,6 +261,9 @@ int main(int argc, char *argv[])
   arguments.append(footer);
   arguments.append(autoScale ? "true" : "false");
   arguments.append(yaxisID);
+  arguments.append(ylabelRight);
+  arguments.append(QString::number(yrange1right));
+  arguments.append(QString::number(yrange2right));
   arguments.append(vars);
   // create the plot application object that is used to check that only one instance of application is running
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0))

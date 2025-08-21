@@ -138,6 +138,8 @@ void PlotWindow::initializePlot(QStringList arguments)
   setXDisplayUnit("");
   setYUnit("");
   setYDisplayUnit("");
+  setYRightUnit("");
+  setYRightDisplayUnit("");
   setXRange(QString(arguments[9]).toDouble(), QString(arguments[10]).toDouble());
   setYRange(QString(arguments[11]).toDouble(), QString(arguments[12]).toDouble());
   setCurveWidth(QString(arguments[13]).toDouble());
@@ -151,30 +153,27 @@ void PlotWindow::initializePlot(QStringList arguments)
   } else {
     throw PlotException("Invalid input" + arguments[17]);
   }
+  QList<bool> plotRightYAxis;
+  foreach(QString yAxis, QString(arguments[18]).split(QChar(','), Qt::SkipEmptyParts)) {
+    if (yAxis == "R") {
+       plotRightYAxis.append(true);
+    } else if (yAxis == "L") {
+       plotRightYAxis.append(false);
+    } else {
+       throw PlotException("Invalid input" + arguments[18]);
+    }
+  }
+  setYRightLabel(QString(arguments[19]));
+  setYRightCustomLabel(getYRightLabel());
+  setYRightRange(QString(arguments[20]).toDouble(), QString(arguments[21]).toDouble());
   setTimeUnit("");
   setPrefixUnits(true);
   /* read variables */
   QStringList variablesToRead;
-  for(int i = 19; i < arguments.length(); i++)
+  for(int i = 22; i < arguments.length(); i++)
     variablesToRead.append(QString(arguments[i]));
 
   setVariablesList(variablesToRead);
-
-  /* assign y-axis to each variable, in order*/
-  int i=0;
-  QHash<QString, bool> plotRightYAxis;
-  foreach(QString yAxis, QString(arguments[18]).split(QChar(','), Qt::SkipEmptyParts)) {
-      if (i >= variablesToRead.size()) {  // ignore extra yAxis specifications
-          break;
-      } else if (yAxis == "2") {
-          plotRightYAxis.insert(variablesToRead[i], true);
-      } else if (yAxis == "1") {
-          plotRightYAxis.insert(variablesToRead[i], false);
-      } else {
-          throw PlotException("Invalid input" + arguments[18]);
-      }
-      i++;
-  }
 
   //Plot
   if(plotType.toLower().compare("plot") == 0)
@@ -200,12 +199,32 @@ void PlotWindow::initializePlot(QStringList arguments)
 
 // assign y-axes appropriately to each curve, if specified
   if (plotRightYAxis.size() > 0) {
-    // if only one axis was specified, apply to all newly plotted curves
-    bool scalarSetToRight = (plotRightYAxis.size()==1) && plotRightYAxis.cbegin().value();
-    foreach(PlotCurve* curve, getPlot()->getPlotCurvesList()) {
-        if (variablesToRead.contains(curve->getYVariable())) {
-            bool setToRight = scalarSetToRight || plotRightYAxis.value(curve->getYVariable(), false);
-            curve->setYAxisRight(setToRight);
+    QStringList variablesPlotted;
+    QString label;
+    int i = 0; 
+    while (i < variablesToRead.size()) {
+        if (isPlotParametric()) {
+            label = variablesToRead[i] + "|" + variablesToRead[i+1];
+            i += 2;
+        } else {
+            label = getXLabel() + "|" + variablesToRead[i];
+            i++;
+        }
+        variablesPlotted.append(label);
+    }
+    foreach (PlotCurve* curve, getPlot()->getPlotCurvesList()) {
+        label = curve->getXVariable() + "|" + curve->getYVariable();
+        int index = variablesPlotted.indexOf(label);
+        if (isPlotAll()) {
+            // if all variables are plotted, use first value of plotRightYAxis
+            curve->setYAxisRight(plotRightYAxis[0]);
+        } else if (index < 0) {
+            continue; // curve not specified at command line
+        } else if (plotRightYAxis.size() == 1) {
+            // if only one axis was specified, apply to all newly plotted curves
+            curve->setYAxisRight(plotRightYAxis[0]);
+        } else {
+            curve->setYAxisRight(plotRightYAxis.value(index, false));
         }
     }
     updatePlot();
