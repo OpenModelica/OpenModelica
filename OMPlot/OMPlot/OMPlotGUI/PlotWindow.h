@@ -72,99 +72,102 @@ class PlotCurve;
 
 class PlotWindow : public QMainWindow
 {
-  Q_OBJECT
+	Q_OBJECT
 public:
-  enum PlotType {PLOT, PLOTALL, PLOTPARAMETRIC, PLOTINTERACTIVE, PLOTARRAY, PLOTARRAYPARAMETRIC};
+	enum PlotType { PLOT, PLOTALL, PLOTPARAMETRIC, PLOTINTERACTIVE, PLOTARRAY, PLOTARRAYPARAMETRIC };
 private:
-  Plot *mpPlot;
-  QCheckBox *mpLogXCheckBox;
-  QCheckBox *mpLogYCheckBox;
-  QComboBox *mpGridComboBox;
-  QToolButton *mpAutoScaleButton;
-  QToolButton *mpSetupButton;
-  QToolButton *mpStartSimulationToolButton;
-  QToolButton *mpPauseSimulationToolButton;
-  QLabel *mpSimulationSpeedLabel;
-  QComboBox *mpSimulationSpeedComboBox;
-  QTextStream *mpTextStream;
-  QFile mFile;
-  QStringList mVariablesList;
-  PlotType mPlotType;
-  QString mGridType;
-  QString mXLabel;
-  QString mYLabel;
-  QString mXCustomLabel;
-  QString mYCustomLabel;
-  QString mYRightCustomLabel;
-  QString mXUnit;
-  QString mXDisplayUnit;
-  QString mYUnit;
-  QString mYDisplayUnit;
-  QString mYRightUnit;
-  QString mYRightDisplayUnit;
-  QString mTimeUnit;
-  QString mXRangeMin;
-  QString mXRangeMax;
-  QString mYRangeMin;
-  QString mYRangeMax;
-  QString mYRightRangeMin;
-  QString mYRightRangeMax;
-  double mCurveWidth;
-  int mCurveStyle;
-  QFont mLegendFont;
-  double mTime;
-  bool mIsInteractiveSimulation;
-  QString mInteractiveTreeItemOwner;
-  int mInteractivePort;
-  QwtSeriesData<QPointF>* mpInteractiveData;
-  QString mInteractiveModelName;
-  bool mPrefixUnits;
-  QMdiSubWindow *mpSubWindow;
+	Plot* mpPlot;
+	QCheckBox* mpLogXCheckBox;
+	QCheckBox* mpLogYCheckBox;
+	QComboBox* mpGridComboBox;
+	QToolButton* mpAutoScaleButton;
+	QToolButton* mpSetupButton;
+	QToolButton* mpStartSimulationToolButton;
+	QToolButton* mpPauseSimulationToolButton;
+	QLabel* mpSimulationSpeedLabel;
+	QComboBox* mpSimulationSpeedComboBox;
+	QTextStream* mpTextStream;
+	QFile mFile;
+	QStringList mVariablesList;
+	PlotType mPlotType;
+	QString mGridType;
+	QString mXLabel;
+	QString mYLabel;
+	QString mYRightLabel;
+	QString mXCustomLabel;
+	QString mYCustomLabel;
+	QString mYRightCustomLabel;
+	QString mXUnit;
+	QString mXDisplayUnit;
+	QString mYUnit;
+	QString mYDisplayUnit;
+	QString mYRightUnit;
+	QString mYRightDisplayUnit;
+	QString mTimeUnit;
+	QString mXRangeMin;
+	QString mXRangeMax;
+	QString mYRangeMin;
+	QString mYRangeMax;
+	QString mYRightRangeMin;
+	QString mYRightRangeMax;
+	double mCurveWidth;
+	int mCurveStyle;
+	QFont mLegendFont;
+	double mTime;
+	bool mIsInteractiveSimulation;
+	QString mInteractiveTreeItemOwner;
+	int mInteractivePort;
+	QwtSeriesData<QPointF>* mpInteractiveData;
+	QString mInteractiveModelName;
+	bool mPrefixUnits;
+	QMdiSubWindow* mpSubWindow;
 public:
-  PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0, bool isInteractiveSimulation = false, int toolbarIconSize = 0);
+	PlotWindow(QStringList arguments = QStringList(), QWidget* parent = 0, bool isInteractiveSimulation = false, int toolbarIconSize = 0);
 
-  ~PlotWindow();
+	~PlotWindow();
 
-  void setUpWidget(int toolbarIconSize);
-  void initializePlot(QStringList arguments);
-  void setVariablesList(QStringList variables);
-  void setPlotType(PlotType type);
-  bool isPlot() const {return mPlotType == PlotWindow::PLOT;}
-  bool isPlotAll() const {return mPlotType == PlotWindow::PLOTALL;}
-  bool isPlotParametric() const {return mPlotType == PlotWindow::PLOTPARAMETRIC;}
-  bool isPlotInteractive() const {return mPlotType == PlotWindow::PLOTINTERACTIVE;}
-  bool isPlotArray() const {return mPlotType == PlotWindow::PLOTARRAY;}
-  bool isPlotArrayParametric() const {return mPlotType == PlotWindow::PLOTARRAYPARAMETRIC;}
-  PlotType getPlotType() const {return mPlotType;}
-  void initializeFile(QString file);
-  void getStartStopTime(double &start, double &stop);
-  void setupToolbar(int toolbarIconSize);
-  void plot(PlotCurve *pPlotCurve = 0);
-  void plotParametric(PlotCurve *pPlotCurve = 0);
-  void plotArray(double time, PlotCurve *pPlotCurve = 0);
-  void plotArrayParametric(double time, PlotCurve *pPlotCurve = 0);
-  QPair<QVector<double>*, QVector<double>*> plotInteractive(PlotCurve *pPlotCurve = 0);
-  void setInteractiveOwner(const QString &interactiveTreeItemOwner);
-  void setInteractivePort(const int port);
-  void setInteractivePlotData(QwtSeriesData<QPointF>* pInteractiveData);
-  void setSubWindow(QMdiSubWindow *pSubWindow) {mpSubWindow = pSubWindow;}
-  QMdiSubWindow* getSubWindow() {return mpSubWindow;}
-  void setInteractiveModelName(const QString &modelName);
-  QString getInteractiveOwner() {return mInteractiveTreeItemOwner;}
-  int getInteractivePort() {return mInteractivePort;}
-  void setTitle(QString title);
-  void setGrid(QString grid);
-  QString getGrid();
-  QCheckBox* getLogXCheckBox();
-  QCheckBox* getLogYCheckBox();
-  QToolButton* getAutoScaleButton() {return mpAutoScaleButton;}
-  QToolButton* getStartSimulationButton() {return mpStartSimulationToolButton;}
-  QToolButton* getPauseSimulationButton() {return mpPauseSimulationToolButton;}
-  QComboBox* getSimulationSpeedBox() {return mpSimulationSpeedComboBox;}
-  void setXLabel(const QString &label) {mXLabel = label;}
-  QString getXLabel() const {return mXLabel;}
-  void setYLabel(const QString &label) {mYLabel = label;}
-  QString getYLabel() const {return mYLabel;}
+	void setUpWidget(int toolbarIconSize);
+	void initializePlot(QStringList arguments);
+	void setVariablesList(QStringList variables);
+	void setPlotType(PlotType type);
+	bool isPlot() const { return mPlotType == PlotWindow::PLOT; }
+	bool isPlotAll() const { return mPlotType == PlotWindow::PLOTALL; }
+	bool isPlotParametric() const { return mPlotType == PlotWindow::PLOTPARAMETRIC; }
+	bool isPlotInteractive() const { return mPlotType == PlotWindow::PLOTINTERACTIVE; }
+	bool isPlotArray() const { return mPlotType == PlotWindow::PLOTARRAY; }
+	bool isPlotArrayParametric() const { return mPlotType == PlotWindow::PLOTARRAYPARAMETRIC; }
+	PlotType getPlotType() const { return mPlotType; }
+	void initializeFile(QString file);
+	void getStartStopTime(double& start, double& stop);
+	void setupToolbar(int toolbarIconSize);
+	void plot(PlotCurve* pPlotCurve = 0);
+	void plotParametric(PlotCurve* pPlotCurve = 0);
+	void plotArray(double time, PlotCurve* pPlotCurve = 0);
+	void plotArrayParametric(double time, PlotCurve* pPlotCurve = 0);
+	QPair<QVector<double>*, QVector<double>*> plotInteractive(PlotCurve* pPlotCurve = 0);
+	void setInteractiveOwner(const QString& interactiveTreeItemOwner);
+	void setInteractivePort(const int port);
+	void setInteractivePlotData(QwtSeriesData<QPointF>* pInteractiveData);
+	void setSubWindow(QMdiSubWindow* pSubWindow) { mpSubWindow = pSubWindow; }
+	QMdiSubWindow* getSubWindow() { return mpSubWindow; }
+	void setInteractiveModelName(const QString& modelName);
+	QString getInteractiveOwner() { return mInteractiveTreeItemOwner; }
+	int getInteractivePort() { return mInteractivePort; }
+	void setTitle(QString title);
+	void setGrid(QString grid);
+	QString getGrid();
+	QCheckBox* getLogXCheckBox();
+	QCheckBox* getLogYCheckBox();
+	QToolButton* getAutoScaleButton() { return mpAutoScaleButton; }
+	QToolButton* getStartSimulationButton() { return mpStartSimulationToolButton; }
+	QToolButton* getPauseSimulationButton() { return mpPauseSimulationToolButton; }
+	QComboBox* getSimulationSpeedBox() { return mpSimulationSpeedComboBox; }
+	void setXLabel(const QString& label) { mXLabel = label; }
+	QString getXLabel() const { return mXLabel; }
+	void setYLabel(const QString& label) { mYLabel = label; }
+	QString getYLabel() const { return mYLabel; }
+	void setYRightLabel(const QString& label) {mYRightLabel = label;}
+	QString getYRightLabel() const { return mYRightLabel; }
   void setXCustomLabel(const QString &label) {mXCustomLabel = label;}
   QString getXCustomLabel() const {return mXCustomLabel;}
   void setYCustomLabel(const QString &label) {mYCustomLabel = label;}
