@@ -1681,7 +1681,7 @@ algorithm
       for arg in exp.inv_arguments loop
         new_exp := combineBinariesExp(arg, SOME(exp.operator), new_exp, true);
       end for;
-    then addArgument(result, new_exp, inverse);
+    then reverseArguments(addArgument(result, new_exp, inverse));
 
     // case 4.0 _ binary | soft commutative operator (-, :)
     case (_, Expression.BINARY()) guard(Operator.isSoftCommutative(exp.operator)) algorithm
@@ -1855,6 +1855,19 @@ algorithm
     then fail();
   end match;
 end addArgument;
+
+protected function reverseArguments
+  input output Expression exp;
+algorithm
+  exp := match exp
+    case Expression.MULTARY() algorithm
+      exp.arguments     := listReverseInPlace(exp.arguments);
+      exp.inv_arguments := listReverseInPlace(exp.inv_arguments);
+    then exp;
+
+    else exp;
+  end match;
+end reverseArguments;
 
 function removeTrivialScalarProduct
   "removes trivial scalar products of size 1 vectors"
