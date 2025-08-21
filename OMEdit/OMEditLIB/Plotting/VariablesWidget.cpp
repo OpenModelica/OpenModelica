@@ -447,7 +447,8 @@ bool VariablesTreeModel::setData(const QModelIndex &index, const QVariant &value
   if (index.column() == 0 && role == Qt::CheckStateRole) {
     if (!signalsBlocked()) {
       PlottingPage *pPlottingPage = OptionsDialog::instance()->getPlottingPage();
-      emit itemChecked(index, pPlottingPage->getCurveThickness(), pPlottingPage->getCurvePattern(), QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier));
+      int keyDown = static_cast<int>(QApplication::keyboardModifiers());
+      emit itemChecked(index, pPlottingPage->getCurveThickness(), pPlottingPage->getCurvePattern(), keyDown);
     }
   } else if (index.column() == 1) { // value
     if (!signalsBlocked()) {
@@ -1036,7 +1037,7 @@ void VariablesTreeModel::plotAllVariables(VariablesTreeItem *pVariablesTreeItem,
       }
     }
     setData(index, Qt::Checked, Qt::CheckStateRole);
-    mpVariablesTreeView->getVariablesWidget()->plotVariables(index, pPlotWindow->getCurveWidth(), pPlotWindow->getCurveStyle(), false, pPlotCurve);
+    mpVariablesTreeView->getVariablesWidget()->plotVariables(index, pPlotWindow->getCurveWidth(), pPlotWindow->getCurveStyle(), Qt::NoModifier, pPlotCurve);
   } else {
     for (int i = 0 ; i < variablesTreeItems.size() ; i++) {
       plotAllVariables(variablesTreeItems[i], pPlotWindow);
@@ -1511,7 +1512,7 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpVariablesTreeView, SLOT(collapseAll()));
   connect(mpVariablesTreeModel, SIGNAL(rowsInserted(QModelIndex,int,int)), mpVariableTreeProxyModel, SLOT(invalidate()));
   connect(mpVariablesTreeModel, SIGNAL(rowsRemoved(QModelIndex,int,int)), mpVariableTreeProxyModel, SLOT(invalidate()));
-  connect(mpVariablesTreeModel, SIGNAL(itemChecked(QModelIndex,qreal,int,bool)), SLOT(plotVariables(QModelIndex,qreal,int,bool)));
+  connect(mpVariablesTreeModel, SIGNAL(itemChecked(QModelIndex,qreal,int,int)), SLOT(plotVariables(QModelIndex,qreal,int,int)));
   connect(mpVariablesTreeModel, SIGNAL(unitChanged(QModelIndex)), SLOT(unitChanged(QModelIndex)));
   connect(mpVariablesTreeModel, SIGNAL(valueEntered(QModelIndex)), SLOT(valueEntered(QModelIndex)));
   connect(mpVariablesTreeView, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
@@ -1589,7 +1590,7 @@ void VariablesWidget::variablesUpdated()
             pPlotCurve->resetPrefixUnit(false);
             QModelIndex index = mpVariablesTreeModel->variablesTreeItemIndex(pVariablesTreeItem);
             mpVariablesTreeModel->setData(index, Qt::Checked, Qt::CheckStateRole);
-            plotVariables(index, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), false, pPlotCurve, pPlotWindow);
+            plotVariables(index, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), Qt::NoModifier, pPlotCurve, pPlotWindow);
             mpVariablesTreeModel->blockSignals(state);
           } else {
             pPlotWindow->getPlot()->removeCurve(pPlotCurve);
@@ -1609,14 +1610,14 @@ void VariablesWidget::variablesUpdated()
             pPlotCurve->resetPrefixUnit(false);
             QModelIndex xIndex = mpVariablesTreeModel->variablesTreeItemIndex(pXVariablesTreeItem);
             mpVariablesTreeModel->setData(xIndex, Qt::Checked, Qt::CheckStateRole);
-            plotVariables(xIndex, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), true, pPlotCurve, pPlotWindow);
+            plotVariables(xIndex, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), Qt::ShiftModifier, pPlotCurve, pPlotWindow);
             updateDisplayUnitAndValue(pPlotCurve->getYUnitPrefix(), pPlotCurve->getYDisplayUnit(), pYVariablesTreeItem);
             pPlotCurve->setYUnit(pYVariablesTreeItem->getUnit());
             pPlotCurve->setYDisplayUnit(pYVariablesTreeItem->getDisplayUnit());
             // No need to call pPlotCurve->resetPrefixUnit(false); again, is already done above
             QModelIndex yIndex = mpVariablesTreeModel->variablesTreeItemIndex(pYVariablesTreeItem);
             mpVariablesTreeModel->setData(yIndex, Qt::Checked, Qt::CheckStateRole);
-            plotVariables(yIndex, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), false, pPlotCurve, pPlotWindow);
+            plotVariables(yIndex, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), Qt::NoModifier, pPlotCurve, pPlotWindow);
             mpVariablesTreeModel->blockSignals(state);
           } else {
             pPlotWindow->getPlot()->removeCurve(pPlotCurve);
@@ -1943,11 +1944,11 @@ QPair<double, bool> VariablesWidget::readVariableValue(QString variable, double 
  * \param index
  * \param curveThickness
  * \param curveStyle
- * \param shiftKey
+ * \param keyDown
  * \param pPlotCurve
  * \param pPlotWindow
  */
-void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, bool shiftKey, PlotCurve *pPlotCurve, PlotWindow *pPlotWindow)
+void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, int keyDown, PlotCurve *pPlotCurve, PlotWindow *pPlotWindow)
 {
   if (index.column() > 0) {
     return;
@@ -1997,6 +1998,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
       return;
     }
     connect(pPlotWindow, SIGNAL(prefixUnitsChanged()), this, SLOT(updatePlottedVariablesDisplayUnitAndValue()), Qt::UniqueConnection);
+    bool ctrl = Qt::KeyboardModifiers(keyDown).testFlag(Qt::ControlModifier);
     // if plottype is PLOT or PLOTARRAY then
     if (pPlotWindow->isPlot() || pPlotWindow->isPlotArray()) {
       // check the item checkstate
@@ -2054,6 +2056,10 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             }
           }
         }
+        if (ctrl && pPlotCurve) {
+          pPlotCurve->setYAxisRight(true);
+          requiresUpdate = true;
+        }
         if (requiresUpdate) {
           pPlotCurve->plotData();
         }
@@ -2083,7 +2089,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           return;
         }
 
-        if (shiftKey) {
+        if (Qt::KeyboardModifiers(keyDown).testFlag(Qt::ShiftModifier)) {
           if (!mPlotParametricCurves.isEmpty()) {
             PlotParametricCurve plotParametricCurve = mPlotParametricCurves.last();
             if (plotParametricCurve.yVariables.isEmpty()) {
@@ -2167,6 +2173,10 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
               } else {
                 pPlotCurve->setYDisplayUnit(plotParametricVariable.displayUnit);
               }
+            }
+            if (ctrl && pPlotCurve) {
+                pPlotCurve->setYAxisRight(true);
+                requiresUpdate = true;
             }
             if (requiresUpdate) {
               pPlotCurve->plotData();

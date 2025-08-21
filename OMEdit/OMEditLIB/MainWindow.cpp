@@ -1690,7 +1690,7 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
           }
         }
         pVariablesTreeModel->setData(index, Qt::Checked, Qt::CheckStateRole);
-        pMainWindow->getVariablesWidget()->plotVariables(index, pPlotWindow->getCurveWidth(), pPlotWindow->getCurveStyle(), false, pPlotCurve);
+        pMainWindow->getVariablesWidget()->plotVariables(index, pPlotWindow->getCurveWidth(), pPlotWindow->getCurveStyle(), Qt::NoModifier, pPlotCurve);
       }
     }
     // variables list is empty for plotAll
