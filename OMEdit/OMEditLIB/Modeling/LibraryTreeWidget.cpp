@@ -430,13 +430,6 @@ QString LibraryTreeItem::getTooltip() const {
       tooltip = QString("%1 %2<br />%3: %4")
                 .arg(Helper::name).arg(mName)
                 .arg(Helper::type).arg("Bus");
-    } else if (mpOMSTLMBusConnector) {
-      tooltip = QString("%1 %2<br />%3: %4<br />%5: %6<br />%7: %8<br />%9: %10")
-                .arg(Helper::name).arg(mName)
-                .arg(Helper::type).arg("TLM Bus")
-                .arg("Domain").arg(QString::number(mpOMSTLMBusConnector->domain))
-                .arg("Dimensions").arg(QString::number(mpOMSTLMBusConnector->dimensions))
-                .arg("Interpolation").arg(OMSProxy::getInterpolationString(mpOMSTLMBusConnector->interpolation));
     }
   } else {
     tooltip = QString("%1 %2\n%3: %4")
@@ -456,9 +449,7 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
     if (isTopLevel()) {
       return ResourceCache::getIcon(":/Resources/icons/model-icon.svg");
     } else if (isSystemElement()) {
-      if (isTLMSystem()) {
-        return ResourceCache::getIcon(":/Resources/icons/tlm-system-icon.svg");
-      } else if (isWCSystem()) {
+      if (isWCSystem()) {
         return ResourceCache::getIcon(":/Resources/icons/wc-system-icon.svg");
       } else {
         return ResourceCache::getIcon(":/Resources/icons/sc-system-icon.svg");
@@ -507,22 +498,6 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
       }
     } else if (mpOMSBusConnector) {
       return QIcon(":/Resources/icons/bus-connector.svg");
-    } else if (mpOMSTLMBusConnector) {
-      switch (mpOMSTLMBusConnector->domain) {
-        case oms_tlm_domain_input:
-          return ResourceCache::getIcon(":/Resources/icons/tlm-input-bus-connector.svg");
-        case oms_tlm_domain_output:
-          return ResourceCache::getIcon(":/Resources/icons/tlm-output-bus-connector.svg");
-        case oms_tlm_domain_rotational:
-          return ResourceCache::getIcon(":/Resources/icons/tlm-rotational-bus-connector.svg");
-        case oms_tlm_domain_hydraulic:
-          return ResourceCache::getIcon(":/Resources/icons/tlm-hydraulic-bus-connector.svg");
-        case oms_tlm_domain_electric:
-          return ResourceCache::getIcon(":/Resources/icons/tlm-electric-bus-connector.svg");
-        case oms_tlm_domain_mechanical:
-        default:
-          return ResourceCache::getIcon(":/Resources/icons/tlm-mechanical-bus-connector.svg");
-      }
     }
   } else if (isModelica()) {
     switch (getRestriction()) {
@@ -1351,8 +1326,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(LibraryTreeItem::Librar
  * \return
  */
 LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, QString nameStructure, QString path, bool isSaved, LibraryTreeItem *pParentLibraryTreeItem,
-                                                         oms_element_t *pOMSElement, oms_connector_t *pOMSConnector, oms_busconnector_t *pOMSBusConnector,
-                                                         oms_tlmbusconnector_t *pOMSTLMBusConnector, int row)
+                                                         oms_element_t *pOMSElement, oms_connector_t *pOMSConnector, oms_busconnector_t *pOMSBusConnector, int row)
 {
   if (row == -1) {
     row = pParentLibraryTreeItem->childrenSize();
@@ -1360,7 +1334,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, QString n
   QModelIndex index = libraryTreeItemIndex(pParentLibraryTreeItem);
   beginInsertRows(index, row, row);
   LibraryTreeItem *pLibraryTreeItem = createOMSLibraryTreeItemImpl(name, nameStructure, path, isSaved, pParentLibraryTreeItem,
-                                                                   pOMSElement, pOMSConnector, pOMSBusConnector, pOMSTLMBusConnector);
+                                                                   pOMSElement, pOMSConnector, pOMSBusConnector);
   pParentLibraryTreeItem->insertChild(row, pLibraryTreeItem);
   endInsertRows();
   // create library tree items
@@ -1941,7 +1915,7 @@ void LibraryTreeModel::reLoadOMSimulatorModel(const QString &modelName, const QS
   // unload the LibraryTreeItems and close the ModelWidgets
   unloadOMSModel(pModelLibraryTreeItem, false, false);
   // create a new tree hirerchy of the model and redraw it on the same ModelWidget
-  LibraryTreeItem *pNewModelLibraryTreeItem = createLibraryTreeItem(modelName, modelName, filePath, false, mpRootLibraryTreeItem, 0, 0, 0, 0, row);
+  LibraryTreeItem *pNewModelLibraryTreeItem = createLibraryTreeItem(modelName, modelName, filePath, false, mpRootLibraryTreeItem, 0, 0, 0, row);
   pNewModelLibraryTreeItem->setModelWidget(pModelModelWidget);
   pModelModelWidget->setLibraryTreeItem(pNewModelLibraryTreeItem);
   pModelModelWidget->reDrawModelWidget();
@@ -2273,7 +2247,6 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
       }
       createOMSConnectorLibraryTreeItems(pLibraryTreeItem);
       createOMSBusConnectorLibraryTreeItems(pLibraryTreeItem);
-      createOMSTLMBusConnectorLibraryTreeItems(pLibraryTreeItem);
     }
   } else {
     qDebug() << "Unable to create LibraryTreeItems, unknown library type.";
@@ -2531,8 +2504,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(LibraryTreeItem::Li
  */
 LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QString nameStructure, QString path, bool isSaved,
                                                                 LibraryTreeItem *pParentLibraryTreeItem, oms_element_t *pOMSElement,
-                                                                oms_connector_t *pOMSConnector, oms_busconnector_t *pOMSBusConnector,
-                                                                oms_tlmbusconnector_t *pOMSTLMBusConnector)
+                                                                oms_connector_t *pOMSConnector, oms_busconnector_t *pOMSBusConnector)
 {
   LibraryTreeItem *pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::OMS, name, nameStructure, path, isSaved, pParentLibraryTreeItem);
   pLibraryTreeItem->setOMSElement(pOMSElement);
@@ -2544,7 +2516,6 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
   }
   pLibraryTreeItem->setOMSConnector(pOMSConnector);
   pLibraryTreeItem->setOMSBusConnector(pOMSBusConnector);
-  pLibraryTreeItem->setOMSTLMBusConnector(pOMSTLMBusConnector);
   if (pParentLibraryTreeItem && pLibraryTreeItem->isComponentElement()) {
     oms_component_enu_t componentType;
     if (OMSProxy::instance()->getComponentType(pLibraryTreeItem->getNameStructure(), &componentType)) {
@@ -2556,11 +2527,6 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
         pLibraryTreeItem->setFMUInfo(pFMUInfo);
         pLibraryTreeItem->setSubModelPath(QString(pFMUInfo->path));
       }
-    } else if (pLibraryTreeItem->isExternalTLMModelComponent()) {
-        const oms_external_tlm_model_info_t *pExternalTLMModelInfo;
-        if(OMSProxy::instance()->getExternalTLMModelInfo(pLibraryTreeItem->getNameStructure(), &pExternalTLMModelInfo)) {
-            pLibraryTreeItem->setExternalTLMModelInfo(pExternalTLMModelInfo);
-        }
     } else if (pLibraryTreeItem->isTableComponent()) {
       QString path;
       if (OMSProxy::instance()->getSubModelPath(pLibraryTreeItem->getNameStructure(), &path)) {
@@ -2599,22 +2565,6 @@ void LibraryTreeModel::createOMSBusConnectorLibraryTreeItems(LibraryTreeItem *pL
       QString name = pLibraryTreeItem->getOMSElement()->busconnectors[j]->name;
       createLibraryTreeItem(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name), pLibraryTreeItem->getFileName(),
                             true, pLibraryTreeItem, 0, 0, pLibraryTreeItem->getOMSElement()->busconnectors[j]);
-    }
-  }
-}
-
-/*!
- * \brief LibraryTreeModel::createOMSTLMBusConnectorLibraryTreeItems
- * Creates the OMS tlm bus connector LibraryTreeItems
- * \param pLibraryTreeItem
- */
-void LibraryTreeModel::createOMSTLMBusConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
-{
-  if (pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->tlmbusconnectors) {
-    for (int j = 0 ; pLibraryTreeItem->getOMSElement()->tlmbusconnectors[j] ; j++) {
-      QString name = pLibraryTreeItem->getOMSElement()->tlmbusconnectors[j]->name;
-      createLibraryTreeItem(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name), pLibraryTreeItem->getFileName(),
-                            true, pLibraryTreeItem, 0, 0, 0, pLibraryTreeItem->getOMSElement()->tlmbusconnectors[j]);
     }
   }
 }
@@ -3089,7 +3039,7 @@ void LibraryTreeView::libraryTreeItemDoubleClicked(const QModelIndex &index)
         mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
       }
     } else if (pLibraryTreeItem->isSSP()) {
-      if ((pLibraryTreeItem->getOMSConnector() || pLibraryTreeItem->getOMSBusConnector() || pLibraryTreeItem->getOMSTLMBusConnector())) {
+      if ((pLibraryTreeItem->getOMSConnector() || pLibraryTreeItem->getOMSBusConnector())) {
         return;
       } else {
         mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);

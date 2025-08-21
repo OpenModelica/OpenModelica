@@ -1473,15 +1473,8 @@ bool GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
   if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
     // if TLM connection
     bool connectionSuccessful = false;
-    if (pConnectionLineAnnotation->getOMSConnectionType() == oms_connection_tlm) {
-      connectionSuccessful = OMSProxy::instance()->addTLMConnection(pConnectionLineAnnotation->getStartElement()->getLibraryTreeItem()->getNameStructure(),
-                                                                    pConnectionLineAnnotation->getEndElement()->getLibraryTreeItem()->getNameStructure(),
-                                                                    pConnectionLineAnnotation->getDelay().toDouble(), pConnectionLineAnnotation->getAlpha().toDouble(),
-                                                                    pConnectionLineAnnotation->getZf().toDouble(), pConnectionLineAnnotation->getZfr().toDouble());
-    } else {
-      connectionSuccessful = OMSProxy::instance()->addConnection(pConnectionLineAnnotation->getStartElement()->getLibraryTreeItem()->getNameStructure(),
+    connectionSuccessful = OMSProxy::instance()->addConnection(pConnectionLineAnnotation->getStartElement()->getLibraryTreeItem()->getNameStructure(),
                                                                  pConnectionLineAnnotation->getEndElement()->getLibraryTreeItem()->getNameStructure());
-    }
     if (connectionSuccessful) {
       pConnectionLineAnnotation->updateOMSConnection();
       return true;
@@ -3121,7 +3114,7 @@ Element* GraphicsView::connectorElementAtPosition(QPoint position)
             (pElement->isConnector() ||
              (mpModelWidget->getLibraryTreeItem()->isSSP() &&
               (pElement->getLibraryTreeItem()->getOMSConnector() || pElement->getLibraryTreeItem()->getOMSBusConnector()
-               || pElement->getLibraryTreeItem()->getOMSTLMBusConnector() || pElement->isPort())))) {
+               || pElement->isPort())))) {
           return pElement;
         }
       }
@@ -3340,13 +3333,6 @@ void GraphicsView::addConnection(Element *pElement, bool createConnector)
         BusConnectionDialog *pBusConnectionDialog = new BusConnectionDialog(this, mpConnectionLineAnnotation);
         // if user cancels the bus connection
         if (!pBusConnectionDialog->exec()) {
-          removeCurrentConnection();
-        }
-      } else if ((pStartElement->getLibraryTreeItem() && pStartElement->getLibraryTreeItem()->getOMSTLMBusConnector())
-                 && (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->getOMSTLMBusConnector())) {
-        TLMConnectionDialog *pTLMBusConnectionDialog = new TLMConnectionDialog(this, mpConnectionLineAnnotation);
-        // if user cancels the tlm bus connection
-        if (!pTLMBusConnectionDialog->exec()) {
           removeCurrentConnection();
         }
       } else {
@@ -3856,7 +3842,6 @@ void GraphicsView::omsGraphicsViewContextMenu(QMenu *pMenu)
     pMenu->addSeparator();
     pMenu->addAction(MainWindow::instance()->getAddConnectorAction());
     pMenu->addAction(MainWindow::instance()->getAddBusAction());
-    pMenu->addAction(MainWindow::instance()->getAddTLMBusAction());
     if (mpModelWidget->getLibraryTreeItem()->isSystemElement()) {
       pMenu->addSeparator();
       pMenu->addAction(MainWindow::instance()->getAddSubModelAction());
@@ -5182,8 +5167,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
         // No context menu for component of type OMS connector i.e., input/output signal or OMS bus connector.
         if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isSSP()
             && (pComponent->getLibraryTreeItem()->getOMSConnector()
-                || pComponent->getLibraryTreeItem()->getOMSBusConnector()
-                || pComponent->getLibraryTreeItem()->getOMSTLMBusConnector())) {
+                || pComponent->getLibraryTreeItem()->getOMSBusConnector())) {
           return;
         }
         omsOneComponentContextMenu(pComponent, &menu);
@@ -7137,8 +7121,7 @@ void ModelWidget::drawOMSModelIconElements()
       if ((pChildLibraryTreeItem->getOMSConnector()
           && (pChildLibraryTreeItem->getOMSConnector()->causality == oms_causality_input
               || pChildLibraryTreeItem->getOMSConnector()->causality == oms_causality_output))
-          || (pChildLibraryTreeItem->getOMSBusConnector())
-          || (pChildLibraryTreeItem->getOMSTLMBusConnector())) {
+          || (pChildLibraryTreeItem->getOMSBusConnector())) {
         double x = 0.5;
         double y = 0.5;
         if (pChildLibraryTreeItem->getOMSConnector() && pChildLibraryTreeItem->getOMSConnector()->geometry) {
@@ -7147,16 +7130,13 @@ void ModelWidget::drawOMSModelIconElements()
         } else if (pChildLibraryTreeItem->getOMSBusConnector() && pChildLibraryTreeItem->getOMSBusConnector()->geometry) {
           x = pChildLibraryTreeItem->getOMSBusConnector()->geometry->x;
           y = pChildLibraryTreeItem->getOMSBusConnector()->geometry->y;
-        } else if (pChildLibraryTreeItem->getOMSTLMBusConnector() && pChildLibraryTreeItem->getOMSTLMBusConnector()->geometry) {
-          x = pChildLibraryTreeItem->getOMSTLMBusConnector()->geometry->x;
-          y = pChildLibraryTreeItem->getOMSTLMBusConnector()->geometry->y;
         }
         QString annotation = QString("Placement(true,%1,%2,-10.0,-10.0,10.0,10.0,0,%1,%2,-10.0,-10.0,10.0,10.0,)")
                              .arg(Utilities::mapToCoordinateSystem(x, 0, 1, -100, 100))
                              .arg(Utilities::mapToCoordinateSystem(y, 0, 1, -100, 100));
         drawOMSElement(pChildLibraryTreeItem, annotation);
         // assoicated the bus component with each of its connector component
-        if ((pChildLibraryTreeItem->getOMSBusConnector()) || (pChildLibraryTreeItem->getOMSTLMBusConnector())) {
+        if (pChildLibraryTreeItem->getOMSBusConnector()) {
           associateBusWithConnectors(pChildLibraryTreeItem->getName());
         }
       }
@@ -7235,8 +7215,7 @@ void ModelWidget::drawOMSElement(LibraryTreeItem *pLibraryTreeItem, const QStrin
   if ((pLibraryTreeItem->getOMSConnector()
       && (pLibraryTreeItem->getOMSConnector()->causality == oms_causality_input
           || pLibraryTreeItem->getOMSConnector()->causality == oms_causality_output))
-      || (pLibraryTreeItem->getOMSBusConnector())
-      || (pLibraryTreeItem->getOMSTLMBusConnector())) {
+      || (pLibraryTreeItem->getOMSBusConnector())) {
     Element *pIconComponent = new Element(pLibraryTreeItem->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), mpIconGraphicsView);
     mpIconGraphicsView->addElementItem(pIconComponent);
     mpIconGraphicsView->addElementToList(pIconComponent);
@@ -7344,14 +7323,8 @@ void ModelWidget::drawOMSModelConnections()
           pConnectionLineAnnotation->setVisible(false);
         }
         // Check if bus connection
-        if (pConnections[i]->type == oms_connection_bus || pConnections[i]->type == oms_connection_tlm) {
+        if (pConnections[i]->type == oms_connection_bus) {
           pConnectionLineAnnotation->setLineThickness(0.5);
-          if (pConnections[i]->type == oms_connection_tlm) {
-            pConnectionLineAnnotation->setDelay(QString::number(pConnections[i]->tlmparameters->delay));
-            pConnectionLineAnnotation->setAlpha(QString::number(pConnections[i]->tlmparameters->alpha));
-            pConnectionLineAnnotation->setZf(QString::number(pConnections[i]->tlmparameters->linearimpedance));
-            pConnectionLineAnnotation->setZfr(QString::number(pConnections[i]->tlmparameters->angularimpedance));
-          }
         }
       }
     }
@@ -7372,16 +7345,6 @@ void ModelWidget::associateBusWithConnectors(Element *pBusComponent, GraphicsVie
     if (pBusConnector->connectors) {
       for (int i = 0 ; pBusConnector->connectors[i] ; i++) {
         Element *pConnectorComponent = pGraphicsView->getElementObject(QString(pBusConnector->connectors[i]));
-        if (pConnectorComponent) {
-          pConnectorComponent->setBusComponent(pBusComponent);
-        }
-      }
-    }
-  } else if (pBusComponent && pBusComponent->getLibraryTreeItem() && pBusComponent->getLibraryTreeItem()->getOMSTLMBusConnector()) {
-    oms_tlmbusconnector_t *pTLMBusConnector = pBusComponent->getLibraryTreeItem()->getOMSTLMBusConnector();
-    if (pTLMBusConnector->connectornames) {
-      for (int i = 0 ; pTLMBusConnector->connectornames[i] ; i++) {
-        Element *pConnectorComponent = pGraphicsView->getElementObject(QString(pTLMBusConnector->connectornames[i]));
         if (pConnectorComponent) {
           pConnectorComponent->setBusComponent(pBusComponent);
         }
@@ -7753,7 +7716,6 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   connect(MainWindow::instance()->getDeleteIconAction(), SIGNAL(triggered()), SLOT(deleteIcon()));
   connect(MainWindow::instance()->getAddConnectorAction(), SIGNAL(triggered()), SLOT(addConnector()));
   connect(MainWindow::instance()->getAddBusAction(), SIGNAL(triggered()), SLOT(addBus()));
-  connect(MainWindow::instance()->getAddTLMBusAction(), SIGNAL(triggered()), SLOT(addTLMBus()));
   connect(MainWindow::instance()->getAddSubModelAction(), SIGNAL(triggered()), SLOT(addSubModel()));
 }
 
@@ -8330,9 +8292,8 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getAddSystemAction()->setEnabled(enabled && !iconGraphicsView && !textView && (omsModel || (omsSystem && (!pLibraryTreeItem->isSCSystem()))));
   MainWindow::instance()->getAddOrEditIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel));
   MainWindow::instance()->getDeleteIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel));
-  MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && !textView && (omsSystem && (!pLibraryTreeItem->isTLMSystem())));
-  MainWindow::instance()->getAddBusAction()->setEnabled(enabled && !textView && ((omsSystem || omsSubmodel)  && (!pLibraryTreeItem->isTLMSystem())));
-  MainWindow::instance()->getAddTLMBusAction()->setEnabled(enabled && !textView && ((omsSystem || omsSubmodel)  && (!pLibraryTreeItem->isTLMSystem())));
+  MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && !textView && omsSystem);
+  MainWindow::instance()->getAddBusAction()->setEnabled(enabled && !textView && (omsSystem || omsSubmodel));
   MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && !iconGraphicsView && !textView && omsSystem);
   MainWindow::instance()->getLogCurrentFileAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getStageCurrentFileForCommitAction()->setEnabled(enabled && gitWorkingDirectory);
@@ -8682,34 +8643,6 @@ void ModelWidgetContainer::addBus()
     }
     AddBusDialog *pAddBusDialog = new AddBusDialog(components, 0, pGraphicsView);
     pAddBusDialog->exec();
-  }
-}
-
-/*!
- * \brief ModelWidgetContainer::addTLMBus
- * Opens the AddTLMBusDialog.
- */
-void ModelWidgetContainer::addTLMBus()
-{
-  ModelWidget *pModelWidget = getCurrentModelWidget();
-  if (pModelWidget) {
-    GraphicsView *pGraphicsView = 0;
-    if (pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) {
-      pGraphicsView = pModelWidget->getIconGraphicsView();
-    } else if (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()) {
-      pGraphicsView = pModelWidget->getDiagramGraphicsView();
-    }
-    QList<Element*> components;
-    QList<QGraphicsItem*> selectedItems = pGraphicsView->scene()->selectedItems();
-    for (int i = 0 ; i < selectedItems.size() ; i++) {
-      // check the selected components.
-      Element *pComponent = dynamic_cast<Element*>(selectedItems.at(i));
-      if (pComponent && pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getOMSConnector()) {
-        components.append(pComponent);
-      }
-    }
-    AddTLMBusDialog *pAddTLMBusDialog = new AddTLMBusDialog(components, 0, pGraphicsView);
-    pAddTLMBusDialog->exec();
   }
 }
 
