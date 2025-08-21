@@ -200,9 +200,13 @@ void PlotWindow::initializePlot(QStringList arguments)
 
 // assign y-axes appropriately to each curve, if specified
   if (plotRightYAxis.size() > 0) {
+    // if only one axis was specified, apply to all newly plotted curves
+    bool scalarSetToRight = (plotRightYAxis.size()==1) && plotRightYAxis.cbegin().value();
     foreach(PlotCurve* curve, getPlot()->getPlotCurvesList()) {
-        bool right = plotRightYAxis.value(curve->getYVariable(), false);
-        curve->setYAxisRight(right);
+        if (variablesToRead.contains(curve->getYVariable())) {
+            bool setToRight = scalarSetToRight || plotRightYAxis.value(curve->getYVariable(), false);
+            curve->setYAxisRight(setToRight);
+        }
     }
     updatePlot();
   }
