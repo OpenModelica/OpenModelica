@@ -355,7 +355,7 @@ public
       (var_start, _) := mapping.var_AtS[var_arr_idx];
       sizes := ComponentRef.sizes(stripped, false);
       int_subs := ComponentRef.subscriptsToInteger(cref);
-      var_scal_idx := locationToIndex(List.zip(sizes, int_subs), var_start);
+      var_scal_idx := locationToIndex(sizes, int_subs, var_start);
       indices := var_scal_idx :: indices;
     end for;
     // remove duplicates and sort
@@ -682,14 +682,16 @@ public
   function locationToIndex
     "reverse function to indexToLocation()
     maps a frame location to a scalar index starting from first index (one based!)"
-    input list<tuple<Integer,Integer>> size_val_tpl_lst;
+    input list<Integer> sizes;
+    input list<Integer> values;
     input output Integer index;
   protected
-    Integer size, val, factor = 1;
+    Integer factor = 1, size;
+    list<Integer> rest_sizes = sizes;
   algorithm
-    for tpl in size_val_tpl_lst loop
-      (size, val) := tpl;
-      index := index + (val-1) * factor;
+    for v in values loop
+      size :: rest_sizes := rest_sizes;
+      index := index + (v - 1) * factor;
       factor := factor * size;
     end for;
   end locationToIndex;
@@ -1083,7 +1085,7 @@ public
       (var_start, _) := mapping.var_AtS[var_arr_idx];
       sizes := ComponentRef.sizes(stripped, false);
       int_subs := ComponentRef.subscriptsToInteger(replaced);
-      var_scal_idx := locationToIndex(List.zip(sizes, int_subs), var_start);
+      var_scal_idx := locationToIndex(sizes, int_subs, var_start);
       indices := var_scal_idx :: indices;
     end for;
   end upgradeRowFull;
@@ -1205,7 +1207,7 @@ protected
       // skip to an array element
       case (Type.ARRAY(), rest) guard List.compareLength(rest, ty.dimensions) >= 0 algorithm
         (rest, tail) := List.split(rest, listLength(ty.dimensions));
-        index := locationToIndex(List.zip(list(Dimension.size(dim, true) for dim in ty.dimensions), rest), index);
+        index := locationToIndex(list(Dimension.size(dim, true) for dim in ty.dimensions), rest, index);
       then resolveSkips(index, ty.elementType, tail, cref, fullmap);
 
       // skip for tuple or array, but the skip is too large
@@ -1594,15 +1596,15 @@ protected
         Expression range;
         Option<Iterator> map;
         Integer start, step, stop;
-        list<list<tuple<Integer, Integer>>> ranges;
+        list<list<Integer>> values;
         list<Expression> iterator_exps;
         list<Integer> iterator_lst;
         Integer sub_idx;
 
       // only occurs for non-for-loop equations (no frames to replace)
       case {} algorithm
-        ranges  := resolveDimensionsSubscripts(sizes, subs, replacements);
-      then list(locationToIndex(r, first) for r in ranges);
+        values := resolveDimensionsSubscripts(sizes, subs, replacements);
+      then list(locationToIndex(sizes, v, first) for v in values);
 
       // extract numeric information about the range
       case (iterator, range, map) :: rest algorithm
@@ -1630,9 +1632,9 @@ protected
 
           if listEmpty(rest) then
             // bottom line, resolve current configuration and create index for it
-            ranges  := resolveDimensionsSubscripts(sizes, subs, replacements);
-            for r in listReverse(ranges) loop
-              indices := locationToIndex(r, first) :: indices;
+            values := resolveDimensionsSubscripts(sizes, subs, replacements);
+            for v in listReverse(values) loop
+              indices := locationToIndex(sizes, v, first) :: indices;
             end for;
           else
             // not last frame, go deeper
@@ -1694,31 +1696,28 @@ protected
 
   function resolveDimensionsSubscripts
     "uses the replacement module to replace all iterator crefs in the subscript with the current position.
-    Returns a list of tuples containing the size of each subscript and current position."
+    Returns the current positions for each subscript."
     input list<Integer> sizes                                     "dimension sizes";
     input list<Expression> subs                                   "subscript expressions";
     input UnorderedMap<ComponentRef, Expression> replacements     "replacement map for iterator crefs";
-    output list<list<tuple<Integer, Integer>>> ranges             "tuple pairs (size, pos)";
+    output list<list<Integer>> values;
   protected
     list<Expression> replaced;
-    list<list<Integer>> values;
   algorithm
     // get all possible subscript combinations
     replaced := list(Expression.map(sub, function Replacements.applySimpleExp(replacements = replacements)) for sub in subs);
-    values := list(resolveDimensionsSubscript(tpl) for tpl in List.zip(replaced, sizes));
+    values := list(resolveDimensionsSubscript(exp, size) threaded for exp in replaced, size in sizes);
     values := List.combination(values);
-    ranges := list(List.zip(sizes, v) for v in values);
   end resolveDimensionsSubscripts;
 
   function resolveDimensionsSubscript
-    input tuple<Expression, Integer> tpl;
+    input Expression replaced;
+    input Integer size;
     output list<Integer> res;
   protected
     Expression rep;
-    Integer size;
   algorithm
-    (rep, size) := tpl;
-    rep := SimplifyExp.simplifyDump(rep, true, getInstanceName());
+    rep := SimplifyExp.simplifyDump(replaced, true, getInstanceName());
     res := match rep
       local
         Integer start, step, stop;
@@ -1733,7 +1732,7 @@ protected
 
       // resolve individual array elements
       case Expression.ARRAY()
-      then List.flatten(list(resolveDimensionsSubscript((e, size)) for e in rep.elements));
+      then List.flatten(list(resolveDimensionsSubscript(e, size) for e in rep.elements));
 
       // assume full dependency if it cannot be evaluated
       else List.intRange(size);
