@@ -785,7 +785,7 @@ end simplifySize;
 function simplifyMultary
   input output Expression exp;
 algorithm
-  exp := match combineBinaries(exp)
+  exp := match exp
     local
       Operator operator;
       list<Expression> arguments, inv_arguments, const_args, inv_const_args;
