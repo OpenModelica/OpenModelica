@@ -302,7 +302,7 @@ public
 
     function hash
       input Mode mode;
-      output Integer hash = stringHashDjb2(toString(mode));
+      output Integer hash = ComponentRef.hash(mode.eqn_name);
     end hash;
 
     function isEqual
@@ -346,7 +346,12 @@ public
 
     function keyHash
       input Key key;
-      output Integer hash = stringHashDjb2(keyString(key));
+      output Integer hash;
+    protected
+      Integer e,v;
+    algorithm
+      (e,v) := key;
+      hash := e * 31 + v;
     end keyHash;
 
     function keyEqual
