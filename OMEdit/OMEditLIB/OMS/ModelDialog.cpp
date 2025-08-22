@@ -58,14 +58,11 @@ SystemWidget::SystemWidget(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent)
   mpTypeLabel = new Label(Helper::type);
   mpTypeComboBox = new QComboBox;
   if (!pLibraryTreeItem || pLibraryTreeItem->isTopLevel()) {
-    mpTypeComboBox->addItem(Helper::systemTLM, oms_system_tlm);
     mpTypeComboBox->addItem(Helper::systemWC, oms_system_wc);
     mpTypeComboBox->addItem(Helper::systemSC, oms_system_sc);
     mpTypeComboBox->setCurrentIndex(1);
   } else if (pLibraryTreeItem->isSystemElement()) {
-    if (pLibraryTreeItem->isTLMSystem()) {
-      mpTypeComboBox->addItem(Helper::systemWC, oms_system_wc);
-    } else if (pLibraryTreeItem->isWCSystem()) {
+    if (pLibraryTreeItem->isWCSystem()) {
       mpTypeComboBox->addItem(Helper::systemSC, oms_system_sc);
     }
   }
@@ -317,11 +314,6 @@ AddSubModelDialog::AddSubModelDialog(GraphicsView *pGraphicsView, const QString 
   pMainLayout->addWidget(mpBrowsePathButton, 2, 2);
   pMainLayout->addWidget(mpNameLabel, 3, 0);
   pMainLayout->addWidget(mpNameTextBox, 3, 1, 1, 2);
-  if(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTLMSystem()) {
-    pMainLayout->addWidget(mpStartScriptLabel, 4, 0);
-    pMainLayout->addWidget(mpStartScriptTextBox, 4, 1);
-    pMainLayout->addWidget(mpBrowseStartScriptButton,4,2);
-  }
   pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 3, Qt::AlignRight);
   setLayout(pMainLayout);
   // Fixes issue #7150. Set the focus on the name instead of path.
@@ -338,9 +330,6 @@ AddSubModelDialog::AddSubModelDialog(GraphicsView *pGraphicsView, const QString 
 QString AddSubModelDialog::browseSubModelPath(GraphicsView *pGraphicsView, QString *pName)
 {
   QString fileTypes;
-  if (!pGraphicsView->getModelWidget()->getLibraryTreeItem()->isTLMSystem()) {
-    fileTypes = Helper::subModelFileTypes;
-  }
   QString path = StringHandler::getOpenFileName(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, fileTypes, NULL);
   QFileInfo fileInfo(path);
   if (fileInfo.exists()) {
@@ -386,11 +375,6 @@ void AddSubModelDialog::addSubModel()
     return;
   }
 
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTLMSystem() && mpStartScriptTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_SCRIPT), QMessageBox::Ok);
-    return;
-  }
-
   QFileInfo fileInfo(mpPathTextBox->text());
   if (!fileInfo.exists()) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Unable to find the SubModel file."), QMessageBox::Ok);
@@ -422,16 +406,7 @@ void AddSubModelDialog::addSubModel()
       failed = true;
     }
   } else {
-    if (OMSProxy::instance()->addExternalTLMModel(nameStructure, mpStartScriptTextBox->text(), fileInfo.absoluteFilePath())) {
-      if (mpGraphicsView->mContextMenuStartPositionValid) {
-        OMSProxy::instance()->createElementGeometryUsingPosition(nameStructure, mpGraphicsView->mContextMenuStartPosition);
-      }
-      mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Add external tlm model %1").arg(nameStructure));
-      mpGraphicsView->getModelWidget()->updateModelText();
-      accept();
-    } else {
-      failed = true;
-    }
+    failed = true;
   }
 
   if (failed) {

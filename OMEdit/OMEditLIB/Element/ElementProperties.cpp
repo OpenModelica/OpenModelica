@@ -1735,7 +1735,8 @@ void ElementParameters::fetchModifiers(ModelInstance::Modifier *pModifier)
   if (pModifier) {
     foreach (auto *pModifier, pModifier->getModifiers()) {
       Parameter *pParameter = findParameter(pModifier->getName());
-      applyFinalStartFixedAndDisplayUnitModifiers(pParameter, pModifier, mInherited || mNested, true);
+      // Pass false for isElementModification. See issue #14196.
+      applyFinalStartFixedAndDisplayUnitModifiers(pParameter, pModifier, mInherited || mNested, false);
     }
   }
 }

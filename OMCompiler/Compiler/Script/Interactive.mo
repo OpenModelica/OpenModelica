@@ -5452,7 +5452,7 @@ algorithm
     modification := InteractiveUtil.makeModifierFromArgs(bindingExp, modifier, info);
     (io, redecl, attr) := getDefaultPrefixes(program, typeName);
 
-    ty_path := AbsynUtil.pathStripSamePrefix(typeName, classPath);
+    SOME(ty_path) := AbsynUtil.pathStripSamePrefix(typeName, classPath);
 
     if AbsynUtil.pathContains(classPath, AbsynUtil.pathFirstIdent(ty_path)) then
       // Keep the full type name if the first identifier of the stripped name

@@ -59,6 +59,7 @@ PlotCurve::PlotCurve(const QString &fileName, const QString &absoluteFilePath, c
   setYDisplayUnit(yDisplayUnit);
   mCustomTitle = "";
   setToggleSign(false);
+  setYAxisRight(false);  // default to left y-axis
   setTitleLocal();
   /* set curve width and style */
   setCurveWidth(mpParentPlot->getParentPlotWindow()->getCurveWidth());
@@ -94,6 +95,10 @@ void PlotCurve::setTitleLocal()
     // Add - sign if curve is toggled
     if (getToggleSign()) {
       titleStr.prepend(QString("-"));
+    }
+     // Append right arrow if curve is plotted on right axis
+    if (isYAxisRight()) {
+      titleStr.append(QChar(0x2794)); 
     }
     setTitle(titleStr);
     // visibility
@@ -250,6 +255,16 @@ bool PlotCurve::hasCustomColor()
 void PlotCurve::toggleVisibility(bool visibility)
 {
   setVisible(visibility);
+}
+
+/*!
+ * \brief PlotCurve::setYAxisRight
+ * Assigns the curve to the right or left y-axis
+*/
+void PlotCurve::setYAxisRight(bool right)
+{
+    auto axis = right ? QwtPlot::yRight : QwtPlot::yLeft;
+    QwtPlotCurve::setYAxis(axis);
 }
 
 /*!

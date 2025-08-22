@@ -5097,7 +5097,6 @@ algorithm
   for e in inList loop
     if inFunc(e) then
       outResult := outResult + 1;
-      return;
     end if;
   end for;
 end count;

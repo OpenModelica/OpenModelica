@@ -3844,6 +3844,14 @@ template literalExpConst(Exp lit, Integer litindex) "These should all be declare
   let meta = 'static modelica_metatype const <%name%>'
 
   match lit
+  case RECORD(__) then
+    let &preExp = buffer ""
+    let &varDecls = buffer ""
+    let &auxFunction = buffer ""
+    let elements = (exps |> e => daeExp(e, contextOther, &preExp, &varDecls, &auxFunction);separator=", ")
+    <<
+    static const <%expTypeFlag(ty, 2)%> <%name%> = {<%elements%>};
+    >>
   case SCONST(__) then
     let escstr = Util.escapeModelicaStringToCString(string)
       /* TODO: Change this when OMC takes constant input arguments (so we cannot write to them)
@@ -3860,7 +3868,6 @@ template literalExpConst(Exp lit, Integer litindex) "These should all be declare
   case lit as MATRIX(ty=ty as T_ARRAY(__))
   case lit as ARRAY(ty=ty as T_ARRAY(__)) then
     let ndim = listLength(getDimensionSizes(ty))
-    let sty = expTypeShort(ty)
     let dims = (getDimensionSizes(ty) |> dim => dim ;separator=", ")
     let data = flattenArrayExpToList(lit) |> exp => literalExpConstArrayVal(exp) ; separator=", "
     <<
@@ -3873,8 +3880,8 @@ template literalExpConst(Exp lit, Integer litindex) "These should all be declare
     >>
     else
     <<
-    static const modelica_<%sty%> <%name%>_data[] = {<%data%>};
-    static <%sty%>_array const <%name%> = {
+    static const <%expTypeFlag(ty, 2)%> <%name%>_data[] = {<%data%>};
+    static <%expTypeFlag(ty, 4)%> const <%name%> = {
       <%ndim%>, <%name%>_dims, (void*) <%name%>_data, (modelica_boolean) 0
     };
     >>
@@ -3983,11 +3990,12 @@ end literalExpConstBoxedValPreLit;
 template literalExpConstArrayVal(Exp lit)
 ::=
   match lit
+    case SCONST(__) then '"<%Util.escapeModelicaStringToCString(string)%>"'
     case ICONST(__) then integer
-    case lit as BCONST(__) then boolStrC(lit.bool)
+    case BCONST(__) then boolStrC(bool)
     case RCONST(__) then real
     case ENUM_LITERAL(__) then index
-    case lit as SHARED_LITERAL(__) then '_OMC_LIT<%lit.index%>'
+    case SHARED_LITERAL(__) then '_OMC_LIT<%index%>'
     else error(sourceInfo(), 'literalExpConstArrayVal failed: <%ExpressionDumpTpl.dumpExp(lit,"\"")%>')
 end literalExpConstArrayVal;
 

@@ -1060,8 +1060,7 @@ void ShapeAnnotation::setShapeFlags(bool enable)
       && !mpGraphicsView->isVisualizationView() && !isInheritedShape()
       && !(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSSP()
            && (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSConnector()
-               || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()
-               || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSTLMBusConnector()))) {
+               || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()))) {
     setFlag(QGraphicsItem::ItemIsMovable, enable);
     setFlag(QGraphicsItem::ItemSendsGeometryChanges, enable);
   }

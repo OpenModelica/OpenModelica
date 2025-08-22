@@ -366,8 +366,8 @@ public
       var_slice := Slice.SLICE(var_ptr, {});
       eqn_slice := Slice.SLICE(eqn_ptr, {});
     else
-      var_slice := Slice.SLICE(var_ptr, list(idx - first_var for idx in listReverse(var_scal_indices)));
-      eqn_slice := Slice.SLICE(eqn_ptr, list(idx - first_eqn for idx in listReverse(eqn_scal_indices)));
+      var_slice := Slice.SLICE(var_ptr, list(idx - first_var for idx in var_scal_indices));
+      eqn_slice := Slice.SLICE(eqn_ptr, list(idx - first_eqn for idx in eqn_scal_indices));
     end if;
 
     // check if it is a resizable component

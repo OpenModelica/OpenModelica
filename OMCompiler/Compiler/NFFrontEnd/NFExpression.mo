@@ -4669,17 +4669,12 @@ public
   function isLiteralReplace
     input Expression exp;
     output Boolean b;
-  protected
-    function isLiteralReplaceElement
-      "mock function to not change isLiteral()"
-      input Expression exp;
-      output Boolean b = not Expression.isRecord(exp) and Expression.isLiteral(exp);
-    end isLiteralReplaceElement;
   algorithm
     b := match exp
       case STRING()         then true;
       case BOX(STRING())    then true;
-      case ARRAY()          then exp.literal or Array.all(exp.elements, isLiteralReplaceElement);
+      case RECORD()         then isLiteral(exp);
+      case ARRAY()          then isLiteral(exp);
       else false;
     end match;
   end isLiteralReplace;
@@ -6567,33 +6562,58 @@ public
     input UnorderedMap<Expression, Integer> map;
     input Pointer<Integer> idx_ptr;
   protected
-    Integer idx;
-    Option<Integer> idx_opt;
-    Expression new_exp;
+    function replace
+      input output Expression exp;
+      input UnorderedMap<Expression, Integer> map;
+      input Pointer<Integer> idx_ptr;
+    protected
+      Integer idx;
+      Option<Integer> idx_opt;
+    algorithm
+      idx_opt := UnorderedMap.get(exp, map);
+      if Util.isSome(idx_opt) then
+        // this literal already exists
+        idx := Util.getOption(idx_opt);
+      else
+        // new literal found
+        idx := Pointer.access(idx_ptr);
+        Pointer.update(idx_ptr, idx + 1);
+        UnorderedMap.add(exp, idx, map);
+      end if;
+      exp := SHARED_LITERAL(idx, exp);
+    end replace;
   algorithm
     exp := match exp
-      // replace literal expressions that are not trivial
-      case _ guard(isLiteralReplace(exp)) algorithm
-        idx_opt := UnorderedMap.get(exp, map);
-        if Util.isSome(idx_opt) then
-          // this literal already exists
-          idx := Util.getOption(idx_opt);
-        else
-          // new literal found
-          idx := Pointer.access(idx_ptr);
-          Pointer.update(idx_ptr, idx + 1);
-          UnorderedMap.add(exp, idx, map);
-        end if;
-        new_exp := SHARED_LITERAL(idx, exp);
-      then new_exp;
-
       // do nothing on shared literal
-      case Expression.SHARED_LITERAL() then exp;
+      case Expression.SHARED_LITERAL()          then exp;
+
+      // replace literal array expressions that are not trivial
+      case ARRAY() guard(isLiteralReplace(exp)) then replace(replaceLiteralArrayElements(exp, map, idx_ptr), map, idx_ptr);
+
+      case RECORD() guard(isLiteralReplace(exp)) algorithm
+        exp.elements := list(replaceLiteral(elem, map, idx_ptr) for elem in exp.elements);
+      then replace(exp, map, idx_ptr);
+
+      // replace literal expressions that are not trivial
+      case _ guard(isLiteralReplace(exp))       then replace(exp, map, idx_ptr);
 
       // map down for other expressions
       else Expression.mapShallow(exp, function replaceLiteral(map = map, idx_ptr = idx_ptr));
     end match;
   end replaceLiteral;
+
+  function replaceLiteralArrayElements
+    input output Expression exp;
+    input UnorderedMap<Expression, Integer> map;
+    input Pointer<Integer> idx_ptr;
+  algorithm
+    exp := match exp
+      case ARRAY() algorithm
+        exp.elements := Array.map(exp.elements, function replaceLiteralArrayElements(map = map, idx_ptr = idx_ptr));
+      then exp;
+      else replaceLiteral(exp, map, idx_ptr);
+    end match;
+  end replaceLiteralArrayElements;
 
   function replaceResizableParameter
     input output Expression exp;

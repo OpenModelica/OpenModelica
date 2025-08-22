@@ -210,7 +210,6 @@ public
           Subscript sub;
           list<list<Subscript>> subs_lst;
           list<Integer> slice = {}, dim_sizes, values;
-          list<tuple<Integer, Integer>> ranges;
 
         // no subscripts -> create full index list
         case {} then subscriptedIndices(start, length, {});
@@ -230,8 +229,7 @@ public
           dim_sizes := list(Dimension.size(dim) for dim in dims);
           for sub_lst in listReverse(subs_lst) loop
             values  := list(Subscript.toInteger(s) for s in sub_lst);
-            ranges  := List.zip(dim_sizes, values);
-            slice   := Slice.locationToIndex(ranges, start) :: slice;
+            slice   := Slice.locationToIndex(dim_sizes, values, start) :: slice;
           end for;
         then slice;
 
@@ -302,7 +300,7 @@ public
 
     function hash
       input Mode mode;
-      output Integer hash = stringHashDjb2(toString(mode));
+      output Integer hash = ComponentRef.hash(mode.eqn_name);
     end hash;
 
     function isEqual
@@ -346,7 +344,12 @@ public
 
     function keyHash
       input Key key;
-      output Integer hash = stringHashDjb2(keyString(key));
+      output Integer hash;
+    protected
+      Integer e,v;
+    algorithm
+      (e,v) := key;
+      hash := e * 31 + v;
     end keyHash;
 
     function keyEqual

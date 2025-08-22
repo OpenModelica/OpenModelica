@@ -722,7 +722,6 @@ public slots:
   void deleteIcon();
   void addConnector();
   void addBus();
-  void addTLMBus();
   void addSubModel();
 };
 

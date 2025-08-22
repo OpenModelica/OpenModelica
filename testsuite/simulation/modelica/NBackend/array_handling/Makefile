@@ -12,11 +12,11 @@ for_if.mos\
 Resizable_HeatTransfer_equations.mos\
 testVectorizedSolarSystem.mos\
 testVectorizedPowerSystem.mos\
+exemplary.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
-exemplary.mos\
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

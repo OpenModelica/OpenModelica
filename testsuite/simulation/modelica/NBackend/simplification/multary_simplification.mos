@@ -4,10 +4,11 @@
 
 loadString("
   model multary_simplification
-    Real x, y;
+    Real x, y, z;
   equation
     x = 2 * (time + (-4) - 3);
     y = time * (-2) * 4 * 1;
+    z = (time + y - time)/(y);
   end multary_simplification;
 "); getErrorString();
 
@@ -18,6 +19,10 @@ simulate(multary_simplification); getErrorString();
 // true
 // ""
 // true
+// ### dumpSimplify | NBackendDAE.simplify ###
+// [BEFORE] ((y + time) - time) / y
+// [AFTER ] 1.0
+//
 // ### dumpSimplify | NBackendDAE.simplify ###
 // [BEFORE] (-2.0) * time * 4.0
 // [AFTER ] -8.0 * time

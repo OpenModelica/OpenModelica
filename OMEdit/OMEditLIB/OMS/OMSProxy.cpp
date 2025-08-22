@@ -183,8 +183,6 @@ void OMSProxy::logResponse(QString command, oms_status_enu_t status, QElapsedTim
 QString OMSProxy::getSystemTypeString(oms_system_enu_t type)
 {
   switch (type) {
-    case oms_system_tlm:
-      return Helper::systemTLM;
     case oms_system_wc:
       return Helper::systemWC;
     case oms_system_sc:
@@ -204,8 +202,6 @@ QString OMSProxy::getSystemTypeString(oms_system_enu_t type)
 QString OMSProxy::getSystemTypeShortString(oms_system_enu_t type)
 {
   switch (type) {
-    case oms_system_tlm:
-      return "TLM";
     case oms_system_wc:
       return "WC";
     case oms_system_sc:
@@ -281,27 +277,6 @@ QString OMSProxy::getCausalityString(oms_causality_enu_t causality)
     case oms_causality_parameter:
       return "Parameter";
     case oms_causality_undefined:
-    default:
-      // should never be reached
-      return "";
-  }
-}
-
-/*!
- * \brief OMSProxy::getInterpolationString
- * Returns the oms_tlm_interpolation_t as string.
- * \param interpolation
- * \return
- */
-QString OMSProxy::getInterpolationString(oms_tlm_interpolation_t interpolation)
-{
-  switch (interpolation) {
-    case oms_tlm_no_interpolation:
-      return "No interpolation";
-    case oms_tlm_coarse_grained:
-      return "Coarse grained";
-    case oms_tlm_fine_grained:
-      return "Fine grained";
     default:
       // should never be reached
       return "";
@@ -399,26 +374,6 @@ bool OMSProxy::addConnectorToBus(QString busCref, QString connectorCref)
 }
 
 /*!
- * \brief OMSProxy::addConnectorToTLMBus
- * Adds a connector to a tlm bus.
- * \param busCref
- * \param connectorCref
- * \param type
- * \return
- */
-bool OMSProxy::addConnectorToTLMBus(QString busCref, QString connectorCref, QString type)
-{
-  QString command = "oms_addConnectorToTLMBus";
-  QStringList args;
-  args << busCref << connectorCref << type;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_addConnectorToTLMBus(busCref.toUtf8().constData(), connectorCref.toUtf8().constData(),
-                                                     type.toUtf8().constData());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
  * \brief OMSProxy::addSubModel
  * Adds the submodel to the system
  * \param busCref
@@ -481,17 +436,6 @@ void OMSProxy::createElementGeometryUsingPosition(const QString &cref, QPointF p
   setElementGeometry(cref, &elementGeometry);
 }
 
-bool OMSProxy::addExternalTLMModel(QString cref, QString startScript, QString modelPath)
-{
-    QString command = "oms_addExternalModel";
-    QStringList args;
-    args << "\"" + cref + "\"" << modelPath << "\"" << startScript;
-    LOG_COMMAND(command, args);
-    oms_status_enu_t status = oms_addExternalModel(cref.toUtf8().constData(), modelPath.toUtf8().constData(), startScript.toUtf8().constData());
-    logResponse(command, status, &commandTime);
-    return statusToBool(status);
-}
-
 /*!
  * \brief OMSProxy::addSystem
  * Adds a system to a model.
@@ -506,50 +450,6 @@ bool OMSProxy::addSystem(QString cref, oms_system_enu_t type)
   args << "\"" + cref + "\"" << QString::number(type);
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms_addSystem(cref.toUtf8().constData(), type);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::addTLMBus
- * Adds a tlm bus.
- * \param cref
- * \param domain
- * \param dimensions
- * \param interpolation
- * \return
- */
-bool OMSProxy::addTLMBus(QString cref, oms_tlm_domain_t domain, int dimensions, const oms_tlm_interpolation_t interpolation)
-{
-  QString command = "oms_addTLMBus";
-  QStringList args;
-  args << "\"" + cref + "\"" << QString::number(domain) << QString::number(dimensions) << QString::number(interpolation);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_addTLMBus(cref.toUtf8().constData(), domain, dimensions, interpolation);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::addTLMConnection
- * Adds a TLM connection.
- * \param crefA
- * \param crefB
- * \param delay
- * \param alpha
- * \param linearimpedance
- * \param angularimpedance
- * \return
- */
-bool OMSProxy::addTLMConnection(QString crefA, QString crefB, double delay, double alpha, double linearimpedance, double angularimpedance)
-{
-  QString command = "oms_addTLMConnection";
-  QStringList args;
-  args << "\"" + crefA + "\"" << "\"" + crefB + "\"" << QString::number(delay) << QString::number(alpha)
-       << QString::number(linearimpedance) << QString::number(angularimpedance);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_addTLMConnection(crefA.toUtf8().constData(), crefB.toUtf8().constData(), delay, alpha,
-                                                 linearimpedance, angularimpedance);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -586,24 +486,6 @@ bool OMSProxy::deleteConnectorFromBus(QString busCref, QString connectorCref)
   args << busCref << connectorCref;
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms_deleteConnectorFromBus(busCref.toUtf8().constData(), connectorCref.toUtf8().constData());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::deleteConnectorFromTLMBus
- * Deletes a connector from a tlm bus.
- * \param busCref
- * \param connectorCref
- * \return
- */
-bool OMSProxy::deleteConnectorFromTLMBus(QString busCref, QString connectorCref)
-{
-  QString command = "oms_deleteConnectorFromTLMBus";
-  QStringList args;
-  args << busCref << connectorCref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_deleteConnectorFromTLMBus(busCref.toUtf8().constData(), connectorCref.toUtf8().constData());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -771,24 +653,6 @@ bool OMSProxy::getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo)
 }
 
 /*!
- * \brief OMSProxy::getFMUInfo
- * Gets the FMU info.
- * \param cref
- * \param pFmuInfo
- * \return
- */
-bool OMSProxy::getExternalTLMModelInfo(QString cref, const oms_external_tlm_model_info_t** pExternalTLMModelInfo)
-{
-  QString command = "getExternalTLMModelInfo";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getExternalModelInfo(cref.toUtf8().constData(), pExternalTLMModelInfo);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
  * \brief OMSProxy::getInteger
  * Gets the integer variable value.
  * \param cref
@@ -935,46 +799,6 @@ bool OMSProxy::getSystemType(QString cref, oms_system_enu_t *pType)
 }
 
 /*!
- * \brief OMSProxy::getTLMBus
- * Gets the bus.
- * \param cref
- * \param pTLMBusConnector
- * \return
- */
-bool OMSProxy::getTLMBus(QString cref, oms_tlmbusconnector_t **pTLMBusConnector)
-{
-  QString command = "oms_getTLMBus";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getTLMBus(cref.toUtf8().constData(), pTLMBusConnector);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::getTLMVariableTypes
- * Gets the TLM variables types based on the domain, dimensions and interpoation.
- * \param domain
- * \param dimensions
- * \param interpolation
- * \param types
- * \param descriptions
- * \return
- */
-bool OMSProxy::getTLMVariableTypes(oms_tlm_domain_t domain, const int dimensions, const oms_tlm_interpolation_t interpolation,
-                                   char ***types, char ***descriptions)
-{
-  QString command = "oms_getTLMVariableTypes";
-  QStringList args;
-  args << QString::number(domain) << QString::number(dimensions) << QString::number(interpolation);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getTLMVariableTypes(domain, dimensions, interpolation, types, descriptions);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
  * \brief OMSProxy::getTolerance
  * Gets the tolerance.
  * \param cref
@@ -1032,7 +856,7 @@ bool OMSProxy::instantiate(QString cref)
 
 /*!
  * \brief OMSProxy::initialize
- * Initializes a model (works for both FMI and TLM).
+ * Initializes a model.
  * \param cref
  * \return
  */
@@ -1504,63 +1328,6 @@ void OMSProxy::setTempDirectory(QString path)
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms_setTempDirectory(path.toUtf8().constData());
   logResponse(command, status, &commandTime);
-}
-
-/*!
- * \brief OMSProxy::setTLMBusGeometry
- * Sets the tlm bus geometry.
- * \param cref
- * \param pGeometry
- * \return
- */
-bool OMSProxy::setTLMBusGeometry(QString cref, const ssd_connector_geometry_t* pGeometry)
-{
-  QString command = "oms_setTLMBusGeometry";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setTLMBusGeometry(cref.toUtf8().constData(), pGeometry);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setTLMConnectionParameters
- * Sets the TLM parameters of a connection.
- * \param crefA
- * \param crefB
- * \param pParameters
- * \return
- */
-bool OMSProxy::setTLMConnectionParameters(QString crefA, QString crefB, const oms_tlm_connection_parameters_t *pParameters)
-{
-  QString command = "oms_setTLMConnectionParameters";
-  QStringList args;
-  args << "\"" + crefA + "\"" << "\"" + crefB + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setTLMConnectionParameters(crefA.toUtf8().constData(), crefB.toUtf8().constData(), pParameters);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setTLMSocketData
- * Sets the TLM system socket data.
- * \param cref
- * \param address
- * \param managerPort
- * \param monitorPort
- * \return
- */
-bool OMSProxy::setTLMSocketData(QString cref, QString address, int managerPort, int monitorPort)
-{
-  QString command = "oms_setTLMSocketData";
-  QStringList args;
-  args << "\"" + cref + "\"" << address << QString::number(managerPort) << QString::number(monitorPort);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setTLMSocketData(cref.toUtf8().constData(), address.toUtf8().constData(), managerPort, monitorPort);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
 }
 
 /*!

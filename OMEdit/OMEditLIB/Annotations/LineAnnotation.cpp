@@ -1366,10 +1366,6 @@ void LineAnnotation::showOMSConnection()
       && (mpEndElement && mpEndElement->getLibraryTreeItem()->getOMSBusConnector())) {
     BusConnectionDialog *pBusConnectionDialog = new BusConnectionDialog(mpGraphicsView, this, false);
     pBusConnectionDialog->exec();
-  } else if ((mpStartElement && mpStartElement->getLibraryTreeItem()->getOMSTLMBusConnector())
-             && (mpEndElement && mpEndElement->getLibraryTreeItem()->getOMSTLMBusConnector())) {
-    TLMConnectionDialog *pTLMBusConnectionDialog = new TLMConnectionDialog(mpGraphicsView, this, false);
-    pTLMBusConnectionDialog->exec();
   }
 }
 
@@ -1414,8 +1410,7 @@ void LineAnnotation::handleCollidingConnections()
   for (int i = 0; i < items.size(); ++i) {
     if (Element *pElement = dynamic_cast<Element*>(items.at(i))) {
       if (pElement->isConnector()
-          || (pElement->getLibraryTreeItem() && (pElement->getLibraryTreeItem()->getOMSConnector() || pElement->getLibraryTreeItem()->getOMSBusConnector()
-                                                 || pElement->getLibraryTreeItem()->getOMSTLMBusConnector()))) {
+          || (pElement->getLibraryTreeItem() && (pElement->getLibraryTreeItem()->getOMSConnector() || pElement->getLibraryTreeItem()->getOMSBusConnector()))) {
         mCollidingConnectorElements.append(pElement);
       }
     } else if (LineAnnotation *pConnectionAnnotation = dynamic_cast<LineAnnotation*>(items.at(i))) {
