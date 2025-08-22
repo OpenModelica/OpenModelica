@@ -13535,7 +13535,7 @@ algorithm
     local
       DAE.Exp lhs;
       DAE.ComponentRef cref;
-      list<DAE.ComponentRef> crefs,crefs2;
+      list<DAE.ComponentRef> crefs, crefs2;
       list<SimCodeVar.SimVar> simVars;
       list<SimCode.SimEqSystem> residual;
     case(SimCode.SES_RESIDUAL())
@@ -13586,18 +13586,27 @@ algorithm
       then crefs;
     case(SimCode.SES_MIXED(discVars=simVars))
       then list(SimCodeFunctionUtil.varName(v) for v in simVars);
-    case(SimCode.SES_WHEN(whenStmtLst={BackendDAE.ASSIGN(left=lhs)}))
-      equation
-        crefs = Expression.getAllCrefs(lhs);
+    case(SimCode.SES_WHEN())
+      algorithm
+        crefs := match simEqSys.whenStmtLst
+          case {BackendDAE.ASSIGN(left = lhs)} then Expression.getAllCrefs(lhs);
+          case {BackendDAE.REINIT(stateVar = cref)} then {cref};
+          case {BackendDAE.ASSERT()} then {};
+          case {BackendDAE.TERMINATE()} then {};
+          case {BackendDAE.NORETCALL()} then {};
+          else algorithm
+            print("implement unknown case for SES_WHEN in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+          then {};
+        end match;
+        if Util.isSome(simEqSys.elseWhen) then
+          crefs2 := getSimEqSystemCrefsLHS(Util.getOption(simEqSys.elseWhen));
+          crefs := listAppend(crefs2, crefs);
+        end if;
       then crefs;
-    case(SimCode.SES_FOR_LOOP())
-      equation
-        print("implement SES_FOR_LOOP in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
-      then {};
+    case(SimCode.SES_FOR_LOOP(cref = cref))
+      then {cref};
     case(SimCode.SES_FOR_EQUATION())
-      equation
-        print("implement SES_FOR_EQUATION in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
-      then {};
+      then listAppend(getSimEqSystemCrefsLHS(b) for b in simEqSys.body);
     case(SimCode.SES_ALIAS())
       equation
         print("implement SES_ALIAS in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
@@ -13619,23 +13628,19 @@ protected function getSimEqSystemCrefsRHS "gets the crefs of the vars that are u
 algorithm
   crefsOut := match(simEqSys)
     local
-      DAE.Exp rhs;
-      DAE.ComponentRef cref;
-      list<DAE.ComponentRef> crefs,crefs2;
-      list<SimCodeVar.SimVar> simVars;
-      list<SimCode.SimEqSystem> residual;
-    case SimCode.SES_RESIDUAL() algorithm
-      Error.addInternalError("failed for SES_RESIDUAL", sourceInfo());
-    then fail();
-    case SimCode.SES_FOR_RESIDUAL() algorithm
-      Error.addInternalError("failed for SES_FOR_RESIDUAL", sourceInfo());
-    then fail();
-    case SimCode.SES_GENERIC_RESIDUAL() algorithm
-      Error.addInternalError("failed for SES_GENERIC_RESIDUAL", sourceInfo());
-    then fail();
-    case SimCode.SES_SIMPLE_ASSIGN(exp=rhs) then Expression.getAllCrefs(rhs);
-    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(exp=rhs) then Expression.getAllCrefs(rhs);
-    case SimCode.SES_ARRAY_CALL_ASSIGN(exp=rhs) then Expression.getAllCrefs(rhs);
+      list<DAE.ComponentRef> crefs, crefs2;
+    case SimCode.SES_RESIDUAL()
+      then Expression.getAllCrefs(simEqSys.exp);
+    case SimCode.SES_FOR_RESIDUAL()
+      then Expression.getAllCrefs(simEqSys.exp);
+    case SimCode.SES_GENERIC_RESIDUAL()
+      then Expression.getAllCrefs(simEqSys.exp);
+    case SimCode.SES_SIMPLE_ASSIGN()
+      then Expression.getAllCrefs(simEqSys.exp);
+    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS()
+      then Expression.getAllCrefs(simEqSys.exp);
+    case SimCode.SES_ARRAY_CALL_ASSIGN()
+      then Expression.getAllCrefs(simEqSys.exp);
     case SimCode.SES_RESIZABLE_ASSIGN() algorithm
       Error.addInternalError("failed for SES_RESIZABLE_ASSIGN", sourceInfo());
     then fail();
@@ -13663,14 +13668,30 @@ algorithm
     case SimCode.SES_MIXED() algorithm
       Error.addInternalError("failed for SES_MIXED", sourceInfo());
     then fail();
-    case SimCode.SES_WHEN(whenStmtLst={BackendDAE.ASSIGN(right=rhs)})
-    then Expression.getAllCrefs(rhs);
-    case SimCode.SES_FOR_LOOP() algorithm
-      Error.addInternalError("failed for SES_FOR_LOOP", sourceInfo());
-    then fail();
-    case SimCode.SES_FOR_EQUATION() algorithm
-      Error.addInternalError("failed for SES_FOR_EQUATION", sourceInfo());
-    then fail();
+    case SimCode.SES_WHEN()
+      algorithm
+        crefs := match simEqSys.whenStmtLst
+          local
+            DAE.Exp e1, e2, e3;
+          case {BackendDAE.ASSIGN(right = e1)} then Expression.getAllCrefs(e1);
+          case {BackendDAE.REINIT(value = e1)} then Expression.getAllCrefs(e1);
+          case {BackendDAE.ASSERT(condition = e1, message = e2, level = e3)}
+            then listAppend(Expression.getAllCrefs(e) for e in {e1, e2, e3});
+          case {BackendDAE.TERMINATE(message = e1)} then Expression.getAllCrefs(e1);
+          case {BackendDAE.NORETCALL(exp = e1)} then Expression.getAllCrefs(e1);
+          else algorithm
+            Error.addInternalError("failed for SES_WHEN", sourceInfo());
+          then fail();
+        end match;
+        if Util.isSome(simEqSys.elseWhen) then
+          crefs2 := getSimEqSystemCrefsRHS(Util.getOption(simEqSys.elseWhen));
+          crefs := listAppend(crefs2, crefs);
+        end if;
+      then crefs;
+    case SimCode.SES_FOR_LOOP()
+      then Expression.getAllCrefs(simEqSys.exp);
+    case SimCode.SES_FOR_EQUATION()
+      then listAppend(getSimEqSystemCrefsRHS(b) for b in simEqSys.body);
     case SimCode.SES_ALIAS() algorithm
       Error.addInternalError("failed for SES_ALIAS", sourceInfo());
     then fail();
