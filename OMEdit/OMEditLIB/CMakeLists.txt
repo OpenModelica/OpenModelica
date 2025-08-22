@@ -298,6 +298,25 @@ else()
   qt5_add_translation(OMEDITLIB_TRANSLATIONS ${TS_FILES})
 endif()
 
+# Attempts to detect version of OMSimulator by parsing its Version.cpp file.
+#  This is being done to accomodate an API change in version 3.0 that
+#  removed absolute tolerance setting.
+set(OMS_SHORT_VERSION_STRING "unknown")
+if(EXISTS "${CMAKE_BINARY_DIR}/OMSimulator/src/OMSimulatorLib/Version.cpp")
+   file(READ "${CMAKE_BINARY_DIR}/OMSimulator/src/OMSimulatorLib/Version.cpp" OMS_VERSIONCPP_CONTENT)
+   string(REGEX MATCH "OMSimulator v([0-9]+(\.[0-9]+)*)" OMS_VERSIONCPP_CONTENT_MATCH "${OMS_VERSIONCPP_CONTENT}")
+   if(NOT "${CMAKE_MATCH_1}" STREQUAL "")
+      set(OMS_SHORT_VERSION_STRING "${CMAKE_MATCH_1}")
+   endif()
+endif()
+message(STATUS "OMSimulator version detected: ${OMS_SHORT_VERSION_STRING}")
+
+# Asume that for major versions equal 2, OMSimulator api has absolute tolerance settings.
+#   Otherwise, assume no absolute tolerance
+if("${OMS_SHORT_VERSION_STRING}" MATCHES "^2")
+   add_compile_definitions(OMS_HAS_ABSOLUTETOLERANCE)
+endif()
+
 # Add the OpenModelica generated files to sources
 set(OMEDITLIB_HEADERS ${OMEDITLIB_HEADERS} ${OMCompiler_SOURCE_DIR}/Compiler/Script/OpenModelicaScriptingAPIQt.h)
 set(OMEDITLIB_SOURCES ${OMEDITLIB_SOURCES} ${OMCompiler_SOURCE_DIR}/Compiler/Script/OpenModelicaScriptingAPIQt.cpp)

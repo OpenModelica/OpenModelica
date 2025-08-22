@@ -78,20 +78,29 @@ SystemSimulationInformationWidget::SystemSimulationInformationWidget(ModelWidget
       mpMinimumStepSizeTextBox->setText(QString::number(minimumStepSize));
       mpMaximumStepSizeTextBox->setText(QString::number(maximumStepSize));
     }
+#ifdef OMS_HAS_ABSOLUTETOLERANCE
     // absolute tolerance
     mpAbsoluteToleranceLabel = new Label("Absolute Tolerance:");
     mpAbsoluteToleranceTextBox = new QLineEdit;
     mpAbsoluteToleranceTextBox->setValidator(pDoubleValidator);
+#endif
     // relative tolerance
     mpRelativeToleranceLabel = new Label("Relative Tolerance:");
     mpRelativeToleranceTextBox = new QLineEdit;
     mpRelativeToleranceTextBox->setValidator(pDoubleValidator);
 
+#ifdef OMS_HAS_ABSOLUTETOLERANCE
     double absoluteTolerance, relativeTolerance;
     if (OMSProxy::instance()->getTolerance(mpModelWidget->getLibraryTreeItem()->getNameStructure(), &absoluteTolerance, &relativeTolerance)) {
       mpAbsoluteToleranceTextBox->setText(QString::number(absoluteTolerance));
       mpRelativeToleranceTextBox->setText(QString::number(relativeTolerance));
     }
+#else
+    double relativeTolerance;
+    if (OMSProxy::instance()->getTolerance(mpModelWidget->getLibraryTreeItem()->getNameStructure(),&relativeTolerance)) {
+      mpRelativeToleranceTextBox->setText(QString::number(relativeTolerance));
+    }
+#endif
   }
 
   if (mpModelWidget->getLibraryTreeItem()->isWCSystem()) { // oms_system_wc
@@ -131,8 +140,10 @@ SystemSimulationInformationWidget::SystemSimulationInformationWidget(ModelWidget
     pMainLayout->addWidget(mpMinimumStepSizeTextBox, row++, 1);
     pMainLayout->addWidget(mpMaximumStepSizeLabel, row, 0);
     pMainLayout->addWidget(mpMaximumStepSizeTextBox, row++, 1);
+#ifdef OMS_HAS_ABSOLUTETOLERANCE
     pMainLayout->addWidget(mpAbsoluteToleranceLabel, row, 0);
     pMainLayout->addWidget(mpAbsoluteToleranceTextBox, row++, 1);
+#endif
     pMainLayout->addWidget(mpRelativeToleranceLabel, row, 0);
     pMainLayout->addWidget(mpRelativeToleranceTextBox, row++, 1);
   }
@@ -209,12 +220,13 @@ bool SystemSimulationInformationWidget::setSystemSimulationInformation(bool push
         }
         break;
     }
-
+#ifdef OMS_HAS_ABSOLUTETOLERANCE
     if (mpAbsoluteToleranceTextBox->text().isEmpty()) {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                             GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Absolute Tolerance"), QMessageBox::Ok);
       return false;
     }
+#endif
 
     if (mpRelativeToleranceTextBox->text().isEmpty()) {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
@@ -250,9 +262,14 @@ bool SystemSimulationInformationWidget::setSystemSimulationInformation(bool push
         break;
     }
     // set tolerance
+#ifdef OMS_HAS_ABSOLUTETOLERANCE
     if (!OMSProxy::instance()->setTolerance(cref, mpAbsoluteToleranceTextBox->text().toDouble(), mpRelativeToleranceTextBox->text().toDouble())) {
+#else
+    if (!OMSProxy::instance()->setTolerance(cref, mpRelativeToleranceTextBox->text().toDouble())) {
+#endif
       return false;
     }
+
   }
   // push on stack
   if (pushOnStack) {

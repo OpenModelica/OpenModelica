@@ -99,7 +99,11 @@ public:
   bool getStopTime(QString cref, double* stopTime);
   bool getSubModelPath(QString cref, QString* pPath);
   bool getSystemType(QString cref, oms_system_enu_t *pType);
+#ifdef OMS_HAS_ABSOLUTETOLERANCE
   bool getTolerance(QString cref, double* absoluteTolerance, double* relativeTolerance);
+#else
+  bool getTolerance(QString cref, double* relativeTolerance);
+#endif
   bool getVariableStepSize(QString cref, double* initialStepSize, double* minimumStepSize, double* maximumStepSize);
   bool instantiate(QString cref);
   bool initialize(QString cref);
@@ -129,7 +133,11 @@ public:
   bool setStartTime(QString cref, double startTime);
   bool setStopTime(QString cref, double stopTime);
   void setTempDirectory(QString path);
+#ifdef OMS_HAS_ABSOLUTETOLERANCE
   bool setTolerance(QString cref, double absoluteTolerance, double relativeTolerance);
+#else
+  bool setTolerance(QString cref, double relativeTolerance);
+#endif
   bool setVariableStepSize(QString cref, double initialStepSize, double minimumStepSize, double maximumStepSize);
   void setWorkingDirectory(QString path);
   bool terminate(QString cref);

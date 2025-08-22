@@ -70,8 +70,10 @@ private:
   QLineEdit *mpMinimumStepSizeTextBox;
   Label *mpMaximumStepSizeLabel;
   QLineEdit *mpMaximumStepSizeTextBox;
+#ifdef OMS_HAS_ABSOLUTETOLERANCE
   Label *mpAbsoluteToleranceLabel;
   QLineEdit *mpAbsoluteToleranceTextBox;
+#endif
   Label *mpRelativeToleranceLabel;
   QLineEdit *mpRelativeToleranceTextBox;
 private slots:

@@ -798,6 +798,7 @@ bool OMSProxy::getSystemType(QString cref, oms_system_enu_t *pType)
   return statusToBool(status);
 }
 
+#ifdef OMS_HAS_ABSOLUTETOLERANCE
 /*!
  * \brief OMSProxy::getTolerance
  * Gets the tolerance.
@@ -816,6 +817,25 @@ bool OMSProxy::getTolerance(QString cref, double *absoluteTolerance, double *rel
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
+#else // OMS_HAS_ABSOLUTETOLERANCE
+/*!
+ * \brief OMSProxy::getTolerance
+ * Gets the tolerance.
+ * \param cref
+ * \param relativeTolerance
+ * \return
+ */
+bool OMSProxy::getTolerance(QString cref, double *relativeTolerance)
+{
+  QString command = "oms_getTolerance";
+  QStringList args;
+  args << "\"" + cref + "\"";
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms_getTolerance(cref.toUtf8().constData(), relativeTolerance);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+#endif // OMS_HAS_ABSOLUTETOLERANCE
 
 /*!
  * \brief OMSProxy::getVariableStepSize
@@ -1330,11 +1350,13 @@ void OMSProxy::setTempDirectory(QString path)
   logResponse(command, status, &commandTime);
 }
 
+#ifdef OMS_HAS_ABSOLUTETOLERANCE
 /*!
  * \brief OMSProxy::setTolerance
  * Sets the tolerance.
  * \param cref
- * \param tolerance
+ * \param absoluteTolerance
+ * \param relativeTolerance
  * \return
  */
 bool OMSProxy::setTolerance(QString cref, double absoluteTolerance, double relativeTolerance)
@@ -1347,6 +1369,26 @@ bool OMSProxy::setTolerance(QString cref, double absoluteTolerance, double relat
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
+#else // OMS_HAS_ABSOLUTETOLERANCE
+/*!
+ * \brief OMSProxy::setTolerance
+ * Sets the tolerance.
+ * \param cref
+ * \param absoluteTolerance
+ * \param relativeTolerance
+ * \return
+ */
+bool OMSProxy::setTolerance(QString cref, double relativeTolerance)
+{
+  QString command = "oms_setTolerance";
+  QStringList args;
+  args << "\"" + cref + "\"" << QString::number(relativeTolerance);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms_setTolerance(cref.toUtf8().constData(), relativeTolerance);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+#endif // OMS_HAS_ABSOLUTETOLERANCE
 
 /*!
  * \brief OMSProxy::setVariableStepSize
