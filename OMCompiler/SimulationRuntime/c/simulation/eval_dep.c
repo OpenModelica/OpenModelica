@@ -43,10 +43,20 @@ EVAL_DAG* allocEvalDAG(size_t nVars, size_t nEqns)
   EVAL_DAG* dag = (EVAL_DAG*) malloc(sizeof(EVAL_DAG));
   dag->nVars = nVars;
   dag->nEqns = nEqns;
-  dag->mapVarToEqNode = (size_t*) malloc(nVars*sizeof(size_t));
-  dag->nEqDep = (size_t*) calloc(nEqns, sizeof(size_t));
-  dag->eqDep = (size_t**) calloc(nEqns, sizeof(size_t*));
-  dag->select = (modelica_boolean*) calloc(nEqns, sizeof(modelica_boolean));
+  if (nVars != 0) {
+    dag->mapVarToEqNode = (size_t*) malloc(nVars*sizeof(size_t));
+  } else {
+    dag->mapVarToEqNode = NULL;
+  }
+  if (nEqns != 0 ) {
+    dag->nEqDep = (size_t*) calloc(nEqns, sizeof(size_t));
+    dag->eqDep = (size_t**) calloc(nEqns, sizeof(size_t*));
+    dag->select = (modelica_boolean*) calloc(nEqns, sizeof(modelica_boolean));
+  } else {
+    dag->nEqDep = NULL;
+    dag->eqDep = NULL;
+    dag->select = NULL;
+  }
 
   /*
   workaround, some JACOBIAN_TMP_VAR variables seem to miss an equation in which

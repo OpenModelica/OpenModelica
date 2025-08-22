@@ -13448,16 +13448,10 @@ end getAssignedCrefsOfSimEq;
 public function getSimEqSystemSimVarsLHS
   input SimCode.SimEqSystem simEqSys;
   input SimCode.SimCode simCode;
-  output list<SimCodeVar.SimVar> simVars;
-algorithm
-  simVars := list(cref2simvar(cr, simCode) for cr in getSimEqSystemCrefsLHS(simEqSys));
-end getSimEqSystemSimVarsLHS;
-
-public function getSimEqSystemSimVarsRHS
-  input SimCode.SimEqSystem simEqSys;
-  input SimCode.SimCode simCode;
-  output list<SimCodeVar.SimVar> simVars;
+  output list<SimCodeVar.SimVar> simVars = {};
 protected
+  SimCodeVar.SimVar var;
+
   function keep
     input SimCodeVar.SimVar var;
     output Boolean b;
@@ -13471,8 +13465,46 @@ protected
     end match;
   end keep;
 algorithm
-  simVars := list(cref2simvar(cr, simCode) for cr in getSimEqSystemCrefsRHS(simEqSys));
-  simVars := list(var for var guard keep(var) in simVars);
+  for cr in getSimEqSystemCrefsLHS(simEqSys) loop
+    try
+      var := cref2simvarOrFail(cr, simCode);
+      if keep(var) then
+        simVars := var :: simVars;
+      end if;
+    else
+    end try;
+  end for;
+end getSimEqSystemSimVarsLHS;
+
+public function getSimEqSystemSimVarsRHS
+  input SimCode.SimEqSystem simEqSys;
+  input SimCode.SimCode simCode;
+  output list<SimCodeVar.SimVar> simVars = {};
+protected
+  SimCodeVar.SimVar var;
+
+  function keep
+    input SimCodeVar.SimVar var;
+    output Boolean b;
+  algorithm
+    b := match var
+      case SimCodeVar.SIMVAR(varKind = BackendDAE.STATE())    then false;
+      case SimCodeVar.SIMVAR(varKind = BackendDAE.DISCRETE()) then false;
+      case SimCodeVar.SIMVAR(varKind = BackendDAE.PARAM())    then false;
+      case SimCodeVar.SIMVAR(varKind = BackendDAE.CONST())    then false;
+      else true;
+    end match;
+  end keep;
+algorithm
+  for cr in getSimEqSystemCrefsRHS(simEqSys) loop
+    try
+      var := cref2simvarOrFail(cr, simCode);
+      if keep(var) then
+        simVars := var :: simVars;
+      end if;
+    else
+    end try;
+  end for;
 end getSimEqSystemSimVarsRHS;
 
 public function getSimEqSystemSimVarsLHSJac
@@ -15567,6 +15599,18 @@ algorithm
   end try;
 end cref2simvar;
 
+public function cref2simvarOrFail
+"Used by templates to find SIMVAR for given cref (to gain representaion index info mainly)."
+  input DAE.ComponentRef inCref;
+  input SimCode.SimCode simCode;
+  output SimCodeVar.SimVar outSimVar;
+protected
+  HashTableCrefSimVar.HashTable crefToSimVarHT;
+algorithm
+  SimCode.SIMCODE(crefToSimVarHT = crefToSimVarHT) := simCode;
+  outSimVar := simVarFromHTOrFail(inCref, crefToSimVarHT);
+end cref2simvarOrFail;
+
 public function simVarFromHT
 "Used by templates to find SIMVAR for given cref (to gain representaion index info mainly)."
   input DAE.ComponentRef inCref;
@@ -15654,7 +15698,7 @@ algorithm
   end if;
   sv := match sv.aliasvar
     case SimCodeVar.NOALIAS() then sv;
-    case SimCodeVar.ALIAS(varName=cref) then simVarFromHT(cref, crefToSimVarHT); /* Possibly not needed; can't really hurt that much though */
+    case SimCodeVar.ALIAS(varName=cref) then simVarFromHTOrFail(cref, crefToSimVarHT); /* Possibly not needed; can't really hurt that much though */
     case SimCodeVar.NEGATEDALIAS() then sv;
   end match;
   outSimVar := sv;
