@@ -55,7 +55,7 @@
 extern "C" {
 #endif
 
-// TODO: add the derivative test here, so we only have one code with all the analysis methods 
+// TODO: add the derivative test here, so we only have one code with all the analysis methods
 // unify all the debug messages of them
 
 typedef enum SolverCaller {
