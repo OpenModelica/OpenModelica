@@ -1181,11 +1181,11 @@ protected
             if skip <= listLength(crefs) then
               for i in 1:skip-1 loop
                 field :: crefs := crefs;
-                field := ComponentRef.mergeSubscripts(subs, field);
+                field := ComponentRef.mergeSubscripts(subs, field, true);
                 index := index + Type.sizeOf(ComponentRef.getSubscriptedType(field));
               end for;
               field :: crefs := crefs;
-              field := ComponentRef.mergeSubscripts(subs, field);
+              field := ComponentRef.mergeSubscripts(subs, field, true);
             else
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because skip of " + intString(skip)
                 + " is too large for record elements " + List.toString(crefs, ComponentRef.toString) + "."});
@@ -1557,7 +1557,7 @@ protected
         Integer sub_idx;
 
       case {} algorithm
-        cref := ComponentRef.mergeSubscripts(listReverse(acc), stripped);
+        cref := ComponentRef.mergeSubscripts(listReverse(acc), stripped, true);
         val := ComponentRef.scalarizeAll(cref, true);
         UnorderedMap.add(arrayList(key), val, map);
       then ();
