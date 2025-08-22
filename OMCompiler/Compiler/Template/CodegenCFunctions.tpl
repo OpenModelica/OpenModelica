@@ -249,7 +249,7 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   LINK=<%makefileParams.linker%>
   EXEEXT=<%makefileParams.exeext%>
   DLLEXT=<%makefileParams.dllext%>
-  DEBUG_FLAGS=<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then " -g" else "$(SIM_OR_DYNLOAD_OPT_LEVEL)" %>
+  DEBUG_FLAGS=<% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g" else "$(SIM_OR_DYNLOAD_OPT_LEVEL)" %>
   CFLAGS= $(DEBUG_FLAGS) <%makefileParams.cflags%>
   CPPFLAGS= <%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I"<%makefileParams.omhome%>/include/omc" <%
     if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then " -DOMC_GENERATE_RELOCATABLE_CODE"
@@ -4983,7 +4983,7 @@ template modelicaLine(builtin.SourceInfo info)
 ::=
   match info
   case SOURCEINFO(fileName="") then ""
-  else if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))
+  else if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)
     then (if Flags.isSet(OMC_RECORD_ALLOC_WORDS)
     then '/*#modelicaLine <%infoStr(info)%>*/<%\n%><% match info case SOURCEINFO() then (if intEq(-1, stringFind(fileName,".interface.mo")) then 'mmc_set_current_pos("<%infoStr(info)%>");<%\n%>') %>'
     else '/*#modelicaLine <%infoStr(info)%>*/<%\n%>'
@@ -4992,7 +4992,7 @@ end modelicaLine;
 
 template endModelicaLine()
 ::=
-  if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then '/*#endModelicaLine*/<%\n%>'
+  if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then '/*#endModelicaLine*/<%\n%>'
 end endModelicaLine;
 
 template tempDecl(String ty, Text &varDecls)

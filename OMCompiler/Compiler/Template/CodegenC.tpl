@@ -6996,7 +6996,7 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   # define OMC_CFLAGS_OPTIMIZATION env variable to your desired optimization level to override this
   OMC_CFLAGS_OPTIMIZATION=-Os
-  DEBUG_FLAGS=<% if boolOr(Testsuite.isRunning(), boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then "-O0" else "$(OMC_CFLAGS_OPTIMIZATION)"%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g" %>
+  DEBUG_FLAGS=<% if boolOr(Testsuite.isRunning(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then "-O0" else "$(OMC_CFLAGS_OPTIMIZATION)"%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g" %>
   CFLAGS=<%ExtraUnicodeFlag%> $(CFLAGS_BASED_ON_INIT_FILE) $(DEBUG_FLAGS) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%>
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then 'OMC_EMCC_PRE_JS=<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/emcc/pre.js<%\n%>'
   %>CPPFLAGS=<%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I"<%makefileParams.omhome%>/include/omc" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME<% if stringEq(Config.simCodeTarget(),"JavaScript") then " -DOMC_EMCC"%><% if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then " -DOMC_GENERATE_RELOCATABLE_CODE"%> -DOMC_MODEL_PREFIX=<%modelNamePrefix(simCode)%> -DOMC_NUM_MIXED_SYSTEMS=<%varInfo.numMixedSystems%> -DOMC_NUM_LINEAR_SYSTEMS=<%varInfo.numLinearSystems%> -DOMC_NUM_NONLINEAR_SYSTEMS=<%varInfo.numNonLinearSystems%> -DOMC_NDELAY_EXPRESSIONS=<%maxDelayedIndex%> -DOMC_NVAR_STRING=<%varInfo.numStringAlgVars%>

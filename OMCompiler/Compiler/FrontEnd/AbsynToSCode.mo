@@ -59,6 +59,7 @@ import SCodeUtil;
 import System;
 import Util;
 import MetaModelica.Dangerous;
+import Dump;
 
 // Constant expression for AssertionLevel.error.
 protected constant Absyn.Exp ASSERTION_LEVEL_ERROR = Absyn.CREF(Absyn.CREF_FULLYQUALIFIED(
@@ -1724,6 +1725,8 @@ protected
   SCode.Mod smod;
   SCode.Element elem;
   SCode.SubMod sub;
+  Absyn.ComponentRef cr1, cr2;
+  String s, s1, s2;
 algorithm
   for arg in args loop
     subMods := match arg
@@ -1753,6 +1756,19 @@ algorithm
         then
           sub :: subMods;
       case Absyn.ELEMENTARGCOMMENT() then subMods;
+      case Absyn.INHERITANCEBREAK(Absyn.EQ_CONNECT(cr1, cr2), _)
+        algorithm
+          s1 := Dump.printComponentRefStr(cr1);
+          s2 := Dump.printComponentRefStr(cr2);
+          if s2 == "break" then
+            s := s2 + " " + s1;
+          else
+            s := Dump.unparseEquationStr(arg.cnct);
+          end if;
+          Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,
+          {"'7.4 Selective Model Extension': [" + s + "]",
+          "ignoring feature"}, arg.info);
+        then subMods;
     end match;
   end for;
 

@@ -653,7 +653,7 @@ implicit_import_name returns [void* ast]
 // allowing the comment.
 extends_clause returns [void* ast]
 @init { OM_PUSHZ3(path, mod, ann); } :
-  EXTENDS path=name_path (mod=class_modification)? (ann=annotation)?
+  EXTENDS path=name_path (mod=class_or_inheritance_modification)? (ann=annotation)?
   {
     ast = Absyn__EXTENDS(path,or_nil(mod),mmc_mk_some_or_none(ann));
   }
@@ -862,15 +862,22 @@ modification_expression returns [void* ast]
 
 class_modification returns [void* ast]
 @init { OM_PUSHZ2(as, ast); } :
-  LPAR ( as=argument_list )? RPAR { ast = or_nil(as); }
+  LPAR ( as=argument_list[0] )? RPAR { ast = or_nil(as); }
   ;
   finally{ OM_POP(2); }
 
-argument_list returns [void* ast]
+
+class_or_inheritance_modification returns [void* ast]
+@init { OM_PUSHZ2(as, ast); } :
+  LPAR ( as=argument_list[1] )? RPAR { ast = or_nil(as); }
+  ;
+  finally{ OM_POP(2); }
+
+argument_list [int canHaveBreak] returns [void* ast]
 @init {
   int first, last;
   void *commentAst;
-  OM_PUSHZ4(a, as, ast, commentAst);
+  OM_PUSHZ5(a, b.ast, as, ast, commentAst);
   ast = mmc_mk_nil();
   commentAst = mmc_mk_nil();
 
@@ -886,7 +893,7 @@ argument_list returns [void* ast]
     }
   }
 } :
-  a=argument ( COMMA as=argument_list )?
+  (a=argument | {canHaveBreak == 1}? b=inheritance_modification) ( COMMA as=argument_list[canHaveBreak] )?
   {
     first = omc_first_comment;
     last = LT(1)->getTokenIndex(LT(1));
@@ -900,11 +907,27 @@ argument_list returns [void* ast]
       }
     }
     ast = listAppend(or_nil(as), ast);
-    ast = mmc_mk_cons_typed(Absyn_ElementArg, a, ast);
+    ast = mmc_mk_cons_typed(Absyn_ElementArg, a?a:b.ast, ast);
     ast = listAppend(commentAst, ast);
   }
   ;
-  finally{ OM_POP(3); }
+  finally{ OM_POP(5); }
+
+inheritance_modification returns [void* ast]
+@init { OM_PUSHZ2(c, i.ast); } :
+  BREAK ( c=connect_clause { $ast = Absyn__INHERITANCEBREAK(c, PARSER_INFO($start)); }
+        | i=component_reference
+          {
+            $ast = Absyn__INHERITANCEBREAK(
+              Absyn__EQ_5fCONNECT(
+                i.ast,
+                Absyn__CREF_5fIDENT(mmc_mk_scon("break"),mmc_mk_nil())
+              ),
+              PARSER_INFO($start));
+          }
+        )
+  ;
+  finally{ OM_POP(2); }
 
 argument returns [void* ast]
 @init { OM_PUSHZ2(em, er.ast); } :

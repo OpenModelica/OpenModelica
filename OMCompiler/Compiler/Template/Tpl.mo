@@ -2353,7 +2353,7 @@ algorithm
         textStringBuf(txt);
         rtTickW = System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
         System.writeFile(file, "") /* To make realpath work */;
-        if Config.acceptMetaModelicaGrammar() or Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
+        if /*Config.acceptMetaModelicaGrammar() or*/ Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
           Print.writeBufConvertLines(System.realpath(file));
         else
           Print.writeBuf(file);

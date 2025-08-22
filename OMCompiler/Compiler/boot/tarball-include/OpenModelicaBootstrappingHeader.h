@@ -5027,6 +5027,23 @@ extern struct record_description Absyn_Msg_MSG__desc;
 #endif
 #define Absyn__MSG_3dBOX1 3
 #define Absyn__MSG(info) (mmc_mk_box2(3,&Absyn_Msg_MSG__desc,info))
+
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Absyn_ElementArg_INHERITANCEBREAK__desc_added
+#define Absyn_ElementArg_INHERITANCEBREAK__desc_added
+ADD_METARECORD_DEFINITIONS const char* Absyn_ElementArg_INHERITANCEBREAK__desc__fields[2] = {"cnct","info"};
+ADD_METARECORD_DEFINITIONS struct record_description Absyn_ElementArg_INHERITANCEBREAK__desc = {
+  "Absyn_ElementArg_INHERITANCEBREAK",
+  "Absyn.ElementArg.INHERITANCEBREAK",
+  Absyn_ElementArg_INHERITANCEBREAK__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_ElementArg_INHERITANCEBREAK__desc;
+#endif
+#define Absyn__INHERITANCEBREAK_3dBOX2 6
+#define Absyn__INHERITANCEBREAK(cnct,info) (mmc_mk_box3(6,&Absyn_ElementArg_INHERITANCEBREAK__desc,cnct,info))
+
 #ifdef __cplusplus
 }
 #endif

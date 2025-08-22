@@ -2307,7 +2307,7 @@ algorithm
           Mod.getUnelabedSubMod(inMod, "Include");
         str = "#line "+intString(lineNumberStart)+" \""+fileName+"\"";
         inc_1 = System.unescapedString(inc);
-        includes = if Config.acceptMetaModelicaGrammar() or Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then {str,inc_1} else {inc_1};
+        includes = if /*Config.acceptMetaModelicaGrammar() or*/ Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then {str,inc_1} else {inc_1};
       then includes;
     else {};
   end matchcontinue;

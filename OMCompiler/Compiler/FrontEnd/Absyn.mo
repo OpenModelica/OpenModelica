@@ -614,6 +614,12 @@ uniontype ElementArg "Wrapper for things that modify elements, modifications and
     String comment;
   end ELEMENTARGCOMMENT;
 
+  record INHERITANCEBREAK "break is either an ident or an equation
+    we save the ident as connect(ident, break) to keep it simple"
+    Equation cnct;
+    Info info;
+  end INHERITANCEBREAK;
+
 end ElementArg;
 
 public
