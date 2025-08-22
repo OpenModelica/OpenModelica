@@ -1514,7 +1514,7 @@ namespace ModelInstance
     if (connector.size() == 1) return true;
 
     auto elem = model.lookupElement(connector.first().getName(false));
-    return elem && elem->getModel() && elem->getModel()->isConnector();
+    return elem && elem->isConnector();
   }
 
   bool isCompatibleConnectorDirection(const Element &lhs, bool lhsOutside, const Element &rhs, bool rhsOutside)
@@ -2067,6 +2067,16 @@ namespace ModelInstance
   bool Element::isRedeclare() const
   {
     return mpPrefixes ? mpPrefixes.get()->isRedeclare() : false;
+  }
+
+  bool Element::isConnector() const
+  {
+    return mpModel && mpModel->isConnector();
+  }
+
+  bool Element::isExpandableConnector() const
+  {
+    return mpModel && mpModel->isExpandableConnector();
   }
 
   QString Element::getConnector() const

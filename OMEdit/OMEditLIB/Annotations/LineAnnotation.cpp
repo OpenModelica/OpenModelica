@@ -1411,7 +1411,7 @@ void LineAnnotation::handleCollidingConnections()
   QList<QGraphicsItem*> items = collidingItems(Qt::IntersectsItemShape);
   for (int i = 0; i < items.size(); ++i) {
     if (Element *pElement = dynamic_cast<Element*>(items.at(i))) {
-      if ((pElement->getModel() && pElement->getModel()->isConnector())
+      if (pElement->isConnector()
           || (pElement->getLibraryTreeItem() && (pElement->getLibraryTreeItem()->getOMSConnector() || pElement->getLibraryTreeItem()->getOMSBusConnector()
                                                  || pElement->getLibraryTreeItem()->getOMSTLMBusConnector()))) {
         mCollidingConnectorElements.append(pElement);
