@@ -860,15 +860,11 @@ protected
         AttributeCollector collector;
         Pointer<Pointer<Variable>> var_to_keep = Pointer.create(Pointer.create(NBVariable.DUMMY_VARIABLE));
         Status status;
-        // part from above
-        Expression res, diff_res, expr;
+        Expression res, expr;
         DifferentiationArguments args;
-        array<array<Real>> all_diffs;
-        array<Real> lhs, column;
-        Integer index_i, idx_j, idx_i = 1;
-        list<ComponentRef> cref_lst;
+        array<Real> lhs;
+        Integer idx_i = 1;
         list<Integer>  lst_enum;
-        Slice.filterCref filter;
         UnorderedMap<ComponentRef, Integer>  int_to_cref;
 
       case SOME(const_eq) algorithm
@@ -886,22 +882,10 @@ protected
         //eqs := EquationPointers.fromList(set.simple_equations);
         ASSC.main(set.simple_equations, set.simple_variables);
 
-        /*// causalize the system
-        (_, comps) := Causalize.simple(vars, eqs);
-        for i in comps loop
-          print("comp"+StrongComponent.toString(i)+"\n");
-        end for;
-        // create replacements from strong components
-        Replacements.simple(comps, replacements);*/
-
         replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
         // for loop creating -> replacements for each var
 
-        // step 0: initialize matrix and lhs vector with zeros
-        all_diffs := arrayCreate(listLength(set.simple_equations),arrayCreate(0,0.0)); // -> indices /values
-        for i in 1:arrayLength(all_diffs) loop
-          arrayUpdate(all_diffs, i, arrayCreate(listLength(set.simple_variables),0.0)); // unique array
-        end for;
+        // initialize lhs vector with zeros
         lhs := arrayCreate(listLength(set.simple_equations),0.0);
         // each cref corresponds to one integer
         lst_enum := List.intRange(listLength(set.simple_variables));
@@ -912,44 +896,13 @@ protected
           res := Equation.getResidualExp(Pointer.access(eq_ptr));
           // update lhs
           expr := Expression.map(res, function Replacements.applySimpleExp(replacements = replacements));
-          print("expr1 "+Expression.toString(expr)+"\n" );
+          //print("expr1 "+Expression.toString(expr)+"\n" );
           if not Expression.containsCrefSet(expr, UnorderedSet.fromList(set.simple_variables, ComponentRef.hash, ComponentRef.isEqual)) then
             expr := Expression.negate(SimplifyExp.simplify(expr));
-            print("expr23 "+Expression.toString(expr)+"\n" );
+            //print("expr23 "+Expression.toString(expr)+"\n" );
             //lhs[idx_i] := Expression.realValue(expr);
-            arrayUpdate(lhs, idx_i,Expression.realValue(expr));
+            arrayUpdate(lhs, idx_i, Expression.realValue(expr));
           end if;
-
-          print("here2 "+Expression.toString(res)+"\n" );
-          args := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE);
-          // collect all necessary crefs for this equation
-          cref_lst := Equation.collectCrefs(Pointer.access(eq_ptr), function Equation.collectFromMap(check_map = UnorderedMap.fromLists(set.simple_variables, set.simple_variables, ComponentRef.hash, ComponentRef.isEqual)));
-          for cref in cref_lst loop
-            print("cref "+BVariable.toString(BVariable.getVar(cref, sourceInfo()))+"\n");
-          end for;
-          // differentiate equation by each variable in cref_lst
-          column := all_diffs[idx_i];
-          for cr in cref_lst loop
-            print("here3"+BVariable.toString(BVariable.getVar(cr, sourceInfo()))+"\n");
-            args.diffCref := cr;
-            diff_res := SimplifyExp.simplify(Differentiate.differentiateExpression(res, args));
-            print("here5"+Expression.toString(diff_res)+"\n" );
-            idx_j := UnorderedMap.getSafe(cr, int_to_cref, sourceInfo());
-            print(intString(idx_j)+"\n");
-            //all_diffs[idx_i][idx_j] := Expression.realValue(diff_res);
-            print("column" + List.toString(arrayList(column),realString)+"\n"); // test
-            arrayUpdate(column,idx_j,Expression.realValue(diff_res));
-          end for;
-          idx_i := idx_i + 1;
-
-          for arr in all_diffs loop // test
-            print(List.toString(arrayList(arr),realString)+"\n");
-          end for;
-        end for;
-
-        // print each line of the matrix
-        for arr in all_diffs loop
-          print(List.toString(arrayList(arr),realString)+"\n");
         end for;
       then replacements;
 
