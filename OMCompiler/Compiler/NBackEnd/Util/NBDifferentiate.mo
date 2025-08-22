@@ -648,7 +648,7 @@ public
         if UnorderedMap.contains(strippedCref, diff_map) then
           // get the derivative and reapply subscripts
           derCref := UnorderedMap.getOrFail(strippedCref, diff_map);
-          derCref := ComponentRef.mergeSubscripts(ComponentRef.subscriptsAllFlat(exp.cref), derCref);
+          derCref := ComponentRef.mergeSubscripts(ComponentRef.subscriptsAllFlat(exp.cref), derCref, true);
           res     := Expression.fromCref(derCref);
         else
           res     := Expression.makeZero(exp.ty);
@@ -713,7 +713,7 @@ public
         guard(UnorderedMap.contains(ComponentRef.stripSubscriptsAll(exp.cref), diff_map)) algorithm
           // get the derivative and reapply subscripts
         derCref := UnorderedMap.getOrFail(ComponentRef.stripSubscriptsAll(exp.cref), diff_map);
-        derCref := ComponentRef.mergeSubscripts(ComponentRef.subscriptsAllFlat(exp.cref), derCref);
+        derCref := ComponentRef.mergeSubscripts(ComponentRef.subscriptsAllFlat(exp.cref), derCref, true);
         res     := Expression.fromCref(derCref);
       then (res, diffArguments);
 
@@ -771,7 +771,7 @@ public
         if UnorderedMap.contains(strippedCref, diff_map) then
           // get the derivative an reapply subscripts
           derCref := UnorderedMap.getOrFail(strippedCref, diff_map);
-          derCref := ComponentRef.mergeSubscripts(ComponentRef.subscriptsAllFlat(exp.cref), derCref);
+          derCref := ComponentRef.mergeSubscripts(ComponentRef.subscriptsAllFlat(exp.cref), derCref, true);
           res     := Expression.fromCref(derCref);
         else
           res     := Expression.makeZero(exp.ty);
@@ -1110,7 +1110,7 @@ public
                 args        = {arg1},
                 variability = Expression.variability(arg1),
                 purity      = NFPrefixes.Purity.PURE));
-              ret := Expression.applySubscripts({Subscript.INDEX(ret1)}, diffArg1);
+              ret := Expression.applySubscripts({Subscript.INDEX(ret1)}, diffArg1, true);
             end if;
           then ret;
 

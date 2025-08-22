@@ -440,7 +440,7 @@ public
           iterator := Iterator.EMPTY();
         else
           (var_ptr, name, _, _, subscripts, _, iterator) := createIteratedStartCref(var_ptr, name);
-          e := Expression.applySubscripts(subscripts, e);
+          e := Expression.applySubscripts(subscripts, e, true);
         end if;
       then e;
 
