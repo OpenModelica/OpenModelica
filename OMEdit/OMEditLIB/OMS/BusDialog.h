@@ -142,37 +142,6 @@ private slots:
   void addBus();
 };
 
-class AddTLMBusDialog : public QDialog
-{
-  Q_OBJECT
-public:
-  AddTLMBusDialog(QList<Element*> components, LibraryTreeItem *pLibraryTreeItem, GraphicsView *pGraphicsView);
-private:
-  LibraryTreeItem *mpLibraryTreeItem;
-  GraphicsView *mpGraphicsView;
-  Label *mpHeading;
-  QFrame *mpHorizontalLine;
-  Label *mpNameLabel;
-  QLineEdit *mpNameTextBox;
-  Label *mpDomainLabel;
-  QComboBox *mpDomainComboBox;
-  Label *mpDimensionLabel;
-  QSpinBox *mpDimensionSpinBox;
-  Label *mpInterpolationLabel;
-  QComboBox *mpInterpolationComboBox;
-  ConnectorsModel *mpInputConnectorsTreeModel;
-  ConnectorsTreeView *mpInputConnectorsTreeView;
-  ConnectorsModel *mpOutputConnectorsTreeModel;
-  ConnectorsTreeView *mpOutputConnectorsTreeView;
-  QPushButton *mpOkButton;
-  QPushButton *mpCancelButton;
-  QDialogButtonBox *mpButtonBox;
-  void markExistingTLMBusConnectors(ConnectorItem *pParentConnectorItem, QList<Element*> components);
-private slots:
-  void fetchTLMTypes();
-  void addTLMBus();
-};
-
 class LineAnnotation;
 class ConnectionItem : public QObject
 {
@@ -266,32 +235,6 @@ private:
 
 private slots:
   void addBusConnection();
-};
-
-class TLMConnectionDialog : public QDialog
-{
-  Q_OBJECT
-public:
-  TLMConnectionDialog(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, bool addCase = true);
-private:
-  GraphicsView *mpGraphicsView;
-  LineAnnotation *mpConnectionLineAnnotation;
-  bool mAddCase;
-  Label *mpHeading;
-  QFrame *mpHorizontalLine;
-  Label *mpDelayLabel;
-  QLineEdit *mpDelayTextBox;
-  Label *mpAlphaLabel;
-  QLineEdit *mpAlphaTextBox;
-  Label *mpLinearImpedanceLabel;
-  QLineEdit *mpLinearImpedanceTextBox;
-  Label *mpAngularImpedanceLabel;
-  QLineEdit *mpAngularImpedanceTextBox;
-  QPushButton *mpOkButton;
-  QPushButton *mpCancelButton;
-  QDialogButtonBox *mpButtonBox;
-private slots:
-  void addTLMConnection();
 };
 
 #endif // ADDBUSDIALOG_H

@@ -4158,9 +4158,6 @@ void MainWindow::createActions()
   // Add bus action
   mpAddBusAction = new QAction(QIcon(":/Resources/icons/bus.svg"), Helper::addBus, this);
   mpAddBusAction->setStatusTip(Helper::addBusTip);
-  // Add tlm bus action
-  mpAddTLMBusAction = new QAction(QIcon(":/Resources/icons/tlm-bus.svg"), Helper::addTLMBus, this);
-  mpAddTLMBusAction->setStatusTip(Helper::addTLMBusTip);
   // Add SubModel Action
   mpAddSubModelAction = new QAction(QIcon(":/Resources/icons/import-fmu.svg"), Helper::addSubModel, this);
   mpAddSubModelAction->setStatusTip(Helper::addSubModelTip);
@@ -4323,7 +4320,6 @@ void MainWindow::createMenus()
   pSSPMenu->addSeparator();
   pSSPMenu->addAction(mpAddConnectorAction);
   pSSPMenu->addAction(mpAddBusAction);
-  pSSPMenu->addAction(mpAddTLMBusAction);
   pSSPMenu->addSeparator();
   pSSPMenu->addAction(mpAddSubModelAction);
   // add OMSimulator menu to menu bar
@@ -4828,7 +4824,6 @@ void MainWindow::createToolbars()
   mpOMSimulatorToolbar->addSeparator();
   mpOMSimulatorToolbar->addAction(mpAddConnectorAction);
   mpOMSimulatorToolbar->addAction(mpAddBusAction);
-  mpOMSimulatorToolbar->addAction(mpAddTLMBusAction);
   mpOMSimulatorToolbar->addSeparator();
   mpOMSimulatorToolbar->addAction(mpAddSubModelAction);
   connect(mpOMSimulatorToolbar, SIGNAL(visibilityChanged(bool)), SLOT(OMSimulatorToolBarVisibilityChanged(bool)));

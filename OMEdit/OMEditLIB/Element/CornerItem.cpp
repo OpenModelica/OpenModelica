@@ -56,8 +56,7 @@ CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotatio
   mIsInherited = mpShapeAnnotation->isInheritedShape();
   mIsOMSConnector = (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSSP() &&
                    (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSConnector()
-                    || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()
-                    || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSTLMBusConnector()));
+                    || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()));
   mIsVisualizationView = mpShapeAnnotation->getGraphicsView()->isVisualizationView();
   /* Shapes manipulation via CornerItem's if the class is not a system library class
    * AND not inherited shape
@@ -246,8 +245,7 @@ void ResizerItem::setActive()
   if (mpComponent->isInheritedElement()
       || (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isSSP()
           && (mpComponent->getLibraryTreeItem()->getOMSConnector()
-              || mpComponent->getLibraryTreeItem()->getOMSBusConnector()
-              || mpComponent->getLibraryTreeItem()->getOMSTLMBusConnector()))) {
+              || mpComponent->getLibraryTreeItem()->getOMSBusConnector()))) {
     mPen = mInheritedActivePen;
   } else {
     mPen = mActivePen;
@@ -405,8 +403,7 @@ void OriginItem::setActive()
       || (mpComponent && (mpComponent->isInheritedElement()
                           || (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isSSP()
                               && (mpComponent->getLibraryTreeItem()->getOMSConnector()
-                                  || mpComponent->getLibraryTreeItem()->getOMSBusConnector()
-                                  || mpComponent->getLibraryTreeItem()->getOMSTLMBusConnector()))))) {
+                                  || mpComponent->getLibraryTreeItem()->getOMSBusConnector()))))) {
     mPen = mInheritedActivePen;
   } else {
     mPen = mActivePen;
