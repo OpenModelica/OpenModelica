@@ -111,34 +111,27 @@ public
     //      values[eqn_index] += append diffs(eqn,cref)
     //    end for
     //  end for
+    //
+    // lhs is still missing; first idea in NBAlias.mo (lines 834-853)
 
-    //diffs := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
     for eq_ptr in eqns loop
+      // find all crefs of vars in eqn
       cref_lst := Equation.collectCrefs(Pointer.access(eq_ptr), function Equation.collectFromMap(check_map = UnorderedMap.fromLists(vars, vars, ComponentRef.hash, ComponentRef.isEqual)));
-      for cref in cref_lst loop
-        print("cref "+BVariable.toString(BVariable.getVar(cref, sourceInfo()))+"\n");
-      end for;
       res := Equation.getResidualExp(Pointer.access(eq_ptr));
-      print("here2 "+Expression.toString(res)+"\n" );
       args := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE);
-
       for cr in cref_lst loop
-        print("here3"+BVariable.toString(BVariable.getVar(cr, sourceInfo()))+"\n");
         args.diffCref := cr;
+        // differentiate eqn for cref
         diff_res := SimplifyExp.simplify(Differentiate.differentiateExpression(res, args));
-        print("here5"+Expression.toString(diff_res)+"\n" );
-        print(Type.toString(Expression.typeOf(diff_res))+"\n");
         if Type.isReal(Expression.typeOf(diff_res)) then // if diff is real
           diff_res_int := realInt(Expression.realValue(diff_res));
-          print("from Real "+intString(diff_res_int)+"\n");
           id := TUPLE_ID(eq_ptr, cr);
-          UnorderedMap.add(id, diff_res_int, diffs);
         elseif Type.isInteger(Expression.typeOf(diff_res)) then // if diff is integer
           diff_res_int := Expression.integerValue(diff_res);
-          print("from Int "+intString(diff_res_int)+"\n");
           id := TUPLE_ID(eq_ptr, cr);
           UnorderedMap.add(id, diff_res_int, diffs);
         else
+          // eqn is not part of linear system
           b := false;
           break;
         end if;
@@ -151,22 +144,22 @@ public
         UnorderedMap.add(eq_ptr, cref_lst, rows);
       end if;
     end for;
-
+    // enumerate sets
     lst_enum := List.intRange(UnorderedSet.size(int_eqns));
-    enum_eqns := UnorderedMap.fromLists(UnorderedSet.toList(int_eqns), lst_enum, Equation.hash, Equation.isEqualPtr);
+    enum_eqns := UnorderedMap.fromLists(eqns, lst_enum, Equation.hash, Equation.isEqualPtr);
     lst_enum := List.intRange(UnorderedSet.size(int_crefs));
-    enum_crefs := UnorderedMap.fromLists(UnorderedSet.toList(int_crefs), lst_enum, ComponentRef.hash, ComponentRef.isEqual);
+    enum_crefs := UnorderedMap.fromLists(vars, lst_enum, ComponentRef.hash, ComponentRef.isEqual);
     indices := arrayCreate(UnorderedSet.size(int_eqns), {});
     values := arrayCreate(UnorderedSet.size(int_eqns), {});
-
+    // create matrix elements for sparse matrix
     lst_eqns := UnorderedSet.toList(int_eqns);
     for eq_ptr in lst_eqns loop
       crefs_rows := UnorderedMap.getSafe(eq_ptr, rows, sourceInfo());
       for cr in crefs_rows loop
         eqn_index := UnorderedMap.getSafe(eq_ptr, enum_eqns, sourceInfo());
         var_index := UnorderedMap.getSafe(cr, enum_crefs, sourceInfo());
-        indices[eqn_index] := {var_index};
-        values[eqn_index] := {UnorderedMap.getSafe(TUPLE_ID(eq_ptr,cr), diffs, sourceInfo())};
+        indices[eqn_index] := var_index :: indices[eqn_index];
+        values[eqn_index] := UnorderedMap.getSafe(TUPLE_ID(eq_ptr,cr), diffs, sourceInfo()) :: values[eqn_index];
       end for;
     end for;
 
@@ -188,13 +181,7 @@ public
 
 
     setMatrix(3,3,5,indices,values);
-    for cref in vars loop
-      print("cref "+BVariable.toString(BVariable.getVar(cref, sourceInfo()))+"\n");
-    end for;
-    for eq in eqns loop
-      print("eq "+ Equation.toString(Pointer.access(eq))+"\n");
-    end for;
-    printMatrix();
+    //printMatrix();
     freeMatrix();
   end main;
 
