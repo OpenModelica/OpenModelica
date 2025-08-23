@@ -664,15 +664,46 @@ public
     output list<tuple<ComponentRef, list<ComponentRef>>> tpl_lst  "cref -> dependencies for each scalar cref";
   protected
     list<ComponentRef> row_cref_scal;
+    Integer row_size;
     list<list<ComponentRef>> dependencies_scal;
+    Pointer<list<ComponentRef>> full_deps = Pointer.create({});
+    function fixSingleDep
+      "helper function to properly add a single dependency"
+      input Integer row_size;
+      input output list<ComponentRef> single_dep;
+      input Pointer<list<ComponentRef>> full_deps;
+    protected
+      Integer div, dep_size = listLength(single_dep);
+    algorithm
+      if row_size > dep_size then
+        // repeat the element until it fits
+        if intMod(row_size, dep_size) == 0 then
+          single_dep := List.repeat(single_dep, realInt(row_size/listLength(single_dep)));
+        else
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because dependencies of size " + intString(dep_size)
+            + " could not be repeated to fit row size " + intString(row_size) + "."});
+          fail();
+        end if;
+      elseif row_size < dep_size then
+        // assume full dependency (not entirely correct but practical)
+        Pointer.update(full_deps, listAppend(single_dep, Pointer.access(full_deps)));
+        single_dep := {};
+      end if;
+    end fixSingleDep;
   algorithm
     row_cref_scal := ComponentRef.scalarizeSlice(row_cref, slice, true);
+    row_size      := listLength(row_cref_scal);
     dependencies_scal := list(ComponentRef.scalarizeSlice(dep, slice, true) for dep in dependencies);
     if not listEmpty(dependencies_scal) then
-      // repeat lists that are too short to fit the equation size
-      dependencies_scal := list(List.repeat(d, realInt(listLength(row_cref_scal)/listLength(d))) for d in dependencies_scal);
+      // repeat lists that are too short to fit the equation size and collect full dependencies
+      dependencies_scal := list(fixSingleDep(row_size, d, full_deps) for d in dependencies_scal);
+      dependencies_scal := list(d for d guard(not listEmpty(d)) in dependencies_scal);
       // transpose it such that each list now represents one row
-      dependencies_scal := List.transposeList(dependencies_scal);
+      if listEmpty(dependencies_scal) then
+        dependencies_scal := List.fill(Pointer.access(full_deps), row_size);
+      else
+        dependencies_scal := list(listAppend(Pointer.access(full_deps), d) for d in List.transposeList(dependencies_scal));
+      end if;
       tpl_lst := List.zip(row_cref_scal, dependencies_scal);
     else
       tpl_lst := list((cref, {}) for cref in row_cref_scal);
