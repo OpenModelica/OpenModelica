@@ -97,6 +97,8 @@ int _main_initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_
  */
 extern int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData);
 
+extern int _main_OptimizationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData);
+
 #if !defined(OMC_MINIMAL_RUNTIME)
 const char* prettyPrintNanoSec(int64_t ns, int *v);
 #endif
