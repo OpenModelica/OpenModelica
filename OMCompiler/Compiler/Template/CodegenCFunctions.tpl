@@ -3850,7 +3850,12 @@ template literalExpConst(Exp lit, Integer litindex) "These should all be declare
     let &auxFunction = buffer ""
     let elements = (exps |> e => daeExp(e, contextOther, &preExp, &varDecls, &auxFunction);separator=", ")
     <<
+    #if (defined(__clang__)  && __clang_major__ >= 17) || (defined(__GNUC__) && __GNUC__ >= 8)
     static const <%expTypeFlag(ty, 2)%> <%name%> = {<%elements%>};
+    #else
+    /* handle joke compilers */
+    #define <%name%> {<%elements%>}
+    #endif
     >>
   case SCONST(__) then
     let escstr = Util.escapeModelicaStringToCString(string)
