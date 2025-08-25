@@ -3854,7 +3854,7 @@ template literalExpConst(Exp lit, Integer litindex) "These should all be declare
     static const <%expTypeFlag(ty, 2)%> <%name%> = {<%elements%>};
     #else
     /* handle joke compilers */
-    #define <%name%> {<%elements%>}
+    #define <%name%> (<%expTypeFlag(ty, 2)%>){<%elements%>}
     #endif
     >>
   case SCONST(__) then
