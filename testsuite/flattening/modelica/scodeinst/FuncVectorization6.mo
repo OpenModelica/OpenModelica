@@ -27,7 +27,7 @@ end FuncVectorization6;
 //   output Real s = 0.0;
 // algorithm
 //   for i in 1:size(x, 1) loop
-//     s := s + min(abs(x[i,$i1]) for $i1 in 1:size(x[i,:], 1));
+//     s := s + min(abs(x[i,$i0]) for $i0 in 1:size(x[i,:], 1));
 //   end for;
 // end FuncVectorization6.f;
 //
