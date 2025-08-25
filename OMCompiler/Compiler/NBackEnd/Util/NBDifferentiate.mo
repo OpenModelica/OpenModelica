@@ -1047,6 +1047,19 @@ public
         exp.call := Call.setArguments(exp.call, {ret1, ret2});
       then exp;
 
+      // d/dz promote(A, n) = promote(dA/dz, n)
+      case (Expression.CALL()) guard(name == "promote")
+      algorithm
+        (arg1, arg2) := match Call.arguments(exp.call)
+          case {arg1, arg2} then (arg1, arg2);
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
+          then fail();
+        end match;
+        (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+        exp.call := Call.setArguments(exp.call, {ret1, arg2});
+      then exp;
+
       // FILL
       case (Expression.CALL()) guard(name == "fill")
       algorithm
