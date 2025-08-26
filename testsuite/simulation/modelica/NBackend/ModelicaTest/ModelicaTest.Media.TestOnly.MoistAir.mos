@@ -2,7 +2,7 @@
 // keywords: NewBackend
 // status: correct
 
-loadModel(ModelicaTest);getErrorString();
+loadModel(ModelicaTest, {"4.0.0"});getErrorString();
 setCommandLineOptions("--newBackend"); getErrorString();
 
 simulate(ModelicaTest.Media.TestOnly.MoistAir); getErrorString();
