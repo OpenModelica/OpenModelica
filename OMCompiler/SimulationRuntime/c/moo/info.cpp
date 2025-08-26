@@ -125,7 +125,7 @@ void InfoGDOP::set_omc_flags(NLP::NLPSolverSettings& nlp_solver_settings) {
         if (lower == "bfgs" || lower == "lbfgs") {
             nlp_solver_settings.set(NLP::Option::Hessian, H::LBFGS);
         } else if (lower == "const" || lower == "qp") {
-            nlp_solver_settings.set(NLP::Option::Hessian, H::CONST);
+            nlp_solver_settings.set(NLP::Option::Hessian, H::Const);
         } else if (lower == "exact") {
             nlp_solver_settings.set(NLP::Option::Hessian, H::Exact);
         } else {
