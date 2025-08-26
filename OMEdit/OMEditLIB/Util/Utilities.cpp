@@ -840,11 +840,35 @@ QTextCharFormat Utilities::getParenthesesMisMatchFormat()
   return parenthesesMisMatchFormat;
 }
 
+// Tries to find an appropriate highlight color from the background
+static QColor utilitiesCalcHighlightColor(void) {
+  // Get default background color's HSV values
+  int h, s, v;
+  // Default QTextEdit background color
+  QTextEdit().palette().color(QPalette::Normal, QPalette::Base).getHsv(&h, &s, &v);
+  // For a pure white background, this is the equivalent of r=232, g=242, b=254
+  // Darken light backgrounds, brighten dark ones
+  if(v>127)
+    v -= 1;
+  else
+    v += 20;
+  // Unsaturated background, set it to light blue
+  if(s<5) {
+    h = 212;
+    s = 22;
+  } else {   // set it to +45 degrees
+    h += (0x20)&0xff;
+  }
+  QColor ret = QColor::fromHsv(h, s, v);
+  return ret;
+}
+
 void Utilities::highlightCurrentLine(QPlainTextEdit *pPlainTextEdit)
 {
   QList<QTextEdit::ExtraSelection> selections = pPlainTextEdit->extraSelections();
   QTextEdit::ExtraSelection selection;
-  QColor lineColor = QColor(232, 242, 254);
+  // This is static, so it can't react to system palette change.
+  static const QColor lineColor = utilitiesCalcHighlightColor();
   selection.format.setBackground(lineColor);
   selection.format.setProperty(QTextFormat::FullWidthSelection, true);
   selection.cursor = pPlainTextEdit->textCursor();
