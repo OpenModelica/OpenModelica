@@ -522,11 +522,8 @@ void* SystemImpl__trimChar(const char* str, char char_to_be_trimmed)
     while(str[end_pos] == char_to_be_trimmed) {
       end_pos--;
     }
-    res = (char*)omc_alloc_interface.malloc_atomic(end_pos - start_pos +2);
-    strncpy(res,&str[start_pos],end_pos - start_pos+1);
-    res[end_pos - start_pos+1] = '\0';
-    rmlRes = (void*) mmc_mk_scon(res);
-    return rmlRes;
+
+    return mmc_mk_scon_n(str + start_pos, end_pos - start_pos + 1);
   } else {
     return mmc_mk_scon("");
   }
