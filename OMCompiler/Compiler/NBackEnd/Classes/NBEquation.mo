@@ -3100,9 +3100,9 @@ public
         local
           Pointer<Equation> eqn_ptr;
          // just a tuple itself
-        case {eqn_ptr} guard(Equation.isRecordOrTupleEquation(eqn_ptr)) then true;
-        // multiple body equations -> tuple return
-        case _ :: _ then true;
+        case {eqn_ptr} then Equation.isRecordOrTupleEquation(eqn_ptr);
+        // at least 2 body equations -> tuple return
+        case _ :: _ :: _ then true;
         else false;
       end match;
     end isRecordOrTupleEquation;

@@ -1,0 +1,34 @@
+// name: for_if_if
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model for_if_if
+  Real[2] r, x;
+equation
+  r = {time, 2*time};
+  for i in 1:2 loop
+    if r[i] > sin(time) then
+      if r[3-i] > cos(time) then
+        x[i] = time;
+      else
+        x[i] = time;
+      end if;
+    else
+      x[i] = time;
+    end if;
+  end for;
+end for_if_if;"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+buildModel(for_if_if); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"for_if_if", "for_if_if_init.xml"}
+// ""
+// endResult
