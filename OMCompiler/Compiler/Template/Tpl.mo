@@ -164,7 +164,7 @@ algorithm
 
     // a new-line is inside
     else
-      writeChars(inText, System.strtokIncludingDelimiters(inStr, "\n"));
+      writeChars(inText, System.splitOnNewline(inStr, includeDelimiter = true));
   end match;
 end writeStr;
 
@@ -280,6 +280,12 @@ algorithm
       then
         writeChars(txt, chars);
 
+    case (txt, "\r\n" :: chars )
+      equation
+        txt = newLine(txt);
+      then
+        writeChars(txt, chars);
+
     //non-new-line at the start of the string, so a string or line only follows
     case (txt, c :: chars )
       equation
@@ -361,6 +367,10 @@ algorithm
         ({}, {}, false);
 
     case ("\n" :: chars)
+      then
+        ({"\n"}, chars, true);
+
+    case ("\r\n" :: chars)
       then
         ({"\n"}, chars, true);
 
