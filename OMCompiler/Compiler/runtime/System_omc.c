@@ -1154,7 +1154,6 @@ extern void* System_strtokIncludingDelimiters(const char *str0, const char *deli
   void *lst = mmc_mk_nil();
   void *slst = mmc_mk_nil();
   char* s = str;
-  char* stmp;
   mmc_uint_t start = 0, end = 0;
   /* len + 3 in pos signifies that there is no delimiter in the string */
   mmc_uint_t pos = len + 3;
@@ -1212,13 +1211,8 @@ extern void* System_strtokIncludingDelimiters(const char *str0, const char *deli
       break;
     }
     start = MMC_UNTAGFIXNUM(MMC_CAR(lst));
-    /* create stmp */
     pos = end - start;
-    stmp = (char*)malloc((pos+1) * sizeof(char));
-    strncpy(stmp, str + start, pos);
-    stmp[pos] = '\0';
-    slst = mmc_mk_cons(mmc_mk_scon(stmp), slst);
-    free(stmp);
+    slst = mmc_mk_cons(mmc_mk_scon_n(str + start, pos), slst);
   }
   return slst;
 }
