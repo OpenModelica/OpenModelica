@@ -2432,7 +2432,7 @@ public
         then DAE.TSUB(toDAE(exp.tupleExp), exp.index, Type.toDAE(exp.ty));
 
       case RECORD_ELEMENT()
-        then DAE.RSUB(toDAE(exp.recordExp), exp.index, exp.fieldName, Type.toDAE(exp.ty));
+        then DAE.RSUB(toDAE(exp.recordExp), -1, exp.fieldName, Type.toDAE(exp.ty));
 
       case PARTIAL_FUNCTION_APPLICATION()
         algorithm
