@@ -2751,8 +2751,6 @@ algorithm
         if AbsynUtil.pathIsQual(qualified_path) then
           path := AbsynUtil.joinPaths(AbsynUtil.pathPrefix(qualified_path), path);
         end if;
-      else
-        fail();
       end if;
     elseif AbsynUtil.pathFirstIdent(qualified_path) == AbsynUtil.pathFirstIdent(env.destinationPath) then
       // Special case, the path refers to the destination package, e.g. moving path A.B.C into A.
