@@ -9,6 +9,7 @@ ModelicaTest.Blocks.IntegratorForceState.mos \
 ModelicaTest.Blocks.StrictLimiters.mos \
 ModelicaTest.Blocks.Continuous.mos \
 ModelicaTest.Media.TestOnly.MoistAir.mos \
+ModelicaTest.Media.TestOnly.MixIdealGasAir.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

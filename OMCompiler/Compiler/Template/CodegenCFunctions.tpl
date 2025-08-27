@@ -3879,16 +3879,26 @@ template literalExpConst(Exp lit, Integer litindex) "These should all be declare
     static _index_t <%name%>_dims[<%ndim%>] = {<%dims%>};
     <% match data case "" then
     <<
+    #if (defined(__clang__)  && __clang_major__ >= 17) || (defined(__GNUC__) && __GNUC__ >= 8)
     static base_array_t const <%name%> = {
       <%ndim%>, <%name%>_dims, (void*) 0, (modelica_boolean) 0
     };
+    #else
+    /* handle joke compilers */
+    #define <%name%> (base_array_t){<%ndim%>, <%name%>_dims, (void*) 0, (modelica_boolean) 0}
+    #endif
     >>
     else
     <<
     static const <%expTypeFlag(ty, 2)%> <%name%>_data[] = {<%data%>};
+    #if (defined(__clang__)  && __clang_major__ >= 17) || (defined(__GNUC__) && __GNUC__ >= 8)
     static <%expTypeFlag(ty, 4)%> const <%name%> = {
       <%ndim%>, <%name%>_dims, (void*) <%name%>_data, (modelica_boolean) 0
     };
+    #else
+    /* handle joke compilers */
+    #define <%name%> (base_array_t){<%ndim%>, <%name%>_dims, (void*) <%name%>_data, (modelica_boolean) 0}
+    #endif
     >>
     %>
     >>
@@ -7207,8 +7217,11 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
     match Expression.typeof(inExp)
     case T_ARRAY(__) then
       error(sourceInfo(),'ASUB non-scalar <%ExpressionDumpTpl.dumpExp(inExp,"\"")%>. The inner exp has type: <%unparseType(Expression.typeof(e))%>. After ASUB it is still an array: <%unparseType(Expression.typeof(inExp))%>.')
+    case T_COMPLEX(complexClassType = ClassInf.RECORD(__)) then
+      let expIndexes = (indexes |> index => daeSubscriptExp(index, context, &preExp, &varDecls, &auxFunction) ;separator=", ")
+      '<%typeShort%>_array_get(<%exp%>, <%listLength(indexes)%>, <%expIndexes%>)'
     else
-      let expIndexes = (indexes |> index => '<%daeExpASubIndex(index, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
+      let expIndexes = (indexes |> index => daeExpASubIndex(index, context, &preExp, &varDecls, &auxFunction) ;separator=", ")
       '<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(<%exp%>, <%expIndexes%>)'
 
   else
