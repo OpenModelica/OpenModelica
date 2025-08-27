@@ -31,6 +31,7 @@ CopyClass3.mos \
 CopyClass4.mos \
 CopyClass5.mos \
 CopyClass6.mos \
+CopyClass7.mos \
 CopyClassInvalid1.mos \
 CopyClassRedeclare1.mos \
 DefaultComponentName.mos \
