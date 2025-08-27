@@ -7136,9 +7136,13 @@ template daeExpRsub(Exp inExp, Context context, Text &preExp,
  "Generates code for an tsub expression."
 ::=
   match inExp
-  case RSUB(__) then
+  case RSUB(ix=-1) then
     let res = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
     '<%res%>._<%fieldName%>'
+  case RSUB(__) then
+    let res = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
+    let offset = intAdd(ix,1) // 1-based
+    '(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%res%>), <%offset%>)))'
   else
     error(sourceInfo(), '<%ExpressionDumpTpl.dumpExp(inExp,"\"")%>: failed')
 end daeExpRsub;
