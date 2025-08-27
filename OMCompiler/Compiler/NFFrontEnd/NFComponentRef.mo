@@ -1120,8 +1120,14 @@ public
           compare(cref1.restCref, cref2.restCref);
 
       case (EMPTY(), EMPTY()) then 0;
-      case (_, EMPTY()) then 1;
-      case (EMPTY(), _) then -1;
+      case (WILD(), WILD())   then 0;
+      case (_, EMPTY())       then 1;
+      case (_, WILD())        then 1;
+      case (EMPTY(), _)       then -1;
+      case (WILD(), _)        then -1;
+      else algorithm
+        Error.assertion(false, getInstanceName() + " failed", sourceInfo());
+      then fail();
     end match;
   end compare;
 
