@@ -57,7 +57,6 @@ protected
   // Util import
   import BackendUtil = NBBackendUtil;
   import Slice = NBSlice;
-  import NBSlice.IntLst;
   import StringUtil;
 public
   // =======================================
@@ -237,8 +236,9 @@ public
     output list<Slice<EquationPointer>> matched_eqns = {}, unmatched_eqns = {};
   protected
     Adjacency.Mapping mapping;
-    UnorderedMap<VariablePointer, IntLst> var_map_matched, var_map_unmatched;
-    UnorderedMap<EquationPointer, IntLst> eqn_map_matched, eqn_map_unmatched;
+    UnorderedMap<VariablePointer, list<Integer>> var_map_matched, var_map_unmatched;
+    UnorderedMap<EquationPointer, list<Integer>> eqn_map_matched, eqn_map_unmatched;
+    type IntLst = list<Integer>; // needed for UnorderedMap.new
     Pointer<Variable> arr_var;
     Pointer<Equation> arr_eqn;
     Integer start_idx;

@@ -344,9 +344,9 @@ protected
       (name, range) := tpl;
       _ := match range
         case Expression.RANGE() algorithm
-          if Util.isSome(range.step) and Expression.isNegative(Util.getOption(range.step)) then
+          if Util.applyOptionOrDefault(range.step, Expression.isNegative, false) then
             UnorderedMap.add(name, range.start, replacements);
-          elseif Util.isNone(range.step) or Expression.isPositive(Util.getOption(range.step)) then
+          elseif Util.applyOptionOrDefault(range.step, Expression.isPositive, true) then
             UnorderedMap.add(name, range.stop, replacements);
           else
             max_call := Expression.CALL(Call.makeTypedCall(

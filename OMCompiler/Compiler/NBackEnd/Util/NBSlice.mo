@@ -62,11 +62,9 @@ protected
   import UnorderedMap;
 
 public
-  type IntLst = list<Integer>;
-
   record SLICE
     T t;
-    IntLst indices;
+    list<Integer> indices;
   end SLICE;
 
   // ############################################################
@@ -139,24 +137,24 @@ public
   function addToSliceMap
     input T t;
     input Integer i;
-    input UnorderedMap<T, IntLst> map;
+    input UnorderedMap<T, list<Integer>> map;
   algorithm
     UnorderedMap.add(t, i :: UnorderedMap.getOrDefault(t, map, {}), map);
   end addToSliceMap;
 
   function fromTpl
-    input tuple<T, IntLst> tpl;
+    input tuple<T, list<Integer>> tpl;
     output Slice<T> slice;
   protected
     T t;
-    IntLst lst;
+    list<Integer> lst;
   algorithm
     (t, lst) := tpl;
     slice := SLICE(t, lst);
   end fromTpl;
 
   function fromMap
-    input UnorderedMap<T, IntLst> map;
+    input UnorderedMap<T, list<Integer>> map;
     output list<Slice<T>> slices = list(fromTpl(tpl) for tpl in UnorderedMap.toList(map));
   end fromMap;
 
@@ -1379,7 +1377,7 @@ protected
   algorithm
     mode        := Mode.create(eqn_name, {original_cref}, false);
     scalarized  := listReverse(ComponentRef.scalarizeAll(cref, true));
-    map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
+    map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual, listLength(scalarized));
     for scal in scalarized loop
       UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map), map3);
     end for;
@@ -1437,7 +1435,7 @@ protected
       resolveReductions(List.zip3(subs, dims, regulars), map1, key, stripped);
 
       // 3. create a map that maps a configuration key to the final variable indices
-      map2      := UnorderedMap.new<Val2>(keyHash, keyEqual);
+      map2      := UnorderedMap.new<Val2>(keyHash, keyEqual, UnorderedMap.size(map1));
       for k in UnorderedMap.keyList(map1) loop
         scalarized := UnorderedMap.getSafe(k, map1, sourceInfo());
         scal_lst := List.flatten(list(getCrefInFrameIndices(scal, frames, mapping, map) for scal in scalarized));
@@ -1478,7 +1476,7 @@ protected
   algorithm
     repeated    := UnorderedSet.contains(cref, rep);
     scalarized  := listReverse(ComponentRef.scalarizeAll(cref, true));
-    map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual);
+    map3        := UnorderedMap.new<Val2>(ComponentRef.hash, ComponentRef.isEqual, listLength(scalarized));
     for scal in scalarized loop
       UnorderedMap.add(scal, getCrefInFrameIndices(scal, frames, mapping, map), map3);
     end for;
@@ -1510,7 +1508,7 @@ protected
     The key is created from the dimensions and the additional boolean to look up the cref occurence in the map."
     input list<tuple<Dimension, Boolean>> lst   "equation dimension and cref regularity tuple list";
     input UnorderedMap<Key, Val2> map           "map to look up occurence";
-    input Array<Integer> key                    "mutable key";
+    input array<Integer> key                    "mutable key";
     input array<list<Integer>> m                "adjacency matrix";
     input UnorderedMap<Mode.Key, Mode> modes;
     input Mode mode;
@@ -1573,7 +1571,7 @@ protected
   function resolveReductions
     input list<tuple<Subscript, Dimension, Boolean>> lst;
     input UnorderedMap<Key, Val1> map;
-    input Array<Integer> key;
+    input array<Integer> key;
     input ComponentRef stripped;
     input list<Subscript> acc = {};
     input Integer index = 1;
@@ -1759,7 +1757,7 @@ protected
       // build list from range
       case Expression.RANGE() algorithm
         (start, step, stop) := Expression.getIntegerRange(rep);
-      then List.intRange3(start,step, stop);
+      then List.intRange3(start, step, stop);
 
       // resolve individual array elements
       case Expression.ARRAY()

@@ -2026,7 +2026,7 @@ public
     input Operator operator;
   protected
     Expression diff_arg;
-    Array<List<Expression>> diff_lists;
+    array<list<Expression>> diff_lists;
     Integer idx = 1;
   algorithm
     diff_lists := arrayCreate(listLength(arguments), {});

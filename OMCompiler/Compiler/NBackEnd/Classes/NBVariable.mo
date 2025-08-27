@@ -322,7 +322,7 @@ public
 
   function getDimensions
     input Pointer<Variable> var_ptr;
-    output List<Dimension> dims;
+    output list<Dimension> dims;
   protected
     Variable var;
   algorithm

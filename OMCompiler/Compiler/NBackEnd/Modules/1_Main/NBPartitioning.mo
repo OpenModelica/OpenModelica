@@ -375,7 +375,7 @@ public
       input ClockedInfo info;
     protected
       ComponentRef base_clock = UnorderedMap.getSafe(clock_name, info.subToBase, sourceInfo());
-      List<ComponentRef> current_clocks;
+      list<ComponentRef> current_clocks;
     algorithm
       current_clocks := UnorderedMap.getOrDefault(base_clock, info.baseToSub, {});
       UnorderedMap.add(base_clock, clock_name :: current_clocks, info.baseToSub);
