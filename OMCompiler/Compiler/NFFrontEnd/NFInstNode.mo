@@ -2055,10 +2055,16 @@ uniontype InstNode
     binding_exp := match node
       local
         Variable var;
-      case COMPONENT_NODE() guard(Component.hasBinding(Pointer.access(node.component)))
-        then Binding.getExpOpt(Component.getBinding(Pointer.access(node.component)));
-      case COMPONENT_NODE()
-        then getBindingExpOpt(instanceParent(node));
+        InstNode scope;
+
+      case COMPONENT_NODE() algorithm
+        scope := instanceParent(node);
+        try
+          binding_exp := Binding.getExpOpt(Component.getImplicitBinding(Pointer.access(node.component), scope));
+        else
+          binding_exp := getBindingExpOpt(scope);
+        end try;
+      then binding_exp;
       case VAR_NODE() algorithm
           var := Pointer.access(node.varPointer);
         then Binding.getExpOpt(var.binding);
