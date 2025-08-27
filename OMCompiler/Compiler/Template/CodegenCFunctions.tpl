@@ -3885,7 +3885,7 @@ template literalExpConst(Exp lit, Integer litindex) "These should all be declare
     };
     #else
     /* handle joke compilers */
-    #define <%name%> {<%ndim%>, <%name%>_dims, (void*) 0, (modelica_boolean) 0}
+    #define <%name%> (base_array_t){<%ndim%>, <%name%>_dims, (void*) 0, (modelica_boolean) 0}
     #endif
     >>
     else
@@ -3897,7 +3897,7 @@ template literalExpConst(Exp lit, Integer litindex) "These should all be declare
     };
     #else
     /* handle joke compilers */
-    #define <%name%> {<%ndim%>, <%name%>_dims, (void*) <%name%>_data, (modelica_boolean) 0}
+    #define <%name%> (base_array_t){<%ndim%>, <%name%>_dims, (void*) <%name%>_data, (modelica_boolean) 0}
     #endif
     >>
     %>
