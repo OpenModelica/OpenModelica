@@ -3879,16 +3879,26 @@ template literalExpConst(Exp lit, Integer litindex) "These should all be declare
     static _index_t <%name%>_dims[<%ndim%>] = {<%dims%>};
     <% match data case "" then
     <<
+    #if (defined(__clang__)  && __clang_major__ >= 17) || (defined(__GNUC__) && __GNUC__ >= 8)
     static base_array_t const <%name%> = {
       <%ndim%>, <%name%>_dims, (void*) 0, (modelica_boolean) 0
     };
+    #else
+    /* handle joke compilers */
+    #define <%name%> {<%ndim%>, <%name%>_dims, (void*) 0, (modelica_boolean) 0}
+    #endif
     >>
     else
     <<
     static const <%expTypeFlag(ty, 2)%> <%name%>_data[] = {<%data%>};
+    #if (defined(__clang__)  && __clang_major__ >= 17) || (defined(__GNUC__) && __GNUC__ >= 8)
     static <%expTypeFlag(ty, 4)%> const <%name%> = {
       <%ndim%>, <%name%>_dims, (void*) <%name%>_data, (modelica_boolean) 0
     };
+    #else
+    /* handle joke compilers */
+    #define <%name%> {<%ndim%>, <%name%>_dims, (void*) <%name%>_data, (modelica_boolean) 0}
+    #endif
     >>
     %>
     >>
