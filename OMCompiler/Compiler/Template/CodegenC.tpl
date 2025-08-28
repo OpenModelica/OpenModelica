@@ -6305,29 +6305,29 @@ template equationGenericAssign(SimEqSystem eq, Context context,
                                  Text &varDecls, Text &auxFunction, String modelNamePrefix)
  "Generate a call for a generic for-loop structure with an index-list."
 ::=
+  let jac = match context case JACOBIAN_CONTEXT() then ", jacobian" else ""
+  let sub_name = match context case JACOBIAN_CONTEXT() then "jac_" else ""
 <<
 <%modelicaLine(eqInfo(eq))%>
 <%match eq
 case eqn as SES_RESIZABLE_ASSIGN() then
   let &preExp = buffer ""
   let &sub = buffer ""
-  let jac = match context case JACOBIAN_CONTEXT() then ", jacobian" else ""
   let forIter = (iters |> it => forIterator(it, context, &preExp, &varDecls, &auxFunction, &sub);separator="\n";empty)
   let forNames = (iters |> it => forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub);separator=", ";empty)
   let forTail = (iters |> it => "}";separator="\n";empty)
   <<
     <%forIter%>
     <%preExp%>
-    genericCall_<%call_index%>(data, threadData<%jac%>, equationIndexes, <%forNames%>); /*<%symbolName(modelNamePrefix,"genericCall")%>*/
+    genericCall_<%sub_name%><%call_index%>(data, threadData<%jac%>, equationIndexes, <%forNames%>); /*<%symbolName(modelNamePrefix,"genericCall")%>*/
     <%forTail%>
   >>
 case eqn as SES_GENERIC_ASSIGN() then
   let idx_len = listLength(scal_indices)
-  let jac = match context case JACOBIAN_CONTEXT() then ", jacobian" else ""
   <<
   const int idx_lst[<%idx_len%>] = {<%(scal_indices |> idx => '<%idx%>';separator=", ")%>};
   for(int i=0; i<<%idx_len%>; i++)
-    genericCall_<%call_index%>(data, threadData<%jac%>, equationIndexes, idx_lst[i]); /*<%symbolName(modelNamePrefix,"genericCall")%>*/
+    genericCall_<%sub_name%><%call_index%>(data, threadData<%jac%>, equationIndexes, idx_lst[i]); /*<%symbolName(modelNamePrefix,"genericCall")%>*/
   >>
 %>
 <%endModelicaLine()%>
@@ -6387,9 +6387,10 @@ template entwinedSingleCall(SimEqSystem eq, Integer i0, Context context,
 <%match eq
 case eqn as SES_GENERIC_ASSIGN() then
   let jac = match context case JACOBIAN_CONTEXT() then ", jacobian" else ""
+  let sub_name = match context case JACOBIAN_CONTEXT() then "jac_" else ""
   <<
     case <%call_index%>:
-      genericCall_<%call_index%>(data, threadData<%jac%>, equationIndexes, idx_lst_<%call_index%>[call_indices[<%i0%>]]);
+      genericCall_<%sub_name%><%call_index%>(data, threadData<%jac%>, equationIndexes, idx_lst_<%call_index%>[call_indices[<%i0%>]]);
       call_indices[<%i0%>]++;
       break;
   >>
@@ -7403,6 +7404,7 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
  "Generates the body for a set of generic calls."
 ::=
   let jac = match context case JACOBIAN_CONTEXT() then ", JACOBIAN *jacobian" else ""
+  let sub_name = match context case JACOBIAN_CONTEXT() then "jac_" else ""
   (genericCalls |> call =>
     let comment = escapeCComments(simGenericCallString(call))
     let &sub = buffer ""
@@ -7421,7 +7423,7 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       <%comment%>
       */
       <%auxFunction%>
-      void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, const int equationIndexes[2], <%idx_%>)
+      void genericCall_<%sub_name%><%index%>(DATA *data, threadData_t *threadData<%jac%>, const int equationIndexes[2], <%idx_%>)
       {
         <%idx_copy%>
         <%varDecls%>
@@ -7441,7 +7443,7 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       <%comment%>
       */
       <%auxFunction%>
-      void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, const int equationIndexes[2], <%idx_%>)
+      void genericCall_<%sub_name%><%index%>(DATA *data, threadData_t *threadData<%jac%>, const int equationIndexes[2], <%idx_%>)
       {
         <%idx_copy%>
         <%varDecls%>
@@ -7461,7 +7463,7 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       <%comment%>
       */
       <%auxFunction%>
-      void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, const int equationIndexes[2], <%idx_%>)
+      void genericCall_<%sub_name%><%index%>(DATA *data, threadData_t *threadData<%jac%>, const int equationIndexes[2], <%idx_%>)
       {
         <%idx_copy%>
         <%varDecls%>
@@ -7616,6 +7618,7 @@ template genericCallHeaders(list<SimGenericCall> genericCalls, Context context)
  "Generates the header for a set of generic calls."
 ::=
   let jac = match context case JACOBIAN_CONTEXT() then ", JACOBIAN *jacobian" else ""
+  let sub_name = match context case JACOBIAN_CONTEXT() then "jac_" else ""
   (genericCalls |> call => match call
     case SINGLE_GENERIC_CALL()
     case IF_GENERIC_CALL() then
@@ -7624,7 +7627,7 @@ template genericCallHeaders(list<SimGenericCall> genericCalls, Context context)
       let &varDecls = buffer ""
       let &auxFunction = buffer ""
       let idx_ = if resizable then (iters |> it => 'modelica_integer <%forIteratorName(it, context, &preExp, &varDecls, &auxFunction, &sub)%>';separator=", ";empty) else "int idx"
-      <<void genericCall_<%index%>(DATA *data, threadData_t *threadData<%jac%>, const int equationIndexes[2], <%idx_%>);>>;
+      <<void genericCall_<%sub_name%><%index%>(DATA *data, threadData_t *threadData<%jac%>, const int equationIndexes[2], <%idx_%>);>>;
   separator="\n\n")
 end genericCallHeaders;
 
