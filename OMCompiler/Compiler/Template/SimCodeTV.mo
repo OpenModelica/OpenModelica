@@ -4034,6 +4034,10 @@ package Config
     output Boolean outBoolean;
   end globalHomotopy;
 
+  function replacedHomotopy
+    output Boolean outBoolean;
+  end replacedHomotopy;
+
   function adaptiveHomotopy
     output Boolean outBoolean;
   end adaptiveHomotopy;

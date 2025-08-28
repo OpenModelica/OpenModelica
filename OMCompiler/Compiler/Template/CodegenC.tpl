@@ -1313,7 +1313,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <%symbolName(modelNamePrefixStr,"function_initSpatialDistribution")%>,
       <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>,
       <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>,
-      <%if Config.adaptiveHomotopy() then (if Config.globalHomotopy() then '2' else '3') else (if Config.globalHomotopy() then '1' else '0')%>, /* useHomotopy - 0: local homotopy (equidistant lambda), 1: global homotopy (equidistant lambda), 2: new global homotopy approach (adaptive lambda), 3: new local homotopy approach (adaptive lambda)*/
+      <%if Config.replacedHomotopy() then 'NO_HOMOTOPY' else if Config.adaptiveHomotopy() then (if Config.globalHomotopy() then 'GLOBAL_ADAPTIVE_HOMOTOPY' else 'LOCAL_ADAPTIVE_HOMOTOPY') else (if Config.globalHomotopy() then 'GLOBAL_EQUIDISTANT_HOMOTOPY' else 'LOCAL_EQUIDISTANT_HOMOTOPY')%>,
       <%if intEq(listLength(initialEquations_lambda0), 0) then "NULL" else '<%symbolName(modelNamePrefixStr,"functionInitialEquations_lambda0")%>'%>,
       <%symbolName(modelNamePrefixStr,"functionRemovedInitialEquations")%>,
       <%symbolName(modelNamePrefixStr,"updateBoundParameters")%>,

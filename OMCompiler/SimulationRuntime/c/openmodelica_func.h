@@ -168,8 +168,9 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   * 1: global homotopy approach (equidistant lambda steps)
   * 2: new global homotopy approach (adaptive lambda steps)
   * 3: new local homotopy approach (adaptive lambda steps)
+  * 4: no homotopy
   */
-  int useHomotopy;
+  HOMOTOPY_METHOD homotopyMethod;
 
   /*! \fn functionInitialEquations_lambda0
   *
