@@ -143,6 +143,7 @@
         <file>Resources/icons/step-return.svg</file>
         <file>Resources/icons/breakpoint_enabled.svg</file>
         <file>Resources/icons/breakpoint_disabled.svg</file>
+        <file>Resources/icons/ssp-icon.svg</file>
         <file>Resources/icons/link-external.svg</file>
         <file>Resources/icons/simulation-parameters.svg</file>
         <file>Resources/icons/interface-data.svg</file>
@@ -207,7 +208,6 @@
         <file>Resources/icons/completerComponent.svg</file>
         <file>Resources/icons/completerClass.svg</file>
         <file>Resources/icons/completerAnnotation.svg</file>
-        <file>Resources/icons/import-tlmmodel.svg</file>
         <file>Resources/icons/auto_scale.svg</file>
         <file>Resources/icons/drop-menu.svg</file>
     </qresource>
