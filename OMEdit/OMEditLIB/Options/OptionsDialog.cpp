@@ -3202,7 +3202,7 @@ void OptionsDialog::addListItems()
   pFMIItem->setText(tr("FMI"));
   // OMSimulator Item
   QListWidgetItem *pOMSimulatorItem = new QListWidgetItem(mpOptionsList);
-  pOMSimulatorItem->setIcon(QIcon(":/Resources/icons/tlm-icon.svg"));
+  pOMSimulatorItem->setIcon(QIcon(":/Resources/icons/ssp-icon.svg"));
   pOMSimulatorItem->setText(tr("OMSimulator/SSP"));
   // Traceability Item
   QListWidgetItem *pTraceabilityItem = new QListWidgetItem(mpOptionsList);
