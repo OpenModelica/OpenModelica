@@ -39,7 +39,6 @@ simulate(initializationTests.bug_2207, simflags="-lv=LOG_INIT_V"); getErrorStrin
 // LOG_INIT          | info    | updating primary start-values
 // LOG_INIT_V        | info    | updated start value: x(start=200)
 // LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
-// LOG_INIT_HOMOTOPY | info    | Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. To disable initialization with homotopy operator use \"-noHomotopyOnFirstTry\".
 // LOG_INIT_V        | info    | parameter values
 // |                 | |       | | real parameters
 // |                 | |       | | | [1] parameter Real a(start=100, fixed=true) = 100
