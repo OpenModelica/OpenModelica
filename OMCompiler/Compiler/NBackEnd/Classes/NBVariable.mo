@@ -575,7 +575,7 @@ public
     if isSome(partner) then
       partner_cref := getVarName(Util.getOption(partner));
       if not scalarized then
-        partner_cref := ComponentRef.mergeSubscripts(listReverse(ComponentRef.subscriptsAllFlat(cref)), partner_cref, true, true);
+        partner_cref := ComponentRef.mergeSubscripts(ComponentRef.subscriptsAllFlat(cref), partner_cref, true, true);
       end if;
     else
       Error.addMessage(Error.INTERNAL_ERROR,
@@ -986,7 +986,7 @@ public
           var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.STATE_DER(state, NONE()));
           (var_ptr, der_cref) := makeVarPtrCyclic(var, der_cref);
           if not scalarized then
-            der_cref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(cref)), der_cref);
+            der_cref := ComponentRef.setSubscriptsList(ComponentRef.subscriptsAll(cref), der_cref);
           end if;
       then ();
 

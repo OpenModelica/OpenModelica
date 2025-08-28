@@ -848,7 +848,14 @@ public
     output list<Subscript> subscripts = List.flatten(subscriptsAllWithWhole(cref));
   end subscriptsAllWithWholeFlat;
 
- function subscriptsAll
+  function subscriptsAll
+    "Returns all subscripts of a cref.
+     Ex: a[1, 2].b[4].c[6, 3] => {{1,2}, {4}, {6,3}}"
+    input ComponentRef cref;
+    output list<list<Subscript>> subscripts = listReverseInPlace(subscriptsAllReverse(cref));
+  end subscriptsAll;
+
+  function subscriptsAllReverse
     "Returns all subscripts of a cref in reverse order.
      Ex: a[1, 2].b[4].c[6, 3] => {{6,3}, {4}, {1,2}}"
     input ComponentRef cref;
@@ -856,10 +863,10 @@ public
     output list<list<Subscript>> subscripts;
   algorithm
     subscripts := match cref
-      case CREF() then subscriptsAll(cref.restCref, cref.subscripts :: accumSubs);
+      case CREF() then subscriptsAllReverse(cref.restCref, cref.subscripts :: accumSubs);
       else accumSubs;
     end match;
-  end subscriptsAll;
+  end subscriptsAllReverse;
 
   function subscriptsAllFlat
     "Returns all subscripts of a cref as a flat list in the correct order.
@@ -869,8 +876,8 @@ public
   end subscriptsAllFlat;
 
   function subscriptsExceptModel
-    "Returns all subscripts of a cref in reverse order leaving out model subs.
-     Ex: a[1, 2].b[4].c[6, 3] => {{6,3}, {4}, {1,2}}"
+    "Returns all subscripts of a cref leaving out model subs.
+     Ex: a[1, 2].b[4].c[6, 3] => {{1,2}, {4}, {6,3}}"
     input ComponentRef cref;
     input list<list<Subscript>> accumSubs = {};
     output list<list<Subscript>> subscripts;
@@ -1087,7 +1094,7 @@ public
     // Fill in : subscripts where needed so the cref is fully subscripted.
     cref := fillSubscripts(cref);
     // Fetch all the subscripts.
-    subs := List.flatten(subscriptsAll(cref));
+    subs := List.flatten(subscriptsAllReverse(cref));
 
     if listEmpty(subs) then
       return;
@@ -1889,7 +1896,7 @@ public
     input ComponentRef cref;
     output list<Integer> s_lst = {};
   algorithm
-    for subs_tmp in subscriptsAll(cref) loop
+    for subs_tmp in subscriptsAllReverse(cref) loop
       if listEmpty(subs_tmp) then
         s_lst := 1 :: s_lst;
       else
@@ -1905,7 +1912,7 @@ public
     input Boolean addScalar;
     output list<Expression> e_lst = {};
   algorithm
-    for subs_tmp in subscriptsAll(cref) loop
+    for subs_tmp in subscriptsAllReverse(cref) loop
       if addScalar and listEmpty(subs_tmp) then
         e_lst := Expression.INTEGER(1) :: e_lst;
       else
@@ -2264,7 +2271,7 @@ public
   protected
     list<Subscript> subs;
   algorithm
-    subs := List.flattenReverse(subscriptsAll(scal));
+    subs := subscriptsAllFlat(scal);
     if listEmpty(subs) then
       // do not do it for scalar variables
       arr := NONE();
