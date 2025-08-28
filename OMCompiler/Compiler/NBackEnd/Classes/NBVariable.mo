@@ -575,7 +575,7 @@ public
     if isSome(partner) then
       partner_cref := getVarName(Util.getOption(partner));
       if not scalarized then
-        partner_cref := ComponentRef.mergeSubscripts(ComponentRef.subscriptsAllFlat(cref), partner_cref, true, true);
+        partner_cref := ComponentRef.setSubscriptsList(ComponentRef.subscriptsAll(cref), partner_cref);
       end if;
     else
       Error.addMessage(Error.INTERNAL_ERROR,
@@ -1068,12 +1068,12 @@ public
     input ComponentRef cref;
     output list<ComponentRef> children;
   protected
-    list<Subscript> subscripts;
+    list<list<Subscript>> subscripts;
     list<Pointer<Variable>> arg_children;
   algorithm
-    subscripts    := ComponentRef.subscriptsAllFlat(cref);
+    subscripts    := ComponentRef.subscriptsAll(cref);
     arg_children  := BVariable.getRecordChildren(getVarPointer(cref, sourceInfo()));
-    children      := list(ComponentRef.mergeSubscripts(subscripts, getVarName(child)) for child in arg_children);
+    children      := list(ComponentRef.setSubscriptsList(subscripts, getVarName(child)) for child in arg_children);
   end getRecordChildrenCref;
 
   function getRecordChildrenCrefOrSelf

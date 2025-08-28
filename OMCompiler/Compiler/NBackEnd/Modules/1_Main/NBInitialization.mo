@@ -281,7 +281,7 @@ public
     Pointer<Variable> var_ptr;
     Option<Pointer<Variable>> var_pre;
     ComponentRef pre;
-    list<Subscript> subscripts;
+    list<list<Subscript>> subscripts;
     EquationKind kind;
     Pointer<Equation> eq;
   algorithm
@@ -289,9 +289,9 @@ public
     var_ptr := BVariable.getVarPointer(cref, sourceInfo());
     var_pre := BVariable.getVarPre(var_ptr);
     if Util.isSome(var_pre) then
-      subscripts := ComponentRef.subscriptsAllFlat(cref);
+      subscripts := ComponentRef.subscriptsAll(cref);
       pre := BVariable.getVarName(Util.getOption(var_pre));
-      pre := ComponentRef.mergeSubscripts(subscripts, pre, true, true);
+      pre := ComponentRef.setSubscriptsList(subscripts, pre);
       kind := if BVariable.isContinuous(var_ptr, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
       eq := Equation.makeAssignment(Expression.fromCref(cref, true), Expression.fromCref(pre, true), idx, NBEquation.START_STR, iter, EquationAttributes.default(kind, true));
       Pointer.update(ptr_start_eqs, eq :: Pointer.access(ptr_start_eqs));
