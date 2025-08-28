@@ -67,7 +67,7 @@ public
     list<ComponentRef> cref_lst;
     Expression res, diff_res;
     DifferentiationArguments args;
-    Integer diff_res_int, eqn_index, var_index;
+    Integer diff_res_int, eqn_index, var_index, nv, ne, nz, count = 0;
     Tuple_Id id;
     UnorderedMap<Tuple_Id,Integer> diffs = UnorderedMap.new<Integer>(Tuple_Id.hash, Tuple_Id.isEqual);
     UnorderedSet<EquationPointer> int_eqns = UnorderedSet.new(Equation.hash, Equation.isEqualPtr);
@@ -169,6 +169,8 @@ public
 
     // remove this dummy section
     // ################################
+    nv := 3;
+    ne := 3;
     indices := arrayCreate(3, {});
     values := arrayCreate(3, {});
     indices[1] := {1,2};
@@ -177,10 +179,14 @@ public
     values[2] := {5};
     indices[3] := {1,3};
     values[3] := {8,-2};
+    for l in values loop
+      count := count + listLength(l);
+    end for;
+    nz := count;
     // ################################
 
 
-    setMatrix(3,3,5,indices,values);
+    setMatrix(nv,ne,nz,indices,values);
     //printMatrix();
     freeMatrix();
   end main;
