@@ -120,7 +120,6 @@ public
       Integer jacobianIndex;
       Integer residualIndex;
       Integer implicitIndex; // this can be removed i think -> moved to solve
-      //Integer genericCallIndex;  this is replaced by UnorderedMap.size(generic_call_map)
       Integer extObjIndex;
 
       UnorderedMap<AliasInfo, Integer> alias_map;
