@@ -38,6 +38,7 @@ testBug3846.mos \
 testBug5673.mos \
 testDisableDep.mos \
 testDiscreteStructe.mos \
+testDgesvSources.mos \
 TestSourceCodeFMU.mos \
 ticket5670.mos \
 ticket6262.mos \

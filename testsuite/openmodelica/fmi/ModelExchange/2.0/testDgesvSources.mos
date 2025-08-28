@@ -1,0 +1,32 @@
+// name:  ticket13719
+// keywords: FMI 2.0 export
+// status: correct
+// teardown_command: rm -rf FMUWithMatrixSolve.fmu
+
+loadModel(Modelica);
+getErrorString();
+
+loadString("
+  model FMUWithMatrixSolve
+    Real A[3,3] = [1,2,3;
+                   3,4,5;
+                   2,1,4];
+    Real b[3] = {10,22,12};
+    Real x[3];
+  algorithm
+    x := Modelica.Math.Matrices.solve(A,b);  // x = {3,2,1}
+  end FMUWithMatrixSolve;");
+getErrorString();
+
+buildModelFMU(FMUWithMatrixSolve);
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "FMUWithMatrixSolve.fmu"
+// ""
+// endResult
