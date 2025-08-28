@@ -1185,7 +1185,7 @@ protected
         Pointer<Variable> parent;
         list<ComponentRef> crefs;
         ComponentRef field;
-        list<Subscript> subs;
+        list<list<Subscript>> subs;
 
       // 0 skips are full dependencies
       case (Type.TUPLE(types = rest_ty), 0::rest) then (index, ty);
@@ -1206,17 +1206,17 @@ protected
         // get the children and skip to correct one
         field := match BVariable.getParent(BVariable.getVarPointer(cref, sourceInfo()))
           case SOME(parent) algorithm
-            subs := ComponentRef.subscriptsAllFlat(cref);
+            subs := ComponentRef.subscriptsAll(cref);
             crefs :=  list(BVariable.getVarName(child) for child in BVariable.getRecordChildren(parent));
             crefs := list(c for c guard(UnorderedMap.contains(c, fullmap)) in crefs);
             if skip <= listLength(crefs) then
               for i in 1:skip-1 loop
                 field :: crefs := crefs;
-                field := ComponentRef.mergeSubscripts(subs, field, true);
+                field := ComponentRef.setSubscriptsList(subs, field);
                 index := index + Type.sizeOf(ComponentRef.getSubscriptedType(field));
               end for;
               field :: crefs := crefs;
-              field := ComponentRef.mergeSubscripts(subs, field, true);
+              field := ComponentRef.setSubscriptsList(subs, field);
             else
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because skip of " + intString(skip)
                 + " is too large for record elements " + List.toString(crefs, ComponentRef.toString) + "."});

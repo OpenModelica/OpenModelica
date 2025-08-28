@@ -575,7 +575,7 @@ public
     if isSome(partner) then
       partner_cref := getVarName(Util.getOption(partner));
       if not scalarized then
-        partner_cref := ComponentRef.mergeSubscripts(listReverse(ComponentRef.subscriptsAllFlat(cref)), partner_cref, true, true);
+        partner_cref := ComponentRef.copySubscripts(cref, partner_cref);
       end if;
     else
       Error.addMessage(Error.INTERNAL_ERROR,
@@ -986,7 +986,7 @@ public
           var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.STATE_DER(state, NONE()));
           (var_ptr, der_cref) := makeVarPtrCyclic(var, der_cref);
           if not scalarized then
-            der_cref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(cref)), der_cref);
+            der_cref := ComponentRef.copySubscripts(cref, der_cref);
           end if;
       then ();
 
@@ -1073,7 +1073,7 @@ public
   algorithm
     subscripts    := ComponentRef.subscriptsAllFlat(cref);
     arg_children  := BVariable.getRecordChildren(getVarPointer(cref, sourceInfo()));
-    children      := list(ComponentRef.mergeSubscripts(subscripts, getVarName(child)) for child in arg_children);
+    children      := list(ComponentRef.mergeSubscripts(subscripts, getVarName(child), true, true) for child in arg_children);
   end getRecordChildrenCref;
 
   function getRecordChildrenCrefOrSelf

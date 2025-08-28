@@ -1890,7 +1890,7 @@ public
         // get all Record children
         crefs := list(BVariable.getVarName(child) for child in BVariable.getRecordChildren(var));
         // add original subscripts
-        crefs := list(ComponentRef.mergeSubscripts(subs, child, true) for child in crefs);
+        crefs := list(ComponentRef.mergeSubscripts(subs, child) for child in crefs);
         // collect dependencies
         crefs := List.flatten(list(collectDependenciesCref(child, depth + 1, map, dep_map, sol_map) for child in crefs));
         for cref in crefs loop
