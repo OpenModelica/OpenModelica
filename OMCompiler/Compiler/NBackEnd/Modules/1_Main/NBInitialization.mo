@@ -289,9 +289,8 @@ public
     var_ptr := BVariable.getVarPointer(cref, sourceInfo());
     var_pre := BVariable.getVarPre(var_ptr);
     if Util.isSome(var_pre) then
-      subscripts := ComponentRef.subscriptsAll(cref);
       pre := BVariable.getVarName(Util.getOption(var_pre));
-      pre := ComponentRef.setSubscriptsList(subscripts, pre);
+      pre := ComponentRef.copySubscripts(cref, pre);
       kind := if BVariable.isContinuous(var_ptr, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
       eq := Equation.makeAssignment(Expression.fromCref(cref, true), Expression.fromCref(pre, true), idx, NBEquation.START_STR, iter, EquationAttributes.default(kind, true));
       Pointer.update(ptr_start_eqs, eq :: Pointer.access(ptr_start_eqs));

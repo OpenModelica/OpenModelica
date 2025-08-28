@@ -648,7 +648,7 @@ public
         if UnorderedMap.contains(strippedCref, diff_map) then
           // get the derivative and reapply subscripts
           derCref := UnorderedMap.getOrFail(strippedCref, diff_map);
-          derCref := ComponentRef.setSubscriptsList(ComponentRef.subscriptsAll(exp.cref), derCref);
+          derCref := ComponentRef.copySubscripts(exp.cref, derCref);
           res     := Expression.fromCref(derCref);
         else
           res     := Expression.makeZero(exp.ty);
@@ -713,7 +713,7 @@ public
         guard(UnorderedMap.contains(ComponentRef.stripSubscriptsAll(exp.cref), diff_map)) algorithm
         // get the derivative and reapply subscripts
         derCref := UnorderedMap.getOrFail(ComponentRef.stripSubscriptsAll(exp.cref), diff_map);
-        derCref := ComponentRef.setSubscriptsList(ComponentRef.subscriptsAll(exp.cref), derCref);
+        derCref := ComponentRef.copySubscripts(exp.cref, derCref);
         res     := Expression.fromCref(derCref);
       then (res, diffArguments);
 
@@ -771,7 +771,7 @@ public
         if UnorderedMap.contains(strippedCref, diff_map) then
           // get the derivative an reapply subscripts
           derCref := UnorderedMap.getOrFail(strippedCref, diff_map);
-          derCref := ComponentRef.setSubscriptsList(ComponentRef.subscriptsAll(exp.cref), derCref);
+          derCref := ComponentRef.copySubscripts(exp.cref, derCref);
           res     := Expression.fromCref(derCref);
         else
           res     := Expression.makeZero(exp.ty);

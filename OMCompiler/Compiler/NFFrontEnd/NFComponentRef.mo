@@ -813,8 +813,21 @@ public
     end match;
   end setSubscriptsList;
 
+  function copySubscripts
+    "merges the subscritps of origin to the target.
+    Note: does not remove subscripts already on target!"
+    input ComponentRef origin;
+    input output ComponentRef target;
+  protected
+    list<Subscript> subs = ComponentRef.subscriptsAllFlat(origin);
+  algorithm
+    if not listEmpty(subs) then
+      target := ComponentRef.mergeSubscripts(subs, target, true, true);
+    end if;
+  end copySubscripts;
+
   function subscriptsAllWithWhole
-    "Returns all subscripts of a cref in reverse order.
+    "Returns all subscripts of a cref in reverse order while not omitting whole dimensions.
      Ex: a[1, 2].b[4].c[6, 3] => {{6,3}, {4}, {1,2}}"
     input ComponentRef cref;
     input list<list<Subscript>> accumSubs = {};
@@ -842,7 +855,7 @@ public
   end subscriptsAllWithWhole;
 
   function subscriptsAllWithWholeFlat
-    "Returns all subscripts of a cref as a flat list in the correct order.
+    "Returns all subscripts of a cref as a flat list in the correct order while not omitting whole dimensions.
      Ex: a[1, 2].b[4].c[6, 3] => {1, 2, 4, 6, 3}"
     input ComponentRef cref;
     output list<Subscript> subscripts = List.flatten(subscriptsAllWithWhole(cref));

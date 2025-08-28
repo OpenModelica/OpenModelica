@@ -1875,7 +1875,7 @@ public
   protected
     Pointer<Variable> var;
     Integer sk = 1;
-    list<list<Subscript>> subs;
+    list<Subscript> subs;
   algorithm
     if UnorderedMap.contains(cref, map) then
       if not UnorderedMap.contains(cref, dep_map) then
@@ -1886,11 +1886,11 @@ public
     else
       var := BVariable.getVarPointer(cref, sourceInfo());
       if BVariable.isRecord(var) then
-        subs := ComponentRef.subscriptsAll(cref);
+        subs := ComponentRef.subscriptsAllFlat(cref);
         // get all Record children
         crefs := list(BVariable.getVarName(child) for child in BVariable.getRecordChildren(var));
         // add original subscripts
-        crefs := list(ComponentRef.setSubscriptsList(subs, child) for child in crefs);
+        crefs := list(ComponentRef.mergeSubscripts(subs, child) for child in crefs);
         // collect dependencies
         crefs := List.flatten(list(collectDependenciesCref(child, depth + 1, map, dep_map, sol_map) for child in crefs));
         for cref in crefs loop
