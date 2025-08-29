@@ -444,3 +444,18 @@ void printList(LIST* list, int stream, void (*printDataFunc)(void*,int,void*))
     messageClose(stream);
   }
 }
+
+/**
+ * @brief apply function to all list elements
+ *
+ * @param list            Pointer to list.
+ * @param applyDataFunc   Function that is applied to each element.
+ */
+void applyList(LIST* list, void(*applyDataFunc)(void*))
+{
+  LIST_NODE* node = list->first;
+  while (node) {
+    applyDataFunc(node->data);
+    node = node->next;
+  }
+}

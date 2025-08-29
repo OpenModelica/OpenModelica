@@ -79,6 +79,7 @@ extern "C" {
   void *listNodeData(LIST_NODE *node);
   void updateNodeData(LIST *list, LIST_NODE *node, const void *data);
   void printList(LIST* list, int stream, void (*printDataFunc)(void*,int,void*));
+  void applyList(LIST* list, void(*applyDataFunc)(void*));
 
 #ifdef __cplusplus
 }
