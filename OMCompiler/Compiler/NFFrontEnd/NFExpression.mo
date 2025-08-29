@@ -6585,7 +6585,7 @@ public
   algorithm
     exp := match exp
       // do nothing on shared literal
-      case Expression.SHARED_LITERAL()          then exp;
+      case Expression.SHARED_LITERAL() then exp;
 
       // replace literal array expressions that are not trivial
       case ARRAY() guard(isLiteralReplace(exp)) then replace(replaceLiteralArrayElements(exp, map, idx_ptr), map, idx_ptr);
@@ -6594,8 +6594,8 @@ public
         exp.elements := list(replaceLiteral(elem, map, idx_ptr) for elem in exp.elements);
       then replace(exp, map, idx_ptr);
 
-      // replace literal expressions that are not trivial
-      case _ guard(isLiteralReplace(exp))       then replace(exp, map, idx_ptr);
+      // replace literal expressions that are trivial
+      case _ guard(isLiteralReplace(exp)) then replace(exp, map, idx_ptr);
 
       // map down for other expressions
       else Expression.mapShallow(exp, function replaceLiteral(map = map, idx_ptr = idx_ptr));

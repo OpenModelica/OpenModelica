@@ -48,6 +48,7 @@ public
   import BuiltinFuncs = NFBuiltinFuncs;
   import Call = NFCall;
   import Class = NFClass;
+  import NFClassTree.ClassTree;
   import Component = NFComponent;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
@@ -1470,12 +1471,15 @@ public
 
             // differentiate interface arguments
             (inputs, funcDiffArgs)  := differentiateFunctionInterfaceNodes(der_func.inputs, interface_map, diff_map, funcDiffArgs, true);
-            (locals, funcDiffArgs)  := differentiateFunctionInterfaceNodes(der_func.locals, interface_map, diff_map, funcDiffArgs, true);
+            (locals, funcDiffArgs)  := differentiateFunctionInterfaceNodes(der_func.locals, interface_map, diff_map, funcDiffArgs, false);
             (outputs, funcDiffArgs) := differentiateFunctionInterfaceNodes(der_func.outputs, interface_map, diff_map, funcDiffArgs, false);
 
+            // update inputs, outputs and locals, add old outputs to locals as they might still be used as temporary variables
             der_func.inputs   := inputs;
-            der_func.locals   := listAppend(locals, local_outputs);
+            der_func.locals   := List.flatten({der_func.locals, locals, local_outputs});
             der_func.outputs  := outputs;
+            // also add the new locals to the class
+            new_cls.elements := ClassTree.appendComponentsToFlatTree(locals, new_cls.elements);
 
             // create "fake" function with correct interface to have the interface
             // in the case of recursive differentiation (e.g. function calls itself)
