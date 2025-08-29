@@ -255,7 +255,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
   nlsData->initializeStaticNLSData(data, threadData, nlsData, TRUE, TRUE);
 
   gbData->jacobian = (JACOBIAN*) malloc(sizeof(JACOBIAN));
-  initJacobian(gbData->jacobian, gbData->nlSystemSize, gbData->nlSystemSize, gbData->nlSystemSize, nlsData->analyticalJacobianColumn, NULL, nlsData->sparsePattern);
+  initJacobian(gbData->jacobian, gbData->nlSystemSize, gbData->nlSystemSize, gbData->nlSystemSize, NULL, nlsData->analyticalJacobianColumn, NULL, nlsData->sparsePattern);
   nlsData->initialAnalyticalJacobian = NULL;
   nlsData->jacobianIndex = -1;
 
@@ -353,8 +353,10 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
 
   nlsData->initializeStaticNLSData(data, threadData, nlsData, TRUE, TRUE);
 
+  JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
   gbfData->jacobian = (JACOBIAN*) malloc(sizeof(JACOBIAN));
-  initJacobian(gbfData->jacobian, gbfData->nlSystemSize, gbfData->nlSystemSize, gbfData->nlSystemSize, nlsData->analyticalJacobianColumn, NULL, nlsData->sparsePattern);
+  initJacobian(gbfData->jacobian, gbfData->nlSystemSize, gbfData->nlSystemSize, gbfData->nlSystemSize, jacobian_ODE->dag, nlsData->analyticalJacobianColumn, NULL, nlsData->sparsePattern);
+  gbfData->jacobian->evalSelection = allocEvalSelection(gbfData->jacobian->dag);
   nlsData->initialAnalyticalJacobian = NULL;
   nlsData->jacobianIndex = -1;
 
@@ -593,7 +595,7 @@ void residual_MS(RESIDUAL_USERDATA* userData, const double *xloc, double *res, c
     assertStreamPrint(threadData, !isnan(xloc[i]), "residual_MS: xloc is NAN");
   memcpy(sData->realVars, xloc, nStates*sizeof(modelica_real));
   // Evaluate right hand side of ODE
-  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
   for (i = 0; i < nStates; i++)
     assertStreamPrint(threadData, !isnan(fODE[i]), "residual_MS: fODE is NAN");
 
@@ -643,7 +645,7 @@ void residual_MS_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *res
     sData->realVars[i] = xloc[ii];
   }
   // Evaluate right hand side of ODE
-  gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
+  gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), gbfData->evalSelectionFast);
 
   // Evaluate residuals
   for (ii = 0; ii < nFastStates; ii++) {
@@ -690,7 +692,7 @@ void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res,
     assertStreamPrint(threadData, !isnan(xloc[i]), "residual_DIRK: xloc is NAN");
   memcpy(sData->realVars, xloc, nStates*sizeof(double));
   // Evaluate right hand side of ODE
-  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
 
   // Evaluate residuals
   for (i = 0; i < nStates; i++) {
@@ -747,7 +749,7 @@ void residual_DIRK_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *r
     sData->realVars[i] = xloc[ii];
   }
   // Evaluate right hand side of ODE
-  gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
+  gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), gbfData->evalSelectionFast);
 
   // Evaluate residuals
   for (ii = 0; ii < nFastStates; ii++) {
@@ -794,7 +796,7 @@ void residual_IRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, 
     if (!gbData->tableau->isKLeftAvailable || stage_ > 0) {
       sData->timeValue = gbData->time + gbData->tableau->c[stage_] * gbData->stepSize;
       memcpy(sData->realVars, xloc + stage_ * nStates, nStates*sizeof(double));
-      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
       for (i = 0; i < nStates; i++)
         assertStreamPrint(threadData, !isnan(fODE[i]), "residual_IRK: fODE is NAN");
       memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
@@ -899,7 +901,10 @@ int jacobian_MR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian,
   }
 
   // call jacobian_ODE with the mapped seedVars
+  // activate fast state evalSelection here!
+  jacobian_ODE->evalSelection = jacobian->evalSelection;
   data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
+  jacobian_ODE->evalSelection = NULL;
 
   /* Update resultVars array */
   if (gbfData->type == MS_TYPE_IMPLICIT) {
