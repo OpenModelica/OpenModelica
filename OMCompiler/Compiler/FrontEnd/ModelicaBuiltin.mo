@@ -3132,15 +3132,18 @@ function plot
   input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
   input String xLabel = "time" "This text will be used as the horizontal label in the diagram.";
-  input String yLabel = "" "This text will be used as the vertical label in the diagram.";
+  input String yLabel = "" "This text will be used as the left vertical label in the diagram.";
   input Real xRange[2] = {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
-  input Real yRange[2] = {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real yRange[2] = {0.0,0.0} "Determines the left vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real curveWidth = 1.0 "Sets the width of the curve.";
   input Integer curveStyle = 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
   input String legendPosition = "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
   input String footer = "" "This text will be used as the diagram footer.";
   input Boolean autoScale = true "Use auto scale while plotting.";
   input Boolean forceOMPlot = false "if true launches OMPlot and doesn't call callback function even if it is defined.";
+  input String yAxis = "L" "Sets the variable to be plotted on the left (L) or right (R) y-axis.";
+  input String yLabelRight = "" "This text will be used as the right vertical label in the diagram.";
+  input Real yRangeRight[2] = {0.0,0.0} "Determines the right vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(preferredView="text",Documentation(info="<html>
@@ -3164,15 +3167,18 @@ function plotAll
   input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
   input String xLabel = "time" "This text will be used as the horizontal label in the diagram.";
-  input String yLabel = "" "This text will be used as the vertical label in the diagram.";
+  input String yLabel = "" "This text will be used as the left vertical label in the diagram.";
   input Real xRange[2] = {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
-  input Real yRange[2] = {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real yRange[2] = {0.0,0.0} "Determines the left vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real curveWidth = 1.0 "Sets the width of the curve.";
   input Integer curveStyle = 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
   input String legendPosition = "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
   input String footer = "" "This text will be used as the diagram footer.";
   input Boolean autoScale = true "Use auto scale while plotting.";
   input Boolean forceOMPlot = false "if true launches OMPlot and doesn't call callback function even if it is defined.";
+  input String yAxis = "L" "Sets the variable to be plotted on the left (L) or right (R) y-axis.";
+  input String yLabelRight = "" "This text will be used as the right vertical label in the diagram.";
+  input Real yRangeRight[2] = {0.0,0.0} "Determines the right vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(Documentation(info="<html>
@@ -3199,15 +3205,18 @@ function plotParametric
   input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
   input String xLabel = "" "This text will be used as the horizontal label in the diagram.";
-  input String yLabel = "" "This text will be used as the vertical label in the diagram.";
+  input String yLabel = "" "This text will be used as the left vertical label in the diagram.";
   input Real xRange[2] = {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
-  input Real yRange[2] = {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real yRange[2] = {0.0,0.0} "Determines the left vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real curveWidth = 1.0 "Sets the width of the curve.";
   input Integer curveStyle = 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
   input String legendPosition = "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
   input String footer = "" "This text will be used as the diagram footer.";
   input Boolean autoScale = true "Use auto scale while plotting.";
   input Boolean forceOMPlot = false "if true launches OMPlot and doesn't call callback function even if it is defined.";
+  input String yAxis = "L" "Sets the variable to be plotted on the left (L) or right (R) y-axis.";
+  input String yLabelRight = "" "This text will be used as the right vertical label in the diagram.";
+  input Real yRangeRight[2] = {0.0,0.0} "Determines the right vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(Documentation(info="<html>
