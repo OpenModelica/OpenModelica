@@ -78,18 +78,13 @@ SystemSimulationInformationWidget::SystemSimulationInformationWidget(ModelWidget
       mpMinimumStepSizeTextBox->setText(QString::number(minimumStepSize));
       mpMaximumStepSizeTextBox->setText(QString::number(maximumStepSize));
     }
-    // absolute tolerance
-    mpAbsoluteToleranceLabel = new Label("Absolute Tolerance:");
-    mpAbsoluteToleranceTextBox = new QLineEdit;
-    mpAbsoluteToleranceTextBox->setValidator(pDoubleValidator);
     // relative tolerance
     mpRelativeToleranceLabel = new Label("Relative Tolerance:");
     mpRelativeToleranceTextBox = new QLineEdit;
     mpRelativeToleranceTextBox->setValidator(pDoubleValidator);
 
-    double absoluteTolerance, relativeTolerance;
-    if (OMSProxy::instance()->getTolerance(mpModelWidget->getLibraryTreeItem()->getNameStructure(), &absoluteTolerance, &relativeTolerance)) {
-      mpAbsoluteToleranceTextBox->setText(QString::number(absoluteTolerance));
+    double relativeTolerance;
+    if (OMSProxy::instance()->getTolerance(mpModelWidget->getLibraryTreeItem()->getNameStructure(), &relativeTolerance)) {
       mpRelativeToleranceTextBox->setText(QString::number(relativeTolerance));
     }
   }
@@ -131,8 +126,6 @@ SystemSimulationInformationWidget::SystemSimulationInformationWidget(ModelWidget
     pMainLayout->addWidget(mpMinimumStepSizeTextBox, row++, 1);
     pMainLayout->addWidget(mpMaximumStepSizeLabel, row, 0);
     pMainLayout->addWidget(mpMaximumStepSizeTextBox, row++, 1);
-    pMainLayout->addWidget(mpAbsoluteToleranceLabel, row, 0);
-    pMainLayout->addWidget(mpAbsoluteToleranceTextBox, row++, 1);
     pMainLayout->addWidget(mpRelativeToleranceLabel, row, 0);
     pMainLayout->addWidget(mpRelativeToleranceTextBox, row++, 1);
   }
@@ -210,12 +203,6 @@ bool SystemSimulationInformationWidget::setSystemSimulationInformation(bool push
         break;
     }
 
-    if (mpAbsoluteToleranceTextBox->text().isEmpty()) {
-      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Absolute Tolerance"), QMessageBox::Ok);
-      return false;
-    }
-
     if (mpRelativeToleranceTextBox->text().isEmpty()) {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                             GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Relative Tolerance"), QMessageBox::Ok);
@@ -250,7 +237,7 @@ bool SystemSimulationInformationWidget::setSystemSimulationInformation(bool push
         break;
     }
     // set tolerance
-    if (!OMSProxy::instance()->setTolerance(cref, mpAbsoluteToleranceTextBox->text().toDouble(), mpRelativeToleranceTextBox->text().toDouble())) {
+    if (!OMSProxy::instance()->setTolerance(cref, mpRelativeToleranceTextBox->text().toDouble())) {
       return false;
     }
   }
