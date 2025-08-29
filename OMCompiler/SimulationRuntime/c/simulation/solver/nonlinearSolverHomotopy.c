@@ -1697,11 +1697,11 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     if(solverData->initHomotopy && OMC_ACTIVE_STREAM(OMC_LOG_INIT_HOMOTOPY))
     {
       if (omc_flag[FLAG_OUTPUT_PATH]) { /* Add output path to file name */
-        sprintf(buffer, "%s/%s_nonlinsys%d_adaptive_%s_homotopy_%s.csv", omc_flagValue[FLAG_OUTPUT_PATH], data->modelData->modelFilePrefix, sysNumber, data->callback->useHomotopy == 2 ? "global" : "local", solverData->startDirection > 0 ? "pos" : "neg");
+        sprintf(buffer, "%s/%s_nonlinsys%d_adaptive_%s_homotopy_%s.csv", omc_flagValue[FLAG_OUTPUT_PATH], data->modelData->modelFilePrefix, sysNumber, data->callback->homotopyMethod == GLOBAL_ADAPTIVE_HOMOTOPY ? "global" : "local", solverData->startDirection > 0 ? "pos" : "neg");
       }
       else
       {
-        sprintf(buffer, "%s_nonlinsys%d_adaptive_%s_homotopy_%s.csv", data->modelData->modelFilePrefix, sysNumber, data->callback->useHomotopy == 2 ? "global" : "local", solverData->startDirection > 0 ? "pos" : "neg");
+        sprintf(buffer, "%s_nonlinsys%d_adaptive_%s_homotopy_%s.csv", data->modelData->modelFilePrefix, sysNumber, data->callback->homotopyMethod == GLOBAL_ADAPTIVE_HOMOTOPY ? "global" : "local", solverData->startDirection > 0 ? "pos" : "neg");
       }
       infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "The homotopy path will be exported to %s.", buffer);
       pFile = omc_fopen(buffer, "wt");

@@ -631,6 +631,15 @@ algorithm
   end match;
 end adaptiveHomotopy;
 
+public function replacedHomotopy
+  output Boolean outBoolean;
+protected
+  String replaceHomotopy;
+algorithm
+  replaceHomotopy := Flags.getConfigString(Flags.REPLACE_HOMOTOPY);
+  outBoolean := replaceHomotopy == "actual" or replaceHomotopy == "simplified";
+end replacedHomotopy;
+
 public function synchronousFeaturesAllowed
 "@autor: adrpo
  checks returns true if language standard is above or equal to Modelica 3.3"

@@ -496,7 +496,7 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
         infoStreamPrint(OMC_LOG_SUCCESS, 0, "The initialization finished successfully without homotopy method.");
       }
       else {
-        usedLocal = data->callback->useHomotopy == 0 || data->callback->useHomotopy == 3;
+        usedLocal = data->callback->homotopyMethod == LOCAL_EQUIDISTANT_HOMOTOPY || data->callback->homotopyMethod == LOCAL_ADAPTIVE_HOMOTOPY ;
         infoStreamPrint(OMC_LOG_SUCCESS, 0, "The initialization finished successfully with %d %shomotopy steps.", data->simulationInfo->homotopySteps, usedLocal? "local ":"");
       }
     }

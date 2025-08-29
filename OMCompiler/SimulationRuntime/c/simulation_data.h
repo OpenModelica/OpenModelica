@@ -219,6 +219,19 @@ typedef struct EXTERNAL_INPUT
   modelica_integer i;
 } EXTERNAL_INPUT;
 
+/**
+ * @brief Specifies homotopy method
+ *
+ */
+typedef enum HOMOTOPY_METHOD
+{
+  LOCAL_EQUIDISTANT_HOMOTOPY = 0,   // 0: local homotopy (equidistant lambda)
+  GLOBAL_EQUIDISTANT_HOMOTOPY = 1,  // 1: global homotopy (equidistant lambda)
+  GLOBAL_ADAPTIVE_HOMOTOPY = 2,     // 2: new global homotopy approach (adaptive lambda)
+  LOCAL_ADAPTIVE_HOMOTOPY = 3,      // 3: new local homotopy approach (adaptive lambda)
+  NO_HOMOTOPY = 4                   // 4: no homotopy / else
+} HOMOTOPY_METHOD;
+
 /* Alias data with various types */
 typedef struct DATA_ALIAS
 {
