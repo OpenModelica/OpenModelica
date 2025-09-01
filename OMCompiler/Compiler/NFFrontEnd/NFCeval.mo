@@ -214,10 +214,8 @@ algorithm
       then
         evalCast(exp1, exp.ty);
 
-    case Expression.UNBOX()
-      algorithm
-        exp1 := evalExp(exp.exp, target);
-      then Expression.UNBOX(exp1, exp.ty);
+    case Expression.BOX()   then evalExp(exp.exp, target);
+    case Expression.UNBOX() then evalExp(exp.exp, target);
 
     case Expression.SUBSCRIPTED_EXP()
       then evalSubscriptedExp(exp.exp, exp.subscripts, target);
