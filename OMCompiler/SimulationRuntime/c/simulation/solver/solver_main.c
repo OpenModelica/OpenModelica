@@ -56,7 +56,6 @@
 #include "sym_solver_ssc.h"
 #include "gbode_main.h"
 #include "gbode_util.h"
-#include "irksco.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
 #include "simulation/solver/embedded_server.h"
 #include "simulation/solver/real_time_sync.h"
@@ -182,11 +181,6 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
     return retVal;
-  case S_IRKSCO:
-    retVal = irksco_midpoint_rule(data, threadData, solverInfo);
-    if(omc_flag[FLAG_SOLVER_STEPS])
-      data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
-    return retVal;
   case S_GBODE:
     retVal = gbode_main(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
@@ -239,11 +233,6 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   case S_SYM_SOLVER_SSC:
   {
     allocateSymSolverSsc(solverInfo, data->modelData->nStates);
-    break;
-  }
-  case S_IRKSCO:
-  {
-    allocateIrksco(data, threadData, solverInfo, data->modelData->nStates, data->modelData->nZeroCrossings);
     break;
   }
   case S_GBODE:
@@ -398,9 +387,6 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
       free(((RK4_DATA*)(solverInfo->solverData))->work_states[i]);
     free(((RK4_DATA*)(solverInfo->solverData))->work_states);
     free((RK4_DATA*)solverInfo->solverData);
-    break;
-  case S_IRKSCO:
-    freeIrksco(solverInfo);
     break;
   case S_GBODE:
     gbode_freeData(data, solverInfo->solverData);
