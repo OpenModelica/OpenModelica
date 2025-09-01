@@ -113,7 +113,6 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
     TRACE_POP
     return retVal;
-  case S_HEUN:
   case S_RUNGEKUTTA:
     retVal = rungekutta_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
@@ -244,7 +243,6 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   }
   case S_ERKSSC:
   case S_RUNGEKUTTA:
-  case S_HEUN:
   {
     /* Allocate RK work arrays */
 
@@ -262,10 +260,6 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
       rungeData->work_states_ndims = rungekutta_s;
       rungeData->b = rungekutta_b;
       rungeData->c = rungekutta_c;
-    } else if (solverInfo->solverMethod==S_HEUN) {
-      rungeData->work_states_ndims = heun_s;
-      rungeData->b = heun_b;
-      rungeData->c = heun_c;
     } else if (solverInfo->solverMethod==S_ERKSSC) {
       rungeData->h = (omc_flag[FLAG_INITIAL_STEP_SIZE]) ? atof(omc_flagValue[FLAG_INITIAL_STEP_SIZE]) : solverInfo->currentStepSize;
       rungeData->work_states_ndims = 5;
@@ -380,7 +374,6 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     freeSymSolverSsc(solverInfo);
     break;
   case S_RUNGEKUTTA:
-  case S_HEUN:
   case S_ERKSSC:
     /* free RK work arrays */
     for(i = 0; i < ((RK4_DATA*)(solverInfo->solverData))->work_states_ndims + 1; i++)

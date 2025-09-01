@@ -868,14 +868,13 @@ void replacementString(enum GB_METHOD gbMethod, modelica_boolean constant)
 /**
  * @brief Display deprecation warning for integration methods replaced by GBODE.
  *
- * Deprecated methods: heun, impeuler, trapezoid, imprungekutta, rungekuttaSsc
+ * Deprecated methods: impeuler, trapezoid, imprungekutta, rungekuttaSsc
  *
  * @param solverMethod  Integration method.
  */
 void deprecationWarningGBODE(enum SOLVER_METHOD method)
 {
   switch (method) {
-    case S_HEUN:
     case S_IMPEULER:
     case S_TRAPEZOID:
     case S_IMPRUNGEKUTTA:
@@ -887,9 +886,6 @@ void deprecationWarningGBODE(enum SOLVER_METHOD method)
 
   warningStreamPrint(OMC_LOG_STDOUT, 1, "Integration method '%s' is deprecated and will be removed in a future version of OpenModelica.", SOLVER_METHOD_NAME[method]);
   switch (method) {
-    case S_HEUN:
-      replacementString(RK_HEUN, TRUE);
-      break;
     case S_IMPEULER:
       replacementString(RK_IMPL_EULER, TRUE);
       break;

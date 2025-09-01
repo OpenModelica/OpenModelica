@@ -146,9 +146,6 @@ lot more using the following simulation flags:
   old: -s=euler
   new: -s=gbode -gbm=expl_euler -gbctrl=const
 
-  old: -s=heun
-  new: -s=gbode -gbm=heun -gbctrl=const
-
   old: -s=impeuler
   new: -s=gbode -gbm=impl_euler -gbctrl=const
 
@@ -171,7 +168,6 @@ numberOfIntervals, the startTime and stopTime parameters in the
 :math:`\mbox{stepSize} \approx \cfrac{\mbox{stopTime} - \mbox{startTime}}{\mbox{numberOfIntervals}}`
 
 - euler - order 1
-- heun - order 2
 - rungekutta - order 4
 
 Basic Implicit Solvers
