@@ -146,9 +146,6 @@ lot more using the following simulation flags:
   old: -s=euler
   new: -s=gbode -gbm=expl_euler -gbctrl=const
 
-  old: -s=heun
-  new: -s=gbode -gbm=heun -gbctrl=const
-
   old: -s=impeuler
   new: -s=gbode -gbm=impl_euler -gbctrl=const
 
@@ -174,7 +171,6 @@ numberOfIntervals, the startTime and stopTime parameters in the
 :math:`\mbox{stepSize} \approx \cfrac{\mbox{stopTime} - \mbox{startTime}}{\mbox{numberOfIntervals}}`
 
 - euler - order 1
-- heun - order 2
 - rungekutta - order 4
 
 Basic Implicit Solvers
@@ -209,14 +205,14 @@ DAE Mode Simulation
 
 Beside the default ODE simulation, OpenModelica is able to simulate models in
 `DAE mode`. The `DAE mode` is enabled by the flag :ref:`--daeMode <omcflag-daeMode>`.
-In general the whole equation system of a model is passed to the DAE integrator, 
+In general the whole equation system of a model is passed to the DAE integrator,
 including all algebraic loops. This reduces the amount of work that needs to be
-done in the post optimization phase of the OpenModelica backend. 
+done in the post optimization phase of the OpenModelica backend.
 Thus models with large algebraic loops might compile faster in `DAE mode`.
 
-Once a model is compiled in `DAE mode` the simulation can be only performed 
-with :ref:`SUNDIALS/IDA <sundials_ida>` integrator and with enabled 
-:ref:`-daeMode <simflag-daeMode>` simulation flag. Both are enabled 
+Once a model is compiled in `DAE mode` the simulation can be only performed
+with :ref:`SUNDIALS/IDA <sundials_ida>` integrator and with enabled
+:ref:`-daeMode <simflag-daeMode>` simulation flag. Both are enabled
 automatically by default, when a simulation run is started.
 
 

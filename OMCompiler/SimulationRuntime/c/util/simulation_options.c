@@ -1119,7 +1119,6 @@ const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX] = {
 const char *SOLVER_METHOD_NAME[S_MAX] = {
   /* S_UNKNOWN = 0 */   "unknown",
   /* S_EULER */         "euler",
-  /* S_HEUN */          "heun",
   /* S_RUNGEKUTTA */    "rungekutta",
   /* S_IMPEULER */      "impeuler",
   /* S_TRAPEZOID */     "trapezoid",
@@ -1139,7 +1138,6 @@ const char *SOLVER_METHOD_NAME[S_MAX] = {
 const char *SOLVER_METHOD_DESC[S_MAX] = {
   /* S_UNKNOWN = 0 */   "unknown",
   /* S_EULER */         "euler - Euler - explicit, fixed step size, order 1",
-  /* S_HEUN */          "heun - Heun's method - explicit, fixed step, order 2",
   /* S_RUNGEKUTTA */    "rungekutta - classical Runge-Kutta - explicit, fixed step, order 4",
   /* S_IMPEULER */      "impeuler - Euler - implicit, fixed step size, order 1",
   /* S_TRAPEZOID */     "trapezoid - trapezoidal rule - implicit, fixed step size, order 2",
