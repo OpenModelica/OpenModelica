@@ -167,7 +167,6 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               gbode_tableau$(OBJ_EXT) \
               gbode_util$(OBJ_EXT) \
               ida_solver$(OBJ_EXT) \
-              irksco$(OBJ_EXT) \
               jacobian_analysis$(OBJ_EXT) \
               jacobianSymbolical$(OBJ_EXT) \
               kinsol_b$(OBJ_EXT) \
