@@ -1294,30 +1294,14 @@ protected
   algorithm
     stmt := match eq
       local
-        Expression message, exp, lhs, rhs;
-        ComponentRef cref, lhs_cref, rhs_cref;
-        Type lhs_ty, rhs_ty;
-        DAE.ElementSource source;
-      // These should hopefully not occur since they have their own top level condition, check assert for same condition?
-      // case FEquation.WHEN()       then fail();
-      // case FEquation.ASSERT()     then fail();
+        ComponentRef cref;
 
-      // These do not provide their own conditions and are therefore body branches
-      case FEquation.TERMINATE(message = message, source = source)
-      then BEquation.TERMINATE(message, source);
-
-      case FEquation.REINIT(cref = Expression.CREF(cref = cref), reinitExp = exp, source = source)
-      then BEquation.REINIT(cref, exp, source);
-
-      case FEquation.NORETCALL(exp = exp, source = source)
-      then BEquation.NORETCALL(exp, source);
-
-      // Convert other equations to assignments
-      case FEquation.EQUALITY(lhs = lhs, rhs = rhs, source = source)
-      then BEquation.ASSIGN(lhs, rhs, source);
-
-      case FEquation.ARRAY_EQUALITY(lhs = lhs, rhs = rhs, source = source)
-      then BEquation.ASSIGN(lhs, rhs, source);
+      case FEquation.TERMINATE()                                  then BEquation.TERMINATE(eq.message, eq.source);
+      case FEquation.REINIT(cref = Expression.CREF(cref = cref))  then BEquation.REINIT(cref, eq.reinitExp, eq.source);
+      case FEquation.NORETCALL()                                  then BEquation.NORETCALL(eq.exp, eq.source);
+      case FEquation.ASSERT()                                     then BEquation.ASSERT(eq.condition, eq.message, eq.level, eq.source);
+      case FEquation.EQUALITY()                                   then BEquation.ASSIGN(eq.lhs, eq.rhs, eq.source);
+      case FEquation.ARRAY_EQUALITY()                             then BEquation.ASSIGN(eq.lhs, eq.rhs, eq.source);
 
       /* ToDo! implement proper cases for FOR and IF --> need FOR_ASSIGN and IF_ASSIGN ?
       case FEquation.FOR(iterator = iterator, range = SOME(range), body = body, source = source)
