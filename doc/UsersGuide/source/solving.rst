@@ -155,9 +155,6 @@ lot more using the following simulation flags:
   old: -s=imprungekutta
   new -s=gbode -gbm=(one of the lobatto or radau or gauss RK methods) -gbctrl=const
 
-  old: -s=irksco
-  new: -s=gbode -gbm=trapezoid
-
   old: -s=rungekuttaSsc
   new: -s=gbode -gbm=rungekuttaSsc
 
@@ -195,7 +192,6 @@ are till now not tested very well.
 
 - cvode - experimental implementation of SUNDIALS CVODE solver - BDF or Adams-Moulton method - step size control, order 1-12
 - rungekuttaSsc - Runge-Kutta based on Novikov (2016) - explicit, step-size control, order 4-5
-- irksco - Own developed Runge-Kutta solver - implicit, step-size control, order 1-2
 - symSolver - Symbolic inline solver (requires :ref:`--symSolver <omcflag-symSolver>`) - fixed step-size, order 1
 - symSolverSsc - Symbolic implicit inline Euler with step-size control (requires :ref:`--symSolver<omcflag-symSolver>`) - step-size control, order 1-2
 - qss - A QSS solver

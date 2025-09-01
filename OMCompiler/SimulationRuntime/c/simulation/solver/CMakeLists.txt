@@ -26,7 +26,6 @@ SET(solver_sources  ../../../../3rdParty/Cdaskr/solver/daux.c
                     gbode_tableau.c
                     gbode_util.c
                     external_input.c
-                    irksco.c
                     jacobian_analysis.c
                     kinsol_b.c
                     kinsolSolver.c
@@ -69,7 +68,6 @@ SET(solver_headers  ../../../../3rdParty/Cdaskr/solver/ddaskr_types.h
                     gbode_util.h
                     events.h
                     external_input.h
-                    irksco.h
                     jacobian_analysis.h
                     kinsol_b.h
                     kinsolSolver.h
@@ -104,4 +102,3 @@ INSTALL(TARGETS solver
 		ARCHIVE DESTINATION lib/omc)
 
 #INSTALL(FILES ${solver_headers} DESTINATION include)
-
