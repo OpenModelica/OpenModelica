@@ -149,9 +149,6 @@ lot more using the following simulation flags:
   old: -s=impeuler
   new: -s=gbode -gbm=impl_euler -gbctrl=const
 
-  old: -s=trapezoid
-  new: -s=gbode -gbm=trapezoid -gbctrl=const
-
   old: -s=imprungekutta
   new -s=gbode -gbm=(one of the lobatto or radau or gauss RK methods) -gbctrl=const
 
@@ -179,7 +176,6 @@ with the simflag :ref:`-impRKLS <simflag-imprkls>`. The step-size is
 determined as for the basic explicit solvers.
 
 - impeuler  - order 1
-- trapezoid - order 2
 - imprungekutta - Based on Radau IIA and Lobatto IIIA defined by its
   Butcher tableau where the order can be adjusted by :ref:`-impRKorder <simflag-imprkorder>`.
 
