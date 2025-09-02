@@ -4,7 +4,7 @@
 // cflags: -d=-newInst
 
 loadFile("testSolverPackage.mo"); getErrorString();
-simulate(testSolver.problem1, stopTime=2e-6, numberOfIntervals=1000, method="trapezoid"); getErrorString();
+simulate(testSolver.problem1, stopTime=2e-6, numberOfIntervals=1000, method="gbode", simflags="-gbm=trapezoid -gbctrl=const"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem1_res.mat",
   getEnvironmentVar("REFERENCEFILES")+"/solver/testSolver.problem1.mat",
@@ -48,13 +48,8 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "testSolver.problem1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 2e-06, numberOfIntervals = 1000, tolerance = 1e-06, method = 'trapezoid', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_STDOUT        | warning | Integration method 'trapezoid' is deprecated and will be removed in a future version of OpenModelica.
-// |                 | info    | | Use integration method GBODE with method 'trapezoid' and constant step size instead:
-// |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=trapezoid -gbctrl=const' in Simulation Setup->Simulation Flags.
-// |                 | |       | | | or
-// |                 | |       | | | Simulation flags '-s=gbode -gbm=trapezoid -gbctrl=const'.
-// |                 | |       | | See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode
+//     simulationOptions = "startTime = 0.0, stopTime = 2e-06, numberOfIntervals = 1000, tolerance = 1e-06, method = 'gbode', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=trapezoid -gbctrl=const'",
+//     messages = "LOG_STDOUT        | warning | Numerical Jacobians without coloring are currently not supported by GBODE. Colored numerical Jacobian will be used.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

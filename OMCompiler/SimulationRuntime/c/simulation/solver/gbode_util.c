@@ -868,7 +868,7 @@ void replacementString(enum GB_METHOD gbMethod, modelica_boolean constant)
 /**
  * @brief Display deprecation warning for integration methods replaced by GBODE.
  *
- * Deprecated methods: impeuler, trapezoid, imprungekutta, rungekuttaSsc
+ * Deprecated methods: impeuler, imprungekutta, rungekuttaSsc
  *
  * @param solverMethod  Integration method.
  */
@@ -876,7 +876,6 @@ void deprecationWarningGBODE(enum SOLVER_METHOD method)
 {
   switch (method) {
     case S_IMPEULER:
-    case S_TRAPEZOID:
     case S_IMPRUNGEKUTTA:
     case S_ERKSSC:
       break;
@@ -888,9 +887,6 @@ void deprecationWarningGBODE(enum SOLVER_METHOD method)
   switch (method) {
     case S_IMPEULER:
       replacementString(RK_IMPL_EULER, TRUE);
-      break;
-    case S_TRAPEZOID:
-      replacementString(RK_TRAPEZOID, TRUE);
       break;
     case S_IMPRUNGEKUTTA:
       replacementString(RK_RADAU_IA_2, TRUE);

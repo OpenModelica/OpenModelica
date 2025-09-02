@@ -144,7 +144,6 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
 #endif
 #ifdef WITH_SUNDIALS
   case S_IMPEULER:
-  case S_TRAPEZOID:
   case S_IMPRUNGEKUTTA:
     retVal = radau_lobatto_step(data, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
@@ -294,14 +293,12 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
 #endif
 #ifdef WITH_SUNDIALS
   case S_IMPEULER:
-  case S_TRAPEZOID:
   case S_IMPRUNGEKUTTA:
   {
     int usedImpRKOrder = DEFAULT_IMPRK_ORDER;
-    if (solverInfo->solverMethod == S_IMPEULER)
+    if (solverInfo->solverMethod == S_IMPEULER) {
       usedImpRKOrder = 1;
-    if (solverInfo->solverMethod == S_TRAPEZOID)
-      usedImpRKOrder = 2;
+    }
 
     /* Check the order if set */
     if (omc_flag[FLAG_IMPRK_ORDER])
@@ -399,7 +396,6 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
 #endif
 #ifdef WITH_SUNDIALS
   case S_IMPEULER:
-  case S_TRAPEZOID:
   case S_IMPRUNGEKUTTA:
     /* free  work arrays */
     freeKinOde((KINODE*)solverInfo->solverData);
@@ -695,7 +691,6 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   {
 #ifndef WITH_SUNDIALS
   case S_IMPEULER:
-  case S_TRAPEZOID:
   case S_IMPRUNGEKUTTA:
     warningStreamPrint(OMC_LOG_STDOUT, 0, "Sundial/kinsol is needed but not available. Please choose other solver.");
     TRACE_POP
