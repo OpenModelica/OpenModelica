@@ -123,7 +123,7 @@ public
         args.diffCref := cr;
         // differentiate eqn for cref
         diff_res := SimplifyExp.simplify(Differentiate.differentiateExpression(res, args));
-        if Type.isReal(Expression.typeOf(diff_res)) then // if diff is real
+        if Type.isReal(Expression.typeOf(diff_res)) then // if diff is real; check if its an integer of type real
           diff_res_int := realInt(Expression.realValue(diff_res));
           id := TUPLE_ID(eq_ptr, cr);
         elseif Type.isInteger(Expression.typeOf(diff_res)) then // if diff is integer

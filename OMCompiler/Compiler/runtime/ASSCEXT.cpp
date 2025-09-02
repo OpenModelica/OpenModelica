@@ -92,3 +92,28 @@ void printAsscElement(void* data)
 #ifdef __cplusplus
 }
 #endif
+/*
+
+    Input: M — an n-square matrix
+    assuming its leading principal minors [M]k,k are all non-zero.
+    Let M0,0 = 1 (Note: M0,0 is a special variable)
+
+    FUTURE
+    0. permutate that leading principal minors are non zero
+    1. bring M00 = 1
+
+
+    For k from 1 to n−1: || n is NV
+        compute M_{k-1,k-1} and M_{k,k}
+        For i from k+1 to n: > traverses col_ptrs || n is NE
+            compute M_{i,k}
+            For j from k+1 to n: || traverse
+
+                Set M_{i,j}={M_{i,j}M_{k,k}-M_{i,k}M_{k,j}} / {M_{k-1,k-1}}
+            Set Mi,k = 0
+    Output: The matrix is modified in-place,
+    each Mk,k entry contains the leading minor [M]k,k,
+    entry Mn,n contains the determinant of the original M.
+
+
+*/
