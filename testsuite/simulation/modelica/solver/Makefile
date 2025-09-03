@@ -32,7 +32,7 @@ problem3-symSolverImp.mos \
 problem3-symSolverExp.mos \
 problem3-symSolverImpSsc.mos \
 problem3-symSolverExpSsc.mos \
-problem4-erk_ssc.mos \
+problem4-rungekuttaSsc.mos \
 problem4-symSolverImp.mos \
 problem4-symSolverExp.mos \
 problem5-symSolverImp.mos \

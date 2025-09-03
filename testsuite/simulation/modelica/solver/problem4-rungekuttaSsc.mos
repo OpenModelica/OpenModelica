@@ -1,15 +1,12 @@
-// name: problem4-symEuler
+// name: problem4-rungekuttaSsc
 // status: correct
-// teardown_command: rm -f testSolver.problem3* output.log
+// teardown_command: rm -f testSolver.problem4* output.log
 // cflags: -d=-newInst
 
 loadFile("./testSolverPackage.mo");
 getErrorString();
 
-simulate(testSolver.problem4, startTime = 0, stopTime=1, numberOfIntervals=1,
- method="rungekuttaSsc", tolerance = 1e-12
- ,simflags="-initialStepSize=1e-4 -maxStepSize=1e-2"
-);
+simulate(testSolver.problem4, startTime = 0, stopTime=1, numberOfIntervals=1, method="gbode", tolerance = 1e-12, simflags="-gbm=rungekuttaSsc");
 getErrorString();
 
 val(x,{0,0.1,0.8,1});
@@ -21,9 +18,7 @@ val(x5,{0,0.1,0.5, 1});
 val(x6,{0,0.1,0.5, 1});
 val(x7,{0,0.1,0.5, 1});
 
-simulate(testSolver.problem4, startTime = 0, stopTime=1, numberOfIntervals=500, method="dassl"
- //,simflags="-lv LOG_STATS"
-);
+simulate(testSolver.problem4, startTime = 0, stopTime=1, numberOfIntervals=500, method="dassl");
 getErrorString();
 
 val(x,{0,0.1,0.8,1});
@@ -41,14 +36,8 @@ val(x7,{0,0.1,0.5, 1});
 // ""
 // record SimulationResult
 //     resultFile = "testSolver.problem4_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-12, method = 'rungekuttaSsc', fileNamePrefix = 'testSolver.problem4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-initialStepSize=1e-4 -maxStepSize=1e-2'",
-//     messages = "LOG_STDOUT        | warning | Integration method 'rungekuttaSsc' is deprecated and will be removed in a future version of OpenModelica.
-// |                 | info    | | Use integration method GBODE with method 'rungekuttaSsc' instead:
-// |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=rungekuttaSsc' in Simulation Setup->Simulation Flags.
-// |                 | |       | | | or
-// |                 | |       | | | Simulation flags '-s=gbode -gbm=rungekuttaSsc'.
-// |                 | |       | | See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1, tolerance = 1e-12, method = 'gbode', fileNamePrefix = 'testSolver.problem4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=rungekuttaSsc'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
