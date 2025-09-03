@@ -146,9 +146,6 @@ lot more using the following simulation flags:
   old: -s=euler
   new: -s=gbode -gbm=expl_euler -gbctrl=const
 
-  old: -s=impeuler
-  new: -s=gbode -gbm=impl_euler -gbctrl=const
-
   old: -s=imprungekutta
   new -s=gbode -gbm=(one of the lobatto or radau or gauss RK methods) -gbctrl=const
 
@@ -175,7 +172,6 @@ from the SUNDIALS suite. The underlining linear solver can be modified
 with the simflag :ref:`-impRKLS <simflag-imprkls>`. The step-size is
 determined as for the basic explicit solvers.
 
-- impeuler  - order 1
 - imprungekutta - Based on Radau IIA and Lobatto IIIA defined by its
   Butcher tableau where the order can be adjusted by :ref:`-impRKorder <simflag-imprkorder>`.
 
