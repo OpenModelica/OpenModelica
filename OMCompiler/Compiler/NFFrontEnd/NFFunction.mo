@@ -2300,7 +2300,7 @@ protected
     InstNode n;
     Boolean check_vis;
   algorithm
-    Error.assertion(InstNode.isClass(node), getInstanceName() + " got non-class node", sourceInfo());
+    Error.assertion(InstNode.isClass(node) or InstNode.isComponent(node), getInstanceName() + " got non-class/non-component node", sourceInfo());
     cls := InstNode.getClass(node);
 
     () := match cls
@@ -2489,7 +2489,7 @@ protected
     Boolean is_partial;
     SCode.Comment cmt;
   algorithm
-    def := InstNode.definition(Class.lastBaseClass(node));
+    def := InstNode.classDefinition(Class.lastBaseClass(node));
     res := SCodeUtil.getClassRestriction(def);
 
     Error.assertion(SCodeUtil.isFunctionRestriction(res), getInstanceName() + " got non-function restriction", sourceInfo());
