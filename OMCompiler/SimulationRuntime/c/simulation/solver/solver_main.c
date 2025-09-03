@@ -46,7 +46,6 @@
 #include "events.h"
 #include "util/parallel_helper.h"
 #include "util/varinfo.h"
-#include "radau.h"
 #include "model_help.h"
 #include "meta/meta_modelica.h"
 #include "simulation/solver/epsilon.h"
@@ -91,8 +90,6 @@ static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo);
 static int rungekutta_step_ssc(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 static int rungekutta_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 static int sym_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
-
-static int radau_lobatto_step(DATA* data, SOLVER_INFO* solverInfo);
 
 #ifdef OMC_HAVE_IPOPT
 static int ipopt_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
@@ -143,12 +140,6 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     return retVal;
 #endif
 #ifdef WITH_SUNDIALS
-  case S_IMPRUNGEKUTTA:
-    retVal = radau_lobatto_step(data, solverInfo);
-    if(omc_flag[FLAG_SOLVER_STEPS])
-      data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
-    TRACE_POP
-    return retVal;
   case S_IDA:
     retVal = ida_solver_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
@@ -291,27 +282,6 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   }
 #endif
 #ifdef WITH_SUNDIALS
-  case S_IMPRUNGEKUTTA:
-  {
-    int usedImpRKOrder = DEFAULT_IMPRK_ORDER;
-
-    /* Check the order if set */
-    if (omc_flag[FLAG_IMPRK_ORDER])
-    {
-      usedImpRKOrder = atoi(omc_flagValue[FLAG_IMPRK_ORDER]);
-      if (usedImpRKOrder>6 || usedImpRKOrder<1)
-      {
-        warningStreamPrint(OMC_LOG_STDOUT, 0, "Selected order %d is out of range[1-6]. Use default order %d", usedImpRKOrder, DEFAULT_IMPRK_ORDER);
-        usedImpRKOrder = DEFAULT_IMPRK_ORDER;
-      }
-    }
-
-    /* Allocate implicit Runge-Kutta methods */
-    infoStreamPrint(OMC_LOG_SOLVER, 0, "Initializing Runge-Kutta method with order %d", usedImpRKOrder);
-    solverInfo->solverData = calloc(1, sizeof(KINODE));
-    allocateKinOde(data, threadData, solverInfo, usedImpRKOrder);
-    break;
-  }
   case S_IDA:
   {
     IDA_SOLVER* idaData = NULL;
@@ -390,10 +360,6 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     break;
 #endif
 #ifdef WITH_SUNDIALS
-  case S_IMPRUNGEKUTTA:
-    /* free  work arrays */
-    freeKinOde((KINODE*)solverInfo->solverData);
-    break;
   case S_IDA:
     /* free work arrays */
     ida_solver_deinitial(solverInfo->solverData);
@@ -683,13 +649,6 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   /* do some solver specific checks */
   switch(solverInfo.solverMethod)
   {
-#ifndef WITH_SUNDIALS
-  case S_IMPRUNGEKUTTA:
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "Sundial/kinsol is needed but not available. Please choose other solver.");
-    TRACE_POP
-    return 1;
-#endif
-
 #ifndef OMC_HAVE_IPOPT
   case S_OPTIMIZATION:
     warningStreamPrint(OMC_LOG_STDOUT, 0, "Ipopt is needed but not available.");
@@ -1136,20 +1095,6 @@ static int ipopt_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverI
   return res;
 }
 #endif
-
-#if defined(WITH_SUNDIALS) && !defined(OMC_MINIMAL_RUNTIME)
-/***************************************    Radau/Lobatto     ***********************************/
-int radau_lobatto_step(DATA* data, SOLVER_INFO* solverInfo)
-{
-  if(kinsolOde(solverInfo) == 0)
-  {
-    solverInfo->currentTime += solverInfo->currentStepSize;
-    return 0;
-  }
-  return -1;
-}
-#endif
-
 
 static void writeOutputVars(char* names, DATA* data)
 {

@@ -177,7 +177,6 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               newton_diagnostics$(OBJ_EXT) \
               newtonIteration$(OBJ_EXT) \
               nonlinearSolverNewton$(OBJ_EXT) \
-              radau$(OBJ_EXT) \
               sundials_error$(OBJ_EXT) \
               sundials_util$(OBJ_EXT) \
               sym_solver_ssc$(OBJ_EXT)
@@ -199,7 +198,6 @@ SOLVER_HFILES = cvode_solver.h \
                 model_help.h \
                 nonlinearSystem.h \
                 nonlinearValuesList.h \
-                radau.h \
                 solver_main.h \
                 spatialDistribution.h \
                 stateset.h \

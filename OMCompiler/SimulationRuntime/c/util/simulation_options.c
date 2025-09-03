@@ -79,8 +79,6 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_IIM */                          "iim",
   /* FLAG_IIT */                          "iit",
   /* FLAG_ILS */                          "ils",
-  /* FLAG_IMPRK_ORDER */                  "impRKOrder",
-  /* FLAG_IMPRK_LS */                     "impRKLS",
   /* FLAG_INITIAL_STEP_SIZE */            "initialStepSize",
   /* FLAG_INPUT_CSV */                    "csvInput",
   /* FLAG_INPUT_FILE_STATES */            "stateFile",
@@ -223,8 +221,6 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_IIM */                          "value specifies the initialization method",
   /* FLAG_IIT */                          "[double] value specifies a time for the initialization of the model",
   /* FLAG_ILS */                          "[int (default 3)] number of lambda steps for homotopy methods",
-  /* FLAG_IMPRK_ORDER */                  "[int (default 5)] value specifies the integration order of the implicit Runge-Kutta method. Valid values: 1-6",
-  /* FLAG_IMPRK_LS */                     "selects the linear solver of the integration methods: imprungekuta",
   /* FLAG_INITIAL_STEP_SIZE */            "value specifies an initial step size for supported solver",
   /* FLAG_INPUT_CSV */                    "value specifies an csv-file with inputs for the simulation/optimization of the model",
   /* FLAG_INPUT_FILE_STATES */            "value specifies an file with states start values for the optimization of the model",
@@ -436,12 +432,6 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_ILS */
   "  Value specifies the number of steps for homotopy method (required: -iim=symbolic).\n"
   "  The value is an Integer with default value 3.",
-  /* FLAG_IMPRK_ORDER */
-  "  Value specifies the integration order of the implicit Runge-Kutta method. Valid values: 1 to 6. Default order is 5.",
-  /* FLAG_IMPRK_LS */
-  "  Selects the linear solver of the integration method imprungekuta:\n\n"
-  "  * iterativ - default, sparse iterativ linear solver with fallback case to dense solver\n"
-  "  * dense - dense linear solver, SUNDIALS default method",
   /* FLAG_INITIAL_STEP_SIZE */
   "  Value specifies an initial step size, used by the methods: dassl, ida, gbode",
   /* FLAG_INPUT_CSV */
@@ -724,8 +714,6 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_IIM */                          FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_IIT */                          FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_ILS */                          FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_IMPRK_ORDER */                  FLAG_REPEAT_POLICY_FORBID,
-  /* FLAG_IMPRK_LS */                     FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_INITIAL_STEP_SIZE */            FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_INPUT_CSV */                    FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_INPUT_FILE_STATES */            FLAG_REPEAT_POLICY_FORBID,
@@ -867,8 +855,6 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_IIM */                          FLAG_TYPE_OPTION,
   /* FLAG_IIT */                          FLAG_TYPE_OPTION,
   /* FLAG_ILS */                          FLAG_TYPE_OPTION,
-  /* FLAG_IMPRK_LS */                     FLAG_TYPE_OPTION,
-  /* FLAG_IMPRK_ORDER */                  FLAG_TYPE_OPTION,
   /* FLAG_INITIAL_STEP_SIZE */            FLAG_TYPE_OPTION,
   /* FLAG_INPUT_CSV */                    FLAG_TYPE_OPTION,
   /* FLAG_INPUT_FILE_STATES */            FLAG_TYPE_OPTION,
@@ -1120,7 +1106,6 @@ const char *SOLVER_METHOD_NAME[S_MAX] = {
   /* S_UNKNOWN = 0 */   "unknown",
   /* S_EULER */         "euler",
   /* S_RUNGEKUTTA */    "rungekutta",
-  /* S_IMPRUNGEKUTTA */ "imprungekutta",
   /* S_GBODE */         "gbode",
   /* S_DASSL */         "dassl",
   /* S_IDA */           "ida",
@@ -1137,7 +1122,6 @@ const char *SOLVER_METHOD_DESC[S_MAX] = {
   /* S_EULER */         "euler - Euler - explicit, fixed step size, order 1",
   /* S_RUNGEKUTTA */    "rungekutta - classical Runge-Kutta - explicit, fixed step, order 4",
   /* S_TRAPEZOID */     "trapezoid - trapezoidal rule - implicit, fixed step size, order 2",
-  /* S_IMPRUNGEKUTTA */ "imprungekutta - Runge-Kutta methods based on Radau and Lobatto IIA - implicit, fixed step size, order 1-6(selected manually by flag -impRKOrder)",
   /* S_GBODE */         "gbode - generic bi-rate ODE solver - implicit, explicit, step size control, arbitrary order",
   /* S_DASSL */         "dassl - default solver - BDF method - implicit, step size control, order 1-5",
   /* S_IDA */           "ida - SUNDIALS IDA solver - BDF method with sparse linear solver - implicit, step size control, order 1-5",
