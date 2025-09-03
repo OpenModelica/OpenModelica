@@ -127,7 +127,7 @@ void free_model(InfoGDOP& info) {
 
 MatEmitter::MatEmitter(InfoGDOP& info) : info(info) {}
 
-int MatEmitter::operator()(const Trajectory& trajectory) {
+int MatEmitter::operator()(const PrimalDualTrajectory& trajectory) {
     DATA* data = info.data;
     threadData_t* threadData = info.threadData;
 
@@ -146,23 +146,25 @@ int MatEmitter::operator()(const Trajectory& trajectory) {
         data->modelData->resultFileName = GC_strdup(result_file_cstr.c_str());
     }
 
-    data->simulationInfo->numSteps = trajectory.t.size();
+    const auto& primals = trajectory.primals;
+
+    data->simulationInfo->numSteps = primals->t.size();
     initializeResultData(data, threadData, 0);
     sim_result.writeParameterData(&sim_result, data, threadData);
 
     // allocate contiguous array for xu
-    FixedVector<f64> xu(trajectory.x.size() + trajectory.u.size());
-    for (size_t i = 0; i < trajectory.t.size(); i++) {
+    FixedVector<f64> xu(primals->x.size() + primals->u.size());
+    for (size_t i = 0; i < primals->t.size(); i++) {
         // move trajectory data in contiguous array
-        for (size_t x_index = 0; x_index < trajectory.x.size(); x_index++) {
-            xu[x_index] = trajectory.x[x_index][i];
+        for (size_t x_index = 0; x_index < primals->x.size(); x_index++) {
+            xu[x_index] = primals->x[x_index][i];
         }
-        for (size_t u_index = 0; u_index < trajectory.u.size(); u_index++) {
-            xu[trajectory.x.size() + u_index] = trajectory.u[u_index][i];
+        for (size_t u_index = 0; u_index < primals->u.size(); u_index++) {
+            xu[primals->x.size() + u_index] = primals->u[u_index][i];
         }
 
         // evaluate all algebraic variables
-        set_time(info, info.model_start_time + trajectory.t[i]);
+        set_time(info, info.model_start_time + primals->t[i]);
         set_states_inputs(info, xu.raw());
         eval_current_point(info);
 
@@ -207,8 +209,8 @@ std::unique_ptr<PrimalDualTrajectory> ConstantInitialization::operator()(const G
 Simulation::Simulation(InfoGDOP& info, SOLVER_METHOD solver)
   : info(info), solver(solver) {}
 
-std::unique_ptr<Trajectory> Simulation::operator()(const ControlTrajectory& controls, int num_steps,
-                                                   f64 start_time, f64 stop_time, f64* x_start_values) {
+std::unique_ptr<Trajectory> Simulation::operator()(const ControlTrajectory& controls, const FixedVector<f64>& parameters,
+                                                   int num_steps, f64 start_time, f64 stop_time, f64* x_start_values) {
     DATA* data = info.data;
     threadData_t* threadData = info.threadData;
     SOLVER_INFO solver_info;
@@ -293,10 +295,10 @@ std::unique_ptr<Trajectory> Simulation::operator()(const ControlTrajectory& cont
 SimulationStep::SimulationStep(std::shared_ptr<Simulation> simulation)
   : simulation(simulation) {}
 
-std::unique_ptr<Trajectory> SimulationStep::operator()(const ControlTrajectory& controls,
+std::unique_ptr<Trajectory> SimulationStep::operator()(const ControlTrajectory& controls, const FixedVector<f64>& parameters,
                                                        f64 start_time, f64 stop_time, f64* x_start_values) {
     const int num_steps = 1;
-    return (*simulation)(controls, num_steps, start_time, stop_time, x_start_values);
+    return (*simulation)(controls, parameters, num_steps, start_time, stop_time, x_start_values);
 }
 
 // ==================== Nominal Scaling Factory ====================
