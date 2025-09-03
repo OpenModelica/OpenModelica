@@ -5,7 +5,7 @@
 
 loadFile("testSolverPackage.mo"); getErrorString();
 //default order 5
-simulate(testSolver.problem1, stopTime=2e-6, numberOfIntervals=1000, method="imprungekutta"); getErrorString();
+simulate(testSolver.problem1, stopTime=2e-6, numberOfIntervals=1000, method="gbode", simflags="-gbm=radauIIA3 -gbctrl=const"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem1_res.mat",
   getEnvironmentVar("REFERENCEFILES")+"/solver/testSolver.problem1.mat",
@@ -44,7 +44,7 @@ res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem1_res.
 getErrorString();
 
 // order 3
-simulate(testSolver.problem1, stopTime=2e-6, numberOfIntervals=1000, method="imprungekutta", simflags="-impRKOrder=3"); getErrorString();
+simulate(testSolver.problem1, stopTime=2e-6, numberOfIntervals=1000, method="gbode", simflags="-gbm=radauIIA2 -gbctrl=const"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem1_res.mat",
   getEnvironmentVar("REFERENCEFILES")+"/solver/testSolver.problem1.mat",
@@ -83,7 +83,7 @@ res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem1_res.
 getErrorString();
 
 // order 4
-simulate(testSolver.problem1, stopTime=2e-6, numberOfIntervals=1000, method="imprungekutta", simflags="-impRKOrder=4"); getErrorString();
+simulate(testSolver.problem1, stopTime=2e-6, numberOfIntervals=1000, method="gbode", simflags="-gbm=lobattoIIIA3 -gbctrl=const"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem1_res.mat",
   getEnvironmentVar("REFERENCEFILES")+"/solver/testSolver.problem1.mat",
@@ -122,7 +122,7 @@ res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem1_res.
 getErrorString();
 
 // order 6
-simulate(testSolver.problem1, stopTime=2e-6, numberOfIntervals=1000, method="imprungekutta", simflags="-impRKOrder=6"); getErrorString();
+simulate(testSolver.problem1, stopTime=2e-6, numberOfIntervals=1000, method="gbode", simflags="-gbm=lobattoIIIA4 -gbctrl=const"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("testSolver.problem1_res.mat",
   getEnvironmentVar("REFERENCEFILES")+"/solver/testSolver.problem1.mat",
@@ -166,13 +166,8 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "testSolver.problem1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 2e-06, numberOfIntervals = 1000, tolerance = 1e-06, method = 'imprungekutta', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_STDOUT        | warning | Integration method 'imprungekutta' is deprecated and will be removed in a future version of OpenModelica.
-// |                 | info    | | Use integration method GBODE with method 'radauIA2' and constant step size instead:
-// |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=radauIA2 -gbctrl=const' in Simulation Setup->Simulation Flags.
-// |                 | |       | | | or
-// |                 | |       | | | Simulation flags '-s=gbode -gbm=radauIA2 -gbctrl=const'.
-// |                 | |       | | See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode
+//     simulationOptions = "startTime = 0.0, stopTime = 2e-06, numberOfIntervals = 1000, tolerance = 1e-06, method = 'gbode', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=radauIIA3 -gbctrl=const'",
+//     messages = "LOG_STDOUT        | warning | Numerical Jacobians without coloring are currently not supported by GBODE. Colored numerical Jacobian will be used.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -184,13 +179,8 @@ getErrorString();
 // "
 // record SimulationResult
 //     resultFile = "testSolver.problem1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 2e-06, numberOfIntervals = 1000, tolerance = 1e-06, method = 'imprungekutta', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-impRKOrder=3'",
-//     messages = "LOG_STDOUT        | warning | Integration method 'imprungekutta' is deprecated and will be removed in a future version of OpenModelica.
-// |                 | info    | | Use integration method GBODE with method 'radauIA2' and constant step size instead:
-// |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=radauIA2 -gbctrl=const' in Simulation Setup->Simulation Flags.
-// |                 | |       | | | or
-// |                 | |       | | | Simulation flags '-s=gbode -gbm=radauIA2 -gbctrl=const'.
-// |                 | |       | | See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode
+//     simulationOptions = "startTime = 0.0, stopTime = 2e-06, numberOfIntervals = 1000, tolerance = 1e-06, method = 'gbode', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=radauIIA2 -gbctrl=const'",
+//     messages = "LOG_STDOUT        | warning | Numerical Jacobians without coloring are currently not supported by GBODE. Colored numerical Jacobian will be used.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -202,13 +192,8 @@ getErrorString();
 // "
 // record SimulationResult
 //     resultFile = "testSolver.problem1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 2e-06, numberOfIntervals = 1000, tolerance = 1e-06, method = 'imprungekutta', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-impRKOrder=4'",
-//     messages = "LOG_STDOUT        | warning | Integration method 'imprungekutta' is deprecated and will be removed in a future version of OpenModelica.
-// |                 | info    | | Use integration method GBODE with method 'radauIA2' and constant step size instead:
-// |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=radauIA2 -gbctrl=const' in Simulation Setup->Simulation Flags.
-// |                 | |       | | | or
-// |                 | |       | | | Simulation flags '-s=gbode -gbm=radauIA2 -gbctrl=const'.
-// |                 | |       | | See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode
+//     simulationOptions = "startTime = 0.0, stopTime = 2e-06, numberOfIntervals = 1000, tolerance = 1e-06, method = 'gbode', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=lobattoIIIA3 -gbctrl=const'",
+//     messages = "LOG_STDOUT        | warning | Numerical Jacobians without coloring are currently not supported by GBODE. Colored numerical Jacobian will be used.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -220,13 +205,8 @@ getErrorString();
 // "
 // record SimulationResult
 //     resultFile = "testSolver.problem1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 2e-06, numberOfIntervals = 1000, tolerance = 1e-06, method = 'imprungekutta', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-impRKOrder=6'",
-//     messages = "LOG_STDOUT        | warning | Integration method 'imprungekutta' is deprecated and will be removed in a future version of OpenModelica.
-// |                 | info    | | Use integration method GBODE with method 'radauIA2' and constant step size instead:
-// |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=radauIA2 -gbctrl=const' in Simulation Setup->Simulation Flags.
-// |                 | |       | | | or
-// |                 | |       | | | Simulation flags '-s=gbode -gbm=radauIA2 -gbctrl=const'.
-// |                 | |       | | See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode
+//     simulationOptions = "startTime = 0.0, stopTime = 2e-06, numberOfIntervals = 1000, tolerance = 1e-06, method = 'gbode', fileNamePrefix = 'testSolver.problem1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=lobattoIIIA4 -gbctrl=const'",
+//     messages = "LOG_STDOUT        | warning | Numerical Jacobians without coloring are currently not supported by GBODE. Colored numerical Jacobian will be used.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

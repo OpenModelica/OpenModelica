@@ -146,9 +146,6 @@ lot more using the following simulation flags:
   old: -s=euler
   new: -s=gbode -gbm=expl_euler -gbctrl=const
 
-  old: -s=imprungekutta
-  new -s=gbode -gbm=(one of the lobatto or radau or gauss RK methods) -gbctrl=const
-
   old: -s=rungekuttaSsc
   new: -s=gbode -gbm=rungekuttaSsc
 
@@ -163,18 +160,6 @@ numberOfIntervals, the startTime and stopTime parameters in the
 
 - euler - order 1
 - rungekutta - order 4
-
-Basic Implicit Solvers
-~~~~~~~~~~~~~~~~~~~~~~
-
-The basic implicit solvers are all based on the non-linear solver KINSOL
-from the SUNDIALS suite. The underlining linear solver can be modified
-with the simflag :ref:`-impRKLS <simflag-imprkls>`. The step-size is
-determined as for the basic explicit solvers.
-
-- imprungekutta - Based on Radau IIA and Lobatto IIIA defined by its
-  Butcher tableau where the order can be adjusted by :ref:`-impRKorder <simflag-imprkorder>`.
-
 
 Experimental Solvers
 ~~~~~~~~~~~~~~~~~~~~
