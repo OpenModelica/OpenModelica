@@ -203,9 +203,6 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   resetSolverStats(&solverInfo->solverStats);
   resetSolverStats(&solverInfo->solverStatsTmp);
 
-  /* Deprecation warnings */
-  deprecationWarningGBODE(solverInfo->solverMethod);
-
   switch (solverInfo->solverMethod)
   {
   case S_SYM_SOLVER:

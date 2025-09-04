@@ -89,7 +89,7 @@ This setting is advised for stiff problems which are very common for Modelica
 models.
 For non-stiff problems an combination of an Adams-Moulton formula (varying
 order 1 to 12) as linear multi-step method together with a fixed-point
-iteration as non-linear solver method can be choosen.
+iteration as non-linear solver method can be chosen.
 
 Both non-linear solver methods are internal functions of CVODE and use its
 internal direct dense linear solver CVDense.
@@ -138,33 +138,28 @@ adjust the behavior of the solver for specific simulation problems:
 :ref:`gbfint <simflag-gbint>`,
 :ref:`gbferr <simflag-gbferr>`.
 
-This solver will replace obsolete and no longer maintained solvers providing a
-lot more using the following simulation flags:
-
-.. code-block::
-
-  old: -s=euler
-  new: -s=gbode -gbm=expl_euler -gbctrl=const
-
 Basic Explicit Solvers
 ~~~~~~~~~~~~~~~~~~~~~~
 
-The basic explicit solvers are performing with a fixed step-size and
-differ only in the integration order. The step-size is based on the
-numberOfIntervals, the startTime and stopTime parameters in the
+The basic explicit solvers Euler uses a fixed step-size based on the
+``numberOfIntervals``, the ``startTime`` and ``stopTime`` parameters in the
 :ref:`simulate` command:
 :math:`\mbox{stepSize} \approx \cfrac{\mbox{stopTime} - \mbox{startTime}}{\mbox{numberOfIntervals}}`
 
-- euler - order 1
-- rungekutta - order 4
+- euler - Explicit Euler, fixed step size, order 1
 
-Experimental Solvers
+Deprecated Solvers
 ~~~~~~~~~~~~~~~~~~~~
 
-The following solvers are marked as experimental, mostly because they
-are till now not tested very well.
+The following solvers are deprecated and will be removed in a future version of OpenModelica:
 
-- cvode - experimental implementation of SUNDIALS CVODE solver - BDF or Adams-Moulton method - step size control, order 1-12
+- rungekutta - Classic Runge-Kutta method RK4, explicit, fixed step-size, oder 4
+
+.. code-block::
+
+  old: -s=rungekutta
+  new: -s=gbode -gbm=rungekutta -gbctrl=const
+
 - symSolver - Symbolic inline solver (requires :ref:`--symSolver <omcflag-symSolver>`) - fixed step-size, order 1
 - symSolverSsc - Symbolic implicit inline Euler with step-size control (requires :ref:`--symSolver<omcflag-symSolver>`) - step-size control, order 1-2
 - qss - A QSS solver

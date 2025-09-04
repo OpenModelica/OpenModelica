@@ -81,6 +81,7 @@
 #include "simulation/results/simulation_result_wall.h"
 #include "simulation/results/simulation_result_ia.h"
 #include "simulation/solver/solver_main.h"
+#include "simulation/solver/gbode_util.h"
 #include "simulation_info_json.h"
 #include "modelinfo.h"
 #include "simulation/solver/events.h"
@@ -755,7 +756,7 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
   TRACE_PUSH
   int retVal = -1;
   mmc_sint_t i;
-  mmc_sint_t solverID = S_UNKNOWN;
+  enum SOLVER_METHOD solverID = S_UNKNOWN;
   const char* outVars = (outputVariablesAtEnd.size() == 0) ? NULL : outputVariablesAtEnd.c_str();
   MMC_TRY_INTERNAL(mmc_jumper)
   MMC_TRY_INTERNAL(globalJumpBuffer)
@@ -775,10 +776,25 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
   } else {
     for(i=1; i<S_MAX; ++i) {
       if(std::string(SOLVER_METHOD_NAME[i]) == simData->simulationInfo->solverMethod) {
-        solverID = i;
+        solverID = (enum SOLVER_METHOD) i;
       }
     }
   }
+
+  /* Deprecation warnings */
+   deprecationWarningGBODE(solverID);
+  switch (solverID)
+  {
+    case S_SYM_SOLVER:
+    case S_SYM_SOLVER_SSC:
+    case S_QSS:
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Integration method '%s' is deprecated and will be removed in a future version of OpenModelica.",
+      SOLVER_METHOD_NAME[solverID]);
+    break;
+    default:
+    break;
+  }
+
   /* if no states are present, then we can
    * use euler method, since it does nothing.
    */
