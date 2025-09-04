@@ -1256,19 +1256,25 @@ public
   end makePDerVar;
 
   function makeFDerVar
-      "Creates a function derivative cref. Used in NBDifferentiation
-    for differentiating body vars of a function."
+    "Creates a function derivative cref. Used in NBDifferentiation
+    for differentiating body vars of a function (crefs are not lowered and only known locally).
+    prepend the funcion derivative name and use the string representation of the cref
+    for interface reasons they have to be a single cref without restCref (gets converted to InstNode)"
     input output ComponentRef cref    "old component reference to new component reference";
   algorithm
     cref := match ComponentRef.node(cref)
       local
         InstNode qual;
 
-      // for function differentiation (crefs are not lowered and only known locally)
+      // inside a function body
       case qual as InstNode.COMPONENT_NODE() algorithm
-        // prepend the funcion derivative name and use the string representation of the cref
-        // for interface reasons they have to be a single cref without restCref (gets converted to InstNode)
-        qual.name := FUNCTION_DERIVATIVE_STR + "_" + ComponentRef.toString(cref);
+        qual.name := BackendUtil.makeFDerString(ComponentRef.toString(cref));
+        cref := ComponentRef.fromNode(qual, ComponentRef.nodeType(cref));
+      then cref;
+
+      // partial function application (passing function pointers)
+      case qual as InstNode.CLASS_NODE() algorithm
+        qual.name := BackendUtil.makeFDerString(ComponentRef.toString(cref));
         cref := ComponentRef.fromNode(qual, ComponentRef.nodeType(cref));
       then cref;
 

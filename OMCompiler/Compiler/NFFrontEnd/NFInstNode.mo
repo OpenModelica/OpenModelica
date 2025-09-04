@@ -424,7 +424,8 @@ uniontype InstNode
     output Boolean isFunc;
   algorithm
     isFunc := match node
-      case CLASS_NODE() then Class.isFunction(Pointer.access(node.cls));
+      case CLASS_NODE()     then Class.isFunction(Pointer.access(node.cls));
+      case COMPONENT_NODE() then Class.isFunction(getClass(node));
       else false;
     end match;
   end isFunction;
@@ -1015,8 +1016,24 @@ uniontype InstNode
     definition := match node
       case CLASS_NODE() then node.definition;
       case COMPONENT_NODE(definition = SOME(definition)) then definition;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non clasS/component node: " + toString(node)});
+      then fail();
     end match;
   end definition;
+
+  function classDefinition
+    input InstNode node;
+    output SCode.Element definition;
+  algorithm
+    definition := match node
+      case CLASS_NODE()     then node.definition;
+      case COMPONENT_NODE() then classDefinition(Component.classInstance(Pointer.access(node.component)));
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non clasS/component node: " + toString(node)});
+      then fail();
+    end match;
+  end classDefinition;
 
   function extendsDefinition
     input InstNode node;
