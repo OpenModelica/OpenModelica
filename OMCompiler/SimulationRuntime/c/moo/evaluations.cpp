@@ -283,6 +283,13 @@ void set_time(InfoGDOP& info, const f64 t_ij) {
     info.data->localData[0]->timeValue = t_ij + info.model_start_time;
 }
 
+void eval_ode_write(InfoGDOP& info, f64* eval_ode_buffer) {
+    /* f */
+    for (int der_x = 0; der_x < info.f_size; der_x++) {
+        eval_ode_buffer[der_x] = info.data->localData[0]->realVars[info.index_der_x_real_vars + der_x];
+    }
+}
+
 void eval_lfg_write(InfoGDOP& info, f64* eval_lfg_buffer) {
     int nz = 0;
     /* L */

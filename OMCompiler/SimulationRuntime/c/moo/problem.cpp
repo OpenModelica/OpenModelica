@@ -62,7 +62,7 @@ void FullSweep::callback_eval(const f64* xu_nlp, const f64* p) {
 
             set_states_inputs(info, xu_ij);
             set_time(info, pc.mesh->t[i][j]);
-            eval_current_point(info);
+            eval_current_point_dae(info);
             eval_lfg_write(info, eval_buf_ij);
         }
     }
@@ -77,7 +77,7 @@ void FullSweep::callback_jac(const f64* xu_nlp, const f64* p) {
 
             set_states_inputs(info, xu_ij);
             set_time(info, pc.mesh->t[i][j]);
-            eval_current_point(info);
+            eval_current_point_dae(info);
             /* TODO: check if B matrix does hold additional ders */
             jac_eval_write_as_csc(info, info.exc_jac->B.jacobian, jac_buf_ij);
         }
@@ -138,7 +138,7 @@ void BoundarySweep::callback_eval(const f64* x0_nlp, const f64* xuf_nlp, const f
     set_parameters(info, p);
     set_states_inputs(info, xuf_nlp);
     set_time(info, pc.mesh->tf);
-    eval_current_point(info);
+    eval_current_point_dae(info);
     eval_mr_write(info, get_eval_buffer());
 }
 
@@ -147,7 +147,7 @@ void BoundarySweep::callback_jac(const f64* x0_nlp, const f64* xuf_nlp, const f6
     set_parameters(info, p);
     set_states_inputs(info, xuf_nlp);
     set_time(info, pc.mesh->tf);
-    eval_current_point(info);
+    eval_current_point_dae(info);
     /* TODO: check if C matrix does hold additional ders */
 
     /* derivative of mayer to jacbuffer[0] ... jac_buffer[exc_jac.D_coo.nnz_offset - 1] */
@@ -195,6 +195,50 @@ void BoundarySweep::callback_hes(const f64* x0_nlp, const f64* xuf_nlp, const f6
             hes_buffer[index_buffer] += info.exc_hes->C.buffer[index_D];
         }
     }
+}
+
+Dynamics::Dynamics(const GDOP::ProblemConstants& pc, InfoGDOP& info)
+    : GDOP::Dynamics(pc), info(info) {}
+
+void Dynamics::allocate() {
+    // TODO: its unclear if other allocations are missing here. for now its working
+    JACOBIAN* jacobian = info.exc_jac->A.jacobian;
+    if (!jacobian->sparsePattern) {
+        info.data->callback->initialAnalyticJacobianA(info.data, info.threadData, jacobian);
+        allocated_ode_matrix = true;
+    }
+
+    SPARSE_PATTERN* sparsePattern = jacobian->sparsePattern;
+
+    jac_pattern = ::Simulation::Jacobian::sparse(
+                    ::Simulation::JacobianFormat::CSC,
+                    reinterpret_cast<int*>(sparsePattern->index)     /* row indices */,
+                    reinterpret_cast<int*>(sparsePattern->leadindex) /* col pointers */,
+                    sparsePattern->numberOfNonZeros);
+}
+
+void Dynamics::free() {
+    if (allocated_ode_matrix) {
+        freeJacobian(info.exc_jac->A.jacobian);
+        allocated_ode_matrix = false;
+    }
+}
+
+void Dynamics::eval(const f64* x, const f64* u, const f64* p, f64 t, f64* f, void* user_data) {
+    set_parameters(info, p);
+    set_states(info, x);
+    set_inputs(info, u);
+    set_time(info, t);
+    eval_current_point_ode(info);
+    eval_ode_write(info, f);
+}
+
+void Dynamics::jac(const f64* x, const f64* u, const f64* p, f64 t, f64* dfdx, void* user_data) {
+    set_parameters(info, p);
+    set_states(info, x);
+    set_inputs(info, u);
+    set_time(info, t);
+    eval_write_ode_jacobian(info, dfdx);
 }
 
 GDOP::Problem create_gdop(InfoGDOP& info, const Mesh& mesh) {
@@ -304,10 +348,11 @@ GDOP::Problem create_gdop(InfoGDOP& info, const Mesh& mesh) {
         mesh
     );
 
-    auto fs = std::make_unique<FullSweep>(std::move(layout_lfg), *pc, info);
-    auto bs = std::make_unique<BoundarySweep>(std::move(layout_mr), *pc, info);
+    auto fs  = std::make_unique<FullSweep>(std::move(layout_lfg), *pc, info);
+    auto bs  = std::make_unique<BoundarySweep>(std::move(layout_mr), *pc, info);
+    auto dyn = std::make_unique<Dynamics>(*pc, info);
 
-    return GDOP::Problem(std::move(fs), std::move(bs),std::move(pc));
+    return GDOP::Problem(std::move(fs), std::move(bs), std::move(pc), std::move(dyn));
 }
 
 } // namespace OpenModelica
