@@ -96,7 +96,13 @@ public:
   VariablesTreeItem* rootParent();
   QVariant getValue(QString fromUnit, QString toUnit);
 
-  QList<VariablesTreeItem*> mChildren;
+  QVector<VariablesTreeItem*> mChildren;
+  /* See issue #14192
+   * We need a hash to speed up the search for child items.
+   * We maintain both mChildren vector and mChildrenHash hash.
+   * One is ordered vector and other is unordered hash.
+   */
+  QHash<QString, VariablesTreeItem*> mChildrenHash;
 private:
   VariablesTreeItem *mpParentVariablesTreeItem;
   bool mIsRootItem;
