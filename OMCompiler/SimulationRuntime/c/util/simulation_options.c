@@ -1104,12 +1104,12 @@ const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX] = {
 
 const char *SOLVER_METHOD_NAME[S_MAX] = {
   /* S_UNKNOWN = 0 */   "unknown",
-  /* S_EULER */         "euler",
-  /* S_RUNGEKUTTA */    "rungekutta",
-  /* S_GBODE */         "gbode",
   /* S_DASSL */         "dassl",
   /* S_IDA */           "ida",
   /* S_CVODE */         "cvode",
+  /* S_GBODE */         "gbode",
+  /* S_EULER */         "euler",
+  /* S_RUNGEKUTTA */    "rungekutta",
   /* S_ERKSSC */        "rungekuttaSsc",
   /* S_SYM_SOLVER */    "symSolver",
   /* S_SYM_SOLVER_SSC */"symSolverSsc",
@@ -1119,18 +1119,17 @@ const char *SOLVER_METHOD_NAME[S_MAX] = {
 
 const char *SOLVER_METHOD_DESC[S_MAX] = {
   /* S_UNKNOWN = 0 */   "unknown",
-  /* S_EULER */         "euler - Euler - explicit, fixed step size, order 1",
+  /* S_DASSL */         "dassl (default) - BDF method - implicit (dense solver), variable step size control, adaptive order 1-5, event location",
+  /* S_IDA */           "ida - SUNDIALS IDA solver - BDF method - implicit (sparse/dense solver, default sparse) variable step size control, adaptive order 1-5, event location - additional simulation flags: -idaMaxErrorTestFails -idaMaxNonLinIters -idaMaxConvFails -idaNonLinConvCoef -idaLS -idaScaling -idaSensitivity",
+  /* S_CVODE */         "cvode - SUNDIALS CVODE solver - BDF or Adams-Moulton solver - implicit (dense solver), variable step-size control, adaptive order 1-12, event location - additional simulation flags -cvodeLinearMultistepMethod -cvodeNonlinearSolverIteration",
+  /* S_GBODE */         "gbode - generic Runge-Kutta ODE solver - implicit (sparse solver)/explicit, fixed/variable step size control, order 1-14, event location, optional bi-rate integration - additional simulation flags -gbm -gbctrl -gbratio - additional advanced flags -gbctrl_filter -gbctrl_fhr -gberr -gbint -gbnls -gbfm -gbfctrl -gbferr -gbfint -gbfnls",
+  /* S_EULER */         "euler - explicit Euler, fixed step size, order 1",
   /* S_RUNGEKUTTA */    "rungekutta - classical Runge-Kutta - explicit, fixed step, order 4",
-  /* S_TRAPEZOID */     "trapezoid - trapezoidal rule - implicit, fixed step size, order 2",
-  /* S_GBODE */         "gbode - generic bi-rate ODE solver - implicit, explicit, step size control, arbitrary order",
-  /* S_DASSL */         "dassl - default solver - BDF method - implicit, step size control, order 1-5",
-  /* S_IDA */           "ida - SUNDIALS IDA solver - BDF method with sparse linear solver - implicit, step size control, order 1-5",
-  /* S_CVODE */         "cvode - experimental implementation of SUNDIALS CVODE solver - BDF or Adams-Moulton method - step size control, order 1-12",
   /* S_ERKSSC */        "rungekuttaSsc - Runge-Kutta based on Novikov (2016) - explicit, step size control, order 4-5 [experimental]",
-  /* S_SYM_SOLVER */     "symSolver - symbolic inline Solver [compiler flag +symSolver needed] - fixed step size, order 1",
-  /* S_SYM_SOLVER_SSC */ "symSolverSsc - symbolic implicit Euler with step size control [compiler flag +symSolver needed] - step size control, order 1",
-  /* S_QSS */           "qss - A QSS solver [experimental]",
-  /* S_OPTIMIZATION */  "optimization - Special solver for dynamic optimization"
+  /* S_SYM_SOLVER */     "symSolver - symbolic inline Solver [compiler flag '--symSolver' needed] - fixed step size, order 1",
+  /* S_SYM_SOLVER_SSC */ "symSolverSsc - symbolic implicit Euler with step size control [compiler flag '--symSolver' needed] - step size control, order 1",
+  /* S_QSS */            "qss - A QSS solver [experimental]",
+  /* S_OPTIMIZATION */   "optimization - Special solver for dynamic optimization"
 };
 
 const char *INIT_METHOD_NAME[IIM_MAX] = {

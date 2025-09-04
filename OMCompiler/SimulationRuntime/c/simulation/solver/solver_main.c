@@ -212,6 +212,17 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
 
   /* Deprecation warnings */
   deprecationWarningGBODE(solverInfo->solverMethod);
+  switch (solverInfo->solverMethod)
+  {
+    case S_SYM_SOLVER:
+    case S_SYM_SOLVER_SSC:
+    case S_QSS:
+    warningStreamPrint(OMC_LOG_STDOUT, 1, "Integration method '%s' is deprecated and will be removed in a future version of OpenModelica.",
+      SOLVER_METHOD_NAME[solverInfo->solverMethod]);
+    break;
+    default:
+    break;
+  }
 
   switch (solverInfo->solverMethod)
   {
