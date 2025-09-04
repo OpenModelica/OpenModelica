@@ -146,20 +146,18 @@ lot more using the following simulation flags:
   old: -s=euler
   new: -s=gbode -gbm=expl_euler -gbctrl=const
 
-  old: -s=rungekuttaSsc
-  new: -s=gbode -gbm=rungekuttaSsc
+  old: -s=rungekutta
+  new: -s=gbode -gbm=rungekutta -gbctrl=const
 
 Basic Explicit Solvers
 ~~~~~~~~~~~~~~~~~~~~~~
 
-The basic explicit solvers are performing with a fixed step-size and
-differ only in the integration order. The step-size is based on the
-numberOfIntervals, the startTime and stopTime parameters in the
+The basic explicit solvers Euler uses a fixed step-size based on the
+``numberOfIntervals``, the ``startTime`` and ``stopTime`` parameters in the
 :ref:`simulate` command:
 :math:`\mbox{stepSize} \approx \cfrac{\mbox{stopTime} - \mbox{startTime}}{\mbox{numberOfIntervals}}`
 
 - euler - order 1
-- rungekutta - order 4
 
 Experimental Solvers
 ~~~~~~~~~~~~~~~~~~~~
