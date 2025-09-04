@@ -868,7 +868,7 @@ void replacementString(enum GB_METHOD gbMethod, modelica_boolean constant)
 /**
  * @brief Display deprecation warning for integration methods replaced by GBODE.
  *
- * Deprecated methods: rungekuttaSsc
+ * Deprecated methods: None
  *
  * @param solverMethod  Integration method.
  */
