@@ -10,7 +10,7 @@ package qssTests
   initial equation
     x1=1;
     x2=1;
-    x3=1; 
+    x3=1;
   equation
     der(x1) = x3;
     der(x2) = x2 * sin(x3);
@@ -33,7 +33,8 @@ val(x3, {0.0, 5.0}); getErrorString();
 // record SimulationResult
 //     resultFile = "qssTests.example5_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'qss', fileNamePrefix = 'qssTests.example5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "LOG_STDOUT        | warning | Integration method 'qss' is deprecated and will be removed in a future version of OpenModelica.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_STDOUT        | warning | This QSS method is under development and should not be used yet.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
