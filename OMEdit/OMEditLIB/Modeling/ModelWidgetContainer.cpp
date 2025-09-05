@@ -5826,8 +5826,12 @@ void ModelWidget::loadModelInstance(bool icon, const ModelInfo &modelInfo)
     MainWindow::instance()->writeNewApiProfiling(QString("Time for parsing JSON %1 secs").arg(QString::number(elapsed, 'f', 6)));
   }
   timer.restart();
+  // enable skip expression evaluation flag if we are drawing the icon only
+  MainWindow::instance()->setSkipExpressionEvaluation(icon);
   // drawing
   drawModel(modelInfo);
+  // disable skip expression evaluation flag
+  MainWindow::instance()->setSkipExpressionEvaluation(false);
   if (MainWindow::instance()->isNewApiProfiling()) {
     double elapsed = (double)timer.elapsed() / 1000.0;
     MainWindow::instance()->writeNewApiProfiling(QString("Time for drawing graphical objects %1 secs").arg(QString::number(elapsed, 'f', 6)));

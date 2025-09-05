@@ -111,6 +111,8 @@ public:
   void setCRMLEnabled(bool crmlEnabled) {mCRMLEnabled = crmlEnabled;}
   bool isTestsuiteRunning() const {return mTestsuiteRunning;}
   void setTestsuiteRunning(bool testsuiteRunning) {mTestsuiteRunning = testsuiteRunning;}
+  bool isSkipExpressionEvaluation() const {return mSkipExpressionEvaluation;}
+  void setSkipExpressionEvaluation(bool skipExpressionEvaluation) {mSkipExpressionEvaluation = skipExpressionEvaluation;}
   OMCProxy* getOMCProxy() {return mpOMCProxy;}
   void setExitApplicationStatus(bool status) {mExitApplicationStatus = status;}
   bool getExitApplicationStatus() {return mExitApplicationStatus;}
@@ -264,6 +266,7 @@ private:
   FILE *mpNewApiProfilingFile = nullptr;
   bool mCRMLEnabled = false;
   bool mTestsuiteRunning = false;
+  bool mSkipExpressionEvaluation = false;
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
   int mNumberOfProcessors;
