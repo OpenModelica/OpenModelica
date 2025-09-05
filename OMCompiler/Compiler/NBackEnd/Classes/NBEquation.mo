@@ -1843,7 +1843,7 @@ public
 
         case ALGORITHM() algorithm
           eq.alg := SimplifyModel.simplifyAlgorithm(eq.alg);
-        then eq;
+        then if Algorithm.isEmpty(eq.alg) then Equation.DUMMY_EQUATION() else eq;
 
         case WHEN_EQUATION() algorithm
           new_eq := match WhenEquationBody.simplify(SOME(eq.body))
@@ -3436,8 +3436,8 @@ public
         // simplify condition
         case SOME(b) algorithm
           b.else_when := simplify(b.else_when);
-          // if the condition is only False -> skip this unreachable branch
-          if Expression.isFalse(b.condition) then
+          // if the condition is a constant boolean -> skip this unreachable branch
+          if Expression.isBoolean(b.condition) then
             body := b.else_when;
           else
             body := SOME(b);

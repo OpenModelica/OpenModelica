@@ -210,6 +210,11 @@ public
       and List.isEqualOnTrue(alg1.statements, alg2.statements, Statement.isEqual);
   end isEqual;
 
+  function isEmpty
+    input Algorithm alg;
+    output Boolean b = listEmpty(alg.statements);
+  end isEmpty;
+
 protected
   function statementInputsOutputs "Helper for getInputsOutputs.
     Traverse statements and find inputs and outputs"
