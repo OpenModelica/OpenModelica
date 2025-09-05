@@ -4552,18 +4552,21 @@ public
           eqData.discretes    := EquationPointers.mapExp(eqData.discretes, func);
           eqData.initials     := EquationPointers.mapExp(eqData.initials, func);
           eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, func);
+          eqData.removed      := EquationPointers.mapExp(eqData.removed, func);
         then eqData;
 
         case EqData.EQ_DATA_JAC() algorithm
           eqData.results      := EquationPointers.mapExp(eqData.results, func);
           eqData.temporary    := EquationPointers.mapExp(eqData.temporary, func);
           eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, func);
+          eqData.removed      := EquationPointers.mapExp(eqData.removed, func);
         then eqData;
 
         case EqData.EQ_DATA_HES() algorithm
           Pointer.update(eqData.result, Equation.map(Pointer.access(eqData.result), func));
           eqData.temporary    := EquationPointers.mapExp(eqData.temporary, func);
           eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, func);
+          eqData.removed      := EquationPointers.mapExp(eqData.removed, func);
         then eqData;
       end match;
     end mapExp;

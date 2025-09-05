@@ -286,7 +286,7 @@ public
     input VariablePointers variables;
     input UnorderedMap<Absyn.Path, Function> replacements;
   algorithm
-        // do nothing if replacements are empty
+    // do nothing if replacements are empty
     if UnorderedMap.isEmpty(replacements) then return; end if;
     eqData := EqData.mapExp(eqData, function applyFuncExp(replacements = replacements, variables = variables));
   end replaceFunctions;
