@@ -3578,7 +3578,7 @@ public
       case MATRIX()
         algorithm
           for row in exp.elements loop
-            applyList(row, func);
+            applyListShallow(row, func);
           end for;
         then
           ();
