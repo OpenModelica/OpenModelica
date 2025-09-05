@@ -35,7 +35,6 @@ simulate(initializationTests.bug_2994, simflags="-lv=LOG_INIT_V -override=a=2");
 // LOG_INIT_V        | info    | parameter values
 // |                 | |       | | real parameters
 // |                 | |       | | | [1] parameter Real a(start=1, fixed=true) = 1
-// |                 | |       | | | [2] parameter Real x(start=0, fixed=true) = 1
 // LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
 // |                 | |       | | other real variables
 // |                 | |       | | | [1] Real y(start=1, nominal=1) = 1 (pre: 1)
@@ -58,7 +57,6 @@ simulate(initializationTests.bug_2994, simflags="-lv=LOG_INIT_V -override=a=2");
 // LOG_INIT_V        | info    | parameter values
 // |                 | |       | | real parameters
 // |                 | |       | | | [1] parameter Real a(start=2, fixed=true) = 2
-// |                 | |       | | | [2] parameter Real x(start=0, fixed=true) = 2
 // LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
 // |                 | |       | | other real variables
 // |                 | |       | | | [1] Real y(start=1, nominal=1) = 2 (pre: 1)
