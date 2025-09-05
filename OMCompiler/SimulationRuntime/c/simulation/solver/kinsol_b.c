@@ -168,7 +168,7 @@ static void nlsKinsolInplaceUnscaleJac(NONLINEAR_SYSTEM_DATA *nlsData, B_NLS_KIN
   }
 }
 
-static void nlsKinsolInplaceScaleX(B_NLS_KINSOL_DATA *kinsolData, N_Vector x) {  
+static void nlsKinsolInplaceScaleX(B_NLS_KINSOL_DATA *kinsolData, N_Vector x) {
   int i, size = kinsolData->size;
   double *x_data = N_VGetArrayPointer(x);
   double *x_scaling = N_VGetArrayPointer(kinsolData->xScale);
@@ -529,7 +529,7 @@ static int B_nlsKinsolResiduals(N_Vector x, N_Vector f, void* userData) {
 
   double *xdata = NV_DATA_S(x);
   double *fdata = NV_DATA_S(f);
-  
+
   NLS_USERDATA* kinsolUserData = (NLS_USERDATA*)userData;
   DATA* data = kinsolUserData->data;
   threadData_t* threadData = kinsolUserData->threadData;
@@ -544,14 +544,14 @@ static int B_nlsKinsolResiduals(N_Vector x, N_Vector f, void* userData) {
 #ifndef OMC_EMCC
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
-  
+
   if (kinsolData->useScaling) {
     nlsKinsolInplaceUnscaleX(kinsolData, x);
   }
 
   /* call residual function */
   nlsData->residualFunc(&resUserData, xdata, fdata, (const int *)&iflag);
-  
+
   if (kinsolData->useScaling) {
     nlsKinsolInplaceScaleX(kinsolData, x);
     nlsKinsolInplaceScaleF(kinsolData, f);
@@ -605,7 +605,7 @@ static int B_nlsDenseJac(long int N,
   const double delta_h = sqrt(DBL_EPSILON * 2e1);
 
   long int col, row;
-  
+
   modelica_boolean stored_nominal_jac = kinsolData->useScaling;
   if (kinsolData->useScaling) {
     nlsKinsolInplaceUnscaleX(kinsolData, vecX);
@@ -1040,12 +1040,12 @@ static int B_nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
           j = sparsePattern->index[nth];
 
           // TODO: investigate NaN values stemming from residual functions
-          // Hypothesis: lambda = 0 system forces variables to be 0, while for lambda = eps, we divide by them?! 
+          // Hypothesis: lambda = 0 system forces variables to be 0, while for lambda = eps, we divide by them?!
           result = (fRes[j] - fx[j]) * delta_hh[ii];
 
           // (IN)SANITY CHECK
           if (isnan(result) || isinf(result)) {
-            warningStreamPrint(OMC_LOG_STDOUT, 0, 
+            warningStreamPrint(OMC_LOG_STDOUT, 0,
                 "WARNING: NaN (%d) or Inf (%d) detected at col %ld row %ld: fRes=%g, fx=%g, delta_hh=%g, x=%g, xsave=%g\n"
                 "ACTION: setting Jacobian entry := 0.0 and trying to recover...",
                 isnan(result), isinf(result), ii, j, fRes[j], fx[j], delta_hh[ii], x[ii], xsave[ii]);
