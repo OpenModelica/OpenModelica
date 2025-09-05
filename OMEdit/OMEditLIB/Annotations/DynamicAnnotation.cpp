@@ -122,14 +122,19 @@ bool DynamicAnnotation::update(double time, ModelInstance::Model *pModel)
  */
 void DynamicAnnotation::evaluate(ModelInstance::Model *pModel)
 {
-  FlatModelica::Expression expression;
-  if (isDynamicSelectExpression()) {
-    expression = mExp.arg(0);
-  } else {
-    expression = mExp;
-  }
-  if (!expression.isNull()) {
-    fromExp(evaluate_helper(&expression, pModel, false, 0.0));
+  /* Avoid expression evaluation when skip expression evaluation flag is set.
+   * We skip expression evaluation when we call getModelInstance for icon.
+   */
+  if (!MainWindow::instance()->isSkipExpressionEvaluation()) {
+    FlatModelica::Expression expression;
+    if (isDynamicSelectExpression()) {
+      expression = mExp.arg(0);
+    } else {
+      expression = mExp;
+    }
+    if (!expression.isNull()) {
+      fromExp(evaluate_helper(&expression, pModel, false, 0.0));
+    }
   }
 }
 
