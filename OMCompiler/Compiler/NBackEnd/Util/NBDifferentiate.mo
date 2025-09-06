@@ -1902,7 +1902,7 @@ public
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
           // create addition operator from the size classification of original multiplication operator
-          (_, sizeClass) := Operator.classify(operator);
+          sizeClass := Operator.classifyAddition(operator);
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
       then (Expression.MULTARY(
               {Expression.BINARY(exp1, operator, diffExp2),

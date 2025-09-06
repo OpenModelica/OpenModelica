@@ -2095,7 +2095,7 @@ public
         then Expression.MULTARY({eqn.rhs}, {eqn.lhs}, operator);
 
         case ARRAY_EQUATION()  algorithm
-          operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.ADD);
+          operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.ADD_EW);
         then Expression.MULTARY({eqn.rhs}, {eqn.lhs}, operator);
 
         case RECORD_EQUATION(ty = Type.COMPLEX(cls = cls_node)) algorithm
