@@ -24,26 +24,27 @@ if(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MINGW)
   if(NOT DEFINED ENV{OMDEV})
     message(FATAL_ERROR "Environment variable \"OMDEV\" is not set.")
   endif()
-  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    string(REPLACE "\\" "/" OMDEV_MSYS_ESCAPED "$ENV{OMDEV}\\tools\\msys")
-    set(UCRT_DIR "${OMDEV_MSYS_ESCAPED}/ucrt64")
-    message(STATUS "MSYS environment UCRT64: ${OMDEV}\\tools\\msys")
-  else()
+  if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
     message(FATAL_ERROR "No 32-bit version of UCRT available!")
   endif()
   if(NOT DEFINED ENV{MSYSTEM_PREFIX})
     message(FATAL_ERROR "Environment variable \"MSYSTEM_PREFIX\" is not set.")
   endif()
-  string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
+
+  if (CMAKE_GENERATOR STREQUAL "MinGW Makefiles" AND "$ENV{VisualStudioVersion}" STREQUAL "")
+    string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{OMDEV}\\tools\\msys\\$ENV{MSYSTEM_PREFIX}")
+  else()
+    string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
+  endif()
 
   # Install the Qt5/Qt6 plugins directories
   message(STATUS "Installing QT${OM_QT_MAJOR_VERSION} plugins from ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/plugins/")
   install(DIRECTORY ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/plugins/    # Note the slash at the end!
-          TYPE BIN)
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/share/qt5/plugins)
   # Install the Qt5/Qt6 translation directories
   message(STATUS "Installing QT${OM_QT_MAJOR_VERSION} translation from ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/translations/")
   install(DIRECTORY ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/translations/    # Note the slash at the end!
-          TYPE BIN)
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/share/qt5/translations)
 
   # TODO: This is stupid, but I can't get install with RUNTIME_DEPENDENCIES to run.
   # It needs to link to libs that are installed to ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR},
@@ -60,6 +61,8 @@ if(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MINGW)
   install(FILES
           ${MSYSTEM_PREFIX_ESCAPED}/bin/Qt5OpenGL.dll
           TYPE BIN)
+
+  message(STATUS "Looking for runtime dependencies of OMEdit in ${MSYSTEM_PREFIX_ESCAPED}/bin ${RUNTIME_LIB_DIRS}")
 
   install(TARGETS OMEdit
           RUNTIME_DEPENDENCIES
