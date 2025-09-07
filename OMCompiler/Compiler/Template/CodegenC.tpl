@@ -2438,7 +2438,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
             %>
             JACOBIAN* jacobian = NULL;
             <%varDeclsRes%>
-            <%equation_profile(ls.index, eqnbody)%>
+            <%equation_withProfile(ls.index, eqnbody)%>
             TRACE_POP
           }
           OMC_DISABLE_OPT
@@ -2469,7 +2469,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
             const int equationIndexes[2] = {1,<%ls.index%>};
             <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
             <%varDecls%>
-            <%equation_profile(ls.index, MatrixA)%>
+            <%equation_withProfile(ls.index, MatrixA)%>
           }
           OMC_DISABLE_OPT
           void setLinearVectorb<%ls.index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData)
@@ -2477,7 +2477,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
             const int equationIndexes[2] = {1,<%ls.index%>};
             <% if ls.partOfJac then 'JACOBIAN* parentJacobian = linearSystemData->parDynamicData[omc_get_thread_num()].parentJacobian;'%>
             <%varDecls2%>
-            <%equation_profile(ls.index, vectorb)%>
+            <%equation_withProfile(ls.index, vectorb)%>
           }
           OMC_DISABLE_OPT
           <%initializeStaticLSVars(ls.vars, ls.index)%>
@@ -2760,7 +2760,7 @@ template createGlobalConstraintsFunction(SimEqSystem system)
       int checkConstraints<%at.index%>(DATA *data, threadData_t *threadData)
       {
         const int equationIndexes[2] = {1,<%at.index%>};
-        <%equation_profile(at.index, constraints)%>
+        <%equation_withProfile(at.index, constraints)%>
         return 1;
       }
 
@@ -2772,7 +2772,7 @@ template createGlobalConstraintsFunction(SimEqSystem system)
       int checkConstraints<%at.index%>(DATA *data, threadData_t *threadData)
       {
         const int equationIndexes[2] = {1,<%at.index%>};
-        <%equation_profile(at.index, constraints)%>
+        <%equation_withProfile(at.index, constraints)%>
         return 1;
       }
 
@@ -3490,7 +3490,7 @@ template functionUpdateBoundVariableAttributesFunctions(SimEqSystem eq, String a
         TRACE_PUSH
         const int equationIndexes[2] = {1,<%ix%>};
         <%&varDecls%>
-        <%equation_profile(ix, body)%>
+        <%equation_withProfile(ix, body)%>
         TRACE_POP
       }
 
@@ -4527,11 +4527,8 @@ case SIMULATION_CONTEXT(genDiscrete=true) then
   let ix = equationIndex(eq)
   let &arrayEqs += '<%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>,<%\n%>'
   let &forwardEqs += 'extern void <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(DATA* data, threadData_t *threadData);<%\n%>'
-  <<
-  <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
-  function<%name%>_systems[<%arrayIndex%>](data);
-  <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix%>);' %>
-  >>
+  let body = 'function<%name%>_systems[<%arrayIndex%>](data);'
+  equation_withProfile(ix, body)
 else
  match eq
   case SES_ALGORITHM(statements={}) then ""
@@ -4539,12 +4536,12 @@ else
   let ix = equationIndex(eq)
   let &arrayEqs += '<%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>,<%\n%>'
   let &forwardEqs += 'extern void <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(DATA* data, threadData_t *threadData);<%\n%>'
-  <<
-  <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
-  // <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data, threadData);
-  function<%name%>_systems[<%arrayIndex%>](data);
-  <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix%>);' %>
-  >>
+  let body =
+    <<
+    // <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data, threadData);
+    function<%name%>_systems[<%arrayIndex%>](data);
+    >>
+  equation_withProfile(ix, body)
 end equationNamesArrayFormat;
 
 template functionXXX_systems_arrayFormat(list<list<SimEqSystem>> eqlstlst, String name, Text &fncalls, Text &nrfuncs, Text &varDecls, String modelNamePrefixStr)
@@ -5925,7 +5922,7 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
     TRACE_PUSH
     const int equationIndexes[2] = {1,<%ix%>};
     <%&varD%>
-    <%equation_profile(ix, x)%>
+    <%equation_withProfile(ix, x)%>
     TRACE_POP
   }
   >>
@@ -6057,7 +6054,7 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
           <%subClockIndex_%>
           const int equationIndexes[2] = {1,<%ix%>};
           <%&varD%>
-          <%equation_profile(ix, x)%>
+          <%equation_withProfile(ix, x)%>
           TRACE_POP
         }
 
@@ -6072,7 +6069,7 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
           <%subClockIndex_%>
           const int equationIndexes[2] = {1,<%ix2%>};
           <%&varD%>
-          <%equation_profile(ix2, x2)%>
+          <%equation_withProfile(ix2, x2)%>
           TRACE_POP
         }
         >>
@@ -6095,7 +6092,7 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
           <%subClockIndex_%>
           const int equationIndexes[2] = {1,<%ix%>};
           <%&varD%>
-          <%equation_profile(ix, x)%>
+          <%equation_withProfile(ix, x)%>
           TRACE_POP
         }
         >>
@@ -6113,7 +6110,7 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
           <%subClockIndex_%>
           const int equationIndexes[2] = {1,<%ix%>};
           <%&varD%>
-          <%equation_profile(ix, x)%>
+          <%equation_withProfile(ix, x)%>
           TRACE_POP
         }
         >>
@@ -6160,8 +6157,7 @@ template equations_call(list<SimEqSystem> eqs, String modelNamePrefix, Context c
     >>
 end equations_call;
 
-template equation_profile(String index, String body)
-  "Generates "
+template equation_withProfile(String index, String body)
 ::=
   <<
   <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
@@ -6169,7 +6165,7 @@ template equation_profile(String index, String body)
   <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
   threadData->lastEquationSolved = <%index%>;
   >>
-end equation_profile;
+end equation_withProfile;
 
 template equationForward_(SimEqSystem eq, Context context, String modelNamePrefixStr)
  "Generates an equation.
@@ -6198,7 +6194,7 @@ template equationNames_(SimEqSystem eq, Context context, String modelNamePrefixS
   <<
   <% match context case DAE_MODE_CONTEXT() then simEqAttrEval(eq) %>
   <% match context case DAE_MODE_CONTEXT() then 'if ((evalStages & currentEvalStage) && !((currentEvalStage!=EVAL_DISCRETE)?(<%simEqAttrIsDiscreteKind(eq)%>):0)) {' else '{' %>
-    <%equation_profile(ix, body)%>
+    <%equation_withProfile(ix, body)%>
   }
   >>
 end equationNames_;

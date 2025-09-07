@@ -6230,52 +6230,51 @@ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
   let size = listLength(nls.crefs)
   <<
 
-   <%nls.crefs |> name hasindex i0 =>
+  <%nls.crefs |> name hasindex i0 =>
     let namestr = contextCref(name, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     <<
     _res[<%i0%>] = <%namestr%>;
-     >>
+    >>
   ;separator="\n"%>
-   >>
- case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))then
-   match ls.jacobianMatrix
-       case SOME(__) then
-       let &varDecls = buffer "" /*BUFD*/
-       let prebody = (ls.residual |> eq2 =>
-         functionExtraResidualsPreBody(eq2, &varDecls, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-     ;separator="\n")
-     let body = (ls.residual |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
-         let &preExp = buffer "" /*BUFD*/
-         let expPart = daeExp(eq2.exp, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-         '<%preExp%>_b[<%i0%>] = <%expPart%>;'
+  >>
+case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+  match ls.jacobianMatrix
+  case SOME(__) then
+    let &varDecls = buffer "" /*BUFD*/
+    let prebody = (ls.residual |> eq2 =>
+      functionExtraResidualsPreBody(eq2, &varDecls, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       ;separator="\n")
-       <<
-         <%varDecls%>
-         //prebody
-         <%prebody%>
-         //body
-         <%body%>
-       >>
+    let body = (ls.residual |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
+      let &preExp = buffer "" /*BUFD*/
+      let expPart = daeExp(eq2.exp, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      '<%preExp%>_b[<%i0%>] = <%expPart%>;'
+      ;separator="\n")
+    <<
+      <%varDecls%>
+      //prebody
+      <%prebody%>
+      //body
+      <%body%>
+    >>
   else
-   let &varDecls = buffer "" /*BUFD*/
-   let Amatrix=
-    (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) hasindex i0 fromindex 0 =>
-      let &preExp = buffer ""
-      let expPart = daeExp(eq.exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      '<%preExp%>__A(<%row%>,<%col%>)=<%expPart%>;'
-  ;separator="\n")
+    let &varDecls = buffer "" /*BUFD*/
+    let Amatrix =
+      (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) hasindex i0 fromindex 0 =>
+        let &preExp = buffer ""
+        let expPart = daeExp(eq.exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+        '<%preExp%>__A(<%row%>,<%col%>)=<%expPart%>;'
+      ;separator="\n")
 
- let bvector =  (ls.beqs |> exp hasindex i0 fromindex 1=>
-     let &preExp = buffer ""
-     let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-     '<%preExp%>__b(<%i0%>)=<%expPart%>;'
-  ;separator="\n")
- <<
-     <%varDecls%>
+    let bvector =  (ls.beqs |> exp hasindex i0 fromindex 1=>
+        let &preExp = buffer ""
+        let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+        '<%preExp%>__b(<%i0%>)=<%expPart%>;'
+      ;separator="\n")
+    <<
+      <%varDecls%>
       <%Amatrix%>
       <%bvector%>
-  >>
-
+    >>
 end initAlgloopEquation;
 
 
