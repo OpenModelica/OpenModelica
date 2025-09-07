@@ -1553,7 +1553,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"driveAngle\" description=\"Reference distance to move\" valueReference=\"118\" variability=\"parameter\" causality=\"calculatedParameter\" alias=\"noAlias\">
+//     <ScalarVariable name=\"driveAngle\" description=\"Reference distance to move\" valueReference=\"118\" variability=\"parameter\" causality=\"parameter\" alias=\"noAlias\">
 //       <Real start=\"1.570796326794897\" fixed=\"true\"   unit=\"rad\" displayUnit=\"deg\"/>
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"driveAngle\"/>
@@ -1613,7 +1613,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.deltaq[1]\" description=\"Distance to move\" valueReference=\"123\" variability=\"parameter\" causality=\"calculatedParameter\" alias=\"noAlias\">
-//       <Real start=\"1.570796326794897\" fixed=\"true\"    />
+//       <Real start=\"driveAngle\" fixed=\"true\"    />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //         <exp:QualifiedNamePart name=\"deltaq\">
@@ -1631,7 +1631,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.p_deltaq[1]\"  valueReference=\"124\" variability=\"parameter\" causality=\"calculatedParameter\" alias=\"noAlias\">
-//       <Real start=\"1.570796326794897\" fixed=\"true\"    />
+//       <Real start=\"kinematicPTP.deltaq[1]\" fixed=\"true\"    />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //         <exp:QualifiedNamePart name=\"p_deltaq\">
@@ -1649,7 +1649,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.p_qd_max[1]\"  valueReference=\"125\" variability=\"parameter\" causality=\"calculatedParameter\" alias=\"noAlias\">
-//       <Real start=\"1.0\" fixed=\"true\"    />
+//       <Real start=\"kinematicPTP.qd_max[1]\" fixed=\"true\"    />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //         <exp:QualifiedNamePart name=\"p_qd_max\">
@@ -1667,7 +1667,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.p_qdd_max[1]\"  valueReference=\"126\" variability=\"parameter\" causality=\"calculatedParameter\" alias=\"noAlias\">
-//       <Real start=\"1.0\" fixed=\"true\"    />
+//       <Real start=\"kinematicPTP.qdd_max[1]\" fixed=\"true\"    />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
 //         <exp:QualifiedNamePart name=\"p_qdd_max\">
@@ -1684,7 +1684,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"kinematicPTP.qd_max[1]\" description=\"Maximum velocities der(q)\" valueReference=\"127\" variability=\"parameter\" causality=\"calculatedParameter\" alias=\"noAlias\">
+//     <ScalarVariable name=\"kinematicPTP.qd_max[1]\" description=\"Maximum velocities der(q)\" valueReference=\"127\" variability=\"parameter\" causality=\"parameter\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\" min=\"1e-60\"   />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
@@ -1702,7 +1702,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <VariableCategory>independentParameter</VariableCategory>
 //     </ScalarVariable>
 //
-//     <ScalarVariable name=\"kinematicPTP.qdd_max[1]\" description=\"Maximum accelerations der(qd)\" valueReference=\"128\" variability=\"parameter\" causality=\"calculatedParameter\" alias=\"noAlias\">
+//     <ScalarVariable name=\"kinematicPTP.qdd_max[1]\" description=\"Maximum accelerations der(qd)\" valueReference=\"128\" variability=\"parameter\" causality=\"parameter\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\" min=\"1e-60\"   />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"kinematicPTP\"/>
@@ -2416,7 +2416,9 @@ readFile("Bug3857.xml"); getErrorString();
 //         </exp:QualifiedNamePart>
 //       </equ:Parameter>
 //       <equ:BindingExp>
-//         <exp:RealLiteral>1.570796326794897</exp:RealLiteral>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"driveAngle\"/>
+//         </exp:Identifier>
 //       </equ:BindingExp>
 //     </equ:BindingEquation>
 //
@@ -2432,7 +2434,16 @@ readFile("Bug3857.xml"); getErrorString();
 //         </exp:QualifiedNamePart>
 //       </equ:Parameter>
 //       <equ:BindingExp>
-//         <exp:RealLiteral>1.570796326794897</exp:RealLiteral>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//           <exp:QualifiedNamePart name=\"deltaq\">
+//             <exp:ArraySubscripts>
+//               <exp:IndexExpression>
+//                 <exp:IntegerLiteral>1</exp:IntegerLiteral>
+//               </exp:IndexExpression>
+//             </exp:ArraySubscripts>
+//           </exp:QualifiedNamePart>
+//         </exp:Identifier>
 //       </equ:BindingExp>
 //     </equ:BindingEquation>
 //
@@ -2448,7 +2459,16 @@ readFile("Bug3857.xml"); getErrorString();
 //         </exp:QualifiedNamePart>
 //       </equ:Parameter>
 //       <equ:BindingExp>
-//         <exp:RealLiteral>1.0</exp:RealLiteral>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//           <exp:QualifiedNamePart name=\"qd_max\">
+//             <exp:ArraySubscripts>
+//               <exp:IndexExpression>
+//                 <exp:IntegerLiteral>1</exp:IntegerLiteral>
+//               </exp:IndexExpression>
+//             </exp:ArraySubscripts>
+//           </exp:QualifiedNamePart>
+//         </exp:Identifier>
 //       </equ:BindingExp>
 //     </equ:BindingEquation>
 //
@@ -2464,7 +2484,16 @@ readFile("Bug3857.xml"); getErrorString();
 //         </exp:QualifiedNamePart>
 //       </equ:Parameter>
 //       <equ:BindingExp>
-//         <exp:RealLiteral>1.0</exp:RealLiteral>
+//         <exp:Identifier>
+//           <exp:QualifiedNamePart name=\"kinematicPTP\"/>
+//           <exp:QualifiedNamePart name=\"qdd_max\">
+//             <exp:ArraySubscripts>
+//               <exp:IndexExpression>
+//                 <exp:IntegerLiteral>1</exp:IntegerLiteral>
+//               </exp:IndexExpression>
+//             </exp:ArraySubscripts>
+//           </exp:QualifiedNamePart>
+//         </exp:Identifier>
 //       </equ:BindingExp>
 //     </equ:BindingEquation>
 //
