@@ -6627,6 +6627,10 @@ public
       exp := match InstNode.getBindingExpOpt(ComponentRef.node(cref))
         case SOME(e as Expression.INTEGER()) then e;
         case SOME(Expression.SUBSCRIPTED_EXP(exp = e as Expression.INTEGER())) then e;
+        case SOME(Expression.SUBSCRIPTED_EXP(exp = e as Expression.CREF())) then replaceWithBinding(e.cref, e);
+        case SOME(e) algorithm
+          e := Expression.map(e, replaceResizableParameter);
+        then e;
         else exp;
       end match;
     end replaceWithBinding;
