@@ -4779,9 +4779,11 @@ public
   protected
     Type arr_ty = typeOf(result);
     Boolean is_literal = isLiteral(fillExp);
+    Expression d_resizable;
   algorithm
     for d in listReverse(dims) loop
-      (result, arr_ty) := fillArray_impl(toInteger(d), result, arr_ty, is_literal);
+      d_resizable := map(d, function replaceResizableParameter());
+      (result, arr_ty) := fillArray_impl(toInteger(d_resizable), result, arr_ty, is_literal);
     end for;
   end fillArgs;
 
@@ -6626,6 +6628,7 @@ public
     algorithm
       exp := match InstNode.getBindingExpOpt(ComponentRef.node(cref))
         case SOME(e as Expression.INTEGER()) then e;
+        case SOME(e as Expression.CREF()) then replaceWithBinding(e.cref, e);
         case SOME(Expression.SUBSCRIPTED_EXP(exp = e as Expression.INTEGER())) then e;
         case SOME(Expression.SUBSCRIPTED_EXP(exp = e as Expression.CREF())) then replaceWithBinding(e.cref, e);
         case SOME(e) algorithm
