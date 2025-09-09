@@ -1859,17 +1859,13 @@ protected
     output Purity purity = Purity.PURE;
   protected
     InstNode scope;
-    Call ty_call;
   algorithm
     Call.UNTYPED_CALL(call_scope = scope) := call;
-    ty_call := Call.typeMatchNormalCall(call, context, info);
+    _ := Call.typeMatchNormalCall(call, context, info);
     // getInstanceName is normally derived from the prefix during the flattening,
     // but sometimes the call is constant evaluated instead (e.g. when it's used
-    // in a package). So we add the scope as an argument here to have it
-    // available later if needed.
-    ty_call := Call.setArguments(ty_call,
-      {Expression.fromCref(ComponentRef.fromNode(scope, Type.UNKNOWN()))});
-    result := Expression.CALL(ty_call);
+    // in a package). So we create an expression here that contains the scope.
+    result := Expression.INSTANCE_NAME(scope);
   end typeGetInstanceName;
 
   function typeClockCall

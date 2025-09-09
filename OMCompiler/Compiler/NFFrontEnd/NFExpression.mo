@@ -262,6 +262,10 @@ public
     Expression exp "For printing strings, code generators that do not support this kind of literal, or for getting the type in case the code generator needs that";
   end SHARED_LITERAL;
 
+  record INSTANCE_NAME
+    InstNode scope;
+  end INSTANCE_NAME;
+
   function isArray
     input Expression exp;
     output Boolean isArray;
@@ -462,6 +466,7 @@ public
         Mutable<Expression> me;
         list<list<Expression>> mat;
         array<Expression> arr;
+        InstNode node;
 
       case INTEGER()
         algorithm
@@ -738,6 +743,12 @@ public
         then
           Util.stringCompare(exp1.filename, s);
 
+      case INSTANCE_NAME()
+        algorithm
+          INSTANCE_NAME(scope = node) := exp2;
+        then
+          InstNode.refCompare(exp1.scope, node);
+
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());
@@ -807,6 +818,7 @@ public
       case EMPTY()           then exp.ty;
       case PARTIAL_FUNCTION_APPLICATION() then exp.ty;
       case FILENAME()        then Type.STRING();
+      case INSTANCE_NAME()   then Type.STRING();
       else Type.UNKNOWN();
     end match;
   end typeOf;
@@ -1982,6 +1994,7 @@ public
           list(n + " = " + toString(a) threaded for a in exp.args, n in exp.argNames), ", ") + ")";
 
       case FILENAME() then "\"" + System.escapedString(exp.filename, false) + "\"";
+      case INSTANCE_NAME() then "getInstanceName()";
       else anyString(exp);
     end match;
   end toString;
@@ -2085,6 +2098,7 @@ public
           list(n + " = " + toFlatString(a, format) threaded for a in exp.args, n in exp.argNames), ", ") + ")";
 
       case FILENAME() then "\"" + Util.escapeModelicaStringToCString(exp.filename) + "\"";
+      case INSTANCE_NAME() then "getInstanceName()";
       else anyString(exp);
     end match;
   end toFlatString;
@@ -2239,6 +2253,7 @@ public
       case MUTABLE() then getName(Mutable.access(exp.exp));
       case SHARED_LITERAL() then getName(exp.exp);
       case PARTIAL_FUNCTION_APPLICATION() then ComponentRef.toString(exp.fn);
+      case INSTANCE_NAME() then "getInstanceName";
       else toString(exp);
     end match;
   end getName;
@@ -2340,6 +2355,7 @@ public
         then Absyn.Exp.PARTEVALFUNCTION(ComponentRef.toAbsyn(exp.fn),
           Absyn.FunctionArgs.FUNCTIONARGS(list(toAbsyn(e) for e in exp.args), {}));
       case FILENAME() then Absyn.Exp.STRING(exp.filename);
+      case INSTANCE_NAME() then AbsynUtil.makeCall(Absyn.ComponentRef.CREF_IDENT("getInstanceName", {}), {});
 
       else
         algorithm
@@ -2451,6 +2467,7 @@ public
                         {DAE.SCONST(exp.filename)}, DAE.callAttrBuiltinImpureString)
              else
                DAE.SCONST(exp.filename);
+      case INSTANCE_NAME() then DAE.CALL(Absyn.Path.IDENT("getInstanceName"), {}, DAE.callAttrBuiltinString);
 
       else
         algorithm
@@ -5390,6 +5407,7 @@ public
       case EMPTY() then Variability.CONSTANT;
       case PARTIAL_FUNCTION_APPLICATION() then Variability.CONTINUOUS;
       case FILENAME() then Variability.CONSTANT;
+      case INSTANCE_NAME() then Variability.CONSTANT;
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());
@@ -5470,6 +5488,7 @@ public
       case EMPTY() then Purity.PURE;
       case PARTIAL_FUNCTION_APPLICATION() then Purity.PURE;
       case FILENAME() then Purity.PURE;
+      case INSTANCE_NAME() then Purity.PURE;
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());

@@ -136,4 +136,3 @@ ModelicaCompliance.Scoping.NameLookup.Imports.QualifiedImportConflict
 ModelicaCompliance.Scoping.NameLookup.Imports.QualifiedImportNonPackage
 ModelicaCompliance.Scoping.NameLookup.Imports.RenamingImportNonPackage
 ModelicaCompliance.Scoping.NameLookup.Imports.UnqualifiedImportProtected
-ModelicaCompliance.Components.Variability.ConstantNoBinding
