@@ -317,6 +317,8 @@ ConnectStream1.mo \
 ConstantConnector1.mo \
 ConstantConnector2.mo \
 ConstantConnector3.mo \
+ConstantMissingBinding1.mo \
+ConstantMissingBinding2.mo \
 const1.mo \
 const10.mo \
 const11.mo \

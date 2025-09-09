@@ -5,27 +5,27 @@
 //
 
 record R
-  Real x;
-  Real y;
+  parameter Real x;
+  parameter Real y(fixed = false);
 end R;
 
 function f
   input R inR;
   output R outR;
 algorithm
-  outR.x := 1.0;
+  outR.x := inR.x;
 end f;
 
 model CevalFuncRecord5
-  constant R r1;
-  constant R r2 = f(r1);
+  parameter R r1(x = 2.0);
+  parameter R r2 = f(r1) annotation(Evaluate=true);
 end CevalFuncRecord5;
 
 // Result:
 // class CevalFuncRecord5
-//   constant Real r1.x;
-//   constant Real r1.y;
-//   constant Real r2.x = 1.0;
-//   constant Real r2.y;
+//   parameter Real r1.x = 2.0;
+//   parameter Real r1.y(fixed = false);
+//   parameter Real r2.x = 2.0;
+//   parameter Real r2.y(fixed = false);
 // end CevalFuncRecord5;
 // endResult

@@ -204,7 +204,7 @@ algorithm
             else
             end try;
           else
-            outExp := Ceval.evalCref(cref, outExp, NFCeval.noTarget, evalSubscripts = false);
+            outExp := Ceval.evalCref(cref, outExp, Ceval.EvalTarget.new(info), evalSubscripts = false);
             outExp := Flatten.flattenExp(outExp, Flatten.Prefix.PREFIX(InstNode.EMPTY_NODE(), cref), info);
             outChanged := true;
           end if;
@@ -219,9 +219,7 @@ algorithm
       then
         (outExp, outChanged);
 
-    case Expression.ARRAY(literal = true)
-      then (exp, false);
-
+    case Expression.ARRAY(literal = true) then (exp, false);
     case Expression.IF() then evaluateIfExp(exp, info);
 
     // Only evaluate the index for size expressions.
