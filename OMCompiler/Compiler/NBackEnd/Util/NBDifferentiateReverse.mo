@@ -6,12 +6,44 @@ encapsulated package NBDifferentiateReverse
  only support REAL, BINARY, UNARY expressions and the five basic BINARY arithmetic ops ADD, SUB, MUL, DIV, (POW) for the type REAL
  How to handle the UNARY ops NEG, SIN, COS as they are no Expressions or Operators?
 "
-public
+
+  public function testBasicDifferentiation
+      input Real dummy;
+      output Boolean success;
+    protected
+      Expression x, y, expr;
+      GradientMap grads;
+      Expression gradX, gradY;
+    algorithm
+      // Create test expression: f(x, y) = x * sin(y)
+      x := Expression.CREF(Type.REAL(), 
+                          ComponentRef.CREF(InstNode.NAME_NODE("x"), {}, Type.REAL(), Origin.CREF, ComponentRef.EMPTY()));
+      y := Expression.CREF(Type.REAL(),
+                          ComponentRef.CREF(InstNode.NAME_NODE("y"), {}, Type.REAL(), Origin.CREF, ComponentRef.EMPTY()));
+      expr := Expression.BINARY(exp1 = x, operator = Operator.makeMul(Type.REAL()), exp2 = y);
+      
+      // Compute gradients
+      grads := symbolicReverseMode(expr);
+      
+      gradX := findGradient(x, grads);
+      gradY := findGradient(y, grads);
+
+      print("Expression: " + expressionToString(expr) + "\n");
+      print("Gradient w.r.t. x: " + expressionToString(gradX) + "\n");
+      print("Gradient w.r.t. y: " + expressionToString(gradY) + "\n");
+
+      success := true;
+  end testBasicDifferentiation;
+
+protected
   import Expression = NFExpression;
   import Operator = NFOperator;
   import Op = NFOperator.Op;
   import Type = NFType;
   import SimplifyExp = NFSimplifyExp;
+  import InstNode = NFInstNode;
+  import ComponentRef = NFComponentRef;
+  import Origin = NFComponentRef.Origin;
 
   function localGradient
     input Expression expr;
@@ -24,6 +56,9 @@ public
     grad := match expr
       case Expression.REAL() then 
         Expression.REAL(value = 0.0); 
+
+      case Expression.CREF() then 
+        Expression.REAL(value = 1.0);
 
       case Expression.BINARY(exp1 = left_child, operator = op, exp2 = right_child) then
         // Differentiate based on the operator
@@ -48,12 +83,6 @@ public
               Expression.negate(Expression.BINARY(left_child, Operator.makeDiv(Type.REAL()), 
                                 Expression.BINARY(right_child, Operator.makePow(Type.REAL()), Expression.REAL(2.0)))); //∂(a / b)/∂b = -a/(b^2)
 
-          // case Op.POW then
-          //   if childIndex == 1 then
-          //     Expression.BINARY(right_child, Operator.makeMul(Type.REAL()), 
-          //     Expression.BINARY(left_child, Operator.makePow(Type.REAL()), 
-          //     Expression.BINARY(right_child, Operator.makeSub(Type.REAL()), Expression.REAL(1.0)))) // ∂(a^b)/∂a = b*(a^(b-1))
-
           else algorithm
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + "Failed! Given Operator is not supported." + Operator.symbol(op)});
           then fail();
@@ -73,6 +102,7 @@ public
   algorithm
     children := match expr
         case Expression.REAL() then {};
+        case Expression.CREF() then {};
         case Expression.BINARY(exp1 = left_child, operator = op, exp2 = right_child) then {left_child, right_child};
         // case UNARY(operator = op, exp = child) then {child};
         else algorithm
@@ -87,6 +117,8 @@ public
   algorithm
     result := match expr
       case Expression.REAL() then true;
+      case Expression.CREF() then true;
+      case Expression.BINARY() then false;
       else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + "Failed! Given Expression is not supported." + Expression.toString(expr)});
       then fail();
