@@ -184,6 +184,7 @@ protected
   ComponentRef cref;
   Type ty, ty2;
   Variability var;
+  Ceval.EvalTarget target;
 algorithm
   (outExp, outChanged) := match exp
     case Expression.CREF()
@@ -192,8 +193,9 @@ algorithm
           Expression.mapFoldShallow(exp,
             function evaluateExpTraverser(info = info, ignoreFailure = ignoreFailure), false);
 
-        if ComponentRef.nodeVariability(cref) <= Variability.STRUCTURAL_PARAMETER and
-           not Type.isExternalObject(ty) then
+        var := ComponentRef.nodeVariability(cref);
+
+        if var <= Variability.STRUCTURAL_PARAMETER and not Type.isExternalObject(ty) then
           // Evaluate all constants and structural parameters.
           if ignoreFailure then
             try
@@ -204,7 +206,8 @@ algorithm
             else
             end try;
           else
-            outExp := Ceval.evalCref(cref, outExp, Ceval.EvalTarget.new(info), evalSubscripts = false);
+            target := if var == Variability.CONSTANT then Ceval.EvalTarget.new(info) else NFCeval.noTarget;
+            outExp := Ceval.evalCref(cref, outExp, target, evalSubscripts = false);
             outExp := Flatten.flattenExp(outExp, Flatten.Prefix.PREFIX(InstNode.EMPTY_NODE(), cref), info);
             outChanged := true;
           end if;
