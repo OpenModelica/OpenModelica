@@ -26,7 +26,8 @@ Containing:
       Integration of DASSL ODE/DAE solver.
 
     - GBODE: [solver/gbode_main.c](./solver/gbode_main.c)<br/>
-      Implementation of a generic (implicit and explicit) Runge Kutta ODE solver.
+      Implementation of a generic (implicit and explicit) Runge Kutta ODE
+      solver.
 
     - IDA: [solver/ida_solver.c](./solver/ida_solver.c)<br/>
       Integration of SUNDIALS IDA ODE/DAE solver.
@@ -83,7 +84,8 @@ Containing:
       [solver/nonlinearSolverNewton.c](./solver/nonlinearSolverNewton.c)<br/>
       Implementaton of Newton-Raphson method.
 
-  - Initial Guess DB: [solver/nonlinearValuesList.c](./solver/nonlinearValuesList.c)<br/>
+  - Initial Guess DB:
+    [solver/nonlinearValuesList.c](./solver/nonlinearValuesList.c)<br/>
     Store guesses for initial values for non-linear systems.
 
 ### Analysis Tools
