@@ -53,6 +53,7 @@ protected
   import Variable = NFVariable;
   import Binding = NFBinding;
   import NFBackendExtension.{BackendInfo, Annotations};
+  import Structural = NFStructural;
 
   import ComponentRef = NFComponentRef;
 

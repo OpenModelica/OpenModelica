@@ -38,14 +38,15 @@ encapsulated uniontype NFConnections
   import NFPrefixes.ConnectorType;
 
 protected
+  import Component = NFComponent;
   import Connections = NFConnections;
   import ElementSource;
   import ExpandExp = NFExpandExp;
   import Expression = NFExpression;
   import Flags;
   import MetaModelica.Dangerous.listReverseInPlace;
-  import Component = NFComponent;
   import NFInstNode.InstNode;
+  import Structural = NFStructural;
   import Type = NFType;
 
 public
@@ -119,7 +120,9 @@ public
         case Equation.CONNECT(lhs = Expression.CREF(ty = ty1, cref = lhs),
                               rhs = Expression.CREF(ty = ty2, cref = rhs), source = source)
           algorithm
+            Structural.markCrefSubscripts(lhs);
             lhs := ComponentRef.evaluateSubscripts(lhs);
+            Structural.markCrefSubscripts(rhs);
             rhs := ComponentRef.evaluateSubscripts(rhs);
             conns.connections := makeConnections(lhs, ty1, rhs, ty2, source, isDeleted, conns.connections);
           then

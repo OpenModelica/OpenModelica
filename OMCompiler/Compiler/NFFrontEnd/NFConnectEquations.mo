@@ -821,6 +821,7 @@ protected
   Integer set;
   ComponentRef cr;
 algorithm
+  Structural.markCrefSubscripts(cref);
   cr := ComponentRef.evaluateSubscripts(cref);
   c := Connector.CONNECTOR(cr, Type.UNKNOWN(), Face.INSIDE,
     ConnectorType.STREAM, DAE.emptyElementSource);
@@ -987,6 +988,7 @@ protected
   Expression flow_exp, stream_exp, instream_exp;
   Operator op;
 algorithm
+  Structural.markCrefSubscripts(streamCref);
   stream_cref := ComponentRef.evaluateSubscripts(streamCref);
   flowCref := associatedFlowCref(stream_cref);
   flow_dir := evaluateFlowDirection(flowCref, variables);

@@ -356,7 +356,7 @@ public
     () := match exp
       case Expression.CREF()
         algorithm
-          ComponentRef.applySubscripts(exp.cref, markSubscript);
+          markCrefSubscripts(exp.cref);
         then
           ();
 
@@ -364,13 +364,19 @@ public
     end match;
   end markSubscripts;
 
+  function markCrefSubscripts
+    input ComponentRef cref;
+  algorithm
+    ComponentRef.applySubscripts(cref, markSubscript);
+  end markCrefSubscripts;
+
   function markSubscript
     input Subscript sub;
   algorithm
     () := match sub
-        case Subscript.UNTYPED() algorithm markExp(sub.exp); then ();
-        case Subscript.INDEX() algorithm markExp(sub.index); then ();
-        case Subscript.SLICE() algorithm markExp(sub.slice); then ();
+      case Subscript.UNTYPED() algorithm markExp(sub.exp); then ();
+      case Subscript.INDEX() algorithm markExp(sub.index); then ();
+      case Subscript.SLICE() algorithm markExp(sub.slice); then ();
       else ();
     end match;
   end markSubscript;
