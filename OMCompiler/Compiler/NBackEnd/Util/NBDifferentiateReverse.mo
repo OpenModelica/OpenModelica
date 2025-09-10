@@ -3,12 +3,13 @@ encapsulated package NBDifferentiateReverse
  package:     NBDifferentiateReverse
  description: This file contains the functions to differentiate equations and
               expressions symbolically in reverse mode e.g. to generate adjoint jacobians.
- only support REAL, BINARY, UNARY expressions and the five basic BINARY arithmetic ops ADD, SUB, MUL, DIV, POW for the type REAL
+ only support REAL, BINARY, UNARY expressions and the five basic BINARY arithmetic ops ADD, SUB, MUL, DIV, (POW) for the type REAL
  How to handle the UNARY ops NEG, SIN, COS as they are no Expressions or Operators?
 "
 public
   import Expression = NFExpression;
   import Operator = NFOperator;
+  import Op = NFOperator.Op;
   import Type = NFType;
   import SimplifyExp = NFSimplifyExp;
 
@@ -16,45 +17,49 @@ public
     input Expression expr;
     input Integer childIndex;
     output Expression grad;
+  protected
+    Expression left_child, right_child;
+    Operator op;
   algorithm
     grad := match expr
-      case REAL(_) then 
-        REAL(value = 0.0); 
+      case Expression.REAL() then 
+        Expression.REAL(value = 0.0); 
 
-      case BINARY(exp1 = left_child, operator = op, exp2 = right_child) then
+      case Expression.BINARY(exp1 = left_child, operator = op, exp2 = right_child) then
         // Differentiate based on the operator
-        match op
-          case Operator.ADD(REAL(),_) then 
-            Constant(1.0);  // ∂(a + b)/∂a = 1, ∂(a + b)/∂b = 1
+        match op.op
+          case Op.ADD then 
+            Expression.REAL(1.0);  // ∂(a + b)/∂a = 1, ∂(a + b)/∂b = 1
 
-          case Operator.SUB(REAL(),_) then 
+          case Op.SUB then 
             if childIndex == 1 then 
-              Constant(1.0)  // ∂(a - b)/∂a = 1
-            else Constant(-1.0); // ∂(a - b)/∂b = -1
+              Expression.REAL(1.0)  // ∂(a - b)/∂a = 1
+            else Expression.REAL(-1.0); // ∂(a - b)/∂b = -1
 
-          case Operator.MUL(REAL(),_) then
+          case Op.MUL then
             if childIndex == 1 then 
               right_child // ∂(a * b)/∂a = b
             else left_child; // ∂(a * b)/∂b = a
 
-          case Operator.DIV(REAL(),_) then
-            if childIndex == 1 then 
-              Div(Constant(1.0), right_child) // ∂(a / b)/∂a = 1/b
-            else 
-              Mul(Constant(-1.0), Div(left_child, Pow(right_child, Constant(2.0)))); //∂(a / b)/∂b = -a/(b^2)
-
-          case Operator.POW(REAL(),_) then
+          case Op.DIV then
             if childIndex == 1 then
-              Mul(right_child, Pow(left_child, Sub(right_child, Constant(1.0)))) // ∂(a^b)/∂a = b*(a^(b-1))
-            else 
-              Mul(Pow(left_child, right_child), Log(left_child)); //∂(a^b)/∂b = (a^b)*ln(a)
+              Expression.BINARY(Expression.REAL(1.0), Operator.makeDiv(Type.REAL()), right_child) // ∂(a / b)/∂a = 1/b
+            else
+              Expression.negate(Expression.BINARY(left_child, Operator.makeDiv(Type.REAL()), 
+                                Expression.BINARY(right_child, Operator.makePow(Type.REAL()), Expression.REAL(2.0)))); //∂(a / b)/∂b = -a/(b^2)
+
+          // case Op.POW then
+          //   if childIndex == 1 then
+          //     Expression.BINARY(right_child, Operator.makeMul(Type.REAL()), 
+          //     Expression.BINARY(left_child, Operator.makePow(Type.REAL()), 
+          //     Expression.BINARY(right_child, Operator.makeSub(Type.REAL()), Expression.REAL(1.0)))) // ∂(a^b)/∂a = b*(a^(b-1))
 
           else algorithm
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + "Failed! Given Operator is not supported." + symbol(op)});
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + "Failed! Given Operator is not supported." + Operator.symbol(op)});
           then fail();
         end match;
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + "Failed! Given Expression is not supported." + toString(expr)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + "Failed! Given Expression is not supported." + Expression.toString(expr)});
       then fail();
     end match;
   end localGradient;
@@ -62,13 +67,16 @@ public
   function getChildren
     input Expression expr;
     output list<Expression> children;
+  protected
+    Expression left_child, right_child;
+    Operator op;
   algorithm
     children := match expr
-        case REAL(_) then {};
-        case BINARY(exp1 = left_child, operator = op, exp2 = right_child) then {left_child, right_child};
+        case Expression.REAL() then {};
+        case Expression.BINARY(exp1 = left_child, operator = op, exp2 = right_child) then {left_child, right_child};
         // case UNARY(operator = op, exp = child) then {child};
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + "Failed! Given Expression is not supported." + toString(expr)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + "Failed! Given Expression is not supported." + Expression.toString(expr)});
         then fail();
     end match;
   end getChildren;
@@ -78,9 +86,9 @@ public
     output Boolean result;
   algorithm
     result := match expr
-      case REAL(_) then true;
+      case Expression.REAL() then true;
       else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + "Failed! Given Expression is not supported." + toString(expr)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + "Failed! Given Expression is not supported." + Expression.toString(expr)});
       then fail();
     end match;
   end isLeaf;
@@ -186,7 +194,7 @@ public
   protected
     Expression key, value;
   algorithm
-    grad := REAL(0.0);  // Default to zero
+    grad := Expression.REAL(0.0);  // Default to zero
     for entry in grads loop
       (key, value) := entry;
       if expressionEqual(key, expr) then
@@ -214,7 +222,7 @@ public
       (key, value) := entry;
       if expressionEqual(key, expr) then
         existingGrad := value;
-        combinedGrad := simplify(Expression.BINARY(existingGrad, Operator.makeAdd(REAL()), newGrad));
+        combinedGrad := simplify(Expression.BINARY(existingGrad, Operator.makeAdd(Type.REAL()), newGrad));
         updatedGrads := (expr, combinedGrad) :: updatedGrads;
         found := true;
       else
@@ -230,7 +238,7 @@ public
   // Main function: Symbolic reverse-mode differentiation
   function symbolicReverseMode
     input Expression expr;
-    input Expression cotangent = REAL(1.0);
+    input Expression cotangent = Expression.REAL(1.0);
     output GradientMap gradients;
   protected
     list<Expression> tape, children;
@@ -258,12 +266,12 @@ public
       i := 1;
       for child in children loop
         localGrad := localGradient(operation, i);
-        childGrad := simplify(Expression.BINARY(currentGrad, Operator.makeMul(REAL()), localGrad));
+        childGrad := simplify(Expression.BINARY(currentGrad, Operator.makeMul(Type.REAL()), localGrad));
         gradients := updateGradient(child, childGrad, gradients);
         i := i + 1;
       end for;
     end for;
   end symbolicReverseMode;
 
-
+  annotation(__OpenModelica_Interface="backend");
 end NBDifferentiateReverse;
