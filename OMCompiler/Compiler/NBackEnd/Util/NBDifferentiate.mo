@@ -1067,13 +1067,44 @@ public
         exp.call := Call.setArguments(exp.call, {ret1, arg2});
       then exp;
 
-      // FILL
+      // d/dz identity(n) = zeros(n, n)
+      case (Expression.CALL()) guard(name == "identity")
+      algorithm
+        arg1 := match Call.arguments(exp.call)
+          case {arg1} then arg1;
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
+          then fail();
+        end match;
+      then Expression.CALL(Call.makeTypedCall(
+          fn          = NFBuiltinFuncs.FILL_FUNC,
+          args        = {Expression.INTEGER(0), arg1, arg1},
+          variability = Variability.CONSTANT,
+          purity      = NFPrefixes.Purity.PURE
+        ));
+
+      // d/dz fill(x, n1, n2, ...) = fill(dx/dz, n1, n2, ...)
       case (Expression.CALL()) guard(name == "fill")
       algorithm
         // only differentiate 1st input
         arg1 :: rest := Call.arguments(exp.call);
         (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
         exp.call := Call.setArguments(exp.call, ret1 :: rest);
+      then exp;
+
+      // d/dz linspace(x, y, n) = linspace(dx/dz, dy/dz, n)
+      case (Expression.CALL()) guard(name == "linspace")
+      algorithm
+        // only differentiate 1st input
+        (arg1, arg2, arg3) := match Call.arguments(exp.call)
+          case {arg1, arg2, arg3} then (arg1, arg2, arg3);
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
+          then fail();
+        end match;
+        (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+        (ret2, diffArguments) := differentiateExpression(arg2, diffArguments);
+        exp.call := Call.setArguments(exp.call, {ret1, ret2, arg3});
       then exp;
 
       // SEMI LINEAR
