@@ -11,7 +11,7 @@ encapsulated package NBDifferentiateReverse
       input Real dummy;
       output Boolean success;
     protected
-      Expression x, y, expr;
+      Expression x, y, expr, mulXY, sinY;
       GradientMap grads;
       Expression gradX, gradY;
     algorithm
@@ -20,13 +20,21 @@ encapsulated package NBDifferentiateReverse
                           ComponentRef.CREF(InstNode.NAME_NODE("x"), {}, Type.REAL(), Origin.CREF, ComponentRef.EMPTY()));
       y := Expression.CREF(Type.REAL(),
                           ComponentRef.CREF(InstNode.NAME_NODE("y"), {}, Type.REAL(), Origin.CREF, ComponentRef.EMPTY()));
-      expr := Expression.BINARY(exp1 = x, operator = Operator.makeMul(Type.REAL()), exp2 = y);
+
+      sinY := Expression.CALL(Call.makeTypedCall(
+          fn          = NFBuiltinFuncs.SIN_REAL,
+          args        = {y},
+          variability = Expression.variability(y),
+          purity      = NFPrefixes.Purity.PURE));
+          
+      mulXY := Expression.BINARY(exp1 = x, operator = Operator.makeMul(Type.REAL()), exp2 = y);
+      expr := Expression.BINARY(exp1 = mulXY, operator = Operator.makeAdd(Type.REAL()), exp2 = sinY);
       
       // Compute gradients
       grads := symbolicReverseMode(expr);
       
-      gradX := findGradient(x, grads);
-      gradY := findGradient(y, grads);
+      gradX := findGradient(x, grads); // y
+      gradY := findGradient(y, grads); // x + cos(y)
 
       print("Expression: " + expressionToString(expr) + "\n");
       print("Gradient w.r.t. x: " + expressionToString(gradX) + "\n");
@@ -44,6 +52,43 @@ protected
   import InstNode = NFInstNode;
   import ComponentRef = NFComponentRef;
   import Origin = NFComponentRef.Origin;
+  import NFBuiltinFuncs;
+  import Call = NFCall;
+  import AbsynUtil;
+  import NFFunction.{Function, Slot};
+
+  import NBDifferentiate;
+
+
+  function localPartialFor1ArgCall
+    "Return local partial df/darg for a builtin single-argument call expression.
+    Reuses differentiateBuiltinCall1Arg so rules are not duplicated."
+    input Expression exp;
+    input Integer childIndex;
+    output Expression localPartial;
+  protected
+    Call callv;
+    String name;
+    Expression arg;
+    Function fn;
+    list<Expression> args;
+  algorithm
+    localPartial := match exp
+      case Expression.CALL(call = callv) then
+        match callv
+          case Call.TYPED_CALL(fn = fn, arguments = args) guard (Function.isBuiltin(fn) and listLength(args) == 1) then
+            // differentiateBuiltinCall1Arg returns df/darg (does NOT multiply by inner derivative)
+            NBDifferentiate.differentiateBuiltinCall1Arg(AbsynUtil.pathString(Function.nameConsiderBuiltin(fn)), listHead(args));
+          else
+            Expression.makeZero(Expression.typeOf(exp));
+        end match;
+      else
+        Expression.makeZero(Expression.typeOf(exp));
+    end match;
+  end localPartialFor1ArgCall;
+
+
+
 
   function localGradient
     input Expression expr;
@@ -81,12 +126,15 @@ protected
               Expression.BINARY(Expression.REAL(1.0), Operator.makeDiv(Type.REAL()), right_child) // ∂(a / b)/∂a = 1/b
             else
               Expression.negate(Expression.BINARY(left_child, Operator.makeDiv(Type.REAL()), 
-                                Expression.BINARY(right_child, Operator.makePow(Type.REAL()), Expression.REAL(2.0)))); //∂(a / b)/∂b = -a/(b^2)
-
+                                Expression.BINARY(right_child, Operator.makePow(Type.REAL()), Expression.REAL(2.0)))); //∂(a / b)/∂b = -a/(b^2)        
           else algorithm
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + "Failed! Given Operator is not supported." + Operator.symbol(op)});
           then fail();
         end match;
+      
+      // assume function call is always unary for now
+      case Expression.CALL() then 
+        localPartialFor1ArgCall(expr, childIndex);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + "Failed! Given Expression is not supported." + Expression.toString(expr)});
       then fail();
@@ -104,6 +152,12 @@ protected
         case Expression.REAL() then {};
         case Expression.CREF() then {};
         case Expression.BINARY(exp1 = left_child, operator = op, exp2 = right_child) then {left_child, right_child};
+        case Expression.CALL() then 
+          match expr
+            local 
+              list<Expression> args;
+            case Expression.CALL(call = Call.TYPED_CALL(arguments = args)) then args;
+          end match;
         // case UNARY(operator = op, exp = child) then {child};
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + "Failed! Given Expression is not supported." + Expression.toString(expr)});
@@ -118,10 +172,7 @@ protected
     result := match expr
       case Expression.REAL() then true;
       case Expression.CREF() then true;
-      case Expression.BINARY() then false;
-      else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + "Failed! Given Expression is not supported." + Expression.toString(expr)});
-      then fail();
+      else then false;
     end match;
   end isLeaf;
 
