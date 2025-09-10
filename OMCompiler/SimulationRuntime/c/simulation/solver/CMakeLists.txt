@@ -44,7 +44,6 @@ SET(solver_sources  ../../../../3rdParty/Cdaskr/solver/daux.c
                     nonlinearSolverNewton.c
                     nonlinearSystem.c
                     omc_math.c
-                    sample.c
                     solver_main.c
                     spatialDistribution.c
                     stateset.c
