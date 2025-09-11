@@ -29,12 +29,17 @@ encapsulated package NBDifferentiateReverse
           
       mulXY := Expression.BINARY(exp1 = x, operator = Operator.makeMul(Type.REAL()), exp2 = y);
       expr := Expression.BINARY(exp1 = mulXY, operator = Operator.makeAdd(Type.REAL()), exp2 = sinY);
+
+
+
       
       // Compute gradients
       grads := symbolicReverseMode(expr);
       
       gradX := findGradient(x, grads); // y
       gradY := findGradient(y, grads); // x + cos(y)
+
+
 
       print("Expression: " + expressionToString(expr) + "\n");
       print("Gradient w.r.t. x: " + expressionToString(gradX) + "\n");
@@ -330,12 +335,17 @@ protected
   algorithm
     // Build computation tape
     tape := buildTape(expr);
+
+    // print("Computation tape:\n");
+    // for i in 1:listLength(tape) loop
+    //   print(intString(i) + ": " + expressionToString(listGet(tape, i)) + "\n");
+    // end for;
     
     // Initialize gradients with output gradient
     gradients := {(expr, cotangent)};
     
     // Process tape in reverse order
-    for operation in listReverse(tape) loop // is the listReverse needed?
+    for operation in tape loop // no need to reverse as tape is built by prepending to it
       currentGrad := findGradient(operation, gradients);
       
       // Skip if no gradient for this operation
