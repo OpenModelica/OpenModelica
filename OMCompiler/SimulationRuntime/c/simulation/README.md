@@ -9,6 +9,17 @@ Containing:
   - Implementaitons of Modelica builtin functions
   - Utility functions for evaluation of equations
 
+## Overview
+
+The C runtime has a large number of methods to solve ODE, DAE, linear and
+non-linear systems.
+
+![Overview of solver methods](../../../../doc/SimulationRuntime/c/img/Solver_Overview_C.png "Overview of solver methods")
+
+OpenModelica links to `IDAS`, but calls it `IDA` in the documentation.
+Also, the linear solver method `LAPACK` is actually `DGESV` from LAPACK.
+The dashed ODE solvers `Runge Kutta`, `symSolver`, `symSolverSsc` and `QSS` are deprecated and might be removed in a future version.
+
 ## Directory Structure
 
 ### ODE/DAE Solver
@@ -19,45 +30,22 @@ Containing:
     Main solver routine to integrate ODE/DAE system using one of the following
     solvers:
 
-    - CVODE: [solver/cvode_solver.c](./solver/cvode_solver.c)<br/>
-      Integration of SUNDIALS CVODES ODE solver.
-
     - DASSL: [solver/dassl.c](./solver/dassl.c)<br/>
       Integration of DASSL ODE/DAE solver.
+
+    - IDA: [solver/ida_solver.c](./solver/ida_solver.c)<br/>
+      Integration of SUNDIALS IDA ODE/DAE solver.
+
+    - CVODE: [solver/cvode_solver.c](./solver/cvode_solver.c)<br/>
+      Integration of SUNDIALS CVODES ODE solver.
 
     - GBODE: [solver/gbode_main.c](./solver/gbode_main.c)<br/>
       Implementation of a generic (implicit and explicit) Runge Kutta ODE
       solver.
 
-    - IDA: [solver/ida_solver.c](./solver/ida_solver.c)<br/>
-      Integration of SUNDIALS IDA ODE/DAE solver.
-
    - QSS:
      [solver/perform_qss_simulation.c.inc](./solver/perform_qss_simulation.c.inc)<br/>
      Quantized State System (QSS) solver for sparse ODE systems.
-
-### Linear Solver
-
-  - Linear System: [solver/linearSystem.c](./solver/linearSystem.c)<br/>
-    Solve linear systems with one of the following solver methods:
-
-    - KLU: [solver/linearSolverKlu.c](./solver/linearSolverKlu.c)<br/>
-      Integration of Suite Sparse's KLU linear solver.
-
-    - LAPACK: [solver/linearSolverLapack.c](./solver/linearSolverLapack.c)<br/>
-      Integration of LAPACK.
-
-    - LIS: [solver/linearSolverLis.c](./solver/linearSolverLis.c)<br/>
-      Integration of Lis from Scalable Software Infrastructure Project.
-
-    - Total Pivot:
-      [solver/linearSolverTotalPivot.c](./solver/linearSolverTotalPivot.c)<br/>
-      Implementation of Gaussian elimination based on LU decomposition with
-      total pivot.
-
-    - UMFPACK:
-      [solver/linearSolverUmfpack.c](./solver/linearSolverUmfpack.c)<br/>
-      Integration of Suite Sparse's UMFPACK linear solver.
 
 ### Non-Linear Solver
 
@@ -87,6 +75,30 @@ Containing:
   - Initial Guess DB:
     [solver/nonlinearValuesList.c](./solver/nonlinearValuesList.c)<br/>
     Store guesses for initial values for non-linear systems.
+
+
+### Linear Solver
+
+  - Linear System: [solver/linearSystem.c](./solver/linearSystem.c)<br/>
+    Solve linear systems with one of the following solver methods:
+
+    - KLU: [solver/linearSolverKlu.c](./solver/linearSolverKlu.c)<br/>
+      Integration of Suite Sparse's KLU linear solver.
+
+    - LAPACK: [solver/linearSolverLapack.c](./solver/linearSolverLapack.c)<br/>
+      Integration of LAPACK.
+
+    - LIS: [solver/linearSolverLis.c](./solver/linearSolverLis.c)<br/>
+      Integration of Lis from Scalable Software Infrastructure Project (SSI).
+
+    - Total Pivot:
+      [solver/linearSolverTotalPivot.c](./solver/linearSolverTotalPivot.c)<br/>
+      Implementation of Gaussian elimination based on LU decomposition with
+      total pivot.
+
+    - UMFPACK:
+      [solver/linearSolverUmfpack.c](./solver/linearSolverUmfpack.c)<br/>
+      Integration of Suite Sparse's UMFPACK linear solver.
 
 ### Analysis Tools
 
