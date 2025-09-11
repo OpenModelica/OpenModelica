@@ -7,13 +7,25 @@ encapsulated package NBDifferentiateReverse
  How to handle the UNARY ops NEG, SIN, COS as they are no Expressions or Operators?
 "
 
+  protected function getCref
+    "Extract cref from expression if it is a cref expression, otherwise return empty cref."
+    input Expression expr;
+    output ComponentRef cref;
+  algorithm
+    cref := match expr
+      case Expression.CREF(cref = cref) then cref;
+      else ComponentRef.EMPTY();
+    end match;
+  end getCref;
+
   public function testBasicDifferentiation
       input Real dummy;
       output Boolean success;
     protected
-      Expression x, y, expr, mulXY, sinY;
+      Expression x, y, expr, diff_expr, mulXY, sinY;
       GradientMap grads;
       Expression gradX, gradY;
+      NBDifferentiate.DifferentiationArguments diff_args, diff_args_diff;
     algorithm
       // Create test expression: f(x, y) = x * sin(y)
       x := Expression.CREF(Type.REAL(), 
@@ -26,27 +38,25 @@ encapsulated package NBDifferentiateReverse
           args        = {y},
           variability = Expression.variability(y),
           purity      = NFPrefixes.Purity.PURE));
-
-      modX := Expression.CALL(Call.makeTypedCall(
-          fn          = NFBuiltinFuncs.SIN_REAL,
-          args        = {y},
-          variability = Expression.variability(y),
-          purity      = NFPrefixes.Purity.PURE));
           
       mulXY := Expression.BINARY(exp1 = x, operator = Operator.makeMul(Type.REAL()), exp2 = y);
       expr := Expression.BINARY(exp1 = mulXY, operator = Operator.makeAdd(Type.REAL()), exp2 = sinY);
-      
-      // Compute gradients
-      grads := symbolicReverseMode(expr);
-      
-      gradX := findGradient(x, grads); // y
-      gradY := findGradient(y, grads); // x + cos(y)
 
 
+      diff_args := NBDifferentiate.DifferentiationArguments.simpleCref(getCref(x));
+      (diff_expr, diff_args_diff) := NBDifferentiate.differentiateBinary(expr, diff_args);
+      print("\n");
 
       print("Expression: " + expressionToString(expr) + "\n");
-      print("Gradient w.r.t. x: " + expressionToString(gradX) + "\n");
-      print("Gradient w.r.t. y: " + expressionToString(gradY) + "\n");
+      print("Differentiated Expression w.r.t. x: " + expressionToString(diff_expr) + "\n");
+      
+      // Compute gradients reverse mode
+      // grads := symbolicReverseMode(expr);
+      // gradX := findGradient(x, grads); // y
+      // gradY := findGradient(y, grads); // x + cos(y)
+      // print("Expression: " + expressionToString(expr) + "\n");
+      // print("Gradient w.r.t. x: " + expressionToString(gradX) + "\n");
+      // print("Gradient w.r.t. y: " + expressionToString(gradY) + "\n");
 
       success := true;
   end testBasicDifferentiation;
@@ -95,43 +105,43 @@ protected
   end localPartialFor1ArgCall;
 
 
-function localPartialFor2ArgCall
-  "Return local partial df/darg for a builtin two-argument call expression.
-   Reuses NBDifferentiate.differentiateBuiltinCall2Arg so rules are not duplicated."
-  input Expression exp;
-  input Integer childIndex;
-  output Expression localPartial;
-protected
-  Call callv;
-  Function fn;
-  list<Expression> args;
-  Expression arg1;
-  Expression arg2;
-  Expression p1;
-  Expression p2;
-  String name;
-algorithm
-  localPartial := match exp
-    case Expression.CALL(call = callv) then
-      match callv
-        case Call.TYPED_CALL(fn = fn, arguments = args) guard (Function.isBuiltin(fn) and listLength(args) == 2) then
-          // extract the two arguments
-          match args
-            case {arg1, arg2} algorithm
-              name := AbsynUtil.pathString(Function.nameConsiderBuiltin(fn));
-              // get local derivatives df/darg1 and df/darg2
-              (p1, p2) := NBDifferentiate.differentiateBuiltinCall2Arg(name, arg1, arg2);
-              then (if childIndex == 1 then p1 else p2);
-            else
-              Expression.makeZero(Expression.typeOf(exp));
-          end match;
-        else
-          Expression.makeZero(Expression.typeOf(exp));
-      end match;
-    else
-      Expression.makeZero(Expression.typeOf(exp));
-  end match;
-end localPartialFor2ArgCall;
+  function localPartialFor2ArgCall
+    "Return local partial df/darg for a builtin two-argument call expression.
+    Reuses NBDifferentiate.differentiateBuiltinCall2Arg so rules are not duplicated."
+    input Expression exp;
+    input Integer childIndex;
+    output Expression localPartial;
+  protected
+    Call callv;
+    Function fn;
+    list<Expression> args;
+    Expression arg1;
+    Expression arg2;
+    Expression p1;
+    Expression p2;
+    String name;
+  algorithm
+    localPartial := match exp
+      case Expression.CALL(call = callv) then
+        match callv
+          case Call.TYPED_CALL(fn = fn, arguments = args) guard (Function.isBuiltin(fn) and listLength(args) == 2) then
+            // extract the two arguments
+            match args
+              case {arg1, arg2} algorithm
+                name := AbsynUtil.pathString(Function.nameConsiderBuiltin(fn));
+                // get local derivatives df/darg1 and df/darg2
+                (p1, p2) := NBDifferentiate.differentiateBuiltinCall2Arg(name, arg1, arg2);
+                then (if childIndex == 1 then p1 else p2);
+              else
+                Expression.makeZero(Expression.typeOf(exp));
+            end match;
+          else
+            Expression.makeZero(Expression.typeOf(exp));
+        end match;
+      else
+        Expression.makeZero(Expression.typeOf(exp));
+    end match;
+  end localPartialFor2ArgCall;
 
 
 

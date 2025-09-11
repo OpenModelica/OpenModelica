@@ -1373,6 +1373,7 @@ public
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + name});
       then fail();
     end match;
+    print("BUILTIN name derFuncCall" + name + Expression.toString(derFuncCall) + "\n");
   end differentiateBuiltinCall1Arg;
 
   function differentiateBuiltinCall2Arg
@@ -1880,6 +1881,8 @@ public
         algorithm
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
+          print("ADD exp1: " + Expression.toString(exp1) + " diffExp1: " + Expression.toString(diffExp1) + "\n");
+          print("ADD exp2: " + Expression.toString(exp2) + " diffExp2: " + Expression.toString(diffExp2) + "\n");
       then (Expression.MULTARY({diffExp1, diffExp2}, {}, operator), diffArguments);
 
       // Subtraction calculations (SUB, SUB_EW, ...)
@@ -1901,6 +1904,8 @@ public
         algorithm
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
+          print("MUL exp1: " + Expression.toString(exp1) + " diffExp1: " + Expression.toString(diffExp1) + "\n");
+          print("MUL exp2: " + Expression.toString(exp2) + " diffExp2: " + Expression.toString(diffExp2) + "\n");
           // create addition operator from the size classification of original multiplication operator
           sizeClass := Operator.classifyAddition(operator);
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
