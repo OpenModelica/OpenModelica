@@ -14,7 +14,7 @@ Containing:
 The C runtime has a large number of methods to solve ODE, DAE, linear and
 non-linear systems.
 
-![Overview of solver methods](../../../../doc/SimulationRuntime/c/img/Solver_Overview_C_old.png "Overview of solver methods")
+![Overview of solver methods](../../../../doc/SimulationRuntime/c/img/Solver_Overview_C.png "Overview of solver methods")
 
 OpenModelica links to `IDAS`, but calls it `IDA` in the documentation.
 Also, the linear solver method `LAPACK` is actually `DGESV` from LAPACK.
