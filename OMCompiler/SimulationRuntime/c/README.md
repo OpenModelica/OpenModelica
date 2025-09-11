@@ -60,7 +60,7 @@ Also, it provides some utility functions:
     ODE, DAE solvers as well as linear and non-linear solvers and tools for
     event handling.
 
-    See [simulation/Readme.md](./simulation/Readme.md) for more details.
+    See [simulation/README.md](./simulation/README.md) for more details.
 
   - [util](./util/)<br/>
     Functions for different parts of the C runtime.
