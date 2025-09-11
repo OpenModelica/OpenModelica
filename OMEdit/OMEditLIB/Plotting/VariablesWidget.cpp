@@ -102,6 +102,7 @@ VariablesTreeItem::~VariablesTreeItem()
 {
   qDeleteAll(mChildren);
   mChildren.clear();
+  mChildrenHash.clear();
 }
 
 /*!
@@ -195,6 +196,7 @@ void VariablesTreeItem::removeChildren()
 {
   qDeleteAll(mChildren);
   mChildren.clear();
+  mChildrenHash.clear();
 }
 
 void VariablesTreeItem::removeChild(VariablesTreeItem *pVariablesTreeItem)
@@ -896,7 +898,6 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
         if (!parentVariable.isEmpty()) {
           previousArrayVar = parentVariable % "." % variable;
         }
-        previousArrayVar = QString("%1.%2").arg(fileName ,StringHandler::joinDerivativeAndPreviousVariable(plotVariable, previousArrayVar, "previous("));
         previousArrayVar = fileName % "." % StringHandler::joinDerivativeAndPreviousVariable(plotVariable, previousArrayVar, "previous(");
         variableData << filePath << fileName << previousArrayVar << StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "previous(");
       }
