@@ -26,12 +26,15 @@ encapsulated package NBDifferentiateReverse
           args        = {y},
           variability = Expression.variability(y),
           purity      = NFPrefixes.Purity.PURE));
+
+      modX := Expression.CALL(Call.makeTypedCall(
+          fn          = NFBuiltinFuncs.SIN_REAL,
+          args        = {y},
+          variability = Expression.variability(y),
+          purity      = NFPrefixes.Purity.PURE));
           
       mulXY := Expression.BINARY(exp1 = x, operator = Operator.makeMul(Type.REAL()), exp2 = y);
       expr := Expression.BINARY(exp1 = mulXY, operator = Operator.makeAdd(Type.REAL()), exp2 = sinY);
-
-
-
       
       // Compute gradients
       grads := symbolicReverseMode(expr);
@@ -69,7 +72,6 @@ protected
     "Return local partial df/darg for a builtin single-argument call expression.
     Reuses differentiateBuiltinCall1Arg so rules are not duplicated."
     input Expression exp;
-    input Integer childIndex;
     output Expression localPartial;
   protected
     Call callv;
@@ -92,6 +94,44 @@ protected
     end match;
   end localPartialFor1ArgCall;
 
+
+function localPartialFor2ArgCall
+  "Return local partial df/darg for a builtin two-argument call expression.
+   Reuses NBDifferentiate.differentiateBuiltinCall2Arg so rules are not duplicated."
+  input Expression exp;
+  input Integer childIndex;
+  output Expression localPartial;
+protected
+  Call callv;
+  Function fn;
+  list<Expression> args;
+  Expression arg1;
+  Expression arg2;
+  Expression p1;
+  Expression p2;
+  String name;
+algorithm
+  localPartial := match exp
+    case Expression.CALL(call = callv) then
+      match callv
+        case Call.TYPED_CALL(fn = fn, arguments = args) guard (Function.isBuiltin(fn) and listLength(args) == 2) then
+          // extract the two arguments
+          match args
+            case {arg1, arg2} algorithm
+              name := AbsynUtil.pathString(Function.nameConsiderBuiltin(fn));
+              // get local derivatives df/darg1 and df/darg2
+              (p1, p2) := NBDifferentiate.differentiateBuiltinCall2Arg(name, arg1, arg2);
+              then (if childIndex == 1 then p1 else p2);
+            else
+              Expression.makeZero(Expression.typeOf(exp));
+          end match;
+        else
+          Expression.makeZero(Expression.typeOf(exp));
+      end match;
+    else
+      Expression.makeZero(Expression.typeOf(exp));
+  end match;
+end localPartialFor2ArgCall;
 
 
 
@@ -137,9 +177,12 @@ protected
           then fail();
         end match;
       
-      // assume function call is always unary for now
-      case Expression.CALL() then 
-        localPartialFor1ArgCall(expr, childIndex);
+      case Expression.CALL() guard List.hasOneElement(Call.arguments(expr.call)) then 
+        localPartialFor1ArgCall(expr);
+
+      case Expression.CALL() guard (listLength(Call.arguments(expr.call)) == 2) then 
+        localPartialFor2ArgCall(expr, childIndex);
+
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + "Failed! Given Expression is not supported." + Expression.toString(expr)});
       then fail();
@@ -340,7 +383,7 @@ protected
     // for i in 1:listLength(tape) loop
     //   print(intString(i) + ": " + expressionToString(listGet(tape, i)) + "\n");
     // end for;
-    
+
     // Initialize gradients with output gradient
     gradients := {(expr, cotangent)};
     
