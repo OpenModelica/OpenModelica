@@ -102,8 +102,6 @@ VariablesTreeItem::~VariablesTreeItem()
 {
   qDeleteAll(mChildren);
   mChildren.clear();
-  qDeleteAll(mChildrenHash);
-  mChildrenHash.clear();
 }
 
 /*!
@@ -197,8 +195,6 @@ void VariablesTreeItem::removeChildren()
 {
   qDeleteAll(mChildren);
   mChildren.clear();
-  qDeleteAll(mChildrenHash);
-  mChildrenHash.clear();
 }
 
 void VariablesTreeItem::removeChild(VariablesTreeItem *pVariablesTreeItem)
@@ -861,7 +857,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
         if (parentVariable.isEmpty()) {
           findVariable = fileName % "." % variable;
         } else {
-          findVariable = fileName % parentVariable % variable;
+          findVariable = fileName % "." % parentVariable % "." % variable;
         }
       }
       // if its the last item then don't try to find the item as we will always fail to find it
