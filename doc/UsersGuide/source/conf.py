@@ -25,6 +25,8 @@ sys.setrecursionlimit(2000)
 if not 'OPENMODELICAHOME' in os.environ:
   if os.path.isdir('../../../build_cmake/install'):
     os.environ['OPENMODELICAHOME'] = os.path.realpath('../../../build_cmake/install')
+  elif os.path.isdir('../../../build_cmake/install_cmake'):
+    os.environ['OPENMODELICAHOME'] = os.path.realpath('../../../build_cmake/install_cmake')
   elif os.path.isdir('../../../install_cmake'):
     os.environ['OPENMODELICAHOME'] = os.path.realpath('../../../install_cmake')
   else:
