@@ -17,10 +17,39 @@ parameter of the :ref:`simulate` command or the :ref:`-s simflag <simflag-s>`.
 The different methods are also called solver and can be distinguished by
 their characteristic:
 
-- explicit vs. implicit
-- order
-- step size control
-- multi step
+- Method
+- Explicit vs. implicit
+- Suitability for stiff systems
+- Usage of sparse methods to solver underlying equation systems
+- Integration order
+- Step size control: Fixed vs. adaptive
+
++----------+---------+------+------------+----------+----------+-----------+
+| Solver   | Method  | Type | System     | Sparsity | Order    | Step Size |
++==========+=========+======+============+==========+==========+===========+
+| `DASSL`_ | BDF     | imp. | stiff      | sparse / | adaptive | adaptive  |
+|          |         |      |            | dense    | 1-5      |           |
++----------+---------+------+------------+----------+----------+-----------+
+| `IDA`_   | BDF     | imp. | stiff      | sparse / | adaptive | adaptive  |
+|          |         |      |            | dense    | 1-5      |           |
++----------+---------+------+------------+----------+----------+-----------+
+| `CVODE`_ | Adams-  | imp. | non-stiff  | dense    | adaptive | adaptive  |
+|          | Moulton |      |            |          | 1-12     |           |
++----------+---------+------+------------+----------+----------+-----------+
+| `CVODE`_ | BDF     | imp. | stiff      | dense    | adaptive | adaptive  |
+|          |         |      |            |          | 1-5      |           |
++----------+---------+------+------------+----------+----------+-----------+
+| `GBODE`_ | RK      | exp. | non-stiff  | sparse / | 1-14     | adaptive  |
+|          |         |      |            | dense    |          |           |
++----------+---------+------+------------+----------+----------+-----------+
+| `GBODE`_ | RK      | imp. | stiff      | sparse / | 1-12     | adaptive  |
+|          |         |      |            | dense    |          |           |
++----------+---------+------+------------+----------+----------+-----------+
+| `GBODE`_ | RK      | imp. | multi-rate | sparse / | 1-14     | adaptive  |
+|          |         |      |            | dense    |          |           |
++----------+---------+------+------------+----------+----------+-----------+
+| `Euler`_ | Euler   | exp. | non-stiff  | dense    | 1        | fixed     |
++----------+---------+------+------------+----------+----------+-----------+
 
 A good introduction on this topic may be found in :cite:`Cellier:2006`
 and a more mathematical approach can be found in :cite:`Hairer:1993`.
@@ -30,16 +59,20 @@ and a more mathematical approach can be found in :cite:`Hairer:1993`.
 DASSL
 ~~~~~
 
-DASSL is the default solver in OpenModelica, because of a severals reasons.
-It is an implicit, higher order, multi-step solver with a step-size control
-and with these properties it is quite stable for a wide range of models.
-Furthermore it has a mature source code, which was originally developed
-in the eighties an initial description may be found in :cite:`PetzoldDASSL:1982`.
+DASSL is the default solver in OpenModelica, because of a severals reasons. It
+is an implicit, higher order, multi-step solver with a step-size control and
+with these properties it is quite stable for a wide range of models. Furthermore
+it has a mature source code, which was originally developed in the eighties an
+initial description may be found in :cite:`PetzoldDASSL:1982`.
 
 This solver is based on backward differentiation formula (BDF), which is
 a family of implicit methods for numerical integration. The used implementation
 is called DASPK2.0 (see [#f1]_) and it is translated automatically to C
 by f2c (see [#f2]_).
+
+Internal non-linear and linear equation systems are solved using dense methods.
+If the target model is known to have a sparse structure one of the sparse
+solvers might be a better alternative.
 
 The following simulation flags can be used to adjust the behavior of the
 solver for specific simulation problems:
@@ -51,17 +84,16 @@ solver for specific simulation problems:
 :ref:`maxIntegrationOrder <simflag-maxintegrationorder>`,
 :ref:`noEquidistantTimeGrid <simflag-noequidistanttimegrid>`.
 
-
 .. _sundials_ida :
 
 IDA
 ~~~
 
-The IDA solver is part of a software family called sundials: SUite of
-Nonlinear and DIfferential/ALgebraic equation Solvers :cite:`Hindmarsh:2005`.
-The implementation is based on DASPK with an extended linear solver
-interface, which includes an interface to the high performance sparse
-linear solver KLU :cite:`Davis:2010`.
+The IDA solver is part of a software family called sundials: SUite of Nonlinear
+and DIfferential/ALgebraic equation Solvers :cite:`Hindmarsh:2005`. The
+implementation is based on DASPK with an extended linear solver interface, which
+includes an interface to the high performance sparse non-lineaer solver KINSOL
+:cite:`Hindmarsh:2005` and linear solver KLU :cite:`Davis:2010`.
 
 The simulation flags of :ref:`dassl` are also valid for the IDA
 solver and furthermore it has the following IDA specific flags:
@@ -122,7 +154,7 @@ interpolated values of the slow states.
 
 The solver utilizes by default the sparsity pattern of the ODE Jacobian and
 solves the corresponding non-linear system in case of an implicit chosen RK
-scheme using KINSOL.
+scheme using sparse solver KINSOL.
 
 GBODE is highly configurable and the following simulation flags can be used to
 adjust the behavior of the solver for specific simulation problems:
@@ -138,6 +170,8 @@ adjust the behavior of the solver for specific simulation problems:
 :ref:`gbfint <simflag-gbint>`,
 :ref:`gbferr <simflag-gbferr>`.
 
+.. _euler :
+
 Basic Explicit Solvers
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -151,7 +185,8 @@ The basic explicit solvers Euler uses a fixed step-size based on the
 Deprecated Solvers
 ~~~~~~~~~~~~~~~~~~~~
 
-The following solvers are deprecated and will be removed in a future version of OpenModelica:
+The following solvers are deprecated and will be removed in a future version of
+OpenModelica:
 
 - rungekutta - Classic Runge-Kutta method RK4, explicit, fixed step-size, oder 4
 
@@ -160,8 +195,10 @@ The following solvers are deprecated and will be removed in a future version of 
   old: -s=rungekutta
   new: -s=gbode -gbm=rungekutta -gbctrl=const
 
-- symSolver - Symbolic inline solver (requires :ref:`--symSolver <omcflag-symSolver>`) - fixed step-size, order 1
-- symSolverSsc - Symbolic implicit inline Euler with step-size control (requires :ref:`--symSolver<omcflag-symSolver>`) - step-size control, order 1-2
+- symSolver - Symbolic inline solver
+  (requires :ref:`--symSolver <omcflag-symSolver>`) - fixed step-size, order 1
+- symSolverSsc - Symbolic implicit inline Euler with step-size control
+  (requires :ref:`--symSolver<omcflag-symSolver>`) - step-size control, order 1-2
 - qss - A QSS solver
 
 DAE Mode Simulation
