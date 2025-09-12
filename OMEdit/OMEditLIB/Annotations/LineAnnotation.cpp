@@ -1414,9 +1414,13 @@ void LineAnnotation::handleCollidingConnections()
         mCollidingConnectorElements.append(pElement);
       }
     } else if (LineAnnotation *pConnectionAnnotation = dynamic_cast<LineAnnotation*>(items.at(i))) {
+      /* Issue #14335
+       * We check start and end element names to avoid adding connections which are not connected to the same component as colliding connections.
+       * We have array elements as connectors so we cannot compare the pointers of start and end elements.
+       */
       if (mSmooth != StringHandler::SmoothBezier && pConnectionAnnotation->getSmooth() != StringHandler::SmoothBezier && pConnectionAnnotation->isConnection()
-          && (mpStartElement == pConnectionAnnotation->getStartElement() || mpStartElement == pConnectionAnnotation->getEndElement()
-              || mpEndElement == pConnectionAnnotation->getStartElement() || mpEndElement == pConnectionAnnotation->getEndElement())) {
+          && (mStartElementName == pConnectionAnnotation->getStartElementName() || mStartElementName == pConnectionAnnotation->getEndElementName()
+              || mEndElementName == pConnectionAnnotation->getStartElementName() || mEndElementName == pConnectionAnnotation->getEndElementName())) {
         mCollidingConnections.append(pConnectionAnnotation);
       }
     }
