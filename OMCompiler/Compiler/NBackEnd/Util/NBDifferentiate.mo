@@ -1092,21 +1092,6 @@ public
         exp.call := Call.setArguments(exp.call, ret1 :: rest);
       then exp;
 
-      // d/dz linspace(x, y, n) = linspace(dx/dz, dy/dz, n)
-      case (Expression.CALL()) guard(name == "linspace")
-      algorithm
-        // only differentiate 1st input
-        (arg1, arg2, arg3) := match Call.arguments(exp.call)
-          case {arg1, arg2, arg3} then (arg1, arg2, arg3);
-          else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
-          then fail();
-        end match;
-        (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
-        (ret2, diffArguments) := differentiateExpression(arg2, diffArguments);
-        exp.call := Call.setArguments(exp.call, {ret1, ret2, arg3});
-      then exp;
-
       // SEMI LINEAR
       // d sL(x, m1, m2)/dz = sL(x, dm1/dz, dm2/dz) + dx/dz * (if x >= 0 then m1 else m2)
       case (Expression.CALL()) guard(name == "semiLinear")
