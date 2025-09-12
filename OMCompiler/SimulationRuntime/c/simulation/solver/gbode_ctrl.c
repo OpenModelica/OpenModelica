@@ -268,7 +268,7 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
   double d0 = 0.0;  // norm of y0 weighted
   double d1 = 0.0;  // norm of f0 weighted
   double d2 = 0.0;  // norm of slope difference weighted
-  
+
   double h0, h1;
   double absTol = data->simulationInfo->tolerance;
   double relTol = absTol;
@@ -281,7 +281,7 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
   memcpy(gbData->yOld, sData->realVars, nStates * sizeof(double));
 
   // Compute f(t0, y0)
-  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
 
   if (gbData->initialStepSize < 0) {
     memcpy(gbData->f, fODE, nStates * sizeof(double));
@@ -316,7 +316,7 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
     sData->timeValue = gbData->time + h0;
 
     // Compute f(t0+h0, y1)
-    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
 
     // Compute weighted norm of slope difference
     for (i = 0; i < nStates; i++) {
