@@ -8659,7 +8659,7 @@ void ModelWidgetContainer::addSubModel()
   ModelWidget *pModelWidget = getCurrentModelWidget();
   if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
     QString name = "";
-    QString path = AddSubModelDialog::browseSubModelPath(pModelWidget->getDiagramGraphicsView(), &name);
+    QString path = AddSubModelDialog::browseSubModelPath(&name);
     if (!path.isEmpty()) {
       AddSubModelDialog *pAddFMUDialog = new AddSubModelDialog(pModelWidget->getDiagramGraphicsView(), path, name);
       pAddFMUDialog->exec();
