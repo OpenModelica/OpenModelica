@@ -22,7 +22,7 @@ encapsulated package NBDifferentiateReverse
       input Real dummy;
       output Boolean success;
     protected
-      Expression x, y, expr, diff_expr, mulXY, sinY;
+      Expression x, y, expr, diff_expr, mulXY, mul2, mul3;
       GradientMap grads;
       Expression gradX, gradY;
       NBDifferentiate.DifferentiationArguments diff_args, diff_args_diff;
@@ -33,30 +33,32 @@ encapsulated package NBDifferentiateReverse
       y := Expression.CREF(Type.REAL(),
                           ComponentRef.CREF(InstNode.NAME_NODE("y"), {}, Type.REAL(), Origin.CREF, ComponentRef.EMPTY()));
 
-      sinY := Expression.CALL(Call.makeTypedCall(
-          fn          = NFBuiltinFuncs.SIN_REAL,
-          args        = {y},
-          variability = Expression.variability(y),
-          purity      = NFPrefixes.Purity.PURE));
+      // sinY := Expression.CALL(Call.makeTypedCall(
+      //     fn          = NFBuiltinFuncs.SIN_REAL,
+      //     args        = {y},
+      //     variability = Expression.variability(y),
+      //     purity      = NFPrefixes.Purity.PURE));
           
       mulXY := Expression.BINARY(exp1 = x, operator = Operator.makeMul(Type.REAL()), exp2 = y);
-      expr := Expression.BINARY(exp1 = mulXY, operator = Operator.makeAdd(Type.REAL()), exp2 = sinY);
+      mul2 := Expression.BINARY(exp1 = Expression.REAL(2.0), operator = Operator.makeMul(Type.REAL()), exp2 = y);
+      mul3 := Expression.BINARY(exp1 = Expression.REAL(3.0), operator = Operator.makeMul(Type.REAL()), exp2 = mulXY);
+      expr := Expression.BINARY(exp1 = mul2, operator = Operator.makeAdd(Type.REAL()), exp2 = mul3);
 
 
-      diff_args := NBDifferentiate.DifferentiationArguments.simpleCref(getCref(x));
-      (diff_expr, diff_args_diff) := NBDifferentiate.differentiateBinary(expr, diff_args);
-      print("\n");
+      // diff_args := NBDifferentiate.DifferentiationArguments.simpleCref(getCref(x));
+      // (diff_expr, diff_args_diff) := NBDifferentiate.differentiateBinary(expr, diff_args);
+      // print("\n");
 
-      print("Expression: " + expressionToString(expr) + "\n");
-      print("Differentiated Expression w.r.t. x: " + expressionToString(diff_expr) + "\n");
+      // print("Expression: " + expressionToString(expr) + "\n");
+      // print("Differentiated Expression w.r.t. x: " + expressionToString(diff_expr) + "\n");
       
       // Compute gradients reverse mode
-      // grads := symbolicReverseMode(expr);
-      // gradX := findGradient(x, grads); // y
-      // gradY := findGradient(y, grads); // x + cos(y)
-      // print("Expression: " + expressionToString(expr) + "\n");
-      // print("Gradient w.r.t. x: " + expressionToString(gradX) + "\n");
-      // print("Gradient w.r.t. y: " + expressionToString(gradY) + "\n");
+      grads := symbolicReverseMode(expr);
+      gradX := findGradient(x, grads); // y
+      gradY := findGradient(y, grads); // x + cos(y)
+      print("Expression: " + expressionToString(expr) + "\n");
+      print("Gradient w.r.t. x: " + expressionToString(gradX) + "\n");
+      print("Gradient w.r.t. y: " + expressionToString(gradY) + "\n");
 
       success := true;
   end testBasicDifferentiation;
@@ -76,6 +78,14 @@ protected
   import NFFunction.{Function, Slot};
 
   import NBDifferentiate;
+
+
+  record Node
+    list<Expression> childGradients; // local gradients df/dchild for each child (weights)
+    list<Integer> childIndices; // indices of the children on the tape these weights correspond to (deps)
+  end Node;
+
+  list<Node> tape; // tape of nodes in the order they were processed (topological order)
 
 
   function localPartialFor1ArgCall
@@ -289,11 +299,11 @@ protected
       return;
     end if;
     
-    // For leaf nodes, don't add to tape
-    if isLeaf(expr) then
-      tape := currentTape;
-      return;
-    end if;
+    // // For leaf nodes, don't add to tape
+    // if isLeaf(expr) then
+    //   tape := currentTape;
+    //   return;
+    // end if;
     
     // Process children first (post-order)
     tape := currentTape;
@@ -389,10 +399,10 @@ protected
     // Build computation tape
     tape := buildTape(expr);
 
-    // print("Computation tape:\n");
-    // for i in 1:listLength(tape) loop
-    //   print(intString(i) + ": " + expressionToString(listGet(tape, i)) + "\n");
-    // end for;
+    print("Computation tape:\n");
+    for i in 1:listLength(tape) loop
+      print(intString(i) + ": " + expressionToString(listGet(tape, i)) + "\n");
+    end for;
 
     // Initialize gradients with output gradient
     gradients := {(expr, cotangent)};

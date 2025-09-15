@@ -306,6 +306,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBBackendUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBDifferentiate.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBDifferentiateReverse.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBDifferentiateReverse_new.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBReplacements.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBResizable.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBSlice.mo

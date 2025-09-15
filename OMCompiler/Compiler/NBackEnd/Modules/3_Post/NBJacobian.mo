@@ -66,7 +66,7 @@ protected
   import Partition = NBPartition;
   import NFOperator.{MathClassification, SizeClassification};
   import NBVariable.{VariablePointers, VarData};
-  import NBDifferentiateReverse;
+  import NBDifferentiateReverse_new;
 
   // Old Backend Import (remove once coloring ins ported)
   import SymbolicJacobian;
@@ -274,7 +274,7 @@ public
     output Module.jacobianInterface func;
   algorithm
     if Flags.isSet(Flags.JAC_DUMP) then
-      NBDifferentiateReverse.testBasicDifferentiation(1.0);
+      NBDifferentiateReverse_new.testBasicDifferentiation(1.0);
     end if;
 
 
