@@ -85,7 +85,8 @@ class DynamicAnnotation
     QJsonValue serialize() const;
 
   private:
-    FlatModelica::Expression evaluate_helper(FlatModelica::Expression *pExpression, ModelInstance::Model *pModel, bool readFromResultFileForDynamicSelect, double time);
+    FlatModelica::Expression evaluate_wrap_helper(FlatModelica::Expression *pExpression, ModelInstance::Model *pModel, bool readFromResultFileForDynamicSelect, double time);
+    FlatModelica::Expression evaluate_helper(FlatModelica::Expression *pExpression, ModelInstance::Model *pModel, bool readFromResultFileForDynamicSelect, double time, bool value);
 
   protected:
     virtual void fromExp(const FlatModelica::Expression &exp) = 0;
