@@ -317,7 +317,7 @@ void SimulationStep::reset() {
 
 std::unique_ptr<Trajectory> SimulationStep::operator()(f64* x_start_values, f64 start_time, f64 stop_time) {
     if (!controls || !parameters) {
-        LOG_ERROR("OpenModelica::SimulationStep has not been activated.");
+        Log::error("OpenModelica::SimulationStep has not been activated.");
         abort();
     }
     const int num_steps = 1;

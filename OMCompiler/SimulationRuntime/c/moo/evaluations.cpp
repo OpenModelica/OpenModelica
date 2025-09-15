@@ -232,7 +232,7 @@ void init_hes_mr(InfoGDOP& info, GDOP::BoundarySweepLayout& layout_mr) {
                 hes_c_index++;
             }
             else {
-                LOG_ERROR("Hessian entry row = {}, col = {} from hes_d not found in pattern!", mayer_hess.row, mayer_hess.col);
+                Log::error("Hessian entry row = {}, col = {} from hes_d not found in pattern!", mayer_hess.row, mayer_hess.col);
                 abort();
             }
         }
@@ -247,7 +247,7 @@ void init_hes_mr(InfoGDOP& info, GDOP::BoundarySweepLayout& layout_mr) {
             if (it != sparsity_to_lnz.end()) {
                 info.exc_hes->D_to_Mr_buffer[i] = {i, it->second};
             } else {
-                LOG_ERROR("Hessian entry row = {}, col = {} from hes_d not found in pattern!", row, col);
+                Log::error("Hessian entry row = {}, col = {} from hes_d not found in pattern!", row, col);
                 abort();
             }
         }
