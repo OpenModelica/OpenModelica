@@ -40,11 +40,11 @@ if(OM_OMEDIT_INSTALL_RUNTIME_DLLS AND MINGW)
   # Install the Qt5/Qt6 plugins directories
   message(STATUS "Installing QT${OM_QT_MAJOR_VERSION} plugins from ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/plugins/")
   install(DIRECTORY ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/plugins/    # Note the slash at the end!
-          DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/share/qt5/plugins)
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/)
   # Install the Qt5/Qt6 translation directories
   message(STATUS "Installing QT${OM_QT_MAJOR_VERSION} translation from ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/translations/")
   install(DIRECTORY ${MSYSTEM_PREFIX_ESCAPED}/share/qt${OM_QT_MAJOR_VERSION}/translations/    # Note the slash at the end!
-          DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/share/qt5/translations)
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/share/qt${OM_QT_MAJOR_VERSION}/translations)
 
   # TODO: This is stupid, but I can't get install with RUNTIME_DEPENDENCIES to run.
   # It needs to link to libs that are installed to ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR},
