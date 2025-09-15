@@ -105,7 +105,7 @@ bool DynamicAnnotation::update(double time, ModelInstance::Model *pModel)
     expression = mExp.arg(1);
 
     if (!expression.isNull()) {
-      fromExp(evaluate_helper(&expression, pModel, true, time));
+      fromExp(evaluate_wrap_helper(&expression, pModel, true, time));
     }
     return true;
   }
@@ -133,7 +133,7 @@ void DynamicAnnotation::evaluate(ModelInstance::Model *pModel)
       expression = mExp;
     }
     if (!expression.isNull()) {
-      fromExp(evaluate_helper(&expression, pModel, false, 0.0));
+      fromExp(evaluate_wrap_helper(&expression, pModel, false, 0.0));
     }
   }
 }
@@ -205,41 +205,83 @@ QJsonValue DynamicAnnotation::serialize() const
 }
 
 /*!
- * \brief DynamicAnnotation::evaluate_helper
+ * \brief DynamicAnnotation::evaluate_wrap_helper
  * Helper function for DynamicAnnotation::evaluate and DynamicAnnotation::update.
+ * \param pExpression
+ * \param pModel
+ * \param readFromResultFileForDynamicSelect
+ * \param time
+ * \return
+ */
+FlatModelica::Expression DynamicAnnotation::evaluate_wrap_helper(FlatModelica::Expression *pExpression, ModelInstance::Model *pModel,
+                                                                 bool readFromResultFileForDynamicSelect, double time)
+{
+  FlatModelica::Expression bindingExpression = evaluate_helper(pExpression, pModel, readFromResultFileForDynamicSelect, time, false);
+
+  // if we fail to evaluate using binding values then try with expresison value.
+  if (bindingExpression.isNull() && !readFromResultFileForDynamicSelect) {
+    // qDebug() << "Using value to evaluate expression.";
+    FlatModelica::Expression valueExpression = evaluate_helper(pExpression, pModel, readFromResultFileForDynamicSelect, time, true);
+    // if we fail to evaluate using value then return the original expresison.
+    if (valueExpression.isNull()) {
+      return *pExpression;
+    } else {
+      // qDebug() << "valueExpression is:" << valueExpression.toQString() << valueExpression.isNull();
+      return valueExpression;
+    }
+  } else {
+    // qDebug() << "bindingExpression is:" << bindingExpression.toQString() << bindingExpression.isNull();
+    return bindingExpression;
+  }
+}
+
+/*!
+ * \brief DynamicAnnotation::evaluate_helper
+ * Helper function for DynamicAnnotation::evaluate_wrap_helper
  * \param pExpression
  * \param pModel
  * \param readFromResultFileForDynamicSelect
  * \param time - only used when readFromResultFileForDynamicSelect is true.
  * \return
  */
-FlatModelica::Expression DynamicAnnotation::evaluate_helper(FlatModelica::Expression *pExpression, ModelInstance::Model *pModel, bool readFromResultFileForDynamicSelect, double time)
+FlatModelica::Expression DynamicAnnotation::evaluate_helper(FlatModelica::Expression *pExpression, ModelInstance::Model *pModel,
+                                                            bool readFromResultFileForDynamicSelect, double time, bool value)
 {
   try {
-    return pExpression->evaluate([&](std::string name) -> auto {
+    auto expression = pExpression->evaluate([&](std::string name) -> auto {
       auto vname = QString::fromStdString(name);
       if (readFromResultFileForDynamicSelect) {
         QPair<double, bool> value = MainWindow::instance()->getVariablesWidget()->readVariableValue(vname, time, false);
         if (value.second) {
           return FlatModelica::Expression(value.first);
+        } else {
+          throw std::runtime_error(vname.toStdString() + " could not be found in " + pModel->getName().toStdString());
+        }
+      } else {
+        // qDebug() << "Evaluating variable:" << vname << "from model:" << (pModel ? pModel->getName() : "null") << "using value:" << value;
+        auto valueOrBindingExpression = pModel ? pModel->getVariableValueOrBinding(vname, value) : nullptr;
+        if (!valueOrBindingExpression) {
+          throw std::runtime_error(vname.toStdString() + " could not be found in " + pModel->getName().toStdString());
+        } else {
+          return *valueOrBindingExpression;
         }
       }
-      // qDebug() << "Evaluating variable:" << vname << "from model:" << (pModel ? pModel->getName() : "null");
-      auto bindingExpression = pModel ? pModel->getVariableBinding(vname) : nullptr;
-      if (!bindingExpression) {
-        throw std::runtime_error(vname.toStdString() + " could not be found in " + pModel->getName().toStdString());
-      } else if (!bindingExpression->isLiteral()) {
-        return evaluate_helper(bindingExpression, pModel, readFromResultFileForDynamicSelect, time);
-      } else {
-        return *bindingExpression;
-      }
     });
+
+    if (!value && !expression.isLiteral()) {
+      // qDebug() << "Expression is not literal:" << expression.toQString();
+      return evaluate_helper(&expression, pModel, readFromResultFileForDynamicSelect, time, value);
+    } else {
+      // qDebug() << "Expression is literal:" << expression.toQString() << expression.isNull();
+      return expression;
+    }
   } catch (const std::exception &e) {
     if (MainWindow::instance()->isDebug()) {
       qDebug() << "Failed to evaluate expression.";
       qDebug() << e.what();
     }
-    return *pExpression;
+
+    return FlatModelica::Expression();
   }
 }
 
