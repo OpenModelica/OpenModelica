@@ -76,16 +76,13 @@ protected
   import Call = NFCall;
   import AbsynUtil;
   import NFFunction.{Function, Slot};
-
   import NBDifferentiate;
 
-
   record Node
-    list<Expression> childGradients; // local gradients df/dchild for each child (weights)
-    list<Integer> childIndices; // indices of the children on the tape these weights correspond to (deps)
+    Expression expr; // the expression this node represents
+    // list<Expression> childGradients; // local gradients d_expr/d_child for each child (weights)
+    list<Integer> childIndices; // indices of the children nodes on the tape these weights correspond to (deps)
   end Node;
-
-  list<Node> tape; // tape of nodes in the order they were processed (topological order)
 
 
   function localPartialFor1ArgCall
