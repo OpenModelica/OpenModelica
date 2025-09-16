@@ -159,4 +159,26 @@ ExchangeHessians::ExchangeHessians(InfoGDOP& info) :
     D(info, info.exc_jac->D) {}
 
 
+void StreamLogger::log(LogLevel lvl, std::string msg) {
+    std::string formatted;
+    switch (lvl) {
+        case LogLevel::Info:
+            formatted = fmt::format("{}\n", msg);
+            infoStreamPrint(OMC_LOG_MOO, 0, "%s", formatted.c_str());
+            break;
+        case LogLevel::Success:
+            formatted = fmt::format("{}\n", msg);
+            infoStreamPrint(OMC_LOG_SUCCESS, 0, "%s", formatted.c_str());
+            break;
+        case LogLevel::Warning:
+            formatted = fmt::format("{}\n", msg);
+            warningStreamPrint(OMC_LOG_MOO, 0, "%s", formatted.c_str());
+            break;
+        case LogLevel::Error:
+            formatted = fmt::format("{}\n", msg);
+            errorStreamPrint(OMC_LOG_MOO, 0, "%s", formatted.c_str());
+            break;
+    }
+}
+
 } // namespace OpenModelica

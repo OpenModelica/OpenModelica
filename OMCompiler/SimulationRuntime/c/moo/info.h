@@ -225,6 +225,11 @@ struct ExchangeHessians {
     ExchangeHessians(InfoGDOP& info);
 };
 
+class StreamLogger : public Logger {
+public:
+    void log(LogLevel lvl, std::string msg) override;
+};
+
 } // namespace OpenModelica
 
 #endif // MOO_OM_INFO_GDOP_H
