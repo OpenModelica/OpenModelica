@@ -37,6 +37,7 @@
 
 #include "problem.h"
 #include "strategies.h"
+#include "streamlog.h"
 
 using namespace OpenModelica;
 
@@ -44,9 +45,7 @@ using namespace OpenModelica;
  * this contains the glue code between MOO and the simulation runtime */
 extern "C"
 int _main_OptimizationRuntime(int argc, char** argv, DATA* data, threadData_t* threadData) {
-    auto logger = std::make_unique<StreamLogger>();
-    Log::set_global_logger(std::move(logger));
-
+    create_set_logger();
     auto info = InfoGDOP(data, threadData, argc, argv);
     auto nlp_solver_settings = NLP::NLPSolverSettings(argc, argv);
     info.set_omc_flags(nlp_solver_settings);
