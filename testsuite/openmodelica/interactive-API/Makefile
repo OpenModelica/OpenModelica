@@ -70,6 +70,7 @@ getNthComponentAnnotation.mos \
 getNthConnector.mos \
 getNthConnectorIconAnnotation.mos \
 getNthImport.mos \
+GetReplaceableChoices1.mos \
 getSimulationOptions1.mos \
 getSimulationOptions2.mos \
 getSimulationOptions3.mos \
