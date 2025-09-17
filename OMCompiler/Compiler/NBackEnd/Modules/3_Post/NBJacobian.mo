@@ -112,6 +112,12 @@ public
 
       case BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(knowns = knowns), funcTree = funcTree)
         algorithm
+
+          if Flags.isSet(Flags.JAC_DUMP) then
+            print("hallo\n");
+            NBDifferentiateReverse.testReverseStrongComponent(bdae, kind);
+          end if;
+
           (oldPartitions, name) := match kind
             case NBPartition.Kind.ODE then (bdae.ode, "ODE_JAC");
             case NBPartition.Kind.DAE then (Util.getOption(bdae.dae), "DAE_JAC");
@@ -273,13 +279,6 @@ public
     "Returns the module function that was chosen by the user."
     output Module.jacobianInterface func;
   algorithm
-    if Flags.isSet(Flags.JAC_DUMP) then
-      NBDifferentiateReverse.testBasicDifferentiation(1.0);
-    end if;
-
-
-
-
     func := match Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN)
       case "symbolic" then jacobianSymbolic;
       case "numeric"  then jacobianNumeric;
