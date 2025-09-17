@@ -330,13 +330,15 @@ function scalarVariable
   input String classType;
   input Integer valueReference;
   input Integer classIndex;
+protected
+  String type_name = if DAEUtil.expTypeArray(var.type_) then "ArrayVariable" else "ScalarVariable";
 algorithm
-  File.write(file, "  <ScalarVariable\n");
+  File.write(file, "  <" + type_name + "\n");
   scalarVariableAttribute(file, var, classType, valueReference, classIndex);
   File.write(file, "    ");
   // TODO: Convert ScalarVariableType to File.mo?
   File.write(file, Tpl.textString(CodegenUtil.ScalarVariableType(Tpl.emptyTxt, var.unit, var.displayUnit, var.minValue, var.maxValue, var.initialValue, var.nominalValue, var.isFixed, var.type_)));
-  File.write(file, "\n  </ScalarVariable>\n");
+  File.write(file, "\n  </" + type_name + ">\n");
 end scalarVariable;
 
 function scalarVariableAttribute "Generates code for ScalarVariable Attribute file for FMU target."
@@ -374,6 +376,12 @@ algorithm
   File.write(file, getCausality(simVar.causality));
   File.write(file, "\" isValueChangeable = \"");
   File.write(file, String(simVar.isValueChangeable));
+  File.write(file, "\"\n");
+
+  File.write(file, "    size = \"");
+  File.write(file, intString(Expression.sizeOf(simVar.type_)));
+  File.write(file, "\"  resizable = \"false");
+  File.write(file, "\"  resizing = \"false");
   File.write(file, "\"\n");
 
   if inputIndex <> -1 then

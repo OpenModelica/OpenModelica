@@ -245,8 +245,8 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
     return;
   }
 
-  /* handle ScalarVariable */
-  if(!strcmp(name, "ScalarVariable"))
+  /* handle ScalarVariable and ArrayVariable */
+  if(!strcmp(name, "ScalarVariable") || !strcmp(name, "ArrayVariable"))
   {
     omc_ScalarVariable *v = NULL, *vfind;
     const char *ci, *ct;
@@ -437,7 +437,8 @@ void read_input_xml(MODEL_DATA* modelData,
   XML_Parser parser = NULL;
   hash_string_long *mapAlias = NULL, *mapAliasParam = NULL, *mapAliasSen = NULL;
   long *it, *itParam;
-  mmc_sint_t i;
+  mmc_sint_t i, i_loc, shift, size;
+  hash_long_var *res;
   int inputIndex = 0;
   int k = 0;
 
@@ -655,27 +656,42 @@ void read_input_xml(MODEL_DATA* modelData,
 /* read all static data from File for every variable */
 #define READ_VARIABLES(out, in, attributeKind, read_var_attribute, debugName, start, nStates, mapAlias) \
   infoStreamPrint(OMC_LOG_DEBUG, 1, "read xml file for %s", debugName); \
-  for(i = 0; i < nStates; i++) \
-  { \
-    mmc_sint_t j = start+i; \
-    VAR_INFO *info = &out[j].info; \
-    attributeKind *attribute = &out[j].attribute; \
-    omc_ScalarVariable *v = *findHashLongVar(in, i); \
-    read_var_info(v, info); \
-    read_var_attribute(v, attribute); \
-    setFilterOuput(v, out[j], info->name); \
-    addHashStringLong(&mapAlias, info->name, j); /* create a mapping for Alias variable to get the correct index */ \
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "real %s: mapAlias[%s] = %ld", debugName, info->name, (long) j); \
-    if (omc_flag[FLAG_IDAS] && 0 == strcmp(debugName, "real sensitivities")) \
-    { \
-      if (0 == strcmp(findHashStringString(v, "isValueChangeable"), "true")) \
+  /* prepare the variable index and the value pointers and get the first variable */ \
+  i = 0;      /* array index of the variable in current context. always shifts by 1 */ \
+  shift = 0;  /* index shift due to previous array variables. shifts by 1 for scalars */ \
+  HASH_FIND_INT(in, &i, res); \
+  /* while there is a next variable, get the values from xml file */ \
+  while (res) { \
+    /* get the variable value and the start index j */ \
+    omc_ScalarVariable *v = res->val; \
+    mmc_sint_t j = start+shift; \
+    /* get the size*/ \
+    read_value_long(findHashStringStringEmpty(v,"size"), &size, 1); \
+    for (i_loc=0; i_loc<size; i_loc++) { \
+      /* get the pointers to the structs where the values will be saved to */ \
+      VAR_INFO *info = &out[j+i_loc].info; \
+      attributeKind *attribute = &out[j+i_loc].attribute; \
+      read_var_info(v, info); \
+      read_var_attribute(v, attribute); \
+      setFilterOuput(v, out[j+i_loc], info->name); \
+      /* create a mapping for Alias variable to get the correct index */ \
+      addHashStringLong(&mapAlias, info->name, j+i_loc); \
+      debugStreamPrint(OMC_LOG_DEBUG, 0, "real %s: mapAlias[%s] = %ld", debugName, info->name, (long) j+i_loc); \
+      if (omc_flag[FLAG_IDAS] && 0 == strcmp(debugName, "real sensitivities")) \
       { \
-        long *it = findHashStringLongPtr(mapAliasParam, info->name); \
-        simulationInfo->sensitivityParList[k] = *it; \
-        infoStreamPrint(OMC_LOG_SOLVER, 0, "%d. sensitivity parameter %s at index %d", k, info->name, simulationInfo->sensitivityParList[k]); \
-        k++; \
+        if (0 == strcmp(findHashStringString(v, "isValueChangeable"), "true")) \
+        { \
+          long *it = findHashStringLongPtr(mapAliasParam, info->name); \
+          simulationInfo->sensitivityParList[k] = *it; \
+          infoStreamPrint(OMC_LOG_SOLVER, 0, "%d. sensitivity parameter %s at index %d", k, info->name, simulationInfo->sensitivityParList[k]); \
+          k++; \
+        } \
       } \
     } \
+    /* get the next variable pointer and adapt indices */ \
+    shift+=size; \
+    i++; \
+    HASH_FIND_INT(in, &i, res); \
   } \
   messageClose(OMC_LOG_DEBUG);
 
