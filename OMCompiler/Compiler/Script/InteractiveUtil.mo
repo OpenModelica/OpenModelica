@@ -3802,13 +3802,74 @@ algorithm
   end match;
 end excludeElementsFromFile;
 
+uniontype ClassEntry
+  record CLASS_ENTRY
+    Absyn.Path path;
+    Absyn.Class cls;
+  end CLASS_ENTRY;
+
+  function getPath
+    input ClassEntry entry;
+    output Absyn.Path path = entry.path;
+  end getPath;
+
+  function greaterEq
+    input ClassEntry entry1;
+    input ClassEntry entry2;
+    output Boolean res = AbsynUtil.pathGe(entry1.path, entry2.path);
+  end greaterEq;
+
+  function equal
+    input ClassEntry entry1;
+    input ClassEntry entry2;
+    output Boolean res = referenceEq(entry1.cls, entry2.cls);
+  end equal;
+end ClassEntry;
+
+public function getAllSubtypeOf
+  input Absyn.Path baseClass;
+  input Absyn.Path parentClass;
+  input Absyn.Program program;
+  input Boolean includePartial;
+  input Boolean sort;
+  output list<Absyn.Path> paths;
+protected
+  list<ClassEntry> classes;
+algorithm
+  classes := getAllSubtypeOf2(baseClass, parentClass, program, includePartial, sort);
+  paths := list(ClassEntry.getPath(c) for c in classes);
+end getAllSubtypeOf;
+
+public function getReplaceableChoices
+  input Absyn.Path baseClass;
+  input Absyn.Path parentClass;
+  input Absyn.Program program;
+  input Boolean includePartial;
+  input Boolean sort;
+  output Values.Value res;
+protected
+  list<ClassEntry> classes;
+  list<Values.Value> vals = {};
+  Values.Value name_val, cmt_val;
+algorithm
+  classes := getAllSubtypeOf2(baseClass, parentClass, program, includePartial, sort);
+
+  for entry in classes loop
+    name_val := ValuesUtil.makeString(AbsynUtil.pathString(entry.path));
+    cmt_val := ValuesUtil.makeString(AbsynUtil.classDefStringComment(entry.cls.body));
+    vals := ValuesUtil.makeArray({name_val, cmt_val}) :: vals;
+  end for;
+
+  res := ValuesUtil.makeArray(Dangerous.listReverseInPlace(vals));
+end getReplaceableChoices;
+
 protected function getAllSubtypeOfCandidates
   "Returns a list of all classes that needs to be considered by getAllSubtypeOf"
   input Absyn.Path path;
   input Absyn.Path parentClass;
   input Absyn.Program program;
   input Boolean includePartial;
-  input output list<Absyn.Path> candidates;
+  input output list<ClassEntry> candidates;
 protected
   Absyn.Class cdef;
   list<String> names;
@@ -3823,7 +3884,7 @@ algorithm
 
   // Only add non-partial classes if includePartial = false.
   if includePartial or AbsynUtil.isNotPartial(cdef) then
-    candidates := path :: candidates;
+    candidates := ClassEntry.CLASS_ENTRY(path, cdef) :: candidates;
 
     // Only recurse into packages, unless it's the parent class in which case we
     // also want to include local classes.
@@ -3837,23 +3898,24 @@ algorithm
   end if;
 end getAllSubtypeOfCandidates;
 
-public function getAllSubtypeOf
+public function getAllSubtypeOf2
   "Returns the list of all classes that extend from class_ given a parentClass where the lookup for class_ should start"
   input Absyn.Path baseClass;
   input Absyn.Path parentClass;
   input Absyn.Program program;
-  input Boolean qualified;
   input Boolean includePartial;
   input Boolean sort;
-  output list<Absyn.Path> paths;
+  output list<ClassEntry> entries;
 protected
   list<String> strlst;
-  Absyn.Path pp, parent, base_class;
+  Absyn.Path p, parent, base_class;
+  Absyn.Class cls;
+  ClassEntry base_entry;
   list<Absyn.Class> classes;
   list<Absyn.Path> result_path_lst;
-  list<Absyn.Path> acc, extendPaths, local_paths;
-  list<tuple<Absyn.Path, list<Absyn.Path>>> candidates = {};
-  Boolean b;
+  list<ClassEntry> acc, locals;
+  list<Absyn.Path> extendPaths;
+  list<tuple<Absyn.Path, list<ClassEntry>>> candidates = {};
   GraphicEnvCache genv;
   Option<Absyn.Path> opt_path;
 algorithm
@@ -3885,50 +3947,53 @@ algorithm
     genv := createEnvironment(program, NONE(), parentClass);
     base_class := qualifyPath(genv, baseClass, failOnError = true);
   else
-    paths := {};
+    entries := {};
     return;
   end try;
 
   // Go through all the candidates and find which ones extend from the base class.
-  paths := {};
-  local_paths := {};
+  entries := {};
+  locals := {};
 
   for tup in candidates loop
     (parent, acc) := tup;
 
-    for pt in acc loop
-      if isSubtypeOf(pt, base_class, program) then
+    for entry in acc loop
+      if isSubtypeOf(entry.path, base_class, program) then
         // Put classes declared locally in the parent class first in the list and
         // remove the parent prefix from their name, since they're usually meant
         // to be the default option.
-        opt_path := AbsynUtil.removePrefixOpt(parent, pt);
+        opt_path := AbsynUtil.removePrefixOpt(parent, entry.path);
 
         if isSome(opt_path) then
-          SOME(pt) := opt_path;
-          local_paths := pt :: local_paths;
+          entry.path := Util.getOption(opt_path);
+          locals := entry :: locals;
         else
-          paths := pt :: paths;
+          entries := entry :: entries;
         end if;
       end if;
     end for;
   end for;
 
   // Also add the base class itself if it's a candidate.
+  cls := getPathedClassInProgram(base_class, program);
+  base_entry := ClassEntry.CLASS_ENTRY(base_class, cls);
   for tup in candidates loop
     (_, acc) := tup;
 
-    if List.contains(acc, base_class, AbsynUtil.pathEqual) then
-      paths := base_class :: paths;
+    if List.contains(acc, base_entry, ClassEntry.equal) then
+      entries := base_entry :: entries;
       break;
     end if;
   end for;
 
-  paths := List.unique(listAppend(local_paths, paths));
+  entries := listAppend(locals, entries);
+  entries := List.uniqueOnTrue(entries, ClassEntry.equal);
 
   if sort then
-    paths := List.sort(paths, AbsynUtil.pathLt);
+    entries := List.sort(entries, ClassEntry.greaterEq);
   end if;
-end getAllSubtypeOf;
+end getAllSubtypeOf2;
 
 protected function isSubtypeOf
   input Absyn.Path classPath;

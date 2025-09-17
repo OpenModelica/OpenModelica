@@ -609,8 +609,9 @@ void Parameter::createValueWidget()
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   QString className = mpModelInstanceElement->getType();
   QString constrainedByClassName = QStringLiteral("$Any");
-  QString replaceable = "", replaceableText = "", replaceableChoice = "", parentClassName = "", restriction = "", elementName = "";
-  QStringList enumerationLiterals, enumerationLiteralsDisplay, replaceableChoices, choices, choicesComment;
+  QString replaceable = "", replaceableText = "", parentClassName = "", restriction = "", elementName = "";
+  QStringList enumerationLiterals, enumerationLiteralsDisplay, choices, choicesComment, replaceableChoice;
+  QList<QList<QString>> replaceableChoices;
 
   switch (mValueType) {
     case Parameter::Boolean:
@@ -688,28 +689,28 @@ void Parameter::createValueWidget()
 
       // choicesAllMatching
       if (mpModelInstanceElement->getAnnotation()->isChoicesAllMatching()) {
-        replaceableChoices = pOMCProxy->getAllSubtypeOf(constrainedByClassName, parentClassName);
+        replaceableChoices = pOMCProxy->getReplaceableChoices(constrainedByClassName, parentClassName);
       }
       for (i = 0; i < replaceableChoices.size(); i++) {
         replaceableChoice = replaceableChoices[i];
         if (isReplaceableComponent() || isReplaceableClass()) {
-          QString str = (pOMCProxy->getClassInformation(replaceableChoice)).comment;
-          if (!str.isEmpty()) {
-            str = " \"" + str + "\"";
+          replaceableText = "redeclare " + replaceableChoice[0];
+          // add comment if available
+          if (!replaceableChoice[1].isEmpty()) {
+            replaceableText += " \"" + replaceableChoice[1] + "\"";
           }
-          replaceableText = "redeclare " + replaceableChoice + str;
           // if replaceableChoices points to a class in this scope, remove scope
-          if (replaceableChoice.startsWith(parentClassName + ".")) {
-            replaceableChoice.remove(0, parentClassName.size() + 1);
+          if (replaceableChoice[0].startsWith(parentClassName + ".")) {
+            replaceableChoice[0].remove(0, parentClassName.size() + 1);
           }
           if (isReplaceableClass()) {
-            replaceable = QString("redeclare %1 %2 = %3").arg(restriction, elementName, replaceableChoice);
+            replaceable = QString("redeclare %1 %2 = %3").arg(restriction, elementName, replaceableChoice[0]);
           } else {
-            replaceable = QString("redeclare %1 %2").arg(replaceableChoice, elementName);
+            replaceable = QString("redeclare %1 %2").arg(replaceableChoice[0], elementName);
           }
           mpValueComboBox->addItem(replaceableText, replaceable);
         } else {
-          mpValueComboBox->addItem(replaceableChoice, replaceableChoice);
+          mpValueComboBox->addItem(replaceableChoice[0], replaceableChoice[0]);
         }
       }
 
