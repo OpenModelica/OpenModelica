@@ -20,7 +20,7 @@ if(OM_OMC_ENABLE_IPOPT AND NOT OM_OMC_ENABLE_FORTRAN)
   message(FATAL_ERROR "Ipopt support requires Fortran support to be enabled. You can disable Ipopt by adding -DOM_OMC_ENABLE_IPOPT=OFF to the CMake configure command.")
 endif()
 
-omc_option(OM_OMC_ENABLE_MOO "Should we enable dynamic optimization support with MOO." ON)
+omc_option(OM_OMC_ENABLE_MOO "Should we enable dynamic optimization support with MOO." OFF)
 if(OM_OMC_ENABLE_MOO AND NOT OM_OMC_ENABLE_FORTRAN)
   message(FATAL_ERROR "Building MOO library requires Fortran support to be enabled. You can disable MOO by adding -OM_OMC_ENABLE_MOO=OFF to the CMake configure command.")
 endif()
