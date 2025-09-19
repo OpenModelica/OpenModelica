@@ -964,6 +964,12 @@ algorithm
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_NAME_IN@", simCode.fileNamePrefix);     // Name with underscored instead of dots
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_TARGET_NAME@", simCode.fmuTargetName);  // Name with dots
 
+        // Include debugging symbols?
+        if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
+          cmakelistsStr := System.stringReplace(cmakelistsStr, "@CMAKE_BUILD_TYPE@", "Debug");
+        else
+          cmakelistsStr := System.stringReplace(cmakelistsStr, "@CMAKE_BUILD_TYPE@", "Release");
+        end if;
         // Set CMake runtime dependencies level
         _ := match (Flags.getConfigString(Flags.FMU_RUNTIME_DEPENDS))
           local
