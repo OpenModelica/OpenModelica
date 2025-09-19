@@ -26,17 +26,17 @@ encapsulated package RuntimeSources
   constant list<String> simrt_c_sundials_sources={"simulation/solver/cvode_solver.c",
                                                   "simulation/solver/sundials_error.c"};
 
-  constant list<String> modelica_external_c_sources={"ModelicaExternalC/ModelicaStandardTables.c",
-                                                     "ModelicaExternalC/ModelicaMatIO.c",
-                                                     "ModelicaExternalC/ModelicaIO.c",
-                                                     "ModelicaExternalC/ModelicaStandardTablesDummyUsertab.c",
-                                                     "ModelicaExternalC/snprintf.c"};
+  constant list<String> modelica_external_c_sources={"ModelicaStandardTables.c",
+                                                     "ModelicaMatIO.c",
+                                                     "ModelicaIO.c",
+                                                     "ModelicaStandardTablesDummyUsertab.c",
+                                                     "snprintf.c"};
 
-  constant list<String> modelica_external_c_headers={"ModelicaExternalC/ModelicaStandardTables.h",
-                                                     "ModelicaExternalC/ModelicaMatIO.h",
-                                                     "ModelicaExternalC/ModelicaIO.h",
-                                                     "ModelicaExternalC/safe-math.h",
-                                                     "ModelicaExternalC/read_data_impl.h"};
+  constant list<String> modelica_external_c_headers={"ModelicaStandardTables.h",
+                                                     "ModelicaMatIO.h",
+                                                     "ModelicaIO.h",
+                                                     "safe-math.h",
+                                                     "read_data_impl.h"};
 
   constant list<String> dgesv_headers={"./external_solvers/blaswrap.h", "./external_solvers/clapack.h", "./external_solvers/f2c.h"};
   constant list<String> dgesv_sources={DGESV_FILES};
@@ -49,4 +49,3 @@ encapsulated package RuntimeSources
   constant list<String> simrt_mixed_solver_sources={MIXED_FILES};
 annotation(__OpenModelica_Interface="backend");
 end RuntimeSources;
-
