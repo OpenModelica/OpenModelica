@@ -1,4 +1,6 @@
-// name:     testModelicaStandardTables
+// name: testCompileModelicaStandardTables
+//
+// Build TableTest.fmu
 
 loadModel(Modelica); getErrorString();
 
