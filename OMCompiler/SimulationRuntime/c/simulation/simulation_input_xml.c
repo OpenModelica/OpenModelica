@@ -336,6 +336,11 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
     addHashStringString(findHashLongVar(*mi->lastCT, mi->lastCI), "variableType", name);
     return;
   }
+  /* handle Dimensions (FMI 3.0)*/
+  if(!strcmp(name, "Dimension")) {
+
+  }
+
   /* anything else, we don't handle! */
 }
 
@@ -665,8 +670,9 @@ void read_input_xml(MODEL_DATA* modelData,
     /* get the variable value and the start index j */ \
     omc_ScalarVariable *v = res->val; \
     mmc_sint_t j = start+shift; \
-    /* get the size*/ \
-    read_value_long(findHashStringStringEmpty(v,"size"), &size, 1); \
+    /* get the size ToDo: THIS HAS TO BE DONE WITH DIMENSIONS: */ \
+    /* read_value_long(findHashStringStringEmpty(v,"size"), &size, 1); */ \
+    size = 1; \
     for (i_loc=0; i_loc<size; i_loc++) { \
       /* get the pointers to the structs where the values will be saved to */ \
       VAR_INFO *info = &out[j+i_loc].info; \

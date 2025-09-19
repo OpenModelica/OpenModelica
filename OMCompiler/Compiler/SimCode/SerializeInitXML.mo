@@ -378,12 +378,6 @@ algorithm
   File.write(file, String(simVar.isValueChangeable));
   File.write(file, "\"\n");
 
-  File.write(file, "    size = \"");
-  File.write(file, intString(Expression.sizeOf(simVar.type_)));
-  File.write(file, "\"  resizable = \"false");
-  File.write(file, "\"  resizing = \"false");
-  File.write(file, "\"\n");
-
   if inputIndex <> -1 then
     File.write(file, "    inputIndex = \"");
     File.writeInt(file, inputIndex);
@@ -423,6 +417,10 @@ algorithm
   File.write(file, "\" fileWritable = \"");
   File.write(file, String(not info.isReadOnly));
   File.write(file, "\">\n");
+
+  for dim in Expression.arrayDimension(simVar.type_) loop
+    File.write(file, "    <Dimension start=\"" + intString(Expression.dimensionSize(dim)) + "\"/>\n");
+  end for;
 end scalarVariableAttribute;
 
 function scalarVariableType "Generates code for ScalarVariable Type file for FMU target."
