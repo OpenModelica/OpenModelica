@@ -13452,6 +13452,7 @@ end tupleHead;
 
 public function isSimpleLiteralValue "A value that requires nothing special during code generation. String literals are special and not included."
   input DAE.Exp exp;
+  input Boolean allow_arrays = false;
   output Boolean b;
 algorithm
   b := match exp
@@ -13459,6 +13460,7 @@ algorithm
     case DAE.RCONST() then true;
     case DAE.BCONST() then true;
     case DAE.ENUM_LITERAL() then true;
+    case DAE.ARRAY() guard(allow_arrays) then List.all(exp.array, function isSimpleLiteralValue(allow_arrays = true));
     else false;
   end match;
 end isSimpleLiteralValue;

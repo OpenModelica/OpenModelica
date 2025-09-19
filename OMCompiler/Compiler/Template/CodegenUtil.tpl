@@ -287,125 +287,75 @@ template ScalarVariableType(String unit, String displayUnit, Option<DAE.Exp> min
  "Generates code for ScalarVariable Type file for FMU target."
 ::=
   match type_
-    case T_INTEGER(__) then '<Integer<%ScalarVariableTypeStartAttribute(startValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeIntegerMinAttribute(minValue)%><%ScalarVariableTypeIntegerMaxAttribute(maxValue)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_REAL(__) then '<Real<%ScalarVariableTypeStartAttribute(startValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeNominalAttribute(nominalValue)%><%ScalarVariableTypeRealMinAttribute(minValue)%><%ScalarVariableTypeRealMaxAttribute(maxValue)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_BOOL(__) then '<Boolean<%ScalarVariableTypeStartAttribute(startValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_STRING(__) then '<String<%ScalarVariableTypeStartAttribute(startValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_ENUMERATION(__) then '<Integer<%ScalarVariableTypeStartAttribute(startValue, type_)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_COMPLEX(complexClassType = ci as ClassInf.EXTERNAL_OBJ(__)) then '<ExternalObject path="<%escapeModelicaStringToXmlString(dotPath(ci.path))%>" />'
+    case T_INTEGER(__) then
+      let start_  = attributeOptionString(startValue, "start")
+      let fixed_  = ' fixed="<%isFixed%>"'
+      let min_    = attributeOptionString(minValue, "min")
+      let max_    = attributeOptionString(maxValue, "max")
+      let unit_   = unitString(unit, "unit")
+      let disp_   = unitString(displayUnit, "displayUnit")
+      '<Integer<%start_%><%fixed_%><%min_%><%max_%><%unit_%><%disp_%> />'
+    case T_REAL(__) then
+      let start_  = attributeOptionString(startValue, "start")
+      let fixed_  = ' fixed="<%isFixed%>"'
+      let nom_    = ' useNominal="<%Util.isSome(nominalValue)%>"<%attributeOptionString(nominalValue, "nominal")%>'
+      let min_    = attributeOptionString(minValue, "min")
+      let max_    = attributeOptionString(maxValue, "max")
+      let unit_   = unitString(unit, "unit")
+      let disp_   = unitString(displayUnit, "displayUnit")
+      '<Real<%start_%><%fixed_%><%nom_%><%min_%><%max_%><%unit_%><%disp_%> />'
+    case T_BOOL(__) then
+      let start_  = attributeOptionString(startValue, "start")
+      let fixed_  = ' fixed="<%isFixed%>"'
+      let unit_   = unitString(unit, "unit")
+      let disp_   = unitString(displayUnit, "displayUnit")
+      '<Boolean<%start_%><%fixed_%><%unit_%><%disp_%> />'
+    case T_STRING(__) then
+      let start_  = attributeOptionString(startValue, "start")
+      let fixed_  = ' fixed="<%isFixed%>"'
+      let unit_   = unitString(unit, "unit")
+      let disp_   = unitString(displayUnit, "displayUnit")
+      '<String<%start_%><%fixed_%><%unit_%><%disp_%> />'
+    case T_ENUMERATION(__) then
+      let start_  = attributeOptionString(startValue, "start")
+      let fixed_  = ' fixed="<%isFixed%>"'
+      let unit_   = unitString(unit, "unit")
+      let disp_   = unitString(displayUnit, "displayUnit")
+      '<Integer<%start_%><%fixed_%><%unit_%><%disp_%> />'
+    case T_COMPLEX(complexClassType = ci as ClassInf.EXTERNAL_OBJ(__)) then
+      '<ExternalObject path="<%escapeModelicaStringToXmlString(dotPath(ci.path))%>" />'
+    case T_ARRAY(__) then
+      ScalarVariableType(unit, displayUnit, minValue, maxValue, startValue, nominalValue, isFixed, ty)
     else error(sourceInfo(), 'ScalarVariableType: <%unparseType(type_)%>')
 end ScalarVariableType;
 
-template StartString(DAE.Exp exp)
+template attributeString(DAE.Exp exp, String attr_name)
 ::=
   match exp
-    case ICONST(__) then ' start="<%initValXml(exp)%>"'
-    case RCONST(__) then ' start="<%initValXml(exp)%>"'
-    case SCONST(__) then ' start="<%initValXml(exp)%>"'
-    case BCONST(__) then ' start="<%initValXml(exp)%>"'
-    case ENUM_LITERAL(__) then ' start="<%initValXml(exp)%>"'
+    case ICONST(__)
+    case RCONST(__)
+    case SCONST(__)
+    case BCONST(__)
+    case ENUM_LITERAL(__) then ' <%attr_name%>="<%initValXml(exp)%>"'
+    case ARRAY(__)        then if Expression.isSimpleLiteralValue(exp, true) then ' <%attr_name%>="{<%array |> elem => initValXml(elem) ;separator=", "%>}"' else ''
+    /* this is basically an each operator, just write one value and repeat it for the size when using it later */
+    case REDUCTION()      then if Expression.isSimpleLiteralValue(expr, true) then '<%attributeString(expr, attr_name)%>' else ''
     else ''
-end StartString;
+end attributeString;
 
-template ScalarVariableTypeStartAttribute(Option<DAE.Exp> startValue, DAE.Type type_)
- "generates code for start attribute"
+template attributeOptionString(Option<DAE.Exp> exp_opt, String attr_name)
+ "generates code for an attribute"
 ::=
-  match startValue
-    case SOME(exp) then '<%StartString(exp)%>'
+  match exp_opt
+    case SOME(exp) then '<%attributeString(exp, attr_name)%>'
     else ''
-end ScalarVariableTypeStartAttribute;
+end attributeOptionString;
 
-template ScalarVariableTypeFixedAttribute(Boolean isFixed)
- "generates code for fixed attribute"
-::=
-  ' fixed="<%isFixed%>"'
-end ScalarVariableTypeFixedAttribute;
-
-template NominalString(DAE.Exp exp)
-::=
-  match exp
-    case ICONST(__) then ' nominal="<%initValXml(exp)%>"'
-    case RCONST(__) then ' nominal="<%initValXml(exp)%>"'
-    case SCONST(__) then ' nominal="<%initValXml(exp)%>"'
-    case BCONST(__) then ' nominal="<%initValXml(exp)%>"'
-    else ''
-end NominalString;
-
-template ScalarVariableTypeNominalAttribute(Option<DAE.Exp> nominalValue)
- "generates code for nominal attribute"
-::=
-  match nominalValue
-    case SOME(exp)
-    then ' useNominal="true"<%NominalString(exp)%>'
-    case NONE() then ' useNominal="false"'
-end ScalarVariableTypeNominalAttribute;
-
-template ScalarVariableTypeUnitAttribute(String unit)
+template unitString(String unit, String attr_name)
  "generates code for unit attribute"
 ::=
-  '<% if unit then ' unit="<%Util.escapeModelicaStringToXmlString(unit)%>"' %>'
-end ScalarVariableTypeUnitAttribute;
-
-template ScalarVariableTypeDisplayUnitAttribute(String displayUnit)
- "generates code for displayUnit attribute"
-::=
-  '<% if displayUnit then ' displayUnit="<%Util.escapeModelicaStringToXmlString(displayUnit)%>"' %>'
-end ScalarVariableTypeDisplayUnitAttribute;
-
-template MinString(DAE.Exp exp)
-::=
-  match exp
-    case ICONST(__) then ' min="<%initValXml(exp)%>"'
-    case RCONST(__) then ' min="<%initValXml(exp)%>"'
-    case SCONST(__) then ' min="<%initValXml(exp)%>"'
-    case BCONST(__) then ' min="<%initValXml(exp)%>"'
-    case ENUM_LITERAL(__) then ' min="<%initValXml(exp)%>"'
-    else ''
-end MinString;
-
-template ScalarVariableTypeIntegerMinAttribute(Option<DAE.Exp> minValue)
- "generates code for min attribute"
-::=
-  match minValue
-    case SOME(exp) then '<%MinString(exp)%>'
-    // case NONE() then ' min="-2147483648"'
-end ScalarVariableTypeIntegerMinAttribute;
-
-template MaxString(DAE.Exp exp)
-::=
-  match exp
-    case ICONST(__) then ' max="<%initValXml(exp)%>"'
-    case RCONST(__) then ' max="<%initValXml(exp)%>"'
-    case SCONST(__) then ' max="<%initValXml(exp)%>"'
-    case BCONST(__) then ' max="<%initValXml(exp)%>"'
-    case ENUM_LITERAL(__) then ' max="<%initValXml(exp)%>"'
-    else ''
-end MaxString;
-
-template ScalarVariableTypeIntegerMaxAttribute(Option<DAE.Exp> maxValue)
- "generates code for max attribute"
-::=
-  match maxValue
-    case SOME(exp) then '<%MaxString(exp)%>'
-    // case NONE() then ' max="2147483647"'
-end ScalarVariableTypeIntegerMaxAttribute;
-
-template ScalarVariableTypeRealMinAttribute(Option<DAE.Exp> minValue)
- "generates code for min attribute"
-::=
-  match minValue
-    case SOME(exp) then '<%MinString(exp)%>'
-    // case NONE() then ' min="-1.7976931348623157E+308"'
-end ScalarVariableTypeRealMinAttribute;
-
-template ScalarVariableTypeRealMaxAttribute(Option<DAE.Exp> maxValue)
- "generates code for max attribute"
-::=
-  match maxValue
-    case SOME(exp) then '<%MaxString(exp)%>'
-    // case NONE() then ' max="1.7976931348623157E+308"'
-end ScalarVariableTypeRealMaxAttribute;
-
+  '<% if unit then ' <%attr_name%>="<%Util.escapeModelicaStringToXmlString(unit)%>"' %>'
+end unitString;
 
 /*********************************************************************
  *********************************************************************
