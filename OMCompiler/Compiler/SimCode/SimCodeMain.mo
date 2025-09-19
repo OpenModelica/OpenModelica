@@ -849,7 +849,6 @@ algorithm
 
         install_include_omc_dir := Settings.getInstallationDirectoryPath() + "/include/omc/";
         install_include_omc_c_dir := install_include_omc_dir + "c/";
-        install_include_omc_modelicaexternalc_dir := install_include_omc_dir + "ModelicaExternalC/";
         install_share_buildproject_dir :=  Settings.getInstallationDirectoryPath() + "/share/omc/runtime/c/fmi/buildproject/";
         install_fmu_sources_dir := Settings.getInstallationDirectoryPath() + RuntimeSources.fmu_sources_dir;
         fmu_tmp_sources_dir := fmutmp + "/sources/";
@@ -911,8 +910,8 @@ algorithm
         * Check if modelicaStandardTables source files are needed
         * this is not clear as of now, may be we should copy all the external C sources by default
         */
-        copyFiles(RuntimeSources.modelica_external_c_sources, source=install_include_omc_modelicaexternalc_dir, destination=fmu_tmp_sources_dir);
-        copyFiles(RuntimeSources.modelica_external_c_headers, source=install_include_omc_modelicaexternalc_dir, destination=fmu_tmp_sources_dir);
+        copyFiles(RuntimeSources.modelica_external_c_sources, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
+        copyFiles(RuntimeSources.modelica_external_c_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
         modelica_standard_table_sources := RuntimeSources.modelica_external_c_sources;
 
         System.writeFile(fmutmp+"/sources/isfmi" + (if FMUVersion=="1.0" then "1" else "2"), "");
