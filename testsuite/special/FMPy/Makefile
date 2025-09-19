@@ -1,11 +1,11 @@
 
 FMPY_CALL = python3 -m fmpy
 
-FMU = FmuExportCrossCompile.fmu \
-      RoomHeating_OM_RH.fmu \
-      WaterTank_Control.fmu \
-      WaterTank_TestSingleWaterTank.fmu \
-      BouncingBall.fmu \
+FMU = ../FmuExportCrossCompile/FmuExportCrossCompile.fmu \
+      ../FmuExportCrossCompile/RoomHeating_OM_RH.fmu \
+      ../FmuExportCrossCompile/WaterTank_Control.fmu \
+      ../FmuExportCrossCompile/WaterTank_TestSingleWaterTank.fmu \
+      ../FmuExportCrossCompile/BouncingBall.fmu \
       TableTest.fmu
 
 .PHONY: all test clean
