@@ -1,0 +1,21 @@
+// name:     testModelicaStandardTables
+
+loadModel(Modelica); getErrorString();
+
+loadString("
+model TableTest
+  Modelica.Blocks.Tables.CombiTable1Ds table(extrapolation = Modelica.Blocks.Types.Extrapolation.HoldLastPoint,smoothness = Modelica.Blocks.Types.Smoothness.LinearSegments, table = [0, 0; 1, 10; 2, 0; 3, 10; 4, 0; 5, 10]);
+  Modelica.Blocks.Interfaces.RealInput real_setpoint;
+  Modelica.Blocks.Interfaces.RealOutput real_output;
+equation
+  connect(real_setpoint, table.u);
+  connect(table.y[1], real_output);
+annotation(uses(Modelica));
+end TableTest;
+"); getErrorString();
+
+mkdir("TableTest"); getErrorString();
+cd("TableTest"); getErrorString();
+buildModelFMU(TableTest); getErrorString();
+
+copy("TableTest.fmu", "../TableTest.fmu"); getErrorString();
