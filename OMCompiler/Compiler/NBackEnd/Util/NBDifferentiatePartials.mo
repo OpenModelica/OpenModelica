@@ -154,76 +154,6 @@ public
     end match;
   end computePartialsForStrongComponent;
 
-  function expandPartialsWithEnv
-    "Apply chain rule: given partials dF/dv for an expression F and an env with
-     dv/ds for previously computed outputs v, produce dF/ds = dF/ds + Σ_v (dF/dv * dv/ds)."
-    input PartialMap partials;            // local dF/dv for current component
-    input PartialsEnv env;                // v -> (dv/ds) map from previous components
-    output PartialMap expanded;
-  protected
-    list<ComponentRef> locals = UnorderedMap.keyList(partials);
-    UnorderedMap<ComponentRef, Expression> acc = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
-    ComponentRef v, s;
-    Expression dFdv, dvds, cur, inc;
-    SourceInfo si = sourceInfo();
-    PartialMap dv_map;
-    list<ComponentRef> seeds;
-  algorithm
-    // Start with direct partials
-    for v in locals loop
-      UnorderedMap.add(v, UnorderedMap.getSafe(v, partials, si), acc);
-    end for;
-
-    // Add chain contributions via env
-    for v in locals loop
-      if UnorderedMap.contains(v, env) then
-        dv_map := UnorderedMap.getSafe(v, env, si);
-        dFdv := UnorderedMap.getSafe(v, partials, si);
-        seeds := UnorderedMap.keyList(dv_map);
-        for s in seeds loop
-          dvds := UnorderedMap.getSafe(s, dv_map, si);
-          inc := mulExpr(dFdv, dvds);
-          cur := if UnorderedMap.contains(s, acc) then UnorderedMap.getSafe(s, acc, si) else Expression.makeZero(Type.REAL());
-          UnorderedMap.add(s, addExpr(cur, inc), acc);
-        end for;
-      end if;
-    end for;
-
-    expanded := acc;
-  end expandPartialsWithEnv;
-
-  function computePartialsForSingleComponentChained
-    "Compute partials for a strong component and expand them using env (chain rule).
-     Updates env with the component's outputs so later components can depend on them."
-    input NBStrongComponent.StrongComponent comp;
-    input output PartialsEnv env;
-    input FunctionTree funcTree = FunctionTreeImpl.EMPTY();
-    output list<PartialsForComponent> results;
-  protected
-    list<PartialsForComponent> locals;
-    list<PartialsForComponent> outs = {};
-    PartialsForComponent pfc;
-    PartialMap expanded;
-  algorithm
-    // Local partials from the current component
-    locals := computePartialsForStrongComponent(comp, funcTree);
-
-    // Expand with env and update env for future components
-    // for pfc in locals loop
-    //   expanded := expandPartialsWithEnv(pfc.partials, env);
-    //   outs := PARTIALS_FOR_COMPONENT(pfc.outputCref, expanded) :: outs;
-    //   // outs := PARTIALS_FOR_COMPONENT(pfc.outputCref, locals) :: outs;
-
-    //   // Only add to env if we have an identifiable output cref
-    //   if not ComponentRef.isEmpty(pfc.outputCref) then
-    //     UnorderedMap.add(pfc.outputCref, placeholderMapFor(pfc.outputCref, pfc.partials), env);
-    //   end if;
-    // end for;
-
-    results := locals;
-    //results := listReverse(outs);
-  end computePartialsForSingleComponentChained;
-
   function computePartialsForComponentsChained
     "Fold a list of components, chaining partials across them (in order)."
     input list<NBStrongComponent.StrongComponent> comps;
@@ -235,7 +165,7 @@ public
     NBStrongComponent.StrongComponent c;
   algorithm
     for c in comps loop
-      (env, res) := computePartialsForSingleComponentChained(c, env, funcTree);
+      res := computePartialsForStrongComponent(c, funcTree);
       allResults := res :: allResults;
     end for;
   end computePartialsForComponentsChained;
@@ -286,48 +216,6 @@ public
   end computePartialsForExpression;
 
 protected
-
-// Build a placeholder expression like q_x (as a Real cref) for ∂q/∂x
-  function placeholderExpr
-    input ComponentRef outputCref;
-    input ComponentRef seedCref;
-    output Expression placeholder;
-  protected
-    String on;
-    String sn;
-    String name;
-    Absyn.ComponentRef acref;
-    ComponentRef pc;
-  algorithm
-    // Use baseModelica-friendly first names to avoid dots/subscripts in identifiers
-    on := ComponentRef.firstName(outputCref, baseModelica = true);
-    sn := ComponentRef.firstName(seedCref, baseModelica = true);
-    name := on + "_" + sn;
-
-    // Build an Absyn cref and convert to NFComponentRef
-    acref := Absyn.ComponentRef.CREF_IDENT(name, {});
-    pc := ComponentRef.fromAbsynCref(acref);
-
-    // Placeholder is a Real cref
-    placeholder := Expression.CREF(Type.REAL(), pc);
-  end placeholderExpr;
-
-  // Given local partials dv/ds (actual expressions), make a placeholder map: s -> q_s
-  function placeholderMapFor
-    input ComponentRef outputCref;
-    input PartialMap partials;
-    output PartialMap placeholders;
-  protected
-    list<ComponentRef> keys;
-    ComponentRef s;
-  algorithm
-    placeholders := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
-    keys := UnorderedMap.keyList(partials);
-    for s in keys loop
-      UnorderedMap.add(s, placeholderExpr(outputCref, s), placeholders);
-    end for;
-  end placeholderMapFor;
-
   function addExpr
     input Expression a;
     input Expression b;

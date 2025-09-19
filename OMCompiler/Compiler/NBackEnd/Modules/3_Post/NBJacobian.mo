@@ -846,6 +846,8 @@ protected
     Pointer<Equation> eqPtr;
     Pointer<Variable> lhsVarPtr;
     UnorderedMap<ComponentRef, ExpressionList> lhsToRhs;
+    SparsityPattern sparsityPattern;
+    SparsityColoring sparsityColoring;
     Integer i;
   algorithm
     if Util.isSome(strongComponents) then
@@ -967,8 +969,13 @@ protected
       ) :: diffed_comps;
       i := i + 1;
     end for;
-
     diffed_comps := listReverse(diffed_comps);
+
+    (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
+
+
+    print(SparsityPattern.toString(sparsityPattern) + "\n" + SparsityColoring.toString(sparsityColoring) + "\n");
+
     jacobian := SOME(Jacobian.JACOBIAN(
       name              = name,
       jacType           = jacType,
@@ -985,13 +992,13 @@ protected
 
 
     
-    for res in results loop
-      print(intString(listLength(res)) + " partials for component:\n");
-      for r in res loop
-        print(DifferentiatePartials.PartialsForComponent.toString(r));
-      end for;
-      print("\n");
-    end for;
+    // for res in results loop
+    //   print(intString(listLength(res)) + " partials for component:\n");
+    //   for r in res loop
+    //     print(DifferentiatePartials.PartialsForComponent.toString(r));
+    //   end for;
+    //   print("\n");
+    // end for;
   end jacobianSymbolicAdjoint;
 
   function jacobianNumeric "still creates sparsity pattern"
