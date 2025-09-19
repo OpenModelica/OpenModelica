@@ -2862,6 +2862,10 @@ void LibraryTreeView::createActions()
   mpUnloadTextFileAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
   mpUnloadTextFileAction->setStatusTip(Helper::unloadTextFileTip);
   connect(mpUnloadTextFileAction, SIGNAL(triggered()), SLOT(unloadTextFile()));
+  // load as simulation model
+  mpLoadAsSimulationModel = new QAction(QIcon(":/Resources/icons/refresh.svg"), "Load as simulation model", this);
+  mpLoadAsSimulationModel->setStatusTip("Load as simulation model");
+  connect(mpLoadAsSimulationModel, SIGNAL(triggered()), SLOT(loadAsSimulationModel()));
   // new file Action
   mpNewFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New File"), this);
   mpNewFileAction->setStatusTip(tr("Creates a new file"));
@@ -3193,6 +3197,10 @@ void LibraryTreeView::showContextMenu(QPoint point)
           if (pLibraryTreeItem->isTopLevel()) {
             menu.addSeparator();
             menu.addAction(mpUnloadTextFileAction);
+          }
+          if (pLibraryTreeItem->isModelicaFile() || QFile::exists(pLibraryTreeItem->getNameStructure() + "/package.mo")) {
+            menu.addSeparator();
+            menu.addAction(mpLoadAsSimulationModel);
           }
           break;
         case LibraryTreeItem::OMS:
@@ -3584,6 +3592,33 @@ void LibraryTreeView::unloadTextFile()
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     mpLibraryWidget->getLibraryTreeModel()->unloadTextFile(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::loadAsSimulationModel
+ * Loads the selected Text LibraryTreeItem as simulation model.
+ */
+void LibraryTreeView::loadAsSimulationModel()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    /* Find the top level LibraryTreeItem
+     * call LibraryWidget::OpenModelicaFile with package.mo if its a directory else call openModelicaFile with the file name
+     * if we succeed in loading the file then LibraryWidget::OpenModelicaFile will unload pTopLevevlLibraryTreeItem
+     * and load the new Modelica LibraryTreeItem as simulation model.
+     */
+    LibraryTreeItem *pTopLevevlLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pLibraryTreeItem);
+    if (pTopLevevlLibraryTreeItem) {
+      QFileInfo fileInfo(pTopLevevlLibraryTreeItem->getNameStructure());
+      if (fileInfo.isDir()) {
+        mpLibraryWidget->openModelicaFile(pTopLevevlLibraryTreeItem->getNameStructure() + "/package.mo", Helper::utf8, true, false, -1, pTopLevevlLibraryTreeItem);
+      } else {
+        mpLibraryWidget->openModelicaFile(pTopLevevlLibraryTreeItem->getNameStructure(), Helper::utf8, true, false, -1, pTopLevevlLibraryTreeItem);
+      }
+    } else {
+      qDebug() << "Invalid case in LibraryTreeView::loadAsSimulationModel()";
+    }
   }
 }
 
@@ -3986,13 +4021,17 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
  * \param showProgress
  * \param secondAttempt - If true then do not try to resolve the loaded libraries conflicts.
  * \param row - insert position for the new LibraryTreeItem.
+ * \param pLibraryTreeItem - Pointer to the LibraryTreeItem that needs to be unloaded in case loadFile succeeds.
  */
-void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool showProgress, bool secondAttempt, int row)
+void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool showProgress, bool secondAttempt, int row, LibraryTreeItem *pLibraryTreeItem)
 {
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileName));
   }
-  QStringList classesList = MainWindow::instance()->getOMCProxy()->parseFile(fileName, encoding);
+  /* Call parseFile with printErrors = true to skip printing errors in the MessagesWidget
+   * we will add the errors after loading the file as text file so the errors are linked properly.
+   */
+  QStringList classesList = MainWindow::instance()->getOMCProxy()->parseFile(fileName, encoding, false);
   if (!classesList.isEmpty()) {
     if (multipleTopLevelClasses(classesList, fileName)) {
       if (showProgress) {
@@ -4024,8 +4063,10 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
     } else { // if no conflicting model found then just load the file simply
       setLoadingLibraries(true);
       QStringList classes = MainWindow::instance()->getOMCProxy()->getClassNames();
-      // load the file in OMC
-      if (MainWindow::instance()->getOMCProxy()->loadFile(fileName, encoding)) {
+      /* load the file in OMC
+       * Same as parseFile above, call loadFile with printErrors = true to skip printing errors in the MessagesWidget
+       */
+      if (MainWindow::instance()->getOMCProxy()->loadFile(fileName, encoding, true, true, false, false, false)) {
         if (MainWindow::instance()->getOMCProxy()->isLoadModelError()) {
           if (secondAttempt) {
             // clear loadModelCallback classes
@@ -4038,7 +4079,7 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
                                                                   Helper::scriptingKind, Helper::errorLevel));
           } else {
             if (resolveConflictWithLoadedLibraries(classesList.join(","), classes)) {
-              openModelicaFile(fileName, encoding, showProgress, true);
+              openModelicaFile(fileName, encoding, showProgress, true, row, pLibraryTreeItem);
             }
           }
         } else {
@@ -4047,6 +4088,12 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
           if (showProgress) {
             MainWindow::instance()->getProgressBar()->setRange(0, classesList.size());
             MainWindow::instance()->showProgressBar();
+          }
+          /* If we have pLibraryTreeItem then we reach to this function after fixing issue with the model/package
+           * In that case we want to unload the text model/package and load it as Modelica model/package that can be simulated.
+           */
+          if (pLibraryTreeItem) {
+            mpLibraryTreeModel->unloadTextFile(pLibraryTreeItem, false);
           }
           foreach (QString model, classesList) {
             mpLibraryTreeModel->createLibraryTreeItem(model, mpLibraryTreeModel->getRootLibraryTreeItem(), true, false, true, row);
@@ -4059,9 +4106,13 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
             MainWindow::instance()->hideProgressBar();
           }
         }
+      } else {
+        openModelicaFileHelper(fileName, encoding, showProgress, false, pLibraryTreeItem);
       }
       setLoadingLibraries(false);
     }
+  } else {
+    openModelicaFileHelper(fileName, encoding, showProgress, true, pLibraryTreeItem);
   }
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->clearMessage();
@@ -4155,8 +4206,9 @@ void LibraryWidget::openEncryptedModelicaLibrary(QString fileName, QString encod
  * Opens a text file and creates a LibraryTreeItem for it.
  * \param fileInfo
  * \param showProgress
+ * \param skipAddRecentFile - if true then do not add the file to recent files list.
  */
-void LibraryWidget::openTextFile(QFileInfo fileInfo, bool showProgress)
+void LibraryWidget::openTextFile(QFileInfo fileInfo, bool showProgress, bool skipAddRecentFile)
 {
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
@@ -4192,7 +4244,9 @@ void LibraryWidget::openTextFile(QFileInfo fileInfo, bool showProgress)
                                                                                   mpLibraryTreeModel->getRootLibraryTreeItem());
     if (pLibraryTreeItem) {
       mpLibraryTreeModel->readLibraryTreeItemClassText(pLibraryTreeItem);
-      MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
+      if (!skipAddRecentFile) {
+        MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
+      }
     }
   }
   if (showProgress) {
@@ -4256,8 +4310,9 @@ void LibraryWidget::openOMSModelFile(QFileInfo fileInfo, bool showProgress)
  * Opens the directory and starts creating LibraryTreeItems for it.
  * \param fileInfo
  * \param showProgress
+ * \param skipAddRecentFile - if true then do not add the file to recent files list.
  */
-void LibraryWidget::openDirectory(QFileInfo fileInfo, bool showProgress)
+void LibraryWidget::openDirectory(QFileInfo fileInfo, bool showProgress, bool skipAddRecentFile)
 {
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
@@ -4284,7 +4339,9 @@ void LibraryWidget::openDirectory(QFileInfo fileInfo, bool showProgress)
   }
   // create a LibraryTreeItem for new loaded file.
   mpLibraryTreeModel->createLibraryTreeItems(fileInfo, mpLibraryTreeModel->getRootLibraryTreeItem());
-  MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
+  if (!skipAddRecentFile) {
+    MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
+  }
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->clearMessage();
   }
@@ -4599,6 +4656,37 @@ bool LibraryWidget::multipleTopLevelClasses(const QStringList &classesList, cons
     return true;
   }
   return false;
+}
+
+/*!
+ * \brief LibraryWidget::openModelicaFileHelper
+ * Helper function for LibraryWidget::openModelicaFile
+ * Handles the case when parseFile or loadFile fails.
+ * Loads the file/directory as text files and let the user fix the errors.
+ * \param fileName
+ * \param encoding
+ * \param showProgress
+ * \param parse - Use parseFile when true otherwise use loadFile.
+ * \param pLibraryTreeItem - If null then only then open the directory/file in text mode.
+ */
+void LibraryWidget::openModelicaFileHelper(QString fileName, QString encoding, bool showProgress, bool parse, LibraryTreeItem *pLibraryTreeItem)
+{
+  QFileInfo fileInfo(fileName);
+  if (fileInfo.fileName().compare(QStringLiteral("package.mo")) == 0) {
+    if (!pLibraryTreeItem) {
+      openDirectory(QFileInfo(fileInfo.absoluteDir().path()), showProgress, true);
+    }
+  } else {
+    if (!pLibraryTreeItem) {
+      openTextFile(fileInfo, showProgress, true);
+    }
+  }
+  // Call parseFile/loadFile again to show the clickable errors in MessagesWidget
+  if (parse) {
+    MainWindow::instance()->getOMCProxy()->parseFile(fileName, encoding);
+  } else {
+    MainWindow::instance()->getOMCProxy()->loadFile(fileName, encoding);
+  }
 }
 
 /*!
