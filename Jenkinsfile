@@ -723,7 +723,7 @@ pipeline {
             export HOME="$PWD"
             cd testsuite/special/FMPy/
             make clean
-            make test
+            make all
             '''
           }
         }
