@@ -1,7 +1,7 @@
 // name:     testModelicaStandardTables
 // keywords: fmi, tables
 // status:   correct
-// teardown_command: rm -rf TableTest*
+// teardown_command: rm -rf TableTest* index.html
 //
 // test https://github.com/OpenModelica/OpenModelica/issues/13260
 //

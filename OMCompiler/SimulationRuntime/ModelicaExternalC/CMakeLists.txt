@@ -141,6 +141,8 @@ elseif(MSVC)
   set_target_properties(ModelicaStandardTables_shared PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif()
 
+## Install
+
 # Common source files for all source-code-FMUs
 set(SOURCE_FMU_MODELICA_EXTERNAL_C_FILES_LIST
   C-Sources/ModelicaStandardTables.c
@@ -161,7 +163,6 @@ install(FILES ${SOURCE_FMU_MODELICA_EXTERNAL_C_FILES_LIST}
               ${SOURCE_FMU_MODELICA_EXTERNAL_HEADER_FILES_LIST}
               DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ModelicaExternalC)
 
-## Install
 # Install the static libs to the normal lib dir.
 install(TARGETS ModelicaExternalC
                 ModelicaMatIO
