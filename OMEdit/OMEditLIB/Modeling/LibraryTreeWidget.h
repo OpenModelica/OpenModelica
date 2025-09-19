@@ -58,8 +58,7 @@ public:
   enum LibraryType {
     Modelica,         /* Used to represent Modelica models. */
     Text,             /* Used to represent text based files. */
-    OMS,              /* Used to represent OMSimulator models. */
-    CRML              /* Used to represent CRML models. */
+    OMS               /* Used to represent OMSimulator models. */
   };
   enum Access {
     hide,
@@ -87,7 +86,6 @@ public:
   void setLibraryType(LibraryType libraryType) {mLibraryType = libraryType;}
   bool isModelica() const {return mLibraryType == LibraryTreeItem::Modelica;}
   bool isText() const {return mLibraryType == LibraryTreeItem::Text;}
-  bool isCRML() const {return mLibraryType == LibraryTreeItem::CRML;}
   bool isSSP() const {return mLibraryType == LibraryTreeItem::OMS;}
   void setSystemLibrary(bool systemLibrary) {mSystemLibrary = systemLibrary;}
   bool isSystemLibrary() {return mSystemLibrary;}
@@ -107,6 +105,7 @@ public:
   const QString& getDateModified() const;
   const QString& getRevisionId() const;
   bool isCRMLFile() const;
+  bool isModelicaFile() const {return mFileName.endsWith(".mo");}
   bool isMOSFile() const {return mFileName.endsWith(".mos");}
   bool isFilePathValid();
   void setReadOnly(bool readOnly) {mReadOnly = readOnly;}
@@ -279,7 +278,7 @@ public:
   void updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName);
   void readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* getContainingFileParentLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
-  LibraryTreeItem* getTopLevelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  static LibraryTreeItem* getTopLevelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeItem);
   void loadDependentLibraries(QStringList libraries);
   LibraryTreeItem* getLibraryTreeItemFromFile(QString fileName, int lineNumber);
@@ -366,6 +365,7 @@ private:
   QAction *mpUnloadClassAction;
   QAction *mpReloadClassAction;
   QAction *mpUnloadTextFileAction;
+  QAction *mpLoadAsSimulationModel;
   QAction *mpNewFileAction;
   QAction *mpNewFileEmptyAction;
   QAction *mpNewFolderAction;
@@ -417,6 +417,7 @@ public slots:
   void unloadClass();
   void reloadClass();
   void unloadTextFile();
+  void loadAsSimulationModel();
   void createNewFile();
   void createNewFileEmpty();
   void createNewFolder();
@@ -448,11 +449,11 @@ public:
   LibraryTreeProxyModel* getLibraryTreeProxyModel() {return mpLibraryTreeProxyModel;}
   LibraryTreeView* getLibraryTreeView() {return mpLibraryTreeView;}
   void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false, bool loadExternalModel = false);
-  void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool secondAttempt = false, int row = -1);
+  void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool secondAttempt = false, int row = -1, LibraryTreeItem *pLibraryTreeItem = 0);
   void openEncryptedModelicaLibrary(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
-  void openTextFile(QFileInfo fileInfo, bool showProgress = true);
+  void openTextFile(QFileInfo fileInfo, bool showProgress = true, bool skipAddRecentFile = false);
 
-  void openDirectory(QFileInfo fileInfo, bool showProgress = true);
+  void openDirectory(QFileInfo fileInfo, bool showProgress = true, bool skipAddRecentFile = false);
   void openOMSModelFile(QFileInfo fileInfo, bool showProgress = true);
   void parseAndLoadModelicaText(QString modelText);
   bool saveFile(QString fileName, QString contents);
@@ -477,6 +478,7 @@ private:
   LibraryTreeProxyModel *mpLibraryTreeProxyModel;
   LibraryTreeView *mpLibraryTreeView;
   bool multipleTopLevelClasses(const QStringList &classesList, const QString &fileName);
+  void openModelicaFileHelper(QString fileName, QString encoding, bool showProgress, bool parse, LibraryTreeItem *pLibraryTreeItem);
   bool saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool saveAs);
   bool saveModelicaLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem, bool saveAs);
   bool saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibraryTreeItem, bool saveAs);

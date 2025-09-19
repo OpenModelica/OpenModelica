@@ -138,7 +138,7 @@ int OMSSimulationDialog::exec(const QString &modelCref, LibraryTreeItem *pLibrar
     delete mpSystemSimulationInformationWidget;
     mpSystemSimulationInformationWidget = 0;
   }
-  LibraryTreeItem *pTopLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+  LibraryTreeItem *pTopLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpLibraryTreeItem);
   LibraryTreeItem *pRootSystemLibraryTreeItem = 0;
   if (pTopLibraryTreeItem && pTopLibraryTreeItem->childrenSize() > 0) {
     pRootSystemLibraryTreeItem = pTopLibraryTreeItem->childAt(0);

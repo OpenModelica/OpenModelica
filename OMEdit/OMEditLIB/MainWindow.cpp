@@ -550,18 +550,6 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
     mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
-  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isCRML()) {
-    pSettings->beginGroup(ToolBars::modelingTextPerspective);
-    SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpShapesToolBar, ToolBars::shapesToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpModelSwitcherToolBar, ToolBars::modelSwitcherToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
-    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
-    SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
   } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isSSP()) {
     pSettings->beginGroup(ToolBars::modelingOMSPerspective);
@@ -925,7 +913,7 @@ void MainWindow::simulate(LibraryTreeItem *pLibraryTreeItem)
     mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false, false, false);
   } else if (pLibraryTreeItem->isSSP()) {
     // get the top level LibraryTreeItem
-    LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pLibraryTreeItem);
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pLibraryTreeItem);
     if (pTopLevelLibraryTreeItem) {
       if (!mpOMSSimulationDialog) {
         mpOMSSimulationDialog = new OMSSimulationDialog(this);
@@ -996,7 +984,7 @@ void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
     mpSimulationDialog->show(pLibraryTreeItem, false, SimulationOptions());
   } else if (pLibraryTreeItem->isSSP()) {
     // get the top level LibraryTreeItem
-    LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pLibraryTreeItem);
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pLibraryTreeItem);
     if (pTopLevelLibraryTreeItem) {
       if (!mpOMSSimulationDialog) {
         mpOMSSimulationDialog = new OMSSimulationDialog(this);
@@ -2546,7 +2534,7 @@ void MainWindow::simulateModelInteractive()
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget && pModelWidget->getLibraryTreeItem() && pModelWidget->getLibraryTreeItem()->isSSP()) {
     // get the top level LibraryTreeItem
-    LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pModelWidget->getLibraryTreeItem());
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pModelWidget->getLibraryTreeItem());
     if (pTopLevelLibraryTreeItem) {
       if (!mpOMSSimulationDialog) {
         mpOMSSimulationDialog = new OMSSimulationDialog(this);
