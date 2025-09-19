@@ -886,37 +886,37 @@ public
 
     function size
       input SimVars simVars;
-      output Integer size = sum(SimVar.size(v) for v in simVars.stateVars)
-                          + sum(SimVar.size(v) for v in simVars.derivativeVars)
-                          + sum(SimVar.size(v) for v in simVars.algVars)
-                          + sum(SimVar.size(v) for v in simVars.discreteAlgVars)
-                          + sum(SimVar.size(v) for v in simVars.intAlgVars)
-                          + sum(SimVar.size(v) for v in simVars.boolAlgVars)
-                          + sum(SimVar.size(v) for v in simVars.inputVars)
-                          + sum(SimVar.size(v) for v in simVars.outputVars)
-                          + sum(SimVar.size(v) for v in simVars.aliasVars)
-                          + sum(SimVar.size(v) for v in simVars.intAliasVars)
-                          + sum(SimVar.size(v) for v in simVars.boolAliasVars)
-                          + sum(SimVar.size(v) for v in simVars.paramVars)
-                          + sum(SimVar.size(v) for v in simVars.intParamVars)
-                          + sum(SimVar.size(v) for v in simVars.boolParamVars)
-                          + sum(SimVar.size(v) for v in simVars.stringAlgVars)
-                          + sum(SimVar.size(v) for v in simVars.stringParamVars)
-                          + sum(SimVar.size(v) for v in simVars.stringAliasVars)
-                          + sum(SimVar.size(v) for v in simVars.extObjVars)
-                          + sum(SimVar.size(v) for v in simVars.constVars)
-                          + sum(SimVar.size(v) for v in simVars.intConstVars)
-                          + sum(SimVar.size(v) for v in simVars.boolConstVars)
-                          + sum(SimVar.size(v) for v in simVars.stringConstVars)
-                          + sum(SimVar.size(v) for v in simVars.stringAlgVars)
-                          + sum(SimVar.size(v) for v in simVars.jacobianVars)
-                          + sum(SimVar.size(v) for v in simVars.seedVars)
-                          + sum(SimVar.size(v) for v in simVars.realOptimizeConstraintsVars)
-                          + sum(SimVar.size(v) for v in simVars.realOptimizeFinalConstraintsVars)
-                          + sum(SimVar.size(v) for v in simVars.sensitivityVars)
-                          + sum(SimVar.size(v) for v in simVars.dataReconSetcVars)
-                          + sum(SimVar.size(v) for v in simVars.dataReconinputVars)
-                          + sum(SimVar.size(v) for v in simVars.dataReconSetBVars);
+      output Integer size = listLength(simVars.stateVars)
+                          + listLength(simVars.derivativeVars)
+                          + listLength(simVars.algVars)
+                          + listLength(simVars.discreteAlgVars)
+                          + listLength(simVars.intAlgVars)
+                          + listLength(simVars.boolAlgVars)
+                          + listLength(simVars.inputVars)
+                          + listLength(simVars.outputVars)
+                          + listLength(simVars.aliasVars)
+                          + listLength(simVars.intAliasVars)
+                          + listLength(simVars.boolAliasVars)
+                          + listLength(simVars.paramVars)
+                          + listLength(simVars.intParamVars)
+                          + listLength(simVars.boolParamVars)
+                          + listLength(simVars.stringAlgVars)
+                          + listLength(simVars.stringParamVars)
+                          + listLength(simVars.stringAliasVars)
+                          + listLength(simVars.extObjVars)
+                          + listLength(simVars.constVars)
+                          + listLength(simVars.intConstVars)
+                          + listLength(simVars.boolConstVars)
+                          + listLength(simVars.stringConstVars)
+                          + listLength(simVars.stringAlgVars)
+                          + listLength(simVars.jacobianVars)
+                          + listLength(simVars.seedVars)
+                          + listLength(simVars.realOptimizeConstraintsVars)
+                          + listLength(simVars.realOptimizeFinalConstraintsVars)
+                          + listLength(simVars.sensitivityVars)
+                          + listLength(simVars.dataReconSetcVars)
+                          + listLength(simVars.dataReconinputVars)
+                          + listLength(simVars.dataReconSetBVars);
     end size;
 
     function convert
@@ -1163,25 +1163,34 @@ public
         end match;
     end getPartitionVars;
 
-    function getStrongComponentVars "ToDo: update to find full variables and combine slices"
+    function getStrongComponentVars
       input StrongComponent comp;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
       output list<SimVar> part_vars = {};
     algorithm
       part_vars := match comp
-        case StrongComponent.SINGLE_COMPONENT()     then {UnorderedMap.getSafe(BVariable.getVarName(comp.var), simcode_map, sourceInfo())};
-        case StrongComponent.MULTI_COMPONENT()      then list(UnorderedMap.getSafe(BVariable.getVarName(Slice.getT(v)), simcode_map, sourceInfo()) for v in comp.vars);
-        case StrongComponent.SLICED_COMPONENT()     then {UnorderedMap.getSafe(BVariable.getVarName(Slice.getT(comp.var)), simcode_map, sourceInfo())};
-        case StrongComponent.RESIZABLE_COMPONENT()  then {UnorderedMap.getSafe(BVariable.getVarName(Slice.getT(comp.var)), simcode_map, sourceInfo())};
-        case StrongComponent.GENERIC_COMPONENT()    then {UnorderedMap.getSafe(BVariable.getVarName(BVariable.getVarPointer(comp.var_cref, sourceInfo())), simcode_map, sourceInfo())};
+        case StrongComponent.SINGLE_COMPONENT()     then getVars(comp.var, simcode_map);
+        case StrongComponent.MULTI_COMPONENT()      then List.flatten(list(getVars(Slice.getT(v), simcode_map) for v in comp.vars));
+        case StrongComponent.SLICED_COMPONENT()     then getVars(Slice.getT(comp.var), simcode_map);
+        case StrongComponent.RESIZABLE_COMPONENT()  then getVars(Slice.getT(comp.var), simcode_map);
+        case StrongComponent.GENERIC_COMPONENT()    then getVars(BVariable.getVarPointer(comp.var_cref, sourceInfo()), simcode_map);
         case StrongComponent.ENTWINED_COMPONENT()   then List.flatten(list(getStrongComponentVars(c, simcode_map) for c in comp.entwined_slices));
-        case StrongComponent.ALGEBRAIC_LOOP()       then list(UnorderedMap.getSafe(BVariable.getVarName(Slice.getT(v)), simcode_map, sourceInfo()) for v in comp.strict.iteration_vars);
+        case StrongComponent.ALGEBRAIC_LOOP()       then List.flatten(list(getVars(Slice.getT(v), simcode_map) for v in comp.strict.iteration_vars));
         case StrongComponent.ALIAS()                then getStrongComponentVars(comp.original, simcode_map);
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with unknown reason for\n" + StrongComponent.toString(comp)});
         then fail();
       end match;
     end getStrongComponentVars;
+
+  protected
+    function getVars
+      input Pointer<Variable> var;
+      input UnorderedMap<ComponentRef, SimVar> simcode_map;
+      output list<SimVar> vars = {};
+    algorithm
+      vars := list(UnorderedMap.getSafe(BVariable.getVarName(v), simcode_map, sourceInfo()) for v in VariablePointers.scalarizeList({var}));
+    end getVars;
   end SimVars;
 
   constant SimVars emptySimVars = SIMVARS(
@@ -1241,23 +1250,23 @@ public
         numTimeEvents                = UnorderedSet.size(eventInfo.time_set),
         numRelations                 = sum(Condition.size(cond) for cond in UnorderedMap.keyList(eventInfo.state_map)),
         numMathEventFunctions        = eventInfo.numberMathEvents,
-        numStateVars                 = sum(SimVar.size(v) for v in vars.stateVars),
-        numAlgVars                   = sum(SimVar.size(v) for v in vars.algVars),
-        numDiscreteReal              = sum(SimVar.size(v) for v in vars.discreteAlgVars),
-        numIntAlgVars                = sum(SimVar.size(v) for v in vars.intAlgVars),
-        numBoolAlgVars               = sum(SimVar.size(v) for v in vars.boolAlgVars),
-        numAlgAliasVars              = sum(SimVar.size(v) for v in vars.aliasVars),
-        numIntAliasVars              = sum(SimVar.size(v) for v in vars.intAliasVars),
-        numBoolAliasVars             = sum(SimVar.size(v) for v in vars.boolAliasVars),
-        numParams                    = sum(SimVar.size(v) for v in vars.paramVars),
-        numIntParams                 = sum(SimVar.size(v) for v in vars.intParamVars),
-        numBoolParams                = sum(SimVar.size(v) for v in vars.boolParamVars),
-        numOutVars                   = sum(SimVar.size(v) for v in vars.outputVars),
-        numInVars                    = sum(SimVar.size(v) for v in vars.inputVars),
-        numExternalObjects           = sum(SimVar.size(v) for v in vars.extObjVars),
-        numStringAlgVars             = sum(SimVar.size(v) for v in vars.stringAlgVars),
-        numStringParamVars           = sum(SimVar.size(v) for v in vars.stringParamVars),
-        numStringAliasVars           = sum(SimVar.size(v) for v in vars.stringAliasVars),
+        numStateVars                 = listLength(vars.stateVars),
+        numAlgVars                   = listLength(vars.algVars),
+        numDiscreteReal              = listLength(vars.discreteAlgVars),
+        numIntAlgVars                = listLength(vars.intAlgVars),
+        numBoolAlgVars               = listLength(vars.boolAlgVars),
+        numAlgAliasVars              = listLength(vars.aliasVars),
+        numIntAliasVars              = listLength(vars.intAliasVars),
+        numBoolAliasVars             = listLength(vars.boolAliasVars),
+        numParams                    = listLength(vars.paramVars),
+        numIntParams                 = listLength(vars.intParamVars),
+        numBoolParams                = listLength(vars.boolParamVars),
+        numOutVars                   = listLength(vars.outputVars),
+        numInVars                    = listLength(vars.inputVars),
+        numExternalObjects           = listLength(vars.extObjVars),
+        numStringAlgVars             = listLength(vars.stringAlgVars),
+        numStringParamVars           = listLength(vars.stringParamVars),
+        numStringAliasVars           = listLength(vars.stringAliasVars),
         numEquations                 = simCodeIndices.equationIndex,
         numLinearSystems             = simCodeIndices.linearSystemIndex,
         numNonLinearSystems          = simCodeIndices.nonlinearSystemIndex,
