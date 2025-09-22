@@ -717,7 +717,7 @@ pipeline {
             stash name: 'cross-fmu-results-linux-wine', includes: 'testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/Test_FMUs/**'
           }
         }
-        stage('linux-FMPy') {
+        stages('linux-FMPy') {
           stage('Compile FMUs') {
             agent {
               dockerfile {
