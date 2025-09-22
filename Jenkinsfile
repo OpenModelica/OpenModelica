@@ -456,18 +456,7 @@ pipeline {
 
         stage('07 cross-build-fmu') {
           agent {
-            dockerfile {
-              additionalBuildArgs '--pull'
-              dir '.CI/cache'
-              label 'linux'
-              // DooD (Docker-outside-of-Docker): Reuse host Docker daemon
-              args '''
-                -v /var/run/docker.sock:/var/run/docker.sock \
-                --group-add $(stat -c %g /var/run/docker.sock) \
-                --mount type=volume,source=runtest-clang-cache,target=/cache/runtest \
-                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary
-                '''
-            }
+            label 'linux'
           }
           environment {
             RUNTESTDB = "/cache/runtest/"
@@ -479,17 +468,26 @@ pipeline {
           }
           steps {
             script {
-              common.standardSetup()
-              unstash 'omc-clang'
-              common.makeLibsAndCache()
-              writeFile file: 'testsuite/special/FmuExportCrossCompile/VERSION', text: common.getVersion()
-              sh 'make -C testsuite/special/FmuExportCrossCompile/ dockerpull'
-              sh 'make -C testsuite/special/FmuExportCrossCompile/ test'
-              sh 'make -C testsuite/special/FMPy/ fmpy-fmus'
-              stash name: 'cross-fmu', includes: 'testsuite/special/FmuExportCrossCompile/*.fmu, testsuite/special/FMPy/Makefile'
-              stash name: 'cross-fmu-extras', includes: 'testsuite/special/FmuExportCrossCompile/*.mos, testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/*.sh, testsuite/special/FmuExportCrossCompile/*.opt, testsuite/special/FmuExportCrossCompile/*.txt, testsuite/special/FmuExportCrossCompile/VERSION'
-              stash name: 'fmpy-fmu', includes: 'testsuite/special/FMPy/*.fmu'
-              archiveArtifacts "testsuite/special/FmuExportCrossCompile/*.fmu"
+              def deps = docker.build('testsuite-fmu-crosscompile', '--pull .CI/cache')
+              // deps.pull() // Already built...
+              def dockergid = sh (script: 'stat -c %g /var/run/docker.sock', returnStdout: true).trim()
+              deps.inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add '${dockergid}' " +
+                          "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                          "--mount type=volume,source=runtest-clang-cache,target=/cache/runtest " +
+                          "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                          "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache") {
+                common.standardSetup()
+                unstash 'omc-clang'
+                common.makeLibsAndCache()
+                writeFile file: 'testsuite/special/FmuExportCrossCompile/VERSION', text: common.getVersion()
+                sh 'make -C testsuite/special/FmuExportCrossCompile/ dockerpull'
+                sh 'make -C testsuite/special/FmuExportCrossCompile/ test'
+                sh 'make -C testsuite/special/FMPy/ fmpy-fmus'
+                stash name: 'cross-fmu', includes: 'testsuite/special/FmuExportCrossCompile/*.fmu, testsuite/special/FMPy/Makefile'
+                stash name: 'cross-fmu-extras', includes: 'testsuite/special/FmuExportCrossCompile/*.mos, testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/*.sh, testsuite/special/FmuExportCrossCompile/*.opt, testsuite/special/FmuExportCrossCompile/*.txt, testsuite/special/FmuExportCrossCompile/VERSION'
+                stash name: 'fmpy-fmu', includes: 'testsuite/special/FMPy/*.fmu'
+                archiveArtifacts "testsuite/special/FmuExportCrossCompile/*.fmu"
+              }
             }
           }
         }
