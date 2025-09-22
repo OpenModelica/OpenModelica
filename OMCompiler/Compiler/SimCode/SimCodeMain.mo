@@ -754,7 +754,7 @@ algorithm
       Boolean b, exportDocumentation;
       Boolean needSundials = false;
       String fileprefix, fileNamePrefixHash;
-      String install_include_omc_dir, install_include_omc_c_dir, install_include_omc_modelicaexternalc_dir, install_share_buildproject_dir, install_fmu_sources_dir, fmu_tmp_sources_dir;
+      String install_include_omc_dir, install_include_omc_c_dir, install_share_buildproject_dir, install_fmu_sources_dir, fmu_tmp_sources_dir;
       String cmakelistsStr, needCvode, cvodeDirectory;
       list<String> sourceFiles, model_desc_src_files, fmi2HeaderFiles, modelica_standard_table_sources;
       list<String> dgesv_sources, cminpack_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources;
