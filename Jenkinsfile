@@ -58,8 +58,10 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:v1.22.2'
               label 'linux'
               alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              args '''
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
             }
           }
           environment {
@@ -76,8 +78,10 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:v1.22.2'
               label 'linux'
               alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              args '''
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
             }
           }
           steps {
@@ -152,8 +156,10 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:v1.22.2-qttools'
               label 'linux'
               alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              args '''
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
             }
           }
           when {
@@ -232,8 +238,10 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:v1.22.2'
               label 'linux'
               alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              args '''
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
             }
           }
           steps {
@@ -259,10 +267,18 @@ pipeline {
             dockerfile {
               additionalBuildArgs '--pull'
               dir '.CI/cache'
+              /* The cache Dockerfile makes /cache/runtest, etc world writable
+               * This is necessary because we run the docker image as a user and need to
+               * be able to have a global caching of the omlibrary parts and the runtest database.
+               * Note that the database is stored in a volume on a per-node basis, so the first time
+               * the tests run on a particular node, they might execute slightly slower
+               */
               label 'linux'
-              args "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest " +
-                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              args '''
+                --mount type=volume,source=runtest-gcc-cache,target=/cache/runtest \
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
             }
           }
           environment {
@@ -289,9 +305,11 @@ pipeline {
               additionalBuildArgs '--pull'
               dir '.CI/cache'
               label 'linux'
-              args "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest " +
-                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              args '''
+                --mount type=volume,source=runtest-gcc-cache,target=/cache/runtest \
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
             }
           }
           environment {
@@ -318,9 +336,11 @@ pipeline {
               additionalBuildArgs '--pull'
               dir '.CI/cache'
               label 'linux'
-              args "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest " +
-                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              args '''
+                --mount type=volume,source=runtest-gcc-cache,target=/cache/runtest \
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
             }
           }
           environment {
@@ -346,16 +366,12 @@ pipeline {
             dockerfile {
               additionalBuildArgs '--pull'
               dir '.CI/cache'
-              /* The cache Dockerfile makes /cache/runtest, etc world writable
-               * This is necessary because we run the docker image as a user and need to
-               * be able to have a global caching of the omlibrary parts and the runtest database.
-               * Note that the database is stored in a volume on a per-node basis, so the first time
-               * the tests run on a particular node, they might execute slightly slower
-               */
               label 'linux'
-              args "--mount type=volume,source=runtest-clang-cache,target=/cache/runtest " +
-                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              args '''
+                --mount type=volume,source=runtest-clang-cache,target=/cache/runtest \
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
             }
           }
           environment {
@@ -381,16 +397,12 @@ pipeline {
             dockerfile {
               additionalBuildArgs '--pull'
               dir '.CI/cache'
-              /* The cache Dockerfile makes /cache/runtest, etc world writable
-               * This is necessary because we run the docker image as a user and need to
-               * be able to have a global caching of the omlibrary parts and the runtest database.
-               * Note that the database is stored in a volume on a per-node basis, so the first time
-               * the tests run on a particular node, they might execute slightly slower
-               */
               label 'linux'
-              args "--mount type=volume,source=runtest-clang-cache,target=/cache/runtest " +
-                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              args '''
+                --mount type=volume,source=runtest-clang-cache,target=/cache/runtest \
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
             }
           }
           environment {
@@ -416,16 +428,12 @@ pipeline {
             dockerfile {
               additionalBuildArgs '--pull'
               dir '.CI/cache'
-              /* The cache Dockerfile makes /cache/runtest, etc world writable
-               * This is necessary because we run the docker image as a user and need to
-               * be able to have a global caching of the omlibrary parts and the runtest database.
-               * Note that the database is stored in a volume on a per-node basis, so the first time
-               * the tests run on a particular node, they might execute slightly slower
-               */
               label 'linux'
-              args "--mount type=volume,source=runtest-clang-cache,target=/cache/runtest " +
-                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              args '''
+                --mount type=volume,source=runtest-clang-cache,target=/cache/runtest \
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
             }
           }
           environment {
@@ -452,12 +460,10 @@ pipeline {
               additionalBuildArgs '--pull'
               dir '.CI/cache'
               label 'linux'
+              // DooD (Docker-outside-of-Docker): Reuse host Docker daemon
               args '''
-                -v /var/run/docker.sock:/var/run/docker.sock \
-                --group-add $(stat -c %g /var/run/docker.sock) \
                 --mount type=volume,source=runtest-clang-cache,target=/cache/runtest \
-                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
-                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary
                 '''
             }
           }
@@ -491,15 +497,11 @@ pipeline {
             dockerfile {
               additionalBuildArgs '--pull'
               dir '.CI/cache'
-              /* The cache Dockerfile makes /cache/runtest, etc world writable
-               * This is necessary because we run the docker image as a user and need to
-               * be able to have a global caching of the omlibrary parts and the runtest database.
-               * Note that the database is stored in a volume on a per-node basis, so the first time
-               * the tests run on a particular node, they might execute slightly slower
-               */
               label 'linux'
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              args '''
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
             }
           }
           environment {
@@ -522,8 +524,10 @@ pipeline {
               additionalBuildArgs '--pull'
               dir '.CI/cache'
               label 'linux'
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              args '''
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
             }
           }
           environment {
@@ -657,9 +661,11 @@ pipeline {
             docker {
               image 'docker.openmodelica.org/build-deps:v1.22.2'
               label 'linux'
-              args "--mount type=volume,source=runtest-clang-icon-generator,target=/cache/runtest " +
-                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              args '''
+                --mount type=volume,source=runtest-clang-icon-generator,target=/cache/runtest \
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
             }
           }
           environment {
