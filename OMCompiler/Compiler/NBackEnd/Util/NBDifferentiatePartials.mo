@@ -316,13 +316,13 @@ protected
         UnorderedMap.add(exp.cref, true, set);
       then ();
 
-    //   case Expression.ARRAY(elements = lst) algorithm
-    //     for e1 in lst loop collectCrefs(e1, set); end for;
-    //   then ();
+      case Expression.ARRAY(elements = lst) algorithm
+        for e1 in lst loop collectCrefs(e1, set); end for;
+      then ();
 
-    //   case Expression.MATRIX(elements = mat) algorithm
-    //     for row in mat loop for e1 in row loop collectCrefs(e1, set); end for; end for;
-    //   then ();
+      case Expression.MATRIX(elements = mat) algorithm
+        for row in mat loop for e1 in row loop collectCrefs(e1, set); end for; end for;
+      then ();
 
     //   case Expression.TUPLE(elements = lst) algorithm
     //     for e1 in lst loop collectCrefs(e1, set); end for;

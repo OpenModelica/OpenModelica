@@ -807,11 +807,10 @@ protected
     input ComponentRef baseCref;
     input String name;
     output ComponentRef seedCref;
-  protected
-    Pointer<Variable> _vp;
+    output Pointer<Variable> vp;
   algorithm
     // Use returned canonical cref: $SEED_<name>.<baseCref>
-    (seedCref, _vp) := BVariable.makeSeedVar(baseCref, name);
+    (seedCref, vp) := BVariable.makeSeedVar(baseCref, name);
   end ensureSeedVarCref;
 
   // Create or reuse the canonical pDer cref: $pDER_<name>.<cref>
@@ -821,11 +820,10 @@ protected
     input String name;
     input Boolean isTmp;
     output ComponentRef pderCref;
-  protected
-    Pointer<Variable> _vp;
+    output Pointer<Variable> vp;
   algorithm
     // Use returned canonical cref: $pDER_<name>.<baseCref>
-    (pderCref, _vp) := BVariable.makePDerVar(baseCref, name, isTmp);
+    (pderCref, vp) := BVariable.makePDerVar(baseCref, name, isTmp);
   end ensurePDerVarCref;
 
   // for saving terms for the same lhs in a map
@@ -839,13 +837,16 @@ protected
     UnorderedSet<ComponentRef> seedVarsSet;
     UnorderedSet<ComponentRef> resVarsSet;
     UnorderedSet<ComponentRef> tmpVarsSet;
-    list<Pointer<Variable>> resVars, tmpVars;
+    list<Pointer<Variable>> res_vars, tmp_vars, seed_vars_list, res_vars_list, tmp_vars_list;
     BVariable.checkVar func = getTmpFilterFunction(jacType);
     ExpressionList terms;
     Expression term, lhsExpr, rhsExpr;
     Pointer<Equation> eqPtr;
-    Pointer<Variable> lhsVarPtr;
+    Pointer<Variable> lhsVarPtr, vp;
     UnorderedMap<ComponentRef, ExpressionList> lhsToRhs;
+
+    list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, tmp_vars, seed_vars, diff_vars;
+    BVariable.VarData varDataJac;
     SparsityPattern sparsityPattern;
     SparsityColoring sparsityColoring;
     Integer i;
@@ -861,8 +862,8 @@ protected
     print(BVariable.VariablePointers.toString(partialCandidates, "Partial Candidates"));
 
     results := DifferentiatePartials.computePartialsForComponentsChained(comps, funcTree);
-    (resVars, tmpVars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
-    (tmpVars, _) := List.splitOnTrue(tmpVars, function BVariable.isContinuous(init = init));
+    (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
+    (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(init = init));
 
 
     // Build sets:
@@ -871,14 +872,17 @@ protected
       ComponentRef.hash, ComponentRef.isEqual);
 
     resVarsSet := UnorderedSet.fromList(
-      VariablePointers.getScalarVarNames(VariablePointers.fromList(resVars)),
+      VariablePointers.getScalarVarNames(VariablePointers.fromList(res_vars)),
       ComponentRef.hash, ComponentRef.isEqual);
 
     tmpVarsSet := UnorderedSet.fromList(
-      VariablePointers.getScalarVarNames(VariablePointers.fromList(tmpVars)),
+      VariablePointers.getScalarVarNames(VariablePointers.fromList(tmp_vars)),
       ComponentRef.hash, ComponentRef.isEqual);
 
     lhsToRhs := UnorderedMap.new<ExpressionList>(ComponentRef.hash, ComponentRef.isEqual);
+    res_vars_list := {};
+    seed_vars_list := {};
+    tmp_vars_list := {};
     for res in results loop
       for r in res loop
         () := match r
@@ -891,11 +895,13 @@ protected
             if not ComponentRef.isEmpty(outCref) then
               // RHS driver adjoint for the output
               if UnorderedSet.contains(outCref, resVarsSet) then
-                q_adj := ensureSeedVarCref(outCref, name);     // q_s
+                (q_adj, vp) := ensureSeedVarCref(outCref, name);     // q_s
+                seed_vars_list := vp :: seed_vars_list; // add to seed vars
               elseif UnorderedSet.contains(outCref, tmpVarsSet) then
-                q_adj := ensurePDerVarCref(outCref, name, true);     // q_p
+                (q_adj, vp) := ensurePDerVarCref(outCref, name, true);     // q_p
+                tmp_vars_list := vp :: tmp_vars_list; // add to tmp vars
               else
-                q_adj := ensurePDerVarCref(outCref, name, true);     // fallback
+                (q_adj, vp) := ensurePDerVarCref(outCref, name, true);     // fallback
               end if;
 
               inputs := UnorderedMap.keyList(pm);
@@ -908,11 +914,12 @@ protected
 
                 // LHS naming per variable class
                 if UnorderedSet.contains(inCref, seedVarsSet) then
-                  x_adj := ensurePDerVarCref(inCref, name, false);  // x_r
+                  (x_adj, vp) := ensurePDerVarCref(inCref, name, false);  // x_r
+                  res_vars_list := vp :: res_vars_list; // add to result vars
                 elseif UnorderedSet.contains(inCref, tmpVarsSet) then
-                  x_adj := ensurePDerVarCref(inCref, name, true);    // q_p (tmp var)
+                  (x_adj, vp) := ensurePDerVarCref(inCref, name, true);    // q_p (tmp var)
                 elseif UnorderedSet.contains(inCref, resVarsSet) then
-                  x_adj := ensureSeedVarCref(inCref, name);    // der(x)_s
+                  (x_adj, vp) := ensureSeedVarCref(inCref, name);    // der(x)_s
                 else
                   // nothing to print
                   continue;
@@ -923,7 +930,6 @@ protected
                 //print(Expression.toString(term) + "\n");
                 // Parenthesize coefficient for precedence, e.g. (1.0 + e) * z_s
                 print(ComponentRef.toString(x_adj) + " = " + Expression.toString(term) + "\n");
-
 
                 terms := if UnorderedMap.contains(x_adj, lhsToRhs)
                          then UnorderedMap.getSafe(x_adj, lhsToRhs, sourceInfo())
@@ -971,18 +977,45 @@ protected
     end for;
     diffed_comps := listReverse(diffed_comps);
 
-    (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
 
+
+    // collect var data (most of this can be removed)
+    unknown_vars  := listAppend(res_vars_list, tmp_vars_list);
+    all_vars      := unknown_vars;  // add other vars later on
+
+    seed_vars     := seed_vars_list;
+    aux_vars      := seed_vars;     // add other auxiliaries later on
+    alias_vars    := {};
+    depend_vars   := {};
+
+    // i am not sure if everything is correct here
+    varDataJac := BVariable.VAR_DATA_JAC(
+      variables     = VariablePointers.fromList(all_vars),
+      unknowns      = VariablePointers.fromList(unknown_vars),
+      knowns        = knowns,
+      auxiliaries   = VariablePointers.fromList(aux_vars),
+      aliasVars     = VariablePointers.fromList(alias_vars),
+      diffVars      = partialCandidates,
+      dependencies  = VariablePointers.fromList(depend_vars),
+      resultVars    = VariablePointers.fromList(res_vars_list),
+      tmpVars       = VariablePointers.fromList(tmp_vars_list),
+      seedVars      = VariablePointers.fromList(seed_vars)
+    );
+
+
+    // im am not sure about this, do we need to transpose
+    // certainly need to rename the variables
+    (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
 
     print(SparsityPattern.toString(sparsityPattern) + "\n" + SparsityColoring.toString(sparsityColoring) + "\n");
 
     jacobian := SOME(Jacobian.JACOBIAN(
       name              = name,
       jacType           = jacType,
-      varData           = BVariable.VAR_DATA_EMPTY(),
+      varData           = varDataJac,
       comps             = listArray(diffed_comps),
-      sparsityPattern   = EMPTY_SPARSITY_PATTERN,
-      sparsityColoring  = EMPTY_SPARSITY_COLORING
+      sparsityPattern   = sparsityPattern,
+      sparsityColoring  = sparsityColoring
     ));
 
 

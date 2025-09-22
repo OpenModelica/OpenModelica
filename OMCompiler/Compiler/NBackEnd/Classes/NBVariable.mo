@@ -2184,6 +2184,20 @@ public
       cref := ComponentRef.mergeSubscripts(list(Subscript.INDEX(Expression.INTEGER(val+1)) for val in vals), cref, true, true);
     end varSlice;
 
+    function variablePointersFromExistingCrefs
+      input list<NFComponentRef.ComponentRef> crefs;
+      output VariablePointers vars;
+    protected
+      list<Pointer<Variable>> ptrs = {};
+      Pointer<Variable> vp;
+    algorithm
+      for c in crefs loop
+        vp := getVarPointer(c, sourceInfo());
+        ptrs := vp :: ptrs;
+      end for;
+      vars := VariablePointers.fromList(listReverse(ptrs));
+    end variablePointersFromExistingCrefs;
+
   protected
     function createSortHashTpl
       "Helper function for sort(). Creates the hash value without considering the name and
