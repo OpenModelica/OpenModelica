@@ -481,10 +481,8 @@ pipeline {
                 writeFile file: 'testsuite/special/FmuExportCrossCompile/VERSION', text: common.getVersion()
                 sh 'make -C testsuite/special/FmuExportCrossCompile/ dockerpull'
                 sh 'make -C testsuite/special/FmuExportCrossCompile/ test'
-                sh 'make -C testsuite/special/FMPy/ fmpy-fmus'
                 stash name: 'cross-fmu', includes: 'testsuite/special/FmuExportCrossCompile/*.fmu, testsuite/special/FMPy/Makefile'
                 stash name: 'cross-fmu-extras', includes: 'testsuite/special/FmuExportCrossCompile/*.mos, testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/*.sh, testsuite/special/FmuExportCrossCompile/*.opt, testsuite/special/FmuExportCrossCompile/*.txt, testsuite/special/FmuExportCrossCompile/VERSION'
-                stash name: 'fmpy-fmu', includes: 'testsuite/special/FMPy/*.fmu'
                 archiveArtifacts "testsuite/special/FmuExportCrossCompile/*.fmu"
               }
             }
@@ -720,29 +718,63 @@ pipeline {
           }
         }
         stage('linux-FMPy') {
-          agent {
-            docker {
-              label 'linux'
-              image 'docker.openmodelica.org/fmpy:v0.3.18'
+          stage('Compile FMUs') {
+            agent {
+              dockerfile {
+                additionalBuildArgs '--pull'
+                dir '.CI/cache'
+                label 'linux'
+                args '''
+                  --mount type=volume,source=runtest-clang-cache,target=/cache/runtest \
+                  --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                  -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+                '''
+              }
+            }
+            environment {
+              RUNTESTDB = "/cache/runtest/"
+              LIBRARIES = "/cache/omlibrary"
+            }
+            when {
+              beforeAgent true
+              expression { shouldWeRunTests }
+            }
+            steps {
+              script {
+                common.standardSetup()
+                unstash 'omc-clang'
+                common.makeLibsAndCache()
+                sh 'make -C testsuite/special/FMPy/ fmpy-fmus'
+                stash name: 'fmpy-fmu', includes: 'testsuite/special/FMPy/*.fmu'
+                archiveArtifacts "testsuite/special/FmuExportCrossCompile/*.fmu"
+              }
             }
           }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          options {
-            skipDefaultCheckout true
-          }
-          steps {
-            echo "${env.NODE_NAME}"
-            unstash 'cross-fmu'
-            unstash 'fmpy-fmu'
-            sh '''
-            export HOME="$PWD"
-            cd testsuite/special/FMPy/
-            make clean
-            make test
-            '''
+          stage('FMPy') {
+            agent {
+              docker {
+                label 'linux'
+                image 'docker.openmodelica.org/fmpy:v0.3.18'
+              }
+            }
+            when {
+              beforeAgent true
+              expression { shouldWeRunTests }
+            }
+            options {
+              skipDefaultCheckout true
+            }
+            steps {
+              echo "${env.NODE_NAME}"
+              unstash 'cross-fmu'
+              unstash 'fmpy-fmu'
+              sh '''
+              export HOME="$PWD"
+              cd testsuite/special/FMPy/
+              make clean
+              make test
+              '''
+            }
           }
         }
         stage('osx-fmuchecker') {
