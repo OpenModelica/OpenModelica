@@ -272,6 +272,7 @@ pipeline {
               // deps.pull() // Already built...
               def dockergid = sh (script: 'stat -c %g /var/run/docker.sock', returnStdout: true).trim()
               deps.inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add '${dockergid}' " +
+                          "--mount type=volume,source=runtest-clang-cache,target=/cache/runtest " +
                           "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary") {
                 common.standardSetup()
                 unstash 'omc-clang'
