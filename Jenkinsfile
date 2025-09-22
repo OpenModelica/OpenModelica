@@ -462,6 +462,8 @@ pipeline {
               label 'linux'
               // DooD (Docker-outside-of-Docker): Reuse host Docker daemon
               args '''
+                -v /var/run/docker.sock:/var/run/docker.sock \
+                --group-add $(stat -c %g /var/run/docker.sock) \
                 --mount type=volume,source=runtest-clang-cache,target=/cache/runtest \
                 --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary
                 '''
