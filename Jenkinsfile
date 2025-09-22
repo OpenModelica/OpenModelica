@@ -452,13 +452,13 @@ pipeline {
               additionalBuildArgs '--pull'
               dir '.CI/cache'
               label 'linux'
-              args """
+              args '''
                 -v /var/run/docker.sock:/var/run/docker.sock \
                 --group-add $(stat -c %g /var/run/docker.sock) \
                 --mount type=volume,source=runtest-clang-cache,target=/cache/runtest \
                 --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
                 -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
-                """
+                '''
             }
           }
           environment {
