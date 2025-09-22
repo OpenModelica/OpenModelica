@@ -279,8 +279,10 @@ pipeline {
                 writeFile file: 'testsuite/special/FmuExportCrossCompile/VERSION', text: common.getVersion()
                 sh 'make -C testsuite/special/FmuExportCrossCompile/ dockerpull'
                 sh 'make -C testsuite/special/FmuExportCrossCompile/ test'
+                sh 'make -C testsuite/special/FMPy/ fmpy-fmus'
                 stash name: 'cross-fmu', includes: 'testsuite/special/FmuExportCrossCompile/*.fmu, testsuite/special/FMPy/Makefile'
                 stash name: 'cross-fmu-extras', includes: 'testsuite/special/FmuExportCrossCompile/*.mos, testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/*.sh, testsuite/special/FmuExportCrossCompile/*.opt, testsuite/special/FmuExportCrossCompile/*.txt, testsuite/special/FmuExportCrossCompile/VERSION'
+                stash name: 'fmpy-fmu', includes: 'testsuite/special/FMPy/*.fmu'
                 archiveArtifacts "testsuite/special/FmuExportCrossCompile/*.fmu"
               }
             }
@@ -719,11 +721,12 @@ pipeline {
           steps {
             echo "${env.NODE_NAME}"
             unstash 'cross-fmu'
+            unstash 'fmpy-fmu'
             sh '''
             export HOME="$PWD"
             cd testsuite/special/FMPy/
             make clean
-            make all
+            make test
             '''
           }
         }

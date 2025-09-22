@@ -1,11 +1,15 @@
+OMC := $(shell test -e ../../../build/install_cmake/bin/omc && echo ../../../build/install_cmake/bin/omc \
+               || test -e ../../../build_cmake/install_cmake/bin/omc && echo ../../../build_cmake/install_cmake/bin/omc \
+               || echo ../../../build/bin/omc )
+OMC := $(shell realpath $(OMC))
 
 FMPY_CALL = python3 -m fmpy
 
-FMU = ../FmuExportCrossCompile/FmuExportCrossCompile.fmu \
-      ../FmuExportCrossCompile/RoomHeating_OM_RH.fmu \
-      ../FmuExportCrossCompile/WaterTank_Control.fmu \
-      ../FmuExportCrossCompile/WaterTank_TestSingleWaterTank.fmu \
-      ../FmuExportCrossCompile/BouncingBall.fmu \
+FMU = ../FmuExportCrossCompile/FmuExportCrossCompile/FmuExportCrossCompile.fmu \
+      ../FmuExportCrossCompile/FmuExportCrossCompile/RoomHeating_OM_RH.fmu \
+      ../FmuExportCrossCompile/FmuExportCrossCompile/WaterTank_Control.fmu \
+      ../FmuExportCrossCompile/FmuExportCrossCompile/WaterTank_TestSingleWaterTank.fmu \
+      ../FmuExportCrossCompile/FmuExportCrossCompile/BouncingBall.fmu \
       TableTest.fmu
 
 .PHONY: all test clean
@@ -32,9 +36,11 @@ FORCE:
 
 compile_FMUs:
 	make -C ../FmuExportCrossCompile
-	omc testCompileModelicaStandardTables.mos
+
+fmpy-fmus:
+	$(OMC) testCompileModelicaStandardTables.mos
 
 clean:
 	rm -f $(FMU)
 	rm -rf $(addsuffix _FMU/,$(FMU))
-	rm -rf Table/Test/
+	rm -rf TableTest/
