@@ -337,7 +337,7 @@ template attributeString(DAE.Exp exp, String attr_name)
     case SCONST(__)
     case BCONST(__)
     case ENUM_LITERAL(__) then ' <%attr_name%>="<%initValXml(exp)%>"'
-    case ARRAY(__)        then if Expression.isSimpleLiteralValue(exp, true) then ' <%attr_name%>="{<%array |> elem => initValXml(elem) ;separator=", "%>}"' else ''
+    case ARRAY(__)        then if Expression.isSimpleLiteralValue(exp, true) then ' <%attr_name%>="<%array |> elem => initValXml(elem) ;separator=" "%>"' else ''
     /* this is basically an each operator, just write one value and repeat it for the size when using it later */
     case REDUCTION()      then if Expression.isSimpleLiteralValue(expr, true) then '<%attributeString(expr, attr_name)%>' else ''
     else ''
