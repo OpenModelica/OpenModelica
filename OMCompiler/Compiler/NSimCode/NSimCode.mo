@@ -310,7 +310,7 @@ public
           UnorderedMap<ComponentRef, SimVar> simcode_map;
           UnorderedMap<ComponentRef, SimStrongComponent.Block> equation_map;
           Option<DaeModeData> daeModeData;
-          SimJacobian jacA, jacB, jacC, jacD, jacF, jacH;
+          SimJacobian jacA, jacB, jacC, jacD, jacF, jacH, jacAdjoint;
           list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
           mapExp collect_literals;
         case BackendDAE.MAIN(varData = varData as BVariable.VAR_DATA_SIM(), eqData = eqData as BEquation.EQ_DATA_SIM())
@@ -406,10 +406,10 @@ public
             (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := collectAlgebraicLoops(init, init_0, ode, algebraic, daeModeData, simCodeIndices, simcode_map);
 
             if isSome(daeModeData) then
-              (jacA, simCodeIndices) := SimJacobian.createSimulationJacobian(Util.getOption(bdae.dae), simCodeIndices, simcode_map);
+              (jacA, _, simCodeIndices) := SimJacobian.createSimulationJacobian(Util.getOption(bdae.dae), simCodeIndices, simcode_map);
               daeModeData := DaeModeData.addJacobian(daeModeData, jacA);
             else
-              (jacA, simCodeIndices) := SimJacobian.createSimulationJacobian(listAppend(bdae.ode, bdae.ode_event), simCodeIndices, simcode_map);
+              (jacA, jacAdjoint, simCodeIndices) := SimJacobian.createSimulationJacobian(listAppend(bdae.ode, bdae.ode_event), simCodeIndices, simcode_map);
             end if;
 
             (jacB, simCodeIndices) := SimJacobian.empty("B", simCodeIndices);
@@ -418,7 +418,7 @@ public
             (jacF, simCodeIndices) := SimJacobian.empty("F", simCodeIndices);
             (jacH, simCodeIndices) := SimJacobian.empty("H", simCodeIndices);
             //jacobians := jacA :: jacB :: jacC :: jacD :: jacF :: jacobians;
-            jacobians := listReverse(jacH :: jacF :: jacD :: jacC :: jacB :: jacA :: jacobians);
+            jacobians := listReverse(jacAdjoint :: jacH :: jacF :: jacD :: jacC :: jacB :: jacA :: jacobians);
 
             for jac in jacobians loop
               if Util.isSome(jac.jac_map) then
@@ -427,7 +427,7 @@ public
             end for;
 
             // jacobian blocks only from simulation jacobians
-            jac_blocks := SimJacobian.getJacobiansBlocks({jacA, jacB, jacC, jacD, jacF, jacH});
+            jac_blocks := SimJacobian.getJacobiansBlocks({jacA, jacB, jacC, jacD, jacF, jacH, jacAdjoint});
             (jac_blocks, simCodeIndices) := SimStrongComponent.Block.fixIndices(jac_blocks, {}, simCodeIndices);
 
             // generate the generic loop calls and replace literal expressions

@@ -70,6 +70,7 @@ public
     record CONTINUOUS
       Kind kind;
       Option<Jacobian> jacobian "Analytic jacobian for the integrator";
+      Option<Jacobian> jacobianAdjoint "Analytic adjoint jacobian for the integrator";
     end CONTINUOUS;
     record CLOCKED
       BClock clock;
@@ -136,7 +137,7 @@ public
           association := CLOCKED(clock, SOME(UnorderedMap.getSafe(base_name, info.baseClocks, sourceInfo())), false);
         end if;
       else
-        association := CONTINUOUS(kind, NONE());
+        association := CONTINUOUS(kind, NONE(), NONE());
       end if;
     end create;
 
@@ -320,6 +321,16 @@ public
         else NONE();
       end match;
     end getJacobian;
+
+    function getJacobianAdjoint
+      input Partition part;
+      output Option<Jacobian> jac;
+    algorithm
+      jac := match part.association
+        case CONTINUOUS(jacobianAdjoint = jac) then jac;
+        else NONE();
+      end match;
+    end getJacobianAdjoint;
 
     function getKind
       input Partition part;

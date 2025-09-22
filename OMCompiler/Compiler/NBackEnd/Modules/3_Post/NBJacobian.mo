@@ -475,6 +475,95 @@ public
       output SparsityPattern sparsityPattern = EMPTY_SPARSITY_PATTERN;
       output SparsityColoring sparsityColoring = EMPTY_SPARSITY_COLORING;
     end createEmpty;
+
+    function transposeRenamed
+      "Transpose a sparsity pattern while applying renaming maps:
+          oldPartial -> newSeed
+          oldSeed    -> newPartial (pDer)
+        The new col_wise is the renamed old row_wise,
+        and the new row_wise is the renamed old col_wise."
+      input SparsityPattern pattern;
+      input UnorderedMap<ComponentRef, ComponentRef> mapPartialToNewSeed;
+      input UnorderedMap<ComponentRef, ComponentRef> mapSeedToNewPDer;
+      input JacobianType jacType;
+      output SparsityPattern transposedPattern;
+      output SparsityColoring transposedColoring;
+    protected
+      list<SparsityPatternCol> newCols = {};
+      list<SparsityPatternRow> newRows = {};
+      list<ComponentRef> newSeedVars = {};
+      list<ComponentRef> newPartialVars = {};
+      ComponentRef oldHead, newHead, depOld, depNew;
+      list<ComponentRef> deps, newDeps;
+      Integer nnz = 0;
+    algorithm
+      // New seed_vars = renamed old partials
+      for oldHead in pattern.partial_vars loop
+        if UnorderedMap.contains(oldHead, mapPartialToNewSeed) then
+          newSeedVars := UnorderedMap.getOrFail(oldHead, mapPartialToNewSeed) :: newSeedVars;
+        end if;
+      end for;
+      newSeedVars := listReverse(newSeedVars);
+
+      // New partial_vars = renamed old seeds
+      for oldHead in pattern.seed_vars loop
+        if UnorderedMap.contains(oldHead, mapSeedToNewPDer) then
+          newPartialVars := UnorderedMap.getOrFail(oldHead, mapSeedToNewPDer) :: newPartialVars;
+        end if;
+      end for;
+      newPartialVars := listReverse(newPartialVars);
+
+      // New columns = renamed old rows (oldPartial -> list oldSeeds)
+      for row in pattern.row_wise_pattern loop
+        (oldHead, deps) := row;
+        if UnorderedMap.contains(oldHead, mapPartialToNewSeed) then
+          newHead := UnorderedMap.getOrFail(oldHead, mapPartialToNewSeed);
+          newDeps := {};
+          for depOld in deps loop
+            if UnorderedMap.contains(depOld, mapSeedToNewPDer) then
+              depNew := UnorderedMap.getOrFail(depOld, mapSeedToNewPDer);
+              newDeps := depNew :: newDeps;
+            end if;
+          end for;
+          // keep unique deps and stable order
+          newDeps := UnorderedSet.unique_list(listReverse(newDeps), ComponentRef.hash, ComponentRef.isEqual);
+          newCols := (newHead, newDeps) :: newCols;
+          nnz := nnz + listLength(newDeps);
+        end if;
+      end for;
+      newCols := listReverse(newCols);
+
+      // New rows = renamed old columns (oldSeed -> list oldPartials)
+      for col in pattern.col_wise_pattern loop
+        (oldHead, deps) := col;
+        if UnorderedMap.contains(oldHead, mapSeedToNewPDer) then
+          newHead := UnorderedMap.getOrFail(oldHead, mapSeedToNewPDer);
+          newDeps := {};
+          for depOld in deps loop
+            if UnorderedMap.contains(depOld, mapPartialToNewSeed) then
+              depNew := UnorderedMap.getOrFail(depOld, mapPartialToNewSeed);
+              newDeps := depNew :: newDeps;
+            end if;
+          end for;
+          newDeps := UnorderedSet.unique_list(listReverse(newDeps), ComponentRef.hash, ComponentRef.isEqual);
+          newRows := (newHead, newDeps) :: newRows;
+        end if;
+      end for;
+      newRows := listReverse(newRows);
+
+      transposedPattern := SPARSITY_PATTERN(
+        col_wise_pattern = newCols,
+        row_wise_pattern = newRows,
+        seed_vars        = newSeedVars,
+        partial_vars     = newPartialVars,
+        nnz              = nnz
+      );
+
+      print("Transposed Sparsity Pattern:\n" + toString(transposedPattern) + "\n");
+
+      // Re-color after transpose
+      transposedColoring := SparsityColoring.PartialD2ColoringAlgC(transposedPattern, jacType);
+    end transposeRenamed;
   end SparsityPattern;
 
   constant SparsityPattern EMPTY_SPARSITY_PATTERN = SPARSITY_PATTERN({}, {}, {}, {}, 0);
@@ -695,7 +784,11 @@ protected
 
     (jacobian, funcTree) := func(name, jacType, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcTree, kind ==  NBPartition.Kind.INI);
 
-    part.association := Partition.Association.CONTINUOUS(kind, jacobian);
+    if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "adjoint" and Util.isSome(jacobian) then
+      part.association := Partition.Association.CONTINUOUS(kind, NONE(), jacobian);
+    else
+      part.association := Partition.Association.CONTINUOUS(kind, jacobian, NONE());
+    end if;
     if Flags.isSet(Flags.JAC_DUMP) then
       print(Partition.Partition.toString(part, 2));
     end if;
@@ -850,6 +943,15 @@ protected
     SparsityPattern sparsityPattern;
     SparsityColoring sparsityColoring;
     Integer i;
+
+    UnorderedMap<ComponentRef, ComponentRef> mapPartialToNewSeed =
+      UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedMap<ComponentRef, ComponentRef> mapSeedToNewPDer =
+      UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
+
+    Pointer<Variable> newVar;
+    Option<Pointer<Variable>> partner;
+    ComponentRef newC;
   algorithm
     if Util.isSome(strongComponents) then
       // filter all discrete strong components and differentiate the others
@@ -1002,10 +1104,45 @@ protected
       seedVars      = VariablePointers.fromList(seed_vars)
     );
 
+    (sparsityPattern, _) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
+    // 1) old partials -> new seeds
+    i := 1;
+    for oldC in sparsityPattern.partial_vars loop
+      if i <= listLength(sparsityPattern.seed_vars) then
+        newC := listGet(sparsityPattern.seed_vars, i);
+        // (partner, _) := BVariable.getVarSeed(newVar);
+        // newC := BVariable.getVarName(Util.getOption(partner));
+        UnorderedMap.add(oldC, newC, mapPartialToNewSeed);
+      end if;
+      i := i + 1;
+    end for;
 
-    // im am not sure about this, do we need to transpose
-    // certainly need to rename the variables
-    (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
+    print("Map original partials to new seeds:\n");
+    print(UnorderedMap.toString(mapPartialToNewSeed, ComponentRef.toString, ComponentRef.toString) + "\n");
+
+    // 2) old seeds -> new pDers
+    i := 1;
+    for oldC in sparsityPattern.seed_vars loop
+      if i <= listLength(sparsityPattern.partial_vars) then
+        newC := listGet(sparsityPattern.partial_vars, i);
+        // (partner, _) := BVariable.getVarPDer(newC);
+        // newC := BVariable.getVarName(Util.getOption(partner));
+        UnorderedMap.add(oldC, newC, mapSeedToNewPDer);
+      end if;
+      i := i + 1;
+    end for;
+
+    print("Map original seeds to new pDers:\n");
+    print(UnorderedMap.toString(mapSeedToNewPDer, ComponentRef.toString, ComponentRef.toString) + "\n");
+
+    
+    (sparsityPattern, sparsityColoring) :=
+      SparsityPattern.transposeRenamed(
+        sparsityPattern,
+        mapPartialToNewSeed,
+        mapSeedToNewPDer,
+        jacType
+      );
 
     print(SparsityPattern.toString(sparsityPattern) + "\n" + SparsityColoring.toString(sparsityColoring) + "\n");
 
