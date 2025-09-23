@@ -486,6 +486,7 @@ pipeline {
                 stash name: 'fmpy-fmu', includes: 'testsuite/special/FMPy/*.fmu'
                 stash name: 'cross-fmu-extras', includes: 'testsuite/special/FmuExportCrossCompile/*.mos, testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/*.sh, testsuite/special/FmuExportCrossCompile/*.opt, testsuite/special/FmuExportCrossCompile/*.txt, testsuite/special/FmuExportCrossCompile/VERSION'
                 archiveArtifacts "testsuite/special/FmuExportCrossCompile/*.fmu"
+                archiveArtifacts "testsuite/special/FMPy/*.fmu"
               }
             }
           }
