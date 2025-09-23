@@ -89,7 +89,6 @@ public
   end PartialsForComponent;
 
   // Entry points
-
   function computePartialsForStrongComponent
     "Compute partial derivatives of the output(s) w.r.t. all input crefs used in the component's equation(s).
      Currently supports SINGLE_COMPONENT and GENERIC_COMPONENT with scalar equations."
@@ -103,56 +102,126 @@ public
     results := match compNoAlias
       local
         Equation eq;
-        Expression lhs, rhs;
+        Expression rhs, lhsE, rhsE;
         ComponentRef outputCref;
         PartialsForComponent res;
         list<PartialsForComponent> acc = {};
+        // NEW (array support)
+        list<Expression> lhsElems, rhsElems;
+        Expression le, re;
+
       // Single scalar equation component: [var, eqn]
       case NBStrongComponent.StrongComponent.SINGLE_COMPONENT()
       algorithm
         eq := Pointer.access(compNoAlias.eqn);
-        (outputCref, rhs) := getOutputAndRhs(eq);
-        res := PARTIALS_FOR_COMPONENT(outputCref, computePartialsForExpression(rhs, funcTree));
-      then {res};
 
-    //   // Generic with single eqn slice pointing to a scalar equation
-    //   case NBStrongComponent.StrongComponent.GENERIC_COMPONENT()
-    //   algorithm
-    //     eq := NBEquation.EquationPointer.access(NBSlice.Slice.getT(comp.eqn));
-    //     (outputCref, rhs) := getOutputAndRhs(eq);
-    //     res := PARTIALS_FOR_COMPONENT(outputCref, computePartialsForExpression(rhs, funcTree));
-    //   then {res};
+        // Handle scalar and array equations
+        () := match eq
+          // Scalar: as before
+          case NBEquation.Equation.SCALAR_EQUATION(lhs = lhsE, rhs = rhsE) algorithm
+            outputCref := match lhsE
+              case Expression.CREF() then lhsE.cref;
+              else ComponentRef.EMPTY();
+            end match;
+            res := PARTIALS_FOR_COMPONENT(outputCref, computePartialsForExpression(rhsE, funcTree));
+            results := {res};
+          then ();
 
-    //   // For sliced/multi/resizable components, collect per sliced equation.
-    //   // You can extend this to handle arrays/records by iterating the slices and elements.
-    //   case NBStrongComponent.StrongComponent.MULTI_COMPONENT()
-    //   algorithm
-    //     for eqs in list(comp.eqn) loop
-    //       eq := NBEquation.EquationPointer.access(NBSlice.Slice.getT(eqs));
-    //       (outputCref, rhs) := getOutputAndRhs(eq);
-    //       res := PARTIALS_FOR_COMPONENT(outputCref, computePartialsForExpression(rhs, funcTree));
-    //       acc := res :: acc;
-    //     end for;
-    //   then listReverse(acc);
+          // Array equation: scalarize element-wise
+          case NBEquation.Equation.ARRAY_EQUATION(lhs = lhsE, rhs = rhsE) algorithm
+            lhsElems := Expression.arrayScalarElements(lhsE);
+            rhsElems := Expression.arrayScalarElements(rhsE);
+            // zip and build element partials
+            acc := {};
+            for i in 1:listLength(lhsElems) loop
+              le := listGet(lhsElems, i);
+              re := listGet(rhsElems, i);
+              outputCref := match le
+                case Expression.CREF() then le.cref;
+                else ComponentRef.EMPTY();
+              end match;
+              acc := PARTIALS_FOR_COMPONENT(outputCref, computePartialsForExpression(re, funcTree)) :: acc;
+            end for;
+            results := listReverse(acc);
+          then ();
 
-    //   case NBStrongComponent.StrongComponent.SLICED_COMPONENT()
-    //   algorithm
-    //     eq := NBEquation.EquationPointer.access(NBSlice.Slice.getT(comp.eqn));
-    //     (outputCref, rhs) := getOutputAndRhs(eq);
-    //     res := PARTIALS_FOR_COMPONENT(outputCref, computePartialsForExpression(rhs, funcTree));
-    //   then {res};
+          // Record equations could be handled analogously if needed.
+          else algorithm
+            // Fallback to previous behavior (best-effort extraction)
+            (outputCref, rhs) := getOutputAndRhs(eq);
+            res := PARTIALS_FOR_COMPONENT(outputCref, computePartialsForExpression(rhs, funcTree));
+            results := {res};
+          then ();
+        end match;
+      then results;
 
-    //   case NBStrongComponent.StrongComponent.RESIZABLE_COMPONENT()
-    //   algorithm
-    //     eq := NBEquation.EquationPointer.access(NBSlice.Slice.getT(comp.eqn));
-    //     (outputCref, rhs) := getOutputAndRhs(eq);
-    //     res := PARTIALS_FOR_COMPONENT(outputCref, computePartialsForExpression(rhs, funcTree));
-    //   then {res};
-
-      // Algebraic loops and entwined components can be expanded similarly by iterating inner/residual eqns.
       else {};
     end match;
   end computePartialsForStrongComponent;
+
+  // function computePartialsForStrongComponent
+  //   "Compute partial derivatives of the output(s) w.r.t. all input crefs used in the component's equation(s).
+  //    Currently supports SINGLE_COMPONENT and GENERIC_COMPONENT with scalar equations."
+  //   input NBStrongComponent.StrongComponent comp;
+  //   input FunctionTree funcTree = FunctionTreeImpl.EMPTY();
+  //   output list<PartialsForComponent> results;
+  // protected
+  //   NBStrongComponent.StrongComponent compNoAlias;
+  // algorithm
+  //   compNoAlias := NBStrongComponent.StrongComponent.removeAlias(comp); // better aliased handling later
+  //   results := match compNoAlias
+  //     local
+  //       Equation eq;
+  //       Expression lhs, rhs;
+  //       ComponentRef outputCref;
+  //       PartialsForComponent res;
+  //       list<PartialsForComponent> acc = {};
+  //     // Single scalar equation component: [var, eqn]
+  //     case NBStrongComponent.StrongComponent.SINGLE_COMPONENT()
+  //     algorithm
+  //       eq := Pointer.access(compNoAlias.eqn);
+  //       (outputCref, rhs) := getOutputAndRhs(eq);
+  //       res := PARTIALS_FOR_COMPONENT(outputCref, computePartialsForExpression(rhs, funcTree));
+  //     then {res};
+
+  //   //   // Generic with single eqn slice pointing to a scalar equation
+  //   //   case NBStrongComponent.StrongComponent.GENERIC_COMPONENT()
+  //   //   algorithm
+  //   //     eq := NBEquation.EquationPointer.access(NBSlice.Slice.getT(comp.eqn));
+  //   //     (outputCref, rhs) := getOutputAndRhs(eq);
+  //   //     res := PARTIALS_FOR_COMPONENT(outputCref, computePartialsForExpression(rhs, funcTree));
+  //   //   then {res};
+
+  //   //   // For sliced/multi/resizable components, collect per sliced equation.
+  //   //   // You can extend this to handle arrays/records by iterating the slices and elements.
+  //   //   case NBStrongComponent.StrongComponent.MULTI_COMPONENT()
+  //   //   algorithm
+  //   //     for eqs in list(comp.eqn) loop
+  //   //       eq := NBEquation.EquationPointer.access(NBSlice.Slice.getT(eqs));
+  //   //       (outputCref, rhs) := getOutputAndRhs(eq);
+  //   //       res := PARTIALS_FOR_COMPONENT(outputCref, computePartialsForExpression(rhs, funcTree));
+  //   //       acc := res :: acc;
+  //   //     end for;
+  //   //   then listReverse(acc);
+
+  //   //   case NBStrongComponent.StrongComponent.SLICED_COMPONENT()
+  //   //   algorithm
+  //   //     eq := NBEquation.EquationPointer.access(NBSlice.Slice.getT(comp.eqn));
+  //   //     (outputCref, rhs) := getOutputAndRhs(eq);
+  //   //     res := PARTIALS_FOR_COMPONENT(outputCref, computePartialsForExpression(rhs, funcTree));
+  //   //   then {res};
+
+  //   //   case NBStrongComponent.StrongComponent.RESIZABLE_COMPONENT()
+  //   //   algorithm
+  //   //     eq := NBEquation.EquationPointer.access(NBSlice.Slice.getT(comp.eqn));
+  //   //     (outputCref, rhs) := getOutputAndRhs(eq);
+  //   //     res := PARTIALS_FOR_COMPONENT(outputCref, computePartialsForExpression(rhs, funcTree));
+  //   //   then {res};
+
+  //     // Algebraic loops and entwined components can be expanded similarly by iterating inner/residual eqns.
+  //     else {};
+  //   end match;
+  // end computePartialsForStrongComponent;
 
   function computePartialsForComponentsChained
     "Fold a list of components, chaining partials across them (in order)."
