@@ -5,11 +5,11 @@ OMC := $(shell realpath $(OMC))
 
 FMPY_CALL = python3 -m fmpy
 
-FMU = ../FmuExportCrossCompile/FmuExportCrossCompile.fmu \
-      ../FmuExportCrossCompile/RoomHeating_OM_RH.fmu \
-      ../FmuExportCrossCompile/WaterTank_Control.fmu \
-      ../FmuExportCrossCompile/WaterTank_TestSingleWaterTank.fmu \
-      ../FmuExportCrossCompile/BouncingBall.fmu \
+FMU = FmuExportCrossCompile.fmu \
+      RoomHeating_OM_RH.fmu \
+      WaterTank_Control.fmu \
+      WaterTank_TestSingleWaterTank.fmu \
+      BouncingBall.fmu \
       TableTest.fmu
 
 .PHONY: all test clean
@@ -19,9 +19,10 @@ all: compile_FMUs
 
 test: $(FMU)
 
-FORCE:
+copy:
+	cp ../FmuExportCrossCompile/*.fmu .
 
-%.fmu: FORCE
+%.fmu: copy
 	@echo -----------------------------------------------------------------------
 	@echo $@
   # Remove binaries
@@ -41,6 +42,6 @@ fmpy-fmus:
 	$(OMC) testCompileModelicaStandardTables.mos
 
 clean:
-	rm -f $(FMU)
+	rm -f $(FMU) *.fmu
 	rm -rf $(addsuffix _FMU/,$(FMU))
 	rm -rf TableTest/
