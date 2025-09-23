@@ -515,7 +515,10 @@ pipeline {
               common.standardSetup()
               unstash 'omc-clang'
               common.makeLibsAndCache()
-              sh 'make -C testsuite/special/FMPy/ fmpy-fmus'
+              sh """
+              export HOME=${env.WORKSPACE}
+              make -C testsuite/special/FMPy/ fmpy-fmus
+              """
               stash name: 'fmpy-fmu', includes: 'testsuite/special/FMPy/*.fmu'
               archiveArtifacts "testsuite/special/FmuExportCrossCompile/*.fmu"
             }
