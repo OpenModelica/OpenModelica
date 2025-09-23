@@ -5,11 +5,11 @@ OMC := $(shell realpath $(OMC))
 
 FMPY_CALL = python3 -m fmpy
 
-FMU = ../FmuExportCrossCompile/FmuExportCrossCompile/FmuExportCrossCompile.fmu \
-      ../FmuExportCrossCompile/FmuExportCrossCompile/RoomHeating_OM_RH.fmu \
-      ../FmuExportCrossCompile/FmuExportCrossCompile/WaterTank_Control.fmu \
-      ../FmuExportCrossCompile/FmuExportCrossCompile/WaterTank_TestSingleWaterTank.fmu \
-      ../FmuExportCrossCompile/FmuExportCrossCompile/BouncingBall.fmu \
+FMU = ../FmuExportCrossCompile/FmuExportCrossCompile.fmu \
+      ../FmuExportCrossCompile/RoomHeating_OM_RH.fmu \
+      ../FmuExportCrossCompile/WaterTank_Control.fmu \
+      ../FmuExportCrossCompile/WaterTank_TestSingleWaterTank.fmu \
+      ../FmuExportCrossCompile/BouncingBall.fmu \
       TableTest.fmu
 
 .PHONY: all test clean
