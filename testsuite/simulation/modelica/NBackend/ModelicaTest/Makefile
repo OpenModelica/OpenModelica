@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+ModelicaTest.Blocks.Exponentiation.mos \
 ModelicaTest.Media.TestOnly.WaterIF97_dewEnthalpy.mos \
 ModelicaTest.Tables.CombiTable1Ds.Test1.mos \
 ModelicaTest.Math.TestMatrices.mos \
