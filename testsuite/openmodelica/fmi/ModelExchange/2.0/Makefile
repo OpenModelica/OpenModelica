@@ -36,9 +36,10 @@ testBug3049.mos \
 testBug3763.mos \
 testBug3846.mos \
 testBug5673.mos \
+testDgesvSources.mos \
 testDisableDep.mos \
 testDiscreteStructe.mos \
-testDgesvSources.mos \
+testModelicaStandardTables.mos \
 TestSourceCodeFMU.mos \
 ticket5670.mos \
 ticket6262.mos \
