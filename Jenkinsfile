@@ -516,7 +516,7 @@ pipeline {
               unstash 'omc-clang'
               common.makeLibsAndCache()
               sh """
-              export HOME=${env.WORKSPACE}
+              export HOME=${env.WORKSPACE}/libraries
               make -C testsuite/special/FMPy/ fmpy-fmus
               """
               stash name: 'fmpy-fmu', includes: 'testsuite/special/FMPy/*.fmu'
