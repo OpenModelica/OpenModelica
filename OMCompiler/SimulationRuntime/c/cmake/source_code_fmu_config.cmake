@@ -216,7 +216,8 @@ set(3RD_CMINPACK_FMU_FILES ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/cminpack.h
                             ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/r1mpyq_.c)
 
 set(3RD_CMINPACK_HEADERS  ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/cminpack.h
-                            ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/minpack.h)
+                          ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/minpack.h
+                          ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/minpackP.h)
 
 install(FILES ${3RD_CMINPACK_HEADERS}
               ${3RD_CMINPACK_FMU_FILES}

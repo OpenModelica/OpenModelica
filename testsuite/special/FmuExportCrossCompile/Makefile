@@ -8,6 +8,7 @@
 OMC := $(shell test -e ../../../build/install_cmake/bin/omc && echo ../../../build/install_cmake/bin/omc \
                || test -e ../../../build_cmake/install_cmake/bin/omc && echo ../../../build_cmake/install_cmake/bin/omc \
                || echo ../../../build/bin/omc )
+OMC := $(shell realpath $(OMC))
 
 test: clean
 	$(MAKE) fmuExportCrossCompile
@@ -52,6 +53,7 @@ fmu-check:
 	./fmu-run.sh WaterTank_Control
 	./fmu-run.sh WaterTank_TestSingleWaterTank
 	$(OMC) check-files.mos
+
 clean:
 	rm -rf *.json *.xml *.html *.fmu* *.c *.makefile *.log *.o *.opt *.libs *.h *.mat *.csv
 	rm -f BouncingBall FmuExportCrossCompile RoomHeating_OM_RH WaterTank_Control WaterTank_TestSingleWaterTank

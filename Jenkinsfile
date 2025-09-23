@@ -58,8 +58,10 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:v1.22.2'
               label 'linux'
               alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              args '''
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
             }
           }
           environment {
@@ -76,8 +78,10 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:v1.22.2'
               label 'linux'
               alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              args '''
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
             }
           }
           steps {
@@ -152,8 +156,10 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:v1.22.2-qttools'
               label 'linux'
               alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              args '''
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
             }
           }
           when {
@@ -232,8 +238,10 @@ pipeline {
               image 'docker.openmodelica.org/build-deps:v1.22.2'
               label 'linux'
               alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              args '''
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
             }
           }
           steps {
@@ -254,6 +262,198 @@ pipeline {
     }
     stage('tests') {
       parallel {
+        stage('01 testsuite-gcc 1/3') {
+          agent {
+            dockerfile {
+              additionalBuildArgs '--pull'
+              dir '.CI/cache'
+              /* The cache Dockerfile makes /cache/runtest, etc world writable
+               * This is necessary because we run the docker image as a user and need to
+               * be able to have a global caching of the omlibrary parts and the runtest database.
+               * Note that the database is stored in a volume on a per-node basis, so the first time
+               * the tests run on a particular node, they might execute slightly slower
+               */
+              label 'linux'
+              args '''
+                --mount type=volume,source=runtest-gcc-cache,target=/cache/runtest \
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
+            }
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          steps {
+            script {
+              common.standardSetup()
+              unstash 'omc-gcc'
+              common.makeLibsAndCache()
+              common.partest(1,3)
+            }
+          }
+        }
+
+        stage('02 testsuite-gcc 2/3') {
+          agent {
+            dockerfile {
+              additionalBuildArgs '--pull'
+              dir '.CI/cache'
+              label 'linux'
+              args '''
+                --mount type=volume,source=runtest-gcc-cache,target=/cache/runtest \
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
+            }
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          steps {
+            script {
+              common.standardSetup()
+              unstash 'omc-gcc'
+              common.makeLibsAndCache()
+              common.partest(2,3)
+            }
+          }
+        }
+
+        stage('03 testsuite-gcc 3/3') {
+          agent {
+            dockerfile {
+              additionalBuildArgs '--pull'
+              dir '.CI/cache'
+              label 'linux'
+              args '''
+                --mount type=volume,source=runtest-gcc-cache,target=/cache/runtest \
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
+            }
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          steps {
+            script {
+              common.standardSetup()
+              unstash 'omc-gcc'
+              common.makeLibsAndCache()
+              common.partest(3,3)
+            }
+          }
+        }
+
+        stage('04 testsuite-clang 1/3') {
+          agent {
+            dockerfile {
+              additionalBuildArgs '--pull'
+              dir '.CI/cache'
+              label 'linux'
+              args '''
+                --mount type=volume,source=runtest-clang-cache,target=/cache/runtest \
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
+            }
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          steps {
+            script {
+              common.standardSetup()
+              unstash 'omc-clang'
+              common.makeLibsAndCache()
+              common.partest(1,3)
+            }
+          }
+        }
+
+        stage('05 testsuite-clang 2/3') {
+          agent {
+            dockerfile {
+              additionalBuildArgs '--pull'
+              dir '.CI/cache'
+              label 'linux'
+              args '''
+                --mount type=volume,source=runtest-clang-cache,target=/cache/runtest \
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
+            }
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          steps {
+            script {
+              common.standardSetup()
+              unstash 'omc-clang'
+              common.makeLibsAndCache()
+              common.partest(2,3)
+            }
+          }
+        }
+
+        stage('06 testsuite-clang 3/3') {
+          agent {
+            dockerfile {
+              additionalBuildArgs '--pull'
+              dir '.CI/cache'
+              label 'linux'
+              args '''
+                --mount type=volume,source=runtest-clang-cache,target=/cache/runtest \
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
+            }
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          steps {
+            script {
+              common.standardSetup()
+              unstash 'omc-clang'
+              common.makeLibsAndCache()
+              common.partest(3,3)
+            }
+          }
+        }
+
         stage('07 cross-build-fmu') {
           agent {
             label 'linux'
@@ -261,6 +461,7 @@ pipeline {
           environment {
             RUNTESTDB = "/cache/runtest/"
             LIBRARIES = "/cache/omlibrary"
+            HOME = "${env.WORKSPACE}/libraries"
           }
           when {
             beforeAgent true
@@ -272,204 +473,20 @@ pipeline {
               // deps.pull() // Already built...
               def dockergid = sh (script: 'stat -c %g /var/run/docker.sock', returnStdout: true).trim()
               deps.inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add '${dockergid}' " +
-                          "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary") {
+                          "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                          "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest") {
                 common.standardSetup()
                 unstash 'omc-clang'
                 common.makeLibsAndCache()
                 writeFile file: 'testsuite/special/FmuExportCrossCompile/VERSION', text: common.getVersion()
                 sh 'make -C testsuite/special/FmuExportCrossCompile/ dockerpull'
                 sh 'make -C testsuite/special/FmuExportCrossCompile/ test'
-                stash name: 'cross-fmu', includes: 'testsuite/special/FmuExportCrossCompile/*.fmu'
+                sh 'make -C testsuite/special/FMPy/ fmpy-fmus'
+                stash name: 'cross-fmu', includes: 'testsuite/special/FmuExportCrossCompile/*.fmu, testsuite/special/FMPy/Makefile'
+                stash name: 'fmpy-fmu', includes: 'testsuite/special/FMPy/*.fmu'
                 stash name: 'cross-fmu-extras', includes: 'testsuite/special/FmuExportCrossCompile/*.mos, testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/*.sh, testsuite/special/FmuExportCrossCompile/*.opt, testsuite/special/FmuExportCrossCompile/*.txt, testsuite/special/FmuExportCrossCompile/VERSION'
                 archiveArtifacts "testsuite/special/FmuExportCrossCompile/*.fmu"
               }
-            }
-          }
-        }
-        stage('04 testsuite-clang 1/3') {
-          agent {
-            dockerfile {
-              additionalBuildArgs '--pull'
-              dir '.CI/cache'
-              /* The cache Dockerfile makes /cache/runtest, etc world writable
-               * This is necessary because we run the docker image as a user and need to
-               * be able to have a global caching of the omlibrary parts and the runtest database.
-               * Note that the database is stored in a volume on a per-node basis, so the first time
-               * the tests run on a particular node, they might execute slightly slower
-               */
-              label 'linux'
-              args "--mount type=volume,source=runtest-clang-cache,target=/cache/runtest " +
-                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/"
-            LIBRARIES = "/cache/omlibrary"
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          steps {
-            script {
-              common.standardSetup()
-              unstash 'omc-clang'
-              common.makeLibsAndCache()
-              common.partest(1,3)
-            }
-          }
-        }
-        stage('05 testsuite-clang 2/3') {
-          agent {
-            dockerfile {
-              additionalBuildArgs '--pull'
-              dir '.CI/cache'
-              /* The cache Dockerfile makes /cache/runtest, etc world writable
-               * This is necessary because we run the docker image as a user and need to
-               * be able to have a global caching of the omlibrary parts and the runtest database.
-               * Note that the database is stored in a volume on a per-node basis, so the first time
-               * the tests run on a particular node, they might execute slightly slower
-               */
-              label 'linux'
-              args "--mount type=volume,source=runtest-clang-cache,target=/cache/runtest " +
-                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/"
-            LIBRARIES = "/cache/omlibrary"
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          steps {
-            script {
-              common.standardSetup()
-              unstash 'omc-clang'
-              common.makeLibsAndCache()
-              common.partest(2,3)
-            }
-          }
-        }
-        stage('06 testsuite-clang 3/3') {
-          agent {
-            dockerfile {
-              additionalBuildArgs '--pull'
-              dir '.CI/cache'
-              /* The cache Dockerfile makes /cache/runtest, etc world writable
-               * This is necessary because we run the docker image as a user and need to
-               * be able to have a global caching of the omlibrary parts and the runtest database.
-               * Note that the database is stored in a volume on a per-node basis, so the first time
-               * the tests run on a particular node, they might execute slightly slower
-               */
-              label 'linux'
-              args "--mount type=volume,source=runtest-clang-cache,target=/cache/runtest " +
-                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/"
-            LIBRARIES = "/cache/omlibrary"
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          steps {
-            script {
-              common.standardSetup()
-              unstash 'omc-clang'
-              common.makeLibsAndCache()
-              common.partest(3,3)
-            }
-          }
-        }
-
-        stage('01 testsuite-gcc 1/3') {
-          agent {
-            dockerfile {
-              additionalBuildArgs '--pull'
-              dir '.CI/cache'
-              label 'linux'
-              args "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest " +
-                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/"
-            LIBRARIES = "/cache/omlibrary"
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          steps {
-            script {
-              common.standardSetup()
-              unstash 'omc-gcc'
-              common.makeLibsAndCache()
-              common.partest(1,3)
-            }
-          }
-        }
-        stage('02 testsuite-gcc 2/3') {
-          agent {
-            dockerfile {
-              additionalBuildArgs '--pull'
-              dir '.CI/cache'
-              label 'linux'
-              args "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest " +
-                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/"
-            LIBRARIES = "/cache/omlibrary"
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          steps {
-            script {
-              common.standardSetup()
-              unstash 'omc-gcc'
-              common.makeLibsAndCache()
-              common.partest(2,3)
-            }
-          }
-        }
-        stage('03 testsuite-gcc 3/3') {
-          agent {
-            dockerfile {
-              additionalBuildArgs '--pull'
-              dir '.CI/cache'
-              label 'linux'
-              args "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest " +
-                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/"
-            LIBRARIES = "/cache/omlibrary"
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          steps {
-            script {
-              common.standardSetup()
-              unstash 'omc-gcc'
-              common.makeLibsAndCache()
-              common.partest(3,3)
             }
           }
         }
@@ -479,15 +496,11 @@ pipeline {
             dockerfile {
               additionalBuildArgs '--pull'
               dir '.CI/cache'
-              /* The cache Dockerfile makes /cache/runtest, etc world writable
-               * This is necessary because we run the docker image as a user and need to
-               * be able to have a global caching of the omlibrary parts and the runtest database.
-               * Note that the database is stored in a volume on a per-node basis, so the first time
-               * the tests run on a particular node, they might execute slightly slower
-               */
               label 'linux'
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              args '''
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
             }
           }
           environment {
@@ -501,6 +514,48 @@ pipeline {
           }
           steps {
             script { common.compliance() }
+          }
+        }
+
+        stage('09 build-usersguide') {
+          agent {
+            dockerfile {
+              additionalBuildArgs '--pull'
+              dir '.CI/cache'
+              label 'linux'
+              args '''
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
+            }
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/" // Dummy directory
+            LIBRARIES = "/cache/omlibrary"
+            GITHUB_AUTH = credentials('OpenModelica-Hudson')
+          }
+          steps {
+            script {
+              common.standardSetup()
+              unstash 'omc-clang'
+              common.makeLibsAndCache()
+            }
+            sh '''
+            export OPENMODELICAHOME=$PWD/build
+            test ! -d $PWD/build/lib/omlibrary
+            cp -a libraries/.openmodelica/libraries $PWD/build/lib/omlibrary
+            for target in html pdf epub; do
+              if ! make -C doc/UsersGuide $target; then
+                killall omc || true
+                exit 1
+              fi
+            done
+            '''
+            sh "tar --transform 's/^html/OpenModelicaUsersGuide/' -cJf OpenModelicaUsersGuide-${common.tagName()}.html.tar.xz -C doc/UsersGuide/build html"
+            sh "mv doc/UsersGuide/build/latex/OpenModelicaUsersGuide.pdf OpenModelicaUsersGuide-${common.tagName()}.pdf"
+            sh "mv doc/UsersGuide/build/epub/OpenModelicaUsersGuide.epub OpenModelicaUsersGuide-${common.tagName()}.epub"
+            archiveArtifacts "OpenModelicaUsersGuide-${common.tagName()}*.*"
+            stash name: 'usersguide', includes: "OpenModelicaUsersGuide-${common.tagName()}*.*"
           }
         }
 
@@ -535,46 +590,6 @@ pipeline {
               common.buildGUI('omc-clang', 'qt6')
             }
             stash name: 'omedit-testsuite-clang-qt6', includes: 'build/**, **/config.status, OMEdit/**'
-          }
-        }
-
-        stage('09 build-usersguide') {
-          agent {
-            dockerfile {
-              additionalBuildArgs '--pull'
-              dir '.CI/cache'
-              label 'linux'
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-            }
-          }
-          environment {
-            RUNTESTDB = "/cache/runtest/" // Dummy directory
-            LIBRARIES = "/cache/omlibrary"
-            GITHUB_AUTH = credentials('OpenModelica-Hudson')
-          }
-          steps {
-            script {
-              common.standardSetup()
-              unstash 'omc-clang'
-              common.makeLibsAndCache()
-            }
-            sh '''
-            export OPENMODELICAHOME=$PWD/build
-            test ! -d $PWD/build/lib/omlibrary
-            cp -a libraries/.openmodelica/libraries $PWD/build/lib/omlibrary
-            for target in html pdf epub; do
-              if ! make -C doc/UsersGuide $target; then
-                killall omc || true
-                exit 1
-              fi
-            done
-            '''
-            sh "tar --transform 's/^html/OpenModelicaUsersGuide/' -cJf OpenModelicaUsersGuide-${common.tagName()}.html.tar.xz -C doc/UsersGuide/build html"
-            sh "mv doc/UsersGuide/build/latex/OpenModelicaUsersGuide.pdf OpenModelicaUsersGuide-${common.tagName()}.pdf"
-            sh "mv doc/UsersGuide/build/epub/OpenModelicaUsersGuide.epub OpenModelicaUsersGuide-${common.tagName()}.epub"
-            archiveArtifacts "OpenModelicaUsersGuide-${common.tagName()}*.*"
-            stash name: 'usersguide', includes: "OpenModelicaUsersGuide-${common.tagName()}*.*"
           }
         }
 
@@ -645,9 +660,11 @@ pipeline {
             docker {
               image 'docker.openmodelica.org/build-deps:v1.22.2'
               label 'linux'
-              args "--mount type=volume,source=runtest-clang-icon-generator,target=/cache/runtest " +
-                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+              args '''
+                --mount type=volume,source=runtest-clang-icon-generator,target=/cache/runtest \
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
             }
           }
           environment {
@@ -719,10 +736,10 @@ pipeline {
           steps {
             echo "${env.NODE_NAME}"
             unstash 'cross-fmu'
+            unstash 'fmpy-fmu'
             sh '''
             export HOME="$PWD"
             cd testsuite/special/FMPy/
-            make clean
             make test
             '''
           }
