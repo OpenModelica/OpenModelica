@@ -84,10 +84,11 @@ protected
   import StrongComponent = NBStrongComponent;
   import NBEquation;
   import NBSolve;
-  import NBVariable;
+  import BVariable = NBVariable;
   import NBackendDAE;
   import NFFlatten.FunctionTree;
   import Partition = NBPartition;
+  import Variable = NFVariable;
 
   // record Node
   //   Expression expr; // the expression this node represents
@@ -153,7 +154,7 @@ protected
     str := str + "]";
   end seedPartialsListToString;
 
-
+  type JacobianType = enumeration(ODE, DAE, LS, NLS);
   public function testReverseStrongComponent
     input NBackendDAE dae;
     input Partition.Kind kind;
@@ -163,19 +164,32 @@ protected
     // ComponentRef lhs_cref;
     // Pointer<NBVariable.Variable> x_var_ptr;
     // Pointer<NBVariable.Variable> der_x_var_ptr;
-    // GradientMap grads;
+    GradientMap grads;
     // Expression grad_x, grad_y;
     // Pointer<NBEquation.Equation> eq_ptr;
     // NBEquation.Equation eq;
     // NBEquation.EquationAttributes attrs;
 
-    // FunctionTree funcTree;
+    FunctionTree funcTree;
     // UnorderedMap<ComponentRef,ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
     // NBDifferentiate.DifferentiationArguments diffArguments;
     // Pointer<Integer> idx = Pointer.create(0);
-    // list<Partition.Partition> oldPartitions;
-    // list<StrongComponent> comps, diffed_comps;
-    list<tuple<Expression, list<Expression>>> allPartials = {};
+    list<Partition.Partition> oldPartitions;
+    list<StrongComponent> comps, diffed_comps;
+    // JacobianType jacType;
+    // BVariable.VariablePointers unknowns;
+    // list<Pointer<Variable>> derivative_vars, state_vars;
+    // BVariable.VariablePointers seedCandidates, partialCandidates;
+    // Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
+    // Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
+    // list<Pointer<Variable>> res_vars, tmp_vars, seed_vars;
+    // String name;
+    // BVariable.checkVar func = BVariable.isStateDerivative;
+    // NBEquation.EquationPointer eq_ptr;
+    // Expression rdiff, expr;
+    // ComponentRef ref;
+    // UnorderedMap<ComponentRef, Expression> partials;
+    //list<tuple<Expression, list<Expression>>> allPartials = {};
   algorithm
     // // Proper backend variables (VAR_NODE) for x and y
     // (x, x_var_ptr, x_cref) := createSimpleRealVar("x");
@@ -199,73 +213,91 @@ protected
     // comp := StrongComponent.SINGLE_COMPONENT(x_var_ptr, eq_ptr, NBSolve.Status.EXPLICIT);
 
 
-    allPartials := gatherPartialsForAllSeeds(dae, kind);
+    // allPartials := gatherPartialsForAllSeeds(dae, kind);
 
 
-    // Print the collected partials
-    print("allPartials = " + seedPartialsListToString(allPartials) + "\n");
+    // // Print the collected partials
+    // print("allPartials = " + seedPartialsListToString(allPartials) + "\n");
 
 
 
-    // _ := match dae
-    //   case NBackendDAE.MAIN(funcTree = funcTree)
-    //     algorithm
-    //       oldPartitions := match kind
-    //         case NBPartition.Kind.ODE then dae.ode;
-    //       end match;
+    _ := match dae
+      case NBackendDAE.MAIN(funcTree = funcTree)
+        algorithm
+          oldPartitions := match kind
+            case NBPartition.Kind.ODE then dae.ode;
+          end match;
 
 
-    //       for part in oldPartitions loop
-    //         comps := list(comp for comp guard(not StrongComponent.isDiscrete(comp)) in Util.getOption(part.strongComponents));
+          for part in oldPartitions loop
+            comps := list(comp for comp guard(not StrongComponent.isDiscrete(comp)) in Util.getOption(part.strongComponents));
 
 
-    //         // Differentiate residual (lhs - rhs)
-    //         for comp in comps loop
-    //           print("Original strong component:\n");
-    //           print("  " + StrongComponent.toString(comp) + "\n");
+            // Differentiate residual (lhs - rhs)
+            for comp in comps loop
+              print("Original strong component:\n");
+              print("  " + StrongComponent.toString(comp) + "\n");
               
-    //           grads := symbolicReverseModeStrongComponent(comp);
+              grads := symbolicReverseModeStrongComponent(comp);
 
-    //           print("Computed gradients:\n");
-    //           print(" " + gradientMapToString(grads) + "\n");
-    //           print("###############################################\n");
+              print("Computed gradients:\n");
+              print(" " + gradientMapToString(grads) + "\n");
+              print("###############################################\n");
 
-    //           // grad_x := findGradient(x, grads);
-    //           // grad_y := findGradient(y, grads);
+              // grad_x := findGradient(x, grads);
+              // grad_y := findGradient(y, grads);
 
-    //           // print("Residual equation: " + NBEquation.Equation.toString(eq) + "\n");
-    //           // print("df/dx = " + Expression.toString(grad_x) + "\n");
-    //           // print("df/dy = " + Expression.toString(grad_y) + "\n");
-    //         end for;
+              // print("Residual equation: " + NBEquation.Equation.toString(eq) + "\n");
+              // print("df/dx = " + Expression.toString(grad_x) + "\n");
+              // print("df/dy = " + Expression.toString(grad_y) + "\n");
+            end for;
 
-    //         //gatherPartialsWrtInput({grads}, x);
-    //       end for;
-    //   then dae;
-    // end match;
+            //gatherPartialsWrtInput({grads}, x);
+          end for;
+      then dae;
+    end match;
 
-  // _ := match dae
+  // () := match dae
   //   case NBackendDAE.MAIN(funcTree = funcTree)
   //     algorithm
-
-  //       // Build differentiation argument structure
-  //       diffArguments := NBDifferentiate.DIFFERENTIATION_ARGUMENTS(
-  //         diffCref        = ComponentRef.EMPTY(),   // no explicit cref necessary, rules are set by diff map
-  //         new_vars        = {},
-  //         diff_map        = SOME(diff_map),         // seed and temporary cref map
-  //         diffType        = NBDifferentiate.DifferentiationType.JACOBIAN,
-  //         funcTree        = funcTree,
-  //         scalarized      = false
-  //       );
-
   //       oldPartitions := match kind
   //         case NBPartition.Kind.ODE then dae.ode;
   //       end match;
-
+  //       jacType := JacobianType.ODE;
+  //       name := "TEST";
   //       print(intString(listLength(oldPartitions)) + " partitions found.\n");
   //       // differentiate all strong components
   //       for part in oldPartitions loop
-  //         print("hallo2\n");
+  //         partialCandidates := part.unknowns;
+  //         unknowns  := part.unknowns;
+  //         derivative_vars := list(var for var guard(NBVariable.isStateDerivative(var)) in BVariable.VariablePointers.toList(unknowns));
+  //         state_vars := list(Util.getOption(NBVariable.getVarState(var)) for var in derivative_vars);
+  //         seedCandidates := BVariable.VariablePointers.fromList(state_vars, partialCandidates.scalarized);
   //         comps := list(comp for comp guard(not StrongComponent.isDiscrete(comp)) in Util.getOption(part.strongComponents));
+
+  //         BVariable.VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map, makeVar = NBVariable.makeSeedVar, init = true));
+
+  //         // create pDer vars (also filters out discrete vars)
+  //         (res_vars, tmp_vars) := List.splitOnTrue(BVariable.VariablePointers.toList(partialCandidates), func);
+  //         (tmp_vars, _) := List.splitOnTrue(tmp_vars, function NBVariable.isContinuous(init = false));
+
+  //         for v in res_vars loop makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function NBVariable.makePDerVar(isTmp = false), init = true); end for;
+  //         res_vars := Pointer.access(pDer_vars_ptr);
+
+  //         pDer_vars_ptr := Pointer.create({});
+  //         for v in tmp_vars loop makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function NBVariable.makePDerVar(isTmp = true), init = true); end for;
+  //         tmp_vars := Pointer.access(pDer_vars_ptr);
+
+  //         // Build differentiation argument structure
+  //         diffArguments := NBDifferentiate.DIFFERENTIATION_ARGUMENTS(
+  //           diffCref        = ComponentRef.EMPTY(),   // no explicit cref necessary, rules are set by diff map
+  //           new_vars        = {},
+  //           diff_map        = SOME(diff_map),         // seed and temporary cref map
+  //           diffType        = NBDifferentiate.DifferentiationType.JACOBIAN,
+  //           funcTree        = funcTree,
+  //           scalarized      = seedCandidates.scalarized
+  //         );
+
   //         (diffed_comps, diffArguments) := NBDifferentiate.differentiateStrongComponentList(comps, diffArguments, idx, "TEST", getInstanceName());
 
   //         print("Original strong components:\n");
@@ -275,103 +307,110 @@ protected
   //         print("Differentiated strong components:\n");
   //         for c in diffed_comps loop
   //           print("  " + StrongComponent.toString(c) + "\n");
+  //           eq_ptr := NBStrongComponent.getEquationPointers(c);
+  //           rdiff := diffedResidualExpr(Pointer.access(eq_ptr));
+  //           partials := collectPartialsWrtSeeds(rdiff, diff_map, diffArguments.scalarized);
+  //           print("    Collected partials: ");
+  //           for tpl in UnorderedMap.toList(partials) loop
+  //             (ref, expr) := tpl;
+  //             print("      " + ComponentRef.toString(ref) + " -> " + Expression.toString(expr) + "\n");
+  //           end for;
   //         end for;
   //       end for;
-  //     then dae;
+  //     then ();
   // end match;
   end testReverseStrongComponent;
 
+  // public function gatherPartialsForAllSeeds
+  //   "For a BackendDAE.JACOBIAN, compute reverse-mode gradients for each strong component
+  //    and gather ∂output_i/∂seed for all seed variables in VarData.seedVars.
+  //    Returns a list of tuples (seedExpr, partialsPerOutput)."
+  //   input NBackendDAE bdae;
+  //   input Partition.Kind kind;
+  //   output list<tuple<Expression, list<Expression>>> seedToPartials = {};
+  // protected
+  //   array<StrongComponent> compsArr;
+  //   NBVariable.VarData varData;
+  //   NBVariable.VariablePointers knowns;
+  //   NBVariable.VariablePointers seedVars;
+  //   NBVariable.VariablePointers unknowns;
+  //   list<Pointer<NBVariable.Variable>> derivative_vars, state_vars;
+  //   NBVariable.VariablePointers seedCandidates, partialCandidates;
+  //   list<Pointer<NBVariable.Variable>> seedPtrs;
+  //   list<GradientMap> outputsGradients = {};
+  //   GradientMap gm;
+  //   StrongComponent comp;
+  //   Expression seedExpr;
+  //   list<Expression> partials;
+  //   Integer i, n;
+  //   list<Partition.Partition> partitions;
+  // algorithm
+  //   _ := match bdae
+  //     case NBackendDAE.MAIN(varData = NBVariable.VAR_DATA_SIM(knowns = knowns)) //NBackendDAE.JACOBIAN(varData = varData as NBVariable.VarData.VAR_DATA_JAC(seedVars = seedVars), comps = compsArr)
+  //       algorithm
+  //         partitions := match kind
+  //           case NBPartition.Kind.ODE then bdae.ode;
+  //         end match;
 
-  public function gatherPartialsForAllSeeds
-    "For a BackendDAE.JACOBIAN, compute reverse-mode gradients for each strong component
-     and gather ∂output_i/∂seed for all seed variables in VarData.seedVars.
-     Returns a list of tuples (seedExpr, partialsPerOutput)."
-    input NBackendDAE bdae;
-    input Partition.Kind kind;
-    output list<tuple<Expression, list<Expression>>> seedToPartials = {};
-  protected
-    array<StrongComponent> compsArr;
-    NBVariable.VarData varData;
-    NBVariable.VariablePointers knowns;
-    NBVariable.VariablePointers seedVars;
-    NBVariable.VariablePointers unknowns;
-    list<Pointer<NBVariable.Variable>> derivative_vars, state_vars;
-    NBVariable.VariablePointers seedCandidates, partialCandidates;
-    list<Pointer<NBVariable.Variable>> seedPtrs;
-    list<GradientMap> outputsGradients = {};
-    GradientMap gm;
-    StrongComponent comp;
-    Expression seedExpr;
-    list<Expression> partials;
-    Integer i, n;
-    list<Partition.Partition> partitions;
-  algorithm
-    _ := match bdae
-      case NBackendDAE.MAIN(varData = NBVariable.VAR_DATA_SIM(knowns = knowns)) //NBackendDAE.JACOBIAN(varData = varData as NBVariable.VarData.VAR_DATA_JAC(seedVars = seedVars), comps = compsArr)
-        algorithm
-          partitions := match kind
-            case NBPartition.Kind.ODE then bdae.ode;
-          end match;
+  //         for part in partitions loop
+  //           partialCandidates := part.unknowns;
+  //           unknowns  := part.unknowns;
+  //           derivative_vars := list(var for var guard(NBVariable.isStateDerivative(var)) in NBVariable.VariablePointers.toList(unknowns));
+  //           state_vars := list(Util.getOption(NBVariable.getVarState(var)) for var in derivative_vars);
+  //           seedCandidates := NBVariable.VariablePointers.fromList(state_vars, partialCandidates.scalarized);
+  //           //allSeedCandidates := seedCandidates :: allSeedCandidates;
 
-          for part in partitions loop
-            partialCandidates := part.unknowns;
-            unknowns  := part.unknowns;
-            derivative_vars := list(var for var guard(NBVariable.isStateDerivative(var)) in NBVariable.VariablePointers.toList(unknowns));
-            state_vars := list(Util.getOption(NBVariable.getVarState(var)) for var in derivative_vars);
-            seedCandidates := NBVariable.VariablePointers.fromList(state_vars, partialCandidates.scalarized);
-            //allSeedCandidates := seedCandidates :: allSeedCandidates;
+  //           compsArr := listArray(list(StrongComponent.removeAlias(c) for c guard(not StrongComponent.isDiscrete(c)) in Util.getOption(part.strongComponents)));
+  //           // print("Partition with " + intString(arrayLength(compsArr)) + " strong components.\n");
+  //           // Build GradientMap list, one per output (strong component)
+  //           n := arrayLength(compsArr);
+  //           for i in 1:n loop
+  //             comp := compsArr[i];
+  //             // Try reverse-mode for supported SINGLE_COMPONENTs; skip unsupported
+  //             try
+  //               gm := symbolicReverseModeStrongComponent(comp);
+  //               outputsGradients := gm :: outputsGradients;
+  //             else
+  //               // skip component if not supported
+  //             end try;
+  //           end for;
+  //         end for;
+  //         outputsGradients := listReverse(outputsGradients);
 
-            compsArr := listArray(list(StrongComponent.removeAlias(c) for c guard(not StrongComponent.isDiscrete(c)) in Util.getOption(part.strongComponents)));
-            // print("Partition with " + intString(arrayLength(compsArr)) + " strong components.\n");
-            // Build GradientMap list, one per output (strong component)
-            n := arrayLength(compsArr);
-            for i in 1:n loop
-              comp := compsArr[i];
-              // Try reverse-mode for supported SINGLE_COMPONENTs; skip unsupported
-              try
-                gm := symbolicReverseModeStrongComponent(comp);
-                outputsGradients := gm :: outputsGradients;
-              else
-                // skip component if not supported
-              end try;
-            end for;
-          end for;
-          outputsGradients := listReverse(outputsGradients);
+  //         // Gather ∂output_i/∂seed for each seed variable
+  //         seedPtrs := NBVariable.VariablePointers.toList(seedCandidates);
+  //         for sptr in seedPtrs loop
+  //           seedExpr := NBVariable.toExpression(sptr);
+  //           partials := gatherPartialsWrtInput(outputsGradients, seedExpr);
+  //           seedToPartials := (seedExpr, partials) :: seedToPartials;
+  //         end for;
+  //         seedToPartials := listReverse(seedToPartials);
+  //     then ();
 
-          // Gather ∂output_i/∂seed for each seed variable
-          seedPtrs := NBVariable.VariablePointers.toList(seedCandidates);
-          for sptr in seedPtrs loop
-            seedExpr := NBVariable.toExpression(sptr);
-            partials := gatherPartialsWrtInput(outputsGradients, seedExpr);
-            seedToPartials := (seedExpr, partials) :: seedToPartials;
-          end for;
-          seedToPartials := listReverse(seedToPartials);
-      then ();
-
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + ": gatherPartialsForAllSeeds only supports BackendDAE.JACOBIAN."});
-      then fail();
-    end match;
-  end gatherPartialsForAllSeeds;
+  //     else algorithm
+  //       Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + ": gatherPartialsForAllSeeds only supports BackendDAE.JACOBIAN."});
+  //     then fail();
+  //   end match;
+  // end gatherPartialsForAllSeeds;
 
 
-  public function partialDerivativeWrtInput
-    "Returns ∂output/∂input from a single GradientMap."
-    input GradientMap grads;
-    input Expression inputExpr;
-    output Expression dfdInput;
-  algorithm
-    dfdInput := simplify(findGradient(inputExpr, grads));
-  end partialDerivativeWrtInput;
+  // public function partialDerivativeWrtInput
+  //   "Returns ∂output/∂input from a single GradientMap."
+  //   input GradientMap grads;
+  //   input Expression inputExpr;
+  //   output Expression dfdInput;
+  // algorithm
+  //   dfdInput := simplify(findGradient(inputExpr, grads));
+  // end partialDerivativeWrtInput;
 
-  public function gatherPartialsWrtInput
-    "Returns ∂output_i/∂input for each output i (one GradientMap per output)."
-    input list<GradientMap> outputsGradients;
-    input Expression inputExpr;
-    output list<Expression> partials;
-  algorithm
-    partials := list(partialDerivativeWrtInput(gm, inputExpr) for gm in outputsGradients);
-  end gatherPartialsWrtInput;
+  // public function gatherPartialsWrtInput
+  //   "Returns ∂output_i/∂input for each output i (one GradientMap per output)."
+  //   input list<GradientMap> outputsGradients;
+  //   input Expression inputExpr;
+  //   output list<Expression> partials;
+  // algorithm
+  //   partials := list(partialDerivativeWrtInput(gm, inputExpr) for gm in outputsGradients);
+  // end gatherPartialsWrtInput;
 
   function localPartialFor1ArgCall
     "Return local partial df/darg for a builtin single-argument call expression.
@@ -463,8 +502,6 @@ protected
     end if;
   end divExp;
 
-
-
   function localGradient
     input Expression expr;
     input Integer childIndex;
@@ -502,17 +539,42 @@ protected
               right_child // ∂(a * b)/∂a = b
             else left_child; // ∂(a * b)/∂b = a
 
+          // case Op.MUL_EW then
+          //   if childIndex == 1 then 
+          //     right_child // ∂(A .* B)/∂A = B
+          //   else left_child; // ∂(A .* B)/∂B = A
+
           case Op.DIV then
             if childIndex == 1 then
               Expression.BINARY(Expression.REAL(1.0), Operator.makeDiv(Type.REAL()), right_child) // ∂(a / b)/∂a = 1/b
             else
               Expression.negate(Expression.BINARY(left_child, Operator.makeDiv(Type.REAL()), 
-                                Expression.BINARY(right_child, Operator.makePow(Type.REAL()), Expression.REAL(2.0)))); //∂(a / b)/∂b = -a/(b^2)        
+                                Expression.BINARY(right_child, Operator.makePow(Type.REAL()), Expression.REAL(2.0)))); //∂(a / b)/∂b = -a/(b^2) 
+
+          case Op.MUL_MATRIX_VECTOR then
+            if childIndex == 1 then 
+              right_child // ∂(A * x)/∂A = x
+            else left_child; // ∂(A * x)/∂x = A
+
+          case Op.MUL_VECTOR_MATRIX then
+            if childIndex == 1 then 
+              right_child // ∂(x * A)/∂x = A
+            else left_child; // ∂(x * A)/∂A = x
+
+          case Op.SCALAR_PRODUCT then
+            if childIndex == 1 then 
+              right_child // ∂(x * y)/∂x = y
+            else left_child; // ∂(x * y)/∂y = x
+          
+          case Op.MATRIX_PRODUCT then
+            if childIndex == 1 then 
+              right_child // ∂(A * B)/∂A = B
+            else left_child; // ∂(A * B)/∂B = A
+    
           else algorithm
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + "Failed! Given Operator is not supported." + Operator.symbol(op)});
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + "Failed! Given Operator is not supported: " + Operator.toDebugString(op)});
           then fail();
         end match;
-
 
       case Expression.MULTARY(arguments = args, inv_arguments = inv_args, operator = op) algorithm
         nArgs := listLength(args);
@@ -781,6 +843,7 @@ protected
     // Only scalar equations supported for now; extract RHS
     rhs := match eq
       case NBEquation.Equation.SCALAR_EQUATION() then NBEquation.Equation.getRHS(eq);
+      case NBEquation.Equation.ARRAY_EQUATION() then NBEquation.Equation.getRHS(eq);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,
           {getInstanceName() + ": symbolicReverseModeStrongComponent currently only supports SCALAR_EQUATION."});

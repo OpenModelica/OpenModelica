@@ -758,6 +758,20 @@ public
     end match;
   end getVariables;
 
+
+  function getEquationPointers
+    input StrongComponent comp;
+    output EquationPointer eqns;
+  algorithm
+    eqns := match comp
+      case SINGLE_COMPONENT()   then comp.eqn;
+      case ALIAS()              then getEquationPointers(comp.original);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
+      then fail();
+    end match;
+  end getEquationPointers;
+
   function isDiscrete
     "checks if all equations are discrete"
     input StrongComponent comp;
