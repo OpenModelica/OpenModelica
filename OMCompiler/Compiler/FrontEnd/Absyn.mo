@@ -121,7 +121,7 @@ uniontype Class
     Boolean     encapsulatedPrefix "true if encapsulated" ;
     Restriction restriction  "Restriction" ;
     ClassDef    body;
-    list<String> commentsBeforeClass "when a class is in one file starting with within followed by the comment";
+    list<String> commentsBeforeClass "when a class is the first one in the file and has a comment before it";
     list<String> commentsBeforeEnd;
     list<String> commentsAfterEnd;
     Info       info    "Information: FileName is the class is defined in +

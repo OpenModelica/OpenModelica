@@ -220,7 +220,7 @@ goto rule ## func ## Ex; }}
 stored_definition returns [void* ast]
 @init{ $omc::numPushed; OM_PUSHZ2(within, cl); } :
   BOM? (within=within_clause SEMICOLON)?
-  cl=class_definition_list[within != NULL]?
+  cl=class_definition_list[1]?
   EOF
     {
       // The EOF makes us not find the last comment after a class, so we take care of it here
@@ -252,9 +252,9 @@ within_clause returns [void* ast]
   ;
   finally{ OM_POP(1); }
 
-class_definition_list [int hasWithin] returns [void* ast]
+class_definition_list [int firstClass] returns [void* ast]
 @init{ void *commentAfterEnd = 0; f = NULL; OM_PUSHZ3(cd.ast, cl, commentAfterEnd); } :
-  ((f=FINAL)? cd=class_definition[f != NULL, hasWithin] SEMICOLON {
+  ((f=FINAL)? cd=class_definition[f != NULL, firstClass] SEMICOLON {
     // Comments between top-level classes need to belong to the class in the AST
     commentAfterEnd = mmc_mk_nil();
     int last = LT(1)->getTokenIndex(LT(1));
@@ -276,11 +276,11 @@ class_definition_list [int hasWithin] returns [void* ast]
   ;
   finally{ OM_POP(2); }
 
-class_definition [int final, int hasWithin] returns [void* ast]
+class_definition [int final, int firstClass] returns [void* ast]
 @init{ void *commentBeforeEnd = 0, *commentBeforeClass = 0; e = 0; p = 0; OM_PUSHZ6(ct, cs.ast, $cs.name, $ast, commentBeforeEnd, commentBeforeClass); } :
    {
       commentBeforeClass = mmc_mk_nil();
-      if (hasWithin)
+      if (firstClass)
       {
         int last = LT(1)->getTokenIndex(LT(1));
         for (;omc_first_comment<last;omc_first_comment++) {
