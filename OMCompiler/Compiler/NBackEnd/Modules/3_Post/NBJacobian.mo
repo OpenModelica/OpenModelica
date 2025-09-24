@@ -44,6 +44,7 @@ protected
   // NF imports
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
+  import NFExpandExp;
   import NFFlatten.FunctionTree;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
@@ -994,15 +995,6 @@ protected
     (pderCref, vp) := BVariable.makePDerVar(baseCref, name, isTmp);
   end ensurePDerVarCref;
 
-  function collectScalarSeedDiffCrefs
-    "Return all scalar $SEED_<name>.* variable crefs created for this jacobian context."
-    input VariablePointers seedVarsPtr;
-    output list<ComponentRef> seedDiffs;
-  algorithm
-    // We want the $SEED_* crefs (not the base), so use the jacobian varData if available,
-    // or build them on the fly using NBVariable.makeSeedVar for each base seed.
-    seedDiffs := VariablePointers.getScalarVarNames(seedVarsPtr);
-  end collectScalarSeedDiffCrefs;
 
   function unitSeedSubst
     "Replace all $SEED crefs in exp: currentSeed -> 1, others -> 0.
@@ -1392,7 +1384,7 @@ protected
       compRows := {};
 
       // Get LHS/RHS for the diffed equation
-      eqPtr := StrongComponent.getEquationPointer(diffed_comps[i]);
+      eqPtr := StrongComponent.getEquationPointers(diffed_comps[i]);
       () := match diffed_comps[i]
       case NBStrongComponent.SINGLE_COMPONENT(eqn = eqPtr)
       algorithm
@@ -1498,6 +1490,51 @@ protected
   end extractPartialsByUnitSeedingOld;
 
 
+  function materializeArray2D
+    input Expression exp;            // type Real[n,m]
+    output Expression arrExp;        // ARRAY(ARRAY(Real,...),...)
+  protected
+    Expression e;
+    Boolean changed;
+  algorithm
+    // Try to expand things like array constructors/calls to a literal ARRAY
+    (e, changed) := NFExpandExp.expand(exp);
+
+    if Expression.isArray(e) then
+      arrExp := e;
+      return;
+    end if;
+
+    // If it's a cref (or can be treated as one), build an ARRAY of scalar crefs
+    // mapCrefScalars will expand dimensions and call the mapper for each scalar element.
+    arrExp := match exp
+      case Expression.CREF() then NFExpression.mapCrefScalars(exp, function NFExpression.fromCref(includeScope = true));
+      case Expression.SUBSCRIPTED_EXP(exp = Expression.CREF())
+        then NFExpression.mapCrefScalars(exp, function NFExpression.fromCref(includeScope = true));
+      else e; // fallback: nothing better to do
+    end match;
+  end materializeArray2D;
+
+  // Transpose any Real[n,m] expression. Requires the input to be materialized to ARRAY.
+  function transpose2D
+    input Expression exp;            // type Real[n,m]
+    output Expression transposed;    // type Real[m,n], ARRAY form
+  protected
+    Expression a;
+  algorithm
+    a := materializeArray2D(exp);
+
+    if not Expression.isArray(a) then
+      // Could also build a builtin transpose() call here if you prefer:
+      // transposed := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.TRANSPOSE, {exp}, NFExpression.variability(exp), NFPrefixes.Purity.PURE));
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected ARRAY for transpose, got: " + NFExpression.toString(exp)});
+      fail();
+    end if;
+
+    transposed := NFExpression.transposeArray(a);
+  end transpose2D;
+
+
   function makeAdjointContribution
     input Expression coeff;
     input ComponentRef rhsVar;
@@ -1512,23 +1549,40 @@ protected
       term := mulCoeffRhs(coeff, rhsVar);
     elseif rnk == 1 then
       // vector coeff -> element-wise multiply
+      print("arrayElemMul with coeff: " + Expression.toStringTyped(coeff) + "\n");
       term := SimplifyExp.simplifyDump(arrayElemMul(coeff, qexp), true, getInstanceName());
     elseif rnk == 2 then
       // matrix coeff -> transpose(coeff) * q
-      term := SimplifyExp.simplifyDump(matVecMul(Expression.transposeArray(coeff), qexp), true, getInstanceName());
+      print("matVecMul with coeff: " + Expression.toStringTyped(coeff) + "\n");
+      print(Expression.toStringTyped(materializeArray2D(coeff)) + "\n");
+      term := SimplifyExp.simplifyDump(matVecMul(transpose2D(materializeArray2D(coeff)), qexp), true, getInstanceName());
     else
       // higher ranks: fallback to plain multiply
       term := mulCoeffRhs(coeff, rhsVar);
     end if;
   end makeAdjointContribution;
 
+  function sizeClassificationFromType
+    input Type ty;
+    output NFOperator.SizeClassification sc;
+  protected
+    Integer rnk = Type.dimensionCount(ty);
+  algorithm
+    sc := if rnk == 0 then 
+        NFOperator.SizeClassification.SCALAR
+      else if rnk == 1 then 
+        NFOperator.SizeClassification.ELEMENT_WISE
+      else
+        NFOperator.SizeClassification.MATRIX_VECTOR;
+  end sizeClassificationFromType;
+
   // for saving terms for the same lhs in a map
   type ExpressionList = list<Expression>;
   function jacobianSymbolicAdjoint extends Module.jacobianInterface;
   protected
     list<StrongComponent> comps, diffed_comps;
-    list<list<NBDifferentiatePartials.PartialsForComponent>> results;
-    NBDifferentiatePartials.PartialsForComponent res_;
+    list<list<NBDifferentiateReverse.PartialsForComponent>> results;
+    NBDifferentiateReverse.PartialsForComponent res_;
     // sets for naming and filtering
     UnorderedSet<ComponentRef> seedVarsSet;
     UnorderedSet<ComponentRef> resVarsSet;
@@ -1574,56 +1628,13 @@ protected
     print(BVariable.VariablePointers.toString(seedCandidates, "Seed Candidates"));
     print(BVariable.VariablePointers.toString(partialCandidates, "Partial Candidates"));
 
-    // same as in jacobianSymbolic up to differentiation
-    // create seed vars
-    VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map, makeVar = BVariable.makeSeedVar, init = init));
-
-    // create pDer vars (also filters out discrete vars)
-    (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
-    (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(init = init));
-
-    for v in res_vars loop makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), init = init); end for;
-    res_vars := Pointer.access(pDer_vars_ptr);
-
-    pDer_vars_ptr := Pointer.create({});
-    for v in tmp_vars loop makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), init = init); end for;
-    tmp_vars := Pointer.access(pDer_vars_ptr);
-
-    // Build differentiation argument structure
-    diffArguments := Differentiate.DIFFERENTIATION_ARGUMENTS(
-      diffCref        = ComponentRef.EMPTY(),   // no explicit cref necessary, rules are set by diff map
-      new_vars        = {},
-      diff_map        = SOME(diff_map),         // seed and temporary cref map
-      diffType        = NBDifferentiate.DifferentiationType.JACOBIAN,
-      funcTree        = funcTree,
-      scalarized      = seedCandidates.scalarized
-    );
-
-    // differentiate all strong components
-    (diffed_comps, diffArguments) := Differentiate.differentiateStrongComponentList(comps, diffArguments, idx, name, getInstanceName());
-    funcTree := diffArguments.funcTree;
-
-    // new
-    // print("vor collectScalarSeedDiffCrefs\n");
-    // seeds := collectScalarSeedDiffCrefs(seedCandidates);
-    // print("nach collectScalarSeedDiffCrefs\n");
-    // print("Seeds for adjoint jacobian:\n" + ComponentRef.listToString(seeds) + "\n");
-    (sp, _) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
-    results := extractPartialsByUnitSeedingOld(listArray(diffed_comps), sp, seedCandidates, partialCandidates); // old way for testing
-    // results := extractJacobianColumnsByUnitSeeds(listArray(diffed_comps), seeds);
-    // print("nach extractPartialsByUnitSeedingOld\n");
-    // print(intString(listLength(results)) + " components with adjoint partials.\n");
-    // results := DifferentiatePartials.computePartialsForComponentsChained(
-    //   comps,
-    //   VariablePointers.getScalarVarNames(seedCandidates),  // only states as seeds
-    //   funcTree
-    // );
-    //results := DifferentiatePartials.computePartialsForComponentsChained(comps, funcTree);
+    results := NBDifferentiateReverse.collectPartialsForComponents(comps);
 
     for res in results loop
       print(intString(listLength(res)) + " partials for component:\n");
       for r in res loop
-        print(DifferentiatePartials.PartialsForComponent.toString(r));
+        print("  Output: " + Expression.toString(r.outputExpr) + "\n");
+        print(NBDifferentiateReverse.partialMapToString(r.partials) + "\n");
       end for;
       print("\n");
     end for;
@@ -1653,10 +1664,12 @@ protected
         () := match r
           local
             ComponentRef outCref, q_adj, inCref, x_adj;
-            NBDifferentiatePartials.PartialMap pm;
-            list<ComponentRef> inputs;
+            Expression outExpr, inExpr;
+            NBDifferentiateReverse.PartialMap pm;
+            list<Expression> inputs;
             Expression dqdv;
-          case NBDifferentiatePartials.PartialsForComponent.PARTIALS_FOR_COMPONENT(outputCref = outCref, partials = pm) algorithm
+          case NBDifferentiateReverse.PartialsForComponent.PARTIALS_FOR_COMPONENT(outputExpr = outExpr, partials = pm) algorithm
+            outCref := NBDifferentiateReverse.getCref(outExpr);
             if not ComponentRef.isEmpty(outCref) then
               // RHS driver adjoint for the output
               if UnorderedSet.contains(outCref, resVarsSet) then
@@ -1671,8 +1684,13 @@ protected
 
               inputs := UnorderedMap.keyList(pm);
               print(StringUtil.headline_3("Adjoint equations for " + ComponentRef.toString(outCref)) + "\n");
-              for inCref in inputs loop
-                print("with input " + ComponentRef.toString(inCref) + "\n");
+              for inExpr in inputs loop
+                inCref := NBDifferentiateReverse.getCref(inExpr);
+                // keep only CREF inputs
+                if ComponentRef.isEmpty(inCref) then
+                  continue;
+                end if;
+                print("with input " + Expression.toString(inExpr) + "\n");
                 // Only generate equations for seeds and tmp vars; skip params/knowns
                 if not UnorderedSet.contains(inCref, seedVarsSet) and not UnorderedSet.contains(inCref, tmpVarsSet) then
                   print(ComponentRef.toString(inCref) + " not in seed or tmp vars, skipping\n");
@@ -1693,7 +1711,7 @@ protected
                   continue;
                 end if;
 
-                dqdv := UnorderedMap.getSafe(inCref, pm, sourceInfo());
+                dqdv := UnorderedMap.getSafe(inExpr, pm, sourceInfo());
                 print("simplified dqdv: " + Expression.toString(NFSimplifyExp.simplify(dqdv)) + "\n");
                 term := makeAdjointContribution(dqdv, q_adj);
                 //term := mulCoeffRhs(dqdv, q_adj);
@@ -1718,14 +1736,17 @@ protected
     diffed_comps := {};
     for lhsKey in UnorderedMap.keyList(lhsToRhs) loop
       terms := listReverse(UnorderedMap.getSafe(lhsKey, lhsToRhs, sourceInfo()));
+
+
       rhsExpr := Expression.MULTARY(terms, {}, Operator.fromClassification(
-        (NFOperator.MathClassification.ADDITION, NFOperator.SizeClassification.SCALAR),
+        (NFOperator.MathClassification.ADDITION, sizeClassificationFromType(ComponentRef.getComponentType(lhsKey))),
         Type.REAL()
       ));
       print(ComponentRef.toString(lhsKey) + " = " + Expression.toString(rhsExpr) + "\n");
 
       // LHS expression (cref with Real type)
-      lhsExpr := Expression.CREF(Type.REAL(), lhsKey);
+      lhsExpr := Expression.CREF(ComponentRef.getComponentType(lhsKey), lhsKey);
+      print(Expression.toStringTyped(lhsExpr));
 
       // Create a scalar equation lhs = rhs
       eqPtr := NBEquation.Equation.makeAssignment(
