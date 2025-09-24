@@ -758,19 +758,19 @@ public
     end match;
   end getVariables;
 
-  function getEquationPointer
-    // ToDo: other types
+
+  function getEquationPointers
     input StrongComponent comp;
-    output Pointer<Equation> vars;
+    output EquationPointer eqns;
   algorithm
-    vars := match comp
-      case SINGLE_COMPONENT() then comp.eqn;
-      case ALIAS()            then getEquationPointer(comp.original);
+    eqns := match comp
+      case SINGLE_COMPONENT()   then comp.eqn;
+      case ALIAS()              then getEquationPointers(comp.original);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
       then fail();
     end match;
-  end getEquationPointer;
+  end getEquationPointers;
 
   function getVarPointer
     // ToDo: other types

@@ -65,8 +65,9 @@ protected
   import StrongComponent = NBStrongComponent;
   import Partition = NBPartition;
   import NFOperator.{MathClassification, SizeClassification};
-  import NBVariable.{VariablePointers, VariablePointer, VarData};
   import DifferentiatePartials = NBDifferentiatePartials;
+  import NBVariable.{VariablePointers, VariablePointer, VarData};
+  import NBDifferentiateReverse;
 
   // Old Backend Import (remove once coloring ins ported)
   import SymbolicJacobian;
@@ -112,6 +113,12 @@ public
 
       case BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(knowns = knowns), funcTree = funcTree)
         algorithm
+
+          if Flags.isSet(Flags.JAC_DUMP) then
+            print("hallo\n");
+            NBDifferentiateReverse.testReverseStrongComponent(bdae, kind);
+          end if;
+
           (oldPartitions, name) := match kind
             case NBPartition.Kind.ODE then (bdae.ode, "ODE_JAC");
             case NBPartition.Kind.DAE then (Util.getOption(bdae.dae), "DAE_JAC");
