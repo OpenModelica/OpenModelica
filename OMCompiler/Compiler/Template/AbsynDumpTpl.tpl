@@ -46,7 +46,8 @@ match cls
   case CLASS(__) then
     let header_str = dumpClassHeader(cls, final_str, redecl_str, repl_str, io_str)
     let body_str = dumpClassDef(body, name, commentsBeforeEnd, options)
-    '<%header_str%> <%body_str%><%sc%><%if commentsAfterEnd then "\n" + commentsAfterEnd |> cmt => cmt%>'
+    let beforeComment = '<%if commentsBeforeClass then (commentsBeforeClass |> cmt => cmt) + "\n" else ""%>'
+    '<%beforeComment%><%header_str%> <%body_str%><%sc%><%if commentsAfterEnd then "\n" + commentsAfterEnd |> cmt => cmt%>'
 end dumpClassElement;
 
 template dumpClassDef(Absyn.ClassDef cdef, String cls_name, list<String> commentsBeforeEnd, DumpOptions options)

@@ -220,26 +220,26 @@ goto rule ## func ## Ex; }}
 stored_definition returns [void* ast]
 @init{ $omc::numPushed; OM_PUSHZ2(within, cl); } :
   BOM? (within=within_clause SEMICOLON)?
-  cl=class_definition_list?
+  cl=class_definition_list[within != NULL]?
   EOF
     {
       // The EOF makes us not find the last comment after a class, so we take care of it here
-      void *commentAfter = mmc_mk_nil();
+      void *commentAfterEnd = mmc_mk_nil();
       int last = LT(1)->getTokenIndex(LT(1));
       pANTLR3_COMMON_TOKEN tok;
       while (tok = INPUT->get(INPUT,omc_first_comment++)) {
         if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
 #if !defined(OMC_BOOTSTRAPPING)
-          commentAfter = mmc_mk_cons_typed(Absyn_Exp, mmc_mk_scon((char*)tok->getText(tok)->chars), commentAfter);
+          commentAfterEnd = mmc_mk_cons_typed(Absyn_Exp, mmc_mk_scon((char*)tok->getText(tok)->chars), commentAfterEnd);
 #endif
         }
       }
-      if (!listEmpty(commentAfter) && cl && !listEmpty(cl)) {
+      if (!listEmpty(commentAfterEnd) && cl && !listEmpty(cl)) {
         void *last = cl;
         while (!listEmpty(MMC_CDR(last))) {
           last = MMC_CDR(last);
         }
-        MMC_CAR(last) = omc_AbsynUtil_setClassCommentsAfterEnd(ModelicaParser_threadData, MMC_CAR(last), listReverseInPlace(commentAfter));
+        MMC_CAR(last) = omc_AbsynUtil_setClassCommentsAfterEnd(ModelicaParser_threadData, MMC_CAR(last), listReverseInPlace(commentAfterEnd));
       }
       ast = Absyn__PROGRAM(or_nil(cl), within ? within : Absyn__TOP);
     }
@@ -252,53 +252,69 @@ within_clause returns [void* ast]
   ;
   finally{ OM_POP(1); }
 
-class_definition_list returns [void* ast]
-@init{ void *commentAfter = 0; f = NULL; OM_PUSHZ3(cd.ast, cl, commentAfter); } :
-  ((f=FINAL)? cd=class_definition[f != NULL] SEMICOLON {
+class_definition_list [int hasWithin] returns [void* ast]
+@init{ void *commentAfterEnd = 0; f = NULL; OM_PUSHZ3(cd.ast, cl, commentAfterEnd); } :
+  ((f=FINAL)? cd=class_definition[f != NULL, hasWithin] SEMICOLON {
     // Comments between top-level classes need to belong to the class in the AST
-    commentAfter = mmc_mk_nil();
+    commentAfterEnd = mmc_mk_nil();
     int last = LT(1)->getTokenIndex(LT(1));
     for (;omc_first_comment<last;omc_first_comment++) {
       pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
       if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
 #if !defined(OMC_BOOTSTRAPPING)
-      commentAfter = mmc_mk_cons_typed(Absyn_Exp, mmc_mk_scon((char*)tok->getText(tok)->chars), commentAfter);
+      commentAfterEnd = mmc_mk_cons_typed(Absyn_Exp, mmc_mk_scon((char*)tok->getText(tok)->chars), commentAfterEnd);
 #endif
       }
     }
-    if (!listEmpty(commentAfter)) {
-      cd.ast = omc_AbsynUtil_setClassCommentsAfterEnd(ModelicaParser_threadData, cd.ast, commentAfter);
+    if (!listEmpty(commentAfterEnd)) {
+      cd.ast = omc_AbsynUtil_setClassCommentsAfterEnd(ModelicaParser_threadData, cd.ast, commentAfterEnd);
     }
-  }) cl=class_definition_list?
+  }) cl=class_definition_list[0]?
     {
       ast = mmc_mk_cons_typed(Absyn_Class, cd.ast, or_nil(cl));
     }
   ;
   finally{ OM_POP(2); }
 
-class_definition [int final] returns [void* ast]
-@init{ void *commentBefore = 0; e = 0; p = 0; OM_PUSHZ5(ct, cs.ast, $cs.name, $ast, commentBefore); } :
-  ((e=ENCAPSULATED)? (p=PARTIAL)? ct=class_type cs=class_specifier)
+class_definition [int final, int hasWithin] returns [void* ast]
+@init{ void *commentBeforeEnd = 0, *commentBeforeClass = 0; e = 0; p = 0; OM_PUSHZ6(ct, cs.ast, $cs.name, $ast, commentBeforeEnd, commentBeforeClass); } :
+   {
+      commentBeforeClass = mmc_mk_nil();
+      if (hasWithin)
+      {
+        int last = LT(1)->getTokenIndex(LT(1));
+        for (;omc_first_comment<last;omc_first_comment++) {
+          pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
+          if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
+#if !defined(OMC_BOOTSTRAPPING)
+          commentBeforeClass = mmc_mk_cons_typed(Absyn_Exp, mmc_mk_scon((char*)tok->getText(tok)->chars), commentBeforeClass);
+#endif
+          }
+        }
+      }
+   }
+   ((e=ENCAPSULATED)? (p=PARTIAL)? ct=class_type cs=class_specifier)
     {
-      commentBefore = mmc_mk_nil();
+      commentBeforeEnd = mmc_mk_nil();
       int last = LT(1)->getTokenIndex(LT(1));
       for (;omc_first_comment<last;omc_first_comment++) {
         pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
         if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
 #if !defined(OMC_BOOTSTRAPPING)
-        commentBefore = mmc_mk_cons_typed(Absyn_Exp, mmc_mk_scon((char*)tok->getText(tok)->chars), commentBefore);
+        commentBeforeEnd = mmc_mk_cons_typed(Absyn_Exp, mmc_mk_scon((char*)tok->getText(tok)->chars), commentBeforeEnd);
 #endif
         }
       }
       $ast = Absyn__CLASS($cs.name, mmc_mk_bcon(p), mmc_mk_bcon(final), mmc_mk_bcon(e), ct, $cs.ast,
 #if !defined(OMC_BOOTSTRAPPING)
-      listReverseInPlace(commentBefore),
+      listReverseInPlace(commentBeforeClass),
+      listReverseInPlace(commentBeforeEnd),
       mmc_mk_nil(),
 #endif
       PARSER_INFO($start));
     }
   ;
-  finally{ OM_POP(4); }
+  finally{ OM_POP(6); }
 
 class_type returns [void* ast]
 @init{ e = 0;  pur = 0; impur = 0; opr = 0; prl = 0; ker = 0; r = 0; } :
@@ -569,7 +585,7 @@ element returns [void* ast]
     ic=import_clause { $ast = Absyn__ELEMENT(MMC_FALSE,mmc_mk_none(),Absyn__NOT_5fINNER_5fOUTER, ic, PARSER_INFO($start), mmc_mk_none()); }
   | ec=extends_clause { $ast = Absyn__ELEMENT(MMC_FALSE,mmc_mk_none(),Absyn__NOT_5fINNER_5fOUTER, ec, PARSER_INFO($start),mmc_mk_none()); }
   | (r=REDECLARE)? (f=FINAL)? (i=INNER)? (o=T_OUTER)? { final = mmc_mk_bcon(f); innerouter = make_inner_outer(i,o); }
-    ( ( cdef=class_definition[f != NULL] | cc=component_clause )
+    ( ( cdef=class_definition[f != NULL, 0] | cc=component_clause )
         {
            redecl = r != NULL ? mmc_mk_some(make_redeclare_keywords(false,r != NULL)) : mmc_mk_none();
            if (!cc) {
@@ -583,7 +599,7 @@ element returns [void* ast]
                                    cc, PARSER_INFO($start), mmc_mk_none());
           }
         }
-    | (REPLACEABLE ( cdef=class_definition[f != NULL] | cc=component_clause ) constr=constraining_clause_comment? )
+    | (REPLACEABLE ( cdef=class_definition[f != NULL, 0] | cc=component_clause ) constr=constraining_clause_comment? )
         {
            redecl = mmc_mk_some(make_redeclare_keywords(true,r != NULL));
            constr = mmc_mk_some_or_none(constr);
@@ -926,7 +942,7 @@ element_modification [void *each, void *final] returns [void* ast]
 element_redeclaration returns [void* ast]
 @init { void *redecl; OM_PUSHZ5($ast, er.ast, cc, cdef.ast, redecl); f = 0; e = 0; } :
   REDECLARE (e=EACH)? (f=FINAL)?
-  ( (cdef=class_definition[f != NULL] | cc=component_clause1) | er=element_replaceable[e != NULL,f != NULL, true] )
+  ( (cdef=class_definition[f != NULL, 0] | cc=component_clause1) | er=element_replaceable[e != NULL,f != NULL, true] )
      {
        if ($er.ast) {
          $ast = $er.ast;
@@ -941,7 +957,7 @@ element_redeclaration returns [void* ast]
 
 element_replaceable [int each, int final, int redeclare] returns [void* ast]
 @init { void *redecl; OM_PUSHZ5($ast, e_spec, cd.ast, constr, redecl); } :
-  REPLACEABLE ( cd=class_definition[final] | e_spec=component_clause1 ) constr=constraining_clause_comment?
+  REPLACEABLE ( cd=class_definition[final, 0] | e_spec=component_clause1 ) constr=constraining_clause_comment?
   {
       e_spec = e_spec ? e_spec : Absyn__CLASSDEF(MMC_TRUE, $cd.ast);
       constr = mmc_mk_some_or_none(constr);
@@ -1509,16 +1525,16 @@ connector_ref_2 returns [void* ast]
  */
 expression[int allowPartEvalFunc] returns [void* ast]
 @init {
-  void *commentBefore, *commentAfter;
-  OM_PUSHZ3(e, commentBefore, commentAfter);
-  commentBefore = mmc_mk_nil();
-  commentAfter = mmc_mk_nil();
+  void *commentBeforeEnd, *commentAfterEnd;
+  OM_PUSHZ3(e, commentBeforeEnd, commentAfterEnd);
+  commentBeforeEnd = mmc_mk_nil();
+  commentAfterEnd = mmc_mk_nil();
   int last = LT(1)->getTokenIndex(LT(1));
   for (;omc_first_comment<last;omc_first_comment++) {
     pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
     if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
 #if !defined(OMC_BOOTSTRAPPING)
-      commentBefore = mmc_mk_cons_typed(Absyn_Exp, mmc_mk_scon((char*)tok->getText(tok)->chars), commentBefore);
+      commentBeforeEnd = mmc_mk_cons_typed(Absyn_Exp, mmc_mk_scon((char*)tok->getText(tok)->chars), commentBeforeEnd);
 #endif
     }
   }
@@ -1542,13 +1558,13 @@ expression[int allowPartEvalFunc] returns [void* ast]
       pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,omc_first_comment);
       if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
   #if !defined(OMC_BOOTSTRAPPING)
-        commentAfter = mmc_mk_cons_typed(Absyn_Exp, mmc_mk_scon((char*)tok->getText(tok)->chars), commentAfter);
+        commentAfterEnd = mmc_mk_cons_typed(Absyn_Exp, mmc_mk_scon((char*)tok->getText(tok)->chars), commentAfterEnd);
   #endif
       }
     }
   #if !defined(OMC_BOOTSTRAPPING)
-    if (!(listEmpty(commentBefore) && listEmpty(commentAfter))) {
-      $ast = Absyn__EXPRESSIONCOMMENT(listReverseInPlace(commentBefore), $ast, listReverseInPlace(commentAfter));
+    if (!(listEmpty(commentBeforeEnd) && listEmpty(commentAfterEnd))) {
+      $ast = Absyn__EXPRESSIONCOMMENT(listReverseInPlace(commentBeforeEnd), $ast, listReverseInPlace(commentAfterEnd));
     }
   #endif
   }

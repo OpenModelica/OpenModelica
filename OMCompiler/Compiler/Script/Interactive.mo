@@ -4312,7 +4312,7 @@ algorithm
 
   outProgram := InteractiveUtil.updateProgram(Absyn.PROGRAM({
     Absyn.CLASS(name, false, false, false, Absyn.R_MODEL(), AbsynUtil.dummyParts,
-        {}, {}, AbsynUtil.dummyInfo)}, w), inProgram);
+        {}, {}, {}, AbsynUtil.dummyInfo)}, w), inProgram);
 end createModel;
 
 public function newModel
@@ -5205,22 +5205,22 @@ algorithm
         (cdef,path);
 
     case (Absyn.IDENT(name = "Real"),_,_) then (Absyn.CLASS("Real",false,false,false,Absyn.R_PREDEFINED_REAL(),
-          AbsynUtil.dummyParts,{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Real"));
+          AbsynUtil.dummyParts,{},{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Real"));
 
     case (Absyn.IDENT(name = "Integer"),_,_) then (Absyn.CLASS("Integer",false,false,false,Absyn.R_PREDEFINED_INTEGER(),
-          AbsynUtil.dummyParts,{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Integer"));
+          AbsynUtil.dummyParts,{},{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Integer"));
 
     case (Absyn.IDENT(name = "String"),_,_) then (Absyn.CLASS("String",false,false,false,Absyn.R_PREDEFINED_STRING(),
-          AbsynUtil.dummyParts,{},{},AbsynUtil.dummyInfo),Absyn.IDENT("String"));
+          AbsynUtil.dummyParts,{},{},{},AbsynUtil.dummyInfo),Absyn.IDENT("String"));
 
     case (Absyn.IDENT(name = "Boolean"),_,_) then (Absyn.CLASS("Boolean",false,false,false,Absyn.R_PREDEFINED_BOOLEAN(),
-          AbsynUtil.dummyParts,{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Boolean"));
+          AbsynUtil.dummyParts,{},{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Boolean"));
     // BTH
     case (Absyn.IDENT(name = "Clock"),_,_)
       equation
         true = Config.synchronousFeaturesAllowed();
       then (Absyn.CLASS("Clock",false,false,false,Absyn.R_PREDEFINED_CLOCK(),
-          AbsynUtil.dummyParts,{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Clock"));
+          AbsynUtil.dummyParts,{},{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Clock"));
 
     case (path,inmodel,_)
       equation
