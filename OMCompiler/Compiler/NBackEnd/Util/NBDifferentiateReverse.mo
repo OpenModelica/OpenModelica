@@ -382,34 +382,6 @@ protected
     str := str + "}";
   end partialMapToString;
 
-  function gradientMapToString
-    input GradientMap grads;
-    output String str;
-  algorithm
-    str := partialMapToString(grads);
-  end gradientMapToString;
-
-
-  // public function collectGradientsForStrongComponent
-  //   "Return one or more GradientMap(s) for a SINGLE_COMPONENT.
-  //   Currently returns a single map for scalar equations."
-  //   input NBStrongComponent.StrongComponent compIn;
-  //   output list<GradientMap> gradients;
-  // protected
-  //   NBStrongComponent.StrongComponent comp = NBStrongComponent.removeAlias(compIn);
-  //   Pointer<NBEquation.Equation> eqp;
-  //   NBEquation.Equation eq;
-  // algorithm
-  //   gradients := {};
-  //   () := match comp
-  //     case NBStrongComponent.SINGLE_COMPONENT(eqn = eqp) algorithm
-  //       eq := Pointer.access(eqp);
-  //       // For SINGLE/scalar, get one gradient map from the whole component
-  //       gradients := { symbolicReverseModeStrongComponent(comp) };
-  //     then ();
-  //     else ();
-  //   end match;
-  // end collectGradientsForStrongComponent;
 
   public function collectPartialsForStrongComponent
     input NBStrongComponent.StrongComponent compIn;
@@ -428,19 +400,6 @@ protected
       else ();
     end match;
   end collectPartialsForStrongComponent;
-
-  // public function collectGradientsForComponents
-  //   "Batch for a list of strong components, result shape: list< per-component list<GradientMap> >."
-  //   input list<NBStrongComponent.StrongComponent> comps;
-  //   output list<list<GradientMap>> results = {};
-  // protected
-  //   NBStrongComponent.StrongComponent c;
-  // algorithm
-  //   for c in comps loop
-  //     results := collectGradientsForStrongComponent(c) :: results;
-  //   end for;
-  //   results := listReverse(results);
-  // end collectGradientsForComponents;
 
   public function collectPartialsForComponents
     "Batch for a list of strong components, result shape: list< per-component list<PartialsForComponent> >."
@@ -679,17 +638,6 @@ protected
     end match;
   end getChildren;
 
-  function isLeaf
-    input Expression expr;
-    output Boolean result;
-  algorithm
-    result := match expr
-      case Expression.REAL() then true;
-      case Expression.CREF() then true;
-      else then false;
-    end match;
-  end isLeaf;
-
   // Check if two expressions are structurally equal
   function expressionEqual
     input Expression expr1;
@@ -706,35 +654,6 @@ protected
   algorithm
     str := Expression.toString(expr);
   end expressionToString;
-
-  // function gradientEntryToString
-  //   input GradientEntry entry;
-  //   output String str;
-  // protected
-  //   Expression key, value;
-  // algorithm
-  //   (key, value) := entry;
-  //   str := "d/d(" + expressionToString(key) + ") = " + expressionToString(value);
-  // end gradientEntryToString;
-
-  // // To-string for GradientMap
-  // function gradientMapToString
-  //   input GradientMap grads;
-  //   output String str;
-  // protected
-  //   Boolean first = true;
-  // algorithm
-  //   str := "{";
-  //   for entry in grads loop
-  //     if first then
-  //       first := false;
-  //     else
-  //       str := str + ", ";
-  //     end if;
-  //     str := str + gradientEntryToString(entry);
-  //   end for;
-  //   str := str + "}";
-  // end gradientMapToString;
 
   // Check if expression is in visited list
   function isVisited
@@ -802,101 +721,6 @@ protected
     simplified := SimplifyExp.simplify(expr);
   end simplify;
 
-  // // Gradient map as list of tuples
-  // type GradientEntry = tuple<Expression, Expression>;
-  // type GradientMap = list<GradientEntry>;
-
-  // // Find gradient for a specific expression in gradient map
-  // function findGradient
-  //   input Expression expr;
-  //   input GradientMap grads;
-  //   output Expression grad;
-  // protected
-  //   Expression key, value;
-  // algorithm
-  //   grad := Expression.REAL(0.0);  // Default to zero
-  //   for entry in grads loop
-  //     (key, value) := entry;
-  //     if expressionEqual(key, expr) then
-  //       grad := value;
-  //       return;
-  //     end if;
-  //   end for;
-  // end findGradient;
-
-  // // Update gradient map with new gradient for expression
-  // function updateGradient
-  //   input Expression expr;
-  //   input Expression newGrad;
-  //   input GradientMap grads;
-  //   output GradientMap updatedGrads;
-  // protected
-  //   Expression existingGrad, combinedGrad;
-  //   Boolean found;
-  //   Expression key, value;
-  // algorithm
-  //   updatedGrads := {};
-  //   found := false;
-    
-  //   for entry in grads loop
-  //     (key, value) := entry;
-  //     if expressionEqual(key, expr) then
-  //       existingGrad := value;
-  //       combinedGrad := simplify(Expression.BINARY(existingGrad, Operator.makeAdd(Type.REAL()), newGrad));
-  //       updatedGrads := (expr, combinedGrad) :: updatedGrads;
-  //       found := true;
-  //     else
-  //       updatedGrads := entry :: updatedGrads;
-  //     end if;
-  //   end for;
-    
-  //   if not found then
-  //     updatedGrads := (expr, newGrad) :: updatedGrads;
-  //   end if;
-  // end updateGradient;
-
-
-  // function symbolicReverseModeStrongComponent
-  //   "Differentiate a SINGLE_COMPONENT strong component in reverse mode.
-  //    Builds residual expression (lhs - rhs) and reuses symbolicReverseMode.
-  //    Currently only supports StrongComponent.SINGLE_COMPONENT with SCALAR_EQUATION."
-  //   input StrongComponent comp;
-  //   input Expression cotangent = Expression.REAL(1.0);
-  //   output GradientMap gradients;
-  // protected
-  //   Pointer<NBEquation.Equation> eq_ptr;
-  //   NBEquation.Equation eq;
-  //   Expression lhs, rhs, residual;
-  //   Type ty;
-  //   Operator subOp;
-  //   StrongComponent c = comp;
-  // algorithm
-  //   c := StrongComponent.removeAlias(c);
-  //   // Use equation pointer directly; do not require EXPLICIT status
-  //   eq_ptr := match c
-  //     case StrongComponent.SINGLE_COMPONENT() then c.eqn;
-  //     else algorithm
-  //       Error.addMessage(Error.INTERNAL_ERROR,
-  //         {getInstanceName() + ": symbolicReverseModeStrongComponent currently only supports SINGLE_COMPONENT."});
-  //     then fail();
-  //   end match;
-
-  //   eq := Pointer.access(eq_ptr);
-
-  //   // Only scalar equations supported for now; extract RHS
-  //   rhs := match eq
-  //     case NBEquation.Equation.SCALAR_EQUATION() then NBEquation.Equation.getRHS(eq);
-  //     case NBEquation.Equation.ARRAY_EQUATION() then NBEquation.Equation.getRHS(eq);
-  //     else algorithm
-  //       Error.addMessage(Error.INTERNAL_ERROR,
-  //         {getInstanceName() + ": symbolicReverseModeStrongComponent currently only supports SCALAR_EQUATION."});
-  //     then fail();
-  //   end match;
-
-  //   gradients := symbolicReverseMode(rhs, cotangent);
-  // end symbolicReverseModeStrongComponent;
-
-
   function symbolicReverseModeStrongComponent
     "Differentiate a SINGLE_COMPONENT strong component in reverse mode.
      Uses RHS for differentiation and returns PartialsForComponent with LHS as outputExpr."
@@ -928,50 +752,6 @@ protected
     pm := symbolicReverseMode(rhs, cotangent);
     result := PartialsForComponent.PARTIALS_FOR_COMPONENT(lhs, pm);
   end symbolicReverseModeStrongComponent;
-
-  // // Main function: Symbolic reverse-mode differentiation
-  // function symbolicReverseMode
-  //   input Expression expr;
-  //   input Expression cotangent = Expression.REAL(1.0);
-  //   output GradientMap gradients;
-  // protected
-  //   list<Expression> tape, children;
-  //   Expression currentGrad, localGrad, childGrad;
-  //   Integer i;
-  // algorithm
-  //   // Build computation tape
-  //   tape := buildTape(expr);
-
-  //   print("Computation tape:\n");
-  //   for i in 1:listLength(tape) loop
-  //     print(intString(i) + ": " + expressionToString(listGet(tape, i)) + "\n");
-  //   end for;
-
-  //   // Initialize gradients with output gradient
-  //   gradients := {(expr, cotangent)};
-    
-  //   // Process tape in reverse order
-  //   for operation in tape loop // no need to reverse as tape is built by prepending to it
-  //     currentGrad := findGradient(operation, gradients);
-      
-  //     // Skip if no gradient for this operation
-  //     if isZeroConstant(currentGrad) then
-  //       continue;
-  //     end if;
-      
-  //     children := getChildren(operation);
-      
-  //     // Propagate gradients to children using chain rule
-  //     i := 1;
-  //     for child in children loop
-  //       localGrad := localGradient(operation, i);
-  //       childGrad := simplify(Expression.BINARY(currentGrad, Operator.makeMul(Type.REAL()), localGrad));
-  //       gradients := updateGradient(child, childGrad, gradients);
-  //       i := i + 1;
-  //     end for;
-  //   end for;
-  // end symbolicReverseMode;
-
 
   // Main function: Symbolic reverse-mode differentiation over an expression
   function symbolicReverseMode
