@@ -122,8 +122,8 @@ uniontype Class
     Restriction restriction  "Restriction" ;
     ClassDef    body;
     list<String> commentsBeforeClass "when a class is the first one in the file and has a comment before it";
-    list<String> commentsBeforeEnd;
-    list<String> commentsAfterEnd;
+    list<String> commentsBeforeEnd "when a class has comments before its end";
+    list<String> commentsAfterEnd "when the class has comments after its end, before the next class or the end of the file";
     Info       info    "Information: FileName is the class is defined in +
                isReadOnly bool + start line no + start column no +
                end line no + end column no";
