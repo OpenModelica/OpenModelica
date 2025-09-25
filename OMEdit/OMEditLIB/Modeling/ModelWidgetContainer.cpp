@@ -5710,20 +5710,6 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mpDiagramGraphicsScene = 0;
     mpDiagramGraphicsView = 0;
   }
-  // Read the file for LibraryTreeItem::Text
-  if (mpLibraryTreeItem->isText() && !mpLibraryTreeItem->isFilePathValid()) {
-    QString contents = "";
-    QFile file(mpLibraryTreeItem->getFileName());
-    if (!file.open(QIODevice::ReadOnly)) {
-      //      QMessageBox::critical(mpLibraryWidget->MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
-      //                            GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(pLibraryTreeItem->getFileName())
-      //                            .arg(file.errorString()), QMessageBox::Ok);
-    } else {
-      contents = QString(file.readAll());
-      file.close();
-    }
-    mpLibraryTreeItem->setClassText(contents);
-  }
 }
 
 ModelWidget::~ModelWidget()
@@ -8119,29 +8105,39 @@ void collectSelectedElements(GraphicsView *pGraphicsView, QStringList *pSelected
 /*!
  * \brief ModelWidgetContainer::getOpenedModelWidgetsAndSelectedElementsOfClass
  * Creates the list of opened ModelWidgets and its selected icon and diagram view elements.
- * \param modelName
+ * \param pLibraryTreeItem
  * \param pOpenedModelWidgetsAndSelectedElements
- * \param pIconSelectedItemsList
- * \param pDiagramSelectedItemsList
  */
-void ModelWidgetContainer::getOpenedModelWidgetsAndSelectedElementsOfClass(const QString &modelName,
+void ModelWidgetContainer::getOpenedModelWidgetsAndSelectedElementsOfClass(LibraryTreeItem *pLibraryTreeItem,
                                                                            QHash<QString, QPair<QStringList, QStringList> > *pOpenedModelWidgetsAndSelectedElements)
 {
   QList<QMdiSubWindow*> subWindowsList = subWindowList(QMdiArea::StackingOrder);
   foreach (QMdiSubWindow *pSubWindow, subWindowsList) {
     ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(pSubWindow->widget());
-    if (pModelWidget && pModelWidget->getLibraryTreeItem()
-        && StringHandler::getFirstWordBeforeDot(pModelWidget->getLibraryTreeItem()->getNameStructure()).compare(modelName) == 0) {
-      QStringList iconSelectedItemsList, diagramSelectedItemsList;
-      // icon view selected elements
-      if (pModelWidget->getIconGraphicsView()) {
-        collectSelectedElements(pModelWidget->getIconGraphicsView(), &iconSelectedItemsList);
+    if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+      LibraryTreeItem *pParentLibraryTreeItem = pModelWidget->getLibraryTreeItem()->parent();
+      bool isChild = false;
+
+      while (pParentLibraryTreeItem) {
+        if (pParentLibraryTreeItem == pLibraryTreeItem) {
+          isChild = true;
+          break;
+        }
+        pParentLibraryTreeItem = pParentLibraryTreeItem->parent();
       }
-      // diagram view selected elements
-      if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
-        collectSelectedElements(pModelWidget->getDiagramGraphicsView(), &diagramSelectedItemsList);
+
+      if (isChild) {
+        QStringList iconSelectedItemsList, diagramSelectedItemsList;
+        // icon view selected elements
+        if (pModelWidget->getIconGraphicsView()) {
+          collectSelectedElements(pModelWidget->getIconGraphicsView(), &iconSelectedItemsList);
+        }
+        // diagram view selected elements
+        if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
+          collectSelectedElements(pModelWidget->getDiagramGraphicsView(), &diagramSelectedItemsList);
+        }
+        pOpenedModelWidgetsAndSelectedElements->insert(pModelWidget->getLibraryTreeItem()->getNameStructure(), qMakePair(iconSelectedItemsList, diagramSelectedItemsList));
       }
-      pOpenedModelWidgetsAndSelectedElements->insert(pModelWidget->getLibraryTreeItem()->getNameStructure(), qMakePair(iconSelectedItemsList, diagramSelectedItemsList));
     }
   }
 }

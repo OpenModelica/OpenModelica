@@ -268,7 +268,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpElementWidget = new ElementWidget(this);
   // Create ElementDockWidget
   mpElementDockWidget = new QDockWidget(Helper::elements, this);
-  mpElementDockWidget->setObjectName("ElementBrowser");
+  mpElementDockWidget->setObjectName("Elements");
   mpElementDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   mpElementDockWidget->setWidget(mpElementWidget);
   addDockWidget(Qt::LeftDockWidgetArea, mpElementDockWidget);

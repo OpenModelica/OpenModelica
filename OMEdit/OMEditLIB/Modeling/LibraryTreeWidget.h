@@ -76,7 +76,7 @@ public:
     SaveFolderStructure
   };
   LibraryTreeItem(QAbstractItemModel *pParent);
-  LibraryTreeItem(LibraryType type, QString text, QString nameStructure, QString fileName, bool isSaved, LibraryTreeItem *pParent = 0);
+  LibraryTreeItem(LibraryType type, QString text, QString nameStructure, QString fileName, bool isSaved, bool isInternal, LibraryTreeItem *pParent = 0);
   ~LibraryTreeItem();
   bool isRootItem() const {return mIsRootItem;}
   int childrenSize() const {return mChildren.size();}
@@ -268,8 +268,8 @@ public:
   void addModelicaLibraries(const QVector<QPair<QString, QString> > libraries = QVector<QPair<QString, QString> >());
   LibraryTreeItem* createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
                                          bool isSystemLibrary = false, bool load = false, int row = -1, bool loadingMOL = false);
-  void createLibraryTreeItems(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem);
-  LibraryTreeItem* createLibraryTreeItem(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved, bool internal,
+  void createLibraryTreeItems(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
+  LibraryTreeItem* createLibraryTreeItem(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved, bool isInternal,
                                          LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
   LibraryTreeItem* createLibraryTreeItem(QString name, QString nameStructursre, QString path, bool isSaved, LibraryTreeItem *pParentLibraryTreeItem,
                                          oms_element_t *pOMSElement = 0, oms_connector_t *pOMSConnector = 0, oms_busconnector_t *pOMSBusConnector = 0, int row = -1);
@@ -311,8 +311,8 @@ private:
   QString readLibraryTreeItemClassTextFromFile(LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* createLibraryTreeItemImpl(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
                                              bool isSystemLibrary = false, bool load = false, int row = -1, bool activateAccessAnnotations = false);
-  void createLibraryTreeItemsImpl(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem);
-  LibraryTreeItem* createLibraryTreeItemImpl(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved, bool internal,
+  void createLibraryTreeItemsImpl(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
+  LibraryTreeItem* createLibraryTreeItemImpl(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved, bool isInternal,
                                              LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
   LibraryTreeItem* createOMSLibraryTreeItemImpl(QString name, QString nameStructure, QString path, bool isSaved,
                                                 LibraryTreeItem *pParentLibraryTreeItem, oms_element_t *pOMSElement = 0,
@@ -365,7 +365,6 @@ private:
   QAction *mpUnloadClassAction;
   QAction *mpReloadClassAction;
   QAction *mpUnloadTextFileAction;
-  QAction *mpLoadAsSimulationModel;
   QAction *mpNewFileAction;
   QAction *mpNewFileEmptyAction;
   QAction *mpNewFolderAction;
@@ -417,7 +416,6 @@ public slots:
   void unloadClass();
   void reloadClass();
   void unloadTextFile();
-  void loadAsSimulationModel();
   void createNewFile();
   void createNewFileEmpty();
   void createNewFolder();
@@ -449,11 +447,11 @@ public:
   LibraryTreeProxyModel* getLibraryTreeProxyModel() {return mpLibraryTreeProxyModel;}
   LibraryTreeView* getLibraryTreeView() {return mpLibraryTreeView;}
   void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false, bool loadExternalModel = false);
-  void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool secondAttempt = false, int row = -1, LibraryTreeItem *pLibraryTreeItem = 0);
+  void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool secondAttempt = false, int row = -1);
   void openEncryptedModelicaLibrary(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
-  void openTextFile(QFileInfo fileInfo, bool showProgress = true, bool skipAddRecentFile = false);
+  void openTextFile(QFileInfo fileInfo, bool showProgress = true, bool skipAddRecentFile = false, int row = -1);
 
-  void openDirectory(QFileInfo fileInfo, bool showProgress = true, bool skipAddRecentFile = false);
+  void openDirectory(QFileInfo fileInfo, bool showProgress = true, bool skipAddRecentFile = false, int row = -1);
   void openOMSModelFile(QFileInfo fileInfo, bool showProgress = true);
   void parseAndLoadModelicaText(QString modelText);
   bool saveFile(QString fileName, QString contents);
@@ -478,7 +476,7 @@ private:
   LibraryTreeProxyModel *mpLibraryTreeProxyModel;
   LibraryTreeView *mpLibraryTreeView;
   bool multipleTopLevelClasses(const QStringList &classesList, const QString &fileName);
-  void openModelicaFileHelper(QString fileName, QString encoding, bool showProgress, bool parse, LibraryTreeItem *pLibraryTreeItem);
+  void openModelicaFileHelper(QString fileName, QString encoding, bool showProgress, bool parse, int row);
   bool saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool saveAs);
   bool saveModelicaLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem, bool saveAs);
   bool saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibraryTreeItem, bool saveAs);

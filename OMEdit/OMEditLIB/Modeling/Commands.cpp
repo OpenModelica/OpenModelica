@@ -712,7 +712,7 @@ void OMSimulatorUndoCommand::redoInternal()
   // Save the expanded LibraryTreeItems list
   pLibraryTreeModel->getExpandedLibraryTreeItemsList(pModelLibraryTreeItem, &mExpandedLibraryTreeItemsList);
   // save the opened ModelWidgets that belong to this model and save the selected elements
-  MainWindow::instance()->getModelWidgetContainer()->getOpenedModelWidgetsAndSelectedElementsOfClass(mModelName, &mOpenedModelWidgetsAndSelectedElements);
+  MainWindow::instance()->getModelWidgetContainer()->getOpenedModelWidgetsAndSelectedElementsOfClass(pModelLibraryTreeItem, &mOpenedModelWidgetsAndSelectedElements);
   // load the new snapshot
   if (mDoSnapShot) {
     OMSProxy::instance()->importSnapshot(mModelName, mNewSnapshot, &mModelName);

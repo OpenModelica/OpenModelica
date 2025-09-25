@@ -1639,10 +1639,17 @@ bool OMCProxy::loadModel(QString className, QString priorityVersion, bool notify
 }
 
 /*!
-  Loads a file in OMC
-  \param fileName - the file to load.
-  \return true on success
-  */
+ * \brief OMCProxy::loadFile
+ * Loads a file in OMC.
+ * \param fileName
+ * \param encoding
+ * \param uses
+ * \param notify
+ * \param requireExactVersion
+ * \param allowWithin
+ * \param printErrors
+ * \return
+ */
 bool OMCProxy::loadFile(QString fileName, QString encoding, bool uses, bool notify, bool requireExactVersion, bool allowWithin, bool printErrors)
 {
   mLoadModelError = false;
@@ -1692,10 +1699,13 @@ bool OMCProxy::loadClassContentString(const QString &data, const QString &classN
 }
 
 /*!
-  Parse the file. Doesn't load it into OMC.
-  \param fileName - the file to parse.
-  \return true on success
-  */
+ * \brief OMCProxy::parseFile
+ * Parse the file. Doesn't load it into OMC.
+ * \param fileName
+ * \param encoding
+ * \param printErrors
+ * \return
+ */
 QList<QString> OMCProxy::parseFile(QString fileName, QString encoding, bool printErrors)
 {
   QList<QString> result;
