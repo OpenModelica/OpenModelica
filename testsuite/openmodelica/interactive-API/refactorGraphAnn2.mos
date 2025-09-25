@@ -12,24 +12,25 @@ echo(true);
 refactorClass(connecttest);
 
 // Result:
+// false
 // true
 // true
-// true
-// "model connecttest
-//   // name:     refactorGraphAnn2
-//   // keywords: annotation
-//   // status:   correct
-//   //
-//   // Graphical  class annotations of old standard to be refactored into a new on.
-//   //
+// "// name:     refactorGraphAnn2
+// // keywords: annotation
+// // status:   correct
+// //
+// // Graphical  class annotations of old standard to be refactored into a new on.
+// //
+//
+// model connecttest
 //   Modelica.Electrical.Analog.Basic.Conductor conductor annotation(
 //     extent = [24, 54; 44, 74]);
 //   Modelica.Electrical.Analog.Basic.Resistor resistor annotation(
-//     rotation = 180,
-//     extent = [-18, 18; 0, 94]);
+//     extent = [-18, 18; 0, 94],
+//     rotation = 180);
 //   Modelica.Electrical.Analog.Basic.Conductor conductor1 annotation(
-//     extent = [94, 22; 64, 42],
-//     rotation = 45);
+//     rotation = 45,
+//     extent = [94, 22; 64, 42]);
 // equation
 //   connect(resistor.n, conductor.p) annotation(
 //     Line(points = {{-18, 56}, {14, 56}, {14, 64}, {24, 64}}, color = {255, 0, 127}, pattern = LinePattern.Dash, arrow = {Arrow.Filled, Arrow.Filled}));
