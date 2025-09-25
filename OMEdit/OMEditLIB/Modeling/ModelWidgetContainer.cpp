@@ -6372,6 +6372,7 @@ void ModelWidget::reDrawModelWidget(const ModelInfo &modelInfo)
   if (isElementMode()) {
     clearGraphicsViewsExceptOutOfSceneItems();
     mModelInstanceList.clear();
+    mLibraryTreeItemList.clear();
     mModelInstancesPos = -1;
     mpElementModeLabel->setText("");
     mpIconGraphicsView->setShapesList(mPreservedIconShapesList);
@@ -6947,6 +6948,7 @@ void ModelWidget::showElement(ModelInstance::Model *pModelInstance, bool addToLi
   QApplication::setOverrideCursor(Qt::WaitCursor);
   if (mModelInstancesPos < 0) {
     mpRootModelInstance = mpModelInstance;
+    mpRootLibraryTreeItem = mpLibraryTreeItem;
     mPreservedIconShapesList = mpIconGraphicsView->getShapesList();
     mPreservedDiagramShapesList = mpDiagramGraphicsView->getShapesList();
     mModelInfo = createModelInfo();
@@ -6978,13 +6980,25 @@ void ModelWidget::showElement(ModelInstance::Model *pModelInstance, bool addToLi
   if (addToList) {
     while (mModelInstanceList.count() > (mModelInstancesPos+1)) {
       mModelInstanceList.removeLast();
+      mLibraryTreeItemList.removeLast();
     }
     mModelInstanceList.append(pModelInstance);
+    // find correct LibraryTreeItem for ModelInstance.
+    LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pModelInstance->getName());
+    if (!pLibraryTreeItem) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Could not find the LibraryTreeItem for model " + pModelInstance->getName() +
+                                                            ". This is a fatal error. Please report a bug.", Helper::scriptingKind, Helper::errorLevel));
+    }
+    mLibraryTreeItemList.append(pLibraryTreeItem);
+    mpLibraryTreeItem = pLibraryTreeItem;
     mModelInstancesPos++;
+  } else {
+    mpLibraryTreeItem = mLibraryTreeItemList.at(mModelInstancesPos);
   }
   mpModelInstance = pModelInstance;
   mpElementModeLabel->setText(tr("Showing element <b>%1</b> in <b>%2</b>").arg(mpModelInstance->getParentElement()->getQualifiedName(), mpRootModelInstance->getName()));
   drawModel(ModelInfo());
+  updateViewButtonsBasedOnAccess();
   updateElementModeButtons();
   // update the coordinate system according to new values
   mpIconGraphicsView->resetZoom();
@@ -7568,12 +7582,14 @@ void ModelWidget::exitElement()
   clearGraphicsViewsExceptOutOfSceneItems();
   // call clearGraphicsViewsExceptOutOfSceneItems before resetting the model instances list so the icon update signal can be ignored.
   mModelInstanceList.clear();
+  mLibraryTreeItemList.clear();
   mModelInstancesPos = -1;
   mpElementModeLabel->setText("");
   // reset the CoordinateSystem
   mpIconGraphicsView->resetCoordinateSystem();
   mpDiagramGraphicsView->resetCoordinateSystem();
   mpModelInstance = mpRootModelInstance;
+  mpLibraryTreeItem = mpRootLibraryTreeItem;
   mpIconGraphicsView->setShapesList(mPreservedIconShapesList);
   mPreservedIconShapesList.clear();
   mpDiagramGraphicsView->setShapesList(mPreservedDiagramShapesList);
@@ -7590,6 +7606,7 @@ void ModelWidget::exitElement()
     setRestoringModel(false);
   }
   setComponentModified(false);
+  updateViewButtonsBasedOnAccess();
   updateElementModeButtons();
   // update the coordinate system according to new values
   mpIconGraphicsView->resetZoom();
