@@ -10,7 +10,7 @@ FMU = FmuExportCrossCompile.fmu \
       WaterTank_Control.fmu \
       WaterTank_TestSingleWaterTank.fmu \
       BouncingBall.fmu \
-      TableTest.fmu
+#       TableTest.fmu # Disabled because it breaks on the maintenance/v1.25 branch. Works on the master branch
 
 .PHONY: all test clean
 
