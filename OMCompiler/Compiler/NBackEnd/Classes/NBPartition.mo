@@ -98,6 +98,9 @@ public
           if Util.isSome(association.jacobian) then
             str := BJacobian.toString(Util.getOption(association.jacobian), Partition.kindToString(association.kind)) + "\n";
           end if;
+          if Util.isSome(association.jacobianAdjoint) then
+            str := BJacobian.toString(Util.getOption(association.jacobianAdjoint), Partition.kindToString(association.kind) + " Adjoint") + "\n";
+          end if;
         then str;
         case CLOCKED() algorithm
           str := BClock.toString(association.clock);

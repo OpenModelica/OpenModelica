@@ -1347,7 +1347,7 @@ protected
     print(SparsityPattern.toString(sparsityPattern) + "\n" + SparsityColoring.toString(sparsityColoring) + "\n");
 
     jacobian := SOME(Jacobian.JACOBIAN(
-      name              = name,
+      name              = name + "_ADJ",
       jacType           = jacType,
       varData           = varDataJac,
       comps             = listArray(diffed_comps),
