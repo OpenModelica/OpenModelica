@@ -7,7 +7,8 @@ encapsulated package NBDifferentiateReverse
  How to handle the UNARY ops NEG, SIN, COS as they are no Expressions or Operators?
 "
 
-  public function getCref
+public  
+  function getCref
     "Extract cref from expression if it is a cref expression, otherwise return empty cref."
     input Expression expr;
     output ComponentRef cref;
@@ -18,56 +19,46 @@ encapsulated package NBDifferentiateReverse
     end match;
   end getCref;
 
-  // public function testBasicDifferentiation
-  //     input Real dummy;
-  //     output Boolean success;
-  //   protected
-  //     Expression x, y, expr, diff_expr, mulXY, mul2, mul3;
-  //     GradientMap grads;
-  //     Expression gradX, gradY;
-  //     NBDifferentiate.DifferentiationArguments diff_args, diff_args_diff;
-  //   algorithm
-  //     // Create test expression: f(x, y) = x * sin(y)
-  //     x := Expression.CREF(Type.REAL(), 
-  //                         ComponentRef.CREF(InstNode.NAME_NODE("x"), {}, Type.REAL(), Origin.CREF, ComponentRef.EMPTY()));
-  //     y := Expression.CREF(Type.REAL(),
-  //                         ComponentRef.CREF(InstNode.NAME_NODE("y"), {}, Type.REAL(), Origin.CREF, ComponentRef.EMPTY()));
+  type PartialMap = UnorderedMap<Expression, Expression>;
+  uniontype PartialsForComponent
+    record PARTIALS_FOR_COMPONENT
+      Expression outputExpr; // lhs of the equation (variable or expression)
+      PartialMap partials;   // d(outputExpr)/d(inputExpr) (inputExprs come from RHS)
+    end PARTIALS_FOR_COMPONENT;
+  end PartialsForComponent;
 
-  //     // sinY := Expression.CALL(Call.makeTypedCall(
-  //     //     fn          = NFBuiltinFuncs.SIN_REAL,
-  //     //     args        = {y},
-  //     //     variability = Expression.variability(y),
-  //     //     purity      = NFPrefixes.Purity.PURE));
-          
-  //     mulXY := Expression.BINARY(exp1 = x, operator = Operator.makeMul(Type.REAL()), exp2 = y);
-  //     mul2 := Expression.BINARY(exp1 = Expression.REAL(2.0), operator = Operator.makeMul(Type.REAL()), exp2 = y);
-  //     mul3 := Expression.BINARY(exp1 = Expression.REAL(3.0), operator = Operator.makeMul(Type.REAL()), exp2 = mulXY);
-  //     expr := Expression.BINARY(exp1 = mul2, operator = Operator.makeAdd(Type.REAL()), exp2 = mul3);
+  function partialMapToString
+    input PartialMap m;
+    output String str;
+  protected
+    list<tuple<Expression, Expression>> kvs;
+    Boolean first = true;
+    Expression k, v;
+  algorithm
+    kvs := UnorderedMap.toList(m);
+    str := "{";
+    for kv in kvs loop
+      (k, v) := kv;
+      if first then first := false; else str := str + ", "; end if;
+      str := str + "d/d(" + expressionToString(k) + ") = " + expressionToString(v);
+    end for;
+    str := str + "}";
+  end partialMapToString;
 
-
-  //     // diff_args := NBDifferentiate.DifferentiationArguments.simpleCref(getCref(x));
-  //     // (diff_expr, diff_args_diff) := NBDifferentiate.differentiateBinary(expr, diff_args);
-  //     // print("\n");
-
-  //     // print("Expression: " + expressionToString(expr) + "\n");
-  //     // print("Differentiated Expression w.r.t. x: " + expressionToString(diff_expr) + "\n");
-      
-  //     // Compute gradients reverse mode
-  //     grads := symbolicReverseMode(expr);
-  //     gradX := findGradient(x, grads); // y
-  //     gradY := findGradient(y, grads); // x + cos(y)
-  //     print("Expression: " + expressionToString(expr) + "\n");
-  //     print("Gradient w.r.t. x: " + expressionToString(gradX) + "\n");
-  //     print("Gradient w.r.t. y: " + expressionToString(gradY) + "\n");
-
-  //     success := true;
-  // end testBasicDifferentiation;
-
-
-
+  function collectPartialsForComponents
+    "Batch for a list of strong components, result shape: list< per-component list<PartialsForComponent> >."
+    input list<NBStrongComponent.StrongComponent> comps;
+    output list<list<PartialsForComponent>> results = {};
+  protected
+    NBStrongComponent.StrongComponent c;
+  algorithm
+    for c in comps loop
+      results := collectPartialsForStrongComponent(c) :: results;
+    end for;
+    results := listReverse(results);
+  end collectPartialsForComponents;
 
 protected
-  import DAE;
   import Expression = NFExpression;
   import Operator = NFOperator;
   import Op = NFOperator.Op;
@@ -79,15 +70,11 @@ protected
   import NFBuiltinFuncs;
   import Call = NFCall;
   import AbsynUtil;
-  import NFFunction.{Function, Slot};
+  import NFFunction.{Function};
   import NBDifferentiate;
   import StrongComponent = NBStrongComponent;
   import NBEquation;
-  import NBSolve;
   import BVariable = NBVariable;
-  import NBackendDAE;
-  import NFFlatten.FunctionTree;
-  import Partition = NBPartition;
   import Variable = NFVariable;
 
   // record Node
@@ -154,182 +141,6 @@ protected
     str := str + "]";
   end seedPartialsListToString;
 
-  type JacobianType = enumeration(ODE, DAE, LS, NLS);
-  public function testReverseStrongComponent
-    input NBackendDAE dae;
-    input Partition.Kind kind;
-  protected
-    // Expression x, y, term1, term2, lhs_expr, rhs;
-    // ComponentRef x_cref;
-    // ComponentRef lhs_cref;
-    // Pointer<NBVariable.Variable> x_var_ptr;
-    // Pointer<NBVariable.Variable> der_x_var_ptr;
-    GradientMap grads;
-    // Expression grad_x, grad_y;
-    // Pointer<NBEquation.Equation> eq_ptr;
-    // NBEquation.Equation eq;
-    // NBEquation.EquationAttributes attrs;
-
-    FunctionTree funcTree;
-    // UnorderedMap<ComponentRef,ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
-    // NBDifferentiate.DifferentiationArguments diffArguments;
-    // Pointer<Integer> idx = Pointer.create(0);
-    list<Partition.Partition> oldPartitions;
-    list<StrongComponent> comps, diffed_comps;
-    // JacobianType jacType;
-    // BVariable.VariablePointers unknowns;
-    // list<Pointer<Variable>> derivative_vars, state_vars;
-    // BVariable.VariablePointers seedCandidates, partialCandidates;
-    // Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
-    // Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
-    // list<Pointer<Variable>> res_vars, tmp_vars, seed_vars;
-    // String name;
-    // BVariable.checkVar func = BVariable.isStateDerivative;
-    // NBEquation.EquationPointer eq_ptr;
-    // Expression rdiff, expr;
-    // ComponentRef ref;
-    // UnorderedMap<ComponentRef, Expression> partials;
-    //list<tuple<Expression, list<Expression>>> allPartials = {};
-  algorithm
-    // // Proper backend variables (VAR_NODE) for x and y
-    // (x, x_var_ptr, x_cref) := createSimpleRealVar("x");
-    // (y, _,          _)     := createSimpleRealVar("y");
-
-    // // Build RHS: x*y + 2*y
-    // term1 := Expression.BINARY(x, Operator.makeMul(Type.REAL()), y);
-    // term2 := Expression.BINARY(Expression.REAL(2.0), Operator.makeMul(Type.REAL()), y);
-    // rhs   := Expression.BINARY(term1, Operator.makeAdd(Type.REAL()), term2);
-
-    // // Create derivative variable der(x)
-    // (lhs_cref, der_x_var_ptr) := NBVariable.makeDerVar(x_cref);
-    // lhs_expr := Expression.CREF(Type.REAL(), lhs_cref);
-
-    // // Equation der(x) = x*y + 2*y
-    // attrs := NBEquation.default(NBEquation.EquationKind.CONTINUOUS, false);
-    // eq := NBEquation.Equation.SCALAR_EQUATION(Type.REAL(), lhs_expr, rhs, DAE.emptyElementSource, attrs);
-    // eq_ptr := Pointer.create(eq);
-
-    // // Construct SINGLE_COMPONENT (adjust if your real signature differs)
-    // comp := StrongComponent.SINGLE_COMPONENT(x_var_ptr, eq_ptr, NBSolve.Status.EXPLICIT);
-
-
-    // allPartials := gatherPartialsForAllSeeds(dae, kind);
-
-
-    // // Print the collected partials
-    // print("allPartials = " + seedPartialsListToString(allPartials) + "\n");
-
-
-
-    // _ := match dae
-    //   case NBackendDAE.MAIN(funcTree = funcTree)
-    //     algorithm
-    //       oldPartitions := match kind
-    //         case NBPartition.Kind.ODE then dae.ode;
-    //       end match;
-
-
-    //       for part in oldPartitions loop
-    //         comps := list(comp for comp guard(not StrongComponent.isDiscrete(comp)) in Util.getOption(part.strongComponents));
-
-
-    //         // Differentiate residual (lhs - rhs)
-    //         for comp in comps loop
-    //           print("Original strong component:\n");
-    //           print("  " + StrongComponent.toString(comp) + "\n");
-              
-    //           grads := symbolicReverseModeStrongComponent(comp);
-
-    //           print("Computed gradients:\n");
-    //           print(" " + gradientMapToString(grads) + "\n");
-    //           print("###############################################\n");
-
-    //           // grad_x := findGradient(x, grads);
-    //           // grad_y := findGradient(y, grads);
-
-    //           // print("Residual equation: " + NBEquation.Equation.toString(eq) + "\n");
-    //           // print("df/dx = " + Expression.toString(grad_x) + "\n");
-    //           // print("df/dy = " + Expression.toString(grad_y) + "\n");
-    //         end for;
-
-    //         //gatherPartialsWrtInput({grads}, x);
-    //       end for;
-    //   then dae;
-    // end match;
-
-  // () := match dae
-  //   case NBackendDAE.MAIN(funcTree = funcTree)
-  //     algorithm
-  //       oldPartitions := match kind
-  //         case NBPartition.Kind.ODE then dae.ode;
-  //       end match;
-  //       jacType := JacobianType.ODE;
-  //       name := "TEST";
-  //       print(intString(listLength(oldPartitions)) + " partitions found.\n");
-  //       // differentiate all strong components
-  //       for part in oldPartitions loop
-  //         partialCandidates := part.unknowns;
-  //         unknowns  := part.unknowns;
-  //         derivative_vars := list(var for var guard(NBVariable.isStateDerivative(var)) in BVariable.VariablePointers.toList(unknowns));
-  //         state_vars := list(Util.getOption(NBVariable.getVarState(var)) for var in derivative_vars);
-  //         seedCandidates := BVariable.VariablePointers.fromList(state_vars, partialCandidates.scalarized);
-  //         comps := list(comp for comp guard(not StrongComponent.isDiscrete(comp)) in Util.getOption(part.strongComponents));
-
-  //         BVariable.VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map, makeVar = NBVariable.makeSeedVar, init = true));
-
-  //         // create pDer vars (also filters out discrete vars)
-  //         (res_vars, tmp_vars) := List.splitOnTrue(BVariable.VariablePointers.toList(partialCandidates), func);
-  //         (tmp_vars, _) := List.splitOnTrue(tmp_vars, function NBVariable.isContinuous(init = false));
-
-  //         for v in res_vars loop makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function NBVariable.makePDerVar(isTmp = false), init = true); end for;
-  //         res_vars := Pointer.access(pDer_vars_ptr);
-
-  //         pDer_vars_ptr := Pointer.create({});
-  //         for v in tmp_vars loop makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function NBVariable.makePDerVar(isTmp = true), init = true); end for;
-  //         tmp_vars := Pointer.access(pDer_vars_ptr);
-
-  //         // Build differentiation argument structure
-  //         diffArguments := NBDifferentiate.DIFFERENTIATION_ARGUMENTS(
-  //           diffCref        = ComponentRef.EMPTY(),   // no explicit cref necessary, rules are set by diff map
-  //           new_vars        = {},
-  //           diff_map        = SOME(diff_map),         // seed and temporary cref map
-  //           diffType        = NBDifferentiate.DifferentiationType.JACOBIAN,
-  //           funcTree        = funcTree,
-  //           scalarized      = seedCandidates.scalarized
-  //         );
-
-  //         (diffed_comps, diffArguments) := NBDifferentiate.differentiateStrongComponentList(comps, diffArguments, idx, "TEST", getInstanceName());
-
-  //         print("Original strong components:\n");
-  //         for c in comps loop
-  //           print("  " + StrongComponent.toString(c) + "\n");
-  //         end for;
-  //         print("Differentiated strong components:\n");
-  //         for c in diffed_comps loop
-  //           print("  " + StrongComponent.toString(c) + "\n");
-  //           eq_ptr := NBStrongComponent.getEquationPointers(c);
-  //           rdiff := diffedResidualExpr(Pointer.access(eq_ptr));
-  //           partials := collectPartialsWrtSeeds(rdiff, diff_map, diffArguments.scalarized);
-  //           print("    Collected partials: ");
-  //           for tpl in UnorderedMap.toList(partials) loop
-  //             (ref, expr) := tpl;
-  //             print("      " + ComponentRef.toString(ref) + " -> " + Expression.toString(expr) + "\n");
-  //           end for;
-  //         end for;
-  //       end for;
-  //     then ();
-  // end match;
-  end testReverseStrongComponent;
-
-  type PartialMap = UnorderedMap<Expression, Expression>;
-  uniontype PartialsForComponent
-    record PARTIALS_FOR_COMPONENT
-      Expression outputExpr; // lhs of the equation (variable or expression)
-      PartialMap partials;   // d(outputExpr)/d(inputExpr) (inputExprs come from RHS)
-    end PARTIALS_FOR_COMPONENT;
-  end PartialsForComponent;
-  type GradientMap = PartialMap;
-
   // Constructors and helpers for PartialMap
   function partialMapNew
     output PartialMap m;
@@ -364,26 +175,8 @@ protected
     end if;
   end partialMapAdd;
 
-  function partialMapToString
-    input PartialMap m;
-    output String str;
-  protected
-    list<tuple<Expression, Expression>> kvs;
-    Boolean first = true;
-    Expression k, v;
-  algorithm
-    kvs := UnorderedMap.toList(m);
-    str := "{";
-    for kv in kvs loop
-      (k, v) := kv;
-      if first then first := false; else str := str + ", "; end if;
-      str := str + "d/d(" + expressionToString(k) + ") = " + expressionToString(v);
-    end for;
-    str := str + "}";
-  end partialMapToString;
 
-
-  public function collectPartialsForStrongComponent
+  function collectPartialsForStrongComponent
     input NBStrongComponent.StrongComponent compIn;
     output list<PartialsForComponent> results;
   protected
@@ -400,19 +193,6 @@ protected
       else ();
     end match;
   end collectPartialsForStrongComponent;
-
-  public function collectPartialsForComponents
-    "Batch for a list of strong components, result shape: list< per-component list<PartialsForComponent> >."
-    input list<NBStrongComponent.StrongComponent> comps;
-    output list<list<PartialsForComponent>> results = {};
-  protected
-    NBStrongComponent.StrongComponent c;
-  algorithm
-    for c in comps loop
-      results := collectPartialsForStrongComponent(c) :: results;
-    end for;
-    results := listReverse(results);
-  end collectPartialsForComponents;
 
   function localPartialFor1ArgCall
     "Return local partial df/darg for a builtin single-argument call expression.
@@ -520,10 +300,20 @@ protected
   algorithm
     grad := match expr
       case Expression.REAL() then 
-        Expression.REAL(value = 0.0); 
+        Expression.REAL(0.0); 
 
       case Expression.CREF() then 
-        Expression.REAL(value = 1.0);
+        Expression.REAL(1.0);
+
+      case Expression.UNARY(operator = op, exp = child) then
+        match op.op
+          case Op.UMINUS then 
+            Expression.REAL(-1.0); // ∂(-a)/∂a = -1
+
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + "Failed! Given Unary Operator is not supported: " + Operator.toDebugString(op)});
+          then fail();
+        end match;
 
       case Expression.BINARY(exp1 = left_child, operator = op, exp2 = right_child) then
         // Differentiate based on the operator
@@ -548,10 +338,10 @@ protected
 
           case Op.DIV then
             if childIndex == 1 then
-              Expression.BINARY(Expression.REAL(1.0), Operator.makeDiv(Type.REAL()), right_child) // ∂(a / b)/∂a = 1/b
+              simplify(Expression.BINARY(Expression.REAL(1.0), Operator.makeDiv(Type.REAL()), right_child)) // ∂(a / b)/∂a = 1/b
             else
-              Expression.negate(Expression.BINARY(left_child, Operator.makeDiv(Type.REAL()), 
-                                Expression.BINARY(right_child, Operator.makePow(Type.REAL()), Expression.REAL(2.0)))); //∂(a / b)/∂b = -a/(b^2) 
+              simplify(Expression.negate(Expression.BINARY(left_child, Operator.makeDiv(Type.REAL()), 
+                                Expression.BINARY(right_child, Operator.makePow(Type.REAL()), Expression.REAL(2.0))))); //∂(a / b)/∂b = -a/(b^2) 
 
           case Op.MUL_MATRIX_VECTOR then
             if childIndex == 1 then 
@@ -583,9 +373,9 @@ protected
         if op.op == Op.ADD then
           grad := if childIndex <= nArgs then Expression.REAL(1.0) else Expression.REAL(-1.0);
         elseif op.op == Op.MUL then
-          P := if listEmpty(args) then Expression.REAL(1.0) else prodExp(args, ty);
-          Q := if listEmpty(inv_args) then Expression.REAL(1.0) else prodExp(inv_args, ty);
-          base := divExp(P, Q, ty);
+          P := if listEmpty(args) then Expression.REAL(1.0) else simplify(prodExp(args, ty));
+          Q := if listEmpty(inv_args) then Expression.REAL(1.0) else simplify(prodExp(inv_args, ty));
+          base := simplify(divExp(P, Q, ty));
           if childIndex <= nArgs then
             child := listGet(args, childIndex);
             grad := simplify(divExp(base, child, ty));
@@ -616,13 +406,14 @@ protected
     input Expression expr;
     output list<Expression> children;
   protected
-    Expression left_child, right_child;
+    Expression left_child, right_child, child;
     Operator op;
     list<Expression> multary_args, multary_inv_args;
   algorithm
     children := match expr
         case Expression.REAL() then {};
         case Expression.CREF() then {};
+        case Expression.UNARY(operator = op, exp = child) then {child};
         case Expression.BINARY(exp1 = left_child, operator = op, exp2 = right_child) then {left_child, right_child};
         case Expression.MULTARY(arguments = multary_args, inv_arguments = multary_inv_args) then listAppend(multary_args, multary_inv_args);
         case Expression.CALL() then 
@@ -631,7 +422,6 @@ protected
               list<Expression> args;
             case Expression.CALL(call = Call.TYPED_CALL(arguments = args)) then args;
           end match;
-        // case UNARY(operator = op, exp = child) then {child};
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + "Failed! Given Expression is not supported: " + Expression.toString(expr)});
         then fail();
@@ -655,63 +445,46 @@ protected
     str := Expression.toString(expr);
   end expressionToString;
 
-  // Check if expression is in visited list
-  function isVisited
-    input Expression expr;
-    input list<Expression> visited;
-    output Boolean result;
-  algorithm
-    result := false;
-    for v in visited loop
-      if expressionEqual(expr, v) then
-        result := true;
-        return;
-      end if;
-    end for;
-  end isVisited;
-
   // Build computation tape in post-order traversal
   function buildTape
     input Expression expr;
     output list<Expression> tape;
+  protected
+    UnorderedSet<Expression> visited;
   algorithm
-    tape := buildTapeHelper(expr, {}, {});
+    // Hash set for fast membership: Expression.hash / Expression.isEqual
+    visited := UnorderedSet.new<Expression>(Expression.hash, Expression.isEqual);
+    tape := buildTapeHelper(expr, {}, visited);
   end buildTape;
 
   // Helper function for building tape with visited tracking
   function buildTapeHelper
     input Expression expr;
     input list<Expression> currentTape;
-    input list<Expression> visited;
+    input UnorderedSet<Expression> visited;
     output list<Expression> tape;
   protected
     list<Expression> children;
   algorithm
     // Check if already processed
-    if isVisited(expr, visited) then
+    if UnorderedSet.contains(expr, visited) then
       tape := currentTape;
       return;
     end if;
+    // if not visited mark as visited now
+    UnorderedSet.add(expr, visited);
     
     // Process children first (post-order)
     tape := currentTape;
     children := getChildren(expr);
     
     for child in children loop
-      tape := buildTapeHelper(child, tape, expr :: visited);
+      tape := buildTapeHelper(child, tape, visited);
     end for;
     
     // Add current expression to tape
     tape := expr :: tape;
   end buildTapeHelper;
-
-  // Helper function to check if expression is zero constant
-  function isZeroConstant
-    input Expression expr;
-    output Boolean result;
-  algorithm
-    result := Expression.isZero(expr);
-  end isZeroConstant;
 
   // Simplification rules for algebraic expressions
   function simplify
@@ -778,7 +551,7 @@ protected
     // Process tape in reverse logical order (we built tape by prepending children first)
     for operation in tape loop
       currentGrad := partialMapGet(partials, operation);
-      if isZeroConstant(currentGrad) then
+      if Expression.isZero(currentGrad) then
         continue;
       end if;
 
