@@ -1,24 +1,32 @@
+OMC := $(shell test -e ../../../build/install_cmake/bin/omc && echo ../../../build/install_cmake/bin/omc \
+               || test -e ../../../build_cmake/install_cmake/bin/omc && echo ../../../build_cmake/install_cmake/bin/omc \
+               || echo ../../../build/bin/omc )
+OMC := $(shell realpath $(OMC))
 
 FMPY_CALL = python3 -m fmpy
 
-FMU_DIRECTORY = ../FmuExportCrossCompile
 FMU = FmuExportCrossCompile.fmu \
       RoomHeating_OM_RH.fmu \
       WaterTank_Control.fmu \
       WaterTank_TestSingleWaterTank.fmu \
-      BouncingBall.fmu
+      BouncingBall.fmu \
+#       TableTest.fmu # Disabled because it breaks on the maintenance/v1.25 branch. Works on the master branch
 
-.PHONY: all test
+.PHONY: all test clean
 
 all: compile_FMUs
 	$(MAKE) test
+
 test: $(FMU)
 
-%.fmu:
+copy:
+	cp ../FmuExportCrossCompile/*.fmu .
+
+%.fmu: copy
 	@echo -----------------------------------------------------------------------
 	@echo $@
   # Remove binaries
-	unzip -qq $(FMU_DIRECTORY)/$@ -d $@_FMU/
+	unzip -qq $@ -d $@_FMU/
 	rm -rf $@_FMU/binaries
 	cd $@_FMU/; zip -qqr ../$@ *
 	rm -rf $@_FMU/
@@ -30,6 +38,10 @@ test: $(FMU)
 compile_FMUs:
 	make -C ../FmuExportCrossCompile
 
+fmpy-fmus:
+	$(OMC) testCompileModelicaStandardTables.mos
+
 clean:
-	rm -f $(FMU)
+	rm -f $(FMU) *.fmu
 	rm -rf $(addsuffix _FMU/,$(FMU))
+	rm -rf TableTest/
