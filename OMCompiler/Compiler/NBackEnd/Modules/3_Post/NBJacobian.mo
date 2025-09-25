@@ -69,6 +69,11 @@ protected
   import DifferentiatePartials = NBDifferentiatePartials;
   import NBVariable.{VariablePointers, VariablePointer, VarData};
   import NBDifferentiateReverse;
+  //import NBSeedGather;
+
+  import Call = NFCall;
+  import NFBuiltinFuncs;
+  import NFPrefixes;
 
   // Old Backend Import (remove once coloring ins ported)
   import SymbolicJacobian;
@@ -886,6 +891,10 @@ protected
       sparsityPattern   = sparsityPattern,
       sparsityColoring  = sparsityColoring
     ));
+
+    // if Flags.isSet(Flags.JAC_DUMP) then
+    //   NBSeedGather.testGatherInJacobian(Util.getOption(jacobian), 10);
+    // end if;
   end jacobianSymbolic;
 
   function mulCoeffRhs
@@ -898,7 +907,7 @@ protected
       Type.REAL()
     );
   algorithm
-    term := SimplifyExp.simplify(Expression.MULTARY({coeff, Expression.CREF(Type.REAL(), rhsVar)}, {}, mulOp));
+    term := SimplifyExp.simplify(Expression.MULTARY({coeff, Expression.CREF(Type.REAL(), rhsVar)}, {}, mulOp), true);
   end mulCoeffRhs;
 
   function mulCoeffRhsClassified
@@ -913,7 +922,7 @@ protected
       Type.REAL()
     );
   algorithm
-    term := SimplifyExp.simplify(Expression.MULTARY({coeff, Expression.CREF(Type.REAL(), rhsVar)}, {}, mulOp));
+    term := SimplifyExp.simplify(Expression.MULTARY({coeff, Expression.CREF(Type.REAL(), rhsVar)}, {}, mulOp), true);
   end mulCoeffRhsClassified;
 
   // Element-wise array multiplication: a .* q
@@ -934,7 +943,7 @@ protected
             Operator.fromClassification(
               (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ELEMENT_WISE),
               Type.REAL()
-            )));
+            )), true);
     end match;
   end arrayElemMul;
 
@@ -956,7 +965,7 @@ protected
             Operator.fromClassification(
               (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX_VECTOR),
               Type.REAL()
-            )));
+            )), true);
     end match;
   end matVecMul;
 
@@ -983,78 +992,86 @@ protected
     (pderCref, vp) := BVariable.makePDerVar(baseCref, name, isTmp);
   end ensurePDerVarCref;
 
+  // function typeTransposeCall
+  //   "Create a typed builtin transpose(mat) call without expanding mat.
+  //    Returns mat if it is not an array with at least 2 dimensions."
+  //   input Expression mat;
+  //   output Expression tr;
+  // protected
+  //   Type inTy = Expression.typeOf(mat);
+  //   list<Type.Dimension> dims;
+  //   Type elTy;
+  //   Type resTy;
+  //   NFCall call;
+  //   NFPrefixes.Variability var = Expression.variability(mat);
+  //   NFPrefixes.Purity pur = Expression.purity(mat);
+  //   NFFunction.Function TRANSPOSE_FUNC;
+  // algorithm
+  //   // Only handle array types
+  //   if not Type.isArray(inTy) then
+  //     tr := mat;
+  //     return;
+  //   end if;
 
-  function materializeArray2D
-    input Expression exp;            // type Real[n,m]
-    output Expression arrExp;        // ARRAY(ARRAY(Real,...),...)
-  protected
-    Expression e;
-    Boolean changed;
-  algorithm
-    // Try to expand things like array constructors/calls to a literal ARRAY
-    (e, changed) := NFExpandExp.expand(exp);
+  //   elTy := Type.arrayElementType(inTy);
+  //   dims := Type.arrayDims(inTy);
 
-    if Expression.isArray(e) then
-      arrExp := e;
-      return;
-    end if;
+  //   // Need at least 2 dimensions to transpose
+  //   if listLength(dims) < 2 then
+  //     tr := mat;
+  //     return;
+  //   end if;
 
-    // If it's a cref (or can be treated as one), build an ARRAY of scalar crefs
-    // mapCrefScalars will expand dimensions and call the mapper for each scalar element.
-    arrExp := match exp
-      case Expression.CREF() then NFExpression.mapCrefScalars(exp, function NFExpression.fromCref(includeScope = true));
-      case Expression.SUBSCRIPTED_EXP(exp = Expression.CREF())
-        then NFExpression.mapCrefScalars(exp, function NFExpression.fromCref(includeScope = true));
-      else e; // fallback: nothing better to do
-    end match;
-  end materializeArray2D;
+  //   // Swap first two dimensions; keep the rest
+  //   resTy := Type.ARRAY(
+  //     elTy,
+  //     listAppend({listGet(dims,2), listGet(dims,1)}, listRest(listRest(dims)))
+  //   );
 
-  // Transpose any Real[n,m] expression. Requires the input to be materialized to ARRAY.
-  function transpose2D
-    input Expression exp;            // type Real[n,m]
-    output Expression transposed;    // type Real[m,n], ARRAY form
-  protected
-    Expression a;
-  algorithm
-    a := materializeArray2D(exp);
+  //   // Build a minimal builtin function descriptor (local, not globally registered)
+  //   TRANSPOSE_FUNC :=
+  //     NFFunction.Function.FUNCTION(
+  //       Absyn.Path.IDENT("transpose"),
+  //       NFInstNode.EMPTY_NODE(),
+  //       {}, {}, {}, {},
+  //       resTy,
+  //       DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+  //       {}, {}, listArray({}),
+  //       Pointer.createImmutable(NFFunction.FunctionStatus.BUILTIN),
+  //       Pointer.createImmutable(0));
 
-    if not Expression.isArray(a) then
-      // Could also build a builtin transpose() call here if you prefer:
-      // transposed := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.TRANSPOSE, {exp}, NFExpression.variability(exp), NFPrefixes.Purity.PURE));
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected ARRAY for transpose, got: " + NFExpression.toString(exp)});
-      fail();
-    end if;
+  //   call := NFCall.makeTypedCall(TRANSPOSE_FUNC, {mat}, var, pur, resTy);
+  //   tr := Expression.CALL(call);
+  // end typeTransposeCall;
 
-    transposed := NFExpression.transposeArray(a);
-  end transpose2D;
-
-
-  function makeAdjointContribution
-    input Expression coeff;
-    input ComponentRef rhsVar;
-    output Expression term;
-  protected
-    Type tyC = Expression.typeOf(coeff);
-    Integer rnk = Type.dimensionCount(tyC); // 0: scalar, 1: vector, 2: matrix
-    Expression qexp = Expression.CREF(Type.REAL(), rhsVar); // actual type is handled by helpers
-  algorithm
-    if not Type.isArray(tyC) then
-      // scalar
-      term := mulCoeffRhs(coeff, rhsVar);
-    elseif rnk == 1 then
-      // vector coeff -> element-wise multiply
-      print("arrayElemMul with coeff: " + Expression.toStringTyped(coeff) + "\n");
-      term := SimplifyExp.simplifyDump(arrayElemMul(coeff, qexp), true, getInstanceName());
-    elseif rnk == 2 then
-      // matrix coeff -> transpose(coeff) * q
-      print("matVecMul with coeff: " + Expression.toStringTyped(coeff) + "\n");
-      print(Expression.toStringTyped(materializeArray2D(coeff)) + "\n");
-      term := SimplifyExp.simplifyDump(matVecMul(transpose2D(materializeArray2D(coeff)), qexp), true, getInstanceName());
-    else
-      // higher ranks: fallback to plain multiply
-      term := mulCoeffRhs(coeff, rhsVar);
-    end if;
-  end makeAdjointContribution;
+  // function makeAdjointContribution
+  //   input Expression coeff;
+  //   input ComponentRef rhsVar;
+  //   output Expression term;
+  // protected
+  //   Type tyC = Expression.typeOf(coeff);
+  //   Integer rnk = Type.dimensionCount(tyC); // 0: scalar, 1: vector, 2: matrix
+  //   Expression qexp = Expression.CREF(Type.REAL(), rhsVar); // actual type is handled by helpers
+  //   Expression transposeCoeff;
+  // algorithm
+  //   if not Type.isArray(tyC) then
+  //     // scalar
+  //     term := mulCoeffRhs(coeff, rhsVar);
+  //   elseif rnk == 1 then
+  //     // vector coeff -> element-wise multiply
+  //     print("arrayElemMul with coeff: " + Expression.toStringTyped(coeff) + "\n");
+  //     term := SimplifyExp.simplify(arrayElemMul(coeff, qexp));
+  //   elseif rnk == 2 then
+  //     // matrix coeff -> transpose(coeff) * q
+  //     print("matVecMul with coeff: " + Expression.toStringTyped(coeff) + "\n");
+  //     transposeCoeff := typeTransposeCall(coeff);
+  //     print("matVecMul with coeff transposed: " + Expression.toStringTyped(transposeCoeff) + "\n");
+  //     term := SimplifyExp.simplify(matVecMul(transposeCoeff, qexp));
+  //   else
+  //     // higher ranks: fallback to plain multiply
+  //     term := mulCoeffRhs(coeff, rhsVar);
+  //   end if;
+  // end makeAdjointContribution;
 
   function sizeClassificationFromType
     input Type ty;
@@ -1076,7 +1093,6 @@ protected
   protected
     list<StrongComponent> comps, diffed_comps;
     list<list<NBDifferentiateReverse.PartialsForComponent>> results;
-    NBDifferentiateReverse.PartialsForComponent res_;
     // sets for naming and filtering
     UnorderedSet<ComponentRef> seedVarsSet;
     UnorderedSet<ComponentRef> resVarsSet;
@@ -1206,8 +1222,9 @@ protected
                 end if;
 
                 dqdv := UnorderedMap.getSafe(inExpr, pm, sourceInfo());
-                print("simplified dqdv: " + Expression.toString(NFSimplifyExp.simplify(dqdv)) + "\n");
-                term := makeAdjointContribution(dqdv, q_adj);
+                print("simplified dqdv: " + Expression.toString(NFSimplifyExp.simplify(dqdv, true)) + "\n");
+                //term := makeAdjointContribution(dqdv, q_adj);
+                term := mulCoeffRhs(dqdv, q_adj);
                 //term := mulCoeffRhs(dqdv, q_adj);
                 // Parenthesize coefficient for precedence, e.g. (1.0 + e) * z_s
                 print(ComponentRef.toString(x_adj) + " = " + Expression.toString(term) + "\n");
@@ -1231,15 +1248,19 @@ protected
     for lhsKey in UnorderedMap.keyList(lhsToRhs) loop
       terms := listReverse(UnorderedMap.getSafe(lhsKey, lhsToRhs, sourceInfo()));
 
-
+      // rhsExpr := Expression.MULTARY(terms, {}, Operator.fromClassification(
+      //   (NFOperator.MathClassification.ADDITION, sizeClassificationFromType(ComponentRef.getComponentType(lhsKey))),
+      //   Type.REAL()
+      // ));
       rhsExpr := Expression.MULTARY(terms, {}, Operator.fromClassification(
-        (NFOperator.MathClassification.ADDITION, sizeClassificationFromType(ComponentRef.getComponentType(lhsKey))),
+        (NFOperator.MathClassification.ADDITION, NFOperator.SizeClassification.SCALAR),
         Type.REAL()
       ));
       print(ComponentRef.toString(lhsKey) + " = " + Expression.toString(rhsExpr) + "\n");
 
       // LHS expression (cref with Real type)
-      lhsExpr := Expression.CREF(ComponentRef.getComponentType(lhsKey), lhsKey);
+      // lhsExpr := Expression.CREF(ComponentRef.getComponentType(lhsKey), lhsKey);
+      lhsExpr := Expression.CREF(Type.REAL(), lhsKey);
       print(Expression.toStringTyped(lhsExpr));
 
       // Create a scalar equation lhs = rhs

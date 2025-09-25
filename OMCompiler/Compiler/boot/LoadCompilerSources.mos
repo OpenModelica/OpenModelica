@@ -312,9 +312,9 @@ if true then /* Suppress output */
     "../NBackEnd/Util/NBDifferentiate.mo",
     "../NBackEnd/Util/NBDifferentiatePartials.mo",
     "../NBackEnd/Util/NBDifferentiateReverse.mo",
-    // "../NBackEnd/Util/NBDifferentiateReverse_new.mo",
     "../NBackEnd/Util/NBReplacements.mo",
     "../NBackEnd/Util/NBResizable.mo",
+    "../NBackEnd/Util/NBSeedGather.mo",
     "../NBackEnd/Util/NBSlice.mo",
 
   // "NSimCode"
