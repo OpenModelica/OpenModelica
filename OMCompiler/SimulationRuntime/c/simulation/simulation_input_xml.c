@@ -427,6 +427,51 @@ static void read_var_attribute_string(omc_ScalarVariable *v, STRING_ATTRIBUTE *a
   infoStreamPrint(OMC_LOG_DEBUG, 0, "String %s(start=%s)", findHashStringString(v,"name"), MMC_STRINGDATA(attribute->start));
 }
 
+/**
+ * @brief Check if a variable should be filtered from the output
+ *
+ * the check is like this:
+ * - we filter if isProtected (protected variables)
+ * - we filter if annotation(HideResult=true)
+ * - we emit (remove filtering) if !encrypted && emitProtected && isProtected
+ * - we emit (remove filtering) if ignoreHideResult && annotation(HideResult=true)
+ *
+ * @param variable  Variable to check
+ * @param name      Variable name
+ *
+ * @return TRUE if the variable should be filtered (not appear in the output)
+ */
+int shouldFilterOutput(omc_ScalarVariable *variable, const char *name)
+{
+  int ep = omc_flag[FLAG_EMIT_PROTECTED];
+  int ihr = omc_flag[FLAG_IGNORE_HIDERESULT];
+  const char *ipstr = findHashStringString(variable, "isProtected");
+  const char *hrstr = findHashStringString(variable, "hideResult");
+  const char *iestr = findHashStringString(variable, "isEncrypted");
+  int ipcmptrue = (0 == strcmp(ipstr, "true"));
+  int hrcmptrue = (0 == strcmp(hrstr, "true"));
+  int iecmptrue = (0 == strcmp(iestr, "true"));
+
+  if (ipcmptrue) {
+    infoStreamPrint(OMC_LOG_DEBUG, 0, "filtering protected variable %s", name);
+    return TRUE;
+  }
+  if (hrcmptrue) {
+    infoStreamPrint(OMC_LOG_DEBUG, 0, "filtering variable %s due to HideResult annotation", name);
+    return TRUE;
+  }
+  if (!iecmptrue && ep && ipcmptrue) {
+    infoStreamPrint(OMC_LOG_DEBUG, 0, "emitting protected variable %s due to flag %s", name, omc_flagValue[FLAG_EMIT_PROTECTED]);
+    return FALSE;
+  }
+  if (ihr && hrcmptrue) {
+    infoStreamPrint(OMC_LOG_DEBUG, 0, "emitting variable %s with HideResult=true annotation due to flag %s", name, omc_flagValue[FLAG_IGNORE_HIDERESULT]);
+    return FALSE;
+  }
+
+  return FALSE;
+}
+
 /* \brief
  *  Reads initial values from a text file.
  *
@@ -617,47 +662,6 @@ void read_input_xml(MODEL_DATA* modelData,
     EXIT(-1);
   }
 
-
-/* general check for filtering the output for a variable
- * defined here to be reused everywhere
- * the check is like this:
- * - we filter if isProtected (protected variables)
- * - we filter if annotation(HideResult=true)
- * - we emit (remove filtering) if !encrypted && emitProtected && isProtected
- * - we emit (remove filtering) if ignoreHideResult && annotation(HideResult=true)
- */
-#define setFilterOuput(v, s, n) \
-{ \
-  int ep = omc_flag[FLAG_EMIT_PROTECTED]; \
-  int ihr = omc_flag[FLAG_IGNORE_HIDERESULT]; \
-  const char *ipstr = findHashStringString((v), "isProtected"); \
-  const char *hrstr = findHashStringString((v), "hideResult"); \
-  const char *iestr = findHashStringString((v), "isEncrypted"); \
-  int ipcmptrue = (0 == strcmp(ipstr, "true")); \
-  int hrcmptrue = (0 == strcmp(hrstr, "true")); \
-  int iecmptrue = (0 == strcmp(iestr, "true")); \
-  if (ipcmptrue) \
-  { \
-    infoStreamPrint(OMC_LOG_DEBUG, 0, "filtering protected variable %s", (n)); \
-    (s).filterOutput = 1; \
-  } \
-  if (hrcmptrue) \
-  { \
-    infoStreamPrint(OMC_LOG_DEBUG, 0, "filtering variable %s due to HideResult annotation", (n)); \
-    (s).filterOutput = 1; \
-  } \
-  if (!iecmptrue && ep && ipcmptrue) \
-  { \
-    infoStreamPrint(OMC_LOG_DEBUG, 0, "emitting protected variable %s due to flag %s", (n), omc_flagValue[FLAG_EMIT_PROTECTED]); \
-    (s).filterOutput = 0; \
-  } \
-  if (ihr && hrcmptrue) \
-  { \
-    infoStreamPrint(OMC_LOG_DEBUG, 0, "emitting variable %s with HideResult=true annotation due to flag %s", (n), omc_flagValue[FLAG_IGNORE_HIDERESULT]); \
-    (s).filterOutput = 0; \
-  } \
-}
-
 /* read all static data from File for every variable */
 #define READ_VARIABLES(out, in, attributeKind, read_var_attribute, debugName, start, nStates, mapAlias) \
   infoStreamPrint(OMC_LOG_DEBUG, 1, "read xml file for %s", debugName); \
@@ -679,7 +683,7 @@ void read_input_xml(MODEL_DATA* modelData,
       attributeKind *attribute = &out[j+i_loc].attribute; \
       read_var_info(v, info); \
       read_var_attribute(v, attribute); \
-      setFilterOuput(v, out[j+i_loc], info->name); \
+      out[j+i_loc].filterOutput = shouldFilterOutput(v, info->name); \
       /* create a mapping for Alias variable to get the correct index */ \
       addHashStringLong(&mapAlias, info->name, j+i_loc); \
       debugStreamPrint(OMC_LOG_DEBUG, 0, "real %s: mapAlias[%s] = %ld", debugName, info->name, (long) j+i_loc); \
@@ -736,7 +740,7 @@ void read_input_xml(MODEL_DATA* modelData,
     }
     infoStreamPrint(OMC_LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->realAlias[i].info.name, modelData->realAlias[i].negate);
 
-    setFilterOuput(*findHashLongVar(mi.rAli,i), modelData->realAlias[i], modelData->realAlias[i].info.name);
+    modelData->realAlias[i].filterOutput = shouldFilterOutput(*findHashLongVar(mi.rAli,i), modelData->realAlias[i].info.name);
 
     free((char*)aliasTmp);
     aliasTmp = NULL;
@@ -782,7 +786,7 @@ void read_input_xml(MODEL_DATA* modelData,
 
     infoStreamPrint(OMC_LOG_DEBUG, 0, "read for %s negated %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].negate);
 
-    setFilterOuput(*findHashLongVar(mi.iAli,i), modelData->integerAlias[i], modelData->integerAlias[i].info.name);
+    modelData->integerAlias[i].filterOutput = shouldFilterOutput(*findHashLongVar(mi.iAli,i), modelData->integerAlias[i].info.name);
 
     free((char*)aliasTmp);
     aliasTmp = NULL;
@@ -826,7 +830,7 @@ void read_input_xml(MODEL_DATA* modelData,
 
     infoStreamPrint(OMC_LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->booleanAlias[i].info.name, modelData->booleanAlias[i].negate);
 
-    setFilterOuput(*findHashLongVar(mi.bAli,i), modelData->booleanAlias[i], modelData->booleanAlias[i].info.name);
+    modelData->booleanAlias[i].filterOutput = shouldFilterOutput(*findHashLongVar(mi.bAli,i), modelData->booleanAlias[i].info.name);
 
     free((char*)aliasTmp);
     aliasTmp = NULL;
@@ -869,7 +873,7 @@ void read_input_xml(MODEL_DATA* modelData,
     }
     infoStreamPrint(OMC_LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->stringAlias[i].info.name, modelData->stringAlias[i].negate);
 
-    setFilterOuput(*findHashLongVar(mi.sAli,i), modelData->stringAlias[i], modelData->stringAlias[i].info.name);
+     modelData->stringAlias[i].filterOutput = shouldFilterOutput(*findHashLongVar(mi.sAli,i), modelData->stringAlias[i].info.name);
 
     free((char*)aliasTmp);
     aliasTmp = NULL;
