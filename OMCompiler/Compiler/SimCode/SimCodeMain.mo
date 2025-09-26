@@ -456,7 +456,7 @@ algorithm
   try
     SimCodeUtil.resetFunctionIndex();
     SimCodeFunctionUtil.codegenResetTryThrowIndex();
-    if Config.acceptMetaModelicaGrammar() or Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
+    if /*Config.acceptMetaModelicaGrammar() or*/ Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
       Tpl.textFileConvertLines(Tpl.tplCallWithFailErrorNoArg(func), file);
     else
       nErr := Error.getNumErrorMessages();
