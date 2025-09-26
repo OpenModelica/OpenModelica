@@ -282,7 +282,7 @@ public
   algorithm
     func := match Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN)
       case "symbolic" then jacobianSymbolic;
-      case "adjoint" then jacobianSymbolicAdjoint;
+      case "adjoint" then jacobianSymbolicAdjoint2;
       case "numeric"  then jacobianNumeric;
       case "none"     then jacobianNone;
     end match;
@@ -845,7 +845,10 @@ protected
       diff_map        = SOME(diff_map),         // seed and temporary cref map
       diffType        = NBDifferentiate.DifferentiationType.JACOBIAN,
       funcTree        = funcTree,
-      scalarized      = seedCandidates.scalarized
+      scalarized      = seedCandidates.scalarized,
+      adjoint_map     = NONE(),
+      current_grad    = Expression.EMPTY(Type.REAL()),
+      collectAdjoints = true
     );
 
     // differentiate all strong components
@@ -1069,6 +1072,150 @@ protected
       else
         NFOperator.SizeClassification.MATRIX_VECTOR;
   end sizeClassificationFromType;
+
+  function adjointMapToString
+    "Pretty print the optional adjoint_map:
+       { cref1 -> [e1, e2, ...]; cref2 -> [ ... ]; }
+     If NONE() => {}"
+    input Option<UnorderedMap<ComponentRef, ExpressionList>> adjoint_map;
+    output String str;
+  protected
+    UnorderedMap<ComponentRef, ExpressionList> map;
+    list<ComponentRef> keys;
+    list<String> entries = {};
+    ComponentRef k;
+    ExpressionList elst;
+    String kstr;
+    String vstr;
+    list<String> vparts;
+  algorithm
+    if not Util.isSome(adjoint_map) then
+      str := "{}";
+      return;
+    end if;
+
+    SOME(map) := adjoint_map;
+
+    // Collect and sort keys (for deterministic output).
+    keys := UnorderedMap.keyList(map);
+    entries := {};
+    for k in keys loop
+      elst := UnorderedMap.getOrFail(k, map);
+      vparts := list(Expression.toString(e) for e in elst);
+      vstr := "[" + stringDelimitList(vparts, ", ") + "]";
+      kstr := ComponentRef.toString(k);
+      entries := (kstr + " -> " + vstr) :: entries;
+    end for;
+
+    entries := listReverse(entries);
+    str := "{ " + stringDelimitList(entries, "; ") + " }";
+  end adjointMapToString;
+
+
+  function jacobianSymbolicAdjoint2 extends Module.jacobianInterface;
+  protected
+    list<StrongComponent> comps, diffed_comps;
+    Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
+    Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
+    UnorderedMap<ComponentRef,ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
+    Differentiate.DifferentiationArguments diffArguments;
+    Pointer<Integer> idx = Pointer.create(0);
+
+    list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, tmp_vars, seed_vars, old_res_vars;
+    BVariable.VarData varDataJac;
+    SparsityPattern sparsityPattern;
+    SparsityColoring sparsityColoring;
+
+    BVariable.checkVar func = getTmpFilterFunction(jacType);
+    UnorderedMap<ComponentRef, ExpressionList> adjoint_map;
+  algorithm
+    if Util.isSome(strongComponents) then
+      // filter all discrete strong components and differentiate the others
+      // todo: mixed algebraic loops should be here without the discrete subsets
+      comps := list(comp for comp guard(not StrongComponent.isDiscrete(comp)) in Util.getOption(strongComponents));
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no strong components were given!"});
+    end if;
+
+    // create seed vars
+    for v in VariablePointers.toList(seedCandidates) loop makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), init = init); end for;
+    //VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = pDer_vars_ptr, map = diff_map, makeVar = BVariable.makePDerVar(isTmp = false), init = init));
+    res_vars := Pointer.access(pDer_vars_ptr);
+
+    // create pDer vars (also filters out discrete vars)
+    (old_res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
+    (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(init = init));
+
+    for v in old_res_vars loop makeVarTraverse(v, name, seed_vars_ptr, diff_map, BVariable.makeSeedVar, init = init); end for;
+    seed_vars := Pointer.access(seed_vars_ptr);
+
+    pDer_vars_ptr := Pointer.create({});
+    for v in tmp_vars loop makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), init = init); end for;
+    tmp_vars := Pointer.access(pDer_vars_ptr);
+
+    // create empty adjoint map with seed vars and tmp vars as keys mapping to empty lists
+    adjoint_map := UnorderedMap.new<ExpressionList>(ComponentRef.hash, ComponentRef.isEqual);
+    for v in res_vars loop
+      UnorderedMap.addNew(BVariable.getVarName(v), {}, adjoint_map);
+    end for;
+    for v in tmp_vars loop
+      UnorderedMap.addNew(BVariable.getVarName(v), {}, adjoint_map);
+    end for;
+    
+    print("Adjoint map before:\n" + adjointMapToString(SOME(adjoint_map)) + "\n");
+
+    // Build differentiation argument structure
+    diffArguments := Differentiate.DIFFERENTIATION_ARGUMENTS(
+      diffCref        = ComponentRef.EMPTY(),   // no explicit cref necessary, rules are set by diff map
+      new_vars        = {},
+      diff_map        = SOME(diff_map),         // seed and temporary cref map
+      diffType        = NBDifferentiate.DifferentiationType.JACOBIAN,
+      funcTree        = funcTree,
+      scalarized      = seedCandidates.scalarized,
+      adjoint_map     = SOME(adjoint_map),
+      current_grad    = Expression.EMPTY(Type.REAL()),
+      collectAdjoints  = true
+    );
+
+    // differentiate all strong components
+    (diffed_comps, diffArguments) := Differentiate.differentiateStrongComponentListAdjoint(comps, diffArguments, idx, name, getInstanceName());
+    funcTree := diffArguments.funcTree;
+
+    print("Adjoint map after:\n" + adjointMapToString(diffArguments.adjoint_map) + "\n");
+
+    // collect var data (most of this can be removed)
+    unknown_vars  := listAppend(res_vars, tmp_vars);
+    all_vars      := unknown_vars;  // add other vars later on
+
+    seed_vars     := Pointer.access(seed_vars_ptr);
+    aux_vars      := seed_vars;     // add other auxiliaries later on
+    alias_vars    := {};
+    depend_vars   := {};
+
+    varDataJac := BVariable.VAR_DATA_JAC(
+      variables     = VariablePointers.fromList(all_vars),
+      unknowns      = VariablePointers.fromList(unknown_vars),
+      knowns        = knowns,
+      auxiliaries   = VariablePointers.fromList(aux_vars),
+      aliasVars     = VariablePointers.fromList(alias_vars),
+      diffVars      = partialCandidates,
+      dependencies  = VariablePointers.fromList(depend_vars),
+      resultVars    = VariablePointers.fromList(res_vars),
+      tmpVars       = VariablePointers.fromList(tmp_vars),
+      seedVars      = VariablePointers.fromList(seed_vars)
+    );
+
+    (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
+
+    jacobian := SOME(Jacobian.JACOBIAN(
+      name              = name,
+      jacType           = jacType,
+      varData           = varDataJac,
+      comps             = listArray(diffed_comps),
+      sparsityPattern   = sparsityPattern,
+      sparsityColoring  = sparsityColoring
+    ));
+  end jacobianSymbolicAdjoint2;
 
   // for saving terms for the same lhs in a map
   type ExpressionList = list<Expression>;
