@@ -167,7 +167,7 @@ end scalarizeVariable;
 
 function scalarizeBackendVariable
   input Variable var;
-  input List<Integer> indices = {};
+  input list<Integer> indices = {};
   input output list<Variable> vars = {};
 protected
   list<ComponentRef> crefs;
