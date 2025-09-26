@@ -7,7 +7,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/bomc/sources.tar.gz")
 else()
 #download and unpack the sources
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bomc/)
-file(DOWNLOAD https://github.com/OpenModelica/OMBootstrapping/archive/refs/heads/master.tar.gz
+file(DOWNLOAD https://github.com/OpenModelica/OMBootstrapping/archive/04d16f7.tar.gz
      ${CMAKE_CURRENT_SOURCE_DIR}/bomc/sources.tar.gz
      SHOW_PROGRESS
      STATUS status
