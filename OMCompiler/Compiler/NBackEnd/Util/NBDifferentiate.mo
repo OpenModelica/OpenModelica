@@ -86,6 +86,7 @@ public
   //        TYPES AND UNIONTYPES
   // ================================
   type DifferentiationType = enumeration(TIME, SIMPLE, FUNCTION, JACOBIAN);
+  type ExpressionList = list<Expression>;
 
   uniontype DifferentiationArguments
     record DIFFERENTIATION_ARGUMENTS
@@ -95,6 +96,8 @@ public
       DifferentiationType diffType                                "Differentiation use case (time, simple, function, jacobian)";
       FunctionTree funcTree                                       "Function tree containing all functions and their known derivatives";
       Boolean scalarized                                          "true if the variables are scalarized";
+      UnorderedMap<ComponentRef, ExpressionList> adjoint_map    "map for accumulating adjoint gradients for component refs";
+      Expression current_grad                                     "current gradient expression, used in reverse mode";
     end DIFFERENTIATION_ARGUMENTS;
 
     function default
@@ -615,6 +618,18 @@ public
   protected
     Pointer<Variable> var_ptr, der_ptr;
     ComponentRef derCref, strippedCref;
+
+    function updateAdjointList
+      input Option<ExpressionList> oldOpt;
+      input Expression expressionGrad;
+      output ExpressionList newList;
+    algorithm
+      newList := match oldOpt
+        // probably the only case since empty list is used to initialize
+        case SOME(oldList) then (expressionGrad :: oldList);
+        else {expressionGrad};
+      end match;
+    end updateAdjointList;
   algorithm
     // extract var pointer first to have following code more readable
     var_ptr := match exp
@@ -759,6 +774,10 @@ public
       algorithm
         if UnorderedMap.contains(exp.cref, diff_map) then
           res := Expression.fromCref(UnorderedMap.getOrFail(exp.cref, diff_map));
+
+          // Accumulate adjoint contribution: append current_grad to list at key exp.cref.
+          UnorderedMap.addUpdate(exp.cref, 
+          function updateAdjointList(current_grad = diffArguments.current_grad), diffArguments.adjoint_map);
         else
           // Everything that is not in diff_map gets differentiated to zero
           res := Expression.makeZero(exp.ty);
@@ -776,6 +795,9 @@ public
           derCref := UnorderedMap.getOrFail(strippedCref, diff_map);
           derCref := ComponentRef.copySubscripts(exp.cref, derCref);
           res     := Expression.fromCref(derCref);
+
+          // or maybe the strippedCref here or the exp.cref?
+          UnorderedMap.addUpdate(derCref, function updateAdjointList(expressionGrad = diffArguments.current_grad), diffArguments.adjoint_map);
         else
           res     := Expression.makeZero(exp.ty);
         end if;
@@ -1892,11 +1914,19 @@ public
 
       // Addition calculations (ADD, ADD_EW, ...)
       // (f + g)' = f' + g'
+      // Adjoint rule: ∂(a + b)/∂a = 1, ∂(a + b)/∂b = 1
+      // diffArguments.current_grad = ∂Out/∂(a + b) * ∂(a + b)/∂a = current_grad * 1 = current_grad
       case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.ADDITION)
         algorithm
+          current_grad := diffArguments.current_grad;
+          diffArguments.current_grad := current_grad; // not needed, but for clarity
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
+
+          diffArguments.current_grad := current_grad; // not needed, but for clarity
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
+
+          diffArguments.current_grad := current_grad;
           print("ADD exp1: " + Expression.toString(exp1) + " diffExp1: " + Expression.toString(diffExp1) + "\n");
           print("ADD exp2: " + Expression.toString(exp2) + " diffExp2: " + Expression.toString(diffExp2) + "\n");
       then (Expression.MULTARY({diffExp1, diffExp2}, {}, operator), diffArguments);
@@ -1918,8 +1948,15 @@ public
       case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
         algorithm
+          current_grad := diffArguments.current_grad; // upstream gradient
+
+          diffArguments.current_grad := Expression.MULTARY({current_grad, exp2}, {}, NFOperator.MathClassification.MULTIPLICATION); // upstream gradient * local gradient
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
+
+          diffArguments.current_grad := Expression.MULTARY({current_grad, exp1}, {}, NFOperator.MathClassification.MULTIPLICATION);
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
+
+          diffArguments.current_grad := current_grad;
           print("MUL exp1: " + Expression.toString(exp1) + " diffExp1: " + Expression.toString(diffExp1) + "\n");
           print("MUL exp2: " + Expression.toString(exp2) + " diffExp2: " + Expression.toString(diffExp2) + "\n");
           // create addition operator from the size classification of original multiplication operator

@@ -2,9 +2,8 @@ encapsulated package NBDifferentiateReverse
 "file:        NBDifferentiateReverse.mo
  package:     NBDifferentiateReverse
  description: This file contains the functions to differentiate equations and
-              expressions symbolically in reverse mode e.g. to generate adjoint jacobians.
+              expressions symbolically in a tape based reverse mode e.g. to generate adjoint jacobians.
  only support REAL, BINARY, UNARY expressions and the five basic BINARY arithmetic ops ADD, SUB, MUL, DIV, (POW) for the type REAL
- How to handle the UNARY ops NEG, SIN, COS as they are no Expressions or Operators?
 "
 
 public  
@@ -48,6 +47,9 @@ public
   function collectPartialsForComponents
     "Batch for a list of strong components, result shape: list< per-component list<PartialsForComponent> >."
     input list<NBStrongComponent.StrongComponent> comps;
+    input list<Expression> seeds = {}; // optional seeds for each component, default is Expression.REAL(1.0)
+    // each inner list<PartialsForComponent> contains the partials for all strong components in one partition
+    // one backend dae can have multiple partitions, so the outer list is needed
     output list<list<PartialsForComponent>> results = {};
   protected
     NBStrongComponent.StrongComponent c;
@@ -64,7 +66,6 @@ protected
   import Op = NFOperator.Op;
   import Type = NFType;
   import SimplifyExp = NFSimplifyExp;
-  import InstNode = NFInstNode;
   import ComponentRef = NFComponentRef;
   import Origin = NFComponentRef.Origin;
   import NFBuiltinFuncs;
@@ -76,6 +77,7 @@ protected
   import NBEquation;
   import BVariable = NBVariable;
   import Variable = NFVariable;
+  //import InstNode = NFInstNode;
 
   // record Node
   //   Expression expr; // the expression this node represents
@@ -83,63 +85,22 @@ protected
   //   list<Integer> childIndices; // indices of the children nodes on the tape these weights correspond to (deps)
   // end Node;
 
-  function createSimpleRealVar
-    input String name;
-    output Expression expr;
-    output Pointer<NBVariable.Variable> var_ptr;
-    output ComponentRef cref;
-  protected
-    InstNode.InstNode node;
-    NBVariable.Variable var;
-    Type ty = Type.REAL();
-  algorithm
-    node := InstNode.VAR_NODE(name, Pointer.create(NBVariable.DUMMY_VARIABLE));
-    cref := ComponentRef.CREF(node, {}, ty, Origin.CREF, ComponentRef.EMPTY());
-    var  := NBVariable.fromCref(cref);
-    (var_ptr, cref) := NBVariable.makeVarPtrCyclic(var, cref);
-    expr := Expression.CREF(ty, cref);
-  end createSimpleRealVar;
-
-
-  function exprListToString
-    input list<Expression> es;
-    output String str;
-  protected
-    Boolean first = true;
-  algorithm
-    str := "{";
-    for e in es loop
-      if first then
-        first := false;
-      else
-        str := str + ", ";
-      end if;
-      str := str + expressionToString(e);
-    end for;
-    str := str + "}";
-  end exprListToString;
-
-  // Pretty-print list<tuple<Expression, list<Expression>>>
-  function seedPartialsListToString
-    input list<tuple<Expression, list<Expression>>> seedToPartials;
-    output String str;
-  protected
-    Boolean first = true;
-    Expression seed;
-    list<Expression> parts;
-  algorithm
-    str := "[";
-    for it in seedToPartials loop
-      (seed, parts) := it;
-      if first then
-        first := false;
-      else
-        str := str + ", ";
-      end if;
-      str := str + "(" + expressionToString(seed) + " -> " + exprListToString(parts) + ")";
-    end for;
-    str := str + "]";
-  end seedPartialsListToString;
+  // function createSimpleRealVar
+  //   input String name;
+  //   output Expression expr;
+  //   output Pointer<NBVariable.Variable> var_ptr;
+  //   output ComponentRef cref;
+  // protected
+  //   InstNode.InstNode node;
+  //   NBVariable.Variable var;
+  //   Type ty = Type.REAL();
+  // algorithm
+  //   node := InstNode.VAR_NODE(name, Pointer.create(NBVariable.DUMMY_VARIABLE));
+  //   cref := ComponentRef.CREF(node, {}, ty, Origin.CREF, ComponentRef.EMPTY());
+  //   var  := NBVariable.fromCref(cref);
+  //   (var_ptr, cref) := NBVariable.makeVarPtrCyclic(var, cref);
+  //   expr := Expression.CREF(ty, cref);
+  // end createSimpleRealVar;
 
   // Constructors and helpers for PartialMap
   function partialMapNew
@@ -174,7 +135,6 @@ protected
       UnorderedMap.add(key, addVal, m);
     end if;
   end partialMapAdd;
-
 
   function collectPartialsForStrongComponent
     input NBStrongComponent.StrongComponent compIn;
@@ -466,7 +426,7 @@ protected
   protected
     list<Expression> children;
   algorithm
-    // Check if already processed
+    // Check if already visited
     if UnorderedSet.contains(expr, visited) then
       tape := currentTape;
       return;
@@ -474,15 +434,17 @@ protected
     // if not visited mark as visited now
     UnorderedSet.add(expr, visited);
     
-    // Process children first (post-order)
+    // process children first (post-order)
+    // so that for expression a * b, a and b appear before a * b in the tape
     tape := currentTape;
     children := getChildren(expr);
     
+    // recursively build tape for each child
     for child in children loop
       tape := buildTapeHelper(child, tape, visited);
     end for;
     
-    // Add current expression to tape
+    // after the children add current expression to tape
     tape := expr :: tape;
   end buildTapeHelper;
 
@@ -498,7 +460,7 @@ protected
     "Differentiate a SINGLE_COMPONENT strong component in reverse mode.
      Uses RHS for differentiation and returns PartialsForComponent with LHS as outputExpr."
     input StrongComponent comp;
-    input Expression cotangent = Expression.REAL(1.0);
+    input Expression seed = Expression.REAL(1.0);
     output PartialsForComponent result;
   protected
     Pointer<NBEquation.Equation> eq_ptr;
@@ -522,14 +484,14 @@ protected
     lhs := NBEquation.Equation.getLHS(eq);
     rhs := NBEquation.Equation.getRHS(eq);
 
-    pm := symbolicReverseMode(rhs, cotangent);
+    pm := symbolicReverseMode(rhs, seed);
     result := PartialsForComponent.PARTIALS_FOR_COMPONENT(lhs, pm);
   end symbolicReverseModeStrongComponent;
 
   // Main function: Symbolic reverse-mode differentiation over an expression
   function symbolicReverseMode
     input Expression expr;
-    input Expression cotangent = Expression.REAL(1.0);
+    input Expression seed = Expression.REAL(1.0);
     output PartialMap partials;
   protected
     list<Expression> tape, children;
@@ -546,9 +508,13 @@ protected
 
     // Initialize gradient map
     partials := partialMapNew();
-    partialMapAdd(partials, expr, cotangent);
+    // add seed gradient d(expr)/d(expr) = seed
+    // this is simply the seed expression e.g. $SEED_ODE_JAC.DER(x)
+    partialMapAdd(partials, expr, seed);
 
-    // Process tape in reverse logical order (we built tape by prepending children first)
+    // Process tape in reverse order 
+    // we built tape by prepending so no need to reverse it here
+    // for a * b the tape looks like [a * b, a, b]
     for operation in tape loop
       currentGrad := partialMapGet(partials, operation);
       if Expression.isZero(currentGrad) then
@@ -559,6 +525,9 @@ protected
       i := 1;
       for child in children loop
         localGrad := localGradient(operation, i);
+        // chain rule: d(output)/d(child) = d(output)/d(operation) * d(operation)/d(child)
+        // this multiplication could be more complicated though for matrices/vectors
+        // currently this is handled in makeAdjointContribution but should probably be done here
         childGrad := simplify(Expression.BINARY(currentGrad, Operator.makeMul(Type.REAL()), localGrad));
         partialMapAdd(partials, child, childGrad);
         i := i + 1;
