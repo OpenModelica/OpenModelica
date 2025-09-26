@@ -530,7 +530,7 @@ algorithm
      BackendDump.dumpAdjacencyMatrixTEnhanced(meT);
      print("\nmapEqnIncRow:"); //+ stringDelimitList(List.map(List.flatten(arrayList(mapEqnIncRow)),intString),",") + "\n\n");
      BackendDump.dumpAdjacencyMatrix(mapEqnIncRow);
-     print("\nmapIncRowEqn:\n" + stringDelimitList(List.map(arrayList(mapIncRowEqn),intString),",") + "\n\n");
+     print("\nmapIncRowEqn:\n" + stringDelimitList(List.mapArray(mapIncRowEqn,intString),",") + "\n\n");
   end if;
 
   ass1 := arrayCreate(size,-1);
@@ -560,8 +560,8 @@ algorithm
   // unassign tvars
   ass1 := List.fold(tvars,unassignTVars,ass1);
   if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-     print("\n" + BORDER + "\n* BFS RESULTS:\n* ass1: "+ stringDelimitList(List.map(arrayList(ass1),intString),",") +"\n");
-     print("* ass2: "+ stringDelimitList(List.map(arrayList(ass2),intString),",") + "\n" + BORDER +"\n\n");
+     print("\n" + BORDER + "\n* BFS RESULTS:\n* ass1: "+ stringDelimitList(List.mapArray(ass1, intString),",") +"\n");
+     print("* ass2: "+ stringDelimitList(List.mapArray(ass2,intString),",") + "\n" + BORDER +"\n\n");
   end if;
 
   // unmatched equations are residual equations
@@ -1049,18 +1049,18 @@ algorithm
         // 1st: Points for solvability (see function solvabilityWeights)
         points = List.fold2(freeVars, calcVarWeights,mt,ass2,points);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-          print("\nPoints after 'calcVarWeights':\n" + stringDelimitList(List.map(arrayList(points),intString),",") + "\n\n");
+          print("\nPoints after 'calcVarWeights':\n" + stringDelimitList(List.mapArray(points, intString),",") + "\n\n");
         end if;
         eqns = Matching.getUnassigned(arrayLength(m),ass2,{});
         // 2nd: 5 points for each equation this variable would causalize
         points = List.fold2(eqns,addEqnWeights,m,ass1,points);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-          print("Points after 'addEqnWeights':\n" + stringDelimitList(List.map(arrayList(points),intString),",") + "\n\n");
+          print("Points after 'addEqnWeights':\n" + stringDelimitList(List.mapArray(points, intString),",") + "\n\n");
         end if;
         // 3rd: only one-tenth of points for each discrete variable
         points = List.fold1(freeVars,discriminateDiscrete,vars,points);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-          print("Points after 'discriminateDiscrete':\n" + stringDelimitList(List.map(arrayList(points),intString),",") + "\n\n");
+          print("Points after 'discriminateDiscrete':\n" + stringDelimitList(List.mapArray(points, intString),",") + "\n\n");
         end if;
         // 4th: Prefer variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.prefer'
         pointsLst = preferAvoidVariables(freeVars, arrayList(points), tSel_prefer, 3.0);
@@ -1529,8 +1529,8 @@ algorithm
         arrayUpdate(ass1,r,c);
         arrayUpdate(ass2,c,r);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-          print("ass1: " + stringDelimitList(List.map(arrayList(ass1),intString),",")+"\n");
-          print("ass2: " + stringDelimitList(List.map(arrayList(ass2),intString),",")+"\n");
+          print("ass1: " + stringDelimitList(List.mapArray(ass1, intString),",")+"\n");
+          print("ass2: " + stringDelimitList(List.mapArray(ass2, intString),",")+"\n");
         end if;
         // not yet assigned equations containing var r
         vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[r]);
@@ -2069,13 +2069,13 @@ algorithm
     BackendDump.dumpAdjacencyMatrixEnhanced(me);
     print("\nAdjacencyMatrixTransposedEnhanced:\n");
     BackendDump.dumpAdjacencyMatrixTEnhanced(meT);
-    print("\neqLinPoints:\n" + stringDelimitList(List.map(arrayList(eqnNonlinPoints),intString),",") + "\n\n");
+    print("\neqLinPoints:\n" + stringDelimitList(List.mapArray(eqnNonlinPoints, intString),",") + "\n\n");
   end if;
 
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("mapEqnIncRow:"); //+ stringDelimitList(List.map(List.flatten(arrayList(mapEqnIncRow)),intString),",") + "\n\n");
     BackendDump.dumpAdjacencyMatrix(mapEqnIncRow);
-    print("\nmapIncRowEqn:\n" + stringDelimitList(List.map(arrayList(mapIncRowEqn),intString),",") + "\n\n");
+    print("\nmapIncRowEqn:\n" + stringDelimitList(List.mapArray(mapIncRowEqn, intString),",") + "\n\n");
     print("\n\nUNSOLVABLES:\n" + stringDelimitList(List.map(unsolvables,intString),",") + "\n\n");
   end if;
 
@@ -2169,13 +2169,13 @@ algorithm
       BackendDump.dumpAdjacencyMatrixEnhanced(me);
       print("\nAdjacencyMatrixTransposedEnhanced:\n");
       BackendDump.dumpAdjacencyMatrixTEnhanced(meT);
-      print("\neqLinPoints:\n" + stringDelimitList(List.map(arrayList(eqnNonlinPoints),intString),",") + "\n\n");
+      print("\neqLinPoints:\n" + stringDelimitList(List.mapArray(eqnNonlinPoints, intString),",") + "\n\n");
     end if;
 
     if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
       print("mapEqnIncRow:"); //+ stringDelimitList(List.map(List.flatten(arrayList(mapEqnIncRow)),intString),",") + "\n\n");
       BackendDump.dumpAdjacencyMatrix(mapEqnIncRow);
-      print("\nmapIncRowEqn:\n" + stringDelimitList(List.map(arrayList(mapIncRowEqn),intString),",") + "\n\n");
+      print("\nmapIncRowEqn:\n" + stringDelimitList(List.mapArray(mapIncRowEqn, intString),",") + "\n\n");
       print("\n\nUNSOLVABLES:\n" + stringDelimitList(List.map(unsolvables,intString),",") + "\n\n");
       print("\nDiscrete Vars:\n" + stringDelimitList(List.map(discreteVars,intString),",") + "\n\n");
     end if;
@@ -2514,8 +2514,8 @@ algorithm
       if debug then execStat("Tearing.CellierTearing2 - 1.2"); end if;
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of TarjanMatching\n" + BORDER + "\n\n");
-        print("\n" + BORDER + "\n* TARJAN RESULTS:\n* ass1: " + stringDelimitList(List.map(arrayList(ass1In),intString),",")+"\n");
-        print("* ass2: "+stringDelimitList(List.map(arrayList(ass2In),intString),",")+"\n");
+        print("\n" + BORDER + "\n* TARJAN RESULTS:\n* ass1: " + stringDelimitList(List.mapArray(ass1In, intString),",")+"\n");
+        print("* ass2: "+stringDelimitList(List.mapArray(ass2In, intString),",")+"\n");
         print("* order: "+stringDelimitList(List.map(order,intString),",")+"\n" + BORDER + "\n\n");
       end if;
       if causal and (Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE)) then
@@ -2575,8 +2575,8 @@ algorithm
       (order,causal) = TarjanMatching(mIn,mtIn,meIn,ass1In,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of TarjanMatching\n" + BORDER + "\n\n");
-        print("\n" + BORDER + "\n* TARJAN RESULTS:\n* ass1: " + stringDelimitList(List.map(arrayList(ass1In),intString),",")+"\n");
-        print("* ass2: "+stringDelimitList(List.map(arrayList(ass2In),intString),",")+"\n");
+        print("\n" + BORDER + "\n* TARJAN RESULTS:\n* ass1: " + stringDelimitList(List.mapArray(ass1In, intString),",")+"\n");
+        print("* ass2: "+stringDelimitList(List.mapArray(ass2In,intString),",")+"\n");
         print("* order: "+stringDelimitList(List.map(order,intString),",")+"\n" + BORDER + "\n\n");
       end if;
       if causal and (Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE)) then
@@ -4673,7 +4673,7 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n\nmapEqnIncRow:"); //+ stringDelimitList(List.map(List.flatten(arrayList(mapEqnIncRow)),intString),",") + "\n\n");
     BackendDump.dumpAdjacencyMatrix(mapEqnIncRow);
-    print("\nmapIncRowEqn:\n" + stringDelimitList(List.map(arrayList(mapIncRowEqn),intString),",") + "\n\n");
+    print("\nmapIncRowEqn:\n" + stringDelimitList(List.mapArray(mapIncRowEqn, intString),",") + "\n\n");
     print("\n\nUNSOLVABLES:\n" + stringDelimitList(List.map(unsolvables,intString),",") + "\n\n");
   end if;
 
@@ -4729,8 +4729,8 @@ algorithm
       causEq := traverseCollectiveEqnsforAssignable(ass2,mLoop,mapEqnIncRow);
 
       // if Flags.isSet(Flags.TOTAL_TEARING_DUMPVERBOSE) then
-        // print("\nInitial ass1: " + stringDelimitList(List.map(arrayList(ass1),intString),",")+"\n");
-        // print("Initial ass2: " + stringDelimitList(List.map(arrayList(ass2),intString),",") + "\n");
+        // print("\nInitial ass1: " + stringDelimitList(List.mapArray(ass1, intString),",")+"\n");
+        // print("Initial ass2: " + stringDelimitList(List.mapArray(ass2, intString),",") + "\n");
         // print("\nInitial m:");BackendDump.dumpAdjacencyMatrix(mLoop);
         // print("\nInitial mt:");BackendDump.dumpAdjacencyMatrix(mtLoop);
         // print("\nInitial causEq: " + stringDelimitList(List.map(causEq,intString),",") + "\n");
@@ -4825,8 +4825,8 @@ algorithm
 
       // 4. Dump
       // if Flags.isSet(Flags.TOTAL_TEARING_DUMPVERBOSE) then
-        // print("\nNew ass1: " + stringDelimitList(List.map(arrayList(ass1Copy),intString),",")+"\n");
-          // print("New ass2: " + stringDelimitList(List.map(arrayList(ass2Copy),intString),",") + "\n");
+        // print("\nNew ass1: " + stringDelimitList(List.mapArray(ass1Copy, intString),",")+"\n");
+          // print("New ass2: " + stringDelimitList(List.mapArray(ass2Copy, intString),",") + "\n");
         // print("\nNew m:");BackendDump.dumpAdjacencyMatrix(mCopy);
         // print("\nNew mt:");BackendDump.dumpAdjacencyMatrix(mtCopy);
         // print("\nNew causEq: " + stringDelimitList(List.map(causEq,intString),",") + "\n");
@@ -4921,8 +4921,8 @@ algorithm
     c := c+1;
     (ass1,ass2,order) := matching;
     print("Matching " + intString(c) + ":\n");
-    print("ass1: " + stringDelimitList(List.map(arrayList(ass1),intString),",") + "\n");
-    print("ass2: " + stringDelimitList(List.map(arrayList(ass2),intString),",") + "\n");
+    print("ass1: " + stringDelimitList(List.mapArray(ass1, intString),",") + "\n");
+    print("ass2: " + stringDelimitList(List.mapArray(ass2, intString),",") + "\n");
     print("order: " + stringDelimitList(List.map(order,intString),",") + "\n\n");
   end for;
 end dumpMatchingList;
@@ -5034,7 +5034,7 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n\nmapEqnIncRow:"); //+ stringDelimitList(List.map(List.flatten(arrayList(mapEqnIncRow)),intString),",") + "\n\n");
     BackendDump.dumpAdjacencyMatrix(mapEqnIncRow);
-    print("\nmapIncRowEqn:\n" + stringDelimitList(List.map(arrayList(mapIncRowEqn),intString),",") + "\n\n");
+    print("\nmapIncRowEqn:\n" + stringDelimitList(List.mapArray(mapIncRowEqn, intString),",") + "\n\n");
     print("\n\nUNSOLVABLES:\n" + stringDelimitList(List.map(unsolvables,intString),",") + "\n\n");
     print("\nDiscrete Vars:\n" + stringDelimitList(List.map(discreteVars,intString),",") + "\n\n");
   end if;
@@ -5050,8 +5050,8 @@ algorithm
   markTVarsOrResiduals(userResiduals_exp, ass2);
 
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    print("\nass1: " + stringDelimitList(List.map(arrayList(ass1),intString),",") + "\n");
-    print("ass2: " + stringDelimitList(List.map(arrayList(ass2),intString),",") + "\n");
+    print("\nass1: " + stringDelimitList(List.mapArray(ass1, intString),",") + "\n");
+    print("ass2: " + stringDelimitList(List.mapArray(ass2, intString),",") + "\n");
   end if;
 
   // remove tearing vars from adjacency matrix and transposed adjacency matrix

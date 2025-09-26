@@ -1429,7 +1429,7 @@ public
           local
             array<list<Integer>> skips;
             list<Kind> kinds;
-          case DEPENDENCY(skips = skips) guard(not listEmpty(List.flatten(arrayList(skips))))
+          case DEPENDENCY(skips = skips) guard(not Array.all(skips, listEmpty))
             algorithm K := cref :: K; then ();
           case DEPENDENCY(kinds = {}) guard(repeats)
             algorithm E := cref :: E; then ();

@@ -3421,7 +3421,7 @@ public
         // if the condition is an array, skip surplus of literal elements
         case SOME(b as WHEN_EQUATION_BODY(condition = condition as Expression.ARRAY())) algorithm
           b.else_when := simplify(b.else_when);
-          conditions := list(elem for elem guard(not Expression.isBoolean(elem)) in arrayList(condition.elements));
+          conditions := list(elem for elem guard(not Expression.isBoolean(elem)) in condition.elements);
           if listEmpty(conditions) then
             body := b.else_when;
           elseif List.hasOneElement(conditions) then

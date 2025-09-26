@@ -1822,11 +1822,9 @@ public function dumpMatching
   input array<Integer> v;
   output list<tuple<Integer,Integer>> eqvarlist={};
 protected
-  list<Integer> var;
   Integer count=1;
 algorithm
-  var:=arrayList(v);
-  for i in var loop
+  for i in v loop
       eqvarlist:=(i,count)::eqvarlist;
       count:=count+1;
   end for;

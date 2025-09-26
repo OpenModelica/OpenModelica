@@ -3907,18 +3907,18 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
           }
           >>
         case ("pthreads") then
-          let threadDecl = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_decl(i0); separator="\n"
-          let threadFuncs = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_func(derivativEquations, name, n, hpcOmSchedule.threadTasks, type, i0, modelNamePrefixStr); separator="\n"
-          let threadFuncCalls = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_call(name, n, i0); separator="\n"
-          let threadStart = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_start(i0); separator="\n"
+          let threadDecl = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_decl(i0); separator="\n"
+          let threadFuncs = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_func(derivativEquations, name, n, hpcOmSchedule.threadTasks, type, i0, modelNamePrefixStr); separator="\n"
+          let threadFuncCalls = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_call(name, n, i0); separator="\n"
+          let threadStart = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_start(i0); separator="\n"
 
-          let threadLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_createLockByLockName(i0, "th_lock", type); separator="\n"
-          let threadLocks1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_createLockByLockName(i0, "th_lock1", type); separator="\n"
-          let threadLocksInit = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLockByLockName(i0, "th_lock", type); separator="\n"
-          let threadLocksInit1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLockByLockName(i0, "th_lock1", type); separator="\n"
-          let threadAssignLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLockByLockName(i0, "th_lock", type); separator="\n"
-          let threadAssignLocks1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLockByLockName(i0, "th_lock1", type); separator="\n"
-          let threadReleaseLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseLockByLockName(i0, "th_lock", type); separator="\n"
+          let threadLocks = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_createLockByLockName(i0, "th_lock", type); separator="\n"
+          let threadLocks1 = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_createLockByLockName(i0, "th_lock1", type); separator="\n"
+          let threadLocksInit = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLockByLockName(i0, "th_lock", type); separator="\n"
+          let threadLocksInit1 = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLockByLockName(i0, "th_lock1", type); separator="\n"
+          let threadAssignLocks = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLockByLockName(i0, "th_lock", type); separator="\n"
+          let threadAssignLocks1 = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLockByLockName(i0, "th_lock1", type); separator="\n"
+          let threadReleaseLocks = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseLockByLockName(i0, "th_lock", type); separator="\n"
 
           <<
           // number of threads: <%arrayLength(hpcOmSchedule.threadTasks)%>
@@ -3969,18 +3969,18 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
           }
           >>
         case ("pthreads_spin") then
-          let threadDecl = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_decl(i0); separator="\n"
-          let threadFuncs = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_func(derivativEquations, name, n, hpcOmSchedule.threadTasks, type, i0, modelNamePrefixStr); separator="\n"
-          let threadFuncCalls = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_call(name, n, i0); separator="\n"
-          let threadStart = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_start(i0); separator="\n"
+          let threadDecl = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_decl(i0); separator="\n"
+          let threadFuncs = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_func(derivativEquations, name, n, hpcOmSchedule.threadTasks, type, i0, modelNamePrefixStr); separator="\n"
+          let threadFuncCalls = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_call(name, n, i0); separator="\n"
+          let threadStart = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_start(i0); separator="\n"
 
-          let threadLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_createLockByLockName(i0, "th_lock", "pthreads"); separator="\n"
-          let threadLocks1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_createLockByLockName(i0, "th_lock1", "pthreads"); separator="\n"
-          let threadLocksInit = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLockByLockName(i0, "th_lock", "pthreads"); separator="\n"
-          let threadLocksInit1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLockByLockName(i0, "th_lock1", "pthreads"); separator="\n"
-          let threadAssignLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLockByLockName(i0, "th_lock", "pthreads"); separator="\n"
-          let threadAssignLocks1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLockByLockName(i0, "th_lock1", "pthreads"); separator="\n"
-          let threadReleaseLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseLockByLockName(i0, "th_lock", "pthreads"); separator="\n"
+          let threadLocks = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_createLockByLockName(i0, "th_lock", "pthreads"); separator="\n"
+          let threadLocks1 = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_createLockByLockName(i0, "th_lock1", "pthreads"); separator="\n"
+          let threadLocksInit = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLockByLockName(i0, "th_lock", "pthreads"); separator="\n"
+          let threadLocksInit1 = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLockByLockName(i0, "th_lock1", "pthreads"); separator="\n"
+          let threadAssignLocks = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLockByLockName(i0, "th_lock", "pthreads"); separator="\n"
+          let threadAssignLocks1 = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLockByLockName(i0, "th_lock1", "pthreads"); separator="\n"
+          let threadReleaseLocks = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseLockByLockName(i0, "th_lock", "pthreads"); separator="\n"
 
           <<
           static int finished; //set to 1 if the hpcom-threads should be destroyed

@@ -875,7 +875,7 @@ public
       case Expression.LBINARY(operator = Operator.OPERATOR(op = NFOperator.Op.OR))
       then isInitialCall(condition.exp1) or isInitialCall(condition.exp2);
       // it's an array where any of the elements is an initialCall
-      case Expression.ARRAY() then List.any(arrayList(condition.elements), isInitialCall);
+      case Expression.ARRAY() then Array.any(condition.elements, isInitialCall);
       // not an initial call. Ignore "and" constructs
       else false;
     end match;
