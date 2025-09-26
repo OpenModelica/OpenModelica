@@ -6568,8 +6568,7 @@ bool ModelWidget::omsimulatorEditorTextChanged()
       return true;
     }
   } else {
-    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-    LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+    LibraryTreeItem *pModelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpLibraryTreeItem);
     if (pModelLibraryTreeItem && OMSProxy::instance()->importSnapshot(pModelLibraryTreeItem->getNameStructure(), mpEditor->getPlainTextEdit()->toPlainText(), &newCref)) {
       QString newEditedCref = QString("%1.%2").arg(mpLibraryTreeItem->parent()->getNameStructure(), newCref);
       createOMSimulatorUndoCommand("Text edited", true, false, mpLibraryTreeItem->getNameStructure(), newEditedCref);
@@ -6617,10 +6616,9 @@ void ModelWidget::updateClassAnnotationIfNeeded()
  */
 void ModelWidget::updateModelText()
 {
-  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
   // Don't allow updating the child LibraryTreeItems of OMS model
   if (mpLibraryTreeItem->isSSP()) {
-    LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+    LibraryTreeItem *pModelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpLibraryTreeItem);
     if (pModelLibraryTreeItem->getModelWidget()) {
       pModelLibraryTreeItem->getModelWidget()->setWindowTitle(QString("%1*").arg(pModelLibraryTreeItem->getName()));
       if (pModelLibraryTreeItem->getModelWidget()->isLoadedWidgetComponents()) {
@@ -6840,7 +6838,7 @@ QList<QVariant> ModelWidget::toOMSensData()
 void ModelWidget::createOMSimulatorUndoCommand(const QString &commandText, const bool doSnapShot, const bool switchToEdited, const QString oldEditedCref, const QString newEditedCref)
 {
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-  LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+  LibraryTreeItem *pModelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpLibraryTreeItem);
   if (!pModelLibraryTreeItem->getModelWidget()) {
     pLibraryTreeModel->showModelWidget(pModelLibraryTreeItem, false);
   }
@@ -6862,7 +6860,7 @@ void ModelWidget::createOMSimulatorUndoCommand(const QString &commandText, const
 void ModelWidget::createOMSimulatorRenameModelUndoCommand(const QString &commandText, const QString &cref, const QString &newCref)
 {
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-  LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+  LibraryTreeItem *pModelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpLibraryTreeItem);
   if (!pModelLibraryTreeItem->getModelWidget()) {
     pLibraryTreeModel->showModelWidget(pModelLibraryTreeItem, false);
   }
@@ -7072,7 +7070,7 @@ void ModelWidget::createUndoStack()
    */
   if (mpLibraryTreeItem && !mpLibraryTreeItem->isTopLevel() && mpLibraryTreeItem->isSSP()) {
     LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-    LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+    LibraryTreeItem *pModelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpLibraryTreeItem);
     if (pModelLibraryTreeItem) {
       if (pModelLibraryTreeItem->getModelWidget()) {
         mpUndoStack = pModelLibraryTreeItem->getModelWidget()->getUndoStack();
