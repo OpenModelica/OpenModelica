@@ -2988,7 +2988,7 @@ algorithm
         // ..
         // sn = sn-1
         // y = semiLinear(x,sa,sb)
-        eqnslst := List.fold(arrayList(eqnsarray), semiLinearOptimize, {});
+        eqnslst := Array.fold(eqnsarray, semiLinearOptimize, {});
         // replace the equations in the system
         syst.orderedEqs := List.fold(eqnslst, semiLinearReplaceEqns, eqns);
       then (BackendDAEUtil.clearEqSyst(syst), ishared);

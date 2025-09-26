@@ -1485,7 +1485,7 @@ algorithm
             true = arrayLength(marr) == arrayLength(arrayGet(marr,1));
             true = arrayLength(marr) > 1;
             simplifySymmetric(marr, arrayLength(marr)-1, arrayLength(marr));
-            mexpl = List.map(arrayList(marr), arrayList);
+            mexpl = List.mapArray(marr, arrayList);
             tp1 = Expression.unliftArray(tp);
             es = List.map2(mexpl, Expression.makeArray, tp1, not Types.isArray(tp1));
             e = Expression.makeArray(es, tp, false);

@@ -187,7 +187,7 @@ algorithm
       BackendVarTransform.dumpReplacements(oRepl);
       BackendDump.dumpVariables(globalKnownVars, "globalKnownVars");
       print("\nmark: " + intString(mark) + "\n");
-      print("markarr: " + stringDelimitList(List.map(arrayList(markarr), intString), ",") + "\n");
+      print("markarr: " + stringDelimitList(List.mapArray(markarr, intString), ",") + "\n");
     end if;
 
 
@@ -213,7 +213,7 @@ algorithm
       BackendVarTransform.dumpReplacements(oRepl);
       BackendDump.dumpVariables(globalKnownVars, "globalKnownVars");
       print("\nmark: " + intString(mark) + "\n");
-      print("markarr: " + stringDelimitList(List.map(arrayList(markarr), intString), ",") + "\n");
+      print("markarr: " + stringDelimitList(List.mapArray(markarr, intString), ",") + "\n");
     end if;
 
 
@@ -229,7 +229,7 @@ algorithm
       BackendVarTransform.dumpReplacements(oRepl);
       BackendDump.dumpVariables(globalKnownVars, "globalKnownVars");
       print("\nmark: " + intString(mark) + "\n");
-      print("markarr: " + stringDelimitList(List.map(arrayList(markarr), intString), ",") + "\n\n");
+      print("markarr: " + stringDelimitList(List.mapArray(markarr, intString), ",") + "\n\n");
     end if;
 
 

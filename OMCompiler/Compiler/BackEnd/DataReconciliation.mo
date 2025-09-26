@@ -1054,7 +1054,7 @@ algorithm
     intermediateVars := getVariablesAfterExtraction({eq}, {}, sBltAdjacencyMatrix);
     intermediateVars := listReverse(List.setDifferenceOnTrue(intermediateVars, knownVars, intEq));
     //print("\n equation No: " + anyString(eq) + "==>" + anyString(varIndex));
-    unmeasuredEq := BackendEquation.get(orderedEqs, listGet(arrayList(mapIncRowEqn), eq));
+    unmeasuredEq := BackendEquation.get(orderedEqs, mapIncRowEqn[eq]);
     setBFailedBoundaryConditionEquations := (varIndex, unmeasuredEq, intermediateVars) :: setBFailedBoundaryConditionEquations;
   end for;
   unMeasuredVariablesAndEquations := {};
@@ -1146,12 +1146,12 @@ algorithm
   swappedEquationList := {};
   for item in mappedEbltSetS loop
     (eqIndex, matchedEqsLst) := item;
-    eq := BackendEquation.get(currentSystem.orderedEqs, listGet(arrayList(mapIncRowEqn), eqIndex));
+    eq := BackendEquation.get(currentSystem.orderedEqs, mapIncRowEqn[eqIndex]);
     if BackendEquation.isComplexEquation(eq) then
       complexEquationList := eq :: complexEquationList;
       // swap complex equation in Set-C with simple equation in Set-S with procedure succeeded
       for index in matchedEqsLst loop
-        swapEq := BackendEquation.get(currentSystem.orderedEqs, listGet(arrayList(mapIncRowEqn), index));
+        swapEq := BackendEquation.get(currentSystem.orderedEqs, mapIncRowEqn[index]);
         if not BackendEquation.isComplexEquation(swapEq) then
           ebltEqsLst := List.removeOnTrue(eqIndex, intEq, ebltEqsLst); // remove the complex equation from set-C
           tempSetS := List.removeOnTrue(index, intEq, tempSetS); // remove the simple equation from set-S
@@ -1235,7 +1235,7 @@ algorithm
         if not boundaryConditionVarExist(setBFailedBoundaryConditionEquations, boundaryConditionVarIndex) then
           intermediateVarsInBoundaryConditionEquation := getVariablesAfterExtraction({List.last(listReverse(minimalSetS))}, {}, sBltAdjacencyMatrix);
           intermediateVarsInBoundaryConditionEquation := listReverse(List.setDifferenceOnTrue(intermediateVarsInBoundaryConditionEquation, knownVars, intEq));
-          failedboundaryConditionEquation := BackendEquation.get(orderedEqs, listGet(arrayList(mapIncRowEqn), List.last(listReverse(minimalSetS))));
+          failedboundaryConditionEquation := BackendEquation.get(orderedEqs, mapIncRowEqn[List.last(listReverse(minimalSetS))]);
           setBFailedBoundaryConditionEquations := (boundaryConditionVarIndex, failedboundaryConditionEquation, intermediateVarsInBoundaryConditionEquation) :: setBFailedBoundaryConditionEquations;
         end if;
       end if;
@@ -1907,7 +1907,7 @@ algorithm
     print("\nEquation Not Exist : " + "NIL");
     print("\nRemainingVars      : " + dumplistInteger(rest) + "\n");
   else
-    mappedEq := listGet(arrayList(mapIncRowEqn), firstMatchedEquation);
+    mappedEq := mapIncRowEqn[firstMatchedEquation];
     tmpEq := BackendEquation.get(orderedEqs, mappedEq);
     //print("\n" + "   ("  + intString(mappedEq) + "/"  + intString(firstMatchedEquation)  + "): " + BackendDump.equationString(tmpEq) + "\n");
     print("\nVarIndex                     : " + intString(varIndex));
@@ -2097,7 +2097,7 @@ protected
   Integer count = 1;
 algorithm
   /* get equation index which have annotation __OpenModelica_BoundaryCondition=true*/
-  for i in arrayList(adjacencyMatrix) loop
+  for i in adjacencyMatrix loop
     for j in boundaryConditions loop
       if valueEq(i, {j}) then
         boundaryConditionsEquationIndexes := count :: boundaryConditionsEquationIndexes;
@@ -2116,7 +2116,7 @@ protected function getUncertainRefineVariablesBindedEquations
   output list<Integer> knownsWithBindedEquations = {};
 algorithm
   /* check already binded equations for variables of interest*/
-  for i in arrayList(adjacencyMatrix) loop
+  for i in adjacencyMatrix loop
     for j in knowns loop
       if valueEq(i, {j}) then
         knownsWithBindedEquations := j :: knownsWithBindedEquations;
@@ -2197,7 +2197,7 @@ protected function getAbsoluteIndexHelper
 algorithm
   for i in inList loop
     if i > 0 then
-      outList := listGet(arrayList(mapIncRowEqn), i) :: outList;
+      outList := mapIncRowEqn[i] :: outList;
     else
       // equations in E-BLT, have negativeindex
       outList := i :: outList;
@@ -2221,7 +2221,7 @@ protected
 algorithm
   (_, varNumber) := getSolvedVariableNumber(eq, solvedEqsVarInfo);
   var := BackendVariable.getVarAt(orderedVars, varNumber);
-  mappedEq := listGet(arrayList(mapIncRowEqn), eq);
+  mappedEq := mapIncRowEqn[eq];
   tmpEq := BackendEquation.get(orderedEqs, mappedEq);
   print("\n" + heading + intString(varNumber) + ": "  + ComponentReference.printComponentRefStr(var.varName) + ": " + "("  + intString(mappedEq) + "/"  + intString(eq)  + "): " + "(" +  intString(BackendEquation.equationSize(tmpEq)) + "): " + BackendDump.equationString(tmpEq));
   count := count + 1;
@@ -2246,7 +2246,7 @@ algorithm
   for eq in tempSetS loop
     (_, varNumber) := getSolvedVariableNumber(eq, solvedEqsVarInfo);
     var := BackendVariable.getVarAt(orderedVars, varNumber);
-    mappedEq := listGet(arrayList(mapIncRowEqn), eq);
+    mappedEq := mapIncRowEqn[eq];
     tmpEq := BackendEquation.get(orderedEqs, mappedEq);
     print("\n" + intString(varNumber) + ": "  + ComponentReference.printComponentRefStr(var.varName) + ": " + "("  + intString(mappedEq) + "/"  + intString(eq)  + "): " + "(" +  intString(BackendEquation.equationSize(tmpEq)) + "): "  + BackendDump.equationString(tmpEq));
     count := count + 1;
@@ -2627,11 +2627,9 @@ public function getSolvedEquationAndVarsInfo
   output list<tuple<Integer,Integer>> eqvarlist={};
   output list<Integer> solvedEqLst ={};
 protected
-  list<Integer> var;
   Integer count=1;
 algorithm
-  var:=arrayList(v);
-  for i in var loop
+  for i in v loop
     eqvarlist:=(i,count)::eqvarlist;
     solvedEqLst := i :: solvedEqLst;
     count:=count+1;

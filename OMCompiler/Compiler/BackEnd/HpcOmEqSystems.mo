@@ -1670,7 +1670,7 @@ algorithm
           print("matrixB"+intString(dim)+"\n");
           dumpMatrix(matrixB);
           print("vecAi\n");
-          print(stringDelimitList(List.map1(arrayList(vecAi),ExpressionDump.dumpExpStr,0),"\n")+"\n");
+          print(stringDelimitList(list(ExpressionDump.dumpExpStr(e, 0) for e in vecAi),"\n")+"\n");
           BackendDump.dumpEquationList(addEqs,"new det eqs");
 
       syst = LINSYS(dim=dim-1, matrixA=matrixB, vectorB= vecAi,vectorX=vectorX);
@@ -1681,7 +1681,7 @@ algorithm
           print("end matrixB"+intString(dim)+"\n");
           dumpMatrix(matrixA);
           print("end vecAi\n");
-          print(stringDelimitList(List.map1(arrayList(vecAi),ExpressionDump.dumpExpStr,0),"\n")+"\n");
+          print(stringDelimitList(list(ExpressionDump.dumpExpStr(e, 0) for e in vecAi),"\n")+"\n");
           BackendDump.dumpEquationList(addEqsIn,"new det eqs");
 
     then (addEqsIn,addVarsIn);
@@ -1910,7 +1910,7 @@ algorithm
           //print("detA "+ExpressionDump.printExpStr(detA)+"\n");
       detLst = List.map2(List.intRange(dim),CramerRule1,system,matrixAT);
           //print("detLst \n"+stringDelimitList(List.map(detLst,ExpressionDump.printExpStr),"\n")+"\n");
-      varExp = List.map(arrayList(vectorX),BackendVariable.varExp);
+      varExp = List.mapArray(vectorX, BackendVariable.varExp);
       detLst = List.map1(detLst,function Expression.makeBinaryExp(inOp = DAE.DIV(ty=DAE.T_ANYTYPE_DEFAULT)),detA);
       (detLst,_) = List.map_2(detLst,ExpressionSimplify.simplify);
       eqLst = List.threadMap2(varExp, detLst, BackendEquation.generateEquation, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
@@ -1926,7 +1926,7 @@ algorithm
           //print("detA "+ExpressionDump.printExpStr(detA)+"\n");
       detLst = List.map2(List.intRange(dim),CramerRule1,system,matrixAT);
           //print("detLst \n"+stringDelimitList(List.map(detLst,ExpressionDump.printExpStr),"\n")+"\n");
-      varExp = List.map(arrayList(vectorX),BackendVariable.varExp);
+      varExp = List.mapArray(vectorX, BackendVariable.varExp);
       detLst = List.map1(detLst,function Expression.makeBinaryExp(inOp = DAE.DIV(ty=DAE.T_ANYTYPE_DEFAULT)),detA);
       (detLst,_) = List.map_2(detLst,ExpressionSimplify.simplify);
       eqLst = List.threadMap2(varExp, detLst, BackendEquation.generateEquation, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
@@ -2086,7 +2086,7 @@ protected
 algorithm
   LINSYS(dim = dim, matrixA=matrixA, vectorB = vectorB, vectorX=vectorX) := matrix;
   print("Matrix("+intString(dim)+")\n");
-  sLst := List.thread3Map(arrayList(matrixA),arrayList(vectorX),arrayList(vectorB),EqSysRowString);
+  sLst := list(EqSysRowString(Arow, x, b) threaded for Arow in matrixA, x in vectorX, b in vectorB);
   print(stringDelimitList(sLst,"\n")+"\n");
 end dumpEqSys;
 
@@ -2110,7 +2110,7 @@ protected
   list<String> sLst;
   String s;
 algorithm
-  sLst := List.map(arrayList(matrix),ExpressionDump.printExpListStr);
+  sLst := List.mapArray(matrix, ExpressionDump.printExpListStr);
   s := "{ "+stringDelimitList(sLst,"  \n  ") + "} \n";
   print(s);
 end dumpMatrix;
@@ -2126,7 +2126,7 @@ protected
 algorithm
   inLstLst := arrayList(inArrLst);
   print("---------\n"+heading+"-variables\n---------\n");
-  str := List.fold1(List.intRange(listLength(inLstLst)),dumpVarArrLst1,inLstLst,heading);
+  str := List.fold1(List.intRange(arrayLength(inArrLst)),dumpVarArrLst1,inLstLst,heading);
 end dumpVarArrLst;
 
 
@@ -2157,7 +2157,7 @@ protected
 algorithm
   inLstLst := arrayList(inArrLst);
   print("---------\n"+heading+"-equations\n---------\n");
-  str := List.fold1(List.intRange(listLength(inLstLst)),dumpEqArrLst1,inLstLst,heading);
+  str := List.fold1(List.intRange(arrayLength(inArrLst)),dumpEqArrLst1,inLstLst,heading);
 end dumpEqArrLst;
 
 
@@ -2397,7 +2397,7 @@ algorithm
         //relLocks = List.map(outgoingDepTasksEnd,HpcOmScheduler.getReleaseLockTask);
         //resEqsTask = HpcOmSimCode.CALCTASK(0,-1,-1.0,-1.0,1,resSimEqs);
 
-        threadTasksLst = arrayList(threadTasks);
+        //threadTasksLst = arrayList(threadTasks);
 
         //threadTasksLst = List.threadMap(threadTasksLst,List.map(relLocks,List.create),listAppend);
         //firstThread::threadTasksLst = threadTasksLst;
@@ -2406,7 +2406,7 @@ algorithm
         //firstThread = listAppend(firstThread,{resEqsTask});
 
         //threadTasksLst = firstThread::threadTasksLst;
-        threadTasks = listArray(threadTasksLst);
+        //threadTasks = listArray(threadTasksLst);
         schedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,outgoingDepTasks,{},allCalcTasks);
 
       then
