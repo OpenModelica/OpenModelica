@@ -79,8 +79,6 @@ typedef struct hash_string_long
   UT_hash_handle hh;
 } hash_string_long;
 
-typedef void (*read_var_attribute_fn)(omc_ScalarVariable*, void*);
-
 enum var_type {
   T_REAL,
   T_INTEGER,
@@ -502,18 +500,22 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
                            omc_ModelVariables *in,
                            const char *debugName,
                            mmc_sint_t start,
-                           hash_string_long *mapAlias,
-                           hash_string_long *mapAliasParam,
+                           hash_string_long **mapAlias,
+                           hash_string_long **mapAliasParam,
                            int *sensitivityParIndex)
 {
-  mmc_sint_t i = 0, shift = 0, size;
+  mmc_sint_t i = 0;
+  mmc_sint_t shift = 0;
+  mmc_sint_t size;
   hash_long_var *res = NULL;
   infoStreamPrint(OMC_LOG_DEBUG, 1, "read xml file for %s", debugName);
   HASH_FIND_INT(in, &i, res);
   while (res) {
     omc_ScalarVariable *v = res->val;
     mmc_sint_t j = start + shift;
-    size = 1; // TODO: handle dimensions
+    /* get the size ToDo: THIS HAS TO BE DONE WITH DIMENSIONS: */ \
+    /* read_value_long(findHashStringStringEmpty(v,"size"), &size, 1); */ \
+    size = 1;
     for (mmc_sint_t i_loc = 0; i_loc < size; i_loc++) {
       VAR_INFO *info;
       modelica_boolean *filterOutput;
@@ -559,18 +561,18 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
             filterOutput = &stringVarsData[j + i_loc].filterOutput;
           }
           break;
-
         default:
+          throwStreamPrint(NULL, "simulation_input_xml.c: Error: Unsupported type in read_variables.");
           break;
       }
       read_var_info(v, info);
       *filterOutput = shouldFilterOutput(v, info->name);
       /* create a mapping for Alias variable to get the correct index */
-      addHashStringLong(&mapAlias, info->name, j + i_loc);
+      addHashStringLong(mapAlias, info->name, j + i_loc);
       debugStreamPrint(OMC_LOG_DEBUG, 0, "%s %s: mapAlias[%s] = %ld", type_name, debugName, info->name, (long)(j + i_loc));
       if (omc_flag[FLAG_IDAS] && 0 == strcmp(debugName, "real sensitivities")) {
         if (0 == strcmp(findHashStringString(v, "isValueChangeable"), "true")) {
-          long *it = findHashStringLongPtr(mapAliasParam, info->name);
+          long *it = findHashStringLongPtr(*mapAliasParam, info->name);
           simulationInfo->sensitivityParList[*sensitivityParIndex] = *it;
           infoStreamPrint(OMC_LOG_SOLVER, 0, "%d. sensitivity parameter %s at index %d", *sensitivityParIndex, info->name, simulationInfo->sensitivityParList[*sensitivityParIndex]);
           (*sensitivityParIndex)++;
@@ -600,7 +602,6 @@ void read_input_xml(MODEL_DATA* modelData,
   hash_string_long *mapAlias = NULL, *mapAliasParam = NULL, *mapAliasSen = NULL;
   long *it, *itParam;
   mmc_sint_t i;
-  int inputIndex = 0;
   int k = 0;
 
   modelica_integer nxchk, nychk, npchk;
@@ -773,22 +774,22 @@ void read_input_xml(MODEL_DATA* modelData,
     EXIT(-1);
   }
 
-  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,    mi.rSta, "real states",            0,                    mapAlias, mapAliasParam, &k);
-  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,    mi.rDer, "real state derivatives", modelData->nStates,   mapAlias, mapAliasParam, &k);
-  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,    mi.rAlg, "real algebraics",        2*modelData->nStates, mapAlias, mapAliasParam, &k);
+  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi.rSta, "real states",            0,                    &mapAlias, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi.rDer, "real state derivatives", modelData->nStates,   &mapAlias, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi.rAlg, "real algebraics",        2*modelData->nStates, &mapAlias, &mapAliasParam, &k);
 
-  read_variables(simulationInfo, T_INTEGER, modelData->integerVarsData, mi.iAlg, "integer variables", 0, mapAlias, mapAliasParam, &k);
-  read_variables(simulationInfo, T_BOOLEAN, modelData->booleanVarsData, mi.bAlg, "boolean variables", 0, mapAlias, mapAliasParam, &k);
-  read_variables(simulationInfo, T_STRING,  modelData->stringVarsData,  mi.sAlg, "string variables",  0, mapAlias, mapAliasParam, &k);
+  read_variables(simulationInfo, T_INTEGER, modelData->integerVarsData,      mi.iAlg, "integer variables",      0,                    &mapAlias, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_BOOLEAN, modelData->booleanVarsData,      mi.bAlg, "boolean variables",      0,                    &mapAlias, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_STRING,  modelData->stringVarsData,       mi.sAlg, "string variables",       0,                    &mapAlias, &mapAliasParam, &k);
 
-  read_variables(simulationInfo, T_REAL,    modelData->realParameterData,    mi.rPar, "real parameters",    0, mapAliasParam, mapAliasParam, &k);
-  read_variables(simulationInfo, T_INTEGER, modelData->integerParameterData, mi.iPar, "integer parameters", 0, mapAliasParam, mapAliasParam, &k);
-  read_variables(simulationInfo, T_BOOLEAN, modelData->booleanParameterData, mi.bPar, "boolean parameters", 0, mapAliasParam, mapAliasParam, &k);
-  read_variables(simulationInfo, T_STRING,  modelData->stringParameterData,  mi.sPar, "string parameters",  0, mapAliasParam, mapAliasParam, &k);
+  read_variables(simulationInfo, T_REAL,    modelData->realParameterData,    mi.rPar, "real parameters",        0,                    &mapAliasParam, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_INTEGER, modelData->integerParameterData, mi.iPar, "integer parameters",     0,                    &mapAliasParam, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_BOOLEAN, modelData->booleanParameterData, mi.bPar, "boolean parameters",     0,                    &mapAliasParam, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_STRING,  modelData->stringParameterData,  mi.sPar, "string parameters",      0,                    &mapAliasParam, &mapAliasParam, &k);
 
   if (omc_flag[FLAG_IDAS])
   {
-    read_variables(simulationInfo, T_REAL, modelData->realSensitivityData, mi.rSen, "real sensitivities", 0, mapAliasSen, mapAliasParam, &k);
+    read_variables(simulationInfo, T_REAL, modelData->realSensitivityData, mi.rSen, "real sensitivities", 0, &mapAliasSen, &mapAliasParam, &k);
   }
 
   /*
