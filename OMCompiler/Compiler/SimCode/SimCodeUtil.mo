@@ -14144,7 +14144,7 @@ algorithm
 
     // get derivatives pattern
     intLst := list(getVariableFMIIndex(v) for v in inModelInfo.vars.derivativeVars);
-    derivatives := list(fmiUnknown for fmiUnknown guard(Util.boolOrList(list(isFmiUnknown(i, fmiUnknown) for i in intLst))) in allUnknowns);
+    derivatives := list(fmiUnknown for fmiUnknown guard(List.any(intLst, function isFmiUnknown(inFMIUnknown = fmiUnknown))) in allUnknowns);
 
     // get output pattern
     varsA := List.filterOnTrue(inModelInfo.vars.algVars, isOutputSimVar);
@@ -14153,12 +14153,12 @@ algorithm
     varsD := List.filterOnTrue(inModelInfo.vars.stringAlgVars, isOutputSimVar); // check for outputs in stringAlgVars
     allOutputVars := listAppend(listAppend(varsA,varsB),listAppend(varsC,varsD));
     intLst := list(getVariableFMIIndex(v) for v in allOutputVars);
-    outputs := list(fmiUnknown for fmiUnknown guard(Util.boolOrList(list(isFmiUnknown(i, fmiUnknown) for i in intLst))) in allUnknowns);
+    outputs := list(fmiUnknown for fmiUnknown guard(List.any(intLst, function isFmiUnknown(inFMIUnknown = fmiUnknown))) in allUnknowns);
 
     // get discrete states pattern
     clockedStates := List.filterOnTrue(inModelInfo.vars.algVars, isClockedStateSimVar);
     intLst := list(getVariableFMIIndex(v) for v in clockedStates);
-    discreteStates := list(fmiUnknown for fmiUnknown guard(Util.boolOrList(list(isFmiUnknown(i, fmiUnknown) for i in intLst))) in allUnknowns);
+    discreteStates := list(fmiUnknown for fmiUnknown guard(List.any(intLst, function isFmiUnknown(inFMIUnknown = fmiUnknown))) in allUnknowns);
 
     // discreteStates
     if not checkForEmptyBDAE(optcontPartDer) then
