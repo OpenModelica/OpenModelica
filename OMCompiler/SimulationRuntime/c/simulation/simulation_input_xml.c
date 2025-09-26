@@ -79,6 +79,13 @@ typedef struct hash_string_long
   UT_hash_handle hh;
 } hash_string_long;
 
+enum var_type {
+  T_REAL,
+  T_INTEGER,
+  T_BOOLEAN,
+  T_STRING
+};
+
 static inline const char* findHashStringStringNull(hash_string_string *ht, const char *key)
 {
   hash_string_string *res;
@@ -427,6 +434,160 @@ static void read_var_attribute_string(omc_ScalarVariable *v, STRING_ATTRIBUTE *a
   infoStreamPrint(OMC_LOG_DEBUG, 0, "String %s(start=%s)", findHashStringString(v,"name"), MMC_STRINGDATA(attribute->start));
 }
 
+/**
+ * @brief Check if a variable should be filtered from the output
+ *
+ * the check is like this:
+ * - we filter if isProtected (protected variables)
+ * - we filter if annotation(HideResult=true)
+ * - we emit (remove filtering) if !encrypted && emitProtected && isProtected
+ * - we emit (remove filtering) if ignoreHideResult && annotation(HideResult=true)
+ *
+ * @param variable  Variable to check
+ * @param name      Variable name
+ *
+ * @return TRUE if the variable should be filtered (not appear in the output)
+ */
+int shouldFilterOutput(omc_ScalarVariable *variable, const char *name)
+{
+  int ep = omc_flag[FLAG_EMIT_PROTECTED];
+  int ihr = omc_flag[FLAG_IGNORE_HIDERESULT];
+  const char *ipstr = findHashStringString(variable, "isProtected");
+  const char *hrstr = findHashStringString(variable, "hideResult");
+  const char *iestr = findHashStringString(variable, "isEncrypted");
+  int ipcmptrue = (0 == strcmp(ipstr, "true"));
+  int hrcmptrue = (0 == strcmp(hrstr, "true"));
+  int iecmptrue = (0 == strcmp(iestr, "true"));
+
+  int shouldFilter = FALSE;
+
+  if (ipcmptrue) {
+    infoStreamPrint(OMC_LOG_DEBUG, 0, "filtering protected variable %s", name);
+    shouldFilter = TRUE;
+  }
+  if (hrcmptrue) {
+    infoStreamPrint(OMC_LOG_DEBUG, 0, "filtering variable %s due to HideResult annotation", name);
+    shouldFilter = TRUE;
+  }
+  if (!iecmptrue && ep && ipcmptrue) {
+    infoStreamPrint(OMC_LOG_DEBUG, 0, "emitting protected variable %s due to flag %s", name, omc_flagValue[FLAG_EMIT_PROTECTED]);
+    shouldFilter = FALSE;
+  }
+  if (ihr && hrcmptrue) {
+    infoStreamPrint(OMC_LOG_DEBUG, 0, "emitting variable %s with HideResult=true annotation due to flag %s", name, omc_flagValue[FLAG_IGNORE_HIDERESULT]);
+    shouldFilter = FALSE;
+  }
+
+  return shouldFilter;
+}
+
+/**
+ * @brief Read all static data from File for every variable
+ *
+ * @param simulationInfo
+ * @param type                T_REAL, T_INTEGER, T_BOOLEAN, T_STRING
+ * @param out                 Write variable infos into.
+ *                            Must be of type STATIC_<type>_DATA
+ * @param in                  Model variable map
+ * @param debugName           Name used in debug output
+ * @param start               Start index in out
+ * @param mapAlias            Map of variable names to indices in out
+ * @param mapAliasParam       Map of parameter names to indices in out
+ * @param sensitivityParIndex Index in sensitivityParList, will be incremented
+ *                            for each sensitivity parameter found
+ */
+static void read_variables(SIMULATION_INFO* simulationInfo,
+                           enum var_type type,
+                           void *out,
+                           omc_ModelVariables *in,
+                           const char *debugName,
+                           mmc_sint_t start,
+                           hash_string_long **mapAlias,
+                           hash_string_long **mapAliasParam,
+                           int *sensitivityParIndex)
+{
+  mmc_sint_t i = 0;
+  mmc_sint_t shift = 0;
+  mmc_sint_t size;
+  hash_long_var *res = NULL;
+  infoStreamPrint(OMC_LOG_DEBUG, 1, "read xml file for %s", debugName);
+  HASH_FIND_INT(in, &i, res);
+  while (res) {
+    omc_ScalarVariable *v = res->val;
+    mmc_sint_t j = start + shift;
+    /* get the size ToDo: THIS HAS TO BE DONE WITH DIMENSIONS: */ \
+    /* read_value_long(findHashStringStringEmpty(v,"size"), &size, 1); */ \
+    size = 1;
+    for (mmc_sint_t i_loc = 0; i_loc < size; i_loc++) {
+      VAR_INFO *info;
+      modelica_boolean *filterOutput;
+      char type_name[8];
+      switch (type) {
+        case T_REAL:
+          {
+            strncpy(type_name, "real", 8);
+            STATIC_REAL_DATA* realVarsData = (STATIC_REAL_DATA*) out;
+            REAL_ATTRIBUTE* attribute = &realVarsData[j + i_loc].attribute;
+            read_var_attribute_real(v, attribute);
+            info = &realVarsData[j + i_loc].info;
+            filterOutput = &realVarsData[j + i_loc].filterOutput;
+          }
+          break;
+        case T_INTEGER:
+          {
+            strncpy(type_name, "integer", 8);
+            STATIC_INTEGER_DATA* intVarsData = (STATIC_INTEGER_DATA*) out;
+            INTEGER_ATTRIBUTE* attribute = &intVarsData[j + i_loc].attribute;
+            read_var_attribute_int(v, attribute);
+            info = &intVarsData[j + i_loc].info;
+            filterOutput = &intVarsData[j + i_loc].filterOutput;
+          }
+          break;
+        case T_BOOLEAN:
+          {
+            strncpy(type_name, "boolean", 8);
+            STATIC_BOOLEAN_DATA* boolVarsData = (STATIC_BOOLEAN_DATA*) out;
+            BOOLEAN_ATTRIBUTE* attribute = &boolVarsData[j + i_loc].attribute;
+            read_var_attribute_bool(v, attribute);
+            info = &boolVarsData[j + i_loc].info;
+            filterOutput = &boolVarsData[j + i_loc].filterOutput;
+          }
+          break;
+        case T_STRING:
+          {
+            strncpy(type_name, "string", 8);
+            STATIC_STRING_DATA* stringVarsData = (STATIC_STRING_DATA*) out;
+            STRING_ATTRIBUTE* attribute = &stringVarsData[j + i_loc].attribute;
+            read_var_attribute_string(v, attribute);
+            info = &stringVarsData[j + i_loc].info;
+            filterOutput = &stringVarsData[j + i_loc].filterOutput;
+          }
+          break;
+        default:
+          throwStreamPrint(NULL, "simulation_input_xml.c: Error: Unsupported type in read_variables.");
+          break;
+      }
+      read_var_info(v, info);
+      *filterOutput = shouldFilterOutput(v, info->name);
+      /* create a mapping for Alias variable to get the correct index */
+      addHashStringLong(mapAlias, info->name, j + i_loc);
+      debugStreamPrint(OMC_LOG_DEBUG, 0, "%s %s: mapAlias[%s] = %ld", type_name, debugName, info->name, (long)(j + i_loc));
+      if (omc_flag[FLAG_IDAS] && 0 == strcmp(debugName, "real sensitivities")) {
+        if (0 == strcmp(findHashStringString(v, "isValueChangeable"), "true")) {
+          long *it = findHashStringLongPtr(*mapAliasParam, info->name);
+          simulationInfo->sensitivityParList[*sensitivityParIndex] = *it;
+          infoStreamPrint(OMC_LOG_SOLVER, 0, "%d. sensitivity parameter %s at index %d", *sensitivityParIndex, info->name, simulationInfo->sensitivityParList[*sensitivityParIndex]);
+          (*sensitivityParIndex)++;
+        }
+      }
+    }
+    shift += size;
+    i++;
+    HASH_FIND_INT(in, &i, res);
+  }
+  messageClose(OMC_LOG_DEBUG);
+}
+
 /* \brief
  *  Reads initial values from a text file.
  *
@@ -442,9 +603,7 @@ void read_input_xml(MODEL_DATA* modelData,
   XML_Parser parser = NULL;
   hash_string_long *mapAlias = NULL, *mapAliasParam = NULL, *mapAliasSen = NULL;
   long *it, *itParam;
-  mmc_sint_t i, i_loc, shift, size;
-  hash_long_var *res;
-  int inputIndex = 0;
+  mmc_sint_t i;
   int k = 0;
 
   modelica_integer nxchk, nychk, npchk;
@@ -617,106 +776,22 @@ void read_input_xml(MODEL_DATA* modelData,
     EXIT(-1);
   }
 
+  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi.rSta, "real states",            0,                    &mapAlias, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi.rDer, "real state derivatives", modelData->nStates,   &mapAlias, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi.rAlg, "real algebraics",        2*modelData->nStates, &mapAlias, &mapAliasParam, &k);
 
-/* general check for filtering the output for a variable
- * defined here to be reused everywhere
- * the check is like this:
- * - we filter if isProtected (protected variables)
- * - we filter if annotation(HideResult=true)
- * - we emit (remove filtering) if !encrypted && emitProtected && isProtected
- * - we emit (remove filtering) if ignoreHideResult && annotation(HideResult=true)
- */
-#define setFilterOuput(v, s, n) \
-{ \
-  int ep = omc_flag[FLAG_EMIT_PROTECTED]; \
-  int ihr = omc_flag[FLAG_IGNORE_HIDERESULT]; \
-  const char *ipstr = findHashStringString((v), "isProtected"); \
-  const char *hrstr = findHashStringString((v), "hideResult"); \
-  const char *iestr = findHashStringString((v), "isEncrypted"); \
-  int ipcmptrue = (0 == strcmp(ipstr, "true")); \
-  int hrcmptrue = (0 == strcmp(hrstr, "true")); \
-  int iecmptrue = (0 == strcmp(iestr, "true")); \
-  if (ipcmptrue) \
-  { \
-    infoStreamPrint(OMC_LOG_DEBUG, 0, "filtering protected variable %s", (n)); \
-    (s).filterOutput = 1; \
-  } \
-  if (hrcmptrue) \
-  { \
-    infoStreamPrint(OMC_LOG_DEBUG, 0, "filtering variable %s due to HideResult annotation", (n)); \
-    (s).filterOutput = 1; \
-  } \
-  if (!iecmptrue && ep && ipcmptrue) \
-  { \
-    infoStreamPrint(OMC_LOG_DEBUG, 0, "emitting protected variable %s due to flag %s", (n), omc_flagValue[FLAG_EMIT_PROTECTED]); \
-    (s).filterOutput = 0; \
-  } \
-  if (ihr && hrcmptrue) \
-  { \
-    infoStreamPrint(OMC_LOG_DEBUG, 0, "emitting variable %s with HideResult=true annotation due to flag %s", (n), omc_flagValue[FLAG_IGNORE_HIDERESULT]); \
-    (s).filterOutput = 0; \
-  } \
-}
+  read_variables(simulationInfo, T_INTEGER, modelData->integerVarsData,      mi.iAlg, "integer variables",      0,                    &mapAlias, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_BOOLEAN, modelData->booleanVarsData,      mi.bAlg, "boolean variables",      0,                    &mapAlias, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_STRING,  modelData->stringVarsData,       mi.sAlg, "string variables",       0,                    &mapAlias, &mapAliasParam, &k);
 
-/* read all static data from File for every variable */
-#define READ_VARIABLES(out, in, attributeKind, read_var_attribute, debugName, start, nStates, mapAlias) \
-  infoStreamPrint(OMC_LOG_DEBUG, 1, "read xml file for %s", debugName); \
-  /* prepare the variable index and the value pointers and get the first variable */ \
-  i = 0;      /* array index of the variable in current context. always shifts by 1 */ \
-  shift = 0;  /* index shift due to previous array variables. shifts by 1 for scalars */ \
-  HASH_FIND_INT(in, &i, res); \
-  /* while there is a next variable, get the values from xml file */ \
-  while (res) { \
-    /* get the variable value and the start index j */ \
-    omc_ScalarVariable *v = res->val; \
-    mmc_sint_t j = start+shift; \
-    /* get the size ToDo: THIS HAS TO BE DONE WITH DIMENSIONS: */ \
-    /* read_value_long(findHashStringStringEmpty(v,"size"), &size, 1); */ \
-    size = 1; \
-    for (i_loc=0; i_loc<size; i_loc++) { \
-      /* get the pointers to the structs where the values will be saved to */ \
-      VAR_INFO *info = &out[j+i_loc].info; \
-      attributeKind *attribute = &out[j+i_loc].attribute; \
-      read_var_info(v, info); \
-      read_var_attribute(v, attribute); \
-      setFilterOuput(v, out[j+i_loc], info->name); \
-      /* create a mapping for Alias variable to get the correct index */ \
-      addHashStringLong(&mapAlias, info->name, j+i_loc); \
-      debugStreamPrint(OMC_LOG_DEBUG, 0, "real %s: mapAlias[%s] = %ld", debugName, info->name, (long) j+i_loc); \
-      if (omc_flag[FLAG_IDAS] && 0 == strcmp(debugName, "real sensitivities")) \
-      { \
-        if (0 == strcmp(findHashStringString(v, "isValueChangeable"), "true")) \
-        { \
-          long *it = findHashStringLongPtr(mapAliasParam, info->name); \
-          simulationInfo->sensitivityParList[k] = *it; \
-          infoStreamPrint(OMC_LOG_SOLVER, 0, "%d. sensitivity parameter %s at index %d", k, info->name, simulationInfo->sensitivityParList[k]); \
-          k++; \
-        } \
-      } \
-    } \
-    /* get the next variable pointer and adapt indices */ \
-    shift+=size; \
-    i++; \
-    HASH_FIND_INT(in, &i, res); \
-  } \
-  messageClose(OMC_LOG_DEBUG);
-
-  READ_VARIABLES(modelData->realVarsData,mi.rSta,REAL_ATTRIBUTE,read_var_attribute_real,"real states",0,modelData->nStates,mapAlias);
-  READ_VARIABLES(modelData->realVarsData,mi.rDer,REAL_ATTRIBUTE,read_var_attribute_real,"real state derivatives",modelData->nStates,modelData->nStates,mapAlias);
-  READ_VARIABLES(modelData->realVarsData,mi.rAlg,REAL_ATTRIBUTE,read_var_attribute_real,"real algebraics",2*modelData->nStates,modelData->nVariablesReal - 2*modelData->nStates,mapAlias);
-
-  READ_VARIABLES(modelData->integerVarsData,mi.iAlg,INTEGER_ATTRIBUTE,read_var_attribute_int,"integer variables",0,modelData->nVariablesInteger,mapAlias);
-  READ_VARIABLES(modelData->booleanVarsData,mi.bAlg,BOOLEAN_ATTRIBUTE,read_var_attribute_bool,"boolean variables",0,modelData->nVariablesBoolean,mapAlias);
-  READ_VARIABLES(modelData->stringVarsData,mi.sAlg,STRING_ATTRIBUTE,read_var_attribute_string,"string variables",0,modelData->nVariablesString,mapAlias);
-
-  READ_VARIABLES(modelData->realParameterData,mi.rPar,REAL_ATTRIBUTE,read_var_attribute_real,"real parameters",0,modelData->nParametersReal,mapAliasParam);
-  READ_VARIABLES(modelData->integerParameterData,mi.iPar,INTEGER_ATTRIBUTE,read_var_attribute_int,"integer parameters",0,modelData->nParametersInteger,mapAliasParam);
-  READ_VARIABLES(modelData->booleanParameterData,mi.bPar,BOOLEAN_ATTRIBUTE,read_var_attribute_bool,"boolean parameters",0,modelData->nParametersBoolean,mapAliasParam);
-  READ_VARIABLES(modelData->stringParameterData,mi.sPar,STRING_ATTRIBUTE,read_var_attribute_string,"string parameters",0,modelData->nParametersString,mapAliasParam);
+  read_variables(simulationInfo, T_REAL,    modelData->realParameterData,    mi.rPar, "real parameters",        0,                    &mapAliasParam, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_INTEGER, modelData->integerParameterData, mi.iPar, "integer parameters",     0,                    &mapAliasParam, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_BOOLEAN, modelData->booleanParameterData, mi.bPar, "boolean parameters",     0,                    &mapAliasParam, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_STRING,  modelData->stringParameterData,  mi.sPar, "string parameters",      0,                    &mapAliasParam, &mapAliasParam, &k);
 
   if (omc_flag[FLAG_IDAS])
   {
-    READ_VARIABLES(modelData->realSensitivityData,mi.rSen,REAL_ATTRIBUTE,read_var_attribute_real,"real sensitivities",0, modelData->nSensitivityVars,mapAliasSen);
+    read_variables(simulationInfo, T_REAL, modelData->realSensitivityData, mi.rSen, "real sensitivities", 0, &mapAliasSen, &mapAliasParam, &k);
   }
 
   /*
@@ -736,7 +811,7 @@ void read_input_xml(MODEL_DATA* modelData,
     }
     infoStreamPrint(OMC_LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->realAlias[i].info.name, modelData->realAlias[i].negate);
 
-    setFilterOuput(*findHashLongVar(mi.rAli,i), modelData->realAlias[i], modelData->realAlias[i].info.name);
+    modelData->realAlias[i].filterOutput = shouldFilterOutput(*findHashLongVar(mi.rAli,i), modelData->realAlias[i].info.name);
 
     free((char*)aliasTmp);
     aliasTmp = NULL;
@@ -782,7 +857,7 @@ void read_input_xml(MODEL_DATA* modelData,
 
     infoStreamPrint(OMC_LOG_DEBUG, 0, "read for %s negated %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].negate);
 
-    setFilterOuput(*findHashLongVar(mi.iAli,i), modelData->integerAlias[i], modelData->integerAlias[i].info.name);
+    modelData->integerAlias[i].filterOutput = shouldFilterOutput(*findHashLongVar(mi.iAli,i), modelData->integerAlias[i].info.name);
 
     free((char*)aliasTmp);
     aliasTmp = NULL;
@@ -826,7 +901,7 @@ void read_input_xml(MODEL_DATA* modelData,
 
     infoStreamPrint(OMC_LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->booleanAlias[i].info.name, modelData->booleanAlias[i].negate);
 
-    setFilterOuput(*findHashLongVar(mi.bAli,i), modelData->booleanAlias[i], modelData->booleanAlias[i].info.name);
+    modelData->booleanAlias[i].filterOutput = shouldFilterOutput(*findHashLongVar(mi.bAli,i), modelData->booleanAlias[i].info.name);
 
     free((char*)aliasTmp);
     aliasTmp = NULL;
@@ -869,7 +944,7 @@ void read_input_xml(MODEL_DATA* modelData,
     }
     infoStreamPrint(OMC_LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->stringAlias[i].info.name, modelData->stringAlias[i].negate);
 
-    setFilterOuput(*findHashLongVar(mi.sAli,i), modelData->stringAlias[i], modelData->stringAlias[i].info.name);
+    modelData->stringAlias[i].filterOutput = shouldFilterOutput(*findHashLongVar(mi.sAli,i), modelData->stringAlias[i].info.name);
 
     free((char*)aliasTmp);
     aliasTmp = NULL;
