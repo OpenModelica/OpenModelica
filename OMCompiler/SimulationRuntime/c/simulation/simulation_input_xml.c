@@ -459,24 +459,26 @@ int shouldFilterOutput(omc_ScalarVariable *variable, const char *name)
   int hrcmptrue = (0 == strcmp(hrstr, "true"));
   int iecmptrue = (0 == strcmp(iestr, "true"));
 
+  int shouldFilter = FALSE;
+
   if (ipcmptrue) {
     infoStreamPrint(OMC_LOG_DEBUG, 0, "filtering protected variable %s", name);
-    return TRUE;
+    shouldFilter = TRUE;
   }
   if (hrcmptrue) {
     infoStreamPrint(OMC_LOG_DEBUG, 0, "filtering variable %s due to HideResult annotation", name);
-    return TRUE;
+    shouldFilter = TRUE;
   }
   if (!iecmptrue && ep && ipcmptrue) {
     infoStreamPrint(OMC_LOG_DEBUG, 0, "emitting protected variable %s due to flag %s", name, omc_flagValue[FLAG_EMIT_PROTECTED]);
-    return FALSE;
+    shouldFilter = FALSE;
   }
   if (ihr && hrcmptrue) {
     infoStreamPrint(OMC_LOG_DEBUG, 0, "emitting variable %s with HideResult=true annotation due to flag %s", name, omc_flagValue[FLAG_IGNORE_HIDERESULT]);
-    return FALSE;
+    shouldFilter = FALSE;
   }
 
-  return FALSE;
+  return shouldFilter;
 }
 
 /**
