@@ -1377,6 +1377,9 @@ constant ConfigFlag EVALUATE_STRUCTURAL_PARAMETERS = CONFIG_FLAG(158, "evaluateS
 constant ConfigFlag LOAD_MISSING_LIBRARIES = CONFIG_FLAG(159, "loadMissingLibraries",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   Gettext.gettext("Automatically try to load a matching library if a name can't be found during name lookup."));
+constant ConfigFlag CAUSALIZE_DAE_MODE = CONFIG_FLAG(160, "causalizeDaeMode",
+  NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
+  Gettext.gettext("The system is partially causalized and simple assignments are generated for equations that can be solved explicitly. Only works with --daeMode."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

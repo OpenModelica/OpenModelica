@@ -277,7 +277,7 @@ protected
   Boolean isStateVarInvoled;
 algorithm
   varCrefLst := list(v.varName for v in inVars);
-  isStateVarInvoled := Util.boolOrList(list(BackendVariable.isStateVar(v) for v in inVars));
+  isStateVarInvoled := not Flags.getConfigBool(Flags.CAUSALIZE_DAE_MODE) or Util.boolOrList(list(BackendVariable.isStateVar(v) for v in inVars));
   (traverserArgs) :=
   matchcontinue(inEqns, traverserArgs.recursiveStrongComponentRun, isStateVarInvoled)
     local
