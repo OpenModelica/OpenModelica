@@ -299,7 +299,7 @@ public
         then ({solved_comp}, solve_status);
 
         case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
-          for inner_comp in listReverse(arrayList(strict.innerEquations)) loop
+          for inner_comp in Array.reverse(strict.innerEquations) loop
             (tmp, funcTree, implicit_index) := solveStrongComponent(inner_comp, funcTree, kind, implicit_index, slicing_map, varData, eqData);
             inner_comps := listAppend(tmp, inner_comps);
           end for;

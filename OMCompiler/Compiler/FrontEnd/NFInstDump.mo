@@ -43,7 +43,7 @@ encapsulated package NFInstDump
 public import NFInstTypes;
 
 protected import NFInstDumpTpl;
-protected import List;
+protected import Array;
 protected import Tpl;
 
 public function modelStr
@@ -109,14 +109,12 @@ public function dumpUntypedComponentDims
 algorithm
   outString := match(inComponent)
     local
-      array<NFInstTypes.Dimension> adims;
-      list<NFInstTypes.Dimension> ldims;
+      array<NFInstTypes.Dimension> dims;
       String dims_str;
 
-    case NFInstTypes.UNTYPED_COMPONENT(dimensions = adims)
+    case NFInstTypes.UNTYPED_COMPONENT(dimensions = dims)
       equation
-        ldims = arrayList(adims);
-        dims_str = List.toString(ldims, dimensionStr, "", "[", ", ", "]", false);
+        dims_str = Array.toString(dims, dimensionStr, "", "[", ", ", "]", false);
       then
         dims_str;
 

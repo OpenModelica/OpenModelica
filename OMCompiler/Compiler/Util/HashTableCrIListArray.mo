@@ -105,7 +105,7 @@ protected
   array<Integer> iArray;
 algorithm
   (iList, iArray) := iValue;
-  res := "[" + stringDelimitList(List.map(iList, intString), ",") + "] {" + stringDelimitList(List.map(arrayList(iArray), intString), ",") + "}";
+  res := "[" + stringDelimitList(List.map(iList, intString), ",") + "] {" + stringDelimitList(List.mapArray(iArray, intString), ",") + "}";
 end printIntListArrayStr;
 
 annotation(__OpenModelica_Interface="frontend");

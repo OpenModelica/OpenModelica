@@ -816,9 +816,9 @@ algorithm
       array<DAE.Exp> color, r, widthDir, lengthDir;
       array<list<DAE.Exp>> T;
   case(SHAPE(ident=ident, shapeType=shapeType, color=color, r=r, lengthDir=lengthDir, widthDir=widthDir, T=T, length=length, width=width, height=height, extra=extra))
-  then ("SHAPE "+ComponentReference.printComponentRefStr(ident)+" '"+ExpressionDump.printExpStr(shapeType) + "'\n r{"+stringDelimitList(List.map1(arrayList(r),ExpressionDump.dumpExpStr,0),",")+"}" +
-        "\nlD{"+stringDelimitList(List.map(arrayList(lengthDir),ExpressionDump.printExpStr),",")+"}"+" wD{"+stringDelimitList(List.map(arrayList(widthDir),ExpressionDump.printExpStr),",")+"}"+
-        "\ncolor("+stringDelimitList(List.map(arrayList(color),ExpressionDump.printExpStr),",")+")"+" w: "+ExpressionDump.printExpStr(width)+" h: "+ExpressionDump.printExpStr(height)+" l: "+ExpressionDump.printExpStr(length) +
+  then ("SHAPE "+ComponentReference.printComponentRefStr(ident)+" '"+ExpressionDump.printExpStr(shapeType) + "'\n r{"+stringDelimitList(list(ExpressionDump.dumpExpStr(e, 0) for e in r),",")+"}" +
+        "\nlD{"+stringDelimitList(List.mapArray(lengthDir, ExpressionDump.printExpStr),",")+"}"+" wD{"+stringDelimitList(List.mapArray(widthDir, ExpressionDump.printExpStr),",")+"}"+
+        "\ncolor("+stringDelimitList(List.mapArray(color, ExpressionDump.printExpStr),",")+")"+" w: "+ExpressionDump.printExpStr(width)+" h: "+ExpressionDump.printExpStr(height)+" l: "+ExpressionDump.printExpStr(length) +
         "\nT {"+ stringDelimitList(List.map(List.flatten(arrayList(T)),ExpressionDump.printExpStr),", ")+"}"+"\nextra{"+ExpressionDump.printExpStr(extra)+"}");
   else
     then "-";
