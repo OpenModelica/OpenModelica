@@ -504,7 +504,7 @@ algorithm
    resEqsOut := hs;
 
    // some optimization
-   (eqsNewOut,varsNewOut,resEqsOut) := simplifyNewEquations(eqsNewOut,varsNewOut,resEqsOut,listLength(List.flatten(arrayList(xa_iArr))),2,ishared);
+   (eqsNewOut,varsNewOut,resEqsOut) := simplifyNewEquations(eqsNewOut,varsNewOut,resEqsOut, sum(listLength(l) for l in xa_iArr), 2,ishared);
 
    // handle the strongComponent (system of equations) to solve the tearing vars
    (compsEqSys,resEqsOut,tVarsOut,addEqLst,addVarLst) := buildEqSystemComponent(resEqIdcs0,tVarIdcs0,resEqsOut,tVarsOut,a_iArr,ishared);
