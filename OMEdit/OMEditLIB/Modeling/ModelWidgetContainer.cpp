@@ -4025,7 +4025,7 @@ void GraphicsView::pasteItems(QPointF positionOffset)
       QPointF cursorPositionAtCopy = MainWindow::instance()->getModelWidgetContainer()->mCursorPositionAtCopy;
       QRect copiedItemsBoundingRect = MainWindow::instance()->getModelWidgetContainer()->mCopiedItemsBoundingRect;
       if (!cursorPositionAtCopy.isNull() && cursorPositionAtCopy != cursorPosition) {
-        cursorPosition = cursorPosition - QPointF(copiedItemsBoundingRect.left(), copiedItemsBoundingRect.bottom());
+        cursorPosition = snapPointToGrid(cursorPosition - QPointF(copiedItemsBoundingRect.left(), copiedItemsBoundingRect.bottom()));
       } else {
         cursorPosition = QPointF(0, 0);
       }
