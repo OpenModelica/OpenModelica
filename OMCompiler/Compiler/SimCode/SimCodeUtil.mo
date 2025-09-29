@@ -5545,7 +5545,6 @@ protected
   DAE.ComponentRef cref;
   Integer size, i, j;
   list<Integer> intLst;
-  array<Integer> intArr;
   list<DAE.ComponentRef> crefs;
 algorithm
   //create HT
@@ -5575,9 +5574,7 @@ algorithm
             intLst := j :: intLst;
           end if;
         end for;
-        intArr := listArray(intLst);
-        Array.heapSort(intArr);
-        intLst := arrayList(intArr);
+        intLst := List.heapSortIntList(intLst);
         outSparse := (i, intLst) :: outSparse;
       end if;
     end for;

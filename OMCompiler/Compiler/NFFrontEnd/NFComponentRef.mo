@@ -2409,16 +2409,16 @@ public
     output list<ComponentRef> children = {};
   protected
     Type ty = Type.arrayElementType(getComponentType(cref));
-    list<InstNode> children_nodes = {};
+    array<InstNode> children_nodes = listArray({});
   algorithm
     if Type.isComplex(ty) then
       children_nodes := match cref
-        case CREF() then arrayList(ClassTree.getComponents(Class.classTree(InstNode.getClass(Component.classInstance(InstNode.component(cref.node))))));
-        else {};
+        case CREF() then ClassTree.getComponents(Class.classTree(InstNode.getClass(Component.classInstance(InstNode.component(cref.node)))));
+        else listArray({});
       end match;
     end if;
 
-    if not listEmpty(children_nodes) then
+    if not arrayEmpty(children_nodes) then
       children := list(prefixCref(node, InstNode.getType(node), {}, cref) for node in children_nodes);
     end if;
   end getRecordChildren;

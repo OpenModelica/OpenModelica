@@ -651,10 +651,10 @@ algorithm
   for row in 1:n loop
     arrayUpdate(b,(row-1)*n+row,1.0);
   end for;
-    //print("b\n"+stringDelimitList(List.map(arrayList(b),realString),", ")+"\n\n");
-    //print("A\n"+stringDelimitList(List.map(arrayList(A),realString),", ")+"\n\n");
+    //print("b\n"+stringDelimitList(List.mapArray(b,realString),", ")+"\n\n");
+    //print("A\n"+stringDelimitList(List.mapArray(A,realString),", ")+"\n\n");
   gauss(A,b,1,n,List.intRange(n),order);
-    //print("the order: "+stringDelimitList(List.map(arrayList(order),intString),",")+"\n");
+    //print("the order: "+stringDelimitList(List.mapArray(order,intString),",")+"\n");
 
   (bVarsOut,bEqsOut) := createBVecVars(sysIdxIn,compIdxIn,n,DAE.T_REAL_DEFAULT,beqs);
   sysEqsOut := createSysEquations(A,b,n,order,var_lst,bVarsOut);
@@ -792,11 +792,11 @@ algorithm
             arrayUpdate(b,pos,b_entry);
           end for;
       end for;
-        //print("A\n"+stringDelimitList(List.map(arrayList(A),realString),", ")+"\n\n");
-        //print("b\n"+stringDelimitList(List.map(arrayList(b),realString),", ")+"\n\n");
+        //print("A\n"+stringDelimitList(List.mapArray(A, realString),", ")+"\n\n");
+        //print("b\n"+stringDelimitList(List.mapArray(b, realString),", ")+"\n\n");
 
-      //print("new permutation: "+stringDelimitList(List.map(arrayList(permutation),intString),",")+"\n");
-      //print("JACB "+intString(indxIn)+" \n"+stringDelimitList(List.map(arrayList(jacB),rListStr),"\n ")+"\n\n");
+      //print("new permutation: "+stringDelimitList(List.mapArray(permutation, intString),",")+"\n");
+      //print("JACB "+intString(indxIn)+" \n"+stringDelimitList(List.mapArray(jacB, rListStr),"\n ")+"\n\n");
       gauss(A,b,indxIn+1,n,range,permutation);
     then();
   else ();
