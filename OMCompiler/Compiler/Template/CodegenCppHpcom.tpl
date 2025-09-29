@@ -356,7 +356,7 @@ template generateAdditionalHpcomVarHeaders(Option<tuple<Schedule,Schedule,Schedu
       let zeroFuncLocks = createLockArrayByName(listLength(zeroFuncSchedule.outgoingDepTasks),"_lockZeroFunc",type)//daeSchedule.outgoingDepTasks |> task => createLockByDepTask(task, "_lockDae", type); separator="\n"
       match type
         case ("openmp") then
-          let threadDecl = odeSchedule.threadTasks |> tt hasindex i0 fromindex 0 => generateThreadHeaderDecl(i0, type); separator="\n"
+          let threadDecl = arrayList(odeSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThreadHeaderDecl(i0, type); separator="\n"
           <<
           <%odeLocks%>
           <%daeLocks%>
@@ -514,7 +514,7 @@ template additionalHpcomConstructorBodyStatements(Option<tuple<Schedule,Schedule
 
       match type
         case ("openmp") then
-          let threadFuncs = odeSchedule.threadTasks |> tt hasindex i0 fromindex 0 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
+          let threadFuncs = arrayList(odeSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
           <<
           omp_set_dynamic(0);
           <%threadFuncs%>
@@ -1013,12 +1013,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    case SOME((odeSchedule as THREADSCHEDULE(threadTasks=threadTasksOde), daeSchedule as THREADSCHEDULE(threadTasks=threadTasksDae), zeroFuncSchedule as THREADSCHEDULE(threadTasks=threadTasksZeroFunc))) then
       match type
         case ("openmp") then
-          let threadAssignLocksOde = threadTasksOde |> tt hasindex i0 fromindex 0 => function_HPCOM_assignThreadLocks(arrayGet(threadTasksOde, intAdd(i0, 1)), "_lockOde", i0, type); separator="\n"
-          let threadReleaseLocksOde = threadTasksOde |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseThreadLocks(arrayGet(threadTasksOde, intAdd(i0, 1)), "_lockOde", i0, type); separator="\n"
-          let threadAssignLocksDae = threadTasksOde |> tt hasindex i0 fromindex 0 => function_HPCOM_assignThreadLocks(arrayGet(threadTasksDae, intAdd(i0, 1)), "_lockDae", i0, type); separator="\n"
-          let threadReleaseLocksDae = threadTasksOde |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseThreadLocks(arrayGet(threadTasksDae, intAdd(i0, 1)), "_lockDae", i0, type); separator="\n"
-          let threadAssignLocksZeroFunc = threadTasksZeroFunc |> tt hasindex i0 fromindex 0 => function_HPCOM_assignThreadLocks(arrayGet(threadTasksZeroFunc, intAdd(i0, 1)), "_lockZeroFunc", i0, type); separator="\n"
-          let threadReleaseLocksZeroFunc = threadTasksZeroFunc |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseThreadLocks(arrayGet(threadTasksZeroFunc, intAdd(i0, 1)), "_lockZeroFunc", i0, type); separator="\n"
+          let threadAssignLocksOde = arrayList(threadTasksOde) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignThreadLocks(arrayGet(threadTasksOde, intAdd(i0, 1)), "_lockOde", i0, type); separator="\n"
+          let threadReleaseLocksOde = arrayList(threadTasksOde) |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseThreadLocks(arrayGet(threadTasksOde, intAdd(i0, 1)), "_lockOde", i0, type); separator="\n"
+          let threadAssignLocksDae = arrayList(threadTasksOde) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignThreadLocks(arrayGet(threadTasksDae, intAdd(i0, 1)), "_lockDae", i0, type); separator="\n"
+          let threadReleaseLocksDae = arrayList(threadTasksOde) |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseThreadLocks(arrayGet(threadTasksDae, intAdd(i0, 1)), "_lockDae", i0, type); separator="\n"
+          let threadAssignLocksZeroFunc = arrayList(threadTasksZeroFunc) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignThreadLocks(arrayGet(threadTasksZeroFunc, intAdd(i0, 1)), "_lockZeroFunc", i0, type); separator="\n"
+          let threadReleaseLocksZeroFunc = arrayList(threadTasksZeroFunc) |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseThreadLocks(arrayGet(threadTasksZeroFunc, intAdd(i0, 1)), "_lockZeroFunc", i0, type); separator="\n"
 
           let odeEqs = arrayList(threadTasksOde) |> tt hasindex i0 => parallelThreadCodeWithSplit(allEquationsPlusWhen,tt,i0,intSub(arrayLength(threadTasksOde),1),type,"_lockOde",&varDecls,simCode, extraFuncs, extraFuncsDecl, lastIdentOfPath(name), "evaluateODE", useFlatArrayNotation); separator="\n"
           let daeEqs = arrayList(threadTasksDae) |> tt hasindex i0 => parallelThreadCodeWithSplit(allEquationsPlusWhen,tt,i0,intSub(arrayLength(threadTasksDae),1),type,"_lockDae",&varDecls,simCode, extraFuncs, extraFuncsDecl, lastIdentOfPath(name), "evaluateAll", useFlatArrayNotation); separator="\n"
