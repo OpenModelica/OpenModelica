@@ -556,7 +556,7 @@ public
   algorithm
     (exp, diffArguments) := match exp
       local
-        Expression elem1, elem2;
+        Expression elem1, elem2, res, current_grad;
         list<Expression> new_elements = {};
         list<list<Expression>> new_matrix_elements = {};
         array<Expression> arr;
@@ -1078,7 +1078,7 @@ public
     exp := match (exp)
       local
         Integer i;
-        Expression ret, ret1, ret2, arg1, arg2, arg3, diffArg1, diffArg2, diffArg3;
+        Expression ret, ret1, ret2, arg1, arg2, arg3, diffArg1, diffArg2, diffArg3, current_grad;
         list<Expression> rest;
         Type ty;
         DifferentiationType diffType;
@@ -1292,8 +1292,13 @@ public
         // differentiate the call df/dx
         ret := differentiateBuiltinCall1Arg(name, arg1);
         if not Expression.isZero(ret) then
+          current_grad := diffArguments.current_grad;
+          
+          diffArguments.current_grad := Expression.MULTARY({current_grad, ret}, {}, mulOp);
           // differentiate the argument (inner derivative) dx/dz
           (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
+
+          diffArguments.current_grad := current_grad;
           ret := Expression.MULTARY({ret, diffArg1}, {}, mulOp);
         end if;
       then ret;
@@ -2008,6 +2013,7 @@ public
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.ADDITION)
         algorithm
           current_grad := diffArguments.current_grad;
+
           diffArguments.current_grad := current_grad; // not needed, but for clarity
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
 
@@ -2072,15 +2078,22 @@ public
       case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.DIVISION)
         algorithm
+          powSizeClass := if Type.isArray(Expression.typeOf(exp2)) then NFOperator.SizeClassification.ARRAY_SCALAR else NFOperator.SizeClassification.SCALAR;
+          powOp := Operator.fromClassification((NFOperator.MathClassification.POWER, powSizeClass), operator.ty);
+          current_grad := diffArguments.current_grad; // upstream gradient
+
+          diffArguments.current_grad := Expression.MULTARY({current_grad}, {exp2}, makeMulFromOperator(operator));
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
+          
+          diffArguments.current_grad := Expression.MULTARY({current_grad, Expression.negate(exp1)}, {Expression.BINARY(exp2, powOp, Expression.REAL(2.0))}, makeMulFromOperator(operator));
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
+
+          diffArguments.current_grad := current_grad;
           // create subtraction and multiplication operator from the size classification of original division operator
           (_, sizeClass) := Operator.classify(operator);
           // the frontend treats multiplication equally for element and nen elementwise, but pow needs to have the correct operator
-          powSizeClass := if Type.isArray(Expression.typeOf(exp2)) then NFOperator.SizeClassification.ARRAY_SCALAR else NFOperator.SizeClassification.SCALAR;
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
-          powOp := Operator.fromClassification((NFOperator.MathClassification.POWER, powSizeClass), operator.ty);
       then (Expression.MULTARY(
               {Expression.MULTARY(
                 {Expression.BINARY(exp1, mulOp, diffExp2)},              // fg'
@@ -2103,13 +2116,20 @@ public
       case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard((Operator.getMathClassification(operator) == NFOperator.MathClassification.POWER))
         algorithm
+          (_, sizeClass) := Operator.classify(operator);
+          addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
+          current_grad := diffArguments.current_grad; // upstream gradient
+
+          diffArguments.current_grad := Expression.MULTARY({current_grad, exp2, Expression.BINARY(exp1, operator, minusOne(exp2, addOp))}, {}, makeMulFromOperator(operator));
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
+
+          diffArguments.current_grad := Expression.MULTARY({current_grad, exp, expLog(exp1)}, {}, makeMulFromOperator(operator));
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
+
+          diffArguments.current_grad := current_grad;
           diffExp1 := SimplifyExp.simplifyDump(diffExp1, true, getInstanceName());
           diffExp2 := SimplifyExp.simplifyDump(diffExp2, true, getInstanceName());
-          (_, sizeClass) := Operator.classify(operator);
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
-          addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
 
           res := match (Expression.isZero(diffExp1), Expression.isZero(diffExp2))
             // Power (POW, POW_EW, ...) with constant exponent and constant base
@@ -2162,9 +2182,12 @@ public
         list<Expression> arguments, new_arguments = {};
         list<Expression> inv_arguments, new_inv_arguments = {};
         list<Expression> diff_arguments, diff_inv_arguments;
-        Operator operator, addOp, powOp;
+        Operator operator, addOp, powOp, mulOp;
         Operator.SizeClassification sizeClass, powSizeClass;
-        Expression current_grad;
+        Expression current_grad, upstream, e_over_f, term, e_over_g;
+        List<Expression> add_terms, arg_rest;
+        Integer idxN, idxD;
+
 
       // Dash calculations (ADD, SUB, ADD_EW, SUB_EW, ...)
       // NOTE: Multary always contains ADDITION
@@ -2215,36 +2238,112 @@ public
       // e.g. (abc)' = a'bc + ab'c + abc'
       // and binary division rule
       // (f / g)' = (f'g - g'f) / g^2
+      // case Expression.MULTARY(arguments = arguments, inv_arguments = inv_arguments, operator = operator)
+      //   guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
+      //   algorithm
+      //     // create addition and power operator
+      //     (_, sizeClass) := Operator.classify(operator);
+      //     // the frontend treats multiplication equally for element and nen elementwise, but pow needs to have the correct operator
+      //     powSizeClass := if Type.isArray(Expression.typeOf(listHead(inv_arguments))) then NFOperator.SizeClassification.ARRAY_SCALAR else NFOperator.SizeClassification.SCALAR;
+      //     addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
+      //     powOp := Operator.fromClassification((NFOperator.MathClassification.POWER, powSizeClass), operator.ty);
+      //     // f'
+
+      //     (diff_arguments, diffArguments) := differentiateMultaryMultiplicationArgs(arguments, diffArguments, operator);
+      //     diff_enumerator := Expression.MULTARY(diff_arguments, {}, addOp);
+      //     // g'
+      //     (diff_inv_arguments, diffArguments) := differentiateMultaryMultiplicationArgs(inv_arguments, diffArguments, operator);
+      //     diff_divisor := Expression.MULTARY(diff_inv_arguments, {}, addOp);
+      //     // g
+      //     current_grad := diffArguments.current_grad;
+      //     divisor := Expression.MULTARY(inv_arguments, {}, operator);
+      //     diffArguments.current_grad := Expression.MULTARY(Expression.REAL(-1.0) :: current_grad :: arguments, {Expression.BINARY(divisor, powOp, Expression.REAL(2.0))}, makeMulFromOperator(operator));
+      //     print("curr grad: " + Expression.toString(diffArguments.current_grad) + "\n");
+      //     // diffArguments.current_grad := current_grad;
+      // then Expression.MULTARY(
+      //         {Expression.MULTARY(
+      //           {Expression.MULTARY(diff_enumerator :: inv_arguments, {}, operator)},   // f'g
+      //           {Expression.MULTARY(diff_divisor :: arguments, {}, operator)},          // -g'f
+      //           addOp
+      //         )},
+      //         {Expression.BINARY(divisor, powOp, Expression.REAL(2.0))},
+      //         operator
+      //      );
+
+
+      // Dot calculations (MUL, DIV, MUL_EW, DIV_EW, ...)
+      // NOTE: Multary always contains MULTIPLICATION
+      // (prod(f_i)) / prod(g_j))'
+      // makes use of single product rule:
+      // prod(f_i)) = sum((f_i)' * prod(f_k | k <> i))
+      // e.g. (abc)' = a'bc + ab'c + abc'
+      // and binary division rule
+      // (f / g)' = (f'g - g'f) / g^2
+
+      // Mixed product / quotient:
+      // E = (prod arguments) / (prod inv_arguments)
+      // dE = Σ_i f_i' * (E / f_i) - Σ_j g_j' * (E / g_j)
+      // Reverse mode local grads (used via current_grad):
+      //   for f_i: G_i = G * (E / f_i)
+      //   for g_j: G_j = -G * (E / g_j)
       case Expression.MULTARY(arguments = arguments, inv_arguments = inv_arguments, operator = operator)
-        guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
+        guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION
+              and (not listEmpty(inv_arguments)))
         algorithm
-          // create addition and power operator
+          // Determine operators
           (_, sizeClass) := Operator.classify(operator);
-          // the frontend treats multiplication equally for element and nen elementwise, but pow needs to have the correct operator
-          powSizeClass := if Type.isArray(Expression.typeOf(listHead(inv_arguments))) then NFOperator.SizeClassification.ARRAY_SCALAR else NFOperator.SizeClassification.SCALAR;
-          addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
-          powOp := Operator.fromClassification((NFOperator.MathClassification.POWER, powSizeClass), operator.ty);
-          // f'
-          (diff_arguments, diffArguments) := differentiateMultaryMultiplicationArgs(arguments, diffArguments, operator);
-          diff_enumerator := Expression.MULTARY(diff_arguments, {}, addOp);
-          // g'
-          (diff_inv_arguments, diffArguments) := differentiateMultaryMultiplicationArgs(inv_arguments, diffArguments, operator);
-          diff_divisor := Expression.MULTARY(diff_inv_arguments, {}, addOp);
-          // g
-          current_grad := diffArguments.current_grad;
-          divisor := Expression.MULTARY(inv_arguments, {}, operator);
-          diffArguments.current_grad := Expression.MULTARY(Expression.REAL(-1.0) :: current_grad :: arguments, {Expression.BINARY(divisor, powOp, Expression.REAL(2.0))}, makeMulFromOperator(operator));
-          print("curr grad: " + Expression.toString(diffArguments.current_grad) + "\n");
-          // diffArguments.current_grad := current_grad;
-      then Expression.MULTARY(
-              {Expression.MULTARY(
-                {Expression.MULTARY(diff_enumerator :: inv_arguments, {}, operator)},   // f'g
-                {Expression.MULTARY(diff_divisor :: arguments, {}, operator)},          // -g'f
-                addOp
-              )},
-              {Expression.BINARY(divisor, powOp, Expression.REAL(2.0))},
-              operator
-           );
+          addOp := Operator.fromClassification(
+            (NFOperator.MathClassification.ADDITION, sizeClass),
+            operator.ty);
+          mulOp := makeMulFromOperator(operator);
+
+          // Forward derivative term accumulator
+          add_terms := {};
+          upstream := diffArguments.current_grad;
+          //Expression E = exp; // alias (original MULTARY expression)
+
+          // Differentiate numerator factors
+          idxN := 1;
+          for f in arguments loop
+            // Remove first occurrence of f from numerator list using List.deleteMemberOnTrue
+            // this may be an issue if f occurs multiple times
+            (arg_rest, _) := List.deleteMemberOnTrue(f, arguments, Expression.isEqual);
+
+            e_over_f := Expression.MULTARY(arg_rest, inv_arguments, operator);
+
+            // Reverse current_grad for f: upstream * (E / f)
+            diffArguments.current_grad := Expression.MULTARY({upstream, e_over_f}, {}, mulOp);
+            (diff_arg, diffArguments) := differentiateExpression(f, diffArguments);
+
+            // Forward term: f' * (E / f)
+            term := Expression.MULTARY({diff_arg, e_over_f}, {}, mulOp);
+            add_terms := term :: add_terms;
+            idxN := idxN + 1;
+          end for;
+
+          // Differentiate denominator factors
+          idxD := 1;
+          for g in inv_arguments loop
+            // E / g : add one more g to denominator list
+            e_over_g := Expression.MULTARY(arguments, g :: inv_arguments, operator);
+
+            // Reverse current_grad for g: - upstream * (E / g)
+            diffArguments.current_grad :=
+              Expression.MULTARY({Expression.REAL(-1.0), upstream, e_over_g}, {}, mulOp);
+            (diff_arg, diffArguments) := differentiateExpression(g, diffArguments);
+
+            // Forward term: - g' * (E / g)
+            term := Expression.MULTARY({Expression.REAL(-1.0), diff_arg, e_over_g}, {}, mulOp);
+            add_terms := term :: add_terms;
+            idxD := idxD + 1;
+          end for;
+
+          // Restore upstream gradient
+          diffArguments.current_grad := upstream;
+
+          // Assemble sum of all terms
+          add_terms := listReverse(add_terms);
+      then Expression.MULTARY(add_terms, {}, addOp);
 
       else algorithm
         // maybe add failtrace here and allow failing
@@ -2273,7 +2372,6 @@ public
       current_grad := diffArguments.current_grad;
 
       // upstream gradient * local gradient = current_grad * prod(f_k | k <> i)
-
       diffArguments.current_grad := Expression.MULTARY(
         {current_grad, listGet(arg_products, idx)}, // i think the order is correct
         {},
@@ -2374,6 +2472,18 @@ public
       (_, sizeClass) := Operator.classify(operator);
       mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
     end makeMulFromOperator;
+
+    function builtinPartials1Arg
+      input String name;
+      input Expression arg1;
+      output list<Expression> partials;
+    protected
+      Expression p;
+    algorithm
+      // Reuse differentiateBuiltinCall1Arg but remove inner derivative logic:
+      p := differentiateBuiltinCall1Arg(name, arg1); // returns df/dx
+      partials := if Expression.isZero(p) then {} else {p};
+    end builtinPartials1Arg;
 
   annotation(__OpenModelica_Interface="backend");
 end NBDifferentiate;
