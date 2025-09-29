@@ -6680,5 +6680,62 @@ public
       else exp;
     end match;
   end replaceResizableParameter;
+
+  function productOfListExceptSelf
+    "prod(f_k | k <> i) for each i.
+     For arguments = {f1, f2, ..., fn} returns list:
+       { Π_{k≠1} fk, Π_{k≠2} fk, ..., Π_{k≠n} fk }.
+     Uses a prefix/suffix O(n) algorithm (no repeated full products).
+     https://leetcode.com/problems/product-of-array-except-self/solutions/65622/simple-java-solution-in-o-n-without-extra-space/
+     If n = 0 -> {}, if n = 1 -> {1} (multiplicative identity of operator.ty)."
+    input list<Expression> arguments;
+    input Operator mulOp "Multiplication operator to use (its type & size classification are preserved)";
+    output list<Expression> products;
+  protected
+    Integer n = listLength(arguments);
+    array<Expression> argsArr;
+    array<Expression> pref; // prefix products up to (i-1)
+    array<Expression> res;
+    Integer i;
+    Expression rightProd;
+    Type baseTy = mulOp.ty;
+  algorithm
+    if n == 0 then
+      products := {};
+      return;
+    end if;
+
+    // Load args into 1-based array
+    argsArr := arrayCreate(n, Expression.makeOne(baseTy));
+    i := 1;
+    for a in arguments loop
+      argsArr[i] := a;
+      i := i + 1;
+    end for;
+
+    // Allocate prefix array & result
+    pref := arrayCreate(n, Expression.makeOne(baseTy));
+    res  := arrayCreate(n, Expression.makeOne(baseTy));
+
+    // Build prefix products: pref[i] = f1 * f2 * ... * f_{i-1}
+    for i in 2:n loop
+      pref[i] := Expression.MULTARY({pref[i-1], argsArr[i-1]}, {}, mulOp);
+    end for;
+
+    // Suffix accumulation
+    rightProd := Expression.makeOne(baseTy);
+    for i in n:-1:1 loop
+      // res[i] = (product of left side) * (product of right side)
+      res[i] := Expression.MULTARY({pref[i], rightProd}, {}, mulOp);
+      // update rightProd *= argsArr[i]
+      rightProd := Expression.MULTARY({rightProd, argsArr[i]}, {}, mulOp);
+    end for;
+
+    // Collect back to list (in order)
+    products := {};
+    for i in n:-1:1 loop
+      products := SimplifyExp.simplify(res[i]) :: products;
+    end for;
+  end productOfListExceptSelf;
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

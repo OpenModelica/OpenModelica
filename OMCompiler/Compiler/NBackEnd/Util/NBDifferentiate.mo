@@ -98,7 +98,7 @@ public
       Boolean scalarized                                          "true if the variables are scalarized";
       Option<UnorderedMap<ComponentRef, ExpressionList>> adjoint_map    "map for accumulating adjoint gradients for component refs";
       Expression current_grad                                     "current gradient expression, used in reverse mode";
-      Boolean collectAdjoints                              "If false, skip writing into adjoint_map (used for LHS traversal in reverse/Jacobian).";
+      Boolean collectAdjoints                                     "If false, skip writing into adjoint_map (used for LHS traversal in reverse/Jacobian).";
     end DIFFERENTIATION_ARGUMENTS;
 
     function default
@@ -113,7 +113,7 @@ public
         scalarized  = false,
         adjoint_map = NONE(),
         current_grad= Expression.EMPTY(Type.REAL()),
-        collectAdjoints = true
+        collectAdjoints = false
       );
     end default;
 
@@ -404,11 +404,13 @@ public
       // then (Equation.SCALAR_EQUATION(eq.ty, lhs, rhs, eq.source, attr), diffArguments);
       
       case Equation.SCALAR_EQUATION() algorithm
-        // For reverse/Jacobian: map LHS variable but do NOT accumulate adjoint.
-        if diffArguments.diffType == DifferentiationType.JACOBIAN then
+        // For adjoint: map LHS variable but do NOT accumulate adjoint.
+        if Util.isSome(diffArguments.adjoint_map) then
           oldCollect := diffArguments.collectAdjoints;
           diffArguments.collectAdjoints := false;
+
           (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
+
           diffArguments.collectAdjoints := oldCollect;
         else
           (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
@@ -2201,18 +2203,14 @@ public
           // create addition operator
           (_, sizeClass) := Operator.classify(operator);
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
-
-          //current_grad := diffArguments.current_grad;
-
+          // the adjoint is handled inside here
           (new_arguments, diffArguments) := differentiateMultaryMultiplicationArgs(arguments, diffArguments, operator);
-
-          //diffArguments.current_grad := current_grad;
       then Expression.MULTARY(new_arguments, {}, addOp);
 
       // Dot calculations (MUL, DIV, MUL_EW, DIV_EW, ...)
       // NOTE: Multary always contains MULTIPLICATION
       // (prod(f_i)) / prod(g_j))'
-      // makes use if single product rule:
+      // makes use of single product rule:
       // prod(f_i)) = sum((f_i)' * prod(f_k | k <> i))
       // e.g. (abc)' = a'bc + ab'c + abc'
       // and binary division rule
@@ -2233,7 +2231,11 @@ public
           (diff_inv_arguments, diffArguments) := differentiateMultaryMultiplicationArgs(inv_arguments, diffArguments, operator);
           diff_divisor := Expression.MULTARY(diff_inv_arguments, {}, addOp);
           // g
+          current_grad := diffArguments.current_grad;
           divisor := Expression.MULTARY(inv_arguments, {}, operator);
+          diffArguments.current_grad := Expression.MULTARY(Expression.REAL(-1.0) :: current_grad :: arguments, {Expression.BINARY(divisor, powOp, Expression.REAL(2.0))}, makeMulFromOperator(operator));
+          print("curr grad: " + Expression.toString(diffArguments.current_grad) + "\n");
+          // diffArguments.current_grad := current_grad;
       then Expression.MULTARY(
               {Expression.MULTARY(
                 {Expression.MULTARY(diff_enumerator :: inv_arguments, {}, operator)},   // f'g
@@ -2251,6 +2253,7 @@ public
     end match;
   end differentiateMultary;
 
+
   function differentiateMultaryMultiplicationArgs
     "prod_i(f_i)' = sum_i((f_i)' * prod(f_k | k <> i))
     e.g. (fgh)' = f'gh + fg'h + fgh'"
@@ -2259,23 +2262,27 @@ public
     input output DifferentiationArguments diffArguments;
     input Operator operator;
   protected
-    Expression diff_arg;
+    Expression diff_arg, current_grad;
     Array<List<Expression>> diff_lists;
+    List<Expression> arg_products;
     Integer idx = 1;
-    Expression current_grad;
   algorithm
     diff_lists := arrayCreate(listLength(arguments), {});
+    arg_products := Expression.productOfListExceptSelf(arguments, makeMulFromOperator(operator));
     for arg in arguments loop
       current_grad := diffArguments.current_grad;
 
+      // upstream gradient * local gradient = current_grad * prod(f_k | k <> i)
+
       diffArguments.current_grad := Expression.MULTARY(
-        current_grad :: List.deletePositions(arguments, {idx-1}), // i dont know if order matters when dealing with vectors and matrices
+        {current_grad, listGet(arg_products, idx)}, // i think the order is correct
         {},
         makeMulFromOperator(operator)
       );
       (diff_arg, diffArguments) := differentiateExpression(arg, diffArguments);
 
       diffArguments.current_grad := current_grad;
+
       for i in 1:arrayLength(diff_lists) loop
         diff_lists[i] := if i == idx then diff_arg :: diff_lists[i] else arg :: diff_lists[i];
       end for;

@@ -1111,6 +1111,40 @@ protected
     str := "{ " + stringDelimitList(entries, "; ") + " }";
   end adjointMapToString;
 
+  // Helper: build addition (or single term) expression from a list of terms for a given LHS cref.
+  function buildAdjointRhs
+    input ComponentRef lhsCref;
+    input ExpressionList terms;
+    output Expression rhs;
+  protected
+    Pointer<Variable> vptr;
+    Variable v;
+    Type vty;
+    NFOperator.SizeClassification sc;
+    Operator addOp;
+  algorithm
+    // Retrieve variable type (fallback Real if not found)
+    vty := ComponentRef.getComponentType(lhsCref);
+
+    if listEmpty(terms) then
+      rhs := Expression.makeZero(vty);
+      return;
+    end if;
+
+    if listLength(terms) == 1 then
+      rhs := listHead(terms);
+      return;
+    end if;
+
+    sc := sizeClassificationFromType(vty);
+    addOp := Operator.fromClassification(
+      (NFOperator.MathClassification.ADDITION, sc),
+      vty
+    );
+
+    rhs := Expression.MULTARY(terms, {}, addOp);
+  end buildAdjointRhs;
+
 
   function jacobianSymbolicAdjoint2 extends Module.jacobianInterface;
   protected
@@ -1128,6 +1162,17 @@ protected
 
     BVariable.checkVar func = getTmpFilterFunction(jacType);
     UnorderedMap<ComponentRef, ExpressionList> adjoint_map;
+    ExpressionList terms;
+    Expression lhsExpr, rhsExpr;
+    Pointer<Variable> lhsVarPtr;
+    Pointer<NBEquation.Equation> eqPtr;
+    Integer i;
+    ComponentRef newC;
+
+    UnorderedMap<ComponentRef, ComponentRef> mapPartialToNewSeed =
+      UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedMap<ComponentRef, ComponentRef> mapSeedToNewPDer =
+      UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
   algorithm
     if Util.isSome(strongComponents) then
       // filter all discrete strong components and differentiate the others
@@ -1178,10 +1223,61 @@ protected
     );
 
     // differentiate all strong components
-    (diffed_comps, diffArguments) := Differentiate.differentiateStrongComponentListAdjoint(comps, diffArguments, idx, name, getInstanceName());
+    (_, diffArguments) := Differentiate.differentiateStrongComponentListAdjoint(comps, diffArguments, idx, name, getInstanceName());
     funcTree := diffArguments.funcTree;
 
     print("Adjoint map after:\n" + adjointMapToString(diffArguments.adjoint_map) + "\n");
+
+
+    if Util.isSome(diffArguments.adjoint_map) then
+      adjoint_map := Util.getOption(diffArguments.adjoint_map);
+
+      // New list of strong components replacing original diffed_comps
+      diffed_comps := {};
+      i := 1;
+
+      for lhsKey in UnorderedMap.keyList(adjoint_map) loop
+        terms := UnorderedMap.getOrFail(lhsKey, adjoint_map);
+
+        // (Terms were appended preserving order; use as-is.)
+        if listEmpty(terms) then
+          // Skip variables with no contributions
+          continue;
+        end if;
+
+        // Build RHS
+        rhsExpr := buildAdjointRhs(lhsKey, terms);
+
+        // LHS expression
+        lhsExpr := Expression.fromCref(lhsKey);
+
+        // Create assignment equation
+        eqPtr := NBEquation.Equation.makeAssignment(
+          lhsExpr, rhsExpr,
+          Pointer.create(i),
+          "JAC_ADJ",
+          NBEquation.Iterator.EMPTY(),
+          BackendDAE.EquationAttributes.default(NBEquation.EquationKind.CONTINUOUS, false));
+
+        // Get (or create) variable pointer for strong component
+        lhsVarPtr := BVariable.getVarPointer(lhsKey, sourceInfo());
+
+        // Add strong component
+        diffed_comps := NBStrongComponent.SINGLE_COMPONENT(
+          var    = lhsVarPtr,
+          eqn    = eqPtr,
+          status = NBSolve.Status.EXPLICIT
+        ) :: diffed_comps;
+
+        if Flags.isSet(Flags.JAC_DUMP) then
+          print("[adjoint] " + ComponentRef.toString(lhsKey) + " = " + Expression.toString(rhsExpr) + "\n");
+        end if;
+
+        i := i + 1;
+      end for;
+
+      diffed_comps := listReverse(diffed_comps);
+    end if;
 
     // collect var data (most of this can be removed)
     unknown_vars  := listAppend(res_vars, tmp_vars);
@@ -1205,7 +1301,49 @@ protected
       seedVars      = VariablePointers.fromList(seed_vars)
     );
 
-    (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
+
+    (sparsityPattern, _) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
+    // 1) old partials -> new seeds
+    i := 1;
+    for oldC in sparsityPattern.partial_vars loop
+      if i <= listLength(sparsityPattern.seed_vars) then
+        newC := listGet(sparsityPattern.seed_vars, i);
+        // (partner, _) := BVariable.getVarSeed(newVar);
+        // newC := BVariable.getVarName(Util.getOption(partner));
+        UnorderedMap.add(oldC, newC, mapPartialToNewSeed);
+      end if;
+      i := i + 1;
+    end for;
+
+    // print("Map original partials to new seeds:\n");
+    // print(UnorderedMap.toString(mapPartialToNewSeed, ComponentRef.toString, ComponentRef.toString) + "\n");
+
+    // 2) old seeds -> new pDers
+    i := 1;
+    for oldC in sparsityPattern.seed_vars loop
+      if i <= listLength(sparsityPattern.partial_vars) then
+        newC := listGet(sparsityPattern.partial_vars, i);
+        // (partner, _) := BVariable.getVarPDer(newC);
+        // newC := BVariable.getVarName(Util.getOption(partner));
+        UnorderedMap.add(oldC, newC, mapSeedToNewPDer);
+      end if;
+      i := i + 1;
+    end for;
+
+    // print("Map original seeds to new pDers:\n");
+    // print(UnorderedMap.toString(mapSeedToNewPDer, ComponentRef.toString, ComponentRef.toString) + "\n");
+
+    (sparsityPattern, sparsityColoring) :=
+      SparsityPattern.transposeRenamed(
+        sparsityPattern,
+        mapPartialToNewSeed,
+        mapSeedToNewPDer,
+        jacType
+      );
+
+    print(SparsityPattern.toString(sparsityPattern) + "\n" + SparsityColoring.toString(sparsityColoring) + "\n");
+
+    // (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
 
     jacobian := SOME(Jacobian.JACOBIAN(
       name              = name,
