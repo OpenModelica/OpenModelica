@@ -1228,14 +1228,14 @@ algorithm
       if listEmpty(minimalSetS) then
         minimalSetS := {eq}; // first equation is detected as boundary condition equation
       end if;
-      if not listMember(List.last(listReverse(minimalSetS)), eqlistToRemove) then
-        eqlistToRemove := List.last(listReverse(minimalSetS)) :: eqlistToRemove;
-        setB := (varnumber, List.last(listReverse(minimalSetS))) :: setB;
+      if not listMember(listHead(minimalSetS), eqlistToRemove) then
+        eqlistToRemove := listHead(minimalSetS) :: eqlistToRemove;
+        setB := (varnumber, listHead(minimalSetS)) :: setB;
         // store the failed boundary conditions equation for D.2 as they will be removed during extraction of set-C and set-S
         if not boundaryConditionVarExist(setBFailedBoundaryConditionEquations, boundaryConditionVarIndex) then
-          intermediateVarsInBoundaryConditionEquation := getVariablesAfterExtraction({List.last(listReverse(minimalSetS))}, {}, sBltAdjacencyMatrix);
+          intermediateVarsInBoundaryConditionEquation := getVariablesAfterExtraction({listHead(minimalSetS)}, {}, sBltAdjacencyMatrix);
           intermediateVarsInBoundaryConditionEquation := listReverse(List.setDifferenceOnTrue(intermediateVarsInBoundaryConditionEquation, knownVars, intEq));
-          failedboundaryConditionEquation := BackendEquation.get(orderedEqs, mapIncRowEqn[List.last(listReverse(minimalSetS))]);
+          failedboundaryConditionEquation := BackendEquation.get(orderedEqs, mapIncRowEqn[listHead(minimalSetS)]);
           setBFailedBoundaryConditionEquations := (boundaryConditionVarIndex, failedboundaryConditionEquation, intermediateVarsInBoundaryConditionEquation) :: setBFailedBoundaryConditionEquations;
         end if;
       end if;
