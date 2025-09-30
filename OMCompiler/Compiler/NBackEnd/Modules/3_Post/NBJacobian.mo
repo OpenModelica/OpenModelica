@@ -1175,10 +1175,10 @@ protected
       UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
     VariablePointers vp_single;
     list<ComponentRef> scalarCrefs;
-    list<Expression> scalarTerms, vectorTerms, unitElems, arrayElems;
+    list<Expression> scalarTerms, vectorTerms, unitElems, arrayElems, new_terms;
     Boolean anyNonZero;
     ExpressionList sc_terms, existing;
-    Expression scalarRhs, arrayExpr, unitVec, vectorTerm, aggregatedVec;
+    Expression scalarRhs, arrayExpr, unitVec, vectorTerm, aggregatedVec, transformed;
     Type elementTy;
   algorithm
     if Util.isSome(strongComponents) then
@@ -1314,9 +1314,67 @@ protected
 
         diffArguments.adjoint_map := SOME(adjoint_map);
       end for;
-  end if;
+    end if;
 
     print("Adjoint map collapsed:\n" + adjointMapToString(diffArguments.adjoint_map) + "\n");
+
+    // Re-orient terms for non-scalar (array) LHS variables:
+    // For each term of the form (seed_vector * partial_matrix) rewrite to transpose(partial_matrix) * seed_vector.
+    // This is a post-processing step to avoid interfering with accumulation logic.
+    if Util.isSome(diffArguments.adjoint_map) then
+      adjoint_map := Util.getOption(diffArguments.adjoint_map);
+
+      for lhsKey in UnorderedMap.keyList(adjoint_map) loop
+        // Only for array LHS (rank > 0)
+        if not Type.isArray(ComponentRef.getComponentType(lhsKey)) then
+          continue;
+        end if;
+
+        terms := UnorderedMap.getOrFail(lhsKey, adjoint_map);
+        if listEmpty(terms) then
+          continue;
+        end if;
+
+        new_terms := {};
+        for t in terms loop
+          transformed := match t
+            local
+              Expression a1, a2;
+              Operator op;
+              Expression trA;
+              Expression transformedTerm;
+              Type t1, t2;
+            // Binary: seed (rank1) * partial (rank2)
+            case Expression.BINARY(exp1 = a1, operator = op, exp2 = a2)
+              guard(Operator.getMathClassification(op) == NFOperator.MathClassification.MULTIPLICATION
+                    and Type.isArray(Expression.typeOf(a1)) and Type.dimensionCount(Expression.typeOf(a1)) == 1
+                    and Type.isArray(Expression.typeOf(a2)) and Type.dimensionCount(Expression.typeOf(a2)) == 2)
+              algorithm
+                trA := typeTransposeCall(a2);
+                transformedTerm := matVecMul(trA, a1);
+              then transformedTerm;
+
+            // MULTARY with exactly two arguments {seed, partial}
+            case Expression.MULTARY(arguments = {a1, a2}, inv_arguments = {}, operator = op)
+              guard(Operator.getMathClassification(op) == NFOperator.MathClassification.MULTIPLICATION
+                    and Type.isArray(Expression.typeOf(a1)) and Type.dimensionCount(Expression.typeOf(a1)) == 1
+                    and Type.isArray(Expression.typeOf(a2)) and Type.dimensionCount(Expression.typeOf(a2)) == 2)
+              algorithm
+                trA := typeTransposeCall(a2);
+                transformedTerm := matVecMul(trA, a1);
+              then transformedTerm;
+
+            else t;
+          end match;
+          new_terms := transformed :: new_terms;
+        end for;
+
+        UnorderedMap.add(lhsKey, listReverse(new_terms), adjoint_map);
+      end for;
+
+      diffArguments.adjoint_map := SOME(adjoint_map);
+      print("Adjoint map oriented:\n" + adjointMapToString(diffArguments.adjoint_map) + "\n");
+    end if;
 
 
     if Util.isSome(diffArguments.adjoint_map) then
