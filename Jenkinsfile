@@ -683,7 +683,7 @@ pipeline {
             }
             sh 'make -C testsuite/openmodelica/icon-generator test'
           }
-        },
+        }
 
         stage('16 testsuite-unit-test-C') {
           agent {
@@ -697,15 +697,10 @@ pipeline {
             expression { shouldWeRunTests }
           }
           steps {
-            script {
-              unstash 'omc-cmake-gcc'
-            }
-            sh '''
-              cmake --build build_cmake --target test
-            '''
+            unstash 'omc-cmake-gcc'
+            sh 'cmake --build build_cmake --target test'
           }
         }
-
       }
     }
     stage('fmuchecker + FMPy + OMEdit testsuite') {
