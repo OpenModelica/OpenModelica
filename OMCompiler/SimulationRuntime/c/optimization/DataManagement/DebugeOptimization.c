@@ -98,7 +98,7 @@ void debugeSteps(OptData * optData, modelica_real*vopt, modelica_real * lambda){
  *  generated csv and python script for jacobian
  *  author: Vitalij Ruge
  **/
-void debugeJac(OptData * optData, Number* vopt){
+void debugeJac(OptData * optData, ipnumber* vopt){
   int i,j,k, jj, kk ,ii;
   const int nv = optData->dim.nv;
   const int nx = optData->dim.nx;
@@ -112,7 +112,7 @@ void debugeJac(OptData * optData, Number* vopt){
   const int NRes = optData->dim.NRes;
   const int nReal = optData->dim.nReal;
   const int NV = optData->dim.NV;
-  Number vopt_shift[NV];
+  ipnumber vopt_shift[NV];
   long double h[nv][nsi][np];
   long double hh;
   const modelica_real * const vmax = optData->bounds.vmax;
@@ -152,7 +152,7 @@ void debugeJac(OptData * optData, Number* vopt){
   fclose(pFile);
 
   #define DF_STEP(v) (1e-5*fabsl(v) + 1e-7)
-  memcpy(vopt_shift ,vopt, NV*sizeof(Number));
+  memcpy(vopt_shift ,vopt, NV*sizeof(ipnumber));
   optData->index = 0;
   for(k=0; k < nv; ++k){
     for(i=0, jj=k; i < nsi; ++i){
