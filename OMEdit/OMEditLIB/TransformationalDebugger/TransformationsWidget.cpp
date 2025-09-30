@@ -552,16 +552,16 @@ EquationTreeWidget::EquationTreeWidget(TransformationsWidget *pTransformationWid
   connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), mpTransformationWidget, SLOT(fetchEquationData(QTreeWidgetItem*,int)));
 }
 
-TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool profiling, QWidget *pParent)
-  : QWidget(pParent), mInfoJSONFullFileName(infoJSONFullFileName)
+/*!
+ * \brief TransformationsWidget::TransformationsWidget
+ * \param infoJSONFullFileName - model_info.json file path
+ * \param profiling - is profiling enabled
+ * \param checkForProfilingFiles - check if profiling files exists
+ * \param pParent
+ */
+TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool profiling, bool checkForProfilingFiles, QWidget *pParent)
+  : QWidget(pParent), mInfoJSONFullFileName(infoJSONFullFileName), mProfilingEnabled(profiling), mCheckForProfilingFiles(checkForProfilingFiles)
 {
-  if (!mInfoJSONFullFileName.endsWith("_info.json") || !profiling) {
-    mProfJSONFullFileName = "";
-    mProfilingDataRealFileName = "";
-  } else {
-    mProfJSONFullFileName = infoJSONFullFileName.left(infoJSONFullFileName.size() - 9) + "prof.json";
-    mProfilingDataRealFileName = infoJSONFullFileName.left(infoJSONFullFileName.size() - 9) + "prof.realdata";
-  }
   mCurrentEquationIndex = 0;
   setWindowIcon(QIcon(":/Resources/icons/equational-debugger.svg"));
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::transformationalDebugger));
@@ -569,7 +569,7 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   pReloadToolButton->setToolTip(Helper::reload);
   pReloadToolButton->setAutoRaise(true);
   pReloadToolButton->setIcon(QIcon(":/Resources/icons/refresh.svg"));
-  connect(pReloadToolButton, SIGNAL(clicked()), SLOT(reloadTransformations()));
+  connect(pReloadToolButton, SIGNAL(clicked()), SLOT(loadTransformations()));
   /* info xml file path label */
   Label *pInfoXMLFilePathLabel = new Label(mInfoJSONFullFileName, this);
   pInfoXMLFilePathLabel->setElideMode(Qt::ElideMiddle);
@@ -901,95 +901,16 @@ static OMEquation* getOMEquation(QList<OMEquation*> equations, int index)
   return NULL;
 }
 
-void TransformationsWidget::loadTransformations()
+/*!
+ * \brief TransformationsWidget::loadTransformations
+ * \param profiling - is profiling enabled
+ * \param checkForProfilingFiles - check if profiling files exists
+ */
+void TransformationsWidget::loadTransformations(bool profiling, bool checkForProfilingFiles)
 {
-  mEquations.clear();
-  mVariables.clear();
-  hasOperationsEnabled = false;
-  if (mInfoJSONFullFileName.endsWith(".json")) {
-    JsonDocument jsonDocument;
-    if (!jsonDocument.parse(mInfoJSONFullFileName)) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, jsonDocument.errorString, Helper::scriptingKind, Helper::errorLevel));
-      MainWindow::instance()->printStandardOutAndErrorFilesMessages();
-      return;
-    }
-    QVariantMap result = jsonDocument.result.toMap();
-    QVariantMap vars = result["variables"].toMap();
-    QVariantList eqs = result["equations"].toList();
-    for(QVariantMap::const_iterator iter = vars.begin(); iter != vars.end(); ++iter) {
-      QVariantMap value = iter.value().toMap();
-      OMVariable var;
-      var.name = iter.key();
-      var.comment = value["comment"].toString();
-      QVariantMap sourceMap = value["source"].toMap();
-      variantToSource(value["source"].toMap(), var.info, var.types, var.ops);
-      if (!hasOperationsEnabled && sourceMap.contains("operations")) {
-        hasOperationsEnabled = true;
-      }
-      mVariables[iter.key()] = var;
-    }
-    mpTVariablesTreeView->setSortingEnabled(false);
-    mpTVariablesTreeModel->insertTVariablesItems(mVariables);
-    mpTVariablesTreeView->setSortingEnabled(true);
-    for (int i=0; i<eqs.size(); i++) {
-      mEquations << new OMEquation();
-    }
-    for (int i=0; i<eqs.size(); i++) {
-      QVariantMap veq = eqs[i].toMap();
-      OMEquation *eq = mEquations[i];
-      eq->section = veq["section"].toString();
-      if (veq["eqIndex"].toInt() != i) {
-        QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::parsingFailedJson), Helper::parsingFailedJson + QString(": got index ") + veq["eqIndex"].toString() + QString(" expected ") + QString::number(i), QMessageBox::Ok);
-        return;
-      }
-      eq->index = i;
-      eq->profileBlock = -1;
-      if (veq.find("parent") != veq.end()) {
-        eq->parent = veq["parent"].toInt();
-        mEquations[eq->parent]->eqs << eq->index;
-      } else {
-        eq->parent = 0;
-      }
-      if (veq.find("defines") != veq.end()) {
-        eq->defines = Utilities::variantListToStringList(veq["defines"].toList());
-        foreach (QString v, eq->defines) {
-          mVariables[v].definedIn << eq->index;
-        }
-      }
-      if (veq.find("uses") != veq.end()) {
-        eq->depends = Utilities::variantListToStringList(veq["uses"].toList());
-        foreach (QString v, eq->depends) {
-          mVariables[v].usedIn << eq->index;
-        }
-      }
-      eq->text = Utilities::variantListToStringList(veq["equation"].toList());
-      eq->tag = veq["tag"].toString();
-      if (veq.find("display") != veq.end()) {
-        eq->display = veq["display"].toString();
-      } else {
-        eq->display = eq->tag;
-      }
-      eq->unknowns = veq["unknowns"].toInt();
-      QVariantMap sourceMap = veq["source"].toMap();
-      variantToSource(veq["source"].toMap(), eq->info, eq->types, eq->ops);
-      if (!hasOperationsEnabled && sourceMap.contains("operations")) {
-        hasOperationsEnabled = true;
-      }
-    }
-    parseProfiling(mProfJSONFullFileName);
-    fetchEquations();
-  } else {
-    QFile file(mInfoJSONFullFileName);
-    mpInfoXMLFileHandler = new MyHandler(file,mVariables,mEquations);
-    mpTVariablesTreeView->setSortingEnabled(false);
-    mpTVariablesTreeModel->insertTVariablesItems(mVariables);
-    mpTVariablesTreeView->setSortingEnabled(true);
-    /* load equations */
-    parseProfiling(mProfJSONFullFileName);
-    fetchEquations();
-    hasOperationsEnabled = mpInfoXMLFileHandler->hasOperationsEnabled;
-  }
-  fetchVariableData(mpTVariableTreeProxyModel->index(0, 0));
+  mProfilingEnabled = profiling;
+  mCheckForProfilingFiles = checkForProfilingFiles;
+  loadTransformations();
 }
 
 void TransformationsWidget::fetchDefinedInEquations(const OMVariable &variable)
@@ -1082,6 +1003,155 @@ QTreeWidgetItem* TransformationsWidget::makeEquationTreeWidgetItem(int equationI
   pEquationTreeItem->setToolTip(5, "Total time excluding the overhead of measuring.");
   pEquationTreeItem->setToolTip(6, "Fraction of time, 100% is the total time of all non-child equations.");
   return pEquationTreeItem;
+}
+
+/*!
+ * \brief TransformationsWidget::loadTransformations
+ * Loads the transformations from the model_info.json file.
+ */
+void TransformationsWidget::loadTransformations()
+{
+  mCurrentEquationIndex = 0;
+  /* clear trees */
+  mpTVariablesTreeModel->clearTVariablesTreeItems();
+  /* Clear the defined in tree. */
+  clearTreeWidgetItems(mpDefinedInEquationsTreeWidget);
+  /* Clear the used in tree. */
+  clearTreeWidgetItems(mpUsedInEquationsTreeWidget);
+  /* Clear the variable operations tree. */
+  clearTreeWidgetItems(mpVariableOperationsTreeWidget);
+  /* clear the variable tree filters. */
+  bool signalsState = mpTreeSearchFilters->getFilterTextBox()->blockSignals(true);
+  mpTreeSearchFilters->getFilterTextBox()->clear();
+  mpTreeSearchFilters->getFilterTextBox()->blockSignals(signalsState);
+  signalsState = mpTreeSearchFilters->getSyntaxComboBox()->blockSignals(true);
+  mpTreeSearchFilters->getSyntaxComboBox()->setCurrentIndex(0);
+  mpTreeSearchFilters->getSyntaxComboBox()->blockSignals(signalsState);
+  signalsState = mpTreeSearchFilters->getCaseSensitiveCheckBox()->blockSignals(true);
+  mpTreeSearchFilters->getCaseSensitiveCheckBox()->setChecked(false);
+  mpTreeSearchFilters->getCaseSensitiveCheckBox()->blockSignals(signalsState);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  mpTVariableTreeProxyModel->setFilterRegularExpression(QRegularExpression());
+#else
+  mpTVariableTreeProxyModel->setFilterRegExp(QRegExp());
+#endif
+  /* clear equations tree */
+  clearTreeWidgetItems(mpEquationsTreeWidget);
+  /* clear defines in tree */
+  clearTreeWidgetItems(mpDefinesVariableTreeWidget);
+  /* clear depends tree */
+  clearTreeWidgetItems(mpDependsVariableTreeWidget);
+  /* clear equation operations tree */
+  clearTreeWidgetItems(mpEquationOperationsTreeWidget);
+  /* clear TSourceEditor */
+  mpTSourceEditorFileLabel->setText("");
+  mpTSourceEditorFileLabel->hide();
+  mpTransformationsEditor->getPlainTextEdit()->clear();
+  mpTSourceEditorInfoBar->hide();
+  /* Clear the equations tree. */
+  clearTreeWidgetItems(mpEquationsTreeWidget);
+  /* initialize all fields again */
+  mProfilingJSONFullFileName = "";
+  mProfilingDataRealFileName = "";
+  /* check if profiling is enabled or checkProfilingExists is true then check if the profiling files exists
+   * if user enabled profiling in the SimulationSetup then profiling will be true
+   * checkProfilingExists is true when user opens the transformation file
+   */
+  if (mProfilingEnabled || mCheckForProfilingFiles) {
+    QString profilingJSONFileName = mInfoJSONFullFileName.left(mInfoJSONFullFileName.size() - 9) + "prof.json";
+    QString profilingDataRealFileName = mInfoJSONFullFileName.left(mInfoJSONFullFileName.size() - 9) + "prof.realdata";
+    if (QFile::exists(profilingJSONFileName) && QFile::exists(profilingDataRealFileName)) {
+      mProfilingJSONFullFileName = profilingJSONFileName;
+      mProfilingDataRealFileName = profilingDataRealFileName;
+    }
+  }
+  mEquations.clear();
+  mVariables.clear();
+  hasOperationsEnabled = false;
+  if (mInfoJSONFullFileName.endsWith(".json")) {
+    JsonDocument jsonDocument;
+    if (!jsonDocument.parse(mInfoJSONFullFileName)) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, jsonDocument.errorString, Helper::scriptingKind, Helper::errorLevel));
+      MainWindow::instance()->printStandardOutAndErrorFilesMessages();
+      return;
+    }
+    QVariantMap result = jsonDocument.result.toMap();
+    QVariantMap vars = result["variables"].toMap();
+    QVariantList eqs = result["equations"].toList();
+    for(QVariantMap::const_iterator iter = vars.begin(); iter != vars.end(); ++iter) {
+      QVariantMap value = iter.value().toMap();
+      OMVariable var;
+      var.name = iter.key();
+      var.comment = value["comment"].toString();
+      QVariantMap sourceMap = value["source"].toMap();
+      variantToSource(value["source"].toMap(), var.info, var.types, var.ops);
+      if (!hasOperationsEnabled && sourceMap.contains("operations")) {
+        hasOperationsEnabled = true;
+      }
+      mVariables[iter.key()] = var;
+    }
+    mpTVariablesTreeView->setSortingEnabled(false);
+    mpTVariablesTreeModel->insertTVariablesItems(mVariables);
+    mpTVariablesTreeView->setSortingEnabled(true);
+    for (int i=0; i<eqs.size(); i++) {
+      mEquations << new OMEquation();
+    }
+    for (int i=0; i<eqs.size(); i++) {
+      QVariantMap veq = eqs[i].toMap();
+      OMEquation *eq = mEquations[i];
+      eq->section = veq["section"].toString();
+      if (veq["eqIndex"].toInt() != i) {
+        QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::parsingFailedJson), Helper::parsingFailedJson + QString(": got index ") + veq["eqIndex"].toString() + QString(" expected ") + QString::number(i), QMessageBox::Ok);
+        return;
+      }
+      eq->index = i;
+      eq->profileBlock = -1;
+      if (veq.find("parent") != veq.end()) {
+        eq->parent = veq["parent"].toInt();
+        mEquations[eq->parent]->eqs << eq->index;
+      } else {
+        eq->parent = 0;
+      }
+      if (veq.find("defines") != veq.end()) {
+        eq->defines = Utilities::variantListToStringList(veq["defines"].toList());
+        foreach (QString v, eq->defines) {
+          mVariables[v].definedIn << eq->index;
+        }
+      }
+      if (veq.find("uses") != veq.end()) {
+        eq->depends = Utilities::variantListToStringList(veq["uses"].toList());
+        foreach (QString v, eq->depends) {
+          mVariables[v].usedIn << eq->index;
+        }
+      }
+      eq->text = Utilities::variantListToStringList(veq["equation"].toList());
+      eq->tag = veq["tag"].toString();
+      if (veq.find("display") != veq.end()) {
+        eq->display = veq["display"].toString();
+      } else {
+        eq->display = eq->tag;
+      }
+      eq->unknowns = veq["unknowns"].toInt();
+      QVariantMap sourceMap = veq["source"].toMap();
+      variantToSource(veq["source"].toMap(), eq->info, eq->types, eq->ops);
+      if (!hasOperationsEnabled && sourceMap.contains("operations")) {
+        hasOperationsEnabled = true;
+      }
+    }
+    parseProfiling(mProfilingJSONFullFileName);
+    fetchEquations();
+  } else {
+    QFile file(mInfoJSONFullFileName);
+    mpInfoXMLFileHandler = new MyHandler(file,mVariables,mEquations);
+    mpTVariablesTreeView->setSortingEnabled(false);
+    mpTVariablesTreeModel->insertTVariablesItems(mVariables);
+    mpTVariablesTreeView->setSortingEnabled(true);
+    /* load equations */
+    parseProfiling(mProfilingJSONFullFileName);
+    fetchEquations();
+    hasOperationsEnabled = mpInfoXMLFileHandler->hasOperationsEnabled;
+  }
+  fetchVariableData(mpTVariableTreeProxyModel->index(0, 0));
 }
 
 void TransformationsWidget::fetchEquations()
@@ -1277,51 +1347,6 @@ void TransformationsWidget::clearTreeWidgetItems(QTreeWidget *pTreeWidget)
     delete pTreeWidget->topLevelItem(i);
     i = 0;   //Restart iteration
   }
-}
-
-void TransformationsWidget::reloadTransformations()
-{
-  mCurrentEquationIndex = 0;
-  /* clear trees */
-  mpTVariablesTreeModel->clearTVariablesTreeItems();
-  /* Clear the defined in tree. */
-  clearTreeWidgetItems(mpDefinedInEquationsTreeWidget);
-  /* Clear the used in tree. */
-  clearTreeWidgetItems(mpUsedInEquationsTreeWidget);
-  /* Clear the variable operations tree. */
-  clearTreeWidgetItems(mpVariableOperationsTreeWidget);
-  /* clear the variable tree filters. */
-  bool signalsState = mpTreeSearchFilters->getFilterTextBox()->blockSignals(true);
-  mpTreeSearchFilters->getFilterTextBox()->clear();
-  mpTreeSearchFilters->getFilterTextBox()->blockSignals(signalsState);
-  signalsState = mpTreeSearchFilters->getSyntaxComboBox()->blockSignals(true);
-  mpTreeSearchFilters->getSyntaxComboBox()->setCurrentIndex(0);
-  mpTreeSearchFilters->getSyntaxComboBox()->blockSignals(signalsState);
-  signalsState = mpTreeSearchFilters->getCaseSensitiveCheckBox()->blockSignals(true);
-  mpTreeSearchFilters->getCaseSensitiveCheckBox()->setChecked(false);
-  mpTreeSearchFilters->getCaseSensitiveCheckBox()->blockSignals(signalsState);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  mpTVariableTreeProxyModel->setFilterRegularExpression(QRegularExpression());
-#else
-  mpTVariableTreeProxyModel->setFilterRegExp(QRegExp());
-#endif
-  /* clear equations tree */
-  clearTreeWidgetItems(mpEquationsTreeWidget);
-  /* clear defines in tree */
-  clearTreeWidgetItems(mpDefinesVariableTreeWidget);
-  /* clear depends tree */
-  clearTreeWidgetItems(mpDependsVariableTreeWidget);
-  /* clear equation operations tree */
-  clearTreeWidgetItems(mpEquationOperationsTreeWidget);
-  /* clear TSourceEditor */
-  mpTSourceEditorFileLabel->setText("");
-  mpTSourceEditorFileLabel->hide();
-  mpTransformationsEditor->getPlainTextEdit()->clear();
-  mpTSourceEditorInfoBar->hide();
-  /* Clear the equations tree. */
-  clearTreeWidgetItems(mpEquationsTreeWidget);
-  /* initialize all fields again */
-  loadTransformations();
 }
 
 /*!
