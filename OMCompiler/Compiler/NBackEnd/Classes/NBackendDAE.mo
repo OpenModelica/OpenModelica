@@ -147,7 +147,7 @@ public
 
       case MAIN()
         algorithm
-          if not Flags.isSet(Flags.BLT_DUMP) or (listEmpty(bdae.ode) and listEmpty(bdae.algebraic) and listEmpty(bdae.ode_event) and listEmpty(bdae.alg_event) and listEmpty(bdae.clocked) and not isSome(bdae.dae)) then
+          if not Flags.isSet(Flags.BLT_DUMP) or (listEmpty(bdae.ode) and listEmpty(bdae.algebraic) and listEmpty(bdae.ode_event) and listEmpty(bdae.alg_event) and listEmpty(bdae.clocked) and isNone(bdae.dae)) then
             tmp := StringUtil.headline_1("BackendDAE: " + str) + "\n";
             tmp := tmp +  VarData.toString(bdae.varData, 2) + "\n" +
                           EqData.toString(bdae.eqData, 1);

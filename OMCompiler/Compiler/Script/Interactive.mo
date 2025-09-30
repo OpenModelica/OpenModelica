@@ -5286,7 +5286,7 @@ algorithm
         l2 = listLength(publst2);
         l1 = listLength(publst);
         l1_1 = l1 - 1;
-        if (/*delete case*/(intEq(l1_1, l2) and boolNot(isSome(item)) and success) or
+        if (/*delete case*/(intEq(l1_1, l2) and isNone(item) and success) or
             /*update case*/(boolNot(intEq(l1_1, l2)) and isSome(item)) and success) then
           parts2 = InteractiveUtil.replacePublicList(parts, publst2);
         else
@@ -5307,7 +5307,7 @@ algorithm
         l2 = listLength(publst2);
         l1 = listLength(publst);
         l1_1 = l1 - 1;
-        if (/*delete case*/(intEq(l1_1, l2) and boolNot(isSome(item)) and success) or
+        if (/*delete case*/(intEq(l1_1, l2) and isNone(item) and success) or
             /*update case*/(boolNot(intEq(l1_1, l2)) and isSome(item)) and success) then
           parts2 = InteractiveUtil.replacePublicList(parts, publst2);
         else
