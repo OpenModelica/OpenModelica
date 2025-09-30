@@ -283,6 +283,8 @@ else # 64-bit MSYS
 	test ! -f $(OM_MSYS_ENV_DIR)/bin/libunistring-2.dll || cp -puf $(OM_MSYS_ENV_DIR)/bin/libunistring-2.dll $(builddir_bin)/
 endif
 	mkdir -p $(builddir_lib)/omc/libexec/
+	(cp -pufr $(OMDEVMSYS)/tools/xsltproc $(builddir_lib)/omc/libexec/)
+	(cp -pufr $(OMDEVMSYS)/tools/gnuplot $(builddir_lib)/omc/libexec/)
 
 copycppmsvcheader: getMSVCversion
 	echo Copying needed header files to the $(OMBUILDDIR)/include/omc/omsicpp/ directory
