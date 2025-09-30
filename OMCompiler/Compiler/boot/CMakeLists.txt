@@ -8,7 +8,7 @@ else()
 #download and unpack the sources
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bomc/)
 # the OMBOOTSTRAPPING_GIT_HASH needs updating when the boostrapping sources change
-SET(OMBOOTSTRAPPING_GIT_HASH TODO)
+SET(OMBOOTSTRAPPING_GIT_HASH f53f31420ab8a1877b1a423693599028df698e14)
 file(DOWNLOAD https://github.com/OpenModelica/OMBootstrapping/archive/${OMBOOTSTRAPPING_GIT_HASH}.tar.gz
      ${CMAKE_CURRENT_SOURCE_DIR}/bomc/sources.tar.gz
      SHOW_PROGRESS
