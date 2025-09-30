@@ -1,11 +1,1 @@
-add_executable(test_read_array_input_xml
-  inputXML/unit/test_read_array_input_xml.c
-)
-target_link_libraries(test_read_array_input_xml PRIVATE SimulationRuntimeC)
-add_test(NAME test_read_array_input_xml COMMAND test_read_array_input_xml)
-
-add_executable(test_read_matrix_input_xml
-  inputXML/unit/test_read_matrix_input_xml.c
-)
-target_link_libraries(test_read_matrix_input_xml PRIVATE SimulationRuntimeC)
-add_test(NAME test_read_matrix_input_xml COMMAND test_read_matrix_input_xml)
+add_subdirectory(inputXML/unit)

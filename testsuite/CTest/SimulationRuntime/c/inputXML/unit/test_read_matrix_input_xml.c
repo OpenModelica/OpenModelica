@@ -9,13 +9,29 @@
 
 #include "simulation_input_xml.h"
 
-int main(void) {
+/**
+ * @brief Test parsing of init XML
+ *
+ * Test init XML with matrix variable containing two dimension tags.
+ * Uses only "start" attribute in dimension tag.
+ *
+ * @param argc  Number of arguments. Has to be 2.
+ * @param argv  Second argument has to be path to resources/RealMatrixVariable_init.xml;
+ * @return int  Return 0 on test success, 1 otherwise.
+ */
+int main(int argc, char* argv[]) {
+
+  if (argc != 2) {
+    printf("Wrong number of arguments!\n");
+    printf("First argument has to be path to resources/RealMatrixVariable_init.xml\n");
+    return 1;
+  }
 
   int test_success = 1;
 
   // Set XML file for testing
   omc_flag[FLAG_F] = 1;
-  omc_flagValue[FLAG_F] = "/home/andreas/workdir/OpenModelica/testsuite/CTest/SimulationRuntime/c/inputXML/unit/resources/RealMatrixVariable_init.xml";
+  omc_flagValue[FLAG_F] = argv[1];
 
   // Prepare dummy threadData, MODEL_DATA and SIMULATION_INFO
   omc_assert = omc_assert_simulation;
@@ -39,10 +55,9 @@ int main(void) {
     .simulationInfo = &simulationInfo
   };
 
-  simulationInfo.OPENMODELICAHOME = "/home/andreas/workdir/OpenModelica/build_cmake/install_cmake";
+  simulationInfo.OPENMODELICAHOME = "/home/user/workdir/OpenModelica/build_cmake/install_cmake/";
 
   initDumpSystem();
-  omc_useStream[OMC_LOG_DEBUG] = 1; // Enable debug logging for testing
 
   MMC_INIT(0);
   {
@@ -62,7 +77,7 @@ int main(void) {
   }
 
   // Validate
-  if (test_success && strcmp(modelData.realVarsData[0].info.name, "A") != 0) {
+  if (test_success && strcmp(modelData.realVarsData[0].info.name, "A")) {
     fprintf(stderr, "Test failed: real variable name mismatch. Expected 'A', got '%s'\n", modelData.realVarsData[0].info.name);
     test_success = 0;
   }
@@ -71,6 +86,7 @@ int main(void) {
     test_success = 0;
   }
 
+  // Dimension 1
   if (test_success && modelData.realVarsData[0].dimension.dimensions[0].type != DIMENSION_BY_START) {
     fprintf(stderr, "Test failed: real variable dimension mismatch. Expected <dimension> to contain 'start'\n");
     test_success = 0;
@@ -79,10 +95,11 @@ int main(void) {
     fprintf(stderr, "Test failed: real variable dimension mismatch. Expected 'start=3', got '%lu'\n", modelData.realVarsData[0].dimension.dimensions[0].start);
     test_success = 0;
   }
-  if (test_success && modelData.realVarsData[0].dimension.dimensions[0].valueReference == -1) {
+  if (test_success && modelData.realVarsData[0].dimension.dimensions[0].valueReference != -1) {
     fprintf(stderr, "Test failed: real variable dimension mismatch. Expected <dimension> to not contain 'valueReference'\n");
     test_success = 0;
   }
+  // Dimension 2
   if (test_success && modelData.realVarsData[0].dimension.dimensions[1].type != DIMENSION_BY_START) {
     fprintf(stderr, "Test failed: real variable dimension mismatch. Expected <dimension> to contain 'start'\n");
     test_success = 0;
@@ -91,7 +108,7 @@ int main(void) {
     fprintf(stderr, "Test failed: real variable dimension mismatch. Expected 'start=2', got '%lu'\n", modelData.realVarsData[0].dimension.dimensions[1].start);
     test_success = 0;
   }
-  if (test_success && modelData.realVarsData[0].dimension.dimensions[1].valueReference == -1) {
+  if (test_success && modelData.realVarsData[0].dimension.dimensions[1].valueReference != -1) {
     fprintf(stderr, "Test failed: real variable dimension mismatch. Expected <dimension> to not contain 'valueReference'\n");
     test_success = 0;
   }

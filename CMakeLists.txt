@@ -198,6 +198,9 @@ set(CPACK_PROJECT_CONFIG_FILE ${CMAKE_CURRENT_BINARY_DIR}/OpenModelicaCPackOptio
 # Tell CPack about our components (dispaly names, descriptions, dependencies ...)
 include(cmake/packaging/components.cmake)
 
+## Testing
+include(CTest)
+enable_testing()
 
 ## Report some status info.
 message(STATUS "--------------------------------------------------------------------------")

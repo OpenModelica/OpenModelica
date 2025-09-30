@@ -61,12 +61,12 @@ typedef struct hash_string_string
 
 typedef hash_string_string omc_ModelDescription;
 typedef hash_string_string omc_DefaultExperiment;
-typedef hash_string_string omc_ScalarVariable;
+typedef hash_string_string omc_ModelVariable; // ScalarVariable or ArrayVariable
 
 typedef struct hash_long_var
 {
   long id;
-  omc_ScalarVariable *val;
+  omc_ModelVariable *val;
   UT_hash_handle hh;
 } hash_long_var;
 
@@ -148,7 +148,7 @@ static inline void addHashStringLong(hash_string_long **ht, const char *key, lon
   }
 }
 
-static inline omc_ScalarVariable** findHashLongVar(hash_long_var *ht, long key)
+static inline omc_ModelVariable** findHashLongVar(hash_long_var *ht, long key)
 {
   hash_long_var *res;
   HASH_FIND_INT( ht, &key, res );
@@ -162,7 +162,7 @@ static inline omc_ScalarVariable** findHashLongVar(hash_long_var *ht, long key)
   return &res->val;
 }
 
-static inline void addHashLongVar(hash_long_var **ht, long key, omc_ScalarVariable *val)
+static inline void addHashLongVar(hash_long_var **ht, long key, omc_ModelVariable *val)
 {
   hash_long_var *v = (hash_long_var*) calloc(1, sizeof(hash_long_var));
   v->id=key;
@@ -255,7 +255,7 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
   /* handle ScalarVariable and ArrayVariable */
   if(!strcmp(name, "ScalarVariable") || !strcmp(name, "ArrayVariable"))
   {
-    omc_ScalarVariable *v = NULL, *vfind;
+    omc_ModelVariable *v = NULL, *vfind;
     const char *ci, *ct;
     int fail=0;
     mi->lastCI = -1;
@@ -263,6 +263,8 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
     for(i = 0; attr[i]; i += 2) {
       addHashStringString(&v, attr[i], attr[i+1]);
     }
+    addHashStringString(&v, "num_dimensions", "0");
+
     /* fetch the class index/type  */
     ci = findHashStringString(v, "classIndex");
     ct = findHashStringString(v, "classType");
@@ -333,6 +335,7 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
 
     return;
   }
+
   /* handle Real/Integer/Boolean/String */
   if(!strcmp(name, "Real") || !strcmp(name, "Integer") || !strcmp(name, "Boolean") || !strcmp(name, "String")) {
     /* add keys/value to the last variable */
@@ -343,9 +346,40 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
     addHashStringString(findHashLongVar(*mi->lastCT, mi->lastCI), "variableType", name);
     return;
   }
-  /* handle Dimensions (FMI 3.0)*/
-  if(!strcmp(name, "Dimension")) {
 
+  /* Handle Dimensions of ArrayVariable */
+  if(!strcmp(name, "Dimension")) {
+    char* key;
+    omc_ModelVariable** v;
+    const char* num_dimensions;
+    char* next_num_dimensions;
+    unsigned int dim_plus_1;
+
+    v = findHashLongVar(*mi->lastCT, mi->lastCI);
+    num_dimensions = findHashStringString(*v, "num_dimensions");
+    dim_plus_1 = atoi(num_dimensions) + 1;
+    unsigned int len = strlen(num_dimensions);
+    next_num_dimensions = calloc(sizeof(char), strlen(num_dimensions) + 1);
+    sprintf(next_num_dimensions, "%u", dim_plus_1);
+    addHashStringString(v, "num_dimensions", next_num_dimensions);
+
+    /* add more key/value pairs to the last variable */
+    for(i = 0; attr[i]; i += 2) {
+      if (!strcmp(attr[i], "start")) {
+        key = calloc(sizeof(char), strlen(num_dimensions) + 10);
+        sprintf(key, "dim-%u-start", dim_plus_1);
+        addHashStringString(v, key, attr[i+1]);
+
+      } else if (!strcmp(attr[i], "valueReference")) {
+        key = calloc(sizeof(char), strlen(num_dimensions) + 19);
+        sprintf(key, "dim-%u-valueReference", dim_plus_1);
+        addHashStringString(v, key, attr[i+1]);
+      }
+      free(key);
+    }
+
+    free(next_num_dimensions);
+    return;
   }
 
   /* anything else, we don't handle! */
@@ -356,7 +390,7 @@ static void XMLCALL endElement(void *userData, const char *name)
   /* do nothing! */
 }
 
-static void read_var_info(omc_ScalarVariable *v, VAR_INFO *info)
+static void read_var_info(omc_ModelVariable *v, VAR_INFO *info)
 {
   modelica_integer inputIndex;
   read_value_string(findHashStringString(v,"name"), &info->name);
@@ -385,7 +419,67 @@ static void read_var_info(omc_ScalarVariable *v, VAR_INFO *info)
   if (OMC_DEBUG_STREAM(OMC_LOG_DEBUG)) messageClose(OMC_LOG_DEBUG);
 }
 
-static void read_var_attribute_real(omc_ScalarVariable *v, REAL_ATTRIBUTE *attribute)
+
+/**
+ * @brief Read variable dimension information
+ *
+ * <ArrayVariable>
+ *   <Dimension start="3"/>
+ *   <Dimension valueReference="1001"/>
+ * </ArrayVariable>
+ *
+ * @param v               Pointer to model variable hash map.
+ * @param dimension_info  Pointer to dimension info structure to populate.
+ */
+static void read_var_dimension(omc_ModelVariable *v, DIMENSION_INFO *dimension_info) {
+  char* key;
+  unsigned int num_digits = 0;
+
+  read_value_long(findHashStringStringEmpty(v, "num_dimensions"), &(dimension_info->numberOfDimensions), -1);
+  if (dimension_info->numberOfDimensions <= 0) {
+    // No <dimension> tags
+    return;
+  }
+
+  dimension_info->dimensions = (DIMENSION_ATTRIBUTE*) calloc(dimension_info->numberOfDimensions, sizeof(DIMENSION_ATTRIBUTE));
+
+  for (unsigned int i=0; i < dimension_info->numberOfDimensions; i++) {
+    DIMENSION_ATTRIBUTE* dim = &dimension_info->dimensions[i];
+
+    // String (a.k.a char*) like "key\00000" will be cast to long to search in hash map.
+    // Any padding after `\0` will result in a different key.
+    if (i%10 == 0) {
+      num_digits++;
+    }
+    key = calloc(sizeof(char), 11 + num_digits );
+    sprintf(key, "dim-%u-start", i+1);
+    read_value_long(findHashStringStringEmpty(v, key), &(dim->start), -1);
+    free(key); key = NULL;
+
+    key = calloc(sizeof(char), 19 + num_digits );
+    sprintf(key, "dim-%u-valueReference", i+1);
+    read_value_long(findHashStringStringEmpty(v, key), &(dim->valueReference), -1);
+    free(key); key = NULL;
+
+    if (dim->start > 0 && dim->valueReference == -1) {
+      dim->type = DIMENSION_BY_START;
+    } else if (dim->start == -1 && dim->valueReference >= 0) {
+      dim->type = DIMENSION_BY_VALUE_REFERENCE;
+    } else if (dim->start == -1 && dim->valueReference == -1) {
+      throwStreamPrint(NULL, "simulation_input_xml.c: Error reading the xml file! " \
+                             "Found neither 'start' or 'valueReference' element in <dimension> tag.");
+    }
+    else {
+      throwStreamPrint(NULL, "simulation_input_xml.c: Error reading the xml file! " \
+                             "Found 'start' and 'valueReference' element in <dimension> tag, " \
+                             "but only one is allowed");
+    }
+  }
+
+  return;
+}
+
+static void read_var_attribute_real(omc_ModelVariable *v, REAL_ATTRIBUTE *attribute)
 {
   const char *unit = NULL;
   const char *displayUnit = NULL;
@@ -406,7 +500,7 @@ static void read_var_attribute_real(omc_ScalarVariable *v, REAL_ATTRIBUTE *attri
   infoStreamPrint(OMC_LOG_DEBUG, 0, "Real %s(start=%g, fixed=%s, %snominal=%g%s, min=%g, max=%g)", findHashStringString(v,"name"), attribute->start, (attribute->fixed)?"true":"false", (attribute->useNominal)?"":"{", attribute->nominal, attribute->useNominal?"":"}", attribute->min, attribute->max);
 }
 
-static void read_var_attribute_int(omc_ScalarVariable *v, INTEGER_ATTRIBUTE *attribute)
+static void read_var_attribute_int(omc_ModelVariable *v, INTEGER_ATTRIBUTE *attribute)
 {
   read_value_long(findHashStringStringEmpty(v,"start"), &attribute->start, 0);
   read_value_bool(findHashStringString(v,"fixed"), &attribute->fixed);
@@ -416,7 +510,7 @@ static void read_var_attribute_int(omc_ScalarVariable *v, INTEGER_ATTRIBUTE *att
   infoStreamPrint(OMC_LOG_DEBUG, 0, "Integer %s(start=%ld, fixed=%s, min=%ld, max=%ld)", findHashStringString(v,"name"), attribute->start, attribute->fixed?"true":"false", attribute->min, attribute->max);
 }
 
-static void read_var_attribute_bool(omc_ScalarVariable *v, BOOLEAN_ATTRIBUTE *attribute)
+static void read_var_attribute_bool(omc_ModelVariable *v, BOOLEAN_ATTRIBUTE *attribute)
 {
   read_value_bool(findHashStringStringEmpty(v,"start"), &attribute->start);
   read_value_bool(findHashStringString(v,"fixed"), &attribute->fixed);
@@ -424,7 +518,7 @@ static void read_var_attribute_bool(omc_ScalarVariable *v, BOOLEAN_ATTRIBUTE *at
   infoStreamPrint(OMC_LOG_DEBUG, 0, "Boolean %s(start=%s, fixed=%s)", findHashStringString(v,"name"), attribute->start?"true":"false", attribute->fixed?"true":"false");
 }
 
-static void read_var_attribute_string(omc_ScalarVariable *v, STRING_ATTRIBUTE *attribute)
+static void read_var_attribute_string(omc_ModelVariable *v, STRING_ATTRIBUTE *attribute)
 {
   const char *start = NULL;
   read_value_string(findHashStringStringEmpty(v,"start"), &start);
@@ -448,7 +542,7 @@ static void read_var_attribute_string(omc_ScalarVariable *v, STRING_ATTRIBUTE *a
  *
  * @return TRUE if the variable should be filtered (not appear in the output)
  */
-int shouldFilterOutput(omc_ScalarVariable *variable, const char *name)
+int shouldFilterOutput(omc_ModelVariable *variable, const char *name)
 {
   int ep = omc_flag[FLAG_EMIT_PROTECTED];
   int ihr = omc_flag[FLAG_IGNORE_HIDERESULT];
@@ -502,88 +596,91 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
                            omc_ModelVariables *in,
                            const char *debugName,
                            mmc_sint_t start,
+                           mmc_sint_t numVariables,
                            hash_string_long **mapAlias,
                            hash_string_long **mapAliasParam,
                            int *sensitivityParIndex)
 {
-  mmc_sint_t i = 0;
-  mmc_sint_t shift = 0;
-  mmc_sint_t size;
-  hash_long_var *res = NULL;
+  char type_name[8];
+  VAR_INFO *info;
+  DIMENSION_INFO* dimension;
+  modelica_boolean *filterOutput;
+  mmc_sint_t j;
+  omc_ModelVariable *v;
+
   infoStreamPrint(OMC_LOG_DEBUG, 1, "read xml file for %s", debugName);
-  HASH_FIND_INT(in, &i, res);
-  while (res) {
-    omc_ScalarVariable *v = res->val;
-    mmc_sint_t j = start + shift;
-    /* get the size ToDo: THIS HAS TO BE DONE WITH DIMENSIONS: */ \
-    /* read_value_long(findHashStringStringEmpty(v,"size"), &size, 1); */ \
-    size = 1;
-    for (mmc_sint_t i_loc = 0; i_loc < size; i_loc++) {
-      VAR_INFO *info;
-      modelica_boolean *filterOutput;
-      char type_name[8];
-      switch (type) {
-        case T_REAL:
-          {
-            strncpy(type_name, "real", 8);
-            STATIC_REAL_DATA* realVarsData = (STATIC_REAL_DATA*) out;
-            REAL_ATTRIBUTE* attribute = &realVarsData[j + i_loc].attribute;
-            read_var_attribute_real(v, attribute);
-            info = &realVarsData[j + i_loc].info;
-            filterOutput = &realVarsData[j + i_loc].filterOutput;
-          }
-          break;
-        case T_INTEGER:
-          {
-            strncpy(type_name, "integer", 8);
-            STATIC_INTEGER_DATA* intVarsData = (STATIC_INTEGER_DATA*) out;
-            INTEGER_ATTRIBUTE* attribute = &intVarsData[j + i_loc].attribute;
-            read_var_attribute_int(v, attribute);
-            info = &intVarsData[j + i_loc].info;
-            filterOutput = &intVarsData[j + i_loc].filterOutput;
-          }
-          break;
-        case T_BOOLEAN:
-          {
-            strncpy(type_name, "boolean", 8);
-            STATIC_BOOLEAN_DATA* boolVarsData = (STATIC_BOOLEAN_DATA*) out;
-            BOOLEAN_ATTRIBUTE* attribute = &boolVarsData[j + i_loc].attribute;
-            read_var_attribute_bool(v, attribute);
-            info = &boolVarsData[j + i_loc].info;
-            filterOutput = &boolVarsData[j + i_loc].filterOutput;
-          }
-          break;
-        case T_STRING:
-          {
-            strncpy(type_name, "string", 8);
-            STATIC_STRING_DATA* stringVarsData = (STATIC_STRING_DATA*) out;
-            STRING_ATTRIBUTE* attribute = &stringVarsData[j + i_loc].attribute;
-            read_var_attribute_string(v, attribute);
-            info = &stringVarsData[j + i_loc].info;
-            filterOutput = &stringVarsData[j + i_loc].filterOutput;
-          }
-          break;
-        default:
-          throwStreamPrint(NULL, "simulation_input_xml.c: Error: Unsupported type in read_variables.");
-          break;
-      }
-      read_var_info(v, info);
-      *filterOutput = shouldFilterOutput(v, info->name);
-      /* create a mapping for Alias variable to get the correct index */
-      addHashStringLong(mapAlias, info->name, j + i_loc);
-      debugStreamPrint(OMC_LOG_DEBUG, 0, "%s %s: mapAlias[%s] = %ld", type_name, debugName, info->name, (long)(j + i_loc));
-      if (omc_flag[FLAG_IDAS] && 0 == strcmp(debugName, "real sensitivities")) {
-        if (0 == strcmp(findHashStringString(v, "isValueChangeable"), "true")) {
-          long *it = findHashStringLongPtr(*mapAliasParam, info->name);
-          simulationInfo->sensitivityParList[*sensitivityParIndex] = *it;
-          infoStreamPrint(OMC_LOG_SOLVER, 0, "%d. sensitivity parameter %s at index %d", *sensitivityParIndex, info->name, simulationInfo->sensitivityParList[*sensitivityParIndex]);
-          (*sensitivityParIndex)++;
+  for (mmc_sint_t i = 0; i < numVariables; i++) {
+    j = start + i;
+    v = *findHashLongVar(in, i);
+
+    // Access real/int/bool/string attribute data
+    // Set info and filterOutput pointers
+    switch (type) {
+      case T_REAL:
+        {
+          strncpy(type_name, "real", 8);
+          STATIC_REAL_DATA* realVarsData = (STATIC_REAL_DATA*) out;
+          REAL_ATTRIBUTE* attribute = &realVarsData[j].attribute;
+          read_var_attribute_real(v, attribute);
+          info = &realVarsData[j].info;
+          dimension = &realVarsData[j].dimension;
+          filterOutput = &realVarsData[j].filterOutput;
         }
+        break;
+      case T_INTEGER:
+        {
+          strncpy(type_name, "integer", 8);
+          STATIC_INTEGER_DATA* intVarsData = (STATIC_INTEGER_DATA*) out;
+          INTEGER_ATTRIBUTE* attribute = &intVarsData[j].attribute;
+          read_var_attribute_int(v, attribute);
+          info = &intVarsData[j].info;
+          dimension = &intVarsData[j].dimension;
+          filterOutput = &intVarsData[j].filterOutput;
+        }
+        break;
+      case T_BOOLEAN:
+        {
+          strncpy(type_name, "boolean", 8);
+          STATIC_BOOLEAN_DATA* boolVarsData = (STATIC_BOOLEAN_DATA*) out;
+          BOOLEAN_ATTRIBUTE* attribute = &boolVarsData[j].attribute;
+          read_var_attribute_bool(v, attribute);
+          info = &boolVarsData[j].info;
+          dimension = &boolVarsData[j].dimension;
+          filterOutput = &boolVarsData[j].filterOutput;
+        }
+        break;
+      case T_STRING:
+        {
+          strncpy(type_name, "string", 8);
+          STATIC_STRING_DATA* stringVarsData = (STATIC_STRING_DATA*) out;
+          STRING_ATTRIBUTE* attribute = &stringVarsData[j].attribute;
+          read_var_attribute_string(v, attribute);
+          info = &stringVarsData[j].info;
+          dimension = &stringVarsData[j].dimension;
+          filterOutput = &stringVarsData[j].filterOutput;
+        }
+        break;
+      default:
+        throwStreamPrint(NULL, "simulation_input_xml.c: Error: Unsupported type in read_variables.");
+        break;
+    }
+
+    read_var_dimension(v, dimension);
+
+    read_var_info(v, info);
+    *filterOutput = shouldFilterOutput(v, info->name);
+
+    /* create a mapping for Alias variable to get the correct index */
+    addHashStringLong(mapAlias, info->name, j);
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "%s %s: mapAlias[%s] = %ld", type_name, debugName, info->name, (long)(j));
+    if (omc_flag[FLAG_IDAS] && 0 == strcmp(debugName, "real sensitivities")) {
+      if (0 == strcmp(findHashStringString(v, "isValueChangeable"), "true")) {
+        long *it = findHashStringLongPtr(*mapAliasParam, info->name);
+        simulationInfo->sensitivityParList[*sensitivityParIndex] = *it;
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "%d. sensitivity parameter %s at index %d", *sensitivityParIndex, info->name, simulationInfo->sensitivityParList[*sensitivityParIndex]);
+        (*sensitivityParIndex)++;
       }
     }
-    shift += size;
-    i++;
-    HASH_FIND_INT(in, &i, res);
   }
   messageClose(OMC_LOG_DEBUG);
 }
@@ -776,22 +873,22 @@ void read_input_xml(MODEL_DATA* modelData,
     EXIT(-1);
   }
 
-  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi.rSta, "real states",            0,                    &mapAlias, &mapAliasParam, &k);
-  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi.rDer, "real state derivatives", modelData->nStates,   &mapAlias, &mapAliasParam, &k);
-  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi.rAlg, "real algebraics",        2*modelData->nStates, &mapAlias, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi.rSta, "real states",            0,                    modelData->nStates,                               &mapAlias, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi.rDer, "real state derivatives", modelData->nStates,   modelData->nStates,                               &mapAlias, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi.rAlg, "real algebraics",        2*modelData->nStates, modelData->nVariablesReal - 2*modelData->nStates, &mapAlias, &mapAliasParam, &k);
 
-  read_variables(simulationInfo, T_INTEGER, modelData->integerVarsData,      mi.iAlg, "integer variables",      0,                    &mapAlias, &mapAliasParam, &k);
-  read_variables(simulationInfo, T_BOOLEAN, modelData->booleanVarsData,      mi.bAlg, "boolean variables",      0,                    &mapAlias, &mapAliasParam, &k);
-  read_variables(simulationInfo, T_STRING,  modelData->stringVarsData,       mi.sAlg, "string variables",       0,                    &mapAlias, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_INTEGER, modelData->integerVarsData,      mi.iAlg, "integer variables",      0,                    modelData->nVariablesInteger, &mapAlias, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_BOOLEAN, modelData->booleanVarsData,      mi.bAlg, "boolean variables",      0,                    modelData->nVariablesBoolean, &mapAlias, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_STRING,  modelData->stringVarsData,       mi.sAlg, "string variables",       0,                    modelData->nVariablesString, &mapAlias, &mapAliasParam, &k);
 
-  read_variables(simulationInfo, T_REAL,    modelData->realParameterData,    mi.rPar, "real parameters",        0,                    &mapAliasParam, &mapAliasParam, &k);
-  read_variables(simulationInfo, T_INTEGER, modelData->integerParameterData, mi.iPar, "integer parameters",     0,                    &mapAliasParam, &mapAliasParam, &k);
-  read_variables(simulationInfo, T_BOOLEAN, modelData->booleanParameterData, mi.bPar, "boolean parameters",     0,                    &mapAliasParam, &mapAliasParam, &k);
-  read_variables(simulationInfo, T_STRING,  modelData->stringParameterData,  mi.sPar, "string parameters",      0,                    &mapAliasParam, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_REAL,    modelData->realParameterData,    mi.rPar, "real parameters",        0,                    modelData->nParametersReal, &mapAliasParam, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_INTEGER, modelData->integerParameterData, mi.iPar, "integer parameters",     0,                    modelData->nParametersInteger, &mapAliasParam, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_BOOLEAN, modelData->booleanParameterData, mi.bPar, "boolean parameters",     0,                    modelData->nParametersBoolean, &mapAliasParam, &mapAliasParam, &k);
+  read_variables(simulationInfo, T_STRING,  modelData->stringParameterData,  mi.sPar, "string parameters",      0,                    modelData->nParametersString, &mapAliasParam, &mapAliasParam, &k);
 
   if (omc_flag[FLAG_IDAS])
   {
-    read_variables(simulationInfo, T_REAL, modelData->realSensitivityData, mi.rSen, "real sensitivities", 0, &mapAliasSen, &mapAliasParam, &k);
+    read_variables(simulationInfo, T_REAL, modelData->realSensitivityData, mi.rSen, "real sensitivities", 0, modelData->nSensitivityVars, &mapAliasSen, &mapAliasParam, &k);
   }
 
   /*
