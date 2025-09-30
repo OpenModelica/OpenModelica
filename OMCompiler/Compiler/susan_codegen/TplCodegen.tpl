@@ -135,7 +135,9 @@ try
 >>
 %>
   for <%idxName%> in 1:arrayLength(<%arrName%>) loop
+    <%if eltName then <<
     <%eltName%> := arrayGet(<%arrName%>, <%idxName%>);
+    >>%>
     <%statements |> it => '<%mmExp(it, ":=")%>;' ;separator="\n"%>
   end for;<% if debugSusan() then
 <<
