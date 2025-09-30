@@ -2512,17 +2512,17 @@ function evaluateBindingConnOp
   input UnorderedMap<ComponentRef, Variable> variables;
   input CardinalityTable.Table ctable;
 protected
-  Binding binding;
   Expression exp, eval_exp;
 algorithm
   () := match var
-    case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING(bindingExp = exp))
+    case Variable.VARIABLE()
+      guard Binding.hasExp(var.binding)
       algorithm
+        exp := Binding.getExp(var.binding);
         eval_exp := ConnectEquations.evaluateOperators(exp, sets, setsArray, variables, ctable);
 
         if not referenceEq(exp, eval_exp) then
-          binding.bindingExp := eval_exp;
-          var.binding := binding;
+          var.binding := Binding.setExp(eval_exp, var.binding);
         end if;
       then
         ();

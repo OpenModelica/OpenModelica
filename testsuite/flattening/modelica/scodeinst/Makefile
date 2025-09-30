@@ -837,6 +837,7 @@ InnerOuterReplaceable3.mo \
 InstanceRestriction1.mo \
 InstanceRestriction2.mo \
 InStreamArray.mo \
+InStreamArray2.mo \
 InStreamFlowThreshold.mo \
 InStreamInsideOutside.mo \
 InStreamNominalThreshold.mo \
