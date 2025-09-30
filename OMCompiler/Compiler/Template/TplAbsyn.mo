@@ -2759,10 +2759,15 @@ algorithm
         (mapstmts, maplocals)
           = addGetIndex(isUsed, freshIdxName, mapstmts, imlicitTxt, maplocals);
 
-        //assume the array element is the first identifier in case locals
+        //define identifiers for array traversal
         idxName = "i";
         arrName = "items";
-        (eltName, _) :: _ = caseLocals;
+        eltName = match mexp
+          case BIND_MATCH(eltName)
+            then eltName;
+          case REST_MATCH()
+            then "";
+        end match;
 
         mapctx = MAP_CONTEXT(ofbind, mapexp, iopts, hasIndexIdentOpt, useiter);
 
