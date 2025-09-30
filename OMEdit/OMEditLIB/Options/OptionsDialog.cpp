@@ -6158,6 +6158,7 @@ DebuggerPage::DebuggerPage(OptionsDialog *pOptionsDialog)
   mpTransformationalDebuggerGroupBox = new QGroupBox(Helper::transformationalDebugger);
   mpAlwaysShowTransformationsCheckBox = new QCheckBox(tr("Always show %1 after compilation").arg(Helper::transformationalDebugger));
   mpGenerateOperationsCheckBox = new QCheckBox(tr("Generate Operations"));
+  mpGenerateOperationsCheckBox->setChecked(OptionsDefaults::Debugger::generateOperations);
   // set the layout of Transformational Debugger group
   QGridLayout *pTransformationalDebuggerLayout = new QGridLayout;
   pTransformationalDebuggerLayout->setAlignment(Qt::AlignTop);
