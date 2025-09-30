@@ -231,7 +231,7 @@ namespace OptionsDefaults
     bool clearOutputOnNewRun = true;
     bool clearLogOnNewRun = true;
     bool alwaysShowTransformationalDebugger = false;
-    bool generateOperations = false;
+    bool generateOperations = true;
   }
 
   namespace FMI {
