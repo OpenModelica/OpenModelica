@@ -171,10 +171,10 @@ pipeline {
               echo "Running on: ${env.NODE_NAME}"
               common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
                                         + " -DOM_USE_CCACHE=OFF"
-                                        + " -DCMAKE_INSTALL_PREFIX=build")
+                                        + " -DCMAKE_INSTALL_PREFIX=build_cmake")
               sh "build/bin/omc --version"
             }
-            // stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/install_cmake/bin/**'
+            stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/**'
           }
         }
         stage('cmake-macos-arm64-gcc') {
@@ -682,6 +682,27 @@ pipeline {
               common.makeLibsAndCache()
             }
             sh 'make -C testsuite/openmodelica/icon-generator test'
+          }
+        },
+
+        stage('16 testsuite-unit-test-C') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              label 'linux'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          steps {
+            script {
+              unstash 'omc-cmake-gcc'
+            }
+            sh '''
+              cmake --build build_cmake --target test
+            '''
           }
         }
 
