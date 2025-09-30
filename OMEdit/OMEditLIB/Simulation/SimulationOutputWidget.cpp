@@ -799,7 +799,7 @@ void SimulationOutputWidget::compilationProcessFinishedHelper(int exitCode, QPro
     if (mSimulationOptions.getBuildOnly() &&
         (OptionsDialog::instance()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
          mSimulationOptions.getLaunchTransformationalDebugger() || profiling)) {
-      MainWindow::instance()->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json", profiling);
+      MainWindow::instance()->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json", profiling, false);
     }
     MainWindow::instance()->getSimulationDialog()->showAlgorithmicDebugger(mSimulationOptions);
     progressStr = tr("Compilation of %1 finished.").arg(mSimulationOptions.getClassName());
@@ -983,7 +983,7 @@ void SimulationOutputWidget::openTransformationalDebugger()
   QString fileName = QString("%1/%2_info.json").arg(mSimulationOptions.getWorkingDirectory(), mSimulationOptions.getOutputFileName());
   /* open the model_info.json file */
   if (QFileInfo(fileName).exists()) {
-    MainWindow::instance()->showTransformationsWidget(fileName, mSimulationOptions.getProfiling().compare(QStringLiteral("none")) != 0);
+    MainWindow::instance()->showTransformationsWidget(fileName, mSimulationOptions.getProfiling().compare(QStringLiteral("none")) != 0, false);
   } else {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), QMessageBox::Ok);
   }
@@ -1244,7 +1244,8 @@ void SimulationOutputWidget::openTransformationBrowser(QUrl url)
 #endif
     /* open the model_info.json file */
     if (QFileInfo(fileName).exists()) {
-      TransformationsWidget *pTransformationsWidget = MainWindow::instance()->showTransformationsWidget(fileName, mSimulationOptions.getProfiling().compare(QStringLiteral("none")) != 0);
+      bool profiling = mSimulationOptions.getProfiling().compare(QStringLiteral("none")) != 0;
+      TransformationsWidget *pTransformationsWidget = MainWindow::instance()->showTransformationsWidget(fileName, profiling, false);
       QUrlQuery query(url);
       int equationIndex = query.queryItemValue("index").toInt();
       QTreeWidgetItem *pTreeWidgetItem = pTransformationsWidget->findEquationTreeItem(equationIndex);

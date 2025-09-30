@@ -1513,17 +1513,19 @@ void MainWindow::createOMNotebookCodeCell(LibraryTreeItem *pLibraryTreeItem, QDo
 /*!
  * \brief MainWindow::showTransformationsWidget
  * Creates a TransformationsWidget and show it to the user.
- * \param fileName
+ * \param fileName - path to model_info.json file.
+ * \param profiling - enable/disable profiling
+ * \param checkProfilingExists - check profiling files exists
  * \return
  */
-TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, bool profiling)
+TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, bool profiling, bool checkProfilingExists)
 {
   TransformationsWidget *pTransformationsWidget = mTransformationsWidgetHash.value(fileName, 0);
   if (!pTransformationsWidget) {
-    pTransformationsWidget = new TransformationsWidget(fileName, profiling);
+    pTransformationsWidget = new TransformationsWidget(fileName, profiling, checkProfilingExists);
     mTransformationsWidgetHash.insert(fileName, pTransformationsWidget);
   } else {
-    pTransformationsWidget->reloadTransformations();
+    pTransformationsWidget->loadTransformations(profiling, checkProfilingExists);
   }
   pTransformationsWidget->show();
   pTransformationsWidget->raise();
@@ -2053,7 +2055,7 @@ void MainWindow::showOpenTransformationFileDialog()
   }
   mpProgressBar->setRange(0, 0);
   mpStatusBar->showMessage(QString("%1: %2").arg(Helper::loading, fileName));
-  showTransformationsWidget(fileName, false);
+  showTransformationsWidget(fileName, false, true);
   mpStatusBar->clearMessage();
   hideProgressBar();
 }

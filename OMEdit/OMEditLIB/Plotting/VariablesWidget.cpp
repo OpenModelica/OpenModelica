@@ -127,6 +127,7 @@ void VariablesTreeItem::setVariableItemData(const QVector<QVariant> &variableIte
   mIsMainArray = variableItemData[VariableItemData::ISMAINARRAY].toBool();
   mUses = variableItemData[VariableItemData::USES].toStringList();
   mInitialUses = variableItemData[VariableItemData::INITIAL_USES].toStringList();
+  mDefinedIn.clear();
   foreach(QVariant var, variableItemData[VariableItemData::DEFINED_IN].toList()) {
      mDefinedIn << var.value<IntStringPair>();
   }
@@ -1255,6 +1256,10 @@ void VariablesTreeModel::filterDependencies()
   }
 }
 
+/*!
+ * \brief VariablesTreeModel::openTransformationsBrowser
+ * Slot activated when open debugger equation context menu action triggered SIGNAL is raised.
+ */
 void VariablesTreeModel::openTransformationsBrowser()
 {
   QAction *pAction = qobject_cast<QAction*>(sender());
@@ -1262,8 +1267,20 @@ void VariablesTreeModel::openTransformationsBrowser()
     QVariantList list = pAction->data().toList();
     QString fileName = list[0].toString();
     int equationIndex = list[1].toInt();
+    QString variableName = list[2].toString();
     if (QFileInfo(fileName).exists()) {
-      TransformationsWidget *pTransformationsWidget = MainWindow::instance()->showTransformationsWidget(fileName, false);
+      bool profiling = false;
+      bool checkForProfilingFiles = true;
+      VariablesTreeItem *pVariablesTreeItem = findVariablesTreeItem(variableName, mpRootVariablesTreeItem);
+      if (pVariablesTreeItem) {
+        pVariablesTreeItem = pVariablesTreeItem->rootParent();
+        SimulationOptions simulationOptions = pVariablesTreeItem->getSimulationOptions();
+        if (simulationOptions.isValid()) {
+          profiling = simulationOptions.getProfiling().compare(QStringLiteral("none")) != 0;
+          checkForProfilingFiles = false;
+        }
+      }
+      TransformationsWidget *pTransformationsWidget = MainWindow::instance()->showTransformationsWidget(fileName, profiling, checkForProfilingFiles);
       QTreeWidgetItem *pTreeWidgetItem = pTransformationsWidget->findEquationTreeItem(equationIndex);
       if (pTreeWidgetItem) {
         pTransformationsWidget->getEquationsTreeWidget()->clearSelection();
@@ -1271,7 +1288,8 @@ void VariablesTreeModel::openTransformationsBrowser()
       }
       pTransformationsWidget->fetchEquationData(equationIndex);
     } else {
-      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), QMessageBox::Ok);
+      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), QMessageBox::Ok);
     }
   }
 }
@@ -2912,6 +2930,7 @@ void VariablesWidget::showContextMenu(QPoint point)
       QVariantList lst;
       lst << QString("%1/%2").arg(pVariablesTreeItem->getFilePath(), pVariablesTreeItem->getInfoFileName());
       lst << pair.first;
+      lst << pVariablesTreeItem->getVariableName();
       pGetDefines->setData(lst);
       pGetDefines->setStatusTip(tr("Open debugger for the equation"));
       menu.addAction(pGetDefines);
