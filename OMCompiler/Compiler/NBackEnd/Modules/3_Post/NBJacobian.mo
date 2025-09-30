@@ -1175,7 +1175,7 @@ protected
       UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
     VariablePointers vp_single;
     list<ComponentRef> scalarCrefs;
-    list<Expression> scalarTerms, vectorTerms, unitElems;
+    list<Expression> scalarTerms, vectorTerms, unitElems, arrayElems;
     Boolean anyNonZero;
     ExpressionList sc_terms, existing;
     Expression scalarRhs, arrayExpr, unitVec, vectorTerm, aggregatedVec;
@@ -1282,67 +1282,39 @@ protected
           continue;
         end if;
 
-        scalarTerms := {};
-        anyNonZero := false;
         elementTy := Type.arrayElementType(ComponentRef.getComponentType(baseCref));
 
+        // Build array elements: reference scalar component variable if it has contributions, else 0.0
+        arrayElems := {};
+        anyNonZero := false;
         for sc in scalarCrefs loop
           sc_terms := UnorderedMap.getOrDefault(sc, adjoint_map, {});
-          // Combine contributions for this scalar component into a scalar expression.
-          scalarRhs := match sc_terms
-            local
-              Expression single;
-            case {} then Expression.makeZero(elementTy);
-            case {single} then single;
-            else
-              Expression.MULTARY(
-                listReverse(sc_terms), {},
-                Operator.fromClassification(
-                  (NFOperator.MathClassification.ADDITION, NFOperator.SizeClassification.SCALAR),
-                  elementTy
-                ));
-          end match;
-
-          // If (due to upstream typing) we still got an array, force it to zero (defensive)
-          if Type.isArray(Expression.typeOf(scalarRhs)) then
-            scalarRhs := Expression.makeZero(elementTy);
-          end if;
-
-            // Track non-zero (heuristic)
-          if not Expression.isZero(scalarRhs) then
+          if listEmpty(sc_terms) then
+            arrayElems := Expression.makeZero(elementTy) :: arrayElems;
+          else
             anyNonZero := true;
+            arrayElems := Expression.CREF(elementTy, sc) :: arrayElems;
           end if;
-
-          // Accumulate in natural order (we will NOT reverse later)
-          scalarTerms := scalarRhs :: scalarTerms;
         end for;
 
         if not anyNonZero then
-          // nothing meaningful in scalar components
+          // no scalar component has contributions -> skip adding aggregated vector
           continue;
         end if;
 
-        // Build aggregated vector directly as an array literal of scalar entries (ordered k[1], k[2], ...).
         aggregatedVec := Expression.ARRAY(
           ComponentRef.getComponentType(baseCref),
-          listArray(listReverse(scalarTerms)),
+          listArray(listReverse(arrayElems)),
           true
         );
 
-        // Append aggregated vector AFTER existing base contributions
+        // Prepend aggregated vector so it appears first:
         existing := UnorderedMap.getOrDefault(baseCref, adjoint_map, {});
         UnorderedMap.add(baseCref, aggregatedVec :: existing, adjoint_map);
 
-        // Clear only the indexed scalar entries k[1], k[2], ...
-        for sc in scalarCrefs loop
-          if UnorderedMap.contains(sc, adjoint_map) then
-            UnorderedMap.add(sc, {}, adjoint_map);
-          end if;
-        end for;
+        diffArguments.adjoint_map := SOME(adjoint_map);
       end for;
-
-      diffArguments.adjoint_map := SOME(adjoint_map);
-    end if;
+  end if;
 
     print("Adjoint map collapsed:\n" + adjointMapToString(diffArguments.adjoint_map) + "\n");
 
