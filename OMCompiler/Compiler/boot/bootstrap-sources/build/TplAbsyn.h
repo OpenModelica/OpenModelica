@@ -167,52 +167,52 @@ extern struct record_description TplAbsyn_TypeSignature_UNRESOLVED__TYPE__desc;
 #define boxptr_TplAbsyn_addTypedIdentsToSet omc_TplAbsyn_addTypedIdentsToSet
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_removeUnusedImports(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fpkg);
 #define boxptr_TplAbsyn_removeUnusedImports omc_TplAbsyn_removeUnusedImports
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_removeUnusedImports,2,0) {(void*) boxptr_TplAbsyn_removeUnusedImports,0}};
 #define boxvar_TplAbsyn_removeUnusedImports MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_removeUnusedImports)
 
 
-DLLExport
+DLLDirection
 modelica_string omc_TplAbsyn_stmtsString(threadData_t *threadData, modelica_metatype _inStmts);
 #define boxptr_TplAbsyn_stmtsString omc_TplAbsyn_stmtsString
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_stmtsString,2,0) {(void*) boxptr_TplAbsyn_stmtsString,0}};
 #define boxvar_TplAbsyn_stmtsString MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_stmtsString)
 
 
-DLLExport
+DLLDirection
 modelica_string omc_TplAbsyn_mmExpString(threadData_t *threadData, modelica_metatype _inMMExp);
 #define boxptr_TplAbsyn_mmExpString omc_TplAbsyn_mmExpString
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_mmExpString,2,0) {(void*) boxptr_TplAbsyn_mmExpString,0}};
 #define boxvar_TplAbsyn_mmExpString MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_mmExpString)
 
 
-DLLExport
+DLLDirection
 modelica_string omc_TplAbsyn_typeSignatureString(threadData_t *threadData, modelica_metatype _inTS);
 #define boxptr_TplAbsyn_typeSignatureString omc_TplAbsyn_typeSignatureString
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_typeSignatureString,2,0) {(void*) boxptr_TplAbsyn_typeSignatureString,0}};
 #define boxvar_TplAbsyn_typeSignatureString MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_typeSignatureString)
 
 
-DLLExport
+DLLDirection
 modelica_string omc_TplAbsyn_pathIdentString(threadData_t *threadData, modelica_metatype _inPathIndent);
 #define boxptr_TplAbsyn_pathIdentString omc_TplAbsyn_pathIdentString
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_pathIdentString,2,0) {(void*) boxptr_TplAbsyn_pathIdentString,0}};
 #define boxvar_TplAbsyn_pathIdentString MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_pathIdentString)
 
 
-DLLExport
+DLLDirection
 modelica_boolean omc_TplAbsyn_canBeOnOneLine(threadData_t *threadData, modelica_metatype _inStringList);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplAbsyn_canBeOnOneLine(threadData_t *threadData, modelica_metatype _inStringList);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_canBeOnOneLine,2,0) {(void*) boxptr_TplAbsyn_canBeOnOneLine,0}};
 #define boxvar_TplAbsyn_canBeOnOneLine MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_canBeOnOneLine)
 
 
-DLLExport
+DLLDirection
 modelica_boolean omc_TplAbsyn_canBeEscapedUnquoted(threadData_t *threadData, modelica_metatype _inStringList);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplAbsyn_canBeEscapedUnquoted(threadData_t *threadData, modelica_metatype _inStringList);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_canBeEscapedUnquoted,2,0) {(void*) boxptr_TplAbsyn_canBeEscapedUnquoted,0}};
 #define boxvar_TplAbsyn_canBeEscapedUnquoted MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_canBeEscapedUnquoted)
@@ -221,7 +221,7 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_canBeEscapedUnquoted,2,0) {(vo
 #define boxptr_TplAbsyn_addSusanNotification omc_TplAbsyn_addSusanNotification
 
 
-DLLExport
+DLLDirection
 void omc_TplAbsyn_addSusanError(threadData_t *threadData, modelica_string _inErrMsg, modelica_metatype _inInfo);
 #define boxptr_TplAbsyn_addSusanError omc_TplAbsyn_addSusanError
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_addSusanError,2,0) {(void*) boxptr_TplAbsyn_addSusanError,0}};
@@ -246,77 +246,77 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_addSusanError,2,0) {(void*) bo
 #define boxptr_TplAbsyn_lookupTupleList omc_TplAbsyn_lookupTupleList
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_fullyQualifyTemplateTypeSignature(threadData_t *threadData, modelica_metatype _inTemplateTypeSignature, modelica_metatype _inASTDefs);
 #define boxptr_TplAbsyn_fullyQualifyTemplateTypeSignature omc_TplAbsyn_fullyQualifyTemplateTypeSignature
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_fullyQualifyTemplateTypeSignature,2,0) {(void*) boxptr_TplAbsyn_fullyQualifyTemplateTypeSignature,0}};
 #define boxvar_TplAbsyn_fullyQualifyTemplateTypeSignature MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_fullyQualifyTemplateTypeSignature)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_fullyQualifyTemplateDef(threadData_t *threadData, modelica_metatype _inTemplateDef, modelica_metatype _inASTDefs);
 #define boxptr_TplAbsyn_fullyQualifyTemplateDef omc_TplAbsyn_fullyQualifyTemplateDef
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_fullyQualifyTemplateDef,2,0) {(void*) boxptr_TplAbsyn_fullyQualifyTemplateDef,0}};
 #define boxvar_TplAbsyn_fullyQualifyTemplateDef MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_fullyQualifyTemplateDef)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_convertNameTypeIfIntrinsic(threadData_t *threadData, modelica_metatype _inNameOfType);
 #define boxptr_TplAbsyn_convertNameTypeIfIntrinsic omc_TplAbsyn_convertNameTypeIfIntrinsic
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_convertNameTypeIfIntrinsic,2,0) {(void*) boxptr_TplAbsyn_convertNameTypeIfIntrinsic,0}};
 #define boxvar_TplAbsyn_convertNameTypeIfIntrinsic MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_convertNameTypeIfIntrinsic)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_fullyQualifyAstTypeSignature(threadData_t *threadData, modelica_metatype _inASTDefTypeSignature, modelica_metatype _inImportPackage, modelica_metatype _inTypeVars);
 #define boxptr_TplAbsyn_fullyQualifyAstTypeSignature omc_TplAbsyn_fullyQualifyAstTypeSignature
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_fullyQualifyAstTypeSignature,2,0) {(void*) boxptr_TplAbsyn_fullyQualifyAstTypeSignature,0}};
 #define boxvar_TplAbsyn_fullyQualifyAstTypeSignature MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_fullyQualifyAstTypeSignature)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_fullyQualifyAstTypedIdents(threadData_t *threadData, modelica_metatype _inASTDefTypedIdents, modelica_metatype _inImportPackage, modelica_metatype _inTypeVars);
 #define boxptr_TplAbsyn_fullyQualifyAstTypedIdents omc_TplAbsyn_fullyQualifyAstTypedIdents
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_fullyQualifyAstTypedIdents,2,0) {(void*) boxptr_TplAbsyn_fullyQualifyAstTypedIdents,0}};
 #define boxvar_TplAbsyn_fullyQualifyAstTypedIdents MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_fullyQualifyAstTypedIdents)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_fullyQualifyAstTypeInfo(threadData_t *threadData, modelica_metatype _inASTTypeInfo, modelica_metatype _inImportPackage);
 #define boxptr_TplAbsyn_fullyQualifyAstTypeInfo omc_TplAbsyn_fullyQualifyAstTypeInfo
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_fullyQualifyAstTypeInfo,2,0) {(void*) boxptr_TplAbsyn_fullyQualifyAstTypeInfo,0}};
 #define boxvar_TplAbsyn_fullyQualifyAstTypeInfo MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_fullyQualifyAstTypeInfo)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_fullyQualifyASTDefs(threadData_t *threadData, modelica_metatype _inASTDefs);
 #define boxptr_TplAbsyn_fullyQualifyASTDefs omc_TplAbsyn_fullyQualifyASTDefs
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_fullyQualifyASTDefs,2,0) {(void*) boxptr_TplAbsyn_fullyQualifyASTDefs,0}};
 #define boxvar_TplAbsyn_fullyQualifyASTDefs MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_fullyQualifyASTDefs)
 
 
-DLLExport
+DLLDirection
 void omc_TplAbsyn_isRecordTag(threadData_t *threadData, modelica_string _inTagIdent, modelica_metatype _inTypeInfo, modelica_string _inTypeIdent);
 #define boxptr_TplAbsyn_isRecordTag omc_TplAbsyn_isRecordTag
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_isRecordTag,2,0) {(void*) boxptr_TplAbsyn_isRecordTag,0}};
 #define boxvar_TplAbsyn_isRecordTag MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_isRecordTag)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_getFields(threadData_t *threadData, modelica_string _inTagIdent, modelica_metatype _inTypeInfo, modelica_string _inTypeIdent);
 #define boxptr_TplAbsyn_getFields omc_TplAbsyn_getFields
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_getFields,2,0) {(void*) boxptr_TplAbsyn_getFields,0}};
 #define boxvar_TplAbsyn_getFields MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_getFields)
 
 
-DLLExport
+DLLDirection
 void omc_TplAbsyn_checkPackageOpt(threadData_t *threadData, modelica_metatype _inPackage, modelica_metatype _inPackageOpt);
 #define boxptr_TplAbsyn_checkPackageOpt omc_TplAbsyn_checkPackageOpt
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_checkPackageOpt,2,0) {(void*) boxptr_TplAbsyn_checkPackageOpt,0}};
 #define boxvar_TplAbsyn_checkPackageOpt MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_checkPackageOpt)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_getFunSignature(threadData_t *threadData, modelica_metatype _inFunName, modelica_metatype _inSourceInfo, modelica_metatype _inTplPackage, modelica_metatype *out_outInArgs, modelica_metatype *out_outOutArgs, modelica_metatype *out_outTypeVars);
 #define boxptr_TplAbsyn_getFunSignature omc_TplAbsyn_getFunSignature
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_getFunSignature,2,0) {(void*) boxptr_TplAbsyn_getFunSignature,0}};
@@ -338,14 +338,14 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_getFunSignature,2,0) {(void*) 
 #define boxptr_TplAbsyn_deAliasedType omc_TplAbsyn_deAliasedType
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_getTypeInfo(threadData_t *threadData, modelica_metatype _inTypePackageOpt, modelica_string _inTypeIdent, modelica_metatype _inASTDefs, modelica_metatype *out_outTypeInfo);
 #define boxptr_TplAbsyn_getTypeInfo omc_TplAbsyn_getTypeInfo
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_getTypeInfo,2,0) {(void*) boxptr_TplAbsyn_getTypeInfo,0}};
 #define boxvar_TplAbsyn_getTypeInfo MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_getTypeInfo)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_makePathIdent(threadData_t *threadData, modelica_metatype _inPackage, modelica_string _inIdent);
 #define boxptr_TplAbsyn_makePathIdent omc_TplAbsyn_makePathIdent
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_makePathIdent,2,0) {(void*) boxptr_TplAbsyn_makePathIdent,0}};
@@ -355,552 +355,552 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_makePathIdent,2,0) {(void*) bo
 #define boxptr_TplAbsyn_getPackageIdent omc_TplAbsyn_getPackageIdent
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_splitPackageAndIdent(threadData_t *threadData, modelica_metatype _inTypePathIdent, modelica_string *out_outTypeIdent);
 #define boxptr_TplAbsyn_splitPackageAndIdent omc_TplAbsyn_splitPackageAndIdent
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_splitPackageAndIdent,2,0) {(void*) boxptr_TplAbsyn_splitPackageAndIdent,0}};
 #define boxvar_TplAbsyn_splitPackageAndIdent MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_splitPackageAndIdent)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_getFieldsForRecord(threadData_t *threadData, modelica_metatype _inMType, modelica_metatype _inTagPath, modelica_metatype _inASTDefs, modelica_metatype *out_inFullyQualifiedTagPath);
 #define boxptr_TplAbsyn_getFieldsForRecord omc_TplAbsyn_getFieldsForRecord
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_getFieldsForRecord,2,0) {(void*) boxptr_TplAbsyn_getFieldsForRecord,0}};
 #define boxvar_TplAbsyn_getFieldsForRecord MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_getFieldsForRecord)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_lookupUpdateMExpList(threadData_t *threadData, modelica_string _inIdent, modelica_metatype _inPathIdent, modelica_metatype _inMExpList, modelica_metatype _inMTypeList, modelica_metatype _inASTDefs, modelica_metatype *out_outMExpList);
 #define boxptr_TplAbsyn_lookupUpdateMExpList omc_TplAbsyn_lookupUpdateMExpList
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_lookupUpdateMExpList,2,0) {(void*) boxptr_TplAbsyn_lookupUpdateMExpList,0}};
 #define boxvar_TplAbsyn_lookupUpdateMExpList MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_lookupUpdateMExpList)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_lookupUpdateMExpRecord(threadData_t *threadData, modelica_string _inIdent, modelica_metatype _inPathIdent, modelica_metatype _inFieldMatchings, modelica_metatype _inFields, modelica_metatype _inASTDefs, modelica_metatype *out_outFieldMatchings);
 #define boxptr_TplAbsyn_lookupUpdateMExpRecord omc_TplAbsyn_lookupUpdateMExpRecord
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_lookupUpdateMExpRecord,2,0) {(void*) boxptr_TplAbsyn_lookupUpdateMExpRecord,0}};
 #define boxvar_TplAbsyn_lookupUpdateMExpRecord MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_lookupUpdateMExpRecord)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_lookupUpdateMExpDotPathRecord(threadData_t *threadData, modelica_string _inIdent, modelica_string _inField, modelica_metatype _inPathIdent, modelica_metatype _inFieldMatchings, modelica_metatype _inMType, modelica_metatype _inASTDefs, modelica_metatype *out_outFieldMatchings);
 #define boxptr_TplAbsyn_lookupUpdateMExpDotPathRecord omc_TplAbsyn_lookupUpdateMExpDotPathRecord
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_lookupUpdateMExpDotPathRecord,2,0) {(void*) boxptr_TplAbsyn_lookupUpdateMExpDotPathRecord,0}};
 #define boxvar_TplAbsyn_lookupUpdateMExpDotPathRecord MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_lookupUpdateMExpDotPathRecord)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_makeBindAs(threadData_t *threadData, modelica_string _inIdent, modelica_metatype _inMExp);
 #define boxptr_TplAbsyn_makeBindAs omc_TplAbsyn_makeBindAs
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_makeBindAs,2,0) {(void*) boxptr_TplAbsyn_makeBindAs,0}};
 #define boxvar_TplAbsyn_makeBindAs MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_makeBindAs)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_updateFieldMatchingsForField(threadData_t *threadData, modelica_string _inIdent, modelica_string _inField, modelica_metatype _inFieldMatchings);
 #define boxptr_TplAbsyn_updateFieldMatchingsForField omc_TplAbsyn_updateFieldMatchingsForField
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_updateFieldMatchingsForField,2,0) {(void*) boxptr_TplAbsyn_updateFieldMatchingsForField,0}};
 #define boxvar_TplAbsyn_updateFieldMatchingsForField MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_updateFieldMatchingsForField)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_lookupUpdateMExpDotPath(threadData_t *threadData, modelica_string _inIdent, modelica_metatype _inPathIdent, modelica_metatype _inMatchingExp, modelica_metatype _inMType, modelica_metatype _inASTDefs, modelica_metatype *out_outMatchingExp);
 #define boxptr_TplAbsyn_lookupUpdateMExpDotPath omc_TplAbsyn_lookupUpdateMExpDotPath
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_lookupUpdateMExpDotPath,2,0) {(void*) boxptr_TplAbsyn_lookupUpdateMExpDotPath,0}};
 #define boxvar_TplAbsyn_lookupUpdateMExpDotPath MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_lookupUpdateMExpDotPath)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_lookupUpdateMatchingExp(threadData_t *threadData, modelica_string _inIdent, modelica_metatype _inPathIdent, modelica_metatype _inMatchingExp, modelica_metatype _inMType, modelica_metatype _inASTDefs, modelica_metatype *out_outMatchingExp);
 #define boxptr_TplAbsyn_lookupUpdateMatchingExp omc_TplAbsyn_lookupUpdateMatchingExp
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_lookupUpdateMatchingExp,2,0) {(void*) boxptr_TplAbsyn_lookupUpdateMatchingExp,0}};
 #define boxvar_TplAbsyn_lookupUpdateMatchingExp MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_lookupUpdateMatchingExp)
 
 
-DLLExport
+DLLDirection
 modelica_string omc_TplAbsyn_updateLocalsForLetExp(threadData_t *threadData, modelica_string _inIdent, modelica_string _inEncIdent, modelica_integer _inPostfix, modelica_metatype _inType, modelica_metatype _inLocals, modelica_metatype _inScopeEnv, modelica_metatype *out_outLocals);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplAbsyn_updateLocalsForLetExp(threadData_t *threadData, modelica_metatype _inIdent, modelica_metatype _inEncIdent, modelica_metatype _inPostfix, modelica_metatype _inType, modelica_metatype _inLocals, modelica_metatype _inScopeEnv, modelica_metatype *out_outLocals);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_updateLocalsForLetExp,2,0) {(void*) boxptr_TplAbsyn_updateLocalsForLetExp,0}};
 #define boxvar_TplAbsyn_updateLocalsForLetExp MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_updateLocalsForLetExp)
 
 
-DLLExport
+DLLDirection
 modelica_boolean omc_TplAbsyn_usedInImmediateLetScope(threadData_t *threadData, modelica_string _inIdent, modelica_string _inFreshIdent, modelica_metatype _inScopeEnv);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplAbsyn_usedInImmediateLetScope(threadData_t *threadData, modelica_metatype _inIdent, modelica_metatype _inFreshIdent, modelica_metatype _inScopeEnv);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_usedInImmediateLetScope,2,0) {(void*) boxptr_TplAbsyn_usedInImmediateLetScope,0}};
 #define boxvar_TplAbsyn_usedInImmediateLetScope MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_usedInImmediateLetScope)
 
 
-DLLExport
+DLLDirection
 modelica_string omc_TplAbsyn_updateLocalsForMatchingExp(threadData_t *threadData, modelica_string _inIdent, modelica_string _inEncIdent, modelica_integer _inPostfix, modelica_metatype _inType, modelica_metatype _inLocalNames, modelica_metatype _inLocals, modelica_metatype *out_outLocalNames, modelica_metatype *out_outLocals);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplAbsyn_updateLocalsForMatchingExp(threadData_t *threadData, modelica_metatype _inIdent, modelica_metatype _inEncIdent, modelica_metatype _inPostfix, modelica_metatype _inType, modelica_metatype _inLocalNames, modelica_metatype _inLocals, modelica_metatype *out_outLocalNames, modelica_metatype *out_outLocals);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_updateLocalsForMatchingExp,2,0) {(void*) boxptr_TplAbsyn_updateLocalsForMatchingExp,0}};
 #define boxvar_TplAbsyn_updateLocalsForMatchingExp MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_updateLocalsForMatchingExp)
 
 
-DLLExport
+DLLDirection
 modelica_string omc_TplAbsyn_addPostfixToIdent(threadData_t *threadData, modelica_string _inIdent, modelica_integer _inPostfix);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplAbsyn_addPostfixToIdent(threadData_t *threadData, modelica_metatype _inIdent, modelica_metatype _inPostfix);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_addPostfixToIdent,2,0) {(void*) boxptr_TplAbsyn_addPostfixToIdent,0}};
 #define boxvar_TplAbsyn_addPostfixToIdent MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_addPostfixToIdent)
 
 
-DLLExport
+DLLDirection
 modelica_string omc_TplAbsyn_resolvePathInScopeEnv(threadData_t *threadData, modelica_string _inIdent, modelica_metatype _inPath, modelica_boolean _canDoImplicitLookup, modelica_metatype _inScopeEnv, modelica_metatype _inASTDefs, modelica_metatype *out_outType, modelica_metatype *out_outScopeEnv);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplAbsyn_resolvePathInScopeEnv(threadData_t *threadData, modelica_metatype _inIdent, modelica_metatype _inPath, modelica_metatype _canDoImplicitLookup, modelica_metatype _inScopeEnv, modelica_metatype _inASTDefs, modelica_metatype *out_outType, modelica_metatype *out_outScopeEnv);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_resolvePathInScopeEnv,2,0) {(void*) boxptr_TplAbsyn_resolvePathInScopeEnv,0}};
 #define boxvar_TplAbsyn_resolvePathInScopeEnv MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_resolvePathInScopeEnv)
 
 
-DLLExport
+DLLDirection
 modelica_string omc_TplAbsyn_prepareMatchArgument(threadData_t *threadData, modelica_metatype _inMExp, modelica_string _inMatchArgName, modelica_metatype *out_outMExp);
 #define boxptr_TplAbsyn_prepareMatchArgument omc_TplAbsyn_prepareMatchArgument
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_prepareMatchArgument,2,0) {(void*) boxptr_TplAbsyn_prepareMatchArgument,0}};
 #define boxvar_TplAbsyn_prepareMatchArgument MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_prepareMatchArgument)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_makeMMExpFromTemplateConstant(threadData_t *threadData, modelica_metatype _inTplDef, modelica_string _inTemplIdent, modelica_metatype *out_outConstType);
 #define boxptr_TplAbsyn_makeMMExpFromTemplateConstant omc_TplAbsyn_makeMMExpFromTemplateConstant
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_makeMMExpFromTemplateConstant,2,0) {(void*) boxptr_TplAbsyn_makeMMExpFromTemplateConstant,0}};
 #define boxvar_TplAbsyn_makeMMExpFromTemplateConstant MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_makeMMExpFromTemplateConstant)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_checkTextType(threadData_t *threadData, modelica_metatype _inType, modelica_string _inIdent, modelica_string _inUnresolvedMsg, modelica_metatype _inInfo);
 #define boxptr_TplAbsyn_checkTextType omc_TplAbsyn_checkTextType
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_checkTextType,2,0) {(void*) boxptr_TplAbsyn_checkTextType,0}};
 #define boxvar_TplAbsyn_checkTextType MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_checkTextType)
 
 
-DLLExport
+DLLDirection
 void omc_TplAbsyn_checkResolvedType(threadData_t *threadData, modelica_metatype _inPath, modelica_metatype _inType, modelica_string _inUnresolvedMsg, modelica_metatype _inInfo);
 #define boxptr_TplAbsyn_checkResolvedType omc_TplAbsyn_checkResolvedType
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_checkResolvedType,2,0) {(void*) boxptr_TplAbsyn_checkResolvedType,0}};
 #define boxvar_TplAbsyn_checkResolvedType MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_checkResolvedType)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_resolveBoundPath(threadData_t *threadData, modelica_metatype _inPath, modelica_metatype _inScopeEnv, modelica_metatype _inTplPackage, modelica_metatype *out_outType, modelica_metatype *out_outScopeEnv);
 #define boxptr_TplAbsyn_resolveBoundPath omc_TplAbsyn_resolveBoundPath
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_resolveBoundPath,2,0) {(void*) boxptr_TplAbsyn_resolveBoundPath,0}};
 #define boxvar_TplAbsyn_resolveBoundPath MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_resolveBoundPath)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_getElseBranch(threadData_t *threadData, modelica_metatype _inElseBranchOpt);
 #define boxptr_TplAbsyn_getElseBranch omc_TplAbsyn_getElseBranch
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_getElseBranch,2,0) {(void*) boxptr_TplAbsyn_getElseBranch,0}};
 #define boxvar_TplAbsyn_getElseBranch MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_getElseBranch)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_casesForTrueFalseCondition(threadData_t *threadData, modelica_boolean _inIsNot, modelica_metatype _inNotMatchingExp, modelica_metatype _inTrueBranch, modelica_metatype _inElseBranchOpt);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplAbsyn_casesForTrueFalseCondition(threadData_t *threadData, modelica_metatype _inIsNot, modelica_metatype _inNotMatchingExp, modelica_metatype _inTrueBranch, modelica_metatype _inElseBranchOpt);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_casesForTrueFalseCondition,2,0) {(void*) boxptr_TplAbsyn_casesForTrueFalseCondition,0}};
 #define boxvar_TplAbsyn_casesForTrueFalseCondition MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_casesForTrueFalseCondition)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_elabCasesFromCondition(threadData_t *threadData, modelica_metatype _inArgType, modelica_boolean _inIsNot, modelica_metatype _inRhsValue, modelica_metatype _inTrueBranch, modelica_metatype _inElseBranchOpt, modelica_metatype _inTplPackage);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplAbsyn_elabCasesFromCondition(threadData_t *threadData, modelica_metatype _inArgType, modelica_metatype _inIsNot, modelica_metatype _inRhsValue, modelica_metatype _inTrueBranch, modelica_metatype _inElseBranchOpt, modelica_metatype _inTplPackage);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_elabCasesFromCondition,2,0) {(void*) boxptr_TplAbsyn_elabCasesFromCondition,0}};
 #define boxvar_TplAbsyn_elabCasesFromCondition MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_elabCasesFromCondition)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_adaptTextToString(threadData_t *threadData, modelica_metatype _inArgValue, modelica_metatype _inArgExp, modelica_metatype _inStmts, modelica_metatype _inLocals, modelica_metatype _inTplPackage, modelica_metatype *out_outArgExp, modelica_metatype *out_outStmts, modelica_metatype *out_outLocals);
 #define boxptr_TplAbsyn_adaptTextToString omc_TplAbsyn_adaptTextToString
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_adaptTextToString,2,0) {(void*) boxptr_TplAbsyn_adaptTextToString,0}};
 #define boxvar_TplAbsyn_adaptTextToString MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_adaptTextToString)
 
 
-DLLExport
+DLLDirection
 modelica_boolean omc_TplAbsyn_isAlwaysMatchedBool(threadData_t *threadData, modelica_metatype _inMatchingExp);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplAbsyn_isAlwaysMatchedBool(threadData_t *threadData, modelica_metatype _inMatchingExp);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_isAlwaysMatchedBool,2,0) {(void*) boxptr_TplAbsyn_isAlwaysMatchedBool,0}};
 #define boxvar_TplAbsyn_isAlwaysMatchedBool MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_isAlwaysMatchedBool)
 
 
-DLLExport
+DLLDirection
 void omc_TplAbsyn_isAlwaysMatched(threadData_t *threadData, modelica_metatype _inMatchingExp);
 #define boxptr_TplAbsyn_isAlwaysMatched omc_TplAbsyn_isAlwaysMatched
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_isAlwaysMatched,2,0) {(void*) boxptr_TplAbsyn_isAlwaysMatched,0}};
 #define boxvar_TplAbsyn_isAlwaysMatched MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_isAlwaysMatched)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_addRestElabCase(threadData_t *threadData, modelica_metatype _inElabCases);
 #define boxptr_TplAbsyn_addRestElabCase omc_TplAbsyn_addRestElabCase
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_addRestElabCase,2,0) {(void*) boxptr_TplAbsyn_addRestElabCase,0}};
 #define boxvar_TplAbsyn_addRestElabCase MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_addRestElabCase)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_makeExtraArgBinding(threadData_t *threadData, modelica_metatype _inExtraArg, modelica_metatype _inCaseArgs, modelica_metatype _inOutArgs);
 #define boxptr_TplAbsyn_makeExtraArgBinding omc_TplAbsyn_makeExtraArgBinding
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_makeExtraArgBinding,2,0) {(void*) boxptr_TplAbsyn_makeExtraArgBinding,0}};
 #define boxvar_TplAbsyn_makeExtraArgBinding MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_makeExtraArgBinding)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_makeMMMatchCase(threadData_t *threadData, modelica_metatype _inElabCase, modelica_metatype _inExtraArgs, modelica_metatype _inOutArgs);
 #define boxptr_TplAbsyn_makeMMMatchCase omc_TplAbsyn_makeMMMatchCase
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_makeMMMatchCase,2,0) {(void*) boxptr_TplAbsyn_makeMMMatchCase,0}};
 #define boxvar_TplAbsyn_makeMMMatchCase MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_makeMMMatchCase)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_addLocalValue(threadData_t *threadData, modelica_string _inIdent, modelica_metatype _inMType, modelica_metatype _inLocals);
 #define boxptr_TplAbsyn_addLocalValue omc_TplAbsyn_addLocalValue
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_addLocalValue,2,0) {(void*) boxptr_TplAbsyn_addLocalValue,0}};
 #define boxvar_TplAbsyn_addLocalValue MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_addLocalValue)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_rewriteMatchExpByLocalNamesList(threadData_t *threadData, modelica_metatype _inMatchingExpLst, modelica_metatype _inTypeLst, modelica_metatype _inLocalNames, modelica_metatype _inUsedLocals, modelica_metatype _inASTDefs, modelica_metatype *out_outUsedLocals);
 #define boxptr_TplAbsyn_rewriteMatchExpByLocalNamesList omc_TplAbsyn_rewriteMatchExpByLocalNamesList
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_rewriteMatchExpByLocalNamesList,2,0) {(void*) boxptr_TplAbsyn_rewriteMatchExpByLocalNamesList,0}};
 #define boxvar_TplAbsyn_rewriteMatchExpByLocalNamesList MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_rewriteMatchExpByLocalNamesList)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_rewriteMatchExpByLocalNamesRecord(threadData_t *threadData, modelica_metatype _inFieldMatchings, modelica_metatype _fields, modelica_metatype _inLocalNames, modelica_metatype _inUsedLocals, modelica_metatype _inASTDefs, modelica_metatype *out_outUsedLocals);
 #define boxptr_TplAbsyn_rewriteMatchExpByLocalNamesRecord omc_TplAbsyn_rewriteMatchExpByLocalNamesRecord
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_rewriteMatchExpByLocalNamesRecord,2,0) {(void*) boxptr_TplAbsyn_rewriteMatchExpByLocalNamesRecord,0}};
 #define boxvar_TplAbsyn_rewriteMatchExpByLocalNamesRecord MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_rewriteMatchExpByLocalNamesRecord)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_rewriteMatchExpByLocalNames(threadData_t *threadData, modelica_metatype _inMatchingExp, modelica_metatype _inMType, modelica_metatype _inLocalNames, modelica_metatype _inUsedLocals, modelica_metatype _inASTDefs, modelica_metatype *out_outUsedLocals);
 #define boxptr_TplAbsyn_rewriteMatchExpByLocalNames omc_TplAbsyn_rewriteMatchExpByLocalNames
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_rewriteMatchExpByLocalNames,2,0) {(void*) boxptr_TplAbsyn_rewriteMatchExpByLocalNames,0}};
 #define boxvar_TplAbsyn_rewriteMatchExpByLocalNames MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_rewriteMatchExpByLocalNames)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_eliminateWildAs(threadData_t *threadData, modelica_metatype _inMatchingExp);
 #define boxptr_TplAbsyn_eliminateWildAs omc_TplAbsyn_eliminateWildAs
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_eliminateWildAs,2,0) {(void*) boxptr_TplAbsyn_eliminateWildAs,0}};
 #define boxvar_TplAbsyn_eliminateWildAs MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_eliminateWildAs)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_typeCheckMatchingExpList(threadData_t *threadData, modelica_metatype _inMatchingExpLst, modelica_metatype _inTypeLst, modelica_metatype _inASTDefs);
 #define boxptr_TplAbsyn_typeCheckMatchingExpList omc_TplAbsyn_typeCheckMatchingExpList
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_typeCheckMatchingExpList,2,0) {(void*) boxptr_TplAbsyn_typeCheckMatchingExpList,0}};
 #define boxvar_TplAbsyn_typeCheckMatchingExpList MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_typeCheckMatchingExpList)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_typeCheckMatchingExpRecord(threadData_t *threadData, modelica_metatype _inFieldMatchings, modelica_metatype _fields, modelica_metatype _inASTDefs);
 #define boxptr_TplAbsyn_typeCheckMatchingExpRecord omc_TplAbsyn_typeCheckMatchingExpRecord
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_typeCheckMatchingExpRecord,2,0) {(void*) boxptr_TplAbsyn_typeCheckMatchingExpRecord,0}};
 #define boxvar_TplAbsyn_typeCheckMatchingExpRecord MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_typeCheckMatchingExpRecord)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_typeCheckMatchingExp(threadData_t *threadData, modelica_metatype _inMatchingExp, modelica_metatype _inMType, modelica_metatype _inASTDefs);
 #define boxptr_TplAbsyn_typeCheckMatchingExp omc_TplAbsyn_typeCheckMatchingExp
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_typeCheckMatchingExp,2,0) {(void*) boxptr_TplAbsyn_typeCheckMatchingExp,0}};
 #define boxvar_TplAbsyn_typeCheckMatchingExp MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_typeCheckMatchingExp)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_getAssignedIdents(threadData_t *threadData, modelica_metatype _inStatements, modelica_metatype _inAssignedIdents);
 #define boxptr_TplAbsyn_getAssignedIdents omc_TplAbsyn_getAssignedIdents
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_getAssignedIdents,2,0) {(void*) boxptr_TplAbsyn_getAssignedIdents,0}};
 #define boxvar_TplAbsyn_getAssignedIdents MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_getAssignedIdents)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_elabMatchCases(threadData_t *threadData, modelica_metatype _inItArgVal, modelica_string _inImplicitValueName, modelica_metatype _inMCases, modelica_boolean _hasImplicitLookup, modelica_metatype _inLocals, modelica_metatype _inAccCaseLocals, modelica_metatype _inScopeEnv, modelica_metatype _inTplPackage, modelica_metatype _inAccMMDecls, modelica_metatype *out_outLocals, modelica_metatype *out_outScopeEnv, modelica_metatype *out_outMMDecls, modelica_metatype *out_outAssignedIdents);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplAbsyn_elabMatchCases(threadData_t *threadData, modelica_metatype _inItArgVal, modelica_metatype _inImplicitValueName, modelica_metatype _inMCases, modelica_metatype _hasImplicitLookup, modelica_metatype _inLocals, modelica_metatype _inAccCaseLocals, modelica_metatype _inScopeEnv, modelica_metatype _inTplPackage, modelica_metatype _inAccMMDecls, modelica_metatype *out_outLocals, modelica_metatype *out_outScopeEnv, modelica_metatype *out_outMMDecls, modelica_metatype *out_outAssignedIdents);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_elabMatchCases,2,0) {(void*) boxptr_TplAbsyn_elabMatchCases,0}};
 #define boxvar_TplAbsyn_elabMatchCases MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_elabMatchCases)
 
 
-DLLExport
+DLLDirection
 modelica_boolean omc_TplAbsyn_isText(threadData_t *threadData, modelica_metatype _inArg);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplAbsyn_isText(threadData_t *threadData, modelica_metatype _inArg);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_isText,2,0) {(void*) boxptr_TplAbsyn_isText,0}};
 #define boxvar_TplAbsyn_isText MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_isText)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_makeMMArgValue(threadData_t *threadData, modelica_metatype _inTypedIdent);
 #define boxptr_TplAbsyn_makeMMArgValue omc_TplAbsyn_makeMMArgValue
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_makeMMArgValue,2,0) {(void*) boxptr_TplAbsyn_makeMMArgValue,0}};
 #define boxvar_TplAbsyn_makeMMArgValue MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_makeMMArgValue)
 
 
-DLLExport
+DLLDirection
 modelica_string omc_TplAbsyn_getMatchArgName(threadData_t *threadData, modelica_metatype _inArgExp, modelica_string *out_outMatchArgName);
 #define boxptr_TplAbsyn_getMatchArgName omc_TplAbsyn_getMatchArgName
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_getMatchArgName,2,0) {(void*) boxptr_TplAbsyn_getMatchArgName,0}};
 #define boxvar_TplAbsyn_getMatchArgName MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_getMatchArgName)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_alignExtArgsToScopeEnv(threadData_t *threadData, modelica_metatype _inExtraArgs, modelica_metatype _inEncExtraArgs, modelica_metatype _inScopeEnv, modelica_metatype *out_outEncExtraArgs);
 #define boxptr_TplAbsyn_alignExtArgsToScopeEnv omc_TplAbsyn_alignExtArgsToScopeEnv
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_alignExtArgsToScopeEnv,2,0) {(void*) boxptr_TplAbsyn_alignExtArgsToScopeEnv,0}};
 #define boxvar_TplAbsyn_alignExtArgsToScopeEnv MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_alignExtArgsToScopeEnv)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_makeMatchFun(threadData_t *threadData, modelica_metatype _inArgval, modelica_metatype _inMCases, modelica_metatype _inArgExp, modelica_boolean _hasImplicitLookup, modelica_metatype _inScopeEnv, modelica_metatype _inTplPackage, modelica_metatype _inAccMMDecls, modelica_metatype *out_outFunName, modelica_metatype *out_outInArgs, modelica_metatype *out_outOutArgs, modelica_metatype *out_outScopeEnv, modelica_metatype *out_outMMDecls);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplAbsyn_makeMatchFun(threadData_t *threadData, modelica_metatype _inArgval, modelica_metatype _inMCases, modelica_metatype _inArgExp, modelica_metatype _hasImplicitLookup, modelica_metatype _inScopeEnv, modelica_metatype _inTplPackage, modelica_metatype _inAccMMDecls, modelica_metatype *out_outFunName, modelica_metatype *out_outInArgs, modelica_metatype *out_outOutArgs, modelica_metatype *out_outScopeEnv, modelica_metatype *out_outMMDecls);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_makeMatchFun,2,0) {(void*) boxptr_TplAbsyn_makeMatchFun,0}};
 #define boxvar_TplAbsyn_makeMatchFun MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_makeMatchFun)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_makeMMExpOptions(threadData_t *threadData, modelica_metatype _inMMEscOptions, modelica_metatype _inSpecifiedMMEscOptions, modelica_metatype *out_outRestSpecifiedMMExpOpts);
 #define boxptr_TplAbsyn_makeMMExpOptions omc_TplAbsyn_makeMMExpOptions
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_makeMMExpOptions,2,0) {(void*) boxptr_TplAbsyn_makeMMExpOptions,0}};
 #define boxvar_TplAbsyn_makeMMExpOptions MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_makeMMExpOptions)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_addPushIter(threadData_t *threadData, modelica_boolean _inDoAddPushIter, modelica_metatype _inMMEscOptions, modelica_metatype _inStmts, modelica_string _inInText, modelica_string _inOutText, modelica_string *out_outInText);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplAbsyn_addPushIter(threadData_t *threadData, modelica_metatype _inDoAddPushIter, modelica_metatype _inMMEscOptions, modelica_metatype _inStmts, modelica_metatype _inInText, modelica_metatype _inOutText, modelica_metatype *out_outInText);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_addPushIter,2,0) {(void*) boxptr_TplAbsyn_addPushIter,0}};
 #define boxvar_TplAbsyn_addPushIter MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_addPushIter)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_addGetIndex(threadData_t *threadData, modelica_boolean _wasIndexUsed, modelica_string _inLocalIdxValIdent, modelica_metatype _inStmts, modelica_string _inInText, modelica_metatype _inLocals, modelica_metatype *out_outLocals);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplAbsyn_addGetIndex(threadData_t *threadData, modelica_metatype _wasIndexUsed, modelica_metatype _inLocalIdxValIdent, modelica_metatype _inStmts, modelica_metatype _inInText, modelica_metatype _inLocals, modelica_metatype *out_outLocals);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_addGetIndex,2,0) {(void*) boxptr_TplAbsyn_addGetIndex,0}};
 #define boxvar_TplAbsyn_addGetIndex MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_addGetIndex)
 
 
-DLLExport
+DLLDirection
 modelica_boolean omc_TplAbsyn_shouldUseIterFunctions(threadData_t *threadData, modelica_boolean _inIsFirstArgToMap, modelica_boolean _inUseIterLast, modelica_boolean _inIsListArgToMap, modelica_boolean _wasIndexVarUsed, modelica_metatype _inIterOptions, modelica_metatype _inRestArgValsToMap);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplAbsyn_shouldUseIterFunctions(threadData_t *threadData, modelica_metatype _inIsFirstArgToMap, modelica_metatype _inUseIterLast, modelica_metatype _inIsListArgToMap, modelica_metatype _wasIndexVarUsed, modelica_metatype _inIterOptions, modelica_metatype _inRestArgValsToMap);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_shouldUseIterFunctions,2,0) {(void*) boxptr_TplAbsyn_shouldUseIterFunctions,0}};
 #define boxvar_TplAbsyn_shouldUseIterFunctions MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_shouldUseIterFunctions)
 
 
-DLLExport
+DLLDirection
 modelica_boolean omc_TplAbsyn_intersectInOutArgs_areTypedIdentsEqual(threadData_t *threadData, modelica_metatype _inTypedIdent1, modelica_metatype _inTypedIdent2);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplAbsyn_intersectInOutArgs_areTypedIdentsEqual(threadData_t *threadData, modelica_metatype _inTypedIdent1, modelica_metatype _inTypedIdent2);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_intersectInOutArgs_areTypedIdentsEqual,2,0) {(void*) boxptr_TplAbsyn_intersectInOutArgs_areTypedIdentsEqual,0}};
 #define boxvar_TplAbsyn_intersectInOutArgs_areTypedIdentsEqual MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_intersectInOutArgs_areTypedIdentsEqual)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_intersectInOutArgs(threadData_t *threadData, modelica_metatype _inList1, modelica_metatype _inList2);
 #define boxptr_TplAbsyn_intersectInOutArgs omc_TplAbsyn_intersectInOutArgs
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_intersectInOutArgs,2,0) {(void*) boxptr_TplAbsyn_intersectInOutArgs,0}};
 #define boxvar_TplAbsyn_intersectInOutArgs MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_intersectInOutArgs)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_statementsFromMapExp(threadData_t *threadData, modelica_boolean _inIsFirstArgToMap, modelica_metatype _inArgValuesToMap, modelica_metatype _inMapContext, modelica_metatype _inStmts, modelica_string _inInText, modelica_string _inOutText, modelica_metatype _inLocals, modelica_metatype _inScopeEnv, modelica_metatype _inTplPackage, modelica_metatype _inAccMMDecls, modelica_metatype *out_outLocals, modelica_metatype *out_outScopeEnv, modelica_metatype *out_outMMDecls, modelica_string *out_outInText);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplAbsyn_statementsFromMapExp(threadData_t *threadData, modelica_metatype _inIsFirstArgToMap, modelica_metatype _inArgValuesToMap, modelica_metatype _inMapContext, modelica_metatype _inStmts, modelica_metatype _inInText, modelica_metatype _inOutText, modelica_metatype _inLocals, modelica_metatype _inScopeEnv, modelica_metatype _inTplPackage, modelica_metatype _inAccMMDecls, modelica_metatype *out_outLocals, modelica_metatype *out_outScopeEnv, modelica_metatype *out_outMMDecls, modelica_metatype *out_outInText);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_statementsFromMapExp,2,0) {(void*) boxptr_TplAbsyn_statementsFromMapExp,0}};
 #define boxvar_TplAbsyn_statementsFromMapExp MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_statementsFromMapExp)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_elabOutTextArgs(threadData_t *threadData, modelica_metatype _inMMArguments, modelica_metatype _inInArgs, modelica_metatype _inOutArgs, modelica_metatype _inTplPackage);
 #define boxptr_TplAbsyn_elabOutTextArgs omc_TplAbsyn_elabOutTextArgs
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_elabOutTextArgs,2,0) {(void*) boxptr_TplAbsyn_elabOutTextArgs,0}};
 #define boxvar_TplAbsyn_elabOutTextArgs MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_elabOutTextArgs)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_mmEnsureNonFunctionArg(threadData_t *threadData, modelica_metatype _inMMArg, modelica_metatype _inTargetType, modelica_metatype _inStmts, modelica_metatype _inLocals, modelica_metatype *out_outStmts, modelica_metatype *out_outLocals);
 #define boxptr_TplAbsyn_mmEnsureNonFunctionArg omc_TplAbsyn_mmEnsureNonFunctionArg
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_mmEnsureNonFunctionArg,2,0) {(void*) boxptr_TplAbsyn_mmEnsureNonFunctionArg,0}};
 #define boxvar_TplAbsyn_mmEnsureNonFunctionArg MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_mmEnsureNonFunctionArg)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_typeAdaptMMOption(threadData_t *threadData, modelica_metatype _inMMArg, modelica_metatype _inArgType, modelica_metatype _sinfo, modelica_metatype _inTargetType, modelica_metatype _inStmts, modelica_metatype _inLocals, modelica_metatype _inASTDefs, modelica_metatype *out_outStmts, modelica_metatype *out_outLocals);
 #define boxptr_TplAbsyn_typeAdaptMMOption omc_TplAbsyn_typeAdaptMMOption
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_typeAdaptMMOption,2,0) {(void*) boxptr_TplAbsyn_typeAdaptMMOption,0}};
 #define boxvar_TplAbsyn_typeAdaptMMOption MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_typeAdaptMMOption)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_typeAdaptMMArg(threadData_t *threadData, modelica_metatype _inMMArg, modelica_metatype _inArgType, modelica_metatype _inSourceInfo, modelica_boolean _errorWhenFail, modelica_metatype _inTargetType, modelica_metatype _inTypeVars, modelica_metatype _inSetTypeVars, modelica_metatype _inASTDefs, modelica_metatype *out_outSetTypeVars);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplAbsyn_typeAdaptMMArg(threadData_t *threadData, modelica_metatype _inMMArg, modelica_metatype _inArgType, modelica_metatype _inSourceInfo, modelica_metatype _errorWhenFail, modelica_metatype _inTargetType, modelica_metatype _inTypeVars, modelica_metatype _inSetTypeVars, modelica_metatype _inASTDefs, modelica_metatype *out_outSetTypeVars);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_typeAdaptMMArg,2,0) {(void*) boxptr_TplAbsyn_typeAdaptMMArg,0}};
 #define boxvar_TplAbsyn_typeAdaptMMArg MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_typeAdaptMMArg)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_typeAdaptMMArgsForFun(threadData_t *threadData, modelica_metatype _inArgValues, modelica_metatype _inInArgs, modelica_metatype _inTypeVars, modelica_metatype _inSetTypeVars, modelica_metatype _inASTDefs, modelica_metatype *out_outSetTypeVars);
 #define boxptr_TplAbsyn_typeAdaptMMArgsForFun omc_TplAbsyn_typeAdaptMMArgsForFun
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_typeAdaptMMArgsForFun,2,0) {(void*) boxptr_TplAbsyn_typeAdaptMMArgsForFun,0}};
 #define boxvar_TplAbsyn_typeAdaptMMArgsForFun MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_typeAdaptMMArgsForFun)
 
 
-DLLExport
+DLLDirection
 void omc_TplAbsyn_areTextInOutArgs(threadData_t *threadData, modelica_metatype _inInArg, modelica_metatype _inOutArg, modelica_metatype _inTplPackage);
 #define boxptr_TplAbsyn_areTextInOutArgs omc_TplAbsyn_areTextInOutArgs
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_areTextInOutArgs,2,0) {(void*) boxptr_TplAbsyn_areTextInOutArgs,0}};
 #define boxvar_TplAbsyn_areTextInOutArgs MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_areTextInOutArgs)
 
 
-DLLExport
+DLLDirection
 modelica_boolean omc_TplAbsyn_statementFromFun(threadData_t *threadData, modelica_metatype _inArgValues, modelica_metatype _inFunName, modelica_metatype _inInArgs, modelica_metatype _inOutArgs, modelica_metatype _inTypeVars, modelica_string _inInText, modelica_string _inOutText, modelica_metatype _inLocals, modelica_metatype _inTplPackage, modelica_metatype _inInfo, modelica_metatype *out_outStmt, modelica_metatype *out_outRetMMExp, modelica_metatype *out_outRetType, modelica_metatype *out_outLocals, modelica_string *out_outOutText);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplAbsyn_statementFromFun(threadData_t *threadData, modelica_metatype _inArgValues, modelica_metatype _inFunName, modelica_metatype _inInArgs, modelica_metatype _inOutArgs, modelica_metatype _inTypeVars, modelica_metatype _inInText, modelica_metatype _inOutText, modelica_metatype _inLocals, modelica_metatype _inTplPackage, modelica_metatype _inInfo, modelica_metatype *out_outStmt, modelica_metatype *out_outRetMMExp, modelica_metatype *out_outRetType, modelica_metatype *out_outLocals, modelica_metatype *out_outOutText);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_statementFromFun,2,0) {(void*) boxptr_TplAbsyn_statementFromFun,0}};
 #define boxvar_TplAbsyn_statementFromFun MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_statementFromFun)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_mmExpToString(threadData_t *threadData, modelica_metatype _inMMExp, modelica_metatype _inType, modelica_metatype _inSourceInfo);
 #define boxptr_TplAbsyn_mmExpToString omc_TplAbsyn_mmExpToString
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_mmExpToString,2,0) {(void*) boxptr_TplAbsyn_mmExpToString,0}};
 #define boxvar_TplAbsyn_mmExpToString MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_mmExpToString)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_addWriteCallFromMMExp(threadData_t *threadData, modelica_boolean _inHasRetValue, modelica_metatype _inMMExp, modelica_metatype _inType, modelica_metatype _inSourceInfo, modelica_metatype _inMMEscOptions, modelica_metatype _inStmts, modelica_string _inInText, modelica_string _inOutText, modelica_metatype _inLocals, modelica_metatype _inScopeEnv, modelica_metatype _inTplPackage, modelica_metatype _inAccMMDecls, modelica_metatype *out_outLocals, modelica_metatype *out_outScopeEnv, modelica_metatype *out_outMMDecls, modelica_string *out_outInText);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplAbsyn_addWriteCallFromMMExp(threadData_t *threadData, modelica_metatype _inHasRetValue, modelica_metatype _inMMExp, modelica_metatype _inType, modelica_metatype _inSourceInfo, modelica_metatype _inMMEscOptions, modelica_metatype _inStmts, modelica_metatype _inInText, modelica_metatype _inOutText, modelica_metatype _inLocals, modelica_metatype _inScopeEnv, modelica_metatype _inTplPackage, modelica_metatype _inAccMMDecls, modelica_metatype *out_outLocals, modelica_metatype *out_outScopeEnv, modelica_metatype *out_outMMDecls, modelica_metatype *out_outInText);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_addWriteCallFromMMExp,2,0) {(void*) boxptr_TplAbsyn_addWriteCallFromMMExp,0}};
 #define boxvar_TplAbsyn_addWriteCallFromMMExp MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_addWriteCallFromMMExp)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_pushBlockStatement(threadData_t *threadData, modelica_string _inBlockType, modelica_metatype _inArg, modelica_string _inInText, modelica_string _inOutArg);
 #define boxptr_TplAbsyn_pushBlockStatement omc_TplAbsyn_pushBlockStatement
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_pushBlockStatement,2,0) {(void*) boxptr_TplAbsyn_pushBlockStatement,0}};
 #define boxvar_TplAbsyn_pushBlockStatement MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_pushBlockStatement)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_tplStatement(threadData_t *threadData, modelica_string _inFunName, modelica_metatype _inArgs, modelica_string _inInText, modelica_string _inOutArg);
 #define boxptr_TplAbsyn_tplStatement omc_TplAbsyn_tplStatement
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_tplStatement,2,0) {(void*) boxptr_TplAbsyn_tplStatement,0}};
 #define boxvar_TplAbsyn_tplStatement MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_tplStatement)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_statementsFromArgList(threadData_t *threadData, modelica_metatype _inExpLst, modelica_metatype _inStmts, modelica_metatype _inLocals, modelica_metatype _inScopeEnv, modelica_metatype _inTplPackage, modelica_metatype _inAccMMDecls, modelica_metatype *out_outStmts, modelica_metatype *out_outLocals, modelica_metatype *out_outScopeEnv, modelica_metatype *out_outMMDecls);
 #define boxptr_TplAbsyn_statementsFromArgList omc_TplAbsyn_statementsFromArgList
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_statementsFromArgList,2,0) {(void*) boxptr_TplAbsyn_statementsFromArgList,0}};
 #define boxvar_TplAbsyn_statementsFromArgList MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_statementsFromArgList)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_statementsFromArg(threadData_t *threadData, modelica_metatype _inExp, modelica_metatype _inStmts, modelica_metatype _inLocals, modelica_metatype _inScopeEnv, modelica_metatype _inTplPackage, modelica_metatype _inAccMMDecls, modelica_metatype *out_outStmts, modelica_metatype *out_outLocals, modelica_metatype *out_outScopeEnv, modelica_metatype *out_outMMDecls);
 #define boxptr_TplAbsyn_statementsFromArg omc_TplAbsyn_statementsFromArg
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_statementsFromArg,2,0) {(void*) boxptr_TplAbsyn_statementsFromArg,0}};
 #define boxvar_TplAbsyn_statementsFromArg MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_statementsFromArg)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_pushPopBlock(threadData_t *threadData, modelica_metatype _inMMEscOptions, modelica_string _inOptionIdent, modelica_string _inBlockTypeIdent, modelica_metatype _inStmts, modelica_metatype _inPopBlockStmts, modelica_string _inInText, modelica_string _inOutText, modelica_metatype *out_outStmts, modelica_metatype *out_outPopBlockStmts, modelica_string *out_outInText);
 #define boxptr_TplAbsyn_pushPopBlock omc_TplAbsyn_pushPopBlock
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_pushPopBlock,2,0) {(void*) boxptr_TplAbsyn_pushPopBlock,0}};
 #define boxvar_TplAbsyn_pushPopBlock MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_pushPopBlock)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_getExpListForMap(threadData_t *threadData, modelica_metatype _inExp);
 #define boxptr_TplAbsyn_getExpListForMap omc_TplAbsyn_getExpListForMap
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_getExpListForMap,2,0) {(void*) boxptr_TplAbsyn_getExpListForMap,0}};
 #define boxvar_TplAbsyn_getExpListForMap MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_getExpListForMap)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_statementsFromEscOptions(threadData_t *threadData, modelica_metatype _inOptions, modelica_metatype _inAccMMEscOptions, modelica_metatype _inStmts, modelica_metatype _inLocals, modelica_metatype _inScopeEnv, modelica_metatype _inTplPackage, modelica_metatype _inAccMMDecls, modelica_metatype *out_outStmts, modelica_metatype *out_outLocals, modelica_metatype *out_outScopeEnv, modelica_metatype *out_outMMDecls);
 #define boxptr_TplAbsyn_statementsFromEscOptions omc_TplAbsyn_statementsFromEscOptions
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_statementsFromEscOptions,2,0) {(void*) boxptr_TplAbsyn_statementsFromEscOptions,0}};
 #define boxvar_TplAbsyn_statementsFromEscOptions MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_statementsFromEscOptions)
 
 
-DLLExport
+DLLDirection
 void omc_TplAbsyn_warnIfSomeOptions(threadData_t *threadData, modelica_metatype _inMMEscOptions);
 #define boxptr_TplAbsyn_warnIfSomeOptions omc_TplAbsyn_warnIfSomeOptions
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_warnIfSomeOptions,2,0) {(void*) boxptr_TplAbsyn_warnIfSomeOptions,0}};
 #define boxvar_TplAbsyn_warnIfSomeOptions MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_warnIfSomeOptions)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_statementsFromExpList(threadData_t *threadData, modelica_metatype _inExpLst, modelica_metatype _inStmts, modelica_string _inInText, modelica_string _inOutText, modelica_metatype _inLocals, modelica_metatype _inScopeEnv, modelica_metatype _inTplPackage, modelica_metatype _inAccMMDecls, modelica_metatype *out_outLocals, modelica_metatype *out_outScopeEnv, modelica_metatype *out_outMMDecls, modelica_string *out_outInText);
 #define boxptr_TplAbsyn_statementsFromExpList omc_TplAbsyn_statementsFromExpList
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_statementsFromExpList,2,0) {(void*) boxptr_TplAbsyn_statementsFromExpList,0}};
 #define boxvar_TplAbsyn_statementsFromExpList MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_statementsFromExpList)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_statementsFromExp(threadData_t *threadData, modelica_metatype _inExp, modelica_metatype _inMMEscOptions, modelica_metatype _inStmts, modelica_string _inInText, modelica_string _inOutText, modelica_metatype _inLocals, modelica_metatype _inScopeEnv, modelica_metatype _inTplPackage, modelica_metatype _inAccMMDecls, modelica_metatype *out_outLocals, modelica_metatype *out_outScopeEnv, modelica_metatype *out_outMMDecls, modelica_string *out_outInText);
 #define boxptr_TplAbsyn_statementsFromExp omc_TplAbsyn_statementsFromExp
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_statementsFromExp,2,0) {(void*) boxptr_TplAbsyn_statementsFromExp,0}};
 #define boxvar_TplAbsyn_statementsFromExp MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_statementsFromExp)
 
 
-DLLExport
+DLLDirection
 modelica_boolean omc_TplAbsyn_isAssignedIdent(threadData_t *threadData, modelica_metatype _inStatementList, modelica_string _inIdent);
-DLLExport
+DLLDirection
 modelica_metatype boxptr_TplAbsyn_isAssignedIdent(threadData_t *threadData, modelica_metatype _inStatementList, modelica_metatype _inIdent);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_isAssignedIdent,2,0) {(void*) boxptr_TplAbsyn_isAssignedIdent,0}};
 #define boxvar_TplAbsyn_isAssignedIdent MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_isAssignedIdent)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_addOutTextAssigns(threadData_t *threadData, modelica_metatype _inTextArgs, modelica_metatype _inTranslatedTextArgs);
 #define boxptr_TplAbsyn_addOutTextAssigns omc_TplAbsyn_addOutTextAssigns
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_addOutTextAssigns,2,0) {(void*) boxptr_TplAbsyn_addOutTextAssigns,0}};
 #define boxvar_TplAbsyn_addOutTextAssigns MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_addOutTextAssigns)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_addOutPrefixesLhs(threadData_t *threadData, modelica_metatype _inLhsArgs, modelica_metatype _inTextArgs, modelica_metatype _inTranslatedTextArgs, modelica_metatype *out_outTranslatedTextArgs);
 #define boxptr_TplAbsyn_addOutPrefixesLhs omc_TplAbsyn_addOutPrefixesLhs
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_addOutPrefixesLhs,2,0) {(void*) boxptr_TplAbsyn_addOutPrefixesLhs,0}};
 #define boxvar_TplAbsyn_addOutPrefixesLhs MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_addOutPrefixesLhs)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_addOutPrefixesRhs(threadData_t *threadData, modelica_metatype _inStmt, modelica_metatype _inTranslatedTextArgs);
 #define boxptr_TplAbsyn_addOutPrefixesRhs omc_TplAbsyn_addOutPrefixesRhs
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_addOutPrefixesRhs,2,0) {(void*) boxptr_TplAbsyn_addOutPrefixesRhs,0}};
 #define boxvar_TplAbsyn_addOutPrefixesRhs MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_addOutPrefixesRhs)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_addOutPrefixes(threadData_t *threadData, modelica_metatype _inStmts, modelica_metatype _inTextArgs, modelica_metatype _inTranslatedTextArgs);
 #define boxptr_TplAbsyn_addOutPrefixes omc_TplAbsyn_addOutPrefixes
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_addOutPrefixes,2,0) {(void*) boxptr_TplAbsyn_addOutPrefixes,0}};
 #define boxvar_TplAbsyn_addOutPrefixes MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_addOutPrefixes)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_encodeTypedIdent(threadData_t *threadData, modelica_metatype _inTypedIdent, modelica_string _prefix);
 #define boxptr_TplAbsyn_encodeTypedIdent omc_TplAbsyn_encodeTypedIdent
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_encodeTypedIdent,2,0) {(void*) boxptr_TplAbsyn_encodeTypedIdent,0}};
 #define boxvar_TplAbsyn_encodeTypedIdent MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_encodeTypedIdent)
 
 
-DLLExport
+DLLDirection
 modelica_string omc_TplAbsyn_encodePathIdent(threadData_t *threadData, modelica_metatype _inPath, modelica_string _prefix);
 #define boxptr_TplAbsyn_encodePathIdent omc_TplAbsyn_encodePathIdent
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_encodePathIdent,2,0) {(void*) boxptr_TplAbsyn_encodePathIdent,0}};
@@ -910,42 +910,42 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_encodePathIdent,2,0) {(void*) 
 #define boxptr_TplAbsyn_encodeIdentNoPrefix omc_TplAbsyn_encodeIdentNoPrefix
 
 
-DLLExport
+DLLDirection
 modelica_string omc_TplAbsyn_encodeIdent(threadData_t *threadData, modelica_string _inIdent, modelica_string _prefix);
 #define boxptr_TplAbsyn_encodeIdent omc_TplAbsyn_encodeIdent
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_encodeIdent,2,0) {(void*) boxptr_TplAbsyn_encodeIdent,0}};
 #define boxvar_TplAbsyn_encodeIdent MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_encodeIdent)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_inlineLastFunIfSingleCall(threadData_t *threadData, modelica_metatype _inInArgs, modelica_metatype _inOutArgs, modelica_metatype _inStmts, modelica_metatype _inLocals, modelica_metatype _inAccMMDecls, modelica_metatype *out_outLocals, modelica_metatype *out_outMMDecls);
 #define boxptr_TplAbsyn_inlineLastFunIfSingleCall omc_TplAbsyn_inlineLastFunIfSingleCall
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_inlineLastFunIfSingleCall,2,0) {(void*) boxptr_TplAbsyn_inlineLastFunIfSingleCall,0}};
 #define boxvar_TplAbsyn_inlineLastFunIfSingleCall MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_inlineLastFunIfSingleCall)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_transformTemplateDefs(threadData_t *threadData, modelica_metatype _inTemplateDefsRest, modelica_metatype _inTplPackage, modelica_metatype _inAccMMDecls);
 #define boxptr_TplAbsyn_transformTemplateDefs omc_TplAbsyn_transformTemplateDefs
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_transformTemplateDefs,2,0) {(void*) boxptr_TplAbsyn_transformTemplateDefs,0}};
 #define boxvar_TplAbsyn_transformTemplateDefs MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_transformTemplateDefs)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_importDeclarations(threadData_t *threadData, modelica_metatype _inASTDefs);
 #define boxptr_TplAbsyn_importDeclarations omc_TplAbsyn_importDeclarations
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_importDeclarations,2,0) {(void*) boxptr_TplAbsyn_importDeclarations,0}};
 #define boxvar_TplAbsyn_importDeclarations MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_importDeclarations)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_fullyQualifyTemplatePackage(threadData_t *threadData, modelica_metatype _inTplPackage);
 #define boxptr_TplAbsyn_fullyQualifyTemplatePackage omc_TplAbsyn_fullyQualifyTemplatePackage
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_fullyQualifyTemplatePackage,2,0) {(void*) boxptr_TplAbsyn_fullyQualifyTemplatePackage,0}};
 #define boxvar_TplAbsyn_fullyQualifyTemplatePackage MMC_REFSTRUCTLIT(boxvar_lit_TplAbsyn_fullyQualifyTemplatePackage)
 
 
-DLLExport
+DLLDirection
 modelica_metatype omc_TplAbsyn_transformAST(threadData_t *threadData, modelica_metatype _inTplPackage);
 #define boxptr_TplAbsyn_transformAST omc_TplAbsyn_transformAST
 static const MMC_DEFSTRUCTLIT(boxvar_lit_TplAbsyn_transformAST,2,0) {(void*) boxptr_TplAbsyn_transformAST,0}};
