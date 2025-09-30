@@ -848,7 +848,7 @@ protected
       scalarized      = seedCandidates.scalarized,
       adjoint_map     = NONE(),
       current_grad    = Expression.EMPTY(Type.REAL()),
-      collectAdjoints = true
+      collectAdjoints = false
     );
 
     // differentiate all strong components
@@ -1108,7 +1108,7 @@ protected
     end for;
 
     entries := listReverse(entries);
-    str := "{ " + stringDelimitList(entries, "; ") + " }";
+    str := "{ " + stringDelimitList(entries, ";\n") + " }";
   end adjointMapToString;
 
   // Helper: build addition (or single term) expression from a list of terms for a given LHS cref.
@@ -1166,13 +1166,20 @@ protected
     Expression lhsExpr, rhsExpr;
     Pointer<Variable> lhsVarPtr;
     Pointer<NBEquation.Equation> eqPtr;
-    Integer i;
-    ComponentRef newC;
+    Integer i, i_idx;
+    ComponentRef newC, baseCref;
 
     UnorderedMap<ComponentRef, ComponentRef> mapPartialToNewSeed =
       UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
     UnorderedMap<ComponentRef, ComponentRef> mapSeedToNewPDer =
       UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
+    VariablePointers vp_single;
+    list<ComponentRef> scalarCrefs;
+    list<Expression> scalarTerms, vectorTerms, unitElems;
+    Boolean anyNonZero;
+    ExpressionList sc_terms, existing;
+    Expression scalarRhs, arrayExpr, unitVec, vectorTerm, aggregatedVec;
+    Type elementTy;
   algorithm
     if Util.isSome(strongComponents) then
       // filter all discrete strong components and differentiate the others
@@ -1202,11 +1209,25 @@ protected
     adjoint_map := UnorderedMap.new<ExpressionList>(ComponentRef.hash, ComponentRef.isEqual);
     for v in res_vars loop
       UnorderedMap.addNew(BVariable.getVarName(v), {}, adjoint_map);
+      // Expand to scalar components and add them as keys too
+      // to handle array seeds correctly
+      vp_single := VariablePointers.fromList({v});
+      for scalarCref in VariablePointers.getScalarVarNames(vp_single) loop
+        if not UnorderedMap.contains(scalarCref, adjoint_map) then
+          UnorderedMap.addNew(scalarCref, {}, adjoint_map);
+        end if;
+      end for;
     end for;
     for v in tmp_vars loop
       UnorderedMap.addNew(BVariable.getVarName(v), {}, adjoint_map);
+      vp_single := VariablePointers.fromList({v});
+      for scalarCref in VariablePointers.getScalarVarNames(vp_single) loop
+        if not UnorderedMap.contains(scalarCref, adjoint_map) then
+          UnorderedMap.addNew(scalarCref, {}, adjoint_map);
+        end if;
+      end for;
     end for;
-    
+
     print("Adjoint map before:\n" + adjointMapToString(SOME(adjoint_map)) + "\n");
 
     // Build differentiation argument structure
@@ -1222,11 +1243,108 @@ protected
       collectAdjoints  = true
     );
 
+    print(BVariable.VariablePointers.toString(seedCandidates, "Seed Candidates"));
+    print(boolString(seedCandidates.scalarized));
+    print(BVariable.VariablePointers.toString(partialCandidates, "Partial Candidates"));
+    print(boolString(partialCandidates.scalarized));
+
     // differentiate all strong components
     (_, diffArguments) := Differentiate.differentiateStrongComponentListAdjoint(comps, diffArguments, idx, name, getInstanceName());
     funcTree := diffArguments.funcTree;
 
     print("Adjoint map after:\n" + adjointMapToString(diffArguments.adjoint_map) + "\n");
+
+    // Collapse only array variables: gather k[i] contributions into a single array term and
+    // append that term to the base variable entry. Do NOT clear the base entry itself.
+    if Util.isSome(diffArguments.adjoint_map) then
+      adjoint_map := Util.getOption(diffArguments.adjoint_map);
+
+      for v in listAppend(res_vars, tmp_vars) loop
+        baseCref := BVariable.getVarName(v);
+        // Skip if base already missing (defensive)
+        if not UnorderedMap.contains(baseCref, adjoint_map) then
+          continue;
+        end if;
+
+        // Only collapse if variable type is an array (rank > 0)
+        if not Type.isArray(ComponentRef.getComponentType(baseCref)) then
+          continue; // scalar variable: leave as-is
+        end if;
+
+        vp_single := VariablePointers.fromList({v});
+        scalarCrefs := VariablePointers.getScalarVarNames(vp_single);
+
+        // Filter out the base cref itself (we only want indexed scalar components)
+        scalarCrefs :=
+          list(sc for sc guard(not ComponentRef.isEqual(sc, baseCref)) in scalarCrefs);
+        // If no scalar component crefs (should not happen for arrays) skip
+        if listEmpty(scalarCrefs) then
+          continue;
+        end if;
+
+        scalarTerms := {};
+        anyNonZero := false;
+        elementTy := Type.arrayElementType(ComponentRef.getComponentType(baseCref));
+
+        for sc in scalarCrefs loop
+          sc_terms := UnorderedMap.getOrDefault(sc, adjoint_map, {});
+          // Combine contributions for this scalar component into a scalar expression.
+          scalarRhs := match sc_terms
+            local
+              Expression single;
+            case {} then Expression.makeZero(elementTy);
+            case {single} then single;
+            else
+              Expression.MULTARY(
+                listReverse(sc_terms), {},
+                Operator.fromClassification(
+                  (NFOperator.MathClassification.ADDITION, NFOperator.SizeClassification.SCALAR),
+                  elementTy
+                ));
+          end match;
+
+          // If (due to upstream typing) we still got an array, force it to zero (defensive)
+          if Type.isArray(Expression.typeOf(scalarRhs)) then
+            scalarRhs := Expression.makeZero(elementTy);
+          end if;
+
+            // Track non-zero (heuristic)
+          if not Expression.isZero(scalarRhs) then
+            anyNonZero := true;
+          end if;
+
+          // Accumulate in natural order (we will NOT reverse later)
+          scalarTerms := scalarRhs :: scalarTerms;
+        end for;
+
+        if not anyNonZero then
+          // nothing meaningful in scalar components
+          continue;
+        end if;
+
+        // Build aggregated vector directly as an array literal of scalar entries (ordered k[1], k[2], ...).
+        aggregatedVec := Expression.ARRAY(
+          ComponentRef.getComponentType(baseCref),
+          listArray(listReverse(scalarTerms)),
+          true
+        );
+
+        // Append aggregated vector AFTER existing base contributions
+        existing := UnorderedMap.getOrDefault(baseCref, adjoint_map, {});
+        UnorderedMap.add(baseCref, aggregatedVec :: existing, adjoint_map);
+
+        // Clear only the indexed scalar entries k[1], k[2], ...
+        for sc in scalarCrefs loop
+          if UnorderedMap.contains(sc, adjoint_map) then
+            UnorderedMap.add(sc, {}, adjoint_map);
+          end if;
+        end for;
+      end for;
+
+      diffArguments.adjoint_map := SOME(adjoint_map);
+    end if;
+
+    print("Adjoint map collapsed:\n" + adjointMapToString(diffArguments.adjoint_map) + "\n");
 
 
     if Util.isSome(diffArguments.adjoint_map) then
