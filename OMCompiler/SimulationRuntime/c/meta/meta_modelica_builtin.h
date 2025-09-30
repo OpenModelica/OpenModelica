@@ -110,7 +110,6 @@ extern modelica_integer listLength(modelica_metatype);
 #define isNone(X) MMC_OPTIONNONE(X)
 #define isSome(X) MMC_OPTIONSOME(X)
 
-extern modelica_metatype boxptr_listNth(threadData_t*,modelica_metatype,modelica_metatype);
 extern modelica_metatype boxptr_listGet(threadData_t*,modelica_metatype,modelica_metatype);
 extern modelica_metatype boxptr_listDelete(threadData_t*,modelica_metatype,modelica_metatype);
 extern modelica_metatype boxptr_listRest(threadData_t*,modelica_metatype);
@@ -167,7 +166,6 @@ static inline modelica_metatype arrayCreateNoInit(modelica_integer nelts, modeli
 #define arrayUpdateNoBoundsChecking(X,Y,Z) boxptr_arrayUpdateNoBoundsChecking(threadData,X,mmc_mk_icon(Y),Z)
 extern modelica_metatype arrayAppend(modelica_metatype, modelica_metatype);
 
-extern modelica_metatype boxptr_arrayNth(threadData_t *threadData,modelica_metatype,modelica_metatype);
 extern modelica_metatype boxptr_arrayGet(threadData_t *threadData,modelica_metatype,modelica_metatype);
 static inline modelica_metatype boxptr_arrayUpdate(threadData_t *threadData,modelica_metatype arr, modelica_metatype i, modelica_metatype val)
 {
