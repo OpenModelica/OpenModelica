@@ -171,10 +171,10 @@ pipeline {
               echo "Running on: ${env.NODE_NAME}"
               common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
                                         + " -DOM_USE_CCACHE=OFF"
-                                        + " -DCMAKE_INSTALL_PREFIX=build_cmake")
+                                        + " -DCMAKE_INSTALL_PREFIX=build")
               sh "build/bin/omc --version"
             }
-            stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/**'
+            stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build/**'
           }
         }
         stage('cmake-macos-arm64-gcc') {
@@ -698,7 +698,7 @@ pipeline {
           }
           steps {
             unstash 'omc-cmake-gcc'
-            sh 'cmake --build build_cmake --target test'
+            sh 'cmake --build build --target test'
           }
         }
       }
