@@ -11,6 +11,8 @@ project(OpenModelica
         HOMEPAGE_URL "https://openmodelica.org/"
         LANGUAGES C CXX)
 
+enable_testing()
+
 # Any custom Find* modules should be placed here.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
 
