@@ -687,15 +687,9 @@ pipeline {
 
         stage('16 testsuite-unit-test-C') {
           agent {
-            dockerfile {
-              additionalBuildArgs '--pull'
-              dir '.CI/cache'
+            docker {
+              image 'docker.openmodelica.org/build-deps:v1.22.2'
               label 'linux'
-              args '''
-                --mount type=volume,source=runtest-clang-cache,target=/cache/runtest \
-                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
-                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
-              '''
             }
           }
           when {
@@ -704,6 +698,7 @@ pipeline {
           }
           steps {
             unstash 'omc-cmake-gcc'
+            sh 'chown -R $(id -u):$(id -g) build_cmake'
             sh '''
               cd build_cmake
               ctest --no-compress-output -T Test
