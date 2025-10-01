@@ -688,8 +688,13 @@ pipeline {
         stage('16 testsuite-unit-test-C') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              image 'docker.openmodelica.org/build-deps:v1.22.2-qttools'
               label 'linux'
+              alwaysPull true
+              args '''
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
             }
           }
           when {
@@ -698,8 +703,11 @@ pipeline {
           }
           steps {
             unstash 'omc-cmake-gcc'
-            sh 'chown -R $(id -u):$(id -g) build_cmake'
-            sh 'chmod -R ugo+rwx build_cmake/'
+            echo "Running on: ${env.NODE_NAME}"
+            common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
+                                      + " -DOM_USE_CCACHE=OFF"
+                                      + " -DCMAKE_INSTALL_PREFIX=build")
+            sh "build/bin/omc --version"
             sh '''
               cd build_cmake
               ctest --no-compress-output -T Test
