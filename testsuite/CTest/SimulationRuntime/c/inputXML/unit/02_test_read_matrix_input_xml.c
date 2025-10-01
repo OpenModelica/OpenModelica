@@ -16,7 +16,7 @@
  * Uses only "start" attribute in dimension tag.
  *
  * @param argc  Number of arguments. Has to be 2.
- * @param argv  Second argument has to be path to resources/RealMatrixVariable_init.xml;
+ * @param argv  Second argument has to be path to resources/02_RealMatrixVariable_init.xml;
  * @return int  Return 0 on test success, 1 otherwise.
  */
 int main(int argc, char* argv[]) {

@@ -713,7 +713,7 @@ pipeline {
           }
           post {
             always {
-              junit 'build_cmake/junit.xml', skipPublishingChecks: true
+              junit testResults: 'build_cmake/junit.xml', skipPublishingChecks: true
             }
           }
         }

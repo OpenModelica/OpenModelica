@@ -16,7 +16,7 @@
  * First dimension tag uses "valueReference" attribute, the other two use the "start" attribute.
  *
  * @param argc  Number of arguments. Has to be 2.
- * @param argv  Second argument has to be path to resources/IntTensorVariable_init.xml;
+ * @param argv  Second argument has to be path to resources/03_IntTensorVariable_init.xml;
  * @return int  Return 0 on test success, 1 otherwise.
  */
 int main(int argc, char* argv[]) {
