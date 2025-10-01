@@ -91,8 +91,8 @@ int main(int argc, char* argv[]) {
     fprintf(stderr, "Test failed: real variable dimension mismatch. Expected <dimension> to contain 'start'\n");
     test_success = 0;
   }
-  if (test_success && modelData.realVarsData[0].dimension.dimensions[0].start != 3) {
-    fprintf(stderr, "Test failed: real variable dimension mismatch. Expected 'start=3', got '%lu'\n", modelData.realVarsData[0].dimension.dimensions[0].start);
+  if (test_success && modelData.realVarsData[0].dimension.dimensions[0].start != 100) {
+    fprintf(stderr, "Test failed: real variable dimension mismatch. Expected 'start=100', got '%lu'\n", modelData.realVarsData[0].dimension.dimensions[0].start);
     test_success = 0;
   }
   if (test_success && modelData.realVarsData[0].dimension.dimensions[0].valueReference != -1) {

@@ -153,8 +153,10 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 # ######################################################################################################################
-## Enable testing in testsuite/CTest/SimulationRuntime/c. This means you need to be in
-## <build_dir>/testsuite/CTest/SimulationRuntime/c folder to run ctest.
-## If you want to run the tests while in another directory (ctest > 3.22) you
-## have to specify --test-dir (e.g., ctest --test-dir build_cmake/testsuite/CTest/SimulationRuntime/c )
-add_subdirectory(${CMAKE_SOURCE_DIR}/testsuite/CTest/SimulationRuntime/c ${CMAKE_BINARY_DIR}/testsuite/CTest/SimulationRuntime/c)
+# Add C Simulation Runtime unit tests
+# Build with target "ctestsuite-depends"
+# Run test with ctest
+add_subdirectory(
+  ${CMAKE_SOURCE_DIR}/testsuite/CTest/SimulationRuntime/c
+  ${CMAKE_BINARY_DIR}/testsuite/CTest/SimulationRuntime/c
+)

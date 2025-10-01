@@ -704,16 +704,18 @@ pipeline {
           steps {
             echo "Running on: ${env.NODE_NAME}"
             unstash 'omc-cmake-gcc'
+            sh "ls build_cmake/"
             script {
-              sh "cmake --build build_cmake --parallel ${common.numPhysicalCPU()} --target test"
+              sh "cmake --version"
+              sh """
+                cmake -S ./ -B ./build_cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOM_USE_CCACHE=OFF
+              """
+              sh "cmake --build ./build_cmake --parallel ${common.numPhysicalCPU()} --target ctestsuite-depends"
+              sh "cmake --build ./build_cmake --parallel ${common.numPhysicalCPU()} --target test"
             }
           }
           post {
             always {
-              archiveArtifacts (
-                artifacts: 'build_cmake/Testing/**/*.xml',
-                fingerprint: true
-              )
               junit 'build_cmake/junit.xml'
             }
           }

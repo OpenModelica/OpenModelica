@@ -14,7 +14,6 @@ project(OpenModelica
 # Any custom Find* modules should be placed here.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
 
-
 #########################################################################################################
 ## Enable verbose Makefiles if you want to debug. (you can also instead use 'make VERBOSE=1')
 # set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -167,6 +166,11 @@ if(OM_ENABLE_ENCRYPTION)
   omc_add_subdirectory(OMEncryption)
 endif()
 
+## Include and enable testing
+set(CMAKE_CTEST_ARGUMENTS "--output-on-failure" "--output-junit" "junit.xml")
+include(CTest)
+enable_testing()
+
 omc_add_subdirectory(OMCompiler)
 
 if(OM_ENABLE_GUI_CLIENTS)
@@ -195,11 +199,6 @@ configure_file(cmake/packaging/OpenModelicaCPackOptions.in.cmake ${CMAKE_CURRENT
 set(CPACK_PROJECT_CONFIG_FILE ${CMAKE_CURRENT_BINARY_DIR}/OpenModelicaCPackOptions.cmake)
 # Tell CPack about our components (dispaly names, descriptions, dependencies ...)
 include(cmake/packaging/components.cmake)
-
-## Testing
-set(CMAKE_CTEST_ARGUMENTS "--output-on-failure" "--output-junit" "junit.xml")
-include(CTest)
-enable_testing()
 
 ## Report some status info.
 message(STATUS "--------------------------------------------------------------------------")
