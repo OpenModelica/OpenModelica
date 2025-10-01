@@ -174,7 +174,7 @@ pipeline {
                                         + " -DCMAKE_INSTALL_PREFIX=build")
               sh "build/bin/omc --version"
             }
-            stash name: 'omc-cmake-gcc', includes: 'build/**'
+            stash name: 'omc-cmake-gcc', includes: 'build_cmake/**, build/**'
           }
         }
         stage('cmake-macos-arm64-gcc') {
@@ -698,7 +698,36 @@ pipeline {
           }
           steps {
             unstash 'omc-cmake-gcc'
-            sh 'cmake --build build --target test'
+            sh '''
+              cd build_cmake
+              ctest --no-compress-output -T Test
+            '''
+          }
+          post {
+            always {
+              // Archieve CTest XML output
+              archiveArtifacts (
+                artifacts: 'build/Testing/**/*.xml',
+                fingerprint: true
+              )
+
+              // Process the CTest xml output with the xUnit plugin
+              xunit (
+                testTimeMargin: '3000',
+                thresholdMode: 1,
+                thresholds: [
+                  skipped(failureThreshold: '0'),
+                  failed(failureThreshold: '0')
+                ],
+              tools: [CTest(
+                  pattern: 'build/Testing/**/*.xml',
+                  deleteOutputFiles: true,
+                  failIfNotNew: false,
+                  skipNoTestFiles: true,
+                  stopProcessingIfError: true
+                )]
+              )
+            }
           }
         }
       }
