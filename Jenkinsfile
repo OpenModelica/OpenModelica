@@ -688,8 +688,13 @@ pipeline {
         stage('16 testsuite-unit-test-C') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              image 'docker.openmodelica.org/build-deps:v1.22.2-qttools'
               label 'linux'
+              alwaysPull true
+              args '''
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
             }
           }
           when {
