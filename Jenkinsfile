@@ -710,12 +710,10 @@ pipeline {
           }
           post {
             always {
-              // Archieve CTest XML output
               archiveArtifacts (
                 artifacts: 'build_cmake/Testing/**/*.xml',
                 fingerprint: true
               )
-
               junit 'build_cmake/junit.xml'
             }
           }
