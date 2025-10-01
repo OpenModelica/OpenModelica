@@ -279,8 +279,28 @@ typedef struct STRING_ATTRIBUTE
   modelica_string start;               /* = "" */
 } STRING_ATTRIBUTE;
 
+/* Model dimension structures */
+enum DIMENSION_ATTRIBUTE_TYPE{
+  DIMENSION_BY_START = 0,               /* dimension defined by start */
+  DIMENSION_BY_VALUE_REFERENCE = 1      /* dimension defined by value reference of structural parameter */
+};
+
+typedef struct DIMENSION_ATTRIBUTE
+{
+  enum DIMENSION_ATTRIBUTE_TYPE type;      /* How the dimension is defined */
+  modelica_integer start;             /* If type=DIMENSION_BY_START: Dimension */
+  modelica_integer valueReference;    /* If type=DIMENSION_BY_VALUE_REFERENCE: Value reference of structural parameter specifying dimension */
+} DIMENSION_ATTRIBUTE;
+
+typedef struct DIMENSION_INFO
+{
+  modelica_integer numberOfDimensions;  /* number of dimension tags <dimension> */
+  DIMENSION_ATTRIBUTE* dimensions;      /* array of dimension sizes */
+} DIMENSION_INFO;
+
 typedef struct STATIC_REAL_DATA
 {
+  DIMENSION_INFO dimension;
   VAR_INFO info;
   REAL_ATTRIBUTE attribute;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
@@ -289,6 +309,7 @@ typedef struct STATIC_REAL_DATA
 
 typedef struct STATIC_INTEGER_DATA
 {
+  DIMENSION_INFO dimension;
   VAR_INFO info;
   INTEGER_ATTRIBUTE attribute;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
@@ -297,6 +318,7 @@ typedef struct STATIC_INTEGER_DATA
 
 typedef struct STATIC_BOOLEAN_DATA
 {
+  DIMENSION_INFO dimension;
   VAR_INFO info;
   BOOLEAN_ATTRIBUTE attribute;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
@@ -305,6 +327,7 @@ typedef struct STATIC_BOOLEAN_DATA
 
 typedef struct STATIC_STRING_DATA
 {
+  DIMENSION_INFO dimension;
   VAR_INFO info;
   STRING_ATTRIBUTE attribute;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */

@@ -174,7 +174,7 @@ pipeline {
                                         + " -DCMAKE_INSTALL_PREFIX=build")
               sh "build/bin/omc --version"
             }
-            // stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/install_cmake/bin/**'
+            //stash name: 'omc-cmake-gcc', includes: 'build_cmake/**, build/**'
           }
         }
         stage('cmake-macos-arm64-gcc') {
@@ -685,6 +685,38 @@ pipeline {
           }
         }
 
+        stage('16 testsuite-unit-test-C') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:v1.22.2-qttools'
+              label 'linux'
+              alwaysPull true
+              args '''
+                --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
+                -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
+              '''
+            }
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          steps {
+            echo "Running on: ${env.NODE_NAME}"
+            script {
+              sh "cmake --version"
+              sh "cmake -S ./ -B ./build_cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOM_USE_CCACHE=OFF"
+              sh "cmake --build ./build_cmake --parallel ${common.numPhysicalCPU()} --target ctestsuite-depends"
+              sh "cmake --build ./build_cmake --parallel ${common.numPhysicalCPU()} --target test"
+            }
+            sh "test -f ./build_cmake/junit.xml"
+          }
+          post {
+            always {
+              junit testResults: 'build_cmake/junit.xml', skipPublishingChecks: true
+            }
+          }
+        }
       }
     }
     stage('fmuchecker + FMPy + OMEdit testsuite') {
