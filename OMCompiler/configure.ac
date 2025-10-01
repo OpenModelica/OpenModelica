@@ -636,7 +636,7 @@ AC_CHECK_LIB(pthread,pthread_self,[RT_LDFLAGS="$RT_LDFLAGS $LIBS"],[AC_MSG_ERROR
 
 LIBS=""
 
-MOO_LDFLAGS="-lmoo"
+MOO_LDFLAGS="-lipopt -ldmumps"
 
 # check for SuiteSparse
 AC_ARG_WITH(SUITESPARSE, [  --without-SUITESPARSE              Disable compilation with SUITESPARSE (UMFPACK, KLU)],

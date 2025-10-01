@@ -168,6 +168,7 @@ $(OMBUILDDIR)/include/omc/c/gc_pthread_redirects.h: 3rdParty/gc/include/gc_pthre
 3rdParty/gc/Makefile: 3rdParty/gc/configure.ac
 	(cd 3rdParty/gc && mkdir -p m4 libatomic_ops/m4 && autoreconf -vif && automake --add-missing && ./configure --prefix="`pwd`" "--host=$(host)" $(LIBGC_EXTRA_CONFIGURATION) --enable-shared --disable-static --disable-gcj-support --disable-java-finalization --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DLARGE_CONFIG -DTHREAD_LOCAL_ALLOC")
 
+# TODO or DISCARD: for now, we only build static ipopt and dmumps (not MOO) directy into the runtime
 moo:
 	mkdir -p $(OMC_MOO_ROOT)/build
 	cd $(OMC_MOO_ROOT)/build && $(CMAKE) .. \
@@ -178,7 +179,8 @@ moo:
 		-DCMAKE_INSTALL_INCLUDEDIR="$(builddir_inc)" \
 		-DMUMPS_USE_METIS=OFF \
 		-DCMAKE_POSITION_INDEPENDENT_CODE=ON
-	$(MAKE) -C $(OMC_MOO_ROOT)/build/ install
+	$(CMAKE) --build $(OMC_MOO_ROOT)/build --target ipopt dmumps
+	$(CMAKE) --build $(OMC_MOO_ROOT)/build --target install
 
 moo-clean:
 	if test -f $(OMC_MOO_ROOT)/build/Makefile; then $(MAKE) -C $(OMC_MOO_ROOT)/build/ clean; fi

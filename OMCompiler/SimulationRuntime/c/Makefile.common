@@ -191,7 +191,7 @@ libSimulationRuntimeC.dll: $(ALL_OBJS) $(CDASKRDIR)/libcdaskr.a $(RYUDIR)/libryu
 		-L$(CDASKRDIR) -lcdaskr -L$(RYUDIR) -lryu \
 		-lklu -lumfpack -lamd -lbtf -lcolamd -lsuitesparseconfig \
 		-lsundials_cvode -lsundials_idas -lsundials_kinsol -lsundials_sunlinsolklu -lsundials_sunlinsollapackdense \
-		-lmoo -lgfortran \
+		-lipopt -ldmumps -lgfortran \
 		-llis -lcminpack -lomcgc \
 		-lopenblas -lexpat -ldbghelp -lregex -lwsock32 \
 		-Wl,--export-all-symbols,--out-implib,$@.a
