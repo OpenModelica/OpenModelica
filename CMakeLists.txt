@@ -11,8 +11,6 @@ project(OpenModelica
         HOMEPAGE_URL "https://openmodelica.org/"
         LANGUAGES C CXX)
 
-enable_testing()
-
 # Any custom Find* modules should be placed here.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
 
@@ -199,6 +197,7 @@ set(CPACK_PROJECT_CONFIG_FILE ${CMAKE_CURRENT_BINARY_DIR}/OpenModelicaCPackOptio
 include(cmake/packaging/components.cmake)
 
 ## Testing
+set(CMAKE_CTEST_ARGUMENTS "--output-on-failure" "--output-junit" "junit.xml")
 include(CTest)
 enable_testing()
 

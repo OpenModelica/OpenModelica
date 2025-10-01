@@ -702,18 +702,11 @@ pipeline {
             expression { shouldWeRunTests }
           }
           steps {
+            echo "Running on: ${env.NODE_NAME}"
             unstash 'omc-cmake-gcc'
             script {
-              echo "Running on: ${env.NODE_NAME}"
-              common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
-                                        + " -DOM_USE_CCACHE=OFF"
-                                        + " -DCMAKE_INSTALL_PREFIX=build")
-              sh "build/bin/omc --version"
+              sh "cmake --build build_cmake --parallel ${common.numPhysicalCPU()} --target test"
             }
-            sh '''
-              cd build_cmake
-              ctest --no-compress-output -T Test
-            '''
           }
           post {
             always {
@@ -723,22 +716,7 @@ pipeline {
                 fingerprint: true
               )
 
-              // Process the CTest xml output with the xUnit plugin
-              xunit (
-                testTimeMargin: '3000',           // 3000ms tolearnce for test duration
-                thresholdMode: 1,
-                thresholds: [
-                  skipped(failureThreshold: '0'), // skipped tests are failures
-                  failed(failureThreshold: '0')   // failed tests are failures
-                ],
-              tools: [CTest(
-                  pattern: 'build_cmake/Testing/**/*.xml',
-                  deleteOutputFiles: true,
-                  failIfNotNew: false,
-                  skipNoTestFiles: true,
-                  stopProcessingIfError: true
-                )]
-              )
+              junit 'build_cmake/junit.xml'
             }
           }
         }
