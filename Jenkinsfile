@@ -703,11 +703,13 @@ pipeline {
           }
           steps {
             unstash 'omc-cmake-gcc'
-            echo "Running on: ${env.NODE_NAME}"
-            common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
-                                      + " -DOM_USE_CCACHE=OFF"
-                                      + " -DCMAKE_INSTALL_PREFIX=build")
-            sh "build/bin/omc --version"
+            script {
+              echo "Running on: ${env.NODE_NAME}"
+              common.buildOMC_CMake("-DCMAKE_BUILD_TYPE=Release"
+                                        + " -DOM_USE_CCACHE=OFF"
+                                        + " -DCMAKE_INSTALL_PREFIX=build")
+              sh "build/bin/omc --version"
+            }
             sh '''
               cd build_cmake
               ctest --no-compress-output -T Test
