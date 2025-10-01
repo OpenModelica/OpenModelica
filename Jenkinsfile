@@ -687,11 +687,12 @@ pipeline {
 
         stage('16 testsuite-unit-test-C') {
           agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.2-qttools'
+            dockerfile {
+              additionalBuildArgs '--pull'
+              dir '.CI/cache'
               label 'linux'
-              alwaysPull true
               args '''
+                --mount type=volume,source=runtest-clang-cache,target=/cache/runtest \
                 --mount type=volume,source=omlibrary-cache,target=/cache/omlibrary \
                 -v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache
               '''
@@ -712,20 +713,20 @@ pipeline {
             always {
               // Archieve CTest XML output
               archiveArtifacts (
-                artifacts: 'build/Testing/**/*.xml',
+                artifacts: 'build_cmake/Testing/**/*.xml',
                 fingerprint: true
               )
 
               // Process the CTest xml output with the xUnit plugin
               xunit (
-                testTimeMargin: '3000',
+                testTimeMargin: '3000',           // 3000ms tolearnce for test duration
                 thresholdMode: 1,
                 thresholds: [
-                  skipped(failureThreshold: '0'),
-                  failed(failureThreshold: '0')
+                  skipped(failureThreshold: '0'), // skipped tests are failures
+                  failed(failureThreshold: '0')   // failed tests are failures
                 ],
               tools: [CTest(
-                  pattern: 'build/Testing/**/*.xml',
+                  pattern: 'build_cmake/Testing/**/*.xml',
                   deleteOutputFiles: true,
                   failIfNotNew: false,
                   skipNoTestFiles: true,
