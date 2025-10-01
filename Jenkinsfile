@@ -699,6 +699,7 @@ pipeline {
           steps {
             unstash 'omc-cmake-gcc'
             sh 'chown -R $(id -u):$(id -g) build_cmake'
+            sh 'chmod -R ugo+rwx build_cmake/'
             sh '''
               cd build_cmake
               ctest --no-compress-output -T Test
