@@ -993,16 +993,16 @@ template simulationFile_lnz(SimCode simCode)
     if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"none") then
       <<
       const char *<%symbolName(modelNamePrefix(simCode),"linear_model_frame")%>()
-      { /* disabled, use compiler flag `--linearizationDumpLanguage` to change target language */ }
+      { return "";  /* disabled, use compiler flag `--linearizationDumpLanguage` to change target language */ }
       const char *<%symbolName(modelNamePrefix(simCode),"linear_model_datarecovery_frame")%>()
-      { /* disabled, use compiler flag `--linearizationDumpLanguage` to change target language */ }
+      { return "";  /* disabled, use compiler flag `--linearizationDumpLanguage` to change target language */ }
       >>
     else if intLt(Flags.getConfigInt(MAX_SIZE_LINEARIZATION), intAdd(intAdd(intAdd(ns,ni),no),na)) then
       <<
       const char *<%symbolName(modelNamePrefix(simCode),"linear_model_frame")%>()
-      { /* system too big, use compiler flag `--maxSizeLinearization` to change threshold */ }
+      { return "";  /* system too big, use compiler flag `--maxSizeLinearization` to change threshold */ }
       const char *<%symbolName(modelNamePrefix(simCode),"linear_model_datarecovery_frame")%>()
-      { /* system too big, use compiler flag `--maxSizeLinearization` to change threshold */ }
+      { return "";  /* system too big, use compiler flag `--maxSizeLinearization` to change threshold */ }
       >>
     else if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"modelica")
       then functionlinearmodel(modelInfo, modelNamePrefix(simCode))
