@@ -420,7 +420,16 @@ public
       then (Equation.SCALAR_EQUATION(eq.ty, lhs, rhs, eq.source, attr), diffArguments);
 
       case Equation.ARRAY_EQUATION() algorithm
-        (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
+        if Util.isSome(diffArguments.adjoint_map) then
+          oldCollect := diffArguments.collectAdjoints;
+          diffArguments.collectAdjoints := false;
+
+          (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
+
+          diffArguments.collectAdjoints := oldCollect;
+        else
+          (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
+        end if;
         (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
       then (Equation.ARRAY_EQUATION(eq.ty, lhs, rhs, eq.source, attr, eq.recordSize), diffArguments);
@@ -2004,6 +2013,12 @@ public
         Operator operator, addOp, mulOp, powOp, mulOpAdjoint;
         Operator.SizeClassification sizeClass, powSizeClass;
         Expression current_grad;
+        // Local reverse grads (to assign before recursing)
+        Expression grad_exp1, grad_exp2;
+        Boolean isVec1, isVec2, isMat1, isMat2;
+        Type ty1, ty2;
+        Integer r1, r2;
+
 
       // Addition calculations (ADD, ADD_EW, ...)
       // (f + g)' = f' + g'
@@ -2048,30 +2063,159 @@ public
       // Multiplication (MUL, MUL_EW, ...)
       // (f * g)' =  fg' + f'g
       // ∂(f * g)/∂f = g, ∂(f * g)/∂g = f
+      // Reverse (adjoint) local rules implemented by setting current_grad before recursing:
+      // 1) Inner product:          s = v * w                 (v,w 1D)        ⇒ ∂s/∂v = w,            ∂s/∂w = v
+      // 2) Matrix * Vector:        y = A * x                 (A 2D, x 1D)     ⇒ ∂L/∂A += G * xᵀ,      ∂L/∂x += Aᵀ * G
+      // 3) Vector * Matrix:        y = x * B                 (x 1D, B 2D)     ⇒ ∂L/∂x += B * Gᵀ,      ∂L/∂B += xᵀ * G
+      // 4) Matrix * Matrix:        C = A * B                 (A 2D, B 2D)     ⇒ ∂L/∂A += G * Bᵀ,      ∂L/∂B += Aᵀ * G
+      // 5) Element-wise product:   Z = X .* Y (sizeClass ELEMENT_WISE)        ⇒ ∂L/∂X += G .* Y,      ∂L/∂Y += G .* X
+      // 6) Fallback (scalar / mixed broadcast) behaves like standard product rule.
+      // case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
+      //   guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
+      //   algorithm
+      //     mulOpAdjoint := makeMulFromOperator(operator);
+      //     sizeClass := Operator.classifyAddition(operator);
+      //     print("differentiateBinary: sizeClass " + Operator.sizeClassificationString(sizeClass) + "\n");
+      //     current_grad := diffArguments.current_grad; // upstream gradient
+
+      //     // upstream gradient * local gradient
+      //     if sizeClass == NFOperator.SizeClassification.ELEMENT_WISE then
+      //       diffArguments.current_grad := Expression.MULTARY({current_grad, exp2}, {}, mulOpAdjoint);
+      //     else if sizeClass == NFOperator.SizeClassification.SCALAR then
+      //       diffArguments.current_grad := Expression.MULTARY({current_grad, exp2}, {}, mulOpAdjoint);
+      //     (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
+
+      //     diffArguments.current_grad := Expression.MULTARY({current_grad, exp1}, {}, mulOpAdjoint);
+      //     (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
+
+      //     diffArguments.current_grad := current_grad;
+      //     // create addition operator from the size classification of original multiplication operator
+      //     addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
+      // then (Expression.MULTARY(
+      //         {Expression.BINARY(exp1, operator, diffExp2),
+      //          Expression.BINARY(diffExp1, operator, exp2)},
+      //         {},
+      //         addOp
+      //       ),
+      //       diffArguments);
+
       case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
-        algorithm
-          mulOpAdjoint := makeMulFromOperator(operator);
-          current_grad := diffArguments.current_grad; // upstream gradient
+      algorithm
+        // Upstream gradient
+        current_grad := diffArguments.current_grad;
 
-          // upstream gradient * local gradient
-          diffArguments.current_grad := Expression.MULTARY({current_grad, exp2}, {}, mulOpAdjoint);
-          (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
+        // Type / rank info
+        ty1 := Expression.typeOf(exp1);
+        ty2 := Expression.typeOf(exp2);
+        r1 := if Type.isArray(ty1) then Type.dimensionCount(ty1) else 0;
+        r2 := if Type.isArray(ty2) then Type.dimensionCount(ty2) else 0;
 
-          diffArguments.current_grad := Expression.MULTARY({current_grad, exp1}, {}, mulOpAdjoint);
-          (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
+        isVec1 := (r1 == 1);
+        isVec2 := (r2 == 1);
+        isMat1 := (r1 == 2);
+        isMat2 := (r2 == 2);
 
-          diffArguments.current_grad := current_grad;
-          // create addition operator from the size classification of original multiplication operator
-          sizeClass := Operator.classifyAddition(operator);
-          addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
+        // Original size classification (kept for forward combination)
+        (_, sizeClass) := Operator.classify(operator);
+        print("differentiateBinary: sizeClass " + Operator.sizeClassificationString(sizeClass) + "\n");
+        // Decide shape case
+        if isVec1 and isVec2 and sizeClass <> NFOperator.SizeClassification.ELEMENT_WISE then
+          // Inner product
+          grad_exp1 := Expression.BINARY(
+            current_grad,
+            Operator.fromClassification(
+              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.SCALAR_ARRAY),
+              operator.ty),
+            exp2); // G * y
+          grad_exp2 := Expression.BINARY(
+            current_grad,
+            Operator.fromClassification(
+              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.SCALAR_ARRAY),
+              operator.ty),
+            exp1); // G * x
+
+        elseif isMat1 and isVec2 then
+          // Matrix * Vector
+          grad_exp1 := Expression.BINARY(
+            current_grad,
+            Operator.fromClassification(
+              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.VECTOR_MATRIX),
+              operator.ty),
+            typeTransposeCall(exp2));              // G * xᵀ
+          grad_exp2 := Expression.BINARY(
+            typeTransposeCall(exp1),
+            Operator.fromClassification(
+              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX_VECTOR),
+              operator.ty),
+            current_grad);                     // Aᵀ * G
+
+        elseif isVec1 and isMat2 then
+            // Vector * Matrix
+            // grad w.r.t exp1 (x): B * Gᵀ  -> treat Gᵀ via transpose(current_grad)
+            grad_exp1 := Expression.BINARY(
+              exp2,
+              Operator.fromClassification(
+                (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX_VECTOR),
+                operator.ty),
+              typeTransposeCall(current_grad));    // B * Gᵀ  (shape n)
+            // grad w.r.t exp2 (B): xᵀ * G
+            grad_exp2 := Expression.BINARY(
+              typeTransposeCall(exp1),
+              Operator.fromClassification(
+                (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX),
+                operator.ty),
+              current_grad);                   // xᵀ * G  (outer product)
+
+        elseif isMat1 and isMat2 then
+          // Matrix * Matrix
+          grad_exp1 := Expression.BINARY(
+            current_grad,
+            Operator.fromClassification(
+              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX),
+              operator.ty),
+            typeTransposeCall(exp2));              // G * Bᵀ
+          grad_exp2 := Expression.BINARY(
+            typeTransposeCall(exp1),
+            Operator.fromClassification(
+              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX),
+              operator.ty),
+            current_grad);                     // Aᵀ * G
+
+        elseif sizeClass == NFOperator.SizeClassification.ELEMENT_WISE and
+               ((isVec1 and isVec2) or (isMat1 and isMat2)) then
+          // Element-wise Hadamard
+          grad_exp1 := Expression.MULTARY({current_grad, exp2}, {}, makeMulFromOperator(operator)); // G .* Y
+          grad_exp2 := Expression.MULTARY({current_grad, exp1}, {}, makeMulFromOperator(operator)); // G .* X
+
+        else
+          // Fallback (scalar / mixed / broadcast)
+          grad_exp1 := Expression.MULTARY({current_grad, exp2}, {}, makeMulFromOperator(operator));
+          grad_exp2 := Expression.MULTARY({current_grad, exp1}, {}, makeMulFromOperator(operator));
+        end if;
+
+        // Reverse recurse: exp1
+        diffArguments.current_grad := grad_exp1;
+        (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
+
+        // Reverse recurse: exp2
+        diffArguments.current_grad := grad_exp2;
+        (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
+
+        // Restore upstream
+        diffArguments.current_grad := current_grad;
+
+        // Forward derivative assembly: f*g' + f'*g
+        sizeClass := Operator.classifyAddition(operator);
+        addOp := Operator.fromClassification(
+          (NFOperator.MathClassification.ADDITION, sizeClass),
+          operator.ty);
+
       then (Expression.MULTARY(
-              {Expression.BINARY(exp1, operator, diffExp2),
-               Expression.BINARY(diffExp1, operator, exp2)},
-              {},
-              addOp
-            ),
-            diffArguments);
+          {Expression.BINARY(exp1, operator, diffExp2),
+            Expression.BINARY(diffExp1, operator, exp2)},
+          {},
+          addOp), diffArguments);
 
       // Division (DIV, DIV_EW, ...)
       // (f / g)' = (f'g - fg') / g^2
@@ -2223,11 +2367,17 @@ public
       case Expression.MULTARY(arguments = arguments, inv_arguments = {}, operator = operator)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
         algorithm
-          // create addition operator
-          (_, sizeClass) := Operator.classify(operator);
-          addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
-          // the adjoint is handled inside here
-          (new_arguments, diffArguments) := differentiateMultaryMultiplicationArgs(arguments, diffArguments, operator);
+          if listLength(arguments) == 2 then
+            // for two arguments just use binary differentiation
+            (diff_arg, diffArguments) := differentiateBinary(Expression.BINARY(listGet(arguments, 1), makeMulFromOperator(operator), listGet(arguments, 2)), diffArguments);
+            new_arguments := {diff_arg};
+          else
+            // create addition operator
+            (_, sizeClass) := Operator.classify(operator);
+            addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
+            // the adjoint is handled inside here
+            (new_arguments, diffArguments) := differentiateMultaryMultiplicationArgs(arguments, diffArguments, operator);
+          end if;
       then Expression.MULTARY(new_arguments, {}, addOp);
 
       // Dot calculations (MUL, DIV, MUL_EW, DIV_EW, ...)
@@ -2473,17 +2623,71 @@ public
       mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
     end makeMulFromOperator;
 
-    function builtinPartials1Arg
-      input String name;
-      input Expression arg1;
-      output list<Expression> partials;
-    protected
-      Expression p;
+    function typeTransposeCall
+    "Create a typed builtin transpose(mat) call without expanding mat.
+     Returns mat if it is not an array with at least 2 dimensions."
+    input Expression mat;
+    output Expression tr;
+  protected
+    Type inTy = Expression.typeOf(mat);
+    list<Type.Dimension> dims;
+    Type elTy;
+    Type resTy;
+    NFCall call;
+    NFPrefixes.Variability var = Expression.variability(mat);
+    NFPrefixes.Purity pur = Expression.purity(mat);
+    NFFunction.Function TRANSPOSE_FUNC;
+  algorithm
+    // Only handle array types
+    if not Type.isArray(inTy) then
+      tr := mat;
+      return;
+    end if;
+
+    elTy := Type.arrayElementType(inTy);
+    dims := Type.arrayDims(inTy);
+
+    // Need at least 2 dimensions to transpose
+    if listLength(dims) < 2 then
+      tr := mat;
+      return;
+    end if;
+
+    // Swap first two dimensions; keep the rest
+    resTy := Type.ARRAY(
+      elTy,
+      listAppend({listGet(dims,2), listGet(dims,1)}, listRest(listRest(dims)))
+    );
+
+    // Build a minimal builtin function descriptor (local, not globally registered)
+    TRANSPOSE_FUNC :=
+      NFFunction.Function.FUNCTION(
+        Absyn.Path.IDENT("transpose"),
+        NFInstNode.EMPTY_NODE(),
+        {}, {}, {}, {},
+        resTy,
+        DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+        {}, {}, listArray({}),
+        Pointer.createImmutable(NFFunction.FunctionStatus.BUILTIN),
+        Pointer.createImmutable(0));
+
+    call := NFCall.makeTypedCall(TRANSPOSE_FUNC, {mat}, var, pur, resTy);
+    tr := Expression.CALL(call);
+  end typeTransposeCall;
+
+    // Helper: build matrix * vector (or matrix * matrix) MULTARY with a proper mul operator
+    function makeMul
+      input Expression a;
+      input Expression b;
+      input Operator.SizeClassification sc;
+      input Type ty;
+      output Expression res;
     algorithm
-      // Reuse differentiateBuiltinCall1Arg but remove inner derivative logic:
-      p := differentiateBuiltinCall1Arg(name, arg1); // returns df/dx
-      partials := if Expression.isZero(p) then {} else {p};
-    end builtinPartials1Arg;
+      res := Expression.BINARY(
+        a,
+        Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sc), ty),
+        b);
+    end makeMul;
 
   annotation(__OpenModelica_Interface="backend");
 end NBDifferentiate;

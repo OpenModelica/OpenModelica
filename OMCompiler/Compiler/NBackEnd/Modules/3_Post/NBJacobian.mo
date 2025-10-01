@@ -50,6 +50,7 @@ protected
   import SimplifyExp = NFSimplifyExp;
   import Type = NFType;
   import Variable = NFVariable;
+  import Subscript = NFSubscript;
 
   // Backend imports
   import Adjacency = NBAdjacency;
@@ -1145,7 +1146,6 @@ protected
     rhs := Expression.MULTARY(terms, {}, addOp);
   end buildAdjointRhs;
 
-
   function jacobianSymbolicAdjoint2 extends Module.jacobianInterface;
   protected
     list<StrongComponent> comps, diffed_comps;
@@ -1164,7 +1164,7 @@ protected
     UnorderedMap<ComponentRef, ExpressionList> adjoint_map;
     ExpressionList terms;
     Expression lhsExpr, rhsExpr;
-    Pointer<Variable> lhsVarPtr;
+    Pointer<Variable> lhsVarPtr, p;
     Pointer<NBEquation.Equation> eqPtr;
     Integer i, i_idx;
     ComponentRef newC, baseCref;
@@ -1180,7 +1180,10 @@ protected
     ExpressionList sc_terms, existing;
     Expression scalarRhs, arrayExpr, unitVec, vectorTerm, aggregatedVec, transformed;
     Type elementTy;
+    Boolean exists;
+    String newName;
   algorithm
+    newName := name + "_ADJ";
     if Util.isSome(strongComponents) then
       // filter all discrete strong components and differentiate the others
       // todo: mixed algebraic loops should be here without the discrete subsets
@@ -1190,22 +1193,26 @@ protected
     end if;
 
     // create seed vars
-    for v in VariablePointers.toList(seedCandidates) loop makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), init = init); end for;
+    for v in VariablePointers.toList(seedCandidates) loop makeVarTraverse(v, newName, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), init = init); end for;
     //VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = pDer_vars_ptr, map = diff_map, makeVar = BVariable.makePDerVar(isTmp = false), init = init));
     res_vars := Pointer.access(pDer_vars_ptr);
+
+    print("res vars after pDer creation:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(res_vars), "Res Vars") + "\n");
 
     // create pDer vars (also filters out discrete vars)
     (old_res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
     (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(init = init));
 
-    for v in old_res_vars loop makeVarTraverse(v, name, seed_vars_ptr, diff_map, BVariable.makeSeedVar, init = init); end for;
+    print("tmp vars after pDer creation:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(tmp_vars), "Tmp Vars") + "\n");
+
+    for v in old_res_vars loop makeVarTraverse(v, newName, seed_vars_ptr, diff_map, BVariable.makeSeedVar, init = init); end for;
     seed_vars := Pointer.access(seed_vars_ptr);
 
     pDer_vars_ptr := Pointer.create({});
-    for v in tmp_vars loop makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), init = init); end for;
+    for v in tmp_vars loop makeVarTraverse(v, newName, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), init = init); end for;
     tmp_vars := Pointer.access(pDer_vars_ptr);
 
-    // create empty adjoint map with seed vars and tmp vars as keys mapping to empty lists
+    // // create empty adjoint map with seed vars and tmp vars as keys mapping to empty lists
     adjoint_map := UnorderedMap.new<ExpressionList>(ComponentRef.hash, ComponentRef.isEqual);
     for v in res_vars loop
       UnorderedMap.addNew(BVariable.getVarName(v), {}, adjoint_map);
@@ -1216,6 +1223,18 @@ protected
         if not UnorderedMap.contains(scalarCref, adjoint_map) then
           UnorderedMap.addNew(scalarCref, {}, adjoint_map);
         end if;
+        // ensure scalar pDer variable exists exactly once (avoid using List.contains with wrong type)
+        exists := false;
+        for pExisting in res_vars loop
+          if ComponentRef.isEqual(BVariable.getVarName(pExisting), scalarCref) then
+            exists := true;
+            break;
+          end if;
+        end for;
+        if not exists then
+          (_, p) := BVariable.makePDerVar(scalarCref, newName, false);
+          res_vars := p :: res_vars;
+        end if;
       end for;
     end for;
     for v in tmp_vars loop
@@ -1225,8 +1244,22 @@ protected
         if not UnorderedMap.contains(scalarCref, adjoint_map) then
           UnorderedMap.addNew(scalarCref, {}, adjoint_map);
         end if;
+        exists := false;
+        for pExisting in tmp_vars loop
+          if ComponentRef.isEqual(BVariable.getVarName(pExisting), scalarCref) then
+            exists := true;
+            break;
+          end if;
+        end for;
+        if not exists then
+          (_, p) := BVariable.makePDerVar(scalarCref, newName, true);
+          tmp_vars := p :: tmp_vars;
+        end if;
       end for;
     end for;
+
+    print("res vars after scalar addition:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(res_vars), "Res Vars") + "\n");
+    print("tmp vars after scalar addition:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(tmp_vars), "Tmp Vars") + "\n");
 
     print("Adjoint map before:\n" + adjointMapToString(SOME(adjoint_map)) + "\n");
 
@@ -1249,7 +1282,7 @@ protected
     print(boolString(partialCandidates.scalarized));
 
     // differentiate all strong components
-    (_, diffArguments) := Differentiate.differentiateStrongComponentListAdjoint(comps, diffArguments, idx, name, getInstanceName());
+    (_, diffArguments) := Differentiate.differentiateStrongComponentListAdjoint(comps, diffArguments, idx, newName, getInstanceName());
     funcTree := diffArguments.funcTree;
 
     print("Adjoint map after:\n" + adjointMapToString(diffArguments.adjoint_map) + "\n");
@@ -1318,63 +1351,63 @@ protected
 
     print("Adjoint map collapsed:\n" + adjointMapToString(diffArguments.adjoint_map) + "\n");
 
-    // Re-orient terms for non-scalar (array) LHS variables:
-    // For each term of the form (seed_vector * partial_matrix) rewrite to transpose(partial_matrix) * seed_vector.
-    // This is a post-processing step to avoid interfering with accumulation logic.
-    if Util.isSome(diffArguments.adjoint_map) then
-      adjoint_map := Util.getOption(diffArguments.adjoint_map);
+    // // Re-orient terms for non-scalar (array) LHS variables:
+    // // For each term of the form (seed_vector * partial_matrix) rewrite to transpose(partial_matrix) * seed_vector.
+    // // This is a post-processing step to avoid interfering with accumulation logic.
+    // if Util.isSome(diffArguments.adjoint_map) then
+    //   adjoint_map := Util.getOption(diffArguments.adjoint_map);
 
-      for lhsKey in UnorderedMap.keyList(adjoint_map) loop
-        // Only for array LHS (rank > 0)
-        if not Type.isArray(ComponentRef.getComponentType(lhsKey)) then
-          continue;
-        end if;
+    //   for lhsKey in UnorderedMap.keyList(adjoint_map) loop
+    //     // Only for array LHS (rank > 0)
+    //     if not Type.isArray(ComponentRef.getComponentType(lhsKey)) then
+    //       continue;
+    //     end if;
 
-        terms := UnorderedMap.getOrFail(lhsKey, adjoint_map);
-        if listEmpty(terms) then
-          continue;
-        end if;
+    //     terms := UnorderedMap.getOrFail(lhsKey, adjoint_map);
+    //     if listEmpty(terms) then
+    //       continue;
+    //     end if;
 
-        new_terms := {};
-        for t in terms loop
-          transformed := match t
-            local
-              Expression a1, a2;
-              Operator op;
-              Expression trA;
-              Expression transformedTerm;
-              Type t1, t2;
-            // Binary: seed (rank1) * partial (rank2)
-            case Expression.BINARY(exp1 = a1, operator = op, exp2 = a2)
-              guard(Operator.getMathClassification(op) == NFOperator.MathClassification.MULTIPLICATION
-                    and Type.isArray(Expression.typeOf(a1)) and Type.dimensionCount(Expression.typeOf(a1)) == 1
-                    and Type.isArray(Expression.typeOf(a2)) and Type.dimensionCount(Expression.typeOf(a2)) == 2)
-              algorithm
-                trA := typeTransposeCall(a2);
-                transformedTerm := matVecMul(trA, a1);
-              then transformedTerm;
+    //     new_terms := {};
+    //     for t in terms loop
+    //       transformed := match t
+    //         local
+    //           Expression a1, a2;
+    //           Operator op;
+    //           Expression trA;
+    //           Expression transformedTerm;
+    //           Type t1, t2;
+    //         // Binary: seed (rank1) * partial (rank2)
+    //         case Expression.BINARY(exp1 = a1, operator = op, exp2 = a2)
+    //           guard(Operator.getMathClassification(op) == NFOperator.MathClassification.MULTIPLICATION
+    //                 and Type.isArray(Expression.typeOf(a1)) and Type.dimensionCount(Expression.typeOf(a1)) == 1
+    //                 and Type.isArray(Expression.typeOf(a2)) and Type.dimensionCount(Expression.typeOf(a2)) == 2)
+    //           algorithm
+    //             trA := typeTransposeCall(a2);
+    //             transformedTerm := matVecMul(trA, a1);
+    //           then transformedTerm;
 
-            // MULTARY with exactly two arguments {seed, partial}
-            case Expression.MULTARY(arguments = {a1, a2}, inv_arguments = {}, operator = op)
-              guard(Operator.getMathClassification(op) == NFOperator.MathClassification.MULTIPLICATION
-                    and Type.isArray(Expression.typeOf(a1)) and Type.dimensionCount(Expression.typeOf(a1)) == 1
-                    and Type.isArray(Expression.typeOf(a2)) and Type.dimensionCount(Expression.typeOf(a2)) == 2)
-              algorithm
-                trA := typeTransposeCall(a2);
-                transformedTerm := matVecMul(trA, a1);
-              then transformedTerm;
+    //         // MULTARY with exactly two arguments {seed, partial}
+    //         case Expression.MULTARY(arguments = {a1, a2}, inv_arguments = {}, operator = op)
+    //           guard(Operator.getMathClassification(op) == NFOperator.MathClassification.MULTIPLICATION
+    //                 and Type.isArray(Expression.typeOf(a1)) and Type.dimensionCount(Expression.typeOf(a1)) == 1
+    //                 and Type.isArray(Expression.typeOf(a2)) and Type.dimensionCount(Expression.typeOf(a2)) == 2)
+    //           algorithm
+    //             trA := typeTransposeCall(a2);
+    //             transformedTerm := matVecMul(trA, a1);
+    //           then transformedTerm;
 
-            else t;
-          end match;
-          new_terms := transformed :: new_terms;
-        end for;
+    //         else t;
+    //       end match;
+    //       new_terms := transformed :: new_terms;
+    //     end for;
 
-        UnorderedMap.add(lhsKey, listReverse(new_terms), adjoint_map);
-      end for;
+    //     UnorderedMap.add(lhsKey, listReverse(new_terms), adjoint_map);
+    //   end for;
 
-      diffArguments.adjoint_map := SOME(adjoint_map);
-      print("Adjoint map oriented:\n" + adjointMapToString(diffArguments.adjoint_map) + "\n");
-    end if;
+    //   diffArguments.adjoint_map := SOME(adjoint_map);
+    //   print("Adjoint map oriented:\n" + adjointMapToString(diffArguments.adjoint_map) + "\n");
+    // end if;
 
 
     if Util.isSome(diffArguments.adjoint_map) then
@@ -1403,7 +1436,7 @@ protected
         eqPtr := NBEquation.Equation.makeAssignment(
           lhsExpr, rhsExpr,
           Pointer.create(i),
-          "JAC_ADJ",
+          newName,
           NBEquation.Iterator.EMPTY(),
           BackendDAE.EquationAttributes.default(NBEquation.EquationKind.CONTINUOUS, false));
 
@@ -1423,8 +1456,6 @@ protected
 
         i := i + 1;
       end for;
-
-      diffed_comps := listReverse(diffed_comps);
     end if;
 
     // collect var data (most of this can be removed)
@@ -1494,7 +1525,7 @@ protected
     // (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
 
     jacobian := SOME(Jacobian.JACOBIAN(
-      name              = name,
+      name              = newName,
       jacType           = jacType,
       varData           = varDataJac,
       comps             = listArray(diffed_comps),
