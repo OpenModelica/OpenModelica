@@ -174,7 +174,7 @@ pipeline {
                                         + " -DCMAKE_INSTALL_PREFIX=build")
               sh "build/bin/omc --version"
             }
-            stash name: 'omc-cmake-gcc', includes: 'build_cmake/**, build/**'
+            //stash name: 'omc-cmake-gcc', includes: 'build_cmake/**, build/**'
           }
         }
         stage('cmake-macos-arm64-gcc') {
@@ -703,16 +703,13 @@ pipeline {
           }
           steps {
             echo "Running on: ${env.NODE_NAME}"
-            unstash 'omc-cmake-gcc'
-            sh "ls build_cmake/"
             script {
               sh "cmake --version"
-              sh """
-                cmake -S ./ -B ./build_cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOM_USE_CCACHE=OFF
-              """
+              sh "cmake -S ./ -B ./build_cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOM_USE_CCACHE=OFF"
               sh "cmake --build ./build_cmake --parallel ${common.numPhysicalCPU()} --target ctestsuite-depends"
               sh "cmake --build ./build_cmake --parallel ${common.numPhysicalCPU()} --target test"
             }
+            sh "test -f ./build_cmake/junit.xml"
           }
           post {
             always {

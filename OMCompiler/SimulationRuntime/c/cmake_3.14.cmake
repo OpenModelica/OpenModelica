@@ -159,4 +159,5 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 add_subdirectory(
   ${CMAKE_SOURCE_DIR}/testsuite/CTest/SimulationRuntime/c
   ${CMAKE_BINARY_DIR}/testsuite/CTest/SimulationRuntime/c
+  EXCLUDE_FROM_ALL
 )
