@@ -278,7 +278,7 @@ bool LibraryTreeItem::isDocumentationClass()
  * Returns the Access annotation.
  * \return
  */
-LibraryTreeItem::Access LibraryTreeItem::getAccess()
+LibraryTreeItem::Access LibraryTreeItem::getAccess() const
 {
   /* Activate the access annotations if the class is encrypted
    * OR if the LibraryTreeItem's mAccessAnnotations is marked true based on the activate access annotation setting.
