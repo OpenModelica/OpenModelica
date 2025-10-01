@@ -174,7 +174,7 @@ pipeline {
                                         + " -DCMAKE_INSTALL_PREFIX=build")
               sh "build/bin/omc --version"
             }
-            stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build/**'
+            stash name: 'omc-cmake-gcc', includes: 'build/**'
           }
         }
         stage('cmake-macos-arm64-gcc') {
