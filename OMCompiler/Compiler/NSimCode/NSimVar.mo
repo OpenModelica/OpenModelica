@@ -1009,7 +1009,7 @@ public
     protected
       SimCode.SimCodeIndices simCodeIndices = Pointer.access(indices_ptr);
     algorithm
-      () := match (var.ty, varType)
+      () := match (Type.arrayElementType(var.ty), varType)
 
         case (Type.REAL(), VarType.SIMULATION)
           algorithm
