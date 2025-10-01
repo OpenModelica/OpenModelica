@@ -730,25 +730,55 @@ uniontype InstNode
     "Returns the enclosing scopes of a node as a path."
     input InstNode node;
     input Boolean ignoreRedeclare = false;
+    input Boolean ignoreBaseClass = false;
     output Absyn.Path path;
   algorithm
     path := AbsynUtil.stringListPath(
-      list(InstNode.name(n) for n in enclosingScopeList(node, ignoreRedeclare)));
+      list(InstNode.name(n) for n in enclosingScopeList(node, ignoreRedeclare, ignoreBaseClass)));
   end enclosingScopePath;
 
   function enclosingScopeList
     "Returns the enclosing scopes of a node as a list of nodes."
     input InstNode node;
     input Boolean ignoreRedeclare = false;
+    input Boolean ignoreBaseClass = false;
     output list<InstNode> res = {};
   protected
     InstNode scope = node;
   algorithm
     while not isTopScope(scope) loop
       res := scope :: res;
-      scope := classScope(parentScope(scope, ignoreRedeclare));
+      scope := classScope(enclosingScope(scope, ignoreRedeclare, ignoreBaseClass));
     end while;
   end enclosingScopeList;
+
+  function enclosingScope
+    input InstNode node;
+    input Boolean ignoreRedeclare = false;
+    input Boolean ignoreBaseClass = false;
+    output InstNode scope;
+  protected
+    InstNodeType it;
+    InstNode orig_node;
+  algorithm
+    scope := match node
+      case CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(originalNode = SOME(orig_node)))
+        guard ignoreRedeclare
+        then enclosingScope(orig_node, ignoreRedeclare);
+
+      case CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(parent = scope))
+        guard ignoreRedeclare
+        then scope;
+
+      case CLASS_NODE(nodeType = it as InstNodeType.BASE_CLASS())
+        guard ignoreBaseClass
+        then enclosingScope(it.parent);
+
+      case CLASS_NODE() then node.parentScope;
+      case COMPONENT_NODE() then enclosingScope(classScope(node));
+      case IMPLICIT_SCOPE() then node.parentScope;
+    end match;
+  end enclosingScope;
 
   function classScope
     input InstNode node;
