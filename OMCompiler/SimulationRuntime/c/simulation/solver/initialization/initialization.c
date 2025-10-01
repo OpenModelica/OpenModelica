@@ -259,7 +259,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   const char* sep = ",";
   long i;
   MODEL_DATA *mData = data->modelData;
-  int homotopySupport = 0;
+  modelica_boolean homotopySupport = FALSE;
   int solveWithGlobalHomotopy;
   int adaptiveGlobal;
   int kinsol = 0;
@@ -271,21 +271,20 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
   for(i=0; i<mData->nNonLinearSystems; i++) {
     if (data->simulationInfo->nonlinearSystemData[i].homotopySupport) {
-      homotopySupport = 1;
+      homotopySupport = TRUE;
       break;
     }
   }
 #endif
-  /* useHomotopy=1: global homotopy (equidistant lambda) */
-  if (data->callback->useHomotopy == 1 && omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] != 1 && omc_flag[FLAG_NO_HOMOTOPY_ON_FIRST_TRY] != 1) {
+  if (homotopySupport && omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] != 1 && omc_flag[FLAG_NO_HOMOTOPY_ON_FIRST_TRY] != 1) {
       omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] = 1;
       infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. "
                                             "To disable initialization with homotopy operator use \"-noHomotopyOnFirstTry\".");
   }
 
-  adaptiveGlobal = data->callback->useHomotopy == 2;  /* new global homotopy approach (adaptive lambda) */
+  adaptiveGlobal = data->callback->homotopyMethod == GLOBAL_ADAPTIVE_HOMOTOPY;  /* new global homotopy approach (adaptive lambda) */
   solveWithGlobalHomotopy = homotopySupport
-                            && ((data->callback->useHomotopy == 1 && init_lambda_steps >= 1) || adaptiveGlobal);
+                            && ((data->callback->homotopyMethod == GLOBAL_EQUIDISTANT_HOMOTOPY && init_lambda_steps >= 1) || adaptiveGlobal);
 
   /* initialize all relations that are ZeroCrossings */
   storePreValues(data);
@@ -312,7 +311,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "Automatically set -homotopyOnFirstTry, because trying without homotopy first is not supported for the adaptive global approach in combination with KINSOL.");
     } else {
       if (adaptiveGlobal)
-        data->callback->useHomotopy = 1;  /* global homotopy (equidistant lambda) */
+        data->callback->homotopyMethod = GLOBAL_EQUIDISTANT_HOMOTOPY;  /* global homotopy (equidistant lambda) */
       data->simulationInfo->lambda = 1.0;
       infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "Try to solve the initialization problem without homotopy first.");
       data->callback->functionInitialEquations(data, threadData);
@@ -324,7 +323,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
     if (adaptiveGlobal)
-      data->callback->useHomotopy = 2; /* new global homotopy approach (adaptive lambda) */
+      data->callback->homotopyMethod = GLOBAL_ADAPTIVE_HOMOTOPY; /* new global homotopy approach (adaptive lambda) */
     if(solveWithGlobalHomotopy) {
       if (!kinsol)
         warningStreamPrint(OMC_LOG_ASSERT, 0, "Failed to solve the initialization problem without homotopy method. If homotopy is available the homotopy method is used now.");
@@ -339,7 +338,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   /* If there is homotopy in the model and the equidistant global homotopy approach is activated
      and solving without homotopy failed or is not wanted,
      use EQUIDISTANT GLOBAL HOMOTOPY METHOD. */
-  if (data->callback->useHomotopy == 1 && solveWithGlobalHomotopy)
+  if (data->callback->homotopyMethod == GLOBAL_EQUIDISTANT_HOMOTOPY && solveWithGlobalHomotopy)
   {
     long step;
     double lambda = -1;

@@ -40,7 +40,7 @@ end FuncVectorization1;
 //   b[1] = 1;
 //   b[2] = 2;
 //   b[3] = 3;
-//   c = array(FuncVectorization1.F(1, b[$i1]) for $i1 in 1:3);
+//   c = array(FuncVectorization1.F(1, b[$i0]) for $i0 in 1:3);
 //   c = array(FuncVectorization1.F(b[$i1], 1) for $i1 in 1:3);
 // end FuncVectorization1;
 // endResult

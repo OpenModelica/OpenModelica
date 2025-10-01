@@ -754,9 +754,36 @@ public
               tree.localComponents := local_comps;
             then
               ();
+
+          else algorithm
+            Error.assertion(false, getInstanceName() + " failed for non-instantiated tree.", sourceInfo());
+          then fail();
         end match;
       end if;
     end appendComponentsToInstTree;
+
+    function appendComponentsToFlatTree
+      "Appens a list of local components to a flat class tree."
+      input list<InstNode> components;
+      input output ClassTree tree;
+    algorithm
+      if listEmpty(components) then
+        return;
+      else
+        () := match tree
+
+          case FLAT_TREE()
+            algorithm
+              tree.components := Array.appendList(tree.components, components);
+            then
+              ();
+
+          else algorithm
+            Error.assertion(false, getInstanceName() + " failed for non-flat tree.", sourceInfo());
+          then fail();
+        end match;
+      end if;
+    end appendComponentsToFlatTree;
 
     function flatten
       "Flattens a class tree by creating new arrays for the classes and

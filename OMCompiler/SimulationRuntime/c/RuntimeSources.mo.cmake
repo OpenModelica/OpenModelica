@@ -58,4 +58,3 @@ encapsulated package RuntimeSources
 
 annotation(__OpenModelica_Interface="backend");
 end RuntimeSources;
-

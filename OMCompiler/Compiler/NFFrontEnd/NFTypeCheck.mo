@@ -2121,7 +2121,7 @@ algorithm
     slot1 :: slots1 := slots1;
     slot2 :: slots2 := slots2;
 
-    if isSome(slot2.default) and not isSome(slot1.default) then
+    if isSome(slot2.default) and isNone(slot1.default) then
       matchKind := MatchKind.NOT_COMPATIBLE;
       return;
     end if;
@@ -2130,7 +2130,7 @@ algorithm
   // The actual type can have more inputs than expected if the extra inputs have
   // default arguments.
   for slot in slots1 loop
-    if not isSome(slot.default) then
+    if isNone(slot.default) then
       matchKind := MatchKind.NOT_COMPATIBLE;
       return;
     end if;

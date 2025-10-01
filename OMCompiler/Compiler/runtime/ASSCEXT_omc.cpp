@@ -44,11 +44,12 @@
 #include <stdlib.h>
 #include "errorext.h"
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 extern void ASSC_setMatrix(modelica_integer nvars, modelica_integer neqns, modelica_integer nz, modelica_metatype adj, modelica_metatype val)
 {
-
   nv = nvars;
   ne = neqns;
   nnz = nz;
@@ -66,20 +67,26 @@ extern void ASSC_setMatrix(modelica_integer nvars, modelica_integer neqns, model
   // initialize values
   if (col_val) free(col_val);
   col_val = (int*) malloc(nz * sizeof(int));
+  // initialize rows
+  rows = (LIST**) malloc(ne * sizeof(LIST*));
 
   col_ptrs[0] = 0;
-  for(i=0; i<neqns; ++i) {
+  for (i=0; i<ne; ++i) {
+    rows[i] = allocList(allocAsscElement, free, copyAsscElement);
     // ToDo: check if adj_col and val_col have same size
     modelica_metatype adj_col = MMC_STRUCTDATA(adj)[i];
     modelica_metatype val_col = MMC_STRUCTDATA(val)[i];
 
-    while((MMC_GETHDR(adj_col) == MMC_CONSHDR) && (MMC_GETHDR(val_col) == MMC_CONSHDR)) {
+    while ((MMC_GETHDR(adj_col) == MMC_CONSHDR) && (MMC_GETHDR(val_col) == MMC_CONSHDR)) {
       adj_i = MMC_UNTAGFIXNUM(MMC_CAR(adj_col));
       val_i = MMC_UNTAGFIXNUM(MMC_CAR(val_col));
       col_ids[j]    = (int)adj_i-1;
       col_val[j++]  = (int)val_i;
       adj_col = MMC_CDR(adj_col);
       val_col = MMC_CDR(val_col);
+
+      ASSC_ELEMENT elem = {.index = ((int)adj_i)-1, .value = (int)val_i};
+      listPushBack(rows[i], &elem);
     }
     // set next starting point
     col_ptrs[i+1] = j;
@@ -91,22 +98,35 @@ extern void ASSC_freeMatrix()
   if (col_ptrs) free(col_ptrs);
   if (col_ids) free(col_ids);
   if (col_val) free(col_val);
+  if (rows){
+    for (int i=0; i<ne; i++)
+      freeList(rows[i]);
+    free(rows);
+  }
+
   col_ptrs=NULL;
   col_ids=NULL;
   col_val=NULL;
+  rows=NULL;
 }
 
 extern void ASSC_printMatrix()
 {
   cout << "Sparse Matrix:" << endl << "================" << endl;
 
-  for (int i=0; i<ne; ++i)
-  {
+  for (int i=0; i<ne; ++i) {
     cout << i << ": ";
-    for(int j=col_ptrs[i]; j < col_ptrs[i+1]; ++j)
+    for (int j=col_ptrs[i]; j < col_ptrs[i+1]; ++j)
       cout << "(" << col_ids[j] << "," << col_val[j] << ")";
     cout << endl;
   }
+
+  for (int i=0; i<ne; ++i) {
+    applyList(rows[i], printAsscElement);
+    printf("\n");
+  }
 }
 
+#ifdef __cplusplus
 }
+#endif

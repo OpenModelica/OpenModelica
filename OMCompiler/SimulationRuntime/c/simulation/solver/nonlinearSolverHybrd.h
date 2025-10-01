@@ -103,4 +103,3 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
 #endif
 
 #endif
-

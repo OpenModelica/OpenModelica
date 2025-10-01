@@ -67,6 +67,7 @@ package Absyn
       Boolean encapsulatedPrefix;
       Restriction restriction;
       ClassDef body;
+      list<String> commentsBeforeClass;
       list<String> commentsBeforeEnd;
       list<String> commentsAfterEnd;
       builtin.SourceInfo info;

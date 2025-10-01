@@ -1661,7 +1661,7 @@ namespace ModelInstance
     return value;
   }
 
-  FlatModelica::Expression* Model::getVariableBinding(const QString &variableName)
+  FlatModelica::Expression* Model::getVariableValueOrBinding(const QString &variableName, bool value) const
   {
     QString curName;
     bool last;
@@ -1690,16 +1690,16 @@ namespace ModelInstance
       if (pElement->isComponent()) {
         if (pElement->getName().compare(curName) == 0) {
           if (last) {
-            return &pElement->getBinding();
+            return value ? &pElement->getValue() : &pElement->getBinding();
           } else {
             if (!pElement->getModel()) {
               return nullptr;
             }
-            return pElement->getModel()->getVariableBinding(StringHandler::removeFirstWordAfterDot(variableName));
+            return pElement->getModel()->getVariableValueOrBinding(StringHandler::removeFirstWordAfterDot(variableName), value);
           }
         }
       } else if (pElement->isExtend() && pElement->getModel()) {
-        auto expression = pElement->getModel()->getVariableBinding(variableName);
+        auto expression = pElement->getModel()->getVariableValueOrBinding(variableName, value);
         if (expression) {
           return expression;
         }
@@ -2367,18 +2367,16 @@ namespace ModelInstance
     if (jsonObject.contains("value")) {
       QJsonObject valueObject = jsonObject.value("value").toObject();
 
-      /* Use "binding" instead of "value"
-       * The binding can either contain the literal value or expression.
-       */
-      /*if (valueObject.contains("value")) {
+      if (valueObject.contains("value")) {
         try {
-          mBinding.deserialize(valueObject.value("value"));
-          mBindingForReset = mBinding;
+          mValue.deserialize(valueObject.value("value"));
         } catch (const std::exception &e) {
           qDebug() << "Failed to deserialize json: " << valueObject.value("value");
           qDebug() << e.what();
         }
-      } else */if (valueObject.contains("binding")) {
+      }
+
+      if (valueObject.contains("binding")) {
         try {
           mBinding.deserialize(valueObject.value("binding"));
           mBindingForReset = mBinding;

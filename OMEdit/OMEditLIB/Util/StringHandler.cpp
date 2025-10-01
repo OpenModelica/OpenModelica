@@ -44,9 +44,9 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QTextCodec>
+#include <QStringBuilder>
 
 #define toAscii toLatin1
-
 
 QString StringHandler::mLastOpenDir;
 
@@ -1806,8 +1806,8 @@ QString StringHandler::trimmedEnd(const QString &str)
  */
 QString StringHandler::joinDerivativeAndPreviousVariable(QString fullVariableName, QString variableName, QString derivativeOrPrevious)
 {
-  int times = (fullVariableName.lastIndexOf(derivativeOrPrevious) / derivativeOrPrevious.size()) + 1;
-  return QString("%1%2%3").arg(QString(derivativeOrPrevious).repeated(times), variableName, QString(")").repeated(times));
+  const int times = fullVariableName.count(derivativeOrPrevious);
+  return derivativeOrPrevious.repeated(times) % variableName % QString(")").repeated(times);
 }
 
 /*!

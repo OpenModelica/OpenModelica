@@ -214,10 +214,8 @@ algorithm
       then
         evalCast(exp1, exp.ty);
 
-    case Expression.UNBOX()
-      algorithm
-        exp1 := evalExp(exp.exp, target);
-      then Expression.UNBOX(exp1, exp.ty);
+    case Expression.BOX()   then evalExp(exp.exp, target);
+    case Expression.UNBOX() then evalExp(exp.exp, target);
 
     case Expression.SUBSCRIPTED_EXP()
       then evalSubscriptedExp(exp.exp, exp.subscripts, target);
@@ -236,6 +234,9 @@ algorithm
         exp1 := evalExp(Mutable.access(exp.exp), target);
       then
         exp1;
+
+    case Expression.INSTANCE_NAME()
+      then evalGetInstanceName(exp.scope);
 
     else exp;
   end match;
@@ -1973,7 +1974,6 @@ algorithm
     case "realClock" then evalRealClock(args);
     case "booleanClock" then evalBooleanClock(args);
     case "solverClock" then evalSolverClock(args);
-    case "getInstanceName" then evalGetInstanceName(listHead(args));
     case "$OMC$PositiveMax" then evalPositiveMax(listGet(args,1),listGet(args,2));
     case "$OMC$inStreamDiv" then listHead(args);
     else
@@ -3101,16 +3101,13 @@ algorithm
 end evalSolverClock;
 
 public function evalGetInstanceName
-  input Expression scopeArg;
+  input InstNode scope;
   output Expression result;
-protected
-  ComponentRef cref;
 algorithm
   // getInstanceName is normally evaluated by the flattening, but we might get
   // here when getInstanceName is used in e.g. a package. In that case use the
-  // scope that was added as an argument during the typing.
-  cref := Expression.toCref(scopeArg);
-  result := Expression.STRING(AbsynUtil.pathString(InstNode.rootPath(ComponentRef.node(cref))));
+  // scope that was saved during the typing.
+  result := Expression.STRING(AbsynUtil.pathString(InstNode.rootPath(scope)));
 end evalGetInstanceName;
 
 protected function evalArrayConstructor

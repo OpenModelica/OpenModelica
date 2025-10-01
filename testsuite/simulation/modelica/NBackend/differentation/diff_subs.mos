@@ -1,0 +1,110 @@
+// name: diff_subs
+// keywords: NewBackend
+// status: correct
+
+loadString("
+record A
+  Real[2,3] x;
+end A;
+
+model diff_subs
+  A[2] a;
+  Real y(start = 0, fixed = true);
+equation
+  a[1].x[2,3] = sin(time);
+  a[2].x[2,3] = cos(time);
+  a[1].x[1,3] = sin(time);
+  a[2].x[1,3] = cos(time);
+  for i in 1:2 loop
+    for j in 1:2 loop
+      a[1].x[i,j] = i*sin(j*time);
+      a[2].x[i,j] = i*cos(j*time);
+    end for;
+  end for;
+  der(y) = sum(a.x);
+end diff_subs;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --generateDynamicJacobian=symbolic -d=debugDifferentiation"); getErrorString();
+
+buildModel(diff_subs); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [FOR-] (2) ($RES_AUX_10)
+// [----] for $i2 in 1:2 loop
+// [----]   [SCAL] (1) $FUN_4[$i2] = cos($i2 * time) ($RES_AUX_11)
+// [----] end for;
+// [AFTER ] [FOR-] (2) ($RES_AUX_10)
+// [----] for $i2 in 1:2 loop
+// [----]   [SCAL] (1) $pDER_ODE_JAC.$FUN_4[$i2] = -0.0 ($RES_AUX_11)
+// [----] end for;
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [FOR-] (4) ($RES_SIM_1)
+// [----] for {$i1 in 1:2, $i2 in 1:2} loop
+// [----]   [SCAL] (1) a[2].x[$i1, $i2] = $i1 * $FUN_4[$i2] ($RES_SIM_2)
+// [----] end for;
+// [AFTER ] [FOR-] (4) ($RES_SIM_1)
+// [----] for {$i1 in 1:2, $i2 in 1:2} loop
+// [----]   [SCAL] (1) $pDER_ODE_JAC.a[2].x[$i1, $i2] = $i1 * $pDER_ODE_JAC.$FUN_4[$i2] ($RES_SIM_2)
+// [----] end for;
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [FOR-] (2) ($RES_AUX_12)
+// [----] for $i2 in 1:2 loop
+// [----]   [SCAL] (1) $FUN_3[$i2] = sin($i2 * time) ($RES_AUX_13)
+// [----] end for;
+// [AFTER ] [FOR-] (2) ($RES_AUX_12)
+// [----] for $i2 in 1:2 loop
+// [----]   [SCAL] (1) $pDER_ODE_JAC.$FUN_3[$i2] = 0.0 ($RES_AUX_13)
+// [----] end for;
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [FOR-] (4) ($RES_SIM_3)
+// [----] for {$i1 in 1:2, $i2 in 1:2} loop
+// [----]   [SCAL] (1) a[1].x[$i1, $i2] = $i1 * $FUN_3[$i2] ($RES_SIM_4)
+// [----] end for;
+// [AFTER ] [FOR-] (4) ($RES_SIM_3)
+// [----] for {$i1 in 1:2, $i2 in 1:2} loop
+// [----]   [SCAL] (1) $pDER_ODE_JAC.a[1].x[$i1, $i2] = $i1 * $pDER_ODE_JAC.$FUN_3[$i2] ($RES_SIM_4)
+// [----] end for;
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $FUN_2 = cos(time) ($RES_AUX_14)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_2 = -0.0 ($RES_AUX_14)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) a[2].x[2, 3] = $FUN_2 ($RES_SIM_7)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.a[2].x[2, 3] = $pDER_ODE_JAC.$FUN_2 ($RES_SIM_7)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) a[2].x[1, 3] = $FUN_2 ($RES_SIM_5)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.a[2].x[1, 3] = $pDER_ODE_JAC.$FUN_2 ($RES_SIM_5)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $FUN_1 = sin(time) ($RES_AUX_15)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_1 = 0.0 ($RES_AUX_15)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) a[1].x[2, 3] = $FUN_1 ($RES_SIM_8)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.a[1].x[2, 3] = $pDER_ODE_JAC.$FUN_1 ($RES_SIM_8)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) a[1].x[1, 3] = $FUN_1 ($RES_SIM_6)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.a[1].x[1, 3] = $pDER_ODE_JAC.$FUN_1 ($RES_SIM_6)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $FUN_5 = sum(a.x) ($RES_AUX_9)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_5 = sum($pDER_ODE_JAC.a.x) ($RES_AUX_9)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.y = $FUN_5 ($RES_SIM_0)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.y = $pDER_ODE_JAC.$FUN_5 ($RES_SIM_0)
+//
+// {"diff_subs", "diff_subs_init.xml"}
+// ""
+// endResult

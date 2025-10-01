@@ -366,12 +366,12 @@ public
 
         // CREF = {...} array equation
         case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.ARRAY()) algorithm
-          elements := list(NFExpression.applySubscripts({Subscript.INDEX(Expression.INTEGER(i))}, lhs) for i in 1:arrayLength(rhs.elements));
+          elements := list(NFExpression.applySubscripts({Subscript.INDEX(Expression.INTEGER(i))}, lhs, true) for i in 1:arrayLength(rhs.elements));
         then inlineArrayEquation(eqn, listArray(elements), rhs.elements, eqn.attr, iter, variables, new_eqns, set, index);
 
         // {...} = CREF array equation
         case Equation.ARRAY_EQUATION(lhs = lhs as Expression.ARRAY(), rhs = rhs as Expression.CREF()) algorithm
-          elements := list(NFExpression.applySubscripts({Subscript.INDEX(Expression.INTEGER(i))}, rhs) for i in 1:arrayLength(lhs.elements));
+          elements := list(NFExpression.applySubscripts({Subscript.INDEX(Expression.INTEGER(i))}, rhs, true) for i in 1:arrayLength(lhs.elements));
         then inlineArrayEquation(eqn, lhs.elements, listArray(elements), eqn.attr, iter, variables, new_eqns, set, index);
 
         // CREF = {... for i in []} array constructor equation

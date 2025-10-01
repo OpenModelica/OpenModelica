@@ -317,6 +317,8 @@ ConnectStream1.mo \
 ConstantConnector1.mo \
 ConstantConnector2.mo \
 ConstantConnector3.mo \
+ConstantMissingBinding1.mo \
+ConstantMissingBinding2.mo \
 const1.mo \
 const10.mo \
 const11.mo \
@@ -707,6 +709,7 @@ FunctionRecordArg2.mo \
 FunctionRecordArg3.mo \
 FunctionRecordArg4.mo \
 FunctionRecordArg5.mo \
+FunctionRecordArg6.mo \
 FunctionRecursive1.mo \
 FunctionRecursive2.mo \
 FunctionSections1.mo \
@@ -834,6 +837,7 @@ InnerOuterReplaceable3.mo \
 InstanceRestriction1.mo \
 InstanceRestriction2.mo \
 InStreamArray.mo \
+InStreamArray2.mo \
 InStreamFlowThreshold.mo \
 InStreamInsideOutside.mo \
 InStreamNominalThreshold.mo \
@@ -1010,6 +1014,7 @@ RecordBinding14.mo \
 RecordBinding15.mo \
 RecordBinding16.mo \
 RecordBinding17.mo \
+RecordBinding18.mo \
 RecordConstructor1.mo \
 RecordConstructor2.mo \
 RecordConstructor3.mo \

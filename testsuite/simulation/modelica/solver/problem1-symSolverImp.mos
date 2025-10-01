@@ -56,6 +56,7 @@ getErrorString();
 // |                 | |       | because density of 0.04 remains under threshold of 0.10.
 // LOG_STDOUT        | info    | The maximum density for using sparse solvers can be specified
 // |                 | |       | using the runtime flag '<-nlssMaxDensity=value>'.
+// LOG_STDOUT        | warning | Integration method 'symSolver' is deprecated and will be removed in a future version of OpenModelica.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

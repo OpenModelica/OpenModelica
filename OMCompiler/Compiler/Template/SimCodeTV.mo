@@ -3987,6 +3987,11 @@ package Expression
     output Boolean hasUnkown;
   end hasUnknownDims;
 
+  function isSimpleLiteralValue
+    input DAE.Exp exp;
+    input Boolean allow_arrays;
+    output Boolean b;
+  end isSimpleLiteralValue;
 end Expression;
 
 package ExpressionDump
@@ -4057,6 +4062,10 @@ package Config
   function globalHomotopy
     output Boolean outBoolean;
   end globalHomotopy;
+
+  function replacedHomotopy
+    output Boolean outBoolean;
+  end replacedHomotopy;
 
   function adaptiveHomotopy
     output Boolean outBoolean;

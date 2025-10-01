@@ -10,6 +10,8 @@ equation
     n = 1;
   elsewhen false then
     n = 2;
+  elsewhen {true, true} then
+    n = 3;
   end when;
 end SimplifyWhen;
 "); getErrorString();
@@ -28,6 +30,8 @@ buildModel(SimplifyWhen); getErrorString();
 //   [----]   n := 1
 //   [----] elsewhen false then
 //   [----]   n := 2
+//   [----] elsewhen {true, true} then
+//   [----]   n := 3
 //   [----] end when;
 // [AFTER ]
 //   [WHEN] (1) ($RES_SIM_0)

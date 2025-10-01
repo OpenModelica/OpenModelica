@@ -1509,7 +1509,7 @@ algorithm
     case (BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns, source=source, attr=eqAttr),repl,_,_,_)
       equation
         (expl1,blst) = replaceExpList1(expl, repl, inFuncTypeExpExpToBooleanOption);
-        b1 = Util.boolOrList(blst);
+        b1 = List.any(blst, Util.id);
         source = ElementSource.addSymbolicTransformationSubstitutionLst(blst,source,expl,expl1);
         (expl2,blst) = ExpressionSimplify.condsimplifyList1(blst,expl1);
         source = ElementSource.addSymbolicTransformationSimplifyLst(blst,source,expl1,expl2);

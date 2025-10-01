@@ -3202,7 +3202,7 @@ void OptionsDialog::addListItems()
   pFMIItem->setText(tr("FMI"));
   // OMSimulator Item
   QListWidgetItem *pOMSimulatorItem = new QListWidgetItem(mpOptionsList);
-  pOMSimulatorItem->setIcon(QIcon(":/Resources/icons/tlm-icon.svg"));
+  pOMSimulatorItem->setIcon(QIcon(":/Resources/icons/ssp-icon.svg"));
   pOMSimulatorItem->setText(tr("OMSimulator/SSP"));
   // Traceability Item
   QListWidgetItem *pTraceabilityItem = new QListWidgetItem(mpOptionsList);
@@ -6158,6 +6158,7 @@ DebuggerPage::DebuggerPage(OptionsDialog *pOptionsDialog)
   mpTransformationalDebuggerGroupBox = new QGroupBox(Helper::transformationalDebugger);
   mpAlwaysShowTransformationsCheckBox = new QCheckBox(tr("Always show %1 after compilation").arg(Helper::transformationalDebugger));
   mpGenerateOperationsCheckBox = new QCheckBox(tr("Generate Operations"));
+  mpGenerateOperationsCheckBox->setChecked(OptionsDefaults::Debugger::generateOperations);
   // set the layout of Transformational Debugger group
   QGridLayout *pTransformationalDebuggerLayout = new QGridLayout;
   pTransformationalDebuggerLayout->setAlignment(Qt::AlignTop);

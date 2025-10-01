@@ -324,10 +324,10 @@ AddSubModelDialog::AddSubModelDialog(GraphicsView *pGraphicsView, const QString 
 /*!
  * \brief AddSubModelDialog::browseSubModelPath
  * Allows the user to select the submodel path and returns it.
- * \param pGraphicsView
+ * \param pName
  * \return
  */
-QString AddSubModelDialog::browseSubModelPath(GraphicsView *pGraphicsView, QString *pName)
+QString AddSubModelDialog::browseSubModelPath(QString *pName)
 {
   QString fileTypes;
   QString path = StringHandler::getOpenFileName(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, fileTypes, NULL);
@@ -345,7 +345,7 @@ QString AddSubModelDialog::browseSubModelPath(GraphicsView *pGraphicsView, QStri
 void AddSubModelDialog::browseSubModelPath()
 {
   QString name = "";
-  QString path = AddSubModelDialog::browseSubModelPath(mpGraphicsView, &name);
+  QString path = AddSubModelDialog::browseSubModelPath(&name);
   if (!path.isEmpty()) {
     mpPathTextBox->setText(path);
     mpNameTextBox->setText(name);

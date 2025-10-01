@@ -139,7 +139,7 @@ algorithm
         info=SOURCEINFO("",false,0,0,0,0,0.0);
         mcom="empty";
       then
-        Absyn.CLASS(id,partial1,false,false,restriction,Absyn.PARTS({},{},classparts,mcom),info);
+        Absyn.CLASS(id,partial1,false,false,restriction,Absyn.PARTS({},{},classparts,mcom),{},{},{},info);
   end matchcontinue;
 end create_class_parts;
 
@@ -3017,7 +3017,7 @@ algorithm
     f_call2 = listAppend(f_call1,fname::{});
     cd = Absyn.PARTS({},{},cp,{},NONE());
     info=SOURCEINFO("",false,0,0,0,0,0.0);
-    class1 = Absyn.CLASS(fname,false,false,false,Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.NO_PURITY())),cd,{},{},info);
+    class1 = Absyn.CLASS(fname,false,false,false,Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.NO_PURITY())),cd,{},{},{},info);
     class2 = listAppend(class1::{},mod_class2);
     then (class2,f_call2);
     case({},f_call4,fnc_hdl_ident1)
@@ -4951,7 +4951,7 @@ algorithm
         (fname, cp, no_ident) = user_function({},uf,{},f_call2,fnc_hdl_ident,all_idents);
         cd = Absyn.PARTS({},{},cp,{},NONE());
         info=SOURCEINFO("",false,0,0,0,0,0.0);
-        class1 = Absyn.CLASS(fname,false,false,false,Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.NO_PURITY())),cd,{},{},info);
+        class1 = Absyn.CLASS(fname,false,false,false,Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.NO_PURITY())),cd,{},{},{},info);
         class2 = listAppend(class1::{},sub_class);
         class3 = listAppend(class2,sub_class1);
       then

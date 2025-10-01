@@ -100,7 +100,7 @@ class AddSubModelDialog : public QDialog
   Q_OBJECT
 public:
   AddSubModelDialog(GraphicsView *pGraphicsView, const QString &path, const QString &name);
-  static QString browseSubModelPath(GraphicsView *pGraphicsView, QString *pName);
+  static QString browseSubModelPath(QString *pName);
 private:
   GraphicsView *mpGraphicsView;
   Label *mpHeading;

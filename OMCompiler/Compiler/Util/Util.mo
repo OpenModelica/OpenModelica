@@ -505,36 +505,6 @@ algorithm
   strings := listReverse(strings);
 end stringSplitAtChar;
 
-public function boolOrList "Example:
-    boolOrList({true,false,false})  => true
-    boolOrList({false,false,false}) => false"
-  input list<Boolean> inBooleanLst;
-  output Boolean outBoolean = false;
-algorithm
-  for b in inBooleanLst loop
-    if b then
-      outBoolean := true;
-      return;
-    end if;
-  end for;
-end boolOrList;
-
-public function boolAndList "Takes a list of boolean values and applies the boolean AND operator on the elements
-  Example:
-  boolAndList({}) => true
-  boolAndList({true, true}) => true
-  boolAndList({false,false,true}) => false"
-  input list<Boolean> inBooleanLst;
-  output Boolean outBoolean = true;
-algorithm
-  for b in inBooleanLst loop
-    if not b then
-      outBoolean := false;
-      return;
-    end if;
-  end for;
-end boolAndList;
-
 public function optionToString<T>
   input Option<T> ot;
   input FuncType f;

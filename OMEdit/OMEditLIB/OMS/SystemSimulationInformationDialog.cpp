@@ -43,7 +43,6 @@ SystemSimulationInformationWidget::SystemSimulationInformationWidget(ModelWidget
 {
   mpModelWidget = pModelWidget;
 
-  QIntValidator *pIntValidator = new QIntValidator(this);
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
 
   if (mpModelWidget->getLibraryTreeItem()->isWCSystem() || mpModelWidget->getLibraryTreeItem()->isSCSystem()) {

@@ -54,7 +54,6 @@ simulate(overrideParamStartFromFile_param_model, simflags="-iif=init_overridePar
 // LOG_INIT          | info    | import boolean parameters
 // LOG_NLS           | info    | update static data of non-linear system solvers
 // LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
-// LOG_INIT_HOMOTOPY | info    | Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. To disable initialization with homotopy operator use \"-noHomotopyOnFirstTry\".
 // LOG_NLS           | info    | ############ Solve nonlinear system 2 at time 0 ############
 // |                 | |       | | initial variable values:
 // |                 | |       | | | [ 1]                              T  =        909.99999		 nom =                1

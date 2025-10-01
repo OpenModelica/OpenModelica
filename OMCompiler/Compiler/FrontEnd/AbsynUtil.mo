@@ -6913,5 +6913,20 @@ algorithm
     Absyn.ElementSpec.CLASSDEF(class_ = cls))) := item;
 end elementItemClass;
 
+function classDefStringComment
+  input Absyn.ClassDef def;
+  output String comment;
+algorithm
+  comment := match def
+    case Absyn.ClassDef.PARTS(comment = SOME(comment)) then comment;
+    case Absyn.ClassDef.DERIVED(comment = SOME(Absyn.Comment.COMMENT(comment = SOME(comment)))) then comment;
+    case Absyn.ClassDef.ENUMERATION(comment = SOME(Absyn.Comment.COMMENT(comment = SOME(comment)))) then comment;
+    case Absyn.ClassDef.OVERLOAD(comment = SOME(Absyn.Comment.COMMENT(comment = SOME(comment)))) then comment;
+    case Absyn.ClassDef.CLASS_EXTENDS(comment = SOME(comment)) then comment;
+    case Absyn.ClassDef.PDER(comment = SOME(Absyn.Comment.COMMENT(comment = SOME(comment)))) then comment;
+    else "";
+  end match;
+end classDefStringComment;
+
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

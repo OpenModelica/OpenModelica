@@ -289,7 +289,6 @@ protected
     new_partitions := listReverse(new_partitions);
   end tearingTraverser;
 
-
   function initialize
     extends Module.tearingInterface;
     input Boolean minimal "if true, refines only discrete variables and equations";

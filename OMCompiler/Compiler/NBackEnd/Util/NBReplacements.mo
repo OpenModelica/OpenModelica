@@ -286,7 +286,7 @@ public
     input VariablePointers variables;
     input UnorderedMap<Absyn.Path, Function> replacements;
   algorithm
-        // do nothing if replacements are empty
+    // do nothing if replacements are empty
     if UnorderedMap.isEmpty(replacements) then return; end if;
     eqData := EqData.mapExp(eqData, function applyFuncExp(replacements = replacements, variables = variables));
   end replaceFunctions;
@@ -321,7 +321,7 @@ public
 
         // add replacement rules for local (protected) variables
         for local_node in fn.locals loop
-          local_cref    := ComponentRef.fromNode(local_node, InstNode.getType(local_node));
+          local_cref      := ComponentRef.fromNode(local_node, InstNode.getType(local_node));
           binding_exp_opt := InstNode.getBindingExpOpt(local_node);
           if Util.isSome(binding_exp_opt) then
             // replace binding expression with already gathered input replacements

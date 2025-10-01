@@ -255,6 +255,7 @@ public
   algorithm
     isInteger := match ty
       case INTEGER() then true;
+      case METABOXED() then isInteger(ty.ty);
       else false;
     end match;
   end isInteger;
@@ -265,6 +266,7 @@ public
   algorithm
     isReal := match ty
       case REAL() then true;
+      case METABOXED() then isReal(ty.ty);
       else false;
     end match;
   end isReal;
@@ -275,6 +277,7 @@ public
   algorithm
     isBool := match ty
       case BOOLEAN() then true;
+      case METABOXED() then isBoolean(ty.ty);
       else false;
     end match;
   end isBoolean;
@@ -285,6 +288,7 @@ public
   algorithm
     isString := match ty
       case STRING() then true;
+      case METABOXED() then isString(ty.ty);
       else false;
     end match;
   end isString;
@@ -295,6 +299,7 @@ public
   algorithm
     isClock := match ty
       case CLOCK() then true;
+      case METABOXED() then isClock(ty.ty);
       else false;
     end match;
   end isClock;

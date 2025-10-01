@@ -25,14 +25,14 @@ buildModel(SplitIf); getErrorString();
 // ""
 // ### dumpSimplify | NBackendDAE.simplify ###
 // [BEFORE]
-//   [-IF-] (1) ($RES_SIM_9)
+//   [-IF-] (1) ($RES_SIM_0)
 //   [----] if time >= 1.0 then
-//   [----]   [SCAL] (1) v2 ^ 3.0 = 0.0 ($RES_SIM_10)
+//   [----]   [SCAL] (1) v2 ^ 3.0 = 0.0 ($RES_SIM_1)
 //   [----] else
-//   [----]   [SCAL] (1) v2 ^ 3.0 = 0.0 ($RES_SIM_11)
+//   [----]   [SCAL] (1) v2 ^ 3.0 = 0.0 ($RES_SIM_2)
 //   [----] end if;
 // [AFTER ]
-//   [SCAL] (1) v2 ^ 3.0 = 0.0 ($RES_SIM_9)
+//   [SCAL] (1) v2 ^ 3.0 = 0.0 ($RES_SIM_0)
 //
 // ### dumpSimplify | NBackendDAE.simplify ###
 // [BEFORE] time * 3.0
@@ -44,14 +44,14 @@ buildModel(SplitIf); getErrorString();
 //
 // ### dumpSimplify | NBackendDAE.simplify ###
 // [BEFORE]
-//   [-IF-] (1) ($RES_SIM_6)
+//   [-IF-] (1) ($RES_SIM_3)
 //   [----] if time >= 1.0 then
-//   [----]   [SCAL] (1) v1 = 3.0 * time ($RES_SIM_7)
+//   [----]   [SCAL] (1) v1 = 3.0 * time ($RES_SIM_4)
 //   [----] else
-//   [----]   [SCAL] (1) v1 = 2.0 + 3.0 * time ($RES_SIM_8)
+//   [----]   [SCAL] (1) v1 = 2.0 + 3.0 * time ($RES_SIM_5)
 //   [----] end if;
 // [AFTER ]
-//   [SCAL] (1) v1 = if time >= 1.0 then 3.0 * time else 2.0 + 3.0 * time ($RES_SIM_6)
+//   [SCAL] (1) v1 = if time >= 1.0 then 3.0 * time else 2.0 + 3.0 * time ($RES_SIM_3)
 //
 // ### dumpSimplify | NBEquation.Equation.getResidualExp ###
 // [BEFORE] 0.0 - v2 ^ 3.0

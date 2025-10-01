@@ -790,6 +790,13 @@ public
     end match;
   end classify;
 
+  function classifyAddition
+    "used to create an addition of the resulting type.
+    Note: not to be used for logical or relations"
+    input Operator op;
+    output SizeClassification sz = if Type.isScalar(op.ty) then SizeClassification.SCALAR else SizeClassification.ELEMENT_WISE;
+  end classifyAddition;
+
   function fromClassification
     "Only works for non-logical operators!"
     input Classification cl "mathematical and size classification";

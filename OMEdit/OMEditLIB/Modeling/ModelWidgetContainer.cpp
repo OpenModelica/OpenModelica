@@ -4010,7 +4010,7 @@ void GraphicsView::pasteItems(QPointF positionOffset)
       QPointF cursorPositionAtCopy = MainWindow::instance()->getModelWidgetContainer()->mCursorPositionAtCopy;
       QRect copiedItemsBoundingRect = MainWindow::instance()->getModelWidgetContainer()->mCopiedItemsBoundingRect;
       if (!cursorPositionAtCopy.isNull() && cursorPositionAtCopy != cursorPosition) {
-        cursorPosition = cursorPosition - QPointF(copiedItemsBoundingRect.left(), copiedItemsBoundingRect.bottom());
+        cursorPosition = snapPointToGrid(cursorPosition - QPointF(copiedItemsBoundingRect.left(), copiedItemsBoundingRect.bottom()));
       } else {
         cursorPosition = QPointF(0, 0);
       }
@@ -5826,8 +5826,12 @@ void ModelWidget::loadModelInstance(bool icon, const ModelInfo &modelInfo)
     MainWindow::instance()->writeNewApiProfiling(QString("Time for parsing JSON %1 secs").arg(QString::number(elapsed, 'f', 6)));
   }
   timer.restart();
+  // enable skip expression evaluation flag if we are drawing the icon only
+  MainWindow::instance()->setSkipExpressionEvaluation(icon);
   // drawing
   drawModel(modelInfo);
+  // disable skip expression evaluation flag
+  MainWindow::instance()->setSkipExpressionEvaluation(false);
   if (MainWindow::instance()->isNewApiProfiling()) {
     double elapsed = (double)timer.elapsed() / 1000.0;
     MainWindow::instance()->writeNewApiProfiling(QString("Time for drawing graphical objects %1 secs").arg(QString::number(elapsed, 'f', 6)));
@@ -6368,6 +6372,7 @@ void ModelWidget::reDrawModelWidget(const ModelInfo &modelInfo)
   if (isElementMode()) {
     clearGraphicsViewsExceptOutOfSceneItems();
     mModelInstanceList.clear();
+    mLibraryTreeItemList.clear();
     mModelInstancesPos = -1;
     mpElementModeLabel->setText("");
     mpIconGraphicsView->setShapesList(mPreservedIconShapesList);
@@ -6943,6 +6948,7 @@ void ModelWidget::showElement(ModelInstance::Model *pModelInstance, bool addToLi
   QApplication::setOverrideCursor(Qt::WaitCursor);
   if (mModelInstancesPos < 0) {
     mpRootModelInstance = mpModelInstance;
+    mpRootLibraryTreeItem = mpLibraryTreeItem;
     mPreservedIconShapesList = mpIconGraphicsView->getShapesList();
     mPreservedDiagramShapesList = mpDiagramGraphicsView->getShapesList();
     mModelInfo = createModelInfo();
@@ -6974,13 +6980,25 @@ void ModelWidget::showElement(ModelInstance::Model *pModelInstance, bool addToLi
   if (addToList) {
     while (mModelInstanceList.count() > (mModelInstancesPos+1)) {
       mModelInstanceList.removeLast();
+      mLibraryTreeItemList.removeLast();
     }
     mModelInstanceList.append(pModelInstance);
+    // find correct LibraryTreeItem for ModelInstance.
+    LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pModelInstance->getName());
+    if (!pLibraryTreeItem) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Could not find the LibraryTreeItem for model " + pModelInstance->getName() +
+                                                            ". This is a fatal error. Please report a bug.", Helper::scriptingKind, Helper::errorLevel));
+    }
+    mLibraryTreeItemList.append(pLibraryTreeItem);
+    mpLibraryTreeItem = pLibraryTreeItem;
     mModelInstancesPos++;
+  } else {
+    mpLibraryTreeItem = mLibraryTreeItemList.at(mModelInstancesPos);
   }
   mpModelInstance = pModelInstance;
   mpElementModeLabel->setText(tr("Showing element <b>%1</b> in <b>%2</b>").arg(mpModelInstance->getParentElement()->getQualifiedName(), mpRootModelInstance->getName()));
   drawModel(ModelInfo());
+  updateViewButtonsBasedOnAccess();
   updateElementModeButtons();
   // update the coordinate system according to new values
   mpIconGraphicsView->resetZoom();
@@ -7564,12 +7582,14 @@ void ModelWidget::exitElement()
   clearGraphicsViewsExceptOutOfSceneItems();
   // call clearGraphicsViewsExceptOutOfSceneItems before resetting the model instances list so the icon update signal can be ignored.
   mModelInstanceList.clear();
+  mLibraryTreeItemList.clear();
   mModelInstancesPos = -1;
   mpElementModeLabel->setText("");
   // reset the CoordinateSystem
   mpIconGraphicsView->resetCoordinateSystem();
   mpDiagramGraphicsView->resetCoordinateSystem();
   mpModelInstance = mpRootModelInstance;
+  mpLibraryTreeItem = mpRootLibraryTreeItem;
   mpIconGraphicsView->setShapesList(mPreservedIconShapesList);
   mPreservedIconShapesList.clear();
   mpDiagramGraphicsView->setShapesList(mPreservedDiagramShapesList);
@@ -7586,6 +7606,7 @@ void ModelWidget::exitElement()
     setRestoringModel(false);
   }
   setComponentModified(false);
+  updateViewButtonsBasedOnAccess();
   updateElementModeButtons();
   // update the coordinate system according to new values
   mpIconGraphicsView->resetZoom();
@@ -8655,7 +8676,7 @@ void ModelWidgetContainer::addSubModel()
   ModelWidget *pModelWidget = getCurrentModelWidget();
   if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
     QString name = "";
-    QString path = AddSubModelDialog::browseSubModelPath(pModelWidget->getDiagramGraphicsView(), &name);
+    QString path = AddSubModelDialog::browseSubModelPath(&name);
     if (!path.isEmpty()) {
       AddSubModelDialog *pAddFMUDialog = new AddSubModelDialog(pModelWidget->getDiagramGraphicsView(), path, name);
       pAddFMUDialog->exec();

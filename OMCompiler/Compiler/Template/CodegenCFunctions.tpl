@@ -249,7 +249,7 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   LINK=<%makefileParams.linker%>
   EXEEXT=<%makefileParams.exeext%>
   DLLEXT=<%makefileParams.dllext%>
-  DEBUG_FLAGS=<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then " -g" else "$(SIM_OR_DYNLOAD_OPT_LEVEL)" %>
+  DEBUG_FLAGS=<% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g" else "$(SIM_OR_DYNLOAD_OPT_LEVEL)" %>
   CFLAGS= $(DEBUG_FLAGS) <%makefileParams.cflags%>
   CPPFLAGS= <%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I"<%makefileParams.omhome%>/include/omc" <%
     if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then " -DOMC_GENERATE_RELOCATABLE_CODE"
@@ -3850,7 +3850,12 @@ template literalExpConst(Exp lit, Integer litindex) "These should all be declare
     let &auxFunction = buffer ""
     let elements = (exps |> e => daeExp(e, contextOther, &preExp, &varDecls, &auxFunction);separator=", ")
     <<
+    #if (defined(__clang__)  && __clang_major__ >= 17) || (defined(__GNUC__) && __GNUC__ >= 8)
     static const <%expTypeFlag(ty, 2)%> <%name%> = {<%elements%>};
+    #else
+    /* handle joke compilers */
+    #define <%name%> (<%expTypeFlag(ty, 2)%>){<%elements%>}
+    #endif
     >>
   case SCONST(__) then
     let escstr = Util.escapeModelicaStringToCString(string)
@@ -3874,16 +3879,26 @@ template literalExpConst(Exp lit, Integer litindex) "These should all be declare
     static _index_t <%name%>_dims[<%ndim%>] = {<%dims%>};
     <% match data case "" then
     <<
+    #if (defined(__clang__)  && __clang_major__ >= 17) || (defined(__GNUC__) && __GNUC__ >= 8)
     static base_array_t const <%name%> = {
       <%ndim%>, <%name%>_dims, (void*) 0, (modelica_boolean) 0
     };
+    #else
+    /* handle joke compilers */
+    #define <%name%> (base_array_t){<%ndim%>, <%name%>_dims, (void*) 0, (modelica_boolean) 0}
+    #endif
     >>
     else
     <<
     static const <%expTypeFlag(ty, 2)%> <%name%>_data[] = {<%data%>};
+    #if (defined(__clang__)  && __clang_major__ >= 17) || (defined(__GNUC__) && __GNUC__ >= 8)
     static <%expTypeFlag(ty, 4)%> const <%name%> = {
       <%ndim%>, <%name%>_dims, (void*) <%name%>_data, (modelica_boolean) 0
     };
+    #else
+    /* handle joke compilers */
+    #define <%name%> (base_array_t){<%ndim%>, <%name%>_dims, (void*) <%name%>_data, (modelica_boolean) 0}
+    #endif
     >>
     %>
     >>
@@ -4968,7 +4983,7 @@ template modelicaLine(builtin.SourceInfo info)
 ::=
   match info
   case SOURCEINFO(fileName="") then ""
-  else if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))
+  else if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)
     then (if Flags.isSet(OMC_RECORD_ALLOC_WORDS)
     then '/*#modelicaLine <%infoStr(info)%>*/<%\n%><% match info case SOURCEINFO() then (if intEq(-1, stringFind(fileName,".interface.mo")) then 'mmc_set_current_pos("<%infoStr(info)%>");<%\n%>') %>'
     else '/*#modelicaLine <%infoStr(info)%>*/<%\n%>'
@@ -4977,7 +4992,7 @@ end modelicaLine;
 
 template endModelicaLine()
 ::=
-  if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then '/*#endModelicaLine*/<%\n%>'
+  if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then '/*#endModelicaLine*/<%\n%>'
 end endModelicaLine;
 
 template tempDecl(String ty, Text &varDecls)
@@ -7128,7 +7143,7 @@ template daeExpRsub(Exp inExp, Context context, Text &preExp,
     let res = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
     let offset = intAdd(ix,1) // 1-based
     '(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%res%>), <%offset%>)))'
-  case RSUB(__) then
+  else
     error(sourceInfo(), '<%ExpressionDumpTpl.dumpExp(inExp,"\"")%>: failed')
 end daeExpRsub;
 
@@ -7202,8 +7217,11 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
     match Expression.typeof(inExp)
     case T_ARRAY(__) then
       error(sourceInfo(),'ASUB non-scalar <%ExpressionDumpTpl.dumpExp(inExp,"\"")%>. The inner exp has type: <%unparseType(Expression.typeof(e))%>. After ASUB it is still an array: <%unparseType(Expression.typeof(inExp))%>.')
+    case T_COMPLEX(complexClassType = ClassInf.RECORD(__)) then
+      let expIndexes = (indexes |> index => daeSubscriptExp(index, context, &preExp, &varDecls, &auxFunction) ;separator=", ")
+      '<%typeShort%>_array_get(<%exp%>, <%listLength(indexes)%>, <%expIndexes%>)'
     else
-      let expIndexes = (indexes |> index => '<%daeExpASubIndex(index, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
+      let expIndexes = (indexes |> index => daeExpASubIndex(index, context, &preExp, &varDecls, &auxFunction) ;separator=", ")
       '<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(<%exp%>, <%expIndexes%>)'
 
   else

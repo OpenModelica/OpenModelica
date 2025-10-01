@@ -15,6 +15,7 @@ simpleForLoop.mos \
 minimalTearing.mos \
 solveSingleEquation.mos \
 detectStates.mos \
+for_if_if.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

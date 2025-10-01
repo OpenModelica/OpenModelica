@@ -16,8 +16,7 @@ OMJulia is not a standalone package, it depends upon the
 OpenModelica installation.
 
 OMJulia.jl is implemented in Julia and depends on
-ZeroMQ - high performance asynchronous messaging library and it supports the Modelica
-Standard Library that is included in OpenModelica 1.9.2.
+ZeroMQ - high performance asynchronous messaging library.
 
 The latest OMJulia.jl documentation can be found online:
 `OMJulia.jl documentation <https://openmodelica.github.io/OMJulia.jl/dev/>`_

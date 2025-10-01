@@ -1606,6 +1606,51 @@ algorithm
       then
         ret_val;
 
+    case ("moo",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_))
+      equation
+        System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+
+        FlagsUtil.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION,true);
+        FlagsUtil.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
+        FlagsUtil.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,true);
+
+        (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,dirs) = buildModel(outCache,inEnv,vals,msg);
+        simflags = stringAppend(simflags, " -moo");
+        if b then
+          exeDir=compileDir;
+          (outCache,simSettings) = calculateSimulationSettings(outCache, vals);
+          SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) = simSettings;
+          result_file = stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
+          executableSuffixedExe = stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
+          logFile = stringAppend(executable,".log");
+          // adrpo: log file is deleted by buildModel! do NOT DELTE IT AGAIN!
+          // we should really have different log files for simulation/compilation!
+          // as the buildModel log file will be deleted here and that gives less information to the user!
+          if System.regularFileExists(logFile) then
+            0 = System.removeFile(logFile);
+          end if;
+          sim_call = stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
+          System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+          SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
+          resI = System.systemCallRestrictedEnv(sim_call, logFile);
+          timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+        else
+          result_file = "";
+          timeSimulation = 0.0;
+          resI = 1;
+        end if;
+        timeTotal = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+        (outCache,simValue) = createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,outCache,className,vals,result_file,logFile);
+      then
+        simValue;
+
+    case ("moo",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
+      equation
+        str = AbsynUtil.pathString(className);
+        res = "Failed to run the moo command: " + str;
+      then
+        createSimulationResultFailure(res, simOptionsAsString(vals));
+
     case ("importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(inputConnectors), Values.BOOL(outputConnectors), Values.CODE(Absyn.C_TYPENAME(classpath))})
       equation
         Error.clearMessages() "Clear messages";
@@ -1727,8 +1772,8 @@ algorithm
   outValue := matchcontinue (inFunctionName, inVals)
     local
       String s1,s2,str,str1,str2,str3,str4,method_str, pd,filename_1,filename,
-             call,name, title,xLabel,yLabel,filename2,varNameStr,xml_filename,pwd,omhome,os,
-             gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str, curveWidthStr, curveStyleStr, legendPosition, footer, autoScaleStr,
+             call,name, title,xLabel,yLabel,yLabelRight,filename2,varNameStr,xml_filename,pwd,omhome,os,
+             gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str, y1RStr, y2RStr, yAxis, curveWidthStr, curveStyleStr, legendPosition, footer, autoScaleStr,
              cname, annStr, annotationname, modifiername;
       list<Values.Value> vals,vals2,cvars;
       Absyn.Path path,classpath,baseClassPath;
@@ -1747,7 +1792,7 @@ algorithm
       Integer size,i,n,curveStyle,numberOfIntervals,x,y;
       Access access;
       list<String> vars_1,args,strings,strs1,strs2,files;
-      Real timeStamp,val,x1,x2,y1,y2,r1,r2,curveWidth, interval;
+      Real timeStamp,val,x1,x2,y1,y2,y1R,y2R,r1,r2,curveWidth, interval;
       GlobalScript.Statements istmts;
       Boolean b, b1, b2, b3, externalWindow, logX, logY, autoScale, forceOMPlot, keepRedeclares, hintReadAllVars;
       list<Real> realVals;
@@ -2374,7 +2419,10 @@ algorithm
           Values.STRING(legendPosition),
           Values.STRING(footer),
           Values.BOOL(autoScale),
-          Values.BOOL(forceOMPlot)
+          Values.BOOL(forceOMPlot),
+          Values.STRING(yAxis),
+          Values.STRING(yLabelRight),
+          Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)})
         })
       equation
         // get OPENMODELICAHOME
@@ -2392,7 +2440,7 @@ algorithm
           // create the path till OMPlot
           str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
           // create the list of arguments for OMPlot
-          str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotAll --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale);
+          str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotAll --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale);
           call = stringAppendList({"\"",str2,"\""," ",str3});
           0 = System.spawnCall(str2, call);
         elseif b then
@@ -2432,7 +2480,10 @@ algorithm
           Values.STRING(legendPosition),
           Values.STRING(footer),
           Values.BOOL(autoScale),
-          Values.BOOL(forceOMPlot)
+          Values.BOOL(forceOMPlot),
+          Values.STRING(yAxis),
+          Values.STRING(yLabelRight),
+          Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)})
         })
       equation
         // get the variables list
@@ -2454,7 +2505,7 @@ algorithm
           // create the path till OMPlot
           str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
           // create the list of arguments for OMPlot
-          str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plot --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " \"" + str + "\"";
+          str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plot --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " \"" + str + "\"";
           call = stringAppendList({"\"",str2,"\""," ",str3});
           0 = System.spawnCall(str2, call);
         elseif b then
@@ -2956,7 +3007,10 @@ algorithm
           Values.STRING(legendPosition),
           Values.STRING(footer),
           Values.BOOL(autoScale),
-          Values.BOOL(forceOMPlot)
+          Values.BOOL(forceOMPlot),
+          Values.STRING(yAxis),
+          Values.STRING(yLabelRight),
+          Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)})
         })
       equation
         // get OPENMODELICAHOME
@@ -2976,7 +3030,7 @@ algorithm
           // create the path till OMPlot
           str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
           // create the list of arguments for OMPlot
-          str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotParametric --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " \"" + str + "\"";
+          str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotParametric --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " \"" + str + "\"";
           call = stringAppendList({"\"",str2,"\""," ",str3});
           0 = System.spawnCall(str2, call);
         elseif b then
@@ -7817,7 +7871,7 @@ protected
   Integer sl,sc,el,ec;
   Absyn.Path classPath;
 algorithm
-  Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,_,_,SOURCEINFO(file,isReadOnly,sl,sc,el,ec,_)) := InteractiveUtil.getPathedClassInProgram(path, p);
+  Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,_,_,_,SOURCEINFO(file,isReadOnly,sl,sc,el,ec,_)) := InteractiveUtil.getPathedClassInProgram(path, p);
   res := Dump.unparseRestrictionStr(restr);
   cmt := getClassDefComment(cdef);
   file := Testsuite.friendly(file);

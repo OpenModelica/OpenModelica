@@ -46,7 +46,6 @@
 #include "events.h"
 #include "util/parallel_helper.h"
 #include "util/varinfo.h"
-#include "radau.h"
 #include "model_help.h"
 #include "meta/meta_modelica.h"
 #include "simulation/solver/epsilon.h"
@@ -56,7 +55,6 @@
 #include "sym_solver_ssc.h"
 #include "gbode_main.h"
 #include "gbode_util.h"
-#include "irksco.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
 #include "simulation/solver/embedded_server.h"
 #include "simulation/solver/real_time_sync.h"
@@ -89,11 +87,8 @@ typedef struct RK4_DATA
 
 
 static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo);
-static int rungekutta_step_ssc(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 static int rungekutta_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 static int sym_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
-
-static int radau_lobatto_step(DATA* data, SOLVER_INFO* solverInfo);
 
 #ifdef OMC_HAVE_IPOPT
 static int ipopt_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
@@ -114,7 +109,6 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
     TRACE_POP
     return retVal;
-  case S_HEUN:
   case S_RUNGEKUTTA:
     retVal = rungekutta_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
@@ -145,14 +139,6 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     return retVal;
 #endif
 #ifdef WITH_SUNDIALS
-  case S_IMPEULER:
-  case S_TRAPEZOID:
-  case S_IMPRUNGEKUTTA:
-    retVal = radau_lobatto_step(data, solverInfo);
-    if(omc_flag[FLAG_SOLVER_STEPS])
-      data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
-    TRACE_POP
-    return retVal;
   case S_IDA:
     retVal = ida_solver_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
@@ -166,12 +152,6 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     TRACE_POP
     return retVal;
 #endif
-  case S_ERKSSC:
-    retVal = rungekutta_step_ssc(data, threadData, solverInfo);
-    if(omc_flag[FLAG_SOLVER_STEPS])
-      data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
-    TRACE_POP
-    return retVal;
   case S_SYM_SOLVER:
     retVal = sym_solver_step(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
@@ -179,11 +159,6 @@ int solver_main_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     return retVal;
   case S_SYM_SOLVER_SSC:
     retVal = sym_solver_ssc_step(data, threadData, solverInfo);
-    if(omc_flag[FLAG_SOLVER_STEPS])
-      data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
-    return retVal;
-  case S_IRKSCO:
-    retVal = irksco_midpoint_rule(data, threadData, solverInfo);
     if(omc_flag[FLAG_SOLVER_STEPS])
       data->simulationInfo->solverSteps = solverInfo->solverStats.nStepsTaken + solverInfo->solverStatsTmp.nStepsTaken;
     return retVal;
@@ -228,9 +203,6 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   resetSolverStats(&solverInfo->solverStats);
   resetSolverStats(&solverInfo->solverStatsTmp);
 
-  /* Deprecation warnings */
-  deprecationWarningGBODE(solverInfo->solverMethod);
-
   switch (solverInfo->solverMethod)
   {
   case S_SYM_SOLVER:
@@ -241,11 +213,6 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     allocateSymSolverSsc(solverInfo, data->modelData->nStates);
     break;
   }
-  case S_IRKSCO:
-  {
-    allocateIrksco(data, threadData, solverInfo, data->modelData->nStates, data->modelData->nZeroCrossings);
-    break;
-  }
   case S_GBODE:
   {
     if (gbode_allocateData(data, threadData, solverInfo) != 0) {
@@ -253,9 +220,7 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
     }
     break;
   }
-  case S_ERKSSC:
   case S_RUNGEKUTTA:
-  case S_HEUN:
   {
     /* Allocate RK work arrays */
 
@@ -269,20 +234,9 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
 
     RK4_DATA* rungeData = (RK4_DATA*) malloc(sizeof(RK4_DATA));
 
-    if (solverInfo->solverMethod==S_RUNGEKUTTA) {
-      rungeData->work_states_ndims = rungekutta_s;
-      rungeData->b = rungekutta_b;
-      rungeData->c = rungekutta_c;
-    } else if (solverInfo->solverMethod==S_HEUN) {
-      rungeData->work_states_ndims = heun_s;
-      rungeData->b = heun_b;
-      rungeData->c = heun_c;
-    } else if (solverInfo->solverMethod==S_ERKSSC) {
-      rungeData->h = (omc_flag[FLAG_INITIAL_STEP_SIZE]) ? atof(omc_flagValue[FLAG_INITIAL_STEP_SIZE]) : solverInfo->currentStepSize;
-      rungeData->work_states_ndims = 5;
-    } else {
-      throwStreamPrint(threadData, "Unknown RK solver");
-    }
+    rungeData->work_states_ndims = rungekutta_s;
+    rungeData->b = rungekutta_b;
+    rungeData->c = rungekutta_c;
 
     rungeData->work_states = (double**) malloc((rungeData->work_states_ndims + 1) * sizeof(double*));
     for (i = 0; i < rungeData->work_states_ndims + 1; i++) {
@@ -310,33 +264,6 @@ int initializeSolverData(DATA* data, threadData_t *threadData, SOLVER_INFO* solv
   }
 #endif
 #ifdef WITH_SUNDIALS
-  case S_IMPEULER:
-  case S_TRAPEZOID:
-  case S_IMPRUNGEKUTTA:
-  {
-    int usedImpRKOrder = DEFAULT_IMPRK_ORDER;
-    if (solverInfo->solverMethod == S_IMPEULER)
-      usedImpRKOrder = 1;
-    if (solverInfo->solverMethod == S_TRAPEZOID)
-      usedImpRKOrder = 2;
-
-    /* Check the order if set */
-    if (omc_flag[FLAG_IMPRK_ORDER])
-    {
-      usedImpRKOrder = atoi(omc_flagValue[FLAG_IMPRK_ORDER]);
-      if (usedImpRKOrder>6 || usedImpRKOrder<1)
-      {
-        warningStreamPrint(OMC_LOG_STDOUT, 0, "Selected order %d is out of range[1-6]. Use default order %d", usedImpRKOrder, DEFAULT_IMPRK_ORDER);
-        usedImpRKOrder = DEFAULT_IMPRK_ORDER;
-      }
-    }
-
-    /* Allocate implicit Runge-Kutta methods */
-    infoStreamPrint(OMC_LOG_SOLVER, 0, "Initializing Runge-Kutta method with order %d", usedImpRKOrder);
-    solverInfo->solverData = calloc(1, sizeof(KINODE));
-    allocateKinOde(data, threadData, solverInfo, usedImpRKOrder);
-    break;
-  }
   case S_IDA:
   {
     IDA_SOLVER* idaData = NULL;
@@ -391,16 +318,12 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     freeSymSolverSsc(solverInfo);
     break;
   case S_RUNGEKUTTA:
-  case S_HEUN:
-  case S_ERKSSC:
     /* free RK work arrays */
-    for(i = 0; i < ((RK4_DATA*)(solverInfo->solverData))->work_states_ndims + 1; i++)
+    for(i = 0; i < ((RK4_DATA*)(solverInfo->solverData))->work_states_ndims + 1; i++) {
       free(((RK4_DATA*)(solverInfo->solverData))->work_states[i]);
+    }
     free(((RK4_DATA*)(solverInfo->solverData))->work_states);
     free((RK4_DATA*)solverInfo->solverData);
-    break;
-  case S_IRKSCO:
-    freeIrksco(solverInfo);
     break;
   case S_GBODE:
     gbode_freeData(data, solverInfo->solverData);
@@ -419,12 +342,6 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     break;
 #endif
 #ifdef WITH_SUNDIALS
-  case S_IMPEULER:
-  case S_TRAPEZOID:
-  case S_IMPRUNGEKUTTA:
-    /* free  work arrays */
-    freeKinOde((KINODE*)solverInfo->solverData);
-    break;
   case S_IDA:
     /* free work arrays */
     ida_solver_deinitial(solverInfo->solverData);
@@ -496,7 +413,7 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
         infoStreamPrint(OMC_LOG_SUCCESS, 0, "The initialization finished successfully without homotopy method.");
       }
       else {
-        usedLocal = data->callback->useHomotopy == 0 || data->callback->useHomotopy == 3;
+        usedLocal = data->callback->homotopyMethod == LOCAL_EQUIDISTANT_HOMOTOPY || data->callback->homotopyMethod == LOCAL_ADAPTIVE_HOMOTOPY ;
         infoStreamPrint(OMC_LOG_SUCCESS, 0, "The initialization finished successfully with %d %shomotopy steps.", data->simulationInfo->homotopySteps, usedLocal? "local ":"");
       }
     }
@@ -714,15 +631,6 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   /* do some solver specific checks */
   switch(solverInfo.solverMethod)
   {
-#ifndef WITH_SUNDIALS
-  case S_IMPEULER:
-  case S_TRAPEZOID:
-  case S_IMPRUNGEKUTTA:
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "Sundial/kinsol is needed but not available. Please choose other solver.");
-    TRACE_POP
-    return 1;
-#endif
-
 #ifndef OMC_HAVE_IPOPT
   case S_OPTIMIZATION:
     warningStreamPrint(OMC_LOG_STDOUT, 0, "Ipopt is needed but not available.");
@@ -911,134 +819,6 @@ static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo)
   return 0;
 }
 
-/***************************************   EXP_RK_SSC     *********************************/
-static int rungekutta_step_ssc(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
-{
-  // see.
-  // Solving Stiff Systems of ODEs by Explicit Methods with Conformed Stability
-  // Domains
-  // 2016 9th EUROSIM Congress on Modelling and Simulation
-  // A. E. Novikov...
-
-  RK4_DATA *rk = ((RK4_DATA*)(solverInfo->solverData));
-  const double Atol = data->simulationInfo->tolerance;
-  const double Rtol = data->simulationInfo->tolerance;
-  const int nx = data->modelData->nStates;
-  modelica_real h = rk->h;
-  double** k = rk->work_states;
-  int j, i;
-  double sum;
-  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
-  SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
-  modelica_real* stateDer = sData->realVars + nx;
-  modelica_real* stateDerOld = sDataOld->realVars + nx;
-  double t = sDataOld->timeValue;
-  const double targetTime = t + solverInfo->currentStepSize;
-  const short isMaxStepSizeSet = omc_flagValue[FLAG_MAX_STEP_SIZE] != NULL;
-  const double maxStepSize = isMaxStepSizeSet ? atof(omc_flagValue[FLAG_MAX_STEP_SIZE]) : -1;
-#if defined(_MSC_VER)
-  /* handle stupid compilers */
-  double *x0 = (double*)malloc(nx*sizeof(double));
-#else
-  double x0[nx];
-#endif
-
-  if(t + h > targetTime)
-    h = solverInfo->currentStepSize;
-
-  memcpy(k[0], stateDerOld, nx*sizeof(double));
-  memcpy(x0, sDataOld->realVars, nx*sizeof(double));
-  while(t < targetTime && h > 0){
-    //printf("\nfrom %g to %g by %g\n", t, targetTime, h);
-    for(j = 0; j < 5; ++j){
-
-      if(j > 0)
-        memcpy(k[j], stateDer, nx*sizeof(double));
-
-      switch(j){
-         case 0:
-         //yn + k1/3
-           for(i = 0; i < nx; ++i)
-             sData->realVars[i] = x0[i] + h * k[0][i]/3.0;
-           sData->timeValue = t + h/3.0;
-           break;
-
-         case 1:
-         //yn + 1/6(k1 + k2)
-           for(i = 0; i < nx; ++i)
-             sData->realVars[i] = x0[i] + h/6.0 * (k[0][i] + k[1][i]);
-           sData->timeValue = t + h/3.0;
-           break;
-
-         case 2:
-         //yn + 1/8*(k1 + 3*k3)
-           for(i = 0; i < nx; ++i)
-             sData->realVars[i] = x0[i] + h/8.0 * (k[0][i] + 3*k[2][i]);
-           sData->timeValue = t + h/2.0;
-           break;
-
-         case 3:
-         //yn + 1/2*(k1 - 3*k3 + 4*k4)
-           for(i = 0; i < nx; ++i)
-             sData->realVars[i] = x0[i] + h/2.0 * (k[0][i] - 3*k[2][i] + 4*k[3][i]);
-           sData->timeValue = t + h;
-           break;
-
-         case 4:
-         //yn + 1/6*(k1 + 4*k3 + k5)
-           for(i = 0; i < nx; ++i){
-             sData->realVars[i] = x0[i] + h/6.0 * (k[0][i] + 4*k[3][i] + k[4][i]);
-           }
-           sData->timeValue = t + h;
-           break;
-
-      }
-      //f(yn + ...)
-      /* read input vars */
-      externalInputUpdate(data);
-      data->callback->input_function(data, threadData);
-      /* eval ode equations */
-      data->callback->functionODE(data, threadData);
-    }
-    t += h;
-    sData->timeValue = t;
-    solverInfo->currentTime = t;
-
-    /* save stats */
-    /* steps */
-    solverInfo->solverStatsTmp.nStepsTaken += 1;
-    /* function ODE evaluation is done directly after this */
-    solverInfo->solverStatsTmp.nCallsODE += 4;
-
-
-    //stepsize
-    for(i = 0, sum = 0.0; i < nx; ++i)
-      sum = fmax(fabs(k[0][i] + 4*k[3][i] -(4.5*k[2][i] + k[4][i]))/(fabs(k[4][i]) + fabs(k[2][i]) + fabs(k[3][i])+ + fabs(k[0][i]) +  Atol), sum);
-    sum *= 2.0/30.0;
-
-
-    h = fmin(0.9*fmax(pow(sum,1/4.0)/(Atol ), 1e-12)*h + 1e-12, (targetTime - h));
-    if(isMaxStepSizeSet && h > maxStepSize) h = maxStepSize;
-    if (h > 0) rk->h = h;
-
-    if(t  < targetTime){
-       memcpy(x0, sData->realVars, nx*sizeof(double));
-       memcpy(k[0], k[4], nx*sizeof(double));
-       sim_result.emit(&sim_result, data, threadData);
-    }
-  }
-
-  //assert(sData->timeValue == targetTime);
-  //assert(solverInfo->currentTime == targetTime);
-#if defined(_MSC_VER)
-  /* handle stupid compilers */
-  free(x0);
-#endif
-
-  return 0;
-}
-
-
 /***************************************    SYM_SOLVER     *********************************/
 static int sym_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo){
   int retVal,i,j;
@@ -1169,20 +949,6 @@ static int ipopt_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverI
   return res;
 }
 #endif
-
-#if defined(WITH_SUNDIALS) && !defined(OMC_MINIMAL_RUNTIME)
-/***************************************    Radau/Lobatto     ***********************************/
-int radau_lobatto_step(DATA* data, SOLVER_INFO* solverInfo)
-{
-  if(kinsolOde(solverInfo) == 0)
-  {
-    solverInfo->currentTime += solverInfo->currentStepSize;
-    return 0;
-  }
-  return -1;
-}
-#endif
-
 
 static void writeOutputVars(char* names, DATA* data)
 {

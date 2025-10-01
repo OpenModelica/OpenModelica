@@ -327,6 +327,18 @@ algorithm
   end match;
 end elementInfo;
 
+function setElementName
+  input output SCode.Element e;
+  input String name;
+algorithm
+  e := match e
+    case SCode.CLASS()      algorithm e.name := name; then e;
+    case SCode.COMPONENT()  algorithm e.name := name; then e;
+    case SCode.DEFINEUNIT() algorithm e.name := name; then e;
+    else e;
+  end match;
+end setElementName;
+
 function elementName ""
   input SCode.Element e;
   output String s;

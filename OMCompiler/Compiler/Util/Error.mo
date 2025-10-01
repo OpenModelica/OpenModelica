@@ -125,7 +125,7 @@ public constant ErrorTypes.Message UNBOUND_VALUE = ErrorTypes.MESSAGE(24, ErrorT
 public constant ErrorTypes.Message NEGATIVE_SQRT = ErrorTypes.MESSAGE(25, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Negative value as argument to sqrt."));
 public constant ErrorTypes.Message NO_CONSTANT_BINDING = ErrorTypes.MESSAGE(26, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("No constant value for variable %s in scope %s."));
+  Gettext.gettext("Constant '%s' has no value."));
 public constant ErrorTypes.Message TYPE_NOT_FROM_PREDEFINED = ErrorTypes.MESSAGE(27, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("In class %s, class specialization 'type' can only be derived from predefined types."));
 public constant ErrorTypes.Message INCOMPATIBLE_CONNECTOR_VARIABILITY = ErrorTypes.MESSAGE(28, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),

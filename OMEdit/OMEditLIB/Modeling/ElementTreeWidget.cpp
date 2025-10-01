@@ -430,16 +430,26 @@ void ElementTreeModel::addElementsHelper(ModelInstance::Model *pModel, ElementTr
   if (pModel) {
     QModelIndex index = elementTreeItemIndex(pParentElementTreeItem);
     int row = 0;
-    QList<ModelInstance::Element*> elements = pModel->getElements();
-    beginInsertRows(index, row, elements.size() - 1);
-    foreach (auto pElement, elements) {
-      pParentElementTreeItem->insertChild(row++, new ElementTreeItem(pElement, pParentElementTreeItem));
-    }
-    endInsertRows();
+    LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pModel->getName());
+    if (pLibraryTreeItem && pLibraryTreeItem->getAccess() >= LibraryTreeItem::icon) {
+      QList<ModelInstance::Element*> elements = pModel->getElements();
+      QList<ModelInstance::Element*> visibleElements;
+      for (ModelInstance::Element* element : elements) {
+        // show only public or all elements if access is diagram
+        if (element->isPublic() || pLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
+          visibleElements.append(element);
+        }
+      }
+      beginInsertRows(index, row, visibleElements.size() - 1);
+      foreach (auto pElement, visibleElements) {
+        pParentElementTreeItem->insertChild(row++, new ElementTreeItem(pElement, pParentElementTreeItem));
+      }
+      endInsertRows();
 
-    for (int i = 0; i < pParentElementTreeItem->childrenSize(); ++i) {
-      ElementTreeItem *pElementTreeItem = pParentElementTreeItem->child(i);
-      addElementsHelper(elements.at(i)->getModel(), pElementTreeItem);
+      for (int i = 0; i < pParentElementTreeItem->childrenSize(); ++i) {
+        ElementTreeItem *pElementTreeItem = pParentElementTreeItem->child(i);
+        addElementsHelper(visibleElements.at(i)->getModel(), pElementTreeItem);
+      }
     }
   }
 }

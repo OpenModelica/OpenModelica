@@ -194,6 +194,18 @@ public function strtokIncludingDelimiters
   external "C" strings=System_strtokIncludingDelimiters(string,token) annotation(Library = "omcruntime");
 end strtokIncludingDelimiters;
 
+public function splitOnNewline
+  "Splits a string on new lines (\n and \r\n). If includeDelimiter is true then
+   the new line delimiters are included in the list as separate tokens.
+     splitOnNewline(a\nb\r\nc) = {a, b, c}
+     splitOnNewline(a\nb\r\nc, true) = {a, \n, b, \r\n, c}"
+  input String str;
+  input Boolean includeDelimiter = false;
+  output list<String> strings;
+
+  external "C" strings=System_splitOnNewline(str, includeDelimiter) annotation(Library = "omcruntime");
+end splitOnNewline;
+
 public function setCCompiler
   input String inString;
 

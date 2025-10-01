@@ -150,6 +150,27 @@ endif()
 
 
 ## Install
+
+# Common source files for all source-code-FMUs
+set(SOURCE_FMU_MODELICA_EXTERNAL_C_FILES_LIST
+  C-Sources/ModelicaStandardTables.c
+  C-Sources/ModelicaStandardTablesDummyUsertab.c
+  C-Sources/ModelicaMatIO.c
+  C-Sources/ModelicaIO.c
+  C-Sources/snprintf.c)
+
+set(SOURCE_FMU_MODELICA_EXTERNAL_HEADER_FILES_LIST
+  C-Sources/ModelicaStandardTables.h
+  C-Sources/ModelicaMatIO.h
+  C-Sources/ModelicaIO.h
+  C-Sources/safe-math.h
+  C-Sources/read_data_impl.h
+)
+
+install(FILES ${SOURCE_FMU_MODELICA_EXTERNAL_C_FILES_LIST}
+              ${SOURCE_FMU_MODELICA_EXTERNAL_HEADER_FILES_LIST}
+              DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ModelicaExternalC)
+
 # Install the static libs to the normal lib dir.
 install(TARGETS ModelicaExternalC
                 ModelicaMatIO

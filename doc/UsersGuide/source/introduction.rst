@@ -887,8 +887,8 @@ it.
   intervals or steps for which the simulation results will be computed.
   More intervals will give higher time resolution, but occupy more space
   and take longer to compute. The default number of intervals is 500. It
-  is possible to choose solving method, default is “dassl”, “euler” and
-  “rungekutta” are also available. Output format “mat” is default. “plt”
+  is possible to choose solving method, default is “dassl”, “cvode”, gbode and
+  “euler” are also available. Output format “mat” is default. “plt”
   and “mat” (MATLAB) are the only ones that work with the val() command,
   “csv” (comma separated values) and “empty” (no output) are also
   available (see section :ref:`alternative-output-formats`).

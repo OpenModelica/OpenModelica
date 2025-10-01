@@ -600,13 +600,13 @@ protected function checkIfConditionBinding
   output Boolean outHasBindings;
 protected
   Option<Values.Value> empty_val;
-  String scope, name;
+  String name;
 algorithm
   empty_val := ValuesUtil.containsEmpty(inValues);
 
   if isSome(empty_val) then
-    SOME(Values.EMPTY(scope = scope, name = name)) := empty_val;
-    Error.addSourceMessage(Error.NO_CONSTANT_BINDING, {name, scope}, inInfo);
+    SOME(Values.EMPTY(name = name)) := empty_val;
+    Error.addSourceMessage(Error.CONDITIONAL_EXP_WITHOUT_VALUE, {name}, inInfo);
     outHasBindings := false;
   else
     outHasBindings := true;
@@ -5203,27 +5203,6 @@ algorithm
     end if;
   end while;
 end checkNoDuplicateAssignments;
-
-protected function generateNoConstantBindingError
-  input Option<Values.Value> emptyValueOpt;
-  input SourceInfo info;
-algorithm
-  _ := match(emptyValueOpt, info)
-    local
-      String scope "the scope where we could not find the binding";
-      String name "the name of the variable";
-      Values.Value ty "the DAE.Type translated to Value using defaults";
-      String tyStr "the type of the variable";
-
-    case (NONE(), _) then ();
-    case (SOME(Values.EMPTY(scope, name, _, _)), _)
-      equation
-         Error.addSourceMessage(Error.NO_CONSTANT_BINDING, {name, scope}, info);
-      then
-        fail();
-
-  end match;
-end generateNoConstantBindingError;
 
 protected function getIteratorType
   input DAE.Type ty;

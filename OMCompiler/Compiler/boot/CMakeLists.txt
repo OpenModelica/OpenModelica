@@ -7,7 +7,9 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/bomc/sources.tar.gz")
 else()
 #download and unpack the sources
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bomc/)
-file(DOWNLOAD https://github.com/OpenModelica/OMBootstrapping/archive/refs/heads/master.tar.gz
+# the OMBOOTSTRAPPING_GIT_HASH needs updating when the boostrapping sources change
+SET(OMBOOTSTRAPPING_GIT_HASH f53f31420ab8a1877b1a423693599028df698e14)
+file(DOWNLOAD https://github.com/OpenModelica/OMBootstrapping/archive/${OMBOOTSTRAPPING_GIT_HASH}.tar.gz
      ${CMAKE_CURRENT_SOURCE_DIR}/bomc/sources.tar.gz
      SHOW_PROGRESS
      STATUS status
@@ -17,7 +19,7 @@ list(GET status 0 status_code)
 list(GET status 1 status_string)
 # check the download status!
 if(NOT status_code EQUAL 0)
-message(FATAL_ERROR "error: downloading 'https://github.com/OpenModelica/OMBootstrapping/archive/refs/heads/master.tar.gz' failed
+message(FATAL_ERROR "error: downloading 'https://github.com/OpenModelica/OMBootstrapping/archive/${OMBOOTSTRAPPING_GIT_HASH}.tar.gz' failed
         status_code: ${status_code}
         status_string: ${status_string}
         log: ${log}")
@@ -75,6 +77,7 @@ target_include_directories(bomc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../Util)
 
 target_link_libraries(bomc PRIVATE omc::parser)
 target_link_libraries(bomc PRIVATE omc::compiler::runtime)
+target_link_libraries(bomc PRIVATE minizip)
 
 
 # Set up for proper usage of the bootstrap omc (bomc).

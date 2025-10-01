@@ -10,7 +10,6 @@ static void* boxvar_fn_arrayAppend = (void*) boxptr_arrayAppend;
 static void* boxvar_fn_arrayCopy = (void*) boxptr_arrayCopy;
 static void* boxvar_fn_arrayGet = (void*) boxptr_arrayGet;
 static void* boxvar_fn_arrayList = (void*) boxptr_arrayList;
-static void* boxvar_fn_arrayNth = (void*) boxptr_arrayNth;
 static void* boxvar_fn_arrayUpdate = (void*) boxptr_arrayUpdate;
 static void* boxvar_fn_boolAnd = (void*) boxptr_boolAnd;
 static void* boxvar_fn_boolEq = (void*) boxptr_boolEq;
@@ -49,7 +48,6 @@ static void* boxvar_fn_listGet = (void*) boxptr_listGet;
 static void* boxvar_fn_listHead = (void*) boxptr_listHead;
 static void* boxvar_fn_listLength = (void*) boxptr_listLength;
 static void* boxvar_fn_listMember = (void*) boxptr_listMember;
-static void* boxvar_fn_listNth = (void*) boxptr_listNth;
 static void* boxvar_fn_listRest = (void*) boxptr_listRest;
 static void* boxvar_fn_listReverse = (void*) boxptr_listReverse;
 static void* boxvar_fn_listReverseInPlace = (void*) boxptr_listReverseInPlace;
@@ -102,8 +100,6 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_arrayGet,2,0) {(modelica_metatype) OMC_
 #define boxvar_arrayGet MMC_REFSTRUCTLIT(boxvar_lit_arrayGet)
 static const MMC_DEFSTRUCTLIT(boxvar_lit_arrayList,2,0) {(modelica_metatype) OMC_SYM_BOXPTR(arrayList),0}};
 #define boxvar_arrayList MMC_REFSTRUCTLIT(boxvar_lit_arrayList)
-static const MMC_DEFSTRUCTLIT(boxvar_lit_arrayNth,2,0) {(modelica_metatype) OMC_SYM_BOXPTR(arrayNth),0}};
-#define boxvar_arrayNth MMC_REFSTRUCTLIT(boxvar_lit_arrayNth)
 static const MMC_DEFSTRUCTLIT(boxvar_lit_arrayUpdate,2,0) {(modelica_metatype) OMC_SYM_BOXPTR(arrayUpdate),0}};
 #define boxvar_arrayUpdate MMC_REFSTRUCTLIT(boxvar_lit_arrayUpdate)
 static const MMC_DEFSTRUCTLIT(boxvar_lit_boolAnd,2,0) {(modelica_metatype) OMC_SYM_BOXPTR(boolAnd),0}};
@@ -180,8 +176,6 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_listLength,2,0) {(modelica_metatype) OM
 #define boxvar_listLength MMC_REFSTRUCTLIT(boxvar_lit_listLength)
 static const MMC_DEFSTRUCTLIT(boxvar_lit_listMember,2,0) {(modelica_metatype) OMC_SYM_BOXPTR(listMember),0}};
 #define boxvar_listMember MMC_REFSTRUCTLIT(boxvar_lit_listMember)
-static const MMC_DEFSTRUCTLIT(boxvar_lit_listNth,2,0) {(modelica_metatype) OMC_SYM_BOXPTR(listNth),0}};
-#define boxvar_listNth MMC_REFSTRUCTLIT(boxvar_lit_listNth)
 static const MMC_DEFSTRUCTLIT(boxvar_lit_listRest,2,0) {(modelica_metatype) OMC_SYM_BOXPTR(listRest),0}};
 #define boxvar_listRest MMC_REFSTRUCTLIT(boxvar_lit_listRest)
 static const MMC_DEFSTRUCTLIT(boxvar_lit_listReverse,2,0) {(modelica_metatype) OMC_SYM_BOXPTR(listReverse),0}};

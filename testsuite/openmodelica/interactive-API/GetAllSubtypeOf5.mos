@@ -1,0 +1,30 @@
+// name: GetAllSubtypeOf5
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+// Tests the getAllSubtypeOf API function.
+//
+
+loadString("
+  partial package Base
+  end Base;
+
+  model A
+    package Air = Base;
+    package Water = Base;
+  end A;
+
+  model M
+    extends A;
+  end M;
+");
+
+getAllSubtypeOf(Base, M, false, false, false);
+getErrorString();
+
+// Result:
+// true
+// {Air, Water}
+// ""
+// endResult

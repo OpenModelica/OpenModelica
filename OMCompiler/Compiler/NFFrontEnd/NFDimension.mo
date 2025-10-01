@@ -135,7 +135,7 @@ public
           e := SimplifyExp.simplify(e);
         then match e
           case Expression.INTEGER(value) then RESIZABLE(value, NONE(), exp, var);
-        // otherwise it is just an expression
+          // otherwise it is just an expression
           else EXP(exp, var);
         end match;
       end match;

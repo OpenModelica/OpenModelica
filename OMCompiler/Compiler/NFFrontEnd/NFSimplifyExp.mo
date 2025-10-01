@@ -122,6 +122,7 @@ algorithm
     case Expression.RECORD_ELEMENT()    then simplifyRecordElement(exp);
     case Expression.BOX()               then Expression.BOX(simplify(exp.exp));
     case Expression.MUTABLE()           then simplify(Mutable.access(exp.exp));
+    case Expression.INSTANCE_NAME()     then Ceval.evalGetInstanceName(exp.scope);
                                         else exp;
   end match;
 
@@ -273,7 +274,6 @@ algorithm
     case "vector"           then simplifyVector(listHead(args), call);
     case "zeros"            then simplifyFill(Expression.INTEGER(0), args, call, expand);
     case "semiLinear"       then simplifySemiLinear(args, call);
-    case "getInstanceName"  then Ceval.evalGetInstanceName(listHead(args));
     case "$OMC$PositiveMax" then simplifyPositiveMax(args, call);
     case "$OMC$inStreamDiv" then simplifyInStreamDiv(args, call);
     case "OpenModelica_uriToFilename" then simplifyURIToFilename(listHead(args), call);

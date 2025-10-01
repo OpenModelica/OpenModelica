@@ -79,7 +79,7 @@ end VT;
 //     for i in 1:10 loop
 //       x1[i] = previous(x1[i]) + u[i];
 //     end for;
-//     x2 = VectorTest.myfor(u, array(previous(x2[$i1]) for $i1 in 1:10));
+//     x2 = VectorTest.myfor(u, array(previous(x2[$i0]) for $i0 in 1:10));
 //   end when;
 //   y0 = sum(u);
 //   y1 = VectorTest.mysum(u);

@@ -163,6 +163,7 @@ public
     list<SCode.SubMod> subMods;
     Integer order;
     SourceInfo info;
+    Function func;
   algorithm
     info := InstNode.info(fnDer.derivedFn);
     Expression.INTEGER(order) := fnDer.order;
@@ -175,8 +176,11 @@ public
       subMods := SCode.NAMEMOD(conditionToString(condition), SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {}, SOME(Absyn.CREF(Absyn.CREF_IDENT(id, {}))), NONE(), info)) :: subMods;
     end for;
 
+
+    func := listHead(Function.getCachedFuncs(fnDer.derivativeFn));
+
     mod := SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), orderMod::subMods,
-             SOME(Absyn.CREF(Absyn.CREF_IDENT(AbsynUtil.pathString(InstNode.scopePath(fnDer.derivativeFn)),{}))), NONE(), info);
+             SOME(Absyn.CREF(Absyn.CREF_IDENT(AbsynUtil.pathString(func.path),{}))), NONE(), info);
     subMod := SCode.NAMEMOD("derivative", mod);
   end toSubMod;
 

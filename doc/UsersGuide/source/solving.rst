@@ -17,10 +17,39 @@ parameter of the :ref:`simulate` command or the :ref:`-s simflag <simflag-s>`.
 The different methods are also called solver and can be distinguished by
 their characteristic:
 
-- explicit vs. implicit
-- order
-- step size control
-- multi step
+- Method
+- Explicit vs. implicit
+- Suitability for stiff systems
+- Usage of sparse methods to solver underlying equation systems
+- Integration order
+- Step size control: Fixed vs. adaptive
+
++----------+---------+------+------------+----------+----------+-----------+
+| Solver   | Method  | Type | System     | Sparsity | Order    | Step Size |
++==========+=========+======+============+==========+==========+===========+
+| `DASSL`_ | BDF     | imp. | stiff      | sparse / | adaptive | adaptive  |
+|          |         |      |            | dense    | 1-5      |           |
++----------+---------+------+------------+----------+----------+-----------+
+| `IDA`_   | BDF     | imp. | stiff      | sparse / | adaptive | adaptive  |
+|          |         |      |            | dense    | 1-5      |           |
++----------+---------+------+------------+----------+----------+-----------+
+| `CVODE`_ | Adams-  | imp. | non-stiff  | dense    | adaptive | adaptive  |
+|          | Moulton |      |            |          | 1-12     |           |
++----------+---------+------+------------+----------+----------+-----------+
+| `CVODE`_ | BDF     | imp. | stiff      | dense    | adaptive | adaptive  |
+|          |         |      |            |          | 1-5      |           |
++----------+---------+------+------------+----------+----------+-----------+
+| `GBODE`_ | RK      | exp. | non-stiff  | sparse / | 1-14     | adaptive  |
+|          |         |      |            | dense    |          |           |
++----------+---------+------+------------+----------+----------+-----------+
+| `GBODE`_ | RK      | imp. | stiff      | sparse / | 1-12     | adaptive  |
+|          |         |      |            | dense    |          |           |
++----------+---------+------+------------+----------+----------+-----------+
+| `GBODE`_ | RK      | imp. | multi-rate | sparse / | 1-14     | adaptive  |
+|          |         |      |            | dense    |          |           |
++----------+---------+------+------------+----------+----------+-----------+
+| `Euler`_ | Euler   | exp. | non-stiff  | dense    | 1        | fixed     |
++----------+---------+------+------------+----------+----------+-----------+
 
 A good introduction on this topic may be found in :cite:`Cellier:2006`
 and a more mathematical approach can be found in :cite:`Hairer:1993`.
@@ -30,16 +59,20 @@ and a more mathematical approach can be found in :cite:`Hairer:1993`.
 DASSL
 ~~~~~
 
-DASSL is the default solver in OpenModelica, because of a severals reasons.
-It is an implicit, higher order, multi-step solver with a step-size control
-and with these properties it is quite stable for a wide range of models.
-Furthermore it has a mature source code, which was originally developed
-in the eighties an initial description may be found in :cite:`PetzoldDASSL:1982`.
+DASSL is the default solver in OpenModelica, because of a severals reasons. It
+is an implicit, higher order, multi-step solver with a step-size control and
+with these properties it is quite stable for a wide range of models. Furthermore
+it has a mature source code, which was originally developed in the eighties an
+initial description may be found in :cite:`PetzoldDASSL:1982`.
 
 This solver is based on backward differentiation formula (BDF), which is
 a family of implicit methods for numerical integration. The used implementation
 is called DASPK2.0 (see [#f1]_) and it is translated automatically to C
 by f2c (see [#f2]_).
+
+Internal non-linear and linear equation systems are solved using dense methods.
+If the target model is known to have a sparse structure one of the sparse
+solvers might be a better alternative.
 
 The following simulation flags can be used to adjust the behavior of the
 solver for specific simulation problems:
@@ -51,17 +84,16 @@ solver for specific simulation problems:
 :ref:`maxIntegrationOrder <simflag-maxintegrationorder>`,
 :ref:`noEquidistantTimeGrid <simflag-noequidistanttimegrid>`.
 
-
 .. _sundials_ida :
 
 IDA
 ~~~
 
-The IDA solver is part of a software family called sundials: SUite of
-Nonlinear and DIfferential/ALgebraic equation Solvers :cite:`Hindmarsh:2005`.
-The implementation is based on DASPK with an extended linear solver
-interface, which includes an interface to the high performance sparse
-linear solver KLU :cite:`Davis:2010`.
+The IDA solver is part of a software family called sundials: SUite of Nonlinear
+and DIfferential/ALgebraic equation Solvers :cite:`Hindmarsh:2005`. The
+implementation is based on DASPK with an extended linear solver interface, which
+includes an interface to the high performance sparse non-lineaer solver KINSOL
+:cite:`Hindmarsh:2005` and linear solver KLU :cite:`Davis:2010`.
 
 The simulation flags of :ref:`dassl` are also valid for the IDA
 solver and furthermore it has the following IDA specific flags:
@@ -89,7 +121,7 @@ This setting is advised for stiff problems which are very common for Modelica
 models.
 For non-stiff problems an combination of an Adams-Moulton formula (varying
 order 1 to 12) as linear multi-step method together with a fixed-point
-iteration as non-linear solver method can be choosen.
+iteration as non-linear solver method can be chosen.
 
 Both non-linear solver methods are internal functions of CVODE and use its
 internal direct dense linear solver CVDense.
@@ -122,7 +154,7 @@ interpolated values of the slow states.
 
 The solver utilizes by default the sparsity pattern of the ODE Jacobian and
 solves the corresponding non-linear system in case of an implicit chosen RK
-scheme using KINSOL.
+scheme using sparse solver KINSOL.
 
 GBODE is highly configurable and the following simulation flags can be used to
 adjust the behavior of the solver for specific simulation problems:
@@ -138,70 +170,35 @@ adjust the behavior of the solver for specific simulation problems:
 :ref:`gbfint <simflag-gbint>`,
 :ref:`gbferr <simflag-gbferr>`.
 
-This solver will replace obsolete and no longer maintained solvers providing a
-lot more using the following simulation flags:
-
-.. code-block::
-
-  old: -s=euler
-  new: -s=gbode -gbm=expl_euler -gbctrl=const
-
-  old: -s=heun
-  new: -s=gbode -gbm=heun -gbctrl=const
-
-  old: -s=impeuler
-  new: -s=gbode -gbm=impl_euler -gbctrl=const
-
-  old: -s=trapezoid
-  new: -s=gbode -gbm=trapezoid -gbctrl=const
-
-  old: -s=imprungekutta
-  new -s=gbode -gbm=(one of the lobatto or radau or gauss RK methods) -gbctrl=const
-
-  old: -s=irksco
-  new: -s=gbode -gbm=trapezoid
-
-  old: -s=rungekuttaSsc
-  new: -s=gbode -gbm=rungekuttaSsc
+.. _euler :
 
 Basic Explicit Solvers
 ~~~~~~~~~~~~~~~~~~~~~~
 
-The basic explicit solvers are performing with a fixed step-size and
-differ only in the integration order. The step-size is based on the
-numberOfIntervals, the startTime and stopTime parameters in the
+The basic explicit solvers Euler uses a fixed step-size based on the
+``numberOfIntervals``, the ``startTime`` and ``stopTime`` parameters in the
 :ref:`simulate` command:
 :math:`\mbox{stepSize} \approx \cfrac{\mbox{stopTime} - \mbox{startTime}}{\mbox{numberOfIntervals}}`
 
-- euler - order 1
-- heun - order 2
-- rungekutta - order 4
+- euler - Explicit Euler, fixed step size, order 1
 
-Basic Implicit Solvers
-~~~~~~~~~~~~~~~~~~~~~~
-
-The basic implicit solvers are all based on the non-linear solver KINSOL
-from the SUNDIALS suite. The underlining linear solver can be modified
-with the simflag :ref:`-impRKLS <simflag-imprkls>`. The step-size is
-determined as for the basic explicit solvers.
-
-- impeuler  - order 1
-- trapezoid - order 2
-- imprungekutta - Based on Radau IIA and Lobatto IIIA defined by its
-  Butcher tableau where the order can be adjusted by :ref:`-impRKorder <simflag-imprkorder>`.
-
-
-Experimental Solvers
+Deprecated Solvers
 ~~~~~~~~~~~~~~~~~~~~
 
-The following solvers are marked as experimental, mostly because they
-are till now not tested very well.
+The following solvers are deprecated and will be removed in a future version of
+OpenModelica:
 
-- cvode - experimental implementation of SUNDIALS CVODE solver - BDF or Adams-Moulton method - step size control, order 1-12
-- rungekuttaSsc - Runge-Kutta based on Novikov (2016) - explicit, step-size control, order 4-5
-- irksco - Own developed Runge-Kutta solver - implicit, step-size control, order 1-2
-- symSolver - Symbolic inline solver (requires :ref:`--symSolver <omcflag-symSolver>`) - fixed step-size, order 1
-- symSolverSsc - Symbolic implicit inline Euler with step-size control (requires :ref:`--symSolver<omcflag-symSolver>`) - step-size control, order 1-2
+- rungekutta - Classic Runge-Kutta method RK4, explicit, fixed step-size, oder 4
+
+.. code-block::
+
+  old: -s=rungekutta
+  new: -s=gbode -gbm=rungekutta -gbctrl=const
+
+- symSolver - Symbolic inline solver
+  (requires :ref:`--symSolver <omcflag-symSolver>`) - fixed step-size, order 1
+- symSolverSsc - Symbolic implicit inline Euler with step-size control
+  (requires :ref:`--symSolver<omcflag-symSolver>`) - step-size control, order 1-2
 - qss - A QSS solver
 
 DAE Mode Simulation
@@ -209,14 +206,14 @@ DAE Mode Simulation
 
 Beside the default ODE simulation, OpenModelica is able to simulate models in
 `DAE mode`. The `DAE mode` is enabled by the flag :ref:`--daeMode <omcflag-daeMode>`.
-In general the whole equation system of a model is passed to the DAE integrator, 
+In general the whole equation system of a model is passed to the DAE integrator,
 including all algebraic loops. This reduces the amount of work that needs to be
-done in the post optimization phase of the OpenModelica backend. 
+done in the post optimization phase of the OpenModelica backend.
 Thus models with large algebraic loops might compile faster in `DAE mode`.
 
-Once a model is compiled in `DAE mode` the simulation can be only performed 
-with :ref:`SUNDIALS/IDA <sundials_ida>` integrator and with enabled 
-:ref:`-daeMode <simflag-daeMode>` simulation flag. Both are enabled 
+Once a model is compiled in `DAE mode` the simulation can be only performed
+with :ref:`SUNDIALS/IDA <sundials_ida>` integrator and with enabled
+:ref:`-daeMode <simflag-daeMode>` simulation flag. Both are enabled
 automatically by default, when a simulation run is started.
 
 

@@ -13036,14 +13036,14 @@ template modelicaLine(builtin.SourceInfo info)
   match info
   case SOURCEINFO(columnNumberStart=0) then "/* Dummy Line */"
   else <<
-  <% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then '/*#modelicaLine <%infoStr(info)%>*/'%>
+  <% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then '/*#modelicaLine <%infoStr(info)%>*/'%>
   >>
 end modelicaLine;
 
 template endModelicaLine()
 ::=
   <<
-  <% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then "/*#endModelicaLine*/"%>
+  <% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then "/*#endModelicaLine*/"%>
   >>
 end endModelicaLine;
 

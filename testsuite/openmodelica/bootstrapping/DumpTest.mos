@@ -9,7 +9,7 @@ setCommandLineOptions("-d=rml,noevalfunc,gen");
 echo(false);
 body:=Absyn.PARTS({},{},{},{},NONE());
 restr:=Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.PURE()));
-prog:=Absyn.PROGRAM({Absyn.CLASS("dummyClass",true,true,true,restr,body,{},{},AbsynUtil.dummyInfo)},Absyn.TOP());
+prog:=Absyn.PROGRAM({Absyn.CLASS("dummyClass",true,true,true,restr,body,{},{},{},AbsynUtil.dummyInfo)},Absyn.TOP());
 echo(true);
 "DumpGraphviz.dump";
 DumpGraphviz.dump(prog);

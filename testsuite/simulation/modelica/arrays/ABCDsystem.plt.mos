@@ -2,16 +2,16 @@
 // keywords: array
 // status: correct
 // teardown_command: rm -rf ABCDsystem_* ABCDsystem ABCDsystem.exe ABCDsystem.cpp ABCDsystem.makefile ABCDsystem.libs ABCDsystem.log output.log
-// 
+//
 // Using empty arrays
 // Drmodelica: 7.9 Empty Arrays (p. 231)
 // cflags: -d=-newInst
 //
 loadFile("ABCDsystem.mo");
 simulate(ABCDsystem,startTime=0.0, stopTime=1.0, method="rungekutta", numberOfIntervals=2, tolerance=1e-4, outputFormat="plt", cflags="-O1"); // 2 intervals == 3 values
-echo(false); // turns of output 
+echo(false); // turns of output
 size := readSimulationResultSize("ABCDsystem_res.plt");
-res:=readSimulationResult("ABCDsystem_res.plt",{D[2,2],y[2],u[1]},size); 
+res:=readSimulationResult("ABCDsystem_res.plt",{D[2,2],y[2],u[1]},size);
 d:=res[1,1];
 y:=res[2,1];
 u:=res[3,1];
@@ -25,7 +25,13 @@ u;
 // record SimulationResult
 //     resultFile = "ABCDsystem_res.plt",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 2, tolerance = 0.0001, method = 'rungekutta', fileNamePrefix = 'ABCDsystem', options = '', outputFormat = 'plt', variableFilter = '.*', cflags = '-O1', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "LOG_STDOUT        | warning | Integration method 'rungekutta' is deprecated and will be removed in a future version of OpenModelica.
+// |                 | info    | | Use integration method GBODE with method 'rungekutta' and constant step size instead:
+// |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=rungekutta -gbctrl=const' in Simulation Setup->Simulation Flags.
+// |                 | |       | | | or
+// |                 | |       | | | Simulation flags '-s=gbode -gbm=rungekutta -gbctrl=const'.
+// |                 | |       | | See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

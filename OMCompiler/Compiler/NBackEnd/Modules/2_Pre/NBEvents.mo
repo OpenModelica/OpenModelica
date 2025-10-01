@@ -1141,6 +1141,9 @@ protected
         exp.call := call;
       then exp;
 
+      // don't traverse noEvent() calls
+      case Expression.CALL() guard(Call.isNamed(exp.call, "noEvent")) then exp;
+
       // don't traverse cref subscripts
       case Expression.CREF() then exp;
 

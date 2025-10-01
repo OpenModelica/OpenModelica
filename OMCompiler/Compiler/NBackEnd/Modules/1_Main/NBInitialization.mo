@@ -281,7 +281,7 @@ public
     Pointer<Variable> var_ptr;
     Option<Pointer<Variable>> var_pre;
     ComponentRef pre;
-    list<Subscript> subscripts;
+    list<list<Subscript>> subscripts;
     EquationKind kind;
     Pointer<Equation> eq;
   algorithm
@@ -289,9 +289,8 @@ public
     var_ptr := BVariable.getVarPointer(cref, sourceInfo());
     var_pre := BVariable.getVarPre(var_ptr);
     if Util.isSome(var_pre) then
-      subscripts := ComponentRef.subscriptsAllFlat(cref);
       pre := BVariable.getVarName(Util.getOption(var_pre));
-      pre := ComponentRef.mergeSubscripts(subscripts, pre, true, true);
+      pre := ComponentRef.copySubscripts(cref, pre);
       kind := if BVariable.isContinuous(var_ptr, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
       eq := Equation.makeAssignment(Expression.fromCref(cref, true), Expression.fromCref(pre, true), idx, NBEquation.START_STR, iter, EquationAttributes.default(kind, true));
       Pointer.update(ptr_start_eqs, eq :: Pointer.access(ptr_start_eqs));
@@ -440,7 +439,7 @@ public
           iterator := Iterator.EMPTY();
         else
           (var_ptr, name, _, _, subscripts, _, iterator) := createIteratedStartCref(var_ptr, name);
-          e := Expression.applySubscripts(subscripts, e);
+          e := Expression.applySubscripts(subscripts, e, true);
         end if;
       then e;
 
@@ -876,7 +875,7 @@ public
       case Expression.LBINARY(operator = Operator.OPERATOR(op = NFOperator.Op.OR))
       then isInitialCall(condition.exp1) or isInitialCall(condition.exp2);
       // it's an array where any of the elements is an initialCall
-      case Expression.ARRAY() then List.any(arrayList(condition.elements), isInitialCall);
+      case Expression.ARRAY() then Array.any(condition.elements, isInitialCall);
       // not an initial call. Ignore "and" constructs
       else false;
     end match;

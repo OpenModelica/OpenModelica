@@ -2926,19 +2926,32 @@ int OMCProxy::numProcessors()
 
 /*!
  * \brief OMCProxy::getAllSubtypeOf
- * Returns the list of all classes that extend from className given a parentClass where the lookup for className should start.
- * \param parentClassName = $TypeName(AllLoadedClasses) - is the name of the class whose sub classes are retrieved.
- * \param className - the name of the class that is subtype of
- * \param qualified = false
+ * Returns the list of all classes that extend from baseClass given a parentClass that the subtypes should be reachable from.
+ * \param baseClass - the name of the base class to look for subtypes of
+ * \param parentClass - the class that the subtypes should be reachable from
  * \param includePartial = false
  * \param sort = false
  * \return
  */
-QStringList OMCProxy::getAllSubtypeOf(QString className, QString parentClassName, bool qualified, bool includePartial, bool sort)
+QStringList OMCProxy::getAllSubtypeOf(QString baseClass, QString parentClass, bool includePartial, bool sort)
 {
-  return mpOMCInterface->getAllSubtypeOf(className, parentClassName, qualified, includePartial, sort);
+  return mpOMCInterface->getAllSubtypeOf(baseClass, parentClass, false /*deprecated*/, includePartial, sort);
 }
 
+
+/*!
+ * \brief OMCProxy::getReplaceableChoices
+ * Returns class names and comments for choicesAllMatching candidates
+ * \param baseClass - the name of the base class to look for subtypes of
+ * \param parentClass - the class that the subtypes should be reachable from
+ * \param includePartial = false
+ * \param sort = false
+ * \return
+ */
+QList<QList<QString>> OMCProxy::getReplaceableChoices(QString baseClass, QString parentClass, bool includePartial, bool sort)
+{
+  return mpOMCInterface->getReplaceableChoices(baseClass, parentClass, includePartial, sort);
+}
 
 /*!
  * \brief OMCProxy::help

@@ -1525,8 +1525,8 @@ algorithm
   usedVars := arrayCreate(arrayLength(mT), false);
   partitionsCnt := partitionIndependentBlocksMasked(m, mT, rm, rmT, arrayCreate(BackendEquation.getNumberOfEquations(eqs), true), eqPartMap, varPartMap,  remEqPartMap, usedVars, usedRemovedVars);
     /*
-    print("eqPartMap "+stringDelimitList(List.map(arrayList(eqPartMap),intString)," | ")+"\n");
-    print("varPartMap "+stringDelimitList(List.map(arrayList(varPartMap),intString)," | ")+"\n");
+    print("eqPartMap "+stringDelimitList(List.mapArray(eqPartMap,intString)," | ")+"\n");
+    print("varPartMap "+stringDelimitList(List.mapArray(varPartMap,intString)," | ")+"\n");
     print("partitionsCnt :"+intString(partitionsCnt)+"\n");
     varAtts := {};
     eqAtts := {};
@@ -1547,7 +1547,7 @@ algorithm
 
   // and get adjacency matrix for subpartitions, remove the sample()-vars first since they are not handled as connections (necessary to get the right order)
   (partAdjacency,order) := getSubPartitionAdjacency(partitionsCnt, baseClockEqIdx, subClockInterfaceEqIdxs, eqPartMap, varPartMap, clockedVarsMask, eqs, vars);
-    //print("order "+stringDelimitList(List.map(arrayList(order),intString)," | ")+"\n");
+    //print("order "+stringDelimitList(List.mapArray(order,intString)," | ")+"\n");
 
   //Detect clocked continuous partitions and create new subclock equations
   (m, mT) := BackendDAEUtil.adjacencyMatrixMasked(inEqSystem, BackendDAE.SUBCLOCK_IDX(), clockedEqsMask, SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
@@ -1639,7 +1639,7 @@ algorithm
   mergedOrder := {};
   mergedParts :={};
   clk := arrayGet(subclocks,order[1]);
-  for part in arrayList(order) loop
+  for part in order loop
     clk2 := arrayGet(subclocks,part);
     if subClkEqual(clk,clk2) then
       //these 2 partitions have the same subclock, put them in one partition

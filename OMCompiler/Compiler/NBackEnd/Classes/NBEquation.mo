@@ -1843,7 +1843,7 @@ public
 
         case ALGORITHM() algorithm
           eq.alg := SimplifyModel.simplifyAlgorithm(eq.alg);
-        then eq;
+        then if Algorithm.isEmpty(eq.alg) then Equation.DUMMY_EQUATION() else eq;
 
         case WHEN_EQUATION() algorithm
           new_eq := match WhenEquationBody.simplify(SOME(eq.body))
@@ -2095,7 +2095,7 @@ public
         then Expression.MULTARY({eqn.rhs}, {eqn.lhs}, operator);
 
         case ARRAY_EQUATION()  algorithm
-          operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.ADD);
+          operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.ADD_EW);
         then Expression.MULTARY({eqn.rhs}, {eqn.lhs}, operator);
 
         case RECORD_EQUATION(ty = Type.COMPLEX(cls = cls_node)) algorithm
@@ -3100,9 +3100,9 @@ public
         local
           Pointer<Equation> eqn_ptr;
          // just a tuple itself
-        case {eqn_ptr} guard(Equation.isRecordOrTupleEquation(eqn_ptr)) then true;
-        // multiple body equations -> tuple return
-        case _ :: _ then true;
+        case {eqn_ptr} then Equation.isRecordOrTupleEquation(eqn_ptr);
+        // at least 2 body equations -> tuple return
+        case _ :: _ :: _ then true;
         else false;
       end match;
     end isRecordOrTupleEquation;
@@ -3418,10 +3418,10 @@ public
           Expression condition;
           list<Expression> conditions;
 
-        // if the condition is an array, skip surplus of False elements
+        // if the condition is an array, skip surplus of literal elements
         case SOME(b as WHEN_EQUATION_BODY(condition = condition as Expression.ARRAY())) algorithm
           b.else_when := simplify(b.else_when);
-          conditions := list(elem for elem guard(not Expression.isFalse(elem)) in arrayList(condition.elements));
+          conditions := list(elem for elem guard(not Expression.isBoolean(elem)) in condition.elements);
           if listEmpty(conditions) then
             body := b.else_when;
           elseif List.hasOneElement(conditions) then
@@ -3431,13 +3431,13 @@ public
             b.condition := Expression.makeArrayCheckLiteral(Type.ARRAY(Type.BOOLEAN(), {Dimension.fromInteger(listLength(conditions))}), listArray(conditions));
             body := SOME(b);
           end if;
-        then SOME(b);
+        then body;
 
         // simplify condition
         case SOME(b) algorithm
           b.else_when := simplify(b.else_when);
-          // if the condition is only False -> skip this unreachable branch
-          if Expression.isFalse(b.condition) then
+          // if the condition is a literal boolean -> skip this unreachable branch
+          if Expression.isBoolean(b.condition) then
             body := b.else_when;
           else
             body := SOME(b);
@@ -4552,18 +4552,21 @@ public
           eqData.discretes    := EquationPointers.mapExp(eqData.discretes, func);
           eqData.initials     := EquationPointers.mapExp(eqData.initials, func);
           eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, func);
+          eqData.removed      := EquationPointers.mapExp(eqData.removed, func);
         then eqData;
 
         case EqData.EQ_DATA_JAC() algorithm
           eqData.results      := EquationPointers.mapExp(eqData.results, func);
           eqData.temporary    := EquationPointers.mapExp(eqData.temporary, func);
           eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, func);
+          eqData.removed      := EquationPointers.mapExp(eqData.removed, func);
         then eqData;
 
         case EqData.EQ_DATA_HES() algorithm
           Pointer.update(eqData.result, Equation.map(Pointer.access(eqData.result), func));
           eqData.temporary    := EquationPointers.mapExp(eqData.temporary, func);
           eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, func);
+          eqData.removed      := EquationPointers.mapExp(eqData.removed, func);
         then eqData;
       end match;
     end mapExp;

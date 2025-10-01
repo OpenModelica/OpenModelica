@@ -164,7 +164,7 @@ public
     classInst := match component
       case COMPONENT()    then component.classInst;
       case ITERATOR(ty = Type.COMPLEX(cls = classInst)) then classInst;
-      case ITERATOR()           then InstNode.ITERATOR_NODE(Expression.EMPTY(component.ty));
+      case ITERATOR()     then InstNode.ITERATOR_NODE(Expression.EMPTY(component.ty));
       else InstNode.EMPTY_NODE();
     end match;
   end classInstance;

@@ -1099,6 +1099,51 @@ int System_isRML()
   return 0;
 }
 
+extern void* System_splitOnNewline(const char *str, int includeDelimiter)
+{
+  const char *start = str;
+  const char *current = start;
+  size_t sz;
+  void *lst = mmc_mk_nil();
+
+  while (*current != '\0') {
+    // Split on \n and \r\n.
+    if (*current == '\n' || (*current == '\r' && *(current + 1) == '\n')) {
+      sz = current - start;
+
+      // Save the string up to the newline.
+      if (sz > 0) {
+        lst = mmc_mk_cons(mmc_mk_scon_n(start, sz), lst);
+      }
+
+      // Is the newline one character (\n) or two (\r\n)?
+      if (*current == '\r' && *(current + 1) == '\n') {
+        sz = 2;
+      } else {
+        sz = 1;
+      }
+
+      // Save the newline if includeDelimiter = true.
+      if (includeDelimiter) {
+        lst = mmc_mk_cons(mmc_mk_scon_n(current, sz), lst);
+      }
+
+      // Move to the next character after the newline.
+      current += sz;
+      start = current;
+    } else {
+      ++current;
+    }
+  }
+
+  // Save the rest of the string if there's anything left.
+  if (current != start) {
+    lst = mmc_mk_cons(mmc_mk_scon_n(start, current - start), lst);
+  }
+
+  return listReverse(lst);
+}
+
 extern void* System_strtokIncludingDelimiters(const char *str0, const char *delimit)
 {
   char* str = (char*)str0;
@@ -1109,7 +1154,6 @@ extern void* System_strtokIncludingDelimiters(const char *str0, const char *deli
   void *lst = mmc_mk_nil();
   void *slst = mmc_mk_nil();
   char* s = str;
-  char* stmp;
   mmc_uint_t start = 0, end = 0;
   /* len + 3 in pos signifies that there is no delimiter in the string */
   mmc_uint_t pos = len + 3;
@@ -1167,13 +1211,8 @@ extern void* System_strtokIncludingDelimiters(const char *str0, const char *deli
       break;
     }
     start = MMC_UNTAGFIXNUM(MMC_CAR(lst));
-    /* create stmp */
     pos = end - start;
-    stmp = (char*)malloc((pos+1) * sizeof(char));
-    strncpy(stmp, str + start, pos);
-    stmp[pos] = '\0';
-    slst = mmc_mk_cons(mmc_mk_scon(stmp), slst);
-    free(stmp);
+    slst = mmc_mk_cons(mmc_mk_scon_n(str + start, pos), slst);
   }
   return slst;
 }

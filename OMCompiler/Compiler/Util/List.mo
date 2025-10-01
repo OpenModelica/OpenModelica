@@ -1771,6 +1771,21 @@ algorithm
   outList := list(inFunc(e) for e in inList);
 end map;
 
+public function mapArray<TI, TO>
+  "Takes a list and a function, and creates a new list by applying the function
+   to each element of the list."
+  input array<TI> inArray;
+  input MapFunc inFunc;
+  output list<TO> outList;
+
+  partial function MapFunc
+    input TI inElement;
+    output TO outElement;
+  end MapFunc;
+algorithm
+  outList := list(inFunc(e) for e in inArray);
+end mapArray;
+
 public function mapCheckReferenceEq<TI>
   "Takes a list and a function, and creates a new list by applying the function
    to each element of the list."
@@ -1914,7 +1929,7 @@ protected
   TO eo;
 algorithm
   for oe in inList loop
-    if not isNone(oe) then
+    if isSome(oe) then
       SOME(ei) := oe;
       eo := inFunc(ei);
       outList := eo :: outList;
@@ -1942,7 +1957,7 @@ protected
   TO eo;
 algorithm
   for oe in inList loop
-    if not isNone(oe) then
+    if isSome(oe) then
       SOME(ei) := oe;
       eo := inFunc(ei, inArg1);
       outList := eo :: outList;

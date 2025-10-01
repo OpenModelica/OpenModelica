@@ -45,10 +45,13 @@
 #include <string>
 #include <vector>
 #include <cassert>
+#include "../../SimulationRuntime/c/util/list.h"
 
 using namespace std;
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 static int nv;
 static int ne;
@@ -57,4 +60,31 @@ static int* col_ptrs=NULL;
 static int* col_ids=NULL;
 static int* col_val=NULL;
 
+LIST** rows = NULL;
+
+typedef struct{
+  int index;
+  int value;
+} ASSC_ELEMENT;
+
+void* allocAsscElement(const void* data)
+{
+  void* new_element = malloc(sizeof(ASSC_ELEMENT));
+  assertStreamPrint(NULL, new_element != NULL, "ASSC_ELEMENT out of memory.");
+  return new_element;
+};
+
+void copyAsscElement(void* dest, const void* src)
+{
+  memcpy(dest, src, sizeof(ASSC_ELEMENT));
+};
+
+void printAsscElement(void* data)
+{
+  ASSC_ELEMENT* elem = (ASSC_ELEMENT*) data;
+  printf("(%d: %d) ", (int) elem->index, (int) elem->value);
 }
+
+#ifdef __cplusplus
+}
+#endif

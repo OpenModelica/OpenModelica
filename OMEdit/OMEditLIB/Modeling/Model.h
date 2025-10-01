@@ -648,7 +648,7 @@ private:
     QPair<QString, bool> getVariableValue(QStringList variables);
     QString getVariableType(QStringList variables);
 
-    FlatModelica::Expression* getVariableBinding(const QString &variableName);
+    FlatModelica::Expression* getVariableValueOrBinding(const QString &variableName, bool value) const;
     const Element *lookupElement(const QString &name) const;
     Element *lookupElement(const QString &name);
     const Element *lookupElement(const Name &name) const;
@@ -706,6 +706,8 @@ private:
     QString getDirectionPrefix() const;
     const QString &getComment() const;
     Annotation *getAnnotation() const;
+    const FlatModelica::Expression &getValue() const {return mValue;}
+    FlatModelica::Expression &getValue() {return mValue;}
     const FlatModelica::Expression &getBinding() const {return mBinding;}
     FlatModelica::Expression &getBinding() {return mBinding;}
     void setBinding(const FlatModelica::Expression expression) {mBinding = expression;}
@@ -738,6 +740,7 @@ private:
     std::unique_ptr<Prefixes> mpPrefixes;
     QString mComment;
     std::unique_ptr<Annotation> mpAnnotation;
+    FlatModelica::Expression mValue;
     FlatModelica::Expression mBinding;
     FlatModelica::Expression mBindingForReset;
   };

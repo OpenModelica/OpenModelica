@@ -846,9 +846,11 @@ algorithm
       end if;
     end if;
 
-    // Constants also must have binding equations if they are used, but this is
-    // checked when evaluating them.
-
+    // Constants must have binding equations.
+    if Binding.isUnbound(binding) then
+      Error.addSourceMessage(Error.NO_CONSTANT_BINDING, {ComponentRef.toString(var.name)}, var.info);
+      fail();
+    end if;
   else
     if fixed and Binding.isUnbound(binding) then
       start_binding := Variable.lookupTypeAttribute("start", var);
@@ -1609,8 +1611,7 @@ algorithm
     case Expression.IF(ty = Type.CONDITIONAL_ARRAY())
       then flattenConditionalArrayIfExp(exp, prefix, info);
 
-    case Expression.CALL()
-      guard Call.isNamed(exp.call, "getInstanceName")
+    case Expression.INSTANCE_NAME()
       then Expression.STRING(Prefix.instanceName(prefix));
 
     else Expression.mapShallow(exp, function flattenExp(prefix = prefix, info = info));
@@ -2511,17 +2512,17 @@ function evaluateBindingConnOp
   input UnorderedMap<ComponentRef, Variable> variables;
   input CardinalityTable.Table ctable;
 protected
-  Binding binding;
   Expression exp, eval_exp;
 algorithm
   () := match var
-    case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING(bindingExp = exp))
+    case Variable.VARIABLE()
+      guard Binding.hasExp(var.binding)
       algorithm
+        exp := Binding.getExp(var.binding);
         eval_exp := ConnectEquations.evaluateOperators(exp, sets, setsArray, variables, ctable);
 
         if not referenceEq(exp, eval_exp) then
-          binding.bindingExp := eval_exp;
-          var.binding := binding;
+          var.binding := Binding.setExp(eval_exp, var.binding);
         end if;
       then
         ();

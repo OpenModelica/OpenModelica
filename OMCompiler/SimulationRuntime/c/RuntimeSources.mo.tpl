@@ -49,4 +49,3 @@ encapsulated package RuntimeSources
   constant list<String> simrt_mixed_solver_sources={MIXED_FILES};
 annotation(__OpenModelica_Interface="backend");
 end RuntimeSources;
-

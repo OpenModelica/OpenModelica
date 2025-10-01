@@ -241,7 +241,8 @@ public:
   QString getAnnotationModifierValue(QString className, QString annotation, QString modifier);
   QString getSimulationFlagsAnnotation(QString className);
   int numProcessors();
-  QStringList getAllSubtypeOf(QString className, QString parentClassName = QString("AllLoadedClasses"), bool qualified = false, bool includePartial = false, bool sort = false);
+  QStringList getAllSubtypeOf(QString className, QString parentClassName = QString("AllLoadedClasses"), bool includePartial = false, bool sort = false);
+  QList<QList<QString>> getReplaceableChoices(QString baseClass, QString parentClass, bool includePartial = false, bool sort = false);
   QString help(QString topic);
   OMCInterface::getConfigFlagValidOptions_res getConfigFlagValidOptions(QString topic);
   QString getCompiler();
