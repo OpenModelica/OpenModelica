@@ -696,10 +696,10 @@ char* getXMLfileName(const char* modelFilePrefix, threadData_t* threadData) {
   if (omc_flag[FLAG_F]) { // Read the filename from the command line
     filename = strdup(omc_flagValue[FLAG_F]);
   } else if (omc_flag[FLAG_INPUT_PATH]) { //  Read the input path from the command line
-    filename = (char*) calloc(strlen(omc_flagValue[FLAG_INPUT_PATH] + strlen(modelFilePrefix) + 10), sizeof(char));
+    filename = (char*) calloc(strlen(omc_flagValue[FLAG_INPUT_PATH] + strlen(modelFilePrefix) + 10 + 1), sizeof(char));
     sprintf(filename, "%s/%s_init.xml", omc_flagValue[FLAG_INPUT_PATH], modelFilePrefix);
   } else { // Use default model_name
-    filename = (char*) calloc(strlen(modelFilePrefix) + 9, sizeof(char));
+    filename = (char*) calloc(strlen(modelFilePrefix) + 9 + 1, sizeof(char));
     sprintf(filename, "%s_init.xml", modelFilePrefix);
   }
 
@@ -733,7 +733,7 @@ omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, t
   }
 
   /* set our user data */
-  XML_SetUserData(parser, &mi);
+  XML_SetUserData(parser, mi);
 
   /* set the handlers for start/end of element. */
   XML_SetElementHandler(parser, startElement, endElement);
