@@ -2367,18 +2367,24 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
 
       if (eventInfo.valuesOfContinuousStatesChanged)
       {
-        status = internalGetContinuousStates(c, states, NUMBER_OF_STATES);
-        if (status != fmi2OK) return fmi2Error;
+        #if NUMBER_OF_STATES > 0
+          status = internalGetContinuousStates(c, states, NUMBER_OF_STATES);
+          if (status != fmi2OK) return fmi2Error;
+        #endif
       }
 
       if (eventInfo.nominalsOfContinuousStatesChanged)
       {
-        status = internalGetNominalsOfContinuousStates(c, states, NUMBER_OF_STATES);
-        if (status != fmi2OK) return fmi2Error;
+        #if NUMBER_OF_STATES > 0
+          status = internalGetNominalsOfContinuousStates(c, states, NUMBER_OF_STATES);
+          if (status != fmi2OK) return fmi2Error;
+        #endif
       }
 
-      status = internalGetEventIndicators(c, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
-      if (status != fmi2OK) return fmi2Error;
+      #if NUMBER_OF_EVENT_INDICATORS > 0
+        status = internalGetEventIndicators(c, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
+        if (status != fmi2OK) return fmi2Error;
+      #endif
 
       comp->solverInfo->didEventStep = 1;
     }
