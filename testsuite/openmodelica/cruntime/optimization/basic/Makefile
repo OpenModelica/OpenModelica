@@ -28,6 +28,7 @@ NP.mos \
 noOCP.mos \
 ocpWithInputs.mos \
 OSP.mos \
+OSP2.mos \
 pendel.mos \
 reduce1.mos \
 SC.mos \
@@ -42,6 +43,7 @@ testAlgLoop3.mos \
 testAlgLoop4.mos \
 testAlgLoop5.mos \
 testAlgLoop6.mos \
+testAlgLoop7.mos \
 testAlgLoop8.mos \
 testAlgLoop9.mos \
 testAlgLoop10.mos \
@@ -63,8 +65,6 @@ TT.mos \
 FAILINGTESTFILES = \
 TT2.mos \
 TT3.mos \
-testAlgLoop7.mos \
-OSP2.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
