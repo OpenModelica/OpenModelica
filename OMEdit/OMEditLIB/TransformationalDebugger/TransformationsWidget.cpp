@@ -965,7 +965,7 @@ void TransformationsWidget::fetchOperations(const OMVariable &variable)
       mpVariableOperationsTreeWidget->setItemWidget(pOperationTreeItem, 0, opText);
     }
   } else {
-    QString message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG).arg(Helper::toolsOptionsPath).arg(Helper::toolsOptionsPath);
+    QString message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG).arg(Helper::toolsOptionsPath);
     QStringList values;
     values << message;
     QString toolTip = message;
@@ -1327,7 +1327,7 @@ void TransformationsWidget::fetchOperations(OMEquation *equation, HtmlDiff htmlD
       }
     }
   } else {
-    QString message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG).arg(Helper::toolsOptionsPath).arg(Helper::toolsOptionsPath);
+    QString message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG).arg(Helper::toolsOptionsPath);
     QStringList values;
     values << message;
     QString toolTip = message;
