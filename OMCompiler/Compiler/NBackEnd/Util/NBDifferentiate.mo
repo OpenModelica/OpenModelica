@@ -633,7 +633,13 @@ public
 
       // (-x)' = -(x')
       case Expression.UNARY() algorithm
+        current_grad := diffArguments.current_grad;
+
+        // apply same unary operator to current_grad
+        diffArguments.current_grad := Expression.UNARY(exp.operator, current_grad); 
         (elem1, diffArguments) := differentiateExpression(exp.exp, diffArguments);
+
+        diffArguments.current_grad := current_grad;
       then (Expression.UNARY(exp.operator, elem1), diffArguments);
 
       // ((Real) x)' = (Real) x'
