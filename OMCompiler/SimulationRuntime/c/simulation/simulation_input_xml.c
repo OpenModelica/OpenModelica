@@ -876,6 +876,262 @@ void validate_model_description_sizes(omc_ModelDescription *md, MODEL_DATA* mode
 }
 
 /**
+ * @brief Read all real alias variables.
+ *
+ * Fill if parameter is negated, its ID, and alias type.
+ *
+ * TODO: Let this function alloc, fill and return DATA_REAL_ALIAS* realAlias.
+ *
+ * @param realAlias     Will be filled with values from hash map on return.
+ * @param rAli          Real alias hash map.
+ * @param nAliasReal    Number of alias variables in hash map.
+ * @param mapAlias      Hash map for alias variables.
+ * @param mapAliasParam Hash map for alias parameters.
+ */
+void read_real_alias_var(DATA_REAL_ALIAS* realAlias,
+                         omc_ModelVariables *rAli,
+                         unsigned long nAliasReal,
+                         hash_string_long *mapAlias,
+                         hash_string_long *mapAliasParam)
+{
+  long *it, *itParam;
+  const char *aliasTmp = NULL;
+
+  infoStreamPrint(OMC_LOG_DEBUG, 1, "read xml file for real alias vars");
+
+  for(unsigned long i=0; i < nAliasReal; i++)
+  {
+    read_var_info(*findHashLongVar(rAli,i), &realAlias[i].info);
+
+    read_value_string(findHashStringStringNull(*findHashLongVar(rAli,i),"alias"), &aliasTmp);
+    if (0 == strcmp(aliasTmp,"negatedAlias")) {
+      realAlias[i].negate = 1;
+    } else {
+      realAlias[i].negate = 0;
+    }
+    infoStreamPrint(OMC_LOG_DEBUG, 0, "read for %s negated %d from setup file", realAlias[i].info.name, realAlias[i].negate);
+
+    realAlias[i].filterOutput = shouldFilterOutput(*findHashLongVar(rAli,i), realAlias[i].info.name);
+
+    free((char*)aliasTmp); aliasTmp = NULL;
+
+    read_value_string(findHashStringStringNull(*findHashLongVar(rAli,i),"aliasVariable"), &aliasTmp);
+
+    it = findHashStringLongPtr(mapAlias, aliasTmp);
+    itParam = findHashStringLongPtr(mapAliasParam, aliasTmp);
+
+    if (NULL != it) {
+      realAlias[i].nameID  = *it;
+      realAlias[i].aliasType = ALIAS_TYPE_VARIABLE;
+    } else if (NULL != itParam) {
+      realAlias[i].nameID  = *itParam;
+      realAlias[i].aliasType = ALIAS_TYPE_PARAMETER;
+    } else if (0==strcmp(aliasTmp,"time")) {
+      realAlias[i].aliasType = ALIAS_TYPE_TIME;
+    } else {
+      throwStreamPrint(NULL, "Real Alias variable %s not found.", aliasTmp);
+    }
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
+                     realAlias[i].info.name,
+                     realAlias[i].nameID,
+                     realAlias[i].aliasType ? ((realAlias[i].aliasType==ALIAS_TYPE_TIME) ? "time" : "real parameters") : "real variables");
+    free((char*)aliasTmp); aliasTmp = NULL;
+  }
+  messageClose(OMC_LOG_DEBUG);
+}
+
+/**
+ * @brief Read all integer alias variables.
+ *
+ * Fill if parameter is negated, its ID, and alias type.
+ *
+ * TODO: Let this function alloc, fill and return DATA_INTEGER_ALIAS* integerAlias.
+ *
+ * @param integerAlias  Will be filled with values from hash map on return.
+ * @param iAli          Integer alias hash map.
+ * @param nAliasInteger Number of alias variables in hash map.
+ * @param mapAlias      Hash map for alias variables.
+ * @param mapAliasParam Hash map for alias parameters.
+ */
+void read_int_alias_var(DATA_INTEGER_ALIAS* integerAlias,
+                        omc_ModelVariables *iAli,
+                        unsigned long nAliasInteger,
+                        hash_string_long *mapAlias,
+                        hash_string_long *mapAliasParam)
+{
+  long *it, *itParam;
+  const char *aliasTmp = NULL;
+
+  infoStreamPrint(OMC_LOG_DEBUG, 1, "read xml file for integer alias vars");
+  for(unsigned long i=0; i < nAliasInteger; i++)
+  {
+    read_var_info(*findHashLongVar(iAli,i), &integerAlias[i].info);
+
+    read_value_string(findHashStringStringNull(*findHashLongVar(iAli,i),"alias"), &aliasTmp);
+    if (0 == strcmp(aliasTmp,"negatedAlias")) {
+      integerAlias[i].negate = 1;
+    } else {
+      integerAlias[i].negate = 0;
+    }
+
+    infoStreamPrint(OMC_LOG_DEBUG, 0, "read for %s negated %d from setup file",integerAlias[i].info.name,integerAlias[i].negate);
+
+    integerAlias[i].filterOutput = shouldFilterOutput(*findHashLongVar(iAli,i), integerAlias[i].info.name);
+
+    free((char*)aliasTmp); aliasTmp = NULL;
+
+    read_value_string(findHashStringString(*findHashLongVar(iAli,i),"aliasVariable"), &aliasTmp);
+
+    it = findHashStringLongPtr(mapAlias, aliasTmp);
+    itParam = findHashStringLongPtr(mapAliasParam, aliasTmp);
+
+    if(NULL != it) {
+      integerAlias[i].nameID  = *it;
+      integerAlias[i].aliasType = ALIAS_TYPE_VARIABLE;
+    } else if(NULL != itParam) {
+      integerAlias[i].nameID  = *itParam;
+      integerAlias[i].aliasType = ALIAS_TYPE_PARAMETER;
+    } else {
+      throwStreamPrint(NULL, "Integer Alias variable %s not found.", aliasTmp);
+    }
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
+                     integerAlias[i].info.name,
+                     integerAlias[i].nameID,
+                     integerAlias[i].aliasType ? "integer parameters":"integer variables");
+    free((char*)aliasTmp); aliasTmp = NULL;
+  }
+  messageClose(OMC_LOG_DEBUG);
+}
+
+/**
+ * @brief Read all boolean alias variables.
+ *
+ * Fill if parameter is negated, its ID, and alias type.
+ *
+ * TODO: Let this function alloc, fill and return DATA_BOOLEAN_ALIAS* booleanAlias.
+ *
+ * @param booleanAlias  Will be filled with values from hash map on return.
+ * @param bAli          Boolean alias hash map.
+ * @param nAliasBoolean Number of alias variables in hash map.
+ * @param mapAlias      Hash map for alias variables.
+ * @param mapAliasParam Hash map for alias parameters.
+ */
+void read_bool_alias_var(DATA_BOOLEAN_ALIAS* booleanAlias,
+                         omc_ModelVariables *bAli,
+                         unsigned long nAliasBoolean,
+                         hash_string_long *mapAlias,
+                         hash_string_long *mapAliasParam)
+{
+  long *it, *itParam;
+  const char *aliasTmp = NULL;
+
+  infoStreamPrint(OMC_LOG_DEBUG, 1, "read xml file for boolean alias vars");
+  for(unsigned long i=0; i < nAliasBoolean; i++)
+  {
+    const char *aliasTmp = NULL;
+    read_var_info(*findHashLongVar(bAli,i), &booleanAlias[i].info);
+
+    read_value_string(findHashStringString(*findHashLongVar(bAli,i),"alias"), &aliasTmp);
+    if  (0 == strcmp(aliasTmp,"negatedAlias")) {
+      booleanAlias[i].negate = 1;
+    } else {
+      booleanAlias[i].negate = 0;
+    }
+
+    infoStreamPrint(OMC_LOG_DEBUG, 0, "read for %s negated %d from setup file", booleanAlias[i].info.name, booleanAlias[i].negate);
+
+    booleanAlias[i].filterOutput = shouldFilterOutput(*findHashLongVar(bAli,i), booleanAlias[i].info.name);
+
+    free((char*)aliasTmp); aliasTmp = NULL;
+
+    read_value_string(findHashStringString(*findHashLongVar(bAli,i),"aliasVariable"), &aliasTmp);
+
+    it = findHashStringLongPtr(mapAlias, aliasTmp);
+    itParam = findHashStringLongPtr(mapAliasParam, aliasTmp);
+
+    if (NULL != it) {
+      booleanAlias[i].nameID  = *it;
+      booleanAlias[i].aliasType = ALIAS_TYPE_VARIABLE;
+    } else if (NULL != itParam) {
+      booleanAlias[i].nameID  = *itParam;
+      booleanAlias[i].aliasType = ALIAS_TYPE_PARAMETER;
+    } else {
+      throwStreamPrint(NULL, "Boolean Alias variable %s not found.", aliasTmp);
+    }
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
+                booleanAlias[i].info.name,
+                booleanAlias[i].nameID,
+                booleanAlias[i].aliasType ? "boolean parameters" : "boolean variables");
+    free((char*)aliasTmp); aliasTmp = NULL;
+  }
+  messageClose(OMC_LOG_DEBUG);
+}
+
+/**
+ * @brief Read all string alias variables.
+ *
+ * Fill if parameter is negated, its ID, and alias type.
+ *
+ * TODO: Let this function alloc, fill and return DATA_BOOLEAN_ALIAS* stringAlias.
+ *
+ * @param stringAlias   Will be filled with values from hash map on return.
+ * @param sAli          String alias hash map.
+ * @param nAliasString  Number of alias variables in hash map.
+ * @param mapAlias      Hash map for alias variables.
+ * @param mapAliasParam Hash map for alias parameters.
+ */
+void read_string_alias_var(DATA_BOOLEAN_ALIAS* stringAlias,
+                           omc_ModelVariables *sAli,
+                           unsigned long nAliasString,
+                           hash_string_long *mapAlias,
+                           hash_string_long *mapAliasParam)
+{
+  long *it, *itParam;
+  const char *aliasTmp = NULL;
+
+  infoStreamPrint(OMC_LOG_DEBUG, 1, "read xml file for string alias vars");
+  for(unsigned long i=0; i < nAliasString; i++)
+  {
+    const char *aliasTmp = NULL;
+    read_var_info(*findHashLongVar(sAli,i), &stringAlias[i].info);
+
+    read_value_string(findHashStringString(*findHashLongVar(sAli,i),"alias"), &aliasTmp);
+    if (0 == strcmp(aliasTmp,"negatedAlias")) {
+      stringAlias[i].negate = 1;
+    } else {
+      stringAlias[i].negate = 0;
+    }
+    infoStreamPrint(OMC_LOG_DEBUG, 0, "read for %s negated %d from setup file", stringAlias[i].info.name, stringAlias[i].negate);
+
+    stringAlias[i].filterOutput = shouldFilterOutput(*findHashLongVar(sAli,i), stringAlias[i].info.name);
+
+    free((char*)aliasTmp);
+    aliasTmp = NULL;
+    read_value_string(findHashStringString(*findHashLongVar(sAli,i),"aliasVariable"), &aliasTmp);
+
+    it = findHashStringLongPtr(mapAlias, aliasTmp);
+    itParam = findHashStringLongPtr(mapAliasParam, aliasTmp);
+
+    if (NULL != it) {
+      stringAlias[i].nameID  = *it;
+      stringAlias[i].aliasType = ALIAS_TYPE_VARIABLE;
+    } else if (NULL != itParam) {
+      stringAlias[i].nameID  = *itParam;
+      stringAlias[i].aliasType = ALIAS_TYPE_PARAMETER;
+    } else {
+      throwStreamPrint(NULL, "String Alias variable %s not found.", aliasTmp);
+    }
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
+                stringAlias[i].info.name,
+                stringAlias[i].nameID,
+                stringAlias[i].aliasType ? "string parameters" : "string variables");
+    free((char*)aliasTmp);
+  }
+  messageClose(OMC_LOG_DEBUG);
+
+}
+
+/**
  * @brief Reads initial values from init XML file.
  *
  * Can be FMI 1.0 modelDescription.xml or in a similar style.
@@ -895,8 +1151,6 @@ void read_input_xml(MODEL_DATA* modelData, SIMULATION_INFO* simulationInfo)
 
   const char *filename, *guid, *override, *overrideFile;
   hash_string_long *mapAlias = NULL, *mapAliasParam = NULL, *mapAliasSen = NULL;
-  long *it, *itParam;
-  mmc_sint_t i;
   int sensitivityParIndex = 0;
 
   filename = getXMLfileName(modelData->modelFilePrefix, NULL);
@@ -920,7 +1174,7 @@ void read_input_xml(MODEL_DATA* modelData, SIMULATION_INFO* simulationInfo)
   overrideFile = omc_flagValue[FLAG_OVERRIDE_FILE];
   modelica_boolean reCalcStepSize = doOverride(mi, modelData, override, overrideFile);
 
-  /* Read values from hash map */
+  /* Read initial values from hash map */
   read_default_experiment(simulationInfo, mi->de, reCalcStepSize);
 
   read_value_string(findHashStringString(mi->md,"OPENMODELICAHOME"), &simulationInfo->OPENMODELICAHOME);
@@ -946,181 +1200,11 @@ void read_input_xml(MODEL_DATA* modelData, SIMULATION_INFO* simulationInfo)
     read_variables(simulationInfo, T_REAL, modelData->realSensitivityData, mi->rSen, "real sensitivities", 0, modelData->nSensitivityVars, &mapAliasSen, &mapAliasParam, &sensitivityParIndex);
   }
 
-  /*
-   * real all alias vars
-   */
-  infoStreamPrint(OMC_LOG_DEBUG, 1, "read xml file for real alias vars");
-  for(i=0; i<modelData->nAliasReal; i++)
-  {
-    const char *aliasTmp = NULL;
-    read_var_info(*findHashLongVar(mi->rAli,i), &modelData->realAlias[i].info);
-
-    read_value_string(findHashStringStringNull(*findHashLongVar(mi->rAli,i),"alias"), &aliasTmp);
-    if (0 == strcmp(aliasTmp,"negatedAlias")) {
-      modelData->realAlias[i].negate = 1;
-    } else {
-      modelData->realAlias[i].negate = 0;
-    }
-    infoStreamPrint(OMC_LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->realAlias[i].info.name, modelData->realAlias[i].negate);
-
-    modelData->realAlias[i].filterOutput = shouldFilterOutput(*findHashLongVar(mi->rAli,i), modelData->realAlias[i].info.name);
-
-    free((char*)aliasTmp);
-    aliasTmp = NULL;
-    read_value_string(findHashStringStringNull(*findHashLongVar(mi->rAli,i),"aliasVariable"), &aliasTmp);
-
-    it = findHashStringLongPtr(mapAlias, aliasTmp);
-    itParam = findHashStringLongPtr(mapAliasParam, aliasTmp);
-
-    if (NULL != it) {
-      modelData->realAlias[i].nameID  = *it;
-      modelData->realAlias[i].aliasType = 0;
-    } else if (NULL != itParam) {
-      modelData->realAlias[i].nameID  = *itParam;
-      modelData->realAlias[i].aliasType = 1;
-    } else if (0==strcmp(aliasTmp,"time")) {
-      modelData->realAlias[i].aliasType = 2;
-    } else {
-      throwStreamPrint(NULL, "Real Alias variable %s not found.", aliasTmp);
-    }
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
-                modelData->realAlias[i].info.name,
-                modelData->realAlias[i].nameID,
-                modelData->realAlias[i].aliasType ? ((modelData->realAlias[i].aliasType==2) ? "time" : "real parameters") : "real variables");
-    free((char*)aliasTmp);
-  }
-  messageClose(OMC_LOG_DEBUG);
-
-  /*
-   * integer all alias vars
-   */
-  infoStreamPrint(OMC_LOG_DEBUG, 1, "read xml file for integer alias vars");
-  for(i=0; i<modelData->nAliasInteger; i++)
-  {
-    const char *aliasTmp = NULL;
-    read_var_info(*findHashLongVar(mi->iAli,i), &modelData->integerAlias[i].info);
-
-    read_value_string(findHashStringStringNull(*findHashLongVar(mi->iAli,i),"alias"), &aliasTmp);
-    if (0 == strcmp(aliasTmp,"negatedAlias")) {
-      modelData->integerAlias[i].negate = 1;
-    } else {
-      modelData->integerAlias[i].negate = 0;
-    }
-
-    infoStreamPrint(OMC_LOG_DEBUG, 0, "read for %s negated %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].negate);
-
-    modelData->integerAlias[i].filterOutput = shouldFilterOutput(*findHashLongVar(mi->iAli,i), modelData->integerAlias[i].info.name);
-
-    free((char*)aliasTmp);
-    aliasTmp = NULL;
-    read_value_string(findHashStringString(*findHashLongVar(mi->iAli,i),"aliasVariable"), &aliasTmp);
-
-    it = findHashStringLongPtr(mapAlias, aliasTmp);
-    itParam = findHashStringLongPtr(mapAliasParam, aliasTmp);
-
-    if(NULL != it) {
-      modelData->integerAlias[i].nameID  = *it;
-      modelData->integerAlias[i].aliasType = 0;
-    } else if(NULL != itParam) {
-      modelData->integerAlias[i].nameID  = *itParam;
-      modelData->integerAlias[i].aliasType = 1;
-    } else {
-      throwStreamPrint(NULL, "Integer Alias variable %s not found.", aliasTmp);
-    }
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
-                modelData->integerAlias[i].info.name,
-                modelData->integerAlias[i].nameID,
-                modelData->integerAlias[i].aliasType?"integer parameters":"integer variables");
-    free((char*)aliasTmp);
-  }
-  messageClose(OMC_LOG_DEBUG);
-
-  /*
-   * boolean all alias vars
-   */
-  infoStreamPrint(OMC_LOG_DEBUG, 1, "read xml file for boolean alias vars");
-  for(i=0; i<modelData->nAliasBoolean; i++)
-  {
-    const char *aliasTmp = NULL;
-    read_var_info(*findHashLongVar(mi->bAli,i), &modelData->booleanAlias[i].info);
-
-    read_value_string(findHashStringString(*findHashLongVar(mi->bAli,i),"alias"), &aliasTmp);
-    if  (0 == strcmp(aliasTmp,"negatedAlias")) {
-      modelData->booleanAlias[i].negate = 1;
-    } else {
-      modelData->booleanAlias[i].negate = 0;
-    }
-
-    infoStreamPrint(OMC_LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->booleanAlias[i].info.name, modelData->booleanAlias[i].negate);
-
-    modelData->booleanAlias[i].filterOutput = shouldFilterOutput(*findHashLongVar(mi->bAli,i), modelData->booleanAlias[i].info.name);
-
-    free((char*)aliasTmp);
-    aliasTmp = NULL;
-    read_value_string(findHashStringString(*findHashLongVar(mi->bAli,i),"aliasVariable"), &aliasTmp);
-
-    it = findHashStringLongPtr(mapAlias, aliasTmp);
-    itParam = findHashStringLongPtr(mapAliasParam, aliasTmp);
-
-    if (NULL != it) {
-      modelData->booleanAlias[i].nameID  = *it;
-      modelData->booleanAlias[i].aliasType = 0;
-    } else if (NULL != itParam) {
-      modelData->booleanAlias[i].nameID  = *itParam;
-      modelData->booleanAlias[i].aliasType = 1;
-    } else {
-      throwStreamPrint(NULL, "Boolean Alias variable %s not found.", aliasTmp);
-    }
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
-                modelData->booleanAlias[i].info.name,
-                modelData->booleanAlias[i].nameID,
-                modelData->booleanAlias[i].aliasType ? "boolean parameters" : "boolean variables");
-    free((char*)aliasTmp);
-  }
-  messageClose(OMC_LOG_DEBUG);
-
-  /*
-   * string all alias vars
-   */
-  infoStreamPrint(OMC_LOG_DEBUG, 1, "read xml file for string alias vars");
-  for(i=0; i<modelData->nAliasString; i++)
-  {
-    const char *aliasTmp = NULL;
-    read_var_info(*findHashLongVar(mi->sAli,i), &modelData->stringAlias[i].info);
-
-    read_value_string(findHashStringString(*findHashLongVar(mi->sAli,i),"alias"), &aliasTmp);
-    if (0 == strcmp(aliasTmp,"negatedAlias")) {
-      modelData->stringAlias[i].negate = 1;
-    } else {
-      modelData->stringAlias[i].negate = 0;
-    }
-    infoStreamPrint(OMC_LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->stringAlias[i].info.name, modelData->stringAlias[i].negate);
-
-    modelData->stringAlias[i].filterOutput = shouldFilterOutput(*findHashLongVar(mi->sAli,i), modelData->stringAlias[i].info.name);
-
-    free((char*)aliasTmp);
-    aliasTmp = NULL;
-    read_value_string(findHashStringString(*findHashLongVar(mi->sAli,i),"aliasVariable"), &aliasTmp);
-
-    it = findHashStringLongPtr(mapAlias, aliasTmp);
-    itParam = findHashStringLongPtr(mapAliasParam, aliasTmp);
-
-    if (NULL != it) {
-      modelData->stringAlias[i].nameID  = *it;
-      modelData->stringAlias[i].aliasType = 0;
-    } else if (NULL != itParam) {
-      modelData->stringAlias[i].nameID  = *itParam;
-      modelData->stringAlias[i].aliasType = 1;
-    } else {
-      throwStreamPrint(NULL, "String Alias variable %s not found.", aliasTmp);
-    }
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
-                modelData->stringAlias[i].info.name,
-                modelData->stringAlias[i].nameID,
-                modelData->stringAlias[i].aliasType ? "string parameters" : "string variables");
-    free((char*)aliasTmp);
-  }
-  messageClose(OMC_LOG_DEBUG);
+  /* Real all alias variables */
+  read_real_alias_var(modelData->realAlias, mi->rAli, modelData->nAliasReal, mapAlias, mapAliasParam);
+  read_int_alias_var(modelData->integerAlias, mi->iAli, modelData->nAliasInteger, mapAlias, mapAliasParam);
+  read_bool_alias_var(modelData->booleanAlias, mi->bAli, modelData->nAliasBoolean, mapAlias, mapAliasParam);
+  read_string_alias_var(modelData->stringAlias, mi->sAli, modelData->nAliasString, mapAlias, mapAliasParam);
 
   free((char*)filename);
   free(mi);
