@@ -455,12 +455,12 @@ static void read_var_dimension(omc_ModelVariable *v, DIMENSION_INFO *dimension_i
     }
 
     key = calloc(sizeof(char), 10 + num_digits + 1);
-    sprintf(key, "dim-%u-start", i + 1);
+    sprintf(key, "dim-%lu-start", i + 1);
     read_value_long(findHashStringStringEmpty(v, key), &(dim->start), -1);
     free(key);
 
     key = calloc(sizeof(char), 19 + num_digits + 1 );
-    sprintf(key, "dim-%u-valueReference", i + 1);
+    sprintf(key, "dim-%lu-valueReference", i + 1);
     read_value_long(findHashStringStringEmpty(v, key), &(dim->valueReference), -1);
     free(key);
 
