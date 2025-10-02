@@ -2015,9 +2015,10 @@ public
         Expression current_grad;
         // Local reverse grads (to assign before recursing)
         Expression grad_exp1, grad_exp2;
-        Boolean isVec1, isVec2, isMat1, isMat2;
+        Boolean isVec1, isVec2, isMat1, isMat2, isScalar1, isScalar2;
         Type ty1, ty2;
         Integer r1, r2;
+        list<Integer> dim1, dim2;
 
 
       // Addition calculations (ADD, ADD_EW, ...)
@@ -2110,7 +2111,11 @@ public
         ty2 := Expression.typeOf(exp2);
         r1 := if Type.isArray(ty1) then Type.dimensionCount(ty1) else 0;
         r2 := if Type.isArray(ty2) then Type.dimensionCount(ty2) else 0;
+        dim1 := if r1 > 0 then NFDimension.sizes(Type.arrayDims(ty1)) else {};
+        dim2 := if r2 > 0 then NFDimension.sizes(Type.arrayDims(ty2)) else {};
 
+        isScalar1 := (r1 == 0);
+        isScalar2 := (r2 == 0);
         isVec1 := (r1 == 1);
         isVec2 := (r2 == 1);
         isMat1 := (r1 == 2);
@@ -2120,7 +2125,8 @@ public
         (_, sizeClass) := Operator.classify(operator);
         print("differentiateBinary: sizeClass " + Operator.sizeClassificationString(sizeClass) + "\n");
         // Decide shape case
-        if isVec1 and isVec2 and sizeClass <> NFOperator.SizeClassification.ELEMENT_WISE then
+        if isVec1 and isVec2 and sizeClass == NFOperator.SizeClassification.SCALAR then
+          print("differentiateBinary: inner product case\n");
           // Inner product
           grad_exp1 := Expression.BINARY(
             current_grad,
@@ -2135,7 +2141,26 @@ public
               operator.ty),
             exp1); // G * x
 
+        elseif isMat1 and isMat2 and sizeClass == NFOperator.SizeClassification.MATRIX and listGet(dim1, 1) > 1 and listGet(dim1, 2) == 1 and listGet(dim2, 1) == 1 and listGet(dim2, 2) > 1 then
+          print("differentiateBinary: outer product case\n");
+          // outer product
+          grad_exp1 := Expression.BINARY(
+            current_grad,
+            Operator.fromClassification(
+              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX),
+              operator.ty),
+            exp2); // G * y
+          print(Expression.toString(grad_exp1) + "\n");
+          grad_exp2 := Expression.BINARY(
+            typeTransposeCall(current_grad),
+            Operator.fromClassification(
+              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX),
+              operator.ty),
+            exp1); // G^T * x
+          print(Expression.toString(grad_exp2) + "\n");
+
         elseif isMat1 and isVec2 then
+          print("differentiateBinary: matrix * vector case\n");
           // Matrix * Vector
           grad_exp1 := Expression.BINARY(
             current_grad,
@@ -2151,23 +2176,25 @@ public
             current_grad);                     // Aᵀ * G
 
         elseif isVec1 and isMat2 then
-            // Vector * Matrix
-            // grad w.r.t exp1 (x): B * Gᵀ  -> treat Gᵀ via transpose(current_grad)
-            grad_exp1 := Expression.BINARY(
-              exp2,
-              Operator.fromClassification(
-                (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX_VECTOR),
-                operator.ty),
-              typeTransposeCall(current_grad));    // B * Gᵀ  (shape n)
-            // grad w.r.t exp2 (B): xᵀ * G
-            grad_exp2 := Expression.BINARY(
-              typeTransposeCall(exp1),
-              Operator.fromClassification(
-                (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX),
-                operator.ty),
-              current_grad);                   // xᵀ * G  (outer product)
+          print("differentiateBinary: vector * matrix case\n");
+          // Vector * Matrix
+          // grad w.r.t exp1 (x): B * Gᵀ  -> treat Gᵀ via transpose(current_grad)
+          grad_exp1 := Expression.BINARY(
+            exp2,
+            Operator.fromClassification(
+              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX_VECTOR),
+              operator.ty),
+            typeTransposeCall(current_grad));    // B * Gᵀ  (shape n)
+          // grad w.r.t exp2 (B): xᵀ * G
+          grad_exp2 := Expression.BINARY(
+            typeTransposeCall(exp1),
+            Operator.fromClassification(
+              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX),
+              operator.ty),
+            current_grad);                   // xᵀ * G  (outer product)
 
         elseif isMat1 and isMat2 then
+          print("differentiateBinary: matrix * matrix case\n");
           // Matrix * Matrix
           grad_exp1 := Expression.BINARY(
             current_grad,
@@ -2182,13 +2209,19 @@ public
               operator.ty),
             current_grad);                     // Aᵀ * G
 
-        elseif sizeClass == NFOperator.SizeClassification.ELEMENT_WISE and
-               ((isVec1 and isVec2) or (isMat1 and isMat2)) then
-          // Element-wise Hadamard
-          grad_exp1 := Expression.MULTARY({current_grad, exp2}, {}, makeMulFromOperator(operator)); // G .* Y
-          grad_exp2 := Expression.MULTARY({current_grad, exp1}, {}, makeMulFromOperator(operator)); // G .* X
+        elseif isScalar1 and isMat2 then
+          print("differentiateBinary: scalar * matrix case\n");
+          // k * A
+          // need to implement the double dot product for grad_exp1
+          // it can be implemented as sum(G .* A) for grad_exp1
+          grad_exp1 := Expression.MULTARY({current_grad, exp2}, {}, Operator.fromClassification(
+              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ELEMENT_WISE),
+              operator.ty)); 
+          grad_exp1 := typeSumCall(grad_exp1); // G : A
+          grad_exp2 := Expression.MULTARY({current_grad, exp1}, {}, makeMulFromOperator(operator)); // G * k
 
         else
+          print("differentiateBinary: fallback case\n");
           // Fallback (scalar / mixed / broadcast)
           grad_exp1 := Expression.MULTARY({current_grad, exp2}, {}, makeMulFromOperator(operator));
           grad_exp2 := Expression.MULTARY({current_grad, exp1}, {}, makeMulFromOperator(operator));
@@ -2674,6 +2707,58 @@ public
     call := NFCall.makeTypedCall(TRANSPOSE_FUNC, {mat}, var, pur, resTy);
     tr := Expression.CALL(call);
   end typeTransposeCall;
+
+
+  function typeSumCall
+      "Create a typed builtin sum(A) call without expanding A.
+       Semantics (matching Modelica):
+         - If A is not an array => return A (defensive fallback).
+         - If A has 1 dimension (vector[n]) -> scalar result (element type).
+         - If A has k>1 dimensions (d1,d2,...,dk) -> array result of shape (d2,...,dk)."
+      input Expression arr;
+      output Expression s;
+    protected
+      Type inTy = Expression.typeOf(arr);
+      list<Type.Dimension> dims;
+      Type elTy;
+      Type resTy;
+      NFCall call;
+      NFPrefixes.Variability var = Expression.variability(arr);
+      NFPrefixes.Purity pur = Expression.purity(arr);
+      NFFunction.Function SUM_FUNC;
+    algorithm
+      // Not an array: just return expression (sum(x) == x)
+      if not Type.isArray(inTy) then
+        s := arr;
+        return;
+      end if;
+
+      elTy := Type.arrayElementType(inTy);
+      dims := Type.arrayDims(inTy);
+
+      // 1D vector -> scalar (element type)
+      if listLength(dims) == 1 then
+        resTy := elTy;
+      else
+        // Reduce first dimension: keep tail dims
+        resTy := Type.ARRAY(elTy, listRest(dims));
+      end if;
+
+      // Build minimal builtin function descriptor for 'sum'
+      SUM_FUNC :=
+        NFFunction.Function.FUNCTION(
+          Absyn.Path.IDENT("sum"),
+          NFInstNode.EMPTY_NODE(),
+          {}, {}, {}, {},
+          resTy,
+          DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+          {}, {}, listArray({}),
+          Pointer.createImmutable(NFFunction.FunctionStatus.BUILTIN),
+          Pointer.createImmutable(0));
+
+      call := NFCall.makeTypedCall(SUM_FUNC, {arr}, var, pur, resTy);
+      s := Expression.CALL(call);
+    end typeSumCall;
 
     // Helper: build matrix * vector (or matrix * matrix) MULTARY with a proper mul operator
     function makeMul
