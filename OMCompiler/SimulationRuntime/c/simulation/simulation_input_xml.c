@@ -355,6 +355,7 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
     char* next_num_dimensions;
     unsigned int dim_plus_1;
     unsigned int size;
+    unsigned int len;
 
     v = findHashLongVar(*mi->lastCT, mi->lastCI);
     num_dimensions = findHashStringString(*v, "num_dimensions");
@@ -364,22 +365,22 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
     sprintf(next_num_dimensions, "%u", dim_plus_1);
     addHashStringString(v, "num_dimensions", next_num_dimensions);
 
+    len = snprintf(NULL, 0, "dim-%u-valueReference", dim_plus_1); // longest string we ever write into key
+    key = calloc(sizeof(char), len + 1);
+
     /* add more key/value pairs to the last variable */
     for(i = 0; attr[i]; i += 2) {
       if(!strcmp(attr[i], "start")) {
-        key = calloc(sizeof(char), size + 10);
         sprintf(key, "dim-%u-start", dim_plus_1);
         addHashStringString(v, key, attr[i+1]);
-        free(key);
 
       } else if(!strcmp(attr[i], "valueReference")) {
-        key = calloc(sizeof(char), size + 19);
         sprintf(key, "dim-%u-valueReference", dim_plus_1);
         addHashStringString(v, key, attr[i+1]);
-        free(key);
       }
     }
 
+    free(key);
     free(next_num_dimensions);
     return;
   }
@@ -435,7 +436,7 @@ static void read_var_info(omc_ModelVariable *v, VAR_INFO *info)
  */
 static void read_var_dimension(omc_ModelVariable *v, DIMENSION_INFO *dimension_info) {
   char* key;
-  unsigned int num_digits = 0;
+  int len;
   DIMENSION_ATTRIBUTE* dim;
   modelica_integer i;
 
@@ -447,22 +448,17 @@ static void read_var_dimension(omc_ModelVariable *v, DIMENSION_INFO *dimension_i
 
   dimension_info->dimensions = (DIMENSION_ATTRIBUTE*) calloc(dimension_info->numberOfDimensions, sizeof(DIMENSION_ATTRIBUTE));
 
+  len = snprintf(NULL, 0, "dim-%lu-valueReference", dimension_info->numberOfDimensions); // longest string we ever write into key
+  key = calloc(sizeof(char), len + 1);
+
   for (i = 0; i < dimension_info->numberOfDimensions; i++) {
     dim = &dimension_info->dimensions[i];
 
-    if ((i+1) % 10 == 0) {
-      num_digits++;
-    }
-
-    key = calloc(sizeof(char), 10 + num_digits + 1);
     sprintf(key, "dim-%lu-start", i + 1);
     read_value_long(findHashStringStringEmpty(v, key), &(dim->start), -1);
-    free(key);
 
-    key = calloc(sizeof(char), 19 + num_digits + 1 );
     sprintf(key, "dim-%lu-valueReference", i + 1);
     read_value_long(findHashStringStringEmpty(v, key), &(dim->valueReference), -1);
-    free(key);
 
     if (dim->start > 0 && dim->valueReference == -1) {
       dim->type = DIMENSION_BY_START;
@@ -477,6 +473,8 @@ static void read_var_dimension(omc_ModelVariable *v, DIMENSION_INFO *dimension_i
                              "but only one is allowed");
     }
   }
+
+  free(key);
 
   return;
 }
