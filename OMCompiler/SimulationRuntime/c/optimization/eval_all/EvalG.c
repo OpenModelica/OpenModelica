@@ -63,13 +63,13 @@ static inline void structJac3(const long double * const a, const modelica_real *
 static inline void structJacC(const modelica_real *const J, double *values,
     const int nv, int *k, const modelica_boolean * const Jj);
 
-static inline void printMaxError(Number *g, const int m, const int nx, const int nJ, long double **t,
+static inline void printMaxError(ipnumber *g, const int m, const int nx, const int nJ, long double **t,
     const int np, const int nsi, DATA * data, OptData * optData);
 
 
 /* eval constraints
  */
-Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData){
+Bool evalfG(ipindex n, double * vopt, Bool new_x, int m, ipnumber *g, void * useData){
   OptData *optData = (OptData*)useData;
 
   const int nx = optData->dim.nx;
@@ -160,7 +160,7 @@ Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData
  *  eval derivation of s.t.
  *  author: Vitalij Ruge
  **/
-Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *iRow, Index *iCol, Number *values, void * useData){
+Bool evalfDiffG(ipindex n, double * vopt, Bool new_x, ipindex m, ipindex njac, ipindex *iRow, ipindex *iCol, ipnumber *values, void * useData){
   OptData *optData = (OptData*)useData;
 
   if(!values){
@@ -663,7 +663,7 @@ static inline void generated_jac_struc(OptData * optData, int *iRow, int* iCol){
 }
 
 
-static inline void printMaxError(Number *g, const int m, const int nx, const int nJ,
+static inline void printMaxError(ipnumber *g, const int m, const int nx, const int nJ,
     long double **t, const int np, const int nsi, DATA * data, OptData * optData){
 
   int index = 0;

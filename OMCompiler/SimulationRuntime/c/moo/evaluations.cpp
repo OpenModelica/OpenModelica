@@ -232,7 +232,7 @@ void init_hes_mr(InfoGDOP& info, GDOP::BoundarySweepLayout& layout_mr) {
                 hes_c_index++;
             }
             else {
-                LOG_ERROR("Hessian entry row = {}, col = {} from hes_d not found in pattern!", mayer_hess.row, mayer_hess.col);
+                Log::error("Hessian entry row = {}, col = {} from hes_d not found in pattern!", mayer_hess.row, mayer_hess.col);
                 abort();
             }
         }
@@ -247,7 +247,7 @@ void init_hes_mr(InfoGDOP& info, GDOP::BoundarySweepLayout& layout_mr) {
             if (it != sparsity_to_lnz.end()) {
                 info.exc_hes->D_to_Mr_buffer[i] = {i, it->second};
             } else {
-                LOG_ERROR("Hessian entry row = {}, col = {} from hes_d not found in pattern!", row, col);
+                Log::error("Hessian entry row = {}, col = {} from hes_d not found in pattern!", row, col);
                 abort();
             }
         }
@@ -281,6 +281,13 @@ void set_states_inputs(InfoGDOP& info, const f64* xu_ij) {
 void set_time(InfoGDOP& info, const f64 t_ij) {
     /* move time horizon to Modelica model time */
     info.data->localData[0]->timeValue = t_ij + info.model_start_time;
+}
+
+void eval_ode_write(InfoGDOP& info, f64* eval_ode_buffer) {
+    /* f */
+    for (int der_x = 0; der_x < info.f_size; der_x++) {
+        eval_ode_buffer[der_x] = info.data->localData[0]->realVars[info.index_der_x_real_vars + der_x];
+    }
 }
 
 void eval_lfg_write(InfoGDOP& info, f64* eval_lfg_buffer) {

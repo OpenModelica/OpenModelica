@@ -45,7 +45,8 @@ pipeline {
                                           // we build a pkg from it and we do not want to depend
                                           // on Fortran for now.
                                           + " -DOM_OMC_ENABLE_FORTRAN=OFF"
-                                          + " -DOM_OMC_ENABLE_IPOPT=OFF"
+                                          + " -DOM_OMC_ENABLE_OPTIMIZATION=OFF"
+                                          + " -DOM_OMC_ENABLE_MOO=OFF"
                                       )
                 sh "build/bin/omc --version"
                 // Create a product build package

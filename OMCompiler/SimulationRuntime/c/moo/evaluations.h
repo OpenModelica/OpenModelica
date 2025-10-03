@@ -66,7 +66,19 @@ void set_inputs(InfoGDOP& info, const f64* u_ij);
 void set_states_inputs(InfoGDOP& info, const f64* xu_ij);
 void set_time(InfoGDOP& info, const f64 t_ij);
 
-inline void eval_current_point(InfoGDOP& info) {
+// === Simulation Utils (e.g. MOO internal RADAU routine) ===
+inline void eval_current_point_ode(InfoGDOP& info) {
+    info.data->callback->functionODE(info.data, info.threadData);
+}
+
+void eval_ode_write(InfoGDOP& info, f64* eval_ode_buffer);
+inline void eval_write_ode_jacobian(InfoGDOP& info, f64* eval_ode_jac_buffer) {
+    assert(info.exc_jac->A.jacobian && info.exc_jac->A.jacobian->sparsePattern);
+    evalJacobian(info.data, info.threadData, info.exc_jac->A.jacobian, NULL, eval_ode_jac_buffer, FALSE);
+}
+
+// === Optimization Utils ===
+inline void eval_current_point_dae(InfoGDOP& info) {
     info.data->callback->functionDAE(info.data, info.threadData);
 }
 

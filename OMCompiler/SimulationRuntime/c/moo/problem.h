@@ -63,6 +63,22 @@ public:
     void callback_hes(const f64* x0_nlp, const f64* xuf_nlp, const f64* p, const f64 mayer_factor, const f64* lambda) override;
 };
 
+class Dynamics : public GDOP::Dynamics {
+public:
+    InfoGDOP& info;
+
+    Dynamics(const GDOP::ProblemConstants& pc_in, InfoGDOP& info);
+
+    void allocate() override;
+    void free() override;
+
+    void eval(const f64* x, const f64* u, const f64* p, f64 t, f64* f, void* user_data) override;
+    void jac(const f64* x, const f64* u, const f64* p, f64 t, f64* dfdx, void* user_data) override;
+
+private:
+    bool allocated_ode_matrix = false;
+};
+
 GDOP::Problem create_gdop(InfoGDOP& info, const Mesh& mesh);
 
 } // namespace OpenModelica

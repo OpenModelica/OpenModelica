@@ -127,7 +127,7 @@ void free_model(InfoGDOP& info) {
 
 MatEmitter::MatEmitter(InfoGDOP& info) : info(info) {}
 
-int MatEmitter::operator()(const Trajectory& trajectory) {
+int MatEmitter::operator()(const PrimalDualTrajectory& trajectory) {
     DATA* data = info.data;
     threadData_t* threadData = info.threadData;
 
@@ -146,25 +146,27 @@ int MatEmitter::operator()(const Trajectory& trajectory) {
         data->modelData->resultFileName = GC_strdup(result_file_cstr.c_str());
     }
 
-    data->simulationInfo->numSteps = trajectory.t.size();
+    const auto& primals = trajectory.primals;
+
+    data->simulationInfo->numSteps = primals->t.size();
     initializeResultData(data, threadData, 0);
     sim_result.writeParameterData(&sim_result, data, threadData);
 
     // allocate contiguous array for xu
-    FixedVector<f64> xu(trajectory.x.size() + trajectory.u.size());
-    for (size_t i = 0; i < trajectory.t.size(); i++) {
+    FixedVector<f64> xu(primals->x.size() + primals->u.size());
+    for (size_t i = 0; i < primals->t.size(); i++) {
         // move trajectory data in contiguous array
-        for (size_t x_index = 0; x_index < trajectory.x.size(); x_index++) {
-            xu[x_index] = trajectory.x[x_index][i];
+        for (size_t x_index = 0; x_index < primals->x.size(); x_index++) {
+            xu[x_index] = primals->x[x_index][i];
         }
-        for (size_t u_index = 0; u_index < trajectory.u.size(); u_index++) {
-            xu[trajectory.x.size() + u_index] = trajectory.u[u_index][i];
+        for (size_t u_index = 0; u_index < primals->u.size(); u_index++) {
+            xu[primals->x.size() + u_index] = primals->u[u_index][i];
         }
 
         // evaluate all algebraic variables
-        set_time(info, info.model_start_time + trajectory.t[i]);
+        set_time(info, info.model_start_time + primals->t[i]);
         set_states_inputs(info, xu.raw());
-        eval_current_point(info);
+        eval_current_point_dae(info);
 
         // emit point
         sim_result.emit(&sim_result, data, threadData);
@@ -207,8 +209,8 @@ std::unique_ptr<PrimalDualTrajectory> ConstantInitialization::operator()(const G
 Simulation::Simulation(InfoGDOP& info, SOLVER_METHOD solver)
   : info(info), solver(solver) {}
 
-std::unique_ptr<Trajectory> Simulation::operator()(const ControlTrajectory& controls, int num_steps,
-                                                   f64 start_time, f64 stop_time, f64* x_start_values) {
+std::unique_ptr<Trajectory> Simulation::operator()(const ControlTrajectory& controls, const FixedVector<f64>& parameters,
+                                                   int num_steps, f64 start_time, f64 stop_time, f64* x_start_values) {
     DATA* data = info.data;
     threadData_t* threadData = info.threadData;
     SOLVER_INFO solver_info;
@@ -252,7 +254,7 @@ std::unique_ptr<Trajectory> Simulation::operator()(const ControlTrajectory& cont
     // init simulation
     initializeSolverData(data, threadData, &solver_info);
     setZCtol(fmin(simInfo->stepSize, simInfo->tolerance));
-    initialize_model(info);
+    initialize_model(info); // TODO: is this needed? we pass x0 after all, maybe call this when getting x0 from the model?!
     data->real_time_sync.enabled = FALSE;
 
     // create an auxiliary object (stored in global void*)
@@ -269,8 +271,17 @@ std::unique_ptr<Trajectory> Simulation::operator()(const ControlTrajectory& cont
     // emit for time = start_time
     controls.interpolate_at(start_time, u_interpolation_buffer.raw());
     set_inputs(info, u_interpolation_buffer.raw());
-    if (x_start_values) set_states(info, x_start_values);
+    set_states(info, x_start_values);
+    eval_current_point_dae(info);
     trajectory_xut_emit(&sim_result, data, threadData);
+
+    // ensure realVars stay consistent across ring buffer rotation (prefixedName_performSimulation line 491ff):
+    // copy current slot (localData[0]) into the upcoming slots (localData[1], localData[2])
+    // after rotateRingBuffer() + lookupRingBuffer(), the new "current slot"
+    // (localData[0]) will already contain our enforced values.
+    // necessary for simulation steps, as otherwise start values (t = 0) would be present in these slots!
+    memcpy(data->localData[1]->realVars, data->localData[0]->realVars, sizeof(modelica_real) * data->modelData->nVariablesReal);
+    memcpy(data->localData[2]->realVars, data->localData[1]->realVars, sizeof(modelica_real) * data->modelData->nVariablesReal);
 
     // simulation with custom emit
     data->callback->performSimulation(data, threadData, &solver_info);
@@ -283,6 +294,8 @@ std::unique_ptr<Trajectory> Simulation::operator()(const ControlTrajectory& cont
 
     // free allocated memory
     free_model(info);                   // free for initialize_model() (at least partial)
+
+    // Attention: this deletes the A Jacobian also!!
     freeSolverData(data, &solver_info); // free for initializeSolverData
 
     return trajectory;
@@ -290,13 +303,25 @@ std::unique_ptr<Trajectory> Simulation::operator()(const ControlTrajectory& cont
 
 // ==================== Simulation Step  ====================
 
-SimulationStep::SimulationStep(std::shared_ptr<Simulation> simulation)
-  : simulation(simulation) {}
+SimulationStep::SimulationStep(std::shared_ptr<Simulation> simulation) : simulation(simulation) {}
 
-std::unique_ptr<Trajectory> SimulationStep::operator()(const ControlTrajectory& controls,
-                                                       f64 start_time, f64 stop_time, f64* x_start_values) {
+void SimulationStep::activate(const ControlTrajectory& controls_, const FixedVector<f64>& parameters_) {
+    controls = &controls_;
+    parameters = &parameters_;
+}
+
+void SimulationStep::reset() {
+    controls = nullptr;
+    parameters = nullptr;
+}
+
+std::unique_ptr<Trajectory> SimulationStep::operator()(f64* x_start_values, f64 start_time, f64 stop_time) {
+    if (!controls || !parameters) {
+        Log::error("OpenModelica::SimulationStep has not been activated.");
+        abort();
+    }
     const int num_steps = 1;
-    return (*simulation)(controls, num_steps, start_time, stop_time, x_start_values);
+    return (*simulation)(*controls, *parameters, num_steps, start_time, stop_time, x_start_values);
 }
 
 // ==================== Nominal Scaling Factory ====================
@@ -367,18 +392,30 @@ std::shared_ptr<NLP::Scaling> NominalScalingFactory::operator()(const GDOP::GDOP
 }
 
 // default strategies for OpenModelica
-GDOP::Strategies default_strategies(InfoGDOP& info) {
+GDOP::Strategies default_strategies(InfoGDOP& info, GDOP::Problem& problem, bool use_moo_simulation) {
     GDOP::Strategies strategies;
 
     // TODO: do add simulation_tolerance factor here?
     FixedVector<f64> verifier_tolerances(info.x_size);
     for (int x = 0; x < info.x_size; x++) { verifier_tolerances[x] = 1e-4 * info.data->modelData->realVarsData[x].attribute.nominal; }
 
-    auto scaling_factory                    = std::make_shared<NominalScalingFactory>(info);
-    auto emitter                            = std::make_shared<MatEmitter>(MatEmitter(info));
-    auto const_initialization_strategy      = std::make_shared<ConstantInitialization>(ConstantInitialization(info));
-    auto simulation_strategy                = std::make_shared<Simulation>(Simulation(info, info.user_ode_solver));
-    auto simulation_step_strategy           = std::make_shared<SimulationStep>(SimulationStep(simulation_strategy));
+    auto scaling_factory               = std::make_shared<NominalScalingFactory>(info);
+    auto emitter                       = std::make_shared<MatEmitter>(MatEmitter(info));
+    auto const_initialization_strategy = std::make_shared<ConstantInitialization>(ConstantInitialization(info));
+
+    std::shared_ptr<GDOP::Simulation> simulation_strategy;
+    std::shared_ptr<GDOP::SimulationStep> simulation_step_strategy;
+
+    if (!use_moo_simulation) {
+        auto tmp_simulation_strategy = std::make_shared<Simulation>(info, info.user_ode_solver);
+        simulation_step_strategy = std::make_shared<SimulationStep>(tmp_simulation_strategy);
+        simulation_strategy = tmp_simulation_strategy;
+    }
+    else {
+        simulation_strategy      = std::make_shared<GDOP::RadauIntegratorSimulation>(*problem.dynamics);
+        simulation_step_strategy = std::make_shared<GDOP::RadauIntegratorSimulationStep>(*problem.dynamics);
+    }
+
     auto simulation_initialization_strategy = std::make_shared<GDOP::SimulationInitialization>(GDOP::SimulationInitialization(const_initialization_strategy,
                                                                                                                               simulation_strategy));
     auto verifier = std::make_shared<GDOP::SimulationVerifier>(GDOP::SimulationVerifier(simulation_strategy,

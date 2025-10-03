@@ -37,6 +37,7 @@
 
 #include "problem.h"
 #include "strategies.h"
+#include "streamlog.h"
 
 using namespace OpenModelica;
 
@@ -44,6 +45,7 @@ using namespace OpenModelica;
  * this contains the glue code between MOO and the simulation runtime */
 extern "C"
 int _main_OptimizationRuntime(int argc, char** argv, DATA* data, threadData_t* threadData) {
+    create_set_logger();
     auto info = InfoGDOP(data, threadData, argc, argv);
     auto nlp_solver_settings = NLP::NLPSolverSettings(argc, argv);
     info.set_omc_flags(nlp_solver_settings);
@@ -51,7 +53,7 @@ int _main_OptimizationRuntime(int argc, char** argv, DATA* data, threadData_t* t
 
     auto mesh = Mesh::create_equidistant_fixed_stages(info.tf, info.intervals, info.stages);
     auto problem = create_gdop(info, *mesh);
-    auto strategies = std::make_unique<GDOP::Strategies>(default_strategies(info));
+    auto strategies = std::make_unique<GDOP::Strategies>(default_strategies(info, problem, false));
     auto gdop = GDOP::GDOP(problem);
 
     IpoptSolver::IpoptSolver ipopt_solver(gdop, nlp_solver_settings);

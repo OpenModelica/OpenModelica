@@ -112,7 +112,7 @@ elseif(MSVC)
   set_target_properties(SimulationRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif(MINGW)
 
-if(OM_OMC_ENABLE_IPOPT)
+if(OM_OMC_ENABLE_OPTIMIZATION)
   target_sources(SimulationRuntimeC PRIVATE ${OMC_SIMRT_OPTIMIZATION_SOURCES})
   target_compile_definitions(SimulationRuntimeC PRIVATE OMC_HAVE_IPOPT)
   target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::ipopt)

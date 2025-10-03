@@ -132,7 +132,7 @@ Optionally, You can also install `gfortran` if you plan to use OpenModelica for 
 > If you install and use `gfortran`, it is recommended that you also use `gcc` and `g++`
 > (instead of `clang` and `clang++`).
 
-If you cannot (M1 Mac does not have libquadmath) or do not want to use `gfortran`, then you should disable Fortran support by adding ```-DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF``` to the CMake configuration command.
+If you cannot (M1 Mac does not have libquadmath) or do not want to use `gfortran`, then you should disable Fortran support by adding ```-DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_OPTIMIZATION=OFF -DOM_OMC_ENABLE_MOO=OFF``` to the CMake configuration command.
 
 You can now configure and compile OpenModelica as:
 
@@ -141,9 +141,9 @@ You can now configure and compile OpenModelica as:
   cmake -S . -B build_cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_Fortran_COMPILER=gfortran -DCMAKE_PREFIX_PATH=/opt/local
   # (M1 Mac does not have libquadmath)
   # With MacPorts and Fortran NOT available. This assumes MacPorts is installing packages to its default location /opt/local
-  cmake -S . -B build_cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF -DCMAKE_PREFIX_PATH=/opt/local
+  cmake -S . -B build_cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_OPTIMIZATION=OFF -DOM_OMC_ENABLE_MOO=OFF -DCMAKE_PREFIX_PATH=/opt/local
   # With homebrew, you also need to disable the graphical clients. This assumes homebrew is installing packages to its default location /usr/local/opt/
-  cmake -S . -B build_cmake -D CMAKE_C_COMPILER=clang -D CMAKE_CXX_COMPILER=clang++ -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF -D OM_ENABLE_GUI_CLIENTS=OFF -DCMAKE_PREFIX_PATH=/usr/local/opt/
+  cmake -S . -B build_cmake -D CMAKE_C_COMPILER=clang -D CMAKE_CXX_COMPILER=clang++ -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_OPTIMIZATION=OFF -DOM_OMC_ENABLE_MOO=OFF -D OM_ENABLE_GUI_CLIENTS=OFF -DCMAKE_PREFIX_PATH=/usr/local/opt/
   ```
 
 > **Warning**
@@ -277,7 +277,8 @@ OM_ENABLE_GUI_CLIENTS=ON
 OM_ENABLE_ENCRYPTION=OFF
 OM_OMC_ENABLE_CPP_RUNTIME=ON
 OM_OMC_ENABLE_FORTRAN=ON
-OM_OMC_ENABLE_IPOPT=ON
+OM_OMC_ENABLE_OPTIMIZATION=ON
+OM_OMC_ENABLE_MOO=ON
 OM_OMEDIT_INSTALL_RUNTIME_DLLS=ON
 OM_OMEDIT_ENABLE_TESTS=OFF
 OM_OMSHELL_ENABLE_TERMINAL=ON
@@ -306,10 +307,14 @@ program_options, ...)
 
 `OM_OMC_ENABLE_FORTRAN` allows you to enable/disable Fortran support. If your system does
 not have a Fortran compiler you can disable this. Fortran is required if you enable IPOPT
-support (`OM_OMC_ENABLE_IPOPT`).
+support (`OM_OMC_ENABLE_OPTIMIZATION`, `OM_OMC_ENABLE_MOO`).
 
-`OM_OMC_ENABLE_IPOPT` allows you to enable/disable support for dynamic optimization
-support with Ipopt. Enabling this requires having a working Fortran compiler.
+`OM_OMC_ENABLE_OPTIMIZATION` allows you to enable/disable support for dynamic optimization
+support with Ipopt. Enabling this requires having a working Fortran compiler and requires
+MOO (`OM_OMC_ENABLE_MOO`).
+
+`OM_OMC_ENABLE_MOO` allows you to enable/disable support for dynamic optimization
+support with MOO. Enabling this requires having a working Fortran compiler.
 
 ### 4.1.3. OpenModelica/OMEdit Options
 

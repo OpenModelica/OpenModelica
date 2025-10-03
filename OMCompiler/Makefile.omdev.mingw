@@ -105,7 +105,7 @@ MODELICA_SPEC_PLATFORM=win32
 SHREXT=.dll
 STAEXT=.a
 EXE=.exe
-IPOPT_TARGET=ipopt
+MOO_TARGET=moo
 SUITESPARSE_TARGET=suitesparse
 SUITESPARSE_SHARED=OFF
 SUNDIALS_TARGET=sundials
@@ -292,7 +292,7 @@ copycppmsvcheader: getMSVCversion
 	(cp -puf $(BOOST_PATH_MSVC)/boost/*.hpp              $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/msvc/boost)
 	(cp -pufr $(BOOST_PATH_MSVC)/boost/*                 $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/msvc/boost)
 
-omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(IPOPT_TARGET) $(SEMLA_LIB) OMSI parmodauto ModelicaExternalC
+omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(MOO_TARGET) $(SEMLA_LIB) OMSI parmodauto ModelicaExternalC
 	(time $(MAKE) -f $(defaultMakefileTarget) CFLAGS="$(CFLAGS)" omc-bootstrapped OMBUILDDIR=$(OMBUILDDIR))
 
 boehm-gc-lib: $(builddir_bin)/libomcgc-1.dll

@@ -100,7 +100,7 @@ void InfoGDOP::set_omc_flags(NLP::NLPSolverSettings& nlp_solver_settings) {
         } else if (lower == "ma97") {
             nlp_solver_settings.set(NLP::Option::LinearSolver, LS::MA97);
         } else {
-            LOG_WARNING("Unsupported linear solver option: %s", cflags);
+            Log::warning("Unsupported linear solver option: %s", cflags);
         }
     }
 
@@ -110,7 +110,7 @@ void InfoGDOP::set_omc_flags(NLP::NLPSolverSettings& nlp_solver_settings) {
         try {
             nlp_solver_settings.set(NLP::Option::Iterations, std::stoi(cflags));
         } catch (...) {
-            LOG_WARNING("Invalid integer for Iterations: %s", cflags);
+            Log::warning("Invalid integer for Iterations: %s", cflags);
         }
     }
 
@@ -129,7 +129,7 @@ void InfoGDOP::set_omc_flags(NLP::NLPSolverSettings& nlp_solver_settings) {
         } else if (lower == "exact") {
             nlp_solver_settings.set(NLP::Option::Hessian, H::Exact);
         } else {
-            LOG_WARNING("Unsupported Hessian option: %s (use LBFGS, QP, or Exact)", cflags);
+            Log::warning("Unsupported Hessian option: %s (use LBFGS, QP, or Exact)", cflags);
         }
     }
 }

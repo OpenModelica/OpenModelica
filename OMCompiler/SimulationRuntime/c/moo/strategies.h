@@ -61,8 +61,6 @@ public:
     std::unique_ptr<PrimalDualTrajectory> operator()(const GDOP::GDOP& gdop) override;
 };
 
-// TODO: maybe think about how we provide these configurations to the Strategy?
-// Do we want to pass a grant SimulationInfo { num_steps, start_time, stop_time } ?
 class Simulation : public GDOP::Simulation {
 public:
     InfoGDOP& info;
@@ -70,18 +68,26 @@ public:
 
     Simulation(InfoGDOP& info, SOLVER_METHOD solver);
 
-    std::unique_ptr<Trajectory> operator()(const ControlTrajectory& controls, int num_steps,
-                                           f64 start_time, f64 stop_time, f64* x_start_values) override;
+    std::unique_ptr<Trajectory> operator()(const ControlTrajectory& controls, const FixedVector<f64>& parameters,
+                                           int num_steps, f64 start_time, f64 stop_time, f64* x_start_values) override;
 };
 
+// TODO: OpenModelica::SimulationStep should not hold a simulation, but rather allocate all the structures in activate
+//       and deallocate them in reset, so we have minimal overhead (like solver_main())
 class SimulationStep : public GDOP::SimulationStep {
 public:
     std::shared_ptr<Simulation> simulation;
 
     SimulationStep(std::shared_ptr<Simulation> simulation);
 
-    std::unique_ptr<Trajectory> operator()(const ControlTrajectory& controls,
-                                           f64 start_time, f64 stop_time, f64* x_start_values) override;
+    void activate(const ControlTrajectory& controls_, const FixedVector<f64>& parameters_) override;
+    void reset() override;
+
+    std::unique_ptr<Trajectory> operator()(f64* x_start_values, f64 start_time, f64 stop_time) override;
+
+private:
+    const ControlTrajectory* controls;
+    const FixedVector<f64>* parameters;
 };
 
 class MatEmitter : public GDOP::Emitter {
@@ -90,7 +96,7 @@ public:
 
     MatEmitter(InfoGDOP& info);
 
-    int operator()(const Trajectory& trajectory) override;
+    int operator()(const PrimalDualTrajectory& trajectory) override;
 };
 
 class NominalScalingFactory : public GDOP::ScalingFactory {
@@ -102,7 +108,7 @@ public:
     std::shared_ptr<NLP::Scaling> operator()(const GDOP::GDOP& gdop) override;
 };
 
-GDOP::Strategies default_strategies(InfoGDOP& info);
+GDOP::Strategies default_strategies(InfoGDOP& info, GDOP::Problem& problem, bool use_moo_simulation);
 
 } // namespace OpenModelica
 

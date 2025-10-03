@@ -56,6 +56,9 @@ CDASKRDIR=$(top_builddir)/3rdParty/Cdaskr/solver/
 CMINPACKDIR=$(top_builddir)/3rdParty/CMinpack/
 LAPACKDIR=$(top_builddir)/3rdParty/dgesv/
 RYUDIR=$(top_builddir)/3rdParty/ryu/ryu/
+IPOPTDIR := $(top_builddir)/3rdParty/moo-0.1.0/third-party/Ipopt.cmake/Ipopt/sources/src
+IPOPT_HEADERS := Interfaces Common Linalg Apps Algorithm
+IPOPT_INCLUDES := $(addprefix -I$(IPOPTDIR)/,$(IPOPT_HEADERS))
 
 RUNTIME_HEADERS = \
 ./omc_inline.h \
@@ -188,7 +191,7 @@ libSimulationRuntimeC.dll: $(ALL_OBJS) $(CDASKRDIR)/libcdaskr.a $(RYUDIR)/libryu
 		-L$(CDASKRDIR) -lcdaskr -L$(RYUDIR) -lryu \
 		-lklu -lumfpack -lamd -lbtf -lcolamd -lsuitesparseconfig \
 		-lsundials_cvode -lsundials_idas -lsundials_kinsol -lsundials_sunlinsolklu -lsundials_sunlinsollapackdense \
-		-lipopt -lcoinmumps -lgfortran \
+		-lipopt -ldmumps -lmumps_common -lseq -lgfortran \
 		-llis -lcminpack -lomcgc \
 		-lopenblas -lexpat -ldbghelp -lregex -lwsock32 \
 		-Wl,--export-all-symbols,--out-implib,$@.a
@@ -280,7 +283,7 @@ $(SIMOBJSPATHC):$(BUILDPATH)/%$(OBJ_EXT): %.c $(SIMHFILESPATH) $(COMMON_HEADERS)
 
 $(OPTIMIZATIONOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(OPTIMIZATIONHFILESPATH) $(COMMON_HEADERS)
 	$(MKBUILDDIR)
-	$(CC) -c -I. -I$(builddir_inc) $(CFLAGS) -o $@ $<
+	$(CC) -c -I. $(IPOPT_INCLUDES) $(CFLAGS) -o $@ $<
 
 $(FMIOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(COMMON_HEADERS)
 	$(MKBUILDDIR)
