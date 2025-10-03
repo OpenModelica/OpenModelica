@@ -614,6 +614,7 @@ private:
     bool isMissing() const {return mMissing;}
     void setRestriction(const QString &restriction) {mRestriction = restriction;}
     const QString &getRestriction() const {return mRestriction;}
+    Replaceable *getReplaceable() const;
     bool isConnector() const;
     bool isExpandableConnector() const;
     bool isEnumeration() const;
