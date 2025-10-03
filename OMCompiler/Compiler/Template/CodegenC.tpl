@@ -2404,8 +2404,8 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
                 functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
               ;separator="\n")
             end match)
-          let body = (ls.residual |> eq2 hasindex i0 => match eq2
-            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes, auxFunction, index, i0)
+          let body = (ls.residual |> eq2 => match eq2
+            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes, auxFunction, index, "res_idx")
             case SES_FOR_RESIDUAL(__) then "case 1"
           ;separator="\n")
           let eqnbody =
@@ -2425,6 +2425,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
             DATA *data = userData->data;
             threadData_t *threadData = userData->threadData;
             const int equationIndexes[2] = {1,<%ls.index%>};
+            size_t res_idx = 0;
             <% if ls.partOfJac then
               'JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
             %>
@@ -2489,8 +2490,8 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          let prebody = (ls.residual |> eq2 =>
                functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
           ;separator="\n")
-         let body = (ls.residual |> eq2 hasindex i0 => match eq2
-            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes, auxFunction, index, i0)
+         let body = (ls.residual |> eq2 => match eq2
+            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes, auxFunction, index, "res_idx")
             case SES_FOR_RESIDUAL(__) then "case 3"
            ;separator="\n")
          // for casual tearing set
@@ -2501,8 +2502,8 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          let prebody2 = (at.residual |> eq2 =>
                functionExtraResidualsPreBody(eq2, &tmp2, modelNamePrefix)
           ;separator="\n")
-         let body2 = (at.residual |> eq2 hasindex i0 => match eq2
-            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes2, auxFunction2, index, i0)
+         let body2 = (at.residual |> eq2 => match eq2
+            case SES_RESIDUAL(__) then equationResidual(exp, varDeclsRes2, auxFunction2, index, "res_idx")
             case SES_FOR_RESIDUAL(__) then "case 4"
            ;separator="\n")
        <<
@@ -2515,6 +2516,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          DATA *data = userData->data;
          threadData_t *threadData = userData->threadData;
          const int equationIndexes[2] = {1,<%ls.index%>};
+         size_t res_idx = 0;
          <% if ls.partOfJac then
            'JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
          %>
@@ -2541,6 +2543,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          DATA *data = userData->data;
          threadData_t *threadData = userData->threadData;
          const int equationIndexes[2] = {1,<%at.index%>};
+         size_t res_idx = 0;
          <% if ls.partOfJac then
            'JACOBIAN* parentJacobian = data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian;'
          %>
@@ -3055,7 +3058,7 @@ match system
         >>
       else
         (nls.eqs |> eq2 hasindex i0 => match eq2
-          case SES_RESIDUAL(__) then equationResidual(exp, varDecls, innerEqns, index, res_index)
+          case SES_RESIDUAL(__) then equationResidual(exp, varDecls, innerEqns, index, "res_idx")
           case SES_FOR_RESIDUAL(__) then
             let &preExp = buffer ""
             let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
@@ -3074,8 +3077,9 @@ match system
             <<
             <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
             <%forPart%>
-            <%preExp%>res[<%res_index%>+<%indexShift%>] = <%expPart%>;
+            <%preExp%>res[res_idx + <%indexShift%>] = <%expPart%>;
             <%endForPart%>
+            res_idx += <%indexShift%>+1; /* ToDo is this correct? should be the size of res */
             <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
             >>
           case SES_GENERIC_RESIDUAL(__) then
@@ -3099,8 +3103,9 @@ match system
             {
               int tmp = idx_lst_<%res_index%>[i_];
               <%iter_%>
-              <%preExp%>res[<%res_index%>+i_] = <%expPart%>;
+              <%preExp%>res[res_idx + i_] = <%expPart%>;
             }
+            res_idx += <%idx_len%>;
             >>
         ;separator="\n")
     let residualFunctionHeader =
@@ -3124,6 +3129,7 @@ match system
       int i,j;<% if clockIndex then <<
       const int clockIndex = <%clockIndex%>;
       >> %>
+      size_t res_idx = 0;
       <%varDecls%>
       <% if profileAll() then 'SIM_PROF_TICK_EQ(<%nls.index%>);' %>
       <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%nls.index%>).profileBlockIndex,1);' %>
@@ -6266,13 +6272,19 @@ case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
 >>
 end equationArrayCallAssign;
 
-template equationResidual(Exp exp, Text &varDecls, Text &auxFunction, Integer eq_index, Integer res_index)
+template equationResidual(Exp exp, Text &varDecls, Text &auxFunction, Integer eq_index, String res_counter)
 ::=
 let &preExp = buffer ""
 let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls, &auxFunction)
+let tmp = tempDecl("real_array", varDecls)
 let assignment = (if isArrayType(typeof(exp))
-  then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_index%>);'
-  else '<%preExp%>res[<%res_index%>] = <%expPart%>;')
+  then
+    <<
+    <%preExp%><%tmp%> = <%expPart%>;
+    copy_real_array_data_mem(<%tmp%>, res + <%res_counter%>);
+    <%res_counter%> += base_array_nr_of_elements(<%tmp%>);
+    >>
+  else '<%preExp%>res[<%res_counter%>++] = <%expPart%>;')
 equation_withProfile(eq_index, assignment)
 end equationResidual;
 
