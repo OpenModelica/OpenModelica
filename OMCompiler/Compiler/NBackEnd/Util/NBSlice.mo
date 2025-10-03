@@ -717,14 +717,15 @@ public
     input list<Integer> values;
     input output Integer index;
   protected
-    Integer factor = 1, size;
-    list<Integer> rest_sizes = sizes;
+    Integer factor = 1, val, siz;
+    list<Integer> val_trav = listReverse(values), siz_trav = listReverse(sizes);
   algorithm
-    for v in values loop
-      size :: rest_sizes := rest_sizes;
-      index := index + (v - 1) * factor;
-      factor := factor * size;
-    end for;
+    while not (listEmpty(val_trav) or listEmpty(siz_trav)) loop
+      val :: val_trav := val_trav;
+      siz :: siz_trav := siz_trav;
+      index := index + (val - 1) * factor;
+      factor := factor * siz;
+    end while;
   end locationToIndex;
 
   function indexToLocation
