@@ -1215,6 +1215,7 @@ public
       Integer numIntAliasVars;
       Integer numBoolAliasVars;
       Integer numParams;
+      Integer numCalcParams;
       Integer numIntParams;
       Integer numBoolParams;
       Integer numOutVars;
@@ -1239,6 +1240,27 @@ public
       Integer numRelatedBoundaryConditions;
     end VAR_INFO;
 
+    function countCalcParams
+      input list<SimVar> paramVars;
+      output Integer count = 0;
+    protected
+      function isCalcParam
+        input SimVar v;
+        output Boolean isCalc;
+        algorithm
+          isCalc := match v
+            case SimVar.SIMVAR(causality=SOME(Causality.CALCULATED_PARAMETER)) then true;
+            else false;
+          end match;
+      end isCalcParam;
+    algorithm
+      for v in paramVars loop
+        if isCalcParam(v) then
+          count := count + 1;
+        end if;
+      end for;
+    end countCalcParams;
+
     function create
       input SimVars vars;
       input EventInfo eventInfo;
@@ -1259,6 +1281,7 @@ public
         numIntAliasVars              = listLength(vars.intAliasVars),
         numBoolAliasVars             = listLength(vars.boolAliasVars),
         numParams                    = listLength(vars.paramVars),
+        numCalcParams                = countCalcParams(vars.paramVars),
         numIntParams                 = listLength(vars.intParamVars),
         numBoolParams                = listLength(vars.boolParamVars),
         numOutVars                   = listLength(vars.outputVars),
@@ -1301,6 +1324,7 @@ public
         numIntAliasVars              = varInfo.numIntAliasVars,
         numBoolAliasVars             = varInfo.numBoolAliasVars,
         numParams                    = varInfo.numParams,
+        numCalcParams                = varInfo.numCalcParams,
         numIntParams                 = varInfo.numIntParams,
         numBoolParams                = varInfo.numBoolParams,
         numOutVars                   = varInfo.numOutVars,

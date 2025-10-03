@@ -639,6 +639,7 @@ typedef struct MODEL_DATA
   long nVariablesBoolean;
   long nVariablesString;
   long nParametersReal;
+  long nCalcParametersReal;               /* number of calculated parameters */
   long nParametersInteger;
   long nParametersBoolean;
   long nParametersString;

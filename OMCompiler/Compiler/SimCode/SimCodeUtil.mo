@@ -240,6 +240,7 @@ protected
   BackendDAE.EquationArray removedEqs;
   BackendDAE.EventInfo eventInfo;
   BackendDAE.Shared shared;
+  BackendDAE.SymbolicJacobian symjac;
   BackendDAE.SymbolicJacobians symJacs;
   BackendDAE.Variables globalKnownVars;
   Boolean ifcpp;
@@ -5021,13 +5022,14 @@ algorithm
         if Util.isSome(shared.dataReconciliationData) then
           BackendDAE.DATA_RECON(_, _, _, _, jacH) := Util.getOption(shared.dataReconciliationData);
           if isSome(jacH) then // check for matrix H is present which means state estimation algorithm is choosed and jacobian F and H are generated earlier
-            matrixnames := {"A", "B", "C", "D"};
+            matrixnames := {"S", "A", "B", "C", "D"};
           else
-            matrixnames := {"A", "B", "C", "D", "H"};
+            matrixnames := {"S", "A", "B", "C", "D", "H"};
           end if;
         else
-           matrixnames := {"A", "B", "C", "D", "F", "H"};
+           matrixnames := {"S", "A", "B", "C", "D", "F", "H"};
         end if;
+        
         (res, ouniqueEqIndex) := createSymbolicJacobianssSimCode(inSymjacs, crefSimVarHT, iuniqueEqIndex, matrixnames, {});
         // _ := FlagsUtil.set(Flags.EXEC_STAT, b);
       then (res,ouniqueEqIndex);
@@ -5074,7 +5076,7 @@ algorithm
       Integer uniqueEqIndex, nRows;
 
       list<String> restnames;
-      String name, dummyVar;
+      String name, dummyVar, jac_name;
 
       SimCodeVar.SimVars simvars;
       list<SimCode.SimEqSystem> allEquations = {}, constantEqns = {};
@@ -5107,7 +5109,7 @@ algorithm
         tmpJac.matrixName = name;
         linearModelMatrices = tmpJac::inJacobianMatrices;
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode({}, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
-     then
+      then
         (linearModelMatrices, uniqueEqIndex);
 
     // if nothing is generated
@@ -5117,7 +5119,17 @@ algorithm
         tmpJac.matrixName = name;
         linearModelMatrices = tmpJac::inJacobianMatrices;
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
-     then
+      then
+        (linearModelMatrices, uniqueEqIndex);
+
+    case ((SOME((_, jac_name, _, _, _, _)), _, _, _) :: _, _, _, name::restnames)
+      guard  not jac_name == name
+      equation
+        tmpJac = SimCode.emptyJacobian;
+        tmpJac.matrixName = name;
+        linearModelMatrices = tmpJac::inJacobianMatrices;
+        (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(inSymJacobians, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
+      then
         (linearModelMatrices, uniqueEqIndex);
 
     // if only sparsity pattern is generated
@@ -7722,7 +7734,7 @@ protected
   String description, directory, version, author, license, copyright, fileName;
   SimCode.VarInfo varInfo;
   SimCodeVar.SimVars vars;
-  Integer nx, ny, ndy, np, na, next, numOutVars, numInVars, ny_int, np_int, na_int, ny_bool, np_bool, dim_1, dim_2, numOptimizeConstraints, numOptimizeFinalConstraints, numRealInputVars;
+  Integer nx, ny, ndy, np, npcalc, na, next, numOutVars, numInVars, ny_int, np_int, na_int, ny_bool, np_bool, dim_1, dim_2, numOptimizeConstraints, numOptimizeFinalConstraints, numRealInputVars;
   Integer na_bool, ny_string, np_string, na_string;
   list<SimCodeVar.SimVar> states1, states_lst, states_lst2, der_states_lst;
   list<SimCodeVar.SimVar> states_2, derivatives_2;
@@ -7757,6 +7769,7 @@ algorithm
     na_int := getNumScalars(vars.intAliasVars);
     na_bool := getNumScalars(vars.boolAliasVars);
     np := getNumScalars(vars.paramVars);
+    npcalc := getNumScalars(list(v for v guard isCalcParam(v) in vars.paramVars));
     np_int := getNumScalars(vars.intParamVars);
     np_bool := getNumScalars(vars.boolParamVars);
     ny_string := getNumScalars(vars.stringAlgVars);
@@ -7767,7 +7780,7 @@ algorithm
     numOptimizeFinalConstraints := getNumScalars(vars.realOptimizeFinalConstraintsVars);
     numRealInputVars := getNumberOfRealInputs(vars.inputVars);
     if debug then execStat("simCode: get lengths"); end if;
-    varInfo := createVarInfo(dlow, nx, ny, ndy, np, na, next, numOutVars, numInVars,
+    varInfo := createVarInfo(dlow, nx, ny, ndy, np, npcalc,  na, next, numOutVars, numInVars,
                              ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,
                              numStateSets, numOptimizeConstraints, numOptimizeFinalConstraints, numRealInputVars);
     if debug then execStat("simCode: createVarInfo"); end if;
@@ -7793,6 +7806,7 @@ protected function createVarInfo
   input Integer ny;
   input Integer ndy;
   input Integer np;
+  input Integer npcalc;
   input Integer na;
   input Integer next;
   input Integer numOutVars;
@@ -7815,7 +7829,7 @@ protected
   Integer numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions;
 algorithm
   (numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions) := BackendDAEUtil.numberOfZeroCrossings(dlow);
-  varInfo := SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, nx, ny, ndy, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
+  varInfo := SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, nx, ny, ndy, ny_int, ny_bool, na, na_int, na_bool, np, npcalc, np_int, np_bool, numOutVars, numInVars,
           next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets,0,numOptimizeConstraints, numOptimizeFinalConstraints, 0, 0, 0, numRealInputVars, 0, 0);
 end createVarInfo;
 
@@ -7840,6 +7854,15 @@ algorithm
     case SimCodeVar.SIMVAR(type_ = DAE.T_REAL()) then true; else false;
   end match;
 end isRealInput;
+
+protected function isCalcParam
+  input SimCodeVar.SimVar var;
+  output Boolean isReal;
+algorithm
+  isReal := match var
+    case SimCodeVar.SIMVAR(causality = SOME(SimCodeVar.Causality.CALCULATED_PARAMETER())) then true; else false;
+  end match;
+end isCalcParam;
 
 protected function evaluateStartValues"evaluates functions in the start values in the variableAttributes"
   input BackendDAE.Var inVar;
@@ -9412,14 +9435,14 @@ algorithm
   _ := match(jacOpt)
     local
       Integer idx;
-      String s;
+      String s, name;
       SimCode.JacobianMatrix jac;
       list<SimCode.JacobianColumn> cols;
       list<SimCode.SimEqSystem> colEqs;
       list<SimCodeVar.SimVar> colVars;
     case(SOME(jac))
       equation
-        SimCode.JAC_MATRIX(columns=cols, jacobianIndex=idx) = jac;
+        SimCode.JAC_MATRIX(columns=cols, jacobianIndex=idx, matrixName=name) = jac;
         colEqs  = List.flatten(list(a.columnEqns for a in cols));
         colVars = List.flatten(list(a.columnVars for a in cols));
         print("\tJacobian idx: "+intString(idx)+"\n\t");
@@ -14160,7 +14183,7 @@ algorithm
     // discreteStates
     if not checkForEmptyBDAE(optcontPartDer) then
       contPartDer := {(optcontPartDer,spPattern,spColors, nlPattern)};
-      ({contSimJac}, uniqueEqIndex) := createSymbolicJacobianssSimCode(contPartDer, crefSimVarHT, uniqueEqIndex, {"FMIDer"}, {});
+      ({contSimJac}, uniqueEqIndex) := createSymbolicJacobianssSimCode(contPartDer, crefSimVarHT, uniqueEqIndex, {"FMIDER"}, {});
       // collect algebraic loops and symjacs for FMIDer
       ({contSimJac}, outModelInfo, symJacs) := addAlgebraicLoopsModelInfoSymJacs({contSimJac}, inModelInfo);
       contPartSimDer := SOME(contSimJac);
