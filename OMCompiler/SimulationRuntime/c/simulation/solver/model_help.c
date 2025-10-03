@@ -940,13 +940,28 @@ int getNextSampleTimeFMU(DATA *data, double *nextSampleEvent)
   return 0 /* FALSE */;
 }
 
-/*! \fn initializeDataStruc
- *
- *  function initialize DATA structure
- *
- *  \param [ref] [data]
- *
- */
+ /*!
+  * @brief Initialize `data` struct.
+  *
+  * Simulation data:
+  *
+  *   - Allocate ring buffer.
+  *
+  * Model data:
+  *
+  *   - Allocate variable and parameter arrays.
+  *
+  * Simulation info:
+  *
+  *   - Allocate clocks.
+  *   - Allocate zero crossings.
+  *   - Buffer for pre variables.
+  *   - Buffer for linear and non-linear solvers.
+  *
+  * @param data         Partially initialized struct `DATA` to initialize.
+  *                     Uses information about number of variables from `data->modelData`.
+  * @param threadData   Used for error handling.
+  */
 void initializeDataStruc(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH

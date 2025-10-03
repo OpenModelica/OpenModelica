@@ -427,7 +427,7 @@ static inline omc_opc_ua_state* addAliasVars(omc_opc_ua_state *state, var_kind_t
     int inputIndex;
     int isState = 0;
 
-    if (aliases[i].aliasType != 0) {
+    if (aliases[i].aliasType != ALIAS_TYPE_VARIABLE) {
       /* We only alias non-parameter/time variables in OPC */
       continue;
     }

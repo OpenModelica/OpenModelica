@@ -143,8 +143,8 @@ void omc_csv_emit(simulation_result *self, DATA *data, threadData_t *threadData)
   //for(i = 0; i < data->modelData->nVariablesString; i++) if(!data->modelData->stringVarsData[i].filterOutput)
   //  fprintf(fout, formatstring, MMC_STRINGDATA((data->localData[0])->stringVars[i]));
 
-  for(i = 0; i < data->modelData->nAliasReal; i++) if(!data->modelData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != 1) {
-    if (data->modelData->realAlias[i].aliasType == 2) {
+  for(i = 0; i < data->modelData->nAliasReal; i++) if(!data->modelData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
+    if (data->modelData->realAlias[i].aliasType == ALIAS_TYPE_TIME) {
       value = (data->localData[0])->timeValue;
     } else {
       value = (data->localData[0])->realVars[data->modelData->realAlias[i].nameID];
@@ -155,21 +155,21 @@ void omc_csv_emit(simulation_result *self, DATA *data, threadData_t *threadData)
       fprintf(fout, format, value);
     }
   }
-  for(i = 0; i < data->modelData->nAliasInteger; i++) if(!data->modelData->integerAlias[i].filterOutput && data->modelData->integerAlias[i].aliasType != 1) {
+  for(i = 0; i < data->modelData->nAliasInteger; i++) if(!data->modelData->integerAlias[i].filterOutput && data->modelData->integerAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
     if (data->modelData->integerAlias[i].negate) {
       fprintf(fout, formatint, -(data->localData[0])->integerVars[data->modelData->integerAlias[i].nameID]);
     } else {
       fprintf(fout, formatint, (data->localData[0])->integerVars[data->modelData->integerAlias[i].nameID]);
     }
   }
-  for(i = 0; i < data->modelData->nAliasBoolean; i++) if(!data->modelData->booleanAlias[i].filterOutput && data->modelData->booleanAlias[i].aliasType != 1) {
+  for(i = 0; i < data->modelData->nAliasBoolean; i++) if(!data->modelData->booleanAlias[i].filterOutput && data->modelData->booleanAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
     if (data->modelData->booleanAlias[i].negate) {
       fprintf(fout, formatbool, (data->localData[0])->booleanVars[data->modelData->booleanAlias[i].nameID]==1?0:1);
     } else {
       fprintf(fout, formatbool, (data->localData[0])->booleanVars[data->modelData->booleanAlias[i].nameID]);
     }
   }
-  //for(i = 0; i < data->modelData->nAliasString; i++) if(!data->modelData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != 1) {
+  //for(i = 0; i < data->modelData->nAliasString; i++) if(!data->modelData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
   //  /* there would no negation of a string happen */
   //  fprintf(fout, formatstring, MMC_STRINGDATA((data->localData[0])->stringVars[data->modelData->stringAlias[i].nameID]));
   //}
@@ -217,19 +217,19 @@ void omc_csv_init(simulation_result *self, DATA *data, threadData_t *threadData)
   }
 
   for(i = 0; i < mData->nAliasReal; i++) {
-    if(!mData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != 1) {
+    if(!mData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
       csvEscapedString(mData->realAlias[i].info.name, escapedNameBuffer, MAX_IDENT_LENGTH, threadData);
       fprintf(fout, format, escapedNameBuffer);
     }
   }
   for(i = 0; i < mData->nAliasInteger; i++) {
-    if(!mData->integerAlias[i].filterOutput && data->modelData->integerAlias[i].aliasType != 1) {
+    if(!mData->integerAlias[i].filterOutput && data->modelData->integerAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
       csvEscapedString(mData->integerAlias[i].info.name, escapedNameBuffer, MAX_IDENT_LENGTH, threadData);
       fprintf(fout, format, escapedNameBuffer);
     }
   }
   for(i = 0; i < mData->nAliasBoolean; i++) {
-    if(!mData->booleanAlias[i].filterOutput && data->modelData->booleanAlias[i].aliasType != 1) {
+    if(!mData->booleanAlias[i].filterOutput && data->modelData->booleanAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
       csvEscapedString(mData->booleanAlias[i].info.name, escapedNameBuffer, MAX_IDENT_LENGTH, threadData);
       fprintf(fout, format, escapedNameBuffer);
     }

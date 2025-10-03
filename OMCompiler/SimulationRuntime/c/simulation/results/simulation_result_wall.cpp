@@ -163,37 +163,37 @@ static void write_aliases(std::ofstream &fp, MODEL_DATA *modelData, int include[
 
   for(long i=0;i<modelData->nAliasReal;i++) {
     DATA_REAL_ALIAS *alias = &modelData->realAlias[i];
-    if (include[(int)alias->aliasType]==0) continue;
-    if (alias->aliasType==2) sig = "time";
-    if (alias->aliasType==1) sig = modelData->realParameterData[alias->nameID].info.name;
-    if (alias->aliasType==0) sig = modelData->realVarsData[alias->nameID].info.name;
+    if (include[(int)alias->aliasType]==ALIAS_TYPE_VARIABLE) continue;
+    if (alias->aliasType==ALIAS_TYPE_TIME) sig = "time";
+    if (alias->aliasType==ALIAS_TYPE_PARAMETER) sig = modelData->realParameterData[alias->nameID].info.name;
+    if (alias->aliasType==ALIAS_TYPE_VARIABLE) sig = modelData->realVarsData[alias->nameID].info.name;
     write_alias(fp, alias->info.name, sig, alias->negate);
   }
 
   for(long i=0;i<modelData->nAliasInteger;i++) {
     DATA_INTEGER_ALIAS *alias = &modelData->integerAlias[i];
-    if (include[(int)alias->aliasType]==0) continue;
-    if (alias->aliasType==2) sig = "time";
-    if (alias->aliasType==1) sig = modelData->integerParameterData[alias->nameID].info.name;
-    if (alias->aliasType==0) sig = modelData->integerVarsData[alias->nameID].info.name;
+    if (include[(int)alias->aliasType]==ALIAS_TYPE_VARIABLE) continue;
+    if (alias->aliasType==ALIAS_TYPE_TIME) sig = "time";
+    if (alias->aliasType==ALIAS_TYPE_PARAMETER) sig = modelData->integerParameterData[alias->nameID].info.name;
+    if (alias->aliasType==ALIAS_TYPE_VARIABLE) sig = modelData->integerVarsData[alias->nameID].info.name;
     write_alias(fp, alias->info.name, sig, alias->negate);
   }
 
   for(long i=0;i<modelData->nAliasBoolean;i++) {
     DATA_BOOLEAN_ALIAS *alias = &modelData->booleanAlias[i];
-    if (include[(int)alias->aliasType]==0) continue;
-    if (alias->aliasType==2) sig = "time";
-    if (alias->aliasType==1) sig = modelData->booleanParameterData[alias->nameID].info.name;
-    if (alias->aliasType==0) sig = modelData->booleanVarsData[alias->nameID].info.name;
+    if (include[(int)alias->aliasType]==ALIAS_TYPE_VARIABLE) continue;
+    if (alias->aliasType==ALIAS_TYPE_TIME) sig = "time";
+    if (alias->aliasType==ALIAS_TYPE_PARAMETER) sig = modelData->booleanParameterData[alias->nameID].info.name;
+    if (alias->aliasType==ALIAS_TYPE_VARIABLE) sig = modelData->booleanVarsData[alias->nameID].info.name;
     write_alias(fp, alias->info.name, sig, alias->negate);
   }
 
   for(long i=0;i<modelData->nAliasString;i++) {
     DATA_STRING_ALIAS *alias = &modelData->stringAlias[i];
-    if (include[(int)alias->aliasType]==0) continue;
-    if (alias->aliasType==2) sig = "time";
-    if (alias->aliasType==1) sig = modelData->stringParameterData[alias->nameID].info.name;
-    if (alias->aliasType==0) sig = modelData->stringVarsData[alias->nameID].info.name;
+    if (include[(int)alias->aliasType]==ALIAS_TYPE_VARIABLE) continue;
+    if (alias->aliasType==ALIAS_TYPE_TIME) sig = "time";
+    if (alias->aliasType==ALIAS_TYPE_PARAMETER) sig = modelData->stringParameterData[alias->nameID].info.name;
+    if (alias->aliasType==ALIAS_TYPE_VARIABLE) sig = modelData->stringVarsData[alias->nameID].info.name;
     write_alias(fp, alias->info.name, sig, alias->negate);
   }
 }
