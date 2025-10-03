@@ -695,16 +695,21 @@ char* getXMLfileName(const char* modelFilePrefix, threadData_t* threadData) {
 
   if (omc_flag[FLAG_F]) { // Read the filename from the command line
     filename = strdup(omc_flagValue[FLAG_F]);
+    if(filename == NULL) {
+      throwStreamPrint(threadData, "simulation_input_xml.c: Out of memory");
+    }
   } else if (omc_flag[FLAG_INPUT_PATH]) { //  Read the input path from the command line
     filename = (char*) calloc(strlen(omc_flagValue[FLAG_INPUT_PATH] + strlen(modelFilePrefix) + 10 + 1), sizeof(char));
+    if(filename == NULL) {
+      throwStreamPrint(threadData, "simulation_input_xml.c: Out of memory");
+    }
     sprintf(filename, "%s/%s_init.xml", omc_flagValue[FLAG_INPUT_PATH], modelFilePrefix);
   } else { // Use default model_name
     filename = (char*) calloc(strlen(modelFilePrefix) + 9 + 1, sizeof(char));
+    if(filename == NULL) {
+      throwStreamPrint(threadData, "simulation_input_xml.c: Out of memory");
+    }
     sprintf(filename, "%s_init.xml", modelFilePrefix);
-  }
-
-  if(filename == NULL) {
-    throwStreamPrint(threadData, "simulation_input_xml.c: Out of memory");
   }
 
   return filename;
