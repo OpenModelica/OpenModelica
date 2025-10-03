@@ -475,8 +475,6 @@ static void read_var_dimension(omc_ModelVariable *v, DIMENSION_INFO *dimension_i
   }
 
   free(key);
-
-  return;
 }
 
 static void read_var_attribute_real(omc_ModelVariable *v, REAL_ATTRIBUTE *attribute)
@@ -615,7 +613,7 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
     v = *findHashLongVar(in, i);
 
     // Access real/int/bool/string attribute data
-    // Set info and filterOutput pointers
+    // Set info, dimension and filterOutput pointers
     switch (type) {
       case T_REAL:
         {
