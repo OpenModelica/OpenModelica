@@ -718,11 +718,16 @@ public
     input output Integer index;
   protected
     Integer factor = 1, val, siz;
-    list<Integer> val_trav = listReverse(values), siz_trav = listReverse(sizes);
+    list<Integer> val_trav = values, siz_trav = sizes;
   algorithm
     while not (listEmpty(val_trav) or listEmpty(siz_trav)) loop
       val :: val_trav := val_trav;
       siz :: siz_trav := siz_trav;
+      if val > siz then
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because value of " + intString(val)
+          + " is too large for size " + intString(siz) + "."});
+        fail();
+      end if;
       index := index + (val - 1) * factor;
       factor := factor * siz;
     end while;
