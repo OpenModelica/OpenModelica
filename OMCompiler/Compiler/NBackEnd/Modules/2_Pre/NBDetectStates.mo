@@ -657,11 +657,11 @@ protected
     _ := match (BVariable.getVarKind(BVariable.getVarPointer(lhs, sourceInfo())), BVariable.getVarKind(BVariable.getVarPointer(rhs, sourceInfo())))
       // a = der(b)
       case (_, VariableKind.STATE_DER(state = state)) algorithm
-        UnorderedMap.add(BVariable.getVarName(state), lhs, state_order);
+        UnorderedMap.add(BVariable.getVarName(state), ComponentRef.stripSubscriptsAll(lhs), state_order);
       then ();
       // der(b) = a
       case (VariableKind.STATE_DER(state = state), _) algorithm
-        UnorderedMap.add(BVariable.getVarName(state), rhs, state_order);
+        UnorderedMap.add(BVariable.getVarName(state), ComponentRef.stripSubscriptsAll(rhs), state_order);
       then ();
       else ();
     end match;

@@ -1331,7 +1331,7 @@ algorithm
       // convert simple equality of crefs to array equality
       // kabdelhak: only do it if all subscripts are simple enough
       //            will lead to complicated code if not index or whole dim
-      //            and we are better of just using for loops for these
+      //            and we are better off just using for loops for these
       case Equation.EQUALITY(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CREF())
         guard(not Flags.getConfigBool(Flags.NEW_BACKEND)
           or (List.all(ComponentRef.subscriptsAllWithWholeFlat(lhs.cref), Subscript.isSimple)
@@ -1473,7 +1473,7 @@ algorithm
       algorithm
         restString := ComponentRef.toString(restCref);
         if StringUtil.startsWith(restString, prefixString) then
-          exp.cref := ComponentRef.mergeSubscripts(subscripts, exp.cref, applyToScope = true);
+          exp.cref := ComponentRef.mergeSubscripts(subscripts, exp.cref, true, false, true);
         end if;
       then
         exp;

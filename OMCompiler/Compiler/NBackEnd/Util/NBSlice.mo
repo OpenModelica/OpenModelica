@@ -717,14 +717,20 @@ public
     input list<Integer> values;
     input output Integer index;
   protected
-    Integer factor = 1, size;
-    list<Integer> rest_sizes = sizes;
+    Integer factor = 1, val, siz;
+    list<Integer> val_trav = values, siz_trav = sizes;
   algorithm
-    for v in values loop
-      size :: rest_sizes := rest_sizes;
-      index := index + (v - 1) * factor;
-      factor := factor * size;
-    end for;
+    while not (listEmpty(val_trav) or listEmpty(siz_trav)) loop
+      val :: val_trav := val_trav;
+      siz :: siz_trav := siz_trav;
+      if val > siz then
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because value of " + intString(val)
+          + " is too large for size " + intString(siz) + "."});
+        fail();
+      end if;
+      index := index + (val - 1) * factor;
+      factor := factor * siz;
+    end while;
   end locationToIndex;
 
   function indexToLocation

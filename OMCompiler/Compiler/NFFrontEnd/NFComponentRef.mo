@@ -674,11 +674,12 @@ public
     input output ComponentRef cref;
     input Boolean applyToScope = false;
     input Boolean backend = false;
+    input Boolean reverse = false;
   protected
     ComponentRef old_cref = cref;
     list<Subscript> new_subscripts;
   algorithm
-    (new_subscripts, cref) := mergeSubscripts2(subscripts, cref, applyToScope, backend);
+    (new_subscripts, cref) := mergeSubscripts2(subscripts, cref, applyToScope, backend, reverse);
     if not listEmpty(new_subscripts) then
       Error.assertion(false, getInstanceName() + " failed because the subscripts "
         + List.toString(subscripts, Subscript.toString) + " could not be fully merged onto "
@@ -693,6 +694,7 @@ public
     input output ComponentRef cref;
     input Boolean applyToScope;
     input Boolean backend;
+    input Boolean reverse;
   algorithm
     (subscripts, cref) := match cref
       local
@@ -702,11 +704,17 @@ public
       case CREF(subscripts = cref_subs)
         guard applyToScope or cref.origin == Origin.CREF
         algorithm
-          (subscripts, rest_cref) := mergeSubscripts2(subscripts, cref.restCref, applyToScope, backend);
+          if not reverse then
+            (subscripts, rest_cref) := mergeSubscripts2(subscripts, cref.restCref, applyToScope, backend, reverse);
+          end if;
 
           if not listEmpty(subscripts) then
             (cref_subs, subscripts) :=
               Subscript.mergeList(subscripts, cref_subs, Type.dimensionCount(cref.ty), backend);
+          end if;
+
+          if reverse then
+            (subscripts, rest_cref) := mergeSubscripts2(subscripts, cref.restCref, applyToScope, backend, reverse);
           end if;
         then
           (subscripts, CREF(cref.node, cref_subs, cref.ty, cref.origin, rest_cref));
