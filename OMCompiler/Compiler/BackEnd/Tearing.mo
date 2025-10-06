@@ -1620,10 +1620,10 @@ algorithm
         innerEquations = omcTearing4_1(othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark);
         linear = BackendDAEUtil.getLinearfromJacType(jacType);
       then
-        (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(ovars, ores, innerEquations, BackendDAE.EMPTY_JACOBIAN()), NONE(), linear,mixedSystem),true);
+        (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(ovars, ores, innerEquations, BackendDAE.EMPTY_JACOBIAN()), linear,mixedSystem),true);
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       then
-        (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET({}, {}, {}, BackendDAE.EMPTY_JACOBIAN()), NONE(), false,mixedSystem),false);
+        (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET({}, {}, {}, BackendDAE.EMPTY_JACOBIAN()), false,mixedSystem),false);
   end matchcontinue;
 end omcTearing4;
 
@@ -1849,7 +1849,7 @@ try
   // dumpTearingSetGlobalIndexes(BackendDAE.TEARINGSET(iterationVars, residualequations, listReverse(innerEquations), BackendDAE.EMPTY_JACOBIAN()),size," - STRICT SET");
 
   // Return torn system
-  ocomp := BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(listReverse(iterationVars), listReverse(residualequations), listReverse(innerEquations), BackendDAE.EMPTY_JACOBIAN()), NONE(), linear, mixedSystem);
+  ocomp := BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(listReverse(iterationVars), listReverse(residualequations), listReverse(innerEquations), BackendDAE.EMPTY_JACOBIAN()), linear, mixedSystem);
 else
   Error.addInternalError("function minimalTearing failed", sourceInfo());
   fail();
@@ -1996,10 +1996,9 @@ protected
   String DAEtypeStr;
   BackendDAE.TearingSet strictTearingSet;
   BackendDAE.StateSets stateSets;
-  Option<BackendDAE.TearingSet> casualTearingSet;
   list<BackendDAE.Equation> eqn_lst;
   list<BackendDAE.Var> var_lst;
-  Boolean linear,b,noDynamicStateSelection,dynamicTearing;
+  Boolean linear,b,noDynamicStateSelection;
   String s,modelName;
   constant Boolean debug = false;
 algorithm
@@ -2008,17 +2007,6 @@ algorithm
   noDynamicStateSelection := listEmpty(stateSets);
   BackendDAE.SHARED(backendDAEType=DAEtype, info=BackendDAE.EXTRA_INFO(fileNamePrefix=modelName)) := ishared;
   DAEtypeStr := BackendDump.printBackendDAEType2String(DAEtype);
-
-  // check if dynamic tearing is enabled for linear/nonlinear system
-  dynamicTearing := match (Config.dynamicTearing(),linear,noDynamicStateSelection,DAEtypeStr,Flags.getConfigBool(Flags.DYNAMIC_TEARING_FOR_INITIALIZATION),Config.simCodeTarget())
-    case ("true",_,true,"simulation",_,"C") then true;
-    case ("true",_,true,"initialization",true,"C") then true;
-    case ("linear",true,true,"simulation",_,"C") then true;
-    case ("linear",true,true,"initialization",true,"C") then true;
-    case ("nonlinear",false,true,"simulation",_,"C") then true;
-    case ("nonlinear",false,true,"initialization",true,"C") then true;
-    else false;
-  end match;
 
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n" + BORDER + "\nBEGINNING of CellierTearing\n\n");
@@ -2145,123 +2133,18 @@ algorithm
   // Determine casual tearing set if dynamic tearing is enabled
   // *****************************************************************
 
-  if dynamicTearing then
-
-    if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-      print("\n\nDetermine CASUAL TEARING SET\n" + BORDER + BORDER + "\n\n");
-    end if;
-
-    // Get adjacency matrix again
-    (_,m,mt,_,_) := BackendDAEUtil.getAdjacencyMatrixScalar(subsyst, BackendDAE.NORMAL(),NONE(), BackendDAEUtil.isInitializationDAE(ishared));
-
-    // Delete negative entries from adjacency matrix
-    m := Array.map(m,deleteNegativeEntries);
-    mt := Array.map(mt,deleteNegativeEntries);
-
-    // Get advanced adjacency matrix (determine if the equations are solvable for the variables)
-    (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,ishared,true);
-
-    // Determine unsolvable vars to consider solvability
-    unsolvables := getUnsolvableVars(size,meT);
-
-    if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-      print("\nAdjacencyMatrixEnhanced:\n");
-      BackendDump.dumpAdjacencyMatrixEnhanced(me);
-      print("\nAdjacencyMatrixTransposedEnhanced:\n");
-      BackendDump.dumpAdjacencyMatrixTEnhanced(meT);
-      print("\neqLinPoints:\n" + stringDelimitList(List.mapArray(eqnNonlinPoints, intString),",") + "\n\n");
-    end if;
-
-    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-      print("mapEqnIncRow:"); //+ stringDelimitList(List.map(List.flatten(arrayList(mapEqnIncRow)),intString),",") + "\n\n");
-      BackendDump.dumpAdjacencyMatrix(mapEqnIncRow);
-      print("\nmapIncRowEqn:\n" + stringDelimitList(List.mapArray(mapIncRowEqn, intString),",") + "\n\n");
-      print("\n\nUNSOLVABLES:\n" + stringDelimitList(List.map(unsolvables,intString),",") + "\n\n");
-      print("\nDiscrete Vars:\n" + stringDelimitList(List.map(discreteVars,intString),",") + "\n\n");
-    end if;
-
-    // Initialize matching
-    ass1 := arrayCreate(size,-1);
-    ass2 := arrayCreate(size,-1);
-    order := {};
-
-    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-      print("\n" + BORDER + "\nBEGINNING of CellierTearing2\n\n");
-    end if;
-    (OutTVars, order) := CellierTearing2(false,m,mt,me,meT,ass1,ass2,unsolvables,{},discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
-    if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-      print("\nEND of CellierTearing2\n" + BORDER + "\n\n");
-    end if;
-
-    // only continue if dynamic tearing makes sense (casual set < strict set)
-    if intLt(listLength(OutTVars), tornsize) then
-
-      // Unassigned equations are residual equations
-      residual := getUnassigned(ass2);
-      residual_coll := List.map1r(residual,arrayGet,mapIncRowEqn);
-      residual_coll := List.unique(residual_coll);
-
-      // dump results with local indexes
+  if not b and not Flags.getConfigBool(Flags.FORCE_TEARING) then
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        dumpTearingSetLocalIndexes(OutTVars,residual_coll,order,ass2,size,mapEqnIncRow,vars,eqns," - CASUAL SET");
+        print("\nNote:\n=====\nTearing set is discarded because it is not smaller than the original set. Use +forceTearing to prevent this.\n\n");
       end if;
-
-      // Convert indexes
-      OutTVars := selectFromList_rev(vindx, OutTVars);
-      residual := selectFromList_rev(eindex, residual_coll);
-
-      // assign innerEquations:
-      innerEquations := assignInnerEquations(order,eindex,vindx,ass2,mapEqnIncRow,SOME(me));
-
-      // Create BackendDAE.TearingSet for casual set
-      casualTearingSet := SOME(BackendDAE.TEARINGSET(OutTVars,residual,innerEquations,BackendDAE.EMPTY_JACOBIAN()));
-
-      // dump results with global indexes
-      if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        dumpTearingSetGlobalIndexes(BackendDAE.TEARINGSET(OutTVars,residual,innerEquations,BackendDAE.EMPTY_JACOBIAN()),size," - CASUAL SET");
-      end if;
-
-      if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        if linear then s:="Linear"; else s:="Nonlinear"; end if;
-        print("\nNote:\n=====\n" + s + " dynamic tearing for this strong component in model:\n" + modelName + "\n\n");
-      end if;
-
-    else
-      if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        print("\n" + BORDER + "\n* TEARING RESULTS (CASUAL SET):\n*\n* No of equations in strong component: "+intString(size)+"\n");
-        print("* No of tVars: "+intString(listLength(OutTVars))+"\n");
-        print("*\n* tVars: "+ stringDelimitList(List.map(listReverse(OutTVars),intString),",") + "\n");
-        print("*\n* The casual tearing set is not smaller\n* than the strict tearing set and there-\n* fore it is discarded.\n*" + BORDER + "\n");
-      end if;
-
-      if not b and not Flags.getConfigBool(Flags.FORCE_TEARING) then
-        if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-          print("\nNote:\n=====\nTearing set is discarded because it is not smaller than the original set. Use +forceTearing to prevent this.\n\n");
-        end if;
-        fail();
-      end if;
-      casualTearingSet := NONE();
-    end if;
-    if debug then execStat("Tearing.CellierTearing -> 6"); end if;
-
-  else
-    if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-          print("Note:\n=====\nNo dynamic Tearing for this strong component. Check if\n- flag 'dynamicTearing' is set proper\n- strong component does not contain statesets\n- system belongs to simulation\n- SimCode target is 'C'\n\n");
-    end if;
-    if not b and not Flags.getConfigBool(Flags.FORCE_TEARING) then
-        if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-          print("\nNote:\n=====\nTearing set is discarded because it is not smaller than the original set. Use +forceTearing to prevent this.\n\n");
-        end if;
-        fail();
-    end if;
-    casualTearingSet := NONE();
-    if debug then execStat("Tearing.CellierTearing -> 7"); end if;
+      fail();
   end if;
+  if debug then execStat("Tearing.CellierTearing -> 7"); end if;
 
   // Determine the rest of the information needed for BackendDAE.TORNSYSTEM
   // ***************************************************************************
 
-  ocomp := BackendDAE.TORNSYSTEM(strictTearingSet,casualTearingSet,linear,mixedSystem);
+  ocomp := BackendDAE.TORNSYSTEM(strictTearingSet,linear,mixedSystem);
   outRunMatching := true;
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nEND of CellierTearing\n" + BORDER + "\n\n");
@@ -4756,7 +4639,7 @@ algorithm
 
   // Determine the rest of the information needed for BackendDAE.TORNSYSTEM
   // ***************************************************************************
-  ocomp := BackendDAE.TORNSYSTEM(listHead(tearingSets),NONE(),linear,mixedSystem);
+  ocomp := BackendDAE.TORNSYSTEM(listHead(tearingSets),linear,mixedSystem);
   outRunMatching := true;
 
   if Flags.isSet(Flags.TOTAL_TEARING_DUMP) or Flags.isSet(Flags.TOTAL_TEARING_DUMPVERBOSE) then
@@ -5084,7 +4967,7 @@ algorithm
     tearingSet := BackendDAE.TEARINGSET(tVars,residuals,innerEquations,BackendDAE.EMPTY_JACOBIAN());
 
     // Create BackendDAE.TornSystem
-    ocomp := BackendDAE.TORNSYSTEM(tearingSet,NONE(),linear,mixedSystem);
+    ocomp := BackendDAE.TORNSYSTEM(tearingSet,linear,mixedSystem);
     outRunMatching := true;
 
     // dump results with local indexes

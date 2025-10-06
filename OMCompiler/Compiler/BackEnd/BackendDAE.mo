@@ -579,7 +579,6 @@ uniontype StrongComponent
 
   record TORNSYSTEM
     TearingSet strictTearingSet;
-    Option<TearingSet> casualTearingSet;
     Boolean linear;
     Boolean mixedSystem "true for system that discrete dependencies to the iteration variables";
   end TORNSYSTEM;

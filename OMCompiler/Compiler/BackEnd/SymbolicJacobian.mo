@@ -2907,23 +2907,16 @@ algorithm
       Boolean mixedSystem, linear;
 
       Boolean debug = false, onlySparsePattern = true;
-      BackendDAE.TearingSet strictTearingset, casualTearingSet;
-      Option<BackendDAE.TearingSet> optCasualTearingSet;
+      BackendDAE.TearingSet strictTearingset;
 
       // generate symbolic jacobian for a torn system
-      case (BackendDAE.TORNSYSTEM(strictTearingset, optCasualTearingSet, linear, mixedSystem), _, _, _)
+      case (BackendDAE.TORNSYSTEM(strictTearingset, linear, mixedSystem), _, _, _)
         equation
           // generate generic jacobian backend dae
           (jacobian, shared) = calculateTearingSetJacobian(inVars, inEqns, strictTearingset, inShared, linear);
           strictTearingset.jac = jacobian;
 
-          if isSome(optCasualTearingSet) then
-            casualTearingSet = Util.getOption(optCasualTearingSet);
-            (jacobianCausal, shared) = calculateTearingSetJacobian(inVars, inEqns, casualTearingSet, shared, linear);
-            casualTearingSet.jac = jacobianCausal;
-            optCasualTearingSet = SOME(casualTearingSet);
-          end if;
-      then (BackendDAE.TORNSYSTEM(strictTearingset, optCasualTearingSet, linear, mixedSystem), shared);
+      then (BackendDAE.TORNSYSTEM(strictTearingset, linear, mixedSystem), shared);
 
       // do not touch constant systems for now
       case (comp as BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_CONSTANT()), _, _, _) then (comp, inShared);
@@ -2935,7 +2928,7 @@ algorithm
           strictTearingset = BackendDAE.TEARINGSET(iterationvarsInts, residualequations, {}, BackendDAE.EMPTY_JACOBIAN());
           (jacobian, shared) = calculateTearingSetJacobian(inVars, inEqns, strictTearingset, inShared, true);
           strictTearingset.jac = jacobian;
-      then (BackendDAE.TORNSYSTEM(strictTearingset, NONE(), true, mixedSystem), shared);
+      then (BackendDAE.TORNSYSTEM(strictTearingset, true, mixedSystem), shared);
 
       // Do not touch linear system
       case (comp as BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_LINEAR()), _, _, _) then (comp, inShared);
