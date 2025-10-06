@@ -5206,7 +5206,7 @@ protected function quicksortWithOrder1
 algorithm
   (lstOut,orderOut) := match(lstIn,orderIn,pivotIdx,markedIn,size)
     local
-      Boolean b1,b2,b3;
+      Boolean b1,b2;
       Integer lIdx,rIdx,pivot;
       Real e,p,l,r,b;
       list<Integer> orderTmp;
@@ -5233,8 +5233,13 @@ algorithm
         lstTmp = if b2 then swapEntriesInList(pivotIdx,rIdx,lstTmp) else lstTmp;
         orderTmp = if b1 then swapEntriesInList(pivotIdx,lIdx,orderIn) else orderIn;
         orderTmp = if b2 then swapEntriesInList(pivotIdx,rIdx,orderTmp) else orderTmp;
-        b3 = boolAnd(boolNot(b1),boolNot(b2)); // if both are false(no member left or rigth found) than the pivot has the right place
-        ((marked,pivot)) = if b3 then getNextPivot(lstTmp,markedIn,pivotIdx) else ((markedIn,pivotIdx));
+        // if both are false(no member left or rigth found) than the pivot has the right place
+        if not b1 and not b2 then
+          (marked, pivot) = getNextPivot(lstTmp,markedIn,pivotIdx);
+        else
+          marked = markedIn;
+          pivot = pivotIdx;
+        end if;
 
         (lstTmp,orderTmp) = quicksortWithOrder1(lstTmp,orderTmp,pivot,marked,size);
       then
@@ -5247,13 +5252,14 @@ protected function getNextPivot "author:Waurich TUD 2013-11
   input list<Real> lstIn;
   input list<Real> markedLstIn;
   input Integer pivotIdx;
-  output tuple<list<Real>,Integer> tplOut;
+  output list<Real> marked;
+  output Integer newIdx;
 algorithm
-  tplOut := match(lstIn,markedLstIn,pivotIdx)
+  (marked, newIdx) := match(lstIn,markedLstIn,pivotIdx)
     local
-      Integer newIdx,midIdx;
+      Integer midIdx;
       Real pivotElement,r1,r2,r3,e;
-      list<Real> marked,rest;
+      list<Real> rest;
     case(_,{_},_)
       then
         (({},0));

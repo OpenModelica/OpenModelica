@@ -4866,13 +4866,10 @@ public function replaceExp
   input DAE.Exp inExp;
   input DAE.Exp inSourceExp;
   input DAE.Exp inTargetExp;
-  output tuple<DAE.Exp,Integer> out;
-protected
-  DAE.Exp exp;
-  Integer i;
+  output DAE.Exp exp;
+  output Integer i;
 algorithm
   (exp,(_,_,i)) := traverseExpTopDown(inExp,replaceExpWork,(inSourceExp,inTargetExp,0));
-  out := (exp,i);
 end replaceExp;
 
 protected function replaceExpWork

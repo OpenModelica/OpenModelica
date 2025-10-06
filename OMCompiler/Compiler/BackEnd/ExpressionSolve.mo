@@ -1195,7 +1195,6 @@ algorithm
   (x, y, new_x, eqnForNewVars, newVarsCrefs, odepth) := matchcontinue inExp1
     local
       DAE.Exp arg, e1, e_1, e, e2, exP, lhs, e3, e4, e5, e6, rhs, a1,x1, a2,x2, ee1, ee2;
-      tuple<DAE.Exp, DAE.Exp> a, c;
       list<DAE.Exp> z1, z2, z3, z4;
       DAE.ComponentRef cr;
       DAE.Type tp;
@@ -1256,10 +1255,8 @@ algorithm
 
         x2 := makeProductLstSort(z3);
         a2 := if Expression.isAdd(op1) then makeProductLstSort(z4) else Expression.negate(makeProductLstSort(z4));
-        a := simplifyBinaryMulCoeff(x1);
-        c := simplifyBinaryMulCoeff(x2);
-        (e2, e3) := a;
-        (e5, e6) := c;
+        (e2, e3) := simplifyBinaryMulCoeff(x1);
+        (e5, e6) := simplifyBinaryMulCoeff(x2);
         (lhs, rhs, eqnForNewVars_, newVarsCrefs_) := solveQE(a1,e2,e3,a2,e5,e6,inExp2,inExp3,ieqnForNewVars,inewVarsCrefs,uniqueEqIndex,idepth);
       then(lhs, rhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
 
@@ -1501,9 +1498,10 @@ end preprocessingSolveFunctionCall;
 protected function simplifyBinaryMulCoeff
 "generalization of ExpressionSimplify.simplifyBinaryMulCoeff2"
   input DAE.Exp inExp;
-  output tuple<DAE.Exp, DAE.Exp> outRes;
+  output DAE.Exp exp1;
+  output DAE.Exp exp2;
 algorithm
-  outRes := match(inExp)
+  (exp1, exp2) := match(inExp)
     local
       DAE.Exp e,e1,e2;
       DAE.Exp coeff;

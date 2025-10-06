@@ -1050,7 +1050,7 @@ protected
   list<tuple<Integer, BackendDAE.Equation, list<Integer>>> unMeasuredVariablesAndEquations;
 algorithm
   for eq in unMeasuredEqsLst loop
-    (_, varIndex) := getSolvedVariableNumber(eq, solvedEqsAndVarsInfo);
+    varIndex := getSolvedVariableNumber(eq, solvedEqsAndVarsInfo);
     intermediateVars := getVariablesAfterExtraction({eq}, {}, sBltAdjacencyMatrix);
     intermediateVars := listReverse(List.setDifferenceOnTrue(intermediateVars, knownVars, intEq));
     //print("\n equation No: " + anyString(eq) + "==>" + anyString(varIndex));
@@ -1224,7 +1224,7 @@ algorithm
 
     // if status == false, prepare setB = {(var, equation to be removed)}
     if not status then
-      (_, varnumber) := getSolvedVariableNumber(eq, solvedEqsAndVarsInfo);
+      varnumber := getSolvedVariableNumber(eq, solvedEqsAndVarsInfo);
       if listEmpty(minimalSetS) then
         minimalSetS := {eq}; // first equation is detected as boundary condition equation
       end if;
@@ -1389,7 +1389,7 @@ algorithm
       break;
     end if;
 
-    (mappedEq, _) := getSolvedEquationNumber(varIndex, solvedEqsAndVarsInfo);
+    mappedEq := getSolvedEquationNumber(varIndex, solvedEqsAndVarsInfo);
 
     if not listMember(mappedEq, bindingEquations) then
       minimalSetS := mappedEq :: minimalSetS;
@@ -2134,7 +2134,7 @@ protected
   Integer varNumber;
 algorithm
   for eq in constantEquations loop
-    (_, varNumber) := getSolvedVariableNumber(eq, solvedEqsVarInfo);
+    varNumber := getSolvedVariableNumber(eq, solvedEqsVarInfo);
     constantVariables := varNumber :: constantVariables;
   end for;
 end getExactConstantVariables;
@@ -2148,7 +2148,7 @@ protected
   Integer varNumber;
 algorithm
   for eq in boundaryConditionEquations loop
-    (_, varNumber) := getSolvedVariableNumber(eq, solvedEqsVarInfo);
+    varNumber := getSolvedVariableNumber(eq, solvedEqsVarInfo);
     boundaryConditionVariables := varNumber :: boundaryConditionVariables;
   end for;
 end getBoundaryConditionVariables;
@@ -2219,7 +2219,7 @@ protected
   BackendDAE.Var var;
   BackendDAE.Equation tmpEq;
 algorithm
-  (_, varNumber) := getSolvedVariableNumber(eq, solvedEqsVarInfo);
+  varNumber := getSolvedVariableNumber(eq, solvedEqsVarInfo);
   var := BackendVariable.getVarAt(orderedVars, varNumber);
   mappedEq := mapIncRowEqn[eq];
   tmpEq := BackendEquation.get(orderedEqs, mappedEq);
@@ -2244,7 +2244,7 @@ algorithm
     print("\n" + heading + ":" + "(" + intString(listLength(tempSetS))  + ")" + "\n============================================================\n");
   end if;
   for eq in tempSetS loop
-    (_, varNumber) := getSolvedVariableNumber(eq, solvedEqsVarInfo);
+    varNumber := getSolvedVariableNumber(eq, solvedEqsVarInfo);
     var := BackendVariable.getVarAt(orderedVars, varNumber);
     mappedEq := mapIncRowEqn[eq];
     tmpEq := BackendEquation.get(orderedEqs, mappedEq);
@@ -2564,10 +2564,10 @@ public function checkBlueOrRedOrBrownBlocks
   output list<Integer> outIntegerList = {};
   output list<String> outStringList = {};
 protected
-  Integer eqNumber, varNumber;
+  Integer varNumber;
 algorithm
   for i in inlist loop
-    (eqNumber, varNumber) := getSolvedVariableNumber(i, solvedVar);
+    varNumber := getSolvedVariableNumber(i, solvedVar);
     // knownVars are named as knowns and belong to Blue Blocks
     if listMember(varNumber, knowns) then
       outStringList := "knowns" :: outStringList;
@@ -2590,14 +2590,13 @@ public function getSolvedVariableNumber
   "returns solvedvars based on the equation "
   input Integer eqnumber;
   input list<tuple<Integer, Integer>> inlist;
-  output tuple<Integer, Integer> mappedEqVar;
+  output Integer solvedvar;
 protected
-  Integer eq, solvedvar;
+  Integer solvedeq;
 algorithm
   for var in inlist loop
-    (eq, solvedvar):=var;
-    if intEq(eqnumber, eq) then
-      mappedEqVar := (eqnumber, solvedvar);
+    (solvedeq, solvedvar):=var;
+    if intEq(eqnumber, solvedeq) then
       return;
     end if;
   end for;
@@ -2607,14 +2606,13 @@ public function getSolvedEquationNumber
   "returns solvedeqs based on the variables "
   input Integer varnumber;
   input list<tuple<Integer, Integer>> inlist;
-  output tuple<Integer, Integer> mappedEqVar;
+  output Integer solvedeq;
 protected
-  Integer eq, solvedvar;
+  Integer solvedvar;
 algorithm
   for var in inlist loop
-    (eq, solvedvar) := var;
+    (solvedeq, solvedvar) := var;
     if intEq(varnumber, solvedvar) then
-      mappedEqVar := (eq, solvedvar);
       return;
     end if;
   end for;
@@ -2925,8 +2923,8 @@ protected
   list<Integer> t={}, nonsq, e_BltList;
   Integer eqnumber, varnumber;
 algorithm
-  for i in inlist loop
-    (eqnumber,varnumber) := getSolvedVariableNumber(i, solvedvariables);
+  for eqnumber in inlist loop
+    varnumber := getSolvedVariableNumber(eqnumber, solvedvariables);
     (nonsq, outEBLT) := getdirectOccurrencesinEquation(m, eqnumber, varnumber);
     //print(anyString(nonsq));
     for lst in nonsq loop
