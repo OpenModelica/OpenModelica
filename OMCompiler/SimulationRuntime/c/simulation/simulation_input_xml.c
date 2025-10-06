@@ -732,7 +732,6 @@ omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, t
   if(!parser)
   {
     fclose(file);
-    printf("Errrroooorrrr!!!\n\n"); fflush(stdout);
     throwStreamPrint(threadData, "simulation_input_xml.c: Error: couldn't allocate memory for the XML parser!");
   }
 
