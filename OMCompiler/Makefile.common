@@ -178,10 +178,10 @@ moo:
 		-DCMAKE_INSTALL_LIBDIR="$(builddir_lib_omc)" \
 		-DCMAKE_INSTALL_INCLUDEDIR="$(builddir_inc)" \
 		-DMUMPS_USE_METIS=OFF \
-		-DCMAKE_C_FLAGS=$(CFLAGS) \
-		-DCMAKE_CXX_FLAGS=$(CXXFLAGS) \
-		-DCMAKE_Fortran_FLAGS=$(FCFLAGS) \
-		-DCMAKE_Fortran_COMPILER=$(FC)
+		-DCMAKE_C_FLAGS="$(CFLAGS)" \
+		-DCMAKE_CXX_FLAGS="$(CXXFLAGS)" \
+		-DCMAKE_Fortran_FLAGS="$(FCFLAGS)" \
+		-DCMAKE_Fortran_COMPILER="$(FC)"
 
 	$(CMAKE) --build $(OMC_MOO_ROOT)/build --target ipopt dmumps
 	$(CMAKE) --build $(OMC_MOO_ROOT)/build --target install
