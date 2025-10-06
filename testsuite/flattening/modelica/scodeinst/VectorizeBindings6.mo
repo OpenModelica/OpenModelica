@@ -28,13 +28,13 @@ end VectorizeBindings6;
 // equation
 //   for $i2 in 1:2 loop
 //     for $i0 in 1:2 loop
-//       b[$i0].a[$i2].x = 1.0;
+//       b[$i2].a[$i0].x = 1.0;
 //     end for;
 //   end for;
 // algorithm
 //   for $i3 in 1:2 loop
 //     for $i1 in 1:2 loop
-//       b[$i1].a[$i3].y := 1.0;
+//       b[$i3].a[$i1].y := 1.0;
 //     end for;
 //   end for;
 // end VectorizeBindings6;
