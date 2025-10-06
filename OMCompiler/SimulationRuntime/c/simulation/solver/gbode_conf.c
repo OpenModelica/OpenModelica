@@ -241,7 +241,7 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag)
 }
 
 /**
- * @brief Use filter technic for step size control 
+ * @brief Use filter technic for step size control
  *
  * Read flag FLAG_SR_CTRL_FILTER to get filter value.
  * Defaults to 1.

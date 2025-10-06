@@ -6189,17 +6189,15 @@ end traversingComponentRefFinderDerPreStart;
 public function extractUniqueCrefsFromStatmentS
   "authot mahge: Extracts all unique ComponentRef from Statments."
   input list<DAE.Statement> inStmts;
-  output tuple<list<DAE.ComponentRef>,list<DAE.ComponentRef>> ocrefs;
+  output list<DAE.ComponentRef> olhscrefs;
+  output list<DAE.ComponentRef> orhscrefs;
 protected
   list<list<DAE.ComponentRef>> lhscreflstlst;
   list<list<DAE.ComponentRef>> rhscreflstlst;
-  list<DAE.ComponentRef> orhscrefs;
-  list<DAE.ComponentRef> olhscrefs;
 algorithm
   (lhscreflstlst,rhscreflstlst) := List.map_2(inStmts,extractCrefsStatment);
   orhscrefs := ComponentReference.uniqueList(List.flatten(rhscreflstlst));
   olhscrefs := ComponentReference.uniqueList(List.flatten(lhscreflstlst));
-  ocrefs := (olhscrefs,orhscrefs);
 end extractUniqueCrefsFromStatmentS;
 
 

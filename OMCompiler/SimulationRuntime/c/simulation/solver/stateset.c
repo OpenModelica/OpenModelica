@@ -346,7 +346,7 @@ int stateSelectionSet(DATA *data, threadData_t *threadData, char reportError, in
       /* error, report the matrix and the time */
 
       char *buffer = (char*)malloc(sizeof(char)*data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols*100+5);
-      warningStreamPrint(OMC_LOG_DSS, 1, "jacobian %dx%d [id: %ld]", data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeRows, data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols, set->jacobianIndex);
+      warningStreamPrint(OMC_LOG_DSS, 1, "jacobian %zux%zu [id: %ld]", data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeRows, data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols, set->jacobianIndex);
 
       for(m=0; m < data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeRows; m++)
       {
