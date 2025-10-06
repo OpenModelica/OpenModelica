@@ -1187,18 +1187,18 @@ void read_input_xml(MODEL_DATA* modelData, SIMULATION_INFO* simulationInfo)
 
   validate_model_description_sizes(mi->md, modelData, NULL);
 
-  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi->rSta, "real states",            0,                    modelData->nStates,                               &mapAlias, &mapAliasParam, &sensitivityParIndex);
-  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi->rDer, "real state derivatives", modelData->nStates,   modelData->nStates,                               &mapAlias, &mapAliasParam, &sensitivityParIndex);
-  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi->rAlg, "real algebraics",        2*modelData->nStates, modelData->nVariablesReal - 2*modelData->nStates, &mapAlias, &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi->rSta, "real states",            0,                    modelData->nStates,                               &mapAlias,      &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi->rDer, "real state derivatives", modelData->nStates,   modelData->nStates,                               &mapAlias,      &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi->rAlg, "real algebraics",        2*modelData->nStates, modelData->nVariablesReal - 2*modelData->nStates, &mapAlias,      &mapAliasParam, &sensitivityParIndex);
 
-  read_variables(simulationInfo, T_INTEGER, modelData->integerVarsData,      mi->iAlg, "integer variables",      0,                    modelData->nVariablesInteger, &mapAlias, &mapAliasParam, &sensitivityParIndex);
-  read_variables(simulationInfo, T_BOOLEAN, modelData->booleanVarsData,      mi->bAlg, "boolean variables",      0,                    modelData->nVariablesBoolean, &mapAlias, &mapAliasParam, &sensitivityParIndex);
-  read_variables(simulationInfo, T_STRING,  modelData->stringVarsData,       mi->sAlg, "string variables",       0,                    modelData->nVariablesString, &mapAlias, &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, T_INTEGER, modelData->integerVarsData,      mi->iAlg, "integer variables",      0,                    modelData->nVariablesInteger,                     &mapAlias,      &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, T_BOOLEAN, modelData->booleanVarsData,      mi->bAlg, "boolean variables",      0,                    modelData->nVariablesBoolean,                     &mapAlias,      &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, T_STRING,  modelData->stringVarsData,       mi->sAlg, "string variables",       0,                    modelData->nVariablesString,                      &mapAlias,      &mapAliasParam, &sensitivityParIndex);
 
-  read_variables(simulationInfo, T_REAL,    modelData->realParameterData,    mi->rPar, "real parameters",        0,                    modelData->nParametersReal, &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
-  read_variables(simulationInfo, T_INTEGER, modelData->integerParameterData, mi->iPar, "integer parameters",     0,                    modelData->nParametersInteger, &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
-  read_variables(simulationInfo, T_BOOLEAN, modelData->booleanParameterData, mi->bPar, "boolean parameters",     0,                    modelData->nParametersBoolean, &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
-  read_variables(simulationInfo, T_STRING,  modelData->stringParameterData,  mi->sPar, "string parameters",      0,                    modelData->nParametersString, &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, T_REAL,    modelData->realParameterData,    mi->rPar, "real parameters",        0,                    modelData->nParametersReal,                       &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, T_INTEGER, modelData->integerParameterData, mi->iPar, "integer parameters",     0,                    modelData->nParametersInteger,                    &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, T_BOOLEAN, modelData->booleanParameterData, mi->bPar, "boolean parameters",     0,                    modelData->nParametersBoolean,                    &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, T_STRING,  modelData->stringParameterData,  mi->sPar, "string parameters",      0,                    modelData->nParametersString,                     &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
 
   if (omc_flag[FLAG_IDAS])
   {
