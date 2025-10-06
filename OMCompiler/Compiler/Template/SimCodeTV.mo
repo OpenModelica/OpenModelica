@@ -1378,6 +1378,30 @@ package SimCodeUtil
     output SimCode.SimCode code;
   end getSimCode;
 
+  function getSimEqSystemSimVarsLHS
+    input SimCode.SimEqSystem simEqSys;
+    input SimCode.SimCode simCode;
+    output list<SimCodeVar.SimVar> simVars;
+  end getSimEqSystemSimVarsLHS;
+
+  function getSimEqSystemSimVarsRHS
+    input SimCode.SimEqSystem simEqSys;
+    input SimCode.SimCode simCode;
+    output list<SimCodeVar.SimVar> simVars;
+  end getSimEqSystemSimVarsRHS;
+
+  function getSimEqSystemSimVarsLHSJac
+    input SimCode.SimEqSystem simEqSys;
+    input Option<HashTableCrefSimVar.HashTable> opt_crefsHT;
+    output list<SimCodeVar.SimVar> simVars;
+  end getSimEqSystemSimVarsLHSJac;
+
+  function getSimEqSystemSimVarsRHSJac
+    input SimCode.SimEqSystem simEqSys;
+    input Option<HashTableCrefSimVar.HashTable> opt_crefsHT;
+    output list<SimCodeVar.SimVar> simVars;
+  end getSimEqSystemSimVarsRHSJac;
+
   function cref2simvar
     input DAE.ComponentRef cref;
     input SimCode.SimCode simCode;

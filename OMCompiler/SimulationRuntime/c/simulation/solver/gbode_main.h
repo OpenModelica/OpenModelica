@@ -103,6 +103,8 @@ typedef struct DATA_GBODEF{
   int *fastStatesIdx, *fastStates_old;              /* Indices of fast states, old values for comparison and update of sparsity pattern */
   int *slowStatesIdx;                               /* Indices of slow states */
 
+  EVAL_SELECTION* evalSelectionFast;                /* selection of fast equations for functionODE */
+
   modelica_boolean didEventStep;                    /* Will be used for updating the derivatives */
   int ringBufferSize;                               /* Buffer size for storing the error, stepSize and last values of states (yv) and their derivatives (kv) */
   enum GB_INTERPOL_METHOD interpolation;            /* Interpolation method */
@@ -172,7 +174,7 @@ typedef struct DATA_GBODE{
   SOLVERSTATS stats;
 } DATA_GBODE;
 
-void gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter);
+void gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter, EVAL_SELECTION* selection);
 int gbode_allocateData(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 void gbode_freeData(DATA* data, DATA_GBODE *gbData);
 int gbode_main(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);

@@ -52,6 +52,7 @@
 #include "stateset.h"
 #include "spatialDistribution.h"
 #include "../../meta/meta_modelica.h"
+#include "../eval_dep.h"
 
 #ifdef USE_PARJAC
   #include <omp.h>
@@ -994,6 +995,10 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->modelData->nVariablesBoolean  = data->simulationInfo->booleanVarsIndex[data->modelData->nVariablesBooleanArray];
   data->modelData->nVariablesString   = data->simulationInfo->stringVarsIndex[data->modelData->nVariablesStringArray];
 
+  /* init eval selection for functionODE */
+  data->callback->getDependency(data, threadData);
+  data->simulationInfo->evalSelection = NULL;
+
   /* prepare RingBuffer */
   for (i = 0; i < SIZERINGBUFFER; i++) {
     /* set time value */
@@ -1310,6 +1315,9 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->integerVarsIndex);
   free(data->simulationInfo->booleanVarsIndex);
   free(data->simulationInfo->stringVarsIndex);
+
+  /* free buffer for adaptive eval */
+  freeEvalDAG(data->modelData->dag);
 
   /* free buffer for old state variables */
   free(data->simulationInfo->realVarsOld);

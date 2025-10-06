@@ -13442,6 +13442,119 @@ algorithm
   end match;
 end getAssignedCrefsOfSimEq;
 
+public function getSimEqSystemSimVarsLHS
+  input SimCode.SimEqSystem simEqSys;
+  input SimCode.SimCode simCode;
+  output list<SimCodeVar.SimVar> simVars = {};
+protected
+  SimCodeVar.SimVar var;
+
+  function keep
+    input SimCodeVar.SimVar var;
+    output Boolean b;
+  algorithm
+    b := match var
+      case SimCodeVar.SIMVAR(varKind = BackendDAE.STATE())    then false;
+      case SimCodeVar.SIMVAR(varKind = BackendDAE.DISCRETE()) then false;
+      case SimCodeVar.SIMVAR(varKind = BackendDAE.PARAM())    then false;
+      case SimCodeVar.SIMVAR(varKind = BackendDAE.CONST())    then false;
+      else true;
+    end match;
+  end keep;
+algorithm
+  for cr in getSimEqSystemCrefsLHS(simEqSys) loop
+    try
+      var := cref2simvarOrFail(cr, simCode);
+      if keep(var) then
+        simVars := var :: simVars;
+      end if;
+    else
+    end try;
+  end for;
+end getSimEqSystemSimVarsLHS;
+
+public function getSimEqSystemSimVarsRHS
+  input SimCode.SimEqSystem simEqSys;
+  input SimCode.SimCode simCode;
+  output list<SimCodeVar.SimVar> simVars = {};
+protected
+  SimCodeVar.SimVar var;
+
+  function keep
+    input SimCodeVar.SimVar var;
+    output Boolean b;
+  algorithm
+    b := match var
+      case SimCodeVar.SIMVAR(varKind = BackendDAE.STATE())    then false;
+      case SimCodeVar.SIMVAR(varKind = BackendDAE.DISCRETE()) then false;
+      case SimCodeVar.SIMVAR(varKind = BackendDAE.PARAM())    then false;
+      case SimCodeVar.SIMVAR(varKind = BackendDAE.CONST())    then false;
+      else true;
+    end match;
+  end keep;
+algorithm
+  for cr in getSimEqSystemCrefsRHS(simEqSys) loop
+    try
+      var := cref2simvarOrFail(cr, simCode);
+      if keep(var) then
+        simVars := var :: simVars;
+      end if;
+    else
+    end try;
+  end for;
+end getSimEqSystemSimVarsRHS;
+
+public function getSimEqSystemSimVarsLHSJac
+  input SimCode.SimEqSystem simEqSys;
+  input Option<HashTableCrefSimVar.HashTable> opt_crefsHT;
+  output list<SimCodeVar.SimVar> simVars = {};
+protected
+  HashTableCrefSimVar.HashTable crefsHT;
+algorithm
+  if isSome(opt_crefsHT) then
+    crefsHT := Util.getOption(opt_crefsHT);
+    for cr in getSimEqSystemCrefsLHS(simEqSys) loop
+      try
+        simVars := simVarFromHTOrFail(cr, crefsHT) :: simVars;
+      else
+      end try;
+    end for;
+  end if;
+end getSimEqSystemSimVarsLHSJac;
+
+public function getSimEqSystemSimVarsRHSJac
+  input SimCode.SimEqSystem simEqSys;
+  input Option<HashTableCrefSimVar.HashTable> opt_crefsHT;
+  output list<SimCodeVar.SimVar> simVars = {};
+protected
+  SimCodeVar.SimVar var;
+  HashTableCrefSimVar.HashTable crefsHT;
+
+  function keep
+    input SimCodeVar.SimVar var;
+    output Boolean b;
+  algorithm
+    b := match var
+      case SimCodeVar.SIMVAR(varKind = BackendDAE.JAC_VAR())      then true;
+      case SimCodeVar.SIMVAR(varKind = BackendDAE.JAC_TMP_VAR())  then true;
+      else false;
+    end match;
+  end keep;
+algorithm
+  if isSome(opt_crefsHT) then
+    crefsHT := Util.getOption(opt_crefsHT);
+    for cr in getSimEqSystemCrefsRHS(simEqSys) loop
+      try
+        var := simVarFromHTOrFail(cr, crefsHT);
+        if keep(var) then
+          simVars := var :: simVars;
+        end if;
+      else
+      end try;
+    end for;
+  end if;
+end getSimEqSystemSimVarsRHSJac;
+
 protected function getSimEqSystemCrefsLHS "gets the crefs of the vars that are assigned (the lhs) for a simEqSystem
 author:Waurich TUD 2014-05"
   input SimCode.SimEqSystem simEqSys;
@@ -13458,19 +13571,38 @@ algorithm
       equation
         print("implement SES_RESIDUAL in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
       then {};
+    case(SimCode.SES_FOR_RESIDUAL())
+      equation
+        print("implement SES_FOR_RESIDUAL in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+      then {};
+    case(SimCode.SES_GENERIC_RESIDUAL())
+      equation
+        print("implement SES_GENERIC_RESIDUAL in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+      then {};
     case(SimCode.SES_SIMPLE_ASSIGN(cref=cref))
       then {cref};
     case(SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(cref=cref))
       then {cref};
     case(SimCode.SES_ARRAY_CALL_ASSIGN(lhs=lhs))
       then {Expression.expCref(lhs)};
+    case(SimCode.SES_RESIZABLE_ASSIGN())
+      equation
+        print("implement SES_RESIZABLE_ASSIGN in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+      then {};
+    case(SimCode.SES_GENERIC_ASSIGN())
+      equation
+        print("implement SES_GENERIC_ASSIGN in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+      then {};
+    case(SimCode.SES_ENTWINED_ASSIGN())
+      equation
+        print("implement SES_ENTWINED_ASSIGN in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+      then {};
     case(SimCode.SES_IFEQUATION())
       equation
         print("implement SES_IFEQUATION in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
       then {};
-    case(SimCode.SES_ALGORITHM()) equation
-      print("implement SES_ALGORITHM in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
-    then {};
+    case(SimCode.SES_ALGORITHM())
+      then CheckModel.algorithmStatementListOutputs(simEqSys.statements, DAE.EXPAND());
     case(SimCode.SES_INVERSE_ALGORITHM()) equation
       print("implement SES_INVERSE_ALGORITHM in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
     then {};
@@ -13483,12 +13615,123 @@ algorithm
       then crefs;
     case(SimCode.SES_MIXED(discVars=simVars))
       then list(SimCodeFunctionUtil.varName(v) for v in simVars);
-    case(SimCode.SES_WHEN(whenStmtLst={BackendDAE.ASSIGN(left=lhs)}))
-      equation
-        crefs = Expression.getAllCrefs(lhs);
+    case(SimCode.SES_WHEN())
+      algorithm
+        crefs := match simEqSys.whenStmtLst
+          case {BackendDAE.ASSIGN(left = lhs)} then Expression.getAllCrefs(lhs);
+          case {BackendDAE.REINIT(stateVar = cref)} then {cref};
+          case {BackendDAE.ASSERT()} then {};
+          case {BackendDAE.TERMINATE()} then {};
+          case {BackendDAE.NORETCALL()} then {};
+          else algorithm
+            print("implement unknown case for SES_WHEN in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+          then {};
+        end match;
+        if Util.isSome(simEqSys.elseWhen) then
+          crefs2 := getSimEqSystemCrefsLHS(Util.getOption(simEqSys.elseWhen));
+          crefs := listAppend(crefs2, crefs);
+        end if;
       then crefs;
+    case(SimCode.SES_FOR_LOOP(cref = cref))
+      then {cref};
+    case(SimCode.SES_FOR_EQUATION())
+      then listAppend(getSimEqSystemCrefsLHS(b) for b in simEqSys.body);
+    case(SimCode.SES_ALIAS())
+      equation
+        print("implement SES_ALIAS in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+      then {};
+    case(SimCode.SES_ALGEBRAIC_SYSTEM())
+      equation
+        print("implement SES_ALGEBRAIC_SYSTEM in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+      then {};
+    else
+      equation
+        print("implement unknown case in SimCodeUtil.getSimEqSystemCrefsLHS!\n");
+      then {};
   end match;
 end getSimEqSystemCrefsLHS;
+
+protected function getSimEqSystemCrefsRHS "gets the crefs of the vars that are used (the rhs) for a simEqSystem"
+  input SimCode.SimEqSystem simEqSys;
+  output list<DAE.ComponentRef> crefsOut;
+algorithm
+  crefsOut := match(simEqSys)
+    local
+      list<DAE.ComponentRef> crefs, crefs2;
+    case SimCode.SES_RESIDUAL()
+      then Expression.getAllCrefs(simEqSys.exp);
+    case SimCode.SES_FOR_RESIDUAL()
+      then Expression.getAllCrefs(simEqSys.exp);
+    case SimCode.SES_GENERIC_RESIDUAL()
+      then Expression.getAllCrefs(simEqSys.exp);
+    case SimCode.SES_SIMPLE_ASSIGN()
+      then Expression.getAllCrefs(simEqSys.exp);
+    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS()
+      then Expression.getAllCrefs(simEqSys.exp);
+    case SimCode.SES_ARRAY_CALL_ASSIGN()
+      then Expression.getAllCrefs(simEqSys.exp);
+    case SimCode.SES_RESIZABLE_ASSIGN() algorithm
+      Error.addInternalError("failed for SES_RESIZABLE_ASSIGN", sourceInfo());
+    then fail();
+    case SimCode.SES_GENERIC_ASSIGN() algorithm
+      Error.addInternalError("failed for SES_GENERIC_ASSIGN", sourceInfo());
+    then fail();
+    case SimCode.SES_ENTWINED_ASSIGN() algorithm
+      Error.addInternalError("failed for SES_ENTWINED_ASSIGN", sourceInfo());
+    then fail();
+    case SimCode.SES_IFEQUATION() algorithm
+      Error.addInternalError("failed for SES_IFEQUATION", sourceInfo());
+    then fail();
+    case SimCode.SES_ALGORITHM() algorithm
+      (_, crefs) := Expression.extractUniqueCrefsFromStatmentS(simEqSys.statements);
+    then crefs;
+    case SimCode.SES_INVERSE_ALGORITHM() algorithm
+      Error.addInternalError("failed for SES_INVERSE_ALGORITHM", sourceInfo());
+    then fail();
+    case SimCode.SES_LINEAR() algorithm
+      Error.addInternalError("failed for SES_LINEAR", sourceInfo());
+    then fail();
+    case SimCode.SES_NONLINEAR() algorithm
+      Error.addInternalError("failed for SES_NONLINEAR", sourceInfo());
+    then fail();
+    case SimCode.SES_MIXED() algorithm
+      Error.addInternalError("failed for SES_MIXED", sourceInfo());
+    then fail();
+    case SimCode.SES_WHEN()
+      algorithm
+        crefs := match simEqSys.whenStmtLst
+          local
+            DAE.Exp e1, e2, e3;
+          case {BackendDAE.ASSIGN(right = e1)} then Expression.getAllCrefs(e1);
+          case {BackendDAE.REINIT(value = e1)} then Expression.getAllCrefs(e1);
+          case {BackendDAE.ASSERT(condition = e1, message = e2, level = e3)}
+            then listAppend(Expression.getAllCrefs(e) for e in {e1, e2, e3});
+          case {BackendDAE.TERMINATE(message = e1)} then Expression.getAllCrefs(e1);
+          case {BackendDAE.NORETCALL(exp = e1)} then Expression.getAllCrefs(e1);
+          else algorithm
+            Error.addInternalError("failed for SES_WHEN", sourceInfo());
+          then fail();
+        end match;
+        if Util.isSome(simEqSys.elseWhen) then
+          crefs2 := getSimEqSystemCrefsRHS(Util.getOption(simEqSys.elseWhen));
+          crefs := listAppend(crefs2, crefs);
+        end if;
+      then crefs;
+    case SimCode.SES_FOR_LOOP()
+      then Expression.getAllCrefs(simEqSys.exp);
+    case SimCode.SES_FOR_EQUATION()
+      then listAppend(getSimEqSystemCrefsRHS(b) for b in simEqSys.body);
+    case SimCode.SES_ALIAS() algorithm
+      Error.addInternalError("failed for SES_ALIAS", sourceInfo());
+    then fail();
+    case SimCode.SES_ALGEBRAIC_SYSTEM() algorithm
+      Error.addInternalError("failed for SES_ALGEBRAIC_SYSTEM", sourceInfo());
+    then fail();
+    else algorithm
+      Error.addInternalError("failed", sourceInfo());
+    then fail();
+  end match;
+end getSimEqSystemCrefsRHS;
 
 public function replaceSimVarName "updates the name of simVarIn.
 author:Waurich TUD 2014-05"
@@ -15353,6 +15596,18 @@ algorithm
   end try;
 end cref2simvar;
 
+public function cref2simvarOrFail
+"Used by templates to find SIMVAR for given cref (to gain representaion index info mainly)."
+  input DAE.ComponentRef inCref;
+  input SimCode.SimCode simCode;
+  output SimCodeVar.SimVar outSimVar;
+protected
+  HashTableCrefSimVar.HashTable crefToSimVarHT;
+algorithm
+  SimCode.SIMCODE(crefToSimVarHT = crefToSimVarHT) := simCode;
+  outSimVar := simVarFromHTOrFail(inCref, crefToSimVarHT);
+end cref2simvarOrFail;
+
 public function simVarFromHT
 "Used by templates to find SIMVAR for given cref (to gain representaion index info mainly)."
   input DAE.ComponentRef inCref;
@@ -15402,6 +15657,49 @@ algorithm
   end try;
   outSimVar := sv;
 end simVarFromHT;
+
+public function simVarFromHTOrFail
+  input DAE.ComponentRef inCref;
+  input HashTableCrefSimVar.HashTable crefToSimVarHT;
+  output SimCodeVar.SimVar outSimVar;
+protected
+  DAE.ComponentRef cref;
+  SimCodeVar.SimVar sv;
+  list<DAE.Subscript> subs;
+algorithm
+  if BaseHashTable.hasKey(inCref, crefToSimVarHT) then
+    sv := BaseHashTable.get(inCref, crefToSimVarHT);
+  else
+    // lookup array variable and add offset for array element
+    if Flags.isSet(Flags.NF_SCALARIZE) then
+      sv := BaseHashTable.get(ComponentReference.crefStripLastSubs(inCref), crefToSimVarHT);
+      subs := ComponentReference.crefLastSubs(inCref);
+      sv.name := ComponentReference.crefSetLastSubs(sv.name, subs);
+    else
+      sv := BaseHashTable.get(ComponentReference.crefStripSubs(inCref), crefToSimVarHT);
+      subs := ComponentReference.crefSubs(inCref);
+      sv.name := ComponentReference.crefApplySubs(ComponentReference.crefStripSubs(sv.name), subs);
+    end if;
+
+    sv.variable_index := match sv.variable_index
+      local Integer index;
+      case SOME(index)
+      then SOME(index + getScalarElementIndex(subs, List.map(sv.numArrayElement, stringInt)) - 1);
+    end match;
+    // fix fmi_index when using nfScalarize
+    sv.fmi_index := match sv.fmi_index
+      local Integer fmiIndex;
+      case SOME(fmiIndex)
+      then SOME(fmiIndex + getScalarElementIndex(subs, List.map(sv.numArrayElement, stringInt)) - 1);
+    end match;
+  end if;
+  sv := match sv.aliasvar
+    case SimCodeVar.NOALIAS() then sv;
+    case SimCodeVar.ALIAS(varName=cref) then simVarFromHTOrFail(cref, crefToSimVarHT); /* Possibly not needed; can't really hurt that much though */
+    case SimCodeVar.NEGATEDALIAS() then sv;
+  end match;
+  outSimVar := sv;
+end simVarFromHTOrFail;
 
 public function createJacContext
   input Option<HashTableCrefSimVar.HashTable> jacHT;
