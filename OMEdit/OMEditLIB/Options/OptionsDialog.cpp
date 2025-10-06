@@ -2881,9 +2881,6 @@ void OptionsDialog::saveDebuggerSettings()
   } else {
     mpSettings->setValue("generateOperations", generateOperations);
   }
-  if (mpDebuggerPage->getGenerateOperationsCheckBox()->isChecked()) {
-    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=infoXmlOperations");
-  }
   mpSettings->endGroup();
 }
 

@@ -764,18 +764,14 @@ uniontype InstNode
     scope := match node
       case CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(originalNode = SOME(orig_node)))
         guard ignoreRedeclare
-        then enclosingScope(orig_node, ignoreRedeclare);
+        then enclosingScope(orig_node, ignoreRedeclare, ignoreBaseClass);
 
       case CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(parent = scope))
         guard ignoreRedeclare
         then scope;
 
-      case CLASS_NODE(nodeType = it as InstNodeType.BASE_CLASS())
-        guard ignoreBaseClass
-        then enclosingScope(it.parent);
-
-      case CLASS_NODE() then node.parentScope;
-      case COMPONENT_NODE() then enclosingScope(classScope(node));
+      case CLASS_NODE() then if ignoreBaseClass then getDerivedNode(node.parentScope) else node.parentScope;
+      case COMPONENT_NODE() then enclosingScope(classScope(node), ignoreRedeclare, ignoreBaseClass);
       case IMPLICIT_SCOPE() then node.parentScope;
     end match;
   end enclosingScope;

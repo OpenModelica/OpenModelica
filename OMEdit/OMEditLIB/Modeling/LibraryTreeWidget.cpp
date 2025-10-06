@@ -2577,7 +2577,9 @@ void LibraryTreeModel::createOMSBusConnectorLibraryTreeItems(LibraryTreeItem *pL
 void unloadHelper(LibraryTreeItem *pLibraryTreeItem)
 {
   MainWindow *pMainWindow = MainWindow::instance();
+#ifndef OM_DISABLE_DOCUMENTATION
   pMainWindow->getDocumentationWidget()->updateDocumentationHistory(pLibraryTreeItem);
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
   /* close the ModelWidget of LibraryTreeItem. */
   if (pLibraryTreeItem->getModelWidget()) {
     // if ModelWidget is used by DiagramWindow

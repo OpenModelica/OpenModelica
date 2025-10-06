@@ -24,6 +24,7 @@ recompileFMU.mos \
 reset_omc.mos \
 reset.mos \
 setStartTime.mos \
+sinus.mos \
 testDirectionalDerivatives.mos \
 testLoopsOverFMUs.mos \
 testSynchronousFMU_01.mos \

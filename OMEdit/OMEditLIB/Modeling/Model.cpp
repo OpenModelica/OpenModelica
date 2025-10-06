@@ -1292,6 +1292,11 @@ namespace ModelInstance
     return mName;
   }
 
+  Replaceable *Model::getReplaceable() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->getReplaceable() : nullptr;
+  }
+
   bool Model::isConnector() const
   {
     if (isExpandableConnector() || (mRestriction.compare(QStringLiteral("connector")) == 0)) {
@@ -2085,7 +2090,13 @@ namespace ModelInstance
 
   Replaceable *Element::getReplaceable() const
   {
-    return mpPrefixes ? mpPrefixes.get()->getReplaceable() : nullptr;
+    if (mpPrefixes) {
+      return mpPrefixes.get()->getReplaceable();
+    } else if (mpModel) {
+      return mpModel->getReplaceable();
+    } else {
+      return nullptr;
+    }
   }
 
   bool Element::isRedeclare() const

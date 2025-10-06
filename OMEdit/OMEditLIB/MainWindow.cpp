@@ -402,11 +402,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
     mpLibraryWidget->getLibraryTreeModel()->addModelicaLibraries();
   }
   // set command line options
-  if (OptionsDialog::instance()->getDebuggerPage()->getGenerateOperationsCheckBox()->isChecked()) {
-    mpOMCProxy->setCommandLineOptions("-d=infoXmlOperations");
-  }
   OptionsDialog::instance()->saveSimulationSettings();
-  OptionsDialog::instance()->saveNFAPISettings();
   // create tabs from MessagesWidget
   QTabBar::ButtonPosition closeSide = (QTabBar::ButtonPosition)style()->styleHint(QStyle::SH_TabBar_CloseButtonPosition, 0, mpMessagesTabWidget);
   MessagesTabWidget *pMessagesTabWidget = MessagesWidget::instance()->getMessagesTabWidget();
