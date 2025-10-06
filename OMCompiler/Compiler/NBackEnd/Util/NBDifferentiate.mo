@@ -128,7 +128,7 @@ public
         funcTree    = funcTree,
         scalarized  = false,
         adjoint_map = NONE(),
-        current_grad= Expression.EMPTY(Type.REAL()),
+        current_grad = Expression.EMPTY(Type.REAL()),
         collectAdjoints = false
       );
     end simpleCref;
@@ -673,7 +673,6 @@ public
         (elem1, diffArguments) := differentiateExpression(exp.recordExp, diffArguments);
       then (Expression.RECORD_ELEMENT(elem1, exp.index, exp.fieldName, exp.ty), diffArguments);
 
-
       // differentiate a passed function pointer
       case Expression.PARTIAL_FUNCTION_APPLICATION() algorithm
         d_fn := BVariable.makeFDerVar(exp.fn);
@@ -1093,7 +1092,7 @@ public
     exp := match (exp)
       local
         Integer i;
-        Expression ret, ret1, ret2, arg1, arg2, arg3, diffArg1, diffArg2, diffArg3, current_grad;
+        Expression ret, ret1, ret2, arg1, arg2, arg3, diffArg1, diffArg2, diffArg3, current_grad, cond, oldGrad, zero1, zero2, grad_x, grad_y, notCond;
         list<Expression> rest;
         Type ty;
         DifferentiationType diffType;
@@ -1257,7 +1256,7 @@ public
       algorithm
         ret := match Call.arguments(exp.call)
           case {arg1} algorithm
-            // dx/dz
+            // dX/dz
             (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
             ty := Expression.typeOf(diffArg1);
             if Expression.isZero(diffArg1) then
@@ -1274,9 +1273,49 @@ public
           then ret;
 
           case {arg1, arg2} algorithm
-            // dx/dz, dy/dz
+            current_grad := diffArguments.current_grad;
+            // Relation: for min use x<y; for max use x>y
+            cond := Expression.RELATION(
+              arg1,
+              if name == "min" then Operator.makeLess(Expression.typeOf(arg1))
+                               else Operator.makeGreater(Expression.typeOf(arg1)),
+              arg2,
+              -1);
+
+            // Reverse local masks:
+            // For min: grad_x = upstream if x<y else 0; grad_y = upstream if x>=y else 0
+            // For max: grad_x = upstream if x>y else 0; grad_y = upstream if x<=y else 0
+            zero1 := Expression.makeZero(Expression.typeOf(arg1));
+            zero2 := Expression.makeZero(Expression.typeOf(arg2));
+
+            grad_x := Expression.IF(
+              Expression.typeOf(arg1),
+              cond,
+              current_grad,
+              zero1);
+
+            // Inverse condition: (not cond)
+            notCond := Expression.logicNegate(cond);
+
+            grad_y := Expression.IF(
+              Expression.typeOf(arg2),
+              notCond,
+              current_grad,
+              zero2);
+
+            // Reverse recurse arg1 with grad_x
+            oldGrad := diffArguments.current_grad;
+            diffArguments.current_grad := grad_x;
+            // dx/dz
             (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
+
+            // Reverse recurse arg2 with grad_y
+            diffArguments.current_grad := grad_y;
+            // dy/dz
             (diffArg2, diffArguments) := differentiateExpression(arg2, diffArguments);
+
+            // Restore upstream
+            diffArguments.current_grad := oldGrad;
 
             ty := Expression.typeOf(diffArg1);
             if Expression.isZero(diffArg1) and Expression.isZero(diffArg2) then
@@ -1330,8 +1369,15 @@ public
         end match;
         // differentiate the call
         (ret1, ret2) := differentiateBuiltinCall2Arg(name, arg1, arg2);             // df/dx and df/dy
+        current_grad := diffArguments.current_grad;
+
+        diffArguments.current_grad := Expression.MULTARY({current_grad, ret1}, {}, mulOp);
         (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);  // dx/dz
+
+        diffArguments.current_grad := Expression.MULTARY({current_grad, ret2}, {}, mulOp);
         (diffArg2, diffArguments) := differentiateExpression(arg2, diffArguments);  // dy/dz
+
+        diffArguments.current_grad := current_grad;
         ret1 := Expression.MULTARY({ret1, diffArg1}, {}, mulOp);                    // df/dx * dx/dz
         ret2 := Expression.MULTARY({ret2, diffArg2}, {}, mulOp);                    // df/dy * dy/dz
         ret := Expression.MULTARY({ret1,ret2}, {}, addOp);                          // df/dx * dx/dz + df/dy * dy/dz
@@ -2220,11 +2266,20 @@ public
           // k * A
           // need to implement the double dot product for grad_exp1
           // it can be implemented as sum(G .* A) for grad_exp1
-          grad_exp1 := Expression.MULTARY({current_grad, exp2}, {}, Operator.fromClassification(
+          grad_exp1 := Expression.BINARY(current_grad, Operator.fromClassification(
               (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ELEMENT_WISE),
-              operator.ty)); 
+              operator.ty), exp2);
           grad_exp1 := typeSumCall(grad_exp1); // G : A
-          grad_exp2 := Expression.MULTARY({current_grad, exp1}, {}, makeMulFromOperator(operator)); // G * k
+          grad_exp2 := Expression.BINARY(current_grad, Operator.fromClassification(
+              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ARRAY_SCALAR),
+              operator.ty), exp1); // G * k
+
+        elseif isScalar1 and isVec2 then
+          print("differentiateBinary: scalar * vector case\n");
+          grad_exp1 := Expression.BINARY(current_grad, Operator.makeScalarProduct(operator.ty), exp2); 
+          grad_exp2 := Expression.BINARY(current_grad, Operator.fromClassification(
+              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ARRAY_SCALAR),
+              operator.ty), exp1);
 
         else
           print("differentiateBinary: fallback case\n");

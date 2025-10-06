@@ -856,6 +856,11 @@ protected
     (diffed_comps, diffArguments) := Differentiate.differentiateStrongComponentList(comps, diffArguments, idx, name, getInstanceName());
     funcTree := diffArguments.funcTree;
 
+
+
+
+
+
     // collect var data (most of this can be removed)
     unknown_vars  := listAppend(res_vars, tmp_vars);
     all_vars      := unknown_vars;  // add other vars later on
@@ -1192,6 +1197,12 @@ protected
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no strong components were given!"});
     end if;
 
+    // print strong components
+    print("Strong components for adjoint differentiation:\n");
+    for c in comps loop
+      print(StrongComponent.toString(c, 2) + "\n");
+    end for;
+
     // create seed vars
     for v in VariablePointers.toList(seedCandidates) loop makeVarTraverse(v, newName, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), init = init); end for;
     //VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = pDer_vars_ptr, map = diff_map, makeVar = BVariable.makePDerVar(isTmp = false), init = init));
@@ -1207,6 +1218,8 @@ protected
 
     for v in old_res_vars loop makeVarTraverse(v, newName, seed_vars_ptr, diff_map, BVariable.makeSeedVar, init = init); end for;
     seed_vars := Pointer.access(seed_vars_ptr);
+
+    print("seed vars after seed creation:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(seed_vars), "Seed Vars") + "\n");
 
     pDer_vars_ptr := Pointer.create({});
     for v in tmp_vars loop makeVarTraverse(v, newName, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), init = init); end for;

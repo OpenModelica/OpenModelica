@@ -549,6 +549,11 @@ public
     output Operator op = OPERATOR(ty, Op.MUL);
   end makeMul;
 
+  function makeScalarProduct
+    input Type ty;
+    output Operator op = OPERATOR(ty, Op.SCALAR_PRODUCT);
+  end makeScalarProduct;
+
   function makeDiv
     input Type ty;
     output Operator op = OPERATOR(ty, Op.DIV);
