@@ -4866,13 +4866,10 @@ public function replaceExp
   input DAE.Exp inExp;
   input DAE.Exp inSourceExp;
   input DAE.Exp inTargetExp;
-  output tuple<DAE.Exp,Integer> out;
-protected
-  DAE.Exp exp;
-  Integer i;
+  output DAE.Exp exp;
+  output Integer i;
 algorithm
   (exp,(_,_,i)) := traverseExpTopDown(inExp,replaceExpWork,(inSourceExp,inTargetExp,0));
-  out := (exp,i);
 end replaceExp;
 
 protected function replaceExpWork
@@ -6189,17 +6186,15 @@ end traversingComponentRefFinderDerPreStart;
 public function extractUniqueCrefsFromStatmentS
   "authot mahge: Extracts all unique ComponentRef from Statments."
   input list<DAE.Statement> inStmts;
-  output tuple<list<DAE.ComponentRef>,list<DAE.ComponentRef>> ocrefs;
+  output list<DAE.ComponentRef> olhscrefs;
+  output list<DAE.ComponentRef> orhscrefs;
 protected
   list<list<DAE.ComponentRef>> lhscreflstlst;
   list<list<DAE.ComponentRef>> rhscreflstlst;
-  list<DAE.ComponentRef> orhscrefs;
-  list<DAE.ComponentRef> olhscrefs;
 algorithm
   (lhscreflstlst,rhscreflstlst) := List.map_2(inStmts,extractCrefsStatment);
   orhscrefs := ComponentReference.uniqueList(List.flatten(rhscreflstlst));
   olhscrefs := ComponentReference.uniqueList(List.flatten(lhscreflstlst));
-  ocrefs := (olhscrefs,orhscrefs);
 end extractUniqueCrefsFromStatmentS;
 
 

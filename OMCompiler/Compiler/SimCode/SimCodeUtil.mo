@@ -13451,7 +13451,7 @@ algorithm
     local
       DAE.Exp lhs;
       DAE.ComponentRef cref;
-      list<DAE.ComponentRef> crefs,crefs2;
+      list<DAE.ComponentRef> crefs, crefs2;
       list<SimCodeVar.SimVar> simVars;
       list<SimCode.SimEqSystem> residual;
     case(SimCode.SES_RESIDUAL())

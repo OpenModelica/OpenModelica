@@ -441,15 +441,15 @@ end WhenEquation;
 public
 uniontype WhenOperator
   record ASSIGN " left_cr = right_exp"
-    .DAE.Exp left     "left hand side of equation";
-    .DAE.Exp right             "right hand side of equation";
-    .DAE.ElementSource source  "origin of equation";
+    .DAE.Exp left             "left hand side of equation";
+    .DAE.Exp right            "right hand side of equation";
+    .DAE.ElementSource source "origin of equation";
   end ASSIGN;
 
   record REINIT "Reinit Statement"
     .DAE.ComponentRef stateVar "State variable to reinit";
-    .DAE.Exp value             "Value after reinit";
-    .DAE.ElementSource source  "origin of equation";
+    .DAE.Exp value            "Value after reinit";
+    .DAE.ElementSource source "origin of equation";
   end REINIT;
 
   record ASSERT

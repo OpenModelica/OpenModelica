@@ -4643,7 +4643,7 @@ uniontype LinearJacobian
         // ToDo: updating the pivot row would also need an update for the rhs!
 
         for j in i+1:arrayLength(linJac.rows) loop
-          row_value := getElementValue(linJac.rows[j], col_index);
+          row_value := UnorderedMap.getOrDefault(col_index, linJac.rows[j], 0.0);
           if not realEq(row_value, 0.0) then
             // set row to processed and perform pivot step
             linJac.eq_marks[j] := true;
@@ -4721,7 +4721,7 @@ uniontype LinearJacobian
   algorithm
     if not realEq(piv_value, 1.0) then
       for idx in UnorderedMap.keyList(pivot_row) loop
-        SOME(value) := UnorderedMap.get(idx, pivot_row);
+        value := UnorderedMap.getOrFail(idx, pivot_row);
         UnorderedMap.add(idx, value/piv_value, pivot_row);
       end for;
     end if;
@@ -4731,31 +4731,17 @@ uniontype LinearJacobian
   "author: kabdelhak FHB 03-2021
    Returns the first element that can be chosen as pivot, fails if none can be chosen."
     input LinearJacobianRow pivot_row;
-    output tuple<Integer, Real> pivot_elem;
-  protected
-    Integer idx;
+    output Integer idx;
+    output Real value;
   algorithm
     if Vector.isEmpty(pivot_row.keys) then
       /* singular row */
       fail();
     else
       idx := UnorderedMap.firstKey(pivot_row);
-      pivot_elem := (idx, Util.getOption(UnorderedMap.get(idx, pivot_row)));
+      value := UnorderedMap.getOrFail(idx, pivot_row);
     end if;
   end getPivot;
-
-  protected function getElementValue
-  "author: kabdelhak FHB 03-2021
-   Returns the value at given column and zero if it does not exist in sparse structure."
-    input LinearJacobianRow row;
-    input Integer col_index;
-    output Real value;
-  algorithm
-    value := match UnorderedMap.get(col_index, row)
-      case SOME(value) then value;
-      else 0.0;
-    end match;
-  end getElementValue;
 
   public function resolveASSC
   "author: kabdelhak FHB 03-2021
