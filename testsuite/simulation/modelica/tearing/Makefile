@@ -31,9 +31,6 @@ Algorithm2-celMC3.mos \
 MixedTearing1-celMC3.mos \
 tearingSelect-celMC3.mos \
 tearingSelect2-celMC3.mos \
-dynamicTearing1.mos \
-dynamicTearing2.mos \
-dynamicTearing3.mos \
 Tearing1-cel.mos \
 Tearing2-cel.mos \
 Tearing3-cel.mos \

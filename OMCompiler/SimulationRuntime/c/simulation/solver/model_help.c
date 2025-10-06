@@ -476,6 +476,7 @@ modelica_boolean sparsitySanityCheck(SPARSE_PATTERN *sparsePattern, int nlsSize,
 
   for(i=0; i < sparsePattern->leadindex[nlsSize]; i++)
   {
+    assertStreamPrint(NULL, sparsePattern->index[i] < nlsSize , "Index out of range.");
     colCheck[sparsePattern->index[i]] = TRUE;
   }
 
