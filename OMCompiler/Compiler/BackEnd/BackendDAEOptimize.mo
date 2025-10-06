@@ -5625,16 +5625,9 @@ algorithm
       case BackendDAE.EQUATIONSYSTEM(jacType = BackendDAE.JAC_NO_ANALYTIC())
         then listAllIterationVariables3(comp.vars, vars, NO_ANALYTIC_JACOBIAN, warnings, componentRefs);
 
-      case BackendDAE.TORNSYSTEM(strictTearingSet = BackendDAE.TEARINGSET(tearingvars = var_idxs),
-                                 casualTearingSet = NONE())
+      case BackendDAE.TORNSYSTEM(strictTearingSet = BackendDAE.TEARINGSET(tearingvars = var_idxs))
         then listAllIterationVariables3(var_idxs, vars,
           if comp.linear then TORN_LINEAR else TORN_NONLINEAR, warnings, componentRefs);
-
-      case BackendDAE.TORNSYSTEM(strictTearingSet = BackendDAE.TEARINGSET(tearingvars = var_idxs),
-                                 casualTearingSet = SOME(BackendDAE.TEARINGSET(tearingvars = var_idxs2)))
-        then
-          listAllIterationVariables3(List.union(var_idxs, var_idxs2), vars,
-            if comp.linear then TORN_LINEAR else TORN_NONLINEAR, warnings, componentRefs);
 
       else (warnings, componentRefs);
     end match;
@@ -6308,7 +6301,7 @@ algorithm
     end match;
   end for;
 
-  outHomotopyComponent := BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(listAppend(newIterationVars,{lambdaIdx}), newResEquations, listReverse(newInnerEquations), BackendDAE.EMPTY_JACOBIAN()), NONE(), false, isMixed);
+  outHomotopyComponent := BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(listAppend(newIterationVars,{lambdaIdx}), newResEquations, listReverse(newInnerEquations), BackendDAE.EMPTY_JACOBIAN()), false, isMixed);
 end createOneHomotopyComponent;
 
 protected function traverseStrongComponentsAddLambda " traverses all the strong components and adds lambda as the last variable if the system contains homotopy
@@ -6327,7 +6320,6 @@ algorithm
     comp := match(comp)
       local
         list<Integer> eqnIndexes, varIndexes, resEqnIndexes, tVarIndexes, innerEqnIndexes;
-        Option<BackendDAE.TearingSet> casualTearingSet;
         BackendDAE.InnerEquations innerEquations;
         BackendDAE.Jacobian jac;
         BackendDAE.JacobianType jacType;
@@ -6346,7 +6338,7 @@ algorithm
           end if;
         then comp;
 
-      case(BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(residualequations=resEqnIndexes, tearingvars=tVarIndexes, innerEquations=innerEquations, jac=jac), casualTearingSet=casualTearingSet, linear=linear, mixedSystem=mixedSystem))
+      case(BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(residualequations=resEqnIndexes, tearingvars=tVarIndexes, innerEquations=innerEquations, jac=jac), linear=linear, mixedSystem=mixedSystem))
         equation
           eqnLst = BackendEquation.getList(resEqnIndexes, system.orderedEqs);
           (_, hasHomotopy) = BackendEquation.traverseExpsOfEquationList(eqnLst, BackendDAEUtil.containsHomotopyCall, false);
@@ -6359,7 +6351,7 @@ algorithm
 
           if hasHomotopy then
             hasAnyHomotopy = true;
-            comp = BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(listAppend(tVarIndexes, {lambdaIdx}), resEqnIndexes, innerEquations, jac), casualTearingSet, linear, mixedSystem);
+            comp = BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(listAppend(tVarIndexes, {lambdaIdx}), resEqnIndexes, innerEquations, jac), linear, mixedSystem);
           end if;
         then comp;
       else comp;

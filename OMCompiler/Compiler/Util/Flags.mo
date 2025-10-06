@@ -926,15 +926,6 @@ constant ConfigFlag REMOVE_SIMPLE_EQUATIONS = CONFIG_FLAG(59, "removeSimpleEquat
     ("new", Gettext.gettext("New implementation (experimental)"))
     })),
   Gettext.gettext("Specifies method that removes simple equations."));
-constant ConfigFlag DYNAMIC_TEARING = CONFIG_FLAG(60, "dynamicTearing",
-  NONE(), EXTERNAL(), STRING_FLAG("false"),
-  SOME(STRING_DESC_OPTION({
-    ("false", Gettext.gettext("No dynamic tearing.")),
-    ("true", Gettext.gettext("Dynamic tearing for linear and nonlinear systems.")),
-    ("linear", Gettext.gettext("Dynamic tearing only for linear systems.")),
-    ("nonlinear", Gettext.gettext("Dynamic tearing only for nonlinear systems."))
-  })),
-  Gettext.gettext("Activates dynamic tearing (TearingSet can be changed automatically during runtime, strict set vs. casual set.)"));
 constant ConfigFlag SYM_SOLVER = CONFIG_FLAG(61, "symSolver",
   NONE(), EXTERNAL(), ENUM_FLAG(0, {("none",0), ("impEuler", 1), ("expEuler",2)}), SOME(STRING_OPTION({"none", "impEuler", "expEuler"})),
   Gettext.gettext("Activates symbolic implicit solver (original system is not changed)."));
@@ -1089,9 +1080,6 @@ constant ConfigFlag TOTAL_TEARING = CONFIG_FLAG(94, "totalTearing",
 constant ConfigFlag IGNORE_SIMULATION_FLAGS_ANNOTATION = CONFIG_FLAG(95, "ignoreSimulationFlagsAnnotation",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Ignores the simulation flags specified as annotation in the class."));
-constant ConfigFlag DYNAMIC_TEARING_FOR_INITIALIZATION = CONFIG_FLAG(96, "dynamicTearingForInitialization",
-  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Gettext.gettext("Enable Dynamic Tearing also for the initialization system."));
 constant ConfigFlag PREFER_TVARS_WITH_START_VALUE = CONFIG_FLAG(97, "preferTVarsWithStartValue",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   Gettext.gettext("Prefer tearing variables with start value for initialization."));

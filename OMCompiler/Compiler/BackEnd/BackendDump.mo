@@ -1160,8 +1160,7 @@ algorithm
         dumpEqnsSolved2(rest,eqns,vars);
       then
         ();
-    // no dynamic tearing
-    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=vlst,residualequations=elst,innerEquations=innerEquations),casualTearingSet=NONE(),linear=b)::rest,_,_)
+    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=vlst,residualequations=elst,innerEquations=innerEquations),linear=b)::rest,_,_)
       equation
         s = if b then "linear" else "nonlinear";
         print("torn " + s + " Equationsystem:\n");
@@ -1178,42 +1177,6 @@ algorithm
         printEquationList(eqnlst);
         eqnlst = BackendEquation.getList(elst,eqns);
         print("\nresidual equations (" + intString(listLength(eqnlst)) + ")\n");
-        printEquationList(eqnlst);
-        print("\n");
-        dumpEqnsSolved2(rest,eqns,vars);
-      then
-        ();
-    // dynamic tearing
-    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=vlst,residualequations=elst,innerEquations=innerEquations),casualTearingSet=SOME(BackendDAE.TEARINGSET(tearingvars=vlst2,residualequations=elst2,innerEquations=innerEquations2)),linear=b)::rest,_,_)
-      equation
-        s = if b then "linear" else "nonlinear";
-        print("Strict torn " + s + " Equationsystem:\n");
-        (elst1,vlst1Lst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
-        vlst1 = List.flatten(vlst1Lst);
-        varlst = List.map1r(vlst1, BackendVariable.getVarAt, vars);
-        printVarList(varlst);
-        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        printVarList(varlst);
-        print("\n");
-        eqnlst = BackendEquation.getList(elst1,eqns);
-        printEquationList(eqnlst);
-        print("\n");
-        eqnlst = BackendEquation.getList(elst,eqns);
-        printEquationList(eqnlst);
-        print("\n");
-        dumpEqnsSolved2(rest,eqns,vars);
-        print("Casual torn " + s + " Equationsystem:\n");
-        (elst1,vlst1Lst,_) = List.map_3(innerEquations2, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
-        vlst1 = List.flatten(vlst1Lst);
-        varlst = List.map1r(vlst1, BackendVariable.getVarAt, vars);
-        printVarList(varlst);
-        varlst = List.map1r(vlst2, BackendVariable.getVarAt, vars);
-        printVarList(varlst);
-        print("\n");
-        eqnlst = BackendEquation.getList(elst1,eqns);
-        printEquationList(eqnlst);
-        print("\n");
-        eqnlst = BackendEquation.getList(elst2,eqns);
         printEquationList(eqnlst);
         print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
@@ -1470,7 +1433,7 @@ algorithm
         s = stringDelimitList(ls, ", ");
         tmpStr = "WhenEquation " + " {" + intString(i) + ":" + s + "}\n";
       then tmpStr;
-    case BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(residualequations=ilst,tearingvars=vlst,innerEquations=innerEquations),casualTearingSet=NONE(),linear=b)
+    case BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(residualequations=ilst,tearingvars=vlst,innerEquations=innerEquations),linear=b)
       equation
         ls = List.map(innerEquations, innerEquationString);
         s = stringDelimitList(ls, ", ");
@@ -1494,52 +1457,6 @@ algorithm
           end if;
         end if;
       then tmpStr;
-    case BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(residualequations=ilst,tearingvars=vlst,innerEquations=innerEquations),casualTearingSet=SOME(BackendDAE.TEARINGSET(residualequations=ilst2,tearingvars=vlst2,innerEquations=innerEquations2)),linear=b)
-      equation
-        ls = List.map(innerEquations, innerEquationString);
-        s = stringDelimitList(ls, ", ");
-        ls = List.map(ilst, intString);
-        s2 = stringDelimitList(ls, ", ");
-        ls = List.map(vlst, intString);
-        s3 = stringDelimitList(ls, ", ");
-        s4 = if b then "linear" else "nonlinear";
-        tmpStr = "{{" + s + "}\n,{" + s2 + ":" + s3 + "}} Size: " + intString(listLength(vlst)) + " " + s4 + " (strict tearing set)\n";
-        if isSome(inSyst) then
-          if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-            SOME(eSys) = inSyst;
-            (innerEqLst,innerVarLst,_) = BackendDAEUtil.getEqnAndVarsFromInnerEquationLst(innerEquations);
-            tmpStr = tmpStr
-                     + "\nTearing Variables:\n-------------------------------------\n" + dumpMarkedVars(eSys,vlst) + "\n"
-                     + "Residual Equations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,ilst)
-                     + "Inner Variables:\n-------------------------------------\n" + dumpMarkedVarsLsts(eSys,innerVarLst) + "\n"
-                     + "InnerEquations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,innerEqLst);
-          else
-            tmpStr = tmpStr + "For more information please use \"-d=tearingdump\".\n";
-          end if;
-        end if;
-
-        ls = List.map(innerEquations2, innerEquationString);
-        s = stringDelimitList(ls, ", ");
-        ls = List.map(ilst2, intString);
-        s2 = stringDelimitList(ls, ", ");
-        ls = List.map(vlst2, intString);
-        s3 = stringDelimitList(ls, ", ");
-        s4 = if b then "linear" else "nonlinear";
-        tmpStr2 = "{{" + s + "}\n,{" + s2 + ":" + s3 + "}} Size: " + intString(listLength(vlst2)) + " " + s4 + " (casual tearing set)\n";
-        if isSome(inSyst) then
-          if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-            SOME(eSys) = inSyst;
-            (innerEqLst,innerVarLst,_) = BackendDAEUtil.getEqnAndVarsFromInnerEquationLst(innerEquations2);
-            tmpStr2 = tmpStr2
-                      + "\nTearing Variables:\n-------------------------------------\n" + dumpMarkedVars(eSys,vlst2) + "\n"
-                      + "Residual Equations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,ilst2)
-                      + "Inner Variables:\n-------------------------------------\n" + dumpMarkedVarsLsts(eSys,innerVarLst) + "\n"
-                      + "InnerEquations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,innerEqLst);
-          else
-            tmpStr2 = tmpStr2 + "For more information please use \"-d=tearingdump\".\n";
-          end if;
-        end if;
-      then tmpStr + tmpStr2;
   end match;
 end printComponent;
 
@@ -3614,7 +3531,7 @@ algorithm
   if intGt(teqsys,0) then
     dumpCompTorn(tornTpl,"strict");
   end if;
-  if intGt(teqsys2,0) and not stringEqual(Config.dynamicTearing(),"false") then
+  if intGt(teqsys2,0) then
     dumpCompTorn(tornTpl2,"casual");
   end if;
 end dumpCompShort;
@@ -3856,35 +3773,20 @@ algorithm
     then ((seq,salg,sarr,sce,swe,sie,(e_jc,e_jt,e_jn,e::e_nj),meqsys,teqsys,teqsys2));
 
     // no dynamic tearing
-    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations,jac=BackendDAE.GENERIC_JACOBIAN(_,(_,_,_,nnz),_)),casualTearingSet=NONE(),linear=true),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
+    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations,jac=BackendDAE.GENERIC_JACOBIAN(_,(_,_,_,nnz),_)),linear=true),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
       d = listLength(ilst);
       e = listLength(innerEquations);
     then ((seq,salg,sarr,sce,swe,sie,eqsys,meqsys,((d,e,nnz)::te_l,te_nl),((0,0,0)::te_l2,te_nl2)));
 
-    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations),casualTearingSet=NONE(),linear=false),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
+    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations),linear=false),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
       d = listLength(ilst);
       e = listLength(innerEquations);
     then ((seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,(d,e)::te_nl),(te_l2,(0,0)::te_nl2)));
 
-    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations,jac=BackendDAE.EMPTY_JACOBIAN()),casualTearingSet=NONE(),linear=true),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
+    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations,jac=BackendDAE.EMPTY_JACOBIAN()),linear=true),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
       d = listLength(ilst);
       e = listLength(innerEquations);
     then ((seq,salg,sarr,sce,swe,sie,eqsys,meqsys,((d,e,0)::te_l,te_nl),((0,0,0)::te_l2,te_nl2)));
-
-    // dynamic tearing
-    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations,jac=BackendDAE.GENERIC_JACOBIAN(_,(_,_,_,nnz),_)),casualTearingSet=SOME(BackendDAE.TEARINGSET(tearingvars=ilst2,innerEquations=innerEquations2,jac=BackendDAE.GENERIC_JACOBIAN(_,(_,_,_,nnz2),_))),linear=true),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
-      d = listLength(ilst);
-      e = listLength(innerEquations);
-      d2 = listLength(ilst2);
-      e2 = listLength(innerEquations2);
-    then ((seq,salg,sarr,sce,swe,sie,eqsys,meqsys,((d,e,nnz)::te_l,te_nl),((d2,e2,nnz2)::te_l2,te_nl2)));
-
-    case (BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(tearingvars=ilst,innerEquations=innerEquations),casualTearingSet=SOME(BackendDAE.TEARINGSET(tearingvars=ilst2,innerEquations=innerEquations2)),linear=false),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,te_nl),(te_l2,te_nl2))) equation
-      d = listLength(ilst);
-      e = listLength(innerEquations);
-      d2 = listLength(ilst2);
-      e2 = listLength(innerEquations2);
-    then ((seq,salg,sarr,sce,swe,sie,eqsys,meqsys,(te_l,(d,e)::te_nl),(te_l2,(d2,e2)::te_nl2)));
 
     else equation
       print("dumpCompShort2 failed with:\n");

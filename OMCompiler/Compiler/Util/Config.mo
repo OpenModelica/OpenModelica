@@ -597,12 +597,6 @@ algorithm
   outBoolean := not stringEq(Flags.getConfigString(Flags.PROFILING_LEVEL), "none");
 end profileFunctions;
 
-public function dynamicTearing
-  output String outString;
-algorithm
-  outString := Flags.getConfigString(Flags.DYNAMIC_TEARING);
-end dynamicTearing;
-
 public function ignoreCommandLineOptionsAnnotation
   output Boolean outBoolean;
 algorithm
