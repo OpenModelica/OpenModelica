@@ -856,11 +856,6 @@ protected
     (diffed_comps, diffArguments) := Differentiate.differentiateStrongComponentList(comps, diffArguments, idx, name, getInstanceName());
     funcTree := diffArguments.funcTree;
 
-
-
-
-
-
     // collect var data (most of this can be removed)
     unknown_vars  := listAppend(res_vars, tmp_vars);
     all_vars      := unknown_vars;  // add other vars later on
@@ -1151,6 +1146,22 @@ protected
     rhs := Expression.MULTARY(terms, {}, addOp);
   end buildAdjointRhs;
 
+  function diffMapToString
+    input UnorderedMap<ComponentRef, ComponentRef> map;
+    output String s;
+  protected
+    list<ComponentRef> keys;
+    ComponentRef k, v;
+  algorithm
+    keys := UnorderedMap.keyList(map);
+    s := "{\n";
+    for k in keys loop
+      v := UnorderedMap.getOrFail(k, map);
+      s := s + "  " + ComponentRef.toString(k) + " -> " + ComponentRef.toString(v) + "\n";
+    end for;
+    s := s + "}";
+  end diffMapToString;
+
   function jacobianSymbolicAdjoint2 extends Module.jacobianInterface;
   protected
     list<StrongComponent> comps, diffed_comps;
@@ -1202,6 +1213,9 @@ protected
     for c in comps loop
       print(StrongComponent.toString(c, 2) + "\n");
     end for;
+
+    print("Seed candidates before pDer creation:\n" + BVariable.VariablePointers.toString(seedCandidates, "Seed Candidates") + "\n");
+    print("Partial candidates before pDer creation:\n" + BVariable.VariablePointers.toString(partialCandidates, "Partial Candidates") + "\n");
 
     // create seed vars
     for v in VariablePointers.toList(seedCandidates) loop makeVarTraverse(v, newName, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), init = init); end for;
@@ -1275,6 +1289,7 @@ protected
     print("tmp vars after scalar addition:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(tmp_vars), "Tmp Vars") + "\n");
 
     print("Adjoint map before:\n" + adjointMapToString(SOME(adjoint_map)) + "\n");
+    print("Diff map before:\n" + diffMapToString(diff_map) + "\n");
 
     // Build differentiation argument structure
     diffArguments := Differentiate.DIFFERENTIATION_ARGUMENTS(

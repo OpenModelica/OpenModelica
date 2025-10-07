@@ -447,6 +447,7 @@ public
 
       case Equation.FOR_EQUATION() algorithm
         for body_eqn in eq.body loop
+          print("Diff For body eqn: " + Equation.toString(body_eqn) + "\n");
           (body_eqn, diffArguments) := differentiateEquation(body_eqn, diffArguments);
           forBody := body_eqn :: forBody;
         end for;
@@ -565,7 +566,7 @@ public
   algorithm
     (exp, diffArguments) := match exp
       local
-        Expression elem1, elem2, res, current_grad;
+        Expression elem1, elem2, res, current_grad, gradTrue, gradFalse;
         list<Expression> new_elements = {};
         list<list<Expression>> new_matrix_elements = {};
         array<Expression> arr;
@@ -617,12 +618,32 @@ public
         end for;
       then (Expression.RECORD(exp.path, exp.ty, listReverse(new_elements)), diffArguments);
 
+      // e.g. (f(x))' = f'(x) * x' (more rules in differentiateCall)
       case Expression.CALL() then differentiateCall(exp, diffArguments);
 
-      // (if c then a else b)' = if c then a' else b'
+      // Forward: (if c then a else b)' = if c then a' else b'
+      // Reverse: upstream G is only sent to taken branch:
+      //   grad_a = IF(c, G, 0)
+      //   grad_b = IF(c, 0, G)
+      // Then recurse with those masked gradients.
       case Expression.IF() algorithm
+        // Keep original upstream
+        current_grad := diffArguments.current_grad;
+
+        // Masked gradients
+        gradTrue  := Expression.IF(Expression.typeOf(current_grad), exp.condition, current_grad, Expression.makeZero(Expression.typeOf(current_grad)));
+        gradFalse := Expression.IF(Expression.typeOf(current_grad), exp.condition, Expression.makeZero(Expression.typeOf(current_grad)), current_grad);
+
+        // Recurse true branch
+        diffArguments.current_grad := gradTrue;
         (elem1, diffArguments) := differentiateExpression(exp.trueBranch, diffArguments);
+
+        // Recurse false branch
+        diffArguments.current_grad := gradFalse;
         (elem2, diffArguments) := differentiateExpression(exp.falseBranch, diffArguments);
+
+        // Restore upstream
+        diffArguments.current_grad := current_grad;
       then (Expression.IF(exp.ty, exp.condition, elem1, elem2), diffArguments);
 
       // e.g. (fg)' = fg' + f'g (more rules in differentiateBinary)
@@ -721,6 +742,29 @@ public
         else {current_grad};
       end match;
     end updateAdjointList;
+
+    function appendAdjoint
+      "Append current_grad to adjoint_map entry for cref; create entry if missing."
+      input ComponentRef cref;
+      input Expression grad;
+      input output DifferentiationArguments da;
+    protected
+      UnorderedMap<ComponentRef, ExpressionList> amap;
+      ExpressionList lst;
+    algorithm
+      if not Util.isSome(da.adjoint_map) then
+        return;
+      end if;
+      amap := Util.getOption(da.adjoint_map);
+      if UnorderedMap.contains(cref, amap) then
+        lst := UnorderedMap.getOrFail(cref, amap);
+        UnorderedMap.add(cref, grad :: lst, amap);
+      else
+        UnorderedMap.add(cref, {grad}, amap);
+      end if;
+      da.adjoint_map := SOME(amap);
+    end appendAdjoint;
+
   algorithm
     // extract var pointer first to have following code more readable
     var_ptr := match exp
@@ -868,8 +912,9 @@ public
 
           // Accumulate adjoint contribution: append current_grad to list at key exp.cref.
           if diffArguments.collectAdjoints then
-            UnorderedMap.tryAddUpdate(exp.cref,
-              function updateAdjointList(current_grad = diffArguments.current_grad), Util.getOption(diffArguments.adjoint_map));
+            // UnorderedMap.tryAddUpdate(exp.cref, // should maybe be UnorderedMap.getOrFail(exp.cref, diff_map)
+            //   function updateAdjointList(current_grad = diffArguments.current_grad), Util.getOption(diffArguments.adjoint_map));
+            appendAdjoint(exp.cref, diffArguments.current_grad, diffArguments);
           end if;
         else
           // Everything that is not in diff_map gets differentiated to zero
@@ -883,16 +928,20 @@ public
         guard(not diffArguments.scalarized)
       algorithm
         strippedCref := ComponentRef.stripSubscriptsAll(exp.cref);
+        print("Differentiate Cref: " + ComponentRef.toString(exp.cref) + " stripped: " + ComponentRef.toString(strippedCref) + "\n");
         if UnorderedMap.contains(strippedCref, diff_map) then
           // get the derivative an reapply subscripts
           derCref := UnorderedMap.getOrFail(strippedCref, diff_map);
+          print("  Found in map, derCref: " + ComponentRef.toString(derCref) + "\n");
           derCref := ComponentRef.copySubscripts(exp.cref, derCref);
+          print("  After copying subscripts: " + ComponentRef.toString(derCref) + "\n");
           res     := Expression.fromCref(derCref);
 
-
           if diffArguments.collectAdjoints then
-            UnorderedMap.tryAddUpdate(derCref,
-            function updateAdjointList(current_grad = diffArguments.current_grad), Util.getOption(diffArguments.adjoint_map));
+            // UnorderedMap.tryAddUpdate(derCref,
+            // function updateAdjointList(current_grad = diffArguments.current_grad), Util.getOption(diffArguments.adjoint_map));
+
+            appendAdjoint(derCref, diffArguments.current_grad, diffArguments);
           end if;
         else
           res     := Expression.makeZero(exp.ty);
@@ -1224,9 +1273,25 @@ public
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
           then fail();
         end match;
+        current_grad := diffArguments.current_grad;
+
+        cond := Expression.RELATION(
+          arg1, // x
+          Operator.makeGreaterEq(Expression.typeOf(arg1)),
+          Expression.makeZero(Expression.typeOf(arg1)),
+          -1);
+
+        grad_x := Expression.IF(
+          Expression.typeOf(arg1),
+          cond,
+          Expression.MULTARY({arg2, current_grad}, {}, mulOp), // d(positive_slope * x)/dx = positive_slope * current_grad
+          Expression.MULTARY({arg3, current_grad}, {}, mulOp)  // d(negative_slope * x)/dx = negative_slope * current_grad
+        );
+        diffArguments.current_grad := grad_x;
 
         // dx/dz, dm1/dz, dm2/dz
         (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
+        diffArguments.current_grad := current_grad; // restore upstream
         (diffArg2, diffArguments) := differentiateExpression(arg2, diffArguments);
         (diffArg3, diffArguments) := differentiateExpression(arg3, diffArguments);
 
@@ -1294,12 +1359,9 @@ public
               current_grad,
               zero1);
 
-            // Inverse condition: (not cond)
-            notCond := Expression.logicNegate(cond);
-
             grad_y := Expression.IF(
               Expression.typeOf(arg2),
-              notCond,
+              cond, // same condition
               current_grad,
               zero2);
 
@@ -2462,8 +2524,8 @@ public
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
         algorithm
           if listLength(arguments) == 2 then
-            // for two arguments just use binary differentiation
-            (diff_arg, diffArguments) := differentiateBinary(Expression.BINARY(listGet(arguments, 1), makeMulFromOperator(operator), listGet(arguments, 2)), diffArguments);
+            // for "pure" multiplication of exactly two arguments just use binary differentiation
+            (diff_arg, diffArguments) := differentiateBinary(Expression.BINARY(listGet(arguments, 1), operator, listGet(arguments, 2)), diffArguments);
             new_arguments := {diff_arg};
           else
             // create addition operator
