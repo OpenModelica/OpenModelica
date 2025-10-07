@@ -29,12 +29,9 @@
  */
 
 #include "simulation_info_json.h"
-#include "simulation_runtime.h"
 #include "options.h"
-#include <errno.h>
 #include <string.h>
 #include <stdio.h>
-#include "../util/rtclock.h"
 #include "../util/omc_mmap.h"
 #include "../util/omc_numbers.h"
 #include "solver/model_help.h"
@@ -563,7 +560,18 @@ void modelInfoInit(MODEL_DATA_XML* xml)
  */
 void modelInfoDeinit(MODEL_DATA_XML* xml)
 {
+  int i,j;
+  for (i = 0; i < xml->nFunctions; ++i) {
+    free((void*) xml->functionNames[i].name);
+  }
   free(xml->functionNames); xml->functionNames = NULL;
+
+  for (i = 1; i < 1+xml->nEquations; ++i) {
+    for (j = 0; j < xml->equationInfo[i].numVar; ++j) {
+      free((void*) xml->equationInfo[i].vars[j]);
+    }
+    free(xml->equationInfo[i].vars);
+  }
   free(xml->equationInfo); xml->equationInfo = NULL;
 }
 
