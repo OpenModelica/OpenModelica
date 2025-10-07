@@ -232,12 +232,18 @@ typedef enum HOMOTOPY_METHOD
   NO_HOMOTOPY = 4                   // 4: no homotopy / else
 } HOMOTOPY_METHOD;
 
+enum ALIAS_TYPE {
+  ALIAS_TYPE_VARIABLE = 0,
+  ALIAS_TYPE_PARAMETER = 1,
+  ALIAS_TYPE_TIME = 2,
+};
+
 /* Alias data with various types */
 typedef struct DATA_ALIAS
 {
   int negate;
   int nameID;                          /* pointer to Alias */
-  char aliasType;                      /* 0 variable, 1 parameter, 2 time */
+  enum ALIAS_TYPE aliasType;           /* 0 variable, 1 parameter, 2 time */
   VAR_INFO info;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
 } DATA_ALIAS;

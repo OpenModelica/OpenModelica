@@ -683,72 +683,78 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
   messageClose(OMC_LOG_DEBUG);
 }
 
-/* \brief
- *  Reads initial values from a text file.
+/**
+ * @brief Read XML file name from user supplied flags
  *
- *  The textfile should be given as argument to the main function using
- *  the -f file flag.
+ * @return const char* Filename, needs to be freed.
  */
-void read_input_xml(MODEL_DATA* modelData,
-    SIMULATION_INFO* simulationInfo)
-{
-  omc_ModelInput mi = {0};
-  const char *filename, *guid, *override, *overrideFile;
-  FILE* file = NULL;
-  XML_Parser parser = NULL;
-  hash_string_long *mapAlias = NULL, *mapAliasParam = NULL, *mapAliasSen = NULL;
-  long *it, *itParam;
-  mmc_sint_t i;
-  int k = 0;
+char* getXMLfileName(const char* modelFilePrefix, threadData_t* threadData) {
+  char *filename;
 
-  modelica_integer nxchk, nychk, npchk;
-  modelica_integer nyintchk, npintchk;
-  modelica_integer nyboolchk, npboolchk;
-  modelica_integer nystrchk, npstrchk;
-
-  if(NULL == modelData->initXMLData)
-  {
-    /* read the filename from the command line (if any) */
-    if (omc_flag[FLAG_F]) {
-      filename = omc_flagValue[FLAG_F];
-    } else if (omc_flag[FLAG_INPUT_PATH]) { /* read the input path from the command line (if any) */
-      if (0 > GC_asprintf(&filename, "%s/%s_init.xml", omc_flagValue[FLAG_INPUT_PATH], modelData->modelFilePrefix)) {
-        throwStreamPrint(NULL, "simulation_input_xml.c: Error: can not allocate memory.");
-      }
-    } else {
-      /* no file given on the command line? use the default
-       * model_name defined in generated code for model.*/
-      if (0 > GC_asprintf(&filename, "%s_init.xml", modelData->modelFilePrefix)) {
-        throwStreamPrint(NULL, "simulation_input_xml.c: Error: can not allocate memory.");
-      }
+  if (omc_flag[FLAG_F]) { // Read the filename from the command line
+    filename = strdup(omc_flagValue[FLAG_F]);
+    if(filename == NULL) {
+      throwStreamPrint(threadData, "simulation_input_xml.c: Out of memory");
     }
-
-    /* open the file and fail on error. we open it read-write to be sure other processes can overwrite it */
-    file = omc_fopen(filename, "r");
-    if(!file) {
-      throwStreamPrint(NULL, "simulation_input_xml.c: Error: can not read file %s as setup file to the generated simulation code.",filename);
+  } else if (omc_flag[FLAG_INPUT_PATH]) { //  Read the input path from the command line
+    filename = (char*) calloc(strlen(omc_flagValue[FLAG_INPUT_PATH]) + strlen(modelFilePrefix) + 10 + 1, sizeof(char));
+    if(filename == NULL) {
+      throwStreamPrint(threadData, "simulation_input_xml.c: Out of memory");
     }
+    sprintf(filename, "%s/%s_init.xml", omc_flagValue[FLAG_INPUT_PATH], modelFilePrefix);
+  } else { // Use default model_name
+    filename = (char*) calloc(strlen(modelFilePrefix) + 9 + 1, sizeof(char));
+    if(filename == NULL) {
+      throwStreamPrint(threadData, "simulation_input_xml.c: Out of memory");
+    }
+    sprintf(filename, "%s_init.xml", modelFilePrefix);
   }
+
+  return filename;
+}
+
+/**
+ * @brief Parse input XML content.
+ *
+ * @param filename          Name to init XML file. If no file is available set `initXMLData` with the content of the file instead.
+ * @param initXMLData       [Optional] Content of input XML file.
+ * @param threadData        For error handling, can be NULL.
+ * @return omc_ModelInput*  Hash map with all data read from XML. Needs to be freed by caller with `free`.
+ */
+omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, threadData_t* threadData) {
+  XML_Parser parser = NULL;
+  enum XML_Status status;
+  FILE* file = NULL;
+  omc_ModelInput* mi = (omc_ModelInput*) calloc(1, sizeof(omc_ModelInput));
+
   /* create the XML parser */
   parser = XML_ParserCreate(NULL);
   if(!parser)
   {
     fclose(file);
-    throwStreamPrint(NULL, "simulation_input_xml.c: Error: couldn't allocate memory for the XML parser!");
+    throwStreamPrint(threadData, "simulation_input_xml.c: Error: couldn't allocate memory for the XML parser!");
   }
+
   /* set our user data */
-  XML_SetUserData(parser, &mi);
+  XML_SetUserData(parser, mi);
+
   /* set the handlers for start/end of element. */
   XML_SetElementHandler(parser, startElement, endElement);
-  if(NULL == modelData->initXMLData)
-  {
+
+  if(initXMLData == NULL) {
+    file = omc_fopen(filename, "r");
+    if(!file) {
+      throwStreamPrint(threadData, "simulation_input_xml.c: Error: can not read file %s as setup file to the generated simulation code.", filename);
+    }
+
     int done;
     char buf[BUFSIZ+1] = {0};
     do
     {
       size_t len = omc_fread(buf, 1, BUFSIZ, file, 1);
       done = len < BUFSIZ;
-      if(XML_STATUS_ERROR == XML_Parse(parser, buf, len, done))
+      status = XML_Parse(parser, buf, len, done);
+      if(status == XML_STATUS_ERROR)
       {
         fclose(file);
         warningStreamPrint(OMC_LOG_STDOUT, 0, "simulation_input_xml.c: Error: failed to read the XML file %s: %s at line %lu\n",
@@ -756,51 +762,40 @@ void read_input_xml(MODEL_DATA* modelData,
             XML_ErrorString(XML_GetErrorCode(parser)),
             XML_GetCurrentLineNumber(parser));
         XML_ParserFree(parser);
-        throwStreamPrint(NULL, "see last warning");
+        throwStreamPrint(threadData, "see last warning");
       }
-    }while(!done);
+    } while(!done);
     fclose(file);
-  } else if(XML_STATUS_ERROR == XML_Parse(parser, modelData->initXMLData, strlen(modelData->initXMLData), 1)) { /* Got the full string already */
-    fprintf(stderr, "%s, %s %lu\n", modelData->initXMLData, XML_ErrorString(XML_GetErrorCode(parser)), XML_GetCurrentLineNumber(parser));
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "simulation_input_xml.c: Error: failed to read the XML data %s: %s at line %lu\n",
-             modelData->initXMLData,
-             XML_ErrorString(XML_GetErrorCode(parser)),
-             XML_GetCurrentLineNumber(parser));
-    XML_ParserFree(parser);
-    throwStreamPrint(NULL, "see last warning");
+  } else {
+    status = XML_Parse(parser, initXMLData, strlen(initXMLData), 1);
+    if(status == XML_STATUS_ERROR) {
+      fprintf(stderr, "%s, %s %lu\n", initXMLData, XML_ErrorString(XML_GetErrorCode(parser)), XML_GetCurrentLineNumber(parser));
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "simulation_input_xml.c: Error: failed to read the XML data %s: %s at line %lu\n",
+              initXMLData,
+              XML_ErrorString(XML_GetErrorCode(parser)),
+              XML_GetCurrentLineNumber(parser));
+      XML_ParserFree(parser);
+      throwStreamPrint(threadData, "see last warning");
+    }
   }
 
-  /* now we should have all the data inside omc_ModelInput mi. */
+  return mi;
+}
 
-  /* first, check the modelGUID!
-     TODO! FIXME! THIS SEEMS TO FAIL!
-     ARE WE READING THE OLD XML FILE?? */
-  guid = findHashStringStringNull(mi.md,"guid");
-  if (NULL==guid) {
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "The Model GUID: %s is not set in file: %s",
-        modelData->modelGUID,
-        filename);
-  } else if (strcmp(modelData->modelGUID, guid)) {
-    XML_ParserFree(parser);
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "Error, the GUID: %s from input data file: %s does not match the GUID compiled in the model: %s",
-        guid,
-        filename,
-        modelData->modelGUID);
-    throwStreamPrint(NULL, "see last warning");
-  }
-
-  // deal with override
-  override = omc_flagValue[FLAG_OVERRIDE];
-  overrideFile = omc_flagValue[FLAG_OVERRIDE_FILE];
-  modelica_boolean reCalcStepSize = doOverride(&mi, modelData, override, overrideFile);
-
-  /* read all the DefaultExperiment values */
+/**
+ * @brief Read default experiment information.
+ *
+ * @param simulationInfo    Contains read values after return.
+ * @param de                Default experiment hash map.
+ * @param reCalcStepSize    If true step size is recalculated instead of read from hash map.
+ */
+void read_default_experiment(SIMULATION_INFO* simulationInfo, omc_DefaultExperiment *de, modelica_boolean reCalcStepSize) {
   infoStreamPrint(OMC_LOG_SIMULATION, 1, "read all the DefaultExperiment values:");
 
-  read_value_real(findHashStringString(mi.de,"startTime"), &(simulationInfo->startTime), 0);
+  read_value_real(findHashStringString(de,"startTime"), &(simulationInfo->startTime), 0);
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "startTime = %g", simulationInfo->startTime);
 
-  read_value_real(findHashStringString(mi.de,"stopTime"), &(simulationInfo->stopTime), 1.0);
+  read_value_real(findHashStringString(de,"stopTime"), &(simulationInfo->stopTime), 1.0);
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "stopTime = %g", simulationInfo->stopTime);
 
   if (reCalcStepSize) {
@@ -810,38 +805,52 @@ void read_input_xml(MODEL_DATA* modelData,
     infoStreamPrint(OMC_LOG_STDOUT, 0, "Add `stepSize=<value>` to `-override=` or override file to silence this warning.");
     messageClose(OMC_LOG_STDOUT);
   } else {
-    read_value_real(findHashStringString(mi.de,"stepSize"), &(simulationInfo->stepSize), (simulationInfo->stopTime - simulationInfo->startTime) / 500);
+    read_value_real(findHashStringString(de,"stepSize"), &(simulationInfo->stepSize), (simulationInfo->stopTime - simulationInfo->startTime) / 500);
   }
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "stepSize = %g", simulationInfo->stepSize);
 
-  read_value_real(findHashStringString(mi.de,"tolerance"), &(simulationInfo->tolerance), 1e-5);
+  read_value_real(findHashStringString(de,"tolerance"), &(simulationInfo->tolerance), 1e-5);
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "tolerance = %g", simulationInfo->tolerance);
 
-  read_value_string(findHashStringString(mi.de,"solver"), &simulationInfo->solverMethod);
+  read_value_string(findHashStringString(de,"solver"), &simulationInfo->solverMethod);
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "solver method: %s", simulationInfo->solverMethod);
 
-  read_value_string(findHashStringString(mi.de,"outputFormat"), &(simulationInfo->outputFormat));
+  read_value_string(findHashStringString(de,"outputFormat"), &(simulationInfo->outputFormat));
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "output format: %s", simulationInfo->outputFormat);
 
-  read_value_string(findHashStringString(mi.de,"variableFilter"), &(simulationInfo->variableFilter));
+  read_value_string(findHashStringString(de,"variableFilter"), &(simulationInfo->variableFilter));
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "variable filter: %s", simulationInfo->variableFilter);
 
-  read_value_string(findHashStringString(mi.md,"OPENMODELICAHOME"), &simulationInfo->OPENMODELICAHOME);
-  infoStreamPrint(OMC_LOG_SIMULATION, 0, "OPENMODELICAHOME: %s", simulationInfo->OPENMODELICAHOME);
   messageClose(OMC_LOG_SIMULATION);
+}
 
-  read_value_long(findHashStringString(mi.md,"numberOfContinuousStates"),          &nxchk, 0);
-  read_value_long(findHashStringString(mi.md,"numberOfRealAlgebraicVariables"),    &nychk, 0);
-  read_value_long(findHashStringString(mi.md,"numberOfRealParameters"),            &npchk, 0);
+/**
+ * @brief Validate if number of variables / parameters from model description matches values from `modelData`.
+ *
+ * Throws if numbers are different.
+ *
+ * @param md          Model description hash map.
+ * @param modelData   Model data containing number of variables / parameters.
+ * @param threadData  For error handling, can be NULL.
+ */
+void validate_model_description_sizes(omc_ModelDescription *md, MODEL_DATA* modelData, threadData_t* threadData) {
+  modelica_integer nxchk, nychk, npchk;
+  modelica_integer npintchk, nyintchk;
+  modelica_integer npboolchk, nyboolchk;
+  modelica_integer npstrchk, nystrchk;
 
-  read_value_long(findHashStringString(mi.md,"numberOfIntegerParameters"),         &npintchk, 0);
-  read_value_long(findHashStringString(mi.md,"numberOfIntegerAlgebraicVariables"), &nyintchk, 0);
+  read_value_long(findHashStringString(md,"numberOfContinuousStates"),          &nxchk, 0);
+  read_value_long(findHashStringString(md,"numberOfRealAlgebraicVariables"),    &nychk, 0);
+  read_value_long(findHashStringString(md,"numberOfRealParameters"),            &npchk, 0);
 
-  read_value_long(findHashStringString(mi.md,"numberOfBooleanParameters"),         &npboolchk, 0);
-  read_value_long(findHashStringString(mi.md,"numberOfBooleanAlgebraicVariables"), &nyboolchk, 0);
+  read_value_long(findHashStringString(md,"numberOfIntegerParameters"),         &npintchk, 0);
+  read_value_long(findHashStringString(md,"numberOfIntegerAlgebraicVariables"), &nyintchk, 0);
 
-  read_value_long(findHashStringString(mi.md,"numberOfStringParameters"),          &npstrchk, 0);
-  read_value_long(findHashStringString(mi.md,"numberOfStringAlgebraicVariables"),  &nystrchk, 0);
+  read_value_long(findHashStringString(md,"numberOfBooleanParameters"),         &npboolchk, 0);
+  read_value_long(findHashStringString(md,"numberOfBooleanAlgebraicVariables"), &nyboolchk, 0);
+
+  read_value_long(findHashStringString(md,"numberOfStringParameters"),          &npstrchk, 0);
+  read_value_long(findHashStringString(md,"numberOfStringAlgebraicVariables"),  &nystrchk, 0);
 
   if(nxchk != modelData->nStates
     || nychk != modelData->nVariablesReal - 2*modelData->nStates
@@ -853,219 +862,163 @@ void read_input_xml(MODEL_DATA* modelData,
     || npstrchk != modelData->nParametersString
     || nystrchk != modelData->nVariablesString)
   {
-    if (OMC_ACTIVE_WARNING_STREAM(OMC_LOG_SIMULATION))
-    {
-      warningStreamPrint(OMC_LOG_SIMULATION, 1, "Error, input data file does not match model.");
-      warningStreamPrint(OMC_LOG_SIMULATION, 0, "nx in setup file: %ld from model code: %d", nxchk, (int)modelData->nStates);
-      warningStreamPrint(OMC_LOG_SIMULATION, 0, "ny in setup file: %ld from model code: %ld", nychk, modelData->nVariablesReal - 2*modelData->nStates);
-      warningStreamPrint(OMC_LOG_SIMULATION, 0, "np in setup file: %ld from model code: %ld", npchk, modelData->nParametersReal);
-      warningStreamPrint(OMC_LOG_SIMULATION, 0, "npint in setup file: %ld from model code: %ld", npintchk, modelData->nParametersInteger);
-      warningStreamPrint(OMC_LOG_SIMULATION, 0, "nyint in setup file: %ld from model code: %ld", nyintchk, modelData->nVariablesInteger);
-      warningStreamPrint(OMC_LOG_SIMULATION, 0, "npbool in setup file: %ld from model code: %ld", npboolchk, modelData->nParametersBoolean);
-      warningStreamPrint(OMC_LOG_SIMULATION, 0, "nybool in setup file: %ld from model code: %ld", nyboolchk, modelData->nVariablesBoolean);
-      warningStreamPrint(OMC_LOG_SIMULATION, 0, "npstr in setup file: %ld from model code: %ld", npstrchk, modelData->nParametersString);
-      warningStreamPrint(OMC_LOG_SIMULATION, 0, "nystr in setup file: %ld from model code: %ld", nystrchk, modelData->nVariablesString);
-      messageClose(OMC_LOG_SIMULATION);
+    errorStreamPrint(OMC_LOG_SIMULATION, 1, "Error, input data file does not match model.");
+    warningStreamPrint(OMC_LOG_SIMULATION, 0, "nx in setup file: %ld from model code: %d", nxchk, (int)modelData->nStates);
+    warningStreamPrint(OMC_LOG_SIMULATION, 0, "ny in setup file: %ld from model code: %ld", nychk, modelData->nVariablesReal - 2*modelData->nStates);
+    warningStreamPrint(OMC_LOG_SIMULATION, 0, "np in setup file: %ld from model code: %ld", npchk, modelData->nParametersReal);
+    warningStreamPrint(OMC_LOG_SIMULATION, 0, "npint in setup file: %ld from model code: %ld", npintchk, modelData->nParametersInteger);
+    warningStreamPrint(OMC_LOG_SIMULATION, 0, "nyint in setup file: %ld from model code: %ld", nyintchk, modelData->nVariablesInteger);
+    warningStreamPrint(OMC_LOG_SIMULATION, 0, "npbool in setup file: %ld from model code: %ld", npboolchk, modelData->nParametersBoolean);
+    warningStreamPrint(OMC_LOG_SIMULATION, 0, "nybool in setup file: %ld from model code: %ld", nyboolchk, modelData->nVariablesBoolean);
+    warningStreamPrint(OMC_LOG_SIMULATION, 0, "npstr in setup file: %ld from model code: %ld", npstrchk, modelData->nParametersString);
+    warningStreamPrint(OMC_LOG_SIMULATION, 0, "nystr in setup file: %ld from model code: %ld", nystrchk, modelData->nVariablesString);
+    messageClose(OMC_LOG_SIMULATION);
+
+    omc_throw_function(threadData);
+  }
+}
+
+/**
+ * @brief Read all alias variables from hash map.
+ *
+ * Fill if parameter is negated, its ID, and alias type (variable, parameter, time).
+ *
+ * TODO: Let this function alloc, fill and return DATA_ALIAS* alias.
+ *
+ * @param realAlias     Will be filled with values from hash map on return.
+ * @param rAli          Real alias hash map.
+ * @param nAliasReal    Number of alias variables in hash map.
+ * @param mapAlias      Hash map for alias variables.
+ * @param mapAliasParam Hash map for alias parameters.
+ */
+void read_alias_var(DATA_ALIAS* alias,
+                    omc_ModelVariables *aliasHashMap,
+                    unsigned long nAliasVariables,
+                    hash_string_long *mapAlias,
+                    hash_string_long *mapAliasParam)
+{
+  long *it, *itParam;
+  const char *aliasTmp = NULL;
+
+  for(unsigned long i=0; i < nAliasVariables; i++)
+  {
+    read_var_info(*findHashLongVar(aliasHashMap, i), &alias[i].info);
+
+    read_value_string(findHashStringStringNull(*findHashLongVar(aliasHashMap, i),"alias"), &aliasTmp);
+    if (0 == strcmp(aliasTmp, "negatedAlias")) {
+      alias[i].negate = 1;
+    } else {
+      alias[i].negate = 0;
     }
-    XML_ParserFree(parser);
-    EXIT(-1);
+    infoStreamPrint(OMC_LOG_DEBUG, 0, "read for %s negated %d from setup file", alias[i].info.name, alias[i].negate);
+
+    alias[i].filterOutput = shouldFilterOutput(*findHashLongVar(aliasHashMap, i), alias[i].info.name);
+
+    free((char*)aliasTmp);
+    aliasTmp = NULL;
+
+    read_value_string(findHashStringStringNull(*findHashLongVar(aliasHashMap, i),"aliasVariable"), &aliasTmp);
+
+    it = findHashStringLongPtr(mapAlias, aliasTmp);
+    itParam = findHashStringLongPtr(mapAliasParam, aliasTmp);
+
+    if (NULL != it) {
+      alias[i].nameID  = *it;
+      alias[i].aliasType = ALIAS_TYPE_VARIABLE;
+    } else if (NULL != itParam) {
+      alias[i].nameID  = *itParam;
+      alias[i].aliasType = ALIAS_TYPE_PARAMETER;
+    } else if (0 == strcmp(aliasTmp, "time")) {
+      alias[i].aliasType = ALIAS_TYPE_TIME;
+    } else {
+      throwStreamPrint(NULL, "Alias variable %s not found.", aliasTmp);
+    }
+    free((char*)aliasTmp);
+    aliasTmp = NULL;
+  }
+}
+
+/**
+ * @brief Reads initial values from init XML file.
+ *
+ * Can be FMI 1.0 modelDescription.xml or in a similar style.
+ *
+ *   * Parse init XML file or content written in C with Expat.
+ *   * Perform some checks on GUID, number of variables / parameters.
+ *   * Update initial values with overrides.
+ *   * Read default experiment
+ *   * Read all initial values into `modelData`.
+ *
+ * @param modelData
+ * @param simulationInfo
+ */
+void read_input_xml(MODEL_DATA* modelData, SIMULATION_INFO* simulationInfo)
+{
+  omc_ModelInput* mi;
+
+  const char *filename, *guid, *override, *overrideFile;
+  hash_string_long *mapAlias = NULL, *mapAliasParam = NULL, *mapAliasSen = NULL;
+  int sensitivityParIndex = 0;
+
+  filename = getXMLfileName(modelData->modelFilePrefix, NULL);
+  mi = parse_input_xml(filename, modelData->initXMLData, NULL);
+
+  /* Check modelGUID */
+  guid = findHashStringStringNull(mi->md,"guid");
+  if (NULL==guid) {
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "The Model GUID: %s is not set in file: %s",
+        modelData->modelGUID,
+        filename);
+  } else if (strcmp(modelData->modelGUID, guid)) {
+    throwStreamPrint(NULL, "GUID: %s from input data file: %s does not match the GUID compiled in the model: %s",
+        guid,
+        filename,
+        modelData->modelGUID);
   }
 
-  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi.rSta, "real states",            0,                    modelData->nStates,                               &mapAlias,      &mapAliasParam, &k);
-  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi.rDer, "real state derivatives", modelData->nStates,   modelData->nStates,                               &mapAlias,      &mapAliasParam, &k);
-  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi.rAlg, "real algebraics",        2*modelData->nStates, modelData->nVariablesReal - 2*modelData->nStates, &mapAlias,      &mapAliasParam, &k);
+  /* Update inital values from override flag */
+  override = omc_flagValue[FLAG_OVERRIDE];
+  overrideFile = omc_flagValue[FLAG_OVERRIDE_FILE];
+  modelica_boolean reCalcStepSize = doOverride(mi, modelData, override, overrideFile);
 
-  read_variables(simulationInfo, T_INTEGER, modelData->integerVarsData,      mi.iAlg, "integer variables",      0,                    modelData->nVariablesInteger,                     &mapAlias,      &mapAliasParam, &k);
-  read_variables(simulationInfo, T_BOOLEAN, modelData->booleanVarsData,      mi.bAlg, "boolean variables",      0,                    modelData->nVariablesBoolean,                     &mapAlias,      &mapAliasParam, &k);
-  read_variables(simulationInfo, T_STRING,  modelData->stringVarsData,       mi.sAlg, "string variables",       0,                    modelData->nVariablesString,                      &mapAlias,      &mapAliasParam, &k);
+  /* Read initial values from hash map */
+  read_default_experiment(simulationInfo, mi->de, reCalcStepSize);
 
-  read_variables(simulationInfo, T_REAL,    modelData->realParameterData,    mi.rPar, "real parameters",        0,                    modelData->nParametersReal,                       &mapAliasParam, &mapAliasParam, &k);
-  read_variables(simulationInfo, T_INTEGER, modelData->integerParameterData, mi.iPar, "integer parameters",     0,                    modelData->nParametersInteger,                    &mapAliasParam, &mapAliasParam, &k);
-  read_variables(simulationInfo, T_BOOLEAN, modelData->booleanParameterData, mi.bPar, "boolean parameters",     0,                    modelData->nParametersBoolean,                    &mapAliasParam, &mapAliasParam, &k);
-  read_variables(simulationInfo, T_STRING,  modelData->stringParameterData,  mi.sPar, "string parameters",      0,                    modelData->nParametersString,                     &mapAliasParam, &mapAliasParam, &k);
+  read_value_string(findHashStringString(mi->md,"OPENMODELICAHOME"), &simulationInfo->OPENMODELICAHOME);
+  infoStreamPrint(OMC_LOG_SIMULATION, 0, "OPENMODELICAHOME: %s", simulationInfo->OPENMODELICAHOME);
+
+  validate_model_description_sizes(mi->md, modelData, NULL);
+
+  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi->rSta, "real states",            0,                    modelData->nStates,                               &mapAlias,      &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi->rDer, "real state derivatives", modelData->nStates,   modelData->nStates,                               &mapAlias,      &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi->rAlg, "real algebraics",        2*modelData->nStates, modelData->nVariablesReal - 2*modelData->nStates, &mapAlias,      &mapAliasParam, &sensitivityParIndex);
+
+  read_variables(simulationInfo, T_INTEGER, modelData->integerVarsData,      mi->iAlg, "integer variables",      0,                    modelData->nVariablesInteger,                     &mapAlias,      &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, T_BOOLEAN, modelData->booleanVarsData,      mi->bAlg, "boolean variables",      0,                    modelData->nVariablesBoolean,                     &mapAlias,      &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, T_STRING,  modelData->stringVarsData,       mi->sAlg, "string variables",       0,                    modelData->nVariablesString,                      &mapAlias,      &mapAliasParam, &sensitivityParIndex);
+
+  read_variables(simulationInfo, T_REAL,    modelData->realParameterData,    mi->rPar, "real parameters",        0,                    modelData->nParametersReal,                       &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, T_INTEGER, modelData->integerParameterData, mi->iPar, "integer parameters",     0,                    modelData->nParametersInteger,                    &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, T_BOOLEAN, modelData->booleanParameterData, mi->bPar, "boolean parameters",     0,                    modelData->nParametersBoolean,                    &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, T_STRING,  modelData->stringParameterData,  mi->sPar, "string parameters",      0,                    modelData->nParametersString,                     &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
 
   if (omc_flag[FLAG_IDAS])
   {
-    read_variables(simulationInfo, T_REAL, modelData->realSensitivityData, mi.rSen, "real sensitivities", 0, modelData->nSensitivityVars, &mapAliasSen, &mapAliasParam, &k);
+    read_variables(simulationInfo, T_REAL, modelData->realSensitivityData, mi->rSen, "real sensitivities", 0, modelData->nSensitivityVars, &mapAliasSen, &mapAliasParam, &sensitivityParIndex);
   }
 
-  /*
-   * real all alias vars
-   */
-  infoStreamPrint(OMC_LOG_DEBUG, 1, "read xml file for real alias vars");
-  for(i=0; i<modelData->nAliasReal; i++)
-  {
-    const char *aliasTmp = NULL;
-    read_var_info(*findHashLongVar(mi.rAli,i), &modelData->realAlias[i].info);
+  /* Real all alias variables */
+  infoStreamPrint(OMC_LOG_DEBUG, 0, "Read XML file for real alias vars");
+  read_alias_var(modelData->realAlias, mi->rAli, modelData->nAliasReal, mapAlias, mapAliasParam);
+  infoStreamPrint(OMC_LOG_DEBUG, 0, "Read XML file for integer alias vars");
+  read_alias_var(modelData->integerAlias, mi->iAli, modelData->nAliasInteger, mapAlias, mapAliasParam);
+  infoStreamPrint(OMC_LOG_DEBUG, 0, "Read XML file for boolean alias vars");
+  read_alias_var(modelData->booleanAlias, mi->bAli, modelData->nAliasBoolean, mapAlias, mapAliasParam);
+  infoStreamPrint(OMC_LOG_DEBUG, 0, "Read XML file for string alias vars");
+  read_alias_var(modelData->stringAlias, mi->sAli, modelData->nAliasString, mapAlias, mapAliasParam);
 
-    read_value_string(findHashStringStringNull(*findHashLongVar(mi.rAli,i),"alias"), &aliasTmp);
-    if (0 == strcmp(aliasTmp,"negatedAlias")) {
-      modelData->realAlias[i].negate = 1;
-    } else {
-      modelData->realAlias[i].negate = 0;
-    }
-    infoStreamPrint(OMC_LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->realAlias[i].info.name, modelData->realAlias[i].negate);
-
-    modelData->realAlias[i].filterOutput = shouldFilterOutput(*findHashLongVar(mi.rAli,i), modelData->realAlias[i].info.name);
-
-    free((char*)aliasTmp);
-    aliasTmp = NULL;
-    read_value_string(findHashStringStringNull(*findHashLongVar(mi.rAli,i),"aliasVariable"), &aliasTmp);
-
-    it = findHashStringLongPtr(mapAlias, aliasTmp);
-    itParam = findHashStringLongPtr(mapAliasParam, aliasTmp);
-
-    if (NULL != it) {
-      modelData->realAlias[i].nameID  = *it;
-      modelData->realAlias[i].aliasType = 0;
-    } else if (NULL != itParam) {
-      modelData->realAlias[i].nameID  = *itParam;
-      modelData->realAlias[i].aliasType = 1;
-    } else if (0==strcmp(aliasTmp,"time")) {
-      modelData->realAlias[i].aliasType = 2;
-    } else {
-      throwStreamPrint(NULL, "Real Alias variable %s not found.", aliasTmp);
-    }
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
-                modelData->realAlias[i].info.name,
-                modelData->realAlias[i].nameID,
-                modelData->realAlias[i].aliasType ? ((modelData->realAlias[i].aliasType==2) ? "time" : "real parameters") : "real variables");
-    free((char*)aliasTmp);
-  }
-  messageClose(OMC_LOG_DEBUG);
-
-  /*
-   * integer all alias vars
-   */
-  infoStreamPrint(OMC_LOG_DEBUG, 1, "read xml file for integer alias vars");
-  for(i=0; i<modelData->nAliasInteger; i++)
-  {
-    const char *aliasTmp = NULL;
-    read_var_info(*findHashLongVar(mi.iAli,i), &modelData->integerAlias[i].info);
-
-    read_value_string(findHashStringStringNull(*findHashLongVar(mi.iAli,i),"alias"), &aliasTmp);
-    if (0 == strcmp(aliasTmp,"negatedAlias")) {
-      modelData->integerAlias[i].negate = 1;
-    } else {
-      modelData->integerAlias[i].negate = 0;
-    }
-
-    infoStreamPrint(OMC_LOG_DEBUG, 0, "read for %s negated %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].negate);
-
-    modelData->integerAlias[i].filterOutput = shouldFilterOutput(*findHashLongVar(mi.iAli,i), modelData->integerAlias[i].info.name);
-
-    free((char*)aliasTmp);
-    aliasTmp = NULL;
-    read_value_string(findHashStringString(*findHashLongVar(mi.iAli,i),"aliasVariable"), &aliasTmp);
-
-    it = findHashStringLongPtr(mapAlias, aliasTmp);
-    itParam = findHashStringLongPtr(mapAliasParam, aliasTmp);
-
-    if(NULL != it) {
-      modelData->integerAlias[i].nameID  = *it;
-      modelData->integerAlias[i].aliasType = 0;
-    } else if(NULL != itParam) {
-      modelData->integerAlias[i].nameID  = *itParam;
-      modelData->integerAlias[i].aliasType = 1;
-    } else {
-      throwStreamPrint(NULL, "Integer Alias variable %s not found.", aliasTmp);
-    }
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
-                modelData->integerAlias[i].info.name,
-                modelData->integerAlias[i].nameID,
-                modelData->integerAlias[i].aliasType?"integer parameters":"integer variables");
-    free((char*)aliasTmp);
-  }
-  messageClose(OMC_LOG_DEBUG);
-
-  /*
-   * boolean all alias vars
-   */
-  infoStreamPrint(OMC_LOG_DEBUG, 1, "read xml file for boolean alias vars");
-  for(i=0; i<modelData->nAliasBoolean; i++)
-  {
-    const char *aliasTmp = NULL;
-    read_var_info(*findHashLongVar(mi.bAli,i), &modelData->booleanAlias[i].info);
-
-    read_value_string(findHashStringString(*findHashLongVar(mi.bAli,i),"alias"), &aliasTmp);
-    if  (0 == strcmp(aliasTmp,"negatedAlias")) {
-      modelData->booleanAlias[i].negate = 1;
-    } else {
-      modelData->booleanAlias[i].negate = 0;
-    }
-
-    infoStreamPrint(OMC_LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->booleanAlias[i].info.name, modelData->booleanAlias[i].negate);
-
-    modelData->booleanAlias[i].filterOutput = shouldFilterOutput(*findHashLongVar(mi.bAli,i), modelData->booleanAlias[i].info.name);
-
-    free((char*)aliasTmp);
-    aliasTmp = NULL;
-    read_value_string(findHashStringString(*findHashLongVar(mi.bAli,i),"aliasVariable"), &aliasTmp);
-
-    it = findHashStringLongPtr(mapAlias, aliasTmp);
-    itParam = findHashStringLongPtr(mapAliasParam, aliasTmp);
-
-    if (NULL != it) {
-      modelData->booleanAlias[i].nameID  = *it;
-      modelData->booleanAlias[i].aliasType = 0;
-    } else if (NULL != itParam) {
-      modelData->booleanAlias[i].nameID  = *itParam;
-      modelData->booleanAlias[i].aliasType = 1;
-    } else {
-      throwStreamPrint(NULL, "Boolean Alias variable %s not found.", aliasTmp);
-    }
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
-                modelData->booleanAlias[i].info.name,
-                modelData->booleanAlias[i].nameID,
-                modelData->booleanAlias[i].aliasType ? "boolean parameters" : "boolean variables");
-    free((char*)aliasTmp);
-  }
-  messageClose(OMC_LOG_DEBUG);
-
-  /*
-   * string all alias vars
-   */
-  infoStreamPrint(OMC_LOG_DEBUG, 1, "read xml file for string alias vars");
-  for(i=0; i<modelData->nAliasString; i++)
-  {
-    const char *aliasTmp = NULL;
-    read_var_info(*findHashLongVar(mi.sAli,i), &modelData->stringAlias[i].info);
-
-    read_value_string(findHashStringString(*findHashLongVar(mi.sAli,i),"alias"), &aliasTmp);
-    if (0 == strcmp(aliasTmp,"negatedAlias")) {
-      modelData->stringAlias[i].negate = 1;
-    } else {
-      modelData->stringAlias[i].negate = 0;
-    }
-    infoStreamPrint(OMC_LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->stringAlias[i].info.name, modelData->stringAlias[i].negate);
-
-    modelData->stringAlias[i].filterOutput = shouldFilterOutput(*findHashLongVar(mi.sAli,i), modelData->stringAlias[i].info.name);
-
-    free((char*)aliasTmp);
-    aliasTmp = NULL;
-    read_value_string(findHashStringString(*findHashLongVar(mi.sAli,i),"aliasVariable"), &aliasTmp);
-
-    it = findHashStringLongPtr(mapAlias, aliasTmp);
-    itParam = findHashStringLongPtr(mapAliasParam, aliasTmp);
-
-    if (NULL != it) {
-      modelData->stringAlias[i].nameID  = *it;
-      modelData->stringAlias[i].aliasType = 0;
-    } else if (NULL != itParam) {
-      modelData->stringAlias[i].nameID  = *itParam;
-      modelData->stringAlias[i].aliasType = 1;
-    } else {
-      throwStreamPrint(NULL, "String Alias variable %s not found.", aliasTmp);
-    }
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s aliasID %d from %s from setup file",
-                modelData->stringAlias[i].info.name,
-                modelData->stringAlias[i].nameID,
-                modelData->stringAlias[i].aliasType ? "string parameters" : "string variables");
-    free((char*)aliasTmp);
-  }
-  messageClose(OMC_LOG_DEBUG);
-
-  XML_ParserFree(parser);
+  free((char*)filename);
+  free(mi);
 }
 
 /* reads modelica_string value from a string */

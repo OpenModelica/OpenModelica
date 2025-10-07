@@ -142,9 +142,9 @@ static void add_result(simulation_result *self,DATA *data,double *data_, long *a
     for(i = 0; i < simData->modelData->nAliasReal; i++) {
       if(!simData->modelData->realAlias[i].filterOutput) {
         double value;
-        if(simData->modelData->realAlias[i].aliasType == 2)
+        if(simData->modelData->realAlias[i].aliasType == ALIAS_TYPE_TIME)
           value = (simData->localData[0])->timeValue;
-        else if(simData->modelData->realAlias[i].aliasType == 1)
+        else if(simData->modelData->realAlias[i].aliasType == ALIAS_TYPE_PARAMETER)
           value = simData->simulationInfo->realParameter[simData->modelData->realAlias[i].nameID];
         else
           value = (simData->localData[0])->realVars[simData->modelData->realAlias[i].nameID];
@@ -158,7 +158,7 @@ static void add_result(simulation_result *self,DATA *data,double *data_, long *a
     for(i = 0; i < simData->modelData->nAliasInteger; i++) {
       if(!simData->modelData->integerAlias[i].filterOutput) {
         modelica_integer value;
-        if(simData->modelData->integerAlias[i].aliasType == 1)
+        if(simData->modelData->integerAlias[i].aliasType == ALIAS_TYPE_PARAMETER)
           value = simData->simulationInfo->integerParameter[simData->modelData->realAlias[i].nameID];
         else
           value = (simData->localData[0])->integerVars[simData->modelData->realAlias[i].nameID];
@@ -172,7 +172,7 @@ static void add_result(simulation_result *self,DATA *data,double *data_, long *a
     for(i = 0; i < simData->modelData->nAliasBoolean; i++) {
       if(!simData->modelData->booleanAlias[i].filterOutput) {
         modelica_boolean value;
-        if(simData->modelData->integerAlias[i].aliasType == 1)
+        if(simData->modelData->integerAlias[i].aliasType == ALIAS_TYPE_PARAMETER)
           value = simData->simulationInfo->booleanParameter[simData->modelData->realAlias[i].nameID];
         else
           value = (simData->localData[0])->booleanVars[simData->modelData->realAlias[i].nameID];
