@@ -34,7 +34,20 @@
 #ifndef SYSTEMSIMULATIONINFORMATIONDIALOG_H
 #define SYSTEMSIMULATIONINFORMATIONDIALOG_H
 
+// Temporarily disable Qt's "signals" macro, as OMSimulator.h uses it as a parameter name
+#ifdef signals
+#  pragma push_macro("signals")
+#  undef signals
+#  define SYSTEMSIMULATIONINFORMATIONDIALOG_H_DISABLED_QT_SIGNALS
+#endif
+
 #include "OMSimulator/OMSimulator.h"
+
+// Restore Qt's "signals" macro
+#ifdef SYSTEMSIMULATIONINFORMATIONDIALOG_H_DISABLED_QT_SIGNALS
+#  pragma pop_macro("signals")
+#  undef SYSTEMSIMULATIONINFORMATIONDIALOG_H_DISABLED_QT_SIGNALS
+#endif
 
 #include <QDialog>
 #include <QLineEdit>

@@ -48,7 +48,21 @@
 #include "Editors/TextEditor.h"
 #include "Editors/MetaModelicaEditor.h"
 #include "LibraryTreeWidget.h"
+
+// Temporarily disable Qt's "signals" macro, as OMSimulator.h uses it as a parameter name
+#ifdef signals
+#  pragma push_macro("signals")
+#  undef signals
+#  define MODELWIDGETCONTAINER_H_DISABLED_QT_SIGNALS
+#endif
+
 #include "OMSimulator/OMSimulator.h"
+
+// Restore Qt's "signals" macro
+#ifdef MODELWIDGETCONTAINER_H_DISABLED_QT_SIGNALS
+#  pragma pop_macro("signals")
+#  undef MODELWIDGETCONTAINER_H_DISABLED_QT_SIGNALS
+#endif
 
 #include <QOpenGLContext>
 #include <QGraphicsView>
