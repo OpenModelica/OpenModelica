@@ -561,18 +561,24 @@ void modelInfoInit(MODEL_DATA_XML* xml)
 void modelInfoDeinit(MODEL_DATA_XML* xml)
 {
   int i,j;
-  for (i = 0; i < xml->nFunctions; ++i) {
-    free((void*) xml->functionNames[i].name);
-  }
-  free(xml->functionNames); xml->functionNames = NULL;
-
-  for (i = 1; i < 1+xml->nEquations; ++i) {
-    for (j = 0; j < xml->equationInfo[i].numVar; ++j) {
-      free((void*) xml->equationInfo[i].vars[j]);
+  if (xml->functionNames != NULL) {
+    for (i = 0; i < xml->nFunctions; ++i) {
+      free((void*) xml->functionNames[i].name);
     }
-    free(xml->equationInfo[i].vars);
+    free(xml->functionNames); xml->functionNames = NULL;
   }
-  free(xml->equationInfo); xml->equationInfo = NULL;
+
+  if (xml->equationInfo != NULL) {
+    for (i = 1; i < 1+xml->nEquations; ++i) {
+      if (xml->equationInfo[i].vars != NULL) {
+        for (j = 0; j < xml->equationInfo[i].numVar; ++j) {
+          free((void*) xml->equationInfo[i].vars[j]);
+        }
+        free(xml->equationInfo[i].vars);
+      }
+    }
+    free(xml->equationInfo); xml->equationInfo = NULL;
+  }
 }
 
 FUNCTION_INFO modelInfoGetFunction(MODEL_DATA_XML* xml, size_t ix)
