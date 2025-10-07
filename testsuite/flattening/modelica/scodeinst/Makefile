@@ -946,6 +946,7 @@ OperatorOverloadBinaryAmbiguousTwoRecords.mo \
 OperatorOverloadBinaryWithBuiltin.mo \
 OperatorOverloadComplex.mo \
 OperatorOverloadConstructor1.mo \
+OperatorOverloadConstructor2.mo \
 OperatorOverloadConstructorDefault1.mo \
 OperatorOverloadConstructorDefault2.mo \
 OperatorOverloadConstructorHideDefault.mo \
