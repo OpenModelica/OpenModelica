@@ -2133,7 +2133,6 @@ public
         Integer r1, r2;
         list<Integer> dim1, dim2;
 
-
       // Addition calculations (ADD, ADD_EW, ...)
       // (f + g)' = f' + g'
       // Adjoint rule: ∂(f + g)/∂f = 1, ∂(f + g)/∂g = 1
@@ -2177,42 +2176,6 @@ public
       // Multiplication (MUL, MUL_EW, ...)
       // (f * g)' =  fg' + f'g
       // ∂(f * g)/∂f = g, ∂(f * g)/∂g = f
-      // Reverse (adjoint) local rules implemented by setting current_grad before recursing:
-      // 1) Inner product:          s = v * w                 (v,w 1D)        ⇒ ∂s/∂v = w,            ∂s/∂w = v
-      // 2) Matrix * Vector:        y = A * x                 (A 2D, x 1D)     ⇒ ∂L/∂A += G * xᵀ,      ∂L/∂x += Aᵀ * G
-      // 3) Vector * Matrix:        y = x * B                 (x 1D, B 2D)     ⇒ ∂L/∂x += B * Gᵀ,      ∂L/∂B += xᵀ * G
-      // 4) Matrix * Matrix:        C = A * B                 (A 2D, B 2D)     ⇒ ∂L/∂A += G * Bᵀ,      ∂L/∂B += Aᵀ * G
-      // 5) Element-wise product:   Z = X .* Y (sizeClass ELEMENT_WISE)        ⇒ ∂L/∂X += G .* Y,      ∂L/∂Y += G .* X
-      // 6) Fallback (scalar / mixed broadcast) behaves like standard product rule.
-      // case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
-      //   guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
-      //   algorithm
-      //     mulOpAdjoint := makeMulFromOperator(operator);
-      //     sizeClass := Operator.classifyAddition(operator);
-      //     print("differentiateBinary: sizeClass " + Operator.sizeClassificationString(sizeClass) + "\n");
-      //     current_grad := diffArguments.current_grad; // upstream gradient
-
-      //     // upstream gradient * local gradient
-      //     if sizeClass == NFOperator.SizeClassification.ELEMENT_WISE then
-      //       diffArguments.current_grad := Expression.MULTARY({current_grad, exp2}, {}, mulOpAdjoint);
-      //     else if sizeClass == NFOperator.SizeClassification.SCALAR then
-      //       diffArguments.current_grad := Expression.MULTARY({current_grad, exp2}, {}, mulOpAdjoint);
-      //     (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
-
-      //     diffArguments.current_grad := Expression.MULTARY({current_grad, exp1}, {}, mulOpAdjoint);
-      //     (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
-
-      //     diffArguments.current_grad := current_grad;
-      //     // create addition operator from the size classification of original multiplication operator
-      //     addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
-      // then (Expression.MULTARY(
-      //         {Expression.BINARY(exp1, operator, diffExp2),
-      //          Expression.BINARY(diffExp1, operator, exp2)},
-      //         {},
-      //         addOp
-      //       ),
-      //       diffArguments);
-
       case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
       algorithm

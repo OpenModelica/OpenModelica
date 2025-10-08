@@ -890,58 +890,6 @@ protected
     ));
   end jacobianSymbolic;
 
-  function typeTransposeCall
-    "Create a typed builtin transpose(mat) call without expanding mat.
-     Returns mat if it is not an array with at least 2 dimensions."
-    input Expression mat;
-    output Expression tr;
-  protected
-    Type inTy = Expression.typeOf(mat);
-    list<Type.Dimension> dims;
-    Type elTy;
-    Type resTy;
-    NFCall call;
-    NFPrefixes.Variability var = Expression.variability(mat);
-    NFPrefixes.Purity pur = Expression.purity(mat);
-    NFFunction.Function TRANSPOSE_FUNC;
-  algorithm
-    // Only handle array types
-    if not Type.isArray(inTy) then
-      tr := mat;
-      return;
-    end if;
-
-    elTy := Type.arrayElementType(inTy);
-    dims := Type.arrayDims(inTy);
-
-    // Need at least 2 dimensions to transpose
-    if listLength(dims) < 2 then
-      tr := mat;
-      return;
-    end if;
-
-    // Swap first two dimensions; keep the rest
-    resTy := Type.ARRAY(
-      elTy,
-      listAppend({listGet(dims,2), listGet(dims,1)}, listRest(listRest(dims)))
-    );
-
-    // Build a minimal builtin function descriptor (local, not globally registered)
-    TRANSPOSE_FUNC :=
-      NFFunction.Function.FUNCTION(
-        Absyn.Path.IDENT("transpose"),
-        NFInstNode.EMPTY_NODE(),
-        {}, {}, {}, {},
-        resTy,
-        DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-        {}, {}, listArray({}),
-        Pointer.createImmutable(NFFunction.FunctionStatus.BUILTIN),
-        Pointer.createImmutable(0));
-
-    call := NFCall.makeTypedCall(TRANSPOSE_FUNC, {mat}, var, pur, resTy);
-    tr := Expression.CALL(call);
-  end typeTransposeCall;
-
   function sizeClassificationFromType
     input Type ty;
     output NFOperator.SizeClassification sc;
@@ -957,60 +905,6 @@ protected
       else 
         NFOperator.SizeClassification.SCALAR; // fallback
   end sizeClassificationFromType;
-
-  function adjointMapToString
-    "Pretty print the optional adjoint_map:
-       { cref1 -> [e1, e2, ...]; cref2 -> [ ... ]; }
-     If NONE() => {}"
-    input Option<UnorderedMap<ComponentRef, ExpressionList>> adjoint_map;
-    output String str;
-  protected
-    UnorderedMap<ComponentRef, ExpressionList> map;
-    list<ComponentRef> keys;
-    list<String> entries = {};
-    ComponentRef k;
-    ExpressionList elst;
-    String kstr;
-    String vstr;
-    list<String> vparts;
-  algorithm
-    if not Util.isSome(adjoint_map) then
-      str := "{}";
-      return;
-    end if;
-
-    SOME(map) := adjoint_map;
-
-    // Collect and sort keys (for deterministic output).
-    keys := UnorderedMap.keyList(map);
-    entries := {};
-    for k in keys loop
-      elst := UnorderedMap.getOrFail(k, map);
-      vparts := list(Expression.toString(e) for e in elst);
-      vstr := "[" + stringDelimitList(vparts, ", ") + "]";
-      kstr := ComponentRef.toString(k);
-      entries := (kstr + " -> " + vstr) :: entries;
-    end for;
-
-    entries := listReverse(entries);
-    str := "{ " + stringDelimitList(entries, ";\n") + " }";
-  end adjointMapToString;
-
-  function diffMapToString
-    input UnorderedMap<ComponentRef, ComponentRef> map;
-    output String s;
-  protected
-    list<ComponentRef> keys;
-    ComponentRef k, v;
-  algorithm
-    keys := UnorderedMap.keyList(map);
-    s := "{\n";
-    for k in keys loop
-      v := UnorderedMap.getOrFail(k, map);
-      s := s + "  " + ComponentRef.toString(k) + " -> " + ComponentRef.toString(v) + "\n";
-    end for;
-    s := s + "}";
-  end diffMapToString;
 
   // Helper: build addition (or single term) expression from a list of terms for a given LHS cref.
   function buildAdjointRhs
@@ -1045,7 +939,6 @@ protected
 
     rhs := Expression.MULTARY(terms, {}, addOp);
   end buildAdjointRhs;
-
 
   // for saving terms for the same lhs in a map
   type ExpressionList = list<Expression>;
@@ -1490,6 +1383,60 @@ protected
       end match;
     end if;
   end makeVarTraverse;
+
+  function adjointMapToString
+    "Pretty print the optional adjoint_map:
+       { cref1 -> [e1, e2, ...]; cref2 -> [ ... ]; }
+     If NONE() => {}"
+    input Option<UnorderedMap<ComponentRef, ExpressionList>> adjoint_map;
+    output String str;
+  protected
+    UnorderedMap<ComponentRef, ExpressionList> map;
+    list<ComponentRef> keys;
+    list<String> entries = {};
+    ComponentRef k;
+    ExpressionList elst;
+    String kstr;
+    String vstr;
+    list<String> vparts;
+  algorithm
+    if not Util.isSome(adjoint_map) then
+      str := "{}";
+      return;
+    end if;
+
+    SOME(map) := adjoint_map;
+
+    // Collect and sort keys (for deterministic output).
+    keys := UnorderedMap.keyList(map);
+    entries := {};
+    for k in keys loop
+      elst := UnorderedMap.getOrFail(k, map);
+      vparts := list(Expression.toString(e) for e in elst);
+      vstr := "[" + stringDelimitList(vparts, ", ") + "]";
+      kstr := ComponentRef.toString(k);
+      entries := (kstr + " -> " + vstr) :: entries;
+    end for;
+
+    entries := listReverse(entries);
+    str := "{ " + stringDelimitList(entries, ";\n") + " }";
+  end adjointMapToString;
+
+  function diffMapToString
+    input UnorderedMap<ComponentRef, ComponentRef> map;
+    output String s;
+  protected
+    list<ComponentRef> keys;
+    ComponentRef k, v;
+  algorithm
+    keys := UnorderedMap.keyList(map);
+    s := "{\n";
+    for k in keys loop
+      v := UnorderedMap.getOrFail(k, map);
+      s := s + "  " + ComponentRef.toString(k) + " -> " + ComponentRef.toString(v) + "\n";
+    end for;
+    s := s + "}";
+  end diffMapToString;
 
   annotation(__OpenModelica_Interface="backend");
 end NBJacobian;
