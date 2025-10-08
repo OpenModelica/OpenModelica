@@ -976,23 +976,42 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   }
 
   /* allocate index map */
-  data->simulationInfo->realVarsIndex     = (size_t*) calloc(data->modelData->nVariablesRealArray + 1, sizeof(size_t));
+  data->simulationInfo->realVarsIndex = (size_t*) calloc(data->modelData->nVariablesRealArray + 1, sizeof(size_t));
   assertStreamPrint(threadData, NULL != data->simulationInfo->realVarsIndex, "out of memory");
-  data->simulationInfo->integerVarsIndex  = (size_t*) calloc(data->modelData->nVariablesIntegerArray + 1, sizeof(size_t));
+  data->simulationInfo->integerVarsIndex = (size_t*) calloc(data->modelData->nVariablesIntegerArray + 1, sizeof(size_t));
   assertStreamPrint(threadData, NULL != data->simulationInfo->integerVarsIndex, "out of memory");
-  data->simulationInfo->booleanVarsIndex  = (size_t*) calloc(data->modelData->nVariablesBooleanArray + 1, sizeof(size_t));
+  data->simulationInfo->booleanVarsIndex = (size_t*) calloc(data->modelData->nVariablesBooleanArray + 1, sizeof(size_t));
   assertStreamPrint(threadData, NULL != data->simulationInfo->booleanVarsIndex, "out of memory");
-  data->simulationInfo->stringVarsIndex   = (size_t*) calloc(data->modelData->nVariablesStringArray + 1, sizeof(size_t));
+  data->simulationInfo->stringVarsIndex = (size_t*) calloc(data->modelData->nVariablesStringArray + 1, sizeof(size_t));
   assertStreamPrint(threadData, NULL != data->simulationInfo->stringVarsIndex, "out of memory");
+  data->simulationInfo->realParamsIndex = (size_t*) calloc(data->modelData->nParametersRealArray + 1, sizeof(size_t));
+  assertStreamPrint(threadData, NULL != data->simulationInfo->realParamsIndex, "out of memory");
+  data->simulationInfo->integerParamsIndex = (size_t*) calloc(data->modelData->nParametersIntegerArray + 1, sizeof(size_t));
+  assertStreamPrint(threadData, NULL != data->simulationInfo->integerParamsIndex, "out of memory");
+  data->simulationInfo->booleanParamsIndex = (size_t*) calloc(data->modelData->nParametersBooleanArray + 1, sizeof(size_t));
+  assertStreamPrint(threadData, NULL != data->simulationInfo->booleanParamsIndex, "out of memory");
+  data->simulationInfo->stringParamsIndex = (size_t*) calloc(data->modelData->nParametersStringArray + 1, sizeof(size_t));
+  assertStreamPrint(threadData, NULL != data->simulationInfo->stringParamsIndex, "out of memory");
 
   /* compute index map */
-  data->callback->computeVarIndices(data, data->simulationInfo->realVarsIndex, data->simulationInfo->integerVarsIndex, data->simulationInfo->booleanVarsIndex, data->simulationInfo->stringVarsIndex);
+  for (i = 0; i < data->modelData->nVariablesRealArray + 1; i++)     data->simulationInfo->realVarsIndex[i]      = i;
+  for (i = 0; i < data->modelData->nVariablesIntegerArray + 1; i++)  data->simulationInfo->integerVarsIndex[i]   = i;
+  for (i = 0; i < data->modelData->nVariablesBooleanArray + 1; i++)  data->simulationInfo->booleanVarsIndex[i]   = i;
+  for (i = 0; i < data->modelData->nVariablesStringArray + 1; i++)   data->simulationInfo->stringVarsIndex[i]    = i;
+  for (i = 0; i < data->modelData->nParametersRealArray + 1; i++)    data->simulationInfo->realParamsIndex[i]    = i;
+  for (i = 0; i < data->modelData->nParametersIntegerArray + 1; i++) data->simulationInfo->integerParamsIndex[i] = i;
+  for (i = 0; i < data->modelData->nParametersBooleanArray + 1; i++) data->simulationInfo->booleanParamsIndex[i] = i;
+  for (i = 0; i < data->modelData->nParametersStringArray + 1; i++)  data->simulationInfo->stringParamsIndex[i]  = i;
 
   /* compute scalar number of variables */
   data->modelData->nVariablesReal     = data->simulationInfo->realVarsIndex[data->modelData->nVariablesRealArray];
   data->modelData->nVariablesInteger  = data->simulationInfo->integerVarsIndex[data->modelData->nVariablesIntegerArray];
   data->modelData->nVariablesBoolean  = data->simulationInfo->booleanVarsIndex[data->modelData->nVariablesBooleanArray];
   data->modelData->nVariablesString   = data->simulationInfo->stringVarsIndex[data->modelData->nVariablesStringArray];
+  data->modelData->nParametersReal    = data->simulationInfo->realParamsIndex[data->modelData->nParametersRealArray];
+  data->modelData->nParametersInteger = data->simulationInfo->integerParamsIndex[data->modelData->nParametersIntegerArray];
+  data->modelData->nParametersBoolean = data->simulationInfo->booleanParamsIndex[data->modelData->nParametersBooleanArray];
+  data->modelData->nParametersString  = data->simulationInfo->stringParamsIndex[data->modelData->nParametersStringArray];
 
   /* prepare RingBuffer */
   for (i = 0; i < SIZERINGBUFFER; i++) {
@@ -1310,6 +1329,10 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->integerVarsIndex);
   free(data->simulationInfo->booleanVarsIndex);
   free(data->simulationInfo->stringVarsIndex);
+  free(data->simulationInfo->realParamsIndex);
+  free(data->simulationInfo->integerParamsIndex);
+  free(data->simulationInfo->booleanParamsIndex);
+  free(data->simulationInfo->stringParamsIndex);
 
   /* free buffer for old state variables */
   free(data->simulationInfo->realVarsOld);

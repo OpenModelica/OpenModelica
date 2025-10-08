@@ -631,25 +631,35 @@ typedef struct MODEL_DATA
 
   long nBaseClocks;                    /* total number of base-clocks*/
 
-  fortran_integer nStates;
+  /* Number of un-scalrarized variables (arrays count as one variable) */
+  long nStatesArray;            /* Number of array + scalar state variables */
+  long nVariablesRealArray;     /* Number of array + scalar real variables: states + state derivatives + real algebraic variables */
+  long nVariablesIntegerArray;  /* Number of array + scalar integer variables */
+  long nVariablesBooleanArray;  /* Number of array + scalar boolean variables */
+  long nVariablesStringArray;   /* Number of array + scalar string variables */
+  long nParametersRealArray;    /* Number of array + scalar real parameters */
+  long nParametersIntegerArray; /* Number of array + scalar integer parameters */
+  long nParametersBooleanArray; /* Number of array + scalar boolean parameters */
+  long nParametersStringArray;  /* Number of array + scalar string parameters */
 
-  /* numbers of unscalarized variables (arrays counted as one variable, used for index map) */
-  size_t nVariablesRealArray;
-  size_t nVariablesIntegerArray;
-  size_t nVariablesBooleanArray;
-  size_t nVariablesStringArray;
+  /* Number of scalarized variables (arrays are flatten to scalar elements.) */
+  long nStates;                 /* Number of state variables*/
+  long nVariablesReal;          /* Number of real variables: states + state derivatives + real algebraic variables + real discrete variables */
+  long nDiscreteReal;           /* Number of all discrete real variables */
+  long nVariablesInteger;       /* Number of integer variables */
+  long nVariablesBoolean;       /* Number of boolean variables */
+  long nVariablesString;        /* Number of string variables */
+  long nParametersReal;         /* Number of real parameters */
+  long nParametersInteger;      /* Number of integer parameters */
+  long nParametersBoolean;      /* Number of boolean parameters */
+  long nParametersString;       /* Number of string parameters */
+  long nInputVars;              /* Number of input variables */
+  long nOutputVars;             /* Number of output variables */
 
-  long nVariablesReal;                 /* all Real Variables of the model (states, statesderivatives, algebraics, real discretes) */
-  long nDiscreteReal;                  /* only all _discrete_ reals */
-  long nVariablesInteger;
-  long nVariablesBoolean;
-  long nVariablesString;
-  long nParametersReal;
-  long nParametersInteger;
-  long nParametersBoolean;
-  long nParametersString;
-  long nInputVars;
-  long nOutputVars;
+  long nAliasReal;              /* Number of real alias variables */
+  long nAliasInteger;           /* Number of integer alias variables */
+  long nAliasBoolean;           /* Number of boolean alias variables */
+  long nAliasString;            /* Number of string alias variables */
 
   long nZeroCrossings;
   long nRelations;
@@ -664,11 +674,6 @@ typedef struct MODEL_DATA
   long nInlineVars;                    /* number of additional variables for the inline solver */
   long nOptimizeConstraints;           /* number of additional variables for constraint in dynamic optimization */
   long nOptimizeFinalConstraints;      /* number of additional variables for final constraint in dynamic optimization */
-
-  long nAliasReal;
-  long nAliasInteger;
-  long nAliasBoolean;
-  long nAliasString;
 
   long nJacobians;
 
@@ -829,6 +834,10 @@ typedef struct SIMULATION_INFO
   size_t* integerVarsIndex;
   size_t* booleanVarsIndex;
   size_t* stringVarsIndex;
+  size_t* realParamsIndex;
+  size_t* integerParamsIndex;
+  size_t* booleanParamsIndex;
+  size_t* stringParamsIndex;
 
   /* old vars for event handling */
   modelica_real timeValueOld;
