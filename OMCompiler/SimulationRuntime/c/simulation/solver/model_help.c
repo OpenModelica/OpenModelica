@@ -1338,13 +1338,17 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->realVarsOld);
   free(data->simulationInfo->integerVarsOld);
   free(data->simulationInfo->booleanVarsOld);
+#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
   omc_alloc_interface.free_uncollectable(data->simulationInfo->stringVarsOld);
+#endif
 
   /* free buffer for all variable pre values */
   free(data->simulationInfo->realVarsPre);
   free(data->simulationInfo->integerVarsPre);
   free(data->simulationInfo->booleanVarsPre);
+#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
   omc_alloc_interface.free_uncollectable(data->simulationInfo->stringVarsPre);
+#endif
 
   /* free buffer for all parameters values */
   free(data->simulationInfo->realParameter);
@@ -1397,7 +1401,9 @@ void deInitializeDataStruc(DATA *data)
   for(i=0; i<data->modelData->nDelayExpressions; i++)
     freeRingBuffer(data->simulationInfo->delayStructure[i]);
 
+#if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
   free(data->simulationInfo->delayStructure);
+#endif
 
 #if !defined(OMC_NO_STATESELECTION)
   /* free stateset data */
