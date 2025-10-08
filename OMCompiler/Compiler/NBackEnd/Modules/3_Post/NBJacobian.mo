@@ -1137,7 +1137,8 @@ protected
         if not UnorderedMap.contains(scalarCref, adjoint_map) then
           UnorderedMap.addNew(scalarCref, {}, adjoint_map);
         end if;
-        // ensure scalar pDer variable exists exactly once (avoid using List.contains with wrong type)
+
+        // ensure scalar pDer variable exists exactly once
         exists := false;
         for pExisting in res_vars loop
           if ComponentRef.isEqual(BVariable.getVarName(pExisting), scalarCref) then
@@ -1149,6 +1150,7 @@ protected
           (_, p) := BVariable.makePDerVar(scalarCref, newName, false);
           res_vars := p :: res_vars;
         end if;
+
       end for;
     end for;
     for v in tmp_vars loop
@@ -1158,6 +1160,7 @@ protected
         if not UnorderedMap.contains(scalarCref, adjoint_map) then
           UnorderedMap.addNew(scalarCref, {}, adjoint_map);
         end if;
+
         exists := false;
         for pExisting in tmp_vars loop
           if ComponentRef.isEqual(BVariable.getVarName(pExisting), scalarCref) then
@@ -1169,6 +1172,7 @@ protected
           (_, p) := BVariable.makePDerVar(scalarCref, newName, true);
           tmp_vars := p :: tmp_vars;
         end if;
+
       end for;
     end for;
 
@@ -1204,115 +1208,102 @@ protected
 
     // Collapse only array variables: gather k[i] contributions into a single array term and
     // append that term to the base variable entry. Do NOT clear the base entry itself.
-    if Util.isSome(diffArguments.adjoint_map) then
-      adjoint_map := Util.getOption(diffArguments.adjoint_map);
+    adjoint_map := Util.getOption(diffArguments.adjoint_map);
 
-      for v in listAppend(res_vars, tmp_vars) loop
-        baseCref := BVariable.getVarName(v);
-        // Skip if base already missing (defensive)
-        if not UnorderedMap.contains(baseCref, adjoint_map) then
-          continue;
+    for v in listAppend(res_vars, tmp_vars) loop
+      baseCref := BVariable.getVarName(v);
+      // Skip if base already missing (defensive)
+      if not UnorderedMap.contains(baseCref, adjoint_map) then
+        continue;
+      end if;
+
+      // Only collapse if variable type is an array (rank > 0)
+      if not Type.isArray(ComponentRef.getComponentType(baseCref)) then
+        continue; // scalar variable: leave as-is
+      end if;
+
+      vp_single := VariablePointers.fromList({v});
+      scalarCrefs := VariablePointers.getScalarVarNames(vp_single);
+
+      // Filter out the base cref itself (we only want indexed scalar components)
+      scalarCrefs :=
+        list(sc for sc guard(not ComponentRef.isEqual(sc, baseCref)) in scalarCrefs);
+      // If no scalar component crefs (should not happen for arrays) skip
+      if listEmpty(scalarCrefs) then
+        continue;
+      end if;
+
+      elementTy := Type.arrayElementType(ComponentRef.getComponentType(baseCref));
+
+      // Build array elements: reference scalar component variable if it has contributions, else 0.0
+      arrayElems := {};
+      anyNonZero := false;
+      for sc in scalarCrefs loop
+        sc_terms := UnorderedMap.getOrDefault(sc, adjoint_map, {});
+        if listEmpty(sc_terms) then
+          arrayElems := Expression.makeZero(elementTy) :: arrayElems;
+        else
+          anyNonZero := true;
+          arrayElems := Expression.CREF(elementTy, sc) :: arrayElems;
         end if;
-
-        // Only collapse if variable type is an array (rank > 0)
-        if not Type.isArray(ComponentRef.getComponentType(baseCref)) then
-          continue; // scalar variable: leave as-is
-        end if;
-
-        vp_single := VariablePointers.fromList({v});
-        scalarCrefs := VariablePointers.getScalarVarNames(vp_single);
-
-        // Filter out the base cref itself (we only want indexed scalar components)
-        scalarCrefs :=
-          list(sc for sc guard(not ComponentRef.isEqual(sc, baseCref)) in scalarCrefs);
-        // If no scalar component crefs (should not happen for arrays) skip
-        if listEmpty(scalarCrefs) then
-          continue;
-        end if;
-
-        elementTy := Type.arrayElementType(ComponentRef.getComponentType(baseCref));
-
-        // Build array elements: reference scalar component variable if it has contributions, else 0.0
-        arrayElems := {};
-        anyNonZero := false;
-        for sc in scalarCrefs loop
-          sc_terms := UnorderedMap.getOrDefault(sc, adjoint_map, {});
-          if listEmpty(sc_terms) then
-            arrayElems := Expression.makeZero(elementTy) :: arrayElems;
-          else
-            anyNonZero := true;
-            arrayElems := Expression.CREF(elementTy, sc) :: arrayElems;
-          end if;
-        end for;
-
-        if not anyNonZero then
-          // no scalar component has contributions -> skip adding aggregated vector
-          continue;
-        end if;
-
-        aggregatedVec := Expression.ARRAY(
-          ComponentRef.getComponentType(baseCref),
-          listArray(listReverse(arrayElems)),
-          true
-        );
-
-        // Prepend aggregated vector so it appears first:
-        existing := UnorderedMap.getOrDefault(baseCref, adjoint_map, {});
-        UnorderedMap.add(baseCref, aggregatedVec :: existing, adjoint_map);
-
-        diffArguments.adjoint_map := SOME(adjoint_map);
       end for;
-    end if;
 
-    print("Adjoint map collapsed:\n" + adjointMapToString(diffArguments.adjoint_map) + "\n");
+      if not anyNonZero then
+        // no scalar component has contributions -> skip adding aggregated vector
+        continue;
+      end if;
 
-    if Util.isSome(diffArguments.adjoint_map) then
-      adjoint_map := Util.getOption(diffArguments.adjoint_map);
+      aggregatedVec := Expression.ARRAY(
+        ComponentRef.getComponentType(baseCref),
+        listArray(listReverse(arrayElems)),
+        true
+      );
 
-      // New list of strong components replacing original diffed_comps
-      diffed_comps := {};
-      i := 1;
+      // Prepend aggregated vector so it appears first:
+      existing := UnorderedMap.getOrDefault(baseCref, adjoint_map, {});
+      UnorderedMap.add(baseCref, aggregatedVec :: existing, adjoint_map);
+    end for;
+    // New list of strong components replacing original diffed_comps
+    diffed_comps := {};
+    i := 1;
+    for lhsKey in UnorderedMap.keyList(adjoint_map) loop
+      terms := UnorderedMap.getOrFail(lhsKey, adjoint_map);
 
-      for lhsKey in UnorderedMap.keyList(adjoint_map) loop
-        terms := UnorderedMap.getOrFail(lhsKey, adjoint_map);
+      // (Terms were appended preserving order; use as-is.)
+      if listEmpty(terms) then
+        // Skip variables with no contributions
+        continue;
+      end if;
 
-        // (Terms were appended preserving order; use as-is.)
-        if listEmpty(terms) then
-          // Skip variables with no contributions
-          continue;
-        end if;
+      // Build RHS
+      rhsExpr := buildAdjointRhs(lhsKey, terms);
 
-        // Build RHS
-        rhsExpr := buildAdjointRhs(lhsKey, terms);
+      // LHS expression
+      lhsExpr := Expression.fromCref(lhsKey);
 
-        // LHS expression
-        lhsExpr := Expression.fromCref(lhsKey);
+      // Create assignment equation
+      eqPtr := NBEquation.Equation.makeAssignment(
+        lhsExpr, rhsExpr,
+        Pointer.create(i),
+        newName,
+        NBEquation.Iterator.EMPTY(),
+        BackendDAE.EquationAttributes.default(NBEquation.EquationKind.CONTINUOUS, false));
 
-        // Create assignment equation
-        eqPtr := NBEquation.Equation.makeAssignment(
-          lhsExpr, rhsExpr,
-          Pointer.create(i),
-          newName,
-          NBEquation.Iterator.EMPTY(),
-          BackendDAE.EquationAttributes.default(NBEquation.EquationKind.CONTINUOUS, false));
+      // Get (or create) variable pointer for strong component
+      lhsVarPtr := BVariable.getVarPointer(lhsKey, sourceInfo());
 
-        // Get (or create) variable pointer for strong component
-        lhsVarPtr := BVariable.getVarPointer(lhsKey, sourceInfo());
+      // Add strong component
+      diffed_comps := NBStrongComponent.SINGLE_COMPONENT(
+        var    = lhsVarPtr,
+        eqn    = eqPtr,
+        status = NBSolve.Status.EXPLICIT
+      ) :: diffed_comps;
 
-        // Add strong component
-        diffed_comps := NBStrongComponent.SINGLE_COMPONENT(
-          var    = lhsVarPtr,
-          eqn    = eqPtr,
-          status = NBSolve.Status.EXPLICIT
-        ) :: diffed_comps;
-
-        if Flags.isSet(Flags.JAC_DUMP) then
-          print("[adjoint] " + ComponentRef.toString(lhsKey) + " = " + Expression.toString(rhsExpr) + "\n");
-        end if;
-
-        i := i + 1;
-      end for;
-    end if;
+      if Flags.isSet(Flags.JAC_DUMP) then
+        print("[adjoint] " + ComponentRef.toString(lhsKey) + " = " + Expression.toString(rhsExpr) + "\n");
+      end if;
+      i := i + 1;
+    end for;
 
     // collect var data (most of this can be removed)
     unknown_vars  := listAppend(res_vars, tmp_vars);
