@@ -1532,7 +1532,7 @@ public
       b := Expression.isLiteral(binding);
       if not b then
         // try to extract literal from array constructor (use dummy map, there should not be any new iterators)
-        (_, binding) := Iterator.extract(binding, UnorderedSet.new(BVariable.hash, BVariable.equalName));
+        (_, binding) := Iterator.extract(binding);
         binding := SimplifyExp.simplifyDump(binding, true, getInstanceName());
         b := Expression.isLiteral(Ceval.tryEvalExp(binding));
       end if;

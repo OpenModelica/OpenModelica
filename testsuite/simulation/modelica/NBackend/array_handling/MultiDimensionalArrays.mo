@@ -38,4 +38,8 @@ package MultiDimensionalArrays
   model Test3
     D[2] d(i = {1,2});
   end Test3;
+
+  model Test4
+    Test3[4] t;
+  end Test4;
 end MultiDimensionalArrays;
