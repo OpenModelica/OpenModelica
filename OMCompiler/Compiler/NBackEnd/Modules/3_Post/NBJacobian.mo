@@ -283,7 +283,7 @@ public
   algorithm
     func := match Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN)
       case "symbolic" then jacobianSymbolic;
-      case "adjoint" then jacobianSymbolicAdjoint2;
+      case "adjoint" then jacobianSymbolicAdjoint;
       case "numeric"  then jacobianNumeric;
       case "none"     then jacobianNone;
     end match;
@@ -890,93 +890,6 @@ protected
     ));
   end jacobianSymbolic;
 
-  function mulCoeffRhs
-    input Expression coeff;
-    input ComponentRef rhsVar;
-    input NFOperator.SizeClassification sizeCl;
-    output Expression term;
-  protected
-    // For robustness we still use REAL; NFOperator classification encodes the array shape.
-    Operator mulOp = Operator.fromClassification(
-      (NFOperator.MathClassification.MULTIPLICATION, sizeCl),
-      Type.REAL()
-    );
-  algorithm
-    term := SimplifyExp.simplify(Expression.MULTARY({coeff, Expression.CREF(Type.REAL(), rhsVar)}, {}, mulOp), true);
-  end mulCoeffRhs;
-
-  // Element-wise array multiplication: a .* q
-  // Uses mulCoeffRhs with SizeClassification.ELEMENT_WISE.
-  function arrayElemMul
-    input Expression a;
-    input Expression b;
-    output Expression out;
-  algorithm
-    // Expect b to be a cref; fall back to generic element-wise if not.
-    out := match b
-      case Expression.CREF() then
-        mulCoeffRhs(a, b.cref, NFOperator.SizeClassification.ELEMENT_WISE);
-      else
-        SimplifyExp.simplify(
-          Expression.MULTARY(
-            {a, b}, {},
-            Operator.fromClassification(
-              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ELEMENT_WISE),
-              Type.REAL()
-            )), true);
-    end match;
-  end arrayElemMul;
-
-  // Matrix-vector product: A * q (no element-wise), i.e., MATRIX_VECTOR
-  // Uses mulCoeffRhs with SizeClassification.MATRIX_VECTOR.
-  function matVecMul
-    input Expression A;
-    input Expression v;
-    output Expression out;
-  algorithm
-    // Expect v to be a cref; fall back to generic matrix-vector operator if not.
-    out := match v
-      case Expression.CREF() then
-        mulCoeffRhs(A, v.cref, NFOperator.SizeClassification.MATRIX_VECTOR);
-      else
-        SimplifyExp.simplify(
-          Expression.MULTARY(
-            {A, v}, {},
-            Operator.fromClassification(
-              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX_VECTOR),
-              Type.REAL()
-            )), true);
-    end match;
-  end matVecMul;
-
-  // is called with a result var as baseCref
-  // pDer -> seed
-  function ensureSeedVarCref
-    input ComponentRef baseCref;
-    input String name;
-    output ComponentRef seedCref;
-    output Pointer<Variable> vp;
-  algorithm
-    // Use returned canonical cref: $SEED_<name>.<baseCref>
-    (seedCref, vp) := BVariable.makeSeedVar(baseCref, name);
-  end ensureSeedVarCref;
-
-
-  // is called with a seed var or a tmp var as baseCref
-  // seed or tmp -> pDer
-  // Create or reuse the canonical pDer cref: $pDER_<name>.<cref>
-  // isTmp = false -> result var (JAC_VAR), true -> tmp var (JAC_TMP_VAR)
-  function ensurePDerVarCref
-    input ComponentRef baseCref;
-    input String name;
-    input Boolean isTmp;
-    output ComponentRef pderCref;
-    output Pointer<Variable> vp;
-  algorithm
-    // Use returned canonical cref: $pDER_<name>.<baseCref>
-    (pderCref, vp) := BVariable.makePDerVar(baseCref, name, isTmp);
-  end ensurePDerVarCref;
-
   function typeTransposeCall
     "Create a typed builtin transpose(mat) call without expanding mat.
      Returns mat if it is not an array with at least 2 dimensions."
@@ -1029,37 +942,6 @@ protected
     tr := Expression.CALL(call);
   end typeTransposeCall;
 
-  // Create the adjoint contribution term for coeff * rhsVar
-  // depending on the type of coeff (scalar, vector, matrix)
-  function makeAdjointContribution
-    input Expression coeff;
-    input ComponentRef rhsVar;
-    output Expression term;
-  protected
-    Type tyC = Expression.typeOf(coeff);
-    Integer rnk = Type.dimensionCount(tyC); // 0: scalar, 1: vector, 2: matrix
-    Expression qexp = Expression.CREF(Type.REAL(), rhsVar); // actual type is handled by helpers
-    Expression transposeCoeff;
-  algorithm
-    if not Type.isArray(tyC) then
-      // scalar
-      term := mulCoeffRhs(coeff, rhsVar, NFOperator.SizeClassification.SCALAR);
-    elseif rnk == 1 then
-      // vector coeff -> element-wise multiply
-      print("arrayElemMul with coeff: " + Expression.toStringTyped(coeff) + "\n");
-      term := SimplifyExp.simplify(arrayElemMul(coeff, qexp));
-    elseif rnk == 2 then
-      // matrix coeff -> transpose(coeff) * q
-      print("matVecMul with coeff: " + Expression.toStringTyped(coeff) + "\n");
-      transposeCoeff := typeTransposeCall(coeff);
-      print("matVecMul with coeff transposed: " + Expression.toStringTyped(transposeCoeff) + "\n");
-      term := SimplifyExp.simplify(matVecMul(transposeCoeff, qexp));
-    else
-      // higher ranks: fallback to plain multiply
-      term := mulCoeffRhs(coeff, rhsVar, NFOperator.SizeClassification.SCALAR);
-    end if;
-  end makeAdjointContribution;
-
   function sizeClassificationFromType
     input Type ty;
     output NFOperator.SizeClassification sc;
@@ -1070,8 +952,10 @@ protected
         NFOperator.SizeClassification.SCALAR
       else if rnk == 1 then 
         NFOperator.SizeClassification.ELEMENT_WISE
-      else
-        NFOperator.SizeClassification.MATRIX_VECTOR;
+      else if rnk == 2 then
+        NFOperator.SizeClassification.MATRIX
+      else 
+        NFOperator.SizeClassification.SCALAR; // fallback
   end sizeClassificationFromType;
 
   function adjointMapToString
@@ -1112,6 +996,22 @@ protected
     str := "{ " + stringDelimitList(entries, ";\n") + " }";
   end adjointMapToString;
 
+  function diffMapToString
+    input UnorderedMap<ComponentRef, ComponentRef> map;
+    output String s;
+  protected
+    list<ComponentRef> keys;
+    ComponentRef k, v;
+  algorithm
+    keys := UnorderedMap.keyList(map);
+    s := "{\n";
+    for k in keys loop
+      v := UnorderedMap.getOrFail(k, map);
+      s := s + "  " + ComponentRef.toString(k) + " -> " + ComponentRef.toString(v) + "\n";
+    end for;
+    s := s + "}";
+  end diffMapToString;
+
   // Helper: build addition (or single term) expression from a list of terms for a given LHS cref.
   function buildAdjointRhs
     input ComponentRef lhsCref;
@@ -1146,23 +1046,10 @@ protected
     rhs := Expression.MULTARY(terms, {}, addOp);
   end buildAdjointRhs;
 
-  function diffMapToString
-    input UnorderedMap<ComponentRef, ComponentRef> map;
-    output String s;
-  protected
-    list<ComponentRef> keys;
-    ComponentRef k, v;
-  algorithm
-    keys := UnorderedMap.keyList(map);
-    s := "{\n";
-    for k in keys loop
-      v := UnorderedMap.getOrFail(k, map);
-      s := s + "  " + ComponentRef.toString(k) + " -> " + ComponentRef.toString(v) + "\n";
-    end for;
-    s := s + "}";
-  end diffMapToString;
 
-  function jacobianSymbolicAdjoint2 extends Module.jacobianInterface;
+  // for saving terms for the same lhs in a map
+  type ExpressionList = list<Expression>;
+  function jacobianSymbolicAdjoint extends Module.jacobianInterface;
   protected
     list<StrongComponent> comps, diffed_comps;
     Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
@@ -1501,284 +1388,6 @@ protected
       sparsityPattern   = sparsityPattern,
       sparsityColoring  = sparsityColoring
     ));
-  end jacobianSymbolicAdjoint2;
-
-  // for saving terms for the same lhs in a map
-  type ExpressionList = list<Expression>;
-  function jacobianSymbolicAdjoint extends Module.jacobianInterface;
-  protected
-    list<StrongComponent> comps, diffed_comps;
-    list<list<NBDifferentiateReverse.PartialsForComponent>> results;
-    // sets for naming and filtering
-    UnorderedSet<ComponentRef> seedVarsSet;
-    UnorderedSet<ComponentRef> resVarsSet;
-    UnorderedSet<ComponentRef> tmpVarsSet;
-    list<Pointer<Variable>> res_vars, tmp_vars, seed_vars_list, res_vars_list, tmp_vars_list;
-    BVariable.checkVar func = getTmpFilterFunction(jacType);
-    ExpressionList terms;
-    Expression term, lhsExpr, rhsExpr;
-    Pointer<Equation> eqPtr;
-    Pointer<Variable> lhsVarPtr, vp;
-    UnorderedMap<ComponentRef, ExpressionList> lhsToRhs;
-
-    list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, tmp_vars, seed_vars, diff_vars;
-    BVariable.VarData varDataJac;
-    SparsityPattern sparsityPattern;
-    SparsityColoring sparsityColoring;
-    Integer i;
-
-    UnorderedMap<ComponentRef, ComponentRef> mapPartialToNewSeed =
-      UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
-    UnorderedMap<ComponentRef, ComponentRef> mapSeedToNewPDer =
-      UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
-
-    Pointer<Variable> newVar;
-    Option<Pointer<Variable>> partner;
-    ComponentRef newC;
-
-    Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
-    Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
-    UnorderedMap<ComponentRef,ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
-    Differentiate.DifferentiationArguments diffArguments;
-    Pointer<Integer> idx = Pointer.create(0);
-    list<ComponentRef> seeds;
-    SparsityPattern sp;
-    String newName;
-  algorithm
-    if Util.isSome(strongComponents) then
-      // filter all discrete strong components and differentiate the others
-      // todo: mixed algebraic loops should be here without the discrete subsets
-      comps := list(comp for comp guard(not StrongComponent.isDiscrete(comp)) in Util.getOption(strongComponents));
-    else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no strong components were given!"});
-    end if;
-    newName := name + "_ADJ";
-    print(BVariable.VariablePointers.toString(seedCandidates, "Seed Candidates"));
-    print(BVariable.VariablePointers.toString(partialCandidates, "Partial Candidates"));
-
-    // compute top level partial derivatives for each component separately
-    results := NBDifferentiateReverse.collectPartialsForComponents(comps);
-
-    for res in results loop
-      print(intString(listLength(res)) + " partials for component:\n");
-      for r in res loop
-        print("  Output: " + Expression.toString(r.outputExpr) + "\n");
-        print(NBDifferentiateReverse.partialMapToString(r.partials) + "\n");
-      end for;
-      print("\n");
-    end for;
-
-    // create original result and tmp vars
-    (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
-    (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(init = init));
-
-    // Build sets for seed, result, and tmp vars for fast filtering
-    seedVarsSet := UnorderedSet.fromList(
-      VariablePointers.getVarNames(seedCandidates),
-      ComponentRef.hash, ComponentRef.isEqual);
-
-    resVarsSet := UnorderedSet.fromList(
-      VariablePointers.getVarNames(VariablePointers.fromList(res_vars)),
-      ComponentRef.hash, ComponentRef.isEqual);
-
-    tmpVarsSet := UnorderedSet.fromList(
-      VariablePointers.getVarNames(VariablePointers.fromList(tmp_vars)),
-      ComponentRef.hash, ComponentRef.isEqual);
-
-
-    // put together the new adjoint equations
-    lhsToRhs := UnorderedMap.new<ExpressionList>(ComponentRef.hash, ComponentRef.isEqual);
-    res_vars_list := {};
-    seed_vars_list := {};
-    tmp_vars_list := {};
-    for res in results loop
-      for r in res loop
-        () := match r
-          local
-            ComponentRef outCref, q_adj, inCref, x_adj;
-            Expression outExpr, inExpr;
-            NBDifferentiateReverse.PartialMap pm;
-            list<Expression> inputs;
-            Expression dqdv;
-          // for each component's partials
-          case NBDifferentiateReverse.PartialsForComponent.PARTIALS_FOR_COMPONENT(outputExpr = outExpr, partials = pm) algorithm
-            outCref := NBDifferentiateReverse.getCref(outExpr);
-            if not ComponentRef.isEmpty(outCref) then
-              // RHS driver adjoint for the output
-              // change of roles for the variables
-              if UnorderedSet.contains(outCref, resVarsSet) then
-                (q_adj, vp) := ensureSeedVarCref(outCref, newName);     // q_s
-                seed_vars_list := vp :: seed_vars_list; // add to seed vars
-              elseif UnorderedSet.contains(outCref, tmpVarsSet) then
-                (q_adj, vp) := ensurePDerVarCref(outCref, newName, true);     // q_p
-                tmp_vars_list := vp :: tmp_vars_list; // add to tmp vars
-              else
-                (q_adj, vp) := ensurePDerVarCref(outCref, newName, true);     // fallback
-              end if;
-
-              inputs := UnorderedMap.keyList(pm);
-              print(StringUtil.headline_3("Adjoint equations for " + ComponentRef.toString(outCref)) + "\n");
-
-              for inExpr in inputs loop
-                inCref := NBDifferentiateReverse.getCref(inExpr);
-                // keep only CREF inputs
-                if ComponentRef.isEmpty(inCref) then
-                  continue;
-                end if;
-                print("with input " + Expression.toString(inExpr) + "\n");
-                // Only generate equations for seeds and tmp vars; skip params/knowns
-                if not UnorderedSet.contains(inCref, seedVarsSet) and not UnorderedSet.contains(inCref, tmpVarsSet) then
-                  print(ComponentRef.toString(inCref) + " not in seed or tmp vars, skipping\n");
-                  continue;
-                end if;
-
-                print(ComponentRef.toString(inCref) + " in seed or tmp vars, not skipping\n");
-                // LHS naming per variable class
-                if UnorderedSet.contains(inCref, seedVarsSet) then
-                  (x_adj, vp) := ensurePDerVarCref(inCref, newName, false);  // x_r
-                  res_vars_list := vp :: res_vars_list; // add to result vars
-                elseif UnorderedSet.contains(inCref, tmpVarsSet) then
-                  (x_adj, vp) := ensurePDerVarCref(inCref, newName, true);    // q_p (tmp var)
-                elseif UnorderedSet.contains(inCref, resVarsSet) then
-                  (x_adj, vp) := ensureSeedVarCref(inCref, newName);    // der(x)_s
-                else
-                  // nothing to print
-                  continue;
-                end if;
-
-                // make the multiplication term: dqdv * q_adj
-                // dqdv is the partial derivative of outExpr wrt inExpr
-                // and q_adj is the new adjoint variable (seed or tmp var)
-                dqdv := UnorderedMap.getSafe(inExpr, pm, sourceInfo());
-                print("simplified dqdv: " + Expression.toString(NFSimplifyExp.simplify(dqdv, true)) + "\n");
-                term := makeAdjointContribution(dqdv, q_adj);
-                print(ComponentRef.toString(x_adj) + " = " + Expression.toString(term) + "\n");
-
-                terms := if UnorderedMap.contains(x_adj, lhsToRhs)
-                         then UnorderedMap.getSafe(x_adj, lhsToRhs, sourceInfo())
-                         else {};
-                UnorderedMap.add(x_adj, term :: terms, lhsToRhs);
-              end for;
-            end if;
-          then ();
-          else ();
-        end match;
-      end for;
-    end for;
-
-
-    print(StringUtil.headline_2("Accumulated contributions (lhs -> sum of rhs terms)") + "\n");
-    i := 1;
-    diffed_comps := {};
-    for lhsKey in UnorderedMap.keyList(lhsToRhs) loop
-      terms := listReverse(UnorderedMap.getSafe(lhsKey, lhsToRhs, sourceInfo()));
-
-      rhsExpr := Expression.MULTARY(terms, {}, Operator.fromClassification(
-        (NFOperator.MathClassification.ADDITION, sizeClassificationFromType(ComponentRef.getComponentType(lhsKey))),
-        Type.REAL()
-      ));
-      print(ComponentRef.toString(lhsKey) + " = " + Expression.toString(rhsExpr) + "\n");
-
-      // LHS expression (cref with Real type)
-      lhsExpr := Expression.CREF(ComponentRef.getComponentType(lhsKey), lhsKey);
-      print(Expression.toStringTyped(lhsExpr));
-
-      // Create the new equation lhs = rhs
-      eqPtr := NBEquation.Equation.makeAssignment(
-        lhsExpr, rhsExpr, 
-        Pointer.create(i), "JAC", NBEquation.Iterator.EMPTY(), 
-        BackendDAE.EquationAttributes.default(NBEquation.EquationKind.CONTINUOUS, false));
-
-      // Variable pointer for the LHS
-      lhsVarPtr := BVariable.getVarPointer(lhsKey, sourceInfo());
-
-      // Create a solved single-component (explicit) for this equation
-      diffed_comps := NBStrongComponent.SINGLE_COMPONENT(
-        var    = lhsVarPtr,
-        eqn    = eqPtr,
-        status = NBSolve.Status.EXPLICIT
-      ) :: diffed_comps;
-      i := i + 1;
-    end for;
-    diffed_comps := listReverse(diffed_comps);
-
-    // collect var data
-    unknown_vars  := listAppend(res_vars_list, tmp_vars_list);
-    all_vars      := unknown_vars;  // add other vars later on
-
-    seed_vars     := seed_vars_list;
-    aux_vars      := seed_vars;     // add other auxiliaries later on
-    alias_vars    := {};
-    depend_vars   := {};
-
-    // i am not sure if everything is correct here
-    varDataJac := BVariable.VAR_DATA_JAC(
-      variables     = VariablePointers.fromList(all_vars),
-      unknowns      = VariablePointers.fromList(unknown_vars),
-      knowns        = knowns,
-      auxiliaries   = VariablePointers.fromList(aux_vars),
-      aliasVars     = VariablePointers.fromList(alias_vars),
-      diffVars      = partialCandidates,
-      dependencies  = VariablePointers.fromList(depend_vars),
-      resultVars    = VariablePointers.fromList(res_vars_list),
-      tmpVars       = VariablePointers.fromList(tmp_vars_list),
-      seedVars      = VariablePointers.fromList(seed_vars)
-    );
-
-    (sparsityPattern, _) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
-    // 1) old partials -> new seeds
-    i := 1;
-    for oldC in sparsityPattern.partial_vars loop
-      if i <= listLength(sparsityPattern.seed_vars) then
-        newC := listGet(sparsityPattern.seed_vars, i);
-        // (partner, _) := BVariable.getVarSeed(newVar);
-        // newC := BVariable.getVarName(Util.getOption(partner));
-        UnorderedMap.add(oldC, newC, mapPartialToNewSeed);
-      end if;
-      i := i + 1;
-    end for;
-
-    // print("Map original partials to new seeds:\n");
-    // print(UnorderedMap.toString(mapPartialToNewSeed, ComponentRef.toString, ComponentRef.toString) + "\n");
-
-    // 2) old seeds -> new pDers
-    i := 1;
-    for oldC in sparsityPattern.seed_vars loop
-      if i <= listLength(sparsityPattern.partial_vars) then
-        newC := listGet(sparsityPattern.partial_vars, i);
-        // (partner, _) := BVariable.getVarPDer(newC);
-        // newC := BVariable.getVarName(Util.getOption(partner));
-        UnorderedMap.add(oldC, newC, mapSeedToNewPDer);
-      end if;
-      i := i + 1;
-    end for;
-
-    // print("Map original seeds to new pDers:\n");
-    // print(UnorderedMap.toString(mapSeedToNewPDer, ComponentRef.toString, ComponentRef.toString) + "\n");
-
-    (sparsityPattern, sparsityColoring) :=
-      SparsityPattern.transposeRenamed(
-        sparsityPattern,
-        mapPartialToNewSeed,
-        mapSeedToNewPDer,
-        jacType
-      );
-
-    print(SparsityPattern.toString(sparsityPattern) + "\n" + SparsityColoring.toString(sparsityColoring) + "\n");
-
-    jacobian := SOME(Jacobian.JACOBIAN(
-      name              = newName,
-      jacType           = jacType,
-      varData           = varDataJac,
-      comps             = listArray(diffed_comps),
-      sparsityPattern   = sparsityPattern,
-      sparsityColoring  = sparsityColoring
-    ));
-
-
-    for comp in diffed_comps loop
-      print(NBStrongComponent.toString(comp) + "\n");
-    end for;
   end jacobianSymbolicAdjoint;
 
   function jacobianNumeric "still creates sparsity pattern"

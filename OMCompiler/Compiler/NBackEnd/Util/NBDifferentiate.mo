@@ -940,7 +940,6 @@ public
           if diffArguments.collectAdjoints then
             // UnorderedMap.tryAddUpdate(derCref,
             // function updateAdjointList(current_grad = diffArguments.current_grad), Util.getOption(diffArguments.adjoint_map));
-
             appendAdjoint(derCref, diffArguments.current_grad, diffArguments);
           end if;
         else
