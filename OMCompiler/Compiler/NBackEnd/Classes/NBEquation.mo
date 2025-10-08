@@ -100,6 +100,8 @@ public
   type RecollectStatus      = enumeration(SUCCESS, FAILURE)                         "result of sub-routine recollect";
   type FrameOrderingStatus  = enumeration(UNCHANGED, CHANGED, FAILURE)              "result of sub-routine frame ordering";
 
+  type CrefLst              = list<ComponentRef>                                    "type for collecting data in hash maps";
+
   partial function MapFuncEqn
     input output Equation e;
   end MapFuncEqn;
@@ -607,11 +609,12 @@ public
       also replaces all array constructors with indexed expressions."
       output Iterator iter;
       input output Expression exp;
-      input UnorderedSet<VariablePointer> new_iters;
+      input UnorderedSet<VariablePointer> new_iters = UnorderedSet.new(BVariable.hash, BVariable.equalName) "store new iterators";
+      input UnorderedMap<list<Dimension>, CrefLst> dims_map = UnorderedMap.new<CrefLst>(Dimension.hashList, function List.isEqualOnTrue(inCompFunc = Dimension.isEqual));
     protected
       UnorderedMap<ComponentRef, Expression> replacements = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
     algorithm
-      (exp, iter) := extractFromCall(exp, EMPTY(), replacements, new_iters);
+      (exp, iter) := extractFromCall(exp, EMPTY(), replacements, new_iters, dims_map);
       exp := Expression.map(exp, function Replacements.applySimpleExp(replacements = replacements));
       exp := Typing.typeExp(exp, NFInstContext.RHS, sourceInfo(), true);
     end extract;
@@ -622,6 +625,7 @@ public
       input output Iterator iter;
       input UnorderedMap<ComponentRef, Expression> replacements   "replacement rules";
       input UnorderedSet<VariablePointer> new_iters;
+      input UnorderedMap<list<Dimension>, list<ComponentRef>> dims_map;
     algorithm
       (exp, iter) := match exp
         local
@@ -630,24 +634,35 @@ public
           InstNode node;
           Expression range;
           Iterator tmp;
+          list<Dimension> full_dims, elem_dims;
 
         case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
+          // inline the frontend iterator to get frames for backend iterator
           for tpl in listReverse(call.iters) loop
             frames := Inline.inlineArrayIterator(tpl, new_iters) :: frames;
           end for;
           tmp := fromFrames(frames);
+
+          // create replacement rules if neccessary
           if not isEmpty(iter) then
             createReplacement(iter, tmp, replacements);
           else
             iter := tmp;
           end if;
+
+          // add the dimension -> iterator names to the dims map to apply the iterators correctly to the lhs
+          full_dims := Type.arrayDims(Expression.typeOf(exp));
+          // remove the dimensions of the type we iterate over to avoid applyings subscripts there
+          full_dims := List.firstN(full_dims, listLength(full_dims) - Type.dimensionCount(Expression.typeOf(call.exp)));
+          // only add if it's a new dimension configuration, first iterator replaces others
+          UnorderedMap.tryAdd(full_dims, list(Util.tuple31(f) for f in frames), dims_map);
         then (call.exp, iter);
 
         // do not iterate call arguments
         case Expression.CALL() then (exp, iter);
 
         else algorithm
-          (exp, iter) := Expression.mapFoldShallow(exp, function extractFromCall(replacements = replacements, new_iters = new_iters), iter);
+          (exp, iter) := Expression.mapFoldShallow(exp, function extractFromCall(replacements = replacements, new_iters = new_iters, dims_map = dims_map), iter);
         then (exp, iter);
       end match;
     end extractFromCall;
@@ -656,13 +671,14 @@ public
       "creates a normalized subscript list such that the traversed iterators result in
       consecutive indices starting at 1."
       input Iterator iter;
+      input UnorderedMap<ComponentRef, Subscript> iter_map = UnorderedMap.new<Subscript>(ComponentRef.hash, ComponentRef.isEqual);
       output list<Subscript> subs;
     protected
       list<ComponentRef> names;
       list<Expression> ranges;
     algorithm
       (names, ranges) := getFrames(iter);
-      subs := list(normalizedSubscript(name, range) threaded for name in names, range in ranges);
+      subs := list(normalizedSubscript(name, range, iter_map) threaded for name in names, range in ranges);
     end normalizedSubscripts;
 
     function normalizedSubscript
@@ -670,6 +686,7 @@ public
       e.g: i in 10:-2:1 -> x[(i-10)/(-2) + 1] which results in 1,2,3... for i=10,8,6..."
       input ComponentRef iter_name;
       input Expression range;
+      input UnorderedMap<ComponentRef, Subscript> iter_map;
       output Subscript sub;
     protected
       Expression step, sub_exp;
@@ -715,6 +732,9 @@ public
             + " failed because range is no range: " + Expression.toString(range)});
         then fail();
       end match;
+
+      // add the pair to the map
+      UnorderedMap.add(iter_name, sub, iter_map);
     end normalizedSubscript;
 
     function simplifyRangeCondition
@@ -2362,6 +2382,9 @@ public
       EquationAttributes eqnAttr;
       Iterator iter;
       list<Subscript> subs;
+      // maps used to correctly apply subscripts
+      UnorderedMap<list<Dimension>, CrefLst> dims_map = UnorderedMap.new<CrefLst>(Dimension.hashList, function List.isEqualOnTrue(inCompFunc = Dimension.isEqual));
+      UnorderedMap<ComponentRef, Subscript> iter_map = UnorderedMap.new<Subscript>(ComponentRef.hash, ComponentRef.isEqual);
     algorithm
       var := Pointer.access(var_ptr);
       rhs := match var.binding
@@ -2388,16 +2411,19 @@ public
       end if;
 
       // simplify rhs and get potential iterators
-      (iter, rhs) := Iterator.extract(rhs, new_iters);
+      (iter, rhs) := Iterator.extract(rhs, new_iters, dims_map);
       rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
 
       if Iterator.isEmpty(iter) then
+        // no iterator -> no for-loop
         lhs := Expression.fromCref(var.name);
         eqn := makeAssignment(lhs, rhs, idx, context, Iterator.EMPTY(), eqnAttr);
       else
-        rhs := Expression.map(rhs, Expression.repairOperator);
-        subs := Iterator.normalizedSubscripts(iter);
-        lhs := Expression.fromCref(ComponentRef.mergeSubscripts(subs, var.name, true, true));
+        // iterator -> create for loop and add subscripts to lhs
+        rhs   := Expression.map(rhs, Expression.repairOperator);
+        subs  := Iterator.normalizedSubscripts(iter, iter_map);
+
+        lhs := Expression.fromCref(ComponentRef.mergeSubscriptsMapped(var.name, dims_map, iter_map));
         eqn := makeAssignment(lhs, rhs, idx, context, iter, eqnAttr);
         // this could lead to non existing variables, should not be a problem though
         renameIterators(eqn, "$i");

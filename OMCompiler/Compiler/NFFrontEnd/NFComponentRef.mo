@@ -674,11 +674,12 @@ public
     input output ComponentRef cref;
     input Boolean applyToScope = false;
     input Boolean backend = false;
+    input Boolean reverse = false;
   protected
     ComponentRef old_cref = cref;
     list<Subscript> new_subscripts;
   algorithm
-    (new_subscripts, cref) := mergeSubscripts2(subscripts, cref, applyToScope, backend);
+    (new_subscripts, cref) := mergeSubscripts2(subscripts, cref, applyToScope, backend, reverse);
     if not listEmpty(new_subscripts) then
       Error.assertion(false, getInstanceName() + " failed because the subscripts "
         + List.toString(subscripts, Subscript.toString) + " could not be fully merged onto "
@@ -693,6 +694,7 @@ public
     input output ComponentRef cref;
     input Boolean applyToScope;
     input Boolean backend;
+    input Boolean reverse;
   algorithm
     (subscripts, cref) := match cref
       local
@@ -702,11 +704,17 @@ public
       case CREF(subscripts = cref_subs)
         guard applyToScope or cref.origin == Origin.CREF
         algorithm
-          (subscripts, rest_cref) := mergeSubscripts2(subscripts, cref.restCref, applyToScope, backend);
+          if not reverse then
+            (subscripts, rest_cref) := mergeSubscripts2(subscripts, cref.restCref, applyToScope, backend, reverse);
+          end if;
 
           if not listEmpty(subscripts) then
             (cref_subs, subscripts) :=
               Subscript.mergeList(subscripts, cref_subs, Type.dimensionCount(cref.ty), backend);
+          end if;
+
+          if reverse then
+            (subscripts, rest_cref) := mergeSubscripts2(subscripts, cref.restCref, applyToScope, backend, reverse);
           end if;
         then
           (subscripts, CREF(cref.node, cref_subs, cref.ty, cref.origin, rest_cref));
@@ -714,6 +722,48 @@ public
       else (subscripts, cref);
     end match;
   end mergeSubscripts2;
+
+  function mergeSubscriptsMapped
+    "merges subscripts to a cref while respecting a map that defines the type to subscript mapping.
+    To be used in the backend when the subscripts have to be added to a very specific dimension space
+    Note: due to technical reasons the mapping is done in two steps"
+    input output ComponentRef cref;
+    input UnorderedMap<list<Dimension>, list<ComponentRef>> dims_map;
+    input UnorderedMap<ComponentRef, Subscript> iter_map;
+  algorithm
+    cref := match cref
+      local
+        list<Dimension> dims;
+        Option<list<ComponentRef>> iter_crefs;
+        ComponentRef new_cref;
+        list<Subscript> new_subs, rest_subs;
+
+      // local array type -> try to find the current dimension configuration in the map and add subscripts
+      case CREF() guard(Type.isArray(cref.ty)) algorithm
+        // apply to restCref
+        cref.restCref := mergeSubscriptsMapped(cref.restCref, dims_map, iter_map);
+        // get dimensions and check in map
+        dims          := Type.arrayDims(getSubscriptedType(cref));
+        iter_crefs    := UnorderedMap.get(dims, dims_map);
+        if Util.isSome(iter_crefs) then
+          // dimension configuration was found, map to subscripts and apply in reverse
+          new_subs    := list(UnorderedMap.getSafe(iter_name, iter_map, sourceInfo()) for iter_name in Util.getOption(iter_crefs));
+          new_cref    := mergeSubscripts(new_subs, cref, true, true, true);
+        else
+          // not found, just keep current cref
+          new_cref    := cref;
+        end if;
+      then new_cref;
+
+      // local scalar type -> only apply to
+      case CREF() algorithm
+        // apply to restCref
+        cref.restCref := mergeSubscriptsMapped(cref.restCref, dims_map, iter_map);
+      then cref;
+
+      else cref;
+    end match;
+  end mergeSubscriptsMapped;
 
   function hasSubscripts
     input ComponentRef cref;

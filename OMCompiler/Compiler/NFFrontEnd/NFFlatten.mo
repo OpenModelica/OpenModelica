@@ -1331,7 +1331,7 @@ algorithm
       // convert simple equality of crefs to array equality
       // kabdelhak: only do it if all subscripts are simple enough
       //            will lead to complicated code if not index or whole dim
-      //            and we are better of just using for loops for these
+      //            and we are better off just using for loops for these
       case Equation.EQUALITY(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.CREF())
         guard(not Flags.getConfigBool(Flags.NEW_BACKEND)
           or (List.all(ComponentRef.subscriptsAllWithWholeFlat(lhs.cref), Subscript.isSimple)
@@ -1464,7 +1464,8 @@ function addIterator_traverse
   input Prefix prefix;
   input list<Subscript> subscripts;
 protected
-  String restString, prefixString = ComponentRef.toString(Prefix.prefix(prefix));
+  ComponentRef ref = Prefix.prefix(prefix);
+  String restString, prefixString = ComponentRef.toString(ref);
 algorithm
   exp := match exp
     local
@@ -1473,13 +1474,30 @@ algorithm
       algorithm
         restString := ComponentRef.toString(restCref);
         if StringUtil.startsWith(restString, prefixString) then
-          exp.cref := ComponentRef.mergeSubscripts(subscripts, exp.cref, applyToScope = true);
+          exp.cref := mergeIterator(exp.cref, ref, subscripts);
         end if;
       then
         exp;
     else exp;
   end match;
 end addIterator_traverse;
+
+function mergeIterator
+  input output ComponentRef cref;
+  input ComponentRef ref;
+  input list<Subscript> subscripts;
+algorithm
+  cref := match cref
+    case ComponentRef.CREF() algorithm
+      if ComponentRef.isEqual(cref, ref) then
+        cref.subscripts := listAppend(cref.subscripts, subscripts);
+      else
+        cref.restCref := mergeIterator(cref.restCref, ref, subscripts);
+      end if;
+    then cref;
+    else cref;
+  end match;
+end mergeIterator;
 
 function containsPrefix
   input Expression exp;

@@ -452,6 +452,11 @@ public
     end match;
   end toString;
 
+  function hashList
+    input list<Dimension> dims;
+    output Integer i = stringHashDjb2(toStringList(dims));
+  end hashList;
+
   function toStringList
     input list<Dimension> dims;
     input Boolean brackets = true;
