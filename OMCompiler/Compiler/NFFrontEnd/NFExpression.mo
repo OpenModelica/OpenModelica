@@ -4759,6 +4759,16 @@ public
     end match;
   end isRecord;
 
+  function isIf
+    input Expression exp;
+    output Boolean isIf;
+  algorithm
+    isIf := match exp
+      case IF() then true;
+      else false;
+    end match;
+  end isIf;
+
   function isRecordOrRecordArray
     input Expression exp;
     output Boolean isRecord;

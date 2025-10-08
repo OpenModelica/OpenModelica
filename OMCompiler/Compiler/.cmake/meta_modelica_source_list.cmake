@@ -309,7 +309,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBDifferentiateReverse.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBReplacements.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBResizable.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBSeedGather.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBSlice.mo
 
     # "NFFrontEnd";

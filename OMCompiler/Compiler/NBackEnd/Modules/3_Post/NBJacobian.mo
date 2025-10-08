@@ -70,7 +70,7 @@ protected
   import DifferentiatePartials = NBDifferentiatePartials;
   import NBVariable.{VariablePointers, VariablePointer, VarData};
   import NBDifferentiateReverse;
-  //import NBSeedGather;
+  import Slice = NBSlice;
 
   import Call = NFCall;
   import NFBuiltinFuncs;
@@ -940,11 +940,112 @@ protected
     rhs := Expression.MULTARY(terms, {}, addOp);
   end buildAdjointRhs;
 
+
+  function adjointBuildIfBody
+    "Recursively transform an Expression.IF tree on the RHS into an IfEquationBody chain.
+     The else-branch is represented as a body node with condition Expression.END()."
+    input Expression lhs;
+    input Expression rhs_if;
+    input NBEquation.EquationAttributes attr;
+    input String ctxName;
+    input Pointer<Integer> dummyIdx;
+    output NBEquation.IfEquationBody body;
+  protected
+    Expression condExp;
+    Expression thenExp;
+    Expression elseExp;
+    Pointer<NBEquation.Equation> thenEqPtr;
+    Pointer<NBEquation.Equation> elseEqPtr;
+    NBEquation.IfEquationBody elseBody;
+    NBEquation.Iterator emptyIter = NBEquation.Iterator.EMPTY();
+    NBEquation.Equation thenEq;
+    NBEquation.Equation elseEq;
+    Expression rhs_if_simplified;
+  algorithm
+    rhs_if_simplified := SimplifyExp.simplifyDump(rhs_if, true, getInstanceName());
+    () := match rhs_if_simplified
+      case Expression.IF(condition = condExp, trueBranch = thenExp, falseBranch = elseExp)
+        algorithm
+          // THEN assignment
+          thenEq := NBEquation.Equation.makeAssignmentEqn(lhs, thenExp, emptyIter, attr);
+          thenEqPtr := Pointer.create(thenEq);
+
+          // ELSE (either another IF -> recurse, or terminal expression)
+          if Expression.isIf(elseExp) then
+            elseBody := adjointBuildIfBody(lhs, elseExp, attr, ctxName, dummyIdx);
+            body := NBEquation.IfEquationBody.IF_EQUATION_BODY(
+              condition = condExp,
+              then_eqns = {thenEqPtr},
+              else_if   = SOME(elseBody)
+            );
+          else
+            elseEq := NBEquation.Equation.makeAssignmentEqn(lhs, elseExp, emptyIter, attr);
+            elseEqPtr := Pointer.create(elseEq);
+            body := NBEquation.IfEquationBody.IF_EQUATION_BODY(
+              condition = condExp,
+              then_eqns = {thenEqPtr},
+              else_if   = SOME(
+                NBEquation.IfEquationBody.IF_EQUATION_BODY(
+                  condition = Expression.END(),      // marks final else-branch
+                  then_eqns = {elseEqPtr},
+                  else_if   = NONE()
+                )
+              )
+            );
+          end if;
+        then ();
+      else
+        algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{
+            getInstanceName() + " adjointBuildIfBody called with non-IF expression: " + Expression.toString(rhs_if)
+          });
+        then fail();
+    end match;
+  end adjointBuildIfBody;
+
+  function adjointSmartCreateEquation
+    "Create an equation pointer for lhs = rhs.
+     If rhs is an Expression.IF create an IF_EQUATION (with nested bodies).
+     Otherwise fall back to standard makeAssignment (SCALAR/ARRAY/RECORD/FOR already handled there)."
+    input Expression lhs;
+    input Expression rhs;
+    input Pointer<Integer> idx;
+    input String contextName;
+    input NBEquation.EquationAttributes attr;
+    output Pointer<NBEquation.Equation> eqPtr;
+  protected
+    NBEquation.IfEquationBody ifBody;
+  algorithm
+    if Expression.isIf(rhs) then
+      // Build IfEquationBody chain
+      ifBody := adjointBuildIfBody(lhs, rhs, attr, contextName, idx);
+      // Wrap into IF_EQUATION (naming via createName inside makeIfEquation)
+      eqPtr := NBEquation.IfEquationBody.makeIfEquation(
+        body    = ifBody,
+        idx     = idx,
+        str     = contextName,
+        iter    = NBEquation.Iterator.EMPTY(),
+        source  = DAE.emptyElementSource,
+        attr    = attr
+      );
+    else
+      eqPtr := NBEquation.Equation.makeAssignment(
+        lhs,
+        rhs,
+        idx,
+        contextName,
+        NBEquation.Iterator.EMPTY(),
+        attr
+      );
+    end if;
+  end adjointSmartCreateEquation;
+
   // for saving terms for the same lhs in a map
   type ExpressionList = list<Expression>;
   function jacobianSymbolicAdjoint extends Module.jacobianInterface;
   protected
     list<StrongComponent> comps, diffed_comps;
+    StrongComponent diffed_comp;
     Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
     Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
     UnorderedMap<ComponentRef,ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
@@ -962,6 +1063,7 @@ protected
     Expression lhsExpr, rhsExpr;
     Pointer<Variable> lhsVarPtr, p;
     Pointer<NBEquation.Equation> eqPtr;
+    NBEquation.Equation eq;
     Integer i, i_idx;
     ComponentRef newC, baseCref;
 
@@ -1162,10 +1264,8 @@ protected
     for lhsKey in UnorderedMap.keyList(adjoint_map) loop
       terms := UnorderedMap.getOrFail(lhsKey, adjoint_map);
 
-      // (Terms were appended preserving order; use as-is.)
       if listEmpty(terms) then
-        // Skip variables with no contributions
-        continue;
+        terms := {Expression.makeZero(ComponentRef.getComponentType(lhsKey))};
       end if;
 
       // Build RHS
@@ -1174,23 +1274,71 @@ protected
       // LHS expression
       lhsExpr := Expression.fromCref(lhsKey);
 
-      // Create assignment equation
-      eqPtr := NBEquation.Equation.makeAssignment(
-        lhsExpr, rhsExpr,
-        Pointer.create(i),
+      // Create assignment equation (now smart: supports IF-expression RHS)
+      eqPtr := adjointSmartCreateEquation(
+        lhsExpr,
+        rhsExpr,
+        Pointer.create(i),             // local counter for residual naming
         newName,
-        NBEquation.Iterator.EMPTY(),
-        BackendDAE.EquationAttributes.default(NBEquation.EquationKind.CONTINUOUS, false));
+        NBEquation.EquationAttributes.default(NBEquation.EquationKind.CONTINUOUS, false)
+      );
 
       // Get (or create) variable pointer for strong component
       lhsVarPtr := BVariable.getVarPointer(lhsKey, sourceInfo());
+      eq := Pointer.access(eqPtr);
 
-      // Add strong component
-      diffed_comps := NBStrongComponent.SINGLE_COMPONENT(
-        var    = lhsVarPtr,
-        eqn    = eqPtr,
-        status = NBSolve.Status.EXPLICIT
-      ) :: diffed_comps;
+      // determine component type based on equation type
+      // How to determine SLICED_COMPONENT?
+      diffed_comp := match eq
+        case NBEquation.SCALAR_EQUATION() then
+          NBStrongComponent.SINGLE_COMPONENT(
+            var    = lhsVarPtr,
+            eqn    = eqPtr,
+            status = NBSolve.Status.EXPLICIT
+          );
+        case NBEquation.ARRAY_EQUATION() then
+          NBStrongComponent.SINGLE_COMPONENT(
+            var    = lhsVarPtr,
+            eqn    = eqPtr,
+            status = NBSolve.Status.EXPLICIT
+          );
+        case NBEquation.RECORD_EQUATION() then
+          NBStrongComponent.SINGLE_COMPONENT(
+            var    = lhsVarPtr,
+            eqn    = eqPtr,
+            status = NBSolve.Status.EXPLICIT
+          );
+        // case NBEquation.FOR_EQUATION() then
+        //   NBStrongComponent.RESIZABLE_COMPONENT(
+        //     var_cref = lhsKey,
+        //     var    = Slice.SLICE(lhsVarPtr, {}),
+        //     eqn    = Slice.SLICE(eqPtr, {}),
+        //     order = NONE(), // get order of original strong component
+        //     status = NBSolve.Status.EXPLICIT
+        //   );
+        case NBEquation.IF_EQUATION() then
+          NBStrongComponent.MULTI_COMPONENT(
+            vars    = {Slice.SLICE(lhsVarPtr, {})},
+            eqn    = Slice.SLICE(eqPtr, {}),
+            status = NBSolve.Status.EXPLICIT
+          );
+        case NBEquation.WHEN_EQUATION() then
+          NBStrongComponent.MULTI_COMPONENT(
+            vars    = {Slice.SLICE(lhsVarPtr, {})},
+            eqn    = Slice.SLICE(eqPtr, {}),
+            status = NBSolve.Status.EXPLICIT
+          );
+        case NBEquation.ALGORITHM() then 
+          NBStrongComponent.MULTI_COMPONENT(
+            vars    = {Slice.SLICE(lhsVarPtr, {})},
+            eqn    = Slice.SLICE(eqPtr, {}),
+            status = NBSolve.Status.EXPLICIT
+          );
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " cannot create adjoint strong component for equation " + NBEquation.Equation.toString(eq)});
+        then fail();
+      end match;
+      diffed_comps := diffed_comp :: diffed_comps;
 
       if Flags.isSet(Flags.JAC_DUMP) then
         print("[adjoint] " + ComponentRef.toString(lhsKey) + " = " + Expression.toString(rhsExpr) + "\n");
