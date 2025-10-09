@@ -762,7 +762,7 @@ algorithm
       SimCode.VarInfo varInfo;
     case (SimCode.SIMCODE(),"C")
       algorithm
-        fileNamePrefixHash := substring(intString(stringHashDjb2(simCode.fileNamePrefix)), 1, 3);
+        fileNamePrefixHash := Util.hashFileNamePrefix(simCode.fileNamePrefix);
         fmutmp := fileNamePrefixHash + ".fmutmp";
         if System.directoryExists(fmutmp) then
           if not System.removeDirectory(fmutmp) then

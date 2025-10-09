@@ -416,6 +416,7 @@ public
   function hash
     input Expression exp;
     output Integer hash = stringHashDjb2(toString(exp));
+    // TODO use stringHashDjb2Continue
   end hash;
 
   function isEqual
