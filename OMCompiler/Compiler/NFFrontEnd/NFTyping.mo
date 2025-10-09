@@ -1729,6 +1729,11 @@ algorithm
       algorithm
         (e, ty, _) := typeExp(exp, next_context, info);
 
+        if Type.isTuple(ty) then
+          ty := Type.firstTupleType(ty);
+          e := Expression.tupleElement(e, ty, 1);
+        end if;
+
         if Type.isConditionalArray(ty) then
           e := Expression.map(e,
             function evaluateArrayIf(target = Ceval.EvalTarget.new(info, next_context)));
