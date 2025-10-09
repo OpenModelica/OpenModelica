@@ -2220,7 +2220,7 @@ public
           body :: rest  := iCall.arguments;
           start         := Expression.INTEGER(1);
           step          := NONE();
-          for stop in rest loop
+          for stop in listReverse(rest) loop
             iter_name   := InstNode.newIndexedIterator(index, "f");
             iter_range  := Expression.makeRange(start, step, stop);
             iterators   := (iter_name, iter_range) :: iterators;
