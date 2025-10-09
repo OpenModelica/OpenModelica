@@ -35,7 +35,7 @@
  */
 
 #include "arrayIndex.h"
-#include "util/omc_error.h"
+#include "../util/omc_error.h"
 
 /**
  * @brief Allocate memory for index maps.
