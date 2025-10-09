@@ -309,7 +309,7 @@ void computeVarsIndex(void *variableData,
       throwStreamPrint(NULL, "computeVarsIndex: Illegal variable type case.");
     }
 
-    assertStreamPrint(NULL, id > previous_id,
+    assertStreamPrint(NULL, id == 0 || id > previous_id,      // TODO: FMUs don't set id
                       "Value reference not increasing. "
                       "`realVarsData` isn't sorted correctly!");
     previous_id = id;
