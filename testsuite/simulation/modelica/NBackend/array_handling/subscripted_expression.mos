@@ -1,0 +1,22 @@
+// name: subscripted_expression
+// keywords: NewBackend
+// status: correct
+// cflags: --newBackend
+
+loadString("
+model subscripted_expression
+  Real [2] x, y;
+equation
+  for i in 1:2 loop
+    x[i] = sin(i*time);
+  end for;
+  for i in 1:2 loop
+    y[i] = ({x[1], x[2]})[i];
+  end for;
+end subscripted_expression;"); getErrorString();
+
+simulate(subscripted_expression); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("subscripted_expression_res.mat",
+  "ReferenceFiles/subscripted_expression_res.mat",
+  "subscripted_expression_diff.csv",0.01,0.0001);
