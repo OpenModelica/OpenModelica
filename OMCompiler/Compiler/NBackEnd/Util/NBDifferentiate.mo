@@ -460,7 +460,7 @@ public
       then (Equation.WHEN_EQUATION(eq.size, whenBody, eq.source, attr), diffArguments);
 
       case Equation.ALGORITHM() algorithm
-        (alg, diffArguments) := differentiateAlgorithm(eq.alg, diffArguments);
+        (alg, diffArguments) := differentiateAlgorithm(eq.alg, diffArguments); // may need differentiateAlgorithmAdjoint
       then (Equation.ALGORITHM(eq.size, alg, eq.source, eq.expand, eq.attr), diffArguments);
 
       else algorithm
@@ -967,7 +967,9 @@ public
   algorithm
     oldCollect := diffArguments.collectAdjoints;
     diffArguments.collectAdjoints := false;
+
     (crefExp, diffArguments) := differentiateComponentRef(Expression.fromCref(var.name), diffArguments);
+
     diffArguments.collectAdjoints := oldCollect;
     diff_ptr := match crefExp
       case Expression.CREF(cref = ComponentRef.EMPTY()) then Pointer.create(NBVariable.DUMMY_VARIABLE);
@@ -1140,10 +1142,11 @@ public
     exp := match (exp)
       local
         Integer i;
-        Expression ret, ret1, ret2, arg1, arg2, arg3, diffArg1, diffArg2, diffArg3, current_grad, cond, oldGrad, zero1, zero2, grad_x, grad_y, notCond;
+        Expression ret, ret1, ret2, arg1, arg2, arg3, diffArg1, diffArg2, diffArg3, current_grad, cond, zero1, zero2, grad_x, grad_y, old_grad;
         list<Expression> rest;
         Type ty;
         DifferentiationType diffType;
+        Integer rY, rX;
 
       // d/dz delay(x, delta) = (dt/dz - d delta/dz) * delay(der(x), delta)
       case (Expression.CALL()) guard(name == "delay")
@@ -1213,6 +1216,7 @@ public
       // df(x,y)/dz = f(dx/dz, dy/dz)
       case (Expression.CALL()) guard(List.contains({"homotopy", "$OMC$inStreamDiv"}, name, stringEqual))
       algorithm
+        print(if boolString(runTestReverseHomotopyFD()) then "homotopy PASS" else "homotopy FAIL" + "\n");
         (arg1, arg2) := match Call.arguments(exp.call)
           case {arg1, arg2} then (arg1, arg2);
           else algorithm
@@ -1233,13 +1237,23 @@ public
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
           then fail();
         end match;
+        rY := if Type.isArray(Expression.typeOf(exp)) then Type.dimensionCount(Expression.typeOf(exp)) else 0;
+        rX := if Type.isArray(Expression.typeOf(arg1)) then Type.dimensionCount(Expression.typeOf(arg1)) else 0;
+        current_grad := diffArguments.current_grad;
+        old_grad := current_grad;
+        for i in 1:(if rY > rX then rY - rX else 0) loop
+            current_grad := dropLastDimIndex1(current_grad);
+          end for;
+        diffArguments.current_grad := current_grad;
         (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+        diffArguments.current_grad := old_grad;
         exp.call := Call.setArguments(exp.call, {ret1, arg2});
       then exp;
 
       // d/dz identity(n) = zeros(n, n)
       case (Expression.CALL()) guard(name == "identity")
       algorithm
+        // diffArguments.current_grad := Expression.makeZero(Expression.typeOf(exp));?
         arg1 := match Call.arguments(exp.call)
           case {arg1} then arg1;
           else algorithm
@@ -1258,7 +1272,16 @@ public
       algorithm
         // only differentiate 1st input
         arg1 :: rest := Call.arguments(exp.call);
+        rY := if Type.isArray(Expression.typeOf(exp)) then Type.dimensionCount(Expression.typeOf(exp)) else 0;
+        rX := if Type.isArray(Expression.typeOf(arg1)) then Type.dimensionCount(Expression.typeOf(arg1)) else 0;
+        current_grad := diffArguments.current_grad;
+        old_grad := current_grad;
+        for i in 1:(if rY > rX then rY - rX else 0) loop // reduce over all added dimensions with sum
+          current_grad := typeSumCall(current_grad); // sum over first (or last?) dimension
+        end for;
+        diffArguments.current_grad := current_grad;
         (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+        diffArguments.current_grad := old_grad;
         exp.call := Call.setArguments(exp.call, ret1 :: rest);
       then exp;
 
@@ -1365,7 +1388,7 @@ public
               zero2);
 
             // Reverse recurse arg1 with grad_x
-            oldGrad := diffArguments.current_grad;
+            old_grad := diffArguments.current_grad;
             diffArguments.current_grad := grad_x;
             // dx/dz
             (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
@@ -1376,7 +1399,7 @@ public
             (diffArg2, diffArguments) := differentiateExpression(arg2, diffArguments);
 
             // Restore upstream
-            diffArguments.current_grad := oldGrad;
+            diffArguments.current_grad := old_grad;
 
             ty := Expression.typeOf(diffArg1);
             if Expression.isZero(diffArg1) and Expression.isZero(diffArg2) then
@@ -2299,6 +2322,10 @@ public
               operator.ty), exp1); // G * k
 
         elseif isScalar1 and isVec2 then
+          // c = k * x
+          // \bar{k} = \bar{c} * x, inner product
+          // \bar{x} = \bar{c} * k, scalar multiplication
+
           print("differentiateBinary: scalar * vector case\n");
           grad_exp1 := Expression.BINARY(current_grad, Operator.makeScalarProduct(operator.ty), exp2); 
           grad_exp2 := Expression.BINARY(current_grad, Operator.fromClassification(
@@ -2859,5 +2886,211 @@ public
         b);
     end makeMul;
 
+    // Drop the last array dimension by indexing it with 1:
+  // arr[..., 1]. If arr is not an array, return it unchanged.
+  function dropLastDimIndex1
+    input Expression arr;
+    output Expression res;
+  protected
+    Type ty = Expression.typeOf(arr);
+    list<Type.Dimension> dims;
+    Integer m, i;
+    list<Subscript> subs = {};
+  algorithm
+    if not Type.isArray(ty) then
+      res := arr; return;
+    end if;
+
+    dims := Type.arrayDims(ty);
+    m := listLength(dims);
+    if m <= 0 then
+      res := arr; return;
+    end if;
+
+    // Build subscripts: WHOLE for first m-1 dims, INDEX(1) for last
+    for i in 1:(m-1) loop
+      subs := Subscript.WHOLE() :: subs;
+    end for;
+    subs := Subscript.INDEX(Expression.INTEGER(1)) :: subs;
+    subs := listReverse(subs);
+
+    res := Expression.applySubscripts(subs, arr, true);
+  end dropLastDimIndex1;
+
+
+  // Simple vector helpers on lists of Real
+  function dot
+    input list<Real> a;
+    input list<Real> b;
+    output Real s = 0.0;
+  protected
+    list<Real> la = a;
+    list<Real> lb = b;
+  algorithm
+    while not listEmpty(la) loop
+      s := s + listHead(la) * listHead(lb);
+      la := listRest(la);
+      lb := listRest(lb);
+    end while;
+  end dot;
+
+  function vecLen
+    input list<Real> a;
+    output Integer n = 0;
+  protected
+    list<Real> l = a;
+  algorithm
+    while not listEmpty(l) loop
+      n := n + 1;
+      l := listRest(l);
+    end while;
+  end vecLen;
+
+  function vecGet
+    input list<Real> a;
+    input Integer i;
+    output Real x;
+  algorithm
+    x := matchcontinue (a, i)
+      case (_, 1) then listHead(a);
+      else vecGet(listRest(a), i-1);
+    end matchcontinue;
+  end vecGet;
+
+  function vecSet
+    input list<Real> a;
+    input Integer i;
+    input Real v;
+    output list<Real> b;
+  algorithm
+    b := matchcontinue (a, i)
+      local list<Real> r;
+      case (_, 1)
+        algorithm
+          r := listRest(a);
+        then v :: r;
+      else
+        algorithm
+          r := vecSet(listRest(a), i-1, v);
+        then listHead(a) :: r;
+    end matchcontinue;
+  end vecSet;
+
+  function vecSub
+    input list<Real> x;
+    input list<Real> y;
+    output list<Real> z = {};
+  protected
+    list<Real> lx = x; list<Real> ly = y;
+  algorithm
+    while not listEmpty(lx) loop
+      z := (listHead(lx) - listHead(ly)) :: z;
+      lx := listRest(lx); ly := listRest(ly);
+    end while;
+    z := listReverse(z);
+  end vecSub;
+
+  function vecScale
+    input Real s;
+    input list<Real> x;
+    output list<Real> y = {};
+  protected
+    list<Real> lx = x;
+  algorithm
+    while not listEmpty(lx) loop
+      y := (s * listHead(lx)) :: y;
+      lx := listRest(lx);
+    end while;
+    y := listReverse(y);
+  end vecScale;
+
+  // Central-difference directional derivative of y=f(x) along coordinate i,
+  // projected by upstream vector g: dL/dx_i ≈ g·(f(x+h e_i) - f(x-h e_i)) / (2h)
+  function fdDirectional
+    input primalEvalFn f; // list<Real> primalEvalFn(list<Real>) 
+    input list<Real> x0;
+    input list<Real> upstream; // flatten y to list, same length used for dot
+    input Integer i;           // 1-based index into x0
+    input Real h;
+    output Real d;
+
+    partial function primalEvalFn
+      input list<Real> x;
+      output list<Real> y;
+    end primalEvalFn;
+  protected
+    list<Real> xp; list<Real> xm;
+    list<Real> yp; list<Real> ym;
+  algorithm
+    xp := vecSet(x0, i, vecGet(x0, i) + h);
+    xm := vecSet(x0, i, vecGet(x0, i) - h);
+    yp := f(xp);
+    ym := f(xm);
+    d := dot(upstream, vecScale(1.0/(2.0*h), vecSub(yp, ym)));
+  end fdDirectional;
+
+  // Generic reverse-mode rule test:
+  // - primalEvalFn: maps x -> y (flatten as list<Real>, scalar y => singleton list)
+  // - reverseRuleEvalFn: maps (x, upstream) -> grads wrt x (list<Real> of same length as x)
+  // Returns pass/fail and a textual report with max error.
+  function testReverseRuleFD
+    input primalEvalFn inPrimalEvalFn; // list<Real> primalEvalFn(list<Real>)
+    input reverseRuleEvalFn inReverseRuleEvalFn; // list<Real> reverseRuleEvalFn(list<Real>, list<Real>)
+    input list<Real> x0;
+    input list<Real> upstream;     // choose 1.0 for scalar outputs
+    input Real eps = 1e-6;
+    input Real atol = 1e-7;
+    input Real rtol = 1e-4;
+    output Boolean pass;
+    output String report;
+
+    partial function primalEvalFn
+      input list<Real> x;
+      output list<Real> y;
+    end primalEvalFn;
+    partial function reverseRuleEvalFn
+      input list<Real> x;
+      input list<Real> upstream;
+      output list<Real> grads;
+    end reverseRuleEvalFn;
+  protected
+    Integer n = vecLen(x0);
+    Integer k;
+    list<Real> ruleGrad;
+    Real num_i;
+    Real err, maxErr = 0.0;
+    Real ref, maxRelErr = 0.0;
+    String lines = "";
+  algorithm
+    // Evaluate user rule once at base point
+    ruleGrad := inReverseRuleEvalFn(x0, upstream);
+    if vecLen(ruleGrad) <> n then
+      pass := false;
+      report := "reverse rule length mismatch: expected " + intString(n) + " got " + intString(vecLen(ruleGrad));
+      return;
+    end if;
+
+    // Compare each component with central differences
+    for k in 1:n loop
+      num_i := fdDirectional(inPrimalEvalFn, x0, upstream, k, eps);
+      err := abs(num_i - vecGet(ruleGrad, k));
+      ref := max(1e-16, abs(num_i));
+      maxErr := if err > maxErr then err else maxErr;
+      maxRelErr := if err/ref > maxRelErr then err/ref else maxRelErr;
+      lines := lines + "i=" + intString(k)
+                    + " rule=" + realString(vecGet(ruleGrad, k))
+                    + " num=" + realString(num_i)
+                    + " absErr=" + realString(err)
+                    + " relErr=" + realString(err/ref) + "\n";
+    end for;
+
+    pass := (maxErr <= atol) or (maxRelErr <= rtol);
+    report := "Reverse FD check: "
+            + (if pass then "PASS" else "FAIL")
+            + " maxAbsErr=" + realString(maxErr)
+            + " maxRelErr=" + realString(maxRelErr) + "\n"
+            + lines;
+  end testReverseRuleFD;
+  
   annotation(__OpenModelica_Interface="backend");
 end NBDifferentiate;

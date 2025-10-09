@@ -1003,7 +1003,7 @@ protected
     end match;
   end adjointBuildIfBody;
 
-  function adjointSmartCreateEquation
+  function createAdjointEquation
     "Create an equation pointer for lhs = rhs.
      If rhs is an Expression.IF create an IF_EQUATION (with nested bodies).
      Otherwise fall back to standard makeAssignment (SCALAR/ARRAY/RECORD/FOR already handled there)."
@@ -1038,10 +1038,56 @@ protected
         attr
       );
     end if;
-  end adjointSmartCreateEquation;
+  end createAdjointEquation;
 
   // for saving terms for the same lhs in a map
   type ExpressionList = list<Expression>;
+
+  // Helper: for each base var v, ensure base and scalar crefs exist in adjoint_map
+  // and that a scalar pDer/tmp var exists exactly once.
+  function addScalarsToAdjointMapAndEnsurePDer
+    input output UnorderedMap<ComponentRef, ExpressionList> adjoint_map;
+    input output list<Pointer<Variable>> vars;
+    input String newName;
+    input Boolean isTmp;
+  protected
+    VariablePointers vp_single;
+    list<ComponentRef> scalarCrefs;
+    Boolean exists;
+    Pointer<Variable> v, pExisting, p;
+    ComponentRef baseCref, scalarCref;
+  algorithm
+    for v in vars loop
+      baseCref := BVariable.getVarName(v);
+      if not UnorderedMap.contains(baseCref, adjoint_map) then
+        UnorderedMap.addNew(baseCref, {}, adjoint_map);
+      end if;
+
+      // Expand to scalar components and add them as keys too
+      vp_single := VariablePointers.fromList({v});
+      for scalarCref in VariablePointers.getScalarVarNames(vp_single) loop
+        if not UnorderedMap.contains(scalarCref, adjoint_map) then
+          UnorderedMap.addNew(scalarCref, {}, adjoint_map);
+        end if;
+
+        // ensure scalar pDer/tmp variable exists exactly once
+        exists := false;
+        for pExisting in vars loop
+          if ComponentRef.isEqual(BVariable.getVarName(pExisting), scalarCref) then
+            exists := true;
+            break;
+          end if;
+        end for;
+
+        if not exists then
+          // Create pDer var for scalar element and add to the corresponding list
+          (_, p) := BVariable.makePDerVar(scalarCref, newName, isTmp);
+          vars := p :: vars;
+        end if;
+      end for;
+    end for;
+  end addScalarsToAdjointMapAndEnsurePDer;
+
   function jacobianSymbolicAdjoint extends Module.jacobianInterface;
   protected
     list<StrongComponent> comps, diffed_comps;
@@ -1123,53 +1169,8 @@ protected
 
     // // create empty adjoint map with seed vars and tmp vars as keys mapping to empty lists
     adjoint_map := UnorderedMap.new<ExpressionList>(ComponentRef.hash, ComponentRef.isEqual);
-    for v in res_vars loop
-      UnorderedMap.addNew(BVariable.getVarName(v), {}, adjoint_map);
-      // Expand to scalar components and add them as keys too
-      // to handle array seeds correctly
-      vp_single := VariablePointers.fromList({v});
-      for scalarCref in VariablePointers.getScalarVarNames(vp_single) loop
-        if not UnorderedMap.contains(scalarCref, adjoint_map) then
-          UnorderedMap.addNew(scalarCref, {}, adjoint_map);
-        end if;
-
-        // ensure scalar pDer variable exists exactly once
-        exists := false;
-        for pExisting in res_vars loop
-          if ComponentRef.isEqual(BVariable.getVarName(pExisting), scalarCref) then
-            exists := true;
-            break;
-          end if;
-        end for;
-        if not exists then
-          (_, p) := BVariable.makePDerVar(scalarCref, newName, false);
-          res_vars := p :: res_vars;
-        end if;
-
-      end for;
-    end for;
-    for v in tmp_vars loop
-      UnorderedMap.addNew(BVariable.getVarName(v), {}, adjoint_map);
-      vp_single := VariablePointers.fromList({v});
-      for scalarCref in VariablePointers.getScalarVarNames(vp_single) loop
-        if not UnorderedMap.contains(scalarCref, adjoint_map) then
-          UnorderedMap.addNew(scalarCref, {}, adjoint_map);
-        end if;
-
-        exists := false;
-        for pExisting in tmp_vars loop
-          if ComponentRef.isEqual(BVariable.getVarName(pExisting), scalarCref) then
-            exists := true;
-            break;
-          end if;
-        end for;
-        if not exists then
-          (_, p) := BVariable.makePDerVar(scalarCref, newName, true);
-          tmp_vars := p :: tmp_vars;
-        end if;
-
-      end for;
-    end for;
+    addScalarsToAdjointMapAndEnsurePDer(adjoint_map, res_vars, newName, false);
+    addScalarsToAdjointMapAndEnsurePDer(adjoint_map, tmp_vars, newName, true);
 
     print("res vars after scalar addition:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(res_vars), "Res Vars") + "\n");
     print("tmp vars after scalar addition:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(tmp_vars), "Tmp Vars") + "\n");
@@ -1265,18 +1266,15 @@ protected
       terms := UnorderedMap.getOrFail(lhsKey, adjoint_map);
 
       if listEmpty(terms) then
-        terms := {Expression.makeZero(ComponentRef.getComponentType(lhsKey))};
+        continue; // skip empty entries
       end if;
 
       // Build RHS
       rhsExpr := buildAdjointRhs(lhsKey, terms);
 
-      // LHS expression
-      lhsExpr := Expression.fromCref(lhsKey);
-
       // Create assignment equation (now smart: supports IF-expression RHS)
-      eqPtr := adjointSmartCreateEquation(
-        lhsExpr,
+      eqPtr := createAdjointEquation(
+        Expression.fromCref(lhsKey),
         rhsExpr,
         Pointer.create(i),             // local counter for residual naming
         newName,
