@@ -1282,7 +1282,12 @@ protected
 
   function keyHash
     input Key key;
-    output Integer hash = stringHashDjb2(keyString(key));
+    output Integer hash;
+  algorithm
+    hash := stringHashDjb2(intString(listHead(key)));
+    for k in listRest(key) loop
+      hash := stringHashDjb2Continue(intString(k), hash);
+    end for;
   end keyHash;
 
   function keyEqual

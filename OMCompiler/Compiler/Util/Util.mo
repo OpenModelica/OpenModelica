@@ -1443,6 +1443,11 @@ algorithm
  end if;
 end absoluteOrRelative;
 
+public function hashFileNamePrefix
+  input String inFileNamePrefix;
+  output String hashStr = substring(intString(stringHashDjb2(inFileNamePrefix)), 1, 3);
+end hashFileNamePrefix;
+
 public function intLstString
   input list<Integer> lst;
   output String s;

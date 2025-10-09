@@ -738,7 +738,7 @@ algorithm
     end if;
 
     // fix issue https://github.com/OpenModelica/OpenModelica/issues/12916
-    fileNamePrefixHash := substring(intString(stringHashDjb2(filenamePrefix)), 1, 3);
+    fileNamePrefixHash := Util.hashFileNamePrefix(filenamePrefix);
 
     // Set fullPathPrefix for FMUs
     if isFMU then
