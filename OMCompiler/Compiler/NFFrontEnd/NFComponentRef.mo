@@ -737,11 +737,12 @@ public
         Option<list<ComponentRef>> iter_crefs;
         ComponentRef new_cref;
         list<Subscript> new_subs, rest_subs;
+        Type ty = getSubscriptedType(cref);
 
       // local array type -> try to find the current dimension configuration in the map and add subscripts
-      case CREF() guard(Type.isArray(cref.ty)) algorithm
+      case CREF() guard(Type.isArray(ty)) algorithm
         // get dimensions and check in map
-        dims          := Type.arrayDims(getSubscriptedType(cref));
+        dims          := Type.arrayDims(ty);
         iter_crefs    := UnorderedMap.get(dims, dims_map);
         if Util.isSome(iter_crefs) then
           // dimension configuration was found, map to subscripts and apply in reverse
