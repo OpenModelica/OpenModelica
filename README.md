@@ -17,7 +17,7 @@ available as a standalone version or integrated in OMEdit.
 In addition there are interactive environments
 [OMNotebook](OMNotebook/README.md), [OMPlot](OMPlot/README.md) and [OMShell](OMShell/README.md)
 interaction with the OMCompiler as well as various other tools:
-[OMOptim](OMOptim/README.md), [OMParser](OMParser/README.md), [OMSens](OMSens/README.md),
+[OMOptim](OMOptim/README.md), [OMParser](OMParser/README.md),
 [OMSense_Qt](OMSens_Qt/README.md).
 
 ## Working with the repository
