@@ -9,7 +9,7 @@
 void computeVarsIndex(void *variableData, enum var_type type, size_t num_variables, size_t *varsIndex);
 
 /**
- * @brief Test calculation of array length of vector variable.
+ * @brief Test calculation of array length of tensor variable.
  *
  * @return int  Return 0 on test success, 1 otherwise.
  */

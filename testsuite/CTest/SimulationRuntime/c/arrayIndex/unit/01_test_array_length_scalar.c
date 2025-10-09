@@ -23,7 +23,8 @@ int main(void)
   size_t actual_length = calculateLength(&dimension_info, NULL, 0);
 
   // Validate
-  if (actual_length != expected_length) {
+  if (actual_length != expected_length)
+  {
     fprintf(stderr, "Test failed: Expected '%zu', but got '%zu'.\n", expected_length, actual_length);
     test_success = 0;
   }

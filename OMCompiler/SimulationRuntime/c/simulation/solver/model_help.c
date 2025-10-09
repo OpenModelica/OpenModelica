@@ -942,11 +942,13 @@ int getNextSampleTimeFMU(DATA *data, double *nextSampleEvent)
 }
 
 /**
- * @brief Allocates `modelData-><TYPE>VarsData` and `modelData-><TYPE>ParameterData`
+ * @brief Allocates static model data.
  *
+ * Allocate `modelData-><TYPE>VarsData` and `modelData-><TYPE>ParameterData`.
  * Free with `freeModelDataVars`.
  *
  * @param modelData   Pointer to model data.
+ * @param threadData  Thread data for error handling, can be `NULL`.
  */
 void allocModelDataVars(MODEL_DATA* modelData, threadData_t* threadData)
 {
@@ -1090,7 +1092,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   allocateArrayIndexMaps(data->modelData, data->simulationInfo, threadData);
   computeVarIndices(data->simulationInfo, data->modelData);
 
-  data->modelData->nStates = data->simulationInfo->realVarsIndex[data->modelData->nStatesArray];
+  data->modelData->nStates           = data->simulationInfo->realVarsIndex[data->modelData->nStatesArray];
   data->modelData->nVariablesReal    = data->simulationInfo->realVarsIndex[data->modelData->nVariablesRealArray];
   data->modelData->nVariablesInteger = data->simulationInfo->integerVarsIndex[data->modelData->nVariablesIntegerArray];
   data->modelData->nVariablesBoolean = data->simulationInfo->booleanVarsIndex[data->modelData->nVariablesBooleanArray];

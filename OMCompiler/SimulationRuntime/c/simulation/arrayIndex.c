@@ -47,7 +47,9 @@
  *                          memory for.
  * @param threadData        Thread data for error handling.
  */
-void allocateArrayIndexMaps(MODEL_DATA *modelData, SIMULATION_INFO *simulationInfo, threadData_t *threadData)
+void allocateArrayIndexMaps(MODEL_DATA *modelData,
+                            SIMULATION_INFO *simulationInfo,
+                            threadData_t *threadData)
 {
   // Variables
   simulationInfo->realVarsIndex = (size_t *)calloc(modelData->nVariablesRealArray + 1, sizeof(size_t));
@@ -118,7 +120,9 @@ void freeArrayIndexMaps(SIMULATION_INFO *simulationInfo)
  *                              `ID`. Will return NULL if no matching parameter
  *                              can be found.
  */
-STATIC_INTEGER_DATA *getParamById(int id, STATIC_INTEGER_DATA *integerParameters, long nParameters)
+STATIC_INTEGER_DATA *getParamById(int id,
+                                  STATIC_INTEGER_DATA *integerParameters,
+                                  long nParameters)
 {
   long i;
   for (i = 0; i < nParameters; i++)
@@ -156,7 +160,9 @@ STATIC_INTEGER_DATA *getParamById(int id, STATIC_INTEGER_DATA *integerParameters
  * @param nParametersIntegerArray Number of parameters in `integerParameterData`.
  * @return size_t                 Scalar length (product of dimensions).
  */
-size_t calculateLength(DIMENSION_INFO *dimensionInfo, STATIC_INTEGER_DATA *integerParameterData, long nParametersIntegerArray)
+size_t calculateLength(DIMENSION_INFO *dimensionInfo,
+                       STATIC_INTEGER_DATA *integerParameterData,
+                       long nParametersIntegerArray)
 {
   size_t length = 1;
   size_t dim_idx;
@@ -206,7 +212,7 @@ size_t calculateLength(DIMENSION_INFO *dimensionInfo, STATIC_INTEGER_DATA *integ
  * @param modelData Model data containing variable data with array variables to
  *                  update.
  */
-void calculateAllScalarLength(MODEL_DATA* modelData)
+void calculateAllScalarLength(MODEL_DATA *modelData)
 {
   long i;
 
@@ -267,7 +273,10 @@ void calculateAllScalarLength(MODEL_DATA* modelData)
  * @param num_variables   Number of variables in array `variableData`.
  * @param varsIndex       Variable index to compute. Will be set on return.
  */
-void computeVarsIndex(void *variableData, enum var_type type, size_t num_variables, size_t *varsIndex)
+void computeVarsIndex(void *variableData,
+                      enum var_type type,
+                      size_t num_variables,
+                      size_t *varsIndex)
 {
   size_t i;
   int id;
@@ -301,7 +310,7 @@ void computeVarsIndex(void *variableData, enum var_type type, size_t num_variabl
     }
 
     assertStreamPrint(NULL, id > previous_id,
-                      "Value reference not increasing. " \
+                      "Value reference not increasing. "
                       "`realVarsData` isn't sorted correctly!");
     previous_id = id;
 
@@ -320,7 +329,8 @@ void computeVarsIndex(void *variableData, enum var_type type, size_t num_variabl
  * @param varsIndex     Alias index to set.
  * @param num_variables Number of variables.
  */
-void computeAliasIndex(size_t *varsIndex, size_t num_variables)
+void computeAliasIndex(size_t *varsIndex,
+                       size_t num_variables)
 {
   unsigned int i;
   for (i = 0; i < num_variables + 1; i++)
@@ -337,8 +347,10 @@ void computeAliasIndex(size_t *varsIndex, size_t num_variables)
  * @param simulationInfo  Simulation info with index maps to set.
  * @param modelData       Model data with number of variables.
  */
-void computeVarIndices(SIMULATION_INFO *simulationInfo, MODEL_DATA *modelData)
+void computeVarIndices(SIMULATION_INFO *simulationInfo,
+                       MODEL_DATA *modelData)
 {
+  // Variables
   computeVarsIndex(modelData->realVarsData, T_REAL, modelData->nVariablesRealArray, simulationInfo->realVarsIndex);
   // TODO: Are states, state derivatives, algebraic variables and discrete algebraic variables handled with this?
   computeVarsIndex(modelData->integerVarsData, T_INTEGER, modelData->nVariablesIntegerArray, simulationInfo->integerVarsIndex);

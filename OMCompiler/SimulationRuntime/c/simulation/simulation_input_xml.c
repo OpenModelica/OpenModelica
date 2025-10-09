@@ -395,7 +395,7 @@ static void XMLCALL endElement(void *userData, const char *name)
  * Needs to be freed with `freeVarInfo`.
  *
  * @param var   Model variable hash map containing variable info.
- * @param info
+ * @param info  Variable info to fill.
  */
 static void read_var_info(omc_ModelVariable *var, VAR_INFO *info)
 {
@@ -864,30 +864,16 @@ void read_model_description_sizes(omc_ModelDescription *md, MODEL_DATA *modelDat
   read_value_long(findHashStringString(md, "numberOfStringAliasVariables"),  &modelData->nAliasStringArray, 0);
 }
 
-size_t count_alias_variables(omc_ModelDescription *aliasHasMap) {
-  size_t num_alias_variables = 0;
-
-  hash_long_var *res = NULL;
-  HASH_FIND_INT(aliasHasMap, &num_alias_variables, res);
-
-  while(res) {
-    num_alias_variables++;
-    HASH_FIND_INT(aliasHasMap, &num_alias_variables, res);
-  }
-
-  return num_alias_variables;
-}
-
 /**
  * @brief Read all alias variables from hash map.
  *
  * Fill if parameter is negated, its ID, and alias type (variable, parameter, time).
  *
- * @param rAli          Real alias hash map.
- * @param nAliasReal    Number of alias variables in hash map.
- * @param mapAlias      Hash map for alias variables.
- * @param mapAliasParam Hash map for alias parameters.
- * @return              Alias variable filled with values from hash map. Free with `omc_alloc_interface.free_uncollectable`
+ * @param aliasHashMap    Alias hash map.
+ * @param nAliasVariables Number of alias variables in hash map.
+ * @param mapAlias        Hash map for alias variables.
+ * @param mapAliasParam   Hash map for alias parameters.
+ * @return DATA_ALIAS*    Alias variable filled with values from hash map. Free with `omc_alloc_interface.free_uncollectable`
  */
 DATA_ALIAS* read_alias_var(omc_ModelVariables *aliasHashMap,
                            unsigned long nAliasVariables,

@@ -17,20 +17,19 @@ int main(void)
 
   // Prepare dummy data
   DIMENSION_ATTRIBUTE dimensions = {
-    .type = DIMENSION_BY_START,
-    .start = dim1,
-    .valueReference = -1
-  };
+      .type = DIMENSION_BY_START,
+      .start = dim1,
+      .valueReference = -1};
   DIMENSION_INFO dimension_info = {
-    .numberOfDimensions = 1,
-    .dimensions = &dimensions
-  };
+      .numberOfDimensions = 1,
+      .dimensions = &dimensions};
 
   // Test
   size_t actual_length = calculateLength(&dimension_info, NULL, 0);
 
   // Validate
-  if (actual_length != expected_length) {
+  if (actual_length != expected_length)
+  {
     fprintf(stderr, "Test failed: Expected '%zu', but got '%zu'.\n", expected_length, actual_length);
     test_success = 0;
   }
