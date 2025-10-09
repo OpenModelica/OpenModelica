@@ -29,7 +29,7 @@ int main(void)
       .dimensions = dimensions};
 
   // Test
-  size_t actual_length = calculateLength(&dimension_info);
+  size_t actual_length = calculateLength(&dimension_info, NULL, 0);
 
   // Validate
   if (actual_length != expected_length)
