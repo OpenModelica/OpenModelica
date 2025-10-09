@@ -48,6 +48,7 @@ target_sources(OpenModelicaRuntimeC PRIVATE ${OMC_SIMRT_GC_SOURCES} ${OMC_SIMRT_
 target_include_directories(OpenModelicaRuntimeC
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/simulation
+  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/util)
 
 # Add the define WIN32_LEAN_AND_MEAN to this lib and anything that links to it.

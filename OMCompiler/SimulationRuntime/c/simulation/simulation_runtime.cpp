@@ -1079,8 +1079,12 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     data->simulationInfo->maxWarnDisplays = DEFAULT_FLAG_LV_MAX_WARN;
   }
 
-  // TODO this needs to happen after read_init_xml,
-  // or we need to read resizable parameters before this.
+  rt_tick(SIM_TIMER_INIT_XML);
+  read_input_xml(data->modelData, data->simulationInfo, threadData);
+  rt_accumulate(SIM_TIMER_INIT_XML);
+  data->simulationInfo->minStepSize = 4.0 * DBL_EPSILON * fmax(fabs(data->simulationInfo->startTime),fabs(data->simulationInfo->stopTime));
+
+
   initializeDataStruc(data, threadData);
   if(!data)
   {
@@ -1218,11 +1222,6 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     warningStreamPrint(OMC_LOG_STDOUT, 0, "The daeMode flag is *deprecated*, because it is not needed any more.\n"
       "If a model is compiled in \"DAEmode\" with compiler flag --daeMode, then it simulates automatically in DAE mode.");
   }
-
-  rt_tick(SIM_TIMER_INIT_XML);
-  read_input_xml(data->modelData, data->simulationInfo);
-  data->simulationInfo->minStepSize = 4.0 * DBL_EPSILON * fmax(fabs(data->simulationInfo->startTime),fabs(data->simulationInfo->stopTime));
-  rt_accumulate(SIM_TIMER_INIT_XML);
 
   /* Set the maximum number of threads prior to any allocation w.r.t.
    * linear systems and Jacobians in order to avoid memory leaks.

@@ -261,6 +261,7 @@ else
   SIM_OBJS_C_FMI=
 endif
 SIM_OBJS_C = $(SIM_OBJS_C_FMI) \
+             array_index$(OBJ_EXT) \
              jacobian_util$(OBJ_EXT) \
              omc_simulation_util$(OBJ_EXT) \
              options$(OBJ_EXT) \
@@ -268,15 +269,16 @@ SIM_OBJS_C = $(SIM_OBJS_C_FMI) \
              simulation_omc_assert$(OBJ_EXT)
 SIM_HFILES = ../dataReconciliation/dataReconciliation.h \
              ../linearization/linearize.h \
+             array_index.h \
+             jacobian_util.h \
              modelinfo.h \
              omc_simulation_util.h \
+             options.h \
              simulation_info_json.h \
              simulation_input_xml.h \
              simulation_omc_assert.h \
              simulation_runtime.h \
-             socket.h \
-             options.h \
-             jacobian_util.h
+             socket.h
 
 FMIPATH = ./fmi/
 FMI_OBJS = FMICommon$(OBJ_EXT) FMI1Common$(OBJ_EXT) FMI1ModelExchange$(OBJ_EXT) FMI1CoSimulation$(OBJ_EXT) FMI2Common$(OBJ_EXT) FMI2ModelExchange$(OBJ_EXT)
