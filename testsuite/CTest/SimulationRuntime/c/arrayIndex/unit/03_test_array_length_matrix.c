@@ -5,7 +5,7 @@
 #include "arrayIndex.h"
 
 /**
- * @brief Test calculation of array length of vector variable.
+ * @brief Test calculation of array length of matrix variable.
  *
  * @return int  Return 0 on test success, 1 otherwise.
  */

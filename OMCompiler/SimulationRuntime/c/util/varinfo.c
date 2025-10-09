@@ -57,7 +57,7 @@ void printErrorEqSyst(EQUATION_SYSTEM_ERROR err, EQUATION_INFO eq, double time)
 }
 
 /**
- * @brief Free memory allocate by `read_var_info`.
+ * @brief Free memory allocated by `read_var_info`.
  *
  * @param info  Pointer to variable info.
  */

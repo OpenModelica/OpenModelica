@@ -49,6 +49,10 @@ int main(int argc, char *argv[])
   modelData.nStates = 0;
   modelData.nParametersInteger = 2;
   modelData.integerParameterData = (STATIC_INTEGER_DATA *)calloc(modelData.nParametersInteger, sizeof(STATIC_INTEGER_DATA));
+  if (modelData.integerParameterData == NULL) {
+    fprintf(stderr, "Memory allocation failed for integerParameterData\n");
+    return 1;
+  }
   modelData.initXMLData = NULL;
   modelData.modelGUID = "test-guid";
 

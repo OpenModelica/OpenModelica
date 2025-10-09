@@ -1084,7 +1084,6 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
   rt_accumulate(SIM_TIMER_INIT_XML);
   data->simulationInfo->minStepSize = 4.0 * DBL_EPSILON * fmax(fabs(data->simulationInfo->startTime),fabs(data->simulationInfo->stopTime));
 
-
   initializeDataStruc(data, threadData);
   if(!data)
   {

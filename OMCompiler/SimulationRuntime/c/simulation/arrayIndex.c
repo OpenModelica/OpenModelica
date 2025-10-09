@@ -297,7 +297,7 @@ void computeVarsIndex(void *variableData, enum var_type type, size_t num_variabl
       id = ((STATIC_STRING_DATA *)variableData)[i].info.id;
       break;
     default:
-      throwStreamPrint(NULL, "scalarArrayVariableSize: Illegal variable type case.");
+      throwStreamPrint(NULL, "computeVarsIndex: Illegal variable type case.");
     }
 
     assertStreamPrint(NULL, id > previous_id,
