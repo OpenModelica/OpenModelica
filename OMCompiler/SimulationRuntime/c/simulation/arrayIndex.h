@@ -28,7 +28,7 @@
  *
  */
 
-#include "simulation_data.h"
+#include "../simulation_data.h"
 
 void allocateArrayIndexMaps(MODEL_DATA *modelData, SIMULATION_INFO *simulationInfo, threadData_t *threadData);
 
