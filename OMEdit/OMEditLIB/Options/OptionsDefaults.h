@@ -252,6 +252,10 @@ namespace OptionsDefaults
     int loggingLevel = 0;
   }
 
+  namespace SensitivityOptimization {
+    QString python = "python";
+  }
+
   namespace Traceability {
     bool traceability = false;
     QString username = "";
