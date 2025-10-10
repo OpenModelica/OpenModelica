@@ -81,8 +81,16 @@ public
   end TEARING_SET;
 
   function hash
+    "compute hash value by only using iteration variables with their first index should be unique enough"
     input Tearing set;
-    output Integer i = stringHashDjb2(toString(set, ""));
+    output Integer h = 5381;
+  algorithm
+    for var in set.iteration_vars loop
+      h := stringHashDjb2Continue(BVariable.pointerToString(Slice.getT(var)), h);
+      for i in List.firstOrEmpty(var.indices) loop
+        h := stringHashDjb2Continue(intString(i), h);
+      end for;
+    end for;
   end hash;
 
   function isEqual
@@ -91,9 +99,9 @@ public
     input Tearing set2;
     output Boolean b;
   algorithm
-     b := List.isEqualOnTrue(set1.iteration_vars, set2.iteration_vars, function Slice.isEqual(func = BVariable.equalName));
-     b := b and List.isEqualOnTrue(set1.residual_eqns, set2.residual_eqns, function Slice.isEqual(func = Equation.isEqualPtr));
-     b := b and Array.isEqualOnTrue(set1.innerEquations, set2.innerEquations, StrongComponent.isEqual);
+     b := List.isEqualOnTrue(set1.residual_eqns, set2.residual_eqns, function Slice.isEqual(func = Equation.isEqualPtr));
+     b := if b then Array.isEqualOnTrue(set1.innerEquations, set2.innerEquations, StrongComponent.isEqual) else b;
+     b := if b then List.isEqualOnTrue(set1.iteration_vars, set2.iteration_vars, function Slice.isEqual(func = BVariable.equalName)) else b;
   end isEqual;
 
   function size

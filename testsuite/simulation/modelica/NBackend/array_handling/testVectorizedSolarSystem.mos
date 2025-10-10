@@ -29,15 +29,15 @@ val(grid.P_grid, 0.0);
 //   (1) Continuous ODE Partition
 // ================================
 //
-// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED, size = 1000)
+// ----------------------------------------------------------------------------
 // ### Variable:
 // 	Real[1000] plant.P_solar = 100.0:100.0:1e5
 // ### Equation:
 // 	[ARRY] (1000) plant.P_solar = 100.0:100.0:1e5 ($RES_BND_10)
 //
-// BLOCK 2: Resizable Component (status = Solve.UNPROCESSED)
-// -----------------------------------------------------------
+// BLOCK 2: Resizable Component (status = Solve.UNPROCESSED, size = 1000)
+// ------------------------------------------------------------------------
 // ### Variable:
 // 	plant[$i1].on
 // ### Equation:
@@ -46,8 +46,8 @@ val(grid.P_grid, 0.0);
 // [----]   [SCAL] (1) plant[$i1].on = true ($RES_BND_9)
 // [----] end for;
 //
-// BLOCK 3: Resizable Component (status = Solve.UNPROCESSED)
-// -----------------------------------------------------------
+// BLOCK 3: Resizable Component (status = Solve.UNPROCESSED, size = 1000)
+// ------------------------------------------------------------------------
 // ### Variable:
 // 	plant[$i1].term.v
 // ### Equation:
@@ -56,8 +56,8 @@ val(grid.P_grid, 0.0);
 // [----]   [SCAL] (1) plant[$i1].term.v = grid.V ($RES_SIM_2)
 // [----] end for;
 //
-// BLOCK 4: Resizable Component (status = Solve.UNPROCESSED)
-// -----------------------------------------------------------
+// BLOCK 4: Resizable Component (status = Solve.UNPROCESSED, size = 1000)
+// ------------------------------------------------------------------------
 // ### Variable:
 // 	plant[$i1].term.i
 // ### Equation:
@@ -66,8 +66,8 @@ val(grid.P_grid, 0.0);
 // [----]   [SCAL] (1) plant[$i1].term.v * plant[$i1].term.i = if plant[$i1].on then plant[$i1].eta * plant[$i1].P_solar else 0.0 ($RES_SIM_4)
 // [----] end for;
 //
-// BLOCK 5: Resizable Component (status = Solve.UNPROCESSED)
-// -----------------------------------------------------------
+// BLOCK 5: Resizable Component (status = Solve.UNPROCESSED, size = 1000)
+// ------------------------------------------------------------------------
 // ### Variable:
 // 	grid.terms[$i1].i
 // ### Equation:
@@ -76,8 +76,8 @@ val(grid.P_grid, 0.0);
 // [----]   [SCAL] (1) plant[$i1].term.i + grid.terms[$i1].i = 0.0 ($RES_SIM_6)
 // [----] end for;
 //
-// BLOCK 6: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 6: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real grid.P_grid
 // ### Equation:
@@ -93,15 +93,15 @@ val(grid.P_grid, 0.0);
 //   (1) Continuous ODE Partition
 // ================================
 //
-// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED, size = 1000)
+// ----------------------------------------------------------------------------
 // ### Variable:
 // 	Real[1000] plant.P_solar = 100.0:100.0:1e5
 // ### Equation:
 // 	[ARRY] (1000) plant.P_solar = 100.0:100.0:1e5 ($RES_BND_10)
 //
-// BLOCK 2: Resizable Component (status = Solve.UNPROCESSED)
-// -----------------------------------------------------------
+// BLOCK 2: Resizable Component (status = Solve.UNPROCESSED, size = 1000)
+// ------------------------------------------------------------------------
 // ### Variable:
 // 	plant[$i1].on
 // ### Equation:
@@ -110,8 +110,8 @@ val(grid.P_grid, 0.0);
 // [----]   [SCAL] (1) plant[$i1].on = true ($RES_BND_9)
 // [----] end for;
 //
-// BLOCK 3: Resizable Component (status = Solve.UNPROCESSED)
-// -----------------------------------------------------------
+// BLOCK 3: Resizable Component (status = Solve.UNPROCESSED, size = 1000)
+// ------------------------------------------------------------------------
 // ### Variable:
 // 	plant[$i1].term.v
 // ### Equation:
@@ -120,8 +120,8 @@ val(grid.P_grid, 0.0);
 // [----]   [SCAL] (1) plant[$i1].term.v = grid.V ($RES_SIM_2)
 // [----] end for;
 //
-// BLOCK 4: Resizable Component (status = Solve.UNPROCESSED)
-// -----------------------------------------------------------
+// BLOCK 4: Resizable Component (status = Solve.UNPROCESSED, size = 1000)
+// ------------------------------------------------------------------------
 // ### Variable:
 // 	plant[$i1].term.i
 // ### Equation:
@@ -130,8 +130,8 @@ val(grid.P_grid, 0.0);
 // [----]   [SCAL] (1) plant[$i1].term.v * plant[$i1].term.i = if plant[$i1].on then plant[$i1].eta * plant[$i1].P_solar else 0.0 ($RES_SIM_4)
 // [----] end for;
 //
-// BLOCK 5: Resizable Component (status = Solve.UNPROCESSED)
-// -----------------------------------------------------------
+// BLOCK 5: Resizable Component (status = Solve.UNPROCESSED, size = 1000)
+// ------------------------------------------------------------------------
 // ### Variable:
 // 	grid.terms[$i1].i
 // ### Equation:
@@ -140,8 +140,8 @@ val(grid.P_grid, 0.0);
 // [----]   [SCAL] (1) plant[$i1].term.i + grid.terms[$i1].i = 0.0 ($RES_SIM_6)
 // [----] end for;
 //
-// BLOCK 6: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 6: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real grid.P_grid
 // ### Equation:
@@ -157,8 +157,8 @@ val(grid.P_grid, 0.0);
 //   (1) Continuous INI Partition
 // ================================
 //
-// BLOCK 1: Resizable Component (status = Solve.UNPROCESSED)
-// -----------------------------------------------------------
+// BLOCK 1: Resizable Component (status = Solve.UNPROCESSED, size = 1000)
+// ------------------------------------------------------------------------
 // ### Variable:
 // 	plant[$i1].on
 // ### Equation:
@@ -167,15 +167,15 @@ val(grid.P_grid, 0.0);
 // [----]   [SCAL] (1) plant[$i1].on = true ($RES_BND_9)
 // [----] end for;
 //
-// BLOCK 2: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 2: Single Strong Component (status = Solve.UNPROCESSED, size = 1000)
+// ----------------------------------------------------------------------------
 // ### Variable:
 // 	Real[1000] plant.P_solar = 100.0:100.0:1e5
 // ### Equation:
 // 	[ARRY] (1000) plant.P_solar = 100.0:100.0:1e5 ($RES_BND_10)
 //
-// BLOCK 3: Resizable Component (status = Solve.UNPROCESSED)
-// -----------------------------------------------------------
+// BLOCK 3: Resizable Component (status = Solve.UNPROCESSED, size = 1000)
+// ------------------------------------------------------------------------
 // ### Variable:
 // 	plant[$i1].term.v
 // ### Equation:
@@ -184,8 +184,8 @@ val(grid.P_grid, 0.0);
 // [----]   [SCAL] (1) plant[$i1].term.v = grid.V ($RES_SIM_2)
 // [----] end for;
 //
-// BLOCK 4: Resizable Component (status = Solve.UNPROCESSED)
-// -----------------------------------------------------------
+// BLOCK 4: Resizable Component (status = Solve.UNPROCESSED, size = 1000)
+// ------------------------------------------------------------------------
 // ### Variable:
 // 	plant[$i1].term.i
 // ### Equation:
@@ -194,8 +194,8 @@ val(grid.P_grid, 0.0);
 // [----]   [SCAL] (1) plant[$i1].term.v * plant[$i1].term.i = if plant[$i1].on then plant[$i1].eta * plant[$i1].P_solar else 0.0 ($RES_SIM_4)
 // [----] end for;
 //
-// BLOCK 5: Resizable Component (status = Solve.UNPROCESSED)
-// -----------------------------------------------------------
+// BLOCK 5: Resizable Component (status = Solve.UNPROCESSED, size = 1000)
+// ------------------------------------------------------------------------
 // ### Variable:
 // 	grid.terms[$i1].i
 // ### Equation:
@@ -204,8 +204,8 @@ val(grid.P_grid, 0.0);
 // [----]   [SCAL] (1) plant[$i1].term.i + grid.terms[$i1].i = 0.0 ($RES_SIM_6)
 // [----] end for;
 //
-// BLOCK 6: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 6: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real grid.P_grid
 // ### Equation:
@@ -222,16 +222,16 @@ val(grid.P_grid, 0.0);
 // ================================
 //
 // --- Alias of INI[1 | 2] ---
-// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
+// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT, size = 1000)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real[1000] plant.P_solar = 100.0:100.0:1e5
 // ### Equation:
 // 	[ARRY] (1000) plant.P_solar = 100.0:100.0:1e5 ($RES_BND_10)
 //
 // --- Alias of INI[1 | 1] ---
-// BLOCK 2: Resizable Component (status = Solve.EXPLICIT)
-// --------------------------------------------------------
+// BLOCK 2: Resizable Component (status = Solve.EXPLICIT, size = 1000)
+// ---------------------------------------------------------------------
 // ### Variable:
 // 	plant[$i1].on
 // ### Equation:
@@ -241,8 +241,8 @@ val(grid.P_grid, 0.0);
 // [----] end for;
 //
 // --- Alias of INI[1 | 3] ---
-// BLOCK 3: Resizable Component (status = Solve.EXPLICIT)
-// --------------------------------------------------------
+// BLOCK 3: Resizable Component (status = Solve.EXPLICIT, size = 1000)
+// ---------------------------------------------------------------------
 // ### Variable:
 // 	plant[$i1].term.v
 // ### Equation:
@@ -252,8 +252,8 @@ val(grid.P_grid, 0.0);
 // [----] end for;
 //
 // --- Alias of INI[1 | 4] ---
-// BLOCK 4: Resizable Component (status = Solve.EXPLICIT)
-// --------------------------------------------------------
+// BLOCK 4: Resizable Component (status = Solve.EXPLICIT, size = 1000)
+// ---------------------------------------------------------------------
 // ### Variable:
 // 	plant[$i1].term.i
 // ### Equation:
@@ -263,8 +263,8 @@ val(grid.P_grid, 0.0);
 // [----] end for;
 //
 // --- Alias of INI[1 | 5] ---
-// BLOCK 5: Resizable Component (status = Solve.EXPLICIT)
-// --------------------------------------------------------
+// BLOCK 5: Resizable Component (status = Solve.EXPLICIT, size = 1000)
+// ---------------------------------------------------------------------
 // ### Variable:
 // 	grid.terms[$i1].i
 // ### Equation:
@@ -274,8 +274,8 @@ val(grid.P_grid, 0.0);
 // [----] end for;
 //
 // --- Alias of INI[1 | 6] ---
-// BLOCK 6: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
+// BLOCK 6: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
 // ### Variable:
 // 	Real grid.P_grid
 // ### Equation:
@@ -291,8 +291,8 @@ val(grid.P_grid, 0.0);
 //   (1) Continuous INI Partition
 // ================================
 //
-// BLOCK 1: Resizable Component (status = Solve.EXPLICIT)
-// --------------------------------------------------------
+// BLOCK 1: Resizable Component (status = Solve.EXPLICIT, size = 1000)
+// ---------------------------------------------------------------------
 // ### Variable:
 // 	plant[$i1].on
 // ### Equation:
@@ -301,15 +301,15 @@ val(grid.P_grid, 0.0);
 // [----]   [SCAL] (1) plant[$i1].on = true ($RES_BND_9)
 // [----] end for;
 //
-// BLOCK 2: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
+// BLOCK 2: Single Strong Component (status = Solve.EXPLICIT, size = 1000)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real[1000] plant.P_solar = 100.0:100.0:1e5
 // ### Equation:
 // 	[ARRY] (1000) plant.P_solar = 100.0:100.0:1e5 ($RES_BND_10)
 //
-// BLOCK 3: Resizable Component (status = Solve.EXPLICIT)
-// --------------------------------------------------------
+// BLOCK 3: Resizable Component (status = Solve.EXPLICIT, size = 1000)
+// ---------------------------------------------------------------------
 // ### Variable:
 // 	plant[$i1].term.v
 // ### Equation:
@@ -318,8 +318,8 @@ val(grid.P_grid, 0.0);
 // [----]   [SCAL] (1) plant[$i1].term.v = grid.V ($RES_SIM_2)
 // [----] end for;
 //
-// BLOCK 4: Resizable Component (status = Solve.EXPLICIT)
-// --------------------------------------------------------
+// BLOCK 4: Resizable Component (status = Solve.EXPLICIT, size = 1000)
+// ---------------------------------------------------------------------
 // ### Variable:
 // 	plant[$i1].term.i
 // ### Equation:
@@ -328,8 +328,8 @@ val(grid.P_grid, 0.0);
 // [----]   [SCAL] (1) plant[$i1].term.i = (if plant[$i1].on then plant[$i1].eta * plant[$i1].P_solar else 0.0) / plant[$i1].term.v ($RES_SIM_4)
 // [----] end for;
 //
-// BLOCK 5: Resizable Component (status = Solve.EXPLICIT)
-// --------------------------------------------------------
+// BLOCK 5: Resizable Component (status = Solve.EXPLICIT, size = 1000)
+// ---------------------------------------------------------------------
 // ### Variable:
 // 	grid.terms[$i1].i
 // ### Equation:
@@ -338,8 +338,8 @@ val(grid.P_grid, 0.0);
 // [----]   [SCAL] (1) grid.terms[$i1].i = -plant[$i1].term.i ($RES_SIM_6)
 // [----] end for;
 //
-// BLOCK 6: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
+// BLOCK 6: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
 // ### Variable:
 // 	Real grid.P_grid
 // ### Equation:
