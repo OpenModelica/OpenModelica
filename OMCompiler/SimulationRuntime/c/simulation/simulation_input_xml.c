@@ -972,6 +972,9 @@ void read_input_xml(MODEL_DATA* modelData,
         modelData->modelGUID);
   }
 
+  // Read sizes before using them
+  read_model_description_sizes(mi->md, modelData);
+
   /* Update inital values from override flag */
   override = omc_flagValue[FLAG_OVERRIDE];
   overrideFile = omc_flagValue[FLAG_OVERRIDE_FILE];
@@ -982,8 +985,6 @@ void read_input_xml(MODEL_DATA* modelData,
 
   read_value_string(findHashStringString(mi->md,"OPENMODELICAHOME"), &simulationInfo->OPENMODELICAHOME);
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "OPENMODELICAHOME: %s", simulationInfo->OPENMODELICAHOME);
-
-  read_model_description_sizes(mi->md, modelData);
 
   allocModelDataVars(modelData, threadData);
 
@@ -1314,48 +1315,48 @@ modelica_boolean doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const cha
     reCalcStepSize = changedStartStop && !changedStepSize;
 
     // override all found!
-    for(i=0; i<modelData->nStates; i++) {
+    for(i=0; i<modelData->nStatesArray; i++) {
       singleOverride(mOverrides, &mOverridesUses, mi->rSta, i, 0);
       singleOverride(mOverrides, &mOverridesUses, mi->rDer, i, 0);
     }
-    for(i=0; i<(modelData->nVariablesReal - 2*modelData->nStates); i++) {
+    for(i=0; i<(modelData->nVariablesRealArray - 2*modelData->nStatesArray); i++) {
       singleOverride(mOverrides, &mOverridesUses, mi->rAlg, i, 0);
     }
-    for(i=0; i<modelData->nVariablesInteger; i++) {
+    for(i=0; i<modelData->nVariablesIntegerArray; i++) {
       singleOverride(mOverrides, &mOverridesUses, mi->iAlg, i, 0);
     }
-    for(i=0; i<modelData->nVariablesBoolean; i++) {
+    for(i=0; i<modelData->nVariablesBooleanArray; i++) {
       singleOverride(mOverrides, &mOverridesUses, mi->bAlg, i, 0);
     }
-    for(i=0; i<modelData->nVariablesString; i++) {
+    for(i=0; i<modelData->nVariablesStringArray; i++) {
       singleOverride(mOverrides, &mOverridesUses, mi->sAlg, i, 0);
     }
-    for(i=0; i<modelData->nParametersReal; i++) {
+    for(i=0; i<modelData->nParametersRealArray; i++) {
       // TODO: only allow to override primary parameters
       singleOverride(mOverrides, &mOverridesUses, mi->rPar, i, 1);
     }
-    for(i=0; i<modelData->nParametersInteger; i++) {
+    for(i=0; i<modelData->nParametersIntegerArray; i++) {
       // TODO: only allow to override primary parameters
       singleOverride(mOverrides, &mOverridesUses, mi->iPar, i, 1);
     }
-    for(i=0; i<modelData->nParametersBoolean; i++) {
+    for(i=0; i<modelData->nParametersBooleanArray; i++) {
       // TODO: only allow to override primary parameters
       singleOverride(mOverrides, &mOverridesUses, mi->bPar, i, 0);
     }
-    for(i=0; i<modelData->nParametersString; i++) {
+    for(i=0; i<modelData->nParametersStringArray; i++) {
       // TODO: only allow to override primary parameters
       singleOverride(mOverrides, &mOverridesUses, mi->sPar, i, 0);
     }
-    for(i=0; i<modelData->nAliasReal; i++) {
+    for(i=0; i<modelData->nAliasRealArray; i++) {
       singleOverride(mOverrides, &mOverridesUses, mi->rAli, i, 0);
     }
-    for(i=0; i<modelData->nAliasInteger; i++) {
+    for(i=0; i<modelData->nAliasIntegerArray; i++) {
       singleOverride(mOverrides, &mOverridesUses, mi->iAli, i, 0);
     }
-    for(i=0; i<modelData->nAliasBoolean; i++) {
+    for(i=0; i<modelData->nAliasBooleanArray; i++) {
       singleOverride(mOverrides, &mOverridesUses, mi->bAli, i, 0);
     }
-    for(i=0; i<modelData->nAliasString; i++) {
+    for(i=0; i<modelData->nAliasStringArray; i++) {
       singleOverride(mOverrides, &mOverridesUses, mi->sAli, i, 0);
     }
 
