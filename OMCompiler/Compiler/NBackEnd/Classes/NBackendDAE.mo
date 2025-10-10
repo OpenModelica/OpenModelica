@@ -1182,39 +1182,43 @@ protected
   end lowerIfBranchBody;
 
   function lowerWhenEquation
-    input FEquation frontend_equation;
+    input FEquation frontend_eq;
     input Boolean init;
     output list<Pointer<Equation>> backend_equations;
   algorithm
-    backend_equations := match frontend_equation
+    backend_equations := match frontend_eq
       local
-        list<FEquation.Branch> branches;
-        DAE.ElementSource source;
-        Expression condition, message, level;
         BEquation.WhenEquationBody whenEqBody;
         list<BEquation.WhenEquationBody> bodies;
         EquationAttributes attr;
+        Call call;
+        Algorithm alg;
 
-      case FEquation.WHEN(branches = branches, source = source)
-        algorithm
-          // When equation inside initial actually not allowed. Throw error?
-          SOME(whenEqBody) := lowerWhenEquationBody(branches);
-          bodies := BEquation.WhenEquationBody.split(whenEqBody);
+      case FEquation.WHEN() algorithm
+        // When equation inside initial actually not allowed. Throw error?
+        SOME(whenEqBody) := lowerWhenEquationBody(frontend_eq.branches);
+        bodies := BEquation.WhenEquationBody.split(whenEqBody);
       then list(Pointer.create(BEquation.WHEN_EQUATION(
         size    = BEquation.WhenEquationBody.size(b),
         body    = b,
-        source  = source,
+        source  = frontend_eq.source,
         attr    = EquationAttributes.default(if BEquation.WhenEquationBody.size(b) > 0 then EquationKind.DISCRETE else EquationKind.EMPTY, init)
       )) for b in bodies);
 
-      case FEquation.ASSERT(condition = condition, message = message, level = level, source = source)
-        algorithm
-          attr := EquationAttributes.default(EquationKind.EMPTY, init);
-          whenEqBody := BEquation.WHEN_EQUATION_BODY(condition, {BEquation.ASSERT(condition, message, level, source)}, NONE());
-      then {Pointer.create(BEquation.WHEN_EQUATION(0, whenEqBody, source, attr))};
+      case FEquation.ASSERT(condition = Expression.CALL(call = call)) guard(Call.isNamed(call, "noEvent")) algorithm
+        attr := EquationAttributes.default(EquationKind.EMPTY, init);
+        alg := Algorithm.ALGORITHM({Statement.ASSERT(frontend_eq.condition, frontend_eq.message, frontend_eq.level, frontend_eq.source)},
+          {}, {}, frontend_eq.scope, frontend_eq.source);
+      then {lowerAlgorithm(alg, init)};
+
+      case FEquation.ASSERT() algorithm
+        attr := EquationAttributes.default(EquationKind.EMPTY, init);
+        whenEqBody := BEquation.WHEN_EQUATION_BODY(frontend_eq.condition,
+          {BEquation.ASSERT(frontend_eq.condition, frontend_eq.message, frontend_eq.level, frontend_eq.source)}, NONE());
+      then {Pointer.create(BEquation.WHEN_EQUATION(0, whenEqBody, frontend_eq.source, attr))};
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + FEquation.toString(frontend_equation)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + FEquation.toString(frontend_eq)});
       then fail();
 
     end match;

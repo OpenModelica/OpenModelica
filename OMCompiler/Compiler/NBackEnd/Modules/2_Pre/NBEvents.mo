@@ -648,7 +648,7 @@ public
 
         else algorithm
           iter := Iterator.fromFrames(listReverse(frames));
-          stmt := Statement.mapExp(stmt, function Expression.mapReverse(
+          stmt := Statement.mapExp(stmt, function Expression.fakeMap(
               func = function collectEventsTraverse(
                 bucket_ptr  = bucket_ptr,
                 iter        = iter,
