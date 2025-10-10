@@ -1544,8 +1544,9 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
       GC_asprintf(&data->modelData->modelDataXml.fileName, "%s/<%fileNamePrefix%>_info.json", data->modelData->resourcesDir);
       >>
     %>
-    data->modelData->nStatesArray = <%varInfo.numStateVars%>;
     data->modelData->runTestsuite = <%if Testsuite.isRunning() then "1" else "0"%>;
+    data->modelData->nStatesArray = <%varInfo.numStateVars%>;
+    data->modelData->nDiscreteReal = <%varInfo.numDiscreteReal%>;
     data->modelData->nVariablesRealArray = <%nVariablesReal(varInfo)%>;
     data->modelData->nVariablesIntegerArray = <%varInfo.numIntAlgVars%>;
     data->modelData->nVariablesBooleanArray = <%varInfo.numBoolAlgVars%>;
@@ -1562,7 +1563,6 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nAliasInteger = <%varInfo.numIntAliasVars%>;
     data->modelData->nAliasBoolean = <%varInfo.numBoolAliasVars%>;
     data->modelData->nAliasString = <%varInfo.numStringAliasVars%>;
-    data->modelData->nDiscreteReal = <%varInfo.numDiscreteReal%>;
     data->modelData->nInputVars = <%varInfo.numInVars%>;
     data->modelData->nOutputVars = <%varInfo.numOutVars%>;
     data->modelData->nZeroCrossings = <%varInfo.numZeroCrossings%>;

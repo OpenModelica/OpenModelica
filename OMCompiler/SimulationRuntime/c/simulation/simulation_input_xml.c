@@ -680,6 +680,7 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
     if (omc_flag[FLAG_IDAS] && 0 == strcmp(debugName, "real sensitivities")) {
       if (0 == strcmp(findHashStringString(v, "isValueChangeable"), "true")) {
         long *it = findHashStringLongPtr(*mapAliasParam, info->name);
+        // TODO: This should not be filled here. It's part of simulation info, not model data.
         simulationInfo->sensitivityParList[*sensitivityParIndex] = *it;
         infoStreamPrint(OMC_LOG_SOLVER, 0, "%d. sensitivity parameter %s at index %d", *sensitivityParIndex, info->name, simulationInfo->sensitivityParList[*sensitivityParIndex]);
         (*sensitivityParIndex)++;
@@ -869,16 +870,17 @@ void read_model_description_sizes(omc_ModelDescription *md, MODEL_DATA *modelDat
  *
  * Fill if parameter is negated, its ID, and alias type (variable, parameter, time).
  *
+ * @param alias           Alias variable to fill with values from hash map.
  * @param aliasHashMap    Alias hash map.
  * @param nAliasVariables Number of alias variables in hash map.
  * @param mapAlias        Hash map for alias variables.
  * @param mapAliasParam   Hash map for alias parameters.
- * @return DATA_ALIAS*    Alias variable filled with values from hash map. Free with `omc_alloc_interface.free_uncollectable`
  */
-DATA_ALIAS* read_alias_var(omc_ModelVariables *aliasHashMap,
-                           unsigned long nAliasVariables,
-                           hash_string_long *mapAlias,
-                           hash_string_long *mapAliasParam)
+void read_alias_var(DATA_ALIAS* alias,
+                    omc_ModelVariables *aliasHashMap,
+                    unsigned long nAliasVariables,
+                    hash_string_long *mapAlias,
+                    hash_string_long *mapAliasParam)
 {
   // Assert nAliasVariables has correct size
   size_t num_alias_vars_xml = HASH_COUNT(aliasHashMap);
@@ -886,8 +888,6 @@ DATA_ALIAS* read_alias_var(omc_ModelVariables *aliasHashMap,
 
   long *it, *itParam;
   const char *aliasTmp = NULL;
-  DATA_ALIAS* alias = (DATA_ALIAS*) omc_alloc_interface.malloc_uncollectable(nAliasVariables * sizeof(DATA_ALIAS));
-  assertStreamPrint(NULL, nAliasVariables == 0 || alias != NULL, "Out of memory");
 
   for(unsigned long i=0; i < nAliasVariables; i++)
   {
@@ -925,8 +925,6 @@ DATA_ALIAS* read_alias_var(omc_ModelVariables *aliasHashMap,
     free((char*)aliasTmp);
     aliasTmp = NULL;
   }
-
-  return alias;
 }
 
 /**
@@ -1002,19 +1000,23 @@ void read_input_xml(MODEL_DATA* modelData,
   read_variables(simulationInfo, T_STRING,  modelData->stringParameterData,  mi->sPar, "string parameters",      0,                    modelData->nParametersStringArray,                     &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
 
   if (omc_flag[FLAG_IDAS]) {
+    /* allocate memory for sensitivity analysis */
+    simulationInfo->sensitivityParList = (int*) calloc(modelData->nSensitivityParamVars, sizeof(int));
+    simulationInfo->sensitivityMatrix = (modelica_real*) calloc(modelData->nSensitivityVars - modelData->nSensitivityParamVars, sizeof(modelica_real));
+
     // TODO: We also need nSensitivityVarsArray
     read_variables(simulationInfo, T_REAL, modelData->realSensitivityData, mi->rSen, "real sensitivities", 0, modelData->nSensitivityVars, &mapAliasSen, &mapAliasParam, &sensitivityParIndex);
   }
 
   /* Read all alias variables */
   infoStreamPrint(OMC_LOG_DEBUG, 0, "Read XML file for real alias vars");
-  modelData->realAlias = read_alias_var(mi->rAli, modelData->nAliasRealArray, mapAlias, mapAliasParam);
+  read_alias_var(modelData->realAlias, mi->rAli, modelData->nAliasRealArray, mapAlias, mapAliasParam);
   infoStreamPrint(OMC_LOG_DEBUG, 0, "Read XML file for integer alias vars");
-  modelData->integerAlias = read_alias_var(mi->iAli, modelData->nAliasIntegerArray, mapAlias, mapAliasParam);
+  read_alias_var(modelData->integerAlias, mi->iAli, modelData->nAliasIntegerArray, mapAlias, mapAliasParam);
   infoStreamPrint(OMC_LOG_DEBUG, 0, "Read XML file for boolean alias vars");
-  modelData->booleanAlias = read_alias_var(mi->bAli, modelData->nAliasBooleanArray, mapAlias, mapAliasParam);
+  read_alias_var(modelData->booleanAlias, mi->bAli, modelData->nAliasBooleanArray, mapAlias, mapAliasParam);
   infoStreamPrint(OMC_LOG_DEBUG, 0, "Read XML file for string alias vars");
-  modelData->stringAlias = read_alias_var(mi->sAli, modelData->nAliasStringArray, mapAlias, mapAliasParam);
+  read_alias_var(modelData->stringAlias, mi->sAli, modelData->nAliasStringArray, mapAlias, mapAliasParam);
 
   calculateAllScalarLength(modelData);
 
