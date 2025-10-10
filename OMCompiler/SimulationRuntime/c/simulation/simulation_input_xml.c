@@ -1097,6 +1097,56 @@ static const char* getOverrideValue(omc_CommandLineOverrides *mOverrides, omc_Co
 }
 
 /**
+ * @brief Check override and do override.
+ *
+ * Overwrite start value if variable is changeable. Otherwise add it to
+ * `mOverridesUses`.
+ *
+ * @param mOverrides            Command line overrides.
+ * @param mOverridesUses
+ * @param variables             Hash map with variables to check override for.
+ * @param index                 Index of variable in map `variables`.
+ * @param warn_small_override   Issue warning if overriding small value or zero if set to `1`.
+ */
+static void singleOverride(omc_CommandLineOverrides *mOverrides,
+                           omc_CommandLineOverridesUses **mOverridesUses,
+                           omc_ModelVariables *variables,
+                           size_t index,
+                           int warn_small_override)
+{
+  if (findHashStringStringNull(mOverrides, findHashStringString(*findHashLongVar(variables, index), "name")))
+  {
+    if (0 == strcmp(findHashStringString(*findHashLongVar(variables, index), "isValueChangeable"), "true"))
+    {
+      infoStreamPrint(OMC_LOG_SOLVER, 0,
+                      "override %s = %s",
+                      findHashStringString(*findHashLongVar(variables, index), "name"),
+                      getOverrideValue(mOverrides, mOverridesUses, findHashStringString(*findHashLongVar(variables, index), "name")));
+      if (warn_small_override && fabs(atof(getOverrideValue(mOverrides, mOverridesUses, findHashStringString(*findHashLongVar(variables, index), "name")))) < 1e-6) {
+        warningStreamPrint(OMC_LOG_STDOUT, 0,
+                           "You are overriding %s with a small value or zero.\n"\
+                           "This could lead to numerically dirty solutions or divisions by zero if not tearingStrictness=veryStrict.",
+                           findHashStringString(*findHashLongVar(variables, index), "name"));
+      }
+      addHashStringString(
+        findHashLongVar(variables, index),
+        "start",
+        getOverrideValue(mOverrides, mOverridesUses, findHashStringString(*findHashLongVar(variables, index), "name")));
+    }
+    else
+    {
+      addHashStringLong(
+        mOverridesUses,
+        findHashStringString(*findHashLongVar(variables, index), "name"), OMC_OVERRIDE_USED);
+      warningStreamPrint(OMC_LOG_STDOUT, 0,
+                         "It is not possible to override the following quantity: %s\n"\
+                         "It seems to be structural, final, protected or evaluated or has a non-constant binding.",
+                         findHashStringString(*findHashLongVar(variables, index), "name"));
+    }
+  }
+}
+
+/**
  * @brief Read override values from simulation flags `-override` and `-overrideFile` and update variables.
  *
  * Return if step sizes needs to be re-calculated because start or stop time was changed, but step size wasn't changed.
@@ -1263,64 +1313,50 @@ modelica_boolean doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const cha
     }
     reCalcStepSize = changedStartStop && !changedStepSize;
 
-    #define CHECK_OVERRIDE(v,b) \
-      if (findHashStringStringNull(mOverrides, findHashStringString(*findHashLongVar(mi->v,i),"name"))) { \
-        if (0 == strcmp(findHashStringString(*findHashLongVar(mi->v,i), "isValueChangeable"), "true")){ \
-          infoStreamPrint(OMC_LOG_SOLVER, 0, "override %s = %s", findHashStringString(*findHashLongVar(mi->v,i),"name"), getOverrideValue(mOverrides, &mOverridesUses, findHashStringString(*findHashLongVar(mi->v,i),"name"))); \
-          if (b && fabs(atof(getOverrideValue(mOverrides, &mOverridesUses, findHashStringString(*findHashLongVar(mi->v,i),"name")))) < 1e-6) \
-            warningStreamPrint(OMC_LOG_STDOUT, 0, "You are overriding %s with a small value or zero.\nThis could lead to numerically dirty solutions or divisions by zero if not tearingStrictness=veryStrict.", findHashStringString(*findHashLongVar(mi->v,i),"name")); \
-          addHashStringString(findHashLongVar(mi->v,i), "start", getOverrideValue(mOverrides, &mOverridesUses, findHashStringString(*findHashLongVar(mi->v,i),"name"))); \
-        } \
-        else{ \
-          addHashStringLong(&mOverridesUses, findHashStringString(*findHashLongVar(mi->v,i),"name"), OMC_OVERRIDE_USED); \
-          warningStreamPrint(OMC_LOG_STDOUT, 0, "It is not possible to override the following quantity: %s\nIt seems to be structural, final, protected or evaluated or has a non-constant binding.", findHashStringString(*findHashLongVar(mi->v,i),"name")); \
-        } \
-      }
-
     // override all found!
     for(i=0; i<modelData->nStates; i++) {
-      CHECK_OVERRIDE(rSta,0);
-      CHECK_OVERRIDE(rDer,0);
+      singleOverride(mOverrides, &mOverridesUses, mi->rSta, i, 0);
+      singleOverride(mOverrides, &mOverridesUses, mi->rDer, i, 0);
     }
     for(i=0; i<(modelData->nVariablesReal - 2*modelData->nStates); i++) {
-      CHECK_OVERRIDE(rAlg,0);
+      singleOverride(mOverrides, &mOverridesUses, mi->rAlg, i, 0);
     }
     for(i=0; i<modelData->nVariablesInteger; i++) {
-      CHECK_OVERRIDE(iAlg,0);
+      singleOverride(mOverrides, &mOverridesUses, mi->iAlg, i, 0);
     }
     for(i=0; i<modelData->nVariablesBoolean; i++) {
-      CHECK_OVERRIDE(bAlg,0);
+      singleOverride(mOverrides, &mOverridesUses, mi->bAlg, i, 0);
     }
     for(i=0; i<modelData->nVariablesString; i++) {
-      CHECK_OVERRIDE(sAlg,0);
+      singleOverride(mOverrides, &mOverridesUses, mi->sAlg, i, 0);
     }
     for(i=0; i<modelData->nParametersReal; i++) {
       // TODO: only allow to override primary parameters
-      CHECK_OVERRIDE(rPar,1);
+      singleOverride(mOverrides, &mOverridesUses, mi->rPar, i, 1);
     }
     for(i=0; i<modelData->nParametersInteger; i++) {
       // TODO: only allow to override primary parameters
-      CHECK_OVERRIDE(iPar,1);
+      singleOverride(mOverrides, &mOverridesUses, mi->iPar, i, 1);
     }
     for(i=0; i<modelData->nParametersBoolean; i++) {
       // TODO: only allow to override primary parameters
-      CHECK_OVERRIDE(bPar,0);
+      singleOverride(mOverrides, &mOverridesUses, mi->bPar, i, 0);
     }
     for(i=0; i<modelData->nParametersString; i++) {
       // TODO: only allow to override primary parameters
-      CHECK_OVERRIDE(sPar,0);
+      singleOverride(mOverrides, &mOverridesUses, mi->sPar, i, 0);
     }
     for(i=0; i<modelData->nAliasReal; i++) {
-      CHECK_OVERRIDE(rAli,0);
+      singleOverride(mOverrides, &mOverridesUses, mi->rAli, i, 0);
     }
     for(i=0; i<modelData->nAliasInteger; i++) {
-      CHECK_OVERRIDE(iAli,0);
+      singleOverride(mOverrides, &mOverridesUses, mi->iAli, i, 0);
     }
     for(i=0; i<modelData->nAliasBoolean; i++) {
-      CHECK_OVERRIDE(bAli,0);
+      singleOverride(mOverrides, &mOverridesUses, mi->bAli, i, 0);
     }
     for(i=0; i<modelData->nAliasString; i++) {
-      CHECK_OVERRIDE(sAli,0);
+      singleOverride(mOverrides, &mOverridesUses, mi->sAli, i, 0);
     }
 
     // give a warning if an override is not used #3204
