@@ -195,7 +195,8 @@ public
 
       case RESIZABLE_COMPONENT() algorithm
         str := StringUtil.headline_3("BLOCK" + indexStr + ": Resizable Component (status = " + Solve.statusString(comp.status) + ")");
-        str := str + "### Variable:\n\t" + ComponentRef.toString(comp.var_cref) + "\n";
+        str := str + "### Variable Cref:\n\t" + ComponentRef.toString(comp.var_cref) + "\n";
+        str := str + "### Variable Slice:\n" + BVariable.pointerToString(Slice.getT(comp.var)) + "\n";
         str := str + "### Equation:\n\t" + Equation.pointerToString(Slice.getT(comp.eqn)) + "\n";
       then str;
 
@@ -758,6 +759,20 @@ public
     end match;
   end getVariables;
 
+  function getVarCref
+    input StrongComponent comp;
+    output ComponentRef var_cref;
+  algorithm
+    var_cref := match comp
+      case SLICED_COMPONENT()   then comp.var_cref;
+      case RESIZABLE_COMPONENT()then comp.var_cref;
+      case GENERIC_COMPONENT() then comp.var_cref;
+      case ALIAS()              then getVarCref(comp.original);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
+      then fail();
+    end match;
+  end getVarCref;
 
   function getEquationPointers
     input StrongComponent comp;

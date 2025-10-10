@@ -1042,51 +1042,23 @@ protected
 
   // for saving terms for the same lhs in a map
   type ExpressionList = list<Expression>;
-
-  // Helper: for each base var v, ensure base and scalar crefs exist in adjoint_map
-  // and that a scalar pDer/tmp var exists exactly once.
-  function addScalarsToAdjointMapAndEnsurePDer
+  
+  // Add all variables in vars to the adjoint map with empty term lists if not already present.
+  function addVarsToAdjointMap
     input output UnorderedMap<ComponentRef, ExpressionList> adjoint_map;
     input output list<Pointer<Variable>> vars;
     input String newName;
     input Boolean isTmp;
   protected
-    VariablePointers vp_single;
-    list<ComponentRef> scalarCrefs;
-    Boolean exists;
-    Pointer<Variable> v, pExisting, p;
-    ComponentRef baseCref, scalarCref;
+    ComponentRef baseCref;
   algorithm
     for v in vars loop
       baseCref := BVariable.getVarName(v);
       if not UnorderedMap.contains(baseCref, adjoint_map) then
         UnorderedMap.addNew(baseCref, {}, adjoint_map);
       end if;
-
-      // Expand to scalar components and add them as keys too
-      vp_single := VariablePointers.fromList({v});
-      for scalarCref in VariablePointers.getScalarVarNames(vp_single) loop
-        if not UnorderedMap.contains(scalarCref, adjoint_map) then
-          UnorderedMap.addNew(scalarCref, {}, adjoint_map);
-        end if;
-
-        // ensure scalar pDer/tmp variable exists exactly once
-        exists := false;
-        for pExisting in vars loop
-          if ComponentRef.isEqual(BVariable.getVarName(pExisting), scalarCref) then
-            exists := true;
-            break;
-          end if;
-        end for;
-
-        if not exists then
-          // Create pDer var for scalar element and add to the corresponding list
-          (_, p) := BVariable.makePDerVar(scalarCref, newName, isTmp);
-          vars := p :: vars;
-        end if;
-      end for;
     end for;
-  end addScalarsToAdjointMapAndEnsurePDer;
+  end addVarsToAdjointMap;
 
   function jacobianSymbolicAdjoint extends Module.jacobianInterface;
   protected
@@ -1169,11 +1141,8 @@ protected
 
     // // create empty adjoint map with seed vars and tmp vars as keys mapping to empty lists
     adjoint_map := UnorderedMap.new<ExpressionList>(ComponentRef.hash, ComponentRef.isEqual);
-    addScalarsToAdjointMapAndEnsurePDer(adjoint_map, res_vars, newName, false);
-    addScalarsToAdjointMapAndEnsurePDer(adjoint_map, tmp_vars, newName, true);
-
-    print("res vars after scalar addition:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(res_vars), "Res Vars") + "\n");
-    print("tmp vars after scalar addition:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(tmp_vars), "Tmp Vars") + "\n");
+    addVarsToAdjointMap(adjoint_map, res_vars, newName, false);
+    addVarsToAdjointMap(adjoint_map, tmp_vars, newName, true);
 
     print("Adjoint map before:\n" + adjointMapToString(SOME(adjoint_map)) + "\n");
     print("Diff map before:\n" + diffMapToString(diff_map) + "\n");

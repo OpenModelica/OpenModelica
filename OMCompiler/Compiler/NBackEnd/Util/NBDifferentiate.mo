@@ -51,6 +51,7 @@ public
   import NFClassTree.ClassTree;
   import Component = NFComponent;
   import ComponentRef = NFComponentRef;
+  import Dimension = NFDimension;
   import Expression = NFExpression;
   import InstContext = NFInstContext;
   import NFInstNode.{InstNode, CachedData};
@@ -208,10 +209,16 @@ public
       else
         lhsCref := ComponentRef.EMPTY();
       end if;
+      print("Diff adjoint component LHS: " + ComponentRef.toString(lhsCref) + "\n");
 
       // Update current_grad if we have a mapping for lhsCref
       if (not ComponentRef.isEmpty(lhsCref)) and Util.isSome(diff_map_opt) and UnorderedMap.contains(lhsCref, diff_map) then
         gradCref := UnorderedMap.getOrFail(lhsCref, diff_map);
+        gradCref := match comp
+          case StrongComponent.RESIZABLE_COMPONENT() then ComponentRef.copySubscripts(StrongComponent.getVarCref(comp), gradCref); // put subscript on the seed;
+          else gradCref;
+        end match;
+        print("  Found mapping to gradient cref: " + ComponentRef.toString(gradCref) + "\n");
         da := Pointer.access(diffArguments_ptr);
         da.current_grad := Expression.fromCref(gradCref);
         Pointer.update(diffArguments_ptr, da);
@@ -765,6 +772,54 @@ public
       da.adjoint_map := SOME(amap);
     end appendAdjoint;
 
+
+    // Build a 1D one-hot array of the same type as derBaseCref:
+    // zeros(n) with value placed at index idx.
+    function buildOneHotVectorAdjoint
+      input ComponentRef derBaseCref;
+      input Integer idx;                // 1-based
+      input Expression value;           // scalar element to place
+      output Option<Expression> onehot; // NONE if sizes unknown or not vector
+    protected
+      Type arrTy;
+      list<Type.Dimension> dims;
+      list<Integer> sizes;
+      Integer n, i;
+      Type elTy;
+      list<Expression> elems = {};
+    algorithm
+      // Array type of the pDER base cref
+      arrTy := ComponentRef.getSubscriptedType(derBaseCref);
+      if not Type.isArray(arrTy) then
+        onehot := NONE(); return;
+      end if;
+
+      dims := Type.arrayDims(arrTy);
+      if listLength(dims) <> 1 then
+        // Only handle simple vectors here
+        onehot := NONE(); return;
+      end if;
+
+      sizes := NFDimension.sizes(dims);
+      if listEmpty(sizes) then
+        onehot := NONE(); return;
+      end if;
+
+      n := listHead(sizes);
+      elTy := Type.arrayElementType(arrTy);
+
+      // Build [0,0,...,value,...,0]
+      for i in 1:n loop
+        elems := (if i == idx then value else Expression.makeZero(elTy)) :: elems;
+      end for;
+
+      onehot := SOME(Expression.ARRAY(
+        arrTy,
+        listArray(listReverse(elems)),
+        false /* literal array, not a view */
+      ));
+    end buildOneHotVectorAdjoint;
+
   algorithm
     // extract var pointer first to have following code more readable
     var_ptr := match exp
@@ -780,8 +835,10 @@ public
 
     (exp, diffArguments) := match (exp, diffArguments.diffType, diffArguments.diff_map)
       local
-        Expression res;
+        Expression res, adjExpr;
         UnorderedMap<ComponentRef,ComponentRef> diff_map;
+        List<Subscript> expCrefSubscripts;
+
 
       // -------------------------------------
       //    EMPTY and WILD crefs do nothing
@@ -928,19 +985,30 @@ public
         guard(not diffArguments.scalarized)
       algorithm
         strippedCref := ComponentRef.stripSubscriptsAll(exp.cref);
-        print("Differentiate Cref: " + ComponentRef.toString(exp.cref) + " stripped: " + ComponentRef.toString(strippedCref) + "\n");
+        expCrefSubscripts := ComponentRef.subscriptsAllFlat(exp.cref);
+        print("Differentiate Cref: " + ComponentRef.toString(exp.cref) + " stripped: " + ComponentRef.toString(strippedCref)
+          + " subscripts: " + List.toString(expCrefSubscripts, Subscript.toString) + "\n");
         if UnorderedMap.contains(strippedCref, diff_map) then
           // get the derivative an reapply subscripts
           derCref := UnorderedMap.getOrFail(strippedCref, diff_map);
           print("  Found in map, derCref: " + ComponentRef.toString(derCref) + "\n");
-          derCref := ComponentRef.copySubscripts(exp.cref, derCref);
-          print("  After copying subscripts: " + ComponentRef.toString(derCref) + "\n");
-          res     := Expression.fromCref(derCref);
+          res     := Expression.fromCref(ComponentRef.copySubscripts(exp.cref, derCref));
 
           if diffArguments.collectAdjoints then
-            // UnorderedMap.tryAddUpdate(derCref,
-            // function updateAdjointList(current_grad = diffArguments.current_grad), Util.getOption(diffArguments.adjoint_map));
-            appendAdjoint(derCref, diffArguments.current_grad, diffArguments);
+            //strippedCref create array from subscripts and put current_grad at the right locations
+            adjExpr := match expCrefSubscripts
+              local
+                Integer iidx;
+                Option<Expression> onehotOpt;
+              case {Subscript.INDEX(Expression.INTEGER(iidx))}
+                algorithm
+                  onehotOpt := buildOneHotVectorAdjoint(derCref, iidx, diffArguments.current_grad);
+                then (if Util.isSome(onehotOpt) then Util.getOption(onehotOpt) else diffArguments.current_grad);
+              else
+                // Fallback: keep previous behavior if not a simple literal index
+                then diffArguments.current_grad;
+            end match;
+            appendAdjoint(derCref, adjExpr, diffArguments);
           end if;
         else
           res     := Expression.makeZero(exp.ty);
@@ -1026,11 +1094,13 @@ public
 
       // handle reductions
       case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
+        print("Differentiate Reduction Call: " + Expression.toString(exp) + "\n");
         (ret, diffArguments) := differentiateReduction(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)), exp, diffArguments);
       then (ret, diffArguments);
 
       // builtin functions
       case Expression.CALL(call = call as Call.TYPED_CALL()) guard(Function.isBuiltin(call.fn)) algorithm
+        print("Differentiate Builtin Call: " + Expression.toString(exp) + "\n");
         (ret, diffArguments) := differentiateBuiltinCall(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)), exp, diffArguments);
       then (ret, diffArguments);
 
@@ -1198,9 +1268,31 @@ public
         end match;
       then ret;
 
+
+      case (Expression.CALL()) guard(name == "sum")
+      algorithm
+        arg1 := match Call.arguments(exp.call)
+          case {arg1} then arg1;
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
+          then fail();
+        end match;
+        current_grad := diffArguments.current_grad;
+        diffArguments.current_grad := Expression.CALL(Call.makeTypedCall(
+          fn          = NFBuiltinFuncs.FILL_FUNC,
+          args        = current_grad :: list(Dimension.sizeExp(d) for d in Type.arrayDims(Expression.typeOf(arg1))),
+          variability = Prefixes.variabilityMax(Expression.variability(current_grad), Expression.variability(arg1)),
+          purity      = NFPrefixes.Purity.PURE
+        ));
+        (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+
+        diffArguments.current_grad := current_grad;
+        exp.call := Call.setArguments(exp.call, {ret1});
+      then exp;
+
       // Functions with one argument that differentiate "through"
       // d/dz f(x) -> f(dx/dz)
-      case (Expression.CALL()) guard(List.contains({"sum", "pre", "noEvent", "scalar", "vector", "matrix", "diagonal", "transpose", "symmetric", "skew"}, name, stringEqual))
+      case (Expression.CALL()) guard(List.contains({"pre", "noEvent", "scalar", "vector", "matrix", "diagonal", "transpose", "symmetric", "skew"}, name, stringEqual))
       algorithm
         arg1 := match Call.arguments(exp.call)
           case {arg1} then arg1;
@@ -1216,7 +1308,6 @@ public
       // df(x,y)/dz = f(dx/dz, dy/dz)
       case (Expression.CALL()) guard(List.contains({"homotopy", "$OMC$inStreamDiv"}, name, stringEqual))
       algorithm
-        print(if boolString(runTestReverseHomotopyFD()) then "homotopy PASS" else "homotopy FAIL" + "\n");
         (arg1, arg2) := match Call.arguments(exp.call)
           case {arg1, arg2} then (arg1, arg2);
           else algorithm
