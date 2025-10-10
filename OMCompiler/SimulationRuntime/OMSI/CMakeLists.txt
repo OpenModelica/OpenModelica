@@ -1,6 +1,5 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.9)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.14)
 SET(CMAKE_VERBOSE_MAKEFILE ON)
-MESSAGE(STATUS "CMake version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}")
 
 PROJECT(OMSIBaseSimulationRuntime)
 
@@ -14,8 +13,6 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif(CMAKE_COMPILER_IS_GNUCXX)
 message(STATUS "Compiling with C flags: ${CMAKE_C_FLAGS}")
 
-
-
 if(NOT PLATFORM OR PLATFORM STREQUAL "dynamic")
   set(BUILD_SHARED_LIBS ON)
 elseif(PLATFORM STREQUAL "static")
@@ -23,15 +20,11 @@ elseif(PLATFORM STREQUAL "static")
 else()
 endif()
 
-
-
 IF(BUILD_SHARED_LIBS)
   SET(LIBSUFFIX "")
 ELSE(BUILD_SHARED_LIBS)
   SET(LIBSUFFIX "_static")
 ENDIF(BUILD_SHARED_LIBS)
-
-
 
 IF(MSVC)
   MESSAGE(STATUS "MSVC")
@@ -49,28 +42,38 @@ ELSE(MSVC)
 ENDIF(MSVC)
 message(STATUS "Libs will be installed in ${CMAKE_INSTALL_PREFIX}/${LIBINSTALLEXT}")
 
+
+# OMSIBaseSimulationRuntime interface library
+add_library(OMSIBaseSimulationRuntime INTERFACE)
+target_include_directories(OMSIBaseSimulationRuntime INTERFACE include)
+target_include_directories(OMSIBaseSimulationRuntime INTERFACE include/fmi2)
+target_include_directories(OMSIBaseSimulationRuntime INTERFACE solver/include)
+
+install(DIRECTORY include DESTINATION include/omc/omsi)
+install(DIRECTORY include/fmi2 DESTINATION include/omc/omsi/fmi2)
+
 SET(OSUBaseName ${LIBPREFIX}OMSIBase${LIBSUFFIX})
 SET(OMSISolverName ${LIBPREFIX}OMSISolver${LIBSUFFIX})
 
-include_directories ("${CMAKE_SOURCE_DIR}/include")
+include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/include")
+
 # omsi base simulation runtime
 ADD_SUBDIRECTORY(solver)
 ADD_SUBDIRECTORY(base)
 
-
 install(FILES
-  ${CMAKE_SOURCE_DIR}/include/omsi.h
-  ${CMAKE_SOURCE_DIR}/include/omsi_callbacks.h
-  ${CMAKE_SOURCE_DIR}/include/omsi_api_functions.h
+  include/omsi.h
+  include/omsi_callbacks.h
+  include/omsi_api_functions.h
   DESTINATION include/omc/omsi)
 
 install(FILES
-  ${CMAKE_SOURCE_DIR}/include/fmi2/omsi_fmi2_cs.h
-  ${CMAKE_SOURCE_DIR}/include/fmi2/omsi_fmi2_me.h
-  ${CMAKE_SOURCE_DIR}/include/fmi2/omsi_fmi2_wrapper.h
-  ${CMAKE_SOURCE_DIR}/include/fmi2/fmi2Functions.h
-  ${CMAKE_SOURCE_DIR}/include/fmi2/fmi2FunctionTypes.h
-  ${CMAKE_SOURCE_DIR}/include/fmi2/fmi2TypesPlatform.h
+  include/fmi2/omsi_fmi2_cs.h
+  include/fmi2/omsi_fmi2_me.h
+  include/fmi2/omsi_fmi2_wrapper.h
+  include/fmi2/fmi2Functions.h
+  include/fmi2/fmi2FunctionTypes.h
+  include/fmi2/fmi2TypesPlatform.h
   DESTINATION include/omc/omsi/fmi2/)
 
 # uninstall target
