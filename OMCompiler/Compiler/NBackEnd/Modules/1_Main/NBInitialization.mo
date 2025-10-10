@@ -394,6 +394,7 @@ public
         end if;
       else
         for c_var in BVariable.getRecordChildren(var) loop
+          BVariable.setBindingAsStart(c_var);
           (parameter_eqs, initial_param_vars) := createParameterEquation(c_var, new_iters, idx, parameter_eqs, initial_param_vars);
         end for;
       end if;
