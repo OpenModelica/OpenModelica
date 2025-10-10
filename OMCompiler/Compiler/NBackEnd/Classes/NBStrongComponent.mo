@@ -170,49 +170,50 @@ public
     input Integer index = -1    "negative indices will not be printed";
     output String str;
   protected
+    Integer s = StrongComponent.size(comp, true);
     String indexStr = if index > 0 then " " + intString(index) else "";
   algorithm
     str := match comp
 
       case SINGLE_COMPONENT() algorithm
-        str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Strong Component (status = " + Solve.statusString(comp.status) + ")");
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Strong Component (status = " + Solve.statusString(comp.status) + ", size = " + intString(s) + ")");
         str := str + "### Variable:\n" + Variable.toString(Pointer.access(comp.var), "\t") + "\n";
         str := str + "### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
       case MULTI_COMPONENT() algorithm
-        str := StringUtil.headline_3("BLOCK" + indexStr + ": Multi Strong Component (status = " + Solve.statusString(comp.status) + ")");
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Multi Strong Component (status = " + Solve.statusString(comp.status) + ", size = " + intString(s) + ")");
         str := str + "### Variables:\n";
         str := str + List.toString(comp.vars, function Slice.toString(func = BVariable.pointerToString, maxLength = 10), "", "\t", "\n\t", "");
         str := str + "\n### Equation:\n" + Slice.toString(comp.eqn, function Equation.pointerToString(str = "\t")) + "\n";
       then str;
 
       case SLICED_COMPONENT() algorithm
-        str := if index == -2 then "" else StringUtil.headline_3("BLOCK" + indexStr + ": Sliced Component (status = " + Solve.statusString(comp.status) + ")");
+        str := if index == -2 then "" else StringUtil.headline_3("BLOCK" + indexStr + ": Sliced Component (status = " + Solve.statusString(comp.status) + ", size = " + intString(s) + ")");
         str := str + "### Variable:\n\t" + ComponentRef.toString(comp.var_cref) + "\n";
         str := str + "### Equation:\n" + Slice.toString(comp.eqn, function Equation.pointerToString(str = "\t")) + "\n";
       then str;
 
       case RESIZABLE_COMPONENT() algorithm
-        str := StringUtil.headline_3("BLOCK" + indexStr + ": Resizable Component (status = " + Solve.statusString(comp.status) + ")");
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Resizable Component (status = " + Solve.statusString(comp.status) + ", size = " + intString(s) + ")");
         str := str + "### Variable:\n\t" + ComponentRef.toString(comp.var_cref) + "\n";
         str := str + "### Equation:\n\t" + Equation.pointerToString(Slice.getT(comp.eqn)) + "\n";
       then str;
 
       case ENTWINED_COMPONENT() algorithm
-        str := StringUtil.headline_3("BLOCK" + indexStr + ": Entwined Component (status = Solve.EXPLICIT)");
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Entwined Component (status = Solve.EXPLICIT, size = " + intString(s) + ")");
         str := str + "call order: " + List.toString(list(Equation.getEqnName(Util.tuple21(e)) for e in comp.entwined_tpl_lst), ComponentRef.toString, "", "{", ", ", "}", true, 10) + "\n";
         str := str + List.toString(comp.entwined_slices, function toString(index = -2), "", "", "", "");
       then str;
 
       case GENERIC_COMPONENT() algorithm
-        str := StringUtil.headline_3("BLOCK" + indexStr + ": Generic Component (status = Solve.EXPLICIT)");
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Generic Component (status = Solve.EXPLICIT, size = " + intString(s) + ")");
         str := str + "### Variable:\n\t" + ComponentRef.toString(comp.var_cref) + "\n";
         str := str + "### Equation:\n" + Slice.toString(comp.eqn, function Equation.pointerToString(str = "\t")) + "\n";
       then str;
 
       case ALGEBRAIC_LOOP() algorithm
-        str := StringUtil.headline_3("BLOCK" + indexStr + ": Algebraic Loop (Linear = " + boolString(comp.linear) + ", Mixed = " + boolString(comp.mixed) + ", Homotopy = " + boolString(comp.homotopy) + ")");
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Algebraic Loop (Linear = " + boolString(comp.linear) + ", Mixed = " + boolString(comp.mixed) + ", Homotopy = " + boolString(comp.homotopy) + ", size = " + intString(s) + ")");
         str := str + Tearing.toString(comp.strict, "Strict Tearing Set");
         if isSome(comp.casual) then
           str := str + Tearing.toString(Util.getOption(comp.casual), "Casual Tearing Set");
@@ -325,6 +326,26 @@ public
       else false;
     end match;
   end isEqual;
+
+  function size
+    input StrongComponent comp;
+    input Boolean resize;
+    output Integer s;
+  algorithm
+    s := match comp
+      case SINGLE_COMPONENT()     then Equation.size(comp.eqn, resize);
+      case MULTI_COMPONENT()      then Slice.size(comp.eqn, function Equation.size(resize = resize));
+      case SLICED_COMPONENT()     then Slice.size(comp.eqn, function Equation.size(resize = resize));
+      case RESIZABLE_COMPONENT()  then Slice.size(comp.eqn, function Equation.size(resize = resize));
+      case GENERIC_COMPONENT()    then Slice.size(comp.eqn, function Equation.size(resize = resize));
+      case ENTWINED_COMPONENT()   then sum(StrongComponent.size(c, resize) for c in comp.entwined_slices);
+      case ALGEBRAIC_LOOP()       then Tearing.size(comp.strict, resize);
+      case ALIAS()                then StrongComponent.size(comp.original, resize);
+      else algorithm
+         Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed. Cannot determine size of strong component:\n" + toString(comp) + "\n"});
+      then fail();
+    end match;
+  end size;
 
   function removeAlias
     input output StrongComponent comp;
