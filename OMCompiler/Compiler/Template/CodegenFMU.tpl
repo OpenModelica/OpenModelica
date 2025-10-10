@@ -64,7 +64,7 @@ match simCode
 case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let guid = getUUIDStr()
   let target  = simulationCodeTarget()
-  let fileNamePrefixHash = '<%substring(intString(stringHashDjb2(fileNamePrefix)), 1, 3)%>'
+  let fileNamePrefixHash = Util.hashFileNamePrefix(fileNamePrefix)
   let fileNamePrefixTmpDir = '<%fileNamePrefixHash%>.fmutmp/sources/<%fileNamePrefix%>'
   let()= textFile(simulationLiteralsFile(fileNamePrefix, literals), '<%fileNamePrefixTmpDir%>_literals.h')
   let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls, sc.generic_loop_calls), '<%fileNamePrefixTmpDir%>_functions.h')
@@ -1252,7 +1252,7 @@ end mapInitialUnknownsIndependentCrefs;
 template getPlatformString2(String modelNamePrefix, String platform, String fileNamePrefix, String fmuTargetName, String dirExtra, String libsPos1, String libsPos2, String omhome, String FMUVersion)
  "returns compilation commands for the platform. "
 ::=
-let fmudirname = '<%substring(intString(stringHashDjb2(fileNamePrefix)), 1, 3)%>.fmutmp'
+let fmudirname = '<%Util.hashFileNamePrefix(fileNamePrefix)%>.fmutmp'
 match platform
   case "win32"
   case "win64" then
@@ -1349,7 +1349,7 @@ template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<Str
       let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
       let libsPos1 = if not dirExtra then libsStr //else ""
       let libsPos2 = if dirExtra then libsStr // else ""
-      let fmudirname = '<%substring(intString(stringHashDjb2(fileNamePrefix)), 1, 3)%>.fmutmp'
+      let fmudirname = '<%Util.hashFileNamePrefix(fileNamePrefix)%>.fmutmp'
       let compilecmds = getPlatformString2(modelNamePrefix(simCode), makefileParams.platform, fileNamePrefix, fmuTargetName, dirExtra, libsPos1, libsPos2, makefileParams.omhome, FMUVersion)
       let mkdir = match makefileParams.platform case "win32" case "win64" then '"mkdir.exe"' else 'mkdir'
       <<

@@ -3555,6 +3555,11 @@ package Util
   output Boolean outBoolean;
   end stringBool;
 
+  function hashFileNamePrefix
+    input String inFileNamePrefix;
+    output String hashStr;
+  end hashFileNamePrefix;
+
 end Util;
 
 package List

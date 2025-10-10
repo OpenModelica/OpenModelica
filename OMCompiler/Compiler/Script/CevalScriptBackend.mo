@@ -4364,7 +4364,7 @@ algorithm
 
   isWindows := Autoconf.os == "Windows_NT";
 
-  fmutmp := substring(intString(stringHashDjb2(filenameprefix)), 1, 3) + ".fmutmp";
+  fmutmp := Util.hashFileNamePrefix(filenameprefix) + ".fmutmp";
   logfile := filenameprefix + ".log";
   dir := fmutmp+"/sources/";
 

@@ -454,7 +454,14 @@ public
 
   function hashList
     input list<Dimension> dims;
-    output Integer i = stringHashDjb2(toStringList(dims));
+    output Integer hash = 0;
+  algorithm
+    if not listEmpty(dims) then
+      hash := stringHashDjb2(toString(listHead(dims)));
+      for dim in listRest(dims) loop
+        hash := stringHashDjb2Continue(toString(dim), hash);
+      end for;
+    end if;
   end hashList;
 
   function toStringList

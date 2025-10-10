@@ -7320,8 +7320,8 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       {
         <%idx_copy%>
         <%varDecls%>
-        <%preExp%>
         <%iter_%>
+        <%preExp%>
         <%body_%>;
       }
       >>
@@ -7340,8 +7340,8 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       {
         <%idx_copy%>
         <%varDecls%>
-        <%preExp%>
         <%iter_%>
+        <%preExp%>
         <%branches_%>
       }
       >>
@@ -7360,8 +7360,8 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       {
         <%idx_copy%>
         <%varDecls%>
-        <%preExp%>
         <%iter_%>
+        <%preExp%>
         <%branches_%>
       }
       >>
