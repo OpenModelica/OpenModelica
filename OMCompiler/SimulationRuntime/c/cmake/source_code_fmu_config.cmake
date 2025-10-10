@@ -42,6 +42,7 @@ set(SOURCE_FMU_COMMON_FILES_LIST ./gc/memory_pool.c
                                  ./util/utility.c
                                  ./util/varinfo.c
                                  ./math-support/pivot.c
+                                 ./simulation/arrayIndex.c
                                  ./simulation/jacobian_util.c
                                  ./simulation/omc_simulation_util.c
                                  ./simulation/options.c
@@ -87,6 +88,7 @@ set(SOURCE_FMU_COMMON_HEADERS \"./omc_inline.h\",
                               \"./optimization/OptimizerData.h\",
                               \"./optimization/OptimizerLocalFunction.h\",
                               \"./optimization/OptimizerInterface.h\",
+                              \"./simulation/arrayIndex.h\",
                               \"./simulation/jacobian_util.h\",
                               \"./simulation/modelinfo.h\",
                               \"./simulation/options.h\",

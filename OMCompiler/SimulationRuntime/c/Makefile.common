@@ -76,6 +76,7 @@ RUNTIMEDATARECONCILE_HEADERS = ./dataReconciliation/dataReconciliation.h
 RUNTIMEOPTIMZ_HEADERS = ./optimization/OptimizerData.h ./optimization/OptimizerLocalFunction.h ./optimization/OptimizerInterface.h
 
 RUNTIMESIMULATION_HEADERS = ./simulation/modelinfo.h \
+./simulation/arrayIndex.h \
 ./simulation/jacobian_util.h \
 ./simulation/options.h \
 ./simulation/simulation_info_json.h \

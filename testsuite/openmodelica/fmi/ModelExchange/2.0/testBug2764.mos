@@ -108,6 +108,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"./util/utility.c\" />
 //       <File name=\"./util/varinfo.c\" />
 //       <File name=\"./math-support/pivot.c\" />
+//       <File name=\"./simulation/arrayIndex.c\" />
 //       <File name=\"./simulation/jacobian_util.c\" />
 //       <File name=\"./simulation/omc_simulation_util.c\" />
 //       <File name=\"./simulation/options.c\" />
