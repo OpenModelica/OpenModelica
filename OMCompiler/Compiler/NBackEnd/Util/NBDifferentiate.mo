@@ -1278,12 +1278,14 @@ public
           then fail();
         end match;
         current_grad := diffArguments.current_grad;
-        diffArguments.current_grad := Expression.CALL(Call.makeTypedCall(
-          fn          = NFBuiltinFuncs.FILL_FUNC,
-          args        = current_grad :: list(Dimension.sizeExp(d) for d in Type.arrayDims(Expression.typeOf(arg1))),
-          variability = Prefixes.variabilityMax(Expression.variability(current_grad), Expression.variability(arg1)),
-          purity      = NFPrefixes.Purity.PURE
-        ));
+        // sum is linear -> multiply upstream gradient with ones of the right size
+        diffArguments.current_grad := Expression.BINARY(
+          Expression.makeOne(Expression.typeOf(arg1)),
+          Operator.fromClassification(
+            (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ARRAY_SCALAR),
+            Expression.typeOf(arg1)
+          ),
+          current_grad);
         (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
 
         diffArguments.current_grad := current_grad;
