@@ -198,7 +198,7 @@ public
     end addMulti;
 
     function filter
-      "filters out the indices that are in in the set"
+      "filters out the indices that are in the set"
       input output tuple<Mode, Value> tpl;
       input UnorderedSet<Integer> set;
     protected
@@ -210,7 +210,7 @@ public
       tpl := (mode, val);
     end filter;
 
-    function relevant
+    function isRelevant
       "returns true if the value has more than one entry"
       input tuple<Mode, Value> tpl;
       output Boolean b;
@@ -219,7 +219,7 @@ public
     algorithm
       (_, val) := tpl;
       b := List.hasSeveralElements(Value.getEquations(val));
-    end relevant;
+    end isRelevant;
   end PseudoBucket;
 
   // ############################################################
@@ -419,18 +419,19 @@ public
       Value val;
       Integer index, shift;
       list<Integer> var_lst, eqn_lst;
-      UnorderedSet<Integer> alg_loop_set = UnorderedSet.new(Util.id, intEq) "the set of indices appearing in algebraic loops";
+      UnorderedSet<Integer> alg_loop_set  "the set of indices appearing in algebraic loops";
     algorithm
       phase2_adj := match phase2_adj
         case Adjacency.FINAL() algorithm
           //### 1. store all loop indices ###
+          alg_loop_set := UnorderedSet.new(Util.id, intEq, sum(listLength(scc) for scc in algebraic_loops));
           for scc in algebraic_loops loop for idx in scc loop
             UnorderedSet.add(idx, alg_loop_set);
           end for; end for;
 
           // remove loop indices from array buckets (so they are not used twice)
           buckets := list(PseudoBucket.filter(bucket_tpl, alg_loop_set) for bucket_tpl in buckets);
-          buckets := list(bucket_tpl for bucket_tpl guard(PseudoBucket.relevant(bucket_tpl)) in buckets);
+          buckets := list(bucket_tpl for bucket_tpl guard(PseudoBucket.isRelevant(bucket_tpl)) in buckets);
           shift := listLength(algebraic_loops) + listLength(buckets);
 
           // ### 2. initialize super nodes ###
