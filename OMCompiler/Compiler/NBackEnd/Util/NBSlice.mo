@@ -1282,10 +1282,9 @@ protected
 
   function keyHash
     input Key key;
-    output Integer hash;
+    output Integer hash = 5381;
   algorithm
-    hash := stringHashDjb2(intString(listHead(key)));
-    for k in listRest(key) loop
+    for k in key loop
       hash := stringHashDjb2Continue(intString(k), hash);
     end for;
   end keyHash;

@@ -119,19 +119,16 @@ modelica_real nobox_stringReal(threadData_t *threadData,metamodelica_string s)
  * hash functions which could be useful to replace System__hash:
  */
 /*** djb2 hash ***/
-static inline unsigned long djb2_hash(const unsigned char *str)
-{
-  unsigned long hash = 5381;
-  int c;
-  while (0 != (c = *str++))  hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-  return hash;
-}
-
 static inline unsigned long djb2_hash_continue(const unsigned char *str, unsigned long hash)
 {
   int c;
   while (0 != (c = *str++)) hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
   return hash;
+}
+
+static inline unsigned long djb2_hash(const unsigned char *str)
+{
+  return djb2_hash_continue(str, 5381);
 }
 
 /*** sdbm hash ***/
