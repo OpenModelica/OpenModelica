@@ -81,19 +81,29 @@ public
   end TEARING_SET;
 
   function hash
-    input Tearing tearing;
-    output Integer i = -1;
-  algorithm
-    // ToDo!
+    input Tearing set;
+    output Integer i = stringHashDjb2(toString(set, ""));
   end hash;
 
   function isEqual
-    input Tearing tearing1;
-    input Tearing tearing2;
-    output Boolean b = false;
+    "checking the jacobian should not be necessary"
+    input Tearing set1;
+    input Tearing set2;
+    output Boolean b;
   algorithm
-    // ToDo!
+     b := List.isEqualOnTrue(set1.iteration_vars, set2.iteration_vars, function Slice.isEqual(func = BVariable.equalName));
+     b := b and List.isEqualOnTrue(set1.residual_eqns, set2.residual_eqns, function Slice.isEqual(func = Equation.isEqualPtr));
+     b := b and Array.isEqualOnTrue(set1.innerEquations, set2.innerEquations, StrongComponent.isEqual);
   end isEqual;
+
+  function size
+    input Tearing set;
+    input Boolean resize;
+    output Integer s;
+  algorithm
+    s := sum(Slice.size(eq, function Equation.size(resize = resize)) for eq in set.residual_eqns);
+    s := s + sum(StrongComponent.size(eq, resize) for eq in set.innerEquations);
+  end size;
 
   function toString
     input Tearing set;
