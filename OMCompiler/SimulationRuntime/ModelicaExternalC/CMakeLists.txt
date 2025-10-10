@@ -55,12 +55,19 @@ endif()
 
 
 ## ModelicaMatIO #########################################################################
+find_package(HDF5 REQUIRED)
+
 set(libModelicaMatIO_SOURCES C-Sources/ModelicaMatIO.c C-Sources/snprintf.c)
 # Static version
 add_library(ModelicaMatIO STATIC ${libModelicaMatIO_SOURCES})
 add_library(omc::simrt::Modelica::MatIO ALIAS ModelicaMatIO)
 
 target_compile_definitions(ModelicaMatIO PRIVATE HAVE_ZLIB)
+target_compile_definitions(ModelicaMatIO PRIVATE HAVE_HDF5)
+
+target_include_directories(ModelicaMatIO PRIVATE ${HDF5_INCLUDE_DIRS})
+
+target_link_libraries(ModelicaMatIO PUBLIC ${HDF5_LIBRARIES})
 target_link_libraries(ModelicaMatIO PUBLIC omc::3rd::zlib)
 target_link_libraries(ModelicaMatIO PUBLIC omc::simrt::runtime)
 
@@ -70,7 +77,12 @@ add_library(omc::simrt::Modelica::MatIO::shared ALIAS ModelicaMatIO_shared)
 set_target_properties(ModelicaMatIO_shared
                       PROPERTIES OUTPUT_NAME ModelicaMatIO CLEAN_DIRECT_OUTPUT 1)
 
-target_compile_definitions(ModelicaMatIO_shared PUBLIC HAVE_ZLIB)
+target_compile_definitions(ModelicaMatIO_shared PRIVATE HAVE_ZLIB)
+target_compile_definitions(ModelicaMatIO_shared PRIVATE HAVE_HDF5)
+
+target_include_directories(ModelicaMatIO_shared PRIVATE ${HDF5_INCLUDE_DIRS})
+
+target_link_libraries(ModelicaMatIO_shared PUBLIC ${HDF5_LIBRARIES})
 target_link_libraries(ModelicaMatIO_shared PUBLIC omc::3rd::zlib)
 target_link_libraries(ModelicaMatIO_shared PUBLIC omc::simrt::runtime)
 
