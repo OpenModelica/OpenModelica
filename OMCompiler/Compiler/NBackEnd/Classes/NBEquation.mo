@@ -2783,6 +2783,8 @@ public
 
         case WHEN_EQUATION() then {Statement.WHEN(WhenEquationBody.toStatement(eqn.body), eqn.source)};
 
+        case ALGORITHM() then eqn.alg.statements;
+
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed it is not yet supported for:\n" + toString(eqn)});
         then fail();
