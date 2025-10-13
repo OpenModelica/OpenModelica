@@ -1268,7 +1268,6 @@ public
         end match;
       then ret;
 
-
       case (Expression.CALL()) guard(name == "sum")
       algorithm
         arg1 := match Call.arguments(exp.call)
@@ -1291,6 +1290,56 @@ public
         diffArguments.current_grad := current_grad;
         exp.call := Call.setArguments(exp.call, {ret1});
       then exp;
+
+      // // diagonal(x): Forward: diagonal(dx/dz).
+      // // Reverse: grad_x = sum( current_grad .* I(n), dim=1 ) = diag(current_grad)
+      // case (Expression.CALL()) guard(name == "diagonal")
+      // algorithm
+      //   arg1 := match Call.arguments(exp.call)
+      //     case {arg1} then arg1;
+      //     else algorithm
+      //       Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
+      //     then fail();
+      //   end match;
+
+      //   // Mask upstream matrix by identity and reduce to vector (diagonal)
+      //   old_grad := diffArguments.current_grad;
+
+      //   // Only apply mask when we actually have an upstream; otherwise just forward-differentiate
+      //   Expression nExp := Expression.SIZE(arg1, SOME(Expression.INTEGER(1)));
+      //   Type vecTy := Expression.typeOf(arg1);
+      //   Type elTy  := Type.arrayElementType(vecTy);
+      //   Type upTy  := Expression.typeOf(old_grad); // expected matrix[n,n]
+      //   Type upEl  := if Type.isArray(upTy) then Type.arrayElementType(upTy) else elTy;
+
+      //   // ones(n)
+      //   Expression onesVec := Expression.CALL(Call.makeTypedCall(
+      //     fn          = NFBuiltinFuncs.FILL_FUNC,
+      //     args        = {Expression.makeOne(elTy), nExp},
+      //     variability = Prefixes.variabilityMax(Expression.variability(arg1), Variability.CONSTANT),
+      //     purity      = NFPrefixes.Purity.PURE));
+
+      //   // I = diagonal(ones(n)) : n x n
+      //   Expression eyeNN := typeDiagonalCall(onesVec);
+
+      //   // H = current_grad .* I (element-wise)
+      //   Operator mulEW := Operator.fromClassification(
+      //     (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ELEMENT_WISE),
+      //     upEl);
+      //   Expression masked := Expression.BINARY(old_grad, mulEW, eyeNN);
+
+      //   // diagVec = sum(masked)  // reduce first dim -> vector[n] with diag entries
+      //   Expression diagVec := typeSumCall(masked);
+
+      //   diffArguments.current_grad := diagVec;
+
+      //   // Forward: diagonal(dx/dz)
+      //   (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+
+      //   // Restore upstream and return updated call
+      //   diffArguments.current_grad := old_grad;
+      //   exp.call := Call.setArguments(exp.call, {ret1});
+      // then exp;
 
       // Functions with one argument that differentiate "through"
       // d/dz f(x) -> f(dx/dz)
