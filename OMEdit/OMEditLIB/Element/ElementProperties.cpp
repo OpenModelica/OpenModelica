@@ -857,69 +857,75 @@ void Parameter::editClassButtonClicked()
     }
   }
 
-  // if we fail to find the type
-  if ((mpModelInstanceElement == NULL) ||
-      (mpModelInstanceElement->getTopLevelExtendElement() == NULL) ||
-      (mpModelInstanceElement->getTopLevelExtendElement()->getParentModel() == NULL) ||
-      (mpModelInstanceElement->getTopLevelExtendElement()->getParentModel()->getName() == QString())) {
-    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Unable to find the redeclare class."), QMessageBox::Ok);
+  QString classPath;
+  if (mpElementParameters && mpElementParameters->hasElement()) {
+    // if we fail to find the type
+    if ((mpModelInstanceElement == NULL) ||
+        (mpModelInstanceElement->getTopLevelExtendElement() == NULL) ||
+        (mpModelInstanceElement->getTopLevelExtendElement()->getParentModel() == NULL) ||
+        (mpModelInstanceElement->getTopLevelExtendElement()->getParentModel()->getName() == QString())) {
+      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Unable to find the redeclare class."), QMessageBox::Ok);
+      return;
+    }
+    classPath = mpModelInstanceElement->getTopLevelExtendElement()->getParentModel()->getName();
   } else {
-    // get type as qualified path
-    const QString qualifiedType = MainWindow::instance()->getOMCProxy()->qualifyPath(mpModelInstanceElement->getTopLevelExtendElement()->getParentModel()->getName(), type);
-    ModelInstance::Model *pCurrentModel = mpModelInstanceElement->getModel();
-    const QJsonObject newModelJSON = MainWindow::instance()->getOMCProxy()->getModelInstance(qualifiedType, modifier);
-    if (!newModelJSON.isEmpty()) {
-      const QJsonObject modifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(modifier);
-      ModelInstance::Modifier *pElementModifier = new ModelInstance::Modifier("", QJsonValue(), mpModelInstanceElement->getParentModel());
-      pElementModifier->deserialize(QJsonValue(modifierJSON));
-      const QJsonObject defaultModifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(defaultModifier);
-      ModelInstance::Modifier *pDefaultElementModifier = new ModelInstance::Modifier("", QJsonValue(), mpModelInstanceElement->getParentModel());
-      pDefaultElementModifier->deserialize(QJsonValue(defaultModifierJSON));
-      ModelInstance::Model *pNewModel = new ModelInstance::Model(newModelJSON, mpModelInstanceElement);
-      mpModelInstanceElement->setModel(pNewModel);
-      MainWindow::instance()->getProgressBar()->setRange(0, 0);
-      MainWindow::instance()->showProgressBar();
-      ElementParameters *pElementParameters = new ElementParameters(mpModelInstanceElement, mpElementParameters->getGraphicsView(), mpElementParameters->isInherited(),
-                                                                    true, pDefaultElementModifier, pReplaceableConstrainedByModifier, pElementModifier, mpElementParameters);
-      MainWindow::instance()->hideProgressBar();
-      MainWindow::instance()->getStatusBar()->clearMessage();
-      if (pElementParameters->exec() == QDialog::Accepted) {
-        const QString modification = pElementParameters->getModification();
-        if (isReplaceableComponent() || isRecord()) {
-          if (value.startsWith("redeclare")) {
-            QString elementRedeclaration = "redeclare " % type % " " % mpModelInstanceElement->getName() % modification;
-            if (!comment.isEmpty()) {
-              elementRedeclaration = elementRedeclaration % " " % comment;
-            }
-            setValueWidget(elementRedeclaration, false, mUnit, true);
-          } else {
-            if (modification.isEmpty()) {
-              setValueWidget("", false, mUnit, true);
-            } else {
-              setValueWidget(mpModelInstanceElement->getName() % modification, false, mUnit, true);
-            }
-          }
-        } else if (isReplaceableClass()) {
-          QString restriction;
-          if (mpModelInstanceElement->getModel()) {
-            restriction = mpModelInstanceElement->getModel()->getRestriction();
-          } else {
-            restriction = mpModelInstanceElement->getType();
-          }
-          QString elementRedeclaration = "redeclare " % restriction % " " % mpModelInstanceElement->getName() % " = " % type % " " % modification;
+    classPath = mpElementParameters->getElementParentClassName();
+  }
+  // get type as qualified path
+  const QString qualifiedType = MainWindow::instance()->getOMCProxy()->qualifyPath(classPath, type);
+  ModelInstance::Model *pCurrentModel = mpModelInstanceElement->getModel();
+  const QJsonObject newModelJSON = MainWindow::instance()->getOMCProxy()->getModelInstance(qualifiedType, modifier);
+  if (!newModelJSON.isEmpty()) {
+    const QJsonObject modifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(modifier);
+    ModelInstance::Modifier *pElementModifier = new ModelInstance::Modifier("", QJsonValue(), mpModelInstanceElement->getParentModel());
+    pElementModifier->deserialize(QJsonValue(modifierJSON));
+    const QJsonObject defaultModifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(defaultModifier);
+    ModelInstance::Modifier *pDefaultElementModifier = new ModelInstance::Modifier("", QJsonValue(), mpModelInstanceElement->getParentModel());
+    pDefaultElementModifier->deserialize(QJsonValue(defaultModifierJSON));
+    ModelInstance::Model *pNewModel = new ModelInstance::Model(newModelJSON, mpModelInstanceElement);
+    mpModelInstanceElement->setModel(pNewModel);
+    MainWindow::instance()->getProgressBar()->setRange(0, 0);
+    MainWindow::instance()->showProgressBar();
+    ElementParameters *pElementParameters = new ElementParameters(mpModelInstanceElement, mpElementParameters->getGraphicsView(), mpElementParameters->isInherited(),
+                                                                  true, pDefaultElementModifier, pReplaceableConstrainedByModifier, pElementModifier, mpElementParameters);
+    MainWindow::instance()->hideProgressBar();
+    MainWindow::instance()->getStatusBar()->clearMessage();
+    if (pElementParameters->exec() == QDialog::Accepted) {
+      const QString modification = pElementParameters->getModification();
+      if (isReplaceableComponent() || isRecord()) {
+        if (value.startsWith("redeclare")) {
+          QString elementRedeclaration = "redeclare " % type % " " % mpModelInstanceElement->getName() % modification;
           if (!comment.isEmpty()) {
             elementRedeclaration = elementRedeclaration % " " % comment;
           }
           setValueWidget(elementRedeclaration, false, mUnit, true);
+        } else {
+          if (modification.isEmpty()) {
+            setValueWidget("", false, mUnit, true);
+          } else {
+            setValueWidget(mpModelInstanceElement->getName() % modification, false, mUnit, true);
+          }
         }
+      } else if (isReplaceableClass()) {
+        QString restriction;
+        if (mpModelInstanceElement->getModel()) {
+          restriction = mpModelInstanceElement->getModel()->getRestriction();
+        } else {
+          restriction = mpModelInstanceElement->getType();
+        }
+        QString elementRedeclaration = "redeclare " % restriction % " " % mpModelInstanceElement->getName() % " = " % type % " " % modification;
+        if (!comment.isEmpty()) {
+          elementRedeclaration = elementRedeclaration % " " % comment;
+        }
+        setValueWidget(elementRedeclaration, false, mUnit, true);
       }
-      pElementParameters->deleteLater();
-      delete pElementModifier;
-      delete pDefaultElementModifier;
-      // reset the actual model of the element
-      mpModelInstanceElement->setModel(pCurrentModel);
-      delete pNewModel;
     }
+    pElementParameters->deleteLater();
+    delete pElementModifier;
+    delete pDefaultElementModifier;
+    // reset the actual model of the element
+    mpModelInstanceElement->setModel(pCurrentModel);
+    delete pNewModel;
   }
 }
 
