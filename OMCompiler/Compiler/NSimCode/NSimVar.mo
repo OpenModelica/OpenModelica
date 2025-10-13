@@ -965,7 +965,7 @@ public
       input SplitType splitType;
       input VarType varType;
     protected
-      VariablePointers scalar_vars;
+      VariablePointers sim_vars = if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then VariablePointers.scalarize(vars) else vars;
       Pointer<list<SimVar>> acc = Pointer.create({});
       Pointer<list<SimVar>> real_lst = Pointer.create({});
       Pointer<list<SimVar>> int_lst = Pointer.create({});
@@ -978,13 +978,13 @@ public
       scalar_vars := VariablePointers.scalarize(vars);
       if splitType == SplitType.NONE then
         // Do not split and return everything as one single list
-        VariablePointers.map(scalar_vars, function SimVar.traverseCreate(acc = acc, indices_ptr = indices_ptr, varType = varType));
+        VariablePointers.map(sim_vars, function SimVar.traverseCreate(acc = acc, indices_ptr = indices_ptr, varType = varType));
         simVars := {listReverse(Pointer.access(acc))};
         simCodeIndices := Pointer.access(indices_ptr);
       elseif splitType == SplitType.TYPE then
         // Split the variables by basic type (real, integer, boolean, string)
         // and return a list for each type
-        VariablePointers.map(scalar_vars, function splitByType(real_lst = real_lst, int_lst = int_lst, bool_lst = bool_lst, string_lst = string_lst, enum_lst = enum_lst, indices_ptr = indices_ptr, varType = varType));
+        VariablePointers.map(sim_vars, function splitByType(real_lst = real_lst, int_lst = int_lst, bool_lst = bool_lst, string_lst = string_lst, enum_lst = enum_lst, indices_ptr = indices_ptr, varType = varType));
         simVars := {listReverse(Pointer.access(real_lst)),
                     listReverse(Pointer.access(int_lst)),
                     listReverse(Pointer.access(bool_lst)),
@@ -1189,8 +1189,13 @@ public
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
       output list<SimVar> vars = {};
     algorithm
-      vars := list(UnorderedMap.getSafe(BVariable.getVarName(v), simcode_map, sourceInfo()) for v in VariablePointers.scalarizeList({var}));
+      if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
+        vars := list(UnorderedMap.getSafe(BVariable.getVarName(v), simcode_map, sourceInfo()) for v in VariablePointers.scalarizeList({var}));
+      else
+        vars := {UnorderedMap.getSafe(BVariable.getVarName(var), simcode_map, sourceInfo())};
+      end if;
     end getVars;
+
   end SimVars;
 
   constant SimVars emptySimVars = SIMVARS(
