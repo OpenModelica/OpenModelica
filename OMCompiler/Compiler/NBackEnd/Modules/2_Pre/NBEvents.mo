@@ -648,7 +648,7 @@ public
 
         else algorithm
           iter := Iterator.fromFrames(listReverse(frames));
-          stmt := Statement.mapExp(stmt, function Expression.mapReverse(
+          stmt := Statement.mapExp(stmt, function Expression.fakeMap(
               func = function collectEventsTraverse(
                 bucket_ptr  = bucket_ptr,
                 iter        = iter,
@@ -1140,6 +1140,9 @@ protected
         call.exp := collectEventsTraverse(call.exp, bucket_ptr, Iterator.addFrames(iter, new_frames), eqn, funcTree, createEqn);
         exp.call := call;
       then exp;
+
+      // don't traverse noEvent() calls
+      case Expression.CALL() guard(Call.isNamed(exp.call, "noEvent")) then exp;
 
       // don't traverse cref subscripts
       case Expression.CREF() then exp;

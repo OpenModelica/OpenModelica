@@ -278,7 +278,7 @@ bool LibraryTreeItem::isDocumentationClass()
  * Returns the Access annotation.
  * \return
  */
-LibraryTreeItem::Access LibraryTreeItem::getAccess()
+LibraryTreeItem::Access LibraryTreeItem::getAccess() const
 {
   /* Activate the access annotations if the class is encrypted
    * OR if the LibraryTreeItem's mAccessAnnotations is marked true based on the activate access annotation setting.
@@ -2577,7 +2577,9 @@ void LibraryTreeModel::createOMSBusConnectorLibraryTreeItems(LibraryTreeItem *pL
 void unloadHelper(LibraryTreeItem *pLibraryTreeItem)
 {
   MainWindow *pMainWindow = MainWindow::instance();
+#ifndef OM_DISABLE_DOCUMENTATION
   pMainWindow->getDocumentationWidget()->updateDocumentationHistory(pLibraryTreeItem);
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
   /* close the ModelWidget of LibraryTreeItem. */
   if (pLibraryTreeItem->getModelWidget()) {
     // if ModelWidget is used by DiagramWindow
@@ -4675,7 +4677,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibrary
       QString name = pLibraryTreeItem->getName();
       fileName = StringHandler::getSaveFileName(this, tr("%1 - Save %2 %3 as Modelica File").arg(Helper::applicationName)
                                                 .arg(pLibraryTreeItem->mClassInformation.restriction).arg(pLibraryTreeItem->getName()), NULL,
-                                                Helper::omFileTypes, NULL, "mo", &name);
+                                                "", NULL, "mo", &name);
       if (fileName.isEmpty()) { // if user press ESC
         return false;
       }
@@ -4920,7 +4922,7 @@ bool LibraryWidget::saveOMSLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
   QString fileName;
   if (pLibraryTreeItem->getFileName().isEmpty()) {
     QString name = pLibraryTreeItem->getName();
-    fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::saveFile), NULL, Helper::omFileTypes, NULL, "ssp", &name);
+    fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::saveFile), NULL, "", NULL, "ssp", &name);
     if (fileName.isEmpty()) { // if user press ESC
       return false;
     }
@@ -4967,7 +4969,7 @@ bool LibraryWidget::saveAsOMSLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
   QString fileName;
   QString name = pLibraryTreeItem->getName();
-  fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::saveFile), NULL, Helper::omFileTypes, NULL, "ssp", &name);
+  fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::saveFile), NULL, "", NULL, "ssp", &name);
   if (fileName.isEmpty()) { // if user press ESC
     return false;
   }

@@ -56,7 +56,7 @@ $(builddir_man)/man1/
 # Silence unnecessary verbose install messages from CMAKE
 CMAKE_FLAGS += -DCMAKE_INSTALL_MESSAGE=LAZY
 
-OMC_IPOPT_ROOT = 3rdParty/Ipopt-3.13.4
+OMC_MOO_ROOT = 3rdParty/moo-0.1.0
 OMC_TBB_ROOT = 3rdParty/tbb
 
 
@@ -126,7 +126,7 @@ interactive-common: .testvariables boehm-gc libryu idl antlr-copy libffi $(MINGW
 interactive-short: .testvariables interactive-common
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies OMBUILDDIR=$(OMBUILDDIR)
 
-interactive: .testvariables interactive-common lis Cdaskr CMinpack docs cppzmq $(IPOPT_TARGET) $(SUITESPARSE_TARGET) antlr-copy $(MINGW_EXTRA_LIBS) OMSI $(SEMLA_LIB)
+interactive: .testvariables interactive-common lis Cdaskr CMinpack docs cppzmq $(MOO_TARGET) $(SUITESPARSE_TARGET) antlr-copy $(MINGW_EXTRA_LIBS) OMSI $(SEMLA_LIB)
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) bootstrap-dependencies-post
 
@@ -168,22 +168,27 @@ $(OMBUILDDIR)/include/omc/c/gc_pthread_redirects.h: 3rdParty/gc/include/gc_pthre
 3rdParty/gc/Makefile: 3rdParty/gc/configure.ac
 	(cd 3rdParty/gc && mkdir -p m4 libatomic_ops/m4 && autoreconf -vif && automake --add-missing && ./configure --prefix="`pwd`" "--host=$(host)" $(LIBGC_EXTRA_CONFIGURATION) --enable-shared --disable-static --disable-gcj-support --disable-java-finalization --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DLARGE_CONFIG -DTHREAD_LOCAL_ALLOC")
 
-ipopt:
-	mkdir -p $(OMC_IPOPT_ROOT)/build
-	cd $(OMC_IPOPT_ROOT)/build && $(CMAKE) .. \
+# TODO or DISCARD: for now, we only build static ipopt and dmumps (not MOO) directy into the runtime
+moo:
+	mkdir -p $(OMC_MOO_ROOT)/build
+	cd $(OMC_MOO_ROOT)/build && $(CMAKE) .. \
 		-G $(CMAKE_TARGET) \
 		-DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
 		-DCMAKE_INSTALL_PREFIX:PATH="$(top_builddir)" \
 		-DCMAKE_INSTALL_LIBDIR="$(builddir_lib_omc)" \
 		-DCMAKE_INSTALL_INCLUDEDIR="$(builddir_inc)" \
-		-DIPOPT_BUILD_SHARED_LIBS:Bool=OFF \
-		-DMUMPS_BUILD_SHARED_LIBS:Bool=OFF \
-		-DCMAKE_POSITION_INDEPENDENT_CODE=ON
-	$(MAKE) -C $(OMC_IPOPT_ROOT)/build/ install
+		-DMUMPS_USE_METIS=OFF \
+		-DCMAKE_C_FLAGS="$(CFLAGS)" \
+		-DCMAKE_CXX_FLAGS="$(CXXFLAGS)" \
+		-DCMAKE_Fortran_FLAGS="$(FCFLAGS)" \
+		-DCMAKE_Fortran_COMPILER="$(FC)"
 
-ipopt-clean:
-	if test -f $(OMC_IPOPT_ROOT)/build/Makefile; then $(MAKE) -C $(OMC_IPOPT_ROOT)/build/ clean; fi
-	rm -rf $(OMC_IPOPT_ROOT)/build
+	$(CMAKE) --build $(OMC_MOO_ROOT)/build --target ipopt dmumps
+	$(CMAKE) --build $(OMC_MOO_ROOT)/build --target install
+
+moo-clean:
+	if test -f $(OMC_MOO_ROOT)/build/Makefile; then $(MAKE) -C $(OMC_MOO_ROOT)/build/ clean; fi
+	rm -rf $(OMC_MOO_ROOT)/build
 
 suitesparse:
 	mkdir -p 3rdParty/SuiteSparse-5.8.1/build
@@ -522,7 +527,7 @@ openblas-clean:
 	# OpenBLAS make clean actually gives error-messages. Let it do it, but silently
 	test ! -d 3rdParty/OpenBLAS-0.2.8 || $(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean > /dev/null 2>&1
 
-clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean openblas-clean suitesparse-clean OMSI-clean libffi-clean ipopt-clean ModelicaExternalC-clean zlib-clean
+clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean openblas-clean suitesparse-clean OMSI-clean libffi-clean moo-clean ModelicaExternalC-clean zlib-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))

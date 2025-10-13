@@ -1154,13 +1154,13 @@ constant ConfigFlag LABELED_REDUCTION = CONFIG_FLAG(110,
   Gettext.gettext("Turns on labeling and reduce terms to do whole process of reduction."));
 constant ConfigFlag DISABLE_EXTRA_LABELING = CONFIG_FLAG(111,
   "disableExtraLabeling", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
-  Gettext.gettext("Disable adding extra label into the whole experssion with more than one term and +,- operations."));
+  Gettext.gettext("Disable adding extra label into the whole expression with more than one term and +,- operations."));
 constant ConfigFlag LOAD_MSL_MODEL = CONFIG_FLAG(112,
   "loadMSLModel", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Used to know loadFile doesn't need to be called in cpp-runtime (for labeled model reduction)."));
 constant ConfigFlag LOAD_PACKAGE_FILE = CONFIG_FLAG(113,
   "loadPackageFile", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
-  Gettext.gettext("used when the outside name is different with the inside name of the packge, in cpp-runtime (for labeled model reduction)."));
+  Gettext.gettext("Used when the outside name is different with the inside name of the packge, in cpp-runtime (for labeled model reduction)."));
 constant ConfigFlag BUILDING_FMU = CONFIG_FLAG(114,
   "", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Is true when building an FMU (so the compiler can look for URIs to package as FMI resources)."));
@@ -1378,6 +1378,9 @@ constant ConfigFlag EVALUATE_STRUCTURAL_PARAMETERS = CONFIG_FLAG(158, "evaluateS
 constant ConfigFlag LOAD_MISSING_LIBRARIES = CONFIG_FLAG(159, "loadMissingLibraries",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   Gettext.gettext("Automatically try to load a matching library if a name can't be found during name lookup."));
+constant ConfigFlag CAUSALIZE_DAE_MODE = CONFIG_FLAG(160, "causalizeDaeMode",
+  NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
+  Gettext.gettext("The system is partially causalized and simple assignments are generated for equations that can be solved explicitly. Only works with --daeMode."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

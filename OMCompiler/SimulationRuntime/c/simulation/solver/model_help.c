@@ -40,6 +40,7 @@
 #include "../../util/omc_error.h"
 #include "../../util/varinfo.h"
 #include "model_help.h"
+#include "../arrayIndex.h"
 #include "../options.h"
 #include "../simulation_info_json.h"
 #include "../../util/omc_msvc.h" /* for freaking round! */
@@ -940,13 +941,171 @@ int getNextSampleTimeFMU(DATA *data, double *nextSampleEvent)
   return 0 /* FALSE */;
 }
 
-/*! \fn initializeDataStruc
+/**
+ * @brief Allocates static model data.
  *
- *  function initialize DATA structure
+ * Allocate memory for model data of variables, parameters, sensitivity
+ * parameters and alias variables.
+ * Won't allocate memory for dynamic memory inside struct.
  *
- *  \param [ref] [data]
+ * Free with `freeModelDataVars`.
  *
+ * @param modelData   Pointer to model data.
+ * @param threadData  Thread data for error handling, can be `NULL`.
  */
+void allocModelDataVars(MODEL_DATA* modelData, threadData_t* threadData)
+{
+  // Variables
+  modelData->realVarsData = (STATIC_REAL_DATA*) omc_alloc_interface.malloc_uncollectable(modelData->nVariablesRealArray * sizeof(STATIC_REAL_DATA));
+  assertStreamPrint(threadData, modelData->nVariablesRealArray == 0 || modelData->realVarsData != NULL, "Out of memory");
+
+  modelData->integerVarsData = (STATIC_INTEGER_DATA*) omc_alloc_interface.malloc_uncollectable(modelData->nVariablesIntegerArray * sizeof(STATIC_INTEGER_DATA));
+  assertStreamPrint(threadData, modelData->nVariablesIntegerArray == 0 || modelData->integerVarsData != NULL, "Out of memory");
+
+  modelData->booleanVarsData = (STATIC_BOOLEAN_DATA*) omc_alloc_interface.malloc_uncollectable(modelData->nVariablesBooleanArray * sizeof(STATIC_BOOLEAN_DATA));
+  assertStreamPrint(threadData, modelData->nVariablesBooleanArray == 0 || modelData->booleanVarsData != NULL, "Out of memory");
+
+#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
+  modelData->stringVarsData = (STATIC_STRING_DATA*) omc_alloc_interface.malloc_uncollectable(modelData->nVariablesStringArray * sizeof(STATIC_STRING_DATA));
+  assertStreamPrint(threadData, modelData->nVariablesStringArray == 0 || modelData->stringVarsData != NULL, "Out of memory");
+#endif
+
+  // Parameter
+  modelData->realParameterData = (STATIC_REAL_DATA*) omc_alloc_interface.malloc_uncollectable(modelData->nParametersRealArray * sizeof(STATIC_REAL_DATA));
+  assertStreamPrint(threadData, modelData->nParametersRealArray == 0 || modelData->realParameterData != NULL, "Out of memory");
+
+  modelData->integerParameterData = (STATIC_INTEGER_DATA*) omc_alloc_interface.malloc_uncollectable(modelData->nParametersIntegerArray * sizeof(STATIC_INTEGER_DATA));
+  assertStreamPrint(threadData, modelData->nParametersIntegerArray == 0 || modelData->integerParameterData != NULL, "Out of memory");
+
+  modelData->booleanParameterData = (STATIC_BOOLEAN_DATA*) omc_alloc_interface.malloc_uncollectable(modelData->nParametersBooleanArray * sizeof(STATIC_BOOLEAN_DATA));
+  assertStreamPrint(threadData, modelData->nParametersBooleanArray == 0 || modelData->booleanParameterData != NULL, "Out of memory");
+
+  modelData->stringParameterData = (STATIC_STRING_DATA*) omc_alloc_interface.malloc_uncollectable(modelData->nParametersStringArray * sizeof(STATIC_STRING_DATA));
+  assertStreamPrint(threadData, modelData->nParametersStringArray == 0 || modelData->stringParameterData != NULL, "Out of memory");
+
+  // Sensitivity
+  modelData->realSensitivityData = (STATIC_REAL_DATA*) omc_alloc_interface.malloc_uncollectable(modelData->nSensitivityVars * sizeof(STATIC_REAL_DATA));
+  assertStreamPrint(threadData, modelData->nSensitivityVars == 0 || modelData->realSensitivityData != NULL, "Out of memory");
+
+  // Alias Variables
+  modelData->realAlias = (DATA_REAL_ALIAS*) omc_alloc_interface.malloc_uncollectable(modelData->nAliasRealArray * sizeof(DATA_REAL_ALIAS));
+  assertStreamPrint(threadData, modelData->nAliasRealArray == 0 || modelData->realAlias != NULL, "Out of memory");
+
+  modelData->integerAlias = (DATA_INTEGER_ALIAS*) omc_alloc_interface.malloc_uncollectable(modelData->nAliasIntegerArray * sizeof(DATA_INTEGER_ALIAS));
+  assertStreamPrint(threadData, modelData->nAliasIntegerArray == 0 || modelData->integerAlias != NULL, "Out of memory");
+
+  modelData->booleanAlias = (DATA_BOOLEAN_ALIAS*) omc_alloc_interface.malloc_uncollectable(modelData->nAliasBooleanArray * sizeof(DATA_BOOLEAN_ALIAS));
+  assertStreamPrint(threadData, modelData->nAliasBooleanArray == 0 || modelData->booleanAlias != NULL, "Out of memory");
+
+  modelData->stringAlias = (DATA_STRING_ALIAS*) omc_alloc_interface.malloc_uncollectable(modelData->nAliasStringArray * sizeof(DATA_STRING_ALIAS));
+  assertStreamPrint(threadData, modelData->nAliasStringArray == 0 || modelData->stringAlias != NULL, "Out of memory");
+}
+
+/**
+ * @brief Free var info and var data.
+ *
+ * VAR_INFO strings get allocated in `read_var_info`.
+ *
+ * @param modelData   Pointer to model data.
+ */
+void freeModelDataVars(MODEL_DATA* modelData)
+{
+  unsigned int i;
+
+  // Variables
+  for(i=0; i < modelData->nVariablesReal; i++) {
+    freeVarInfo(&modelData->realVarsData[i].info);
+  }
+  omc_alloc_interface.free_uncollectable(modelData->realVarsData);
+
+  for(i=0; i < modelData->nVariablesInteger; i++) {
+    freeVarInfo(&modelData->integerVarsData[i].info);
+  }
+  omc_alloc_interface.free_uncollectable(modelData->integerVarsData);
+
+  for(i=0; i < modelData->nVariablesBoolean; i++) {
+    freeVarInfo(&modelData->booleanVarsData[i].info);
+  }
+  omc_alloc_interface.free_uncollectable(modelData->booleanVarsData);
+
+#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
+  for(i=0; i < modelData->nVariablesString; i++) {
+    freeVarInfo(&modelData->stringVarsData[i].info);
+  }
+  omc_alloc_interface.free_uncollectable(modelData->stringVarsData);
+#endif
+
+  // Parameters
+  for(i=0; i < modelData->nParametersReal; i++) {
+    freeVarInfo(&modelData->realParameterData[i].info);
+  }
+  omc_alloc_interface.free_uncollectable(modelData->realParameterData);
+
+  for(i=0; i < modelData->nParametersInteger; i++) {
+    freeVarInfo(&modelData->integerParameterData[i].info);
+  }
+  omc_alloc_interface.free_uncollectable(modelData->integerParameterData);
+
+  for(i=0; i < modelData->nParametersBoolean; i++) {
+    freeVarInfo(&modelData->booleanParameterData[i].info);
+  }
+  omc_alloc_interface.free_uncollectable(modelData->booleanParameterData);
+
+  for(i=0; i < modelData->nParametersString; i++) {
+    freeVarInfo(&modelData->stringParameterData[i].info);
+  }
+  omc_alloc_interface.free_uncollectable(modelData->stringParameterData);
+
+  // Sensitivity
+  for(i=0; i < modelData->nSensitivityVars; i++) {
+    freeVarInfo(&modelData->realSensitivityData[i].info);
+  }
+  omc_alloc_interface.free_uncollectable(modelData->realSensitivityData);
+
+  // Alias Variables
+  for(i=0; i < modelData->nAliasReal; i++) {
+    freeVarInfo(&modelData->realAlias[i].info);
+  }
+  omc_alloc_interface.free_uncollectable(modelData->realAlias);
+
+  for(i=0; i < modelData->nAliasInteger; i++) {
+    freeVarInfo(&modelData->integerAlias[i].info);
+  }
+  omc_alloc_interface.free_uncollectable(modelData->integerAlias);
+
+  for(i=0; i < modelData->nAliasBoolean; i++) {
+    freeVarInfo(&modelData->booleanAlias[i].info);
+  }
+  omc_alloc_interface.free_uncollectable(modelData->booleanAlias);
+
+  for(i=0; i < modelData->nAliasString; i++) {
+    freeVarInfo(&modelData->stringAlias[i].info);
+  }
+  omc_alloc_interface.free_uncollectable(modelData->stringAlias);
+}
+
+ /*!
+  * @brief Initialize `data` struct.
+  *
+  * Simulation data:
+  *
+  *   - Allocate ring buffer.
+  *
+  * Model data:
+  *
+  *   - Allocate variable and parameter arrays.
+  *
+  * Simulation info:
+  *
+  *   - Allocate clocks.
+  *   - Allocate zero crossings.
+  *   - Buffer for pre variables.
+  *   - Buffer for linear and non-linear solvers.
+  *
+  * @param data         Partially initialized struct `DATA` to initialize.
+  *                     Uses information about number of variables from `data->modelData`.
+  * @param threadData   Used for error handling.
+  */
 void initializeDataStruc(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
@@ -960,24 +1119,25 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
     throwStreamPrint(threadData, "Your memory is not strong enough for our ringbuffer!");
   }
 
-  /* allocate index map */
-  data->simulationInfo->realVarsIndex     = (size_t*) calloc(data->modelData->nVariablesRealArray + 1, sizeof(size_t));
-  assertStreamPrint(threadData, NULL != data->simulationInfo->realVarsIndex, "out of memory");
-  data->simulationInfo->integerVarsIndex  = (size_t*) calloc(data->modelData->nVariablesIntegerArray + 1, sizeof(size_t));
-  assertStreamPrint(threadData, NULL != data->simulationInfo->integerVarsIndex, "out of memory");
-  data->simulationInfo->booleanVarsIndex  = (size_t*) calloc(data->modelData->nVariablesBooleanArray + 1, sizeof(size_t));
-  assertStreamPrint(threadData, NULL != data->simulationInfo->booleanVarsIndex, "out of memory");
-  data->simulationInfo->stringVarsIndex   = (size_t*) calloc(data->modelData->nVariablesStringArray + 1, sizeof(size_t));
-  assertStreamPrint(threadData, NULL != data->simulationInfo->stringVarsIndex, "out of memory");
+  /* Index map for array variables */
+  allocateArrayIndexMaps(data->modelData, data->simulationInfo, threadData);
+  computeVarIndices(data->simulationInfo, data->modelData);
 
-  /* compute index map */
-  data->callback->computeVarIndices(data, data->simulationInfo->realVarsIndex, data->simulationInfo->integerVarsIndex, data->simulationInfo->booleanVarsIndex, data->simulationInfo->stringVarsIndex);
+  data->modelData->nStates           = data->simulationInfo->realVarsIndex[data->modelData->nStatesArray];
+  data->modelData->nVariablesReal    = data->simulationInfo->realVarsIndex[data->modelData->nVariablesRealArray];
+  data->modelData->nVariablesInteger = data->simulationInfo->integerVarsIndex[data->modelData->nVariablesIntegerArray];
+  data->modelData->nVariablesBoolean = data->simulationInfo->booleanVarsIndex[data->modelData->nVariablesBooleanArray];
+  data->modelData->nVariablesString  = data->simulationInfo->stringVarsIndex[data->modelData->nVariablesStringArray];
 
-  /* compute scalar number of variables */
-  data->modelData->nVariablesReal     = data->simulationInfo->realVarsIndex[data->modelData->nVariablesRealArray];
-  data->modelData->nVariablesInteger  = data->simulationInfo->integerVarsIndex[data->modelData->nVariablesIntegerArray];
-  data->modelData->nVariablesBoolean  = data->simulationInfo->booleanVarsIndex[data->modelData->nVariablesBooleanArray];
-  data->modelData->nVariablesString   = data->simulationInfo->stringVarsIndex[data->modelData->nVariablesStringArray];
+  data->modelData->nParametersReal    = data->simulationInfo->realParamsIndex[data->modelData->nParametersRealArray];
+  data->modelData->nParametersInteger = data->simulationInfo->integerParamsIndex[data->modelData->nParametersIntegerArray];
+  data->modelData->nParametersBoolean = data->simulationInfo->booleanParamsIndex[data->modelData->nParametersBooleanArray];
+  data->modelData->nParametersString  = data->simulationInfo->stringParamsIndex[data->modelData->nParametersStringArray];
+
+  data->modelData->nAliasReal    = data->simulationInfo->realAliasIndex[data->modelData->nAliasRealArray];
+  data->modelData->nAliasInteger = data->simulationInfo->integerAliasIndex[data->modelData->nAliasIntegerArray];
+  data->modelData->nAliasBoolean = data->simulationInfo->booleanAliasIndex[data->modelData->nAliasBooleanArray];
+  data->modelData->nAliasString  = data->simulationInfo->stringAliasIndex[data->modelData->nAliasStringArray];
 
   /* prepare RingBuffer */
   for (i = 0; i < SIZERINGBUFFER; i++) {
@@ -1004,22 +1164,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   memset(data->localData, 0, SIZERINGBUFFER * sizeof(SIMULATION_DATA));
   lookupRingBuffer(data->simulationData, (void**) data->localData);
 
-  /* create modelData var arrays */
-  data->modelData->realVarsData = (STATIC_REAL_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nVariablesReal * sizeof(STATIC_REAL_DATA));
-  data->modelData->integerVarsData = (STATIC_INTEGER_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nVariablesInteger * sizeof(STATIC_INTEGER_DATA));
-  data->modelData->booleanVarsData = (STATIC_BOOLEAN_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nVariablesBoolean * sizeof(STATIC_BOOLEAN_DATA));
-#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
-  data->modelData->stringVarsData = (STATIC_STRING_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nVariablesString * sizeof(STATIC_STRING_DATA));
-#endif
-  data->modelData->realParameterData = (STATIC_REAL_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nParametersReal * sizeof(STATIC_REAL_DATA));
-  data->modelData->integerParameterData = (STATIC_INTEGER_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nParametersInteger * sizeof(STATIC_INTEGER_DATA));
-  data->modelData->booleanParameterData = (STATIC_BOOLEAN_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nParametersBoolean * sizeof(STATIC_BOOLEAN_DATA));
-  data->modelData->stringParameterData = (STATIC_STRING_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nParametersString * sizeof(STATIC_STRING_DATA));
-
-  data->modelData->realAlias = (DATA_REAL_ALIAS*) omc_alloc_interface.malloc_uncollectable(data->modelData->nAliasReal * sizeof(DATA_REAL_ALIAS));
-  data->modelData->integerAlias = (DATA_INTEGER_ALIAS*) omc_alloc_interface.malloc_uncollectable(data->modelData->nAliasInteger * sizeof(DATA_INTEGER_ALIAS));
-  data->modelData->booleanAlias = (DATA_BOOLEAN_ALIAS*) omc_alloc_interface.malloc_uncollectable(data->modelData->nAliasBoolean * sizeof(DATA_BOOLEAN_ALIAS));
-  data->modelData->stringAlias = (DATA_STRING_ALIAS*) omc_alloc_interface.malloc_uncollectable(data->modelData->nAliasString * sizeof(DATA_STRING_ALIAS));
+  /* modelData vars, parameter and alias arrays are already allocated in read_input_xml */
 
   data->modelData->samplesInfo = (SAMPLE_INFO*) omc_alloc_interface.malloc_uncollectable(data->modelData->nSamples * sizeof(SAMPLE_INFO));
   data->simulationInfo->nextSampleEvent = data->simulationInfo->startTime;
@@ -1206,15 +1351,6 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   initializeStateSetJacobians(data, threadData);
 #endif
 
-  /* allocate memory for sensitivity analysis */
-  if (omc_flag[FLAG_IDAS])
-  {
-    data->simulationInfo->sensitivityParList = (int*) calloc(data->modelData->nSensitivityParamVars, sizeof(int));
-    data->simulationInfo->sensitivityMatrix = (modelica_real*) calloc(data->modelData->nSensitivityVars-data->modelData->nSensitivityParamVars, sizeof(modelica_real));
-    data->modelData->realSensitivityData = (STATIC_REAL_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nSensitivityVars * sizeof(STATIC_REAL_DATA));
-  }
-
-
   TRACE_POP
 }
 
@@ -1244,28 +1380,9 @@ void deInitializeDataStruc(DATA *data)
   omc_alloc_interface.free_uncollectable(data->localData);
   freeRingBuffer(data->simulationData);
 
-  /* free modelData var arrays */
-  #define FREE_VARS(n,vars) { if (needToFree) { \
-    for(i=0; i < data->modelData->n; i++) { \
-      freeVarInfo(&((data->modelData->vars[i]).info)); \
-    } \
-  } \
-  omc_alloc_interface.free_uncollectable(data->modelData->vars); }
-
-  FREE_VARS(nVariablesReal,realVarsData)
-  FREE_VARS(nVariablesInteger,integerVarsData)
-  FREE_VARS(nVariablesBoolean,booleanVarsData)
-#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
-  FREE_VARS(nVariablesString,stringVarsData)
-#endif
-  FREE_VARS(nParametersReal,realParameterData)
-  FREE_VARS(nParametersInteger,integerParameterData)
-  FREE_VARS(nParametersBoolean,booleanParameterData)
-  FREE_VARS(nParametersString,stringParameterData)
-  FREE_VARS(nAliasReal,realAlias)
-  FREE_VARS(nAliasInteger,integerAlias)
-  FREE_VARS(nAliasBoolean,booleanAlias)
-  FREE_VARS(nAliasString,stringAlias)
+  if (needToFree) {
+    freeModelDataVars(data->modelData);
+  }
 
   omc_alloc_interface.free_uncollectable(data->modelData->samplesInfo);
   free(data->simulationInfo->nextSampleTimes);
@@ -1290,23 +1407,23 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->states_left);
   free(data->simulationInfo->states_right);
 
-  /* free buffer for index map */
-  free(data->simulationInfo->realVarsIndex);
-  free(data->simulationInfo->integerVarsIndex);
-  free(data->simulationInfo->booleanVarsIndex);
-  free(data->simulationInfo->stringVarsIndex);
+  freeArrayIndexMaps(data->simulationInfo);
 
   /* free buffer for old state variables */
   free(data->simulationInfo->realVarsOld);
   free(data->simulationInfo->integerVarsOld);
   free(data->simulationInfo->booleanVarsOld);
+#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
   omc_alloc_interface.free_uncollectable(data->simulationInfo->stringVarsOld);
+#endif
 
   /* free buffer for all variable pre values */
   free(data->simulationInfo->realVarsPre);
   free(data->simulationInfo->integerVarsPre);
   free(data->simulationInfo->booleanVarsPre);
+#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
   omc_alloc_interface.free_uncollectable(data->simulationInfo->stringVarsPre);
+#endif
 
   /* free buffer for all parameters values */
   free(data->simulationInfo->realParameter);
@@ -1359,7 +1476,9 @@ void deInitializeDataStruc(DATA *data)
   for(i=0; i<data->modelData->nDelayExpressions; i++)
     freeRingBuffer(data->simulationInfo->delayStructure[i]);
 
+#if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
   free(data->simulationInfo->delayStructure);
+#endif
 
 #if !defined(OMC_NO_STATESELECTION)
   /* free stateset data */
@@ -1375,7 +1494,6 @@ void deInitializeDataStruc(DATA *data)
   {
     free(data->simulationInfo->sensitivityParList);
     free(data->simulationInfo->sensitivityMatrix);
-    FREE_VARS(nSensitivityVars, realSensitivityData)
   }
 
   /* Free model info xml data */

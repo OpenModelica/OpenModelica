@@ -25,15 +25,15 @@ val(fixedVoltageSource1.p[1], 1.0);
 //   (1) Continuous ODE Partition
 // ================================
 //
-// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real[1] busBar1.v = busBar1.v
 // ### Equation:
 // 	[SCAL] (1) busBar1.v[1] = fixedVoltageSource1.V ($RES_SIM_32)
 //
-// BLOCK 2: Resizable Component (status = Solve.UNPROCESSED)
-// -----------------------------------------------------------
+// BLOCK 2: Resizable Component (status = Solve.UNPROCESSED, size = 3)
+// ---------------------------------------------------------------------
 // ### Variable:
 // 	busBar1.terminal_n[$i1].v
 // ### Equation:
@@ -42,8 +42,8 @@ val(fixedVoltageSource1.p[1], 1.0);
 // [----]   [ARRY] (1) busBar1.terminal_n[$i1].v = busBar1.v ($RES_SIM_1)
 // [----] end for;
 //
-// BLOCK 3: Resizable Component (status = Solve.UNPROCESSED)
-// -----------------------------------------------------------
+// BLOCK 3: Resizable Component (status = Solve.UNPROCESSED, size = 3)
+// ---------------------------------------------------------------------
 // ### Variable:
 // 	fixedLoad1[$i1].terminal.i[1]
 // ### Equation:
@@ -52,8 +52,8 @@ val(fixedVoltageSource1.p[1], 1.0);
 // [----]   [SCAL] (1) busBar1.terminal_n[$i1].v[1] * fixedLoad1[$i1].terminal.i[1] = fixedLoad1[$i1].P ($RES_SIM_34)
 // [----] end for;
 //
-// BLOCK 4: Resizable Component (status = Solve.UNPROCESSED)
-// -----------------------------------------------------------
+// BLOCK 4: Resizable Component (status = Solve.UNPROCESSED, size = 3)
+// ---------------------------------------------------------------------
 // ### Variable:
 // 	busBar1.terminal_n[$i1].i[1]
 // ### Equation:
@@ -62,57 +62,57 @@ val(fixedVoltageSource1.p[1], 1.0);
 // [----]   [SCAL] (1) busBar1.terminal_n[$i1].i[1] + fixedLoad1[$i1].terminal.i[1] = 0.0 ($RES_SIM_17)
 // [----] end for;
 //
-// BLOCK 5: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 5: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real $FUN_1
 // ### Equation:
 // 	[SCAL] (1) $FUN_1 = sum(busBar1.terminal_n[:].i[1]) ($RES_AUX_31)
 //
-// BLOCK 6: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 6: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real[1] busBar1.i = busBar1.i
 // ### Equation:
 // 	[SCAL] (1) busBar1.i[1] = -$FUN_1 ($RES_SIM_2)
 //
-// BLOCK 7: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 7: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real[1] busBar1.p = VectorizedPowerSystemTest.busBar1.PhaseSystem.phasePowers_vi(busBar1.v, busBar1.i)
 // ### Equation:
 // 	[SCAL] (1) busBar1.p[1] = busBar1.v[1] * busBar1.i[1] ($RES_SIM_35)
 //
-// BLOCK 8: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 8: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real busBar1.V = VectorizedPowerSystemTest.busBar1.PhaseSystem.systemVoltage(busBar1.v)
 // ### Equation:
 // 	[SCAL] (1) busBar1.V = busBar1.v[1] ($RES_BND_28)
 //
-// BLOCK 9: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 9: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real busBar1.I = VectorizedPowerSystemTest.busBar1.PhaseSystem.systemCurrent(busBar1.i)
 // ### Equation:
 // 	[SCAL] (1) busBar1.I = busBar1.i[1] ($RES_BND_29)
 //
-// BLOCK 10: Single Strong Component (status = Solve.UNPROCESSED)
-// ----------------------------------------------------------------
+// BLOCK 10: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// --------------------------------------------------------------------------
 // ### Variable:
 // 	flow Real[1] fixedVoltageSource1.terminal.i
 // ### Equation:
 // 	[SCAL] (1) fixedVoltageSource1.terminal.i[1] + busBar1.i[1] = 0.0 ($RES_SIM_14)
 //
-// BLOCK 11: Single Strong Component (status = Solve.UNPROCESSED)
-// ----------------------------------------------------------------
+// BLOCK 11: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// --------------------------------------------------------------------------
 // ### Variable:
 // 	Real[1] fixedVoltageSource1.p = VectorizedPowerSystemTest.fixedVoltageSource1.PhaseSystem.phasePowers_vi(busBar1.v, fixedVoltageSource1.terminal.i)
 // ### Equation:
 // 	[SCAL] (1) fixedVoltageSource1.p[1] = busBar1.v[1] * fixedVoltageSource1.terminal.i[1] ($RES_SIM_38)
 //
-// BLOCK 12: Resizable Component (status = Solve.UNPROCESSED)
-// ------------------------------------------------------------
+// BLOCK 12: Resizable Component (status = Solve.UNPROCESSED, size = 3)
+// ----------------------------------------------------------------------
 // ### Variable:
 // 	fixedLoad1[$i1].p[1]
 // ### Equation:
@@ -125,8 +125,8 @@ val(fixedVoltageSource1.p[1], 1.0);
 //   (2) Continuous ODE Partition
 // ================================
 //
-// BLOCK 1: Multi Strong Component (status = Solve.UNPROCESSED)
-// --------------------------------------------------------------
+// BLOCK 1: Multi Strong Component (status = Solve.UNPROCESSED, size = 1)
+// ------------------------------------------------------------------------
 // ### Variables:
 // 	[DISS] (1) discrete Real system.initime
 // ### Equation:
@@ -139,8 +139,8 @@ val(fixedVoltageSource1.p[1], 1.0);
 //   (3) Continuous ODE Partition
 // ================================
 //
-// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real system.thetaRef = system.thetaRef
 // ### Equation:
@@ -150,8 +150,8 @@ val(fixedVoltageSource1.p[1], 1.0);
 //   (4) Continuous ODE Partition
 // ================================
 //
-// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real system.thetaRel = system.thetaRef - system.thetaRef
 // ### Equation:
@@ -167,15 +167,15 @@ val(fixedVoltageSource1.p[1], 1.0);
 //   (1) Continuous ODE Partition
 // ================================
 //
-// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real[1] busBar1.v = busBar1.v
 // ### Equation:
 // 	[SCAL] (1) busBar1.v[1] = fixedVoltageSource1.V ($RES_SIM_32)
 //
-// BLOCK 2: Resizable Component (status = Solve.UNPROCESSED)
-// -----------------------------------------------------------
+// BLOCK 2: Resizable Component (status = Solve.UNPROCESSED, size = 3)
+// ---------------------------------------------------------------------
 // ### Variable:
 // 	busBar1.terminal_n[$i1].v
 // ### Equation:
@@ -184,8 +184,8 @@ val(fixedVoltageSource1.p[1], 1.0);
 // [----]   [ARRY] (1) busBar1.terminal_n[$i1].v = busBar1.v ($RES_SIM_1)
 // [----] end for;
 //
-// BLOCK 3: Resizable Component (status = Solve.UNPROCESSED)
-// -----------------------------------------------------------
+// BLOCK 3: Resizable Component (status = Solve.UNPROCESSED, size = 3)
+// ---------------------------------------------------------------------
 // ### Variable:
 // 	fixedLoad1[$i1].terminal.i[1]
 // ### Equation:
@@ -194,8 +194,8 @@ val(fixedVoltageSource1.p[1], 1.0);
 // [----]   [SCAL] (1) busBar1.terminal_n[$i1].v[1] * fixedLoad1[$i1].terminal.i[1] = fixedLoad1[$i1].P ($RES_SIM_34)
 // [----] end for;
 //
-// BLOCK 4: Resizable Component (status = Solve.UNPROCESSED)
-// -----------------------------------------------------------
+// BLOCK 4: Resizable Component (status = Solve.UNPROCESSED, size = 3)
+// ---------------------------------------------------------------------
 // ### Variable:
 // 	busBar1.terminal_n[$i1].i[1]
 // ### Equation:
@@ -204,57 +204,57 @@ val(fixedVoltageSource1.p[1], 1.0);
 // [----]   [SCAL] (1) busBar1.terminal_n[$i1].i[1] + fixedLoad1[$i1].terminal.i[1] = 0.0 ($RES_SIM_17)
 // [----] end for;
 //
-// BLOCK 5: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 5: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real $FUN_1
 // ### Equation:
 // 	[SCAL] (1) $FUN_1 = sum(busBar1.terminal_n[:].i[1]) ($RES_AUX_31)
 //
-// BLOCK 6: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 6: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real[1] busBar1.i = busBar1.i
 // ### Equation:
 // 	[SCAL] (1) busBar1.i[1] = -$FUN_1 ($RES_SIM_2)
 //
-// BLOCK 7: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 7: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real[1] busBar1.p = VectorizedPowerSystemTest.busBar1.PhaseSystem.phasePowers_vi(busBar1.v, busBar1.i)
 // ### Equation:
 // 	[SCAL] (1) busBar1.p[1] = busBar1.v[1] * busBar1.i[1] ($RES_SIM_35)
 //
-// BLOCK 8: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 8: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real busBar1.V = VectorizedPowerSystemTest.busBar1.PhaseSystem.systemVoltage(busBar1.v)
 // ### Equation:
 // 	[SCAL] (1) busBar1.V = busBar1.v[1] ($RES_BND_28)
 //
-// BLOCK 9: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 9: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real busBar1.I = VectorizedPowerSystemTest.busBar1.PhaseSystem.systemCurrent(busBar1.i)
 // ### Equation:
 // 	[SCAL] (1) busBar1.I = busBar1.i[1] ($RES_BND_29)
 //
-// BLOCK 10: Single Strong Component (status = Solve.UNPROCESSED)
-// ----------------------------------------------------------------
+// BLOCK 10: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// --------------------------------------------------------------------------
 // ### Variable:
 // 	flow Real[1] fixedVoltageSource1.terminal.i
 // ### Equation:
 // 	[SCAL] (1) fixedVoltageSource1.terminal.i[1] + busBar1.i[1] = 0.0 ($RES_SIM_14)
 //
-// BLOCK 11: Single Strong Component (status = Solve.UNPROCESSED)
-// ----------------------------------------------------------------
+// BLOCK 11: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// --------------------------------------------------------------------------
 // ### Variable:
 // 	Real[1] fixedVoltageSource1.p = VectorizedPowerSystemTest.fixedVoltageSource1.PhaseSystem.phasePowers_vi(busBar1.v, fixedVoltageSource1.terminal.i)
 // ### Equation:
 // 	[SCAL] (1) fixedVoltageSource1.p[1] = busBar1.v[1] * fixedVoltageSource1.terminal.i[1] ($RES_SIM_38)
 //
-// BLOCK 12: Resizable Component (status = Solve.UNPROCESSED)
-// ------------------------------------------------------------
+// BLOCK 12: Resizable Component (status = Solve.UNPROCESSED, size = 3)
+// ----------------------------------------------------------------------
 // ### Variable:
 // 	fixedLoad1[$i1].p[1]
 // ### Equation:
@@ -267,8 +267,8 @@ val(fixedVoltageSource1.p[1], 1.0);
 //   (2) Continuous ODE Partition
 // ================================
 //
-// BLOCK 1: Multi Strong Component (status = Solve.UNPROCESSED)
-// --------------------------------------------------------------
+// BLOCK 1: Multi Strong Component (status = Solve.UNPROCESSED, size = 0)
+// ------------------------------------------------------------------------
 // ### Variables:
 // 	[DISS] (1) discrete Real system.initime
 // ### Equation:
@@ -278,8 +278,8 @@ val(fixedVoltageSource1.p[1], 1.0);
 //   (3) Continuous ODE Partition
 // ================================
 //
-// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real system.thetaRef = system.thetaRef
 // ### Equation:
@@ -289,8 +289,8 @@ val(fixedVoltageSource1.p[1], 1.0);
 //   (4) Continuous ODE Partition
 // ================================
 //
-// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real system.thetaRel = system.thetaRef - system.thetaRef
 // ### Equation:
@@ -306,15 +306,15 @@ val(fixedVoltageSource1.p[1], 1.0);
 //   (1) Continuous INI Partition
 // ================================
 //
-// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 1: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real[1] busBar1.v = busBar1.v
 // ### Equation:
 // 	[SCAL] (1) busBar1.v[1] = fixedVoltageSource1.V ($RES_SIM_32)
 //
-// BLOCK 2: Resizable Component (status = Solve.UNPROCESSED)
-// -----------------------------------------------------------
+// BLOCK 2: Resizable Component (status = Solve.UNPROCESSED, size = 3)
+// ---------------------------------------------------------------------
 // ### Variable:
 // 	busBar1.terminal_n[$i1].v
 // ### Equation:
@@ -323,8 +323,8 @@ val(fixedVoltageSource1.p[1], 1.0);
 // [----]   [ARRY] (1) busBar1.terminal_n[$i1].v = busBar1.v ($RES_SIM_1)
 // [----] end for;
 //
-// BLOCK 3: Resizable Component (status = Solve.UNPROCESSED)
-// -----------------------------------------------------------
+// BLOCK 3: Resizable Component (status = Solve.UNPROCESSED, size = 3)
+// ---------------------------------------------------------------------
 // ### Variable:
 // 	fixedLoad1[$i1].terminal.i[1]
 // ### Equation:
@@ -333,8 +333,8 @@ val(fixedVoltageSource1.p[1], 1.0);
 // [----]   [SCAL] (1) busBar1.terminal_n[$i1].v[1] * fixedLoad1[$i1].terminal.i[1] = fixedLoad1[$i1].P ($RES_SIM_34)
 // [----] end for;
 //
-// BLOCK 4: Resizable Component (status = Solve.UNPROCESSED)
-// -----------------------------------------------------------
+// BLOCK 4: Resizable Component (status = Solve.UNPROCESSED, size = 3)
+// ---------------------------------------------------------------------
 // ### Variable:
 // 	busBar1.terminal_n[$i1].i[1]
 // ### Equation:
@@ -343,36 +343,36 @@ val(fixedVoltageSource1.p[1], 1.0);
 // [----]   [SCAL] (1) busBar1.terminal_n[$i1].i[1] + fixedLoad1[$i1].terminal.i[1] = 0.0 ($RES_SIM_17)
 // [----] end for;
 //
-// BLOCK 5: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 5: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real $FUN_1
 // ### Equation:
 // 	[SCAL] (1) $FUN_1 = sum(busBar1.terminal_n[:].i[1]) ($RES_AUX_31)
 //
-// BLOCK 6: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 6: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real[1] busBar1.i = busBar1.i
 // ### Equation:
 // 	[SCAL] (1) busBar1.i[1] = -$FUN_1 ($RES_SIM_2)
 //
-// BLOCK 7: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 7: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	flow Real[1] fixedVoltageSource1.terminal.i
 // ### Equation:
 // 	[SCAL] (1) fixedVoltageSource1.terminal.i[1] + busBar1.i[1] = 0.0 ($RES_SIM_14)
 //
-// BLOCK 8: Single Strong Component (status = Solve.UNPROCESSED)
-// ---------------------------------------------------------------
+// BLOCK 8: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
 // ### Variable:
 // 	Real[1] fixedVoltageSource1.p = VectorizedPowerSystemTest.fixedVoltageSource1.PhaseSystem.phasePowers_vi(busBar1.v, fixedVoltageSource1.terminal.i)
 // ### Equation:
 // 	[SCAL] (1) fixedVoltageSource1.p[1] = busBar1.v[1] * fixedVoltageSource1.terminal.i[1] ($RES_SIM_38)
 //
-// BLOCK 9: Multi Strong Component (status = Solve.UNPROCESSED)
-// --------------------------------------------------------------
+// BLOCK 9: Multi Strong Component (status = Solve.UNPROCESSED, size = 1)
+// ------------------------------------------------------------------------
 // ### Variables:
 // 	[DISS] (1) discrete Real system.initime
 // ### Equation:
@@ -380,50 +380,50 @@ val(fixedVoltageSource1.p[1], 1.0);
 // 	[----] system.initime := time;
 //
 //
-// BLOCK 10: Single Strong Component (status = Solve.UNPROCESSED)
-// ----------------------------------------------------------------
+// BLOCK 10: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// --------------------------------------------------------------------------
 // ### Variable:
 // 	Real system.thetaRel = system.thetaRef - system.thetaRef
 // ### Equation:
 // 	[SCAL] (1) system.thetaRel = 0.0 ($RES_BND_21)
 //
-// BLOCK 11: Single Strong Component (status = Solve.UNPROCESSED)
-// ----------------------------------------------------------------
+// BLOCK 11: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// --------------------------------------------------------------------------
 // ### Variable:
 // 	Real system.thetaRef = system.thetaRef
 // ### Equation:
 // 	[SCAL] (1) system.thetaRef = 314.1592653589793 * time ($RES_SIM_7)
 //
-// BLOCK 12: Single Strong Component (status = Solve.UNPROCESSED)
-// ----------------------------------------------------------------
+// BLOCK 12: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// --------------------------------------------------------------------------
 // ### Variable:
 // 	Real[1] busBar1.p = VectorizedPowerSystemTest.busBar1.PhaseSystem.phasePowers_vi(busBar1.v, busBar1.i)
 // ### Equation:
 // 	[SCAL] (1) busBar1.p[1] = busBar1.v[1] * busBar1.i[1] ($RES_SIM_35)
 //
-// BLOCK 13: Single Strong Component (status = Solve.UNPROCESSED)
-// ----------------------------------------------------------------
+// BLOCK 13: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// --------------------------------------------------------------------------
 // ### Variable:
 // 	Real busBar1.V = VectorizedPowerSystemTest.busBar1.PhaseSystem.systemVoltage(busBar1.v)
 // ### Equation:
 // 	[SCAL] (1) busBar1.V = busBar1.v[1] ($RES_BND_28)
 //
-// BLOCK 14: Single Strong Component (status = Solve.UNPROCESSED)
-// ----------------------------------------------------------------
+// BLOCK 14: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// --------------------------------------------------------------------------
 // ### Variable:
 // 	Real busBar1.I = VectorizedPowerSystemTest.busBar1.PhaseSystem.systemCurrent(busBar1.i)
 // ### Equation:
 // 	[SCAL] (1) busBar1.I = busBar1.i[1] ($RES_BND_29)
 //
-// BLOCK 15: Single Strong Component (status = Solve.UNPROCESSED)
-// ----------------------------------------------------------------
+// BLOCK 15: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// --------------------------------------------------------------------------
 // ### Variable:
 // 	discrete Real $PRE.system.initime
 // ### Equation:
 // 	[SCAL] (1) $PRE.system.initime = $START.system.initime ($RES_SIM_40)
 //
-// BLOCK 16: Resizable Component (status = Solve.UNPROCESSED)
-// ------------------------------------------------------------
+// BLOCK 16: Resizable Component (status = Solve.UNPROCESSED, size = 3)
+// ----------------------------------------------------------------------
 // ### Variable:
 // 	fixedLoad1[$i1].p[1]
 // ### Equation:
@@ -443,16 +443,16 @@ val(fixedVoltageSource1.p[1], 1.0);
 // ================================
 //
 // --- Alias of INI[1 | 1] ---
-// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
+// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
 // ### Variable:
 // 	Real[1] busBar1.v = busBar1.v
 // ### Equation:
 // 	[SCAL] (1) busBar1.v[1] = fixedVoltageSource1.V ($RES_SIM_32)
 //
 // --- Alias of INI[1 | 2] ---
-// BLOCK 2: Resizable Component (status = Solve.EXPLICIT)
-// --------------------------------------------------------
+// BLOCK 2: Resizable Component (status = Solve.EXPLICIT, size = 3)
+// ------------------------------------------------------------------
 // ### Variable:
 // 	busBar1.terminal_n[$i1].v
 // ### Equation:
@@ -462,8 +462,8 @@ val(fixedVoltageSource1.p[1], 1.0);
 // [----] end for;
 //
 // --- Alias of INI[1 | 3] ---
-// BLOCK 3: Resizable Component (status = Solve.EXPLICIT)
-// --------------------------------------------------------
+// BLOCK 3: Resizable Component (status = Solve.EXPLICIT, size = 3)
+// ------------------------------------------------------------------
 // ### Variable:
 // 	fixedLoad1[$i1].terminal.i[1]
 // ### Equation:
@@ -473,8 +473,8 @@ val(fixedVoltageSource1.p[1], 1.0);
 // [----] end for;
 //
 // --- Alias of INI[1 | 4] ---
-// BLOCK 4: Resizable Component (status = Solve.EXPLICIT)
-// --------------------------------------------------------
+// BLOCK 4: Resizable Component (status = Solve.EXPLICIT, size = 3)
+// ------------------------------------------------------------------
 // ### Variable:
 // 	busBar1.terminal_n[$i1].i[1]
 // ### Equation:
@@ -484,64 +484,64 @@ val(fixedVoltageSource1.p[1], 1.0);
 // [----] end for;
 //
 // --- Alias of INI[1 | 5] ---
-// BLOCK 5: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
+// BLOCK 5: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
 // ### Variable:
 // 	Real $FUN_1
 // ### Equation:
 // 	[SCAL] (1) $FUN_1 = sum(busBar1.terminal_n[:].i[1]) ($RES_AUX_31)
 //
 // --- Alias of INI[1 | 6] ---
-// BLOCK 6: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
+// BLOCK 6: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
 // ### Variable:
 // 	Real[1] busBar1.i = busBar1.i
 // ### Equation:
 // 	[SCAL] (1) busBar1.i[1] = -$FUN_1 ($RES_SIM_2)
 //
 // --- Alias of INI[1 | 12] ---
-// BLOCK 7: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
+// BLOCK 7: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
 // ### Variable:
 // 	Real[1] busBar1.p = VectorizedPowerSystemTest.busBar1.PhaseSystem.phasePowers_vi(busBar1.v, busBar1.i)
 // ### Equation:
 // 	[SCAL] (1) busBar1.p[1] = busBar1.v[1] * busBar1.i[1] ($RES_SIM_35)
 //
 // --- Alias of INI[1 | 13] ---
-// BLOCK 8: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
+// BLOCK 8: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
 // ### Variable:
 // 	Real busBar1.V = VectorizedPowerSystemTest.busBar1.PhaseSystem.systemVoltage(busBar1.v)
 // ### Equation:
 // 	[SCAL] (1) busBar1.V = busBar1.v[1] ($RES_BND_28)
 //
 // --- Alias of INI[1 | 14] ---
-// BLOCK 9: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
+// BLOCK 9: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
 // ### Variable:
 // 	Real busBar1.I = VectorizedPowerSystemTest.busBar1.PhaseSystem.systemCurrent(busBar1.i)
 // ### Equation:
 // 	[SCAL] (1) busBar1.I = busBar1.i[1] ($RES_BND_29)
 //
 // --- Alias of INI[1 | 7] ---
-// BLOCK 10: Single Strong Component (status = Solve.EXPLICIT)
-// -------------------------------------------------------------
+// BLOCK 10: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// -----------------------------------------------------------------------
 // ### Variable:
 // 	flow Real[1] fixedVoltageSource1.terminal.i
 // ### Equation:
 // 	[SCAL] (1) fixedVoltageSource1.terminal.i[1] = -busBar1.i[1] ($RES_SIM_14)
 //
 // --- Alias of INI[1 | 8] ---
-// BLOCK 11: Single Strong Component (status = Solve.EXPLICIT)
-// -------------------------------------------------------------
+// BLOCK 11: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// -----------------------------------------------------------------------
 // ### Variable:
 // 	Real[1] fixedVoltageSource1.p = VectorizedPowerSystemTest.fixedVoltageSource1.PhaseSystem.phasePowers_vi(busBar1.v, fixedVoltageSource1.terminal.i)
 // ### Equation:
 // 	[SCAL] (1) fixedVoltageSource1.p[1] = busBar1.v[1] * fixedVoltageSource1.terminal.i[1] ($RES_SIM_38)
 //
 // --- Alias of INI[1 | 16] ---
-// BLOCK 12: Resizable Component (status = Solve.EXPLICIT)
-// ---------------------------------------------------------
+// BLOCK 12: Resizable Component (status = Solve.EXPLICIT, size = 3)
+// -------------------------------------------------------------------
 // ### Variable:
 // 	fixedLoad1[$i1].p[1]
 // ### Equation:
@@ -559,8 +559,8 @@ val(fixedVoltageSource1.p[1], 1.0);
 // ================================
 //
 // --- Alias of INI[1 | 11] ---
-// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
+// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
 // ### Variable:
 // 	Real system.thetaRef = system.thetaRef
 // ### Equation:
@@ -571,8 +571,8 @@ val(fixedVoltageSource1.p[1], 1.0);
 // ================================
 //
 // --- Alias of INI[1 | 10] ---
-// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
+// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
 // ### Variable:
 // 	Real system.thetaRel = system.thetaRef - system.thetaRef
 // ### Equation:
@@ -588,15 +588,15 @@ val(fixedVoltageSource1.p[1], 1.0);
 //   (1) Continuous INI Partition
 // ================================
 //
-// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
+// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
 // ### Variable:
 // 	Real[1] busBar1.v = busBar1.v
 // ### Equation:
 // 	[SCAL] (1) busBar1.v[1] = fixedVoltageSource1.V ($RES_SIM_32)
 //
-// BLOCK 2: Resizable Component (status = Solve.EXPLICIT)
-// --------------------------------------------------------
+// BLOCK 2: Resizable Component (status = Solve.EXPLICIT, size = 3)
+// ------------------------------------------------------------------
 // ### Variable:
 // 	busBar1.terminal_n[$i1].v
 // ### Equation:
@@ -605,8 +605,8 @@ val(fixedVoltageSource1.p[1], 1.0);
 // [----]   [ARRY] (1) busBar1.terminal_n[$i1].v = busBar1.v ($RES_SIM_1)
 // [----] end for;
 //
-// BLOCK 3: Resizable Component (status = Solve.EXPLICIT)
-// --------------------------------------------------------
+// BLOCK 3: Resizable Component (status = Solve.EXPLICIT, size = 3)
+// ------------------------------------------------------------------
 // ### Variable:
 // 	fixedLoad1[$i1].terminal.i[1]
 // ### Equation:
@@ -615,8 +615,8 @@ val(fixedVoltageSource1.p[1], 1.0);
 // [----]   [SCAL] (1) fixedLoad1[$i1].terminal.i[1] = fixedLoad1[$i1].P / busBar1.terminal_n[$i1].v[1] ($RES_SIM_34)
 // [----] end for;
 //
-// BLOCK 4: Resizable Component (status = Solve.EXPLICIT)
-// --------------------------------------------------------
+// BLOCK 4: Resizable Component (status = Solve.EXPLICIT, size = 3)
+// ------------------------------------------------------------------
 // ### Variable:
 // 	busBar1.terminal_n[$i1].i[1]
 // ### Equation:
@@ -625,36 +625,36 @@ val(fixedVoltageSource1.p[1], 1.0);
 // [----]   [SCAL] (1) busBar1.terminal_n[$i1].i[1] = -fixedLoad1[$i1].terminal.i[1] ($RES_SIM_17)
 // [----] end for;
 //
-// BLOCK 5: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
+// BLOCK 5: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
 // ### Variable:
 // 	Real $FUN_1
 // ### Equation:
 // 	[SCAL] (1) $FUN_1 = sum(busBar1.terminal_n[:].i[1]) ($RES_AUX_31)
 //
-// BLOCK 6: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
+// BLOCK 6: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
 // ### Variable:
 // 	Real[1] busBar1.i = busBar1.i
 // ### Equation:
 // 	[SCAL] (1) busBar1.i[1] = -$FUN_1 ($RES_SIM_2)
 //
-// BLOCK 7: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
+// BLOCK 7: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
 // ### Variable:
 // 	flow Real[1] fixedVoltageSource1.terminal.i
 // ### Equation:
 // 	[SCAL] (1) fixedVoltageSource1.terminal.i[1] = -busBar1.i[1] ($RES_SIM_14)
 //
-// BLOCK 8: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
+// BLOCK 8: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
 // ### Variable:
 // 	Real[1] fixedVoltageSource1.p = VectorizedPowerSystemTest.fixedVoltageSource1.PhaseSystem.phasePowers_vi(busBar1.v, fixedVoltageSource1.terminal.i)
 // ### Equation:
 // 	[SCAL] (1) fixedVoltageSource1.p[1] = busBar1.v[1] * fixedVoltageSource1.terminal.i[1] ($RES_SIM_38)
 //
-// BLOCK 9: Multi Strong Component (status = Solve.EXPLICIT)
-// -----------------------------------------------------------
+// BLOCK 9: Multi Strong Component (status = Solve.EXPLICIT, size = 1)
+// ---------------------------------------------------------------------
 // ### Variables:
 // 	[DISS] (1) discrete Real system.initime
 // ### Equation:
@@ -662,50 +662,50 @@ val(fixedVoltageSource1.p[1], 1.0);
 // 	[----] system.initime := time;
 //
 //
-// BLOCK 10: Single Strong Component (status = Solve.EXPLICIT)
-// -------------------------------------------------------------
+// BLOCK 10: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// -----------------------------------------------------------------------
 // ### Variable:
 // 	Real system.thetaRel = system.thetaRef - system.thetaRef
 // ### Equation:
 // 	[SCAL] (1) system.thetaRel = 0.0 ($RES_BND_21)
 //
-// BLOCK 11: Single Strong Component (status = Solve.EXPLICIT)
-// -------------------------------------------------------------
+// BLOCK 11: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// -----------------------------------------------------------------------
 // ### Variable:
 // 	Real system.thetaRef = system.thetaRef
 // ### Equation:
 // 	[SCAL] (1) system.thetaRef = 314.1592653589793 * time ($RES_SIM_7)
 //
-// BLOCK 12: Single Strong Component (status = Solve.EXPLICIT)
-// -------------------------------------------------------------
+// BLOCK 12: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// -----------------------------------------------------------------------
 // ### Variable:
 // 	Real[1] busBar1.p = VectorizedPowerSystemTest.busBar1.PhaseSystem.phasePowers_vi(busBar1.v, busBar1.i)
 // ### Equation:
 // 	[SCAL] (1) busBar1.p[1] = busBar1.v[1] * busBar1.i[1] ($RES_SIM_35)
 //
-// BLOCK 13: Single Strong Component (status = Solve.EXPLICIT)
-// -------------------------------------------------------------
+// BLOCK 13: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// -----------------------------------------------------------------------
 // ### Variable:
 // 	Real busBar1.V = VectorizedPowerSystemTest.busBar1.PhaseSystem.systemVoltage(busBar1.v)
 // ### Equation:
 // 	[SCAL] (1) busBar1.V = busBar1.v[1] ($RES_BND_28)
 //
-// BLOCK 14: Single Strong Component (status = Solve.EXPLICIT)
-// -------------------------------------------------------------
+// BLOCK 14: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// -----------------------------------------------------------------------
 // ### Variable:
 // 	Real busBar1.I = VectorizedPowerSystemTest.busBar1.PhaseSystem.systemCurrent(busBar1.i)
 // ### Equation:
 // 	[SCAL] (1) busBar1.I = busBar1.i[1] ($RES_BND_29)
 //
-// BLOCK 15: Single Strong Component (status = Solve.EXPLICIT)
-// -------------------------------------------------------------
+// BLOCK 15: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// -----------------------------------------------------------------------
 // ### Variable:
 // 	discrete Real $PRE.system.initime
 // ### Equation:
 // 	[SCAL] (1) $PRE.system.initime = $START.system.initime ($RES_SIM_40)
 //
-// BLOCK 16: Resizable Component (status = Solve.EXPLICIT)
-// ---------------------------------------------------------
+// BLOCK 16: Resizable Component (status = Solve.EXPLICIT, size = 3)
+// -------------------------------------------------------------------
 // ### Variable:
 // 	fixedLoad1[$i1].p[1]
 // ### Equation:

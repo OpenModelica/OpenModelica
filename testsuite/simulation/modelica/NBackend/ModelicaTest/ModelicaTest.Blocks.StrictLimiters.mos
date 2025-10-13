@@ -3,7 +3,7 @@
 // status: correct
 
 
-loadModel(ModelicaTest, {"4.0.0"});getErrorString();
+loadModel(ModelicaTest, {"4.1.0"});getErrorString();
 setCommandLineOptions("--newBackend"); getErrorString();
 
 simulate(ModelicaTest.Blocks.StrictLimiters); getErrorString();

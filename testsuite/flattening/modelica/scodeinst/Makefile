@@ -374,6 +374,7 @@ DimUnknown13.mo \
 DimUnknown14.mo \
 DimUnknown15.mo \
 DimUnknown16.mo \
+DimUnknown17.mo \
 dim1.mo \
 dim13.mo \
 dim16.mo \
@@ -837,6 +838,7 @@ InnerOuterReplaceable3.mo \
 InstanceRestriction1.mo \
 InstanceRestriction2.mo \
 InStreamArray.mo \
+InStreamArray2.mo \
 InStreamFlowThreshold.mo \
 InStreamInsideOutside.mo \
 InStreamNominalThreshold.mo \
@@ -945,6 +947,7 @@ OperatorOverloadBinaryAmbiguousTwoRecords.mo \
 OperatorOverloadBinaryWithBuiltin.mo \
 OperatorOverloadComplex.mo \
 OperatorOverloadConstructor1.mo \
+OperatorOverloadConstructor2.mo \
 OperatorOverloadConstructorDefault1.mo \
 OperatorOverloadConstructorDefault2.mo \
 OperatorOverloadConstructorHideDefault.mo \

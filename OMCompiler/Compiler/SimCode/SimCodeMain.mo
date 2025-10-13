@@ -456,7 +456,7 @@ algorithm
   try
     SimCodeUtil.resetFunctionIndex();
     SimCodeFunctionUtil.codegenResetTryThrowIndex();
-    if Config.acceptMetaModelicaGrammar() or Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
+    if /*Config.acceptMetaModelicaGrammar() or*/ Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
       Tpl.textFileConvertLines(Tpl.tplCallWithFailErrorNoArg(func), file);
     else
       nErr := Error.getNumErrorMessages();
@@ -762,7 +762,7 @@ algorithm
       SimCode.VarInfo varInfo;
     case (SimCode.SIMCODE(),"C")
       algorithm
-        fileNamePrefixHash := substring(intString(stringHashDjb2(simCode.fileNamePrefix)), 1, 3);
+        fileNamePrefixHash := Util.hashFileNamePrefix(simCode.fileNamePrefix);
         fmutmp := fileNamePrefixHash + ".fmutmp";
         if System.directoryExists(fmutmp) then
           if not System.removeDirectory(fmutmp) then
@@ -910,8 +910,8 @@ algorithm
         * Check if modelicaStandardTables source files are needed
         * this is not clear as of now, may be we should copy all the external C sources by default
         */
-        copyFiles(RuntimeSources.modelica_external_c_sources, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
-        copyFiles(RuntimeSources.modelica_external_c_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+        copyFiles(RuntimeSources.modelica_external_c_sources, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
+        copyFiles(RuntimeSources.modelica_external_c_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
         modelica_standard_table_sources := RuntimeSources.modelica_external_c_sources;
 
         System.writeFile(fmutmp+"/sources/isfmi" + (if FMUVersion=="1.0" then "1" else "2"), "");
@@ -964,6 +964,12 @@ algorithm
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_NAME_IN@", simCode.fileNamePrefix);     // Name with underscored instead of dots
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_TARGET_NAME@", simCode.fmuTargetName);  // Name with dots
 
+        // Include debugging symbols?
+        if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
+          cmakelistsStr := System.stringReplace(cmakelistsStr, "@CMAKE_BUILD_TYPE@", "Debug");
+        else
+          cmakelistsStr := System.stringReplace(cmakelistsStr, "@CMAKE_BUILD_TYPE@", "Release");
+        end if;
         // Set CMake runtime dependencies level
         _ := match (Flags.getConfigString(Flags.FMU_RUNTIME_DEPENDS))
           local

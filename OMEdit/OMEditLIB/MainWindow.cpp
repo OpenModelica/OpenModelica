@@ -402,11 +402,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
     mpLibraryWidget->getLibraryTreeModel()->addModelicaLibraries();
   }
   // set command line options
-  if (OptionsDialog::instance()->getDebuggerPage()->getGenerateOperationsCheckBox()->isChecked()) {
-    mpOMCProxy->setCommandLineOptions("-d=infoXmlOperations");
-  }
   OptionsDialog::instance()->saveSimulationSettings();
-  OptionsDialog::instance()->saveNFAPISettings();
   // create tabs from MessagesWidget
   QTabBar::ButtonPosition closeSide = (QTabBar::ButtonPosition)style()->styleHint(QStyle::SH_TabBar_CloseButtonPosition, 0, mpMessagesTabWidget);
   MessagesTabWidget *pMessagesTabWidget = MessagesWidget::instance()->getMessagesTabWidget();
@@ -1513,17 +1509,19 @@ void MainWindow::createOMNotebookCodeCell(LibraryTreeItem *pLibraryTreeItem, QDo
 /*!
  * \brief MainWindow::showTransformationsWidget
  * Creates a TransformationsWidget and show it to the user.
- * \param fileName
+ * \param fileName - path to model_info.json file.
+ * \param profiling - enable/disable profiling
+ * \param checkProfilingExists - check profiling files exists
  * \return
  */
-TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, bool profiling)
+TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, bool profiling, bool checkProfilingExists)
 {
   TransformationsWidget *pTransformationsWidget = mTransformationsWidgetHash.value(fileName, 0);
   if (!pTransformationsWidget) {
-    pTransformationsWidget = new TransformationsWidget(fileName, profiling);
+    pTransformationsWidget = new TransformationsWidget(fileName, profiling, checkProfilingExists);
     mTransformationsWidgetHash.insert(fileName, pTransformationsWidget);
   } else {
-    pTransformationsWidget->reloadTransformations();
+    pTransformationsWidget->loadTransformations(profiling, checkProfilingExists);
   }
   pTransformationsWidget->show();
   pTransformationsWidget->raise();
@@ -2053,7 +2051,7 @@ void MainWindow::showOpenTransformationFileDialog()
   }
   mpProgressBar->setRange(0, 0);
   mpStatusBar->showMessage(QString("%1: %2").arg(Helper::loading, fileName));
-  showTransformationsWidget(fileName, false);
+  showTransformationsWidget(fileName, false, true);
   mpStatusBar->clearMessage();
   hideProgressBar();
 }
@@ -2996,11 +2994,19 @@ void MainWindow::runOMSensPlugin()
     }
   }
   // if OMSens plugin is already loaded.
-  InformationInterface *pInformationInterface = qobject_cast<InformationInterface*>(mpOMSensPlugin);
-  pInformationInterface->setOpenModelicaHome(Helper::OpenModelicaHome);
-  pInformationInterface->setTempPath(Utilities::tempDirectory());
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
+  if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+    if (!pModelWidget->getLibraryTreeItem()->isSaved()) {
+      // save the model
+      if (!MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pModelWidget->getLibraryTreeItem())) {
+        return;
+      }
+    }
+    InformationInterface *pInformationInterface = qobject_cast<InformationInterface*>(mpOMSensPlugin);
+    pInformationInterface->setOpenModelicaHome(Helper::OpenModelicaHome);
+    pInformationInterface->setTempPath(Utilities::tempDirectory());
+    pInformationInterface->setOMSensPath(OptionsDialog::instance()->getSensitivityOptimizationPage()->getOMSensBackendPathTextBox()->text());
+    pInformationInterface->setPython(OptionsDialog::instance()->getSensitivityOptimizationPage()->getPythonTextBox()->text());
     ModelInterface *pModelInterface = qobject_cast<ModelInterface*>(mpOMSensPlugin);
     pModelInterface->analyzeModel(pModelWidget->toOMSensData());
   } else {
@@ -4362,7 +4368,7 @@ void MainWindow::createMenus()
 #ifndef Q_OS_MAC
   // Sensitivity Optimization menu
   QMenu *pSensitivityOptimizationMenu = new QMenu(menuBar());
-  pSensitivityOptimizationMenu->setTitle(tr("Sensitivity Optimization"));
+  pSensitivityOptimizationMenu->setTitle(Helper::sensitivityOptimization);
   // add actions to Sensitivity Optimization menu
   pSensitivityOptimizationMenu->addAction(mpRunOMSensAction);
   // add Sensitivity Optimization menu to menu bar

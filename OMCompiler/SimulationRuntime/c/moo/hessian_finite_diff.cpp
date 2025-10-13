@@ -497,6 +497,7 @@ void free_hessian_pattern(HESSIAN_PATTERN* hes_pattern) {
     }
     free(hes_pattern->ws_baseJac);
     free(hes_pattern->ws_oldX);
+    free(hes_pattern->ws_h);
 
     free(hes_pattern);
 }

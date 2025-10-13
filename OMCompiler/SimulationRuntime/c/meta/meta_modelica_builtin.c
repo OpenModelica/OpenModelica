@@ -119,19 +119,16 @@ modelica_real nobox_stringReal(threadData_t *threadData,metamodelica_string s)
  * hash functions which could be useful to replace System__hash:
  */
 /*** djb2 hash ***/
-static inline unsigned long djb2_hash(const unsigned char *str)
-{
-  unsigned long hash = 5381;
-  int c;
-  while (0 != (c = *str++))  hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-  return hash;
-}
-
 static inline unsigned long djb2_hash_continue(const unsigned char *str, unsigned long hash)
 {
   int c;
   while (0 != (c = *str++)) hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
   return hash;
+}
+
+static inline unsigned long djb2_hash(const unsigned char *str)
+{
+  return djb2_hash_continue(str, 5381);
 }
 
 /*** sdbm hash ***/
@@ -524,11 +521,6 @@ modelica_metatype boxptr_listGet(threadData_t *threadData,modelica_metatype lst,
   MMC_THROW_INTERNAL(); /* List was not long enough */
 }
 
-modelica_metatype boxptr_listNth(threadData_t *threadData,modelica_metatype lst, modelica_metatype i)
-{
-  return boxptr_listGet(threadData,lst,mmc_mk_icon(mmc_unbox_integer(i)+1));
-}
-
 modelica_metatype boxptr_listDelete(threadData_t *threadData, modelica_metatype lst, modelica_metatype iix)
 {
   /* TODO: If we assume the index exists we can do this in a much better way */
@@ -644,11 +636,6 @@ modelica_metatype arrayAppend(modelica_metatype arr1, modelica_metatype arr2)
     resp[i+nelts1] = arr2p[i];
   }
   return res;
-}
-
-modelica_metatype boxptr_arrayNth(threadData_t *threadData,modelica_metatype arr,modelica_metatype ix)
-{
-  return arrayGet(arr, mmc_unbox_integer(ix)+1);
 }
 
 /* Misc Operations */

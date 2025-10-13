@@ -3555,6 +3555,11 @@ package Util
   output Boolean outBoolean;
   end stringBool;
 
+  function hashFileNamePrefix
+    input String inFileNamePrefix;
+    output String hashStr;
+  end hashFileNamePrefix;
+
 end Util;
 
 package List
@@ -3963,6 +3968,11 @@ package Expression
     output Boolean hasUnkown;
   end hasUnknownDims;
 
+  function isSimpleLiteralValue
+    input DAE.Exp exp;
+    input Boolean allow_arrays;
+    output Boolean b;
+  end isSimpleLiteralValue;
 end Expression;
 
 package ExpressionDump

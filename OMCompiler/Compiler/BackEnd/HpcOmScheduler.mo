@@ -347,7 +347,7 @@ algorithm
         false = listEmpty(predecessors); //in this case the node has predecessors
         //!print("Handle1 task " + intString(index) + "\n");// + " with " + intString(listLength(predecessors)) + " child nodes and "
               //+ intString(listLength(successorIdc)) + " parent nodes.\n");
-        //!print("\tZeile 367\t" + stringDelimitList(List.map(arrayList(iThreadReadyTimes),realString), "\t\t") + "\n");
+        //!print("\tZeile 367\t" + stringDelimitList(List.mapArray(iThreadReadyTimes, realString), "\t\t") + "\n");
 
         //! Randomly chose thread for scheduling.
         threadId = System.intRandom(iNumberOfThreads) + 1;
@@ -2483,7 +2483,7 @@ algorithm
       equation
         (xadj,adjncy,vwgt,adjwgt) = prepareMetis(iTaskGraph,iTaskGraphMeta);
 
-        //print("createMetisSchedule: Weights of nodes = " + stringDelimitList(List.map(arrayList(vwgt), intString), ",") + "\n");
+        //print("createMetisSchedule: Weights of nodes = " + stringDelimitList(List.mapArray(vwgt, intString), ",") + "\n");
 
         if(intGt(iNumberOfThreads, 1)) then //check if more then one thread is given -- otherwise a division through zero will occur
           extInfo = HpcOmSchedulerExt.scheduleMetis(xadj, adjncy, vwgt, adjwgt, iNumberOfThreads);
@@ -2796,9 +2796,9 @@ algorithm
   help := {};
   n := arrayLength(iTaskGraph);
   xadj := arrayCreate(n+1,0);
-  m := List.fold(arrayList(iTaskGraph),sumEdge,0);
+  m := Array.fold(iTaskGraph, sumEdge, 0);
   adjwgt := arrayCreate(2*m,0);
-  adjundirected := List.fold1(arrayList(iTaskGraph),getRelations,iTaskGraphMeta,({},1));
+  adjundirected := Array.fold(iTaskGraph, function getRelations(iTaskGraphMeta = iTaskGraphMeta), ({},1));
   (help,_) := adjundirected;
   allTheNodes := List.intRange(n);
   adjncy := arrayCreate(2*m,0);
@@ -2868,7 +2868,7 @@ protected
   tuple<Integer,Integer,list<Integer>,list<Integer>,list<Integer>> result;
 algorithm
   n := arrayLength(iTaskGraph);
-  result := List.fold(arrayList(iTaskGraph),getHedge,(1,0,{0},{},{}));
+  result := Array.fold(iTaskGraph,getHedge,(1,0,{0},{},{}));
   (_,_,l_eptr,l_eint,l_hewgts) := result;
   print("Diagnostic length: " + intString(listLength(l_eptr)) + " " + intString(listLength(l_eint)) + "\n");
   allTheNodes := List.intRange(n);
@@ -3323,8 +3323,8 @@ algorithm
         HpcOmSimCodeMain.dumpSccSimEqMapping(sccSimEqMap);
         print("inComps2\n");
         HpcOmSimCodeMain.dumpSccSimEqMapping(comps);
-        print("the taskAss2: "+stringDelimitList(List.map(arrayList(taskAss),intString),"\n")+"\n");
-        print("the procAss2: "+stringDelimitList(List.map(arrayList(procAss),intListString),"\n")+"\n");
+        print("the taskAss2: "+stringDelimitList(List.mapArray(taskAss,intString),"\n")+"\n");
+        print("the procAss2: "+stringDelimitList(List.mapArray(procAss,intListString),"\n")+"\n");
         printSchedule(schedule);
         //HpcOmTaskGraph.printTaskGraph(taskGraph);
         //--------------------------------------
@@ -4541,11 +4541,11 @@ algorithm
         graphT := AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,arrayLength(iTaskGraph));
         // get all existing partitions
         (taskMap,partMap,_) := List.fold1(rootNodes,assignPartitions,iTaskGraph,(taskMap,partMap,1));
-          //print("taskMap \n"+stringDelimitList(List.map(arrayList(taskMap), intString),"\n")+"\n");
-          //print("partMap \n"+stringDelimitList(List.map(arrayList(partMap), HpcOmTaskGraph.intLstString),"\n")+"\n");
+          //print("taskMap \n"+stringDelimitList(List.mapArray(taskMap, intString),"\n")+"\n");
+          //print("partMap \n"+stringDelimitList(List.mapArray(partMap, HpcOmTaskGraph.intLstString),"\n")+"\n");
         // gather them to n partitions
         (taskMap,partitions) := distributePartitions(taskMap,partMap,iTaskGraphMeta,numProc);
-          //print("partitions \n"+stringDelimitList(List.map(arrayList(partitions), HpcOmTaskGraph.intLstString),"\n")+"\n");
+          //print("partitions \n"+stringDelimitList(List.mapArray(partitions, HpcOmTaskGraph.intLstString),"\n")+"\n");
 
         threadTask := arrayCreate(numProc,{});
         allCalcTasks := convertTaskGraphToTasks(graphT,iTaskGraphMeta,convertNodeToTask);
@@ -4582,7 +4582,7 @@ protected
   list<Real> partCosts={};
 algorithm
   // get costs
-  for part in arrayList(partMap) loop
+  for part in partMap loop
     costs := List.fold(List.map1(part,HpcOmTaskGraph.getExeCostReqCycles,metaIn),realAdd,0.0);
     partCosts := costs::partCosts;
   end for;
@@ -4719,7 +4719,7 @@ protected
   Integer size, numSfLocks;
   array<list<Integer>> taskGraphT;
   array<Real> alapArray;  // this is the latest possible starting time of every node
-  list<Real> alapLst, alapSorted, priorityLst;
+  list<Real> alapSorted, priorityLst;
   list<Integer> order;
   array<Integer> taskAss; //<idx>=task, <value>=processor
   array<list<Integer>> procAss; //<idx>=processor, <value>=task;
@@ -4736,9 +4736,8 @@ algorithm
   taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,size);
   (alapArray,_,_,_) := computeGraphValuesTopDown(iTaskGraph,iTaskGraphMeta);
   //printRealArray(alapArray,"alap");
-  alapLst := arrayList(alapArray);
   // get the order of the task, assign to processors
-  (priorityLst,order) := quicksortWithOrder(alapLst);
+  (priorityLst,order) := quicksortWithOrder(arrayList(alapArray));
   (taskAss,procAss) := MCP_getTaskAssignment(order,alapArray,numProc,iTaskGraph,iTaskGraphMeta);
   // create the schedule
   threadTask := arrayCreate(numProc,{});
@@ -5207,7 +5206,7 @@ protected function quicksortWithOrder1
 algorithm
   (lstOut,orderOut) := match(lstIn,orderIn,pivotIdx,markedIn,size)
     local
-      Boolean b1,b2,b3;
+      Boolean b1,b2;
       Integer lIdx,rIdx,pivot;
       Real e,p,l,r,b;
       list<Integer> orderTmp;
@@ -5234,8 +5233,13 @@ algorithm
         lstTmp = if b2 then swapEntriesInList(pivotIdx,rIdx,lstTmp) else lstTmp;
         orderTmp = if b1 then swapEntriesInList(pivotIdx,lIdx,orderIn) else orderIn;
         orderTmp = if b2 then swapEntriesInList(pivotIdx,rIdx,orderTmp) else orderTmp;
-        b3 = boolAnd(boolNot(b1),boolNot(b2)); // if both are false(no member left or rigth found) than the pivot has the right place
-        ((marked,pivot)) = if b3 then getNextPivot(lstTmp,markedIn,pivotIdx) else ((markedIn,pivotIdx));
+        // if both are false(no member left or rigth found) than the pivot has the right place
+        if not b1 and not b2 then
+          (marked, pivot) = getNextPivot(lstTmp,markedIn,pivotIdx);
+        else
+          marked = markedIn;
+          pivot = pivotIdx;
+        end if;
 
         (lstTmp,orderTmp) = quicksortWithOrder1(lstTmp,orderTmp,pivot,marked,size);
       then
@@ -5248,13 +5252,14 @@ protected function getNextPivot "author:Waurich TUD 2013-11
   input list<Real> lstIn;
   input list<Real> markedLstIn;
   input Integer pivotIdx;
-  output tuple<list<Real>,Integer> tplOut;
+  output list<Real> marked;
+  output Integer newIdx;
 algorithm
-  tplOut := match(lstIn,markedLstIn,pivotIdx)
+  (marked, newIdx) := match(lstIn,markedLstIn,pivotIdx)
     local
-      Integer newIdx,midIdx;
+      Integer midIdx;
       Real pivotElement,r1,r2,r3,e;
-      list<Real> marked,rest;
+      list<Real> rest;
     case(_,{_},_)
       then
         (({},0));
@@ -5538,7 +5543,7 @@ algorithm
       nodes := computeGraphValuesTopDown2(nodes,iTaskGraph,iTaskGraphT,iTaskGraphMeta,alap,last,lact,tdsLevel,visitedNodes);
     end if;
   end while;
-  //print("Alaps: {" + stringDelimitList(arrayList(Array.map(alap, realString)), ",") + "}\n");
+  //print("Alaps: {" + stringDelimitList(List.mapArray(alap, realString), ",") + "}\n");
 end computeGraphValuesTopDown1;
 
 protected function computeGraphValuesTopDown2 "author: Waurich TUD 2013-10

@@ -738,7 +738,7 @@ algorithm
     end if;
 
     // fix issue https://github.com/OpenModelica/OpenModelica/issues/12916
-    fileNamePrefixHash := substring(intString(stringHashDjb2(filenamePrefix)), 1, 3);
+    fileNamePrefixHash := Util.hashFileNamePrefix(filenamePrefix);
 
     // Set fullPathPrefix for FMUs
     if isFMU then
@@ -5545,7 +5545,6 @@ protected
   DAE.ComponentRef cref;
   Integer size, i, j;
   list<Integer> intLst;
-  array<Integer> intArr;
   list<DAE.ComponentRef> crefs;
 algorithm
   //create HT
@@ -5575,9 +5574,7 @@ algorithm
             intLst := j :: intLst;
           end if;
         end for;
-        intArr := listArray(intLst);
-        Array.heapSort(intArr);
-        intLst := arrayList(intArr);
+        intLst := List.heapSortIntList(intLst);
         outSparse := (i, intLst) :: outSparse;
       end if;
     end for;
@@ -13454,7 +13451,7 @@ algorithm
     local
       DAE.Exp lhs;
       DAE.ComponentRef cref;
-      list<DAE.ComponentRef> crefs,crefs2;
+      list<DAE.ComponentRef> crefs, crefs2;
       list<SimCodeVar.SimVar> simVars;
       list<SimCode.SimEqSystem> residual;
     case(SimCode.SES_RESIDUAL())
@@ -14144,7 +14141,7 @@ algorithm
 
     // get derivatives pattern
     intLst := list(getVariableFMIIndex(v) for v in inModelInfo.vars.derivativeVars);
-    derivatives := list(fmiUnknown for fmiUnknown guard(Util.boolOrList(list(isFmiUnknown(i, fmiUnknown) for i in intLst))) in allUnknowns);
+    derivatives := list(fmiUnknown for fmiUnknown guard(List.any(intLst, function isFmiUnknown(inFMIUnknown = fmiUnknown))) in allUnknowns);
 
     // get output pattern
     varsA := List.filterOnTrue(inModelInfo.vars.algVars, isOutputSimVar);
@@ -14153,12 +14150,12 @@ algorithm
     varsD := List.filterOnTrue(inModelInfo.vars.stringAlgVars, isOutputSimVar); // check for outputs in stringAlgVars
     allOutputVars := listAppend(listAppend(varsA,varsB),listAppend(varsC,varsD));
     intLst := list(getVariableFMIIndex(v) for v in allOutputVars);
-    outputs := list(fmiUnknown for fmiUnknown guard(Util.boolOrList(list(isFmiUnknown(i, fmiUnknown) for i in intLst))) in allUnknowns);
+    outputs := list(fmiUnknown for fmiUnknown guard(List.any(intLst, function isFmiUnknown(inFMIUnknown = fmiUnknown))) in allUnknowns);
 
     // get discrete states pattern
     clockedStates := List.filterOnTrue(inModelInfo.vars.algVars, isClockedStateSimVar);
     intLst := list(getVariableFMIIndex(v) for v in clockedStates);
-    discreteStates := list(fmiUnknown for fmiUnknown guard(Util.boolOrList(list(isFmiUnknown(i, fmiUnknown) for i in intLst))) in allUnknowns);
+    discreteStates := list(fmiUnknown for fmiUnknown guard(List.any(intLst, function isFmiUnknown(inFMIUnknown = fmiUnknown))) in allUnknowns);
 
     // discreteStates
     if not checkForEmptyBDAE(optcontPartDer) then

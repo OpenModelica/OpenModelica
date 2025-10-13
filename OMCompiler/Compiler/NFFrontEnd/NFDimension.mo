@@ -461,6 +461,15 @@ public
     end match;
   end toString;
 
+  function hashList
+    input list<Dimension> dims;
+    output Integer hash = 5381;
+  algorithm
+    for dim in dims loop
+      hash := stringHashDjb2Continue(toString(dim), hash);
+    end for;
+  end hashList;
+
   function toStringList
     input list<Dimension> dims;
     input Boolean brackets = true;

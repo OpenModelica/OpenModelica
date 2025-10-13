@@ -31,13 +31,13 @@ end M3;
 // equation
 //   for $i4 in 1:3 loop
 //     for $i0 in 1:10 loop
-//       der(m2[$i0].m1[$i4].x) = 1.0;
+//       der(m2[$i4].m1[$i0].x) = 1.0;
 //     end for;
 //   end for;
 //   for $i3 in 1:3 loop
 //     for $i1 in 1:10 loop
 //       for $i2 in 1:10 loop
-//         der(m2[$i1].m11[$i2,$i3].x) = 1.0;
+//         der(m2[$i3].m11[$i1,$i2].x) = 1.0;
 //       end for;
 //     end for;
 //   end for;

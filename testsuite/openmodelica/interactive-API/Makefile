@@ -50,6 +50,7 @@ GetAllSubtypeOf1.mos \
 GetAllSubtypeOf2.mos \
 GetAllSubtypeOf3.mos \
 GetAllSubtypeOf4.mos \
+GetAllSubtypeOf5.mos \
 getClassComment.mos \
 getClassNames.mos \
 getCommandLineOptions.mos \
@@ -69,6 +70,7 @@ getNthComponentAnnotation.mos \
 getNthConnector.mos \
 getNthConnectorIconAnnotation.mos \
 getNthImport.mos \
+GetReplaceableChoices1.mos \
 getSimulationOptions1.mos \
 getSimulationOptions2.mos \
 getSimulationOptions3.mos \

@@ -993,16 +993,16 @@ template simulationFile_lnz(SimCode simCode)
     if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"none") then
       <<
       const char *<%symbolName(modelNamePrefix(simCode),"linear_model_frame")%>()
-      { /* disabled, use compiler flag `--linearizationDumpLanguage` to change target language */ }
+      { return "";  /* disabled, use compiler flag `--linearizationDumpLanguage` to change target language */ }
       const char *<%symbolName(modelNamePrefix(simCode),"linear_model_datarecovery_frame")%>()
-      { /* disabled, use compiler flag `--linearizationDumpLanguage` to change target language */ }
+      { return "";  /* disabled, use compiler flag `--linearizationDumpLanguage` to change target language */ }
       >>
     else if intLt(Flags.getConfigInt(MAX_SIZE_LINEARIZATION), intAdd(intAdd(intAdd(ns,ni),no),na)) then
       <<
       const char *<%symbolName(modelNamePrefix(simCode),"linear_model_frame")%>()
-      { /* system too big, use compiler flag `--maxSizeLinearization` to change threshold */ }
+      { return "";  /* system too big, use compiler flag `--maxSizeLinearization` to change threshold */ }
       const char *<%symbolName(modelNamePrefix(simCode),"linear_model_datarecovery_frame")%>()
-      { /* system too big, use compiler flag `--maxSizeLinearization` to change threshold */ }
+      { return "";  /* system too big, use compiler flag `--maxSizeLinearization` to change threshold */ }
       >>
     else if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"modelica")
       then functionlinearmodel(modelInfo, modelNamePrefix(simCode))
@@ -1278,8 +1278,6 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""), hpcomData.schedules, modelNamePrefixStr)%>
 
-    <%computeVarIndices(modelInfo.vars, modelNamePrefixStr)%>
-
     /* forward the main in the simulation runtime */
     extern int _main_SimulationRuntime(int argc, char **argv, DATA *data, threadData_t *threadData);
     extern int _main_OptimizationRuntime(int argc, char **argv, DATA *data, threadData_t *threadData);
@@ -1301,7 +1299,6 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       NULL,
       #endif    /* initializeStateSets */
       <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>,
-      <%symbolName(modelNamePrefixStr,"computeVarIndices")%>,
       <%symbolName(modelNamePrefixStr,"functionODE")%>,
       <%symbolName(modelNamePrefixStr,"functionAlgebraics")%>,
       <%symbolName(modelNamePrefixStr,"functionDAE")%>,
@@ -1548,22 +1545,26 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
       >>
     %>
     data->modelData->runTestsuite = <%if Testsuite.isRunning() then "1" else "0"%>;
-    data->modelData->nStates = <%varInfo.numStateVars%>;
-    data->modelData->nVariablesRealArray = <%nVariablesReal(varInfo)%>;
+    data->modelData->nStatesArray = <%varInfo.numStateVars%>;
     data->modelData->nDiscreteReal = <%varInfo.numDiscreteReal%>;
+    data->modelData->nVariablesRealArray = <%nVariablesReal(varInfo)%>;
     data->modelData->nVariablesIntegerArray = <%varInfo.numIntAlgVars%>;
     data->modelData->nVariablesBooleanArray = <%varInfo.numBoolAlgVars%>;
     data->modelData->nVariablesStringArray = <%varInfo.numStringAlgVars%>;
+    data->modelData->nParametersRealArray = <%varInfo.numParams%>;
+    data->modelData->nParametersIntegerArray = <%varInfo.numIntParams%>;
+    data->modelData->nParametersBooleanArray = <%varInfo.numBoolParams%>;
+    data->modelData->nParametersStringArray = <%varInfo.numStringParamVars%>;
     data->modelData->nParametersReal = <%varInfo.numParams%>;
     data->modelData->nParametersInteger = <%varInfo.numIntParams%>;
     data->modelData->nParametersBoolean = <%varInfo.numBoolParams%>;
     data->modelData->nParametersString = <%varInfo.numStringParamVars%>;
-    data->modelData->nInputVars = <%varInfo.numInVars%>;
-    data->modelData->nOutputVars = <%varInfo.numOutVars%>;
     data->modelData->nAliasReal = <%varInfo.numAlgAliasVars%>;
     data->modelData->nAliasInteger = <%varInfo.numIntAliasVars%>;
     data->modelData->nAliasBoolean = <%varInfo.numBoolAliasVars%>;
     data->modelData->nAliasString = <%varInfo.numStringAliasVars%>;
+    data->modelData->nInputVars = <%varInfo.numInVars%>;
+    data->modelData->nOutputVars = <%varInfo.numOutVars%>;
     data->modelData->nZeroCrossings = <%varInfo.numZeroCrossings%>;
     data->modelData->nSamples = <%varInfo.numTimeEvents%>;
     data->modelData->nRelations = <%varInfo.numRelations%>;
@@ -4670,89 +4671,6 @@ template genVarIndexes(list<SimVar> vars, String arrayName)
   >>
 end genVarIndexes;
 
-template computeVarIndices(SimVars vars, String modelNamePrefix)
-""
-::=
-  match vars
-  case SIMVARS(__) then
-    <<
-    void <%symbolName(modelNamePrefix,"computeVarIndices")%>(DATA* data, size_t* realIndex, size_t* integerIndex, size_t* booleanIndex, size_t* stringIndex)
-    {
-      TRACE_PUSH
-
-      size_t i_real = 0;
-      size_t i_integer = 0;
-      size_t i_boolean = 0;
-      size_t i_string = 0;
-
-      realIndex[0] = 0;
-      integerIndex[0] = 0;
-      booleanIndex[0] = 0;
-      stringIndex[0] = 0;
-
-      /* temporary fix for https://github.com/OpenModelica/OpenModelica/issues/13999 */
-      for (i_real = 0; i_real < data->modelData->nVariablesRealArray + 1; i_real++)
-        realIndex[i_real] = i_real;
-      for (i_integer = 0; i_integer < data->modelData->nVariablesIntegerArray + 1; i_integer++)
-        integerIndex[i_integer] = i_integer;
-      for (i_boolean = 0; i_boolean < data->modelData->nVariablesBooleanArray + 1; i_boolean++)
-        booleanIndex[i_boolean] = i_boolean;
-      for (i_string = 0; i_string < data->modelData->nVariablesStringArray + 1; i_string++)
-        stringIndex[i_string] = i_string;
-
-      /* stateVars */
-      <%computeVarIndicesList(stateVars)%>
-
-      /* derivativeVars */
-      <%computeVarIndicesList(derivativeVars)%>
-
-      /* algVars */
-      <%computeVarIndicesList(algVars)%>
-
-      /* discreteAlgVars */
-      <%computeVarIndicesList(discreteAlgVars)%>
-
-      /* realOptimizeConstraintsVars */
-      <%computeVarIndicesList(realOptimizeConstraintsVars)%>
-
-      /* realOptimizeFinalConstraintsVars */
-      <%computeVarIndicesList(realOptimizeFinalConstraintsVars)%>
-
-
-      /* intAlgVars */
-      <%computeVarIndicesList(intAlgVars)%>
-
-      /* boolAlgVars */
-      <%computeVarIndicesList(boolAlgVars)%>
-
-      /* stringAlgVars */
-      <%computeVarIndicesList(stringAlgVars)%>
-
-      TRACE_POP
-    }
-    >>
-end computeVarIndices;
-
-template computeVarIndicesList(list<SimVar> vars)
-::=
-  '/* skip for #13999 */'
-  /*
-  (vars |> var as SIMVAR(__) =>
-      let &preExp = buffer ""
-      let &varDecls = buffer ""
-      let &auxFunction = buffer ""
-      let ty = crefShortType(name)
-      let i = 'i_<%ty%>'
-      let size = daeExp(DAEUtil.typeExp(type_), contextOther, &preExp, &varDecls, &auxFunction)
-      <<
-      <%preExp%>
-      <%varDecls%>
-      <%auxFunction%>
-      <%ty%>Index[<%i%>+1] = <%ty%>Index[<%i%>] + <%size%>; <%i%>++; <%crefCCommentWithVariability(var)%>>>; separator="")
-  */
-end computeVarIndicesList;
-
-
 template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer nAuxVars, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
   "Generates initialization function for daeMode."
 ::=
@@ -6996,7 +6914,7 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   # define OMC_CFLAGS_OPTIMIZATION env variable to your desired optimization level to override this
   OMC_CFLAGS_OPTIMIZATION=-Os
-  DEBUG_FLAGS=<% if boolOr(Testsuite.isRunning(), boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then "-O0" else "$(OMC_CFLAGS_OPTIMIZATION)"%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g" %>
+  DEBUG_FLAGS=<% if boolOr(Testsuite.isRunning(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then "-O0" else "$(OMC_CFLAGS_OPTIMIZATION)"%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g" %>
   CFLAGS=<%ExtraUnicodeFlag%> $(CFLAGS_BASED_ON_INIT_FILE) $(DEBUG_FLAGS) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%>
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then 'OMC_EMCC_PRE_JS=<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/emcc/pre.js<%\n%>'
   %>CPPFLAGS=<%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I"<%makefileParams.omhome%>/include/omc" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME<% if stringEq(Config.simCodeTarget(),"JavaScript") then " -DOMC_EMCC"%><% if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then " -DOMC_GENERATE_RELOCATABLE_CODE"%> -DOMC_MODEL_PREFIX=<%modelNamePrefix(simCode)%> -DOMC_NUM_MIXED_SYSTEMS=<%varInfo.numMixedSystems%> -DOMC_NUM_LINEAR_SYSTEMS=<%varInfo.numLinearSystems%> -DOMC_NUM_NONLINEAR_SYSTEMS=<%varInfo.numNonLinearSystems%> -DOMC_NDELAY_EXPRESSIONS=<%maxDelayedIndex%> -DOMC_NVAR_STRING=<%varInfo.numStringAlgVars%>
@@ -7402,8 +7320,8 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       {
         <%idx_copy%>
         <%varDecls%>
-        <%preExp%>
         <%iter_%>
+        <%preExp%>
         <%body_%>;
       }
       >>
@@ -7422,8 +7340,8 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       {
         <%idx_copy%>
         <%varDecls%>
-        <%preExp%>
         <%iter_%>
+        <%preExp%>
         <%branches_%>
       }
       >>
@@ -7442,8 +7360,8 @@ template genericCallBodies(list<SimGenericCall> genericCalls, Context context)
       {
         <%idx_copy%>
         <%varDecls%>
-        <%preExp%>
         <%iter_%>
+        <%preExp%>
         <%branches_%>
       }
       >>

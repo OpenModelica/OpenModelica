@@ -4364,7 +4364,7 @@ algorithm
 
   isWindows := Autoconf.os == "Windows_NT";
 
-  fmutmp := substring(intString(stringHashDjb2(filenameprefix)), 1, 3) + ".fmutmp";
+  fmutmp := Util.hashFileNamePrefix(filenameprefix) + ".fmutmp";
   logfile := filenameprefix + ".log";
   dir := fmutmp+"/sources/";
 
@@ -7871,7 +7871,7 @@ protected
   Integer sl,sc,el,ec;
   Absyn.Path classPath;
 algorithm
-  Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,_,_,SOURCEINFO(file,isReadOnly,sl,sc,el,ec,_)) := InteractiveUtil.getPathedClassInProgram(path, p);
+  Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,_,_,_,SOURCEINFO(file,isReadOnly,sl,sc,el,ec,_)) := InteractiveUtil.getPathedClassInProgram(path, p);
   res := Dump.unparseRestrictionStr(restr);
   cmt := getClassDefComment(cdef);
   file := Testsuite.friendly(file);

@@ -11,7 +11,7 @@ echo '#endif'
 exit
 fi
 
-echo '#include "meta/meta_modelica.h"'
+echo '#include "../meta/meta_modelica_data.h"'
 HEX="0 1 2 3 4 5 6 7 8 9 A B C D E F"
 echo 'static const MMC_DEFSTRINGLIT(OMC_STRINGLIT_0,0,"");'
 echo 'void* mmc_emptystring = MMC_REFSTRINGLIT(OMC_STRINGLIT_0);'

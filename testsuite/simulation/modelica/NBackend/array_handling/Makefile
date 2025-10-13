@@ -13,6 +13,11 @@ Resizable_HeatTransfer_equations.mos\
 testVectorizedSolarSystem.mos\
 testVectorizedPowerSystem.mos\
 exemplary.mos\
+MultiDimensionalArrays1.mos\
+MultiDimensionalArrays2.mos\
+MultiDimensionalArrays3.mos\
+MultiDimensionalArrays4.mos\
+subscripted_expression.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

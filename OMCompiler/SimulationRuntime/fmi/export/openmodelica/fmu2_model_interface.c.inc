@@ -30,6 +30,7 @@
 
 #include "fmu2_model_interface.h"
 #include "fmu_read_flags.h"
+#include "../simulation/arrayIndex.h"
 #include "../simulation/solver/stateset.h"
 #include "../simulation/solver/model_help.h"
 #include "../simulation/solver/cvode_solver.h"
@@ -637,13 +638,17 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
    * to handle model that have startTime > 0 (e.g) startTime = 0.2
    */
   comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
-  initializeDataStruc(comp->fmuData, comp->threadData);
+  allocModelDataVars(comp->fmuData->modelData, comp->threadData);
+  calculateAllScalarLength(comp->fmuData->modelData);
 
   /* setup model data with default start data */
   setDefaultStartValues(comp);
+  initializeDataStruc(comp->fmuData, comp->threadData);
+
   setAllParamsToStart(comp->fmuData);
   setAllVarsToStart(comp->fmuData);
   comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData);
+
 
 #if !defined(OMC_MINIMAL_METADATA)
   modelInfoInit(&(comp->fmuData->modelData->modelDataXml));
@@ -2367,18 +2372,24 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
 
       if (eventInfo.valuesOfContinuousStatesChanged)
       {
-        status = internalGetContinuousStates(c, states, NUMBER_OF_STATES);
-        if (status != fmi2OK) return fmi2Error;
+        #if NUMBER_OF_STATES > 0
+          status = internalGetContinuousStates(c, states, NUMBER_OF_STATES);
+          if (status != fmi2OK) return fmi2Error;
+        #endif
       }
 
       if (eventInfo.nominalsOfContinuousStatesChanged)
       {
-        status = internalGetNominalsOfContinuousStates(c, states, NUMBER_OF_STATES);
-        if (status != fmi2OK) return fmi2Error;
+        #if NUMBER_OF_STATES > 0
+          status = internalGetNominalsOfContinuousStates(c, states, NUMBER_OF_STATES);
+          if (status != fmi2OK) return fmi2Error;
+        #endif
       }
 
-      status = internalGetEventIndicators(c, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
-      if (status != fmi2OK) return fmi2Error;
+      #if NUMBER_OF_EVENT_INDICATORS > 0
+        status = internalGetEventIndicators(c, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
+        if (status != fmi2OK) return fmi2Error;
+      #endif
 
       comp->solverInfo->didEventStep = 1;
     }

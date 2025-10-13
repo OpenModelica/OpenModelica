@@ -669,7 +669,7 @@ protected
   list<Integer> notRemovedNodes,removedNodes;
   array<list<Integer>> inComps,inCompsNew;
 algorithm
-  //print("GRS_newGraph: " + stringDelimitList(List.map(arrayList(contrTasks), intString), ",") + "\n");
+  //print("GRS_newGraph: " + stringDelimitList(List.mapArray(contrTasks, intString), ",") + "\n");
   HpcOmTaskGraph.TASKGRAPHMETA(inComps = inComps) := metaIn;
   notRemovedNodes := HpcOmTaskGraph.filterContractedNodes(List.intRange(arrayLength(graphIn)),contrTasks);
   removedNodes := HpcOmTaskGraph.filterNonContractedNodes(List.intRange(arrayLength(graphIn)),contrTasks);
@@ -1058,7 +1058,7 @@ protected
 algorithm
   BackendDAE.DAE(eqs=eqSystems, shared=shared) := dae;
   HpcOmTaskGraph.TASKGRAPHMETA(exeCosts=exeCosts) := graphData;
-  numCycles := List.map(arrayList(exeCosts),Util.tuple22);
+  numCycles := List.mapArray(exeCosts, Util.tuple22);
     print("start cost benchmark\n");
   outputTimeBenchmark2(BackendDAEUtil.getStrongComponents(listHead(eqSystems)),numCycles,eqSystems,shared,1);
     print("finish cost benchmark\n");

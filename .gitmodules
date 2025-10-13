@@ -7,9 +7,6 @@
 [submodule "OMCompiler/3rdParty"]
 	path = OMCompiler/3rdParty
 	url = ../OMCompiler-3rdParty
-[submodule "OMSens"]
-	path = OMSens
-	url = ../OMSens.git
 [submodule "OMSens_Qt"]
 	path = OMSens_Qt
 	url = ../OMSens_Qt.git

@@ -81,19 +81,37 @@ public
   end TEARING_SET;
 
   function hash
-    input Tearing tearing;
-    output Integer i = -1;
+    "compute hash value by only using iteration variables with their first index should be unique enough"
+    input Tearing set;
+    output Integer h = 5381;
   algorithm
-    // ToDo!
+    for var in set.iteration_vars loop
+      h := stringHashDjb2Continue(BVariable.pointerToString(Slice.getT(var)), h);
+      for i in List.firstOrEmpty(var.indices) loop
+        h := stringHashDjb2Continue(intString(i), h);
+      end for;
+    end for;
   end hash;
 
   function isEqual
-    input Tearing tearing1;
-    input Tearing tearing2;
-    output Boolean b = false;
+    "checking the jacobian should not be necessary"
+    input Tearing set1;
+    input Tearing set2;
+    output Boolean b;
   algorithm
-    // ToDo!
+     b := List.isEqualOnTrue(set1.residual_eqns, set2.residual_eqns, function Slice.isEqual(func = Equation.isEqualPtr));
+     b := if b then Array.isEqualOnTrue(set1.innerEquations, set2.innerEquations, StrongComponent.isEqual) else b;
+     b := if b then List.isEqualOnTrue(set1.iteration_vars, set2.iteration_vars, function Slice.isEqual(func = BVariable.equalName)) else b;
   end isEqual;
+
+  function size
+    input Tearing set;
+    input Boolean resize;
+    output Integer s;
+  algorithm
+    s := sum(Slice.size(eq, function Equation.size(resize = resize)) for eq in set.residual_eqns);
+    s := s + sum(StrongComponent.size(eq, resize) for eq in set.innerEquations);
+  end size;
 
   function toString
     input Tearing set;

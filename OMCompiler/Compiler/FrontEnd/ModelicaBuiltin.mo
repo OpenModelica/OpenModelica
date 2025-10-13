@@ -3122,6 +3122,17 @@ external "builtin";
 annotation(preferredView="text");
 end getAllSubtypeOf;
 
+function getReplaceableChoices
+  "Returns all replaceable choices for a class with choicesAllMatching."
+  input TypeName baseClass;
+  input TypeName parentClass;
+  input Boolean includePartial = false;
+  input Boolean sort = false;
+  output String choices[:, :];
+external "builtin";
+annotation(preferredView="text");
+end getReplaceableChoices;
+
 function plot
   "Displays a plot with selected variables using OMPlot."
   input VariableNames vars "The variables you want to plot";

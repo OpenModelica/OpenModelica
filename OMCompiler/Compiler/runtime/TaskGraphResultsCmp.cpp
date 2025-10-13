@@ -512,7 +512,7 @@ std::string GraphCodeParser::Trim(const std::string& str)
 void GraphCodeParser::ParseGraph(Graph *currentGraph, const char* fileName,NodeComparator nodeComparator, std::string *_errorMsg)
 {
   std::string line;
-  int MAX_MATCHES=1;
+  const int MAX_MATCHES=1;
   regmatch_t matches[MAX_MATCHES];
   regex_t nodeRegex, nodeParentRegex, nodeDependencyRegex;
 

@@ -1429,7 +1429,7 @@ public
           local
             array<list<Integer>> skips;
             list<Kind> kinds;
-          case DEPENDENCY(skips = skips) guard(not listEmpty(List.flatten(arrayList(skips))))
+          case DEPENDENCY(skips = skips) guard(not Array.all(skips, listEmpty))
             algorithm K := cref :: K; then ();
           case DEPENDENCY(kinds = {}) guard(repeats)
             algorithm E := cref :: E; then ();
@@ -1708,10 +1708,11 @@ public
         set := UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
       then set;
 
-      // reduce the dependency for these
+      // reduce the dependency and remove skips for these
       case Expression.SUBSCRIPTED_EXP() algorithm
         set := collectDependencies(exp.exp, depth, map, dep_map, sol_map, rep_set);
         Dependency.updateList(UnorderedSet.toList(set), listLength(exp.subscripts), true, dep_map);
+        Dependency.removeSkipsList(UnorderedSet.toList(set), dep_map);
       then set;
 
       // should not change anything

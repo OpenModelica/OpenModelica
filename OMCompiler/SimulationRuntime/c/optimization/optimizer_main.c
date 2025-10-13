@@ -79,15 +79,15 @@ static inline int optimizationWithIpopt(OptData*optData){
   const int njac = np*(NJ*nsi + nx*(np*nsi - 1)) + NJf;
   const int nhess = (nsi*np-1)*nH0+nH1;
 
-  Number * Vmin = optData->bounds.Vmin;
-  Number * Vmax = optData->bounds.Vmax;
-  Number * gmin = optData->ipop.gmin;
-  Number * gmax = optData->ipop.gmax;
-  Number * vopt = optData->ipop.vopt;
-  Number * mult_g = optData->ipop.mult_g;
-  Number * mult_x_L = optData->ipop.mult_x_L;
-  Number * mult_x_U = optData->ipop.mult_x_U;
-  Number obj;
+  ipnumber * Vmin = optData->bounds.Vmin;
+  ipnumber * Vmax = optData->bounds.Vmax;
+  ipnumber * gmin = optData->ipop.gmin;
+  ipnumber * gmax = optData->ipop.gmax;
+  ipnumber * vopt = optData->ipop.vopt;
+  ipnumber * mult_g = optData->ipop.mult_g;
+  ipnumber * mult_x_L = optData->ipop.mult_x_L;
+  ipnumber * mult_x_U = optData->ipop.mult_x_U;
+  ipnumber obj;
 
   char *cflags;
   int max_iter = 5000;

@@ -7,6 +7,12 @@ omc_add_subdirectory(FrontEndCpp)
 # set(OMC_EXE ${PROJECT_SOURCE_DIR}/../build/bin/omc)
 set(OMC_EXE $<TARGET_FILE:bomc>)
 
+# Enable MetaModelica debug symbols when doing a debug build, which is needed
+# for the debugger to work.
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(GEN_DEBUG_SYMBOLS "-d=gendebugsymbols")
+endif()
+
 # list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/.cmake")
 # enable_language(MODELICA)
 
@@ -84,7 +90,7 @@ macro(add_compile_step mo_source_file)
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo.stamp
                 ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.compile.mos
 
-        COMMAND ${OMC_EXE} -g=MetaModelica -n=1 ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.compile.mos
+        COMMAND ${OMC_EXE} -g=MetaModelica -n=1 ${GEN_DEBUG_SYMBOLS} ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.compile.mos
 
         OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/c_files/${file_name_no_ext}.c
                 ${CMAKE_CURRENT_BINARY_DIR}/c_files/${file_name_no_ext}_records.c

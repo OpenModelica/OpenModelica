@@ -231,7 +231,7 @@ namespace OptionsDefaults
     bool clearOutputOnNewRun = true;
     bool clearLogOnNewRun = true;
     bool alwaysShowTransformationalDebugger = false;
-    bool generateOperations = false;
+    bool generateOperations = true;
   }
 
   namespace FMI {
@@ -250,6 +250,10 @@ namespace OptionsDefaults
   namespace OMSimulator {
     QString commandLineOptions = "--suppressPath=true";
     int loggingLevel = 0;
+  }
+
+  namespace SensitivityOptimization {
+    QString python = "python";
   }
 
   namespace Traceability {

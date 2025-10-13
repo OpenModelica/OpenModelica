@@ -2029,7 +2029,6 @@ protected function commonSubExpressionFind
 protected
   Integer numVars;
   list<Integer> eqIdcs, varIdcs,lengthLst, range;
-  list<list<Integer>> arrLst;
   list<list<Integer>> partitions;
   BackendDAE.Variables vars, linPathVars;
   BackendDAE.EquationArray eqs;
@@ -2043,8 +2042,7 @@ protected
 algorithm
   try
     range := List.intRange(arrayLength(mIn));
-    arrLst := arrayList(mIn);
-    lengthLst := List.map(arrLst, listLength);
+    lengthLst := List.mapArray(mIn, listLength);
 
     // check for CSE of length 1 (all eqs with 2 variables)
       //print("CHECK FOR CSE 2\n");
@@ -2130,7 +2128,7 @@ algorithm
   try
     // getall vars with only 2 adjacent equations
     numVars := BackendVariable.varsSize(allVars);
-    (_, pathVarIdcs) := List.filter1OnTrueSync(List.map(arrayList(mTIn), listLength), intEq, 2, List.intRange(numVars));
+    (_, pathVarIdcs) := List.filter1OnTrueSync(List.mapArray(mTIn, listLength), intEq, 2, List.intRange(numVars));
     pathVars := BackendVariable.listVar1(List.map1(pathVarIdcs, BackendVariable.getVarAtIndexFirst, allVars));
     pathVarIdxMap := listArray(List.map1(pathVarIdcs,Array.getIndexFirst,varMap));
     cses := cseIn;

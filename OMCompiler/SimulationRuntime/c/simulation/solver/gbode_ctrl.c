@@ -268,7 +268,7 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
   double d0 = 0.0;  // norm of y0 weighted
   double d1 = 0.0;  // norm of f0 weighted
   double d2 = 0.0;  // norm of slope difference weighted
-  
+
   double h0, h1;
   double absTol = data->simulationInfo->tolerance;
   double relTol = absTol;
