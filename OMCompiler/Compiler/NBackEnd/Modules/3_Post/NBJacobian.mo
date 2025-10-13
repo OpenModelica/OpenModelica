@@ -1060,6 +1060,37 @@ protected
     end for;
   end addVarsToAdjointMap;
 
+
+  // Build processing order for adjoint equations:
+  // - tmp_vars in reverse order (reverse-mode)
+  // - res_vars in original order
+  // - any other keys with non-empty terms appended afterwards (stable)
+  function buildAdjointProcessingOrder
+    input UnorderedMap<ComponentRef, ExpressionList> adjoint_map;
+    input list<Pointer<Variable>> res_vars;
+    input list<Pointer<Variable>> tmp_vars;
+    output list<ComponentRef> orderedKeys;
+  protected
+    UnorderedSet<ComponentRef> seen =
+      UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(2*UnorderedMap.bucketCount(adjoint_map) + 17));
+    ComponentRef c;
+    list<ComponentRef> tail = {};
+    ExpressionList terms;
+  algorithm
+    orderedKeys := {};
+    for v in listAppend(tmp_vars, res_vars) loop
+      c := BVariable.getVarName(v);
+      if UnorderedMap.contains(c, adjoint_map) then
+        terms := UnorderedMap.getOrDefault(c, adjoint_map, {});
+        if (not listEmpty(terms)) and (not UnorderedSet.contains(c, seen)) then
+          orderedKeys := c :: orderedKeys;
+          UnorderedSet.add(c, seen);
+        end if;
+      end if;
+    end for;
+  end buildAdjointProcessingOrder;
+
+
   function jacobianSymbolicAdjoint extends Module.jacobianInterface;
   protected
     list<StrongComponent> comps, diffed_comps;
@@ -1231,7 +1262,8 @@ protected
     // New list of strong components replacing original diffed_comps
     diffed_comps := {};
     i := 1;
-    for lhsKey in UnorderedMap.keyList(adjoint_map) loop
+    // first the reversed tmp vars then res vars
+    for lhsKey in buildAdjointProcessingOrder(adjoint_map, res_vars, tmp_vars) loop
       terms := UnorderedMap.getOrFail(lhsKey, adjoint_map);
 
       if listEmpty(terms) then
