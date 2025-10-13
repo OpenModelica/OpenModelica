@@ -145,7 +145,7 @@ initFileContent := readFile("ArrayAttributes_init.tmp.xml");
 //     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
 //     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
 //     <Dimension start=\"2\"/>
-//     <String start=\"&quot;init&quot;\" fixed=\"false\" />
+//     <String start=\"init\" fixed=\"false\" />
 //   </ArrayVariable>
 //   <ArrayVariable
 //     name = \"s_fill\"
@@ -157,7 +157,7 @@ initFileContent := readFile("ArrayAttributes_init.tmp.xml");
 //     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
 //     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
 //     <Dimension start=\"2\"/>
-//     <String start=\"&quot;fillValue&quot;\" fixed=\"false\" />
+//     <String start=\"fillValue\" fixed=\"false\" />
 //   </ArrayVariable>
 //   <ArrayVariable
 //     name = \"s_array\"
