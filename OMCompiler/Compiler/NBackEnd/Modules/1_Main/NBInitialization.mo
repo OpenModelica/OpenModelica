@@ -227,7 +227,7 @@ public
             local
               Expression e;
             // use the start attribute itself if it is not a literal
-            case SOME(e) guard not Expression.isLiteral(e) then e;
+            case SOME(e) guard not Expression.isLiteralXML(e) then e;
             else algorithm
               // create a start variable if it is a literal
               (_, name, start_var, start_name) := createStartVar(var, name, {});
@@ -446,7 +446,7 @@ public
         ComponentRef new_iter;
 
       // convert array constructor to for-equation if elements are not a literal
-      case SOME(Expression.CALL(call = array_constructor as Call.TYPED_ARRAY_CONSTRUCTOR(exp = e))) guard not Expression.isLiteral(e) algorithm
+      case SOME(Expression.CALL(call = array_constructor as Call.TYPED_ARRAY_CONSTRUCTOR(exp = e))) guard not Expression.isLiteralXML(e) algorithm
         (var_ptr, name, _, _, _, frames, iterator) := createIteratedStartCref(var_ptr, name);
         replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
         for tpl in List.zip(array_constructor.iters, frames) loop
@@ -456,7 +456,7 @@ public
       then Expression.map(array_constructor.exp, function Replacements.applySimpleExp(replacements = replacements));
 
       // use the start attribute itself if it is not a literal
-      case SOME(e) guard not Expression.isLiteral(e) algorithm
+      case SOME(e) guard not Expression.isLiteralXML(e) algorithm
         if Slice.isFull(var_slice) then
           (var_ptr, name, _, _) := createStartVar(var_ptr, name, {});
           iterator := Iterator.EMPTY();

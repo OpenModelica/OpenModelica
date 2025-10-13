@@ -4684,6 +4684,29 @@ public
     end match;
   end isLiteral;
 
+  function isLiteralXML
+    "allows for expressions additionally for init_xml"
+    input Expression exp;
+    output Boolean literal;
+  algorithm
+    literal := match exp
+      local
+        Expression call_exp;
+      case INTEGER() then true;
+      case REAL() then true;
+      case STRING() then true;
+      case BOOLEAN() then true;
+      case ENUM_LITERAL() then true;
+      case ARRAY() then exp.literal or Array.all(exp.elements, isLiteralXML);
+      case RECORD() then List.all(exp.elements, isLiteralXML);
+      case RANGE() then isLiteralXML(exp.start) and isLiteralXML(exp.stop) and
+                        Util.applyOptionOrDefault(exp.step, isLiteralXML, true);
+      case FILENAME() then true;
+      case CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = call_exp)) then isLiteralXML(call_exp);
+      else false;
+    end match;
+  end isLiteralXML;
+
   function isLiteralReplace
     input Expression exp;
     output Boolean b;
