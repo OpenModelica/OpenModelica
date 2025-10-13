@@ -7,7 +7,7 @@
 // Needs to be serialized in row major order
 // From FMI 3.0 specification, section 2.2.7.1. Serialization of Array Variables
 
-setCommandLineOptions("--newBackend");
+setCommandLineOptions("--newBackend --simCodeScalarize=false");
 
 loadString("
 model MatrixArrayVariable

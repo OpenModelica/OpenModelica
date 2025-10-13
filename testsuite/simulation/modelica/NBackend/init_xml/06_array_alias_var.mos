@@ -6,7 +6,7 @@
 // Check if init XML generates correct alias variable ID for alias variable
 // withing an array and array alias variables.
 
-setCommandLineOptions("--newBackend");
+setCommandLineOptions("--newBackend --simCodeScalarize=false");
 
 loadString("
 model ArrayAliasVar

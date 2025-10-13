@@ -5,7 +5,7 @@
 //
 // Check if init XML generates correct attributes for array variables
 
-setCommandLineOptions("--newBackend");
+setCommandLineOptions("--newBackend --simCodeScalarize=false");
 
 loadFile("ArrayAttributes.mo"); getErrorString();
 
@@ -169,7 +169,7 @@ initFileContent := readFile("ArrayAttributes_init.tmp.xml");
 //     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
 //     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
 //     <Dimension start=\"2\"/>
-//     <String start=\"&quot;a&quot; &quot;b&quot;\"fixed=\"false\" />
+//     <String start=\"&quot;a&quot; &quot;b&quot;\" fixed=\"false\" />
 //   </ArrayVariable>
 //
 //

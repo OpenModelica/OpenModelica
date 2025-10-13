@@ -5,7 +5,7 @@
 //
 // Check if init XML has array variable for x with size=5
 
-setCommandLineOptions("--newBackend");
+setCommandLineOptions("--newBackend --simCodeScalarize=false");
 
 loadString("
 model RealArrayVariable
