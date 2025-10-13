@@ -974,8 +974,6 @@ public
       Pointer<list<SimVar>> enum_lst = Pointer.create({});
       Pointer<SimCode.SimCodeIndices> indices_ptr = Pointer.create(simCodeIndices);
     algorithm
-      // scalarize variables for simcode
-      scalar_vars := VariablePointers.scalarize(vars);
       if splitType == SplitType.NONE then
         // Do not split and return everything as one single list
         VariablePointers.map(sim_vars, function SimVar.traverseCreate(acc = acc, indices_ptr = indices_ptr, varType = varType));
