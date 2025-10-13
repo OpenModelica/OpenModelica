@@ -1522,24 +1522,43 @@ public
     end match;
   end getBindingVariability;
 
-  function hasEvaluableBinding
+  function hasEvaluableBindingOrStart
     extends checkVar;
   protected
-    Expression binding;
-  algorithm
-    if isBound(var_ptr) then
-      binding := Binding.getExp(var.binding);
-      b := Expression.isLiteral(binding);
+    Expression binding, start;
+    Option<Expression> opt_start;
+    function isEvaluable
+      input Expression exp;
+      output Boolean b;
+    protected
+      Expression new_exp;
+    algorithm
+      b := Expression.isLiteralXML(exp);
       if not b then
         // try to extract literal from array constructor (use dummy map, there should not be any new iterators)
-        (_, binding) := Iterator.extract(binding);
-        binding := SimplifyExp.simplifyDump(binding, true, getInstanceName());
-        b := Expression.isLiteral(Ceval.tryEvalExp(binding));
+        (_, new_exp) := Iterator.extract(exp);
+        new_exp := SimplifyExp.simplifyDump(new_exp, true, getInstanceName());
+        b := Expression.isLiteralXML(Ceval.tryEvalExp(new_exp));
       end if;
+    end isEvaluable;
+  algorithm
+    // check binding
+    if isBound(var_ptr) then
+      binding := Binding.getExp(var.binding);
+      b := isEvaluable(binding);
     else
       b := false;
     end if;
-  end hasEvaluableBinding;
+
+    // check start value
+    if not b then
+      opt_start := getStartAttribute(var_ptr);
+      b := match opt_start
+        case SOME(start) then isEvaluable(start);
+        else false;
+      end match;
+    end if;
+  end hasEvaluableBindingOrStart;
 
   function mapExp
     input Pointer<Variable> var_ptr;

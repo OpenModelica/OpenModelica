@@ -217,10 +217,12 @@ end initDefaultValXml;
 template initValXml(Exp exp)
 ::=
   match exp
-  case ICONST(__) then integer
-  case RCONST(__) then real
-  case SCONST(__) then '<%Util.escapeModelicaStringToXmlString(string)%>'
-  case BCONST(__) then if bool then "true" else "false"
+  case ICONST(__)       then integer
+  case RCONST(__)       then real
+  case SCONST(__)       then '&quot;<%Util.escapeModelicaStringToXmlString(string)%>&quot;'
+  case BCONST(__)       then bool
+  case ARRAY(__)        then '<%array |> elem => initValXml(elem) ;separator=" "%>'
+  case REDUCTION(__)    then if Expression.isSimpleLiteralValue(expr, true) then '<%initValXml(expr)%>' else ''
   case ENUM_LITERAL(__) then '<%index%>'
   else error(sourceInfo(), 'initial value of unknown type: <%dumpExp(exp,"\"")%>')
 end initValXml;
