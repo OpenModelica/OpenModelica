@@ -23,7 +23,7 @@ file(REAL_PATH 03_IntTensorVariable_init.xml TEST_REAL_MATRIX_XML BASE_DIRECTORY
 add_test(NAME test_read_tensor_input_xml COMMAND test_read_tensor_input_xml ${TEST_REAL_MATRIX_XML})
 
 add_custom_target(ctestsuite-inputXML-unit DEPENDS
-   test_read_array_input_xml
-   test_read_matrix_input_xml
-   test_read_tensor_input_xml
+  test_read_array_input_xml
+  test_read_matrix_input_xml
+  test_read_tensor_input_xml
 )

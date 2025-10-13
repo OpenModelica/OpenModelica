@@ -1545,7 +1545,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
       >>
     %>
     data->modelData->runTestsuite = <%if Testsuite.isRunning() then "1" else "0"%>;
-    data->modelData->nStates = <%varInfo.numStateVars%>;
+    data->modelData->nStatesArray = <%varInfo.numStateVars%>;
     data->modelData->nDiscreteReal = <%varInfo.numDiscreteReal%>;
     data->modelData->nVariablesRealArray = <%nVariablesReal(varInfo)%>;
     data->modelData->nVariablesIntegerArray = <%varInfo.numIntAlgVars%>;
