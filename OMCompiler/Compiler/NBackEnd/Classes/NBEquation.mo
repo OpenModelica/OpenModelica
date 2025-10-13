@@ -614,7 +614,7 @@ public
     protected
       UnorderedMap<ComponentRef, Expression> replacements = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
     algorithm
-      (exp, iter) := extractFromCall(exp, EMPTY(), replacements, new_iters, dims_map);
+      (exp, iter) := extractFromCall(exp, EMPTY(), {}, replacements, new_iters, dims_map);
       exp := Expression.map(exp, function Replacements.applySimpleExp(replacements = replacements));
       exp := Typing.typeExp(exp, NFInstContext.RHS, sourceInfo(), true);
     end extract;
@@ -623,16 +623,17 @@ public
       "helper function for extract()"
       input output Expression exp;
       input output Iterator iter;
-      input UnorderedMap<ComponentRef, Expression> replacements   "replacement rules";
-      input UnorderedSet<VariablePointer> new_iters;
-      input UnorderedMap<list<Dimension>, list<ComponentRef>> dims_map;
+      input list<Dimension> dimensions                                  "dimensions of previous iterators";
+      input UnorderedMap<ComponentRef, Expression> replacements         "replacement rules";
+      input UnorderedSet<VariablePointer> new_iters                     "new iterator variables";
+      input UnorderedMap<list<Dimension>, list<ComponentRef>> dims_map  "map from dimensions to iterator names";
     algorithm
       (exp, iter) := match exp
         local
           Call call;
           list<Frame> frames = {};
           InstNode node;
-          Expression range;
+          Expression range, new_exp;
           Iterator tmp;
           list<Dimension> full_dims, elem_dims;
 
@@ -644,25 +645,30 @@ public
           tmp := fromFrames(frames);
 
           // create replacement rules if neccessary
-          if not isEmpty(iter) then
+          if listEmpty(dimensions) and not isEmpty(iter) then // todo: check if same size to replace
             createReplacement(iter, tmp, replacements);
           else
-            iter := tmp;
+            iter := Iterator.merge({tmp, iter});
           end if;
 
           // add the dimension -> iterator names to the dims map to apply the iterators correctly to the lhs
           full_dims := Type.arrayDims(Expression.typeOf(exp));
           // remove the dimensions of the type we iterate over to avoid applyings subscripts there
           full_dims := List.firstN(full_dims, listLength(full_dims) - Type.dimensionCount(Expression.typeOf(call.exp)));
+
+          full_dims := listAppend(dimensions, full_dims);
           // only add if it's a new dimension configuration, first iterator replaces others
           UnorderedMap.tryAdd(full_dims, list(Util.tuple31(f) for f in frames), dims_map);
-        then (call.exp, iter);
+
+          // go deeper on the expression (do not map as the call expression itself can already be an array constructor)
+          (new_exp, iter) := extractFromCall(call.exp, iter, full_dims, replacements, new_iters, dims_map);
+        then (new_exp, iter);
 
         // do not iterate call arguments
         case Expression.CALL() then (exp, iter);
 
         else algorithm
-          (exp, iter) := Expression.mapFoldShallow(exp, function extractFromCall(replacements = replacements, new_iters = new_iters, dims_map = dims_map), iter);
+          (exp, iter) := Expression.mapFoldShallow(exp, function extractFromCall(dimensions = dimensions, replacements = replacements, new_iters = new_iters, dims_map = dims_map), iter);
         then (exp, iter);
       end match;
     end extractFromCall;
@@ -2418,6 +2424,7 @@ public
       // simplify rhs and get potential iterators
       (iter, rhs) := Iterator.extract(rhs, new_iters, dims_map);
       rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
+      //print("iter: " + Iterator.toString(iter) + "\n");
 
       if Iterator.isEmpty(iter) then
         // no iterator -> no for-loop
