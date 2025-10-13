@@ -1,0 +1,89 @@
+// name: 06_array_alias_var
+// keywords: NewBackend
+// status: correct
+// teardown_command: rm -f *ArrayAliasVar*
+//
+// Check if init XML generates correct alias variable ID for alias variable
+// withing an array and array alias variables.
+
+setCommandLineOptions("--newBackend");
+
+loadString("
+model ArrayAliasVar
+  Real x[3] (each fixed=true, each start=1);
+  Real alias_x_2;
+  Real alias_x[3];
+equation
+  alias_x_2 = alias_x[2];
+  alias_x = x;
+  der(x) = -x;
+end ArrayAliasVar;
+"); getErrorString();
+
+buildModel(ArrayAliasVar); getErrorString();
+
+system("sed -n '/<ModelVariables>/,/<\\/ModelVariables>/p' ArrayAliasVar_init.xml > ArrayAliasVar_init.tmp.xml");
+initFileContent := readFile("ArrayAliasVar_init.tmp.xml");
+
+// Result:
+// true
+// true
+// ""
+// {"ArrayAliasVar", "ArrayAliasVar_init.xml"}
+// "
+// 0
+// "  <ModelVariables>
+//
+//   <ArrayVariable
+//     name = \"alias_x\"
+//     valueReference = \"1000\"
+//     variability = \"continuous\" isDiscrete = \"false\"
+//     causality = \"local\" isValueChangeable = \"false\"
+//     alias = \"noAlias\"
+//     classIndex = \"0\" classType = \"rSta\"
+//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
+//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
+//     <Dimension start=\"3\"/>
+//     <Real fixed=\"false\" useNominal=\"false\" />
+//   </ArrayVariable>
+//   <ArrayVariable
+//     name = \"der(alias_x)\"
+//     valueReference = \"1001\"
+//     variability = \"continuous\" isDiscrete = \"false\"
+//     causality = \"local\" isValueChangeable = \"false\"
+//     alias = \"noAlias\"
+//     classIndex = \"0\" classType = \"rDer\"
+//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
+//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
+//     <Dimension start=\"3\"/>
+//     <Real fixed=\"false\" useNominal=\"false\" />
+//   </ArrayVariable>
+//   <ScalarVariable
+//     name = \"alias_x_2\"
+//     valueReference = \"1002\"
+//     variability = \"continuous\" isDiscrete = \"false\"
+//     causality = \"local\" isValueChangeable = \"false\"
+//     alias = \"noAlias\"
+//     classIndex = \"0\" classType = \"rAlg\"
+//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
+//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
+//     <Real fixed=\"false\" useNominal=\"false\" />
+//   </ScalarVariable>
+//   <ArrayVariable
+//     name = \"x\"
+//     valueReference = \"1003\"
+//     variability = \"continuous\" isDiscrete = \"false\"
+//     causality = \"local\" isValueChangeable = \"false\"
+//     alias = \"alias\" aliasVariable=\"alias_x\" aliasVariableId=\"0\"
+//     classIndex = \"0\" classType = \"rAli\"
+//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
+//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
+//     <Dimension start=\"3\"/>
+//     <Real start=\"1.0\" fixed=\"false\" useNominal=\"false\" />
+//   </ArrayVariable>
+//
+//
+//
+//   </ModelVariables>
+// "
+// endResult

@@ -1,0 +1,48 @@
+// name: 04_real_matrix_var
+// keywords: NewBackend
+// status: correct
+// teardown_command: rm -f *MatrixArrayVariable*
+//
+// Check if init XML has array variable for real matrix A of size (3,2)
+// Needs to be serialized in row major order
+// From FMI 3.0 specification, section 2.2.7.1. Serialization of Array Variables
+
+setCommandLineOptions("--newBackend");
+
+loadString("
+model MatrixArrayVariable
+  parameter Integer m = 3;
+  parameter Integer n = 2;
+  parameter Real A[m,n] = [0.0, 0.1;
+                 1.0, 1.1;
+                 2.0, 2.1];
+end MatrixArrayVariable;
+"); getErrorString();
+
+buildModel(MatrixArrayVariable); getErrorString();
+
+system("sed -n '/<ArrayVariable/,/<\\/ArrayVariable>/p' MatrixArrayVariable_init.xml > MatrixArrayVariable_init.tmp.xml");
+initFileContent := readFile("MatrixArrayVariable_init.tmp.xml");
+
+// Result:
+// true
+// true
+// ""
+// {"MatrixArrayVariable", "MatrixArrayVariable_init.xml"}
+// ""
+// 0
+// "  <ArrayVariable
+//     name = \"A\"
+//     valueReference = \"1000\"
+//     variability = \"parameter\" isDiscrete = \"true\"
+//     causality = \"local\" isValueChangeable = \"true\"
+//     alias = \"noAlias\"
+//     classIndex = \"0\" classType = \"rPar\"
+//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
+//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
+//     <Dimension start=\"3\"/>
+//     <Dimension start=\"2\"/>
+//     <Real start=\"0.0 0.1 1.0 1.1 2.0 2.1\" fixed=\"false\" useNominal=\"false\" />
+//   </ArrayVariable>
+// "
+// endResult
