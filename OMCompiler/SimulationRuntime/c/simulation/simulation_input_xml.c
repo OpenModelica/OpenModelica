@@ -216,16 +216,11 @@ static const double INTEGER_MIN = (double)MODELICA_INT_MIN;
 /* Avoid integer overflow */
 static const double INTEGER_MAX = (double)MODELICA_INT_MAX;
 
-/* reads double value from a string */
-static void read_value_real(const char *s, modelica_real* res, modelica_real default_value);
-/* reads integer value from a string */
-static void read_value_long(const char *s, modelica_integer* res, modelica_integer default_value);
-/* reads integer value from a string */
-static void read_value_int(const char *s, int* res);
-/* reads modelica_string value from a string */
-static void read_value_string(const char *s, const char** str);
-/* reads boolean value from a string */
-static void read_value_bool(const char *s, modelica_boolean* str);
+/* Private function prototypes */
+static modelica_real read_value_real(const char *s, modelica_real default_value);
+static modelica_integer read_value_long(const char *s, modelica_integer default_value);
+static modelica_boolean read_value_bool(const char *s);
+static modelica_string read_value_string(const char *s);
 
 static void XMLCALL startElement(void *userData, const char *name, const char **attr)
 {
@@ -392,38 +387,36 @@ static void XMLCALL endElement(void *userData, const char *name)
  * @brief Fill variable info.
  *
  * Allocates memory for strings `name`, `comment`, `filename`.
- * Needs to be freed with `freeVarInfo`.
+ * `VAR_INFO` needs to be freed with `freeVarInfo` to free that memory.
  *
  * @param var   Model variable hash map containing variable info.
  * @param info  Variable info to fill.
  */
 static void read_var_info(omc_ModelVariable *var, VAR_INFO *info)
 {
-  modelica_integer inputIndex;
-  read_value_string(findHashStringString(var,"name"), &info->name);
+  info->name = strdup(findHashStringString(var,"name"));
+  info->inputIndex = read_value_long(findHashStringStringNull(var,"inputIndex"), -1);
+  info->id = read_value_long(findHashStringString(var,"valueReference"), -1);
+  assertStreamPrint(NULL, info->id != -1, "read_var_info: Missing valueReference!");
+  info->comment = strdup(findHashStringStringEmpty(var,"description"));
+  info->info.filename = strdup(findHashStringString(var,"fileName"));
+  info->info.lineStart = read_value_long(findHashStringString(var,"startLine"), 0);
+  info->info.colStart = read_value_long(findHashStringString(var,"startColumn"), 0);
+  info->info.lineEnd = read_value_long(findHashStringString(var,"endLine"), 0);
+  info->info.colEnd = read_value_long(findHashStringString(var,"endColumn"), 0);
+  info->info.readonly = read_value_long(findHashStringString(var,"fileWritable"), 0);
+
   debugStreamPrint(OMC_LOG_DEBUG, 1, "read var %s from setup file", info->name);
-
-  read_value_long(findHashStringStringNull(var,"inputIndex"), &inputIndex, -1);
-  info->inputIndex = inputIndex;
   debugStreamPrint(OMC_LOG_DEBUG, 0, "read input index %d from setup file", info->inputIndex);
-
-  read_value_int(findHashStringString(var,"valueReference"), &info->id);
   debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s id %d from setup file", info->name, info->id);
-  read_value_string(findHashStringStringEmpty(var,"description"), &info->comment);
   debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s description \"%s\" from setup file", info->name, info->comment);
-  read_value_string(findHashStringString(var,"fileName"), &info->info.filename);
   debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s filename %s from setup file", info->name, info->info.filename);
-  read_value_long(findHashStringString(var,"startLine"), (modelica_integer*)&(info->info.lineStart), 0);
   debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s lineStart %d from setup file", info->name, info->info.lineStart);
-  read_value_long(findHashStringString(var,"startColumn"), (modelica_integer*)&(info->info.colStart), 0);
   debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s colStart %d from setup file", info->name, info->info.colStart);
-  read_value_long(findHashStringString(var,"endLine"), (modelica_integer*)&(info->info.lineEnd), 0);
   debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s lineEnd %d from setup file", info->name, info->info.lineEnd);
-  read_value_long(findHashStringString(var,"endColumn"), (modelica_integer*)&(info->info.colEnd), 0);
   debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s colEnd %d from setup file", info->name, info->info.colEnd);
-  read_value_long(findHashStringString(var,"fileWritable"), (modelica_integer*)&(info->info.readonly), 0);
   debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s readonly %d from setup file", info->name, info->info.readonly);
-  if (OMC_DEBUG_STREAM(OMC_LOG_DEBUG)) messageClose(OMC_LOG_DEBUG);
+  messageClose(OMC_LOG_DEBUG);
 }
 
 
@@ -444,7 +437,7 @@ static void read_var_dimension(omc_ModelVariable *v, DIMENSION_INFO *dimension_i
   DIMENSION_ATTRIBUTE* dim;
   modelica_integer i;
 
-  read_value_long(findHashStringStringEmpty(v, "num_dimensions"), &(dimension_info->numberOfDimensions), -1);
+  dimension_info->numberOfDimensions = read_value_long(findHashStringStringEmpty(v, "num_dimensions"), -1);
   if (dimension_info->numberOfDimensions <= 0) {
     // No <dimension> tags
     return;
@@ -459,10 +452,10 @@ static void read_var_dimension(omc_ModelVariable *v, DIMENSION_INFO *dimension_i
     dim = &dimension_info->dimensions[i];
 
     sprintf(key, "dim-%lu-start", i + 1);
-    read_value_long(findHashStringStringEmpty(v, key), &(dim->start), -1);
+    dim->start = read_value_long(findHashStringStringEmpty(v, key), -1);
 
     sprintf(key, "dim-%lu-valueReference", i + 1);
-    read_value_long(findHashStringStringEmpty(v, key), &(dim->valueReference), -1);
+    dim->valueReference = read_value_long(findHashStringStringEmpty(v, key), -1);
 
     if (dim->start > 0 && dim->valueReference == -1) {
       dim->type = DIMENSION_BY_START;
@@ -485,49 +478,39 @@ static void read_var_dimension(omc_ModelVariable *v, DIMENSION_INFO *dimension_i
 
 static void read_var_attribute_real(omc_ModelVariable *v, REAL_ATTRIBUTE *attribute)
 {
-  const char *unit = NULL;
-  const char *displayUnit = NULL;
-  read_value_real(findHashStringStringEmpty(v,"start"), &(attribute->start), 0.0);
-  read_value_bool(findHashStringString(v,"fixed"), (modelica_boolean*)&(attribute->fixed));
-  read_value_bool(findHashStringString(v,"useNominal"), (modelica_boolean*)&(attribute->useNominal));
-  read_value_real(findHashStringStringEmpty(v,"nominal"), &(attribute->nominal), 1.0);
-  read_value_real(findHashStringStringEmpty(v,"min"), &(attribute->min), REAL_MIN);
-  read_value_real(findHashStringStringEmpty(v,"max"), &(attribute->max), REAL_MAX);
-  read_value_string(findHashStringStringEmpty(v,"unit"), &unit);
-  attribute->unit = mmc_mk_scon_persist(unit); /* this function returns a copy, so unit can be freed */
-  free((char*)unit);
-  // read displayUnit
-  read_value_string(findHashStringStringEmpty(v,"displayUnit"), &displayUnit);
-  attribute->displayUnit = mmc_mk_scon_persist(displayUnit); /* this function returns a copy, so unit can be freed */
-  free((char*)displayUnit);
+  attribute->start = read_value_real(findHashStringStringEmpty(v,"start"), 0.0);
+  attribute->fixed = read_value_bool(findHashStringString(v,"fixed"));
+  attribute->useNominal = read_value_bool(findHashStringString(v,"useNominal"));
+  attribute->nominal = read_value_real(findHashStringStringEmpty(v,"nominal"), 1.0);
+  attribute->min = read_value_real(findHashStringStringEmpty(v,"min"), REAL_MIN);
+  attribute->max = read_value_real(findHashStringStringEmpty(v,"max"), REAL_MAX);
+  attribute->unit = read_value_string(findHashStringStringEmpty(v,"unit"));
+  attribute->displayUnit = read_value_string(findHashStringStringEmpty(v,"displayUnit"));
 
   infoStreamPrint(OMC_LOG_DEBUG, 0, "Real %s(start=%g, fixed=%s, %snominal=%g%s, min=%g, max=%g)", findHashStringString(v,"name"), attribute->start, (attribute->fixed)?"true":"false", (attribute->useNominal)?"":"{", attribute->nominal, attribute->useNominal?"":"}", attribute->min, attribute->max);
 }
 
 static void read_var_attribute_int(omc_ModelVariable *v, INTEGER_ATTRIBUTE *attribute)
 {
-  read_value_long(findHashStringStringEmpty(v,"start"), &attribute->start, 0);
-  read_value_bool(findHashStringString(v,"fixed"), &attribute->fixed);
-  read_value_long(findHashStringStringEmpty(v,"min"), &attribute->min, INTEGER_MIN);
-  read_value_long(findHashStringStringEmpty(v,"max"), &attribute->max, INTEGER_MAX);
+  attribute->start = read_value_long(findHashStringStringEmpty(v,"start"), 0);
+  attribute->fixed = read_value_bool(findHashStringString(v,"fixed"));
+  attribute->min = read_value_long(findHashStringStringEmpty(v,"min"), INTEGER_MIN);
+  attribute->max = read_value_long(findHashStringStringEmpty(v,"max"), INTEGER_MAX);
 
   infoStreamPrint(OMC_LOG_DEBUG, 0, "Integer %s(start=%ld, fixed=%s, min=%ld, max=%ld)", findHashStringString(v,"name"), attribute->start, attribute->fixed?"true":"false", attribute->min, attribute->max);
 }
 
 static void read_var_attribute_bool(omc_ModelVariable *v, BOOLEAN_ATTRIBUTE *attribute)
 {
-  read_value_bool(findHashStringStringEmpty(v,"start"), &attribute->start);
-  read_value_bool(findHashStringString(v,"fixed"), &attribute->fixed);
+  attribute->start = read_value_bool(findHashStringStringEmpty(v,"start"));
+  attribute->fixed = read_value_bool(findHashStringString(v,"fixed"));
 
   infoStreamPrint(OMC_LOG_DEBUG, 0, "Boolean %s(start=%s, fixed=%s)", findHashStringString(v,"name"), attribute->start?"true":"false", attribute->fixed?"true":"false");
 }
 
 static void read_var_attribute_string(omc_ModelVariable *v, STRING_ATTRIBUTE *attribute)
 {
-  const char *start = NULL;
-  read_value_string(findHashStringStringEmpty(v,"start"), &start);
-  attribute->start = mmc_mk_scon_persist(start); /* this function returns a copy, so start can be freed */
-  free((char*)start);
+  attribute->start = read_value_string(findHashStringStringEmpty(v,"start"));
 
   infoStreamPrint(OMC_LOG_DEBUG, 0, "String %s(start=%s)", findHashStringString(v,"name"), MMC_STRINGDATA(attribute->start));
 }
@@ -792,19 +775,16 @@ omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, t
 /**
  * @brief Read default experiment information.
  *
+ * Allocates memory for `solverMethod`, `outputFormat` and `variableFilter`
+ * which needs to be freed by caller.
+ *
  * @param simulationInfo    Contains read values after return.
  * @param de                Default experiment hash map.
  * @param reCalcStepSize    If true step size is recalculated instead of read from hash map.
  */
 void read_default_experiment(SIMULATION_INFO* simulationInfo, omc_DefaultExperiment *de, modelica_boolean reCalcStepSize) {
-  infoStreamPrint(OMC_LOG_SIMULATION, 1, "read all the DefaultExperiment values:");
-
-  read_value_real(findHashStringString(de,"startTime"), &(simulationInfo->startTime), 0);
-  infoStreamPrint(OMC_LOG_SIMULATION, 0, "startTime = %g", simulationInfo->startTime);
-
-  read_value_real(findHashStringString(de,"stopTime"), &(simulationInfo->stopTime), 1.0);
-  infoStreamPrint(OMC_LOG_SIMULATION, 0, "stopTime = %g", simulationInfo->stopTime);
-
+  simulationInfo->startTime = read_value_real(findHashStringString(de,"startTime"), 0);
+  simulationInfo->stopTime = read_value_real(findHashStringString(de,"stopTime"), 1.0);
   if (reCalcStepSize) {
     simulationInfo->stepSize = (simulationInfo->stopTime - simulationInfo->startTime) / 500;
     warningStreamPrint(OMC_LOG_STDOUT, 1, "Start or stop time was overwritten, but no new integrator step size was provided.");
@@ -812,22 +792,21 @@ void read_default_experiment(SIMULATION_INFO* simulationInfo, omc_DefaultExperim
     infoStreamPrint(OMC_LOG_STDOUT, 0, "Add `stepSize=<value>` to `-override=` or override file to silence this warning.");
     messageClose(OMC_LOG_STDOUT);
   } else {
-    read_value_real(findHashStringString(de,"stepSize"), &(simulationInfo->stepSize), (simulationInfo->stopTime - simulationInfo->startTime) / 500);
+    simulationInfo->stepSize = read_value_real(findHashStringString(de, "stepSize"), (simulationInfo->stopTime - simulationInfo->startTime) / 500);
   }
+  simulationInfo->tolerance = read_value_real(findHashStringString(de, "tolerance"), 1e-5);
+  simulationInfo->solverMethod = GC_strdup(findHashStringString(de, "solver"));
+  simulationInfo->outputFormat = GC_strdup(findHashStringString(de, "outputFormat"));
+  simulationInfo->variableFilter = GC_strdup(findHashStringString(de, "variableFilter"));
+
+  infoStreamPrint(OMC_LOG_SIMULATION, 1, "Read all the DefaultExperiment values:");
+  infoStreamPrint(OMC_LOG_SIMULATION, 0, "startTime = %g", simulationInfo->startTime);
+  infoStreamPrint(OMC_LOG_SIMULATION, 0, "stopTime = %g", simulationInfo->stopTime);
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "stepSize = %g", simulationInfo->stepSize);
-
-  read_value_real(findHashStringString(de,"tolerance"), &(simulationInfo->tolerance), 1e-5);
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "tolerance = %g", simulationInfo->tolerance);
-
-  read_value_string(findHashStringString(de,"solver"), &simulationInfo->solverMethod);
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "solver method: %s", simulationInfo->solverMethod);
-
-  read_value_string(findHashStringString(de,"outputFormat"), &(simulationInfo->outputFormat));
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "output format: %s", simulationInfo->outputFormat);
-
-  read_value_string(findHashStringString(de,"variableFilter"), &(simulationInfo->variableFilter));
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "variable filter: %s", simulationInfo->variableFilter);
-
   messageClose(OMC_LOG_SIMULATION);
 }
 
@@ -845,24 +824,24 @@ void read_default_experiment(SIMULATION_INFO* simulationInfo, omc_DefaultExperim
 void read_model_description_sizes(omc_ModelDescription *md, MODEL_DATA *modelData) {
   modelica_integer numRealAlgVars;
 
-  read_value_long(findHashStringString(md, "numberOfContinuousStates"), &modelData->nStatesArray, 0);
-  read_value_long(findHashStringString(md, "numberOfRealAlgebraicVariables"), &numRealAlgVars, 0);
+  modelData->nStatesArray = read_value_long(findHashStringString(md, "numberOfContinuousStates"), 0);
+  numRealAlgVars = read_value_long(findHashStringString(md, "numberOfRealAlgebraicVariables"), 0);
   modelData->nVariablesRealArray = 2*modelData->nStatesArray + numRealAlgVars;
-  read_value_long(findHashStringString(md, "numberOfRealAlgebraicAliasVariables"), &modelData->nAliasRealArray, 0);
+  modelData->nAliasRealArray = read_value_long(findHashStringString(md, "numberOfRealAlgebraicAliasVariables"), 0);
   // TODO: How to get data->modelData->nDiscreteReal or its array version?
-  read_value_long(findHashStringString(md, "numberOfRealParameters"), &modelData->nParametersRealArray, 0);
+  modelData->nParametersRealArray = read_value_long(findHashStringString(md, "numberOfRealParameters"), 0);
 
-  read_value_long(findHashStringString(md, "numberOfIntegerParameters"), &modelData->nParametersIntegerArray, 0);
-  read_value_long(findHashStringString(md, "numberOfIntegerAlgebraicVariables"), &modelData->nVariablesIntegerArray, 0);
-  read_value_long(findHashStringString(md, "numberOfIntegerAliasVariables"), &modelData->nAliasIntegerArray, 0);
+  modelData->nParametersIntegerArray = read_value_long(findHashStringString(md, "numberOfIntegerParameters"), 0);
+  modelData->nVariablesIntegerArray = read_value_long(findHashStringString(md, "numberOfIntegerAlgebraicVariables"), 0);
+  modelData->nAliasIntegerArray = read_value_long(findHashStringString(md, "numberOfIntegerAliasVariables"), 0);
 
-  read_value_long(findHashStringString(md, "numberOfBooleanParameters"), &modelData->nParametersBooleanArray, 0);
-  read_value_long(findHashStringString(md, "numberOfBooleanAlgebraicVariables"), &modelData->nVariablesBooleanArray, 0);
-  read_value_long(findHashStringString(md, "numberOfBooleanAliasVariables"), &modelData->nAliasBooleanArray, 0);
+  modelData->nParametersBooleanArray = read_value_long(findHashStringString(md, "numberOfBooleanParameters"), 0);
+  modelData->nVariablesBooleanArray = read_value_long(findHashStringString(md, "numberOfBooleanAlgebraicVariables"), 0);
+  modelData->nAliasBooleanArray = read_value_long(findHashStringString(md, "numberOfBooleanAliasVariables"), 0);
 
-  read_value_long(findHashStringString(md, "numberOfStringParameters"), &modelData->nParametersStringArray, 0);
-  read_value_long(findHashStringString(md, "numberOfStringAlgebraicVariables"),  &modelData->nVariablesStringArray, 0);
-  read_value_long(findHashStringString(md, "numberOfStringAliasVariables"),  &modelData->nAliasStringArray, 0);
+  modelData->nParametersStringArray = read_value_long(findHashStringString(md, "numberOfStringParameters"), 0);
+  modelData->nVariablesStringArray = read_value_long(findHashStringString(md, "numberOfStringAlgebraicVariables"), 0);
+  modelData->nAliasStringArray = read_value_long(findHashStringString(md, "numberOfStringAliasVariables"), 0);
 }
 
 /**
@@ -893,7 +872,7 @@ void read_alias_var(DATA_ALIAS* alias,
   {
     read_var_info(*findHashLongVar(aliasHashMap, i), &alias[i].info);
 
-    read_value_string(findHashStringStringNull(*findHashLongVar(aliasHashMap, i),"alias"), &aliasTmp);
+    aliasTmp = strdup(findHashStringStringNull(*findHashLongVar(aliasHashMap, i),"alias"));
     if (0 == strcmp(aliasTmp, "negatedAlias")) {
       alias[i].negate = 1;
     } else {
@@ -906,7 +885,7 @@ void read_alias_var(DATA_ALIAS* alias,
     free((char*)aliasTmp);
     aliasTmp = NULL;
 
-    read_value_string(findHashStringStringNull(*findHashLongVar(aliasHashMap, i),"aliasVariable"), &aliasTmp);
+    aliasTmp = strdup(findHashStringStringNull(*findHashLongVar(aliasHashMap, i),"aliasVariable"));
 
     it = findHashStringLongPtr(mapAlias, aliasTmp);
     itParam = findHashStringLongPtr(mapAliasParam, aliasTmp);
@@ -937,6 +916,7 @@ void read_alias_var(DATA_ALIAS* alias,
  *   - Read number of variables / parameters from XML.
  *   - Update initial values with overrides.
  *   - Read default experiment.
+ *   - Read OPENMODELICAHOME.
  *   - Allocates model data variables --> free with `freeModelDataVars`.
  *   - Read all initial values into `modelData`.
  *
@@ -981,7 +961,7 @@ void read_input_xml(MODEL_DATA* modelData,
   /* Read initial values from hash map */
   read_default_experiment(simulationInfo, mi->de, reCalcStepSize);
 
-  read_value_string(findHashStringString(mi->md,"OPENMODELICAHOME"), &simulationInfo->OPENMODELICAHOME);
+  simulationInfo->OPENMODELICAHOME = GC_strdup(findHashStringString(mi->md,"OPENMODELICAHOME")); // Can be set by generated code
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "OPENMODELICAHOME: %s", simulationInfo->OPENMODELICAHOME);
 
   allocModelDataVars(modelData, threadData);
@@ -1024,61 +1004,75 @@ void read_input_xml(MODEL_DATA* modelData,
   free(mi);
 }
 
-/* reads modelica_string value from a string */
-static inline void read_value_string(const char *s, const char **str)
-{
-  if(str == NULL)
-  {
-    warningStreamPrint(OMC_LOG_SIMULATION, 0, "error read_value, no data allocated for storing string");
-    return;
-  }
-  *str = strdup(s); /* memory is allocated here, must be freed by the caller */
-}
-
-/* reads double value from a string */
-static inline void read_value_real(const char *s, modelica_real* res, modelica_real default_value)
+/**
+ * @brief Read double value from a string
+ *
+ * @param s               Null terminated string.
+ *                        Treat string value `"true"` as `1.0` and `"false"`
+ *                        as `0.0`.
+ * @param default_value   Default value to return if string is empty.
+ * @return modelica_real  Real value.
+ */
+static inline modelica_real read_value_real(const char *s, modelica_real default_value)
 {
   if (*s == '\0') {
-    *res = default_value;
+    return default_value;
   } else if (0 == strcmp(s, "true")) {
-    *res = 1.0;
+    return 1.0;
   } else if (0 == strcmp(s, "false")) {
-    *res = 0.0;
+    return 0.0;
   } else {
-    *res = atof(s);
+    return atof(s);
   }
 }
 
-/* reads boolean value from a string */
-static inline void read_value_bool(const char *s, modelica_boolean* res)
-{
-  *res = 0 == strcmp(s, "true");
-}
-
-/* reads integer value from a string */
-static inline void read_value_long(const char *s, modelica_integer* res, modelica_integer default_value)
+/**
+ * @brief Read long value from string.
+ *
+ * @param s                   Null terminated string to read.
+ *                            Treat string value `"true"` as `1` and `"false"`
+ *                            as `0`.
+ * @param default_value       Default value if string is empty.
+ * @return modelica_integer   Long integer.
+ */
+static inline modelica_integer read_value_long(const char *s, modelica_integer default_value)
 {
   if (s == NULL || *s == '\0') {
-    *res = default_value;
+    return default_value;
   } else if (0 == strcmp(s, "true")) {
-    *res = 1;
+    return 1;
   } else if (0 == strcmp(s, "false")) {
-    *res = 0;
+    return 0;
   } else {
-    *res = atol(s);
+    return atol(s);
   }
 }
 
-/* reads int value from a string */
-static inline void read_value_int(const char *s, int* res)
+/**
+ * @brief Read boolean value from string.
+ *
+ * @param s                   Null terminated string to read.
+ * @return modelica_boolean   Return TRUE if string equals "true", FALSE otherwise.
+ */
+static inline modelica_boolean read_value_bool(const char *s)
 {
-  if (0 == strcmp(s, "true")) {
-    *res = 1;
-  } else if (0 == strcmp(s, "false")) {
-    *res = 0;
-  } else {
-    *res = atoi(s);
-  }
+  return 0 == strcmp(s, "true");
+}
+
+/**
+ * @brief Read modelica_string from a string
+ *
+ * @param s                 String
+ * @return modelica_string  Modelica string. Needs to be freed by caller.
+ */
+static inline modelica_string read_value_string(const char *s)
+{
+  char* buffer;
+  modelica_string* str;
+  buffer = strdup(s); /* memory is allocated here, must be freed by the caller */
+  str = mmc_mk_scon_persist(buffer);
+  free(buffer);
+  return str;
 }
 
 static char* trim(char *str) {
