@@ -214,13 +214,15 @@ template initDefaultValXml(DAE.Type type_)
   else error(sourceInfo(), 'initial value of unknown type: <%unparseType(type_)%>')
 end initDefaultValXml;
 
-template initValXml(Exp exp)
+template initValXml(Exp exp, String stringQuotes)
 ::=
   match exp
-  case ICONST(__) then integer
-  case RCONST(__) then real
-  case SCONST(__) then '<%Util.escapeModelicaStringToXmlString(string)%>'
-  case BCONST(__) then if bool then "true" else "false"
+  case ICONST(__)       then integer
+  case RCONST(__)       then real
+  case SCONST(__)       then '<%stringQuotes%><%Util.escapeModelicaStringToXmlString(string)%><%stringQuotes%>'
+  case BCONST(__)       then bool
+  case ARRAY(__)        then '<%array |> elem => initValXml(elem, stringQuotes) ;separator=" "%>'
+  case REDUCTION(__)    then if Expression.isSimpleLiteralValue(expr, true) then '<%initValXml(expr, stringQuotes)%>' else ''
   case ENUM_LITERAL(__) then '<%index%>'
   else error(sourceInfo(), 'initial value of unknown type: <%dumpExp(exp,"\"")%>')
 end initValXml;
@@ -336,8 +338,8 @@ template attributeString(DAE.Exp exp, String attr_name)
     case RCONST(__)
     case SCONST(__)
     case BCONST(__)
-    case ENUM_LITERAL(__) then ' <%attr_name%>="<%initValXml(exp)%>"'
-    case ARRAY(__)        then if Expression.isSimpleLiteralValue(exp, true) then ' <%attr_name%>="<%array |> elem => initValXml(elem) ;separator=" "%>"' else ''
+    case ENUM_LITERAL(__) then ' <%attr_name%>="<%initValXml(exp, '')%>"'
+    case ARRAY(__)        then if Expression.isSimpleLiteralValue(exp, true) then ' <%attr_name%>="<%array |> elem => initValXml(elem, '&quot;') ;separator=" "%>"' else ''
     /* this is basically an each operator, just write one value and repeat it for the size when using it later */
     case REDUCTION()      then if Expression.isSimpleLiteralValue(expr, true) then '<%attributeString(expr, attr_name)%>' else ''
     else ''

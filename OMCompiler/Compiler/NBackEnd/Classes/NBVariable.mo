@@ -1525,19 +1525,34 @@ public
   function hasEvaluableBinding
     extends checkVar;
   protected
-    Expression binding;
-  algorithm
-    if isBound(var_ptr) then
-      binding := Binding.getExp(var.binding);
-      b := Expression.isLiteral(binding);
+    Expression binding, start;
+    Option<Expression> opt_start;
+    function isEvaluable
+      input Expression exp;
+      output Boolean b;
+    protected
+      Expression new_exp;
+    algorithm
+      b := Expression.isLiteralXML(exp);
       if not b then
         // try to extract literal from array constructor (use dummy map, there should not be any new iterators)
-        (_, binding) := Iterator.extract(binding);
-        binding := SimplifyExp.simplifyDump(binding, true, getInstanceName());
-        b := Expression.isLiteral(Ceval.tryEvalExp(binding));
+        (_, new_exp) := Iterator.extract(exp);
+        new_exp := SimplifyExp.simplifyDump(new_exp, true, getInstanceName());
+        b := Expression.isLiteralXML(Ceval.tryEvalExp(new_exp));
       end if;
+    end isEvaluable;
+  algorithm
+    // check binding
+    if isBound(var_ptr) then
+      binding := Binding.getExp(var.binding);
+      b := isEvaluable(binding);
     else
-      b := false;
+      // check start value
+      opt_start := getStartAttribute(var_ptr);
+      b := match opt_start
+        case SOME(start) then isEvaluable(start);
+        else false;
+      end match;
     end if;
   end hasEvaluableBinding;
 
@@ -1601,9 +1616,9 @@ public
   end setFixed;
 
   function setBindingAsStart
-    "use this if a binding is found out to be constant, remove variable to known vars (param/const)
-    NOTE: this overwrites the old start value. throw error/warning if different?"
+    "use this if a binding is found out to be constant, remove variable to known vars (param/const)"
     input Pointer<Variable> var_ptr;
+    input Boolean overwrite = false;
   protected
     Variable var;
   algorithm
@@ -1615,7 +1630,7 @@ public
 
       case Variable.VARIABLE(backendinfo = binfo as BackendInfo.BACKEND_INFO()) algorithm
         start := Binding.getExp(var.binding);
-        binfo.attributes := VariableAttributes.setStartAttribute(binfo.attributes, start, true);
+        binfo.attributes := VariableAttributes.setStartAttribute(binfo.attributes, start, overwrite);
         var.backendinfo := binfo;
       then var;
 
@@ -1629,8 +1644,9 @@ public
   function setBindingAsStartAndFix
     input output Pointer<Variable> var_ptr;
     input Boolean b = true;
+    input Boolean overwrite = false;
   algorithm
-    setBindingAsStart(var_ptr);
+    setBindingAsStart(var_ptr, overwrite);
     var_ptr := setFixed(var_ptr, b);
   end setBindingAsStartAndFix;
 

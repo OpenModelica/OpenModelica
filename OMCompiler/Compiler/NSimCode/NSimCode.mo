@@ -561,7 +561,8 @@ public
         partitionData                 = OldSimCode.PARTITIONDATA(-1,{},{},{}),
         daeModeData                   = if isSome(simCode.daeModeData) then SOME(DaeModeData.convert(Util.getOption(simCode.daeModeData))) else NONE(),
         inlineEquations               = {},
-        omsiData                      = NONE());
+        omsiData                      = NONE(),
+        scalarized                    = Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE));
     end convert;
 
     function getDirectoryAndLibs

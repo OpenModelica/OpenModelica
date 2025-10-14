@@ -802,7 +802,8 @@ algorithm
       partitionData               = SimCode.emptyPartitionData,
       daeModeData                 = NONE(),
       inlineEquations             = inlineEquations,
-      omsiData                    = omsiOptData
+      omsiData                    = omsiOptData,
+      scalarized                  = true
     );
 
     (simCode, (_, _, lits)) := traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literals);
@@ -15341,11 +15342,12 @@ public function cref2simvar
   output SimCodeVar.SimVar outSimVar;
 protected
   HashTableCrefSimVar.HashTable crefToSimVarHT;
-  DAE.ComponentRef badcref;
+  DAE.ComponentRef cref, badcref;
 algorithm
   try
     SimCode.SIMCODE(crefToSimVarHT = crefToSimVarHT) := simCode;
-    outSimVar := simVarFromHT(inCref, crefToSimVarHT);
+    cref := if simCode.scalarized then inCref else ComponentReference.crefStripSubs(inCref);
+    outSimVar := simVarFromHT(cref, crefToSimVarHT);
   else
     //print("cref2simvar: " + ComponentReference.printComponentRefStr(inCref) + " not found!\n");
     badcref := ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed " + ComponentReference.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});

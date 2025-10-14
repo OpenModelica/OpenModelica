@@ -1380,6 +1380,10 @@ constant ConfigFlag LOAD_MISSING_LIBRARIES = CONFIG_FLAG(159, "loadMissingLibrar
 constant ConfigFlag CAUSALIZE_DAE_MODE = CONFIG_FLAG(160, "causalizeDaeMode",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   Gettext.gettext("The system is partially causalized and simple assignments are generated for equations that can be solved explicitly. Only works with --daeMode."));
+/* please remove me once this is supported */
+constant ConfigFlag SIM_CODE_SCALARIZE = CONFIG_FLAG(161, "simCodeScalarize",
+  NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
+  Gettext.gettext("Sclarizes variables during simcode phase."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

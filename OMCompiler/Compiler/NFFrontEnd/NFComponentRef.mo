@@ -2342,16 +2342,20 @@ public
   protected
     list<Subscript> subs;
   algorithm
-    subs := subscriptsAllFlat(scal);
-    if listEmpty(subs) then
-      // do not do it for scalar variables
-      arr := NONE();
-    elseif List.all(subs, function Subscript.isEqual(subscript1 = Subscript.INDEX(Expression.INTEGER(1)))) then
-      // if it is the first element, save the array var
-      arr := SOME(stripSubscriptsAll(scal));
+    if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
+      subs := subscriptsAllFlat(scal);
+      if listEmpty(subs) then
+        // do not do it for scalar variables
+        arr := NONE();
+      elseif List.all(subs, function Subscript.isEqual(subscript1 = Subscript.INDEX(Expression.INTEGER(1)))) then
+        // if it is the first element, save the array var
+        arr := SOME(stripSubscriptsAll(scal));
+      else
+        // not first element
+        arr := NONE();
+      end if;
     else
-      // not first element
-      arr := NONE();
+      arr := if Type.isArray(getSubscriptedType(scal)) then SOME(scal) else NONE();
     end if;
   end getArrayCrefOpt;
 

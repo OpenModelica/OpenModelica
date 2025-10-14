@@ -265,7 +265,7 @@ protected
           (const_vars, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasConstOrParamAliasBinding);
           for var in const_vars loop
             BVariable.setVarKind(var, VariableKind.PARAMETER(NONE()));
-            BVariable.setBindingAsStartAndFix(var);
+            BVariable.setBindingAsStartAndFix(var, true);
           end for;
           varData.parameters := VariablePointers.addList(const_vars, varData.parameters);
           varData.knowns := VariablePointers.addList(const_vars, varData.knowns);
