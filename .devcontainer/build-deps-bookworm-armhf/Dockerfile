@@ -2,16 +2,19 @@ ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
 ENV SHELL=/bin/bash
-ENV LANG=en_US.UTF-8
-ENV LANGUAGE=en_US
 
 ARG USERNAME=openmodelica-user
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
-# Additional software (gdb, valgrind)
+# Additional software (gdb, valgrind) and set locale
 RUN apt-get update \
-    && apt-get install -qy build-essential gdb valgrind
+    && apt-get install -qy build-essential gdb valgrind locales \
+    && locale-gen en_US.UTF-8
+
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
 
 # Create the user
 RUN groupadd --gid $USER_GID $USERNAME \

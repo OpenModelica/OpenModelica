@@ -16,6 +16,7 @@ pipeline {
   }
   parameters {
     booleanParam(name: 'BUILD_MSYS2_UCRT64', defaultValue: false, description: 'Build with Win/MSYS2-UCRT64')
+    booleanParam(name: 'BUILD_DEBIAN_ARMHF', defaultValue: false, description: 'Build with Linux Debian armhf')
     booleanParam(name: 'DISABLE_ALL_CMAKE_BUILDS', defaultValue: false, description: 'Skip building omc with CMake (CMake 3.17.2) on all platforms')
     booleanParam(name: 'ENABLE_MSYS2_UCRT64_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on MSYS2-UCRT64')
     booleanParam(name: 'ENABLE_MACOS_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on MacOS')
@@ -175,6 +176,29 @@ pipeline {
               sh "build/bin/omc --version"
             }
             //stash name: 'omc-cmake-gcc', includes: 'build_cmake/**, build/**'
+          }
+        }
+        stage('bookworm-armhf-cmake-clang') {
+          agent {
+            docker {
+              image 'build-deps:bookworm.nightly.armhf'
+              label 'linux-arm32'
+              alwaysPull true
+            }
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeBuildARMHF }
+          }
+          steps {
+            script {
+              echo "Running on: ${env.NODE_NAME}"
+              common.buildOMC_CMake("-DCMAKE_TOOLCHAIN_FILE=.CI/toolchain/toolchain-arm-linux-gnueabihf.cmake "
+                                  + "-DCMAKE_BUILD_TYPE=Release "
+                                  + "-DOM_USE_CCACHE=OFF "
+                                  + "-DCMAKE_INSTALL_PREFIX=build")
+              sh "build/bin/omc --version"
+            }
           }
         }
         stage('cmake-macos-arm64-gcc') {
