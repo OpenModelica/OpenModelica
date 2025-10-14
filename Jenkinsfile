@@ -184,7 +184,7 @@ pipeline {
         stage('bookworm-armhf-cmake-clang') {
           agent {
             docker {
-              image 'build-deps:bookworm.nightly.armhf'
+              image 'docker.openmodelica.org/build-deps:bookworm.nightly.armhf'
               label 'linux-arm32'
               alwaysPull true
             }
