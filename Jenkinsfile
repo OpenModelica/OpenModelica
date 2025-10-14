@@ -1,5 +1,6 @@
 def common
 def shouldWeBuildUCRT
+def shouldWeBuildARMHF
 def shouldWeDisableAllCMakeBuilds_value
 def shouldWeEnableMacOSCMakeBuild_value
 def shouldWeEnableUCRTCMakeBuild_value
@@ -40,6 +41,8 @@ pipeline {
           print "isPR: ${isPR}"
           shouldWeBuildUCRT = common.shouldWeBuildUCRT()
           print "shouldWeBuildUCRT: ${shouldWeBuildUCRT}"
+          shouldWeBuildARMHF = common.shouldWeBuildARMHF()
+          print "shouldWeBuildARMHF: ${shouldWeBuildARMHF}"
           shouldWeDisableAllCMakeBuilds_value = common.shouldWeDisableAllCMakeBuilds()
           print "shouldWeDisableAllCMakeBuilds: ${shouldWeDisableAllCMakeBuilds_value}"
           shouldWeEnableMacOSCMakeBuild_value = common.shouldWeEnableMacOSCMakeBuild()
@@ -193,7 +196,6 @@ pipeline {
           steps {
             script {
               echo "Running on: ${env.NODE_NAME}"
-
               sh "cmake --version"
               sh '''
               cmake -S ./ -B ./build_cmake \
