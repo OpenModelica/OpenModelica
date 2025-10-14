@@ -845,24 +845,24 @@ void read_default_experiment(SIMULATION_INFO* simulationInfo, omc_DefaultExperim
 void read_model_description_sizes(omc_ModelDescription *md, MODEL_DATA *modelData) {
   modelica_integer numRealAlgVars;
 
-  read_value_long(findHashStringString(md, "numberOfContinuousStates"), &modelData->nStatesArray, 0);
+  read_value_long(findHashStringString(md, "numberOfContinuousStates"), (modelica_integer*)&modelData->nStatesArray, 0);
   read_value_long(findHashStringString(md, "numberOfRealAlgebraicVariables"), &numRealAlgVars, 0);
   modelData->nVariablesRealArray = 2*modelData->nStatesArray + numRealAlgVars;
-  read_value_long(findHashStringString(md, "numberOfRealAlgebraicAliasVariables"), &modelData->nAliasRealArray, 0);
+  read_value_long(findHashStringString(md, "numberOfRealAlgebraicAliasVariables"), (modelica_integer*)&modelData->nAliasRealArray, 0);
   // TODO: How to get data->modelData->nDiscreteReal or its array version?
-  read_value_long(findHashStringString(md, "numberOfRealParameters"), &modelData->nParametersRealArray, 0);
+  read_value_long(findHashStringString(md, "numberOfRealParameters"), (modelica_integer*)&modelData->nParametersRealArray, 0);
 
-  read_value_long(findHashStringString(md, "numberOfIntegerParameters"), &modelData->nParametersIntegerArray, 0);
-  read_value_long(findHashStringString(md, "numberOfIntegerAlgebraicVariables"), &modelData->nVariablesIntegerArray, 0);
-  read_value_long(findHashStringString(md, "numberOfIntegerAliasVariables"), &modelData->nAliasIntegerArray, 0);
+  read_value_long(findHashStringString(md, "numberOfIntegerParameters"), (modelica_integer*)&modelData->nParametersIntegerArray, 0);
+  read_value_long(findHashStringString(md, "numberOfIntegerAlgebraicVariables"), (modelica_integer*)&modelData->nVariablesIntegerArray, 0);
+  read_value_long(findHashStringString(md, "numberOfIntegerAliasVariables"), (modelica_integer*)&modelData->nAliasIntegerArray, 0);
 
-  read_value_long(findHashStringString(md, "numberOfBooleanParameters"), &modelData->nParametersBooleanArray, 0);
-  read_value_long(findHashStringString(md, "numberOfBooleanAlgebraicVariables"), &modelData->nVariablesBooleanArray, 0);
-  read_value_long(findHashStringString(md, "numberOfBooleanAliasVariables"), &modelData->nAliasBooleanArray, 0);
+  read_value_long(findHashStringString(md, "numberOfBooleanParameters"), (modelica_integer*)&modelData->nParametersBooleanArray, 0);
+  read_value_long(findHashStringString(md, "numberOfBooleanAlgebraicVariables"), (modelica_integer*)&modelData->nVariablesBooleanArray, 0);
+  read_value_long(findHashStringString(md, "numberOfBooleanAliasVariables"), (modelica_integer*)&modelData->nAliasBooleanArray, 0);
 
-  read_value_long(findHashStringString(md, "numberOfStringParameters"), &modelData->nParametersStringArray, 0);
-  read_value_long(findHashStringString(md, "numberOfStringAlgebraicVariables"),  &modelData->nVariablesStringArray, 0);
-  read_value_long(findHashStringString(md, "numberOfStringAliasVariables"),  &modelData->nAliasStringArray, 0);
+  read_value_long(findHashStringString(md, "numberOfStringParameters"), (modelica_integer*)&modelData->nParametersStringArray, 0);
+  read_value_long(findHashStringString(md, "numberOfStringAlgebraicVariables"), (modelica_integer*)&modelData->nVariablesStringArray, 0);
+  read_value_long(findHashStringString(md, "numberOfStringAliasVariables"), (modelica_integer*)&modelData->nAliasStringArray, 0);
 }
 
 /**

@@ -181,7 +181,7 @@ pipeline {
             //stash name: 'omc-cmake-gcc', includes: 'build_cmake/**, build/**'
           }
         }
-        stage('bookworm-armhf-cmake-clang') {
+        stage('bookworm-armhf-clang') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:bookworm.nightly.armhf'

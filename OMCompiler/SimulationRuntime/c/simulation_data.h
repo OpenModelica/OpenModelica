@@ -640,43 +640,43 @@ typedef struct MODEL_DATA
   long nBaseClocks;                    /* total number of base-clocks*/
 
   /* Number of un-scalrarized variables (arrays count as one variable) */
-  modelica_integer nStatesArray;            /* Number of array + scalar state variables */
-  modelica_integer nVariablesRealArray;     /* Number of array + scalar real variables: states + state derivatives + real algebraic variables */
-  modelica_integer nVariablesIntegerArray;  /* Number of array + scalar integer variables */
-  modelica_integer nVariablesBooleanArray;  /* Number of array + scalar boolean variables */
-  modelica_integer nVariablesStringArray;   /* Number of array + scalar string variables */
+  long nStatesArray;            /* Number of array + scalar state variables */
+  long nVariablesRealArray;     /* Number of array + scalar real variables: states + state derivatives + real algebraic variables */
+  long nVariablesIntegerArray;  /* Number of array + scalar integer variables */
+  long nVariablesBooleanArray;  /* Number of array + scalar boolean variables */
+  long nVariablesStringArray;   /* Number of array + scalar string variables */
 
-  modelica_integer nParametersRealArray;    /* Number of array + scalar real parameters */
-  modelica_integer nParametersIntegerArray; /* Number of array + scalar integer parameters */
-  modelica_integer nParametersBooleanArray; /* Number of array + scalar boolean parameters */
-  modelica_integer nParametersStringArray;  /* Number of array + scalar string parameters */
+  long nParametersRealArray;    /* Number of array + scalar real parameters */
+  long nParametersIntegerArray; /* Number of array + scalar integer parameters */
+  long nParametersBooleanArray; /* Number of array + scalar boolean parameters */
+  long nParametersStringArray;  /* Number of array + scalar string parameters */
 
-  modelica_integer nAliasRealArray;         /* Number of array + scalar real alias variables */
-  modelica_integer nAliasIntegerArray;      /* Number of array + scalar integer alias variables */
-  modelica_integer nAliasBooleanArray;      /* Number of array + scalar boolean alias variables */
-  modelica_integer nAliasStringArray;       /* Number of array + scalar string alias variables */
+  long nAliasRealArray;         /* Number of array + scalar real alias variables */
+  long nAliasIntegerArray;      /* Number of array + scalar integer alias variables */
+  long nAliasBooleanArray;      /* Number of array + scalar boolean alias variables */
+  long nAliasStringArray;       /* Number of array + scalar string alias variables */
   // TODO: array handling for input and output vars missing
 
   /* Number of scalarized variables (arrays are flatten to scalar elements.) */
-  modelica_integer nStates;                 /* Number of state variables*/
-  modelica_integer nVariablesReal;          /* Number of real variables: states + state derivatives + real algebraic variables + real discrete variables */
-  modelica_integer nDiscreteReal;           /* Number of all discrete real variables */
-  modelica_integer nVariablesInteger;       /* Number of integer variables */
-  modelica_integer nVariablesBoolean;       /* Number of boolean variables */
-  modelica_integer nVariablesString;        /* Number of string variables */
+  long nStates;                 /* Number of state variables*/
+  long nVariablesReal;          /* Number of real variables: states + state derivatives + real algebraic variables + real discrete variables */
+  long nDiscreteReal;           /* Number of all discrete real variables */
+  long nVariablesInteger;       /* Number of integer variables */
+  long nVariablesBoolean;       /* Number of boolean variables */
+  long nVariablesString;        /* Number of string variables */
 
-  modelica_integer nParametersReal;         /* Number of real parameters */
-  modelica_integer nParametersInteger;      /* Number of integer parameters */
-  modelica_integer nParametersBoolean;      /* Number of boolean parameters */
-  modelica_integer nParametersString;       /* Number of string parameters */
+  long nParametersReal;         /* Number of real parameters */
+  long nParametersInteger;      /* Number of integer parameters */
+  long nParametersBoolean;      /* Number of boolean parameters */
+  long nParametersString;       /* Number of string parameters */
 
-  modelica_integer nInputVars;              /* Number of input variables */
-  modelica_integer nOutputVars;             /* Number of output variables */
+  long nInputVars;              /* Number of input variables */
+  long nOutputVars;             /* Number of output variables */
 
-  modelica_integer nAliasReal;              /* Number of real alias variables */
-  modelica_integer nAliasInteger;           /* Number of integer alias variables */
-  modelica_integer nAliasBoolean;           /* Number of boolean alias variables */
-  modelica_integer nAliasString;            /* Number of string alias variables */
+  long nAliasReal;              /* Number of real alias variables */
+  long nAliasInteger;           /* Number of integer alias variables */
+  long nAliasBoolean;           /* Number of boolean alias variables */
+  long nAliasString;            /* Number of string alias variables */
 
   long nZeroCrossings;
   long nRelations;
