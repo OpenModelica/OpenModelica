@@ -1,0 +1,70 @@
+// name: 01_real_array_var
+// keywords: NewBackend
+// status: correct
+// teardown_command: rm -f *RealArrayVariable*
+//
+// Check if init XML has array variable for x with size=5
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false");
+
+loadString("
+model RealArrayVariable
+  parameter Integer p = 5;
+  Real x[p];
+equation
+  for i in 1:p loop
+    x[i] = i;
+  end for;
+end RealArrayVariable;
+"); getErrorString();
+
+buildModel(RealArrayVariable); getErrorString();
+
+// Life's too short to learn regex. LLM to the rescue!
+system("sed -n 's/.*\\(numberOf[[:alnum:]_]*\\)[[:space:]]*=[[:space:]]*\"\\([0-9][0-9]*\\)\".*/\\1 \\2/p' RealArrayVariable_init.xml > RealArrayVariable_init.numberOf.xml ");
+initFileContent := readFile("RealArrayVariable_init.numberOf.xml");
+system("sed -n '/<ArrayVariable/,/<\\/ArrayVariable>/p' RealArrayVariable_init.xml > RealArrayVariable_init.ArrayVariable.xml");
+initFileContent := readFile("RealArrayVariable_init.ArrayVariable.xml");
+
+// Result:
+// true
+// true
+// ""
+// {"RealArrayVariable", "RealArrayVariable_init.xml"}
+// ""
+// 0
+// "numberOfEventIndicators 0
+// numberOfTimeEvents 0
+// numberOfInputVariables 0
+// numberOfOutputVariables 0
+// numberOfExternalObjects 0
+// numberOfFunctions 0
+// numberOfContinuousStates 0
+// numberOfRealAlgebraicVariables 1
+// numberOfRealAlgebraicAliasVariables 0
+// numberOfRealParameters 0
+// numberOfIntegerAlgebraicVariables 0
+// numberOfIntegerAliasVariables 0
+// numberOfIntegerParameters 1
+// numberOfStringAlgebraicVariables 0
+// numberOfStringAliasVariables 0
+// numberOfStringParameters 0
+// numberOfBooleanAlgebraicVariables 0
+// numberOfBooleanAliasVariables 0
+// numberOfBooleanParameters 0
+// "
+// 0
+// "  <ArrayVariable
+//     name = \"x\"
+//     valueReference = \"1000\"
+//     variability = \"continuous\" isDiscrete = \"false\"
+//     causality = \"local\" isValueChangeable = \"false\"
+//     alias = \"noAlias\"
+//     classIndex = \"0\" classType = \"rAlg\"
+//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
+//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
+//     <Dimension start=\"5\"/>
+//     <Real fixed=\"false\" useNominal=\"false\" />
+//   </ArrayVariable>
+// "
+// endResult

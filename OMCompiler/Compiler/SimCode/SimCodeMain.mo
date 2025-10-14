@@ -1832,7 +1832,8 @@ algorithm
       partitionData               = SimCode.emptyPartitionData,
       daeModeData                 = daeModeData,
       inlineEquations             = {},
-      omsiData                    = NONE()
+      omsiData                    = NONE(),
+      scalarized                  = true
     );
 
     (simCode, (_, _, lits)) := SimCodeUtil.traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literals);

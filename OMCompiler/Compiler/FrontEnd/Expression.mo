@@ -13451,6 +13451,7 @@ public function isSimpleLiteralValue "A value that requires nothing special duri
   output Boolean b;
 algorithm
   b := match exp
+    case DAE.SCONST() then allow_arrays /* allow string constants with arrays */;
     case DAE.ICONST() then true;
     case DAE.RCONST() then true;
     case DAE.BCONST() then true;

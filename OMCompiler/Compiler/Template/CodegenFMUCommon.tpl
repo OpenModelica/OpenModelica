@@ -254,11 +254,11 @@ template StartString(SimVar simvar)
 match simvar
 case SIMVAR(initialValue = initialValue, causality = causality, type_ = type_) then
   match initialValue
-    case SOME(e as ICONST(__)) then ' start="<%initValXml(e)%>"'
-    case SOME(e as RCONST(__)) then ' start="<%initValXml(e)%>"'
-    case SOME(e as SCONST(__)) then ' start="<%initValXml(e)%>"'
-    case SOME(e as BCONST(__)) then ' start="<%initValXml(e)%>"'
-    case SOME(e as ENUM_LITERAL(__)) then ' start="<%initValXml(e)%>"'
+    case SOME(e as ICONST(__)) then ' start="<%initValXml(e, "")%>"'
+    case SOME(e as RCONST(__)) then ' start="<%initValXml(e, "")%>"'
+    case SOME(e as SCONST(__)) then ' start="<%initValXml(e, "")%>"'
+    case SOME(e as BCONST(__)) then ' start="<%initValXml(e, "")%>"'
+    case SOME(e as ENUM_LITERAL(__)) then ' start="<%initValXml(e, "")%>"'
     else
       match causality
         case SOME(INPUT(__)) then ' start="<%initDefaultValXml(type_)%>"'
@@ -605,18 +605,18 @@ template startString3(SimVar simvar)
 match simvar
 case SIMVAR(initialValue = initialValue) then
   match initialValue
-    case SOME(e as ICONST(__)) then ' start="<%initValXml(e)%>"'
-    case SOME(e as RCONST(__)) then ' start="<%initValXml(e)%>"'
-    case SOME(e as SCONST(__)) then ' start="<%initValXml(e)%>"'
-    case SOME(e as BCONST(__)) then ' start="<%initValXml(e)%>"'
-    case SOME(e as ENUM_LITERAL(__)) then ' start="<%initValXml(e)%>"'
+    case SOME(e as ICONST(__)) then ' start="<%initValXml(e, "")%>"'
+    case SOME(e as RCONST(__)) then ' start="<%initValXml(e, "")%>"'
+    case SOME(e as SCONST(__)) then ' start="<%initValXml(e, "")%>"'
+    case SOME(e as BCONST(__)) then ' start="<%initValXml(e, "")%>"'
+    case SOME(e as ENUM_LITERAL(__)) then ' start="<%initValXml(e, "")%>"'
     else ''
 end startString3;
 
 template startString2Helper(Option<Exp> exp, DAE.Type type_)
 ::=
 match exp
-    case SOME((e as exp)) then '<%initValXml(e)%>'
+    case SOME((e as exp)) then '<%initValXml(e, "")%>'
     // if start expression is none then assigne defaultvalues for start attribute based on Type
     else '<%initDefaultValXml(type_)%>'
 end startString2Helper;
@@ -626,11 +626,11 @@ template MinString2(SimVar simvar)
 match simvar
 case SIMVAR(minValue = minValue) then
   match minValue
-    case SOME(e as ICONST(__)) then ' min="<%initValXml(e)%>"'
-    case SOME(e as RCONST(__)) then ' min="<%initValXml(e)%>"'
-    case SOME(e as SCONST(__)) then ' min="<%initValXml(e)%>"'
-    case SOME(e as BCONST(__)) then ' min="<%initValXml(e)%>"'
-    case SOME(e as ENUM_LITERAL(__)) then ' min="<%initValXml(e)%>"'
+    case SOME(e as ICONST(__)) then ' min="<%initValXml(e, "")%>"'
+    case SOME(e as RCONST(__)) then ' min="<%initValXml(e, "")%>"'
+    case SOME(e as SCONST(__)) then ' min="<%initValXml(e, "")%>"'
+    case SOME(e as BCONST(__)) then ' min="<%initValXml(e, "")%>"'
+    case SOME(e as ENUM_LITERAL(__)) then ' min="<%initValXml(e, "")%>"'
     else ''
 end MinString2;
 
@@ -639,11 +639,11 @@ template MaxString2(SimVar simvar)
 match simvar
 case SIMVAR(maxValue = maxValue) then
   match maxValue
-    case SOME(e as ICONST(__)) then ' max="<%initValXml(e)%>"'
-    case SOME(e as RCONST(__)) then ' max="<%initValXml(e)%>"'
-    case SOME(e as SCONST(__)) then ' max="<%initValXml(e)%>"'
-    case SOME(e as BCONST(__)) then ' max="<%initValXml(e)%>"'
-    case SOME(e as ENUM_LITERAL(__)) then ' max="<%initValXml(e)%>"'
+    case SOME(e as ICONST(__)) then ' max="<%initValXml(e, "")%>"'
+    case SOME(e as RCONST(__)) then ' max="<%initValXml(e, "")%>"'
+    case SOME(e as SCONST(__)) then ' max="<%initValXml(e, "")%>"'
+    case SOME(e as BCONST(__)) then ' max="<%initValXml(e, "")%>"'
+    case SOME(e as ENUM_LITERAL(__)) then ' max="<%initValXml(e, "")%>"'
     else ''
 end MaxString2;
 
@@ -652,7 +652,7 @@ template NominalString2(SimVar simvar)
 match simvar
 case SIMVAR(nominalValue = nominalValue) then
   match nominalValue
-    case SOME(e as RCONST(__)) then ' nominal="<%initValXml(e)%>"'
+    case SOME(e as RCONST(__)) then ' nominal="<%initValXml(e, "")%>"'
     else ''
 end NominalString2;
 
