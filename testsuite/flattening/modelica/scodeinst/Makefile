@@ -373,6 +373,7 @@ DimUnknown13.mo \
 DimUnknown14.mo \
 DimUnknown15.mo \
 DimUnknown16.mo \
+DimUnknown17.mo \
 dim1.mo \
 dim13.mo \
 dim16.mo \
@@ -942,6 +943,7 @@ OperatorOverloadBinaryAmbiguousTwoRecords.mo \
 OperatorOverloadBinaryWithBuiltin.mo \
 OperatorOverloadComplex.mo \
 OperatorOverloadConstructor1.mo \
+OperatorOverloadConstructor2.mo \
 OperatorOverloadConstructorDefault1.mo \
 OperatorOverloadConstructorDefault2.mo \
 OperatorOverloadConstructorHideDefault.mo \

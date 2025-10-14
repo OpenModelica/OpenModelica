@@ -409,9 +409,10 @@ protected
 algorithm
   cache := InstNode.getFuncCache(constructor);
 
-  recordTy := match cache
-    case CachedData.FUNCTION(funcs = fn :: _)
+  recordTy := matchcontinue cache
+    case CachedData.FUNCTION()
       algorithm
+        fn := List.find(cache.funcs, Function.isDefaultRecordConstructor);
         (fields, indexMap) := Record.collectRecordFields(fn.node);
       then
         ComplexType.RECORD(constructor, fields, indexMap);
@@ -422,7 +423,7 @@ algorithm
           " got record type without constructor", sourceInfo());
       then
         fail();
-  end match;
+  end matchcontinue;
 end makeRecordType;
 
 function typeComponent
@@ -1727,6 +1728,11 @@ algorithm
     else
       algorithm
         (e, ty, _) := typeExp(exp, next_context, info);
+
+        if Type.isTuple(ty) then
+          ty := Type.firstTupleType(ty);
+          e := Expression.tupleElement(e, ty, 1);
+        end if;
 
         if Type.isConditionalArray(ty) then
           e := Expression.map(e,

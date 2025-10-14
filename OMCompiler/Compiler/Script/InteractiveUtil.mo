@@ -2364,6 +2364,7 @@ end getElementAttributeValues;
 public function qualifyPath
   input GraphicEnvCache inEnv;
   input Absyn.Path inPath;
+  input Boolean failOnError = false;
   output Absyn.Path outPath;
 protected
   String n;
@@ -2378,12 +2379,16 @@ algorithm
       algorithm
         try
           if Flags.isSet(Flags.NF_API) then
-            (_, outPath) := Interactive.mkFullyQual(inEnv, inPath);
+            (_, outPath) := Interactive.mkFullyQual(inEnv, inPath, failOnError);
           else
             outPath := qualifyType(Interactive.envFromGraphicEnvCache(inEnv), inPath);
           end if;
         else
-          outPath := inPath;
+          if failOnError then
+            fail();
+          else
+            outPath := inPath;
+          end if;
         end try;
       then
         outPath;
@@ -3834,24 +3839,33 @@ end getAllSubtypeOfCandidates;
 
 public function getAllSubtypeOf
   "Returns the list of all classes that extend from class_ given a parentClass where the lookup for class_ should start"
-  input Absyn.Path inClass;
-  input Absyn.Path inParentClass;
-  input Absyn.Program inProgram;
+  input Absyn.Path baseClass;
+  input Absyn.Path parentClass;
+  input Absyn.Program program;
   input Boolean qualified;
   input Boolean includePartial;
   input Boolean sort;
   output list<Absyn.Path> paths;
 protected
   list<String> strlst;
-  Absyn.Path pp, fqpath;
+  Absyn.Path pp, parent, base_class;
   list<Absyn.Class> classes;
   list<Absyn.Path> result_path_lst;
   list<Absyn.Path> acc, extendPaths, local_paths;
+  list<tuple<Absyn.Path, list<Absyn.Path>>> candidates = {};
   Boolean b;
   GraphicEnvCache genv;
   Option<Absyn.Path> opt_path;
 algorithm
-  Absyn.PROGRAM(classes=classes) := inProgram;
+  // Collect candidates inherited by the parent class. Do this first so they
+  // end up after the local ones but before all the rest in the result list.
+  for ext in getAllInheritedClasses(parentClass, program) loop
+    acc := getAllSubtypeOfCandidates(ext, ext, program, includePartial, {});
+    candidates := (ext, acc) :: candidates;
+  end for;
+
+  // Collect candidates in the rest of the program.
+  Absyn.PROGRAM(classes=classes) := program;
 
   if not includePartial then
     classes := list(c for c guard AbsynUtil.isNotPartial(c) in classes);
@@ -3859,41 +3873,55 @@ algorithm
 
   strlst := List.map(classes, AbsynUtil.getClassName);
   result_path_lst := list(AbsynUtil.makeIdentPathFromString(str) for str in strlst);
-  acc := List.fold(result_path_lst,
-    function getAllSubtypeOfCandidates(parentClass = inParentClass, program = inProgram, includePartial = includePartial), {});
 
+  acc := {};
+  for p in result_path_lst loop
+    acc := getAllSubtypeOfCandidates(p, parentClass, program, includePartial, acc);
+  end for;
+  candidates := (parentClass, acc) :: candidates;
+
+  // Fully qualify the base class we're looking for.
   try
-    genv := createEnvironment(inProgram, NONE(), inParentClass);
-    fqpath := qualifyPath(genv, inClass);
+    genv := createEnvironment(program, NONE(), parentClass);
+    base_class := qualifyPath(genv, baseClass, failOnError = true);
   else
-    fqpath := inClass;
+    paths := {};
+    return;
   end try;
 
+  // Go through all the candidates and find which ones extend from the base class.
   paths := {};
   local_paths := {};
 
-  for pt in acc loop
-    extendPaths := getAllInheritedClasses(pt, inProgram);
+  for tup in candidates loop
+    (parent, acc) := tup;
 
-    if List.contains(extendPaths, fqpath, AbsynUtil.pathSuffixOfr) then
-      // Put classes declared locally in the parent class first in the list and
-      // remove the parent prefix from their name, since they're usually meant
-      // to be the default option.
-      opt_path := AbsynUtil.removePrefixOpt(inParentClass, pt);
+    for pt in acc loop
+      if isSubtypeOf(pt, base_class, program) then
+        // Put classes declared locally in the parent class first in the list and
+        // remove the parent prefix from their name, since they're usually meant
+        // to be the default option.
+        opt_path := AbsynUtil.removePrefixOpt(parent, pt);
 
-      if isSome(opt_path) then
-        SOME(pt) := opt_path;
-        local_paths := pt :: local_paths;
-      else
-        paths := pt :: paths;
+        if isSome(opt_path) then
+          SOME(pt) := opt_path;
+          local_paths := pt :: local_paths;
+        else
+          paths := pt :: paths;
+        end if;
       end if;
-    end if;
+    end for;
   end for;
 
-  // Also add the class itself if it's a candidate.
-  if List.contains(acc, fqpath, AbsynUtil.pathEqual) then
-    paths := fqpath :: paths;
-  end if;
+  // Also add the base class itself if it's a candidate.
+  for tup in candidates loop
+    (_, acc) := tup;
+
+    if List.contains(acc, base_class, AbsynUtil.pathEqual) then
+      paths := base_class :: paths;
+      break;
+    end if;
+  end for;
 
   paths := List.unique(listAppend(local_paths, paths));
 
@@ -3901,6 +3929,18 @@ algorithm
     paths := List.sort(paths, AbsynUtil.pathLt);
   end if;
 end getAllSubtypeOf;
+
+protected function isSubtypeOf
+  input Absyn.Path classPath;
+  input Absyn.Path baseClassPath;
+  input Absyn.Program program;
+  output Boolean res;
+protected
+  list<Absyn.Path> base_classes;
+algorithm
+  base_classes := getAllInheritedClasses(classPath, program);
+  res := List.contains(base_classes, baseClassPath, AbsynUtil.pathSuffixOfr);
+end isSubtypeOf;
 
 public function updateConnectionAnnotation
   "Updates a connection annotation in a model."
