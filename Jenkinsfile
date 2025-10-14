@@ -195,8 +195,37 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC('clang', 'clang++', '--host=arm-linux-gnueabihf --build=arm-linux-gnueabihf --with-lapack="-llapack -lblas -lm" --without-paradiseo --without-hwloc', false, true)
+              sh 'autoreconf --install'
+              sh './configure CC=clang CXX=clang++ FC=gfortran CFLAGS=-Os --host=arm-linux-gnueabihf --build=arm-linux-gnueabihf --with-lapack="-llapack -lblas -lm" --without-omc --without-cppruntime --without-omlibrary --without-omniORB --prefix=`pwd`/install'
+              sh label: 'build', script: "make -j${common.numPhysicalCPU()} ${common.outputSync()} omc"
               common.getVersion()
+            }
+          }
+        }
+        stage('bookworm-armhf-cmake') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:bookworm.nightly.armhf'
+              label 'linux-arm32'
+              alwaysPull true
+            }
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeBuildARMHF }
+          }
+          steps {
+            script {
+              sh 'cmake --version'
+              sh '''
+              cmake -S ./ -B ./build_cmake \
+                -DCMAKE_TOOLCHAIN_FILE=.CI/toolchain/toolchain.armhf.cmake \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DOM_USE_CCACHE=OFF \
+                -DCMAKE_INSTALL_PREFIX=install_cmake
+              '''
+              sh "cmake --build ./build_cmake --parallel ${common.numPhysicalCPU()}"
+              sh 'build_cmake/bin/omc --version'
             }
           }
         }
