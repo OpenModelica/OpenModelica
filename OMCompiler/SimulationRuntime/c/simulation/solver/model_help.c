@@ -1496,12 +1496,6 @@ void deInitializeDataStruc(DATA *data)
     free(data->simulationInfo->sensitivityMatrix);
   }
 
-  /* free simulationInfo strings */
-  free((char*) data->simulationInfo->OPENMODELICAHOME);
-  free((char*) data->simulationInfo->solverMethod);
-  free((char*) data->simulationInfo->outputFormat);
-  free((char*) data->simulationInfo->variableFilter);
-
   /* Free model info xml data */
   modelInfoDeinit(&(data->modelData->modelDataXml));
 

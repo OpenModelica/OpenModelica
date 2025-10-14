@@ -528,15 +528,13 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
 
   if(omc_flag[FLAG_S]) {
     if (omc_flagValue[FLAG_S]) {
-      free((char*)data->simulationInfo->solverMethod);
-      data->simulationInfo->solverMethod = strdup(omc_flagValue[FLAG_S]);
+      data->simulationInfo->solverMethod = GC_strdup(omc_flagValue[FLAG_S]);
       infoStreamPrint(OMC_LOG_SOLVER, 0, "overwrite solver method: %s [from command line]", data->simulationInfo->solverMethod);
     }
   }
   /* if the model is compiled in daeMode then we have to use ida solver */
   if (compiledInDAEMode && std::string("ida") != data->simulationInfo->solverMethod) {
-    free((char*)data->simulationInfo->solverMethod);
-    data->simulationInfo->solverMethod = strdup(std::string("ida").c_str());
+    data->simulationInfo->solverMethod = GC_strdup(std::string("ida").c_str());
     infoStreamPrint(OMC_LOG_SIMULATION, 0, "overwrite solver method: %s [DAEmode works only with IDA solver]", data->simulationInfo->solverMethod);
   }
 

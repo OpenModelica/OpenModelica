@@ -795,9 +795,9 @@ void read_default_experiment(SIMULATION_INFO* simulationInfo, omc_DefaultExperim
     simulationInfo->stepSize = read_value_real(findHashStringString(de, "stepSize"), (simulationInfo->stopTime - simulationInfo->startTime) / 500);
   }
   simulationInfo->tolerance = read_value_real(findHashStringString(de, "tolerance"), 1e-5);
-  simulationInfo->solverMethod = strdup(findHashStringString(de, "solver"));
-  simulationInfo->outputFormat = strdup(findHashStringString(de, "outputFormat"));
-  simulationInfo->variableFilter = strdup(findHashStringString(de, "variableFilter"));
+  simulationInfo->solverMethod = GC_strdup(findHashStringString(de, "solver"));
+  simulationInfo->outputFormat = GC_strdup(findHashStringString(de, "outputFormat"));
+  simulationInfo->variableFilter = GC_strdup(findHashStringString(de, "variableFilter"));
 
   infoStreamPrint(OMC_LOG_SIMULATION, 1, "Read all the DefaultExperiment values:");
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "startTime = %g", simulationInfo->startTime);
@@ -916,7 +916,7 @@ void read_alias_var(DATA_ALIAS* alias,
  *   - Read number of variables / parameters from XML.
  *   - Update initial values with overrides.
  *   - Read default experiment.
- *   - Read OPENMODELICAHOME, needs to be freed with `free`.
+ *   - Read OPENMODELICAHOME.
  *   - Allocates model data variables --> free with `freeModelDataVars`.
  *   - Read all initial values into `modelData`.
  *
@@ -961,7 +961,7 @@ void read_input_xml(MODEL_DATA* modelData,
   /* Read initial values from hash map */
   read_default_experiment(simulationInfo, mi->de, reCalcStepSize);
 
-  simulationInfo->OPENMODELICAHOME = strdup(findHashStringString(mi->md,"OPENMODELICAHOME"));
+  simulationInfo->OPENMODELICAHOME = GC_strdup(findHashStringString(mi->md,"OPENMODELICAHOME")); // Can be set by generated code
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "OPENMODELICAHOME: %s", simulationInfo->OPENMODELICAHOME);
 
   allocModelDataVars(modelData, threadData);
