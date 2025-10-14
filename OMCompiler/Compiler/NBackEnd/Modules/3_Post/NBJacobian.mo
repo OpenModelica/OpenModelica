@@ -940,69 +940,6 @@ protected
     rhs := Expression.MULTARY(terms, {}, addOp);
   end buildAdjointRhs;
 
-
-  function adjointBuildIfBody
-    "Recursively transform an Expression.IF tree on the RHS into an IfEquationBody chain.
-     The else-branch is represented as a body node with condition Expression.END()."
-    input Expression lhs;
-    input Expression rhs_if;
-    input NBEquation.EquationAttributes attr;
-    input String ctxName;
-    input Pointer<Integer> dummyIdx;
-    output NBEquation.IfEquationBody body;
-  protected
-    Expression condExp;
-    Expression thenExp;
-    Expression elseExp;
-    Pointer<NBEquation.Equation> thenEqPtr;
-    Pointer<NBEquation.Equation> elseEqPtr;
-    NBEquation.IfEquationBody elseBody;
-    NBEquation.Iterator emptyIter = NBEquation.Iterator.EMPTY();
-    NBEquation.Equation thenEq;
-    NBEquation.Equation elseEq;
-    Expression rhs_if_simplified;
-  algorithm
-    rhs_if_simplified := SimplifyExp.simplifyDump(rhs_if, true, getInstanceName());
-    () := match rhs_if_simplified
-      case Expression.IF(condition = condExp, trueBranch = thenExp, falseBranch = elseExp)
-        algorithm
-          // THEN assignment
-          thenEq := NBEquation.Equation.makeAssignmentEqn(lhs, thenExp, emptyIter, attr);
-          thenEqPtr := Pointer.create(thenEq);
-
-          // ELSE (either another IF -> recurse, or terminal expression)
-          if Expression.isIf(elseExp) then
-            elseBody := adjointBuildIfBody(lhs, elseExp, attr, ctxName, dummyIdx);
-            body := NBEquation.IfEquationBody.IF_EQUATION_BODY(
-              condition = condExp,
-              then_eqns = {thenEqPtr},
-              else_if   = SOME(elseBody)
-            );
-          else
-            elseEq := NBEquation.Equation.makeAssignmentEqn(lhs, elseExp, emptyIter, attr);
-            elseEqPtr := Pointer.create(elseEq);
-            body := NBEquation.IfEquationBody.IF_EQUATION_BODY(
-              condition = condExp,
-              then_eqns = {thenEqPtr},
-              else_if   = SOME(
-                NBEquation.IfEquationBody.IF_EQUATION_BODY(
-                  condition = Expression.END(),      // marks final else-branch
-                  then_eqns = {elseEqPtr},
-                  else_if   = NONE()
-                )
-              )
-            );
-          end if;
-        then ();
-      else
-        algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{
-            getInstanceName() + " adjointBuildIfBody called with non-IF expression: " + Expression.toString(rhs_if)
-          });
-        then fail();
-    end match;
-  end adjointBuildIfBody;
-
   function createAdjointEquation
     "Create an equation pointer for lhs = rhs.
      If rhs is an Expression.IF create an IF_EQUATION (with nested bodies).
@@ -1013,36 +950,20 @@ protected
     input String contextName;
     input NBEquation.EquationAttributes attr;
     output Pointer<NBEquation.Equation> eqPtr;
-  protected
-    NBEquation.IfEquationBody ifBody;
   algorithm
-    if Expression.isIf(rhs) then
-      // Build IfEquationBody chain
-      ifBody := adjointBuildIfBody(lhs, rhs, attr, contextName, idx);
-      // Wrap into IF_EQUATION (naming via createName inside makeIfEquation)
-      eqPtr := NBEquation.IfEquationBody.makeIfEquation(
-        body    = ifBody,
-        idx     = idx,
-        str     = contextName,
-        iter    = NBEquation.Iterator.EMPTY(),
-        source  = DAE.emptyElementSource,
-        attr    = attr
-      );
-    else
-      eqPtr := NBEquation.Equation.makeAssignment(
-        lhs,
-        rhs,
-        idx,
-        contextName,
-        NBEquation.Iterator.EMPTY(),
-        attr
-      );
-    end if;
+    print("Creating adjoint ASSIGNMENT for lhs = " + Expression.toString(lhs) + " with rhs = " + Expression.toString(rhs) + "\n");
+    eqPtr := NBEquation.Equation.makeAssignment(
+      lhs,
+      rhs,
+      idx,
+      contextName,
+      NBEquation.Iterator.EMPTY(),
+      attr
+    );
   end createAdjointEquation;
 
   // for saving terms for the same lhs in a map
   type ExpressionList = list<Expression>;
-  
   // Add all variables in vars to the adjoint map with empty term lists if not already present.
   function addVarsToAdjointMap
     input output UnorderedMap<ComponentRef, ExpressionList> adjoint_map;
@@ -1059,7 +980,6 @@ protected
       end if;
     end for;
   end addVarsToAdjointMap;
-
 
   // Build processing order for adjoint equations:
   // - tmp_vars in reverse order (reverse-mode)
@@ -1090,7 +1010,6 @@ protected
     end for;
   end buildAdjointProcessingOrder;
 
-
   function jacobianSymbolicAdjoint extends Module.jacobianInterface;
   protected
     list<StrongComponent> comps, diffed_comps;
@@ -1106,29 +1025,22 @@ protected
     SparsityPattern sparsityPattern;
     SparsityColoring sparsityColoring;
 
+    Integer i;
+    String newName;
+    ComponentRef newC;
+
     BVariable.checkVar func = getTmpFilterFunction(jacType);
     UnorderedMap<ComponentRef, ExpressionList> adjoint_map;
     ExpressionList terms;
-    Expression lhsExpr, rhsExpr;
-    Pointer<Variable> lhsVarPtr, p;
+    Expression rhsExpr;
+    Pointer<Variable> lhsVarPtr;
     Pointer<NBEquation.Equation> eqPtr;
     NBEquation.Equation eq;
-    Integer i, i_idx;
-    ComponentRef newC, baseCref;
 
     UnorderedMap<ComponentRef, ComponentRef> mapPartialToNewSeed =
       UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
     UnorderedMap<ComponentRef, ComponentRef> mapSeedToNewPDer =
       UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
-    VariablePointers vp_single;
-    list<ComponentRef> scalarCrefs;
-    list<Expression> scalarTerms, vectorTerms, unitElems, arrayElems, new_terms;
-    Boolean anyNonZero;
-    ExpressionList sc_terms, existing;
-    Expression scalarRhs, arrayExpr, unitVec, vectorTerm, aggregatedVec, transformed;
-    Type elementTy;
-    Boolean exists;
-    String newName;
   algorithm
     newName := name + "_ADJ";
     if Util.isSome(strongComponents) then
@@ -1202,63 +1114,7 @@ protected
 
     print("Adjoint map after:\n" + adjointMapToString(diffArguments.adjoint_map) + "\n");
 
-    // Collapse only array variables: gather k[i] contributions into a single array term and
-    // append that term to the base variable entry. Do NOT clear the base entry itself.
     adjoint_map := Util.getOption(diffArguments.adjoint_map);
-
-    for v in listAppend(res_vars, tmp_vars) loop
-      baseCref := BVariable.getVarName(v);
-      // Skip if base already missing (defensive)
-      if not UnorderedMap.contains(baseCref, adjoint_map) then
-        continue;
-      end if;
-
-      // Only collapse if variable type is an array (rank > 0)
-      if not Type.isArray(ComponentRef.getComponentType(baseCref)) then
-        continue; // scalar variable: leave as-is
-      end if;
-
-      vp_single := VariablePointers.fromList({v});
-      scalarCrefs := VariablePointers.getScalarVarNames(vp_single);
-
-      // Filter out the base cref itself (we only want indexed scalar components)
-      scalarCrefs :=
-        list(sc for sc guard(not ComponentRef.isEqual(sc, baseCref)) in scalarCrefs);
-      // If no scalar component crefs (should not happen for arrays) skip
-      if listEmpty(scalarCrefs) then
-        continue;
-      end if;
-
-      elementTy := Type.arrayElementType(ComponentRef.getComponentType(baseCref));
-
-      // Build array elements: reference scalar component variable if it has contributions, else 0.0
-      arrayElems := {};
-      anyNonZero := false;
-      for sc in scalarCrefs loop
-        sc_terms := UnorderedMap.getOrDefault(sc, adjoint_map, {});
-        if listEmpty(sc_terms) then
-          arrayElems := Expression.makeZero(elementTy) :: arrayElems;
-        else
-          anyNonZero := true;
-          arrayElems := Expression.CREF(elementTy, sc) :: arrayElems;
-        end if;
-      end for;
-
-      if not anyNonZero then
-        // no scalar component has contributions -> skip adding aggregated vector
-        continue;
-      end if;
-
-      aggregatedVec := Expression.ARRAY(
-        ComponentRef.getComponentType(baseCref),
-        listArray(listReverse(arrayElems)),
-        true
-      );
-
-      // Prepend aggregated vector so it appears first:
-      existing := UnorderedMap.getOrDefault(baseCref, adjoint_map, {});
-      UnorderedMap.add(baseCref, aggregatedVec :: existing, adjoint_map);
-    end for;
     // New list of strong components replacing original diffed_comps
     diffed_comps := {};
     i := 1;
@@ -1273,7 +1129,7 @@ protected
       // Build RHS
       rhsExpr := buildAdjointRhs(lhsKey, terms);
 
-      // Create assignment equation (now smart: supports IF-expression RHS)
+      // Create assignment equation (supports IF-expression RHS)
       eqPtr := createAdjointEquation(
         Expression.fromCref(lhsKey),
         rhsExpr,
@@ -1281,6 +1137,7 @@ protected
         newName,
         NBEquation.EquationAttributes.default(NBEquation.EquationKind.CONTINUOUS, false)
       );
+      i := i + 1;
 
       // Get (or create) variable pointer for strong component
       lhsVarPtr := BVariable.getVarPointer(lhsKey, sourceInfo());
@@ -1327,12 +1184,12 @@ protected
             eqn    = Slice.SLICE(eqPtr, {}),
             status = NBSolve.Status.EXPLICIT
           );
-        case NBEquation.ALGORITHM() then 
-          NBStrongComponent.MULTI_COMPONENT(
-            vars    = {Slice.SLICE(lhsVarPtr, {})},
-            eqn    = Slice.SLICE(eqPtr, {}),
-            status = NBSolve.Status.EXPLICIT
-          );
+        // case NBEquation.ALGORITHM() then 
+        //   NBStrongComponent.MULTI_COMPONENT(
+        //     vars    = {Slice.SLICE(lhsVarPtr, {})},
+        //     eqn    = Slice.SLICE(eqPtr, {}),
+        //     status = NBSolve.Status.EXPLICIT
+        //   );
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " cannot create adjoint strong component for equation " + NBEquation.Equation.toString(eq)});
         then fail();
@@ -1342,7 +1199,6 @@ protected
       if Flags.isSet(Flags.JAC_DUMP) then
         print("[adjoint] " + ComponentRef.toString(lhsKey) + " = " + Expression.toString(rhsExpr) + "\n");
       end if;
-      i := i + 1;
     end for;
 
     // collect var data (most of this can be removed)
@@ -1366,7 +1222,6 @@ protected
       tmpVars       = VariablePointers.fromList(tmp_vars),
       seedVars      = VariablePointers.fromList(seed_vars)
     );
-
 
     (sparsityPattern, _) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
     // 1) old partials -> new seeds
@@ -1566,7 +1421,7 @@ protected
     end for;
 
     entries := listReverse(entries);
-    str := "{ " + stringDelimitList(entries, ";\n") + " }";
+    str := "{\n  " + stringDelimitList(entries, "\n  ") + " \n}";
   end adjointMapToString;
 
   function diffMapToString

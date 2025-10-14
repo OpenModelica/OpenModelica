@@ -491,6 +491,16 @@ public
     end match;
   end isIterator;
 
+  function isPDer
+    extends checkVar;
+  algorithm
+    b := match var.backendinfo.varKind
+      case VariableKind.JAC_VAR() then true;
+      case VariableKind.JAC_TMP_VAR() then true;
+      else false;
+    end match;
+  end isPDer;
+
   partial function getVarPartner
     input Pointer<Variable> var_ptr;
     output Option<Pointer<Variable>> partner;
