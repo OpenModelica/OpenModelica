@@ -1,9 +1,9 @@
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
-ENV SHELL /bin/bash
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US
+ENV SHELL=/bin/bash
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US
 
 ARG USERNAME=openmodelica-user
 ARG USER_UID=1000
@@ -21,6 +21,8 @@ RUN groupadd --gid $USER_GID $USERNAME \
 RUN apt-get update \
     && apt-get install -y sudo \
     && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
-    && chmod 0440 /etc/sudoers.d/$USERNAME
+    && chmod 0440 /etc/sudoers.d/$USERNAME \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV USER=$USERNAME
