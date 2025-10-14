@@ -1522,7 +1522,7 @@ public
     end match;
   end getBindingVariability;
 
-  function hasEvaluableBindingOrStart
+  function hasEvaluableBinding
     extends checkVar;
   protected
     Expression binding, start;
@@ -1554,7 +1554,7 @@ public
         else false;
       end match;
     end if;
-  end hasEvaluableBindingOrStart;
+  end hasEvaluableBinding;
 
   function mapExp
     input Pointer<Variable> var_ptr;

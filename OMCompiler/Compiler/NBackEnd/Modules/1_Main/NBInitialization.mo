@@ -382,7 +382,7 @@ public
     // parse records slightly different
     if BVariable.isKnownRecord(var) and not skip then
       // only consider non-evaluable parameter bindings
-      if not BVariable.hasEvaluableBindingOrStart(var) then
+      if not BVariable.hasEvaluableBinding(var) then
         initial_param_vars := listAppend(BVariable.getRecordChildren(var), initial_param_vars);
         // if the record is bound or has a start value, create an equation from it, otherwise create from its children
         if BVariable.isBound(var) or BVariable.hasStartAttr(var) then
@@ -395,7 +395,7 @@ public
       else
         for c_var in BVariable.getRecordChildren(var) loop
           if BVariable.isBound(c_var) then
-            BVariable.setBindingAsStart(c_var);
+            BVariable.setBindingAsStart(c_var, true);
           end if;
           (parameter_eqs, initial_param_vars) := createParameterEquation(c_var, new_iters, idx, parameter_eqs, initial_param_vars);
         end for;
@@ -404,7 +404,7 @@ public
     // all other variables that are not records and not record elements to be skipped
     elseif not (BVariable.isRecord(var) or skip) then
       // only consider non-evaluable parameter bindings
-      if not BVariable.hasEvaluableBindingOrStart(var) then
+      if not BVariable.hasEvaluableBinding(var) then
         // add variable to initial unknowns
         initial_param_vars := var :: initial_param_vars;
         // generate equation only if variable is fixed
@@ -412,7 +412,7 @@ public
           parameter_eqs := Equation.generateBindingEquation(var, idx, true, new_iters) :: parameter_eqs;
         end if;
       elseif BVariable.isBound(var) then
-        BVariable.setBindingAsStart(var);
+        BVariable.setBindingAsStart(var, true);
       end if;
     end if;
   end createParameterEquation;
