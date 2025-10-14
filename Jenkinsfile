@@ -199,7 +199,6 @@ pipeline {
               sh "cmake --version"
               sh '''
               cmake -S ./ -B ./build_cmake \
-                -DCMAKE_TOOLCHAIN_FILE=.CI/toolchain/toolchain-arm-linux-gnueabihf.cmake \
                 -DCMAKE_BUILD_TYPE=Release \
                 -DOM_USE_CCACHE=OFF \
                 -DCMAKE_INSTALL_PREFIX=install_cmake
