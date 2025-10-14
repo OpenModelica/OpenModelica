@@ -1191,6 +1191,17 @@ public
         DifferentiationType diffType;
         Integer rY, rX;
 
+        Type elTy;
+        // sumG = G + Gᵀ
+        Operator addM;
+        Expression sumG, triuG;
+
+        // diagG = G .* I(n), I(n) from diagonal(ones(n))
+        Integer nExp;
+        Expression eyeNN;
+        Operator mulEW;
+        Expression diagG;
+
       // d/dz delay(x, delta) = (dt/dz - d delta/dz) * delay(der(x), delta)
       case (Expression.CALL()) guard(name == "delay")
       algorithm
@@ -1264,10 +1275,57 @@ public
         exp.call := Call.setArguments(exp.call, {ret1});
       then exp;
 
+      // symmetric(A): 
+      // Forward: symmetric(dA/dz)
+      // Reverse: grad_A = triu(G + Gᵀ) - diag(G)
+      case (Expression.CALL()) guard(name == "symmetric")
+      algorithm
+        arg1 := match Call.arguments(exp.call)
+          case {arg1} then arg1;
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
+          then fail();
+        end match;
+
+        current_grad := diffArguments.current_grad;
+
+        // Only apply reverse mask for matrix upstream
+        ty := Expression.typeOf(current_grad);
+        elTy := Type.arrayElementType(ty);
+        nExp := Dimension.size(listHead(Type.arrayDims(Expression.typeOf(arg1))));
+        addM := Operator.fromClassification(
+          (NFOperator.MathClassification.ADDITION, NFOperator.SizeClassification.MATRIX),
+          elTy);
+        mulEW := Operator.fromClassification(
+          (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ELEMENT_WISE),
+          elTy);
+
+        // sumG = G + Gᵀ
+        sumG := Expression.MULTARY({current_grad, typeTransposeCall(current_grad)}, {}, addM);
+        //  triu(sumG) = sumG .* triu(ones(n,n))
+        triuG := Expression.MULTARY({sumG, Expression.makeTriuMask(nExp, elTy)}, {}, mulEW);
+        
+        // Build I(n): n = size(arg1,1)
+        eyeNN  := Expression.makeIdentityMatrix(nExp, elTy);
+
+        // diagG = G .* I
+        diagG := Expression.MULTARY({current_grad, eyeNN}, {}, mulEW);
+        
+
+        // triu(G + Gᵀ) - diag(G)
+        diffArguments.current_grad := Expression.MULTARY({triuG}, {diagG}, addM);
+
+        // Forward: symmetric(dA/dz)
+        (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+
+        // Restore upstream and return updated call
+        diffArguments.current_grad := current_grad;
+        exp.call := Call.setArguments(exp.call, {ret1});
+      then exp;
 
       // Functions with one argument that differentiate "through"
       // d/dz f(x) -> f(dx/dz)
-      case (Expression.CALL()) guard(List.contains({"pre", "noEvent", "scalar", "vector", "matrix", "diagonal", "transpose", "symmetric", "skew"}, name, stringEqual))
+      case (Expression.CALL()) guard(List.contains({"pre", "noEvent", "scalar", "vector", "matrix", "diagonal", "transpose", "skew"}, name, stringEqual))
       algorithm
         arg1 := match Call.arguments(exp.call)
           case {arg1} then arg1;
@@ -2939,7 +2997,6 @@ public
 
     res := Expression.applySubscripts(subs, arr, true);
   end dropLastDimIndex1;
-
 
   // Simple vector helpers on lists of Real
   function dot

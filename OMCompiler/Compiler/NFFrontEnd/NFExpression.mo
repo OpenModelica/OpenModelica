@@ -5269,6 +5269,38 @@ public
     matrix := makeExpArray(rows, row_ty, true);
   end makeIdentityMatrix;
 
+
+  // Upper-triangular mask (including diagonal) as a literal matrix.
+  // Mask U[i,j] = 1 if i <= j else 0
+  function makeTriuMask
+    input Integer n;
+    input Type elTy;
+    output Expression mask;
+  protected
+    array<Expression> row, rows;
+    Expression zero, one;
+    Type row_ty;
+    Integer i, j;
+  algorithm
+    zero := Expression.makeZero(elTy);
+    one  := Expression.makeOne(elTy);
+
+    rows := arrayCreateNoInit(n, zero);
+    row_ty := Type.ARRAY(elTy, {Dimension.fromInteger(n)});
+
+    for i in 1:n loop
+      row := arrayCreateNoInit(n, zero);
+
+      for j in 1:n loop
+        arrayUpdateNoBoundsChecking(row, j, if i <= j then one else zero);
+      end for;
+
+      arrayUpdateNoBoundsChecking(rows, i, Expression.makeArray(row_ty, row, true));
+    end for;
+
+    mask := Expression.makeExpArray(rows, row_ty, true);
+  end makeTriuMask;
+
   function promote
     input output Expression e;
     input output Type ty;
