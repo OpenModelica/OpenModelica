@@ -195,18 +195,8 @@ pipeline {
           }
           steps {
             script {
-              echo "Running on: ${env.NODE_NAME}"
-              sh "cmake --version"
-              sh '''
-              cmake -S ./ -B ./build_cmake \
-                -DCMAKE_C_COMPILER=clang \
-                -DCMAKE_CXX_COMPILER=clang++ \
-                -DCMAKE_BUILD_TYPE=Release \
-                -DOM_USE_CCACHE=OFF \
-                -DCMAKE_INSTALL_PREFIX=install_cmake
-              '''
-              sh "cmake --build ./build_cmake --parallel ${common.numPhysicalCPU()} --target install"
-              sh "build_cmake/install_cmake/bin/omc --version"
+              common.buildOMC('clang', 'clang++', '--host=arm-linux-gnueabihf --build=arm-linux-gnueabihf --with-lapack="-llapack -lblas -lm" --without-paradiseo --without-hwloc', false, true)
+              common.getVersion()
             }
           }
         }
