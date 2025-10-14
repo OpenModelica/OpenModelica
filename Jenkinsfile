@@ -193,11 +193,17 @@ pipeline {
           steps {
             script {
               echo "Running on: ${env.NODE_NAME}"
-              common.buildOMC_CMake("-DCMAKE_TOOLCHAIN_FILE=.CI/toolchain/toolchain-arm-linux-gnueabihf.cmake "
-                                  + "-DCMAKE_BUILD_TYPE=Release "
-                                  + "-DOM_USE_CCACHE=OFF "
-                                  + "-DCMAKE_INSTALL_PREFIX=build")
-              sh "build/bin/omc --version"
+
+              sh "cmake --version"
+              sh '''
+              cmake -S ./ -B ./build_cmake \
+                -DCMAKE_TOOLCHAIN_FILE=.CI/toolchain/toolchain-arm-linux-gnueabihf.cmake \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DOM_USE_CCACHE=OFF \
+                -DCMAKE_INSTALL_PREFIX=install_cmake
+              '''
+              sh "cmake --build ./build_cmake --parallel ${numPhysicalCPU()} --target install"
+              sh "build_cmake/install_cmake/bin/omc --version"
             }
           }
         }
