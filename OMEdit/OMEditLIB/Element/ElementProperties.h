@@ -68,7 +68,6 @@ public slots:
   void showParameterMenu();
 };
 
-class ElementParametersOld;
 class ElementParameters;
 class Parameter : public QObject
 {
@@ -247,6 +246,7 @@ public:
   ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, ModelInstance::Modifier *pDefaultElementModifier,
                     ModelInstance::Modifier *pReplaceableConstrainedByModifier, ModelInstance::Modifier *pElementModifier, QWidget *pParent = 0);
   ~ElementParameters();
+  QString getElementQualifiedName() const;
   QString getElementParentClassName() const;
   QString getComponentClassName() const;
   QString getComponentClassComment() const;
@@ -256,6 +256,7 @@ public:
   bool isElementArray() const {return mpElement->getDimensions().isArray();}
   QString getElementDimensions() const {return mpElement->getDimensions().getTypedDimensionsString();}
   bool isInherited() const {return mInherited;}
+  bool isNested() const {return mNested;}
   QString getModification() const {return mModification;}
   void applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, ModelInstance::Modifier *pModifier, bool defaultValue, bool isElementModification);
   void updateParameters();

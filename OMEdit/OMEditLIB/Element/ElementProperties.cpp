@@ -586,7 +586,9 @@ void Parameter::setEnabled(bool enable)
  */
 void Parameter::update()
 {
-  mEnable.evaluate(mpElementParameters->getGraphicsView()->getModelWidget()->getModelInstance());
+  ElementParameters *pElementParameters = qobject_cast<ElementParameters*>(mpElementParameters->parent());
+  mEnable.evaluate(mpElementParameters->getGraphicsView()->getModelWidget()->getModelInstance(),
+                   mpElementParameters->isNested() ? pElementParameters->getElementQualifiedName() : "");
   setEnabled(mEnable);
 }
 
@@ -1225,14 +1227,14 @@ ElementParameters::ElementParameters(ModelInstance::Element *pElement, GraphicsV
                                      ModelInstance::Modifier *pReplaceableConstrainedByModifier, ModelInstance::Modifier *pElementModifier, QWidget *pParent)
   : QDialog(pParent)
 {
+  mpElement = pElement;
+  mpGraphicsView = pGraphicsView;
   const QString className = pGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
   if (pElement) {
-    setWindowTitle(tr("%1 - %2 - %3 in %4").arg(Helper::applicationName, tr("Element Parameters"), pElement->getQualifiedName(), className));
+    setWindowTitle(tr("%1 - %2 - %3 in %4").arg(Helper::applicationName, tr("Element Parameters"), getElementQualifiedName(), className));
   } else {
     setWindowTitle(tr("%1 - %2 - %3").arg(Helper::applicationName, Helper::parameters, className));
   }
-  mpElement = pElement;
-  mpGraphicsView = pGraphicsView;
   mInherited = inherited;
   mNested = nested;
   mpDefaultElementModifier = pDefaultElementModifier;
@@ -1250,6 +1252,16 @@ ElementParameters::~ElementParameters()
 {
   qDeleteAll(mParametersList.begin(), mParametersList.end());
   mParametersList.clear();
+}
+
+/*!
+ * \brief ElementParameters::getElementQualifiedName
+ * Returns the qualified name of the element.
+ * \return
+ */
+QString ElementParameters::getElementQualifiedName() const
+{
+  return hasElement() ? mpElement->getQualifiedName() : "";
 }
 
 /*!
@@ -1462,7 +1474,7 @@ void ElementParameters::setUpDialog()
   mpComponentNameLabel = new Label(Helper::name);
   QString name;
   if (hasElement()) {
-    name = mpElement->getQualifiedName();
+    name = getElementQualifiedName();
     if (isElementArray()) {
       name.append("[" % getElementDimensions() % "]");
     }
