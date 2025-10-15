@@ -1323,9 +1323,37 @@ public
         exp.call := Call.setArguments(exp.call, {ret1});
       then exp;
 
-      // Functions with one argument that differentiate "through"
+      // diagonal(v):
+      // Forward: diagonal(dv/dz)
+      // Reverse: grad_v = diag(G)  (extract diagonal of upstream matrix)
+      case (Expression.CALL()) guard(name == "diagonal")
+      algorithm
+        arg1 := match Call.arguments(exp.call)
+          case {arg1} then arg1;
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
+          then fail();
+        end match;
+
+        current_grad := diffArguments.current_grad;
+
+        // number of elements in v and in diagonal of G
+        nExp := Dimension.size(listHead(Type.arrayDims(Expression.typeOf(arg1))));
+        // Literal: [ G[1,1], G[2,2], ..., G[n,n] ]
+        diffArguments.current_grad := extractDiagonalVector(current_grad, nExp, Expression.typeOf(arg1));
+
+        // Forward: diagonal(dv/dz)
+        (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+
+        // Restore upstream and return updated call
+        diffArguments.current_grad := current_grad;
+        exp.call := Call.setArguments(exp.call, {ret1});
+      then exp;
+
+      // Functions with one argument that differentiate "through" 
+      // through means that the derivative of the function wrt. its input is equal to the function of derivative of input
       // d/dz f(x) -> f(dx/dz)
-      case (Expression.CALL()) guard(List.contains({"pre", "noEvent", "scalar", "vector", "matrix", "diagonal", "transpose", "skew"}, name, stringEqual))
+      case (Expression.CALL()) guard(List.contains({"pre", "noEvent", "scalar", "vector", "matrix", "transpose", "skew"}, name, stringEqual))
       algorithm
         arg1 := match Call.arguments(exp.call)
           case {arg1} then arg1;
@@ -2385,18 +2413,20 @@ public
         elseif isMat1 and isVec2 then
           print("differentiateBinary: matrix * vector case\n");
           // Matrix * Vector
+          // first rule might be wrong
+          // has to be an outer product
           grad_exp1 := Expression.BINARY(
             current_grad,
             Operator.fromClassification(
-              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.VECTOR_MATRIX),
+              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX),
               operator.ty),
-            typeTransposeCall(exp2));              // G * xᵀ
+            typeTransposeCall(exp2)); // G * xᵀ
           grad_exp2 := Expression.BINARY(
             typeTransposeCall(exp1),
             Operator.fromClassification(
               (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX_VECTOR),
               operator.ty),
-            current_grad);                     // Aᵀ * G
+            current_grad); // Aᵀ * G
 
         elseif isVec1 and isMat2 then
           print("differentiateBinary: vector * matrix case\n");
@@ -2998,179 +3028,23 @@ public
     res := Expression.applySubscripts(subs, arr, true);
   end dropLastDimIndex1;
 
-  // Simple vector helpers on lists of Real
-  function dot
-    input list<Real> a;
-    input list<Real> b;
-    output Real s = 0.0;
+  // Build vector[n] with elements A[i,i], i=1..n (literal array).
+  function extractDiagonalVector
+    input Expression A;     // matrix
+    input Integer n;
+    input Type vecTy;       // vector[n] type
+    output Expression v;
   protected
-    list<Real> la = a;
-    list<Real> lb = b;
+    list<Expression> elems = {};
+    Integer i;
   algorithm
-    while not listEmpty(la) loop
-      s := s + listHead(la) * listHead(lb);
-      la := listRest(la);
-      lb := listRest(lb);
-    end while;
-  end dot;
-
-  function vecLen
-    input list<Real> a;
-    output Integer n = 0;
-  protected
-    list<Real> l = a;
-  algorithm
-    while not listEmpty(l) loop
-      n := n + 1;
-      l := listRest(l);
-    end while;
-  end vecLen;
-
-  function vecGet
-    input list<Real> a;
-    input Integer i;
-    output Real x;
-  algorithm
-    x := matchcontinue (a, i)
-      case (_, 1) then listHead(a);
-      else vecGet(listRest(a), i-1);
-    end matchcontinue;
-  end vecGet;
-
-  function vecSet
-    input list<Real> a;
-    input Integer i;
-    input Real v;
-    output list<Real> b;
-  algorithm
-    b := matchcontinue (a, i)
-      local list<Real> r;
-      case (_, 1)
-        algorithm
-          r := listRest(a);
-        then v :: r;
-      else
-        algorithm
-          r := vecSet(listRest(a), i-1, v);
-        then listHead(a) :: r;
-    end matchcontinue;
-  end vecSet;
-
-  function vecSub
-    input list<Real> x;
-    input list<Real> y;
-    output list<Real> z = {};
-  protected
-    list<Real> lx = x; list<Real> ly = y;
-  algorithm
-    while not listEmpty(lx) loop
-      z := (listHead(lx) - listHead(ly)) :: z;
-      lx := listRest(lx); ly := listRest(ly);
-    end while;
-    z := listReverse(z);
-  end vecSub;
-
-  function vecScale
-    input Real s;
-    input list<Real> x;
-    output list<Real> y = {};
-  protected
-    list<Real> lx = x;
-  algorithm
-    while not listEmpty(lx) loop
-      y := (s * listHead(lx)) :: y;
-      lx := listRest(lx);
-    end while;
-    y := listReverse(y);
-  end vecScale;
-
-  // Central-difference directional derivative of y=f(x) along coordinate i,
-  // projected by upstream vector g: dL/dx_i ≈ g·(f(x+h e_i) - f(x-h e_i)) / (2h)
-  function fdDirectional
-    input primalEvalFn f; // list<Real> primalEvalFn(list<Real>) 
-    input list<Real> x0;
-    input list<Real> upstream; // flatten y to list, same length used for dot
-    input Integer i;           // 1-based index into x0
-    input Real h;
-    output Real d;
-
-    partial function primalEvalFn
-      input list<Real> x;
-      output list<Real> y;
-    end primalEvalFn;
-  protected
-    list<Real> xp; list<Real> xm;
-    list<Real> yp; list<Real> ym;
-  algorithm
-    xp := vecSet(x0, i, vecGet(x0, i) + h);
-    xm := vecSet(x0, i, vecGet(x0, i) - h);
-    yp := f(xp);
-    ym := f(xm);
-    d := dot(upstream, vecScale(1.0/(2.0*h), vecSub(yp, ym)));
-  end fdDirectional;
-
-  // Generic reverse-mode rule test:
-  // - primalEvalFn: maps x -> y (flatten as list<Real>, scalar y => singleton list)
-  // - reverseRuleEvalFn: maps (x, upstream) -> grads wrt x (list<Real> of same length as x)
-  // Returns pass/fail and a textual report with max error.
-  function testReverseRuleFD
-    input primalEvalFn inPrimalEvalFn; // list<Real> primalEvalFn(list<Real>)
-    input reverseRuleEvalFn inReverseRuleEvalFn; // list<Real> reverseRuleEvalFn(list<Real>, list<Real>)
-    input list<Real> x0;
-    input list<Real> upstream;     // choose 1.0 for scalar outputs
-    input Real eps = 1e-6;
-    input Real atol = 1e-7;
-    input Real rtol = 1e-4;
-    output Boolean pass;
-    output String report;
-
-    partial function primalEvalFn
-      input list<Real> x;
-      output list<Real> y;
-    end primalEvalFn;
-    partial function reverseRuleEvalFn
-      input list<Real> x;
-      input list<Real> upstream;
-      output list<Real> grads;
-    end reverseRuleEvalFn;
-  protected
-    Integer n = vecLen(x0);
-    Integer k;
-    list<Real> ruleGrad;
-    Real num_i;
-    Real err, maxErr = 0.0;
-    Real ref, maxRelErr = 0.0;
-    String lines = "";
-  algorithm
-    // Evaluate user rule once at base point
-    ruleGrad := inReverseRuleEvalFn(x0, upstream);
-    if vecLen(ruleGrad) <> n then
-      pass := false;
-      report := "reverse rule length mismatch: expected " + intString(n) + " got " + intString(vecLen(ruleGrad));
-      return;
-    end if;
-
-    // Compare each component with central differences
-    for k in 1:n loop
-      num_i := fdDirectional(inPrimalEvalFn, x0, upstream, k, eps);
-      err := abs(num_i - vecGet(ruleGrad, k));
-      ref := max(1e-16, abs(num_i));
-      maxErr := if err > maxErr then err else maxErr;
-      maxRelErr := if err/ref > maxRelErr then err/ref else maxRelErr;
-      lines := lines + "i=" + intString(k)
-                    + " rule=" + realString(vecGet(ruleGrad, k))
-                    + " num=" + realString(num_i)
-                    + " absErr=" + realString(err)
-                    + " relErr=" + realString(err/ref) + "\n";
+    for i in 1:n loop
+      elems := Expression.applySubscripts(
+        { Subscript.INDEX(Expression.INTEGER(i)), Subscript.INDEX(Expression.INTEGER(i)) },
+        A, true) :: elems;
     end for;
-
-    pass := (maxErr <= atol) or (maxRelErr <= rtol);
-    report := "Reverse FD check: "
-            + (if pass then "PASS" else "FAIL")
-            + " maxAbsErr=" + realString(maxErr)
-            + " maxRelErr=" + realString(maxRelErr) + "\n"
-            + lines;
-  end testReverseRuleFD;
+    v := Expression.ARRAY(vecTy, listArray(listReverse(elems)), false);
+  end extractDiagonalVector;
   
   annotation(__OpenModelica_Interface="backend");
 end NBDifferentiate;
