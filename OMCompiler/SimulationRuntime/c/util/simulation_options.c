@@ -164,6 +164,8 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_SOLVER_STEPS */                 "steps",
   /* FLAG_STEADY_STATE */                 "steadyState",
   /* FLAG_STEADY_STATE_TOL */             "steadyStateTol",
+  /* FLAG_SVD_SPARSE_COUNT */             "svdCount",
+  /* FLAG_SVD_SPARSE_SIGMA */             "svdSigma",
   /* FLAG_DATA_RECONCILE_Sx */            "sx",
   /* FLAG_UP_HESSIAN */                   "keepHessian",
   /* FLAG_W */                            "w",
@@ -306,6 +308,8 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_SOLVER_STEPS */                 "dumps the number of integration steps into the result file",
   /* FLAG_STEADY_STATE */                 "aborts if steady state is reached",
   /* FLAG_STEADY_STATE_TOL */             "[double (default 1e-3)] This relative tolerance is used to detect steady state.",
+  /* FLAG_SVD_SPARSE_COUNT */             "[int (default 0)] Number of extremal singular values and vectors computed for LOG_NLS_SVD (0 disables).",
+  /* FLAG_SVD_SPARSE_SIGMA */             "[double (default 1e-8, > 0)] Estimated smallest singular value for the preconditioner in SVD analysis.",
   /* FLAG_DATA_RECONCILE_Sx */            "value specifies a csv-file with inputs as covariance matrix Sx for DataReconciliation",
   /* FLAG_UP_HESSIAN */                   "value specifies the number of steps, which keep hessian matrix constant",
   /* FLAG_W */                            "shows all warnings even if a related log-stream is inactive",
@@ -652,6 +656,10 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Aborts the simulation if steady state is reached.",
   /* FLAG_STEADY_STATE_TOL */
   "  This relative tolerance is used to detect steady state: max(|d(x_i)/dt|/nominal(x_i)) < steadyStateTol",
+  /* FLAG_SVD_SPARSE_COUNT */
+  "  Number of extremal singular values and vectors computed for LOG_NLS_SVD (0 disables).",
+  /* FLAG_SVD_SPARSE_SIGMA */
+  "  Estimated smallest singular value for the preconditioner in SVD analysis.",
   /* FLAG_DATA_RECONCILE_Sx */
   "  Value specifies an csv-file with inputs as covariance matrix Sx for DataReconciliation",
   /* FLAG_UP_HESSIAN */
@@ -799,6 +807,8 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_SOLVER_STEPS */                 FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_STEADY_STATE */                 FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_STEADY_STATE_TOL */             FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_SVD_SPARSE_COUNT */             FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_SVD_SPARSE_SIGMA */             FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_DATA_RECONCILE_Sx */            FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_UP_HESSIAN */                   FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_W */                            FLAG_REPEAT_POLICY_FORBID,
@@ -939,6 +949,8 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_SINGLE */                       FLAG_TYPE_FLAG,
   /* FLAG_SOLVER_STEPS */                 FLAG_TYPE_FLAG,
   /* FLAG_STEADY_STATE */                 FLAG_TYPE_FLAG,
+  /* FLAG_SVD_SPARSE_COUNT */             FLAG_TYPE_OPTION,
+  /* FLAG_SVD_SPARSE_SIGMA */             FLAG_TYPE_OPTION,
   /* FLAG_STEADY_STATE_TOL */             FLAG_TYPE_OPTION,
   /* FLAG_DATA_RECONCILE_Sx */            FLAG_TYPE_OPTION,
   /* FLAG_UP_HESSIAN */                   FLAG_TYPE_OPTION,
