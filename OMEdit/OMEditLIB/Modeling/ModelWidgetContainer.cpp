@@ -53,6 +53,7 @@
 #include "Util/ResourceCache.h"
 #include "Plotting/PlotWindowContainer.h"
 #include "Util/NetworkAccessManager.h"
+#include "QuickInsertWidget.h"
 
 #include <QNetworkReply>
 #include <QMessageBox>
@@ -4841,6 +4842,30 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
     return;
   }
   const bool removeLastAddedPoint = true;
+  // if double clicking on an empty space, show a searchable quick insert menu.
+  if (!itemAt(event->pos())) {
+    if (mpModelWidget->getLibraryTreeItem()->isModelica() && !mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+      LibraryTreeModel *treeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+      QuickInsertWidget *menu = new QuickInsertWidget(treeModel, this);
+
+      QString selectedClass;
+
+      QEventLoop loop;
+      connect(menu, &QuickInsertWidget::classSelected, [&](const QString &className) {
+          selectedClass = className;
+          loop.quit();
+      });
+      connect(menu, &QuickInsertWidget::destroyed, &loop, &QEventLoop::quit);
+
+      menu->showAt(event->globalPos());
+      loop.exec(); // blocking until loop.quit() call
+
+      if (!selectedClass.isEmpty()) {
+          addComponent(selectedClass, mapToScene(event->pos()));
+      }
+      return;
+    }
+  }
   if (isCreatingLineShape()) {
     finishDrawingLineShape(removeLastAddedPoint);
     setFocus(Qt::ActiveWindowFocusReason);
@@ -4852,8 +4877,8 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
   }
   ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(itemAt(event->pos()));
   /* Double click on Component also end up here.
-   * But we don't have GraphicsView for the shapes inside the Component so we can go out of this block.
-   */
+    * But we don't have GraphicsView for the shapes inside the Component so we can go out of this block.
+    */
   if (!isCreatingConnection() && !isCreatingTransition() && pShapeAnnotation && pShapeAnnotation->getGraphicsView()) {
     if (mpModelWidget->getLibraryTreeItem()->isModelica()) {
       LineAnnotation *pTransitionLineAnnotation = dynamic_cast<LineAnnotation*>(pShapeAnnotation);

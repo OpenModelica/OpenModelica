@@ -34,6 +34,7 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Modeling/ModelicaClassDialog.cpp
                       Modeling/FunctionArgumentDialog.cpp
                       Modeling/InstallLibraryDialog.cpp
+                      Modeling/QuickInsertWidget.cpp
                       Search/SearchWidget.cpp
                       Options/OptionsDialog.cpp
                       Editors/BaseEditor.cpp
