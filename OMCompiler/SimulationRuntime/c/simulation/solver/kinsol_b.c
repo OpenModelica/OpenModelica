@@ -1653,7 +1653,7 @@ NLS_SOLVER_STATUS B_nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINE
       nlsJacobianRowColSums(data, nlsData, kinsolData->J, KINSOL_B_ENTRY_POINT /* called at entry point */, kinsolData->useScaling /* scaled */);
     }
 
-    if (omc_useStream[OMC_LOG_NLS_SVD])
+    if (omc_useStream[OMC_LOG_NLS_SVD] || omc_useStream[OMC_LOG_NLS_SVD_V])
     {
       svd_compute(data, nlsData, SM_DATA_S(kinsolData->J), kinsolData->useScaling, KINSOL_B_ENTRY_POINT /* called at entry point */);
     }
