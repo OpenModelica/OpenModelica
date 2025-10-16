@@ -1547,12 +1547,7 @@ public
       binding := Binding.getExp(var.binding);
       b := isEvaluable(binding);
     else
-      // check start value
-      opt_start := getStartAttribute(var_ptr);
-      b := match opt_start
-        case SOME(start) then isEvaluable(start);
-        else false;
-      end match;
+      b := false;
     end if;
   end hasEvaluableBinding;
 
