@@ -825,6 +825,12 @@ protected
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no strong components were given!"});
     end if;
 
+    // print strong components
+    print("Strong components for symboli differentiation:\n");
+    for c in comps loop
+      print(StrongComponent.toString(c, 2) + "\n");
+    end for;
+
     // create seed vars
     VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map, makeVar = BVariable.makeSeedVar, init = init));
 
