@@ -26,6 +26,10 @@ ifeq (MINGW,$(findstring MINGW,$(shell uname)))
 	CPPFLAGS += -DOMC_HAVE_IPOPT
 endif
 
+ifeq (MINGW,$(findstring MINGW,$(shell uname)))
+	CPPFLAGS += -DOMC_HAVE_PRIMME
+endif
+
 override CFLAGS += $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS)
 # CXXFLAGS can include everything as before. For FMI we need to use relative paths since
 # automatic builds might not add the -I., etc
