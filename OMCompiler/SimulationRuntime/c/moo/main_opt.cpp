@@ -40,14 +40,19 @@
 #include "strategies.h"
 #include "streamlog.h"
 
+#ifndef NO_INTERACTIVE_DEPENDENCY
+    #include "simulation/socket.h"
+    extern Socket sim_communication_port;
+#endif
+
 using namespace OpenModelica;
 
 /* entry point to the optimization runtime from OpenModelica generated code
  * this contains the glue code between MOO and the simulation runtime */
 extern "C"
 int _main_OptimizationRuntime(int argc, char** argv, DATA* data, threadData_t* threadData) {
-    { ScopedTimer timer("Optimization Runtime");
-
+{
+    ScopedTimer timer("Optimization Runtime");
     create_set_logger();
     auto info = InfoGDOP(data, threadData, argc, argv);
     auto nlp_solver_settings = NLP::NLPSolverSettings(argc, argv);
@@ -66,11 +71,16 @@ int _main_OptimizationRuntime(int argc, char** argv, DATA* data, threadData_t* t
     orchestrator.optimize();
 
     communicateStatus("Finished", 1, info.tf, 0.0);
-
-    }
-
+}
     // TODO: if MOO VERBOSE
     // TimingTree::instance().print_tree_table();
+
+#ifndef NO_INTERACTIVE_DEPENDENCY
+    if(omc_flag[FLAG_PORT] /* should be the same as static sim_communication_port_open */)
+    {
+        sim_communication_port.close();
+    }
+#endif
 
     return 0;
 }
