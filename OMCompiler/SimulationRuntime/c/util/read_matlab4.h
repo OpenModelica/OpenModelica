@@ -35,57 +35,80 @@
 #include <stdint.h>
 #include "omc_msvc.h"
 
+/**
+ * @brief Information about a single variable or parameter contained in a .mat file.
+ *
+ * This structure describes one entry from the MATLAB v4 variable metadata
+ * tables (`name`, `description`, `dataInfo`). It carries the human-readable
+ * name and description, a flag indicating whether the entry is a parameter
+ * (stored in `data_1`) or a simulation variable (stored in `data_2`), and
+ * the index used to find the actual numeric values in the corresponding
+ * data block.
+ */
 typedef struct {
-  char *name,*descr;
+  /** Human-readable variable name (null-terminated, malloc'd) */
+  char *name,
+       *descr;
+  /** Non-zero if this entry is a parameter (stored in data_1). */
   int isParam;
-  /* Parameters are stored in data_1, variables in data_2; parameters are defined at any time, variables only within the simulation start/stop interval */
+  /** 1-based index into the appropriate data block; negative values indicate a
+      negative alias (the file also contains negative alias columns). */
   int index;
 } ModelicaMatVariable_t;
 
+/**
+ * @brief Runtime representation of an opened MATLAB v4 file for OpenModelica.
+ *
+ * Instances of this structure are initialized by `omc_new_matlab4_reader`
+ * and used by the various accessor functions to read variable metadata and
+ * time series data. Fields that own heap memory (e.g. `fileName`,
+ * `allInfo`, `params`, `vars`) must be freed by calling
+ * `omc_free_matlab4_reader`.
+ */
 typedef struct {
+  /** Open FILE pointer to the .mat file (binary mode) */
   FILE *file;
+  /** Path of the opened file (malloc'd) */
   char *fileName;
+  /** Number of entries in `allInfo` */
   uint32_t nall;
-  ModelicaMatVariable_t *allInfo; /* Sorted array of variables and their associated information */
+  /** Sorted array of variable/parameter descriptors (length nall) */
+  ModelicaMatVariable_t *allInfo;
+  /** Number of parameters present (length of `params`) */
   uint32_t nparam;
+  /** Start and stop times for the contained time series (NaN if unknown) */
   double startTime, stopTime;
-  double *params; /* This has size nparam */
+  /** Parameter values stored in `data_1` (length nparam) */
+  double *params;
+  /** Number of variables (columns) in the data block and number of rows */
   uint32_t nvar,nrows;
-  size_t var_offset; /* This is the offset in the file */
-  int readAll; /* Read all variables already */
+  /** File offset (bytes) where the `data_2` block begins (for lazy reads) */
+  size_t var_offset;
+  /** Non-zero if all variables have been read into memory */
+  int readAll;
+  /** Cached variable time-series pointers (length 2*nvar to include negative aliases) */
   double **vars;
-  char doublePrecision; /* data_1 and data_2 in double ore single precision */
+  /** 1 if stored in double precision, 0 if stored as float */
+  char doublePrecision;
 } ModelicaMatReader;
 
-/* Returns 0 on success; the error message on error.
- * The internal data is free'd by omc_free_matlab4_reader.
- * The data persists until free'd, and is safe to use in your own data-structures
- */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *reader);
 
 void omc_free_matlab4_reader(ModelicaMatReader *reader);
 
-/* Returns a variable or NULL */
 ModelicaMatVariable_t *omc_matlab4_find_var(ModelicaMatReader *reader, const char *varName);
 
-/* Writes the number of values in the returned array if nvals is non-NULL
- * Returns all values that the given variable may have.
- * Note: This function is _not_ defined for parameters; check var->isParam and then send the index
- * No bounds checking is performed. The returned data persists until the reader is closed.
- */
 double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex);
 
-/* Returns 0 on success */
 int omc_matlab4_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_t *var, double time);
 
-/* Reads multiple variables values in single time
- * Returns 0 on success */
 int omc_matlab4_read_vars_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_t **var, int N, double time);
 
-/* For debugging */
 void omc_matlab4_print_all_vars(FILE *stream, ModelicaMatReader *reader);
 
 double omc_matlab4_startTime(ModelicaMatReader *reader);
@@ -95,7 +118,6 @@ void matrix_transpose(double *m, int w, int h);
 void matrix_transpose_uint32(uint32_t *m, int w, int h);
 int omc_matlab4_read_all_vals(ModelicaMatReader *reader);
 
-/* Fix the placement of a.der(b) -> der(a.b) */
 char* openmodelicaStyleVariableName(const char *varName);
 
 #ifdef __cplusplus
