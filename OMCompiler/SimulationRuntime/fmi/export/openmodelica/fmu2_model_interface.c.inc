@@ -638,7 +638,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
    * to handle model that have startTime > 0 (e.g) startTime = 0.2
    */
   comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
-  allocModelDataVars(comp->fmuData->modelData, comp->threadData);
+  allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
   calculateAllScalarLength(comp->fmuData->modelData);
 
   /* setup model data with default start data */

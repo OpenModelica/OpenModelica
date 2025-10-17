@@ -964,7 +964,7 @@ void read_input_xml(MODEL_DATA* modelData,
   simulationInfo->OPENMODELICAHOME = GC_strdup(findHashStringString(mi->md,"OPENMODELICAHOME")); // Can be set by generated code
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "OPENMODELICAHOME: %s", simulationInfo->OPENMODELICAHOME);
 
-  allocModelDataVars(modelData, threadData);
+  allocModelDataVars(modelData, TRUE, threadData);
 
   read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi->rSta, "real states",            0,                    modelData->nStatesArray,                               &mapAlias,      &mapAliasParam, &sensitivityParIndex);
   read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi->rDer, "real state derivatives", modelData->nStatesArray,   modelData->nStatesArray,                               &mapAlias,      &mapAliasParam, &sensitivityParIndex);

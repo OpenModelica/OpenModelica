@@ -1559,10 +1559,6 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nParametersInteger = <%varInfo.numIntParams%>;
     data->modelData->nParametersBoolean = <%varInfo.numBoolParams%>;
     data->modelData->nParametersString = <%varInfo.numStringParamVars%>;
-    data->modelData->nAliasReal = <%varInfo.numAlgAliasVars%>;
-    data->modelData->nAliasInteger = <%varInfo.numIntAliasVars%>;
-    data->modelData->nAliasBoolean = <%varInfo.numBoolAliasVars%>;
-    data->modelData->nAliasString = <%varInfo.numStringAliasVars%>;
     data->modelData->nInputVars = <%varInfo.numInVars%>;
     data->modelData->nOutputVars = <%varInfo.numOutVars%>;
     data->modelData->nZeroCrossings = <%varInfo.numZeroCrossings%>;
