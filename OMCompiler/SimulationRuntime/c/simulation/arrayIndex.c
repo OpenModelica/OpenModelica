@@ -192,6 +192,7 @@ size_t calculateLength(DIMENSION_INFO *dimensionInfo,
                         "Failed to calculate length of variable.",
                         dimensionAttribute->valueReference);
 
+      dimensionAttribute->start = structuralParameter->attribute.start;
       length = length * structuralParameter->attribute.start;
       break;
 
@@ -203,6 +204,60 @@ size_t calculateLength(DIMENSION_INFO *dimensionInfo,
 
   return length;
 }
+
+/**
+ * @brief Convert index from linear to lexicographical access order.
+ *
+ * The linear storage assumes row-major order representation.
+ *
+ * #### Example:
+ *
+ * For a 2x3 Matrix A =
+ * ```txt
+ *     a_{1,1} a_{1,2} a_{1,3}
+ *     a_{2,1} a_{2,2} a_{2,3}
+ * ```
+ *
+ * convert `Address` to `Access` according to
+ *
+ * ```txt
+ * Address | Access  | Value
+ * --------|---------|--------
+ *    0    | A[0][0] | a_{1,1}
+ *    1    | A[0][1] | a_{1,2}
+ *    2    | A[0][2] | a_{1,3}
+ *    3    | A[1][0] | a_{2,1}
+ *    4    | A[1][1] | a_{2,2}
+ *    5    | A[1][2] | a_{2,3}
+ * ```
+ *
+ * @param dimension
+ * @param linear_address
+ * @return integer_array*
+ */
+integer_array* scalarToArrayIndex(DIMENSION_INFO dimension, size_t linear_address) {
+
+}
+
+size_t arrayToScalarIndex(DIMENSION_INFO dimension, integer_array* array_index) {
+  size_t linear_address = 0;
+  size_t dim_product;
+
+  assertStreamPrint(NULL, dimension.numberOfDimensions == array_index->ndims, "Missmatch of number of dimensions.");
+
+  modelica_integer* data = (modelica_integer*) array_index->data;
+
+  for (size_t k = 1; k < array_index->ndims; k++) {
+    dim_product = 1;
+    for(size_t l = k+1; k < array_index->ndims; l++) {
+      dim_product *= dimension.dimensions[l].start;
+    }
+
+    linear_address += dim_product * data[l];
+  }
+}
+
+
 
 /**
  * @brief Calculate scalar length of all array variables.
