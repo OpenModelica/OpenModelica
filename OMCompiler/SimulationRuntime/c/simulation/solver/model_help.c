@@ -951,9 +951,12 @@ int getNextSampleTimeFMU(DATA *data, double *nextSampleEvent)
  * Free with `freeModelDataVars`.
  *
  * @param modelData   Pointer to model data.
+ * @param allocAlias  If true allocate memory for `modelData->realAlias`, ... , `modelData->stringAlias`.
+ *                    Alias variables aren't used in FMI C runtime.
  * @param threadData  Thread data for error handling, can be `NULL`.
+ *
  */
-void allocModelDataVars(MODEL_DATA* modelData, threadData_t* threadData)
+void allocModelDataVars(MODEL_DATA* modelData, modelica_boolean allocAlias, threadData_t* threadData)
 {
   // Variables
   modelData->realVarsData = (STATIC_REAL_DATA*) omc_alloc_interface.malloc_uncollectable(modelData->nVariablesRealArray * sizeof(STATIC_REAL_DATA));
@@ -988,17 +991,27 @@ void allocModelDataVars(MODEL_DATA* modelData, threadData_t* threadData)
   assertStreamPrint(threadData, modelData->nSensitivityVars == 0 || modelData->realSensitivityData != NULL, "Out of memory");
 
   // Alias Variables
-  modelData->realAlias = (DATA_REAL_ALIAS*) omc_alloc_interface.malloc_uncollectable(modelData->nAliasRealArray * sizeof(DATA_REAL_ALIAS));
-  assertStreamPrint(threadData, modelData->nAliasRealArray == 0 || modelData->realAlias != NULL, "Out of memory");
+  // TODO: alias variables aren't used at all for FMUs.
+  if (allocAlias) {
+    modelData->realAlias = (DATA_REAL_ALIAS*) omc_alloc_interface.malloc_uncollectable(modelData->nAliasRealArray * sizeof(DATA_REAL_ALIAS));
+    assertStreamPrint(threadData, modelData->nAliasRealArray == 0 || modelData->realAlias != NULL, "Out of memory");
 
-  modelData->integerAlias = (DATA_INTEGER_ALIAS*) omc_alloc_interface.malloc_uncollectable(modelData->nAliasIntegerArray * sizeof(DATA_INTEGER_ALIAS));
-  assertStreamPrint(threadData, modelData->nAliasIntegerArray == 0 || modelData->integerAlias != NULL, "Out of memory");
+    modelData->integerAlias = (DATA_INTEGER_ALIAS*) omc_alloc_interface.malloc_uncollectable(modelData->nAliasIntegerArray * sizeof(DATA_INTEGER_ALIAS));
+    assertStreamPrint(threadData, modelData->nAliasIntegerArray == 0 || modelData->integerAlias != NULL, "Out of memory");
 
-  modelData->booleanAlias = (DATA_BOOLEAN_ALIAS*) omc_alloc_interface.malloc_uncollectable(modelData->nAliasBooleanArray * sizeof(DATA_BOOLEAN_ALIAS));
-  assertStreamPrint(threadData, modelData->nAliasBooleanArray == 0 || modelData->booleanAlias != NULL, "Out of memory");
+    modelData->booleanAlias = (DATA_BOOLEAN_ALIAS*) omc_alloc_interface.malloc_uncollectable(modelData->nAliasBooleanArray * sizeof(DATA_BOOLEAN_ALIAS));
+    assertStreamPrint(threadData, modelData->nAliasBooleanArray == 0 || modelData->booleanAlias != NULL, "Out of memory");
 
-  modelData->stringAlias = (DATA_STRING_ALIAS*) omc_alloc_interface.malloc_uncollectable(modelData->nAliasStringArray * sizeof(DATA_STRING_ALIAS));
-  assertStreamPrint(threadData, modelData->nAliasStringArray == 0 || modelData->stringAlias != NULL, "Out of memory");
+    modelData->stringAlias = (DATA_STRING_ALIAS*) omc_alloc_interface.malloc_uncollectable(modelData->nAliasStringArray * sizeof(DATA_STRING_ALIAS));
+    assertStreamPrint(threadData, modelData->nAliasStringArray == 0 || modelData->stringAlias != NULL, "Out of memory");
+  }
+  else {
+    modelData->realAlias = NULL;
+    modelData->integerAlias = NULL;
+    modelData->booleanAlias = NULL;
+    modelData->stringAlias = NULL;
+  }
+
 }
 
 /**
@@ -1063,25 +1076,33 @@ void freeModelDataVars(MODEL_DATA* modelData)
   omc_alloc_interface.free_uncollectable(modelData->realSensitivityData);
 
   // Alias Variables
-  for(i=0; i < modelData->nAliasReal; i++) {
-    freeVarInfo(&modelData->realAlias[i].info);
+  if (modelData->realAlias != NULL) {
+    for(i=0; i < modelData->nAliasReal; i++) {
+      freeVarInfo(&modelData->realAlias[i].info);
+    }
+    omc_alloc_interface.free_uncollectable(modelData->realAlias);
   }
-  omc_alloc_interface.free_uncollectable(modelData->realAlias);
 
-  for(i=0; i < modelData->nAliasInteger; i++) {
-    freeVarInfo(&modelData->integerAlias[i].info);
+  if (modelData->integerAlias != NULL) {
+    for(i=0; i < modelData->nAliasInteger; i++) {
+      freeVarInfo(&modelData->integerAlias[i].info);
+    }
+    omc_alloc_interface.free_uncollectable(modelData->integerAlias);
   }
-  omc_alloc_interface.free_uncollectable(modelData->integerAlias);
 
-  for(i=0; i < modelData->nAliasBoolean; i++) {
-    freeVarInfo(&modelData->booleanAlias[i].info);
+  if (modelData->booleanAlias != NULL) {
+    for(i=0; i < modelData->nAliasBoolean; i++) {
+      freeVarInfo(&modelData->booleanAlias[i].info);
+    }
+    omc_alloc_interface.free_uncollectable(modelData->booleanAlias);
   }
-  omc_alloc_interface.free_uncollectable(modelData->booleanAlias);
 
-  for(i=0; i < modelData->nAliasString; i++) {
-    freeVarInfo(&modelData->stringAlias[i].info);
+  if (modelData->stringAlias != NULL) {
+    for(i=0; i < modelData->nAliasString; i++) {
+      freeVarInfo(&modelData->stringAlias[i].info);
+    }
+    omc_alloc_interface.free_uncollectable(modelData->stringAlias);
   }
-  omc_alloc_interface.free_uncollectable(modelData->stringAlias);
 }
 
  /*!
