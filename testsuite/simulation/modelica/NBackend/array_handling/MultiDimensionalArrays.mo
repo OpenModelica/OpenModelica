@@ -47,19 +47,4 @@ package MultiDimensionalArrays
     Real[2,3] r = {{i*j for j in 1:3} for i in 1:2};
   end Test5;
 
-  model E
-    parameter Real r;
-  end E;
-
-  model F
-    E[2] e;
-  end F;
-
-  model G
-    F[3] f;
-  end G;
-
-  model Test6
-    G[4] g(f(e(r = {{{i*j*k for k in 1:2}for j in 1:3} for i in 1:4})));
-  end Test6;
 end MultiDimensionalArrays;
