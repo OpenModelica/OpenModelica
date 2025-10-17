@@ -30,6 +30,7 @@
 
 #include <base/fLGR.h>
 #include <base/log.h>
+#include <base/timing.h>
 #include <base/mesh.h>
 
 #include <nlp/solvers/ipopt/solver.h>
@@ -45,6 +46,8 @@ using namespace OpenModelica;
  * this contains the glue code between MOO and the simulation runtime */
 extern "C"
 int _main_OptimizationRuntime(int argc, char** argv, DATA* data, threadData_t* threadData) {
+    { ScopedTimer timer("Optimization Runtime");
+
     create_set_logger();
     auto info = InfoGDOP(data, threadData, argc, argv);
     auto nlp_solver_settings = NLP::NLPSolverSettings(argc, argv);
@@ -63,6 +66,11 @@ int _main_OptimizationRuntime(int argc, char** argv, DATA* data, threadData_t* t
     orchestrator.optimize();
 
     communicateStatus("Finished", 1, info.tf, 0.0);
+
+    }
+
+    // TODO: if MOO VERBOSE
+    // TimingTree::instance().print_tree_table();
 
     return 0;
 }
