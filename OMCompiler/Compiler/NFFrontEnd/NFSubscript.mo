@@ -1164,12 +1164,13 @@ public
     input list<Subscript> oldSubs "Existing subscripts";
     input Integer dimensions "The number of dimensions to subscript";
     input Boolean backend "if true discards a subscript for scalar if it is exacty 1";
+    input Boolean reverse "if reverse then append to the end rather than to the start";
     output list<Subscript> outSubs "The merged subscripts, at most 'dimensions' many";
     output list<Subscript> remainingSubs "The subscripts that didn't fit";
   protected
     Integer subs_count;
     Subscript new_sub, old_sub;
-    list<Subscript> rest_old_subs;
+    list<Subscript> rest_old_subs, new_subs;
     Boolean merged = true;
   algorithm
     // discard an index for backend if it is exactly one for scalars
@@ -1239,14 +1240,18 @@ public
       outSubs := s :: outSubs;
     end for;
 
-    // Append any remaining new subscripts to the end of the list as long as
+    // Append any remaining new subscripts to the end or start of the list as long as
     // there are dimensions left to fill.
-    while not listEmpty(remainingSubs) and subs_count < dimensions loop
-      new_sub :: remainingSubs := remainingSubs;
-      outSubs := new_sub :: outSubs;
-      subs_count := subs_count + 1;
-    end while;
-
+    if listLength(remainingSubs) >= dimensions - subs_count then
+      (new_subs, remainingSubs) := List.split(remainingSubs, dimensions - subs_count);
+      subs_count := dimensions;
+    else
+      new_subs := remainingSubs;
+      subs_count := subs_count + listLength(new_subs);
+    end if;
+    if not listEmpty(new_subs) then
+      outSubs := if reverse then listAppend(outSubs, new_subs) else listAppend(new_subs, outSubs);
+    end if;
     outSubs := listReverseInPlace(outSubs);
   end mergeList;
 
