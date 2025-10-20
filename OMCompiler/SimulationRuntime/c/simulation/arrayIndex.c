@@ -246,8 +246,8 @@ size_t *linearToMultiDimArrayIndex(DIMENSION_INFO *dimension, size_t linear_addr
     throwStreamPrint(NULL, "Invalid dimension info.");
   }
 
-  if(linear_address < 0 || linear_address > dimension->scalar_length) {
-    throwStreamPrint(NULL, "Array out of range: %zu not in [0, %zu]", linear_address, dimension->scalar_length);
+  if(linear_address >= dimension->scalar_length) {
+    throwStreamPrint(NULL, "Array out of range: %zu not in [0, %zu)", linear_address, dimension->scalar_length);
   }
 
   /* Allocate array for indices; caller is responsible for freeing */
@@ -321,7 +321,22 @@ size_t multiDimArrayToLinearIndex(DIMENSION_INFO* dimension, size_t* array_index
   size_t linear_address = 0;
   size_t dim_product;
 
+  if (dimension == NULL || dimension->numberOfDimensions <= 0 || dimension->dimensions == NULL)
+  {
+    throwStreamPrint(NULL, "Invalid dimension info.");
+  }
+
+  if (array_index == NULL)
+  {
+    throwStreamPrint(NULL, "Array index pointer is NULL.");
+  }
+
    for (size_t k = 0; k < dimension->numberOfDimensions; k++) {
+     if (array_index[k] >= dimension->dimensions[k].start) {
+       throwStreamPrint(NULL, "Index out of bounds: array_index[%zu] = %zu >= %zu",
+                        k, array_index[k], dimension->dimensions[k].start);
+     }
+
      dim_product = 1;
      /* multiply sizes of later dimensions (k+1 .. n-1) for row-major */
      for (size_t l = k + 1; l < dimension->numberOfDimensions; l++) {
