@@ -43,51 +43,49 @@
 
 class LibraryTreeModel;
 
-// A custom proxy model to handle filtering and display formatting.
 class ClassNameFilterProxyModel : public QSortFilterProxyModel {
-    Q_OBJECT
+  Q_OBJECT
 public:
-    explicit ClassNameFilterProxyModel(QObject *parent = nullptr);
-    void setFilterString(const QString &pattern);
-    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+  explicit ClassNameFilterProxyModel(QObject *parent = nullptr);
+  void setFilterString(const QString &pattern);
+  QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 
 protected:
-    bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const override;
-    bool lessThan(const QModelIndex &left, const QModelIndex &right) const override;
-    Qt::ItemFlags flags(const QModelIndex &index) const override;
+  bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const override;
+  bool lessThan(const QModelIndex &left, const QModelIndex &right) const override;
+  Qt::ItemFlags flags(const QModelIndex &index) const override;
 
 private:
-    QString fuzzyPattern;
+  QString mFuzzyPattern;
 };
 
-// The main widget for our searchable menu.
 class QuickInsertWidget : public QWidget {
-    Q_OBJECT
+  Q_OBJECT
 
 public:
-    explicit QuickInsertWidget(LibraryTreeModel *model, QWidget *parent = nullptr);
-    void showAt(const QPoint &pos);
-    QString getSelectedClass() const;
+  explicit QuickInsertWidget(LibraryTreeModel *model, QWidget *parent = nullptr);
+  void showAt(const QPoint &pos);
+  QString getSelectedClass() const;
 
 signals:
-    void classSelected(const QString &className);
+  void classSelected(const QString &className);
 
 protected:
-    void keyPressEvent(QKeyEvent *event) override;
-    bool eventFilter(QObject *watched, QEvent *event) override;
+  void keyPressEvent(QKeyEvent *event) override;
+  bool eventFilter(QObject *watched, QEvent *event) override;
 
 private slots:
-    void onSearchTextChanged(const QString &text);
-    void onListItemActivated(const QModelIndex &index);
+  void onSearchTextChanged(const QString &text);
+  void onListItemActivated(const QModelIndex &index);
 
 private:
-    void populateModel();
-    void recursivePopulate(const QModelIndex &parentIndex, const QString &parentPath);
+  void populateModel();
+  void recursivePopulate(const QModelIndex &parentIndex, const QString &parentPath);
 
-    QLineEdit *m_searchLineEdit;
-    QListView *m_resultsListView;
-    QStringListModel *m_sourceModel;
-    ClassNameFilterProxyModel *m_proxyModel;
-    LibraryTreeModel *m_libraryTreeModel;
-    QString m_selectedClass;
+  QLineEdit *mpSearchLineEdit;
+  QListView *mpResultsListView;
+  QStringListModel *mpSourceModel;
+  ClassNameFilterProxyModel *mpProxyModel;
+  LibraryTreeModel *mpLibraryTreeModel;
+  QString mSelectedClass;
 };
