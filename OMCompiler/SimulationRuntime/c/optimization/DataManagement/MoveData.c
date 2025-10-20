@@ -513,7 +513,6 @@ static inline void printSomeModelInfos(OptDataBounds * bounds, OptDataDim * dim,
 
   double *umin, *umax, *unom, *u0;
   double *xmin, *xmax, *xnom;
-  double tmpStart;
 
   char buffer[200];
   char ** inputName;
@@ -540,9 +539,12 @@ static inline void printSomeModelInfos(OptDataBounds * bounds, OptDataDim * dim,
     else
       sprintf(buffer, ", min = -Inf");
 
-    tmpStart = data->modelData->realVarsData[i].attribute.start;
-
-    printf("\nState[%i]:%s(start = %g, nominal = %g%s", i, data->modelData->realVarsData[i].info.name, tmpStart, xnom[i], buffer);
+    printf("\nState[%i]:%s(start = %s, nominal = %g%s",
+           i,
+           data->modelData->realVarsData[i].info.name,
+           real_vector_to_string(data->modelData->realVarsData[i].attribute.start.data),
+           xnom[i],
+           buffer);
 
     if(xmax[i] < 1e20)
       sprintf(buffer, ", max = %g", data->modelData->realVarsData[i].attribute.max);

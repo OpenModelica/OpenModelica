@@ -86,6 +86,8 @@ extern void put_real_matrix_element(modelica_real value, int r, int c, real_arra
 
 extern void print_real_matrix(const real_array * source);
 extern void print_real_array(const real_array * source);
+
+extern const char* real_vector_to_string(const real_array *source);
 /*
 
  a[1:3] := b;
