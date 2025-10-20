@@ -408,7 +408,7 @@ static void read_var_info(omc_ModelVariable *var, VAR_INFO *info)
 
   debugStreamPrint(OMC_LOG_DEBUG, 1, "read var %s from setup file", info->name);
   debugStreamPrint(OMC_LOG_DEBUG, 0, "read input index %d from setup file", info->inputIndex);
-  debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s id %ld from setup file", info->name, info->id);
+  debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s id %d from setup file", info->name, info->id);
   debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s description \"%s\" from setup file", info->name, info->comment);
   debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s filename %s from setup file", info->name, info->info.filename);
   debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s lineStart %d from setup file", info->name, info->info.lineStart);
