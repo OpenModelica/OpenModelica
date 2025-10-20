@@ -272,7 +272,7 @@ algorithm
   end if;
 
   //(var_count, eq_count) := CheckModel.checkModel(flatModel);
-  //print(name + " has " + String(var_count) + " variable(s) and " + String(eq_count) + " equation(s).\n");
+  //print(AbsynUtil.pathString(classPath) + " has " + String(var_count) + " variable(s) and " + String(eq_count) + " equation(s).\n");
 
   clearCaches();
 end instClassInProgram;

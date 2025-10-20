@@ -1450,7 +1450,7 @@ public
       case CLOCK() then 1;
       case ENUMERATION() then 1;
       case ARRAY() then sizeOf(ty.elementType) * Dimension.sizesProduct(ty.dimensions, resize);
-      case TUPLE() then List.fold(list(sizeOf(t) for t in ty.types), intAdd, 0);
+      case TUPLE() then sum(sizeOf(t) for t in ty.types);
       case COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()) then 1;
       case COMPLEX(complexTy = ComplexType.RECORD())
         then ClassTree.foldComponents(Class.classTree(InstNode.getClass(ty.cls)), fold_comp_size, 0);
