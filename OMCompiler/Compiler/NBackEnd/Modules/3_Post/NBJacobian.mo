@@ -1114,7 +1114,7 @@ protected
           Pointer<NBEquation.Equation> eqPtr1;
           Pointer<Variable> itVarPtr;
           NBEquation.Equation eq_;
-          Expression residual, termExpr, ybar_vec, Jy_mat, Jy_T, lambda_vec;
+          Expression residual, termExpr, ybar_vec, Jy_mat, Jy_T, lambda_vec, termSum;
           // variable lists for differentiation
           // Jacobians as row-wise lists
           list<list<Expression>> Jx_rows = {};
@@ -1122,10 +1122,11 @@ protected
           list<Pointer<Variable>> inVars = {};
           list<Pointer<Variable>> outVars = {};
           // results
-          list<Expression> dIn = {}, dOut = {}, residuals = {};
+          list<Expression> dIn = {}, dOut = {}, residuals = {}, col_coeffs;
           Tearing tearing;
-          ComponentRef outSeed, dInKey;
+          ComponentRef outSeed, dInKey, ySeedCref;
           Operator mulOp = Operator.fromClassification((MathClassification.MULTIPLICATION, SizeClassification.SCALAR), Type.REAL());
+          Operator addOp = Operator.fromClassification((MathClassification.ADDITION, SizeClassification.SCALAR), Type.REAL());
           Integer r;
         case NBStrongComponent.ALGEBRAIC_LOOP(strict = tearing)
           //guard listLength(tearing.residual_eqns) == 1
@@ -1213,6 +1214,43 @@ protected
             print("[adjoint] Built Jy_T matrix expression:\n" + Expression.toString(Jy_T) + "\n");
             lambda_vec := typeSolveLinearSystemCall(Jy_T, ybar_vec);
             print("[adjoint] Built lambda vector expression:\n" + Expression.toString(lambda_vec) + "\n");
+
+            // For each input seed variable x_k, add x_bar[k] = sum_{i=1..m} lambda[i] * d r_i / d x_k
+            for cidx in 1:VariablePointers.size(seedCandidates) loop
+              // Collect column k from Jx_rows
+              col_coeffs := {}; // reset per column
+              r := 1;
+              for row_dIn in Jx_rows loop
+                if cidx <= listLength(row_dIn) then
+                  col_coeffs := Expression.MULTARY({Expression.REAL(-1.0), makeIndex(r, lambda_vec), listGet(row_dIn, cidx)}, {}, mulOp) :: col_coeffs;
+                end if;
+                r := r + 1;
+              end for;
+              col_coeffs := listReverse(col_coeffs);
+
+              if not listEmpty(col_coeffs) then
+                // Sum of products for x_bar[k]
+                termSum := if listLength(col_coeffs) == 1
+                  then listHead(col_coeffs)
+                  else Expression.MULTARY(col_coeffs, {}, addOp);
+
+                // Map seed candidate k to its adjoint variable cref (diff_map)
+                // These were pre-created as res_vars (pDer of seedCandidates)
+                // and added to adjoint_map earlier.
+                try
+                  ySeedCref := UnorderedMap.getOrFail(
+                    BVariable.getVarName(NBVariable.VariablePointers.getVarAt(seedCandidates, cidx)),
+                    diff_map
+                  );
+                  UnorderedMap.add(ySeedCref, termSum :: UnorderedMap.getOrFail(ySeedCref, adjoint_map), adjoint_map);
+                  print("[adjoint] Added x_bar term for " + ComponentRef.toString(ySeedCref) + ": "
+                    + Expression.toString(termSum) + "\n");
+                else
+                  // If key is not present, skip silently
+                  continue;
+                end try;
+              end if;
+            end for;
 
 
             // print("dF/d(inputs): " + List.toString(dIn, Expression.toString) + "\n");
@@ -1692,6 +1730,19 @@ protected
     call := NFCall.makeTypedCall(SOLVE_FUNC, {A, B}, var, pur, X_ty);
     X := Expression.CALL(call);
   end typeSolveLinearSystemCall;
+
+  // Local helper to index a 1-based vector expression
+  function makeIndex
+    input Integer k;
+    input Expression lambda_vec;
+    output Expression idxExpr;
+  algorithm
+    idxExpr := Expression.applySubscripts(
+      {Subscript.INDEX(Expression.INTEGER(k))},
+      lambda_vec,
+      true
+    );
+  end makeIndex;
 
   annotation(__OpenModelica_Interface="backend");
 end NBJacobian;
