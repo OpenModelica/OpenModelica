@@ -226,7 +226,7 @@ static void printInfoTag(FILE *fout, int level, const FILE_INFO info) {
 static void printVar(FILE *fout, int level, VAR_INFO* info) {
 
   indent(fout,level);
-  fprintf(fout, "<variable id=\"var%d\" name=\"", info->id);
+  fprintf(fout, "<variable id=\"var%ld\" name=\"", info->id);
   printStrXML(fout, info->name);
   fprintf(fout, "\" comment=\"");
   printStrXML(fout, info->comment);

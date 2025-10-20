@@ -209,6 +209,7 @@ size_t calculateLength(DIMENSION_INFO *dimensionInfo,
  * @brief Convert index from linear to lexicographical access order.
  *
  * The linear storage assumes row-major order representation.
+ * Linear version of an array is also called flattened or scalarized version.
  *
  * #### Example:
  *
@@ -231,33 +232,106 @@ size_t calculateLength(DIMENSION_INFO *dimensionInfo,
  *    5    | A[1][2] | a_{2,3}
  * ```
  *
- * @param dimension
- * @param linear_address
- * @return integer_array*
+ * @param dimension         Dimensions of multi-dimensional array.
+ * @param linear_address    Linear array address.
+ * @return size_t*          Array of indices,
+ *                          caller is responsible to free with `free`.
  */
-integer_array* scalarToArrayIndex(DIMENSION_INFO dimension, size_t linear_address) {
+size_t *linearToMultiDimArrayIndex(DIMENSION_INFO *dimension, size_t linear_address)
+{
+  size_t k;
 
+  if (dimension == NULL || dimension->numberOfDimensions <= 0 || dimension->dimensions == NULL)
+  {
+    throwStreamPrint(NULL, "Invalid dimension info.");
+  }
+
+  if(linear_address < 0 || linear_address > dimension->scalar_length) {
+    throwStreamPrint(NULL, "Array out of range: %zu not in [0, %zu]", linear_address, dimension->scalar_length);
+  }
+
+  /* Allocate array for indices; caller is responsible for freeing */
+  size_t *array_index = (size_t *)calloc(dimension->numberOfDimensions, sizeof(size_t));
+  if (!array_index)
+  {
+    throwStreamPrint(NULL, "Out of memory.");
+  }
+
+  /* Compute sizes of later dimensions for row-major ordering */
+  size_t *stride = (size_t *)calloc(dimension->numberOfDimensions, sizeof(size_t));
+  if (!stride)
+  {
+    free(array_index);
+    throwStreamPrint(NULL, "Out of memory.");
+  }
+
+  /* stride[k] = product of dimensions[k+1..dimension->numberOfDimensions-1];
+   * last stride = 1 */
+  stride[dimension->numberOfDimensions - 1] = 1;
+  for (k = dimension->numberOfDimensions - 2; k > 0; k--)
+  {
+    stride[k] = stride[k + 1] * dimension->dimensions[k + 1].start;
+  }
+  stride[0] = stride[1] * dimension->dimensions[1].start;
+
+  size_t remaining = linear_address;
+  for (k = 0; k < dimension->numberOfDimensions; k++)
+  {
+    array_index[k] = remaining / stride[k];
+    remaining = remaining % stride[k];
+  }
+
+  free(stride);
+  return array_index;
 }
 
-size_t arrayToScalarIndex(DIMENSION_INFO dimension, integer_array* array_index) {
+/**
+ * @brief Convert index from lexicographical access order to linear.
+ *
+ * The linear storage assumes row-major order representation, see
+ * https://en.wikipedia.org/wiki/Row-_and_column-major_order.
+ * Linear version of an array is also called flattened or scalarized version.
+ *
+ * #### Example:
+ *
+ * For a 2x3 Matrix A =
+ * ```txt
+ *     a_{1,1} a_{1,2} a_{1,3}
+ *     a_{2,1} a_{2,2} a_{2,3}
+ * ```
+ *
+ * convert `Access` to `Address` according to
+ *
+ * ```txt
+ * Address | Access  | Value
+ * --------|---------|--------
+ *    0    | A[0][0] | a_{1,1}
+ *    1    | A[0][1] | a_{1,2}
+ *    2    | A[0][2] | a_{1,3}
+ *    3    | A[1][0] | a_{2,1}
+ *    4    | A[1][1] | a_{2,2}
+ *    5    | A[1][2] | a_{2,3}
+ * ```
+ *
+ * @param dimension         Dimensions of multi-dimensional array.
+ * @param array_index       Array of indices
+ * @return size_t           Linear array address.
+ */
+size_t multiDimArrayToLinearIndex(DIMENSION_INFO* dimension, size_t* array_index) {
   size_t linear_address = 0;
   size_t dim_product;
 
-  assertStreamPrint(NULL, dimension.numberOfDimensions == array_index->ndims, "Missmatch of number of dimensions.");
+   for (size_t k = 0; k < dimension->numberOfDimensions; k++) {
+     dim_product = 1;
+     /* multiply sizes of later dimensions (k+1 .. n-1) for row-major */
+     for (size_t l = k + 1; l < dimension->numberOfDimensions; l++) {
+       dim_product *= dimension->dimensions[l].start;
+     }
+     linear_address += dim_product * array_index[k];
+   }
 
-  modelica_integer* data = (modelica_integer*) array_index->data;
-
-  for (size_t k = 1; k < array_index->ndims; k++) {
-    dim_product = 1;
-    for(size_t l = k+1; k < array_index->ndims; l++) {
-      dim_product *= dimension.dimensions[l].start;
-    }
-
-    linear_address += dim_product * data[l];
-  }
+  return linear_address;
 }
-
-
 
 /**
  * @brief Calculate scalar length of all array variables.

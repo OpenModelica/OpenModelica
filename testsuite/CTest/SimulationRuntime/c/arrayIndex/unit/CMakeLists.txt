@@ -26,9 +26,25 @@ add_executable(test_compute_var_index
 target_link_libraries(test_compute_var_index PRIVATE SimulationRuntimeC)
 add_test(NAME test_compute_var_index COMMAND test_compute_var_index)
 
+# Test 5
+add_executable(test_calc_index_matrix
+  05_test_calc_index_matrix.c
+)
+target_link_libraries(test_calc_index_matrix PRIVATE SimulationRuntimeC)
+add_test(NAME test_calc_index_matrix COMMAND test_calc_index_matrix)
+
+# Test 6
+add_executable(test_calc_index_tensor
+  06_test_calc_index_tensor.c
+)
+target_link_libraries(test_calc_index_tensor PRIVATE SimulationRuntimeC)
+add_test(NAME test_calc_index_tensor COMMAND test_calc_index_tensor)
+
 add_custom_target(ctestsuite-arrayIndex-unit DEPENDS
   test_array_length_scalar
   test_array_length_vector
   test_array_length_matrix
   test_compute_var_index
+  test_calc_index_matrix
+  test_calc_index_tensor
 )

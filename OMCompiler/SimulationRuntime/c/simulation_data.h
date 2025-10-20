@@ -307,7 +307,7 @@ typedef struct DIMENSION_ATTRIBUTE
 
 typedef struct DIMENSION_INFO
 {
-  modelica_integer numberOfDimensions;  /* Number of dimension tags <dimension> */
+  size_t numberOfDimensions;            /* Number of dimension tags <dimension>, scalar if 0*/
   DIMENSION_ATTRIBUTE* dimensions;      /* Array of dimension sizes */
   size_t scalar_length;                 /* Length of variable after scalarization to 1-dimensional array*/
 } DIMENSION_INFO;

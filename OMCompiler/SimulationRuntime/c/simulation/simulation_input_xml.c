@@ -408,7 +408,7 @@ static void read_var_info(omc_ModelVariable *var, VAR_INFO *info)
 
   debugStreamPrint(OMC_LOG_DEBUG, 1, "read var %s from setup file", info->name);
   debugStreamPrint(OMC_LOG_DEBUG, 0, "read input index %d from setup file", info->inputIndex);
-  debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s id %d from setup file", info->name, info->id);
+  debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s id %ld from setup file", info->name, info->id);
   debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s description \"%s\" from setup file", info->name, info->comment);
   debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s filename %s from setup file", info->name, info->info.filename);
   debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s lineStart %d from setup file", info->name, info->info.lineStart);
@@ -435,11 +435,18 @@ static void read_var_dimension(omc_ModelVariable *v, DIMENSION_INFO *dimension_i
   char* key;
   int len;
   DIMENSION_ATTRIBUTE* dim;
+  modelica_integer numDimensions;
   modelica_integer i;
 
-  dimension_info->numberOfDimensions = read_value_long(findHashStringStringEmpty(v, "num_dimensions"), -1);
-  if (dimension_info->numberOfDimensions <= 0) {
+  numDimensions = read_value_long(findHashStringStringEmpty(v, "num_dimensions"), 0);
+  if (numDimensions < 0) {
+    throwStreamPrint(NULL, "Illegal value while parsing 'num_dimensions'. Expected positive number.");
+  }
+  dimension_info->numberOfDimensions = (size_t) numDimensions;
+  if (dimension_info->numberOfDimensions == 0) {
     // No <dimension> tags
+    dimension_info->dimensions = NULL;
+    dimension_info->scalar_length = 1;
     return;
   }
 

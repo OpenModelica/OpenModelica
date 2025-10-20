@@ -101,9 +101,9 @@ int main(int argc, char *argv[])
     fprintf(stderr, "Test failed: Int parameter dimension mismatch. Expected <dimension> to contain 'valueReference'\n");
     test_success = 0;
   }
-  if (test_success && modelData.integerParameterData[0].dimension.dimensions[0].start != -1)
+  if (test_success && modelData.integerParameterData[0].dimension.dimensions[0].start != 2)
   {
-    fprintf(stderr, "Test failed: Int parameter dimension mismatch. Expected <dimension> to not contain 'start'\n");
+    fprintf(stderr, "Test failed: Int parameter dimension mismatch. Expected start to be read from parameter and equal '2', but got %zu\n", modelData.integerParameterData[0].dimension.dimensions[0].start);
     test_success = 0;
   }
   if (test_success && modelData.integerParameterData[0].dimension.dimensions[0].valueReference != 1001)
