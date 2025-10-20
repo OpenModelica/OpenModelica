@@ -1364,8 +1364,8 @@ public
   uniontype NonlinearSystem
     record NONLINEAR_SYSTEM
       Integer index;
-      list<Block> blcks;
-      list<ComponentRef> crefs;
+      list<Block> blcks; // equations
+      list<ComponentRef> crefs; // iteration variables
       Integer indexSystem;
       Integer size "Number of variables that are solved in this system. Needed because 'crefs' only contains the iteration variables.";
       Pointer<Option<SimJacobian>> jacobian;

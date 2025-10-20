@@ -202,31 +202,45 @@ public
     end if;
 
     for comp in comps loop
+
+
+
       // Determine LHS cref of this component
-      compVars := StrongComponent.getVariables(comp);
-      if listLength(compVars) == 1 then
-        lhsCref := BVariable.getVarName(listHead(compVars));
-      else
-        lhsCref := ComponentRef.EMPTY();
-      end if;
-      print("\nLHS cref: " + ComponentRef.toString(lhsCref) + "\n");
+      // this is the faulty assumption that each component is explicitly assigned to exactly one variable
+      compVars := match comp
+        case StrongComponent.ALGEBRAIC_LOOP() then StrongComponent.getLoopIterationVars(comp);
+        else StrongComponent.getVariables(comp);
+      end match;
+      for var in compVars loop
+        lhsCref := BVariable.getVarName(var);
+      // if listLength(compVars) == 1 then
+      //   lhsCref := BVariable.getVarName(listHead(compVars));
+      // else
+      //   // print all compVars
+      //   print("No unique LHS cref found. CompVars:\n");
+      //   for var in compVars loop
+      //     print("  " + BVariable.pointerToString(var) + "\n");
+      //   end for;
+      //   lhsCref := ComponentRef.EMPTY();
+      // end if;
+        print("\nLHS cref: " + ComponentRef.toString(lhsCref) + "\n");
 
-      // Update current_grad if we have a mapping for lhsCref
-      if (not ComponentRef.isEmpty(lhsCref)) and Util.isSome(diff_map_opt) and UnorderedMap.contains(lhsCref, diff_map) then
-        gradCref := UnorderedMap.getOrFail(lhsCref, diff_map);
-        gradCref := match comp
-          case StrongComponent.RESIZABLE_COMPONENT() then ComponentRef.copySubscripts(StrongComponent.getVarCref(comp), gradCref); // put subscript on the seed;
-          else gradCref;
-        end match;
-        print("Found diff_map entry for LHS: " + ComponentRef.toString(gradCref) + "\n");
-        da := Pointer.access(diffArguments_ptr);
-        da.current_grad := Expression.fromCref(gradCref);
-        Pointer.update(diffArguments_ptr, da);
-      end if;
-
-      // Differentiate this component
-      comp := differentiateStrongComponent(comp, diffArguments_ptr, idx, context, name);
-      newComps := comp :: newComps;
+        // Update current_grad if we have a mapping for lhsCref
+        if (not ComponentRef.isEmpty(lhsCref)) and Util.isSome(diff_map_opt) and UnorderedMap.contains(lhsCref, diff_map) then
+          gradCref := UnorderedMap.getOrFail(lhsCref, diff_map);
+          gradCref := match comp
+            case StrongComponent.RESIZABLE_COMPONENT() then ComponentRef.copySubscripts(StrongComponent.getVarCref(comp), gradCref); // put subscript on the seed;
+            else gradCref;
+          end match;
+          print("Found diff_map entry for LHS: " + ComponentRef.toString(gradCref) + "\n");
+          da := Pointer.access(diffArguments_ptr);
+          da.current_grad := Expression.fromCref(gradCref);
+          Pointer.update(diffArguments_ptr, da);
+        end if;
+        // Differentiate this component
+        comp := differentiateStrongComponent(comp, diffArguments_ptr, idx, context, name);
+        newComps := comp :: newComps;
+      end for;
     end for;
 
     comps := listReverse(newComps);
@@ -319,9 +333,33 @@ public
     list<Slice<VariablePointer>> ite_vars;
     list<Slice<EquationPointer>> res_eqns;
     array<StrongComponent> inner_eqns;
+    Integer i;
+    Equation eq;
   algorithm
     ite_vars := list(Slice.apply(var, function differentiateVariablePointer(diffArguments_ptr = diffArguments_ptr)) for var in tearing.iteration_vars);
     res_eqns := list(Slice.apply(eqn, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr, name = name)) for eqn in tearing.residual_eqns);
+
+     // Debug: print diffed ite_vars
+    print("[NBDifferentiate] differentiateTearing: ite_vars (diffed) count="
+          + intString(listLength(ite_vars)) + "\n");
+    i := 1;
+    for var_slice in ite_vars loop
+      print("  [ite " + intString(i) + "] "
+            + BVariable.pointerToString(Slice.getT(var_slice)) + "\n");
+      i := i + 1;
+    end for;
+
+
+    // Debug: print diffed res_eqns
+    print("[NBDifferentiate] differentiateTearing: res_eqns (diffed) count="
+          + intString(listLength(res_eqns)) + "\n");
+    i := 1;
+    for eq_slice in res_eqns loop
+      eq := Pointer.access(Slice.getT(eq_slice));
+      print("  [res " + intString(i) + "] " + Equation.toString(eq) + "\n");
+      i := i + 1;
+    end for;
+
     // filter discretes?
     inner_eqns := listArray(list(differentiateStrongComponent(ie, diffArguments_ptr, idx, context, name) for ie in tearing.innerEquations));
 
@@ -725,6 +763,67 @@ public
       then fail();
     end match;
   end differentiateExpression;
+
+
+  // ================================
+  //  Residual partials via SIMPLE
+  // ================================
+  function differentiateResidualWrtCrefs
+    "Differentiate a residual expression F(x, y, ...) = 0 with respect to two
+     sets of ComponentRefs using SIMPLE (d/d cref) differentiation.
+     Returns two lists: [dF/d(inputs[i])] and [dF/d(outputs[j])], in the same order
+     as the inputs/outputs lists."
+    input Expression residual;
+    input list<ComponentRef> inputs;
+    input list<ComponentRef> outputs;
+    input FunctionTree funcTree = FunctionTreeImpl.EMPTY();
+    output list<Expression> dF_dInputs;
+    output list<Expression> dF_dOutputs;
+  protected
+    DifferentiationArguments args;
+    Expression d;
+  algorithm
+    // Inputs
+    dF_dInputs := {};
+    for c in listReverse(inputs) loop
+      args := DifferentiationArguments.simpleCref(c, funcTree);
+      (d, args) := differentiateExpression(residual, args);
+      dF_dInputs := SimplifyExp.simplify(d) :: dF_dInputs;
+    end for;
+
+    // Outputs
+    dF_dOutputs := {};
+    for c in listReverse(outputs) loop
+      args := DifferentiationArguments.simpleCref(c, funcTree);
+      (d, args) := differentiateExpression(residual, args);
+      dF_dOutputs := SimplifyExp.simplify(d) :: dF_dOutputs;
+    end for;
+  end differentiateResidualWrtCrefs;
+
+  function differentiateResidualWrtVariablePointers
+    "Like differentiateResidualWrtCrefs, but takes NBVariable.VariablePointers for inputs/outputs.
+     Uses the stored order of the VariablePointers."
+    input Expression residual;
+    input BVariable.VariablePointers inputVars;
+    input BVariable.VariablePointers outputVars;
+    input FunctionTree funcTree = FunctionTreeImpl.EMPTY();
+    output list<Expression> dF_dInputs;
+    output list<Expression> dF_dOutputs;
+  protected
+    list<ComponentRef> inCrefs;
+    list<ComponentRef> outCrefs;
+  algorithm
+    // Extract the variable names in stored order
+    inCrefs  := BVariable.VariablePointers.getVarNames(inputVars);
+    outCrefs := BVariable.VariablePointers.getVarNames(outputVars);
+
+    (dF_dInputs, dF_dOutputs) := differentiateResidualWrtCrefs(
+      residual = residual,
+      inputs   = inCrefs,
+      outputs  = outCrefs,
+      funcTree = funcTree
+    );
+  end differentiateResidualWrtVariablePointers;
 
   function differentiateComponentRef
     input output Expression exp "Has to be Expression.CREF()";
@@ -2879,7 +2978,7 @@ public
       mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
     end makeMulFromOperator;
 
-    function typeTransposeCall
+  function typeTransposeCall
     "Create a typed builtin transpose(mat) call without expanding mat.
      Returns mat if it is not an array with at least 2 dimensions."
     input Expression mat;

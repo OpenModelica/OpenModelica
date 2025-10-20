@@ -71,6 +71,7 @@ protected
   import NBVariable.{VariablePointers, VariablePointer, VarData};
   import NBDifferentiateReverse;
   import Slice = NBSlice;
+  import Tearing = NBTearing;
 
   import Call = NFCall;
   import NFBuiltinFuncs;
@@ -827,6 +828,7 @@ protected
 
     // print strong components
     print("Strong components for symboli differentiation:\n");
+    print(jacobianTypeString(jacType) + "\n");
     for c in comps loop
       print(StrongComponent.toString(c, 2) + "\n");
     end for;
@@ -1018,8 +1020,8 @@ protected
 
   function jacobianSymbolicAdjoint extends Module.jacobianInterface;
   protected
-    list<StrongComponent> comps, diffed_comps;
-    StrongComponent diffed_comp;
+    list<StrongComponent> comps, diffed_comps, comps_non_alg;
+    StrongComponent diffed_comp, c_noalias;
     Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
     Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
     UnorderedMap<ComponentRef,ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
@@ -1037,7 +1039,7 @@ protected
 
     BVariable.checkVar func = getTmpFilterFunction(jacType);
     UnorderedMap<ComponentRef, ExpressionList> adjoint_map;
-    ExpressionList terms;
+    ExpressionList terms, dF_in, dF_out;
     Expression rhsExpr;
     Pointer<Variable> lhsVarPtr;
     Pointer<NBEquation.Equation> eqPtr;
@@ -1095,6 +1097,151 @@ protected
 
     print("Adjoint map before:\n" + adjointMapToString(SOME(adjoint_map)) + "\n");
     print("Diff map before:\n" + diffMapToString(diff_map) + "\n");
+
+    comps_non_alg := {};
+    for c in comps loop
+      // Compute partials dF/d(inputs) and dF/d(outputs) for single-equation algebraic loop
+      c_noalias := StrongComponent.removeAlias(c);
+      () := match c_noalias
+        local
+          // tearing data
+          list<Slice<VariablePointer>> itVars;
+          list<Slice<Pointer<NBEquation.Equation>>> resEqns;
+          list<VariablePointer> itVarPtrs = {};
+          list<Pointer<NBEquation.Equation>> resEqnPtrs = {};
+          list<Expression> ybar_elems = {};
+          // extracted single eqn/var
+          Pointer<NBEquation.Equation> eqPtr1;
+          Pointer<Variable> itVarPtr;
+          NBEquation.Equation eq_;
+          Expression residual, termExpr, ybar_vec, Jy_mat, Jy_T, lambda_vec;
+          // variable lists for differentiation
+          // Jacobians as row-wise lists
+          list<list<Expression>> Jx_rows = {};
+          list<list<Expression>> Jy_rows = {};
+          list<Pointer<Variable>> inVars = {};
+          list<Pointer<Variable>> outVars = {};
+          // results
+          list<Expression> dIn = {}, dOut = {}, residuals = {};
+          Tearing tearing;
+          ComponentRef outSeed, dInKey;
+          Operator mulOp = Operator.fromClassification((MathClassification.MULTIPLICATION, SizeClassification.SCALAR), Type.REAL());
+          Integer r;
+        case NBStrongComponent.ALGEBRAIC_LOOP(strict = tearing)
+          //guard listLength(tearing.residual_eqns) == 1
+          algorithm
+            // Unwrap single residual equation and iteration vars
+            itVars := tearing.iteration_vars;
+            resEqns := tearing.residual_eqns;
+
+            // Gather pointers in stable order
+            for sv in itVars loop
+              itVarPtrs := Slice.getT(sv) :: itVarPtrs;
+            end for;
+            itVarPtrs := listReverse(itVarPtrs);
+
+            for se in resEqns loop
+              resEqnPtrs := Slice.getT(se) :: resEqnPtrs;
+            end for;
+            resEqnPtrs := listReverse(resEqnPtrs);
+
+            // Build residual expressions r_i
+            for eq in resEqnPtrs loop
+              residuals := NBEquation.Equation.getResidualExp(Pointer.access(eq)) :: residuals;
+            end for;
+            residuals := listReverse(residuals);
+
+            // Build y_bar from the seed variable mapped to each iteration var
+            for vptr in itVarPtrs loop
+              ybar_elems := Expression.fromCref(UnorderedMap.getOrFail(BVariable.getVarName(vptr), diff_map)) :: ybar_elems;
+            end for;
+            ybar_elems := listReverse(ybar_elems);
+            ybar_vec := Expression.ARRAY(Type.REAL(), listArray(ybar_elems), false);
+
+              
+            // // Dimensions
+            // m := listLength(itVarPtrs); // number of eqns/iters
+            // nSeeds := VariablePointers.size(seedCandidates);
+
+            // Fill Jacobians rows
+            for residual in residuals loop
+              (dIn, dOut) := Differentiate.differentiateResidualWrtVariablePointers(
+                residual   = residual,
+                inputVars  = seedCandidates,
+                outputVars = VariablePointers.fromList(itVarPtrs),
+                funcTree   = funcTree
+              );
+              // row_dIn length = nSeeds, row_dOut length = m
+              Jx_rows := dIn :: Jx_rows;
+              Jy_rows := dOut :: Jy_rows;
+            end for;
+            Jx_rows := listReverse(Jx_rows);
+            Jy_rows := listReverse(Jy_rows);
+
+            print("[adjoint] Built Jx_rows=" + intString(listLength(Jx_rows)) + " Jy_rows=" + intString(listLength(Jy_rows)) + "\n");
+
+            // Debug print of Jx_rows
+            // Jx_rows: each row contains d r_i / d x_k entries in seedCandidates order
+            r := 1;
+            for row in Jx_rows loop
+              print("[adjoint] Jx_rows[" + intString(r) + "] = [");
+              print(stringDelimitList(list(Expression.toString(e) for e in row), ", "));
+              print("]\n");
+              r := r + 1;
+            end for;
+
+            // Debug print of Jy_rows
+            // Jy_rows: each row contains d r_i / d y_j entries in iteration_vars order
+            r := 1;
+            for row in Jy_rows loop
+              print("[adjoint] Jy_rows[" + intString(r) + "] = [");
+              print(stringDelimitList(list(Expression.toString(e) for e in row), ", "));
+              print("]\n");
+              r := r + 1;
+            end for;
+
+
+            // Helper: build a matrix expression as array of row vectors
+            Jy_mat := Expression.ARRAY(
+              Type.REAL(),
+              listArray(list(Expression.ARRAY(Type.REAL(), listArray(row), true) for row in Jy_rows)),
+              true
+            );
+            print("[adjoint] Built Jy matrix expression:\n" + Expression.toString(Jy_mat) + "\n");
+            // lambda = solveLinearSystem(transpose(Jy), ybar)
+            Jy_T := typeTransposeCall(Jy_mat);
+            print("[adjoint] Built Jy_T matrix expression:\n" + Expression.toString(Jy_T) + "\n");
+            lambda_vec := typeSolveLinearSystemCall(Jy_T, ybar_vec);
+            print("[adjoint] Built lambda vector expression:\n" + Expression.toString(lambda_vec) + "\n");
+
+
+            // print("dF/d(inputs): " + List.toString(dIn, Expression.toString) + "\n");
+            // print("dF/d(outputs): " + List.toString(dOut, Expression.toString) + "\n");
+
+            // // create all adjoint map entries
+            // outSeed := UnorderedMap.getOrFail(BVariable.getVarName(itVarPtr), diff_map); // get the seed cref for the output variable
+            // for i in 1:listLength(dIn) loop
+            //   termExpr := Expression.MULTARY({Expression.makeMinusOne(REAL()), listGet(dIn, i), Expression.fromCref(outSeed)}, {listGet(dOut, 1)}, mulOp); // - dF/d(input_i) / dF/d(output) * output_seed
+            //   print("Adding adjoint term for input " + Expression.toString(listGet(dIn, i)) + ": " + Expression.toString(termExpr) + "\n");
+
+            //   // add term to adjoint map
+            //   // get result var cref from diff map for current input variable
+            //   dInKey := UnorderedMap.getOrFail(BVariable.getVarName(NBVariable.VariablePointers.getVarAt(seedCandidates, i)), diff_map);
+            //   UnorderedMap.add(dInKey, termExpr :: UnorderedMap.getOrFail(dInKey, adjoint_map), adjoint_map);
+            // end for;
+
+          then ();
+        else algorithm
+          // when the component was not matched it is not an algebraic loop and will be handled normally
+          comps_non_alg := c_noalias :: comps_non_alg;
+        then ();
+      end match;
+    end for;
+
+    // keep original order
+    comps := listReverse(comps_non_alg);
+
+    print("Adjoint map after loop adding:\n" + adjointMapToString(SOME(adjoint_map)) + "\n");
 
     // Build differentiation argument structure
     diffArguments := Differentiate.DIFFERENTIATION_ARGUMENTS(
@@ -1445,6 +1592,106 @@ protected
     end for;
     s := s + "}";
   end diffMapToString;
+
+
+  function typeTransposeCall
+    "Create a typed builtin transpose(mat) call without expanding mat.
+     Returns mat if it is not an array with at least 2 dimensions."
+    input Expression mat;
+    output Expression tr;
+  protected
+    Type inTy = Expression.typeOf(mat);
+    list<Type.Dimension> dims;
+    Type elTy;
+    Type resTy;
+    NFCall call;
+    NFPrefixes.Variability var = Expression.variability(mat);
+    NFPrefixes.Purity pur = Expression.purity(mat);
+    NFFunction.Function TRANSPOSE_FUNC;
+  algorithm
+    // Only handle array types
+    if not Type.isArray(inTy) then
+      tr := mat;
+      return;
+    end if;
+
+    elTy := Type.arrayElementType(inTy);
+    dims := Type.arrayDims(inTy);
+
+    // Need at least 2 dimensions to transpose
+    if listLength(dims) < 2 then
+      tr := mat;
+      return;
+    end if;
+
+    // Swap first two dimensions; keep the rest
+    resTy := Type.ARRAY(
+      elTy,
+      listAppend({listGet(dims,2), listGet(dims,1)}, listRest(listRest(dims)))
+    );
+
+    // Build a minimal builtin function descriptor (local, not globally registered)
+    TRANSPOSE_FUNC :=
+      NFFunction.Function.FUNCTION(
+        Absyn.Path.IDENT("transpose"),
+        NFInstNode.EMPTY_NODE(),
+        {}, {}, {}, {},
+        resTy,
+        DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+        {}, {}, listArray({}),
+        Pointer.createImmutable(NFFunction.FunctionStatus.BUILTIN),
+        Pointer.createImmutable(0));
+
+    call := NFCall.makeTypedCall(TRANSPOSE_FUNC, {mat}, var, pur, resTy);
+    tr := Expression.CALL(call);
+  end typeTransposeCall;
+
+  function typeSolveLinearSystemCall
+    "Create a typed builtin solveLinearSystem(A, B) call and return only X.
+     A must be Real[n,n], B must be Real[n]. The result type matches B."
+    input Expression A;
+    input Expression B;
+    output Expression X;
+  protected
+    Type A_ty = Expression.typeOf(A);
+    Type B_ty = Expression.typeOf(B);
+    list<Type.Dimension> dimsB;
+    Type elTyB;
+    Type X_ty;
+    NFCall call;
+    NFPrefixes.Variability var;
+    NFPrefixes.Purity pur;
+    NFFunction.Function SOLVE_FUNC;
+  algorithm
+    // Default to B's variability/purity (conservative)
+    var := Expression.variability(B);
+    pur := Expression.purity(B);
+
+    // If B is not an array, fall back to unknown length Real vector
+    if not Type.isArray(B_ty) then
+      X_ty := Type.ARRAY(Type.REAL(), {Type.Dimension.UNKNOWN()});
+    else
+      elTyB := Type.arrayElementType(B_ty);
+      // Coerce element type to Real (as per builtin signature)
+      dimsB := Type.arrayDims(B_ty);
+      X_ty := Type.ARRAY(Type.REAL(), dimsB);
+    end if;
+
+    // Minimal builtin function descriptor for solveLinearSystem returning only X
+    SOLVE_FUNC :=
+      NFFunction.Function.FUNCTION(
+        Absyn.Path.IDENT("solveLinearSystem"),
+        NFInstNode.EMPTY_NODE(),
+        {}, {}, {}, {},
+        X_ty, // only the first output type (X)
+        DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+        {}, {}, listArray({}),
+        Pointer.createImmutable(NFFunction.FunctionStatus.BUILTIN),
+        Pointer.createImmutable(0));
+
+    call := NFCall.makeTypedCall(SOLVE_FUNC, {A, B}, var, pur, X_ty);
+    X := Expression.CALL(call);
+  end typeSolveLinearSystemCall;
 
   annotation(__OpenModelica_Interface="backend");
 end NBJacobian;

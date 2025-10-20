@@ -761,6 +761,16 @@ public
     end match;
   end getLoopResiduals;
 
+  function getLoopIterationVars
+    input StrongComponent comp;
+    output list<Pointer<Variable>> iterationVars;
+  algorithm
+    iterationVars := match comp
+      case ALGEBRAIC_LOOP()  then Tearing.getIterationVars(comp.strict);
+                        else {};
+    end match;
+  end getLoopIterationVars;
+
   function getVariables
     "should this return slices?"
     input StrongComponent comp;
