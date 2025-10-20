@@ -552,6 +552,11 @@ QString Parameter::getFixedState() const
   */
 void Parameter::setEnabled(bool enable)
 {
+  // enable/disable fixed checkbox
+  mpFixedCheckBox->setEnabled(enable);
+  // enable/disable fixed final each menu button
+  mpFixedFinalEachMenuButton->setEnabled(enable);
+  // enable/disable value widget
   switch (mValueType) {
     case Parameter::Boolean:
     case Parameter::Enumeration:
@@ -570,14 +575,20 @@ void Parameter::setEnabled(bool enable)
       mpValueTextBox->setEnabled(enable);
       break;
   }
+  // enable/disable final each menu button
+  mpFinalEachMenuButton->setEnabled(enable);
+  // enable/disable unit combobox
   mpUnitComboBox->setEnabled(enable);
   // if enable is true then enable/disable the unit combobox based on value
   if (enable) {
     enableDisableUnitComboBox(getValue());
   }
+  // enable/disable edit class button
   if (mpEditClassButton) {
     mpEditClassButton->setEnabled(enable);
   }
+  // enable/disable displayunit final each menu button
+  mpDisplayUnitFinalEachMenuButton->setEnabled(enable);
 }
 
 /*!
