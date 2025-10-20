@@ -435,11 +435,18 @@ static void read_var_dimension(omc_ModelVariable *v, DIMENSION_INFO *dimension_i
   char* key;
   int len;
   DIMENSION_ATTRIBUTE* dim;
+  modelica_integer numDimensions;
   modelica_integer i;
 
-  dimension_info->numberOfDimensions = read_value_long(findHashStringStringEmpty(v, "num_dimensions"), -1);
-  if (dimension_info->numberOfDimensions <= 0) {
+  numDimensions = read_value_long(findHashStringStringEmpty(v, "num_dimensions"), 0);
+  if (numDimensions < 0) {
+    throwStreamPrint(NULL, "Illegal value while parsing 'num_dimensions'. Expected positive number.");
+  }
+  dimension_info->numberOfDimensions = (size_t) numDimensions;
+  if (dimension_info->numberOfDimensions == 0) {
     // No <dimension> tags
+    dimension_info->dimensions = NULL;
+    dimension_info->scalar_length = 1;
     return;
   }
 
