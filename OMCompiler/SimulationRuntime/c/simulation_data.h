@@ -73,8 +73,8 @@ typedef int (*initialAnalyticalJacobian_func_ptr)(DATA* data, threadData_t* thre
 /* Model info structures */
 typedef struct VAR_INFO
 {
-  long id;
-  int inputIndex; /* -1 means not an input */
+  int id;               /* -1 if no value reference set */
+  int inputIndex;       /* -1 means not an input */
   const char *name;
   const char *comment;
   FILE_INFO info;

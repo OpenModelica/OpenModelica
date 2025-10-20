@@ -219,6 +219,7 @@ static const double INTEGER_MAX = (double)MODELICA_INT_MAX;
 /* Private function prototypes */
 static modelica_real read_value_real(const char *s, modelica_real default_value);
 static modelica_integer read_value_long(const char *s, modelica_integer default_value);
+static int read_value_int(const char *s, int default_value);
 static modelica_boolean read_value_bool(const char *s);
 static modelica_string read_value_string(const char *s);
 
@@ -396,7 +397,7 @@ static void read_var_info(omc_ModelVariable *var, VAR_INFO *info)
 {
   info->name = strdup(findHashStringString(var,"name"));
   info->inputIndex = read_value_long(findHashStringStringNull(var,"inputIndex"), -1);
-  info->id = read_value_long(findHashStringString(var,"valueReference"), -1);
+  info->id = read_value_int(findHashStringString(var,"valueReference"), -1);
   assertStreamPrint(NULL, info->id != -1, "read_var_info: Missing valueReference!");
   info->comment = strdup(findHashStringStringEmpty(var,"description"));
   info->info.filename = strdup(findHashStringString(var,"fileName"));
@@ -1052,6 +1053,28 @@ static inline modelica_integer read_value_long(const char *s, modelica_integer d
     return 0;
   } else {
     return atol(s);
+  }
+}
+
+/**
+ * @brief Read int value from string.
+ *
+ * @param s                   Null terminated string to read.
+ *                            Treat string value `"true"` as `1` and `"false"`
+ *                            as `0`.
+ * @param default_value       Default value if string is empty.
+ * @return modelica_integer   Integer.
+ */
+static inline int read_value_int(const char *s, int default_value)
+{
+  if (s == NULL || *s == '\0') {
+    return default_value;
+  } else if (0 == strcmp(s, "true")) {
+    return 1;
+  } else if (0 == strcmp(s, "false")) {
+    return 0;
+  } else {
+    return atoi(s);
   }
 }
 
