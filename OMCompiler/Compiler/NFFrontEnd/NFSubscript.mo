@@ -1247,6 +1247,7 @@ public
       subs_count := dimensions;
     else
       new_subs := remainingSubs;
+      remainingSubs := {};
       subs_count := subs_count + listLength(new_subs);
     end if;
     if not listEmpty(new_subs) then
