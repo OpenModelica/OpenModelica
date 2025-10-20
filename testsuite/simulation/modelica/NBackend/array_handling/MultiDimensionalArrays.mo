@@ -42,4 +42,9 @@ package MultiDimensionalArrays
   model Test4
     Test3[4] t;
   end Test4;
+
+  model Test5
+    Real[2,3] r = {{i*j for j in 1:3} for i in 1:2};
+  end Test5;
+
 end MultiDimensionalArrays;
