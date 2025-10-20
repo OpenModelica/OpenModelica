@@ -4877,8 +4877,8 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
   }
   ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(itemAt(event->pos()));
   /* Double click on Component also end up here.
-    * But we don't have GraphicsView for the shapes inside the Component so we can go out of this block.
-    */
+   * But we don't have GraphicsView for the shapes inside the Component so we can go out of this block.
+   */
   if (!isCreatingConnection() && !isCreatingTransition() && pShapeAnnotation && pShapeAnnotation->getGraphicsView()) {
     if (mpModelWidget->getLibraryTreeItem()->isModelica()) {
       LineAnnotation *pTransitionLineAnnotation = dynamic_cast<LineAnnotation*>(pShapeAnnotation);

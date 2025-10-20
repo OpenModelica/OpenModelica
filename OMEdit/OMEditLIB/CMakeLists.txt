@@ -162,6 +162,7 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Modeling/ModelicaClassDialog.h
                       Modeling/FunctionArgumentDialog.h
                       Modeling/InstallLibraryDialog.h
+                      Modeling/QuickInsertWidget.h
                       Search/SearchWidget.h
                       Options/OptionsDefaults.h
                       Options/OptionsDialog.h
