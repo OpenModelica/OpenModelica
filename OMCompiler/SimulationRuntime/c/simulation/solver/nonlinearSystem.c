@@ -1533,14 +1533,14 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
       int done=0;
       long k;
       const MODEL_DATA *mData = data->modelData;
-      for(k=0; k<mData->nVariablesReal && !done; ++k)
+      for(k=0; k<mData->nVariablesRealArray && !done; ++k)
       {
         if (!strcmp(mData->realVarsData[k].info.name, modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).vars[j]))
         {
         done = 1;
-        warningStreamPrint(OMC_LOG_INIT, 0, "[%ld] Real %s(start=%g, nominal=%g)", j+1,
+        warningStreamPrint(OMC_LOG_INIT, 0, "[%ld] Real %s(start=%s, nominal=%g)", j+1,
                                      mData->realVarsData[k].info.name,
-                                     mData->realVarsData[k].attribute.start,
+                                     real_vector_to_string(&mData->realVarsData[k].attribute.start),
                                      mData->realVarsData[k].attribute.nominal);
         }
       }
@@ -1584,4 +1584,3 @@ void cleanUpOldValueListAfterEvent(DATA *data, double time)
     cleanValueListbyTime(nonlinsys[i].oldValueList->valueList, time);
   }
 }
-

@@ -487,12 +487,15 @@ static void read_var_dimension(omc_ModelVariable *v, DIMENSION_INFO *dimension_i
 }
 
 /**
- * @brief
+ * @brief Read string with multiple real values into `array`.
  *
- * @param str           Destroys str in the process!
- * @param array
- * @param num_elements
- * @return size_t
+ * @param str           String to read values from.
+ * @param array         Array to fill. Needs enough memory to store
+ *                      `num_elements` elements.
+ *                      If `NULL` only counts number of elements, but doesn't
+ *                      write into `array`.
+ * @param num_elements  Number of elements to read from `str`.
+ * @return size_t       Returns number of elements read.
  */
 size_t read_str(const char* str,  real_array* array, size_t num_elements) {
   const char* delimeter = " ";
@@ -500,14 +503,15 @@ size_t read_str(const char* str,  real_array* array, size_t num_elements) {
 
   char* copy = strdup(str);
   assertStreamPrint(NULL, copy != NULL, "Out of memory!");
+  char* rest = copy;
 
-  char *token = strtok(copy, delimeter);
+  char *token = strtok_r(rest, delimeter, &rest);
   while (token != NULL) {
       count++;
-      if (count <= num_elements) {
+      if (count <= num_elements && array != NULL) {
         put_real_element(read_value_real(token), count-1, array);
       }
-      token = strtok(NULL, delimeter);
+      token = strtok_r(rest, delimeter, &rest);
   }
 
   free(copy);
