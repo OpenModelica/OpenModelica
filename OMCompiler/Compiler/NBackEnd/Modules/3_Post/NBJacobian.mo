@@ -1049,6 +1049,7 @@ protected
       UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
     UnorderedMap<ComponentRef, ComponentRef> mapSeedToNewPDer =
       UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
+    list<StrongComponent> pre_adjoint_comps = {};
   algorithm
     newName := name + "_ADJ";
     if Util.isSome(strongComponents) then
@@ -1111,8 +1112,8 @@ protected
           list<Pointer<NBEquation.Equation>> resEqnPtrs = {};
           list<Expression> ybar_elems = {};
           // extracted single eqn/var
-          Pointer<NBEquation.Equation> eqPtr1;
-          Pointer<Variable> itVarPtr;
+          Pointer<NBEquation.Equation> eqPtr1, lambdaEqPtr;
+          Pointer<Variable> itVarPtr, lambdaVarPtr;
           NBEquation.Equation eq_;
           Expression residual, termExpr, ybar_vec, Jy_mat, Jy_T, lambda_vec, termSum;
           // variable lists for differentiation
@@ -1124,7 +1125,7 @@ protected
           // results
           list<Expression> dIn = {}, dOut = {}, residuals = {}, col_coeffs;
           Tearing tearing;
-          ComponentRef outSeed, dInKey, ySeedCref;
+          ComponentRef outSeed, dInKey, ySeedCref, lambdaCref;
           Operator mulOp = Operator.fromClassification((MathClassification.MULTIPLICATION, SizeClassification.SCALAR), Type.REAL());
           Operator addOp = Operator.fromClassification((MathClassification.ADDITION, SizeClassification.SCALAR), Type.REAL());
           Integer r;
@@ -1140,6 +1141,8 @@ protected
               itVarPtrs := Slice.getT(sv) :: itVarPtrs;
             end for;
             itVarPtrs := listReverse(itVarPtrs);
+
+            print("[adjoint] Processing algebraic loop with itVars=" + BVariable.VariablePointers.toString(VariablePointers.fromList(itVarPtrs), "itVars") + "\n");
 
             for se in resEqns loop
               resEqnPtrs := Slice.getT(se) :: resEqnPtrs;
@@ -1157,7 +1160,7 @@ protected
               ybar_elems := Expression.fromCref(UnorderedMap.getOrFail(BVariable.getVarName(vptr), diff_map)) :: ybar_elems;
             end for;
             ybar_elems := listReverse(ybar_elems);
-            ybar_vec := Expression.ARRAY(Type.REAL(), listArray(ybar_elems), false);
+            ybar_vec := Expression.makeExpArray(listArray(ybar_elems), Type.REAL(), false);
 
               
             // // Dimensions
@@ -1203,17 +1206,40 @@ protected
 
 
             // Helper: build a matrix expression as array of row vectors
-            Jy_mat := Expression.ARRAY(
-              Type.REAL(),
-              listArray(list(Expression.ARRAY(Type.REAL(), listArray(row), true) for row in Jy_rows)),
-              true
-            );
+            Jy_mat := Expression.makeMatrixFromRows(Jy_rows);
             print("[adjoint] Built Jy matrix expression:\n" + Expression.toString(Jy_mat) + "\n");
             // lambda = solveLinearSystem(transpose(Jy), ybar)
             Jy_T := typeTransposeCall(Jy_mat);
             print("[adjoint] Built Jy_T matrix expression:\n" + Expression.toString(Jy_T) + "\n");
             lambda_vec := typeSolveLinearSystemCall(Jy_T, ybar_vec);
             print("[adjoint] Built lambda vector expression:\n" + Expression.toString(lambda_vec) + "\n");
+
+            // Create a fresh auxiliary vector variable for lambda and define it once:
+            //   $TMP_<k> := lambda_vec
+            // Use a unique index from idx to keep names stable.
+            (lambdaVarPtr, lambdaCref) := BVariable.makeAuxVar(NBVariable.TEMPORARY_STR, Pointer.access(idx) + 1, Expression.typeOf(lambda_vec), false);
+            Pointer.update(idx, Pointer.access(idx) + 1);
+            (lambdaCref, lambdaVarPtr) := BVariable.makePDerVar(lambdaCref, newName, isTmp = true);
+
+            // Add lambda to tmp_vars so it’s part of unknowns/variables
+            tmp_vars := lambdaVarPtr :: tmp_vars;
+
+            // Create assignment equation: lambda = lambda_vec
+            lambdaEqPtr := NBEquation.Equation.makeAssignment(
+              Expression.fromCref(lambdaCref),
+              lambda_vec,
+              idx,
+              newName,
+              NBEquation.Iterator.EMPTY(),
+              NBEquation.EquationAttributes.default(NBEquation.EquationKind.CONTINUOUS, false)
+            );
+
+            // Emit as a pre-adjoint strong component
+            pre_adjoint_comps := NBStrongComponent.SINGLE_COMPONENT(
+              var    = lambdaVarPtr,
+              eqn    = lambdaEqPtr,
+              status = NBSolve.Status.EXPLICIT
+            ) :: pre_adjoint_comps;
 
             // For each input seed variable x_k, add x_bar[k] = sum_{i=1..m} lambda[i] * d r_i / d x_k
             for cidx in 1:VariablePointers.size(seedCandidates) loop
@@ -1222,7 +1248,18 @@ protected
               r := 1;
               for row_dIn in Jx_rows loop
                 if cidx <= listLength(row_dIn) then
-                  col_coeffs := Expression.MULTARY({Expression.REAL(-1.0), makeIndex(r, lambda_vec), listGet(row_dIn, cidx)}, {}, mulOp) :: col_coeffs;
+                  col_coeffs := Expression.MULTARY(
+                    {
+                      Expression.applySubscripts(
+                        {Subscript.INDEX(Expression.INTEGER(r))},
+                        Expression.fromCref(lambdaCref),
+                        true
+                      ),
+                      listGet(row_dIn, cidx)
+                    },
+                    {},
+                    mulOp
+                  ) :: col_coeffs;
                 end if;
                 r := r + 1;
               end for;
@@ -1233,6 +1270,7 @@ protected
                 termSum := if listLength(col_coeffs) == 1
                   then listHead(col_coeffs)
                   else Expression.MULTARY(col_coeffs, {}, addOp);
+                termSum := Expression.MULTARY({Expression.REAL(-1.0), termSum}, {}, mulOp); // multiply by 1 to fix potential type issues
 
                 // Map seed candidate k to its adjoint variable cref (diff_map)
                 // These were pre-created as res_vars (pDer of seedCandidates)
@@ -1251,26 +1289,9 @@ protected
                 end try;
               end if;
             end for;
-
-
-            // print("dF/d(inputs): " + List.toString(dIn, Expression.toString) + "\n");
-            // print("dF/d(outputs): " + List.toString(dOut, Expression.toString) + "\n");
-
-            // // create all adjoint map entries
-            // outSeed := UnorderedMap.getOrFail(BVariable.getVarName(itVarPtr), diff_map); // get the seed cref for the output variable
-            // for i in 1:listLength(dIn) loop
-            //   termExpr := Expression.MULTARY({Expression.makeMinusOne(REAL()), listGet(dIn, i), Expression.fromCref(outSeed)}, {listGet(dOut, 1)}, mulOp); // - dF/d(input_i) / dF/d(output) * output_seed
-            //   print("Adding adjoint term for input " + Expression.toString(listGet(dIn, i)) + ": " + Expression.toString(termExpr) + "\n");
-
-            //   // add term to adjoint map
-            //   // get result var cref from diff map for current input variable
-            //   dInKey := UnorderedMap.getOrFail(BVariable.getVarName(NBVariable.VariablePointers.getVarAt(seedCandidates, i)), diff_map);
-            //   UnorderedMap.add(dInKey, termExpr :: UnorderedMap.getOrFail(dInKey, adjoint_map), adjoint_map);
-            // end for;
-
           then ();
         else algorithm
-          // when the component was not matched it is not an algebraic loop and will be handled normally
+          // when the component was not matched it is not an algebraic loop and will be handled natively
           comps_non_alg := c_noalias :: comps_non_alg;
         then ();
       end match;
@@ -1309,6 +1330,13 @@ protected
     // New list of strong components replacing original diffed_comps
     diffed_comps := {};
     i := 1;
+
+    // emit pre-adjoint components first (e.g., lambda := solve(...))
+    // tmp var component which solves the linear system defined in it and produces lambda
+    for diffed_comp in listReverse(pre_adjoint_comps) loop
+      diffed_comps := diffed_comp :: diffed_comps;
+    end for;
+
     // first the reversed tmp vars then res vars
     for lhsKey in buildAdjointProcessingOrder(adjoint_map, res_vars, tmp_vars) loop
       terms := UnorderedMap.getOrFail(lhsKey, adjoint_map);
@@ -1743,6 +1771,50 @@ protected
       true
     );
   end makeIndex;
+
+  function makeLinearAlgebraicLoop
+    input list<NBVariable.VariablePointer> itVarPtrs;           // unknowns y (order = columns of A)
+    input list<Pointer<NBEquation.Equation>> resEqnPtrs;        // residuals r_i(y)=0, same order as rows of A
+    input Option<NBackendDAE> jac = NONE();                     // optional analytic Jacobian for A
+    input Boolean mixed = false;
+    input Boolean homotopy = false;
+    output NBStrongComponent comp;
+  protected
+    Integer m1 = listLength(itVarPtrs);
+    Integer m2 = listLength(resEqnPtrs);
+    list<NBSlice.Slice<NBVariable.VariablePointer>> itVars_s;
+    list<NBSlice.Slice<Pointer<NBEquation.Equation>>> res_s;
+    NBTearing.Tearing tearingSet;
+  algorithm
+    // sanity
+    if m1 <> m2 then
+      Error.addMessage(Error.INTERNAL_ERROR, {"makeLinearAlgebraicLoop: |vars| != |eqns|"});
+      fail();
+    end if;
+
+    // wrap as full slices (keep order)
+    itVars_s := list(NBSlice.SLICE(vp, {}) for vp in itVarPtrs);
+    res_s    := list(NBSlice.SLICE(ep, {}) for ep in resEqnPtrs);
+
+    // strict tearing: no inner equations for a plain linear system
+    tearingSet := NBTearing.TEARING_SET(
+      iteration_vars = itVars_s,
+      residual_eqns  = res_s,
+      innerEquations = listArray({}),
+      jac            = jac
+    );
+
+    // mark as linear algebraic loop
+    comp := NBStrongComponent.ALGEBRAIC_LOOP(
+      idx      = -1,
+      strict   = tearingSet,
+      casual   = NONE(),
+      linear   = true,
+      mixed    = mixed,
+      homotopy = homotopy,
+      status   = NBSolve.Status.IMPLICIT
+    );
+  end makeLinearAlgebraicLoop;
 
   annotation(__OpenModelica_Interface="backend");
 end NBJacobian;
