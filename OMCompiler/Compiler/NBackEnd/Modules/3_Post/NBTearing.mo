@@ -246,10 +246,9 @@ public
     String flag = Flags.getConfigString(Flags.TEARING_METHOD);
   algorithm
     funcs := match flag
-      case "cellier"        then {function initialize(minimal = false), minimal, finalize};
-      case "noTearing"      then {function initialize(minimal = true), minimal, finalize};
-      case "omcTearing"     then {function initialize(minimal = false), minimal, finalize};
       case "minimalTearing" then {function initialize(minimal = true), minimal, finalize};
+      case "cellier"        then {function initialize(minimal = true), minimal, finalize}; // TODO set `minimal = false` when it's actually doing something
+      case "omcTearing"     then {function initialize(minimal = true), minimal, finalize}; // TODO set `minimal = false` when it's actually doing something
       /* ... New tearing modules have to be added here */
       else fail();
     end match;
@@ -384,10 +383,6 @@ protected
     end match;
   end finalize;
 
-  function none extends Module.tearingInterface;
-    // does nothing
-  end none;
-
   function minimal extends Module.tearingInterface;
     // only extracts discrete variables to be solved as inner equations
   protected
@@ -434,7 +429,7 @@ protected
           adj         := Adjacency.Matrix.fromFull(full, v, e, equations, NBAdjacency.MatrixStrictness.MATCHING);
           matching    := Matching.regular(NBMatching.EMPTY_MATCHING, adj, true, true);
           adj         := Adjacency.Matrix.upgrade(adj, full, v, e, equations, NBAdjacency.MatrixStrictness.SORTING);
-          inner_comps := Sorting.tarjan(adj, matching, variables, equations); //probably need other variables and equations here?
+          inner_comps := Sorting.tarjan(adj, matching, variables, equations); // probably need other variables and equations here?
           strict.innerEquations := listArray(inner_comps);
 
           // create residuals equations and iteration variables
