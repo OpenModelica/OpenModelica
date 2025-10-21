@@ -812,7 +812,7 @@
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="2254"/>
         <source>Data Reconciliation</source>
-        <translation>Réconciliation de données</translation>
+        <translation>Réconciliation des Données</translation>
     </message>
     <message>
         <location filename="../../Simulation/SimulationDialog.cpp" line="2255"/>
@@ -3547,7 +3547,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../Util/Helper.cpp" line="782"/>
         <source>Data Reconciliation</source>
-        <translation>Réconciliation de données</translation>
+        <translation>Réconciliation des Données</translation>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="622"/>
@@ -5505,7 +5505,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="3931"/>
         <source>Calculate Data Reconciliation</source>
-        <translation>Calculer le réconciliation des données</translation>
+        <translation>Calculer le Réconciliation des Données</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3932"/>
@@ -5745,7 +5745,7 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="4352"/>
         <source>&amp;Data Reconciliation</source>
-        <translation>Réconciliation &amp;Données</translation>
+        <translation>Réconciliation des &amp;Données</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="4360"/>
