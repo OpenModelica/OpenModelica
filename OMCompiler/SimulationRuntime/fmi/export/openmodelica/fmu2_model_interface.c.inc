@@ -639,6 +639,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
    */
   comp->fmuData->callback->read_simulation_info(comp->fmuData->simulationInfo);
   allocModelDataVars(comp->fmuData->modelData, FALSE, comp->threadData);
+  scalarAllocArrayAttributes(comp->fmuData->modelData);
   calculateAllScalarLength(comp->fmuData->modelData);
 
   /* setup model data with default start data */
@@ -1350,7 +1351,8 @@ fmi2Status fmi2GetFMUstate(fmi2Component c, fmi2FMUstate* FMUstate)
   internal_state->realParameter = (modelica_real*)functions->allocateMemory(fmudata->modelData->nParametersReal, sizeof(modelica_real));
   for (int i = 0; i < fmudata->modelData->nParametersReal; ++i)
   {
-    internal_state->realParameter[i] = fmudata->modelData->realParameterData[i].attribute.start;
+    modelica_real *start = (modelica_real *) &fmudata->modelData->realParameterData[i].attribute.start.data;
+    internal_state->realParameter[i] = start[0];
     // infoStreamPrint(LOG_STDOUT, 0, "Copy Real parameter %s = %g", fmudata->modelData->realParameterData[i].info.name, internal_state->realParameters[i]);
   }
 

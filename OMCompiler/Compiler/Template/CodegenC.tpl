@@ -1240,6 +1240,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "simulation/solver/events.h"
+    #include "util/real_array.h"
 
     <% if stringEq("",isModelExchangeFMU) then
     <<
@@ -1918,7 +1919,10 @@ let &sub = buffer ""
       <%vars.inputVars |> SIMVAR(name=name, type_=T_REAL()) hasindex i0 =>
         match cref2simvar(name, simCode)
         case SIMVAR(aliasvar=NOALIAS()) then
-        'data->simulationInfo->inputVars[<%i0%>] = data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start;'
+        <<
+        TODO: This needs to iterate over array!
+        data->simulationInfo->inputVars[<%i0%>] = real_get(data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start, 0);
+        >>
         else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
       %>
@@ -1934,8 +1938,12 @@ let &sub = buffer ""
       <%vars.inputVars |> SIMVAR(name=name, type_=T_REAL()) hasindex i0 =>
         match cref2simvar(name, simCode)
         case SIMVAR(aliasvar=NOALIAS()) then
-        'data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start = data->simulationInfo->inputVars[<%i0%>];'
-        else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
+          <<
+          TODO: Not yet implemented! This needs to iterate over array.
+          put_real_element(data->simulationInfo->inputVars[<%i0%>], 0, &data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start);
+          >>
+        else
+          error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
       %>
 

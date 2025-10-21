@@ -1033,7 +1033,6 @@ void allocModelDataVars(MODEL_DATA* modelData, modelica_boolean allocAlias, thre
     modelData->booleanAlias = NULL;
     modelData->stringAlias = NULL;
   }
-
 }
 
 /**
@@ -1050,7 +1049,7 @@ void freeModelDataVars(MODEL_DATA* modelData)
   // Variables
   for(i=0; i < modelData->nVariablesReal; i++) {
     freeVarInfo(&modelData->realVarsData[i].info);
-    // omc_alloc_interface.free_uncollectable(modelData->realVarsData[i].attribute.start.data);
+    omc_alloc_interface.free_uncollectable(modelData->realVarsData[i].attribute.start.data);
   }
   omc_alloc_interface.free_uncollectable(modelData->realVarsData);
 
@@ -1074,7 +1073,7 @@ void freeModelDataVars(MODEL_DATA* modelData)
   // Parameters
   for(i=0; i < modelData->nParametersReal; i++) {
     freeVarInfo(&modelData->realParameterData[i].info);
-    // omc_alloc_interface.free_uncollectable(modelData->realParameterData[i].attribute.start.data);
+    omc_alloc_interface.free_uncollectable(modelData->realParameterData[i].attribute.start.data);
   }
   omc_alloc_interface.free_uncollectable(modelData->realParameterData);
 
@@ -1126,6 +1125,30 @@ void freeModelDataVars(MODEL_DATA* modelData)
       freeVarInfo(&modelData->stringAlias[i].info);
     }
     omc_alloc_interface.free_uncollectable(modelData->stringAlias);
+  }
+}
+
+/**
+ * @brief Allocate memory for scalar attributes.
+ *
+ * Only allocate arrays of length 1 for the scalar case.
+ * Used for scalar only FMI case.
+ *
+ * Memory is freed with `freeModelDataVars`.
+ *
+ * @param modelData   Pointer to model data.
+ */
+void scalarAllocArrayAttributes(MODEL_DATA* modelData) {
+  size_t i;
+
+  // Variables
+  for(i = 0; i < modelData->nVariablesRealArray; i++) {
+    simple_alloc_1d_real_array(&modelData->realVarsData[i].attribute.start, 1);
+  }
+
+  // Parameter
+  for(i = 0; i < modelData->nParametersRealArray; i++) {
+    simple_alloc_1d_real_array(&modelData->realParameterData[i].attribute.start, 1);
   }
 }
 

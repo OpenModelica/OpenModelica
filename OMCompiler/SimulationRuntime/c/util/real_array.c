@@ -53,7 +53,6 @@ static inline void real_set(real_array *a, size_t i, modelica_real r)
     ((modelica_real *) a->data)[i] = r;
 }
 
-
 modelica_real real_get(const real_array a, size_t i)
 {
   return ((modelica_real *) a.data)[i];
