@@ -48,6 +48,7 @@ protected
   import Inline = NBInline;
   import Jacobian = NBJacobian;
   import Partition = NBPartition;
+  import StrongComponent = NBStrongComponent;
   import Tearing = NBTearing;
   import BVariable = NBVariable;
   import NBVariable.{VariablePointer, VariablePointers, VarData};
@@ -107,30 +108,22 @@ protected
       new_partitions := match part.association
         local
           Partition.Association association;
+          Option<array<StrongComponent>> new_comps;
+
         case association as Partition.Association.CONTINUOUS() algorithm
           // update association to continuous -> dae
           association.kind := NBPartition.Kind.DAE;
           part.association := association;
 
-          // remove all discrete equations
-          part.equations := EquationPointers.fromList(list(eqn for eqn guard(not Equation.isDiscrete(eqn)) in EquationPointers.toList(part.equations)));
-          // deep clone equations
-          part.equations := EquationPointers.clone(part.equations, false);
-          // inline record and tuple equations and then create residuals
-          new_eqns := Pointer.create({});
+          // get the new components
+          new_comps := StrongComponent.sortDAEModeComponents(part.strongComponents, variables, uniqueIndex);
+          // Todo: get proper equations from strong components, still old are saved
+          // get new unknowns
 
-          EquationPointers.map(part.equations, function Inline.inlineRecordTupleArrayEquation(
-              iter = Iterator.EMPTY(), variables = variables, new_eqns = new_eqns, set = dummy_set, index = uniqueIndex, inlineSimple = true));
-          part.equations := EquationPointers.addList(Pointer.access(new_eqns), EquationPointers.compress(part.equations));
-          EquationPointers.mapPtr(part.equations, function Equation.createResidual(new = false));
 
-          // move unknowns
-          part.daeUnknowns := SOME(part.unknowns);
-          part.unknowns := EquationPointers.getResiduals(part.equations);
-          // remove strong components
-          part.strongComponents := NONE();
           // accumulate new partitions
-          then if Partition.Partition.isEmpty(part) then new_partitions else part :: new_partitions;
+        then if Partition.Partition.isEmpty(part) then new_partitions else part :: new_partitions;
+
         else new_partitions;
       end match;
     end for;

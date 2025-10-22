@@ -57,6 +57,7 @@ protected
   import BVariable = NBVariable;
   import NBEquation.{Equation, EquationPointer, EquationPointers, EquationAttributes, Iterator};
   import Initialization = NBInitialization;
+  import Inline = NBInline;
   import NBJacobian.JacobianType;
   import Matching = NBMatching;
   import Resizable = NBResizable;
@@ -480,32 +481,164 @@ public
     flat_tpl_indices := listReverse(flat_tpl_indices);
   end createPseudoEntwinedIndices;
 
-  function makeDAEModeResidualTraverse
-    " update later to do both inner and residual equations "
-    input output Pointer<Equation> eq_ptr;
-    input Pointer<list<StrongComponent>> acc;
+  /*
+    input strong component
+    input pointer residuals
+    input pointer inners
+    match comp
+      case SINLGE() guard isResidual then residuals.add(comp) OTHER CASES: MULTI SLICED GENERIC RESIZABLE
+      else inners.add(comp)
+
+    NOTE:
+     0. CLONE EQUATIONS! (to have different solving possible)
+     1. incorporate the record/array/tuple inlining?
+     2. incorporate the toResidual func?
+     3. split discretes off here?
+     4. use UNORDEREDSET(eq name) to determine if slices are already handled as residual or have to be created as inner
+
+    TODO:
+      properly collect variables for inner/residual. allow slices? --> NO!
+  */
+
+
+  type DAEType = enumeration(UNPROCESSED, REMOVED, INNER, RESIDUAL);
+
+  function sortDAEModeComponents
+    input output Option<array<StrongComponent>> comps;
+    input VariablePointers variables;
+    input Pointer<Integer> uniqueIndex;
   protected
-    StrongComponent comp;
+    list<StrongComponent> residuals = {}, inners = {};
+    // used to determine if a sliced equation will be handled as residual or as inner
+    UnorderedSet<ComponentRef> slice_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
   algorithm
-    comp := match Pointer.access(eq_ptr)
-      local
-        Pointer<Variable> residualVar;
+    comps := match comps
+        local
+          array<StrongComponent> original;
+          list<StrongComponent> new_residuals;
+          DAEType dae_type;
 
-      case Equation.SCALAR_EQUATION(attr = EquationAttributes.EQUATION_ATTRIBUTES(residualVar = SOME(residualVar)))
-      then SINGLE_COMPONENT(residualVar, eq_ptr, NBSolve.Status.UNPROCESSED);
+      case SOME(original) algorithm
+        for comp in original loop
+          (new_residuals, dae_type) := match comp
+            // single equation fully solved for single variable (not neccessarily scalar)
+            case SINGLE_COMPONENT() algorithm
+              (new_residuals, dae_type) := singleDAEModeComponent(comp.eqn, variables, uniqueIndex);
+            then (new_residuals, dae_type);
 
-      case Equation.ARRAY_EQUATION(attr = EquationAttributes.EQUATION_ATTRIBUTES(residualVar = SOME(residualVar)))
-      then SINGLE_COMPONENT(residualVar, eq_ptr, NBSolve.Status.UNPROCESSED);
+            case MULTI_COMPONENT() algorithm
+              (new_residuals, dae_type) := slicedDAEModeComponent(comp.vars, comp.eqn, variables, uniqueIndex, slice_set);
+            then (new_residuals, dae_type);
 
-      /* are other residuals possible? */
+            case SLICED_COMPONENT() algorithm
+              // this will always result in inner equation for now as either eqn or var are sliced
+              // -> in the future improve this
+              (new_residuals, dae_type) := slicedDAEModeComponent({comp.var}, comp.eqn, variables, uniqueIndex, slice_set);
+            then (new_residuals, dae_type);
 
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
-      then fail();
+            case RESIZABLE_COMPONENT() algorithm
+              (new_residuals, dae_type) := slicedDAEModeComponent({comp.var}, comp.eqn, variables, uniqueIndex, slice_set);
+            then (new_residuals, dae_type);
+
+            else ({}, if StrongComponent.isDiscrete(comp) then DAEType.REMOVED else DAEType.INNER);
+          end match;
+
+          if dae_type == DAEType.RESIDUAL then
+            // add residuals
+            residuals := listAppend(new_residuals, residuals);
+          elseif dae_type == DAEType.INNER then
+            // add original to inners
+            inners := comp :: inners;
+          end if;
+        end for;
+
+
+        /* order of inners matters */
+        comps := SOME(listArray(listAppend(listReverse(inners), residuals)));
+      then comps;
+
+      else comps;
     end match;
 
-    Pointer.update(acc, comp :: Pointer.access(acc));
-  end makeDAEModeResidualTraverse;
+  end sortDAEModeComponents;
+
+  function slicedDAEModeComponent
+    input list<Slice<Pointer<Variable>>> var_slices;
+    input Slice<Pointer<Equation>> eqn_slice;
+    input VariablePointers variables;
+    input Pointer<Integer> uniqueIndex;
+    input UnorderedSet<ComponentRef> slice_set;
+    output list<StrongComponent> new_residuals;
+    output DAEType dae_type;
+  protected
+    Pointer<Equation> eqn;
+    ComponentRef eqn_name;
+  algorithm
+    eqn       := Slice.getT(eqn_slice);
+    eqn_name  := Equation.getEqnName(eqn);
+    if listEmpty(eqn_slice.indices) and List.all(list(v.indices for v in var_slices), listEmpty)
+      and not UnorderedSet.contains(eqn_name, slice_set) then
+      // unsliced equation in multi component / equation not found in map
+      (new_residuals, dae_type) := singleDAEModeComponent(eqn, variables, uniqueIndex);
+    else
+      // this sliced equation cannot be made residual, add it to the map
+      UnorderedSet.add(eqn_name, slice_set);
+      new_residuals := {};
+      dae_type := DAEType.INNER;
+    end if;
+  end slicedDAEModeComponent;
+
+  function singleDAEModeComponent
+    input Pointer<Equation> eqn_ptr;
+    input VariablePointers variables;
+    input Pointer<Integer> uniqueIndex;
+    output list<StrongComponent> new_residuals;
+    output DAEType dae_type = DAEType.RESIDUAL;
+  protected
+    Pointer<list<Pointer<Equation>>> new_eqns;
+    UnorderedSet<VariablePointer> dummy_set;
+    Equation eqn;
+    list<Pointer<Equation>> eqns;
+  algorithm
+    new_eqns  := Pointer.create({});
+    dummy_set := UnorderedSet.new(BVariable.hash, BVariable.equalName);
+    eqn       := Inline.inlineRecordTupleArrayEquation(Pointer.access(eqn_ptr), Iterator.EMPTY(), variables, new_eqns, dummy_set, uniqueIndex, true);
+    eqns      := Pointer.access(new_eqns);
+    // check if eqn is dummy => use new_eqns
+    // create equation, deliberately use new pointer. allow creating residual to fail and add original strong component to inners
+    eqns := if listEmpty(eqns) then {Pointer.create(eqn)} else eqns;
+    (new_residuals, dae_type) := inlinedDAEModeComponent(eqns);
+  end singleDAEModeComponent;
+
+  function inlinedDAEModeComponent
+    input list<Pointer<Equation>> eqns;
+    output list<StrongComponent> comps = {};
+    output DAEType dae_type = DAEType.UNPROCESSED;
+  protected
+    Pointer<Equation> new_eqn;
+    StrongComponent new_comp;
+  algorithm
+    for eqn in eqns loop
+      if not Equation.isDiscrete(eqn) then
+        new_eqn := Equation.createResidual(eqn, false, true);
+        if Equation.isResidual(new_eqn) then
+          // add to residuals
+          new_comp := SINGLE_COMPONENT(Equation.getResidualVar(new_eqn), new_eqn, NBSolve.Status.UNPROCESSED);
+          comps := new_comp :: comps;
+          dae_type := DAEType.RESIDUAL;
+        else
+          // cannot make residuals for all, make whole equation inner for now
+          // might not be neccessary --> needs further solving to get proper sub strong component
+          dae_type := DAEType.INNER; break;
+        end if;
+      else
+        // all sub equations are discrete, remove whole equation
+        if dae_type < DAEType.INNER then
+          dae_type := DAEType.REMOVED;
+        end if;
+      end if;
+    end for;
+  end inlinedDAEModeComponent;
 
   function fromSolvedEquationSlice
     "creates a strong component assuming the equation is already solved

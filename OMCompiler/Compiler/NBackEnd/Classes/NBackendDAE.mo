@@ -310,7 +310,7 @@ public
 
     // (do not change order SOLVE -> JACOBIAN)
     postOptModules := {
-      (Evaluation.removeDummies,    "Remove Dummies"),
+      (Evaluation.removeDummies,              "Remove Dummies"),
       (function Tearing.main(kind = kind),    "Tearing"),
       (Partitioning.categorize,               "Categorize"),
       (Solve.main,                            "Solve"),

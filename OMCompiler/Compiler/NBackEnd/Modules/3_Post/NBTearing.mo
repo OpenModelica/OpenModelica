@@ -362,7 +362,7 @@ protected
         acc := list(Inline.inlineRecordSliceEquation(eqn, variables, dummy_set, eq_index, true) for eqn in strict.residual_eqns);
 
         // create residual equations
-        strict.residual_eqns := list(Slice.apply(eqn, function Equation.createResidual(new = true)) for eqn in List.flatten(acc));
+        strict.residual_eqns := list(Slice.apply(eqn, function Equation.createResidual(new = true, allowFail = false)) for eqn in List.flatten(acc));
 
         // create residual equations
         residual_comps := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);

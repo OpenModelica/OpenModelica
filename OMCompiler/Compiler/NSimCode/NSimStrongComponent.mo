@@ -492,7 +492,8 @@ public
     algorithm
       for partition in listReverse(partitions) loop
         indices_ptr := Pointer.create(simCodeIndices);
-        VariablePointers.map(partition.unknowns, function SimVar.traverseCreate(acc = vars_ptr, indices_ptr = indices_ptr, varType = VarType.RESIDUAL));
+        //VariablePointers.map(partition.unknowns, function SimVar.traverseCreate(acc = vars_ptr, indices_ptr = indices_ptr, varType = VarType.RESIDUAL));
+        Partition.Partition.mapStrongComponents(partition, function SimVar.createFromResidualComponent(acc = vars_ptr, indices_ptr = indices_ptr, varType = VarType.RESIDUAL));
         (tmp, simCodeIndices) := fromPartition(partition, Pointer.access(indices_ptr), simcode_map, equation_map);
         blcks := tmp :: blcks;
       end for;
