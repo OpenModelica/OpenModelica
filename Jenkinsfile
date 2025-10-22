@@ -115,7 +115,6 @@ pipeline {
                 common.cloneOMDev()
                 common.buildOMC('cc', 'c++', '', true, false)
                 common.makeLibsAndCache()
-                common.buildOMSens()
                 common.buildGUI('', 'qt5')
                 common.buildAndRunOMEditTestsuite('', 'qt5')
               }
@@ -143,7 +142,6 @@ pipeline {
                 common.cloneOMDev()
                 common.buildOMC('cc', 'c++', '', true, false)
                 common.makeLibsAndCache()
-                common.buildOMSens()
                 common.buildGUI('', 'qt6')
                 common.buildAndRunOMEditTestsuite('', 'qt6')
               }
