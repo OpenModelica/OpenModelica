@@ -2054,6 +2054,7 @@ public
       Example (for DAEMode): $RES_DAE_idx := rhs."
       input output Pointer<Equation> eqn_ptr;
       input Boolean new = false               "set to true if the resulting pointer should be a new one";
+      input Boolean allowFail = false;
     protected
       Equation eqn = Pointer.access(eqn_ptr);
       EquationAttributes attr;
@@ -2090,9 +2091,13 @@ public
         else algorithm
           // update RHS and LHS
           lhs := Expression.fromCref(residualCref);
-          rhs := getResidualExp(eqn);
-          eqn := setLHS(eqn, lhs);
-          eqn := setRHS(eqn, rhs);
+          try
+            rhs := getResidualExp(eqn, not allowFail);
+            eqn := setLHS(eqn, lhs);
+            eqn := setRHS(eqn, rhs);
+          else
+            if not allowFail then fail(); end if;
+          end try;
         then eqn;
       end match;
 
@@ -2102,6 +2107,7 @@ public
 
     function getResidualExp
       input Equation eqn;
+      input Boolean throwOnFail = true;
       output Expression exp;
     algorithm
       exp := match eqn
@@ -2123,9 +2129,11 @@ public
           cls := InstNode.getClass(cls_node);
           for op in {"'+'", "'0'", "'-'"} loop
             if not Class.hasOperator(op, cls) then
-              Error.addMessage(Error.INTERNAL_ERROR,
-                {"Trying to construct residual expression of type " + Type.toString(eqn.ty)
-                 + " for equation " + toString(eqn) + " but operator " + op + " is not defined."});
+              if throwOnFail then
+                Error.addMessage(Error.INTERNAL_ERROR,
+                  {"Trying to construct residual expression of type " + Type.toString(eqn.ty)
+                  + " for equation " + toString(eqn) + " but operator " + op + " is not defined."});
+              end if;
               fail();
             end if;
           end for;
@@ -2137,7 +2145,9 @@ public
         case FOR_EQUATION(body = {_}) then getResidualExp(listHead(eqn.body));
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(eqn)});
+          if throwOnFail then
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(eqn)});
+          end if;
         then fail();
       end match;
       exp := SimplifyExp.simplifyDump(exp, true, getInstanceName());

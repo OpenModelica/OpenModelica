@@ -48,6 +48,7 @@ protected
   import Inline = NBInline;
   import Jacobian = NBJacobian;
   import Partition = NBPartition;
+  import StrongComponent = NBStrongComponent;
   import Tearing = NBTearing;
   import BVariable = NBVariable;
   import NBVariable.{VariablePointer, VariablePointers, VarData};
@@ -100,37 +101,53 @@ protected
   function daeModeDefault extends Module.daeModeInterface;
   protected
     list<Partition.Partition> new_partitions = {};
-    Pointer<list<Pointer<Equation>>> new_eqns;
     UnorderedSet<VariablePointer> dummy_set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
   algorithm
     for part in partitions loop
       new_partitions := match part.association
         local
           Partition.Association association;
+          Option<array<StrongComponent>> new_comps;
+          EquationPointers new_eqns;
+          VariablePointers new_vars;
+
         case association as Partition.Association.CONTINUOUS() algorithm
           // update association to continuous -> dae
           association.kind := NBPartition.Kind.DAE;
           part.association := association;
 
-          // remove all discrete equations
-          part.equations := EquationPointers.fromList(list(eqn for eqn guard(not Equation.isDiscrete(eqn)) in EquationPointers.toList(part.equations)));
-          // deep clone equations
-          part.equations := EquationPointers.clone(part.equations, false);
-          // inline record and tuple equations and then create residuals
-          new_eqns := Pointer.create({});
+          // get the new components
+          part.strongComponents := StrongComponent.sortDAEModeComponents(part.strongComponents, variables, uniqueIndex);
 
-          EquationPointers.map(part.equations, function Inline.inlineRecordTupleArrayEquation(
-              iter = Iterator.EMPTY(), variables = variables, new_eqns = new_eqns, set = dummy_set, index = uniqueIndex, inlineSimple = true));
-          part.equations := EquationPointers.addList(Pointer.access(new_eqns), EquationPointers.compress(part.equations));
-          EquationPointers.mapPtr(part.equations, function Equation.createResidual(new = false));
+          // get the new equations and variables
+          (new_eqns, new_vars) := match part.strongComponents
+            local
+              array<StrongComponent> new_c;
+              list<Pointer<Equation>> eqns;
+              list<Pointer<Variable>> vars;
+              UnorderedSet<Pointer<Equation>> new_eqns_set;
+              UnorderedSet<Pointer<Variable>> new_vars_set;
 
-          // move unknowns
+            case SOME(new_c) algorithm
+              new_eqns_set := UnorderedSet.new(Equation.hash, Equation.equalName);
+              new_vars_set := UnorderedSet.new(BVariable.hash, BVariable.equalName);
+              for comp in new_c loop
+                eqns := StrongComponent.getEquations(comp);
+                vars := StrongComponent.getVariables(comp);
+                for eqn in eqns loop UnorderedSet.add(eqn, new_eqns_set); end for;
+                for var in vars loop UnorderedSet.add(var, new_vars_set); end for;
+              end for;
+            then (EquationPointers.fromList(UnorderedSet.toList(new_eqns_set)), VariablePointers.fromList(UnorderedSet.toList(new_vars_set)));
+            else (part.equations, part.unknowns);
+          end match;
+
+          part.equations := new_eqns;
           part.daeUnknowns := SOME(part.unknowns);
-          part.unknowns := EquationPointers.getResiduals(part.equations);
-          // remove strong components
-          part.strongComponents := NONE();
+          part.unknowns := new_vars;
+
           // accumulate new partitions
-          then if Partition.Partition.isEmpty(part) then new_partitions else part :: new_partitions;
+        then if Partition.Partition.isEmpty(part) then new_partitions else part :: new_partitions;
+
         else new_partitions;
       end match;
     end for;
