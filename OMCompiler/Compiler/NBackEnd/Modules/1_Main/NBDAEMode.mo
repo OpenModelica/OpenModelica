@@ -101,7 +101,6 @@ protected
   function daeModeDefault extends Module.daeModeInterface;
   protected
     list<Partition.Partition> new_partitions = {};
-    Pointer<list<Pointer<Equation>>> new_eqns;
     UnorderedSet<VariablePointer> dummy_set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
   algorithm
     for part in partitions loop
@@ -109,6 +108,8 @@ protected
         local
           Partition.Association association;
           Option<array<StrongComponent>> new_comps;
+          EquationPointers new_eqns;
+          VariablePointers new_vars;
 
         case association as Partition.Association.CONTINUOUS() algorithm
           // update association to continuous -> dae
@@ -116,10 +117,33 @@ protected
           part.association := association;
 
           // get the new components
-          new_comps := StrongComponent.sortDAEModeComponents(part.strongComponents, variables, uniqueIndex);
-          // Todo: get proper equations from strong components, still old are saved
-          // get new unknowns
+          part.strongComponents := StrongComponent.sortDAEModeComponents(part.strongComponents, variables, uniqueIndex);
 
+          // get the new equations and variables
+          (new_eqns, new_vars) := match part.strongComponents
+            local
+              array<StrongComponent> new_c;
+              list<Pointer<Equation>> eqns;
+              list<Pointer<Variable>> vars;
+              UnorderedSet<Pointer<Equation>> new_eqns_set;
+              UnorderedSet<Pointer<Variable>> new_vars_set;
+
+            case SOME(new_c) algorithm
+              new_eqns_set := UnorderedSet.new(Equation.hash, Equation.equalName);
+              new_vars_set := UnorderedSet.new(BVariable.hash, BVariable.equalName);
+              for comp in new_c loop
+                eqns := StrongComponent.getEquations(comp);
+                vars := StrongComponent.getVariables(comp);
+                for eqn in eqns loop UnorderedSet.add(eqn, new_eqns_set); end for;
+                for var in vars loop UnorderedSet.add(var, new_vars_set); end for;
+              end for;
+            then (EquationPointers.fromList(UnorderedSet.toList(new_eqns_set)), VariablePointers.fromList(UnorderedSet.toList(new_vars_set)));
+            else (part.equations, part.unknowns);
+          end match;
+
+          part.equations := new_eqns;
+          part.daeUnknowns := SOME(part.unknowns);
+          part.unknowns := new_vars;
 
           // accumulate new partitions
         then if Partition.Partition.isEmpty(part) then new_partitions else part :: new_partitions;

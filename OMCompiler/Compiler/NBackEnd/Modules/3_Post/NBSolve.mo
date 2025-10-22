@@ -441,7 +441,7 @@ public
 
     // create a generic component if its a for-equation, otherwise create a sliced component
     if Equation.isForEquation(Slice.getT(solved_slice)) then
-      comp := StrongComponent.GENERIC_COMPONENT(cref, solved_slice);
+      comp := StrongComponent.GENERIC_COMPONENT(cref, var_slice, solved_slice);
     else
       comp := StrongComponent.SLICED_COMPONENT(cref, var_slice, solved_slice, solve_status);
     end if;

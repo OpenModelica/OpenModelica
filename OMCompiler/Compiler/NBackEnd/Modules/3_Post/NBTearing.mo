@@ -262,6 +262,11 @@ public
     residuals := list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in tearing.residual_eqns);
   end getResidualVars;
 
+  function getResidualEqns
+    input Tearing tearing;
+    output list<Pointer<Equation>> residuals = list(Slice.getT(eqn) for eqn in tearing.residual_eqns);
+  end getResidualEqns;
+
   function setResidualEqns
     input output Tearing tearing;
     input list<Slice<EquationPointer>> residuals;
