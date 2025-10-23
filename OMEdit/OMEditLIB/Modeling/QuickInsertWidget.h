@@ -34,21 +34,44 @@
 
 #pragma once
 
-#include <QWidget>
-#include <QLineEdit>
-#include <QListView>
-#include <QStringListModel>
-#include <QSortFilterProxyModel>
+#include <QApplication>
+#include <QPainter>
+#include <QStyledItemDelegate>
+
+class ModelItemDelegate : public QStyledItemDelegate
+{
+  Q_OBJECT
+public:
+  explicit ModelItemDelegate(QObject *parent = nullptr);
+
+  //! Overrides the paint method to draw the item.
+  void paint(QPainter *painter, const QStyleOptionViewItem &option,
+             const QModelIndex &index) const override;
+
+  //! Overrides the sizeHint method to provide the correct item size.
+  QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+};
+
 #include <QKeyEvent>
+#include <QListView>
+#include <QLineEdit>
+#include <QSortFilterProxyModel>
+#include <QStandardItemModel>
+#include <QWidget>
 
 class LibraryTreeModel;
+class QCheckBox;
 
-class ClassNameFilterProxyModel : public QSortFilterProxyModel {
+class ClassNameFilterProxyModel : public QSortFilterProxyModel
+{
   Q_OBJECT
 public:
   explicit ClassNameFilterProxyModel(QObject *parent = nullptr);
   void setFilterString(const QString &pattern);
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+
+public slots:
+  void setHideExamples(bool hide);
 
 protected:
   bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const override;
@@ -57,9 +80,11 @@ protected:
 
 private:
   QString mFuzzyPattern;
+  bool mHideExamples = true;
 };
 
-class QuickInsertWidget : public QWidget {
+class QuickInsertWidget : public QWidget
+{
   Q_OBJECT
 
 public:
@@ -77,15 +102,16 @@ protected:
 private slots:
   void onSearchTextChanged(const QString &text);
   void onListItemActivated(const QModelIndex &index);
+  void onHideExamplesToggled(bool checked);
 
 private:
   void populateModel();
-  void recursivePopulate(const QModelIndex &parentIndex, const QString &parentPath);
 
   QLineEdit *mpSearchLineEdit;
   QListView *mpResultsListView;
-  QStringListModel *mpSourceModel;
+  QStandardItemModel *mpSourceModel;
   ClassNameFilterProxyModel *mpProxyModel;
   LibraryTreeModel *mpLibraryTreeModel;
   QString mSelectedClass;
+  QCheckBox *mpHideExamplesCheckBox;
 };
