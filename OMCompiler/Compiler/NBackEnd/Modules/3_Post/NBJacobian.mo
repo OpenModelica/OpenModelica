@@ -1159,8 +1159,6 @@ protected
 
           list<Slice<NBVariable.VariablePointer>> itVars_s;
 
-          // Local map that collects terms per $pDER(x): {$pDER(x) -> [dr1/dx*lam1, dr2/dx*lam2, ...]}
-          UnorderedMap<ComponentRef, ExpressionList> product_adjoint_map;
           Pointer<Variable> seedVarPtrX;
           ComponentRef baseX, pDerX;
           Integer iRes;
@@ -1259,7 +1257,7 @@ protected
               end if;
             end for;
 
-            // Union diff maps into diff_map_union (disjoint domains expected)
+            // Union diff maps into diff_map_union
             for key in UnorderedMap.keyList(diff_map_y) loop
               UnorderedMap.add(key, UnorderedMap.getOrFail(key, diff_map_y), diff_map_union);
             end for;
@@ -1289,6 +1287,7 @@ protected
             end for;
 
             // Accumulate reverse-mode adjoints per residual with seed = lambda_i into the unified map
+            // we only need to process residuals 1..m with their corresponding lambda_i because everything is linear
             iRes := 1;
             for residual_i in residuals loop
               if iRes > listLength(lambdaCrefs) then
@@ -1442,12 +1441,6 @@ protected
     diffed_comps := {};
     i := 1;
 
-    // emit pre-adjoint components first (e.g., lambda := solve(...))
-    // tmp var component which solves the linear system defined in it and produces lambda
-    for diffed_comp in listReverse(pre_adjoint_comps) loop
-      diffed_comps := diffed_comp :: diffed_comps;
-    end for;
-
     // first the reversed tmp vars then res vars
     for lhsKey in buildAdjointProcessingOrder(adjoint_map, res_vars, tmp_vars) loop
       terms := UnorderedMap.getOrFail(lhsKey, adjoint_map);
@@ -1530,6 +1523,10 @@ protected
         print("[adjoint] " + ComponentRef.toString(lhsKey) + " = " + Expression.toString(rhsExpr) + "\n");
       end if;
     end for;
+
+    // append pre_adjoint_components (lambda := solve(...)) to other components
+    // this gives pre_adjoint_components a higher index so its evaluated first
+    diffed_comps := List.append_reverse(pre_adjoint_comps, diffed_comps);
 
     // collect var data (most of this can be removed)
     unknown_vars  := listAppend(res_vars, tmp_vars);
