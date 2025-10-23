@@ -1,3 +1,6 @@
+#ifndef FMU2_DUMMY_MODEL_DEFINES_H
+#define FMU2_DUMMY_MODEL_DEFINES_H
+
 #define MODEL_GUID "DUMMY-GUID"
 
 #define NUMBER_OF_REALS 1
@@ -10,3 +13,5 @@
 
 #define STATES { 0 }
 #define STATESDERIVATIVES { 1 }
+
+#endif /* FMU2_DUMMY_MODEL_DEFINES_H */

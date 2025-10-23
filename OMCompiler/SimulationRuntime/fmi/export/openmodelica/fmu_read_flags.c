@@ -39,24 +39,26 @@
 #include "../util/omc_file.h"
 
 /**
- * @ Skips to a given character or end of file
+  * @brief Skips to a given character or end of string.
  *
- * @param  str
- * @param  c
- * @return
+  * @param str            Null terminated string.
+  * @param c              Character to move pointer to.
+  * @return const char*   Position of character `c` or `\0`.
  */
 static inline const char* skipTo(const char *str, char c)
 {
-  while(*str != c && *str != '\0')
+  while(*str != c && *str != '\0') {
     str++;
+  }
   return str;
 }
 
 /**
- * @ brief puts double quotes around a string
+  * @brief Puts double quotes around a string
  *
- * @param  str
- * @return
+  * @param str      Null terminated string.
+  * @return char*   Newly allocated string with double quotes around `str`.
+  *                 Needs to be freed with `free`
  */
 static inline char* quote(const char *str)
 {
@@ -70,11 +72,11 @@ static inline char* quote(const char *str)
 }
 
 /**
- * @brief parseses and sets the solver method string
+ * @brief Parse and sets the solver method string
  *
- * @param  solverInfo
- * @param  str        string that starts at solver method string
- * @return            input string skipped to endline
+ * @param  solverInfo   Solver info to set solver method in.
+ * @param  str          string that starts at solver method string
+ * @return const char*  input string skipped to endline
  */
 static inline const char* setSolverMethod(SOLVER_INFO *solverInfo, const char *str)
 {
@@ -138,7 +140,7 @@ void parseFlags(SOLVER_INFO *solverInfo, const char *str)
  * Initialize solver euler or CVODE.
  *
  * @param comp          FMU component.
- * @return int          Return 0 on success and -1 when an error occured.
+ * @return int          Return 0 on success and -1 when an error occurred.
  */
 int FMI2CS_initializeSolverData(ModelInstance* comp)
 {
@@ -232,7 +234,7 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
 }
 
 /**
- * @brief Deinitlaize solver data.
+ * @brief Deinitialize solver data.
  *
  * Use for solver data allocated with FMI2CS_initializeSolverData.
  * Frees everything inside comp->solverInfo.
@@ -271,7 +273,8 @@ int FMI2CS_deInitializeSolverData(ModelInstance* comp)
       retValue = -1;
   }
 
-  comp->functions->freeMemory(comp->solverInfo); comp->solverInfo = NULL;
+  comp->functions->freeMemory(comp->solverInfo);
+  comp->solverInfo = NULL;
 
   return retValue;
 }

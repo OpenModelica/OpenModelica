@@ -65,6 +65,15 @@ fmi2Boolean isCategoryLogged(ModelInstance *comp, int categoryIndex);
 static fmi2String logCategoriesNames[] = {"logEvents", "logSingularLinearSystems", "logNonlinearSystems", "logDynamicStateSelection",
     "logStatusWarning", "logStatusDiscard", "logStatusError", "logStatusFatal", "logStatusPending", "logAll", "logFmi2Call"};
 
+/**
+ * @brief Log a message if the category is enabled.
+ *
+ * @param instance        FMU instance.
+ * @param status          FMI2 status.
+ * @param categoryIndex   Category name index of array `logCategoriesNames`.
+ * @param message         Pointer to null-terminated format string to log.
+ * @param ...             Arguments specifying data to log.
+ */
 inline void filteredLog(ModelInstance *instance, fmi2Status status, int categoryIndex, const char *message, ...)
 {
   if (!isCategoryLogged(instance, categoryIndex)) return;
@@ -76,22 +85,22 @@ inline void filteredLog(ModelInstance *instance, fmi2Status status, int category
   GC_vasprintf(&str, message, args);
   va_end(args);
 
-  if (str) {
+  if (!str) {
     instance->functions->logger(instance->functions->componentEnvironment,
                                 instance->instanceName,
-                                status,
-                                logCategoriesNames[categoryIndex],
-                                "%s",
-                                str);
-    /* GC_vasprintf'd memory is allocated via GC; no explicit free here (matches usage elsewhere). */
-  } else {
-    /* Fallback: call logger with the raw format if allocation failed */
-    instance->functions->logger(instance->functions->componentEnvironment,
-                                instance->instanceName,
-                                status,
-                                logCategoriesNames[categoryIndex],
-                                message);
+                                fmi2Fatal,
+                                logCategoriesNames[LOG_STATUSFATAL],
+                                "Failed to allocate memory while trying log message!"
+                              );
   }
+
+  instance->functions->logger(instance->functions->componentEnvironment,
+                              instance->instanceName,
+                              status,
+                              logCategoriesNames[categoryIndex],
+                              "%s",
+                              str);
+
 }
 
 // array of value references of states

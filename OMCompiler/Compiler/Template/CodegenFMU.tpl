@@ -240,8 +240,8 @@ template fmumodel_identifierHeaderFile(SimCode simCode, String guid, String FMUV
 match simCode
 case SIMCODE(__) then
   <<
-  #ifndef <%modelNamePrefix(simCode)%>_H
-  #define <%modelNamePrefix(simCode)%>_H
+  #ifndef <%modelNamePrefix(simCode)%>_FMU_H
+  #define <%modelNamePrefix(simCode)%>_FMU_H
 
   #include "simulation_data.h"
 
@@ -321,7 +321,7 @@ case SIMCODE(__) then
   }
   #endif
 
-  #endif // <%modelNamePrefix(simCode)%>_H
+  #endif // <%modelNamePrefix(simCode)%>_FMU_H
   >>
 end fmumodel_identifierHeaderFile;
 
