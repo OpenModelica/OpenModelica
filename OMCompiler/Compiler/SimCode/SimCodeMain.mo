@@ -756,6 +756,7 @@ algorithm
       String fileprefix, fileNamePrefixHash;
       String install_include_omc_dir, install_include_omc_c_dir, install_share_buildproject_dir, install_fmu_sources_dir, fmu_tmp_sources_dir;
       String cmakelistsStr, needCvode, cvodeDirectory;
+      String modelDefinesHeaderStr;
       list<String> sourceFiles, model_desc_src_files, fmi2HeaderFiles, modelica_standard_table_sources;
       list<String> dgesv_sources, cminpack_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources;
       list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
@@ -1007,6 +1008,12 @@ algorithm
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_ADDITIONAL_INCLUDES@", SimCodeUtil.make2CMakeInclude(simCode.makefileParams.includes));
 
         System.writeFile(fmu_tmp_sources_dir + "CMakeLists.txt", cmakelistsStr);
+
+        // Set model define include in fmu2_model_interface.c
+        modelDefinesHeaderStr := System.readFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c.inc");
+        modelDefinesHeaderStr := System.stringReplace(modelDefinesHeaderStr, "fmu2_dummy_model_defines.h", simCode.fileNamePrefix + "_FMU.h");
+        System.writeFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c", modelDefinesHeaderStr);
+        System.removeFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c.inc");
 
         Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(function CodegenFMU.fmuMakefile(a_target=Config.simulationCodeTarget(), a_simCode=simCode, a_FMUVersion=FMUVersion, a_sourceFiles=model_all_gen_files, a_runtimeObjectFiles=list(System.stringReplace(f,".c",".o") for f in shared_source_files), a_dgesvObjectFiles=list(System.stringReplace(f,".c",".o") for f in dgesv_sources), a_cminpackObjectFiles=list(System.stringReplace(f,".c",".o") for f in cminpack_sources), a_sundialsObjectFiles=list(System.stringReplace(f,".c",".o") for f in simrt_c_sundials_sources)),
                       txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/Makefile.in")));

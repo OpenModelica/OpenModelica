@@ -75,6 +75,7 @@ endif()
 
 # Source files
 file(GLOB_RECURSE FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external_solvers/*.c
+                                      ${CMAKE_CURRENT_SOURCE_DIR}/fmi-export/*.c
                                       ${CMAKE_CURRENT_SOURCE_DIR}/gc/*.c
                                       ${CMAKE_CURRENT_SOURCE_DIR}/math-support/pivot.c
                                       ${CMAKE_CURRENT_SOURCE_DIR}/meta/*.c
