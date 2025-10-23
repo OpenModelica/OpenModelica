@@ -1155,32 +1155,42 @@ protected
           NBEquation.Equation eq_;
           Expression residual_i;
 
-          // loop-local adjoint map only for the algebraic loop seeds (y),
-          // and a filtered diff_map that only contains y -> $SEED(...) mappings.
-          UnorderedMap<ComponentRef, ExpressionList> loop_adjoint_map;
-          UnorderedMap<ComponentRef, ComponentRef>   diff_map_y;
           ComponentRef itCref, mappedSeed;
 
-          list<Pointer<NBEquation.Equation>> linResEqnPtrs = {};
           list<Slice<NBVariable.VariablePointer>> itVars_s;
-          list<Expression> terms_j;
-          Expression lhs_j, rhs_j;
-          Pointer<NBEquation.Equation> resid_j;
-          ComponentRef ySeedCref;
 
-          // Map for inputs x only: base x -> $pDER_...(x)
-          UnorderedMap<ComponentRef, ComponentRef> diff_map_x;
           // Local map that collects terms per $pDER(x): {$pDER(x) -> [dr1/dx*lam1, dr2/dx*lam2, ...]}
           UnorderedMap<ComponentRef, ExpressionList> product_adjoint_map;
-          list<Pointer<Variable>> seedPtrListX;
           Pointer<Variable> seedVarPtrX;
           ComponentRef baseX, pDerX;
-          Integer iSeed, iRes;
+          Integer iRes;
           ExpressionList terms_x;
           Expression sum_x, rhs_x;
           Type vty_x;
           NFOperator.SizeClassification sc_x;
           Operator mulOpNeg;
+
+          UnorderedMap<ComponentRef, ComponentRef> diff_map_y =
+            UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
+          // Map for inputs x only: base x -> $pDER_...(x)
+          UnorderedMap<ComponentRef, ComponentRef> diff_map_x =
+            UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
+          UnorderedMap<ComponentRef, ComponentRef> diff_map_union =
+            UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
+          UnorderedMap<ComponentRef, ExpressionList> loop_product_adjoint_map =
+            UnorderedMap.new<ExpressionList>(ComponentRef.hash, ComponentRef.isEqual);
+          ComponentRef itCref, mappedSeed, baseX, pDerX;
+          list<Pointer<Variable>> seedPtrListX;
+          Integer iRes;
+          Expression residual_i;
+
+          list<Pointer<NBEquation.Equation>> linResEqnPtrs = {};
+          list<Expression> terms_j;
+          Expression lhs_j, rhs_j;
+          Pointer<NBEquation.Equation> resid_j;
+          ComponentRef ySeedCref;
+          Operator addOp = Operator.fromClassification((MathClassification.ADDITION, SizeClassification.SCALAR), Type.REAL());
+          Operator mulOp = Operator.fromClassification((MathClassification.MULTIPLICATION, SizeClassification.SCALAR), Type.REAL());
         case NBStrongComponent.ALGEBRAIC_LOOP(strict = tearing)
           algorithm
             // Collect iteration vars and residual equations (stable order)
@@ -1225,185 +1235,172 @@ protected
             lambdaPtrs := listReverse(lambdaPtrs);
             lambdaCrefs := listReverse(lambdaCrefs);
 
-            // Build filtered diff_map (only for iteration vars y), and an empty loop adjoint map.
-            diff_map_y := UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
-            loop_adjoint_map := UnorderedMap.new<ExpressionList>(ComponentRef.hash, ComponentRef.isEqual);
-
+            // ===================== Unified accumulation =====================
+              // Build filtered diff maps:
+              //  - diff_map_y: base iteration var y -> $SEED(y)
+              //  - diff_map_x: base input x       -> $pDER(x)
+              // Combine both into diff_map_union and collect adjoints into loop_product_adjoint_map
+            // diff_map_y: keep only iteration vars that have a $SEED mapping in the global diff_map
             for vptr in itVarPtrs loop
               itCref := BVariable.getVarName(vptr);
-              // Only keep entries that exist in the global diff_map (should map to $SEED for y)
               if UnorderedMap.contains(itCref, diff_map) then
-                mappedSeed := UnorderedMap.getOrFail(itCref, diff_map);
+                mappedSeed := UnorderedMap.getOrFail(itCref, diff_map); // $SEED(y)
                 UnorderedMap.add(itCref, mappedSeed, diff_map_y);
-                // Ensure a key exists in the loop map for this seed (optional, tryAddUpdate also handles absent keys)
-                UnorderedMap.add(mappedSeed, {}, loop_adjoint_map);
-              else
-                if Flags.isSet(Flags.JAC_DUMP) then
-                  print("[adjoint] warn: iteration var not in diff_map (skipping): " + ComponentRef.toString(itCref) + "\n");
+              end if;
+            end for;
+
+            // diff_map_x: keep only inputs x (seedCandidates) that have a $pDER mapping in the global diff_map
+            seedPtrListX := BVariable.VariablePointers.toList(seedCandidates);
+            for seedVarPtrX in seedPtrListX loop
+              baseX := BVariable.getVarName(seedVarPtrX);
+              if UnorderedMap.contains(baseX, diff_map) then
+                pDerX := UnorderedMap.getOrFail(baseX, diff_map); // $pDER(x)
+                UnorderedMap.add(baseX, pDerX, diff_map_x);
+              end if;
+            end for;
+
+            // Union diff maps into diff_map_union (disjoint domains expected)
+            for key in UnorderedMap.keyList(diff_map_y) loop
+              UnorderedMap.add(key, UnorderedMap.getOrFail(key, diff_map_y), diff_map_union);
+            end for;
+            for key in UnorderedMap.keyList(diff_map_x) loop
+              UnorderedMap.add(key, UnorderedMap.getOrFail(key, diff_map_x), diff_map_union);
+            end for;
+
+            // Pre-populate loop_product_adjoint_map with all $SEED(y) keys
+            for vptr in itVarPtrs loop
+              itCref := BVariable.getVarName(vptr);
+              if UnorderedMap.contains(itCref, diff_map_y) then
+                mappedSeed := UnorderedMap.getOrFail(itCref, diff_map_y);
+                if not UnorderedMap.contains(mappedSeed, loop_product_adjoint_map) then
+                  UnorderedMap.add(mappedSeed, {}, loop_product_adjoint_map);
+                end if;
+              end if;
+            end for;
+            // ...and all $pDER(x) keys
+            for seedVarPtrX in seedPtrListX loop
+              baseX := BVariable.getVarName(seedVarPtrX);
+              if UnorderedMap.contains(baseX, diff_map_x) then
+                pDerX := UnorderedMap.getOrFail(baseX, diff_map_x);
+                if not UnorderedMap.contains(pDerX, loop_product_adjoint_map) then
+                  UnorderedMap.add(pDerX, {}, loop_product_adjoint_map);
                 end if;
               end if;
             end for;
 
-            // For each residual r_i, accumulate reverse-mode adjoints with seed = lambda_i,
-            // collecting only into loop_adjoint_map (y-seeds) via filtered diff_map_y.
-            for iIdx in 1:m loop
-              residual_i := listGet(residuals, iIdx);
+            // Accumulate reverse-mode adjoints per residual with seed = lambda_i into the unified map
+            iRes := 1;
+            for residual_i in residuals loop
+              if iRes > listLength(lambdaCrefs) then
+                break;
+              end if;
+
               diffArguments := accumulateAdjointForResidual(
                 residual_i,
-                Expression.fromCref(listGet(lambdaCrefs, iIdx)),
-                diff_map,
+                Expression.fromCref(listGet(lambdaCrefs, iRes)),  // current_grad = lambda_i
+                diff_map_union,                                    // union: { y-> $SEED(y), x-> $pDER(x) }
                 funcTree,
                 seedCandidates.scalarized,
-                loop_adjoint_map
+                loop_product_adjoint_map
               );
-              // Thread funcTree and adjoint_map
+
+              // Thread state
               funcTree := diffArguments.funcTree;
-              loop_adjoint_map := Util.getOption(diffArguments.adjoint_map);
+              loop_product_adjoint_map := Util.getOption(diffArguments.adjoint_map);
+
+              iRes := iRes + 1;
             end for;
-            print("Adjoint map after algebraic loop:\n" + adjointMapToString(SOME(loop_adjoint_map)) + "\n");
+            print("[adjoint] loop_product_adjoint_map after: \n" + adjointMapToString(SOME(loop_product_adjoint_map)) + "\n");
 
-          // Build a linear algebraic loop for lambda: sum_i (d r_i / d y_j) * lambda_i = y_bar_j
-          // For each iteration var y_j (in itVarPtrs order), create residual:
-          //   LHS_j = sum(loop_adjoint_map[$SEED(y_j)]) ; residual_j = LHS_j - $SEED(y_j) = 0
-          // Construct residuals in the same order as iteration vars
-          for vptr in itVarPtrs loop
-            // Map base y to its seed cref (y_bar variable)
-            if UnorderedMap.contains(BVariable.getVarName(vptr), diff_map_y) then
-              ySeedCref := UnorderedMap.getOrFail(BVariable.getVarName(vptr), diff_map_y);
-              // Get accumulated terms for this seed (may be empty)
-              terms_j := UnorderedMap.getOrDefault(ySeedCref, loop_adjoint_map, {});
-              // Build LHS as sum of terms (or 0 if empty)
-              lhs_j := buildAdjointRhs(ySeedCref, terms_j);
-              // RHS is the y_bar variable itself
-              rhs_j := Expression.fromCref(ySeedCref);
 
-              // Create assignment equation: lambda = lambda_vec
-              resid_j := NBEquation.Equation.makeAssignment(
-                lhs_j,
-                rhs_j,
-                idx,
-                newName,
-                NBEquation.Iterator.EMPTY(),
-                NBEquation.EquationAttributes.default(NBEquation.EquationKind.CONTINUOUS, false)
-              );
-              // residual equation = lhs - rhs = 0
-              linResEqnPtrs := NBEquation.Equation.createResidual(resid_j) :: linResEqnPtrs;
-            else
-              // No mapping -> skip (nothing to solve for this y)
-              continue;
-            end if;
-          end for;
-          linResEqnPtrs := listReverse(linResEqnPtrs);
+            // Build a linear algebraic loop for lambda: sum_i (d r_i / d y_j) * lambda_i = y_bar_j
+            // For each iteration var y_j (in itVarPtrs order), create residual:
+            //   LHS_j = sum(loop_product_adjoint_map[$SEED(y_j)]) ; residual_j = LHS_j - $SEED(y_j) = 0
+            for vptr in itVarPtrs loop
+              // Map base y to its seed cref (y_bar variable)
+              if UnorderedMap.contains(BVariable.getVarName(vptr), diff_map_y) then
+                ySeedCref := UnorderedMap.getOrFail(BVariable.getVarName(vptr), diff_map_y);
 
-          // Wrap into a linear algebraic loop with lambda as iteration vars
-          if not listEmpty(linResEqnPtrs) then
-            pre_adjoint_comps := makeLinearAlgebraicLoop(
-              lambdaPtrs,                  // iteration vars: lambda_1..m
-              linResEqnPtrs,               // residuals: sum(...) - y_bar = 0
-              NONE(),
-              mixed = false,
-              homotopy = false
-            ) :: pre_adjoint_comps;
+                // Get accumulated terms for this seed (may be empty)
+                terms_j := UnorderedMap.getOrDefault(ySeedCref, loop_product_adjoint_map, {});
 
-            if Flags.isSet(Flags.JAC_DUMP) then
-              print("[adjoint] Inserted linear ALGEBRAIC_LOOP for lambda with "
-                    + intString(listLength(linResEqnPtrs)) + " residuals\n");
-            end if;
-          end if;
+                // Build LHS as sum of terms (or 0 if empty)
+                lhs_j := buildAdjointRhs(ySeedCref, terms_j);
 
-          // -------------------------------------------------------------
-          // x_bar = - lambda^T * (d r / d x) via reverse mode
-          // Build a loop-local adjoint map for inputs x (their $pDER vars),
-          // by differentiating each residual r_i with seed = lambda_i
-          // and accumulating only for x. Then emit the summed, negated RHS
-          // into the global adjoint_map under each $pDER(x_k).
-          // -------------------------------------------------------------
-          // 1) Filter diff_map for inputs x only (seedCandidates), keeping mapping x -> $pDER(x)
-          diff_map_x := UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
-          seedPtrListX := BVariable.VariablePointers.toList(seedCandidates);
-          for seedVarPtrX in seedPtrListX loop
-            baseX := BVariable.getVarName(seedVarPtrX);
-            if UnorderedMap.contains(baseX, diff_map) then
-              pDerX := UnorderedMap.getOrFail(baseX, diff_map);
-              // Keep only inputs x that have a pDER mapping
-              UnorderedMap.add(baseX, pDerX, diff_map_x);
-            end if;
-          end for;
+                // RHS is the y_bar variable itself
+                rhs_j := Expression.fromCref(ySeedCref);
 
-          // 2) Create a local adjoint map for $pDER(x) keys, initialized empty
-          product_adjoint_map := UnorderedMap.new<ExpressionList>(ComponentRef.hash, ComponentRef.isEqual);
-          // Pre-populate keys with all pDER result vars so we always have entries to fill/sum
-          addVarsToAdjointMap(product_adjoint_map, res_vars, newName, false);
+                // Create assignment equation: lambda = lambda_vec
+                resid_j := NBEquation.Equation.makeAssignment(
+                  lhs_j,
+                  rhs_j,
+                  idx,
+                  newName,
+                  NBEquation.Iterator.EMPTY(),
+                  NBEquation.EquationAttributes.default(NBEquation.EquationKind.CONTINUOUS, false)
+                );
 
-          // 3) For each residual r_i, accumulate reverse-mode adjoints with seed = lambda_i
-          //    collecting only into product_adjoint_map via diff_map_x.
-          iRes := 1;
-          for residual_i in residuals loop
-            if iRes > listLength(lambdaCrefs) then
-              break;
-            end if;
-
-            diffArguments := accumulateAdjointForResidual(
-              residual_i,
-              Expression.fromCref(listGet(lambdaCrefs, iRes)),  // seed = lambda_i
-              diff_map_x,                                        // inputs x only: x -> $pDER(x)
-              funcTree,
-              false,                                             // force not-scalarized to key by $pDER(x)
-              product_adjoint_map
-            );
-            funcTree := diffArguments.funcTree;
-            product_adjoint_map := Util.getOption(diffArguments.adjoint_map);
-
-            if Flags.isSet(Flags.JAC_DUMP) then
-              print("[adjoint] product_adjoint_map after residual " + intString(iRes) + ":\n"
-                    + adjointMapToString(SOME(product_adjoint_map)) + "\n");
-            end if;
-
-            iRes := iRes + 1;
-          end for;
-
-          // 4) For each $pDER(x_k) build x_bar[k] = - sum(terms_k) and write into global adjoint_map
-          for seedVarPtrX in seedPtrListX loop
-            baseX := BVariable.getVarName(seedVarPtrX);
-
-            // If this base x has a pDER mapping and collected terms, emit its equation
-            if UnorderedMap.contains(baseX, diff_map_x) then
-              pDerX := UnorderedMap.getOrFail(baseX, diff_map_x);
-
-              terms_x := UnorderedMap.getOrDefault(pDerX, product_adjoint_map, {});
-              if listEmpty(terms_x) then
-                // no contributions -> skip
+                // Create scalar residual equation pointer for r_j = 0
+                linResEqnPtrs := NBEquation.Equation.createResidual(resid_j) :: linResEqnPtrs;
+              else
+                // No mapping -> skip (nothing to solve for this y)
                 continue;
               end if;
+            end for;
+            linResEqnPtrs := listReverse(linResEqnPtrs);
 
-              // Sum terms using correct type/operator for the LHS variable
-              sum_x := buildAdjointRhs(pDerX, terms_x);
-
-              // Apply required minus sign with appropriate size classification
-              vty_x := ComponentRef.getComponentType(pDerX);
-              sc_x := sizeClassificationFromType(vty_x);
-              mulOpNeg := Operator.fromClassification(
-                (NFOperator.MathClassification.MULTIPLICATION, sc_x),
-                vty_x
-              );
-              rhs_x := Expression.MULTARY({Expression.REAL(-1.0), sum_x}, {}, mulOpNeg);
-
-              // Append to global adjoint_map so standard emission produces:
-              //   $pDER_...x = - (sum_i lambda_i * d r_i / d x)
-              UnorderedMap.add(
-                pDerX,
-                rhs_x :: UnorderedMap.getOrDefault(pDerX, adjoint_map, {}),
-                adjoint_map
-              );
-
-              if Flags.isSet(Flags.JAC_DUMP) then
-                print("[adjoint] x_bar emit for "
-                      + ComponentRef.toString(pDerX) + " := "
-                      + Expression.toString(rhs_x) + "\n");
-              end if;
+            // Wrap into a linear algebraic loop with lambda as iteration vars
+            if not listEmpty(linResEqnPtrs) then
+              pre_adjoint_comps := makeLinearAlgebraicLoop(
+                lambdaPtrs,                  // iteration vars: lambda_1..m
+                linResEqnPtrs,               // residuals: sum(...) - y_bar = 0
+                NONE(),
+                mixed = false,
+                homotopy = false
+              ) :: pre_adjoint_comps;
             end if;
-          end for;
+            
+            // -------------------------------------------------------------
+            // Build x_bar = - lambda^T * (d r / d x)
+            // Use the unified loop_product_adjoint_map:
+            //   for each $pDER(x_k): terms_x = [dr1/dx_k*lambda_1, dr2/dx_k*lambda_2, ...]
+            //   x_bar[k] = - sum(terms_x)
+            // Append into global adjoint_map under the $pDER(x_k) keys.
+            // -------------------------------------------------------------
+            for seedVarPtrX in seedPtrListX loop
+              baseX := BVariable.getVarName(seedVarPtrX);
 
+              // If this base x has a $pDER mapping and collected terms, emit its equation
+              if UnorderedMap.contains(baseX, diff_map_x) then
+                pDerX := UnorderedMap.getOrFail(baseX, diff_map_x);
+
+                terms_x := UnorderedMap.getOrDefault(pDerX, loop_product_adjoint_map, {});
+                if listEmpty(terms_x) then
+                  // no contributions -> skip
+                  continue;
+                end if;
+
+                // Sum terms using correct type/operator for the LHS variable
+                sum_x := buildAdjointRhs(pDerX, terms_x);
+
+                // Apply required minus sign with appropriate size classification
+                vty_x := ComponentRef.getComponentType(pDerX);
+                sc_x := sizeClassificationFromType(vty_x);
+                mulOpNeg := Operator.fromClassification(
+                  (MathClassification.MULTIPLICATION, sc_x),
+                  vty_x
+                );
+                rhs_x := Expression.MULTARY({Expression.REAL(-1.0), sum_x}, {}, mulOpNeg);
+
+                // Append to global adjoint_map so standard emission produces:
+                //   $pDER_...x = - (sum_i lambda_i * d r_i / d x)
+                UnorderedMap.add(
+                  pDerX,
+                  rhs_x :: UnorderedMap.getOrDefault(pDerX, adjoint_map, {}),
+                  adjoint_map
+                );
+              end if;
+            end for;
           then ();
         else algorithm
           // non-algebraic loop handled later
