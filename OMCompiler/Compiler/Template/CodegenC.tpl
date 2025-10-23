@@ -7166,6 +7166,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
         case simCode as SIMCODE(__) then
           match modelInfo
             case MODELINFO(vars=SIMVARS(__)) then
+              // TODO: Handle start attribute
               <<
               <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
               'min[<%i0%>] = <%crefAttributes(name)%>.min;<%\n%>max[<%i0%>] = <%crefAttributes(name)%>.max;<%\n%>nominal[<%i0%>] = <%crefAttributes(name)%>.nominal;<%\n%>useNominal[<%i0%>] = <%crefAttributes(name)%>.useNominal;<%\n%>name[<%i0%>] =(char *) <%crefVarInfo(name)%>.name;<%\n%>start[<%i0%>] = <%crefAttributes(name)%>.start;'

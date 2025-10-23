@@ -60,9 +60,6 @@ extern void alloc_real_array(real_array* dest,int ndims,...);
 /* Allocation of real data */
 extern void alloc_real_array_data(real_array* a);
 
-/* Frees memory*/
-extern void free_real_array_data(real_array* a);
-
 /* Clones data*/
 static inline void clone_real_array_spec(const real_array *src, real_array* dst)
 { clone_base_array_spec(src, dst); }

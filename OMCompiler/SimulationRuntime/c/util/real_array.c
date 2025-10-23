@@ -250,7 +250,7 @@ void print_real_array(const real_array *source)
 }
 
 /**
- * @brief Write real vector into string.
+ * @brief Write real vector into null-terminated string.
  *
  * @param source        Real vector to write to buffer.
  * @return const char* Pointer to static buffer. Not thread-safe!
@@ -267,7 +267,7 @@ const char* real_vector_to_string(const real_array *source) {
     data = (modelica_real *) source->data;
 
     pos += snprintf(buffer + pos, sizeof(buffer) - pos, "{");
-    for(i = 1; i < source->dim_size[0]; ++i) {
+    for(i = 0; i < source->dim_size[0]; i++) {
         pos += snprintf(buffer + pos, sizeof(buffer) - pos,
                         "%g%s", data[i], (i < source->dim_size[0] - 1) ? ", " : "");
         if (pos >= sizeof(buffer)) {
