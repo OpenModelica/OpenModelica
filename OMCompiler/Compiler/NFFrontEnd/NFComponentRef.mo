@@ -2254,18 +2254,12 @@ public
       Backend Extension functions
   ========================================= */
 
-  function listHasDiscrete
-    "kabdelhak: Returns true if any component reference in the list has a
-    discrete type. Used to analyze algorithm outputs."
-    input list<ComponentRef> cref_lst;
-    output Boolean result = false;
-  algorithm
-    for cref in cref_lst loop
-      if Type.isDiscrete(nodeType(cref)) then
-        result := true; return;
-      end if;
-    end for;
-  end listHasDiscrete;
+  function isDiscrete
+    "kabdelhak: Returns true if component reference has a discrete type.
+    Used to analyze algorithm outputs."
+    input ComponentRef cref;
+    output Boolean result = Type.isDiscrete(nodeType(cref));
+  end isDiscrete;
 
   function removeOuterCrefPrefix
     input output ComponentRef cref;

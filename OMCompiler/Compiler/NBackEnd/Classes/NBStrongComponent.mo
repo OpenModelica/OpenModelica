@@ -954,17 +954,13 @@ public
     "checks if all equations are discrete"
     input StrongComponent comp;
     output Boolean b;
-  protected
-    function bool_ident "just for usage in List.all"
-      input output Boolean b;
-    end bool_ident;
   algorithm
     b := match comp
       case SINGLE_COMPONENT()   then Equation.isDiscrete(comp.eqn);
       case MULTI_COMPONENT()    then Equation.isDiscrete(Slice.getT(comp.eqn));
       case SLICED_COMPONENT()   then Equation.isDiscrete(Slice.getT(comp.eqn));
       case RESIZABLE_COMPONENT()then Equation.isDiscrete(Slice.getT(comp.eqn));
-      case ENTWINED_COMPONENT() then List.all(list(isDiscrete(c) for c in comp.entwined_slices), bool_ident);
+      case ENTWINED_COMPONENT() then List.all(comp.entwined_slices, isDiscrete);
       case GENERIC_COMPONENT()  then Equation.isDiscrete(Slice.getT(comp.eqn));
       case ALGEBRAIC_LOOP()     then comp.mixed;
       case ALIAS()              then isDiscrete(comp.original);
