@@ -2060,14 +2060,11 @@ public
       EquationAttributes attr;
       ComponentRef residualCref;
       Expression lhs, rhs;
+      Boolean failed;
     algorithm
       // leave immediately if its already in residual form
       if isResidual(eqn_ptr) then
         return;
-      else
-        attr := getAttributes(eqn);
-        attr.residual := true;
-        eqn := setAttributes(eqn, attr);
       end if;
 
       // TODO: future improvement - save the residual in [INI] -> re-use for [ODE] tearing
@@ -2084,10 +2081,10 @@ public
         else getEqnName(eqn_ptr);
       end match;
 
-      eqn := match eqn
+      (eqn, failed) := match eqn
         case IF_EQUATION() algorithm
           eqn.body := IfEquationBody.createResidual(eqn.body, residualCref);
-        then IfEquationBody.inline(eqn.body, eqn);
+        then (IfEquationBody.inline(eqn.body, eqn), false);
         else algorithm
           // update RHS and LHS
           lhs := Expression.fromCref(residualCref);
@@ -2095,14 +2092,24 @@ public
             rhs := getResidualExp(eqn, not allowFail);
             eqn := setLHS(eqn, lhs);
             eqn := setRHS(eqn, rhs);
+            failed := false;
           else
+            failed := true;
             if not allowFail then fail(); end if;
           end try;
-        then eqn;
+        then (eqn, failed);
       end match;
+
+      // update residual attribute
+      if not failed then
+        attr := getAttributes(eqn);
+        attr.residual := true;
+        eqn := setAttributes(eqn, attr);
+      end if;
 
       // update pointer or create new
       if new then eqn_ptr := Pointer.create(eqn); else Pointer.update(eqn_ptr, eqn); end if;
+
     end createResidual;
 
     function getResidualExp

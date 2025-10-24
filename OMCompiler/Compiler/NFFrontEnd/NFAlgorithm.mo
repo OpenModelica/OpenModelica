@@ -215,6 +215,20 @@ public
     output Boolean b = listEmpty(alg.statements);
   end isEmpty;
 
+  function isDiscrete
+    "returns true if the algorithm contains any discrete outputs"
+    input Algorithm alg;
+    output Boolean b;
+  algorithm
+    b := ComponentRef.listHasDiscrete(alg.outputs);
+    if not b then
+      for stmt in alg.statements loop
+        b := Statement.containsWhen(stmt);
+        if b then break; end if;
+      end for;
+    end if;
+  end isDiscrete;
+
 protected
   function statementInputsOutputs "Helper for getInputsOutputs.
     Traverse statements and find inputs and outputs"

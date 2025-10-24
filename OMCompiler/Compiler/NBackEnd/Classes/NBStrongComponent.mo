@@ -496,45 +496,10 @@ public
     comps := match comps
         local
           array<StrongComponent> original;
-          list<StrongComponent> new_residuals;
-          DAEType dae_type;
 
       case SOME(original) algorithm
         for comp in original loop
-          (new_residuals, dae_type) := match comp
-            // single equation fully solved for single variable (not neccessarily scalar)
-            case SINGLE_COMPONENT() algorithm
-              (new_residuals, dae_type) := singleDAEModeComponent(comp.eqn, variables, uniqueIndex);
-            then (new_residuals, dae_type);
-
-            case MULTI_COMPONENT() algorithm
-              (new_residuals, dae_type) := slicedDAEModeComponent(comp.vars, comp.eqn, variables, uniqueIndex, slice_set);
-            then (new_residuals, dae_type);
-
-            case SLICED_COMPONENT() algorithm
-              // this will always result in inner equation for now as either eqn or var are sliced
-              // -> in the future improve this
-              (new_residuals, dae_type) := slicedDAEModeComponent({comp.var}, comp.eqn, variables, uniqueIndex, slice_set);
-            then (new_residuals, dae_type);
-
-            case RESIZABLE_COMPONENT() algorithm
-              (new_residuals, dae_type) := slicedDAEModeComponent({comp.var}, comp.eqn, variables, uniqueIndex, slice_set);
-            then (new_residuals, dae_type);
-
-            case GENERIC_COMPONENT() algorithm
-              (new_residuals, dae_type) := slicedDAEModeComponent({comp.var}, comp.eqn, variables, uniqueIndex, slice_set);
-            then (new_residuals, dae_type);
-
-            else ({}, if StrongComponent.isDiscrete(comp) then DAEType.REMOVED else DAEType.INNER);
-          end match;
-
-          if dae_type == DAEType.RESIDUAL then
-            // add residuals
-            residuals := listAppend(new_residuals, residuals);
-          elseif dae_type == DAEType.INNER then
-            // add original to inners
-            inners := comp :: inners;
-          end if;
+          (residuals, inners) := sortDAEModeComponent(comp, residuals, inners, variables, uniqueIndex, slice_set);
         end for;
 
         /* order of inners matters */
@@ -545,9 +510,60 @@ public
     end match;
   end sortDAEModeComponents;
 
+  function sortDAEModeComponent
+    input StrongComponent comp;
+    input output list<StrongComponent> residuals;
+    input output list<StrongComponent> inners;
+    input VariablePointers variables;
+    input Pointer<Integer> uniqueIndex;
+    input UnorderedSet<ComponentRef> slice_set;
+  protected
+    list<StrongComponent> new_residuals;
+    DAEType dae_type;
+  algorithm
+    (new_residuals, dae_type) := match comp
+      // single equation fully solved for single variable (not neccessarily scalar)
+      case SINGLE_COMPONENT() algorithm
+        (new_residuals, dae_type) := singleDAEModeComponent(comp.eqn, variables, uniqueIndex);
+      then (new_residuals, dae_type);
+
+      case MULTI_COMPONENT() algorithm
+        (new_residuals, dae_type) := slicedDAEModeComponent(comp.vars, {comp.eqn}, variables, uniqueIndex, slice_set);
+      then (new_residuals, dae_type);
+
+      case SLICED_COMPONENT() algorithm
+        // this will always result in inner equation for now as either eqn or var are sliced
+        // -> in the future improve this
+        (new_residuals, dae_type) := slicedDAEModeComponent({comp.var}, {comp.eqn}, variables, uniqueIndex, slice_set);
+      then (new_residuals, dae_type);
+
+      case RESIZABLE_COMPONENT() algorithm
+        (new_residuals, dae_type) := slicedDAEModeComponent({comp.var}, {comp.eqn}, variables, uniqueIndex, slice_set);
+      then (new_residuals, dae_type);
+
+      case GENERIC_COMPONENT() algorithm
+        (new_residuals, dae_type) := slicedDAEModeComponent({comp.var}, {comp.eqn}, variables, uniqueIndex, slice_set);
+      then (new_residuals, dae_type);
+
+      case ALGEBRAIC_LOOP() algorithm
+        (new_residuals, dae_type) := slicedDAEModeComponent(comp.strict.iteration_vars, comp.strict.residual_eqns, variables, uniqueIndex, slice_set);
+      then (new_residuals, dae_type);
+
+      else ({}, if StrongComponent.isDiscrete(comp) then DAEType.REMOVED else DAEType.INNER);
+    end match;
+
+    if dae_type == DAEType.RESIDUAL then
+      // add residuals
+      residuals := listAppend(new_residuals, residuals);
+    elseif dae_type == DAEType.INNER then
+      // add original to inners
+      inners := comp :: inners;
+    end if;
+  end sortDAEModeComponent;
+
   function slicedDAEModeComponent
     input list<Slice<Pointer<Variable>>> var_slices;
-    input Slice<Pointer<Equation>> eqn_slice;
+    input list<Slice<Pointer<Equation>>> eqn_slices;
     input VariablePointers variables;
     input Pointer<Integer> uniqueIndex;
     input UnorderedSet<ComponentRef> slice_set;
@@ -556,18 +572,39 @@ public
   protected
     Pointer<Equation> eqn;
     ComponentRef eqn_name;
+    list<list<StrongComponent>> acc_new_residuals = {};
   algorithm
-    eqn       := Slice.getT(eqn_slice);
-    eqn_name  := Equation.getEqnName(eqn);
-    if listEmpty(eqn_slice.indices) and List.all(list(v.indices for v in var_slices), listEmpty)
-      and not UnorderedSet.contains(eqn_name, slice_set) then
-      // unsliced equation in multi component / equation not found in map
-      (new_residuals, dae_type) := singleDAEModeComponent(eqn, variables, uniqueIndex);
+    if List.all(list(v.indices for v in var_slices), listEmpty) then
+      for eqn_slice in eqn_slices loop
+        eqn       := Slice.getT(eqn_slice);
+        eqn_name  := Equation.getEqnName(eqn);
+        if listEmpty(eqn_slice.indices) and not UnorderedSet.contains(eqn_name, slice_set) then
+          // unsliced equation in multi component / equation not found in map
+          (new_residuals, dae_type) := singleDAEModeComponent(eqn, variables, uniqueIndex);
+          if dae_type == DAEType.RESIDUAL then
+            acc_new_residuals := new_residuals :: acc_new_residuals;
+          elseif dae_type == DAEType.INNER then
+            break;
+          end if;
+        else
+          // this sliced equation cannot be made residual, add it to the map
+          dae_type := DAEType.INNER;
+          break;
+        end if;
+      end for;
     else
-      // this sliced equation cannot be made residual, add it to the map
-      UnorderedSet.add(eqn_name, slice_set);
-      new_residuals := {};
       dae_type := DAEType.INNER;
+    end if;
+
+    if dae_type == DAEType.INNER then
+      for eqn_slice in eqn_slices loop
+        eqn       := Slice.getT(eqn_slice);
+        eqn_name  := Equation.getEqnName(eqn);
+        UnorderedSet.add(eqn_name, slice_set);
+      end for;
+      new_residuals := {};
+    else
+      new_residuals := List.flatten(acc_new_residuals);
     end if;
   end slicedDAEModeComponent;
 
@@ -587,7 +624,6 @@ public
     dummy_set := UnorderedSet.new(BVariable.hash, BVariable.equalName);
     eqn       := Inline.inlineRecordTupleArrayEquation(Pointer.access(eqn_ptr), Iterator.EMPTY(), variables, new_eqns, dummy_set, uniqueIndex, true);
     eqns      := Pointer.access(new_eqns);
-    // check if eqn is dummy => use new_eqns
     // create equation, deliberately use new pointer. allow creating residual to fail and add original strong component to inners
     eqns := if listEmpty(eqns) then {Pointer.create(eqn)} else eqns;
     (new_residuals, dae_type) := inlinedDAEModeComponent(eqns);
@@ -602,7 +638,12 @@ public
     StrongComponent new_comp;
   algorithm
     for eqn in eqns loop
-      if not Equation.isDiscrete(eqn) then
+      if Equation.isDiscrete(eqn) then
+        // all sub equations are discrete, remove whole equation
+        if dae_type < DAEType.INNER then
+          dae_type := DAEType.REMOVED;
+        end if;
+      else
         new_eqn := Equation.createResidual(eqn, false, true);
         if Equation.isResidual(new_eqn) then
           // add to residuals
@@ -613,11 +654,6 @@ public
           // cannot make residuals for all, make whole equation inner for now
           // might not be neccessary --> needs further solving to get proper sub strong component
           dae_type := DAEType.INNER; break;
-        end if;
-      else
-        // all sub equations are discrete, remove whole equation
-        if dae_type < DAEType.INNER then
-          dae_type := DAEType.REMOVED;
         end if;
       end if;
     end for;
