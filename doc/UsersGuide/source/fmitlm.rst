@@ -104,12 +104,8 @@ The BouncingBall_flags.json for this example is displayed in
 Compilation Process
 ~~~~~~~~~~~~~~~~~~~
 
-OpenModelica can export FMUs that are compiled with CMake (default) or Makefiles. CMake
-version v3.21 or newer is recommended, minimum CMake version is v3.5.
-
-The Makefile FMU export will be removed in a future version of OpenModelica.
-Set compiler flag :ref:`--fmuCMakeBuild=false<omcflag-fmuCMakeBuild>` to use the
-Makefiles export.
+OpenModelica exports FMUs that are compiled with CMake.
+CMake version v3.21 or newer is recommended, minimum CMake version is v3.5.
 
 The FMU contains a CMakeLists.txt file in the sources directory that can be used to
 re-compile the FMU for a different host and is also used to cross-compile for different

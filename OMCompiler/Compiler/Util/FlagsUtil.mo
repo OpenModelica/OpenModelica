@@ -398,7 +398,6 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.FMI_FILTER,
   Flags.FMI_SOURCES,
   Flags.FMI_FLAGS,
-  Flags.FMU_CMAKE_BUILD,
   Flags.NEW_BACKEND,
   Flags.PARMODAUTO,
   Flags.INTERACTIVE_PORT,

@@ -13,7 +13,7 @@ cd("CMakeCrossCompile");
 
 // Set CMake FMU without any filters
 // Disable CMake features, because version in multiarch/crossbuild is too old.
-if not setCommandLineOptions("--fmiFilter=none --fmuCMakeBuild=true --fmuRuntimeDepends=none") then
+if not setCommandLineOptions("--fmiFilter=none --fmuRuntimeDepends=none") then
   print(getErrorString());
   exit(1);
 end if;
@@ -26,4 +26,3 @@ platforms := {
   "x86_64-w64-mingw32 docker run multiarch/crossbuild",
   "i686-w64-mingw32 docker run multiarch/crossbuild"};
 buildModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version="2.0", fmuType="me_cs", fileNamePrefix="Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum", platforms=platforms); getErrorString();
-
