@@ -9,6 +9,7 @@ ModelicaTest.Math.TestMatricesExamplesSolveLinearEquations.mos \
 ModelicaTest.Media.TestAllProperties.ConstantPropertyLiquidWater.mos \
 ModelicaTest.Blocks.IntegratorForceState.mos \
 ModelicaTest.Blocks.StrictLimiters.mos \
+ModelicaTest.Blocks.Continuous_SteadyState.mos \
 ModelicaTest.Blocks.Continuous.mos \
 ModelicaTest.Media.TestOnly.MoistAir.mos \
 ModelicaTest.Media.TestOnly.MixIdealGasAir.mos \
