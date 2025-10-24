@@ -488,28 +488,48 @@ end initializeFunction;
 
 template initVals(SimVar var, String arrayName) ::=
   match var
-    case SIMVAR(__) then
+    case var as SIMVAR(__) then
     if stringEq(crefStr(name),"$dummy") then
       ''
     else if stringEq(crefStr(name),"der($dummy)") then
       ''
     else
-    let str = 'comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start'
-      '<%str%> =  comp->fmuData->localData[0]-><%arrayName%>[<%index%>];'
+      match arrayName
+        case "realVars" then
+          <<
+          put_real_element(comp->fmuData->localData[0]-><%arrayName%>[<%var.index%>], 0, &comp->fmuData->modelData-><%arrayName%>Data[<%var.index%>].attribute.start);
+          >>
+        else
+          let str = 'comp->fmuData->modelData-><%arrayName%>Data[<%var.index%>].attribute.start'
+          '<%str%> =  comp->fmuData->localData[0]-><%arrayName%>[<%var.index%>];'
 end initVals;
 
 template initParams(SimVar var, String arrayName) ::=
   match var
-    case SIMVAR(__) then
-    let str = 'comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start'
-      '<%str%> = comp->fmuData->simulationInfo-><%arrayName%>[<%index%>];'
+    case var as SIMVAR(__) then
+
+    match arrayName
+      case "realParameter" then
+        <<
+        put_real_element(comp->fmuData->simulationInfo-><%arrayName%>[<%var.index%>], 0, &comp->fmuData->modelData-><%arrayName%>Data[<%var.index%>].attribute.start);
+        >>
+      else
+        let str = 'comp->fmuData->modelData-><%arrayName%>Data[<%var.index%>].attribute.start'
+          '<%str%> = comp->fmuData->simulationInfo-><%arrayName%>[<%var.index%>];'
 end initParams;
 
 template initValsDefault(SimVar var, String arrayName) ::=
   match var
-    case SIMVAR(index=index, type_=type_) then
-    let str = 'comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start'
-    '<%str%> = <%initValDefault(var)%>;'
+    case var as SIMVAR(index=index, type_=type_) then
+
+    match arrayName
+      case "realVars" then
+        <<
+        put_real_element(<%initValDefault(var)%>, 0, &comp->fmuData->modelData-><%arrayName%>Data[<%var.index%>].attribute.start);
+        >>
+      else
+        let str = 'comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start'
+        '<%str%> = <%initValDefault(var)%>;'
 end initValsDefault;
 
 template initParamsDefault(SimVar var, String arrayName) ::=
@@ -517,6 +537,8 @@ template initParamsDefault(SimVar var, String arrayName) ::=
     case SIMVAR(__) then
     let str = 'comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start'
     match initialValue
+      case SOME(v as RCONST(__)) then
+      'put_real_element(<%initValDefault(var)%>, 0, &<%str%>);'
       case SOME(v as SCONST(__)) then
       '<%str%> = mmc_mk_scon_persist(<%initVal(v)%>); /* TODO: these are not freed currently, see #6161 */'
       else
@@ -808,7 +830,7 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numAlgAliasVars=numAlgAliasVars,
   fmi2Status setReal(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Real value) {
     // set start value attribute for all variable that has start value, till initialization mode
     if (vr < <%ixFirstParam%> && (comp->state == model_state_instantiated || comp->state == model_state_initialization_mode)) {
-      comp->fmuData->modelData->realVarsData[vr].attribute.start = value;
+      put_real_element(value, 0, &comp->fmuData->modelData->realVarsData[vr].attribute.start);
     }
     if (vr < <%ixFirstParam%>) {
       comp->fmuData->localData[0]->realVars[vr] = value;
@@ -3202,6 +3224,7 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
   then
   <<
   #include "simulation_data.h"
+  #include "util/real_array.h"
 
   OMC_DISABLE_OPT<%/* This function is very simple and doesn't need to be optimized. GCC/clang spend way too much time looking at it. */%>
 
@@ -3329,7 +3352,7 @@ template ScalarVariableTypeFMU(String attrstr, String unit, String displayUnit, 
       <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
       <%attrstr%>.useNominal = <%if nominalValue then 1 else 0%>;
       <%attrstr%>.nominal = <%optInitValFMU(nominalValue,"1.0")%>;
-      <%attrstr%>.start = <%optInitValFMU(startValue,"0.0")%>;
+      put_real_element(<%optInitValFMU(startValue,"0.0")%>, 0, &<%attrstr%>.start);
       >>
     case T_BOOL(__) then
       <<
