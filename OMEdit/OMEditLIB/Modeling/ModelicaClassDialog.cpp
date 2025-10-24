@@ -2282,7 +2282,7 @@ void CreateNewItemDialog::createNewFileOrFolder()
   // if file or folder creation is successful.
   if (success) {
     LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileInfo.fileName(), fileInfo.absoluteFilePath(),
-                                                                                 fileInfo.absoluteFilePath(), true, pParentLibraryTreeItem);
+                                                                                 fileInfo.absoluteFilePath(), true, pParentLibraryTreeItem->isInternal(), pParentLibraryTreeItem);
     if (mIsCreateFile) {
       pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
     }
