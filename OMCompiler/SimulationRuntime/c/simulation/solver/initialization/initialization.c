@@ -102,7 +102,7 @@ void dumpInitialSolution(DATA *simData)
     for(i=0; i<mData->nStates; ++i)
       infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] Real %s(start=%s, nominal=%g) = %g (pre: %g)", i+1,
                                    mData->realVarsData[i].info.name,
-                                   real_vector_to_string(&mData->realVarsData[i].attribute.start),
+                                   real_vector_to_string(&mData->realVarsData[i].attribute.start, mData->realVarsData[i].dimension.numberOfDimensions == 0),
                                    mData->realVarsData[i].attribute.nominal,
                                    simData->localData[0]->realVars[i],
                                    sInfo->realVarsPre[i]);
@@ -126,7 +126,7 @@ void dumpInitialSolution(DATA *simData)
     for(i=2*mData->nStates; i<mData->nVariablesReal; ++i)
       infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] Real %s(start=%s, nominal=%g) = %g (pre: %g)", i+1,
                                    mData->realVarsData[i].info.name,
-                                   real_vector_to_string(&mData->realVarsData[i].attribute.start),
+                                   real_vector_to_string(&mData->realVarsData[i].attribute.start, mData->realVarsData[i].dimension.numberOfDimensions == 0),
                                    mData->realVarsData[i].attribute.nominal,
                                    simData->localData[0]->realVars[i],
                                    sInfo->realVarsPre[i]);

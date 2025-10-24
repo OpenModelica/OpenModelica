@@ -333,7 +333,7 @@ void printParameters(DATA *data, int stream)
     for(i=0; i<mData->nParametersReal; ++i)
       infoStreamPrint(stream, 0, "[%ld] parameter Real %s(start=%s, fixed=%s) = %g", i+1,
                                  mData->realParameterData[i].info.name,
-                                 real_vector_to_string(&mData->realParameterData[i].attribute.start),
+                                 real_vector_to_string(&mData->realParameterData[i].attribute.start, mData->realParameterData[i].dimension.numberOfDimensions == 0),
                                  mData->realParameterData[i].attribute.fixed ? "true" : "false",
                                  data->simulationInfo->realParameter[i]);
     messageClose(stream);

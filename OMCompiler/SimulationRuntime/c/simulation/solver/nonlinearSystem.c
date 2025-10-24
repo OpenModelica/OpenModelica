@@ -1540,7 +1540,7 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
         done = 1;
         warningStreamPrint(OMC_LOG_INIT, 0, "[%ld] Real %s(start=%s, nominal=%g)", j+1,
                                      mData->realVarsData[k].info.name,
-                                     real_vector_to_string(&mData->realVarsData[k].attribute.start),
+                                     real_vector_to_string(&mData->realVarsData[k].attribute.start, mData->realVarsData[k].dimension.numberOfDimensions == 0),
                                      mData->realVarsData[k].attribute.nominal);
         }
       }

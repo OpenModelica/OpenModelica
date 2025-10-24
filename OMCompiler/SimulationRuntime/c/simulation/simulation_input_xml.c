@@ -548,7 +548,7 @@ void read_array_var_real(real_array* array, const char* str, modelica_real defau
  * @param var_map   Hash map for variable with attributes as keys.
  * @param attribute Attributes to write values into.
  */
-static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *attribute)
+static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *attribute, modelica_boolean isArrayVar)
 {
   read_array_var_real(&attribute->start, findHashStringStringEmpty(var_map, "start"), 0.0);
   attribute->fixed = read_value_bool(findHashStringString(var_map, "fixed"));
@@ -562,7 +562,7 @@ static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *
   infoStreamPrint(OMC_LOG_DEBUG, 0,
                   "Real %s(start=%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)",
                   findHashStringString(var_map, "name"),
-                  real_vector_to_string(&attribute->start),
+                  real_vector_to_string(&attribute->start, isArrayVar),
                   (attribute->fixed) ? "true" : "false",
                   (attribute->useNominal) ? "" : "{", attribute->nominal, attribute->useNominal ? "" : "}",
                   attribute->min,
@@ -688,10 +688,13 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           strncpy(type_name, "real", 8);
           STATIC_REAL_DATA* realVarsData = (STATIC_REAL_DATA*) out;
           REAL_ATTRIBUTE* attribute = &realVarsData[j].attribute;
-          read_var_attribute_real(v, attribute);
-          info = &realVarsData[j].info;
           dimension = &realVarsData[j].dimension;
+          info = &realVarsData[j].info;
           filterOutput = &realVarsData[j].filterOutput;
+          read_var_dimension(v, dimension);
+          read_var_attribute_real(v, attribute, dimension->numberOfDimensions == 0);
+          read_var_info(v, info);
+          *filterOutput = shouldFilterOutput(v, info->name);
         }
         break;
       case T_INTEGER:
@@ -699,10 +702,13 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           strncpy(type_name, "integer", 8);
           STATIC_INTEGER_DATA* intVarsData = (STATIC_INTEGER_DATA*) out;
           INTEGER_ATTRIBUTE* attribute = &intVarsData[j].attribute;
-          read_var_attribute_int(v, attribute);
-          info = &intVarsData[j].info;
           dimension = &intVarsData[j].dimension;
+          info = &intVarsData[j].info;
           filterOutput = &intVarsData[j].filterOutput;
+          read_var_dimension(v, dimension);
+          read_var_attribute_int(v, attribute);
+          read_var_info(v, info);
+          *filterOutput = shouldFilterOutput(v, info->name);
         }
         break;
       case T_BOOLEAN:
@@ -710,10 +716,13 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           strncpy(type_name, "boolean", 8);
           STATIC_BOOLEAN_DATA* boolVarsData = (STATIC_BOOLEAN_DATA*) out;
           BOOLEAN_ATTRIBUTE* attribute = &boolVarsData[j].attribute;
-          read_var_attribute_bool(v, attribute);
-          info = &boolVarsData[j].info;
           dimension = &boolVarsData[j].dimension;
+          info = &boolVarsData[j].info;
           filterOutput = &boolVarsData[j].filterOutput;
+          read_var_dimension(v, dimension);
+          read_var_attribute_bool(v, attribute);
+          read_var_info(v, info);
+          *filterOutput = shouldFilterOutput(v, info->name);
         }
         break;
       case T_STRING:
@@ -721,20 +730,19 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           strncpy(type_name, "string", 8);
           STATIC_STRING_DATA* stringVarsData = (STATIC_STRING_DATA*) out;
           STRING_ATTRIBUTE* attribute = &stringVarsData[j].attribute;
-          read_var_attribute_string(v, attribute);
-          info = &stringVarsData[j].info;
           dimension = &stringVarsData[j].dimension;
+          info = &stringVarsData[j].info;
           filterOutput = &stringVarsData[j].filterOutput;
+          read_var_dimension(v, dimension);
+          read_var_attribute_string(v, attribute);
+          read_var_info(v, info);
+          *filterOutput = shouldFilterOutput(v, info->name);
         }
         break;
       default:
         throwStreamPrint(NULL, "simulation_input_xml.c: Error: Unsupported type in read_variables.");
         break;
     }
-
-    read_var_dimension(v, dimension);
-    read_var_info(v, info);
-    *filterOutput = shouldFilterOutput(v, info->name);
 
     /* create a mapping for Alias variable to get the correct index */
     addHashStringLong(mapAlias, info->name, j);
