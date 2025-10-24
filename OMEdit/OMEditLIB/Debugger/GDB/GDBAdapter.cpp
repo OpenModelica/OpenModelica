@@ -770,7 +770,7 @@ void GDBAdapter::createFullBacktraceCB(GDBMIResultRecord *pGDBMIResultRecord)
   if (MainWindow::instance()->getLibraryWidget()->saveFile(fileInfo.absoluteFilePath(), backtrace)) {
     LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileInfo.fileName(),
                                                                                  fileInfo.absoluteFilePath(), fileInfo.absoluteFilePath(),
-                                                                                 true, pLibraryTreeModel->getRootLibraryTreeItem());
+                                                                                 true, false, pLibraryTreeModel->getRootLibraryTreeItem());
     if (pLibraryTreeItem) {
       pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
     }
