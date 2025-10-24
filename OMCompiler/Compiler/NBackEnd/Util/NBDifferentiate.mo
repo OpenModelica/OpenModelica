@@ -195,56 +195,59 @@ public
     ComponentRef lhsCref;
     ComponentRef gradCref;
     list<VariablePointer> compVars;
+    list<Slice<VariablePointer>> itVarSlices;
     DifferentiationArguments da;
+    Integer ci = 0, total = listLength(comps);
   algorithm
+    dbg("=== differentiateStrongComponentListAdjoint: " + intString(total) + " components ===");
     if Util.isSome(diff_map_opt) then
       SOME(diff_map) := diff_map_opt;
+      dbg("diff_map present; " + tryAdjointMapKeysToString(diffArguments.adjoint_map));
+    else
+      dbg("diff_map = NONE()");
     end if;
 
     for comp in comps loop
-
-
-
       // Determine LHS cref of this component
       // this is the faulty assumption that each component is explicitly assigned to exactly one variable
+      ci := ci + 1;
+      dbg("--- Component " + intString(ci) + "/" + intString(total) + " [" + compKindString(comp) + "] ---");
       compVars := match comp
         case StrongComponent.ALGEBRAIC_LOOP() then StrongComponent.getLoopIterationVars(comp);
         else StrongComponent.getVariables(comp);
       end match;
+      dbg("Vars: " + varPtrsToString(compVars));
       for var in compVars loop
         lhsCref := BVariable.getVarName(var);
-      // if listLength(compVars) == 1 then
-      //   lhsCref := BVariable.getVarName(listHead(compVars));
-      // else
-      //   // print all compVars
-      //   print("No unique LHS cref found. CompVars:\n");
-      //   for var in compVars loop
-      //     print("  " + BVariable.pointerToString(var) + "\n");
-      //   end for;
-      //   lhsCref := ComponentRef.EMPTY();
-      // end if;
-        print("\nLHS cref: " + ComponentRef.toString(lhsCref) + "\n");
-
+        dbg(" LHS cref: " + ComponentRef.toString(lhsCref));
         // Update current_grad if we have a mapping for lhsCref
         if (not ComponentRef.isEmpty(lhsCref)) and Util.isSome(diff_map_opt) and UnorderedMap.contains(lhsCref, diff_map) then
           gradCref := UnorderedMap.getOrFail(lhsCref, diff_map);
           gradCref := match comp
             case StrongComponent.RESIZABLE_COMPONENT() then ComponentRef.copySubscripts(StrongComponent.getVarCref(comp), gradCref); // put subscript on the seed;
+            case StrongComponent.SLICED_COMPONENT() then ComponentRef.copySubscripts(StrongComponent.getVarCref(comp), gradCref); // put subscript on the seed;
             else gradCref;
           end match;
-          print("Found diff_map entry for LHS: " + ComponentRef.toString(gradCref) + "\n");
+          dbg("  Seed selected from diff_map: " + ComponentRef.toString(gradCref));
+          dbg("Seed has dimensions: " + intString(Type.dimensionCount(ComponentRef.getComponentType(gradCref))));
           da := Pointer.access(diffArguments_ptr);
           da.current_grad := Expression.fromCref(gradCref);
           Pointer.update(diffArguments_ptr, da);
+        else
+          dbg("  No seed mapping for: " + ComponentRef.toString(lhsCref));
         end if;
         // Differentiate this component
+        dbg("  Differentiating component...");
         comp := differentiateStrongComponent(comp, diffArguments_ptr, idx, context, name);
         newComps := comp :: newComps;
+        da := Pointer.access(diffArguments_ptr);
+        dbg("  Done. " + tryAdjointMapKeysToString(da.adjoint_map));
       end for;
     end for;
 
     comps := listReverse(newComps);
     diffArguments := Pointer.access(diffArguments_ptr);
+    dbg("=== done differentiateStrongComponentListAdjoint ===");
   end differentiateStrongComponentListAdjoint;
 
   function differentiateStrongComponent
@@ -441,6 +444,14 @@ public
         Algorithm alg;
         Boolean oldCollect;
 
+        UnorderedMap<ComponentRef,ComponentRef> dm;
+        ComponentRef lhs_base = ComponentRef.EMPTY();
+        ComponentRef seed_base;
+        Integer n = 0, iel;
+        list<Type.Dimension> dims;
+        Expression grad_save, rhs_i, grad_i;
+        Boolean collect_save;
+
       // ToDo: Element source stuff (see old backend)
       // case Equation.SCALAR_EQUATION() algorithm
       //   (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
@@ -468,7 +479,70 @@ public
         else
           (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
         end if;
-        (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
+
+        // Only do per-element reverse seeding for explicit element-wise array assembly on RHS
+        if Util.isSome(diffArguments.adjoint_map) and
+          diffArguments.diffType == DifferentiationType.JACOBIAN and
+          Expression.isArray(eq.rhs) then
+
+          SOME(dm) := diffArguments.diff_map;
+
+          // this must be a variable cref on the LHS so this should work
+          lhs_base := Expression.toCref(eq.lhs);
+
+          // Vector length from equation type
+          if Type.isArray(eq.ty) then
+            dims := Type.arrayDims(eq.ty);
+            if not listEmpty(dims) then
+              n := Dimension.size(listHead(dims));
+            end if;
+          end if;
+
+          if (not ComponentRef.isEmpty(lhs_base)) and UnorderedMap.contains(lhs_base, dm) and n > 0 then
+            seed_base := UnorderedMap.getOrFail(lhs_base, dm);
+
+            // Save and prepare flags
+            grad_save := diffArguments.current_grad;
+            collect_save := diffArguments.collectAdjoints;
+
+            // Accumulate adjoints per element with scalar seeds seed_base[i] on rhs[i]
+            for iel in 1:n loop
+              // current_grad := $SEED...y[i]
+              grad_i := Expression.applySubscripts(
+                {Subscript.INDEX(Expression.INTEGER(iel))},
+                Expression.fromCref(seed_base),
+                true);
+
+              // rhs_i := rhs[i]
+              rhs_i := Expression.applySubscripts(
+                {Subscript.INDEX(Expression.INTEGER(iel))},
+                eq.rhs,
+                true);
+
+              diffArguments.current_grad := grad_i;
+              diffArguments.collectAdjoints := true;
+
+              // Differentiate rhs element to accumulate into adjoint_map
+              (_, diffArguments) := differentiateExpression(rhs_i, diffArguments);
+            end for;
+
+            // Restore state
+            diffArguments.current_grad := grad_save;
+            diffArguments.collectAdjoints := collect_save;
+
+            // Also differentiate the full RHS without collecting (avoid duplicates)
+            oldCollect := diffArguments.collectAdjoints;
+            diffArguments.collectAdjoints := false;
+            (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
+            diffArguments.collectAdjoints := oldCollect;
+          else
+            // Fallback: regular vector reverse-mode
+            (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
+          end if;
+        else
+          // Non-explicit RHS (e.g., A*x): let reverse-mode handle vectors/matrices
+          (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
+        end if;
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
       then (Equation.ARRAY_EQUATION(eq.ty, lhs, rhs, eq.source, attr, eq.recordSize), diffArguments);
 
@@ -722,6 +796,7 @@ public
 
       // (x(1))' = x'(1)
       case Expression.SUBSCRIPTED_EXP() algorithm
+        print("[NBDifferentiate] Differentiating SUBSCRIPTED_EXP: " + Expression.toString(exp) + "\n");
         (elem1, diffArguments) := differentiateExpression(exp.exp, diffArguments);
       then (Expression.SUBSCRIPTED_EXP(elem1, exp.subscripts, exp.ty, exp.split), diffArguments);
 
@@ -764,66 +839,6 @@ public
     end match;
   end differentiateExpression;
 
-
-  // ================================
-  //  Residual partials via SIMPLE
-  // ================================
-  function differentiateResidualWrtCrefs
-    "Differentiate a residual expression F(x, y, ...) = 0 with respect to two
-     sets of ComponentRefs using SIMPLE (d/d cref) differentiation.
-     Returns two lists: [dF/d(inputs[i])] and [dF/d(outputs[j])], in the same order
-     as the inputs/outputs lists."
-    input Expression residual;
-    input list<ComponentRef> inputs;
-    input list<ComponentRef> outputs;
-    input FunctionTree funcTree = FunctionTreeImpl.EMPTY();
-    output list<Expression> dF_dInputs;
-    output list<Expression> dF_dOutputs;
-  protected
-    DifferentiationArguments args;
-    Expression d;
-  algorithm
-    // Inputs
-    dF_dInputs := {};
-    for c in listReverse(inputs) loop
-      args := DifferentiationArguments.simpleCref(c, funcTree);
-      (d, args) := differentiateExpression(residual, args);
-      dF_dInputs := SimplifyExp.simplify(d) :: dF_dInputs;
-    end for;
-
-    // Outputs
-    dF_dOutputs := {};
-    for c in listReverse(outputs) loop
-      args := DifferentiationArguments.simpleCref(c, funcTree);
-      (d, args) := differentiateExpression(residual, args);
-      dF_dOutputs := SimplifyExp.simplify(d) :: dF_dOutputs;
-    end for;
-  end differentiateResidualWrtCrefs;
-
-  function differentiateResidualWrtVariablePointers
-    "Like differentiateResidualWrtCrefs, but takes NBVariable.VariablePointers for inputs/outputs.
-     Uses the stored order of the VariablePointers."
-    input Expression residual;
-    input BVariable.VariablePointers inputVars;
-    input BVariable.VariablePointers outputVars;
-    input FunctionTree funcTree = FunctionTreeImpl.EMPTY();
-    output list<Expression> dF_dInputs;
-    output list<Expression> dF_dOutputs;
-  protected
-    list<ComponentRef> inCrefs;
-    list<ComponentRef> outCrefs;
-  algorithm
-    // Extract the variable names in stored order
-    inCrefs  := BVariable.VariablePointers.getVarNames(inputVars);
-    outCrefs := BVariable.VariablePointers.getVarNames(outputVars);
-
-    (dF_dInputs, dF_dOutputs) := differentiateResidualWrtCrefs(
-      residual = residual,
-      inputs   = inCrefs,
-      outputs  = outCrefs,
-      funcTree = funcTree
-    );
-  end differentiateResidualWrtVariablePointers;
 
   function differentiateComponentRef
     input output Expression exp "Has to be Expression.CREF()";
@@ -889,9 +904,125 @@ public
       onehot := SOME(Expression.ARRAY(
         arrTy,
         listArray(listReverse(elems)),
-        false /* literal array, not a view */
+        false
       ));
     end buildOneHotVectorAdjoint;
+
+
+    // Build a multi-hot scatter vector for a SLICE subscript:
+    // result = sum_t [onehot(idx_t) * seed_elem_t]
+    // Handles:
+    //   - WHOLE()                     -> returns seed
+    //   - SLICE {i1,i2,...}           -> sum of one-hots; indices must be literal integers
+    //   - SLICE range lo[:st]:hi      -> sum over lo, lo+st, ..., hi; lo,st,hi must be literal integers
+    function buildMultiHotVectorAdjoint
+      input ComponentRef derBaseCref;
+      input Subscript sub;        // SLICE or WHOLE
+      input Expression seed;      // upstream gradient for the sliced view (scalar or vector)
+      output Option<Expression> scatter; // NONE() if not handled
+    protected
+      Type arrTy;
+      Type elTy;
+      Operator addOp;
+      Boolean seedIsArray;
+      Integer m, j, loI, hiI, stI;
+      array<Expression> elems = arrayCreate(0, Expression.INTEGER(0));
+      Option<Expression> accOpt;
+      Option<Expression> ohOpt;
+      Expression acc, seedElem, term;
+      list<Expression> idxElems;
+    algorithm
+      arrTy := ComponentRef.getSubscriptedType(derBaseCref);
+      elTy  := Type.arrayElementType(arrTy);
+      addOp := Operator.fromClassification(
+        (NFOperator.MathClassification.ADDITION, NFOperator.SizeClassification.ELEMENT_WISE),
+        elTy
+      );
+      seedIsArray := Type.isArray(Expression.typeOf(seed));
+
+      scatter := match sub
+        // case Subscript.SLICE(slice = Expression.ARRAY(elements = elems))
+        //     algorithm
+        //       m := arrayLength(elems);
+        //       if m == 0 then
+        //         scatter := SOME(Expression.makeZero(arrTy)); return;
+        //       end if;
+
+        //       acc := Expression.makeZero(arrTy);
+
+        //       for j in 1:m loop
+        //         // slice index must be a literal integer
+        //         if match elems[j] case Expression.INTEGER() then true else false end match then
+        //           // pick element seed[j] if seed is a vector, else reuse scalar seed
+        //           seedElem := if seedIsArray
+        //             then Expression.applySubscripts({Subscript.INDEX(Expression.INTEGER(j))}, seed, true)
+        //             else seed;
+
+        //           ohOpt := buildOneHotVectorAdjoint(derBaseCref, Expression.toInteger(elems[j]), seedElem);
+        //           if Util.isSome(ohOpt) then
+        //             acc := Expression.MULTARY({acc, Util.getOption(ohOpt)}, {}, addOp);
+        //           else
+        //             scatter := NONE(); return;
+        //           end if;
+        //         else
+        //           scatter := NONE(); return;
+        //         end if;
+        //       end for;
+
+        //       scatter := SOME(acc);
+        //     then scatter;
+         // SLICE with range lo:hi (unit step)
+        case Subscript.SLICE(slice = Expression.RANGE(
+            start = Expression.INTEGER(loI),
+            step  = NONE(),
+            stop  = Expression.INTEGER(hiI)))
+          algorithm
+            if hiI < loI then
+              scatter := SOME(Expression.makeZero(arrTy)); return;
+            end if;
+
+            accOpt := NONE();
+            m := hiI - loI + 1;
+            for j in 0:(m-1) loop
+              ohOpt := buildOneHotVectorAdjoint(
+                derBaseCref,
+                loI + j,
+                if seedIsArray
+                  then Expression.applySubscripts({Subscript.INDEX(Expression.INTEGER(j+1))}, seed, true)
+                  else seed
+              );
+              if Util.isSome(ohOpt) then
+                if Util.isSome(accOpt) then
+                  acc := Util.getOption(accOpt);
+                  term := Util.getOption(ohOpt);
+                  accOpt := SOME(Expression.MULTARY({acc, term}, {}, addOp));
+                else
+                  accOpt := ohOpt;
+                end if;
+              else
+                scatter := NONE(); return;
+              end if;
+            end for;
+
+            scatter := if Util.isSome(accOpt) then accOpt else SOME(Expression.makeZero(arrTy));
+          then scatter;
+
+        else NONE();
+      end match;
+    end buildMultiHotVectorAdjoint;
+
+    // Small debug helpers (local)
+    function boolStr
+      input Boolean b; output String s;
+    algorithm
+      s := if b then "true" else "false";
+    end boolStr;
+
+    function subsToString
+      input List<Subscript> subs; output String s;
+    algorithm
+      s := "{" + List.toString(subs, Subscript.toString) + "}";
+    end subsToString;
 
   algorithm
     // extract var pointer first to have following code more readable
@@ -905,6 +1036,17 @@ public
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
       then fail();
     end match;
+
+    // Debug entry summary
+    if debugOn() then
+      dbg("[dCREF] exp=" + Expression.toString(exp)
+          + " | diffType=" + DifferentiationArguments.diffTypeStr(diffArguments.diffType)
+          + " | scalarized=" + boolStr(diffArguments.scalarized)
+          + " | collectAdjoints=" + boolStr(diffArguments.collectAdjoints));
+      if Util.isSome(diffArguments.adjoint_map) then
+        dbg("[dCREF] current_grad=" + Expression.toString(diffArguments.current_grad));
+      end if;
+    end if;
 
     (exp, diffArguments) := match (exp, diffArguments.diffType, diffArguments.diff_map)
       local
@@ -1057,32 +1199,51 @@ public
       algorithm
         strippedCref := ComponentRef.stripSubscriptsAll(exp.cref);
         expCrefSubscripts := ComponentRef.subscriptsAllFlat(exp.cref);
-        print("cref in diffCompRef: " + ComponentRef.toString(exp.cref) + "\ncref stripped: " + ComponentRef.toString(strippedCref)
-          + " with subscripts: " + List.toString(expCrefSubscripts, Subscript.toString) + "\n");
+        dbg("[dCREF:JAC] cref=" + ComponentRef.toString(exp.cref)
+            + " | stripped=" + ComponentRef.toString(strippedCref)
+            + " | subs=" + subsToString(expCrefSubscripts));
         if UnorderedMap.contains(strippedCref, diff_map) then
           // get the derivative an reapply subscripts
           derCref := UnorderedMap.getOrFail(strippedCref, diff_map);
-          print(" Found diff_map entry for cref: " + ComponentRef.toString(derCref) + "\n");
+          dbg("[dCREF:JAC] mapped -> " + ComponentRef.toString(derCref));
           res     := Expression.fromCref(ComponentRef.copySubscripts(exp.cref, derCref));
-          print("get variable for derivative cref: " + NBVariable.pointerToString(NBVariable.getVarPointer(derCref, sourceInfo())) + "\n");
+          dbg("[dCREF:JAC] get variable for derivative cref: " + NBVariable.pointerToString(NBVariable.getVarPointer(derCref, sourceInfo())));
           if diffArguments.collectAdjoints then // if derCref is on the rhs then collect adjoint (collectAdjoints is false when differentiating lhs)
-            //create array from subscripts and put current_grad at the right location
+            // Create adjoint expression from subscripts:
             adjExpr := match expCrefSubscripts
               local
                 Integer iidx;
                 Option<Expression> onehotOpt;
-              case {Subscript.INDEX(Expression.INTEGER(iidx))} // subscript must be a simple literal index, e.g. x[3] then put into a one-hot vector
+                Option<Expression> multiOpt;
+              // Single literal index -> one-hot
+              case {Subscript.INDEX(Expression.INTEGER(iidx))}
                 algorithm
+                  dbg("[dCREF:JAC] adjoint via INDEX[" + intString(iidx) + "]");
                   onehotOpt := buildOneHotVectorAdjoint(derCref, iidx, diffArguments.current_grad);
                 then (if Util.isSome(onehotOpt) then Util.getOption(onehotOpt) else diffArguments.current_grad);
-              else
-                // Fallback: keep previous behavior if not a simple literal index
+
+              // Single slice/range -> multi-hot scatter
+              case {Subscript.SLICE()}
+                algorithm
+                  dbg("[dCREF:JAC] adjoint via SLICE " + Subscript.toString(listHead(expCrefSubscripts)));
+                  multiOpt := buildMultiHotVectorAdjoint(derCref, listHead(expCrefSubscripts), diffArguments.current_grad);
+                then (if Util.isSome(multiOpt) then Util.getOption(multiOpt) else diffArguments.current_grad);
+
+              // Whole dimension -> pass upstream as-is
+              case {Subscript.WHOLE()}
                 then diffArguments.current_grad;
+
+              // Fallback: keep previous behavior
+              else diffArguments.current_grad;
             end match;
-            print("  Appending adjoint for " + ComponentRef.toString(derCref) + ": " + Expression.toString(adjExpr) + "\n");
+            dbg("[dCREF:JAC] append adjoint key=" + ComponentRef.toString(derCref)
+                + " expr=" + Expression.toString(adjExpr));
             UnorderedMap.tryAddUpdate(derCref, function updateAdjointList(current_grad = adjExpr), Util.getOption(diffArguments.adjoint_map));
+          else
+            dbg("[dCREF:JAC] collectAdjoints=false, skip append");
           end if;
         else
+          dbg("[dCREF:JAC] no diff_map entry for " + ComponentRef.toString(strippedCref) + " -> 0");
           res     := Expression.makeZero(exp.ty);
         end if;
       then (res, diffArguments);
@@ -1409,7 +1570,6 @@ public
 
         // diagG = G .* I
         diagG := Expression.MULTARY({current_grad, eyeNN}, {}, mulEW);
-        
 
         // triu(G + Gᵀ) - diag(G)
         diffArguments.current_grad := Expression.MULTARY({triuG}, {diagG}, addM);
@@ -3144,6 +3304,84 @@ public
     end for;
     v := Expression.ARRAY(vecTy, listArray(listReverse(elems)), false);
   end extractDiagonalVector;
+
+
+  // ================================
+  //           DEBUG HELPERS
+  // ================================
+
+  function debugOn
+    output Boolean on;
+  algorithm
+    on := true;
+  end debugOn;
+
+  function dbg
+    input String s;
+  algorithm
+    if debugOn() then
+      print(s + "\n");
+    end if;
+  end dbg;
+
+  function compKindString
+    input StrongComponent comp;
+    output String kind;
+  algorithm
+    kind := match comp
+      case StrongComponent.SINGLE_COMPONENT()     then "SINGLE";
+      case StrongComponent.MULTI_COMPONENT()      then "MULTI";
+      case StrongComponent.SLICED_COMPONENT()     then "SLICED";
+      case StrongComponent.RESIZABLE_COMPONENT()  then "RESIZABLE";
+      case StrongComponent.GENERIC_COMPONENT()    then "GENERIC";
+      case StrongComponent.ALGEBRAIC_LOOP()       then "ALGEBRAIC_LOOP";
+      case StrongComponent.ENTWINED_COMPONENT()   then "ENTWINED";
+      case StrongComponent.ALIAS()                then "ALIAS";
+      else "UNKNOWN";
+    end match;
+  end compKindString;
+
+  function varPtrsToString
+    input list<VariablePointer> vps;
+    output String s;
+  protected
+    list<String> names = {};
+  algorithm
+    for vp in vps loop
+      names := ComponentRef.toString(BVariable.getVarName(vp)) :: names;
+    end for;
+    s := "{" + stringDelimitList(listReverse(names), ", ") + "}";
+  end varPtrsToString;
+
+  function slicesToVarPtrs
+    input list<Slice<VariablePointer>> sls;
+    output list<VariablePointer> vps = {};
+  algorithm
+    for sl in sls loop
+      vps := Slice.getT(sl) :: vps;
+    end for;
+    vps := listReverse(vps);
+  end slicesToVarPtrs;
+
+  function tryAdjointMapKeysToString
+    input Option<UnorderedMap<ComponentRef, ExpressionList>> omap;
+    output String s;
+  protected
+    list<ComponentRef> keys = {};
+    String ks;
+  algorithm
+    if Util.isSome(omap) then
+      try
+        keys := UnorderedMap.keyList(Util.getOption(omap));
+        ks := "{" + stringDelimitList(list(ComponentRef.toString(k) for k in keys), ", ") + "}";
+        s := "adjoint_map keys = " + ks;
+      else
+        s := "adjoint_map keys = <unavailable>";
+      end try;
+    else
+      s := "adjoint_map = NONE()";
+    end if;
+  end tryAdjointMapKeysToString;
   
   annotation(__OpenModelica_Interface="backend");
 end NBDifferentiate;
