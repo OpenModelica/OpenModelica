@@ -826,6 +826,7 @@ public
         UnorderedSet<ComponentRef> pre_set;
         ComponentRef post_cref;
         list<Statement> tail_stmts;
+        Expression lhs, rhs;
 
       case Statement.ASSIGNMENT() guard(UnorderedSet.contains(stmt.lhs, condition_set)) algorithm
         // this is a cse statement. if it contains a pre variable on the RHS remove and add to tail statements
@@ -837,7 +838,16 @@ public
           tail_stmts := stmt :: Pointer.access(tail_stmts_ptr);
           for pre_cref in UnorderedSet.toList(pre_set) loop
             post_cref := BVariable.getPartnerCref(pre_cref, BVariable.getVarPre);
-            tail_stmts := Statement.ASSIGNMENT(Expression.fromCref(pre_cref), Expression.fromCref(post_cref), ComponentRef.getSubscriptedType(pre_cref), DAE.emptyElementSource) :: tail_stmts;
+            if BVariable.isFixed(BVariable.getVarPointer(post_cref, sourceInfo())) then
+              // if the variables is fixed create var = pre.var because the pre will be set to the start value
+              lhs := Expression.fromCref(post_cref);
+              rhs := Expression.fromCref(pre_cref);
+            else
+              // if the variables is not fixed create pre.var = var
+              lhs := Expression.fromCref(pre_cref);
+              rhs := Expression.fromCref(post_cref);
+            end if;
+            tail_stmts := Statement.ASSIGNMENT(lhs, rhs, ComponentRef.getSubscriptedType(pre_cref), DAE.emptyElementSource) :: tail_stmts;
           end for;
           Pointer.update(tail_stmts_ptr, tail_stmts);
         end if;
