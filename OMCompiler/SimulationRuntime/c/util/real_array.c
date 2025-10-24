@@ -282,7 +282,6 @@ const char* real_vector_to_string(const real_array *source, modelica_boolean isS
         snprintf(buffer + pos, sizeof(buffer) - pos, "}");
     }
 
-
     return buffer;
 }
 

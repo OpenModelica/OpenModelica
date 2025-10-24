@@ -638,7 +638,7 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
       }
 
       if(pVar) {
-        modelica_real* start = (modelica_real *)mData->realVarsData[i].attribute.start.data;
+        modelica_real* start = (modelica_real *)mData->realParameterData[i].attribute.start.data;
         omc_matlab4_val(&start[0], &reader, pVar, initTime);
         data->simulationInfo->realParameter[i] = start[0];
         infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=%g)", mData->realParameterData[i].info.name, start[0]);
