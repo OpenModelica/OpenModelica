@@ -85,6 +85,7 @@ import DAEQuery;
 import DAEUtil;
 import Debug;
 import DiffAlgorithm;
+import Docker;
 import Dump;
 import Error;
 import ErrorExt;
@@ -3930,9 +3931,12 @@ algorithm
       String cmakeCall;
       String crossTriple, buildDir, fmiTarget;
       list<String> dockerImgArgs;
+      Docker.DockerImageReference dockerImage;
+      list<String> dockerArguments;
       Integer uid;
       String cidFile, volumeID, containerID, userID;
       String dockerLogFile;
+      String cmake_toolchain;
       list<String> locations;
     case {"dynamic"}
       algorithm
@@ -3974,6 +3978,9 @@ algorithm
         then();
     case crossTriple::"docker"::"run"::dockerImgArgs
       algorithm
+        (dockerImage, dockerArguments) := Docker.parseDockerReferenceWithArgs(dockerImgArgs);
+        Docker.warnNonOpenModelicaImage(dockerImage);
+
         uid := System.getuid();
         cidFile := fmutmp+".cidfile";
 
@@ -4030,12 +4037,20 @@ algorithm
         else
           fmiTarget := "";
         end if;
-        cmakeCall := "cmake -DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/fmu/fmiInclude " +
+
+        if List.listGet(dockerImgArgs, 1) == "crossbuild:latest" then // TODO: Use openmodelica/crossbuild
+          cmake_toolchain := "-DCMAKE_TOOLCHAIN_FILE=/opt/cmake/toolchain/" + crossTriple + ".cmake";
+        else
+          cmake_toolchain := "";
+        end if;
+
+        cmakeCall := "cmake " + cmake_toolchain +
+                            "-DFMI_INTERFACE_HEADER_FILES_DIRECTORY=/fmu/fmiInclude " +
                             "-DDOCKER_VOL_DIR=/fmu " +
                             fmiTarget +
                             CMAKE_BUILD_TYPE +
                             " ..";
-        cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu -e CROSS_TRIPLE=" + crossTriple + " " + stringDelimitList(dockerImgArgs," ") +
+        cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu " + stringDelimitList(dockerImgArgs," ") +
                " sh -c " + dquote +
                   "cd " + dquote + "/fmu/" + fmuSourceDir + dquote + " && " +
                   "mkdir " + buildDir + " && cd " + buildDir + " && " +
