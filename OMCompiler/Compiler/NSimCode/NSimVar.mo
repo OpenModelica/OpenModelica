@@ -57,6 +57,7 @@ protected
 
   // Backend imports
   import BVariable = NBVariable;
+  import NBEquation.Equation;
   import NBEvents.{EventInfo, Condition};
   import NBPartition.Partition;
   import Slice = NBSlice;
@@ -251,6 +252,20 @@ public
       end match;
       Pointer.update(indices_ptr, simCodeIndices);
     end traverseCreate;
+
+    function createFromResidualComponent
+      input output StrongComponent comp;
+      input Pointer<list<SimVar>> acc;
+      input Pointer<SimCode.SimCodeIndices> indices_ptr;
+      input VarType varType = VarType.SIMULATION;
+    algorithm
+      _ := match comp
+        case StrongComponent.SINGLE_COMPONENT() guard(Equation.isResidual(comp.eqn)) algorithm
+          traverseCreate(Pointer.access(Equation.getResidualVar(comp.eqn)), acc, indices_ptr, varType);
+        then ();
+        else ();
+      end match;
+    end createFromResidualComponent;
 
     function size
       input SimVar var;

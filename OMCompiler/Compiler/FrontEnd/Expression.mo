@@ -2120,54 +2120,22 @@ algorithm
 end arrayEltType;
 
 public function sizeOf
-"Returns the size of an ET_ARRAY or ET_COMPLEX"
+  "Returns the size of a type."
   input DAE.Type inType;
   output Integer i;
 algorithm
   i := matchcontinue inType
-    local
-      DAE.Dimensions ad;
-      Integer nr;
-      list<Integer> lstInt;
-      list<Var> varLst;
-      list<DAE.Type> typs;
-      Type ty;
-
     // count the variables in array
-    case DAE.T_ARRAY(dims = ad)
-      equation
-        nr = dimensionSize(List.reduce(ad, dimensionsMult));
-        nr = nr * sizeOf(inType.ty);
-      then
-        nr;
+    case DAE.T_ARRAY()
+      then sizeOf(inType.ty) * product(dimensionSize(d) for d in inType.dims);
 
-    case DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ())
-      then 0;
+    case DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()) then 0;
 
     // count the variables in record
-    case DAE.T_COMPLEX(varLst = varLst)
-      equation
-        lstInt = List.mapMap(varLst, varType, sizeOf);
-        nr = List.reduce(lstInt, intAdd);
-      then
-        nr;
-
-    case DAE.T_TUPLE(types=typs)
-      equation
-        nr = List.applyAndFold(typs, intAdd, sizeOf, 0);
-      then
-        nr;
-/* Size of Enumeration is 1 like a Integer
-    case DAE.T_ENUMERATION(index=NONE(),names=strlst)
-      then
-        listLength(strlst);
-*/
-    case DAE.T_FUNCTION(funcResultType=ty)
-      then
-        sizeOf(ty);
-
-    case DAE.T_METATYPE(ty=ty)
-      then sizeOf(ty);
+    case DAE.T_COMPLEX()  then sum(sizeOf(varType(v)) for v in inType.varLst);
+    case DAE.T_TUPLE()    then sum(sizeOf(ty) for ty in inType.types);
+    case DAE.T_FUNCTION() then sizeOf(inType.funcResultType);
+    case DAE.T_METATYPE() then sizeOf(inType.ty);
 
     // 0 for T_UNKNOWN as it can only appear in tuples for WILD()??!!
     case DAE.T_UNKNOWN() then 0;
@@ -4799,15 +4767,6 @@ public function makeVar "Creates a Var given a name and Type"
 algorithm
   v := DAE.TYPES_VAR(name, DAE.dummyAttrVar, tp, DAE.UNBOUND(), false, NONE());
 end makeVar;
-
-public function dimensionsMult
-  "Multiplies two dimensions."
-  input DAE.Dimension dim1;
-  input DAE.Dimension dim2;
-  output DAE.Dimension res;
-algorithm
-  res := intDimension(dimensionSize(dim1) * dimensionSize(dim2));
-end dimensionsMult;
 
 public function dimensionsAdd
   "Adds two dimensions."

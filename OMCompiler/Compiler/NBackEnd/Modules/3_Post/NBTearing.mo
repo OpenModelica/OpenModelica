@@ -246,10 +246,9 @@ public
     String flag = Flags.getConfigString(Flags.TEARING_METHOD);
   algorithm
     funcs := match flag
-      case "cellier"        then {function initialize(minimal = false), minimal, finalize};
-      case "noTearing"      then {function initialize(minimal = true), minimal, finalize};
-      case "omcTearing"     then {function initialize(minimal = false), minimal, finalize};
       case "minimalTearing" then {function initialize(minimal = true), minimal, finalize};
+      case "cellier"        then {function initialize(minimal = true), minimal, finalize}; // TODO set `minimal = false` when it's actually doing something
+      case "omcTearing"     then {function initialize(minimal = true), minimal, finalize}; // TODO set `minimal = false` when it's actually doing something
       /* ... New tearing modules have to be added here */
       else fail();
     end match;
@@ -261,6 +260,11 @@ public
   algorithm
     residuals := list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in tearing.residual_eqns);
   end getResidualVars;
+
+  function getResidualEqns
+    input Tearing tearing;
+    output list<Pointer<Equation>> residuals = list(Slice.getT(eqn) for eqn in tearing.residual_eqns);
+  end getResidualEqns;
 
   function setResidualEqns
     input output Tearing tearing;
@@ -362,7 +366,7 @@ protected
         acc := list(Inline.inlineRecordSliceEquation(eqn, variables, dummy_set, eq_index, true) for eqn in strict.residual_eqns);
 
         // create residual equations
-        strict.residual_eqns := list(Slice.apply(eqn, function Equation.createResidual(new = true)) for eqn in List.flatten(acc));
+        strict.residual_eqns := list(Slice.apply(eqn, function Equation.createResidual(new = true, allowFail = false)) for eqn in List.flatten(acc));
 
         // create residual equations
         residual_comps := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
@@ -383,10 +387,6 @@ protected
       else comp;
     end match;
   end finalize;
-
-  function none extends Module.tearingInterface;
-    // does nothing
-  end none;
 
   function minimal extends Module.tearingInterface;
     // only extracts discrete variables to be solved as inner equations
@@ -434,7 +434,7 @@ protected
           adj         := Adjacency.Matrix.fromFull(full, v, e, equations, NBAdjacency.MatrixStrictness.MATCHING);
           matching    := Matching.regular(NBMatching.EMPTY_MATCHING, adj, true, true);
           adj         := Adjacency.Matrix.upgrade(adj, full, v, e, equations, NBAdjacency.MatrixStrictness.SORTING);
-          inner_comps := Sorting.tarjan(adj, matching, variables, equations); //probably need other variables and equations here?
+          inner_comps := Sorting.tarjan(adj, matching, variables, equations); // probably need other variables and equations here?
           strict.innerEquations := listArray(inner_comps);
 
           // create residuals equations and iteration variables

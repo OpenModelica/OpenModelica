@@ -2262,8 +2262,7 @@ public
   algorithm
     for cref in cref_lst loop
       if Type.isDiscrete(nodeType(cref)) then
-        result := true;
-        return;
+        result := true; return;
       end if;
     end for;
   end listHasDiscrete;
