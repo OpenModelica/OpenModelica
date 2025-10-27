@@ -1087,8 +1087,6 @@ protected
   algorithm
     newName := name + "_ADJ";
     if Util.isSome(strongComponents) then
-      // filter all discrete strong components and differentiate the others
-      // todo: mixed algebraic loops should be here without the discrete subsets
       comps := list(comp for comp guard(not StrongComponent.isDiscrete(comp)) in Util.getOption(strongComponents));
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no strong components were given!"});
@@ -1099,6 +1097,7 @@ protected
     for c in comps loop
       print(StrongComponent.toString(c, 2) + "\n");
     end for;
+
 
     print("Seed candidates before pDer creation:\n" + BVariable.VariablePointers.toString(seedCandidates, "Seed Candidates") + "\n");
     print("Partial candidates before pDer creation:\n" + BVariable.VariablePointers.toString(partialCandidates, "Partial Candidates") + "\n");
@@ -1469,12 +1468,27 @@ protected
       // determine component type based on equation type
       // How to determine SLICED_COMPONENT?
       diffed_comp := match eq
-        case NBEquation.SCALAR_EQUATION() then
-          NBStrongComponent.SINGLE_COMPONENT(
-            var    = lhsVarPtr,
-            eqn    = eqPtr,
-            status = NBSolve.Status.EXPLICIT
-          );
+        local
+          // helper: true if lhsKey carries any subscript (index/slice)
+          Boolean lhsHasSubs = not listEmpty(ComponentRef.subscriptsAllFlat(lhsKey));
+        case NBEquation.SCALAR_EQUATION() algorithm
+          if lhsHasSubs then
+            // Represent as a sliced component of size 1
+            diffed_comp := NBStrongComponent.SLICED_COMPONENT(
+              var_cref = lhsKey,                               // keep the subscripted cref for nice printing
+              var      = Slice.SLICE(lhsVarPtr, {}),           // scalar element; indices not needed here
+              eqn      = Slice.SLICE(eqPtr, {}),               // scalar equation
+              status   = NBSolve.Status.EXPLICIT
+            );
+          else
+            diffed_comp := NBStrongComponent.SINGLE_COMPONENT(
+              var    = lhsVarPtr,
+              eqn    = eqPtr,
+              status = NBSolve.Status.EXPLICIT
+            );
+          end if;
+        then diffed_comp;
+
         case NBEquation.ARRAY_EQUATION() then
           NBStrongComponent.SINGLE_COMPONENT(
             var    = lhsVarPtr,
