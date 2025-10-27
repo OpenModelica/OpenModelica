@@ -45,6 +45,7 @@ protected
   import Expression = NFExpression;
   import FunctionTree = NFFlatten.FunctionTree;
   import SimplifyExp = NFSimplifyExp;
+  import Statement = NFStatement;
   import Subscript = NFSubscript;
   import Type = NFType;
   import Operator = NFOperator;
@@ -1629,8 +1630,10 @@ public
       then UnorderedSet.union(occ1, occ2);
 
       case Equation.ALGORITHM() algorithm
+        // filter inputs for solvable (not occuring only in conditions)
+        inputs := collectDependenciesAlgorithmInputs(eqn.alg.statements, eqn.alg.inputs);
         // collect all crefs expanding potential records
-        inputs  := List.flatten(list(collectDependenciesCref(c, 0, map, dep_map, sol_map) for c in eqn.alg.inputs));
+        inputs  := List.flatten(list(collectDependenciesCref(c, 0, map, dep_map, sol_map) for c in inputs));
         outputs := List.flatten(list(collectDependenciesCref(c, 0, map, dep_map, sol_map) for c in eqn.alg.outputs));
         // create dependencies for inputs and outputs
         Dependency.addListFull(inputs, 0, dep_map, rep_set);
@@ -2049,6 +2052,71 @@ public
       then (set1, set2);
     end match;
   end collectDependenciesStmt;
+
+  function collectDependenciesAlgorithmInputs
+    "collects dependencies from algorithm inputs.
+    Only consider inputs that appear outside of when/if conditions"
+    input list<Statement> stmts;
+    input output list<ComponentRef> inputs;
+  protected
+    UnorderedSet<ComponentRef> candidates = UnorderedSet.fromList(inputs, ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedSet<ComponentRef> result = UnorderedSet.fromList(inputs, ComponentRef.hash, ComponentRef.isEqual);
+  algorithm
+    for stmt in stmts loop
+      collectDependenciesAlgorithmStatement(stmt, candidates, result);
+    end for;
+    inputs := UnorderedSet.toList(result);
+  end collectDependenciesAlgorithmInputs;
+
+  function collectDependenciesAlgorithmStatement
+    input Statement stmt;
+    input UnorderedSet<ComponentRef> candidates;
+    input UnorderedSet<ComponentRef> result;
+  algorithm
+    _ := match stmt
+
+      // actual occurence can only happen here
+      case Statement.ASSIGNMENT() algorithm
+        Slice.filterExp(stmt.lhs, function Equation.collectFromSet(check_set = candidates), result);
+        Slice.filterExp(stmt.rhs, function Equation.collectFromSet(check_set = candidates), result);
+      then ();
+
+      // map body
+      case Statement.FOR() algorithm
+        for s in stmt.body loop
+          collectDependenciesAlgorithmStatement(s, candidates, result);
+        end for;
+      then ();
+
+      // map body
+      case Statement.WHILE() algorithm
+        for s in stmt.body loop
+          collectDependenciesAlgorithmStatement(s, candidates, result);
+        end for;
+      then ();
+
+      // skip conditions but map body
+      case Statement.IF() algorithm
+        for branch in stmt.branches loop
+          for s in Util.tuple22(branch) loop
+            collectDependenciesAlgorithmStatement(s, candidates, result);
+          end for;
+        end for;
+      then ();
+
+      // skip conditions but map body
+      case Statement.WHEN() algorithm
+        for branch in stmt.branches loop
+          for s in Util.tuple22(branch) loop
+            collectDependenciesAlgorithmStatement(s, candidates, result);
+          end for;
+        end for;
+      then ();
+
+      // all other cases do not produce an occurence
+      else ();
+    end match;
+  end collectDependenciesAlgorithmStatement;
 
   function updateConditionCrefs
     "variables in conditions are unsolvable, reduced and get their skips removed"
