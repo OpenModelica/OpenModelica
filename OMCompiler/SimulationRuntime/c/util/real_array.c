@@ -254,7 +254,7 @@ void print_real_array(const real_array *source)
  *
  * @param source        Real vector to write to buffer.
  * @param isScalar      Treat vector as scalar.
- * @return const char* Pointer to static buffer. Not thread-safe!
+ * @return const char*  Pointer to static buffer. Not thread-safe!
  */
 const char* real_vector_to_string(const real_array *source, modelica_boolean isScalar) {
     _index_t i;

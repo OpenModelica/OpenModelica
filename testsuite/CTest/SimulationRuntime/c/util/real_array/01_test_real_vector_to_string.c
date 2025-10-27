@@ -23,7 +23,7 @@ int main(void)
   const char *expected_print = "{1, 1e+11, -2, -1.23457e-07}";
 
   // Test
-  const char *actual_print = real_vector_to_string(&test_array);
+  const char *actual_print = real_vector_to_string(&test_array, TRUE);
 
   // Validate
   if (test_success && strcmp(actual_print, expected_print))
@@ -31,9 +31,6 @@ int main(void)
     fprintf(stderr, "Test failed: Expected '%s', got '%s'\n", expected_print, actual_print);
     test_success = 0;
   }
-
-  // Free allocated memory
-  omc_alloc_interface.free_uncollectable(&test_array);
 
   if (test_success)
   {
