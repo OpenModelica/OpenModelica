@@ -1049,7 +1049,6 @@ void freeModelDataVars(MODEL_DATA* modelData)
   // Variables
   for(i=0; i < modelData->nVariablesReal; i++) {
     freeVarInfo(&modelData->realVarsData[i].info);
-    omc_alloc_interface.free_uncollectable(modelData->realVarsData[i].attribute.start.data);
   }
   omc_alloc_interface.free_uncollectable(modelData->realVarsData);
 
@@ -1073,7 +1072,6 @@ void freeModelDataVars(MODEL_DATA* modelData)
   // Parameters
   for(i=0; i < modelData->nParametersReal; i++) {
     freeVarInfo(&modelData->realParameterData[i].info);
-    omc_alloc_interface.free_uncollectable(modelData->realParameterData[i].attribute.start.data);
   }
   omc_alloc_interface.free_uncollectable(modelData->realParameterData);
 
