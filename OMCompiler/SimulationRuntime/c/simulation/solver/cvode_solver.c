@@ -1037,7 +1037,7 @@ int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   }
   flag = CVodeSetStopTime(cvodeData->cvode_mem, tNext);
   if (flag < 0) {
-    filteredLog(comp, fmi2Fatal, OMC_LOG_STATUSFATAL, "fmi2DoStep: ##CVODE## CVodeSetStopTime failed with flag %i.", flag)
+    filteredLog(comp, fmi2Fatal, OMC_LOG_STATUSFATAL, "fmi2DoStep: ##CVODE## CVodeSetStopTime failed with flag %i.", flag);
     return -1;
   }
   flag = CVode(cvodeData->cvode_mem,
@@ -1048,11 +1048,11 @@ int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   /* Error handling */
   if ((flag == CV_SUCCESS || flag == CV_TSTOP_RETURN) && solverInfo->currentTime >= tNext)
   {
-    filteredLog(comp, fmi2OK, OMC_LOG_ALL, "fmi2DoStep:##CVODE## step done to time = %.15g.", comp->solverInfo->currentTime)
+    filteredLog(comp, fmi2OK, OMC_LOG_ALL, "fmi2DoStep:##CVODE## step done to time = %.15g.", comp->solverInfo->currentTime);
   }
   else
   {
-    filteredLog(comp, fmi2Fatal, OMC_LOG_STATUSFATAL, "fmi2DoStep: ##CVODE## %d error occurred at time = %.15g.", flag, fmuComponent->solverInfo->currentTime)
+    filteredLog(comp, fmi2Fatal, OMC_LOG_STATUSFATAL, "fmi2DoStep: ##CVODE## %d error occurred at time = %.15g.", flag, fmuComponent->solverInfo->currentTime);
     return -1;
   }
 
