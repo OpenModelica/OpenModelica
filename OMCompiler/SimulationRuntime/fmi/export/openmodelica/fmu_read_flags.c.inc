@@ -214,8 +214,10 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
       cvodeData = (CVODE_SOLVER*) functions->allocateMemory(1, sizeof(CVODE_SOLVER));
       if (!cvodeData) {
         FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: Out of memory.")
+        retValue = -1;
+      } else {
+        retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData, 1 /* is FMI */);   /* TODO: cvode_solver_initial needs to use malloc and free from fmi2CallbackFunctions */
       }
-      retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData, 1 /* is FMI */);   /* TODO: cvode_solver_initial needs to use malloc and free from fmi2CallbackFunctions */
       solverInfo->solverData = cvodeData;
       omc_useStream[OMC_LOG_SOLVER] = 0;
 #else
