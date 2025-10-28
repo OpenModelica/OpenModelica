@@ -2089,7 +2089,7 @@ fmi2Status internalGetEventIndicators(fmi2Component c, fmi2Real eventIndicators[
   if (done) {
     return fmi2OK;
   }
-  filteredLog(comp, fmi2OK, LOG_FMI2_CALL, "error", "fmi2GetEventIndicators: terminated by an assertion.");
+  filteredLog(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetEventIndicators: terminated by an assertion.");
   return fmi2Error;
 }
 
