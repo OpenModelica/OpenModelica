@@ -430,7 +430,8 @@ void ElementTreeModel::addElementsHelper(ModelInstance::Model *pModel, ElementTr
   if (pModel) {
     QModelIndex index = elementTreeItemIndex(pParentElementTreeItem);
     int row = 0;
-    LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pModel->getName());
+    const QString name = pModel->getReplaceable() ? pModel->getNameIfReplaceable() : pModel->getName();
+    LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(name);
     if (pLibraryTreeItem && pLibraryTreeItem->getAccess() >= LibraryTreeItem::icon) {
       QList<ModelInstance::Element*> elements = pModel->getElements();
       QList<ModelInstance::Element*> visibleElements;
