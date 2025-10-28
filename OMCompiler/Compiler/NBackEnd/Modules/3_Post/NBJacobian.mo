@@ -67,7 +67,6 @@ protected
   import StrongComponent = NBStrongComponent;
   import Partition = NBPartition;
   import NFOperator.{MathClassification, SizeClassification};
-  import DifferentiatePartials = NBDifferentiatePartials;
   import NBVariable.{VariablePointers, VariablePointer, VarData};
   import NBDifferentiateReverse;
   import Slice = NBSlice;
@@ -999,8 +998,7 @@ protected
     input list<Pointer<Variable>> tmp_vars;
     output list<ComponentRef> orderedKeys;
   protected
-    UnorderedSet<ComponentRef> seen =
-      UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(2*UnorderedMap.bucketCount(adjoint_map) + 17));
+    UnorderedSet<ComponentRef> seen = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     ComponentRef c;
     list<ComponentRef> tail = {};
     ExpressionList terms;
@@ -1010,7 +1008,7 @@ protected
       c := BVariable.getVarName(v);
       if UnorderedMap.contains(c, adjoint_map) then
         terms := UnorderedMap.getOrDefault(c, adjoint_map, {});
-        if (not listEmpty(terms)) and (not UnorderedSet.contains(c, seen)) then
+        if not UnorderedSet.contains(c, seen) then
           orderedKeys := c :: orderedKeys;
           UnorderedSet.add(c, seen);
         end if;
@@ -1445,11 +1443,14 @@ protected
       terms := UnorderedMap.getOrFail(lhsKey, adjoint_map);
 
       if listEmpty(terms) then
-        continue; // skip empty entries
+        // No contributions -> assign zero
+        print("[adjoint] No terms for " + ComponentRef.toString(lhsKey) + ", assigning zero.\n");
+        rhsExpr := Expression.makeZero(ComponentRef.getComponentType(lhsKey));
+      else
+        // Build RHS
+        print("[adjoint] Building RHS for " + ComponentRef.toString(lhsKey) + " with " + intString(listLength(terms)) + " terms.\n");
+        rhsExpr := buildAdjointRhs(lhsKey, terms);
       end if;
-
-      // Build RHS
-      rhsExpr := buildAdjointRhs(lhsKey, terms);
 
       // Create assignment equation (supports IF-expression RHS)
       eqPtr := createAdjointEquation(
