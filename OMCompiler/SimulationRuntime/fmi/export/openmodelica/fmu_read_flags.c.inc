@@ -32,7 +32,9 @@
 #include "fmu_read_flags.h"
 #include "../simulation/options.h"
 #include "../util/simulation_options.h"
+#ifdef WITH_SUNDIALS
 #include "../simulation/solver/cvode_solver.h"
+#endif
 #include "../util/omc_mmap.h"
 #include "../util/omc_file.h"
 
@@ -146,7 +148,6 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
   threadData_t* threadData;
   SOLVER_INFO* solverInfo;
 
-  CVODE_SOLVER* cvodeData;
   int retValue;
 
   functions = comp->functions;
@@ -205,20 +206,26 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
       /* Needs no initialization */
       retValue = 0;
       break;
-    case S_CVODE:
+      case S_CVODE:
+#ifdef WITH_SUNDIALS
       omc_useStream[OMC_LOG_SOLVER] = 1;
-      cvodeData = NULL;
+      CVODE_SOLVER* cvodeData = NULL;
       FILTERED_LOG(comp, fmi2OK, LOG_ALL, "Initializing CVODE ODE Solver")
       cvodeData = (CVODE_SOLVER*) functions->allocateMemory(1, sizeof(CVODE_SOLVER));
       if (!cvodeData) {
-        FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "fmi2Instantiate: Out of memory.")
+        FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: Out of memory.")
       }
       retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData, 1 /* is FMI */);   /* TODO: cvode_solver_initial needs to use malloc and free from fmi2CallbackFunctions */
       solverInfo->solverData = cvodeData;
       omc_useStream[OMC_LOG_SOLVER] = 0;
+#else
+      solverInfo->solverData = NULL;
+      FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: FMU not compiled with SUNDIALS but solver CVODE selected.")
+      retValue = -1;
+#endif /* WITH_SUNDIALS */
       break;
     default:
-      FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "fmi2Instantiate: Unknown solver method.")
+      FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: Unknown solver method.")
       retValue = -1;
   }
 
@@ -262,10 +269,16 @@ int FMI2CS_deInitializeSolverData(ModelInstance* comp)
       retValue = 0;
       break;
     case S_CVODE:
+#ifdef WITH_SUNDIALS
       retValue = cvode_solver_deinitial(solverInfo->solverData);
       break;
+#else
+      FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: FMU not compiled with SUNDIALS but solver CVODE selected.")
+      retValue = -1;
+      break;
+#endif /* WITH_SUNDIALS */
     default:
-      FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "fmi2FreeInstance: Unknown solver method.")
+      FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2FreeInstance: Unknown solver method.")
       retValue = -1;
   }
 

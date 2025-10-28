@@ -33,7 +33,9 @@
 #include "../simulation/arrayIndex.h"
 #include "../simulation/solver/stateset.h"
 #include "../simulation/solver/model_help.h"
+#ifdef WITH_SUNDIALS
 #include "../simulation/solver/cvode_solver.h"
+#endif
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
 #include "../simulation/solver/nonlinearSystem.h"
 #endif
@@ -2210,7 +2212,6 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
   int i, zc_event = 0, time_event = 0;
   int flag;
 
-  CVODE_SOLVER* cvodeData;
   fmi2Status status = fmi2OK;
   fmi2Real* states = comp->states;
   fmi2Real* states_der = comp->states_der;
@@ -2304,12 +2305,17 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
         }
         break;
       case S_CVODE:
+#ifdef WITH_SUNDIALS
         flag = cvode_solver_fmi_step(comp->fmuData, comp->threadData, comp->solverInfo, tNext, states, comp);
         if (flag < 0)
         {
           FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: CVODE integrator step failed.")
           return fmi2Fatal;
         }
+#else
+        FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: FMU not compiled with SUNDIALS but solver CVODE selected.")
+        return fmi2Fatal;
+#endif /* WITH_SUNDIALS */
         break;
       default:
         FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: Unknown solver method %d.", comp->solverInfo->solverMethod)

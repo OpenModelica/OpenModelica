@@ -81,7 +81,8 @@ file(GLOB_RECURSE FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external_solve
                                       ${CMAKE_CURRENT_SOURCE_DIR}/simulation/*.c
                                       ${CMAKE_CURRENT_SOURCE_DIR}/util/*.c)
 if (NOT ${NEED_CVODE})
-  list(REMOVE_ITEM FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/sundials_error.c)
+  list(REMOVE_ITEM FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/sundials_error.c
+                                       ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/cvode_solver.c)
 endif()
 file(GLOB FMU_GENERATED_MODEL_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
 
