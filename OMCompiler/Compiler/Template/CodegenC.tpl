@@ -1906,7 +1906,7 @@ let &sub = buffer ""
     {
       TRACE_PUSH
 
-      <%vars.inputVars |> SIMVAR(name=name, type_=T_REAL()) hasindex i0 =>
+      <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
         '<%cref(name, &sub)%> = data->simulationInfo->inputVars[<%i0%>];'
         ;separator="\n"
       %>
@@ -1919,7 +1919,7 @@ let &sub = buffer ""
     {
       TRACE_PUSH
 
-      <%vars.inputVars |> SIMVAR(name=name, type_=T_REAL()) hasindex i0 =>
+      <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
         match cref2simvar(name, simCode)
         case SIMVAR(aliasvar=NOALIAS()) then
         'data->simulationInfo->inputVars[<%i0%>] = data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start;'
@@ -1935,7 +1935,7 @@ let &sub = buffer ""
     {
       TRACE_PUSH
 
-      <%vars.inputVars |> SIMVAR(name=name, type_=T_REAL()) hasindex i0 =>
+      <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
         match cref2simvar(name, simCode)
         case SIMVAR(aliasvar=NOALIAS()) then
         'data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start = data->simulationInfo->inputVars[<%i0%>];'
