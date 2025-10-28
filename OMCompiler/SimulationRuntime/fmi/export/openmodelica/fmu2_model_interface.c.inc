@@ -78,8 +78,8 @@ static fmi2String logCategoriesNames[] = {"logEvents", "logSingularLinearSystems
  */
 inline void filteredLog(ModelInstance *instance, fmi2Status status, int categoryIndex, const char *message, ...)
 {
-  if (!isCategoryLogged(instance, categoryIndex)) return;
   if (!instance || !instance->functions || !instance->functions->logger) return;
+  if (!isCategoryLogged(instance, categoryIndex)) return;
 
   const char *str = NULL;
   va_list args;
@@ -94,6 +94,7 @@ inline void filteredLog(ModelInstance *instance, fmi2Status status, int category
                                 logCategoriesNames[LOG_STATUSFATAL],
                                 "Failed to allocate memory while trying log message!"
                               );
+    return;
   }
 
   instance->functions->logger(instance->functions->componentEnvironment,

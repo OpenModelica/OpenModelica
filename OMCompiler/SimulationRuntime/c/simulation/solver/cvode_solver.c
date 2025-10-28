@@ -1094,7 +1094,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
 }
 
 #ifdef OMC_FMI_RUNTIME
-int cvode_solver_fmi_step(ModelInstance *comp, double tNext, double* states);
+int cvode_solver_fmi_step(ModelInstance *comp, double tNext, double* states)
 {
   printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");
   return -1;
