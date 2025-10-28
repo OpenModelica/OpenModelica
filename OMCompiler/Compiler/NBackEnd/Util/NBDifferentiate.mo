@@ -2800,7 +2800,7 @@ public
           print(Operator.toDebugString(powOp) + "\n");
 
           diffArguments.current_grad := Expression.MULTARY({current_grad}, {exp2}, Operator.fromClassification(
-            (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ARRAY_SCALAR),
+            (NFOperator.MathClassification.MULTIPLICATION, if Type.isArray(Expression.typeOf(current_grad)) then NFOperator.SizeClassification.ARRAY_SCALAR else NFOperator.SizeClassification.SCALAR),
             operator.ty)); // z = f/g going into f
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
 
