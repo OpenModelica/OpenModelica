@@ -2442,7 +2442,12 @@ void Element::showParameters()
   pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 parameters window").arg(mpModel->getName()).arg(getName()));
   pMainWindow->getProgressBar()->setRange(0, 0);
   pMainWindow->showProgressBar();
-  ElementParameters *pElementParameters = new ElementParameters(mpModelComponent, mpGraphicsView, isInheritedElement(), false, 0, 0, 0, pMainWindow);
+  bool inherited = false;
+  if (mpGraphicsView && mpGraphicsView->getModelWidget() && mpGraphicsView->getModelWidget()->isElementMode()
+      && mpGraphicsView->getModelWidget()->getModelInstance() && mpGraphicsView->getModelWidget()->getModelInstance()->getRootParentElement()) {
+    inherited = mpGraphicsView->getModelWidget()->getModelInstance()->getRootParentElement()->isExtend();
+  }
+  ElementParameters *pElementParameters = new ElementParameters(mpModelComponent, mpGraphicsView, inherited, false, 0, 0, 0, pMainWindow);
   pMainWindow->hideProgressBar();
   pMainWindow->getStatusBar()->clearMessage();
   pElementParameters->exec();
