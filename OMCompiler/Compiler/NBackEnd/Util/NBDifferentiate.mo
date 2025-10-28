@@ -1618,10 +1618,53 @@ public
         exp.call := Call.setArguments(exp.call, {ret1});
       then exp;
 
+      // matrix(A)
+      // Forward: matrix(dA/dz)
+      // Reverse: let rX = ndims(A), G the upstream matrix:
+      //   - if rX < 2: dropLastDimIndex1(G) (2-rX times)
+      //   - if rX = 2: G
+      //   - if rX > 2: promote(G, rX)
+      case (Expression.CALL()) guard(name == "matrix")
+      algorithm
+        arg1 := match Call.arguments(exp.call)
+          case {arg1} then arg1;
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
+          then fail();
+        end match;
+
+        current_grad := diffArguments.current_grad;
+
+        // Rank of input A
+        ty := Expression.typeOf(arg1);
+        rX := if Type.isArray(ty) then Type.dimensionCount(ty) else 0;
+
+        // Map upstream gradient back to A's shape
+        grad_x := current_grad;
+
+        // If A has rank < 2, drop trailing dims by indexing with 1
+        if rX < 2 then
+          for i in 1:(2 - rX) loop
+            grad_x := dropLastDimIndex1(grad_x);
+          end for;
+        elseif rX > 2 then
+          // If A has rank > 2 (with trailing singleton dims), promote G to rank rX
+          grad_x := typePromoteCall(grad_x, rX);
+        end if;
+
+        // Recurse into A with mapped upstream gradient
+        diffArguments.current_grad := grad_x;
+        (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+        diffArguments.current_grad := current_grad;
+
+        // Forward: matrix(dA/dz)
+        exp.call := Call.setArguments(exp.call, {ret1});
+      then exp;
+
       // Functions with one argument that differentiate "through" 
       // through means that the derivative of the function wrt. its input is equal to the function of derivative of input
       // d/dz f(x) -> f(dx/dz)
-      case (Expression.CALL()) guard(List.contains({"pre", "noEvent", "scalar", "vector", "matrix", "transpose", "skew"}, name, stringEqual))
+      case (Expression.CALL()) guard(List.contains({"pre", "noEvent", "scalar", "vector", "transpose", "skew"}, name, stringEqual))
       algorithm
         arg1 := match Call.arguments(exp.call)
           case {arg1} then arg1;
@@ -2958,8 +3001,8 @@ public
       case Expression.MULTARY(arguments = arguments, inv_arguments = {}, operator = operator)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
         algorithm
-          if listLength(arguments) == 2 then
-            // for "pure" multiplication of exactly two arguments just use binary differentiation
+          if listLength(arguments) == 2 and (Type.isArray(Expression.typeOf(listGet(arguments, 1))) or Type.isArray(Expression.typeOf(listGet(arguments, 2)))) then
+            // for "pure" multiplication of exactly two arguments where atleast one is an array just use binary differentiation
             (diff_arg, diffArguments) := differentiateBinary(Expression.BINARY(listGet(arguments, 1), operator, listGet(arguments, 2)), diffArguments);
             new_arguments := {diff_arg};
           else
@@ -2990,9 +3033,8 @@ public
               and (not listEmpty(inv_arguments)))
         algorithm
           (_, sizeClass) := Operator.classify(operator);
-          if (listLength(arguments) == 1 and listLength(inv_arguments) == 1) then
-            print("hi\n");
-            // for "pure" division of exactly two arguments just use binary differentiation
+          if listLength(arguments) == 1 and listLength(inv_arguments) == 1 and Type.isArray(Expression.typeOf(listGet(arguments, 1))) then
+            // for "pure" division of exactly two arguments and the numerator is an array just use binary differentiation
             (diff_arg, diffArguments) := differentiateBinary(Expression.BINARY(listGet(arguments, 1), Operator.fromClassification(
               (NFOperator.MathClassification.DIVISION, sizeClass),
               operator.ty), listGet(inv_arguments, 1)), diffArguments);
@@ -3232,6 +3274,51 @@ public
     tr := Expression.CALL(call);
   end typeTransposeCall;
 
+    // Helper: build a typed builtin promote(A, n) call that appends (n - ndims(A)) singleton dims.
+  function typePromoteCall
+    input Expression arr;   // A (scalar or array)
+    input Integer n;        // desired rank
+    output Expression promoted;
+  protected
+    Type inTy = Expression.typeOf(arr);
+    Type elTy;
+    list<Type.Dimension> inDims;
+    Integer m, k;
+    list<Type.Dimension> ones = {};
+    list<Type.Dimension> resDims;
+    Type resTy;
+    NFCall call;
+    NFPrefixes.Variability var = Expression.variability(arr);
+    NFPrefixes.Purity pur = Expression.purity(arr);
+    NFFunction.Function PROMOTE_FUNC;
+  algorithm
+    elTy := if Type.isArray(inTy) then Type.arrayElementType(inTy) else inTy;
+    inDims := if Type.isArray(inTy) then Type.arrayDims(inTy) else {};
+    m := listLength(inDims);
+
+    // Append singleton dims to the right until rank n
+    for k in 1:max(0, n - m) loop
+      ones := Dimension.fromInteger(1) :: ones;
+    end for;
+    resDims := List.append_reverse(ones, inDims);
+    resTy := if n > 0 then Type.ARRAY(elTy, resDims) else elTy;
+
+    // Minimal builtin descriptor for 'promote'
+    PROMOTE_FUNC :=
+      NFFunction.Function.FUNCTION(
+        Absyn.Path.IDENT("promote"),
+        NFInstNode.EMPTY_NODE(),
+        {}, {}, {}, {},
+        resTy,
+        DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+        {}, {}, listArray({}),
+        Pointer.createImmutable(NFFunction.FunctionStatus.BUILTIN),
+        Pointer.createImmutable(0));
+
+    call := NFCall.makeTypedCall(PROMOTE_FUNC, {arr, Expression.INTEGER(n)}, var, pur, resTy);
+    promoted := Expression.CALL(call);
+  end typePromoteCall;
+
 
   function typeSumCall
       "Create a typed builtin sum(A) call without expanding A.
@@ -3298,7 +3385,7 @@ public
         b);
     end makeMul;
 
-    // Drop the last array dimension by indexing it with 1:
+  // Drop the last array dimension by indexing it with 1:
   // arr[..., 1]. If arr is not an array, return it unchanged.
   function dropLastDimIndex1
     input Expression arr;
