@@ -1338,6 +1338,8 @@ template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<Str
     ifneq ($(NEED_SUNDIALS),)
     FMISUNDIALSFILES=<%sundialsObjectFiles ; separator = " "%>
     LDFLAGS+=-Wl,-Bstatic -lsundials_cvode -lsundials_nvecserial -Wl,-Bdynamic
+    else
+    FMISUNDIALSFILES=./simulation/solver/cvode_solver.o
     endif
     >>
 
