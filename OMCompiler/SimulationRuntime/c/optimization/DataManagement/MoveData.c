@@ -542,7 +542,7 @@ static inline void printSomeModelInfos(OptDataBounds * bounds, OptDataDim * dim,
     printf("\nState[%i]:%s(start = %s, nominal = %g%s",
            i,
            data->modelData->realVarsData[i].info.name,
-           real_vector_to_string(data->modelData->realVarsData[i].attribute.start.data, data->modelData->realVarsData[i].dimension.numberOfDimensions == 0),
+           real_vector_to_string(&data->modelData->realVarsData[i].attribute.start, data->modelData->realVarsData[i].dimension.numberOfDimensions == 0),
            xnom[i],
            buffer);
 

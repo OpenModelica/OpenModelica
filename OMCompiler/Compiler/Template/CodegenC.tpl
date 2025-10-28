@@ -7170,10 +7170,25 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
         case simCode as SIMCODE(__) then
           match modelInfo
             case MODELINFO(vars=SIMVARS(__)) then
-              // TODO: Handle start attribute
               <<
-              <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
-              'min[<%i0%>] = <%crefAttributes(name)%>.min;<%\n%>max[<%i0%>] = <%crefAttributes(name)%>.max;<%\n%>nominal[<%i0%>] = <%crefAttributes(name)%>.nominal;<%\n%>useNominal[<%i0%>] = <%crefAttributes(name)%>.useNominal;<%\n%>name[<%i0%>] =(char *) <%crefVarInfo(name)%>.name;<%\n%>start[<%i0%>] = <%crefAttributes(name)%>.start;'
+              <%vars.inputVars |> SIMVAR(index=index, type_=type_) hasindex i0 =>
+                <<
+                min[<%i0%>] = <%crefAttributes(name)%>.min;
+                max[<%i0%>] = <%crefAttributes(name)%>.max;
+                nominal[<%i0%>] = <%crefAttributes(name)%>.nominal;
+                useNominal[<%i0%>] = <%crefAttributes(name)%>.useNominal;
+                name[<%i0%>] =(char *) <%crefVarInfo(name)%>.name;
+                <%match type_ case T_REAL() then
+                  <<
+                  assertStreamPrint(NULL, data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].dimension.numberOfDimensions == 0, "Handling of array variables not yet implemetned.");
+                  start[<%i0%>] = real_get(<%crefAttributes(name)%>.start, 0);
+                  >>
+                else
+                  <<
+                  start[<%i0%>] = <%crefAttributes(name)%>.start;
+                  >>
+                %>
+                >>
               ;separator="\n"%>
               >>
 
