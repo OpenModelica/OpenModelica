@@ -2279,7 +2279,8 @@ void Element::showAttributes()
  */
 void Element::openClass()
 {
-  MainWindow::instance()->getLibraryWidget()->openLibraryTreeItem(getClassName());
+  const QString className = (mpModel && mpModel->getReplaceable()) ? mpModel->getNameIfReplaceable() : getClassName();
+  MainWindow::instance()->getLibraryWidget()->openLibraryTreeItem(className);
 }
 
 /*!
