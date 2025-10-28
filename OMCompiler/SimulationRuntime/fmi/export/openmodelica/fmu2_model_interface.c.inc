@@ -285,7 +285,12 @@ fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
       eventInfo->valuesOfContinuousStatesChanged = fmi2True;
     }
 #endif
-    storePreValues(comp->fmuData);
+
+    /* store pre-values after events are handled, this will override pre values
+     * soon and there is no chance of event triggering for conditons change(u) (i.e) u <> pre(u)
+     *https://github.com/OpenModelica/OpenModelica/issues/13811
+     */
+    //storePreValues(comp->fmuData);
 
     /* activate sample event */
     for(i=0; i<comp->fmuData->modelData->nSamples; ++i) {
@@ -330,8 +335,6 @@ fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
     }
     FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "internalEventUpdate: newDiscreteStatesNeeded %s",eventInfo->newDiscreteStatesNeeded?"true":"false");
 
-    /* due to an event overwrite old values */
-    overwriteOldSimulationData(comp->fmuData);
 
     /* TODO: check the event iteration for relation
      * in fmi2 import and export. This is an workaround,
@@ -339,6 +342,8 @@ fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
      */
     storePreValues(comp->fmuData);
     updateRelationsPre(comp->fmuData);
+    /* due to an event overwrite old values */
+    overwriteOldSimulationData(comp->fmuData);
 
     nextSampleEventDefined = getNextSampleTimeFMU(comp->fmuData, &nextSampleEvent);
 
