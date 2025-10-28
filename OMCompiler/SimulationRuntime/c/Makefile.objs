@@ -135,6 +135,7 @@ endif
 SOLVER_OBJS_FMU=$(SOLVER_OBJS_LINEAR_SYSTEMS) \
                 $(SOLVER_OBJS_MIXED_SYSTEMS) \
                 $(SOLVER_OBJS_NONLINEAR_SYSTEMS) \
+                cvode_solver$(OBJ_EXT) \
                 delay$(OBJ_EXT) \
                 fmi_events$(OBJ_EXT) \
                 model_help$(OBJ_EXT) \
@@ -154,7 +155,6 @@ else
 endif
 ifeq ($(OMC_MINIMAL_RUNTIME),)
   SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL) \
-              cvode_solver$(OBJ_EXT) \
               dae_mode$(OBJ_EXT) \
               dassl$(OBJ_EXT) \
               gbode_conf$(OBJ_EXT) \
