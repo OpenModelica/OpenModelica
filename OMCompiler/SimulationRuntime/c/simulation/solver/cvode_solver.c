@@ -76,6 +76,10 @@ const char *CVODE_ITER_DESC[CVODE_ITER_MAX + 1] = {
     "Nonlinear system solution through Newton iterations"
 };
 
+#ifdef OMC_FMI_RUNTIME
+extern void filteredLog(ModelInstance *instance, fmi2Status status, int categoryIndex, const char *message, ...);
+#endif
+
 /* Internal function prototypes */
 int cvodeRightHandSideODEFunction(realtype time, N_Vector y, N_Vector ydot, void *userData);
 void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype isFMI);
@@ -1001,7 +1005,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   return retVal;
 }
 
-
+#ifdef OMC_FMI_RUNTIME
 
 /**
  * @brief Integration step with CVODE for fmi2DoStep
@@ -1033,8 +1037,7 @@ int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   }
   flag = CVodeSetStopTime(cvodeData->cvode_mem, tNext);
   if (flag < 0) {
-    // TODO: Add logging
-    //FILTERED_LOG(comp, fmi2Fatal, OMC_LOG_STATUSFATAL, "fmi2DoStep: ##CVODE## CVodeSetStopTime failed with flag %i.", flag)
+    filteredLog(comp, fmi2Fatal, OMC_LOG_STATUSFATAL, "fmi2DoStep: ##CVODE## CVodeSetStopTime failed with flag %i.", flag)
     return -1;
   }
   flag = CVode(cvodeData->cvode_mem,
@@ -1045,18 +1048,18 @@ int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   /* Error handling */
   if ((flag == CV_SUCCESS || flag == CV_TSTOP_RETURN) && solverInfo->currentTime >= tNext)
   {
-    //FILTERED_LOG(comp, fmi2OK, OMC_LOG_ALL, "fmi2DoStep:##CVODE## step done to time = %.15g.", comp->solverInfo->currentTime)
+    filteredLog(comp, fmi2OK, OMC_LOG_ALL, "fmi2DoStep:##CVODE## step done to time = %.15g.", comp->solverInfo->currentTime)
   }
   else
   {
-    //FILTERED_LOG(comp, fmi2Fatal, OMC_LOG_STATUSFATAL, "fmi2DoStep: ##CVODE## %d error occurred at time = %.15g.", flag, fmuComponent->solverInfo->currentTime)
-    // TODO: Add logging
-    printf("fmi2DoStep: ##CVODE## %d error occurred at time = %.15g.", flag, solverInfo->currentTime);
+    filteredLog(comp, fmi2Fatal, OMC_LOG_STATUSFATAL, "fmi2DoStep: ##CVODE## %d error occurred at time = %.15g.", flag, fmuComponent->solverInfo->currentTime)
     return -1;
   }
 
   return 0;
 }
+
+#endif /* OMC_FMI_RUNTIME */
 
 #else /* WITH_SUNDIALS */
 
