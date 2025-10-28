@@ -240,6 +240,22 @@ public
     end match;
   end isWhen;
 
+  function containsWhen
+    input Statement stmt;
+    output Boolean b;
+  algorithm
+    b := match stmt
+      case FOR() then List.any(stmt.body, containsWhen);
+      case IF() algorithm
+        for branch in stmt.branches loop
+          b := List.any(Util.tuple22(branch), containsWhen);
+          if b then break; end if;
+        end for;
+      then b;
+      else isWhen(stmt);
+    end match;
+  end containsWhen;
+
   function makeIf
     input list<tuple<Expression, list<Statement>>> branches;
     input DAE.ElementSource src;

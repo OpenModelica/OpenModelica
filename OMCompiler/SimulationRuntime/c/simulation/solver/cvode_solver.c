@@ -1058,4 +1058,46 @@ int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   return 0;
 }
 
+#else /* WITH_SUNDIALS */
+
+int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData, int isFMI)
+{
+#ifdef OMC_FMI_RUNTIME
+  printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");
+  return -1;
+#else
+  throwStreamPrint(threadData, "##CVODE## SUNDIALS not available. Reconfigure omc with SUNDIALS.\n");
+#endif
+}
+
+int cvode_solver_deinitial(CVODE_SOLVER *cvodeData)
+{
+#ifdef OMC_FMI_RUNTIME
+  printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");
+  return -1;
+#else
+  throwStreamPrint(NULL, "##CVODE## SUNDIALS not available. Reconfigure omc with SUNDIALS.\n");
+#endif
+}
+
+int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
+{
+#ifdef OMC_FMI_RUNTIME
+  printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");
+  return -1;
+#else
+  throwStreamPrint(threadData, "##CVODE## SUNDIALS not available. Reconfigure omc with SUNDIALS.\n");
+#endif
+}
+
+int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double tNext, double* states, void* fmuComponent)
+{
+#ifdef OMC_FMI_RUNTIME
+  printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");
+  return -1;
+#else
+  throwStreamPrint(threadData, "##CVODE## SUNDIALS not available. Reconfigure omc with SUNDIALS.\n");
+#endif
+}
+
 #endif /* #ifdef WITH_SUNDIALS */

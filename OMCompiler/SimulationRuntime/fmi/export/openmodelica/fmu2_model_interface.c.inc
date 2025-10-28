@@ -34,7 +34,9 @@
 #include "../simulation/solver/initialization/initialization.h"
 #include "../simulation/solver/stateset.h"
 #include "../simulation/solver/model_help.h"
+#ifdef WITH_SUNDIALS
 #include "../simulation/solver/cvode_solver.h"
+#endif
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
 #include "../simulation/solver/nonlinearSystem.h"
 #endif
@@ -322,7 +324,12 @@ fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
       eventInfo->valuesOfContinuousStatesChanged = fmi2True;
     }
 #endif
-    storePreValues(comp->fmuData);
+
+    /* store pre-values after events are handled, this will override pre values
+     * soon and there is no chance of event triggering for conditons change(u) (i.e) u <> pre(u)
+     *https://github.com/OpenModelica/OpenModelica/issues/13811
+     */
+    //storePreValues(comp->fmuData);
 
     /* activate sample event */
     for(i=0; i<comp->fmuData->modelData->nSamples; ++i) {
@@ -367,8 +374,6 @@ fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
     }
     filteredLog(comp, fmi2OK, LOG_FMI2_CALL, "internalEventUpdate: newDiscreteStatesNeeded %s",eventInfo->newDiscreteStatesNeeded?"true":"false");;
 
-    /* due to an event overwrite old values */
-    overwriteOldSimulationData(comp->fmuData);
 
     /* TODO: check the event iteration for relation
      * in fmi2 import and export. This is an workaround,
@@ -376,6 +381,8 @@ fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
      */
     storePreValues(comp->fmuData);
     updateRelationsPre(comp->fmuData);
+    /* due to an event overwrite old values */
+    overwriteOldSimulationData(comp->fmuData);
 
     nextSampleEventDefined = getNextSampleTimeFMU(comp->fmuData, &nextSampleEvent);
 
@@ -2242,7 +2249,6 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
   int i, zc_event = 0, time_event = 0;
   int flag;
 
-  CVODE_SOLVER* cvodeData;
   fmi2Status status = fmi2OK;
   fmi2Real* states = comp->states;
   fmi2Real* states_der = comp->states_der;
@@ -2336,12 +2342,17 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
         }
         break;
       case S_CVODE:
+#ifdef WITH_SUNDIALS
         flag = cvode_solver_fmi_step(comp->fmuData, comp->threadData, comp->solverInfo, tNext, states, comp);
         if (flag < 0)
         {
           filteredLog(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: CVODE integrator step failed.");
           return fmi2Fatal;
         }
+#else
+        FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: FMU not compiled with SUNDIALS but solver CVODE selected.")
+        return fmi2Fatal;
+#endif /* WITH_SUNDIALS */
         break;
       default:
         filteredLog(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: Unknown solver method %d.", comp->solverInfo->solverMethod);
