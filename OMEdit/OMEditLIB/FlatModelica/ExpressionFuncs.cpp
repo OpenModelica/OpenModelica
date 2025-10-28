@@ -82,11 +82,22 @@ namespace FlatModelica
       case 2: // String(r, format)
         return Expression(format_string("%" + args[1].stringValue(), args[0].realValue()));
 
-      case 3: // String(i, minimumLength, leftJustified)
-        return Expression(format_string(
-            (args[2].boolValue() ? "%-" : "%") + args[1].toString() + "d",
-            args[0].intValue()
-          ));
+      case 3: // String(i|b|e, minimumLength, leftJustified)
+        if (args[0].isInteger()) {
+          return Expression(format_string(
+              (args[2].boolValue() ? "%-" : "%") + args[1].toString() + "d",
+              args[0].intValue()
+            ));
+        } else {
+          // Boolean or enumeration, convert to string and pad with spaces if necessary.
+          auto str = args[0].toString();
+          auto len = args[1].intValue();
+          auto pad_len = len - str.size();
+          if (pad_len > 0) {
+            str.insert(args[2].boolValue() ? str.end() : str.begin(), pad_len, ' ');
+          }
+          return Expression(std::move(str));
+        }
 
       case 4: // String(r, significantDigits, mininumLength, leftJustified)
         return Expression(format_string(
