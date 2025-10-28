@@ -3072,10 +3072,13 @@ match system
                   let start = daeExp(range.start, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
                   '<%daeExp(crefExp(cref), contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)%>-<%start%>'
                 ;separator="+")
+            let assignment = (if isArrayType(typeof(exp))
+              then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_index%>+<%indexShift%>);'
+              else '<%preExp%>res[<%res_index%>+<%indexShift%>] = <%expPart%>;')
             <<
             <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
             <%forPart%>
-            <%preExp%>res[<%res_index%>+<%indexShift%>] = <%expPart%>;
+            <%assignment%>
             <%endForPart%>
             <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
             >>
@@ -3094,13 +3097,16 @@ match system
                 int <%iter%> = <%step%> * <%iter%>_loc + <%start%>;
                 tmp /= <%iter%>_size;
                 >>;separator="\n")
+            let assignment = (if isArrayType(typeof(exp))
+              then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_index%>+i_);'
+              else '<%preExp%>res[<%res_index%>+i_] = <%expPart%>;')
             <<
             const int idx_lst_<%res_index%>[<%idx_len%>] = {<%(scal_indices |> idx => '<%idx%>';separator=", ")%>};
             for(int i_=0; i_<<%idx_len%>; i_++)
             {
               int tmp = idx_lst_<%res_index%>[i_];
               <%iter_%>
-              <%preExp%>res[<%res_index%>+i_] = <%expPart%>;
+              <%assignment%>
             }
             >>
         ;separator="\n")
