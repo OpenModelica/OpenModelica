@@ -400,6 +400,20 @@ QModelIndex ElementTreeModel::elementTreeItemIndex(const ElementTreeItem *pEleme
 }
 
 /*!
+ * \brief ElementTreeModel::removeElements
+ * Removes all the Elements from the Element Browser.
+ */
+void ElementTreeModel::removeElements()
+{
+  const int n = mpRootElementTreeItem->childrenSize();
+  if (n > 0) {
+    beginRemoveRows(elementTreeItemIndex(mpRootElementTreeItem), 0, n - 1);
+    mpRootElementTreeItem->removeChildren();
+    endRemoveRows();
+  }
+}
+
+/*!
  * \brief ElementTreeModel::addElements
  * Adds the Elements of the model to the Element Browser.
  * \param pModel
@@ -408,12 +422,7 @@ void ElementTreeModel::addElements(ModelInstance::Model *pModel)
 {
   mpElementWidget->setIgnoreSelectionChange(true);
   // remove the existing elements if there are any
-  const int n = mpRootElementTreeItem->childrenSize();
-  if (n > 0) {
-    beginRemoveRows(elementTreeItemIndex(mpRootElementTreeItem), 0, n - 1);
-    mpRootElementTreeItem->removeChildren();
-    endRemoveRows();
-  }
+  removeElements();
   // add model elements recursively
   addElementsHelper(pModel, mpRootElementTreeItem);
   mpElementWidget->setIgnoreSelectionChange(false);
