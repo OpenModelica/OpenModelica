@@ -174,7 +174,6 @@ void PlotWindow::initializePlot(QStringList arguments)
   setYRightCustomLabel(getYRightLabel());
   setYRightRange(QString(arguments[20]).toDouble(), QString(arguments[21]).toDouble());
   setTimeUnit("");
-  setPrefixUnits(true);
   /* read variables */
   QStringList variablesToRead;
   for(int i = 22; i < arguments.length(); i++)
@@ -2293,7 +2292,8 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   mpYRightMinimumTextBox->setValidator(pDoubleValidator);
   mpYRightMaximumTextBox->setValidator(pDoubleValidator);
   mpPrefixUnitsCheckbox = new QCheckBox(tr("Prefix Units"));
-  mpPrefixUnitsCheckbox->setChecked(mpPlotWindow->getPrefixUnits());
+  mpPrefixUnitsCheckbox->setChecked(mpPlotWindow->getPrefixUnits() && mpPlotWindow->canHavePrefixUnits());
+  mpPrefixUnitsCheckbox->setEnabled(mpPlotWindow->canHavePrefixUnits());
   // range tab layout
   QVBoxLayout *pRangeTabVerticalLayout = new QVBoxLayout;
   pRangeTabVerticalLayout->setAlignment(Qt::AlignTop);
