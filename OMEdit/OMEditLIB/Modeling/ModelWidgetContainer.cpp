@@ -6526,7 +6526,7 @@ void ModelWidget::updateChildClasses(LibraryTreeItem *pLibraryTreeItem)
   while(i != pLibraryTreeItem->childrenSize()) {
     LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
     if (!classNames.contains(pChildLibraryTreeItem->getName())) {
-      pLibraryTreeModel->removeLibraryTreeItem(pChildLibraryTreeItem);
+      pLibraryTreeModel->removeLibraryTreeItem(pChildLibraryTreeItem, false);
       i = 0;  //Restart iteration if list has changed
     } else {
       i++;
@@ -8370,6 +8370,10 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     MainWindow::instance()->showDebuggingPerspectiveToolBars(pModelWidget);
   }
   if (!pSubWindow || mpLastActiveSubWindow == pSubWindow) {
+    // Clear Element Browser
+    if (!pSubWindow) {
+      MainWindow::instance()->getElementWidget()->getElementTreeModel()->removeElements();
+    }
     return;
   }
   mpLastActiveSubWindow = pSubWindow;

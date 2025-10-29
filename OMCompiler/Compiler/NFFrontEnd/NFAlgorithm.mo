@@ -220,13 +220,8 @@ public
     input Algorithm alg;
     output Boolean b;
   algorithm
-    b := ComponentRef.listHasDiscrete(alg.outputs);
-    if not b then
-      for stmt in alg.statements loop
-        b := Statement.containsWhen(stmt);
-        if b then break; end if;
-      end for;
-    end if;
+    b := List.any(alg.outputs, ComponentRef.isDiscrete);
+    b := if b then b else List.any(alg.statements, Statement.isDiscrete);
   end isDiscrete;
 
 protected

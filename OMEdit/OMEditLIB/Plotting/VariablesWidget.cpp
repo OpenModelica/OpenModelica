@@ -193,17 +193,11 @@ VariablesTreeItem* VariablesTreeItem::child(int row)
   return mChildren.value(row);
 }
 
-void VariablesTreeItem::removeChildren()
-{
-  qDeleteAll(mChildren);
-  mChildren.clear();
-  mChildrenHash.clear();
-}
-
 void VariablesTreeItem::removeChild(VariablesTreeItem *pVariablesTreeItem)
 {
   mChildren.removeOne(pVariablesTreeItem);
   mChildrenHash.remove(pVariablesTreeItem->getVariableName());
+  delete pVariablesTreeItem;
 }
 
 int VariablesTreeItem::columnCount() const
@@ -384,14 +378,16 @@ int VariablesTreeModel::columnCount(const QModelIndex &parent) const
 int VariablesTreeModel::rowCount(const QModelIndex &parent) const
 {
   VariablesTreeItem *pParentVariablesTreeItem;
-  if (parent.column() > 0)
+  if (parent.column() > 0) {
     return 0;
+  }
 
-  if (!parent.isValid())
+  if (!parent.isValid()) {
     pParentVariablesTreeItem = mpRootVariablesTreeItem;
-  else
+  } else {
     pParentVariablesTreeItem = static_cast<VariablesTreeItem*>(parent.internalPointer());
-  return pParentVariablesTreeItem->mChildren.size();
+  }
+  return pParentVariablesTreeItem ? pParentVariablesTreeItem->mChildren.size() : 0;
 }
 
 QVariant VariablesTreeModel::headerData(int section, Qt::Orientation orientation, int role) const
@@ -403,21 +399,22 @@ QVariant VariablesTreeModel::headerData(int section, Qt::Orientation orientation
 
 QModelIndex VariablesTreeModel::index(int row, int column, const QModelIndex &parent) const
 {
-  if (!hasIndex(row, column, parent))
+  if (!hasIndex(row, column, parent)) {
     return QModelIndex();
+  }
 
   VariablesTreeItem *pParentVariablesTreeItem;
-
-  if (!parent.isValid())
+  if (!parent.isValid()) {
     pParentVariablesTreeItem = mpRootVariablesTreeItem;
-  else
+  } else {
     pParentVariablesTreeItem = static_cast<VariablesTreeItem*>(parent.internalPointer());
+  }
 
-  VariablesTreeItem *pChildVariablesTreeItem = pParentVariablesTreeItem->child(row);
-  if (pChildVariablesTreeItem)
-    return createIndex(row, column, pChildVariablesTreeItem);
-  else
+  if (row < 0 || row >= pParentVariablesTreeItem->mChildren.size()) {
     return QModelIndex();
+  }
+
+  return createIndex(row, column, pParentVariablesTreeItem->child(row));
 }
 
 QModelIndex VariablesTreeModel::parent(const QModelIndex &index) const
@@ -660,26 +657,32 @@ bool VariablesTreeModel::removeVariableTreeItem(QString variable, bool closeInte
 {
   VariablesTreeItem *pVariablesTreeItem = findVariablesTreeItem(variable, mpRootVariablesTreeItem);
   if (pVariablesTreeItem) {
-    int row = pVariablesTreeItem->row();
-    beginRemoveRows(variablesTreeItemIndex(pVariablesTreeItem->parent()), row, row);
-    pVariablesTreeItem->removeChildren();
-    VariablesTreeItem *pParentVariablesTreeItem = pVariablesTreeItem->parent();
-    pParentVariablesTreeItem->removeChild(pVariablesTreeItem);
     MainWindow::instance()->getSimulationDialog()->removeInteractiveSimulation(pVariablesTreeItem->getSimulationOptions().isInteractiveSimulation(),
                                                                                pVariablesTreeItem->getFileName(), closeInteractivePlotWindow);
+    removeVariableTreeItem(pVariablesTreeItem);
+    return true;
+  }
+  return false;
+}
+
+void VariablesTreeModel::removeVariableTreeItem(VariablesTreeItem *pVariablesTreeItem)
+{
+  // now remove the item
+  VariablesTreeItem *pParentVariablesTreeItem = pVariablesTreeItem->parent();
+  if (pParentVariablesTreeItem) {
     /* Reset the active VariablesTreeItem so the contorls are disabled when initializeVisualization is called.
      * The can controls can be enabled if diagramWindow is active and we have a corresponding VariablesTreeItem for it.
      */
     if (pVariablesTreeItem == mpActiveVariablesTreeItem) {
       mpActiveVariablesTreeItem = 0;
     }
-    delete pVariablesTreeItem;
-    mpVariablesTreeView->getVariablesWidget()->initializeVisualization();
+    int row = pVariablesTreeItem->row();
+    beginRemoveRows(variablesTreeItemIndex(pParentVariablesTreeItem), row, row);
+    pParentVariablesTreeItem->removeChild(pVariablesTreeItem);
     endRemoveRows();
-    mpVariablesTreeView->getVariablesWidget()->findVariables();
-    return true;
+    mpVariablesTreeView->getVariablesWidget()->initializeVisualization();
   }
-  return false;
+  mpVariablesTreeView->getVariablesWidget()->findVariables();
 }
 
 /*!
@@ -1071,12 +1074,7 @@ void VariablesTreeModel::filterVariableTreeItem(VariableNode *pParentVariableNod
     VariableNode *pVariableNode = pParentVariableNode->mChildren.value(pVariablesTreeItem->getVariableName(), 0);
     // if we fail to find the variable node then remove that pVariablesTreeItem
     if (!pVariableNode) {
-      QModelIndex index = variablesTreeItemIndex(pParentVariablesTreeItem);
-      int row = pVariablesTreeItem->row();
-      beginRemoveRows(index, row, row);
-      pParentVariablesTreeItem->removeChild(pVariablesTreeItem);
-      delete pVariablesTreeItem;
-      endRemoveRows();
+      removeVariableTreeItem(pVariablesTreeItem);
     } else {
       filterVariableTreeItem(pVariableNode, pVariablesTreeItem);
     }

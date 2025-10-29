@@ -72,8 +72,7 @@ TVariablesTreeItem::TVariablesTreeItem(const QVector<QVariant> &tVariableItemDat
 
 TVariablesTreeItem::~TVariablesTreeItem()
 {
-  qDeleteAll(mChildren);
-  mChildren.clear();
+  removeChildren();
 }
 
 void TVariablesTreeItem::insertChild(int position, TVariablesTreeItem *pTVariablesTreeItem)
@@ -90,11 +89,6 @@ void TVariablesTreeItem::removeChildren()
 {
   qDeleteAll(mChildren);
   mChildren.clear();
-}
-
-void TVariablesTreeItem::removeChild(TVariablesTreeItem *pTVariablesTreeItem)
-{
-  mChildren.removeOne(pTVariablesTreeItem);
 }
 
 int TVariablesTreeItem::columnCount() const
@@ -184,14 +178,16 @@ int TVariablesTreeModel::columnCount(const QModelIndex &parent) const
 int TVariablesTreeModel::rowCount(const QModelIndex &parent) const
 {
   TVariablesTreeItem *pParentTVariablesTreeItem;
-  if (parent.column() > 0)
+  if (parent.column() > 0) {
     return 0;
+  }
 
-  if (!parent.isValid())
+  if (!parent.isValid()) {
     pParentTVariablesTreeItem = mpRootTVariablesTreeItem;
-  else
+  } else {
     pParentTVariablesTreeItem = static_cast<TVariablesTreeItem*>(parent.internalPointer());
-  return pParentTVariablesTreeItem->getChildren().size();
+  }
+  return pParentTVariablesTreeItem ? pParentTVariablesTreeItem->childrenSize() : 0;
 }
 
 QVariant TVariablesTreeModel::headerData(int section, Qt::Orientation orientation, int role) const
@@ -203,21 +199,22 @@ QVariant TVariablesTreeModel::headerData(int section, Qt::Orientation orientatio
 
 QModelIndex TVariablesTreeModel::index(int row, int column, const QModelIndex &parent) const
 {
-  if (!hasIndex(row, column, parent))
+  if (!hasIndex(row, column, parent)) {
     return QModelIndex();
+  }
 
   TVariablesTreeItem *pParentTVariablesTreeItem;
-
-  if (!parent.isValid())
+  if (!parent.isValid()) {
     pParentTVariablesTreeItem = mpRootTVariablesTreeItem;
-  else
+  } else {
     pParentTVariablesTreeItem = static_cast<TVariablesTreeItem*>(parent.internalPointer());
+  }
 
-  TVariablesTreeItem *pChildTVariablesTreeItem = pParentTVariablesTreeItem->child(row);
-  if (pChildTVariablesTreeItem)
-    return createIndex(row, column, pChildTVariablesTreeItem);
-  else
+  if (row < 0 || row >= pParentTVariablesTreeItem->childrenSize()) {
     return QModelIndex();
+  }
+
+  return createIndex(row, column, pParentTVariablesTreeItem->child(row));
 }
 
 QModelIndex TVariablesTreeModel::parent(const QModelIndex &index) const
@@ -251,7 +248,7 @@ Qt::ItemFlags TVariablesTreeModel::flags(const QModelIndex &index) const
   /* Ticket #3207. Make all the items enable and selectable.
    */
 //  TVariablesTreeItem *pTVariablesTreeItem = static_cast<TVariablesTreeItem*>(index.internalPointer());
-//  if (pTVariablesTreeItem && pTVariablesTreeItem->getChildren().size() == 0)
+//  if (pTVariablesTreeItem && pTVariablesTreeItem->childrenSize() == 0)
 //    flags |= Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 
   return flags;
@@ -261,7 +258,7 @@ TVariablesTreeItem* TVariablesTreeModel::findTVariablesTreeItem(const QString &n
 {
   if (root->getVariableName() == name)
     return root;
-  for (int i = root->getChildren().size(); --i >= 0; )
+  for (int i = root->childrenSize(); --i >= 0; )
     if (TVariablesTreeItem *item = findTVariablesTreeItem(name, root->getChildren().at(i)))
       return item;
   return 0;
@@ -269,7 +266,11 @@ TVariablesTreeItem* TVariablesTreeModel::findTVariablesTreeItem(const QString &n
 
 QModelIndex TVariablesTreeModel::tVariablesTreeItemIndex(const TVariablesTreeItem *pTVariablesTreeItem) const
 {
-  return tVariablesTreeItemIndexHelper(pTVariablesTreeItem, mpRootTVariablesTreeItem, QModelIndex());
+  if (!pTVariablesTreeItem || pTVariablesTreeItem == mpRootTVariablesTreeItem) {
+    return QModelIndex();
+  }
+
+  return createIndex(pTVariablesTreeItem->row(), 0, const_cast<TVariablesTreeItem *>(pTVariablesTreeItem));
 }
 
 void TVariablesTreeModel::insertTVariablesItems(QHashIterator<QString, OMVariable> variables)
@@ -406,30 +407,12 @@ void TVariablesTreeModel::insertTVariablesItems(QHashIterator<QString, OMVariabl
 
 void TVariablesTreeModel::clearTVariablesTreeItems()
 {
-  const int n = mpRootTVariablesTreeItem->getChildren().size();
+  const int n = mpRootTVariablesTreeItem->childrenSize();
   if (n > 0) {
-    QModelIndex index = tVariablesTreeItemIndex(mpRootTVariablesTreeItem);
-    beginRemoveRows(index, 0, n - 1);
+    beginRemoveRows(tVariablesTreeItemIndex(mpRootTVariablesTreeItem), 0, n - 1);
     mpRootTVariablesTreeItem->removeChildren();
     endRemoveRows();
   }
-}
-
-QModelIndex TVariablesTreeModel::tVariablesTreeItemIndexHelper(const TVariablesTreeItem *pTVariablesTreeItem, const TVariablesTreeItem *pParentTVariablesTreeItem,
-                                                               const QModelIndex &parentIndex) const
-{
-  if (pTVariablesTreeItem == pParentTVariablesTreeItem) {
-    return parentIndex;
-  }
-  for (int i = pParentTVariablesTreeItem->getChildren().size(); --i >= 0; ) {
-    const TVariablesTreeItem *childItem = pParentTVariablesTreeItem->getChildren().at(i);
-    QModelIndex childIndex = index(i, 0, parentIndex);
-    QModelIndex index = tVariablesTreeItemIndexHelper(pTVariablesTreeItem, childItem, childIndex);
-    if (index.isValid()) {
-      return index;
-    }
-  }
-  return QModelIndex();
 }
 
 /*!
