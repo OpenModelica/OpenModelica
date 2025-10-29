@@ -120,6 +120,8 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
 {
   int color, column, row, nz;
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
+  int sizeDirection = jacobian->isRowEval ? jacobian->sizeRows : jacobian->sizeCols;
+
 
   /* evaluate constant equations of Jacobian */
   if (jacobian->constantEqns != NULL) {
@@ -135,6 +137,7 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
   /* evaluate Jacobian */
   for (color = 0; color < sp->maxColors; color++) {
     /* activate seed variable for the corresponding color */
+    // direction = 0; direction < sizeDirection; direction++
     for (column = 0; column < jacobian->sizeCols; column++)
       if (sp->colorCols[column]-1 == color)
         jacobian->seedVars[column] = 1.0;
@@ -162,14 +165,102 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
   }
 }
 
+
+/**
+ * @brief Compute Jacobian-vector product y = J * s without forming J explicitly.
+ *
+ * Uses the sparsity coloring to activate multiple independent seed directions at once.
+ * Assumes column-wise evaluation (seedVars has length sizeCols, resultVars has length sizeRows).
+ *
+ * @param data            Runtime data struct.
+ * @param threadData      Thread data for error handling.
+ * @param jacobian        Jacobian object (must have evalColumn and sparsePattern set).
+ * @param parentJacobian  Parent Jacobian (if nested), can be NULL.
+ * @param seed            Input seed vector s, length = jacobian->sizeCols.
+ * @param out             Output vector y, length = jacobian->sizeRows.
+ * @param zero_out        If true, zero-initialize out before accumulation.
+ */
+void jvp(DATA* data, threadData_t *threadData,
+         JACOBIAN* jacobian, JACOBIAN* parentJacobian,
+         const modelica_real* seed, modelica_real* out,
+         modelica_boolean zero_out)
+{
+  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
+  const unsigned int nCols = jacobian->sizeCols;
+  const unsigned int nRows = jacobian->sizeRows;
+
+  /* Optional: zero output before accumulation */
+  if (zero_out) {
+    memset(out, 0, nRows * sizeof(modelica_real));
+  }
+
+  /* Ensure seeds are zeroed before use */
+  memset(jacobian->seedVars, 0, nCols * sizeof(modelica_real));
+
+  /* Evaluate constant equations (if any) */
+  if (jacobian->constantEqns != NULL) {
+    jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
+  }
+
+  /* Temporary bitmap for touched rows (to avoid O(nRows) accumulation) */
+  unsigned char* touched = (unsigned char*) calloc(nRows, sizeof(unsigned char));
+
+  /* Process one color group at a time */
+  for (unsigned int color = 0; color < sp->maxColors; color++) {
+    int anyActive = 0;
+
+    /* Activate seeds for this color and mark touched rows */
+    for (unsigned int col = 0; col < nCols; col++) {
+      if (sp->colorCols[col] - 1 == color) {
+        const modelica_real s = seed[col];
+        if (s != 0.0) {
+          jacobian->seedVars[col] = s;
+          anyActive = 1;
+
+          /* Mark rows affected by this column via the sparsity pattern */
+          for (unsigned int nz = sp->leadindex[col]; nz < sp->leadindex[col+1]; nz++) {
+            const unsigned int row = sp->index[nz];
+            touched[row] = 1;
+          }
+        }
+      }
+    }
+
+    /* Skip if no non-zero seeds in this color */
+    if (!anyActive) {
+      continue;
+    }
+
+    /* Evaluate J * s_color into resultVars */
+    jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
+
+    /* Accumulate only touched rows */
+    for (unsigned int row = 0; row < nRows; row++) {
+      if (touched[row]) {
+        out[row] += jacobian->resultVars[row];
+        touched[row] = 0; /* reset for next color */
+      }
+    }
+
+    /* Deactivate seeds of this color */
+    for (unsigned int col = 0; col < nCols; col++) {
+      if (sp->colorCols[col] - 1 == color) {
+        jacobian->seedVars[col] = 0.0;
+      }
+    }
+  }
+
+  free(touched);
+}
+
 /**
  * @brief Allocate memory for sparsity pattern.
  *
  * @param n_leadIndex         Number of rows or columns of Matrix.
  *                            Depending on compression type CSR (-->rows) or CSC (-->columns).
- * @param numberOfNonZeros    Numbe rof non-zero elements in Matrix.
+ * @param numberOfNonZeros    Number of non-zero elements in Matrix.
  * @param maxColors           Maximum number of colors of Matrix.
- * @return SPARSE_PATTERN*    Pointer ot allocated sparsity pattern of Matrix.
+ * @return SPARSE_PATTERN*    Pointer to allocated sparsity pattern of Matrix.
  */
 SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int numberOfNonZeros, unsigned int maxColors)
 {
@@ -183,6 +274,98 @@ SPARSE_PATTERN* allocSparsePattern(unsigned int n_leadIndex, unsigned int number
 
   return sparsePattern;
 }
+
+
+/**
+ * @brief Convert a CSC-format sparsity pattern to CSR-format.
+ *
+ * Input CSC (A):
+ *   - Ap = csc->leadindex (size nCols+1), column pointers
+ *   - Ai = csc->index     (size nnz),      row indices
+ *
+ * Output CSR (B):
+ *   - Bp = csr->leadindex (size nRows+1), row pointers
+ *   - Bj = csr->index     (size nnz),     column indices
+ *
+ * Complexity: O(nnz + max(nRows, nCols))
+ */
+SPARSE_PATTERN* csc_to_csr(const SPARSE_PATTERN* csc,
+                           unsigned int nRows,
+                           unsigned int nCols)
+{
+  if (!csc) return NULL;
+
+  const unsigned int nnz = csc->sizeofIndex; /* == csc->numberOfNonZeros */
+
+  /* Allocate CSR pattern: leadindex size = nRows+1, index size = nnz */
+  SPARSE_PATTERN* csr = allocSparsePattern(nRows, nnz, /*maxColors*/ 0);
+  if (!csr) return NULL;
+
+  /* Aliases for clarity */
+  const unsigned int* Ap = csc->leadindex; /* col pointer (CSC) */
+  const unsigned int* Ai = csc->index;     /* row indices (CSC) */
+  unsigned int* Bp = csr->leadindex;       /* row pointer (CSR) */
+  unsigned int* Bj = csr->index;           /* col indices (CSR) */
+
+  /* 1) Count nnz per row (Bp[0..nRows-1]) */
+  memset(Bp, 0, (nRows+1) * sizeof(unsigned int));
+  for (unsigned int k = 0; k < nnz; k++) {
+    const unsigned int row = Ai[k];
+    if (row >= nRows) {
+      /* Out of bounds. Clean up and abort. */
+      freeSparsePattern(csr);
+      free(csr);
+      return NULL;
+    }
+    Bp[row]++;
+  }
+
+  /* 2) Exclusive prefix sum over Bp to get row pointers; set Bp[nRows] = nnz */
+  {
+    unsigned int cumsum = 0;
+    for (unsigned int r = 0; r < nRows; r++) {
+      const unsigned int tmp = Bp[r];
+      Bp[r] = cumsum;
+      cumsum += tmp;
+    }
+    Bp[nRows] = nnz;
+  }
+
+  /* 3) Fill CSR column indices Bj using running heads in Bp */
+  for (unsigned int col = 0; col < nCols; col++) {
+    const unsigned int start = Ap[col];
+    const unsigned int stop  = Ap[col + 1];
+    if (stop < start || stop > nnz) {
+      /* Corrupt CSC pointers. Clean up and abort. */
+      freeSparsePattern(csr);
+      free(csr);
+      return NULL;
+    }
+    for (unsigned int jj = start; jj < stop; jj++) {
+      const unsigned int row = Ai[jj];
+      const unsigned int dest = Bp[row]; /* next free slot in this row */
+      Bj[dest] = col;
+      Bp[row]++; /* advance head */
+    }
+  }
+
+  /* 4) Restore Bp to row pointers by shifting heads back */
+  {
+    unsigned int last = 0;
+    for (unsigned int r = 0; r <= nRows; r++) {
+      const unsigned int tmp = Bp[r];
+      Bp[r] = last;
+      last = tmp;
+    }
+  }
+
+  /* We don't have row coloring here; keep defaults (zeros). */
+  csr->maxColors = 0;
+  /* numberOfNonZeros/sizeofIndex were set by allocSparsePattern */
+
+  return csr;
+}
+
 
 /**
  * @brief Free sparsity pattern

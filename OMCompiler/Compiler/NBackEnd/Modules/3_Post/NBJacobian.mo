@@ -379,6 +379,26 @@ public
       sparsityColoring := SparsityColoring.lazy(sparsityPattern);
     end lazy;
 
+    // Pretty-print the bipartite adjacency map used during sparsity detection:
+    // map[cref] -> list of neighbor crefs on the opposite side.
+    function adjacencyMapToString
+      input UnorderedMap<ComponentRef, list<ComponentRef>> map;
+      output String s;
+    protected
+      list<ComponentRef> keys;
+      ComponentRef k;
+      list<ComponentRef> neighs;
+      list<String> lines = {};
+    algorithm
+      keys := UnorderedMap.keyList(map);
+      for k in keys loop
+        neighs := UnorderedMap.getOrFail(k, map);
+        lines := ("  " + ComponentRef.toString(k) + " -> " + ComponentRef.listToString(neighs)) :: lines;
+      end for;
+      lines := listReverse(lines);
+      s := "Adjacency map (" + intString(listLength(keys)) + " keys):\n" + stringDelimitList(lines, "\n");
+    end adjacencyMapToString;
+
     function create
       input VariablePointers seedCandidates;
       input VariablePointers partialCandidates;
@@ -471,8 +491,11 @@ public
 
       end match;
 
+      print(adjacencyMapToString(map) + "\n");
+
       // create coloring
       sparsityColoring := SparsityColoring.PartialD2ColoringAlgC(sparsityPattern, jacType);
+      // sparsityColoring := SparsityColoring.PartialD2ColoringAlg(sparsityPattern, map);
 
       if Flags.isSet(Flags.DUMP_SPARSE) then
         print(toString(sparsityPattern) + "\n" + SparsityColoring.toString(sparsityColoring) + "\n");
@@ -679,6 +702,103 @@ public
       sparsityColoring := SPARSITY_COLORING(cref_colored_cols, arrayCreate(sizeRows, {}));
     end PartialD2ColoringAlgC;
 
+
+    // Distance-2 greedy coloring on a bipartite graph represented by 'map':
+    // Given a node set 'nodes' (either seeds or partials), assign colors so that
+    // no two nodes at distance 2 (node -> opposite side -> node) share a color.
+    // Returns the list of color groups in stable order.
+    function GreedyPartialD2Color
+      input array<ComponentRef> nodes;
+      input UnorderedMap<ComponentRef, list<ComponentRef>> map;
+      output list<list<ComponentRef>> groups_lst;
+    protected
+      UnorderedMap<ComponentRef, Integer> index_lookup;
+      array<Integer> coloring, forbidden_colors;
+      array<Boolean> color_exists;
+      array<list<ComponentRef>> groups;
+      Integer i, color, n = arrayLength(nodes);
+      ComponentRef node, mid, neigh;
+    algorithm
+      // Build cref -> index lookup for the given nodes.
+      index_lookup := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(n));
+      for i in 1:n loop
+        UnorderedMap.add(nodes[i], i, index_lookup);
+      end for;
+
+      // Init data structures
+      coloring := arrayCreate(n, 0);
+      forbidden_colors := arrayCreate(n, 0);
+      color_exists := arrayCreate(n, false);
+      groups := arrayCreate(n, {});
+
+      // Greedy partial distance-2 coloring:
+      // For node i, forbid colors of any already-colored neighbor at distance 2.
+      for i in 1:n loop
+        node := nodes[i];
+
+        // Mark forbidden colors for neighbors at distance 2: node -> mid -> neigh
+        for mid in UnorderedMap.getSafe(node, map, sourceInfo()) loop
+          for neigh in UnorderedMap.getSafe(mid, map, sourceInfo()) loop
+            color := coloring[UnorderedMap.getSafe(neigh, index_lookup, sourceInfo())];
+            if color > 0 then
+              forbidden_colors[color] := i;
+            end if;
+          end for;
+        end for;
+
+        // Pick smallest available color
+        color := 1;
+        while forbidden_colors[color] == i loop
+          color := color + 1;
+        end while;
+
+        coloring[i] := color;
+        color_exists[color] := true;
+        groups[color] := node :: groups[color];
+      end for;
+
+      // Collect groups (reverse to keep stable order)
+      groups_lst := {};
+      for i in arrayLength(color_exists):-1:1 loop
+        if color_exists[i] then
+          groups_lst := groups[i] :: groups_lst;
+        end if;
+      end for;
+    end GreedyPartialD2Color;
+
+    function PartialD2ColoringAlgColumnAndRow
+      "author: fbrandt 2025-10
+      taken from: 'What Color Is Your Jacobian? Graph Coloring for Computing Derivatives'
+      https://doi.org/10.1137/S0036144504444711 (Algorithm 3.2)
+      A greedy partial distance-2 coloring algorithm done twice to compute both column and row coloring."
+      input SparsityPattern sparsityPattern;
+      input UnorderedMap<ComponentRef, list<ComponentRef>> map;
+      output SparsityColoring sparsityColoring;
+    protected
+      array<ComponentRef> seed_nodes, partial_nodes;
+      list<SparsityColoringCol> col_groups = {};
+      list<SparsityColoringRow> row_groups = {};
+      Integer nCols, nRows, pad, k;
+      array<SparsityColoringCol> cols_arr;
+      array<SparsityColoringRow> rows_arr;
+    algorithm
+      // Nodes to color: seeds (columns) and partials (rows)
+      seed_nodes := listArray(sparsityPattern.seed_vars);
+      partial_nodes  := listArray(sparsityPattern.partial_vars);
+
+      // Column coloring (seeds -> partials -> seeds)
+      col_groups := GreedyPartialD2Color(seed_nodes, map);
+
+      // Row coloring (partials -> seeds -> partials)
+      row_groups := GreedyPartialD2Color(partial_nodes, map);
+
+      // Build arrays for result
+      cols_arr := listArray(col_groups);
+      rows_arr := listArray(row_groups);
+
+      sparsityColoring := SPARSITY_COLORING(cols_arr, rows_arr);
+    end PartialD2ColoringAlgColumnAndRow;
+
     function PartialD2ColoringAlg
       "author: kabdelhak 2022-03
       taken from: 'What Color Is Your Jacobian? Graph Coloring for Computing Derivatives'
@@ -712,7 +832,9 @@ public
       row_coloring := arrayCreate(arrayLength(cref_lookup), {});
 
       for i in 1:arrayLength(cref_lookup) loop
+        // all neighbors w of v_i
         for row_var /* w */ in UnorderedMap.getSafe(cref_lookup[i], map, sourceInfo()) loop
+          // all colored neighbors x of w
           for col_var /* x */ in UnorderedMap.getSafe(row_var, map, sourceInfo()) loop
             color := coloring[UnorderedMap.getSafe(col_var, index_lookup, sourceInfo())];
             if color > 0 then
@@ -720,6 +842,7 @@ public
             end if;
           end for;
         end for;
+        // assign the smallest available color to v_i
         color := 1;
         while forbidden_colors[color] == i loop
           color := color + 1;

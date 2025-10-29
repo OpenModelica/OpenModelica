@@ -155,13 +155,21 @@ typedef enum
  */
 typedef struct SPARSE_PATTERN
 {
-  unsigned int* leadindex;        /* Array with column indices, size rows+1 */
+  /* Primary CSC representation */
+  unsigned int* leadindex;        /* Array with column indices, size nCols+1 */
   unsigned int* index;            /* Array with number of non-zeros indices */
   unsigned int sizeofIndex;       /* Length of array index, equal to numberOfNonZeros */
   unsigned int* colorCols;        /* Color coding of columns. First color is `1`, second is `2`, ...
-                                   * Length of array is rows */
+                                   * Length of array is nCols */
   unsigned int numberOfNonZeros;  /* Number of non-zero elements in matrix */
   unsigned int maxColors;         /* Number of colors */
+
+  /* Optional CSR representation (filled if available) */
+  unsigned int hasCSR;            /* Flag indicating if CSR representation is available. default is 0 */
+  unsigned int* csr_leadindex;    /* CSR: row pointer array, size nRows+1 */
+  unsigned int* csr_index;        /* CSR: column indices (length = numberOfNonZeros) */
+  unsigned int* colorRows;        /* CSR: color per row (1..maxRowColors), length = nRows */
+  unsigned int  maxRowColors;     /* Number of row colors (if colorRows is used) */
 } SPARSE_PATTERN;
 
 /* NONLINEAR_PATTERN
@@ -195,13 +203,15 @@ typedef struct JACOBIAN
   size_t sizeCols;                      /* Number of columns of Jacobian */
   size_t sizeRows;                      /* Number of rows of Jacobian */
   size_t sizeTmpVars;                   /* Length of vector tmpVars */
-  SPARSE_PATTERN* sparsePattern;        /* Contain sparse pattern including coloring */
-  modelica_real* seedVars;              /* Seed vector for specifying which columns to evaluate */
+  SPARSE_PATTERN* sparsePattern;        /* Contain sparse pattern in CSC/CSR format including column/row coloring */
+  modelica_real* seedVars;              /* Seed vector for specifying which columns/rows to evaluate */
   modelica_real* tmpVars;               /* Partial derivatives used to compute resultVars */
-  modelica_real* resultVars;            /* Result column for given seed vector */
+  modelica_real* resultVars;            /* Result column/row for given seed vector */
   modelica_real dae_cj;                 /* Is the scalar in the system Jacobian, proportional to the inverse of the step size. From User Documentation for ida v5.4.0 equation (2.5). */
-  jacobianColumn_func_ptr evalColumn;   /* symbolic jacobian column based on seed vector */
+  jacobianColumn_func_ptr evalColumn;   /* symbolic jacobian column/row based on seed vector */
   jacobianColumn_func_ptr constantEqns; /* Constant equations independent of seed vector */
+  modelica_boolean isRowEval;           /* Flag indicating if evalColumn evaluates rows instead of columns and
+                                           uses CSR sparse pattern and row coloring and seedVars is length sizeRows and resultVars is length sizeCols */
 } JACOBIAN;
 
 /* EXTERNAL_INPUT
