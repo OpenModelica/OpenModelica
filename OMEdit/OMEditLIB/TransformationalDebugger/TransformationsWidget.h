@@ -54,6 +54,7 @@ class TVariablesTreeItem
 public:
   TVariablesTreeItem(const QVector<QVariant> &tVariableItemData, TVariablesTreeItem *pParent = 0, bool isRootItem = false);
   ~TVariablesTreeItem();
+  int childrenSize() const {return mChildren.size();}
   QList<TVariablesTreeItem*> getChildren() const {return mChildren;}
   bool isRootItem() {return mIsRootItem;}
   QString getVariableName() {return mVariableName;}
@@ -61,7 +62,6 @@ public:
   void insertChild(int position, TVariablesTreeItem *pVariablesTreeItem);
   TVariablesTreeItem *child(int row);
   void removeChildren();
-  void removeChild(TVariablesTreeItem *pTVariablesTreeItem);
   int columnCount() const;
   QVariant data(int column, int role = Qt::DisplayRole) const;
   int row() const;
@@ -99,7 +99,6 @@ private:
   TVariablesTreeItem *mpRootTVariablesTreeItem;
   QHash<QString, QHash<QString,QString> > mScalarVariablesList;
 
-  QModelIndex tVariablesTreeItemIndexHelper(const TVariablesTreeItem *pTVariablesTreeItem, const TVariablesTreeItem *pParentTVariablesTreeItem, const QModelIndex &parentIndex) const;
   void insertVariablesItems(VariableNode *pParentVariableNode, TVariablesTreeItem *pParentTVariablesTreeItem);
 };
 

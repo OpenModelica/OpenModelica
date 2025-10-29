@@ -107,9 +107,9 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
 LibraryTreeItem::~LibraryTreeItem()
 {
   if (mpModelWidget) {
-    delete mpModelWidget;
+    mpModelWidget->deleteLater();
   }
-  qDeleteAll(mChildren);
+  removeChildren();
 }
 
 QString LibraryTreeItem::getWhereToMoveFMU()
@@ -763,13 +763,30 @@ void LibraryTreeItem::tryToComplete(QList<CompleterItem> &completionClasses, QLi
 }
 
 /*!
+ * \brief LibraryTreeItem::removeChildren
+ * Removes and deletes all child LibraryTreeItems.
+ */
+void LibraryTreeItem::removeChildren()
+{
+  for (LibraryTreeItem *pChildLibraryTreeItem : std::as_const(mChildren)) {
+    if (pChildLibraryTreeItem) {
+      // Use deleteLater since LibraryTreeItem inherits from QObject. Avoids QObject delete while in use issues.
+      pChildLibraryTreeItem->deleteLater();
+    }
+  }
+  mChildren.clear();
+}
+
+/*!
  * \brief LibraryTreeItem::removeChild
- * Removes the child LibraryTreeItem.
+ * Removes and deletes the child LibraryTreeItem.
  * \param pLibraryTreeItem
  */
 void LibraryTreeItem::removeChild(LibraryTreeItem *pLibraryTreeItem)
 {
   mChildren.removeOne(pLibraryTreeItem);
+  // Use deleteLater since LibraryTreeItem inherits from QObject. Avoids QObject delete while in use issues.
+  pLibraryTreeItem->deleteLater();
 }
 
 /*!
@@ -1668,7 +1685,7 @@ bool LibraryTreeModel::unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
    * If deleteClass is successful remove the class from Library Browser and delete the corresponding ModelWidget.
    */
   if (!doDeleteClass || MainWindow::instance()->getOMCProxy()->deleteClass(pLibraryTreeItem->getNameStructure())) {
-    removeLibraryTreeItem(pLibraryTreeItem);
+    removeLibraryTreeItem(pLibraryTreeItem, false);
     return true;
   } else {
     QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
@@ -1778,7 +1795,7 @@ bool LibraryTreeModel::unloadTextFile(LibraryTreeItem *pLibraryTreeItem, bool as
         return false;
     }
   }
-  removeLibraryTreeItem(pLibraryTreeItem);
+  removeLibraryTreeItem(pLibraryTreeItem, false);
   return true;
 }
 
@@ -1815,7 +1832,7 @@ bool LibraryTreeModel::unloadOMSModel(LibraryTreeItem *pLibraryTreeItem, bool do
   }
   // unload OMSimulator model
   if (!doDelete || OMSProxy::instance()->omsDelete(pLibraryTreeItem->getNameStructure())) {
-    removeLibraryTreeItem(pLibraryTreeItem);
+    removeLibraryTreeItem(pLibraryTreeItem, false);
     return true;
   } else {
     return false;
@@ -1933,7 +1950,7 @@ bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, 
    * If deleteClass is successful remove the class from Library Browser.
    */
   if (!doDeleteClass || MainWindow::instance()->getOMCProxy()->deleteClass(pLibraryTreeItem->getNameStructure())) {
-    removeLibraryTreeItem(pLibraryTreeItem);
+    removeLibraryTreeItem(pLibraryTreeItem, false);
     return true;
   } else {
     QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
@@ -1947,10 +1964,11 @@ bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, 
  * \brief LibraryTreeModel::removeLibraryTreeItem
  * Removes the LibraryTreeItem.
  * \param pLibraryTreeItem
+ * \param deleteFile
  */
-void LibraryTreeModel::removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
+void LibraryTreeModel::removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool deleteFile)
 {
-  unloadClassChildren(pLibraryTreeItem);
+  unloadClassChildren(pLibraryTreeItem, deleteFile);
   if (pLibraryTreeItem->isModelica()) {
     if (!pLibraryTreeItem->isTopLevel()) {
       LibraryTreeItem *pContainingFileParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
@@ -1969,7 +1987,15 @@ void LibraryTreeModel::removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     // reset the --loadMissingLibraries to true.
     MainWindow::instance()->getOMCProxy()->setCommandLineOptions("--loadMissingLibraries=true");
   }
-  pLibraryTreeItem->deleteLater();
+  // Now remove the LibraryTreeItem itself from its parent
+  unloadClassHelper(pLibraryTreeItem, deleteFile);
+  LibraryTreeItem *pParentLibraryTreeItem = pLibraryTreeItem->parent();
+  if (pParentLibraryTreeItem) {
+    int row = pLibraryTreeItem->row();
+    beginRemoveRows(libraryTreeItemIndex(pParentLibraryTreeItem), row, row);
+    pParentLibraryTreeItem->removeChild(pLibraryTreeItem);
+    endRemoveRows();
+  }
   /* Update the model switcher toolbar button. */
   MainWindow::instance()->updateModelSwitcherMenu(0);
 }
@@ -2004,11 +2030,7 @@ bool LibraryTreeModel::deleteTextFile(LibraryTreeItem *pLibraryTreeItem, bool as
         return false;
     }
   }
-  // Deletes the LibraryTreeItem children if any and then deletes the LibraryTreeItem.
-  deleteFileChildren(pLibraryTreeItem);
-  pLibraryTreeItem->deleteLater();
-  /* Update the model switcher toolbar button. */
-  MainWindow::instance()->updateModelSwitcherMenu(0);
+  removeLibraryTreeItem(pLibraryTreeItem, true);
   return true;
 }
 
@@ -2142,10 +2164,12 @@ void LibraryTreeModel::generateVerificationScenarios(LibraryTreeItem *pLibraryTr
      * Remove the LibraryTreeItems
      * Load the newly created scenrario classes.
      */
-    int i = 0;
-    while(i < pLibraryTreeItem->childrenSize()) {
-      unloadClassChildren(pLibraryTreeItem->child(i));
-      i = 0;  //Restart iteration
+    unloadClassChildren(pLibraryTreeItem, false);
+    const int n = pLibraryTreeItem->childrenSize();
+    if (n > 0) {
+      beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem), 0, n - 1);
+      pLibraryTreeItem->removeChildren();
+      endRemoveRows();
     }
     createLibraryTreeItems(pLibraryTreeItem);
     updateLibraryTreeItem(pLibraryTreeItem);
@@ -2509,11 +2533,28 @@ void LibraryTreeModel::createOMSBusConnectorLibraryTreeItems(LibraryTreeItem *pL
 }
 
 /*!
- * \brief unloadHelper
- * Helper function for LibraryTreeModel::unloadClassHelper
+ * \brief LibraryTreeModel::unloadClassChildren
+ * Unloads/deletes the LibraryTreeItem childrens.
  * \param pLibraryTreeItem
+ * \param deleteFile
  */
-void unloadHelper(LibraryTreeItem *pLibraryTreeItem)
+void LibraryTreeModel::unloadClassChildren(LibraryTreeItem *pLibraryTreeItem, bool deleteFile)
+{
+  // unload children recursively first
+  for (int i = 0; i < pLibraryTreeItem->childrenSize(); ++i) {
+    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
+    unloadClassChildren(pChildLibraryTreeItem, deleteFile);
+    unloadClassHelper(pChildLibraryTreeItem, deleteFile);
+  }
+}
+
+/*!
+ * \brief LibraryTreeModel::unloadClassHelper
+ * Helper function for unloading/deleting the LibraryTreeItem.
+ * \param pLibraryTreeItem
+ * \param deleteFile
+ */
+void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, bool deleteFile)
 {
   MainWindow *pMainWindow = MainWindow::instance();
 #ifndef OM_DISABLE_DOCUMENTATION
@@ -2546,87 +2587,20 @@ void unloadHelper(LibraryTreeItem *pLibraryTreeItem)
     pLibraryTreeItem->getModelWidget()->deleteLater();
     pLibraryTreeItem->setModelWidget(0);
   }
-}
-
-/*!
- * \brief LibraryTreeModel::unloadClassHelper
- * Helper function for unloading/deleting the LibraryTreeItem.
- * \param pLibraryTreeItem
- * \param pParentLibraryTreeItem
- */
-void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem)
-{
-  unloadHelper(pLibraryTreeItem);
-  int row = pLibraryTreeItem->row();
-  beginRemoveRows(libraryTreeItemIndex(pParentLibraryTreeItem), row, row);
-  pParentLibraryTreeItem->removeChild(pLibraryTreeItem);
-  endRemoveRows();
-}
-
-/*!
- * \brief LibraryTreeModel::unloadClassChildren
- * Unloads/deletes the LibraryTreeItem childrens.
- * \param pLibraryTreeItem
- */
-void LibraryTreeModel::unloadClassChildren(LibraryTreeItem *pLibraryTreeItem)
-{
-  int i = 0;
-  while (i < pLibraryTreeItem->childrenSize()) {
-    unloadClassChildren(pLibraryTreeItem->child(i));
-    i = 0;  //Restart iteration
-  }
-  unloadClassHelper(pLibraryTreeItem, pLibraryTreeItem->parent());
-}
-
-/*!
- * \brief LibraryTreeModel::deleteFileHelper
- * Helper function for deleting the LibraryTreeItem.
- * \param pLibraryTreeItem
- * \param pParentLibraryTreeItem
- */
-void LibraryTreeModel::deleteFileHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem)
-{
-  // remove the ModelWidget of LibraryTreeItem and remove the QMdiSubWindow from MdiArea and delete it.
-  if (pLibraryTreeItem->getModelWidget()) {
-    QMdiSubWindow *pMdiSubWindow = MainWindow::instance()->getModelWidgetContainer()->getMdiSubWindow(pLibraryTreeItem->getModelWidget());
-    if (pMdiSubWindow) {
-      pMdiSubWindow->close();
-      pMdiSubWindow->deleteLater();
-    }
-    pLibraryTreeItem->getModelWidget()->deleteLater();
-  }
-  int row = pLibraryTreeItem->row();
-  beginRemoveRows(libraryTreeItemIndex(pParentLibraryTreeItem), row, row);
-  pParentLibraryTreeItem->removeChild(pLibraryTreeItem);
-  endRemoveRows();
-  QFileInfo fileInfo(pLibraryTreeItem->getFileName());
   // delete the file/folder
-  bool fail = false;
-  if (fileInfo.isDir()) {
-    fail = !QDir().rmdir(fileInfo.absoluteFilePath());
-  } else {
-    fail = !QFile::remove(fileInfo.absoluteFilePath());
+  if (deleteFile) {
+    QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+    bool fail = false;
+    if (fileInfo.isDir()) {
+      fail = !QDir().rmdir(fileInfo.absoluteFilePath());
+    } else {
+      fail = !QFile::remove(fileInfo.absoluteFilePath());
+    }
+    if (fail) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_DELETE_FILE)
+                                                            .arg(fileInfo.absoluteFilePath()), Helper::scriptingKind, Helper::errorLevel));
+    }
   }
-  if (fail) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_DELETE_FILE)
-                                                          .arg(fileInfo.absoluteFilePath()), Helper::scriptingKind, Helper::errorLevel));
-  }
-  pLibraryTreeItem->deleteLater();
-}
-
-/*!
- * \brief LibraryTreeModel::deleteFileChildren
- * Deletes the LibraryTreeItem childrens.
- * \param pLibraryTreeItem
- */
-void LibraryTreeModel::deleteFileChildren(LibraryTreeItem *pLibraryTreeItem)
-{
-  int i = 0;
-  while (i < pLibraryTreeItem->childrenSize()) {
-    deleteFileChildren(pLibraryTreeItem->child(i));
-    i = 0;  //Restart iteration
-  }
-  deleteFileHelper(pLibraryTreeItem, pLibraryTreeItem->parent());
 }
 
 /*!
