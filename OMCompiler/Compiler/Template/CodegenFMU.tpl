@@ -1278,12 +1278,12 @@ match platform
   <<
   <%fileNamePrefix%>_FMU: nozip
   <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fmuTargetName%>.fmu *
-  nozip: <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES) $(FMI_EXPORT_FILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
-  <%\t%>$(CXX) -shared -I. -o <%modelNamePrefix%>$(DLLEXT) $(RUNTIMEFILES) $(FMISUNDIALSFILES) $(OFILES) $(FMI_EXPORT_FILES) $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -llis -Wl,--kill-at
+  nozip: <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
+  <%\t%>$(CXX) -shared -I. -o <%modelNamePrefix%>$(DLLEXT) $(RUNTIMEFILES) $(FMISUNDIALSFILES) $(OFILES) $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -llis -Wl,--kill-at
   <%\t%>mkdir.exe -p ../binaries/<%platform%>
   <%\t%>dlltool -d <%fileNamePrefix%>.def --dllname <%fileNamePrefix%>$(DLLEXT) --output-lib <%fileNamePrefix%>.lib --kill-at
   <%\t%>cp <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>.lib <%fileNamePrefix%>_FMU.libs ../binaries/<%platform%>/
-  <%\t%>rm -f *.o <%fileNamePrefix%>$(DLLEXT) $(OFILES) $(FMI_EXPORT_FILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
+  <%\t%>rm -f *.o <%fileNamePrefix%>$(DLLEXT) $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
   <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fmuTargetName%>.fmu *
 
   >>
@@ -1291,10 +1291,10 @@ match platform
   <<
   <%fileNamePrefix%>_FMU: nozip
   <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fmuTargetName%>.fmu *
-  nozip: <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES) $(FMI_EXPORT_FILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
+  nozip: <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
   <%\t%>mkdir -p ../binaries/$(FMIPLATFORM)
   ifeq (@LIBTYPE_DYNAMIC@,1)
-  <%\t%>$(LD) -o <%modelNamePrefix%>$(DLLEXT) $(OFILES) $(FMI_EXPORT_FILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES) <%dirExtra%> <%libsPos1%> <%libsPos2%> @BDYNAMIC@ $(LDFLAGS)
+  <%\t%>$(LD) -o <%modelNamePrefix%>$(DLLEXT) $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES) <%dirExtra%> <%libsPos1%> <%libsPos2%> @BDYNAMIC@ $(LDFLAGS)
   <%\t%>cp <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>_FMU.libs ../binaries/$(FMIPLATFORM)/
   endif
   <%if intLt(Flags.getConfigEnum(Flags.FMI_FILTER), 4) then
@@ -1302,14 +1302,14 @@ match platform
    %>
   ifeq (@LIBTYPE_STATIC@,1)
   <%\t%>rm -f <%modelNamePrefix%>.a
-  <%\t%>$(AR) -rsu <%modelNamePrefix%>.a $(OFILES) $(FMI_EXPORT_FILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
+  <%\t%>$(AR) -rsu <%modelNamePrefix%>.a $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
   <%\t%>cp <%fileNamePrefix%>.a <%fileNamePrefix%>_FMU.libs ../binaries/$(FMIPLATFORM)/
   endif
   <% if not Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then "\t$(MAKE) distclean" %>
   distclean: clean
   <%\t%>rm -f Makefile config.status config.log
   clean:
-  <%\t%>rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>.a <%fileNamePrefix%>$(DLLEXT) $(MAINOBJ) $(OFILES) $(FMI_EXPORT_FILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
+  <%\t%>rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>.a <%fileNamePrefix%>$(DLLEXT) $(MAINOBJ) $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
   >>
 end getPlatformString2;
 
@@ -1345,7 +1345,6 @@ template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<Str
     OFILES=$(CFILES:.c=.o)
 
     RUNTIMEDIR=.
-    FMI_EXPORT_FILES = ./fmi-export/fmu_read_flags.o ./fmi-export/fmu2_model_interface.o
     ifneq ($(NEED_DGESV),)
     DGESV_OBJS = <%dgesvObjectFiles ; separator = " "%>
     endif
