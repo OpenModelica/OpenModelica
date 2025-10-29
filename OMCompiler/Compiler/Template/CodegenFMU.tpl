@@ -1279,11 +1279,11 @@ match platform
   <%fileNamePrefix%>_FMU: nozip
   <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fmuTargetName%>.fmu *
   nozip: <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES) $(FMI_EXPORT_FILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
-  <%\t%>$(CXX) -shared -I. -o <%modelNamePrefix%>$(DLLEXT) $(RUNTIMEFILES) $(FMISUNDIALSFILES) $(OFILES) $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -llis -Wl,--kill-at
+  <%\t%>$(CXX) -shared -I. -o <%modelNamePrefix%>$(DLLEXT) $(RUNTIMEFILES) $(FMISUNDIALSFILES) $(OFILES) $(FMI_EXPORT_FILES) $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -llis -Wl,--kill-at
   <%\t%>mkdir.exe -p ../binaries/<%platform%>
   <%\t%>dlltool -d <%fileNamePrefix%>.def --dllname <%fileNamePrefix%>$(DLLEXT) --output-lib <%fileNamePrefix%>.lib --kill-at
   <%\t%>cp <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>.lib <%fileNamePrefix%>_FMU.libs ../binaries/<%platform%>/
-  <%\t%>rm -f *.o <%fileNamePrefix%>$(DLLEXT) $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
+  <%\t%>rm -f *.o <%fileNamePrefix%>$(DLLEXT) $(OFILES) $(FMI_EXPORT_FILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
   <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fmuTargetName%>.fmu *
 
   >>
@@ -1302,14 +1302,14 @@ match platform
    %>
   ifeq (@LIBTYPE_STATIC@,1)
   <%\t%>rm -f <%modelNamePrefix%>.a
-  <%\t%>$(AR) -rsu <%modelNamePrefix%>.a $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
+  <%\t%>$(AR) -rsu <%modelNamePrefix%>.a $(OFILES) $(FMI_EXPORT_FILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
   <%\t%>cp <%fileNamePrefix%>.a <%fileNamePrefix%>_FMU.libs ../binaries/$(FMIPLATFORM)/
   endif
   <% if not Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then "\t$(MAKE) distclean" %>
   distclean: clean
   <%\t%>rm -f Makefile config.status config.log
   clean:
-  <%\t%>rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>.a <%fileNamePrefix%>$(DLLEXT) $(MAINOBJ) $(OFILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
+  <%\t%>rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>.a <%fileNamePrefix%>$(DLLEXT) $(MAINOBJ) $(OFILES) $(FMI_EXPORT_FILES) $(RUNTIMEFILES) $(FMISUNDIALSFILES)
   >>
 end getPlatformString2;
 
