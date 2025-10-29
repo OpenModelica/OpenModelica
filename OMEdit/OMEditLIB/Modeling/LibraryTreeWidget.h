@@ -180,6 +180,7 @@ public:
   LibraryTreeItem *getDirectComponentsClass(const QString &name);
   LibraryTreeItem *getComponentsClass(const QString &name);
   void tryToComplete(QList<CompleterItem> &completionClasses, QList<CompleterItem> &completionComponents, const QString &lastPart);
+  void removeChildren();
   void removeChild(LibraryTreeItem *pLibraryTreeItem);
   QVariant data(int column, int role = Qt::DisplayRole) const;
   int row() const;
@@ -301,7 +302,7 @@ public:
   void expandLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem, QStringList expandedLibraryTreeItemsList);
   void reLoadOMSimulatorModel(const QString &modelName, const QString &editedCref, const QString &snapShot, const QString &oldEditedCref, const QString &newEditedCref);
   bool unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool doDeleteClass);
-  void removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  void removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool deleteFile);
   bool deleteTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   void moveClassUpDown(LibraryTreeItem *pLibraryTreeItem, bool up);
   void moveClassTopBottom(LibraryTreeItem *pLibraryTreeItem, bool top);
@@ -330,10 +331,8 @@ private:
   void createOMSConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
   void createOMSBusConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
   void createOMSTLMBusConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
-  void unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
-  void unloadClassChildren(LibraryTreeItem *pLibraryTreeItem);
-  void deleteFileHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
-  void deleteFileChildren(LibraryTreeItem *pLibraryTreeItem);
+  void unloadClassChildren(LibraryTreeItem *pLibraryTreeItem, bool deleteFile);
+  void unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, bool deleteFile);
 protected:
   Qt::DropActions supportedDropActions() const override;
 signals:

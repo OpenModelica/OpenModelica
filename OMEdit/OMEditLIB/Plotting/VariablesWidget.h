@@ -85,7 +85,6 @@ public:
   QIcon getVariableTreeItemIcon(QString name) const;
   void insertChild(int position, VariablesTreeItem *pVariablesTreeItem);
   VariablesTreeItem* child(int row);
-  void removeChildren();
   void removeChild(VariablesTreeItem *pVariablesTreeItem);
   int columnCount() const;
   bool setData(int column, const QVariant &value, int role = Qt::EditRole);
@@ -165,6 +164,7 @@ public:
   bool insertVariablesItems(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
   void parseInitXml(QXmlStreamReader &xmlReader, SimulationOptions simulationOptions, QStringList *variablesList);
   bool removeVariableTreeItem(QString variable, bool closeInteractivePlotWindow);
+  void removeVariableTreeItem(VariablesTreeItem *pVariablesTreeItem);
   void unCheckVariables(VariablesTreeItem *pVariablesTreeItem);
   void plotAllVariables(VariablesTreeItem *pVariablesTreeItem, OMPlot::PlotWindow *pPlotWindow);
 private:

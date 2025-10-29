@@ -50,6 +50,7 @@ public:
   LocalsTreeItem(const QVector<QVariant> &localItemData, LocalsTreeModel *pLocalsTreeModel, LocalsTreeItem *pLocalsTreeItem = 0);
   ~LocalsTreeItem();
   LocalsTreeModel* getLocalsTreeModel() {return mpLocalsTreeModel;}
+  int childrenSize() const {return mChildren.size();}
   QList<LocalsTreeItem*> getChildren() const {return mChildren;}
   void setName(QString name) {mName = name;}
   QString getName() {return mName;}
@@ -116,8 +117,6 @@ public:
   QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const override;
   LocalsTreeItem* findLocalsTreeItem(const QString &name, LocalsTreeItem *root) const;
   QModelIndex localsTreeItemIndex(const LocalsTreeItem *pLocalsTreeItem) const;
-  QModelIndex localsTreeItemIndexHelper(const LocalsTreeItem *pLocalsTreeItem, const LocalsTreeItem *pParentLocalsTreeItem,
-                                        const QModelIndex &parentIndex) const;
   void insertLocalItemData(const QVector<QVariant> &localItemData, LocalsTreeItem *pParentLocalsTreeItem);
   void insertLocalsList(const QList<QVector<QVariant> > &locals);
   void removeLocalItem(LocalsTreeItem *pLocalsTreeItem);
