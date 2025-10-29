@@ -99,6 +99,7 @@ public:
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
   Qt::ItemFlags flags(const QModelIndex &index) const override;
   QModelIndex elementTreeItemIndex(const ElementTreeItem *pElementTreeItem) const;
+  void removeElements();
   void addElements(ModelInstance::Model *pModel);
   ElementTreeItem* findElementTreeItem(const QString &name, ElementTreeItem *pLibraryTreeItem = 0, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
 private:

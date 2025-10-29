@@ -8370,6 +8370,10 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     MainWindow::instance()->showDebuggingPerspectiveToolBars(pModelWidget);
   }
   if (!pSubWindow || mpLastActiveSubWindow == pSubWindow) {
+    // Clear Element Browser
+    if (!pSubWindow) {
+      MainWindow::instance()->getElementWidget()->getElementTreeModel()->removeElements();
+    }
     return;
   }
   mpLastActiveSubWindow = pSubWindow;
