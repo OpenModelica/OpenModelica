@@ -765,6 +765,7 @@ int MainWindow::askForExit()
  */
 void MainWindow::beforeClosingMainWindow()
 {
+  mpAutoSaveTimer->stop();
   // Issue #9101. Close all top level windows
   foreach (QWidget *pWidget, QApplication::topLevelWidgets())  {
     if (pWidget == this) {
