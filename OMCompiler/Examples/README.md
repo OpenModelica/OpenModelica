@@ -1,13 +1,22 @@
 # Examples
 
+## Documentation
+
+This directory stores Modelica examples and scripts used to build the OpenModelica User's Guide.
+
 ## Modelica Compliance Suite
 
 ### Dependencies
 
-- Python 3
+- Python 3 with modules
+  - junit_xml
+  - simplejson
+  - natsort
+
 - xsltproc
 
     ```bash
+    sudo apt-get update
     sudo apt-get install xsltproc
     ```
 
@@ -30,3 +39,6 @@ export COMPLIANCEPREFIX="compliance"
 ```bash
 omc -g=MetaModelica ComplianceSuite.mos
 ```
+
+The sucessfull result can be found in file [compliance.html](./compliance.html)
+and the failures in [compliance.failures](./compliance.failures).
