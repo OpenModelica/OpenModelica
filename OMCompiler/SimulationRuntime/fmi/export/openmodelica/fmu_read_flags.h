@@ -44,3 +44,5 @@ int FMI2CS_deInitializeSolverData(ModelInstance* comp);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __FMU_READ_FLAGS_H__ */
