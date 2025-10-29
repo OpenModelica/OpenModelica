@@ -479,6 +479,12 @@ public
   algorithm
     if ConnectorType.isConnectorType(cty) then
       if Restriction.isConnector(restriction) then
+        if attributes.variability < Variability.DISCRETE and not InstContext.inRelaxed(context) then
+          Error.addSourceMessage(Error.INVALID_CONNECTOR_VARIABILITY,
+            {Prefixes.variabilityString(attributes.variability), InstNode.name(component)}, InstNode.info(component));
+          fail();
+        end if;
+
         if Restriction.isExpandableConnector(restriction) then
           cty := ConnectorType.setPresent(cty);
         else
