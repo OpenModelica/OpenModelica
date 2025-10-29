@@ -33,7 +33,6 @@
 
 #include "fmi2TypesPlatform.h"
 #include "fmi2FunctionTypes.h"
-#include "fmi2Functions.h"
 #include "../simulation_data.h"
 #include "../simulation/solver/solver_main.h"
 

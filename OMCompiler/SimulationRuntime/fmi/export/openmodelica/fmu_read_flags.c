@@ -28,8 +28,6 @@
  *
  */
 
-#include "fmi2FunctionTypes.h"
-#include "fmu2_model_interface.h"
 #include "fmu_read_flags.h"
 #include "../simulation/options.h"
 #include "../util/simulation_options.h"

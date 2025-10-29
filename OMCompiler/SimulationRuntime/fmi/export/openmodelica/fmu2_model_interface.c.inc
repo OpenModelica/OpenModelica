@@ -55,7 +55,6 @@
 #include "../util/simulation_options.h"
 #include "../util/omc_error.h"
 
-
 #include "fmu2_dummy_model_defines.h" // get's replaced in SimCodeMain.mo
 
 /*

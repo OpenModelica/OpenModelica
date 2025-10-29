@@ -32,12 +32,12 @@
 #define __FMU_READ_FLAGS_H__
 
 #include "fmu2_model_interface.h"
-#include "../simulation_data.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/* Function declarations */
 int FMI2CS_initializeSolverData(ModelInstance* comp);
 int FMI2CS_deInitializeSolverData(ModelInstance* comp);
 
