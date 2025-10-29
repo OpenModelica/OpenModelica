@@ -51,10 +51,6 @@
 
 #ifdef WITH_SUNDIALS
 
-#ifdef OMC_FMI_RUNTIME
-#include "fmi-export/fmu_read_flags.h"
-#endif
-
 #define CVODE_LMM_MAX 2
 const char *CVODE_LMM_NAME[CVODE_LMM_MAX + 1] = {
     "undefined",
