@@ -135,10 +135,15 @@ public
     b := match stmt
       case ASSIGNMENT()           then Type.isDiscrete(stmt.ty);
       case FUNCTION_ARRAY_INIT()  then Type.isDiscrete(stmt.ty);
+      case FOR()                  then List.any(stmt.body, isDiscrete);
+      case IF() algorithm
+        for branch in stmt.branches loop
+          b := List.any(Util.tuple22(branch), isDiscrete);
+          if b then break; end if;
+        end for;
+      then b;
       case WHEN()                 then true;
-      case ASSERT()               then true;
-      case TERMINATE()            then true;
-      case REINIT()               then true;
+      case WHILE()                then List.any(stmt.body, isDiscrete);
                                   else false;
     end match;
   end isDiscrete;
@@ -229,32 +234,6 @@ public
       else false;
     end match;
   end isAssignment;
-
-  function isWhen
-    input Statement stmt;
-    output Boolean res;
-  algorithm
-    res := match stmt
-      case WHEN() then true;
-      else false;
-    end match;
-  end isWhen;
-
-  function containsWhen
-    input Statement stmt;
-    output Boolean b;
-  algorithm
-    b := match stmt
-      case FOR() then List.any(stmt.body, containsWhen);
-      case IF() algorithm
-        for branch in stmt.branches loop
-          b := List.any(Util.tuple22(branch), containsWhen);
-          if b then break; end if;
-        end for;
-      then b;
-      else isWhen(stmt);
-    end match;
-  end containsWhen;
 
   function makeIf
     input list<tuple<Expression, list<Statement>>> branches;

@@ -6987,10 +6987,13 @@ void ModelWidget::showElement(ModelInstance::Model *pModelInstance, bool addToLi
     }
     mModelInstanceList.append(pModelInstance);
     // find correct LibraryTreeItem for ModelInstance.
-    LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pModelInstance->getName());
+    QString name = pModelInstance->getReplaceable() ? pModelInstance->getNameIfReplaceable() : pModelInstance->getName();
+    LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(name);
     if (!pLibraryTreeItem) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Could not find the LibraryTreeItem for model " + pModelInstance->getName() +
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Could not find the LibraryTreeItem for model " + name +
                                                             ". This is a fatal error. Please report a bug.", Helper::scriptingKind, Helper::errorLevel));
+      exitElement();
+      return;
     }
     mLibraryTreeItemList.append(pLibraryTreeItem);
     mpLibraryTreeItem = pLibraryTreeItem;
