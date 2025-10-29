@@ -1011,7 +1011,7 @@ algorithm
 
         // Set model define include in fmu2_model_interface.c
         modelDefinesHeaderStr := System.readFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c.inc");
-        modelDefinesHeaderStr := System.stringReplace(modelDefinesHeaderStr, "fmu2_dummy_model_defines.h", simCode.fileNamePrefix + "_FMU.h");
+        modelDefinesHeaderStr := System.stringReplace(modelDefinesHeaderStr, "fmu2_dummy_model_defines.h", "../" + simCode.fileNamePrefix + "_FMU.h");
         System.writeFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c", modelDefinesHeaderStr);
         System.removeFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c.inc");
 
