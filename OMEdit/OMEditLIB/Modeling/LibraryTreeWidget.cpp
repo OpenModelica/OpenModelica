@@ -107,9 +107,9 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
 LibraryTreeItem::~LibraryTreeItem()
 {
   if (mpModelWidget) {
-    delete mpModelWidget;
+    mpModelWidget->deleteLater();
   }
-  qDeleteAll(mChildren);
+  removeChildren();
 }
 
 QString LibraryTreeItem::getWhereToMoveFMU()
@@ -1992,8 +1992,7 @@ void LibraryTreeModel::removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, 
   LibraryTreeItem *pParentLibraryTreeItem = pLibraryTreeItem->parent();
   if (pParentLibraryTreeItem) {
     int row = pLibraryTreeItem->row();
-    QModelIndex parentIndex = libraryTreeItemIndex(pParentLibraryTreeItem);
-    beginRemoveRows(parentIndex, row, row);
+    beginRemoveRows(libraryTreeItemIndex(pParentLibraryTreeItem), row, row);
     pParentLibraryTreeItem->removeChild(pLibraryTreeItem);
     endRemoveRows();
   }
@@ -2166,6 +2165,12 @@ void LibraryTreeModel::generateVerificationScenarios(LibraryTreeItem *pLibraryTr
      * Load the newly created scenrario classes.
      */
     unloadClassChildren(pLibraryTreeItem, false);
+    const int n = pLibraryTreeItem->childrenSize();
+    if (n > 0) {
+      beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem), 0, n - 1);
+      pLibraryTreeItem->removeChildren();
+      endRemoveRows();
+    }
     createLibraryTreeItems(pLibraryTreeItem);
     updateLibraryTreeItem(pLibraryTreeItem);
   }
@@ -2535,21 +2540,11 @@ void LibraryTreeModel::createOMSBusConnectorLibraryTreeItems(LibraryTreeItem *pL
  */
 void LibraryTreeModel::unloadClassChildren(LibraryTreeItem *pLibraryTreeItem, bool deleteFile)
 {
-  // Get the number of children
-  int childCount = pLibraryTreeItem->childrenSize();
-  // Remove children recursively first
-  for (int i = 0; i < childCount; ++i) {
+  // unload children recursively first
+  for (int i = 0; i < pLibraryTreeItem->childrenSize(); ++i) {
     LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
     unloadClassChildren(pChildLibraryTreeItem, deleteFile);
     unloadClassHelper(pChildLibraryTreeItem, deleteFile);
-  }
-  // Now remove *all* children in one batch
-  if (childCount > 0) {
-    QModelIndex parentIndex = libraryTreeItemIndex(pLibraryTreeItem);
-    beginRemoveRows(parentIndex, 0, childCount - 1);
-    // Actually delete/remove all children from the item
-    pLibraryTreeItem->removeChildren();
-    endRemoveRows();
   }
 }
 
