@@ -70,10 +70,10 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"test_Bug3049_18spd.c\" />
 //       <File name=\"test_Bug3049_init_fmu.c\" />
 //       <File name=\"test_Bug3049_FMU.c\" />
-//       <File name=\"./gc/memory_pool.c\" />
-//       <File name=\"./gc/omc_gc.c\" />
 //       <File name=\"./fmi-export/fmu_read_flags.c />
 //       <File name=\"./fmi-export/fmu2_model_interface.c />
+//       <File name=\"./gc/memory_pool.c\" />
+//       <File name=\"./gc/omc_gc.c\" />
 //       <File name=\"./util/base_array.c\" />
 //       <File name=\"./util/boolean_array.c\" />
 //       <File name=\"./util/context.c\" />
