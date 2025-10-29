@@ -41,4 +41,6 @@ extern "C" {
 int FMI2CS_initializeSolverData(ModelInstance* comp);
 int FMI2CS_deInitializeSolverData(ModelInstance* comp);
 
+#ifdef __cplusplus
+}
 #endif

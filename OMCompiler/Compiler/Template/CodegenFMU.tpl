@@ -321,7 +321,7 @@ case SIMCODE(__) then
   }
   #endif
 
-  #endif // <%modelNamePrefix(simCode)%>_FMU_H
+  #endif /* <%modelNamePrefix(simCode)%>_FMU_H */
   >>
 end fmumodel_identifierHeaderFile;
 
