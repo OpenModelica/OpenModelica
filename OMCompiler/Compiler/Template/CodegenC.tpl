@@ -7504,7 +7504,7 @@ end forIteratorName;
 template subIterator(tuple<DAE.ComponentRef, array<DAE.Exp>> iter, String parent_iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
 ::= match iter
   case (name, range) then
-    let type_ = crefShortType(name)
+    let type_ = 'modelica_<%crefShortType(name)%>'
     let name_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
     let range_ = (arrayList(range) |> elem => daeExp(elem, context, &preExp, &varDecls, &auxFunction); separator=", ")
     let size_ = arrayLength(range)

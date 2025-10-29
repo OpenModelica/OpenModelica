@@ -243,7 +243,7 @@ public
       case (node, range as Expression.ARRAY()) algorithm
         node2   := InstNode.newIterator("$" + InstNode.name(node), Type.INTEGER(), sourceInfo());
         range2  := Expression.makeRange(Expression.INTEGER(1), NONE(), Expression.INTEGER(Type.sizeOf(Expression.typeOf(range))));
-        map     := Iterator.fromFrames({(ComponentRef.makeIterator(node, Type.INTEGER()), range, NONE())});
+        map     := Iterator.fromFrames({(ComponentRef.makeIterator(node, Type.arrayElementType(Expression.typeOf(range))), range, NONE())});
 
         // create the new iterator variable
         iter_cref := ComponentRef.makeIterator(node2, Type.INTEGER());
