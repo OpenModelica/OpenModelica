@@ -1922,10 +1922,14 @@ let &sub = buffer ""
 
       <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
         match cref2simvar(name, simCode)
-        case var as SIMVAR(aliasvar=NOALIAS()) then
+        case SIMVAR(aliasvar=NOALIAS(), type_=T_REAL()) then
           <<
           assertStreamPrint(threadData, data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].dimension.numberOfDimensions == 0, "Handling of array variables not yet implemetned.");
           data->simulationInfo->inputVars[<%i0%>] = real_get(data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start, 0);
+          >>
+        case SIMVAR(aliasvar=NOALIAS()) then
+          <<
+          data->simulationInfo->inputVars[<%i0%>] = data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start;
           >>
         else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
@@ -1941,10 +1945,15 @@ let &sub = buffer ""
 
       <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
         match cref2simvar(name, simCode)
-        case SIMVAR(aliasvar=NOALIAS()) then
+
+        case SIMVAR(aliasvar=NOALIAS(), type_=T_REAL()) then
           <<
           assertStreamPrint(threadData, data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].dimension.numberOfDimensions == 0, "Handling of array variables not yet implemetned.");
           put_real_element(data->simulationInfo->inputVars[<%i0%>], 0, &data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start);
+          >>
+        case SIMVAR(aliasvar=NOALIAS()) then
+          <<
+          data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start = data->simulationInfo->inputVars[<%i0%>];
           >>
         else
           error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
