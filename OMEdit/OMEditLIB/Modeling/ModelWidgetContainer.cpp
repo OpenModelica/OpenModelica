@@ -8405,8 +8405,8 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     MainWindow::instance()->showDebuggingPerspectiveToolBars(pModelWidget);
   }
   if (!pSubWindow || mpLastActiveSubWindow == pSubWindow) {
-    // Clear Element Browser
-    if (!pSubWindow) {
+    // Clear Element Browser when no ModelWidget is opened
+    if (subWindowList().isEmpty()) {
       MainWindow::instance()->getElementWidget()->getElementTreeModel()->removeElements();
     }
     return;
