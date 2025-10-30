@@ -5504,33 +5504,32 @@ end genVector;
 template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String modelNamePrefix, String fileNamePrefix) "template functionAnalyticJacobians
   This template generates source code for all given jacobians."
 ::=
-  let initialjacMats =
+   let initialjacMats =
     (JacobianMatrices |> JAC_MATRIX() =>
-      match isAdjoint
-        // Adjoint: use transposed sparsity and row coloring
-        case true then (
-          initialAnalyticJacobians(
-            columns,
-            seedVars,
-            matrixName,
-            sparsityT,                /* useSparse */
-            coloredRows,              /* useColors (rows) */
-            listLength(coloredRows),  /* useMaxColors */
-            modelNamePrefix,
-            fileNamePrefix) ;separator = "\n")
-        // Normal: use regular sparsity and column coloring
-        case false then (
-          initialAnalyticJacobians(
-            columns,
-            seedVars,
-            matrixName,
-            sparsity,                 /* useSparse */
-            coloredCols,              /* useColors (cols) */
-            maxColorCols,             /* useMaxColors */
-            modelNamePrefix,
-            fileNamePrefix) ;separator = "\n")
-      end match)
-      
+      // Adjoint: use transposed sparsity and row coloring
+      // Normal: use regular sparsity and column coloring
+      if isAdjoint then
+        initialAnalyticJacobians(
+          columns,
+          seedVars,
+          matrixName,
+          sparsityT,                /* useSparse */
+          coloredRows,              /* useColors (rows) */
+          listLength(coloredRows),  /* useMaxColors */
+          modelNamePrefix,
+          fileNamePrefix)
+      else
+        initialAnalyticJacobians(
+          columns,
+          seedVars,
+          matrixName,
+          sparsity,                 /* useSparse */
+          coloredCols,              /* useColors (cols) */
+          maxColorCols,             /* useMaxColors */
+          modelNamePrefix,
+          fileNamePrefix)
+      ;separator="\n")
+
   let jacMats = (JacobianMatrices |> JAC_MATRIX() =>
     generateMatrix(columns, seedVars, matrixName, partitionIndex, crefsHT, modelNamePrefix) ;separator="\n")
   let jacGenericCalls = (JacobianMatrices |> JAC_MATRIX() =>

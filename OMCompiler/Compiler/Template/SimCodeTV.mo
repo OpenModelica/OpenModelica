@@ -410,11 +410,13 @@ package SimCode
       NonlinearPattern nonlinear;
       NonlinearPattern nonlinearT;
       list<list<Integer>> coloredCols;
+      list<list<Integer>> coloredRows;
       Integer maxColorCols;
       Integer jacobianIndex;
       Integer partitionIndex;
       list<SimGenericCall> generic_loop_calls;
       Option<HashTableCrefSimVar.HashTable> crefsHT;
+      Boolean isAdjoint;
     end JAC_MATRIX;
   end JacobianMatrix;
 
