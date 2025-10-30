@@ -88,8 +88,8 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"testDID_18spd.c\" />
 //       <File name=\"testDID_init_fmu.c\" />
 //       <File name=\"testDID_FMU.c\" />
-//       <File name=\"./fmi-export/fmu2_model_interface.c />
-//       <File name=\"./fmi-export/fmu_read_flags.c />
+//       <File name=\"fmi-export/fmu2_model_interface.c />
+//       <File name=\"fmi-export/fmu_read_flags.c />
 //       <File name=\"./gc/memory_pool.c\" />
 //       <File name=\"./gc/omc_gc.c\" />
 //       <File name=\"./util/base_array.c\" />
