@@ -903,6 +903,8 @@ public constant ErrorTypes.Message CONFLICTING_INHERITED_ANNOTATIONS = ErrorType
   Gettext.gettext("Conflicting '%s' annotations inherited by class '%s':\n  %s from 'extends %s'\n  %s from 'extends %s'"));
 public constant ErrorTypes.Message ASSIGN_ITERATOR_ERROR = ErrorTypes.MESSAGE(415, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Assignment to iterator '%s'."));
+public constant ErrorTypes.Message INVALID_CONNECTOR_VARIABILITY = ErrorTypes.MESSAGE(416, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Invalid variability %s on connector '%s'."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));

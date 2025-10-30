@@ -51,6 +51,7 @@ ConnectorIllegal2.mo \
 ConnectorInheritance1.mo \
 ConnectorSimple.mo \
 ConnectorSubtypeComp.mo \
+ConnectorVariability1.mo \
 ConnectTheSameConnector.mo \
 ConnectTwoSources.mo \
 ConnectTypes.mo \

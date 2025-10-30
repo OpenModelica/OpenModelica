@@ -119,7 +119,8 @@ private:
 	int mInteractivePort;
 	QwtSeriesData<QPointF>* mpInteractiveData;
 	QString mInteractiveModelName;
-	bool mPrefixUnits;
+    bool mCanHavePrefixUnits = false;
+    bool mPrefixUnits = false;
 	QMdiSubWindow* mpSubWindow;
 public:
 	PlotWindow(QStringList arguments = QStringList(), QWidget* parent = 0, bool isInteractiveSimulation = false, int toolbarIconSize = 0);
@@ -207,6 +208,8 @@ public:
   QString getLegendPosition();
   void setFooter(QString footer);
   QString getFooter();
+  bool canHavePrefixUnits() const { return mCanHavePrefixUnits; }
+  void setCanHavePrefixUnits(bool canHavePrefixUnits) { mCanHavePrefixUnits = canHavePrefixUnits; }
   bool getPrefixUnits() const;
   void setPrefixUnits(bool prefixUnits);
   void checkForErrors(QStringList variables, QStringList variablesPlotted);
