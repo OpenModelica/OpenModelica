@@ -15952,12 +15952,17 @@ algorithm
   */
   cmakecode := cmakecode + getCmakeCrossPlatformSuffixes() + "\n";
   for lib in libraries loop
-    cmakecode := cmakecode + "find_library(" + lib + "\n" +
-                 "             NAMES " + lib + "\n" +
-                 "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH)\n" +
-                 "message(STATUS \"Linking ${" + lib + "}\")" + "\n" +
-                 "target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})" + "\n" +
-                 "list(APPEND RUNTIME_DEPENDS ${" + lib + "})" + "\n";
+    // Special handling for ModelicaExternalC, we always copy the sources into the FMU
+    if List.contains({"ModelicaStandardTables", "ModelicaIO", "ModelicaMatIO"}, lib, stringEqual) then
+      cmakecode := cmakecode + "list(APPEND FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/" + lib + ".c)\n";
+    else
+      cmakecode := cmakecode + "find_library(" + lib + "\n" +
+                  "             NAMES " + lib + "\n" +
+                  "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH)\n" +
+                  "message(STATUS \"Linking ${" + lib + "}\")" + "\n" +
+                  "target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})" + "\n" +
+                  "list(APPEND RUNTIME_DEPENDS ${" + lib + "})" + "\n";
+    end if;
   end for;
 end getCmakeLinkLibrariesCode;
 
