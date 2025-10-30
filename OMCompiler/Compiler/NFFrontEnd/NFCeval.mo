@@ -996,11 +996,11 @@ algorithm
     // technically the following two are incorrect because they need element wise addition
     // but the backend can create these and immediately tries to evaluate them.
     // kabdelhak: instead of fixing the operators we will just allow this to be immediately evaluated
-    case (Expression.ARRAY(), Expression.INTEGER())
+    case (Expression.ARRAY(), _)
       then Expression.makeArray(exp1.ty,
         Array.map(exp1.elements, function evalBinaryAdd(exp2 = exp2)),
         literal = exp1.literal);
-    case (Expression.INTEGER(), Expression.ARRAY())
+    case (_, Expression.ARRAY())
       then Expression.makeArray(exp2.ty,
         Array.map(exp2.elements, function evalBinaryAdd(exp1 = exp1)),
         literal = exp2.literal);
@@ -1032,6 +1032,18 @@ algorithm
         Array.threadMap(exp1.elements, exp2.elements, evalBinarySub),
         literal = true);
 
+    // technically the following two are incorrect because they need element wise addition
+    // but the backend can create these and immediately tries to evaluate them.
+    // kabdelhak: instead of fixing the operators we will just allow this to be immediately evaluated
+    case (Expression.ARRAY(), _)
+      then Expression.makeArray(exp1.ty,
+        Array.map(exp1.elements, function evalBinarySub(exp2 = exp2)),
+        literal = exp1.literal);
+    case (_, Expression.ARRAY())
+      then Expression.makeArray(exp2.ty,
+        Array.map(exp2.elements, function evalBinarySub(exp1 = exp1)),
+        literal = exp2.literal);
+
     else
       algorithm
         exp := Expression.BINARY(exp1, Operator.makeSub(Type.UNKNOWN()), exp2);
@@ -1040,6 +1052,23 @@ algorithm
         fail();
   end match;
 end evalBinarySub;
+
+function evalMultaryAddSub
+  input list<Expression> arguments;
+  input list<Expression> inv_arguments;
+  input Type operator_ty;
+  output Expression exp = Expression.makeZero(operator_ty);
+algorithm
+  // add up all arguments
+  for arg in arguments loop
+    exp := evalBinaryAdd(exp, arg);
+  end for;
+
+  // subtract all inverse arguments
+  for arg in inv_arguments loop
+    exp := evalBinarySub(exp, arg);
+  end for;
+end evalMultaryAddSub;
 
 function evalBinaryMul
   input Expression exp1;
@@ -1058,6 +1087,18 @@ algorithm
       then Expression.makeArray(exp1.ty,
         Array.threadMap(exp1.elements, exp2.elements, evalBinaryMul),
         literal = true);
+
+    // technically the following two are incorrect because they need element wise addition
+    // but the backend can create these and immediately tries to evaluate them.
+    // kabdelhak: instead of fixing the operators we will just allow this to be immediately evaluated
+    case (Expression.ARRAY(), _)
+      then Expression.makeArray(exp1.ty,
+        Array.map(exp1.elements, function evalBinaryMul(exp2 = exp2)),
+        literal = exp1.literal);
+    case (_, Expression.ARRAY())
+      then Expression.makeArray(exp2.ty,
+        Array.map(exp2.elements, function evalBinaryMul(exp1 = exp1)),
+        literal = exp2.literal);
 
     else
       algorithm
@@ -1096,6 +1137,18 @@ algorithm
         Array.threadMap(exp1.elements, exp2.elements, function evalBinaryDiv(target = target)),
         literal = true);
 
+    // technically the following two are incorrect because they need element wise addition
+    // but the backend can create these and immediately tries to evaluate them.
+    // kabdelhak: instead of fixing the operators we will just allow this to be immediately evaluated
+    case (Expression.ARRAY(), _)
+      then Expression.makeArray(exp1.ty,
+        Array.map(exp1.elements, function evalBinarySub(exp2 = exp2)),
+        literal = exp1.literal);
+    case (_, Expression.ARRAY())
+      then Expression.makeArray(exp2.ty,
+        Array.map(exp2.elements, function evalBinarySub(exp1 = exp1)),
+        literal = exp2.literal);
+
     else
       algorithm
         exp := Expression.BINARY(exp1, Operator.makeDiv(Type.UNKNOWN()), exp2);
@@ -1104,6 +1157,23 @@ algorithm
         fail();
   end match;
 end evalBinaryDiv;
+
+function evalMultaryMulDiv
+  input list<Expression> arguments;
+  input list<Expression> inv_arguments;
+  input Type operator_ty;
+  output Expression exp = Expression.makeOne(operator_ty);
+algorithm
+  // multiply all arguments
+  for arg in arguments loop
+    exp := evalBinaryMul(exp, arg);
+  end for;
+
+  // divide all inverse arguments
+  for arg in inv_arguments loop
+    exp := evalBinaryDiv(exp, arg, noTarget);
+  end for;
+end evalMultaryMulDiv;
 
 function evalBinaryPow
   input Expression exp1;

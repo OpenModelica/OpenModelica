@@ -817,11 +817,20 @@ algorithm
       (arguments, inv_arguments, isNegative) := simplifyMultarySigns(arguments, inv_arguments, mcl);
 
       // split them into constant and non constant arguments
-      (const_args, arguments) := List.splitOnTrue(arguments, Expression.isConstNumber);
-      (inv_const_args, inv_arguments) := List.splitOnTrue(inv_arguments, Expression.isConstNumber);
+      (const_args, arguments) := List.splitOnTrue(arguments, Expression.isLiteral);
+      (inv_const_args, inv_arguments) := List.splitOnTrue(inv_arguments, Expression.isLiteral); // --> change to isLiteral
 
       // combine the constants
-      new_const := combineConstantNumbers(const_args, inv_const_args, mcl, Operator.typeOf(operator));
+      if mcl == NFOperator.MathClassification.ADDITION then
+        new_const := Ceval.evalMultaryAddSub(const_args, inv_const_args, Operator.typeOf(operator));
+      elseif mcl == NFOperator.MathClassification.MULTIPLICATION then
+        new_const := Ceval.evalMultaryMulDiv(const_args, inv_const_args, Operator.typeOf(operator));
+      else
+        Error.assertion(false, getInstanceName() + " detected non-commutative operator in MULTARY(): [" + Operator.mathSymbol(mcl) +
+          "]\n with following arguments: " + stringDelimitList(list(Expression.toString(e) for e in const_args), ", ") +
+          "\n and following inverse arguments: " + stringDelimitList(list(Expression.toString(e) for e in inv_const_args), ", "),
+          sourceInfo());
+      end if;
 
       // remove expressions that are in both arguments and inv_arguments
       (arguments, inv_arguments) := cancelTermsInMultary(arguments, inv_arguments);
