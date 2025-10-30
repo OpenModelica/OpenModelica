@@ -40,7 +40,7 @@ add_executable(test_calc_index_tensor
 target_link_libraries(test_calc_index_tensor PRIVATE SimulationRuntimeC)
 add_test(NAME test_calc_index_tensor COMMAND test_calc_index_tensor)
 
-add_custom_target(ctestsuite-arrayIndex-unit DEPENDS
+add_custom_target(ctestsuite-simulation-arrayIndex-unit DEPENDS
   test_array_length_scalar
   test_array_length_vector
   test_array_length_matrix

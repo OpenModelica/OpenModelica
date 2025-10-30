@@ -1240,6 +1240,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "simulation/solver/events.h"
+    #include "util/real_array.h"
 
     <% if stringEq("",isModelExchangeFMU) then
     <<
@@ -1921,8 +1922,15 @@ let &sub = buffer ""
 
       <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
         match cref2simvar(name, simCode)
+        case SIMVAR(aliasvar=NOALIAS(), type_=T_REAL()) then
+          <<
+          assertStreamPrint(threadData, data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].dimension.numberOfDimensions == 0, "Handling of array variables not yet implemetned.");
+          data->simulationInfo->inputVars[<%i0%>] = real_get(data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start, 0);
+          >>
         case SIMVAR(aliasvar=NOALIAS()) then
-        'data->simulationInfo->inputVars[<%i0%>] = data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start;'
+          <<
+          data->simulationInfo->inputVars[<%i0%>] = data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start;
+          >>
         else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
       %>
@@ -1937,9 +1945,18 @@ let &sub = buffer ""
 
       <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
         match cref2simvar(name, simCode)
+
+        case SIMVAR(aliasvar=NOALIAS(), type_=T_REAL()) then
+          <<
+          assertStreamPrint(threadData, data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].dimension.numberOfDimensions == 0, "Handling of array variables not yet implemetned.");
+          put_real_element(data->simulationInfo->inputVars[<%i0%>], 0, &data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start);
+          >>
         case SIMVAR(aliasvar=NOALIAS()) then
-        'data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start = data->simulationInfo->inputVars[<%i0%>];'
-        else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
+          <<
+          data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start = data->simulationInfo->inputVars[<%i0%>];
+          >>
+        else
+          error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
       %>
 
@@ -7169,8 +7186,24 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
           match modelInfo
             case MODELINFO(vars=SIMVARS(__)) then
               <<
-              <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
-              'min[<%i0%>] = <%crefAttributes(name)%>.min;<%\n%>max[<%i0%>] = <%crefAttributes(name)%>.max;<%\n%>nominal[<%i0%>] = <%crefAttributes(name)%>.nominal;<%\n%>useNominal[<%i0%>] = <%crefAttributes(name)%>.useNominal;<%\n%>name[<%i0%>] =(char *) <%crefVarInfo(name)%>.name;<%\n%>start[<%i0%>] = <%crefAttributes(name)%>.start;'
+              <%vars.inputVars |> SIMVAR(index=index, type_=type_) hasindex i0 =>
+                <<
+                min[<%i0%>] = <%crefAttributes(name)%>.min;
+                max[<%i0%>] = <%crefAttributes(name)%>.max;
+                nominal[<%i0%>] = <%crefAttributes(name)%>.nominal;
+                useNominal[<%i0%>] = <%crefAttributes(name)%>.useNominal;
+                name[<%i0%>] =(char *) <%crefVarInfo(name)%>.name;
+                <%match type_ case T_REAL() then
+                  <<
+                  assertStreamPrint(NULL, data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].dimension.numberOfDimensions == 0, "Handling of array variables not yet implemetned.");
+                  start[<%i0%>] = real_get(<%crefAttributes(name)%>.start, 0);
+                  >>
+                else
+                  <<
+                  start[<%i0%>] = <%crefAttributes(name)%>.start;
+                  >>
+                %>
+                >>
               ;separator="\n"%>
               >>
 
