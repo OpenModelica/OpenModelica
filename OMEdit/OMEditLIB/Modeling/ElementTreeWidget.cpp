@@ -532,8 +532,6 @@ ElementWidget::ElementWidget(QWidget *pParent)
   mpElementTreeView = new ElementTreeView(this);
   mpElementTreeView->setModel(mpElementTreeProxyModel);
   mpElementTreeView->setSelectionMode(QAbstractItemView::ExtendedSelection);
-  connect(mpElementTreeModel, SIGNAL(rowsInserted(QModelIndex,int,int)), mpElementTreeProxyModel, SLOT(invalidate()));
-  connect(mpElementTreeModel, SIGNAL(rowsRemoved(QModelIndex,int,int)), mpElementTreeProxyModel, SLOT(invalidate()));
   connect(mpTreeSearchFilters->getExpandAllButton(), SIGNAL(clicked()), mpElementTreeView, SLOT(expandAll()));
   connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpElementTreeView, SLOT(collapseAll()));
   connect(mpElementTreeView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), SLOT(elementSelectionChanged(QItemSelection,QItemSelection)));
