@@ -85,7 +85,7 @@ import DAEQuery;
 import DAEUtil;
 import Debug;
 import DiffAlgorithm;
-import Docker;
+import DockerImage;
 import Dump;
 import Error;
 import ErrorExt;
@@ -3931,7 +3931,7 @@ algorithm
       String cmakeCall;
       String crossTriple, buildDir, fmiTarget;
       list<String> dockerImgArgs;
-      Docker.DockerImageReference dockerImage;
+      DockerImage.DockerImage dockerImage;
       list<String> dockerArguments;
       Integer uid;
       String cidFile, volumeID, containerID, userID;
@@ -3978,8 +3978,9 @@ algorithm
         then();
     case crossTriple::"docker"::"run"::dockerImgArgs
       algorithm
-        (dockerImage, dockerArguments) := Docker.parseDockerReferenceWithArgs(dockerImgArgs);
-        Docker.warnNonOpenModelicaImage(dockerImage);
+        (dockerImage, dockerArguments) := DockerImage.parseWithArgs(dockerImgArgs);
+        Error.addCompilerNotification("Using docker image '" + DockerImage.toString(dockerImage) + "' for cross compilation.");
+        DockerImage.isTrustedOpenModelicaImage(dockerImage);
 
         uid := System.getuid();
         cidFile := fmutmp+".cidfile";
@@ -4039,7 +4040,7 @@ algorithm
         end if;
 
         if List.listGet(dockerImgArgs, 1) == "crossbuild:latest" then // TODO: Use openmodelica/crossbuild
-          cmake_toolchain := "-DCMAKE_TOOLCHAIN_FILE=/opt/cmake/toolchain/" + crossTriple + ".cmake";
+          cmake_toolchain := "-DCMAKE_TOOLCHAIN_FILE=/opt/cmake/toolchain/" + crossTriple + ".cmake ";
         else
           cmake_toolchain := "";
         end if;
