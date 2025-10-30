@@ -41,14 +41,26 @@ function serialize
 protected
   array<Integer> columnPointers, rowIndices, columns;
   String fname;
+  Boolean adj;
+  list<tuple<Integer, list<Integer>>> pattern;
+  list<list<Integer>> colorList;
 algorithm
+  // TODO: redo naming variables
   for jac in code.jacobianMatrices loop
-    if not listEmpty(jac.sparsity) then
+    // pick sparsity and coloring depending on adjoint
+    adj := jac.isAdjoint;
+    print("adjoint in serialize: " + boolString(adj) + " for jacobian matrix: " + jac.matrixName + "\n");
+    print("colored rows laenge: " + intString(listLength(jac.coloredRows)) + " " + boolString(listEmpty(jac.coloredRows)) + "\n");
+    print("colored cols laenge: " + intString(listLength(jac.coloredCols)) + " " + boolString(listEmpty(jac.coloredCols)) + "\n");
+    pattern := if adj then jac.sparsityT else jac.sparsity;
+    // prefer row coloring if available for adjoint, otherwise fall back to column coloring
+    colorList := if adj then (if not listEmpty(jac.coloredRows) then jac.coloredRows else jac.coloredCols) else jac.coloredCols;
+    if not listEmpty(pattern) then
       fname := code.fileNamePrefix + "_Jac" + jac.matrixName + ".bin";
-      columnPointers := listArray(0 :: list(listLength(Util.tuple22(column)) for column in jac.sparsity));
-      rowIndices := listArray(List.flatten(list(Util.tuple22(column) for column in jac.sparsity)));
+      columnPointers := listArray(0 :: list(listLength(Util.tuple22(column)) for column in pattern));
+      rowIndices := listArray(List.flatten(list(Util.tuple22(column) for column in pattern)));
       serializeJacobian(fname, arrayLength(columnPointers), arrayLength(rowIndices), columnPointers, rowIndices);
-      for color in jac.coloredCols loop
+      for color in colorList loop
         columns := listArray(color);
         serializeColor(fname, arrayLength(columns), columns);
       end for;

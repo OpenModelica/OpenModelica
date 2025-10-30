@@ -89,15 +89,17 @@ uniontype JacobianMatrix
     NonlinearPattern nonlinear;
     NonlinearPattern nonlinearT;
     list<list<Integer>> coloredCols;
+    list<list<Integer>> coloredRows;
     Integer maxColorCols;
     Integer jacobianIndex;
     Integer partitionIndex;
     list<SimGenericCall> generic_loop_calls;
     Option<HashTableCrefSimVar.HashTable> crefsHT; // all jacobian variables
+    Boolean isAdjoint; // true if this jacobian is for adjoint calculation
   end JAC_MATRIX;
 end JacobianMatrix;
 
-constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", {}, {}, {}, {}, {}, 0, -1, 0, {}, NONE());
+constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", {}, {}, {}, {}, {}, {}, 0, -1, 0, {}, NONE(), false);
 constant PartitionData emptyPartitionData = PARTITIONDATA(-1,{},{},{});
 
 

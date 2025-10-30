@@ -272,7 +272,8 @@ public
         varData           = varData,
         comps             = listArray(comps),
         sparsityPattern   = sparsityPattern,
-        sparsityColoring  = sparsityColoring
+        sparsityColoring  = sparsityColoring,
+        isAdjoint         = if name == "ADJ" then true else false // this is maybe bad (e.g. when name changes)
       );
     end if;
   end combine;
@@ -494,8 +495,8 @@ public
       print(adjacencyMapToString(map) + "\n");
 
       // create coloring
-      sparsityColoring := SparsityColoring.PartialD2ColoringAlgC(sparsityPattern, jacType);
-      // sparsityColoring := SparsityColoring.PartialD2ColoringAlg(sparsityPattern, map);
+      //sparsityColoring := SparsityColoring.PartialD2ColoringAlgC(sparsityPattern, jacType);
+      sparsityColoring := SparsityColoring.PartialD2ColoringAlgColumnAndRow(sparsityPattern, map);
 
       if Flags.isSet(Flags.DUMP_SPARSE) then
         print(toString(sparsityPattern) + "\n" + SparsityColoring.toString(sparsityColoring) + "\n");
@@ -619,9 +620,12 @@ public
         str := str + "\n<empty sparsity pattern>\n";
       end if;
       for i in 1:arrayLength(sparsityColoring.cols) loop
-        str := str + "Color (" + intString(i) + ")\n"
-          + "  - Column: " + ComponentRef.listToString(sparsityColoring.cols[i]) + "\n"
-          + "  - Row:    " + ComponentRef.listToString(sparsityColoring.rows[i]) + "\n\n";
+        str := str + "Column Color (" + intString(i) + ")\n"
+          + "  - Column: " + ComponentRef.listToString(sparsityColoring.cols[i]) + "\n";
+      end for;
+      for i in 1:arrayLength(sparsityColoring.rows) loop
+        str := str + "Row Color (" + intString(i) + ")\n"
+          + "  - Row:    " + ComponentRef.listToString(sparsityColoring.rows[i]) + "\n";
       end for;
     end toString;
 
@@ -1016,7 +1020,8 @@ protected
       varData           = varDataJac,
       comps             = listArray(diffed_comps),
       sparsityPattern   = sparsityPattern,
-      sparsityColoring  = sparsityColoring
+      sparsityColoring  = sparsityColoring,
+      isAdjoint         = false
     ));
   end jacobianSymbolic;
 
@@ -1688,44 +1693,44 @@ protected
       seedVars      = VariablePointers.fromList(seed_vars)
     );
 
-    (sparsityPattern, _) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
-    // 1) old partials -> new seeds
-    i := 1;
-    for oldC in sparsityPattern.partial_vars loop
-      if i <= listLength(sparsityPattern.seed_vars) then
-        newC := listGet(sparsityPattern.seed_vars, i);
-        // (partner, _) := BVariable.getVarSeed(newVar);
-        // newC := BVariable.getVarName(Util.getOption(partner));
-        UnorderedMap.add(oldC, newC, mapPartialToNewSeed);
-      end if;
-      i := i + 1;
-    end for;
+    (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
+    // // 1) old partials -> new seeds
+    // i := 1;
+    // for oldC in sparsityPattern.partial_vars loop
+    //   if i <= listLength(sparsityPattern.seed_vars) then
+    //     newC := listGet(sparsityPattern.seed_vars, i);
+    //     // (partner, _) := BVariable.getVarSeed(newVar);
+    //     // newC := BVariable.getVarName(Util.getOption(partner));
+    //     UnorderedMap.add(oldC, newC, mapPartialToNewSeed);
+    //   end if;
+    //   i := i + 1;
+    // end for;
 
-    // print("Map original partials to new seeds:\n");
-    // print(UnorderedMap.toString(mapPartialToNewSeed, ComponentRef.toString, ComponentRef.toString) + "\n");
+    // // print("Map original partials to new seeds:\n");
+    // // print(UnorderedMap.toString(mapPartialToNewSeed, ComponentRef.toString, ComponentRef.toString) + "\n");
 
-    // 2) old seeds -> new pDers
-    i := 1;
-    for oldC in sparsityPattern.seed_vars loop
-      if i <= listLength(sparsityPattern.partial_vars) then
-        newC := listGet(sparsityPattern.partial_vars, i);
-        // (partner, _) := BVariable.getVarPDer(newC);
-        // newC := BVariable.getVarName(Util.getOption(partner));
-        UnorderedMap.add(oldC, newC, mapSeedToNewPDer);
-      end if;
-      i := i + 1;
-    end for;
+    // // 2) old seeds -> new pDers
+    // i := 1;
+    // for oldC in sparsityPattern.seed_vars loop
+    //   if i <= listLength(sparsityPattern.partial_vars) then
+    //     newC := listGet(sparsityPattern.partial_vars, i);
+    //     // (partner, _) := BVariable.getVarPDer(newC);
+    //     // newC := BVariable.getVarName(Util.getOption(partner));
+    //     UnorderedMap.add(oldC, newC, mapSeedToNewPDer);
+    //   end if;
+    //   i := i + 1;
+    // end for;
 
-    // print("Map original seeds to new pDers:\n");
-    // print(UnorderedMap.toString(mapSeedToNewPDer, ComponentRef.toString, ComponentRef.toString) + "\n");
+    // // print("Map original seeds to new pDers:\n");
+    // // print(UnorderedMap.toString(mapSeedToNewPDer, ComponentRef.toString, ComponentRef.toString) + "\n");
 
-    (sparsityPattern, sparsityColoring) :=
-      SparsityPattern.transposeRenamed(
-        sparsityPattern,
-        mapPartialToNewSeed,
-        mapSeedToNewPDer,
-        jacType
-      );
+    // (sparsityPattern, sparsityColoring) :=
+    //   SparsityPattern.transposeRenamed(
+    //     sparsityPattern,
+    //     mapPartialToNewSeed,
+    //     mapSeedToNewPDer,
+    //     jacType
+    //   );
 
     print(SparsityPattern.toString(sparsityPattern) + "\n" + SparsityColoring.toString(sparsityColoring) + "\n");
 
@@ -1737,7 +1742,8 @@ protected
       varData           = varDataJac,
       comps             = listArray(diffed_comps),
       sparsityPattern   = sparsityPattern,
-      sparsityColoring  = sparsityColoring
+      sparsityColoring  = sparsityColoring,
+      isAdjoint         = true
     ));
   end jacobianSymbolicAdjoint;
 
@@ -1774,7 +1780,8 @@ protected
       varData           = varDataJac,
       comps             = listArray({}),
       sparsityPattern   = sparsityPattern,
-      sparsityColoring  = sparsityColoring
+      sparsityColoring  = sparsityColoring,
+      isAdjoint         = false
     ));
   end jacobianNumeric;
 

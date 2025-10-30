@@ -154,7 +154,7 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
             jac[nz] = jacobian->resultVars[row]; //* solverData->xScaling[j];
           }
           else {
-            /* dense case */
+            /* dense case (row major layout for csc format) */
             jac[column * jacobian->sizeRows + row] = jacobian->resultVars[row]; //* solverData->xScaling[j];
           }
         }
@@ -165,12 +165,82 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
   }
 }
 
+/*!
+ * \brief Row-wise Jacobian evaluation.
+ *
+ * Assumptions:
+ *  - jacobian->evalColumn evaluates a row-direction seed (i.e., is a row evaluator)
+ *  - sparsePattern is in CSR format:
+ *      leadindex: sizeRows + 1 (row pointers)
+ *      index:     nnz (column indices)
+ *  - colorCols encodes row coloring (1-based color ids)
+ *
+ * Output:
+ *  - If isDense == false: jac is nnz-sized buffer aligned with CSR index order.
+ *  - If isDense == true:  jac is dense column-major buffer of size sizeRows*sizeCols
+ *                         with J(row, col) stored at jac[col*sizeRows + row].
+ */
+void evalJacobianRow(DATA* data, threadData_t *threadData,
+                     JACOBIAN* jacobian, JACOBIAN* parentJacobian,
+                     modelica_real* jac, modelica_boolean isDense)
+{
+  int color, row, col, nz;
+  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
+  const unsigned int nRows = jacobian->sizeRows;
+  const unsigned int nCols = jacobian->sizeCols;
+
+  if (!jacobian->isRowEval) {
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "cant perform row-wise evaluation on column-evaluation Jacobian\n");
+    return;
+  }
+
+  /* evaluate constant equations of Jacobian (if any) */
+  if (jacobian->constantEqns != NULL) {
+    jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
+  }
+
+  /* memset to zero for dense, since solvers might destroy "hard zeros" */
+  if (isDense) {
+    memset(jac, 0, nRows * nCols * sizeof(modelica_real));
+  }
+
+  /* Ensure seeds are zeroed before use (row seeds) */
+  memset(jacobian->seedVars, 0, nRows * sizeof(modelica_real));
+
+  /* evaluate Jacobian row-wise using row-coloring */
+  for (color = 0; color < (int)sp->maxColors; color++) {
+    /* activate seed variable(s) for the corresponding color (rows) */
+    for (row = 0; row < (int)nRows; row++) {
+      if ((int)sp->colorCols[row] - 1 == color) {
+        jacobian->seedVars[row] = 1.0;
+      }
+    }
+
+    /* evaluate all active rows at once (evalColumn acts as evalRow here) */
+    jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
+
+    /* scatter results */
+    for (row = 0; row < (int)nRows; row++) {
+      if ((int)sp->colorCols[row] - 1 == color) {
+        for (nz = sp->leadindex[row]; nz < (int)sp->leadindex[row + 1]; nz++) {
+          col = sp->index[nz];
+          if (!isDense) {
+            /* sparse case (CSR value buffer aligned with index order) */
+            jac[nz] = jacobian->resultVars[col];
+          } else {
+            /* dense case (row-major layout for csr format) */
+            jac[row * nCols + col] = jacobian->resultVars[col];
+          }
+        }
+        /* de-activate seed variable for the corresponding color (row) */
+        jacobian->seedVars[row] = 0.0;
+      }
+    }
+  }
+}
 
 /**
- * @brief Compute Jacobian-vector product y = J * s without forming J explicitly.
- *
- * Uses the sparsity coloring to activate multiple independent seed directions at once.
- * Assumes column-wise evaluation (seedVars has length sizeCols, resultVars has length sizeRows).
+ * @brief Compute Jacobian-Vector product y = J * s.
  *
  * @param data            Runtime data struct.
  * @param threadData      Thread data for error handling.
@@ -185,7 +255,11 @@ void jvp(DATA* data, threadData_t *threadData,
          const modelica_real* seed, modelica_real* out,
          modelica_boolean zero_out)
 {
-  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
+  if (jacobian->isRowEval) {
+    /* Error: jvp called on row-evaluation Jacobian */
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "cant perform jvp on row-evaluation Jacobian\n");
+    return;
+  }
   const unsigned int nCols = jacobian->sizeCols;
   const unsigned int nRows = jacobian->sizeRows;
 
@@ -202,55 +276,71 @@ void jvp(DATA* data, threadData_t *threadData,
     jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
   }
 
-  /* Temporary bitmap for touched rows (to avoid O(nRows) accumulation) */
-  unsigned char* touched = (unsigned char*) calloc(nRows, sizeof(unsigned char));
-
-  /* Process one color group at a time */
-  for (unsigned int color = 0; color < sp->maxColors; color++) {
-    int anyActive = 0;
-
-    /* Activate seeds for this color and mark touched rows */
-    for (unsigned int col = 0; col < nCols; col++) {
-      if (sp->colorCols[col] - 1 == color) {
-        const modelica_real s = seed[col];
-        if (s != 0.0) {
-          jacobian->seedVars[col] = s;
-          anyActive = 1;
-
-          /* Mark rows affected by this column via the sparsity pattern */
-          for (unsigned int nz = sp->leadindex[col]; nz < sp->leadindex[col+1]; nz++) {
-            const unsigned int row = sp->index[nz];
-            touched[row] = 1;
-          }
-        }
-      }
-    }
-
-    /* Skip if no non-zero seeds in this color */
-    if (!anyActive) {
-      continue;
-    }
-
-    /* Evaluate J * s_color into resultVars */
-    jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
-
-    /* Accumulate only touched rows */
-    for (unsigned int row = 0; row < nRows; row++) {
-      if (touched[row]) {
-        out[row] += jacobian->resultVars[row];
-        touched[row] = 0; /* reset for next color */
-      }
-    }
-
-    /* Deactivate seeds of this color */
-    for (unsigned int col = 0; col < nCols; col++) {
-      if (sp->colorCols[col] - 1 == color) {
-        jacobian->seedVars[col] = 0.0;
-      }
-    }
+  /* Set all seeds */
+  for (unsigned int col = 0; col < nCols; col++) {
+      jacobian->seedVars[col] = seed[col];
   }
 
-  free(touched);
+  /* Evaluate J * s into resultVars */
+  jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
+
+  /* Accumulate results into out */
+  for (unsigned int row = 0; row < nRows; row++) {
+    out[row] += jacobian->resultVars[row];
+  }
+}
+
+
+/**
+ * @brief Compute Vector-Jacobian product y = J^T * s.
+ *
+ * @param data            Runtime data struct.
+ * @param threadData      Thread data for error handling.
+ * @param jacobian        Jacobian object (must have evalColumn and sparsePattern set).
+ * @param parentJacobian  Parent Jacobian (if nested), can be NULL.
+ * @param seed            Input seed vector s, length = jacobian->sizeRows.
+ * @param out             Output vector y, length = jacobian->sizeCols.
+ * @param zero_out        If true, zero-initialize out before accumulation.
+ */
+void vjp(DATA* data, threadData_t *threadData,
+         JACOBIAN* jacobian, JACOBIAN* parentJacobian,
+         const modelica_real* seed, modelica_real* out,
+         modelica_boolean zero_out)
+{
+  if (!jacobian->isRowEval) {
+    /* Error: vjp called on column-evaluation Jacobian */
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "cant perform vjp on column-evaluation Jacobian\n");
+    return;
+  }
+  const unsigned int nCols = jacobian->sizeCols;
+  const unsigned int nRows = jacobian->sizeRows;
+
+  /* Optional: zero output before accumulation */
+  if (zero_out) {
+    memset(out, 0, nCols * sizeof(modelica_real));
+  }
+
+  /* Ensure seeds are zeroed before use */
+  memset(jacobian->seedVars, 0, nRows * sizeof(modelica_real));
+
+  /* Evaluate constant equations (if any) */
+  if (jacobian->constantEqns != NULL) {
+    jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
+  }
+
+  /* Set all seeds */
+  for (unsigned int row = 0; row < nRows; row++) {
+      jacobian->seedVars[row] = seed[row];
+  }
+
+  /* Evaluate J * s into resultVars */
+  // this is actually evalRow
+  jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
+
+  /* Accumulate results into out */
+  for (unsigned int col = 0; col < nCols; col++) {
+    out[col] += jacobian->resultVars[col];
+  }
 }
 
 /**

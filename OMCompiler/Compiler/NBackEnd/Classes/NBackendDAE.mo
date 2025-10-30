@@ -130,6 +130,7 @@ public
     array<StrongComponent> comps      "the sorted equations";
     SparsityPattern sparsityPattern   "Sparsity pattern for the jacobian";
     SparsityColoring sparsityColoring "Coloring information";
+    Boolean isAdjoint                 "is this an adjoint jacobian?";
   end JACOBIAN;
 
   record HESSIAN
