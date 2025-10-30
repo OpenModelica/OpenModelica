@@ -1,0 +1,62 @@
+// name: 14530
+// keywords: NewBackend, differentiation, array, multiplication
+// status: correct
+
+loadString("
+model MWE_14530_small
+  parameter Integer N = 2;
+  parameter Real M = 1.0;
+  Real x[N];
+equation
+  M * der(x) = x;
+end MWE_14530_small;
+
+model MODULE
+  parameter Integer N = 10;
+  parameter Real M = 1.0;
+  Real x[N], Xin[N], w[N];
+equation
+  for j in 1:N loop
+    Xin[j] = time;
+    w[j] = time;
+  end for;
+  M * der(x) = w .* (Xin - x);
+end MODULE;
+
+model MWE_14530
+  parameter Integer N = 10;
+  MODULE[N] module(each N=N, M={i * 1.0 for i in 1:N});
+end MWE_14530;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend");
+
+simulate(MWE_14530_small); getErrorString();
+diffSimulationResults("MWE_14530_small_res.mat", "ReferenceFiles/MWE_14530_small_res.mat", "MWE_14530_small_diff.csv", 1e-8);
+
+simulate(MWE_14530); getErrorString();
+diffSimulationResults("MWE_14530_res.mat", "ReferenceFiles/MWE_14530_res.mat", "MWE_14530_diff.csv", 1e-8);
+
+// Result:
+// true
+// ""
+// true
+// record SimulationResult
+//     resultFile = "MWE_14530_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'MWE_14530', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// record SimulationResult
+//     resultFile = "MWE_3_13788_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'MWE_3_13788', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// endResult
