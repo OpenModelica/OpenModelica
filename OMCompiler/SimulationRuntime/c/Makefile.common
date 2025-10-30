@@ -359,7 +359,12 @@ endif
 	# copy fmi stuff
 	mkdir -p $(builddir_inc)/c/fmi-export
 	cp -p ../fmi/export/fmi/*.h $(builddir_inc)/c/fmi
-	cp -p ../fmi/export/openmodelica/*.inc ../fmi/export/openmodelica/*.h $(builddir_inc)/c/fmi-export
+	cp -p ../fmi/export/openmodelica/fmu1_model_interface.c.inc \
+	      ../fmi/export/openmodelica/fmu1_model_interface.h  $(builddir_inc)/c/fmi-export
+	cp -p ../fmi/export/openmodelica/fmu2_model_interface.c \
+	      ../fmi/export/openmodelica/fmu2_model_interface.h \
+	      ../fmi/export/openmodelica/fmu_read_flags.c \
+	      ../fmi/export/openmodelica/fmu_read_flags.h  $(builddir_inc)/c/fmi-export
 
 clean:
 	rm -rf $(ALL_PATHS_CLEAN_OBJS) fmi/*.o *.a *.so optimization/*/*.o build/
