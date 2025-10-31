@@ -818,7 +818,7 @@ algorithm
 
       // split them into constant and non constant arguments
       (const_args, arguments) := List.splitOnTrue(arguments, Expression.isLiteral);
-      (inv_const_args, inv_arguments) := List.splitOnTrue(inv_arguments, Expression.isLiteral); // --> change to isLiteral
+      (inv_const_args, inv_arguments) := List.splitOnTrue(inv_arguments, Expression.isLiteral);
 
       // combine the constants
       if mcl == NFOperator.MathClassification.ADDITION then
