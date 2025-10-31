@@ -6322,12 +6322,12 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   pPlatformsLayout->addWidget(pNativePlatformCheckBox);
   // docker platforms
   QStringList dockerPlarforms;
-  dockerPlarforms << "x86_64-linux-gnu docker run --pull=never multiarch/crossbuild"
-                  << "i686-linux-gnu docker run --pull=never multiarch/crossbuild"
-                  << "x86_64-w64-mingw32 docker run --pull=never multiarch/crossbuild"
-                  << "i686-w64-mingw32 docker run --pull=never multiarch/crossbuild"
-                  << "arm-linux-gnueabihf docker run --pull=never multiarch/crossbuild"
-                  << "aarch64-linux-gnu docker run --pull=never multiarch/crossbuild";
+  dockerPlarforms << "x86_64-linux-gnu docker run openmodelica/crossbuild"
+                  << "i686-linux-gnu docker run openmodelica/crossbuild"
+                  << "x86_64-w64-mingw32 docker run openmodelica/crossbuild"
+                  << "i686-w64-mingw32 docker run openmodelica/crossbuild"
+                  << "arm-linux-gnueabihf docker run openmodelica/crossbuild"
+                  << "aarch64-linux-gnu docker run openmodelica/crossbuild";
   foreach (QString dockerPlarform, dockerPlarforms) {
     QCheckBox *pCheckBox = new QCheckBox(dockerPlarform);
     pCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, dockerPlarform);

@@ -15,10 +15,7 @@ test: clean
 	$(MAKE) CMakeCrossCompile
 
 dockerpull:
-	docker pull docker.openmodelica.org/osxcross-omsimulator:v2.0
-	docker pull docker.openmodelica.org/armcross-omsimulator:v2.0
-	docker pull docker.openmodelica.org/msyscross-omsimulator:v2.0
-	docker pull multiarch/crossbuild:latest
+	docker pull openmodelica/crossbuild
 
 fmuExportCrossCompile:
 	HOME=$(CURDIR)/../../../libraries/ $(OMC) fmuExportCrossCompile.mos

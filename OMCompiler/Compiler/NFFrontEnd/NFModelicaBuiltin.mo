@@ -2929,6 +2929,7 @@ function translateModelFMU
                                           \"dynamic\"=current platform, dynamically link the runtime.
                                           \"static\"=current platform, statically link everything.
                                           \"<cpu>-<vendor>-<os>\", host tripple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\".
+                                          \"<cpu>-<vendor>-<os> docker run openmodelica/crossbuild\" host tripple with OpenModelica supplied Docker image, e.g. \"x86_64-linux-gnu docker run openmodelica/crossbuild\".
                                           \"<cpu>-<vendor>-<os> docker run <image>\" host tripple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
   input Boolean includeResources = false "include Modelica based resources via loadResource or not";
   output Boolean success;
@@ -2952,6 +2953,7 @@ function buildModelFMU
                                           \"dynamic\"=current platform, dynamically link the runtime.
                                           \"static\"=current platform, statically link everything.
                                           \"<cpu>-<vendor>-<os>\", host tripple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\".
+                                          \"<cpu>-<vendor>-<os> docker run openmodelica/crossbuild\" host tripple with OpenModelica supplied Docker image, e.g. \"x86_64-linux-gnu docker run openmodelica/crossbuild\".
                                           \"<cpu>-<vendor>-<os> docker run <image>\" host tripple with Docker image, e.g. \"x86_64-linux-gnu docker run --pull=never multiarch/crossbuild\"";
   input Boolean includeResources = false "Depreacted and no effect";
   output String generatedFileName "Returns the full path of the generated FMU.";

@@ -10,6 +10,10 @@ project(${FMU_NAME_HASH} C)
 set(CMAKE_BUILD_TYPE @CMAKE_BUILD_TYPE@)
 
 # FMU compilation options
+set(COMPILE_MODELICA_EXTERNAL_C
+    @COMPILE_MODELICA_EXTERNAL_C@
+    CACHE BOOL
+    "Add Modelica External C sources to build target if 'ON'.")
 set(BUILD_SHARED_LIBS
     ON
     CACHE BOOL
@@ -81,7 +85,14 @@ file(GLOB_RECURSE FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external_solve
                                       ${CMAKE_CURRENT_SOURCE_DIR}/meta/*.c
                                       ${CMAKE_CURRENT_SOURCE_DIR}/simulation/*.c
                                       ${CMAKE_CURRENT_SOURCE_DIR}/util/*.c)
-if (NOT ${NEED_CVODE})
+if(${COMPILE_MODELICA_EXTERNAL_C})
+  list(APPEND FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaStandardTables.c
+                                  ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaStandardTablesDummyUsertab.c
+                                  ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/snprintf.c
+                                  ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaIO.c
+                                  ${CMAKE_CURRENT_SOURCE_DIR}/ModelicaExternalC/ModelicaMatIO.c)
+endif()
+if(NOT ${NEED_CVODE})
   list(REMOVE_ITEM FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/sundials_error.c
                                        ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/cvode_solver.c)
 endif()
