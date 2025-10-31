@@ -63,13 +63,12 @@ end if;
 getErrorString();
 
 platforms := {
-  "x86_64-apple-darwin15 docker run docker.openmodelica.org/osxcross-omsimulator:v2.0",
-  "arm-linux-gnueabihf docker run docker.openmodelica.org/armcross-omsimulator:v2.0",
-  "x86_64-linux-gnu docker run docker.openmodelica.org/build-deps:v1.13",
-  "i686-linux-gnu docker run docker.openmodelica.org/build-deps:v1.13-i386",
-  "x86_64-w64-mingw32 docker run docker.openmodelica.org/msyscross-omsimulator:v2.0",
-  "i686-w64-mingw32 docker run docker.openmodelica.org/msyscross-omsimulator:v2.0"
-};
+  "arm-linux-gnueabihf docker run openmodelica/crossbuild",
+  "x86_64-linux-gnu docker run openmodelica/crossbuild",
+  "i686-linux-gnu docker run openmodelica/crossbuild",
+  "x86_64-w64-mingw32 docker run openmodelica/crossbuild",
+  "i686-w64-mingw32 docker run openmodelica/crossbuild"
+}
 
 for c in {"FmuExportCrossCompile","RoomHeating_OM.RH","WaterTank.Control","WaterTank.TestSingleWaterTank","BouncingBall"} loop
   c2 := stringReplace(c, ".", "_");

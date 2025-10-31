@@ -112,7 +112,7 @@ Set compiler flag :ref:`--fmuCMakeBuild=false<omcflag-fmuCMakeBuild>` to use the
 Makefiles export.
 
 The FMU contains a CMakeLists.txt file in the sources directory that can be used to
-re-compile the FMU for a different host and is also used to cross-compile for different
+re-compile the FMU for a different host and is also used to cross compile for different
 platforms.
 
 The CMake compilation accepts the following settings:
@@ -191,13 +191,32 @@ The ``platforms`` setting specifies for what target system the FMU is compiled:
   E.g. ``x86_64-linux-gnu`` for a 64 bit Linux OS or ``i686-w64-mingw32`` for a 32 bit
   Windows OS using MINGW.
 
+* ``<cpu>-<vendor>-<os> docker run openmodelica/crossbuild`` Host triple with
+  Docker image provided by OpenModelica: OpenModelica will use the
+  `openmodelica/crossbuild <https://github.com/OpenModelica/openmodelica-crossbuild>`_
+  Docker image to cross compile. The image provides compiler toolchain files to
+  cross compile with CMake for the following host triples:
+
+    * ``i686-linux-gnu``
+    * ``x86_64-linux-gnu``
+    * ``i686-w64-mingw32``
+    * ``x86_64-w64-mingw32``
+
+  OpenModelica will add a matching ``CMAKE_TOOLCHAIN_FILE`` to the compilation
+  process.
+
+  If your model depends on external C libraries cross compilation can be
+  difficult. Providing pre-compiled static libraries can be necessary.
+  Installing runtime dependencies using CMake isn't supported when
+  cross-compiling.
+
 * ``<cpu>-<vendor>-<os> docker run <image>`` Host triple with Docker image:
-  OpenModelica will use the specified Docker image to cross-compile for given host triple.
+  OpenModelica will use the specified Docker image to cross compile for given host triple.
   Because privilege escalation is very easy to achieve with Docker OMEdit adds
   ``--pull=never`` to the Docker calls for the ``multiarch/crossbuild`` images. Only use
   this option if you understand the security risks associated with Docker images from
   unknown sources.
-  E.g. ``x86_64-linux-gnu docker run --pull=never multiarch/crossbuild`` to cross-compile
+  E.g. ``x86_64-linux-gnu docker run --pull=never multiarch/crossbuild`` to cross compile
   for a 64 bit Linux OS.
   Because system libraries can be different for different versions of the same operating
   system, it is advised to use :ref:`--fmuRuntimeDepends=all<omcflag-fmuRuntimeDepends>`.
