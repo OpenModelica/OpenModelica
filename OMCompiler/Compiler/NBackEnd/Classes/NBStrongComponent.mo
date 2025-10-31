@@ -877,6 +877,26 @@ public
     end match;
   end isAlias;
 
+  public function isSingleComponent
+    input StrongComponent comp;
+    output Boolean b;
+  algorithm
+    b := match removeAlias(comp)
+      case SINGLE_COMPONENT() then true;
+      else false;
+    end match;
+  end isSingleComponent;
+
+  public function isAlgebraicLoop
+    input StrongComponent comp;
+    output Boolean b;
+  algorithm
+    b := match removeAlias(comp)
+      case ALGEBRAIC_LOOP() then true;
+      else false;
+    end match;
+  end isAlgebraicLoop;
+
   function createPseudoScalar
     input list<Integer> comp_indices;
     input array<Integer> eqn_to_var;
