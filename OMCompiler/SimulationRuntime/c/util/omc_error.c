@@ -88,6 +88,7 @@ const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX] = {
   "LOG_NLS_NEWTON_DIAGNOSTICS",
   "LOG_NLS_DERIVATIVE_TEST",
   "LOG_NLS_SVD",
+  "LOG_NLS_SVD_V",
   "LOG_NLS_RES",
   "LOG_NLS_EXTRAPOLATE",
   "LOG_RES_INIT",
@@ -151,6 +152,7 @@ const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX] = {
   "newton diagnostics (see: https://doi.org/10.1016/j.amc.2021.125991)",        /* OMC_LOG_NLS_NEWTON_DIAGNOSTICS */
   "test derivatives in KINSOL nonlinear systems",                               /* OMC_LOG_NLS_DERIVATIVE_TEST */
   "perform a SVD analysis in KINSOL nonlinear systems",                         /* OMC_LOG_NLS_SVD */
+  "perform a SVD analysis in KINSOL nonlinear systems (verbose)",               /* OMC_LOG_NLS_SVD_V */
   "outputs every evaluation of the residual function",                          /* OMC_LOG_NLS_RES */
   "outputs debug information about extrapolate process",                        /* OMC_LOG_NLS_EXTRAPOLATE */
   "outputs residuals of the initialization",                                    /* OMC_LOG_RES_INIT */

@@ -6481,15 +6481,19 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
     /* if a class inside a package one file is renamed then it is already deleted by calling loadString using the whole package contents
      * so we tell unloadLibraryTreeItem to don't try deleteClass since it will only produce error
      */
-    pLibraryTreeModel->unloadLibraryTreeItem(mpLibraryTreeItem, !mpLibraryTreeItem->isInPackageOneFile());
-    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(mpLibraryTreeItem->getNameStructure(), false);
     disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString,bool)), this, SLOT(updateModelIfDependsOn(QString,bool)));
+    // set this to null before calling unloadLibraryTreeItem to this ModelWidget is not deleted.
     mpLibraryTreeItem->setModelWidget(0);
+    const QString nameStructure = mpLibraryTreeItem->getNameStructure();
+    LibraryTreeItem *pParentLibraryTreeItem = mpLibraryTreeItem->parent();
+    LibraryTreeItem::SaveContentsType saveContentsType =  mpLibraryTreeItem->getSaveContentsType();
+    pLibraryTreeModel->unloadLibraryTreeItem(mpLibraryTreeItem, !mpLibraryTreeItem->isInPackageOneFile());
+    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(nameStructure, false);
     QString name = StringHandler::getLastWordAfterDot(className);
-    LibraryTreeItem *pNewLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(name, mpLibraryTreeItem->parent(), false, false, true, row);
+    LibraryTreeItem *pNewLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(name, pParentLibraryTreeItem, false, false, true, row);
     setWindowTitle(pNewLibraryTreeItem->getName() + (pNewLibraryTreeItem->isSaved() ? "" : "*"));
     setModelClassPathLabel(pNewLibraryTreeItem->getNameStructure());
-    pNewLibraryTreeItem->setSaveContentsType(mpLibraryTreeItem->getSaveContentsType());
+    pNewLibraryTreeItem->setSaveContentsType(saveContentsType);
     // make the new created LibraryTreeItem selected
     QModelIndex modelIndex = pLibraryTreeModel->libraryTreeItemIndex(pNewLibraryTreeItem);
     LibraryTreeProxyModel *pLibraryTreeProxyModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeProxyModel();
@@ -6500,7 +6504,6 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
     // update class text
     pNewLibraryTreeItem->setModelWidget(this);
     pNewLibraryTreeItem->setClassText(modelicaText);
-    mpLibraryTreeItem->deleteLater();
     setLibraryTreeItem(pNewLibraryTreeItem);
     setModelFilePathLabel(pNewLibraryTreeItem->getFileName());
     reDrawModelWidget();
@@ -6523,7 +6526,7 @@ void ModelWidget::updateChildClasses(LibraryTreeItem *pLibraryTreeItem)
   while(i != pLibraryTreeItem->childrenSize()) {
     LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
     if (!classNames.contains(pChildLibraryTreeItem->getName())) {
-      pLibraryTreeModel->removeLibraryTreeItem(pChildLibraryTreeItem);
+      pLibraryTreeModel->removeLibraryTreeItem(pChildLibraryTreeItem, false);
       i = 0;  //Restart iteration if list has changed
     } else {
       i++;
@@ -6984,10 +6987,13 @@ void ModelWidget::showElement(ModelInstance::Model *pModelInstance, bool addToLi
     }
     mModelInstanceList.append(pModelInstance);
     // find correct LibraryTreeItem for ModelInstance.
-    LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pModelInstance->getName());
+    QString name = pModelInstance->getReplaceable() ? pModelInstance->getNameIfReplaceable() : pModelInstance->getName();
+    LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(name);
     if (!pLibraryTreeItem) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Could not find the LibraryTreeItem for model " + pModelInstance->getName() +
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Could not find the LibraryTreeItem for model " + name +
                                                             ". This is a fatal error. Please report a bug.", Helper::scriptingKind, Helper::errorLevel));
+      exitElement();
+      return;
     }
     mLibraryTreeItemList.append(pLibraryTreeItem);
     mpLibraryTreeItem = pLibraryTreeItem;
@@ -8364,6 +8370,10 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     MainWindow::instance()->showDebuggingPerspectiveToolBars(pModelWidget);
   }
   if (!pSubWindow || mpLastActiveSubWindow == pSubWindow) {
+    // Clear Element Browser when no ModelWidget is opened
+    if (subWindowList().isEmpty()) {
+      MainWindow::instance()->getElementWidget()->getElementTreeModel()->removeElements();
+    }
     return;
   }
   mpLastActiveSubWindow = pSubWindow;

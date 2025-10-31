@@ -1559,10 +1559,10 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nParametersInteger = <%varInfo.numIntParams%>;
     data->modelData->nParametersBoolean = <%varInfo.numBoolParams%>;
     data->modelData->nParametersString = <%varInfo.numStringParamVars%>;
-    data->modelData->nAliasReal = <%varInfo.numAlgAliasVars%>;
-    data->modelData->nAliasInteger = <%varInfo.numIntAliasVars%>;
-    data->modelData->nAliasBoolean = <%varInfo.numBoolAliasVars%>;
-    data->modelData->nAliasString = <%varInfo.numStringAliasVars%>;
+    data->modelData->nAliasRealArray = <%varInfo.numAlgAliasVars%>;
+    data->modelData->nAliasIntegerArray = <%varInfo.numIntAliasVars%>;
+    data->modelData->nAliasBooleanArray = <%varInfo.numBoolAliasVars%>;
+    data->modelData->nAliasStringArray = <%varInfo.numStringAliasVars%>;
     data->modelData->nInputVars = <%varInfo.numInVars%>;
     data->modelData->nOutputVars = <%varInfo.numOutVars%>;
     data->modelData->nZeroCrossings = <%varInfo.numZeroCrossings%>;
@@ -1906,7 +1906,7 @@ let &sub = buffer ""
     {
       TRACE_PUSH
 
-      <%vars.inputVars |> SIMVAR(name=name, type_=T_REAL()) hasindex i0 =>
+      <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
         '<%cref(name, &sub)%> = data->simulationInfo->inputVars[<%i0%>];'
         ;separator="\n"
       %>
@@ -1919,7 +1919,7 @@ let &sub = buffer ""
     {
       TRACE_PUSH
 
-      <%vars.inputVars |> SIMVAR(name=name, type_=T_REAL()) hasindex i0 =>
+      <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
         match cref2simvar(name, simCode)
         case SIMVAR(aliasvar=NOALIAS()) then
         'data->simulationInfo->inputVars[<%i0%>] = data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start;'
@@ -1935,7 +1935,7 @@ let &sub = buffer ""
     {
       TRACE_PUSH
 
-      <%vars.inputVars |> SIMVAR(name=name, type_=T_REAL()) hasindex i0 =>
+      <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
         match cref2simvar(name, simCode)
         case SIMVAR(aliasvar=NOALIAS()) then
         'data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start = data->simulationInfo->inputVars[<%i0%>];'
@@ -3072,10 +3072,13 @@ match system
                   let start = daeExp(range.start, contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)
                   '<%daeExp(crefExp(cref), contextSimulationDiscrete, &preExp, &varDecls, &innerEqns)%>-<%start%>'
                 ;separator="+")
+            let assignment = (if isArrayType(typeof(exp))
+              then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_index%>+<%indexShift%>);'
+              else '<%preExp%>res[<%res_index%>+<%indexShift%>] = <%expPart%>;')
             <<
             <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
             <%forPart%>
-            <%preExp%>res[<%res_index%>+<%indexShift%>] = <%expPart%>;
+            <%assignment%>
             <%endForPart%>
             <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
             >>
@@ -3094,13 +3097,16 @@ match system
                 int <%iter%> = <%step%> * <%iter%>_loc + <%start%>;
                 tmp /= <%iter%>_size;
                 >>;separator="\n")
+            let assignment = (if isArrayType(typeof(exp))
+              then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_index%>+i_);'
+              else '<%preExp%>res[<%res_index%>+i_] = <%expPart%>;')
             <<
             const int idx_lst_<%res_index%>[<%idx_len%>] = {<%(scal_indices |> idx => '<%idx%>';separator=", ")%>};
             for(int i_=0; i_<<%idx_len%>; i_++)
             {
               int tmp = idx_lst_<%res_index%>[i_];
               <%iter_%>
-              <%preExp%>res[<%res_index%>+i_] = <%expPart%>;
+              <%assignment%>
             }
             >>
         ;separator="\n")
@@ -7522,12 +7528,13 @@ end forIteratorName;
 template subIterator(tuple<DAE.ComponentRef, array<DAE.Exp>> iter, String parent_iter, Context context, Text &preExp, Text &varDecls, Text &auxFunction, Text &sub)
 ::= match iter
   case (name, range) then
+    let type_ = 'modelica_<%crefShortType(name)%>'
     let name_ = contextCref(name, contextOther, &preExp, &varDecls, &auxFunction, &sub)
     let range_ = (arrayList(range) |> elem => daeExp(elem, context, &preExp, &varDecls, &auxFunction); separator=", ")
     let size_ = arrayLength(range)
     <<
-    static const modelica_real <%name_%>_arr[<%size_%>] = {<%range_%>};
-    modelica_real <%name_%> = <%name_%>_arr[<%parent_iter%>-1];
+    static const <%type_%> <%name_%>_arr[<%size_%>] = {<%range_%>};
+    <%type_%> <%name_%> = <%name_%>_arr[<%parent_iter%>-1];
     >>
 end subIterator;
 

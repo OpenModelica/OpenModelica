@@ -72,6 +72,7 @@ protected
   Type ty;
   Binding binding;
   Attributes attr;
+  Integer var_size;
 algorithm
   Variable.VARIABLE(ty = ty, binding = binding, attributes = attr) := var;
 
@@ -83,11 +84,14 @@ algorithm
     return;
   end if;
 
-  if not Variable.isTopLevelInput(var) then
-    variables := variables + Type.sizeOf(ty);
-  end if;
+  var_size := Type.sizeOf(ty);
+  variables := variables + var_size;
 
-  equations := equations + Type.sizeOf(Binding.getType(binding));
+  if Variable.isTopLevelInput(var) then
+    equations := equations + var_size;
+  else
+    equations := equations + Type.sizeOf(Binding.getType(binding));
+  end if;
 end countVariableSize;
 
 function countAlgorithmSize

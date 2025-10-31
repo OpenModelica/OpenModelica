@@ -76,6 +76,7 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let _ = generateSimulationFiles(simCode,guid,fileNamePrefixTmpDir,FMUVersion)
 
   let()= textFile(simulationInitFunction(simCode,guid), '<%fileNamePrefixTmpDir%>_init_fmu.c')
+  let()= textFile(fmumodel_identifierHeaderFile(simCode,guid,FMUVersion,FMUType), '<%fileNamePrefixTmpDir%>_FMU.h')
   let()= textFile(fmumodel_identifierFile(simCode,guid,FMUVersion,FMUType), '<%fileNamePrefixTmpDir%>_FMU.c')
 
   /* Doesn't seem to work properly
@@ -232,27 +233,42 @@ case SIMCODE(__) then
   >>
 end VendorAnnotations;
 
-template fmumodel_identifierFile(SimCode simCode, String guid, String FMUVersion, String FMUType)
- "Generates code for ModelDescription file for FMU target."
+
+template fmumodel_identifierHeaderFile(SimCode simCode, String guid, String FMUVersion, String FMUType)
+ "Generates code for model defines."
 ::=
 match simCode
 case SIMCODE(__) then
   <<
+  #ifndef <%modelNamePrefix(simCode)%>_FMU_H
+  #define <%modelNamePrefix(simCode)%>_FMU_H
+
+  #include "simulation_data.h"
+
   // define class name and unique id
   #define MODEL_IDENTIFIER <%modelNamePrefix(simCode)%>
   #define MODEL_GUID "{<%guid%>}"
 
-  // include fmu header files, typedefs and macros
-  #include <stdio.h>
-  #include <string.h>
-  #include <assert.h>
-  #include "openmodelica.h"
-  #include "openmodelica_func.h"
-  #include "simulation_data.h"
-  #include "util/omc_error.h"
-  #include "<%fileNamePrefix%>_functions.h"
-  #include "simulation/solver/initialization/initialization.h"
-  #include "simulation/solver/events.h"
+  <%ModelDefineData(simCode, modelInfo)%>
+
+  #ifdef __cplusplus
+  extern "C" {
+  #endif
+
+  extern void <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>(DATA *data, threadData_t *threadData);
+  <%if isFMIVersion20(FMUVersion) then
+    <<
+    #define fmu2_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
+    #include "fmi-export/fmu2_model_interface.h"
+    #include "fmi-export/fmu_read_flags.h"
+    >>
+  else
+    <<
+    #define fmu1_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
+    #include "fmi-export/fmu1_model_interface.c.inc"
+    >>
+  %>
+
   <%if isFMIVersion20(FMUVersion) then
   <<
   #define FMI2_FUNCTION_PREFIX <%modelNamePrefix(simCode)%>_
@@ -265,10 +281,6 @@ case SIMCODE(__) then
   #include "fmi2Functions.h"
   #include "fmi-export/fmu1_model_interface.h"
   >>%>
-
-  #ifdef __cplusplus
-  extern "C" {
-  #endif
 
   void setStartValues(ModelInstance *comp);
   void setDefaultStartValues(ModelInstance *comp);
@@ -305,26 +317,37 @@ case SIMCODE(__) then
   >>
   %>
 
-  <%ModelDefineData(simCode, modelInfo)%>
+  #ifdef __cplusplus
+  }
+  #endif
 
-  // implementation of the Model Exchange functions
-  <%if isFMIVersion20(FMUVersion) then
-    <<
-    extern void <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>(DATA *data, threadData_t *threadData);
-    #define fmu2_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
-    #include "fmi-export/fmu2_model_interface.c.inc"
-    #include "fmi-export/fmu_read_flags.c.inc"
-    >>
-  else
-    <<
-    extern void <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>(DATA *data, threadData_t *threadData);
-    #define fmu1_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
-    #include "fmi-export/fmu1_model_interface.c.inc"
-    >>
-  %>
+  #endif /* <%modelNamePrefix(simCode)%>_FMU_H */
+  >>
+end fmumodel_identifierHeaderFile;
+
+template fmumodel_identifierFile(SimCode simCode, String guid, String FMUVersion, String FMUType)
+ "Generates code for ModelDescription file for FMU target."
+::=
+match simCode
+case SIMCODE(__) then
+  <<
+  #include "<%modelNamePrefix(simCode)%>_FMU.h"
+
+  // include fmu header files, typedefs and macros
+  #include <stdio.h>
+  #include <string.h>
+  #include <assert.h>
+  #include "openmodelica.h"
+  #include "openmodelica_func.h"
+  #include "util/omc_error.h"
+  #include "<%fileNamePrefix%>_functions.h"
+
+  #include "simulation/solver/events.h"
 
   <%setDefaultStartValues(modelInfo)%>
   <%setStartValues(modelInfo)%>
+
+  // implementation of the Model Exchange functions
   <%if isFMIVersion20(FMUVersion) then
   <<
   <%eventUpdateFunction2(simCode)%>
@@ -356,10 +379,6 @@ case SIMCODE(__) then
     <%setExternalFunction(modelInfo)%>
   >>
   %>
-
-  #ifdef __cplusplus
-  }
-  #endif
 
   >>
 end fmumodel_identifierFile;

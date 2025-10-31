@@ -323,7 +323,7 @@ public
 
     // (do not change order SOLVE -> JACOBIAN)
     postOptModules := {
-      (Evaluation.removeDummies,    "Remove Dummies"),
+      (Evaluation.removeDummies,              "Remove Dummies"),
       (function Tearing.main(kind = kind),    "Tearing"),
       (Partitioning.categorize,               "Categorize"),
       (Solve.main,                            "Solve"),
@@ -1344,7 +1344,7 @@ protected
 
     if listEmpty(alg.outputs) then
       attr := EquationAttributes.default(EquationKind.EMPTY, init);
-    elseif ComponentRef.listHasDiscrete(alg.outputs) then
+    elseif Algorithm.isDiscrete(alg) then
       attr := EquationAttributes.default(EquationKind.DISCRETE, init);
     else
       attr := EquationAttributes.default(EquationKind.CONTINUOUS, init);

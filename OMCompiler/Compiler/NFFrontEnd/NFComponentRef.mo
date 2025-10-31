@@ -2254,19 +2254,12 @@ public
       Backend Extension functions
   ========================================= */
 
-  function listHasDiscrete
-    "kabdelhak: Returns true if any component reference in the list has a
-    discrete type. Used to analyze algorithm outputs."
-    input list<ComponentRef> cref_lst;
-    output Boolean result = false;
-  algorithm
-    for cref in cref_lst loop
-      if Type.isDiscrete(nodeType(cref)) then
-        result := true;
-        return;
-      end if;
-    end for;
-  end listHasDiscrete;
+  function isDiscrete
+    "kabdelhak: Returns true if component reference has a discrete type.
+    Used to analyze algorithm outputs."
+    input ComponentRef cref;
+    output Boolean result = Type.isDiscrete(nodeType(cref));
+  end isDiscrete;
 
   function removeOuterCrefPrefix
     input output ComponentRef cref;
@@ -2342,16 +2335,20 @@ public
   protected
     list<Subscript> subs;
   algorithm
-    subs := subscriptsAllFlat(scal);
-    if listEmpty(subs) then
-      // do not do it for scalar variables
-      arr := NONE();
-    elseif List.all(subs, function Subscript.isEqual(subscript1 = Subscript.INDEX(Expression.INTEGER(1)))) then
-      // if it is the first element, save the array var
-      arr := SOME(stripSubscriptsAll(scal));
+    if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
+      subs := subscriptsAllFlat(scal);
+      if listEmpty(subs) then
+        // do not do it for scalar variables
+        arr := NONE();
+      elseif List.all(subs, function Subscript.isEqual(subscript1 = Subscript.INDEX(Expression.INTEGER(1)))) then
+        // if it is the first element, save the array var
+        arr := SOME(stripSubscriptsAll(scal));
+      else
+        // not first element
+        arr := NONE();
+      end if;
     else
-      // not first element
-      arr := NONE();
+      arr := if Type.isArray(getSubscriptedType(scal)) then SOME(scal) else NONE();
     end if;
   end getArrayCrefOpt;
 

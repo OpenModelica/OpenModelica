@@ -5145,6 +5145,7 @@ end daeExp;
      '((<%int_type%>) <%integer%>)' /* Yes, we need to cast int to long on 64-bit arch... */
   case e as RCONST(__)          then real
   case e as BCONST(__)          then boolStrC(bool)
+  case e as SCONST(__)          then '"<%string%>"'
   case e as ENUM_LITERAL(__)    then index
   else error(sourceInfo(), 'Not a simple literal expression: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end daeExpSimpleLiteral;

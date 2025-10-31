@@ -163,6 +163,7 @@ uniontype SimCode
     Option<DaeModeData> daeModeData;
     list<SimEqSystem> inlineEquations;
     Option<OMSIData> omsiData "used for OMSI to generate equations code";
+    Boolean scalarized;
   end SIMCODE;
 end SimCode;
 

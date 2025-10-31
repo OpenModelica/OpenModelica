@@ -36,6 +36,10 @@ void freeArrayIndexMaps(SIMULATION_INFO *simulationInfo);
 
 size_t calculateLength(DIMENSION_INFO *dimensionInfo, STATIC_INTEGER_DATA *integerParameterData, long nParametersIntegerArray);
 
+size_t multiDimArrayToLinearIndex(DIMENSION_INFO* dimension, size_t* array_index);
+
+size_t* linearToMultiDimArrayIndex(DIMENSION_INFO* dimension, size_t linear_address);
+
 void calculateAllScalarLength(MODEL_DATA* modelData);
 
 size_t scalarArrayVariableSize(void *variableData, enum var_type type, size_t num_variables);

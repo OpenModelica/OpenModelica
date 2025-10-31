@@ -561,7 +561,8 @@ public
         partitionData                 = OldSimCode.PARTITIONDATA(-1,{},{},{}),
         daeModeData                   = if isSome(simCode.daeModeData) then SOME(DaeModeData.convert(Util.getOption(simCode.daeModeData))) else NONE(),
         inlineEquations               = {},
-        omsiData                      = NONE());
+        omsiData                      = NONE(),
+        scalarized                    = Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE));
     end convert;
 
     function getDirectoryAndLibs
@@ -729,9 +730,9 @@ public
   uniontype DaeModeData
     "contains data that belongs to the dae mode"
     record DAE_MODE_DATA
-      list<list<SimStrongComponent.Block>> blcks          "daeMode blocks";
+      list<list<SimStrongComponent.Block>> blcks "daeMode blocks";
       Option<SimJacobian> sparsityPattern "contains the sparsity pattern for the daeMode";
-      list<SimVar> residualVars "variable used to calculate residuals of a DAE form, they are real";
+      list<SimVar> residualVars "variable used to calculate residuals of a DAE form, they are of type real";
       list<SimVar> algebraicVars;
       list<SimVar> auxiliaryVars;
       DaeModeConfig modeCreated;

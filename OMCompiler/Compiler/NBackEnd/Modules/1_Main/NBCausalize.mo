@@ -326,13 +326,8 @@ protected
   end causalizePseudoArray;
 
   function causalizeDAEMode extends Module.causalizeInterface;
-  protected
-    Pointer<list<StrongComponent>> acc = Pointer.create({});
   algorithm
-    // create all components as residuals for now
-    // ToDo: use tearing to get inner/tmp equations
-    EquationPointers.mapPtr(partition.equations, function StrongComponent.makeDAEModeResidualTraverse(acc = acc));
-    partition.strongComponents := SOME(List.listArrayReverse(Pointer.access(acc)));
+    // nothing to do?
   end causalizeDAEMode;
 
   annotation(__OpenModelica_Interface="backend");

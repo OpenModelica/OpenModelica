@@ -419,7 +419,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.RESIZABLE_ARRAYS,
   Flags.EVALUATE_STRUCTURAL_PARAMETERS,
   Flags.LOAD_MISSING_LIBRARIES,
-  Flags.CAUSALIZE_DAE_MODE
+  Flags.CAUSALIZE_DAE_MODE,
+  Flags.SIM_CODE_SCALARIZE
 };
 
 public function new

@@ -540,6 +540,7 @@ public:
   ModelInstance::Model *getModelInstance() const {return mpModelInstance;}
   void setLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mpLibraryTreeItem = pLibraryTreeItem;}
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
+  LibraryTreeItem* getRootLibraryTreeItem() {return mpRootLibraryTreeItem;}
   QToolButton* getIconViewToolButton() {return mpIconViewToolButton;}
   QToolButton* getDiagramViewToolButton() {return mpDiagramViewToolButton;}
   QToolButton* getTextViewToolButton() {return mpTextViewToolButton;}

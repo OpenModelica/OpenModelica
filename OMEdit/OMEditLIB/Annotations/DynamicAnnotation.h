@@ -75,7 +75,7 @@ class DynamicAnnotation
     bool parse(const QString &str);
     bool deserialize(const QJsonValue &value);
     bool update(double time, ModelInstance::Model *pModel);
-    void evaluate(ModelInstance::Model *pModel);
+    void evaluate(ModelInstance::Model *pModel, const QString &instanceName = QString());
     void reset();
     void resetDynamicToStatic();
     virtual void clear() = 0;
@@ -85,8 +85,10 @@ class DynamicAnnotation
     QJsonValue serialize() const;
 
   private:
-    FlatModelica::Expression evaluate_wrap_helper(FlatModelica::Expression *pExpression, ModelInstance::Model *pModel, bool readFromResultFileForDynamicSelect, double time);
-    FlatModelica::Expression evaluate_helper(FlatModelica::Expression *pExpression, ModelInstance::Model *pModel, bool readFromResultFileForDynamicSelect, double time, bool value);
+    FlatModelica::Expression evaluate_wrap_helper(FlatModelica::Expression *pExpression, ModelInstance::Model *pModel,bool readFromResultFileForDynamicSelect,
+                                                  double time, const QString &instanceName);
+    FlatModelica::Expression evaluate_helper(FlatModelica::Expression *pExpression, ModelInstance::Model *pModel, bool readFromResultFileForDynamicSelect,
+                                             double time, bool value, const QString &instanceName);
 
   protected:
     virtual void fromExp(const FlatModelica::Expression &exp) = 0;

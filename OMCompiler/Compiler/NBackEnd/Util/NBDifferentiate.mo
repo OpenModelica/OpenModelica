@@ -311,9 +311,10 @@ public
       case StrongComponent.GENERIC_COMPONENT() algorithm
         (Expression.CREF(cref = new_cref), diffArguments) := differentiateComponentRef(Expression.fromCref(comp.var_cref), Pointer.access(diffArguments_ptr));
         Pointer.update(diffArguments_ptr, diffArguments);
-        new_eqn := differentiateEquationPointer(Slice.getT(comp.eqn), diffArguments_ptr, name);
-        Equation.createName(new_eqn, idx, context);
-      then StrongComponent.GENERIC_COMPONENT(new_cref, Slice.SLICE(new_eqn, comp.eqn.indices));
+        new_var_slice := Slice.apply(comp.var, function differentiateVariablePointer(diffArguments_ptr = diffArguments_ptr));
+        new_eqn_slice := Slice.apply(comp.eqn, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr, name = name));
+        Slice.applyMutable(new_eqn_slice, function Equation.createName(idx = idx, context = context));
+      then StrongComponent.GENERIC_COMPONENT(new_cref, new_var_slice, new_eqn_slice);
 
       case StrongComponent.ALGEBRAIC_LOOP() algorithm
         strict := differentiateTearing(comp.strict, diffArguments_ptr, idx, context, name);
@@ -3007,13 +3008,12 @@ public
             new_arguments := {diff_arg};
           else
             // create addition operator
-            (_, sizeClass) := Operator.classify(operator);
+            sizeClass := Operator.classifyAddition(operator);
             addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
             // the adjoint is handled inside here
             (new_arguments, diffArguments) := differentiateMultaryMultiplicationArgs(arguments, diffArguments, operator);
           end if;
       then Expression.MULTARY(new_arguments, {}, addOp);
-
       // Dot calculations (MUL, DIV, MUL_EW, DIV_EW, ...)
       // NOTE: Multary always contains MULTIPLICATION
       // (prod(f_i)) / prod(g_j))'

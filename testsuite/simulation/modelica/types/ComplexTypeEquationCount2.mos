@@ -1,0 +1,59 @@
+// name: ComplexTypeEquationCount2
+// keywords:
+// status: correct
+//
+// Checks that the equation matching is correct when extending from a basetype.
+//
+
+loadString("
+  partial package PartialMedium
+    constant String mediumName = \"unusablePartialMedium\";
+    constant String substanceNames[:] = {mediumName};
+    constant Real reference_X[nX] = fill(1/nX, nX);
+    constant Integer nX = size(substanceNames, 1);
+
+    replaceable record ThermodynamicState
+    end ThermodynamicState;
+
+    replaceable partial function setState_phX
+      input Real p;
+      input Real h;
+      input Real X[:] = reference_X;
+      output ThermodynamicState state;
+    end setState_phX;
+
+    replaceable partial function specificEntropy
+      input ThermodynamicState state;
+      output Real s;
+    end specificEntropy;
+  end PartialMedium;
+
+  model ExtendedThermodynamicState
+    replaceable package Medium = PartialMedium;
+    input Real pt;
+    input Real ht;
+    input Real X[Medium.nX] = Medium.reference_X;
+    input Real c;
+    output Real h;
+    output Real p;
+    Real s;
+  protected
+    Medium.ThermodynamicState state;
+    Medium.ThermodynamicState state_t;
+  equation
+    state = Medium.setState_phX(p, h, X);
+    state_t = Medium.setState_phX(pt, ht, X);
+    s = Medium.specificEntropy(state_t);
+    s = Medium.specificEntropy(state);
+    ht = h + 0.5*c^2;
+  end ExtendedThermodynamicState;
+");
+
+checkModel(ExtendedThermodynamicState);
+
+// Result:
+// true
+// "Check of ExtendedThermodynamicState completed successfully.
+// Class ExtendedThermodynamicState has 7 equation(s) and 7 variable(s).
+// 4 of these are trivial equation(s)."
+// endResult
