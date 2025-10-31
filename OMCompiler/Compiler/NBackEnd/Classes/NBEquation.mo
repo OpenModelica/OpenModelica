@@ -2755,10 +2755,11 @@ public
           list<ComponentRef> iter_lst;
           list<Expression> range_lst;
           ComponentRef iter, lhs_rec, rhs_rec;
-          Expression range;
+          Expression range, lhs_exp, rhs_exp;
           list<Statement> body;
           Pointer<Variable> lhs, rhs;
           list<Pointer<Variable>> lhs_lst, rhs_lst;
+          list<Subscript> lhs_subs, rhs_subs;
 
         case SCALAR_EQUATION()
         then {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, eqn.ty, eqn.source)};
@@ -2769,10 +2770,14 @@ public
         case RECORD_EQUATION(lhs = Expression.CREF(cref = lhs_rec), rhs = Expression.CREF(cref = rhs_rec)) algorithm
           lhs_lst := BVariable.getRecordChildren(BVariable.getVarPointer(lhs_rec, sourceInfo()));
           rhs_lst := BVariable.getRecordChildren(BVariable.getVarPointer(rhs_rec, sourceInfo()));
+          lhs_subs := ComponentRef.subscriptsAllFlat(lhs_rec);
+          rhs_subs := ComponentRef.subscriptsAllFlat(rhs_rec);
           if List.compareLength(lhs_lst, rhs_lst) == 0 and not Type.isExternalObject(Type.arrayElementType(Expression.typeOf(eqn.lhs))) then
             for tpl in List.zip(lhs_lst, rhs_lst) loop
               (lhs, rhs) := tpl;
-              stmts := Statement.ASSIGNMENT(Expression.fromCref(BVariable.getVarName(lhs)), Expression.fromCref(BVariable.getVarName(rhs)), Variable.typeOf(Pointer.access(lhs)), eqn.source) :: stmts;
+              lhs_exp := Expression.fromCref(ComponentRef.mergeSubscripts(lhs_subs, BVariable.getVarName(lhs), true));
+              rhs_exp := Expression.fromCref(ComponentRef.mergeSubscripts(rhs_subs, BVariable.getVarName(rhs), true));
+              stmts := Statement.ASSIGNMENT(lhs_exp, rhs_exp, Expression.typeOf(lhs_exp), eqn.source) :: stmts;
             end for;
           else
             stmts := {Statement.ASSIGNMENT(eqn.lhs, eqn.rhs, eqn.ty, eqn.source)};
