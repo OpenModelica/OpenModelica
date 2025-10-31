@@ -99,7 +99,6 @@ public:
   BreakpointMarker* findBreakpointMarker(const QString &fileName, int lineNumber);
   BreakpointTreeItem* findBreakpointTreeItem(const QString &fileName, int lineNumber, BreakpointTreeItem *pRootBreakpointTreeItem) const;
   QModelIndex breakpointTreeItemIndex(const BreakpointTreeItem *pBreakpointTreeItem) const;
-  QModelIndex breakpointTreeItemIndexHelper(const BreakpointTreeItem *pBreakpointTreeItem, const BreakpointTreeItem *pParentBreakpointTreeItem, const QModelIndex &parentIndex) const;
   void insertBreakpoint(BreakpointMarker *pBreakpointMarker, LibraryTreeItem *pLibraryTreeItem, BreakpointTreeItem *pParentBreakpointTreeItem);
   void updateBreakpoint(BreakpointMarker *pBreakpointMarker, int lineNumber);
   void updateBreakpoint(BreakpointTreeItem *pBreakpointTreeItem, QString filePath, int lineNumber, bool enabled, int ignoreCount, QString condition);
@@ -117,6 +116,7 @@ class BreakpointTreeItem : public QObject
 public:
   BreakpointTreeItem(const QVector<QVariant> &breakpointItemData, LibraryTreeItem *pLibraryTreeItem = 0, BreakpointTreeItem *pParent = 0);
   ~BreakpointTreeItem();
+  int childrenSize() const {return mChildren.size();}
   QList<BreakpointTreeItem*> getChildren() const {return mChildren;}
   void setLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mpLibraryTreeItem = pLibraryTreeItem;}
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
@@ -137,7 +137,6 @@ public:
   QIcon getBreakpointTreeItemIcon() const;
   void insertChild(int position, BreakpointTreeItem *pBreakpointTreeItem);
   BreakpointTreeItem *child(int row);
-  void removeChildren();
   void removeChild(BreakpointTreeItem *pBreakpointTreeItem);
   QVariant data(int column, int role = Qt::DisplayRole) const;
   int row() const;

@@ -208,7 +208,7 @@ void BreakpointsTreeView::deleteAllBreakpoints()
   int i = 0;
   BreakpointTreeItem *pRootBreakpointTreeItem = mpBreakpointsWidget->getBreakpointsTreeModel()->getRootBreakpointTreeItem();
 
-  while(i < pRootBreakpointTreeItem->getChildren().size())
+  while(i < pRootBreakpointTreeItem->childrenSize())
   {
     deleteBreakpoint(pRootBreakpointTreeItem->child(i));
     i = 0;  //Restart iteration
@@ -277,7 +277,6 @@ BreakpointsTreeModel::BreakpointsTreeModel(BreakpointsTreeView *pBreakpointsTree
   */
 BreakpointsTreeModel::~BreakpointsTreeModel()
 {
-  mpRootBreakpointTreeItem->removeChildren();
   delete mpRootBreakpointTreeItem;
 }
 
@@ -290,14 +289,16 @@ int BreakpointsTreeModel::columnCount(const QModelIndex &parent) const
 int BreakpointsTreeModel::rowCount(const QModelIndex &parent) const
 {
   BreakpointTreeItem *pParentBreakpointTreeItem;
-  if (parent.column() > 0)
+  if (parent.column() > 0) {
     return 0;
+  }
 
-  if (!parent.isValid())
+  if (!parent.isValid()) {
     pParentBreakpointTreeItem = mpRootBreakpointTreeItem;
-  else
+  } else {
     pParentBreakpointTreeItem = static_cast<BreakpointTreeItem*>(parent.internalPointer());
-  return pParentBreakpointTreeItem->getChildren().size();
+  }
+  return pParentBreakpointTreeItem ? pParentBreakpointTreeItem->childrenSize() : 0;
 }
 
 QVariant BreakpointsTreeModel::headerData(int section, Qt::Orientation orientation, int role) const
@@ -309,21 +310,23 @@ QVariant BreakpointsTreeModel::headerData(int section, Qt::Orientation orientati
 
 QModelIndex BreakpointsTreeModel::index(int row, int column, const QModelIndex &parent) const
 {
-  if (!hasIndex(row, column, parent))
+  if (!hasIndex(row, column, parent)) {
     return QModelIndex();
+  }
 
   BreakpointTreeItem *pParentBreakpointTreeItem;
 
-  if (!parent.isValid())
+  if (!parent.isValid()) {
     pParentBreakpointTreeItem = mpRootBreakpointTreeItem;
-  else
+  } else {
     pParentBreakpointTreeItem = static_cast<BreakpointTreeItem*>(parent.internalPointer());
+  }
 
-  BreakpointTreeItem *pChildBreakpointTreeItem = pParentBreakpointTreeItem->child(row);
-  if (pChildBreakpointTreeItem)
-    return createIndex(row, column, pChildBreakpointTreeItem);
-  else
+  if (row < 0 || row >= pParentBreakpointTreeItem->childrenSize()) {
     return QModelIndex();
+  }
+
+  return createIndex(row, column, pParentBreakpointTreeItem->child(row));
 }
 
 QModelIndex BreakpointsTreeModel::parent(const QModelIndex &index) const
@@ -374,7 +377,7 @@ BreakpointTreeItem* BreakpointsTreeModel::findBreakpointTreeItem(const QString &
   if ((pRootBreakpointTreeItem->getFilePath().compare(fileName) == 0) && (pRootBreakpointTreeItem->getLineNumber().compare(ln) == 0)) {
     return pRootBreakpointTreeItem;
   }
-  for (int i = pRootBreakpointTreeItem->getChildren().size(); --i >= 0; ) {
+  for (int i = pRootBreakpointTreeItem->childrenSize(); --i >= 0; ) {
     if (BreakpointTreeItem *pBreakpointTreeItem = findBreakpointTreeItem(fileName, lineNumber, pRootBreakpointTreeItem->getChildren().at(i))) {
       return pBreakpointTreeItem;
     }
@@ -388,27 +391,11 @@ BreakpointTreeItem* BreakpointsTreeModel::findBreakpointTreeItem(const QString &
   */
 QModelIndex BreakpointsTreeModel::breakpointTreeItemIndex(const BreakpointTreeItem *pBreakpointTreeItem) const
 {
-  return breakpointTreeItemIndexHelper(pBreakpointTreeItem, mpRootBreakpointTreeItem, QModelIndex());
-}
+  if (!pBreakpointTreeItem || pBreakpointTreeItem == mpRootBreakpointTreeItem) {
+    return QModelIndex();
+  }
 
-/*!
-  Helper function to find BreakpointTreeItem QModelIndex
-  \see BreakpointsTreeModel::breakpointTreeItemIndex
-  */
-QModelIndex BreakpointsTreeModel::breakpointTreeItemIndexHelper(const BreakpointTreeItem *pBreakpointTreeItem, const BreakpointTreeItem *pParentBreakpointTreeItem, const QModelIndex &parentIndex) const
-{
-  if (pBreakpointTreeItem == pParentBreakpointTreeItem) {
-    return parentIndex;
-  }
-  for (int i = pParentBreakpointTreeItem->getChildren().size(); --i >= 0; ) {
-    const BreakpointTreeItem *childItem = pParentBreakpointTreeItem->getChildren().at(i);
-    QModelIndex childIndex = index(i, 0, parentIndex);
-    QModelIndex index = breakpointTreeItemIndexHelper(pBreakpointTreeItem, childItem, childIndex);
-    if (index.isValid()) {
-      return index;
-    }
-  }
-  return QModelIndex();
+  return createIndex(pBreakpointTreeItem->row(), 0, const_cast<BreakpointTreeItem *>(pBreakpointTreeItem));
 }
 
 /*!
@@ -432,7 +419,7 @@ void BreakpointsTreeModel::insertBreakpoint(BreakpointMarker *pBreakpointMarker,
   pBreakpointTreeItem->setEnabled(pBreakpointMarker->isEnabled());
   pBreakpointTreeItem->setIgnoreCount(pBreakpointMarker->getIgnoreCount());
   pBreakpointTreeItem->setCondition(pBreakpointMarker->getCondition());
-  int row = pParentBreakpointTreeItem->getChildren().size();
+  int row = pParentBreakpointTreeItem->childrenSize();
   beginInsertRows(index, row, row);
   pParentBreakpointTreeItem->insertChild(row, pBreakpointTreeItem);
   endInsertRows();
@@ -525,12 +512,13 @@ void BreakpointsTreeModel::removeBreakpoint(BreakpointTreeItem *pBreakpointTreeI
                                           GDBAdapter::NonCriticalResponse);
     }
     // remove the breakpoint from the tree.
-    int row = pBreakpointTreeItem->row();
-    beginRemoveRows(breakpointTreeItemIndex(pBreakpointTreeItem->parent()), row, row);
-    pBreakpointTreeItem->removeChildren();
     BreakpointTreeItem *pParentBreakpointTreeItem = pBreakpointTreeItem->parent();
-    pParentBreakpointTreeItem->removeChild(pBreakpointTreeItem);
-    endRemoveRows();
+    if (pParentBreakpointTreeItem) {
+      int row = pBreakpointTreeItem->row();
+      beginRemoveRows(breakpointTreeItemIndex(pParentBreakpointTreeItem), row, row);
+      pParentBreakpointTreeItem->removeChild(pBreakpointTreeItem);
+      endRemoveRows();
+    }
   }
 }
 
@@ -543,8 +531,7 @@ void BreakpointsTreeModel::removeBreakpoint(BreakpointTreeItem *pBreakpointTreeI
   0 -> filePath\n
   1 -> lineNumber
   */
-BreakpointTreeItem::BreakpointTreeItem(const QVector<QVariant> &breakpointItemData, LibraryTreeItem *pLibraryTreeItem,
-                                       BreakpointTreeItem *pParent)
+BreakpointTreeItem::BreakpointTreeItem(const QVector<QVariant> &breakpointItemData, LibraryTreeItem *pLibraryTreeItem, BreakpointTreeItem *pParent)
   : mIsRootItem(false)
 {
   mpLibraryTreeItem = pLibraryTreeItem;
@@ -562,7 +549,12 @@ BreakpointTreeItem::BreakpointTreeItem(const QVector<QVariant> &breakpointItemDa
   */
 BreakpointTreeItem::~BreakpointTreeItem()
 {
-  qDeleteAll(mChildren);
+  for (BreakpointTreeItem *pChildBreakpointTreeItem : std::as_const(mChildren)) {
+    if (pChildBreakpointTreeItem) {
+      // Use deleteLater since BreakpointTreeItem inherits from QObject. Avoids QObject delete while in use issues.
+      pChildBreakpointTreeItem->deleteLater();
+    }
+  }
   mChildren.clear();
 }
 
@@ -584,15 +576,11 @@ BreakpointTreeItem* BreakpointTreeItem::child(int row)
   return mChildren.value(row);
 }
 
-void BreakpointTreeItem::removeChildren()
-{
-  qDeleteAll(mChildren);
-  mChildren.clear();
-}
-
 void BreakpointTreeItem::removeChild(BreakpointTreeItem *pBreakpointTreeItem)
 {
   mChildren.removeOne(pBreakpointTreeItem);
+  // Use deleteLater since BreakpointTreeItem inherits from QObject. Avoids QObject delete while in use issues.
+  pBreakpointTreeItem->deleteLater();
 }
 
 QVariant BreakpointTreeItem::data(int column, int role) const

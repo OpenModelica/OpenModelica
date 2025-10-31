@@ -608,6 +608,7 @@ private:
     bool isModelJsonEmpty() const {return mModelJson.isEmpty();}
     void setModelJson(const QJsonObject &modelJson) {mModelJson = modelJson;}
     const QString &getName() const {return mName;}
+    QString getNameIfReplaceable() const;
     const QString &getRootType() const;
     bool isMissing() const {return mMissing;}
     void setRestriction(const QString &restriction) {mRestriction = restriction;}
