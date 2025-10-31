@@ -860,15 +860,6 @@ algorithm
         // 0 * {...} / {...} = 0
         case (NFOperator.MathClassification.MULTIPLICATION, _, _) guard(Expression.isZero(new_const)) then new_const;
 
-        // THIS SEEMS LIKE A BAD IDEA STRUCTURALLY
-        // apply negative constant to inverse list for addition
-        //case (NFOperator.MathClassification.ADDITION, _, _) guard(Expression.isNegative(new_const) and useConst)
-        //then Expression.MULTARY(
-        //    arguments     = arguments,
-        //    inv_arguments = Expression.negate(new_const) :: inv_arguments,
-        //    operator      = operator
-        //  );
-
         else Expression.MULTARY(
             arguments     = if useConst then new_const :: arguments else arguments,
             inv_arguments = inv_arguments,

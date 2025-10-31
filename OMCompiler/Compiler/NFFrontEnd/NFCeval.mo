@@ -1011,6 +1011,10 @@ algorithm
         Array.map(exp2.elements, function evalBinaryAdd(exp1 = exp1)),
         literal = exp2.literal);
 
+    // first element is added to nothing. To make sure the right typing is used
+    case (Expression.EMPTY(), _) then exp2;
+    case (_, Expression.EMPTY()) then exp1;
+
     else
       algorithm
         exp := Expression.BINARY(exp1, Operator.makeAdd(Type.UNKNOWN()), exp2);
@@ -1056,6 +1060,10 @@ algorithm
         Array.map(exp2.elements, function evalBinarySub(exp1 = exp1)),
         literal = exp2.literal);
 
+    // first element is subtracted from nothing. To make sure the right typing is used
+    case (Expression.EMPTY(), _) then evalBinarySub(Expression.makeZero(Expression.typeOf(exp2)), exp2);
+    case (_, Expression.EMPTY()) then exp1;
+
     else
       algorithm
         exp := Expression.BINARY(exp1, Operator.makeSub(Type.UNKNOWN()), exp2);
@@ -1069,7 +1077,7 @@ function evalMultaryAddSub
   input list<Expression> arguments;
   input list<Expression> inv_arguments;
   input Type operator_ty;
-  output Expression exp = Expression.makeZero(operator_ty);
+  output Expression exp = Expression.EMPTY(operator_ty);
 algorithm
   // add up all arguments
   for arg in arguments loop
@@ -1080,6 +1088,9 @@ algorithm
   for arg in inv_arguments loop
     exp := evalBinarySub(exp, arg);
   end for;
+
+  // fix expression if its still empty at the end
+  exp := if Expression.isEmpty(exp) then Expression.makeZero(operator_ty) else exp;
 end evalMultaryAddSub;
 
 function evalBinaryMul
@@ -1117,6 +1128,10 @@ algorithm
       then Expression.makeArray(exp2.ty,
         Array.map(exp2.elements, function evalBinaryMul(exp1 = exp1)),
         literal = exp2.literal);
+
+    // first element is multiplied to nothing. To make sure the right typing is used
+    case (Expression.EMPTY(), _) then exp2;
+    case (_, Expression.EMPTY()) then exp1;
 
     else
       algorithm
@@ -1167,12 +1182,16 @@ algorithm
     // kabdelhak: instead of fixing the operators we will just allow this to be immediately evaluated
     case (Expression.ARRAY(), _)
       then Expression.makeArray(exp1.ty,
-        Array.map(exp1.elements, function evalBinarySub(exp2 = exp2)),
+        Array.map(exp1.elements, function evalBinaryDiv(exp2 = exp2, target = target)),
         literal = exp1.literal);
     case (_, Expression.ARRAY())
       then Expression.makeArray(exp2.ty,
-        Array.map(exp2.elements, function evalBinarySub(exp1 = exp1)),
+        Array.map(exp2.elements, function evalBinaryDiv(exp1 = exp1, target = target)),
         literal = exp2.literal);
+
+    // first element is divided from nothing. To make sure the right typing is used
+    case (Expression.EMPTY(), _) then evalBinaryDiv(Expression.makeOne(Expression.typeOf(exp2)), exp2, target);
+    case (_, Expression.EMPTY()) then exp1;
 
     else
       algorithm
@@ -1187,7 +1206,7 @@ function evalMultaryMulDiv
   input list<Expression> arguments;
   input list<Expression> inv_arguments;
   input Type operator_ty;
-  output Expression exp = Expression.makeOne(operator_ty);
+  output Expression exp = Expression.EMPTY(operator_ty);
 algorithm
   // multiply all arguments
   for arg in arguments loop
@@ -1198,6 +1217,9 @@ algorithm
   for arg in inv_arguments loop
     exp := evalBinaryDiv(exp, arg, noTarget);
   end for;
+
+  // fix expression if its still empty at the end
+  exp := if Expression.isEmpty(exp) then Expression.makeOne(operator_ty) else exp;
 end evalMultaryMulDiv;
 
 function evalBinaryPow
