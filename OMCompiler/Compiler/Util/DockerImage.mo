@@ -70,85 +70,6 @@ public
     end match;
   end parseWithArgs;
 
-  function isTrustedOpenModelicaImage
-    "Add compiler warning if Docker image isn't 'docker.io/openmodelica/crossbuild/v0.1.0'."
-    input DockerImage image;
-    output Boolean isOpenModelicaImage = true;
-  protected
-    String host;
-  algorithm
-    // Check host
-    isOpenModelicaImage := match image.host
-      case NONE()
-        then(isOpenModelicaImage);
-      case SOME("docker.io")
-        then(isOpenModelicaImage);
-      else
-      algorithm
-        Error.addCompilerWarning("Using non-default Docker registry \"" + toString(image) + "\". Make sure you trust the registry.");
-        then(false);
-    end match;
-
-    // Check namespace
-    isOpenModelicaImage := match (image.namespace, isOpenModelicaImage)
-      case (NONE(), true) then (isOpenModelicaImage); // TODO: Remove, just for testing
-      case (SOME("openmodelica"), true)
-        then(isOpenModelicaImage);
-      case (_, true)
-      algorithm
-        Error.addCompilerWarning("Docker image \"" + toString(image) + "\" is an external image. Make sure you trust the image.");
-        then(false);
-      else
-        then(false);
-    end match;
-
-    // Check repository
-    isOpenModelicaImage := match (image.repository, isOpenModelicaImage)
-      case ("crossbuild", true) then(isOpenModelicaImage);
-      case (_, true)
-        algorithm
-        Error.addCompilerWarning("Docker image \"" + toString(image) + "\" is not a known OpenModelica image.");
-        then(false);
-      else
-        then(false);
-    end match;
-
-    // Check tag
-    isOpenModelicaImage := match (image.tag, isOpenModelicaImage)
-      case (SOME("v0.1.0"), true) then(isOpenModelicaImage);
-      case (SOME("latest"), true) then(isOpenModelicaImage);
-      case (_, true)
-        algorithm
-          Error.addCompilerWarning("Docker image \"" + toString(image) + "\" is not tested for this OpenModelica version.");
-        then(false);
-      else
-        then(false);
-    end match;
-
-    // Check sha
-    //sha := getImageSHA(image);
-
-
-  end isTrustedOpenModelicaImage;
-
-  function toString
-    input DockerImage image;
-    output String imageString = "";
-  algorithm
-    imageString := hostToString(image);
-    if not imageString == "" then
-      imageString := imageString + "/";
-    end if;
-
-    imageString := imageString + nameToString(image);
-
-    if isSome(image.tag) then
-      imageString := imageString + ":" + Util.getOption(image.tag);
-    end if;
-  end toString;
-
-protected
-  // Helper functions for parsing
   function parseDockerReference
     "Parse Docker image reference string:
         [[HOST[:PORT]/]NAMESPACE/]REPOSITORY[:TAG]"
@@ -185,6 +106,105 @@ protected
     end match;
   end parseDockerReference;
 
+  function isTrustedOpenModelicaImage
+    "Add compiler warning if Docker image isn't 'docker.io/openmodelica/crossbuild/v1.26.0'.
+     or ghcr.io/openmodelica/crossbuild:v1.26.0".
+    input DockerImage image;
+    output Boolean isOpenModelicaImage = true;
+  protected
+    String host;
+  algorithm
+    // Check host
+    isOpenModelicaImage := match image.host
+      case NONE()
+        then(isOpenModelicaImage);
+      case SOME("docker.io")
+      case SOME("ghcr.io")
+        then(isOpenModelicaImage);
+      else
+      algorithm
+        Error.addCompilerWarning("Using Docker registry \"" + toString(image) + "\". Make sure you trust the registry.");
+        then(false);
+    end match;
+
+    // Check namespace
+    isOpenModelicaImage := match (image.namespace, isOpenModelicaImage)
+      case (SOME("openmodelica"), true)
+        then(isOpenModelicaImage);
+      case (_, true)
+      algorithm
+        Error.addCompilerWarning("Docker image \"" + toString(image) + "\" is an external image. Make sure you trust the image.");
+        then(false);
+      else
+        then(false);
+    end match;
+
+    // Check repository
+    isOpenModelicaImage := match (image.repository, isOpenModelicaImage)
+      case ("crossbuild", true) then(isOpenModelicaImage);
+      case (_, true)
+        algorithm
+        Error.addCompilerWarning("Docker image \"" + toString(image) + "\" is not a known OpenModelica image.");
+        then(false);
+      else
+        then(false);
+    end match;
+
+    // Check tag
+    isOpenModelicaImage := match (image.tag, isOpenModelicaImage)
+      case (SOME("v1.26.0"), true) then(isOpenModelicaImage);
+      case (_, true)
+        algorithm
+          Error.addCompilerWarning("Docker image \"" + toString(image) + "\" is not tested for this OpenModelica version.");
+        then(false);
+      else
+        then(false);
+    end match;
+
+    // Check sha
+    //sha := getImageSHA(image);
+
+
+  end isTrustedOpenModelicaImage;
+
+  function toString
+    input DockerImage image;
+    output String imageString = "";
+  algorithm
+    imageString := hostToString(image);
+    if not imageString == "" then
+      imageString := imageString + "/";
+    end if;
+
+    imageString := imageString + nameToString(image);
+
+    if isSome(image.tag) then
+      imageString := imageString + ":" + Util.getOption(image.tag);
+    end if;
+  end toString;
+
+  function nameToString
+    "Return name [NAMESPACE/]REPOSITORY as String."
+    input DockerImage image;
+    output String name = "";
+  algorithm
+    name := match image
+      local
+        String namespace_str;
+        String repository;
+      case DOCKER_IMAGE(namespace = SOME(namespace_str), repository = repository)
+        then(namespace_str + "/" + repository);
+      case DOCKER_IMAGE(namespace = NONE(), repository = repository)
+        then(repository);
+      else
+      algorithm
+        Error.addCompilerError("Failed to get name of docker image reference.");
+        then fail();
+    end match;
+  end nameToString;
+
+protected
+  // Helper functions for parsing
   function parseDockerHostPort
     "Parse Docker host and port string:
         HOST[:PORT]"
@@ -227,6 +247,7 @@ protected
     case {repository_str}
     algorithm
       repository := repository_str;
+      tag := NONE();
       then();
     else
     algorithm
@@ -236,26 +257,6 @@ protected
   end parseDockerRepository;
 
   // Helper functions for toString
-  function nameToString
-    "Return name [NAMESPACE/]REPOSITORY as String."
-    input DockerImage image;
-    output String name = "";
-  algorithm
-    name := match image
-      local
-        String namespace_str;
-        String repository;
-      case DOCKER_IMAGE(namespace = SOME(namespace_str), repository = repository)
-        then(namespace_str + "/" + repository);
-      case DOCKER_IMAGE(namespace = NONE(), repository = repository)
-        then(repository);
-      else
-      algorithm
-        Error.addCompilerError("Failed to get name of docker image reference.");
-        then fail();
-    end match;
-  end nameToString;
-
   function hostToString
     "Return [HOST[:PORT]] as string."
     input DockerImage image;

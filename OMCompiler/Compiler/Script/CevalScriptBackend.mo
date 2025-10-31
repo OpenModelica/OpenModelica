@@ -3933,6 +3933,7 @@ algorithm
       list<String> dockerImgArgs;
       DockerImage.DockerImage dockerImage;
       list<String> dockerArguments;
+      Boolean isOpenModelicaImage;
       Integer uid;
       String cidFile, volumeID, containerID, userID;
       String dockerLogFile;
@@ -3980,7 +3981,7 @@ algorithm
       algorithm
         (dockerImage, dockerArguments) := DockerImage.parseWithArgs(dockerImgArgs);
         Error.addCompilerNotification("Using docker image '" + DockerImage.toString(dockerImage) + "' for cross compilation.");
-        DockerImage.isTrustedOpenModelicaImage(dockerImage);
+        isOpenModelicaImage := DockerImage.isTrustedOpenModelicaImage(dockerImage);
 
         uid := System.getuid();
         cidFile := fmutmp+".cidfile";
@@ -4039,7 +4040,7 @@ algorithm
           fmiTarget := "";
         end if;
 
-        if List.listGet(dockerImgArgs, 1) == "crossbuild:latest" then // TODO: Use openmodelica/crossbuild
+        if isOpenModelicaImage then
           cmake_toolchain := "-DCMAKE_TOOLCHAIN_FILE=/opt/cmake/toolchain/" + crossTriple + ".cmake ";
         else
           cmake_toolchain := "";
