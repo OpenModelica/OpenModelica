@@ -1116,6 +1116,9 @@ function evalBinaryDiv
   output Expression exp;
 algorithm
   exp := match (exp1, exp2)
+    // while technically not allowed to devide integers, it occurs when solving in the new backend
+    case (_, Expression.INTEGER(1)) then exp1;
+
     case (_, Expression.REAL(0.0))
       algorithm
         if EvalTarget.hasInfo(target) then
