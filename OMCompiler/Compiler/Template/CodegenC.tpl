@@ -5507,25 +5507,25 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
    let initialjacMats =
     (JacobianMatrices |> JAC_MATRIX() =>
       // Adjoint: use transposed sparsity and row coloring
-      // Normal: use regular sparsity and column coloring
       if isAdjoint then
         initialAnalyticJacobians(
           columns,
           seedVars,
           matrixName,
-          sparsityT,                /* useSparse */
-          coloredRows,              /* useColors (rows) */
-          listLength(coloredRows),  /* useMaxColors */
+          sparsityT,
+          coloredRows,
+          listLength(coloredRows),
           modelNamePrefix,
           fileNamePrefix)
+      // Normal: use regular sparsity and column coloring
       else
         initialAnalyticJacobians(
           columns,
           seedVars,
           matrixName,
-          sparsity,                 /* useSparse */
-          coloredCols,              /* useColors (cols) */
-          maxColorCols,             /* useMaxColors */
+          sparsity,
+          coloredCols,
+          maxColorCols,
           modelNamePrefix,
           fileNamePrefix)
       ;separator="\n")
