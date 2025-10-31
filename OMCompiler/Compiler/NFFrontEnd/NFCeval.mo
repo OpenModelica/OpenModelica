@@ -969,6 +969,12 @@ function evalBinaryAdd
   output Expression exp;
 algorithm
   exp := match (exp1, exp2)
+    // while technically not allowed to mix integers and reals, it occurs when solving in the new backend
+    case (Expression.REAL(), Expression.INTEGER())
+      then Expression.REAL(exp1.value + exp2.value);
+    case (Expression.INTEGER(), Expression.REAL())
+      then Expression.REAL(exp1.value + exp2.value);
+
     case (Expression.INTEGER(), Expression.INTEGER())
       then Expression.INTEGER(exp1.value + exp2.value);
 
@@ -1020,6 +1026,12 @@ function evalBinarySub
   output Expression exp;
 algorithm
   exp := match (exp1, exp2)
+    // while technically not allowed to mix integers and reals, it occurs when solving in the new backend
+    case (Expression.REAL(), Expression.INTEGER())
+      then Expression.REAL(exp1.value - exp2.value);
+    case (Expression.INTEGER(), Expression.REAL())
+      then Expression.REAL(exp1.value - exp2.value);
+
     case (Expression.INTEGER(), Expression.INTEGER())
       then Expression.INTEGER(exp1.value - exp2.value);
 
@@ -1076,6 +1088,12 @@ function evalBinaryMul
   output Expression exp;
 algorithm
   exp := match (exp1, exp2)
+    // while technically not allowed to mix integers and reals, it occurs when solving in the new backend
+    case (Expression.REAL(), Expression.INTEGER())
+      then Expression.REAL(exp1.value * exp2.value);
+    case (Expression.INTEGER(), Expression.REAL())
+      then Expression.REAL(exp1.value * exp2.value);
+
     case (Expression.INTEGER(), Expression.INTEGER())
       then Expression.INTEGER(exp1.value * exp2.value);
 
@@ -1118,6 +1136,10 @@ algorithm
   exp := match (exp1, exp2)
     // while technically not allowed to devide integers, it occurs when solving in the new backend
     case (_, Expression.INTEGER(1)) then exp1;
+    case (Expression.REAL(), Expression.INTEGER()) then Expression.REAL(exp1.value / exp2.value);
+    case (Expression.INTEGER(), Expression.REAL()) then Expression.REAL(exp1.value / exp2.value);
+    case (Expression.INTEGER(), Expression.INTEGER()) then
+      if intMod(exp1.value, exp2.value) == 0 then Expression.INTEGER(intDiv(exp1.value, exp2.value)) else Expression.REAL(exp1.value / exp2.value);
 
     case (_, Expression.REAL(0.0))
       algorithm
