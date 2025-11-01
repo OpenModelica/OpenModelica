@@ -5505,12 +5505,12 @@ Please check the Messages browser for error messages and possibly undo the lates
     <message>
         <location filename="../../MainWindow.cpp" line="3931"/>
         <source>Calculate Data Reconciliation</source>
-        <translation>Calculer le Réconciliation des Données</translation>
+        <translation>Calculer la Réconciliation des Données</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3932"/>
         <source>Calculates the data reconciliation</source>
-        <translation>Calcule le réconciliation des données</translation>
+        <translation>Calcule la réconciliation des données</translation>
     </message>
     <message>
         <location filename="../../MainWindow.cpp" line="3937"/>
