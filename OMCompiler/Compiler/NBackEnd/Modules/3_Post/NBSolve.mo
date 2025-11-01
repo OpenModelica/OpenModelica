@@ -519,9 +519,9 @@ public
           then (eqn, Status.EXPLICIT);
           else algorithm
             // check if all belong to the same record
-            record_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-            for var_slice in var_slices loop
-              (var_cref, status) := getVarSlice(BVariable.getVarName(Slice.getT(var_slice)), eqn);
+            record_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual, listLength(vars));
+            for var in vars loop
+              (var_cref, status) := getVarSlice(BVariable.getVarName(var), eqn);
               UnorderedSet.add(var_cref, record_crefs);
               if status == Status.UNSOLVABLE then break; end if;
             end for;
