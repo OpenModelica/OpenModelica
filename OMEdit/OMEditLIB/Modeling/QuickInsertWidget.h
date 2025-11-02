@@ -46,7 +46,7 @@ public:
 
   //! Overrides the paint method to draw the item.
   void paint(QPainter *painter, const QStyleOptionViewItem &option,
-             const QModelIndex &index) const override;
+         const QModelIndex &index) const override;
 
   //! Overrides the sizeHint method to provide the correct item size.
   QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
@@ -60,7 +60,6 @@ public:
 #include <QWidget>
 
 class LibraryTreeModel;
-class QCheckBox;
 
 class ClassNameFilterProxyModel : public QSortFilterProxyModel
 {
@@ -70,9 +69,6 @@ public:
   void setFilterString(const QString &pattern);
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 
-public slots:
-  void setHideExamples(bool hide);
-
 protected:
   bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const override;
   bool lessThan(const QModelIndex &left, const QModelIndex &right) const override;
@@ -80,7 +76,6 @@ protected:
 
 private:
   QString mFuzzyPattern;
-  bool mHideExamples = true;
 };
 
 class QuickInsertWidget : public QWidget
@@ -102,7 +97,6 @@ protected:
 private slots:
   void onSearchTextChanged(const QString &text);
   void onListItemActivated(const QModelIndex &index);
-  void onHideExamplesToggled(bool checked);
 
 private:
   void populateModel();
@@ -113,5 +107,4 @@ private:
   ClassNameFilterProxyModel *mpProxyModel;
   LibraryTreeModel *mpLibraryTreeModel;
   QString mSelectedClass;
-  QCheckBox *mpHideExamplesCheckBox;
 };

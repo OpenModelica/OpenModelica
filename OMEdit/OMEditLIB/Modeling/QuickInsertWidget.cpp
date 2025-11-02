@@ -35,14 +35,13 @@
 #include "QuickInsertWidget.h"
 #include "Modeling/LibraryTreeWidget.h" // For LibraryTreeModel and LibraryTreeItem
 #include "Options/OptionsDialog.h"
+#include "Util/StringHandler.h"
 #include <QApplication>
-#include <QCheckBox>
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QLineEdit>
 #include <QListView>
 #include <QScreen>
-#include <QSettings>
 #include <QStandardItemModel>
 #include <QVBoxLayout>
 
@@ -56,8 +55,7 @@ namespace
  */
 QString getClassName(const QString &fullPath)
 {
-  int lastDot = fullPath.lastIndexOf('.');
-  return (lastDot != -1) ? fullPath.mid(lastDot + 1) : fullPath;
+  return StringHandler::getLastWordAfterDot(fullPath);
 }
 
 /*!
@@ -65,39 +63,121 @@ QString getClassName(const QString &fullPath)
  * Extracts the path (e.g., "Modelica.Blocks.Sources") from a full path
  * (e.g., "Modelica.Blocks.Sources.Sine").
  */
-QString getPath(const QString &fullPath)
+QString getPath(const QString &fullPath) { return StringHandler::removeLastWordAfterDot(fullPath); }
+
+/*!
+ * \brief calculateNameScore
+ * Calculates a score for a simple name match (Exact, StartsWith, Contains).
+ * \param pattern The search pattern (e.g., "Sine").
+ * \param className The class name (e.g., "Sine").
+ * \return An integer score (1000, 800, 500) or 0.
+ */
+int calculateNameScore(const QString &pattern, const QString &className)
 {
-  int lastDot = fullPath.lastIndexOf('.');
-  return (lastDot != -1) ? fullPath.left(lastDot) : QString(); // Empty string if no path
+  if (pattern.isEmpty() || className.isEmpty()) {
+    return 0;
+  }
+  if (className.compare(pattern, Qt::CaseInsensitive) == 0) {
+    return 1000;
+  }
+  if (className.startsWith(pattern, Qt::CaseInsensitive)) {
+    return 800 - className.length();
+  }
+  if (className.contains(pattern, Qt::CaseInsensitive)) {
+    return 500 - className.indexOf(pattern, 0, Qt::CaseInsensitive) - className.length();
+  }
+  return 0;
+}
+
+/*!
+ * \brief calculateFuzzyPathScore
+ * Calculates a score for a "fuzzy" path match.
+ * Splits pattern and path by '.' and checks if all pattern parts
+ * are found in the path parts in the correct order using 'startsWith'.
+ * \param pattern The search pattern (e.g., "mult.for").
+ * \param fullPath The full path (e.g., "Modelica.Mechanics.MultiBody.Forces.Force").
+ * \return An integer score (max 700). Higher is better.
+ */
+int calculateFuzzyPathScore(const QString &pattern, const QString &fullPath)
+{
+  const QStringList patternParts = pattern.split('.');
+  const QStringList pathParts = fullPath.split('.');
+
+  if (patternParts.isEmpty()) {
+    return 0;
+  }
+
+  int pathIdx = 0;
+  for (const QString &part : patternParts) {
+    bool partFound = false;
+    while (pathIdx < pathParts.size()) {
+      if (pathParts.at(pathIdx).startsWith(part, Qt::CaseInsensitive)) {
+        partFound = true;
+        pathIdx++;
+        break;
+      }
+      pathIdx++;
+    }
+    if (!partFound) {
+      return 0;
+    }
+  }
+  return 700 - pathParts.size();
 }
 
 /*!
  * \brief rankingScore
  * Calculates a score for a match, used to rank search results.
+ *
+ * - If pattern contains no '.', it searches only the className (Prioritizing Exact/StartsWith).
+ * (e.g., "Sine" -> calculateNameScore("Sine", "Sine"))
+ *
+ * - If pattern contains a '.', it triggers a hybrid path/name search.
+ * (e.g., "mul.force" -> path "mul" vs target path AND name "force" vs target name)
+ *
  * \param pattern The search pattern entered by the user.
  * \param className The *pure* class name (not the full path) being checked.
+ * \param fullPath The full path (e.g. Modelica.Blocks.Examples.Sine)
  * \return An integer score. Higher is better.
  */
-int rankingScore(const QString &pattern, const QString &className)
+int rankingScore(const QString &pattern, const QString &className, const QString &fullPath)
 {
-  if (pattern.isEmpty())
+  if (pattern.isEmpty()) {
     return 0;
-  if (className.isEmpty())
-    return 0;
+  }
 
-  if (className.compare(pattern, Qt::CaseInsensitive) == 0) {
-    return 1000; // Exact match
+  int score = 0;
+
+  if (pattern.contains('.')) {
+    // Hybrid path/name search
+    const int lastDot = pattern.lastIndexOf('.');
+    const QString patternPath = pattern.left(lastDot);
+    const QString patternName = pattern.mid(lastDot + 1);
+
+    // An empty patternPath (e.g., query ".Sine") is always a valid path match.
+    const bool pathMatch = patternPath.isEmpty()
+                               ? true
+                               : (calculateFuzzyPathScore(patternPath, getPath(fullPath)) > 0);
+
+    if (pathMatch) {
+      score = calculateNameScore(patternName, className);
+    }
+  } else {
+    // Name-only search
+    score = calculateNameScore(pattern, className);
   }
-  if (className.startsWith(pattern, Qt::CaseInsensitive)) {
-    return 800 - className.length(); // "Starts with" match, prefer shorter
+
+  if (score == 0) {
+    return 0;
   }
-  if (className.contains(pattern, Qt::CaseInsensitive)) {
-    return 500 - className.indexOf(pattern, 0, Qt::CaseInsensitive) -
-           className.length(); // "Contains" match, prefer earlier hits
+
+  // Apply penalty for examples so they don't show up first for exact name matches
+  if (fullPath.contains(".Examples.", Qt::CaseInsensitive)) {
+    score = qMax(1, score - 100);
   }
-  return 0; // No match
+
+  return score;
 }
-
 } // namespace
 
 ModelItemDelegate::ModelItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {}
@@ -192,8 +272,6 @@ QSize ModelItemDelegate::sizeHint(const QStyleOptionViewItem &option,
   return QSize(option.rect.width(), desiredHeight);
 }
 
-// --- ClassNameFilterProxyModel Implementation ---
-
 ClassNameFilterProxyModel::ClassNameFilterProxyModel(QObject *parent)
     : QSortFilterProxyModel(parent)
 {
@@ -205,14 +283,6 @@ void ClassNameFilterProxyModel::setFilterString(const QString &pattern)
 {
   mFuzzyPattern = pattern;
   invalidateFilter(); // Retriggers filtering and sorting
-}
-
-void ClassNameFilterProxyModel::setHideExamples(bool hide)
-{
-  if (mHideExamples != hide) {
-    mHideExamples = hide;
-    invalidateFilter(); // Retrigger filtering
-  }
 }
 
 bool ClassNameFilterProxyModel::filterAcceptsRow(int source_row,
@@ -227,14 +297,9 @@ bool ClassNameFilterProxyModel::filterAcceptsRow(int source_row,
   QString fullPath = sourceModel()->data(index).toString();
   QString className = getClassName(fullPath);
 
-  // 1. Check if name matches the search pattern
-  bool scoreMatch = rankingScore(mFuzzyPattern, className) > 0;
+  // Score will always be > 0
+  bool scoreMatch = rankingScore(mFuzzyPattern, className, fullPath) > 0;
   if (!scoreMatch) {
-    return false;
-  }
-
-  // 2. Check if it's an example and we are hiding examples
-  if (mHideExamples && fullPath.contains(".Examples.", Qt::CaseInsensitive)) {
     return false;
   }
 
@@ -249,9 +314,10 @@ bool ClassNameFilterProxyModel::lessThan(const QModelIndex &left, const QModelIn
   QString leftClassName = getClassName(leftFullPath);
   QString rightClassName = getClassName(rightFullPath);
 
-  // Sorting in DescendingOrder (set in constructor) means
-  // items with a *higher* score are considered "less than".
-  return rankingScore(mFuzzyPattern, leftClassName) < rankingScore(mFuzzyPattern, rightClassName);
+  int leftScore = rankingScore(mFuzzyPattern, leftClassName, leftFullPath);
+  int rightScore = rankingScore(mFuzzyPattern, rightClassName, rightFullPath);
+
+  return leftScore < rightScore;
 }
 
 QVariant ClassNameFilterProxyModel::data(const QModelIndex &index, int role) const
@@ -287,8 +353,6 @@ Qt::ItemFlags ClassNameFilterProxyModel::flags(const QModelIndex &index) const
   return QSortFilterProxyModel::flags(index) & ~Qt::ItemIsEditable;
 }
 
-// --- QuickInsertWidget Implementation ---
-
 QuickInsertWidget::QuickInsertWidget(LibraryTreeModel *model, QWidget *parent)
     : QWidget(parent, Qt::Popup), mpLibraryTreeModel(model)
 {
@@ -297,8 +361,6 @@ QuickInsertWidget::QuickInsertWidget(LibraryTreeModel *model, QWidget *parent)
 
   mpSearchLineEdit = new QLineEdit(this);
   mpSearchLineEdit->setPlaceholderText(tr("Search models..."));
-
-  mpHideExamplesCheckBox = new QCheckBox(tr("Hide Examples"), this);
 
   mpResultsListView = new QListView(this);
   mpSourceModel = new QStandardItemModel(this);
@@ -312,7 +374,6 @@ QuickInsertWidget::QuickInsertWidget(LibraryTreeModel *model, QWidget *parent)
   QHBoxLayout *topLayout = new QHBoxLayout();
   topLayout->setContentsMargins(0, 0, 0, 0);
   topLayout->addWidget(mpSearchLineEdit);
-  topLayout->addWidget(mpHideExamplesCheckBox);
 
   QVBoxLayout *layout = new QVBoxLayout(this);
   layout->setContentsMargins(1, 1, 1, 1);
@@ -323,15 +384,6 @@ QuickInsertWidget::QuickInsertWidget(LibraryTreeModel *model, QWidget *parent)
 
   populateModel();
 
-  // Load persistent settings
-  QSettings settings;
-  bool hide = settings.value("QuickInsert/HideExamples", true).toBool(); // Default: true
-  mpHideExamplesCheckBox->setChecked(hide);
-  mpProxyModel->setHideExamples(hide); // Inform proxy of the initial state
-
-  // Connect signals
-  connect(mpHideExamplesCheckBox, &QCheckBox::toggled, this,
-          &QuickInsertWidget::onHideExamplesToggled);
   connect(mpSearchLineEdit, &QLineEdit::textChanged, this, &QuickInsertWidget::onSearchTextChanged);
   connect(mpResultsListView, &QListView::activated, this, &QuickInsertWidget::onListItemActivated);
 
@@ -460,14 +512,4 @@ void QuickInsertWidget::onListItemActivated(const QModelIndex &index)
     emit classSelected(mSelectedClass);
     close();
   }
-}
-
-void QuickInsertWidget::onHideExamplesToggled(bool checked)
-{
-  // 1. Tell the proxy model to refilter
-  mpProxyModel->setHideExamples(checked);
-
-  // 2. Persist the setting
-  QSettings settings;
-  settings.setValue("QuickInsert/HideExamples", checked);
 }
