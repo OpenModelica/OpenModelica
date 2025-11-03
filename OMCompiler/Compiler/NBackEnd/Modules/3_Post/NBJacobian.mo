@@ -68,7 +68,6 @@ protected
   import Partition = NBPartition;
   import NFOperator.{MathClassification, SizeClassification};
   import NBVariable.{VariablePointers, VariablePointer, VarData};
-  import NBDifferentiateReverse;
   import Slice = NBSlice;
   import Tearing = NBTearing;
 
