@@ -107,8 +107,9 @@ public
   end parseDockerReference;
 
   function isTrustedOpenModelicaImage
-    "Add compiler warning if Docker image isn't 'docker.io/openmodelica/crossbuild/v1.26.0'.
-     or ghcr.io/openmodelica/crossbuild:v1.26.0".
+    "Add compiler warning if Docker image is not
+     'openmodelica/crossbuild:v1.26.0' from DockerHub or GitHub Container
+     Registry."
     input DockerImage image;
     output Boolean isOpenModelicaImage = true;
   protected
@@ -116,11 +117,9 @@ public
   algorithm
     // Check host
     isOpenModelicaImage := match image.host
-      case NONE()
-        then(isOpenModelicaImage);
-      case SOME("docker.io")
-      case SOME("ghcr.io")
-        then(isOpenModelicaImage);
+      case NONE() then(isOpenModelicaImage);
+      case SOME("docker.io") then(isOpenModelicaImage);
+      case SOME("ghcr.io") then(isOpenModelicaImage);
       else
       algorithm
         Error.addCompilerWarning("Using Docker registry \"" + toString(image) + "\". Make sure you trust the registry.");
@@ -129,8 +128,7 @@ public
 
     // Check namespace
     isOpenModelicaImage := match (image.namespace, isOpenModelicaImage)
-      case (SOME("openmodelica"), true)
-        then(isOpenModelicaImage);
+      case (SOME("openmodelica"), true) then(isOpenModelicaImage);
       case (_, true)
       algorithm
         Error.addCompilerWarning("Docker image \"" + toString(image) + "\" is an external image. Make sure you trust the image.");
