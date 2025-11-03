@@ -1188,11 +1188,14 @@ algorithm
   pkg_name := InstNode.name(InstNode.libraryScope(fn.node));
   fn_handle := loadLibraryFunction(pkg_name, extName, extAnnotation, debug, info);
 
-  (mapped_args, specs) := mapExternalArgs(fn, args, extArgs);
-  ret_ty := if ComponentRef.isCref(outputRef) then ComponentRef.nodeType(outputRef) else Type.NORETCALL();
-  (res, output_vals) := FFI.callFunction(fn_handle, mapped_args, specs, ret_ty);
-
-  freeLibraryFunction(fn_handle, debug);
+  try
+    (mapped_args, specs) := mapExternalArgs(fn, args, extArgs);
+    ret_ty := if ComponentRef.isCref(outputRef) then ComponentRef.nodeType(outputRef) else Type.NORETCALL();
+    (res, output_vals) := FFI.callFunction(fn_handle, mapped_args, specs, ret_ty);
+  else
+    freeLibraryFunction(fn_handle, debug);
+    fail();
+  end try;
 
   if listEmpty(output_vals) then
     // No output parameters, just return the return value.

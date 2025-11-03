@@ -31,7 +31,10 @@
 #ifndef __FMU2_MODEL_INTERFACE_H__
 #define __FMU2_MODEL_INTERFACE_H__
 
+#include "fmi2TypesPlatform.h"
+#include "fmi2FunctionTypes.h"
 #include "../simulation_data.h"
+#include "../simulation/solver/solver_main.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -114,6 +117,7 @@ typedef struct {
   modelica_string* stringParameter;
 } INTERNAL_FMU_STATE;
 
+void filteredLog(ModelInstance *instance, fmi2Status status, int categoryIndex, const char *fmt, ...);
 
 /* reset alignment policy to the one set before reading this file */
 #if defined _MSC_VER || defined __GNUC__

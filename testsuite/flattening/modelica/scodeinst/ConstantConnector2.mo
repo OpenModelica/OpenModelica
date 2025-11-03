@@ -1,6 +1,6 @@
 // name: ConstantConnector2
 // keywords:
-// status: incorrect
+// status: correct
 //
 
 model ConstantConnector2
@@ -12,11 +12,10 @@ equation
 end ConstantConnector2;
 
 // Result:
-// Error processing file: ConstantConnector2.mo
-// [flattening/modelica/scodeinst/ConstantConnector2.mo:9:3-9:19:writable] Error: Invalid variability constant on connector 'c1'.
-//
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
-//
-// Execution failed!
+// class ConstantConnector2
+//   constant Real c1 = 1.0;
+//   constant Real c2 = 2.0;
+// equation
+//   assert(false, "Connected constants/parameters must be equal");
+// end ConstantConnector2;
 // endResult

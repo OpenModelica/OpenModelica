@@ -479,7 +479,8 @@ public
   algorithm
     if ConnectorType.isConnectorType(cty) then
       if Restriction.isConnector(restriction) then
-        if attributes.variability < Variability.DISCRETE and not InstContext.inRelaxed(context) then
+        if attributes.variability < Variability.DISCRETE and not InstContext.inRelaxed(context) and
+           not Class.isBuiltin(InstNode.getClass(component)) then
           Error.addSourceMessage(Error.INVALID_CONNECTOR_VARIABILITY,
             {Prefixes.variabilityString(attributes.variability), InstNode.name(component)}, InstNode.info(component));
           fail();

@@ -2052,8 +2052,8 @@ public
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
         algorithm
           // create addition operator
-          (_, sizeClass) := Operator.classify(operator);
-          addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
+          sizeClass := Operator.classifyAddition(operator);
+          addOp     := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
           (new_arguments, diffArguments) := differentiateMultaryMultiplicationArgs(arguments, diffArguments, operator);
       then Expression.MULTARY(new_arguments, {}, addOp);
 
