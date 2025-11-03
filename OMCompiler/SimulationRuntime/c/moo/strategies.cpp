@@ -71,9 +71,6 @@ static int control_trajectory_input_function(DATA* data, threadData_t* threadDat
     // but not important for now
     f64 time = data->localData[0]->timeValue;
 
-    // transform back to GDOP time (always [0, tf])
-    time -= info.model_start_time;
-
     controls.interpolate_at(time, u_interpolation);
     set_inputs(info, u_interpolation);
 
@@ -96,7 +93,7 @@ static void trajectory_xut_emit(simulation_result* sim_result, DATA* data, threa
         trajectory.u[u_idx].push_back(data->localData[0]->realVars[u]);
     }
 
-    trajectory.t.push_back(solver_info->currentTime - info.model_start_time);
+    trajectory.t.push_back(solver_info->currentTime);
 }
 
 static void trajectory_p_emit(simulation_result* sim_result, DATA* data, threadData_t *threadData)
@@ -115,7 +112,7 @@ static void trajectory_p_emit(simulation_result* sim_result, DATA* data, threadD
 // from e.g. initial equations / parameters
 void initialize_model(InfoGDOP& info) {
     externalInputallocate(info.data);
-    initializeModel(info.data, info.threadData, "", "", info.model_start_time);
+    initializeModel(info.data, info.threadData, "", "", info.t0);
 }
 
 // at least free for externalInputallocate();
@@ -164,7 +161,7 @@ int MatEmitter::operator()(const PrimalDualTrajectory& trajectory) {
         }
 
         // evaluate all algebraic variables
-        set_time(info, info.model_start_time + primals->t[i]);
+        set_time(info, primals->t[i]);
         set_states_inputs(info, xu.raw());
         eval_current_point_dae(info);
 
@@ -185,7 +182,7 @@ ConstantInitialization::ConstantInitialization(InfoGDOP& info)
 std::unique_ptr<PrimalDualTrajectory> ConstantInitialization::operator()(const GDOP::GDOP& gdop) {
     DATA* data = info.data;
 
-    std::vector<f64> t = {0, info.tf};
+    std::vector<f64> t = {info.t0, info.tf};
     std::vector<std::vector<f64>> x_guess;
     std::vector<std::vector<f64>> u_guess;
     std::vector<f64> p;
@@ -228,8 +225,8 @@ std::unique_ptr<Trajectory> Simulation::operator()(const ControlTrajectory& cont
 
     solver_info.solverMethod = solver;
     simInfo->numSteps  = num_steps;
-    simInfo->startTime = start_time + info.model_start_time; // shift by model start time
-    simInfo->stopTime  = stop_time  + info.model_start_time; // shift by model start time
+    simInfo->startTime = start_time;
+    simInfo->stopTime  = stop_time;
     simInfo->stepSize  = (stop_time - start_time) / static_cast<f64>(num_steps);
     simInfo->useStopTime = 1;
 
@@ -346,9 +343,9 @@ std::shared_ptr<NLP::Scaling> NominalScalingFactory::operator()(const GDOP::GDOP
     auto x_size  = info.x_size;
     auto u_size  = info.u_size;
     auto xu_size = info.xu_size;
-    auto f_size = info.f_size;
-    auto g_size = info.g_size;
-    auto r_size = info.r_size;
+    auto f_size  = info.f_size;
+    auto g_size  = info.g_size;
+    auto r_size  = info.r_size;
     auto fg_size = f_size + g_size;
 
     auto real_vars_data = info.data->modelData->realVarsData;

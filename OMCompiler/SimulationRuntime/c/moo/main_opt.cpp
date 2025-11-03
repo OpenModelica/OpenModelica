@@ -59,7 +59,7 @@ int _main_OptimizationRuntime(int argc, char** argv, DATA* data, threadData_t* t
     info.set_omc_flags(nlp_solver_settings);
     nlp_solver_settings.print();
 
-    auto mesh = Mesh::create_equidistant_fixed_stages(info.tf, info.intervals, info.stages);
+    auto mesh = Mesh::create_equidistant_fixed_stages(info.t0, info.tf, info.intervals, info.stages, MeshType::Physical);
     auto problem = create_gdop(info, *mesh);
     auto strategies = std::make_unique<GDOP::Strategies>(default_strategies(info, problem, false));
     auto gdop = GDOP::GDOP(problem);

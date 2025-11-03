@@ -134,19 +134,19 @@ BoundarySweep::BoundarySweep(GDOP::BoundarySweepLayout&& layout_mr,
                                    InfoGDOP& info)
     : GDOP::BoundarySweep(std::move(layout_mr), pc), info(info) {}
 
-void BoundarySweep::callback_eval(const f64* x0_nlp, const f64* xuf_nlp, const f64* p) {
+void BoundarySweep::callback_eval(const f64* x0_nlp, const f64* xuf_nlp, const f64* p, const f64 t0, const f64 tf) {
     set_parameters(info, p);
     set_states_inputs(info, xuf_nlp);
-    set_time(info, pc.mesh->tf);
+    set_time(info, tf);
     eval_current_point_dae(info);
     eval_mr_write(info, get_eval_buffer());
 }
 
-void BoundarySweep::callback_jac(const f64* x0_nlp, const f64* xuf_nlp, const f64* p) {
+void BoundarySweep::callback_jac(const f64* x0_nlp, const f64* xuf_nlp, const f64* p, const f64 t0, const f64 tf) {
     f64* jac_buf = get_jac_buffer();
     set_parameters(info, p);
     set_states_inputs(info, xuf_nlp);
-    set_time(info, pc.mesh->tf);
+    set_time(info, tf);
     eval_current_point_dae(info);
     /* TODO: check if C matrix does hold additional ders */
 
@@ -162,10 +162,10 @@ void BoundarySweep::callback_jac(const f64* x0_nlp, const f64* xuf_nlp, const f6
     }
 }
 
-void BoundarySweep::callback_hes(const f64* x0_nlp, const f64* xuf_nlp, const f64* p, const f64 mayer_factor, const f64* lambda) {
+void BoundarySweep::callback_hes(const f64* x0_nlp, const f64* xuf_nlp, const f64* p, const f64 t0, const f64 tf, const f64 mayer_factor, const f64* lambda) {
     set_parameters(info, p);
     set_states_inputs(info, xuf_nlp);
-    set_time(info, pc.mesh->tf);
+    set_time(info, tf);
     fill_zero_hes_buffer();
 
     f64* jac_buf = get_jac_buffer();
@@ -241,7 +241,7 @@ void Dynamics::jac(const f64* x, const f64* u, const f64* p, f64 t, f64* dfdx, v
     eval_write_ode_jacobian(info, dfdx);
 }
 
-GDOP::Problem create_gdop(InfoGDOP& info, const Mesh& mesh) {
+GDOP::Problem create_gdop(InfoGDOP& info, Mesh& mesh) {
     DATA* data = info.data;
 
     // at first call init for all start values
@@ -315,6 +315,10 @@ GDOP::Problem create_gdop(InfoGDOP& info, const Mesh& mesh) {
     FixedVector<std::optional<f64>> x0_fixed(info.x_size);
     FixedVector<std::optional<f64>> xf_fixed(info.x_size);
 
+    /* fix time horizon for now to [t0, tf] */
+    std::array<Bounds, 2> T_bounds = { Bounds{ info.t0, info.t0 }, Bounds{ info.tf, info.tf } };
+    std::array<std::optional<f64>, 2> T_fixed = { info.t0, info.tf };
+
     /* set *fixed* initial, final states */
     for (int x = 0; x < info.x_size; x++) {
         if (data->modelData->realVarsData[x].dimension.numberOfDimensions > 0) {
@@ -346,8 +350,10 @@ GDOP::Problem create_gdop(InfoGDOP& info, const Mesh& mesh) {
         std::move(x_bounds),
         std::move(u_bounds),
         std::move(p_bounds),
+        std::move(T_bounds),
         std::move(x0_fixed),
         std::move(xf_fixed),
+        std::move(T_fixed),
         std::move(r_bounds),
         std::move(g_bounds),
         mesh
