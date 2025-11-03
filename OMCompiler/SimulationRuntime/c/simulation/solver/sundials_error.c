@@ -206,6 +206,8 @@ static void checkReturnFlag_CV(int flag, const char *functionName) {
     default:
       throwStreamPrint(NULL,"##CVODE## In function %s: Error with flag %i.", functionName, flag);
   }
+
+  free((char*)flagName); // We leak memory if an error is thrown, but doesn't matter in that case.
 }
 
 /**
