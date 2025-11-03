@@ -342,7 +342,7 @@ public
           body_exp := Typing.typeExp(body_exp, NFInstContext.RHS, sourceInfo(), true);
         end if;
         body_exp := SimplifyExp.combineBinaries(body_exp);
-        body_exp := SimplifyExp.simplifyDump(body_exp, true, getInstanceName(), "\n");
+        body_exp := SimplifyExp.simplifyDump(body_exp, true, getInstanceName());
 
         if Flags.isSet(Flags.DUMPBACKENDINLINE) then
           print("[" + getInstanceName() + "] Inlining: " + Expression.toString(exp) + "\n");

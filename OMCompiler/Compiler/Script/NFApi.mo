@@ -800,38 +800,43 @@ protected
   String str;
   Modifier mod;
 algorithm
-  context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
-  context := InstContext.set(context, NFInstContext.INSTANCE_API);
-  inst_settings := InstSettings.SETTINGS(mergeExtendsSections = false, resizableArrays = false);
+  try
+    context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
+    context := InstContext.set(context, NFInstContext.INSTANCE_API);
+    inst_settings := InstSettings.SETTINGS(mergeExtendsSections = false, resizableArrays = false);
 
-  (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
-  mod := parseModifier(modifier, top);
-  cls_node := Inst.lookupRootClass(classPath, top, context);
+    (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
+    mod := parseModifier(modifier, top);
+    cls_node := Inst.lookupRootClass(classPath, top, context);
 
-  if SCodeUtil.isFunction(InstNode.definition(cls_node)) then
-    context := InstContext.unset(context, NFInstContext.CLASS);
-    context := InstContext.set(context, NFInstContext.FUNCTION);
-  end if;
+    if SCodeUtil.isFunction(InstNode.definition(cls_node)) then
+      context := InstContext.unset(context, NFInstContext.CLASS);
+      context := InstContext.set(context, NFInstContext.FUNCTION);
+    end if;
 
-  cls_node := Inst.instantiateRootClass(cls_node, context, mod);
-  execStat("Inst.instantiateRootClass");
-  inst_tree := buildInstanceTree(cls_node);
-  execStat("NFApi.buildInstanceTree");
-  Inst.instExpressions(cls_node, context = context, settings = inst_settings);
-  Inst.updateImplicitVariability(cls_node, Flags.isSet(Flags.EVAL_PARAM), context);
-  execStat("Inst.instExpressions");
+    cls_node := Inst.instantiateRootClass(cls_node, context, mod);
+    execStat("Inst.instantiateRootClass");
+    inst_tree := buildInstanceTree(cls_node);
+    execStat("NFApi.buildInstanceTree");
+    Inst.instExpressions(cls_node, context = context, settings = inst_settings);
+    Inst.updateImplicitVariability(cls_node, Flags.isSet(Flags.EVAL_PARAM), context);
+    execStat("Inst.instExpressions");
 
-  Typing.typeClassType(cls_node, NFBinding.EMPTY_BINDING, context, cls_node);
-  Typing.typeComponents(cls_node, context);
-  execStat("Typing.typeComponents");
-  Typing.typeBindings(cls_node, context);
-  execStat("Typing.typeBinding");
+    Typing.typeClassType(cls_node, NFBinding.EMPTY_BINDING, context, cls_node);
+    Typing.typeComponents(cls_node, context);
+    execStat("Typing.typeComponents");
+    Typing.typeBindings(cls_node, context);
+    execStat("Typing.typeBinding");
 
-  json := dumpJSONInstanceTree(inst_tree, cls_node);
-  execStat("NFApi.dumpJSONInstanceTree");
-  res := Values.STRING(JSON.toString(json, prettyPrint));
-  execStat("JSON.toString");
-  Inst.clearCaches();
+    json := dumpJSONInstanceTree(inst_tree, cls_node);
+    execStat("NFApi.dumpJSONInstanceTree");
+    res := Values.STRING(JSON.toString(json, prettyPrint));
+    execStat("JSON.toString");
+    Inst.clearCaches();
+  else
+    Inst.clearCaches();
+    fail();
+  end try;
 end getModelInstance;
 
 function getModelInstanceAnnotation
@@ -844,16 +849,21 @@ protected
   InstContext.Type context;
   JSON json;
 algorithm
-  context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
-  context := InstContext.set(context, NFInstContext.INSTANCE_API);
+  try
+    context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
+    context := InstContext.set(context, NFInstContext.INSTANCE_API);
 
-  (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
-  cls_node := Inst.lookupRootClass(classPath, top, context);
-  cls_node := InstNode.resolveInner(cls_node);
+    (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
+    cls_node := Inst.lookupRootClass(classPath, top, context);
+    cls_node := InstNode.resolveInner(cls_node);
 
-  json := dumpJSONInstanceAnnotation(cls_node, filter);
-  res := Values.STRING(JSON.toString(json, prettyPrint));
-  Inst.clearCaches();
+    json := dumpJSONInstanceAnnotation(cls_node, filter);
+    res := Values.STRING(JSON.toString(json, prettyPrint));
+    Inst.clearCaches();
+  else
+    Inst.clearCaches();
+    fail();
+  end try;
 end getModelInstanceAnnotation;
 
 function parseModifier

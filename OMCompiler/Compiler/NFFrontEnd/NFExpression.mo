@@ -2436,9 +2436,8 @@ public
 
       // END() doesn't have a DAE representation.
 
-      case MULTARY() algorithm
-        // swapping not necessary because multary expressions have to be commutative
-      then toDAEMultary(exp.arguments, exp.inv_arguments, exp.operator);
+      // convert to binaries by splitting then use toDAE on result
+      case MULTARY() then toDAE(SimplifyExp.splitMultary(exp));
 
       case BINARY()
         algorithm
@@ -2493,66 +2492,6 @@ public
 
     end match;
   end toDAE;
-
-  function toDAEMultary
-    "Converts a multary expression to a chain of binary expressions because
-    the old frontend does not have multary expressions."
-    input list<Expression> arguments;
-    input list<Expression> inv_arguments;
-    input Operator operator;
-    output DAE.Exp daeExp;
-  algorithm
-    if listEmpty(inv_arguments) then
-      daeExp := toDAEMultaryArgs(arguments, operator);
-    elseif Type.isBoolean(operator.ty) then
-      daeExp := DAE.LBINARY(
-        exp1      = toDAEMultaryArgs(arguments, operator),
-        operator  = Operator.toDAE(Operator.invert(operator)),
-        exp2      = toDAEMultaryArgs(inv_arguments, operator)
-       );
-    else
-      daeExp := DAE.BINARY(
-        exp1      = toDAEMultaryArgs(arguments, operator),
-        operator  = Operator.toDAE(Operator.invert(operator)),
-        exp2      = toDAEMultaryArgs(inv_arguments, operator)
-       );
-     end if;
-  end toDAEMultary;
-
-  function toDAEMultaryArgs
-    input list<Expression> arguments;
-    input Operator operator;
-    output DAE.Exp daeExp;
-  protected
-    DAE.Operator daeOp;
-  algorithm
-    daeExp := match arguments
-      local
-        Expression arg;
-        list<Expression> rest;
-        DAE.Exp exp;
-
-      // list is empty from the get-go: create neutral element
-      case {} guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.ADDITION)
-      then toDAE(makeZero(operator.ty));
-      case {} guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
-      then toDAE(makeOne(operator.ty));
-
-      // no rest, just return the DAE representation of last argument
-      case arg :: {} then toDAE(arg);
-
-      // convert argument to DAE and create new binary. recurse for second argument
-      case arg :: rest algorithm
-        exp := toDAE(arg);
-       (daeOp, _) := Operator.toDAE(operator);
-      then  DAE.BINARY(exp, daeOp, toDAEMultary(rest, {}, operator));
-
-      else algorithm
-        Error.assertion(false, getInstanceName() + " got unhandled argument list:
-        {" + stringDelimitList(list(toString(e) for e in arguments), ", ") + "}", sourceInfo());
-      then fail();
-    end match;
-  end toDAEMultaryArgs;
 
   function toDAERecord
     input Type ty;
@@ -4555,13 +4494,14 @@ public
 
   function isOne
     input Expression exp;
-    output Boolean isOne;
+    output Boolean b;
   algorithm
-    isOne := match exp
+    b := match exp
       case INTEGER() then exp.value == 1;
       case REAL() then exp.value == 1.0;
       case CAST() then isOne(exp.exp);
       case UNARY() then isMinusOne(exp.exp);
+      case ARRAY()    then Array.all(exp.elements, isOne);
       else false;
     end match;
   end isOne;

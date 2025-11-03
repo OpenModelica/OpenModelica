@@ -3660,6 +3660,7 @@ algorithm
       NFInst.instClassInProgram(cls_name, scode_p, annotation_p, relaxedFrontend, dumpFlat);
   else
     inst_failed := true;
+    NFInst.clearCaches();
   end try;
 
   FlagsUtil.set(Flags.NF_API, nf_api);
