@@ -1,0 +1,516 @@
+// name: AdjointJacobian2
+// keywords: NewBackend
+// status: correct
+// cflags: -d=dumpSimCode
+
+loadString("
+  model AdjointJacobian2
+    parameter Real a = 2.0;
+    parameter Real b = 1.2;
+    parameter Real c = 3.0;
+    parameter Real d = 1.0;
+    parameter Real A[3,3] = [ -1,  2,  0;
+                                0, -2,  1;
+                                0,  0, -3 ];
+    parameter Real B[3,3] = [ -1,  2,  0;
+                                0, -2,  1;
+                                0,  0, -3 ];
+
+    Real x(start=10, fixed=true);
+    Real y(start=5, fixed=true);
+    Real z(start=2);
+    Real l;
+    Real m;
+    Real p;
+    Real k[3](start={1,0,0});
+    Real q;
+    Real t;
+  equation
+    q = x * y;
+    t = q + z;
+    der(x) = a * x + b * q;
+    der(y) = c * y - d * q;
+    der(z) = x / y;
+    der(k) = A * B * k;
+    der(l) = x ^ y;
+    der(m) = sin(x) + cos(y) + t;
+    der(p) = k[1] * x;
+  end AdjointJacobian2;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --generateDynamicJacobian=symbolicadjoint -d=dumpSimCode"); getErrorString();
+
+buildModel(AdjointJacobian2); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// ##################################
+//
+//     SimCode (AdjointJacobian2)
+//
+// ##################################
+// ============
+//   SimVars 
+// ============
+// States (9)
+// ************
+//   (0)[STAT] (1) Real x = 10.0
+//   (1)[STAT] (1) Real y = 5.0
+//   (2)[STAT] (1) Real z = 2.0
+//   (3)[STAT] (1) Real k[1] = 1.0
+//   (4)[STAT] (1) Real k[2] = 0.0
+//   (5)[STAT] (1) Real k[3] = 0.0
+//   (6)[STAT] (1) Real l
+//   (7)[STAT] (1) Real m
+//   (8)[STAT] (1) Real p
+//
+// Derivatives (9)
+// *****************
+//   (9)[DER-] (1) Real $DER.x
+//   (10)[DER-] (1) Real $DER.y
+//   (11)[DER-] (1) Real $DER.z
+//   (12)[DER-] (1) Real $DER.k[1]
+//   (13)[DER-] (1) Real $DER.k[2]
+//   (14)[DER-] (1) Real $DER.k[3]
+//   (15)[DER-] (1) Real $DER.l
+//   (16)[DER-] (1) Real $DER.m
+//   (17)[DER-] (1) Real $DER.p
+//
+// Algebraic Variables (4)
+// *************************
+//   (18)[ALGB] (1) Real q
+//   (19)[ALGB] (1) Real t
+//   (20)[ALGB] (1) Real $FUN_1
+//   (21)[ALGB] (1) Real $FUN_2
+//
+// Real Parameters (22)
+// **********************
+//   (0)[PRMT] (1) Real a = 2.0
+//   (1)[PRMT] (1) Real b = 1.2
+//   (2)[PRMT] (1) Real c = 3.0
+//   (3)[PRMT] (1) Real d = 1.0
+//   (4)[PRMT] (1) Real A[1, 1] = -1.0
+//   (5)[PRMT] (1) Real A[1, 2] = 2.0
+//   (6)[PRMT] (1) Real A[1, 3] = 0.0
+//   (7)[PRMT] (1) Real A[2, 1] = 0.0
+//   (8)[PRMT] (1) Real A[2, 2] = -2.0
+//   (9)[PRMT] (1) Real A[2, 3] = 1.0
+//   (10)[PRMT] (1) Real A[3, 1] = 0.0
+//   (11)[PRMT] (1) Real A[3, 2] = 0.0
+//   (12)[PRMT] (1) Real A[3, 3] = -3.0
+//   (13)[PRMT] (1) Real B[1, 1] = -1.0
+//   (14)[PRMT] (1) Real B[1, 2] = 2.0
+//   (15)[PRMT] (1) Real B[1, 3] = 0.0
+//   (16)[PRMT] (1) Real B[2, 1] = 0.0
+//   (17)[PRMT] (1) Real B[2, 2] = -2.0
+//   (18)[PRMT] (1) Real B[2, 3] = 1.0
+//   (19)[PRMT] (1) Real B[3, 1] = 0.0
+//   (20)[PRMT] (1) Real B[3, 2] = 0.0
+//   (21)[PRMT] (1) Real B[3, 3] = -3.0
+//
+// Initial Partition
+// -------------------
+//   (18) x := $START.x
+//   (17) y := $START.y
+//   (16) z := $START.z
+//   (15) l := $START.l
+//   (14) m := $START.m
+//   (13) p := $START.p
+//   (12) q := x * y
+//   (11) t := q + z
+//   (10) $FUN_1 := cos(y)
+//   (9) $FUN_2 := sin(x)
+//   (8) $DER.x := a * x + b * q
+//   (7) $DER.y := c * y - d * q
+//   (6) $DER.z := x / y
+//   (5) $DER.l := x ^ y
+//   (4) $DER.m := $FUN_1 + $FUN_2 + t
+//   (3) k := $START.k
+//   (2) $DER.p := k[1] * x
+//   (1) $DER.k := A * B * k
+//
+// ODE Partition 1
+// -----------------
+//   (29) Alias of 12
+//   (28) Alias of 8
+//   (27) Alias of 9
+//   (26) Alias of 10
+//   (25) Alias of 7
+//   (24) Alias of 5
+//   (23) Alias of 11
+//   (22) Alias of 2
+//   (21) Alias of 6
+//   (20) Alias of 4
+//   (19) Alias of 1
+//
+// Event Partition
+// -----------------
+//   (29) Alias of 12
+//   (28) Alias of 8
+//   (27) Alias of 9
+//   (26) Alias of 10
+//   (25) Alias of 7
+//   (24) Alias of 5
+//   (23) Alias of 11
+//   (22) Alias of 2
+//   (21) Alias of 6
+//   (20) Alias of 4
+//   (19) Alias of 1
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian A(idx = 0, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian B(idx = 2, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian C(idx = 3, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian D(idx = 4, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian F(idx = 5, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian H(idx = 6, partition = 0)
+// ======================================================
+//
+// ================================================
+//   SimCode Jacobian ADJ(idx = 1, partition = 1)
+// ================================================
+//
+// ColumnVars (size = 18)
+// ************************
+//   (0)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.m
+//   (1)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.z
+//   (2)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.p
+//   (3)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.l
+//   (4)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.y
+//   (5)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.k[1]
+//   (6)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.k[2]
+//   (7)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.k[3]
+//   (8)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.x
+//   (0)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.m
+//   (1)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.z
+//   (2)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.p
+//   (3)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.l
+//   (4)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.y
+//   (5)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.k[1]
+//   (6)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.k[2]
+//   (7)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.k[3]
+//   (8)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.x
+//
+// SeedVars (size = 18)
+// **********************
+//   (0)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.m
+//   (1)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.z
+//   (2)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.p
+//   (3)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.l
+//   (4)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.y
+//   (5)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.k[1]
+//   (6)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.k[2]
+//   (7)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.k[3]
+//   (8)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.x
+//   (0)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.m
+//   (1)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.z
+//   (2)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.p
+//   (3)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.l
+//   (4)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.y
+//   (5)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.k[1]
+//   (6)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.k[2]
+//   (7)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.k[3]
+//   (8)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.x
+//
+// Column Equations (size = 18)
+// ------------------------------
+//   (40) $pDER_ODE_JAC_ADJ.q := ($pDER_ODE_JAC_ADJ.t + $SEED_ODE_JAC_ADJ.$DER.x * b) - $SEED_ODE_JAC_ADJ.$DER.y * d
+//   (39) $pDER_ODE_JAC_ADJ.t := $SEED_ODE_JAC_ADJ.$DER.m
+//   (38) $pDER_ODE_JAC_ADJ.$FUN_1 := $SEED_ODE_JAC_ADJ.$DER.m
+//   (37) $pDER_ODE_JAC_ADJ.$FUN_2 := $SEED_ODE_JAC_ADJ.$DER.m
+//   (36) $pDER_ODE_JAC_ADJ.m := 0.0
+//   (35) $pDER_ODE_JAC_ADJ.z := $pDER_ODE_JAC_ADJ.t
+//   (34) $pDER_ODE_JAC_ADJ.p := 0.0
+//   (33) $pDER_ODE_JAC_ADJ.l := 0.0
+//   (32) $pDER_ODE_JAC_ADJ.y := ($SEED_ODE_JAC_ADJ.$DER.l * x ^ y * log(x) + $SEED_ODE_JAC_ADJ.$DER.y * c + $pDER_ODE_JAC_ADJ.q * x) - ($SEED_ODE_JAC_ADJ.$DER.z * (x / (y * y)) + $pDER_ODE_JAC_ADJ.$FUN_1 * sin(y))
+//   (31) $pDER_ODE_JAC_ADJ.k := transpose(A * B) * $SEED_ODE_JAC_ADJ.$DER.k .+ {$SEED_ODE_JAC_ADJ.$DER.p * x, 0.0, 0.0}
+//   (30) $pDER_ODE_JAC_ADJ.x := $SEED_ODE_JAC_ADJ.$DER.z * (1/y) + $SEED_ODE_JAC_ADJ.$DER.p * k[1] + $SEED_ODE_JAC_ADJ.$DER.l * y * x ^ ((-1.0) + y) + $pDER_ODE_JAC_ADJ.$FUN_2 * cos(x) + $SEED_ODE_JAC_ADJ.$DER.x * a + $pDER_ODE_JAC_ADJ.q * y
+//
+// Sparsity Pattern Cols
+// ***********************
+//   0:	{1, 4, 8}
+//   1:	{4, 8}
+//   2:	{5, 8}
+//   3:	{4, 8}
+//   4:	{4, 8}
+//   5:	{5}
+//   6:	{6}
+//   7:	{7}
+//   8:	{4, 8}
+//
+// Sparsity Pattern Rows
+// ***********************
+//   0:	{}
+//   1:	{0}
+//   2:	{}
+//   3:	{}
+//   4:	{0, 1, 3, 4, 8}
+//   5:	{2, 5}
+//   6:	{6}
+//   7:	{7}
+//   8:	{0, 1, 2, 3, 4, 8}
+//
+// Sparsity Coloring Columns
+// ***************************
+//   {0, 2, 3, 6, 7, 8}
+//   {4, 5}
+//   {1}
+//
+// Sparsity Coloring Rows
+// ************************
+//   {5, 6, 7, 8}
+//   {4}
+//   {3}
+//   {2}
+//   {1}
+//   {0}
+//
+//
+//
+// *********************
+// * SimCode Equations *
+// *********************
+//
+//
+// allEquations:
+// ========================================
+//
+// 29: alias of 12
+// 28: alias of 8
+// 27: alias of 9
+// 26: alias of 10
+// 25: alias of 7
+// 24: alias of 5
+// 23: alias of 11
+// 22: alias of 2
+// 21: alias of 6
+// 20: alias of 4
+// 19: alias of 1
+// ========================================
+//
+//
+//
+// odeEquations (1 systems):
+// ========================================
+// 29: alias of 12
+// 28: alias of 8
+// 27: alias of 9
+// 26: alias of 10
+// 25: alias of 7
+// 24: alias of 5
+// 23: alias of 11
+// 22: alias of 2
+// 21: alias of 6
+// 20: alias of 4
+// 19: alias of 1
+// ========================================
+//
+//
+//
+// algebraicEquations (0 systems):
+// ========================================
+// ========================================
+//
+//
+// clockPartitions (0 systems):
+//
+// ========================================
+//
+//
+//
+// initialEquations: (18)
+// ========================================
+// 18: x=$START.x [Real]
+// 17: y=$START.y [Real]
+// 16: z=$START.z [Real]
+// 15: l=$START.l [Real]
+// 14: m=$START.m [Real]
+// 13: p=$START.p [Real]
+// 12: q=x * y [Real]
+// 11: t=q + z [Real]
+// 10: $FUN_1=cos(y) [Real]
+// 9: $FUN_2=sin(x) [Real]
+// 8: $DER.x=a * x + b * q [Real]
+// 7: $DER.y=c * y - d * q [Real]
+// 6: $DER.z=x / y [Real]
+// 5: $DER.l=x ^ y [Real]
+// 4: $DER.m=$FUN_1 + $FUN_2 + t [Real]
+// 3: k=$START.k [Real[3]]
+// 2: $DER.p=k[1] * x [Real]
+// 1: $DER.k=A * B * k [Real[3]]
+// ========================================
+//
+//
+//
+// initialEquations_lambda0: (0)
+// ========================================
+//
+// removedInitialEquations:
+// ========================================
+//
+// startValueEquations:
+// ========================================
+//
+// nominalValueEquations:
+// ========================================
+//
+// minValueEquations:
+// ========================================
+//
+// maxValueEquations:
+// ========================================
+//
+// parameterEquations:
+// ========================================
+//
+// removedEquations:
+// ========================================
+//
+// algorithmAndEquationAsserts:
+// ========================================
+//
+// equationsForZeroCrossings:
+// ========================================
+//
+// generic calls:
+// ========================================
+//
+// jacobianEquations:
+// ========================================
+// 51: $pDER_ODE_JAC_ADJ.x=$SEED_ODE_JAC_ADJ.$DER.z * 1.0 / y + $SEED_ODE_JAC_ADJ.$DER.p * k[1] + $SEED_ODE_JAC_ADJ.$DER.l * y * x ^ (-1.0 + y) + $pDER_ODE_JAC_ADJ.$FUN_2 * cos(x) + $SEED_ODE_JAC_ADJ.$DER.x * a + $pDER_ODE_JAC_ADJ.q * y [Real]
+// 50: $pDER_ODE_JAC_ADJ.k=transpose(A * B) * $SEED_ODE_JAC_ADJ.$DER.k + {$SEED_ODE_JAC_ADJ.$DER.p * x, 0.0, 0.0} [Real[3]]
+// 49: $pDER_ODE_JAC_ADJ.y=$SEED_ODE_JAC_ADJ.$DER.l * x ^ y * log(x) + $SEED_ODE_JAC_ADJ.$DER.y * c + $pDER_ODE_JAC_ADJ.q * x - ($SEED_ODE_JAC_ADJ.$DER.z * x / (y * y) + $pDER_ODE_JAC_ADJ.$FUN_1 * sin(y)) [Real]
+// 48: $pDER_ODE_JAC_ADJ.l=0.0 [Real]
+// 47: $pDER_ODE_JAC_ADJ.p=0.0 [Real]
+// 46: $pDER_ODE_JAC_ADJ.z=$pDER_ODE_JAC_ADJ.t [Real]
+// 45: $pDER_ODE_JAC_ADJ.m=0.0 [Real]
+// 44: $pDER_ODE_JAC_ADJ.$FUN_2=$SEED_ODE_JAC_ADJ.$DER.m [Real]
+// 43: $pDER_ODE_JAC_ADJ.$FUN_1=$SEED_ODE_JAC_ADJ.$DER.m [Real]
+// 42: $pDER_ODE_JAC_ADJ.t=$SEED_ODE_JAC_ADJ.$DER.m [Real]
+// 41: $pDER_ODE_JAC_ADJ.q=$pDER_ODE_JAC_ADJ.t + $SEED_ODE_JAC_ADJ.$DER.x * b - $SEED_ODE_JAC_ADJ.$DER.y * d [Real]
+//
+// jacobianMatrices:
+// ========================================
+// 	Jacobian idx: 0
+// 	
+// 	Jacobian idx: 2
+// 	
+// 	Jacobian idx: 3
+// 	
+// 	Jacobian idx: 4
+// 	
+// 	Jacobian idx: 5
+// 	
+// 	Jacobian idx: 6
+// 	
+// 	Jacobian idx: 1
+// 	40: $pDER_ODE_JAC_ADJ.q=$pDER_ODE_JAC_ADJ.t + $SEED_ODE_JAC_ADJ.$DER.x * b - $SEED_ODE_JAC_ADJ.$DER.y * d [Real]
+// 	39: $pDER_ODE_JAC_ADJ.t=$SEED_ODE_JAC_ADJ.$DER.m [Real]
+// 	38: $pDER_ODE_JAC_ADJ.$FUN_1=$SEED_ODE_JAC_ADJ.$DER.m [Real]
+// 	37: $pDER_ODE_JAC_ADJ.$FUN_2=$SEED_ODE_JAC_ADJ.$DER.m [Real]
+// 	36: $pDER_ODE_JAC_ADJ.m=0.0 [Real]
+// 	35: $pDER_ODE_JAC_ADJ.z=$pDER_ODE_JAC_ADJ.t [Real]
+// 	34: $pDER_ODE_JAC_ADJ.p=0.0 [Real]
+// 	33: $pDER_ODE_JAC_ADJ.l=0.0 [Real]
+// 	32: $pDER_ODE_JAC_ADJ.y=$SEED_ODE_JAC_ADJ.$DER.l * x ^ y * log(x) + $SEED_ODE_JAC_ADJ.$DER.y * c + $pDER_ODE_JAC_ADJ.q * x - ($SEED_ODE_JAC_ADJ.$DER.z * x / (y * y) + $pDER_ODE_JAC_ADJ.$FUN_1 * sin(y)) [Real]
+// 	31: $pDER_ODE_JAC_ADJ.k=transpose(A * B) * $SEED_ODE_JAC_ADJ.$DER.k + {$SEED_ODE_JAC_ADJ.$DER.p * x, 0.0, 0.0} [Real[3]]
+// 	30: $pDER_ODE_JAC_ADJ.x=$SEED_ODE_JAC_ADJ.$DER.z * 1.0 / y + $SEED_ODE_JAC_ADJ.$DER.p * k[1] + $SEED_ODE_JAC_ADJ.$DER.l * y * x ^ (-1.0 + y) + $pDER_ODE_JAC_ADJ.$FUN_2 * cos(x) + $SEED_ODE_JAC_ADJ.$DER.x * a + $pDER_ODE_JAC_ADJ.q * y [Real]
+// 	
+// columnVars(18)
+// ----------------------
+// index:0: $pDER_ODE_JAC_ADJ.m (no alias)  initial: 	no arrCref index:(1) []
+// index:1: $pDER_ODE_JAC_ADJ.z (no alias)  initial: 	no arrCref index:(2) []
+// index:2: $pDER_ODE_JAC_ADJ.p (no alias)  initial: 	no arrCref index:(3) []
+// index:3: $pDER_ODE_JAC_ADJ.l (no alias)  initial: 	no arrCref index:(4) []
+// index:4: $pDER_ODE_JAC_ADJ.y (no alias)  initial: 	no arrCref index:(5) []
+// index:5: $pDER_ODE_JAC_ADJ.k[1] (no alias)  initial: 	arrCref:$pDER_ODE_JAC_ADJ.k index:(6) []
+// index:6: $pDER_ODE_JAC_ADJ.k[2] (no alias)  initial: 	no arrCref index:(7) []
+// index:7: $pDER_ODE_JAC_ADJ.k[3] (no alias)  initial: 	no arrCref index:(8) []
+// index:8: $pDER_ODE_JAC_ADJ.x (no alias)  initial: 	no arrCref index:(9) []
+// index:0: $pDER_ODE_JAC_ADJ.m (no alias)  initial: 	no arrCref index:(1) []
+// index:1: $pDER_ODE_JAC_ADJ.z (no alias)  initial: 	no arrCref index:(2) []
+// index:2: $pDER_ODE_JAC_ADJ.p (no alias)  initial: 	no arrCref index:(3) []
+// index:3: $pDER_ODE_JAC_ADJ.l (no alias)  initial: 	no arrCref index:(4) []
+// index:4: $pDER_ODE_JAC_ADJ.y (no alias)  initial: 	no arrCref index:(5) []
+// index:5: $pDER_ODE_JAC_ADJ.k[1] (no alias)  initial: 	arrCref:$pDER_ODE_JAC_ADJ.k index:(6) []
+// index:6: $pDER_ODE_JAC_ADJ.k[2] (no alias)  initial: 	no arrCref index:(7) []
+// index:7: $pDER_ODE_JAC_ADJ.k[3] (no alias)  initial: 	no arrCref index:(8) []
+// index:8: $pDER_ODE_JAC_ADJ.x (no alias)  initial: 	no arrCref index:(9) []
+//
+// modelInfo:
+// ========================================
+// stateVars (9)
+// ----------------------
+// index:0: x (no alias)  initial: 10.0	no arrCref index:(1) []
+// index:1: y (no alias)  initial: 5.0	no arrCref index:(2) []
+// index:2: z (no alias)  initial: 2.0	no arrCref index:(3) []
+// index:3: k[1] (no alias)  initial: 1.0	arrCref:k index:(4) []
+// index:4: k[2] (no alias)  initial: 0.0	no arrCref index:(5) []
+// index:5: k[3] (no alias)  initial: 0.0	no arrCref index:(6) []
+// index:6: l (no alias)  initial: 	no arrCref index:(7) []
+// index:7: m (no alias)  initial: 	no arrCref index:(8) []
+// index:8: p (no alias)  initial: 	no arrCref index:(9) []
+// derivativeVars
+// ----------------------
+// index:9: $DER.x (no alias)  initial: 	no arrCref index:(10) []
+// index:10: $DER.y (no alias)  initial: 	no arrCref index:(11) []
+// index:11: $DER.z (no alias)  initial: 	no arrCref index:(12) []
+// index:12: $DER.k[1] (no alias)  initial: 	arrCref:$DER.k index:(13) []
+// index:13: $DER.k[2] (no alias)  initial: 	no arrCref index:(14) []
+// index:14: $DER.k[3] (no alias)  initial: 	no arrCref index:(15) []
+// index:15: $DER.l (no alias)  initial: 	no arrCref index:(16) []
+// index:16: $DER.m (no alias)  initial: 	no arrCref index:(17) []
+// index:17: $DER.p (no alias)  initial: 	no arrCref index:(18) []
+// algVars (4)
+// ----------------------
+// index:18: q (no alias)  initial: 	no arrCref index:(19) []
+// index:19: t (no alias)  initial: 	no arrCref index:(20) []
+// index:20: $FUN_1 (no alias)  hideResult  initial: 	no arrCref index:(21) []
+// index:21: $FUN_2 (no alias)  hideResult  initial: 	no arrCref index:(22) []
+// paramVars
+// ----------------------
+// index:0: a (no alias)  initial: 2.0	no arrCref index:(23) []
+// index:1: b (no alias)  initial: 1.2	no arrCref index:(24) []
+// index:2: c (no alias)  initial: 3.0	no arrCref index:(25) []
+// index:3: d (no alias)  initial: 1.0	no arrCref index:(26) []
+// index:4: A[1,1] (no alias)  initial: -1.0	arrCref:A index:(27) []
+// index:5: A[1,2] (no alias)  initial: 2.0	no arrCref index:(28) []
+// index:6: A[1,3] (no alias)  initial: 0.0	no arrCref index:(29) []
+// index:7: A[2,1] (no alias)  initial: 0.0	no arrCref index:(30) []
+// index:8: A[2,2] (no alias)  initial: -2.0	no arrCref index:(31) []
+// index:9: A[2,3] (no alias)  initial: 1.0	no arrCref index:(32) []
+// index:10: A[3,1] (no alias)  initial: 0.0	no arrCref index:(33) []
+// index:11: A[3,2] (no alias)  initial: 0.0	no arrCref index:(34) []
+// index:12: A[3,3] (no alias)  initial: -3.0	no arrCref index:(35) []
+// index:13: B[1,1] (no alias)  initial: -1.0	arrCref:B index:(36) []
+// index:14: B[1,2] (no alias)  initial: 2.0	no arrCref index:(37) []
+// index:15: B[1,3] (no alias)  initial: 0.0	no arrCref index:(38) []
+// index:16: B[2,1] (no alias)  initial: 0.0	no arrCref index:(39) []
+// index:17: B[2,2] (no alias)  initial: -2.0	no arrCref index:(40) []
+// index:18: B[2,3] (no alias)  initial: 1.0	no arrCref index:(41) []
+// index:19: B[3,1] (no alias)  initial: 0.0	no arrCref index:(42) []
+// index:20: B[3,2] (no alias)  initial: 0.0	no arrCref index:(43) []
+// index:21: B[3,3] (no alias)  initial: -3.0	no arrCref index:(44) []
+// functions:
+// -----------
+//
+// {"AdjointJacobian2", "AdjointJacobian2_init.xml"}
+// ""
+// endResult

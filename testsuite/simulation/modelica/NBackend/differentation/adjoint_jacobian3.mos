@@ -1,0 +1,305 @@
+// name: scalarAdjointJacobian3
+// keywords: NewBackend
+// status: erroneous
+// cflags: -d=dumpSimCode
+
+loadString("
+  model scalarAdjointJacobian3
+    Real x(start=0.5, fixed=true);
+    Real y(start=0.0, fixed=true);
+  equation
+  der(y)^3 + der(x)^2 - x * y = 0;
+  der(x)^3 - der(y)^2 - y - x = 0;
+  end scalarAdjointJacobian3;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --generateDynamicJacobian=symbolicadjoint -d=dumpSimCode"); getErrorString();
+
+buildModel(scalarAdjointJacobian3); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// ########################################
+//
+//     SimCode (scalarAdjointJacobian3)
+//
+// ########################################
+// ============
+//   SimVars 
+// ============
+// States (2)
+// ************
+//   (0)[STAT] (1) Real y = 0.0
+//   (1)[STAT] (1) Real x = 0.5
+//
+// Derivatives (2)
+// *****************
+//   (2)[DER-] (1) Real $DER.y
+//   (3)[DER-] (1) Real $DER.x
+//
+// Residual Variables (2)
+// ************************
+//   (0)[RES-] (1) Real $RES_SIM_1
+//   (1)[RES-] (1) Real $RES_SIM_0
+//
+// Initial Partition
+// -------------------
+//   (5) x := $START.x
+//   (4) y := $START.y
+//   (3) Nonlinear System (size = 2, homotopy = false, mixed = false, torn = true)
+//   --Iteration Vars:{$DER.y, $DER.x}
+//   --(1) 0 = -(($DER.x ^ 2.0 + $DER.y ^ 3.0) - x * y)
+//   --(2) 0 = -($DER.x ^ 3.0 - (x + y + $DER.y ^ 2.0))
+//
+// ODE Partition 1
+// -----------------
+//   (8) Nonlinear System (size = 2, homotopy = false, mixed = false, torn = true)
+//   --Iteration Vars:{$DER.x, $DER.y}
+//   --(6) 0 = -($DER.x ^ 3.0 - (x + y + $DER.y ^ 2.0))
+//   --(7) 0 = -(($DER.x ^ 2.0 + $DER.y ^ 3.0) - x * y)
+//
+// Event Partition
+// -----------------
+//   (8) Nonlinear System (size = 2, homotopy = false, mixed = false, torn = true)
+//   --Iteration Vars:{$DER.x, $DER.y}
+//   --(6) 0 = -($DER.x ^ 3.0 - (x + y + $DER.y ^ 2.0))
+//   --(7) 0 = -(($DER.x ^ 2.0 + $DER.y ^ 3.0) - x * y)
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian A(idx = 0, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian B(idx = 2, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian C(idx = 3, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian D(idx = 4, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian F(idx = 5, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian H(idx = 6, partition = 0)
+// ======================================================
+//
+// ================================================
+//   SimCode Jacobian ADJ(idx = 1, partition = 1)
+// ================================================
+//
+// ColumnVars (size = 4)
+// ***********************
+//   (0)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.y
+//   (1)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.x
+//   (0)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.y
+//   (1)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.x
+//
+// SeedVars (size = 4)
+// *********************
+//   (0)[SEED] (1) Real $SEED_INI_LS_JAC_1.$DER.y
+//   (1)[SEED] (1) Real $SEED_INI_LS_JAC_1.$DER.x
+//   (0)[SEED] (1) Real $SEED_INI_LS_JAC_1.$DER.y
+//   (1)[SEED] (1) Real $SEED_INI_LS_JAC_1.$DER.x
+//
+// Column Equations (size = 4)
+// -----------------------------
+//   (13) Nonlinear System (size = 2, homotopy = false, mixed = false, torn = true)
+//   --Iteration Vars:{$pDER_ODE_JAC_ADJ.$TMP_1, $pDER_ODE_JAC_ADJ.$TMP_2}
+//   --(11) 0 = $SEED_INI_LS_JAC_1.$DER.x - (-(2.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.x + 3.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.x ^ 2.0))
+//   --(12) 0 = $SEED_INI_LS_JAC_1.$DER.y - (2.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.y - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.y ^ 2.0)
+//   (10) $pDER_ODE_JAC_ADJ.y := (-1.0) * ($pDER_ODE_JAC_ADJ.$TMP_2 * x + $pDER_ODE_JAC_ADJ.$TMP_1)
+//   (9) $pDER_ODE_JAC_ADJ.x := (-1.0) * ($pDER_ODE_JAC_ADJ.$TMP_2 * y + $pDER_ODE_JAC_ADJ.$TMP_1)
+//
+// Sparsity Pattern Cols
+// ***********************
+//   0:	{0, 1}
+//   1:	{0, 1}
+//
+// Sparsity Pattern Rows
+// ***********************
+//   0:	{0, 1}
+//   1:	{0, 1}
+//
+// Sparsity Coloring Columns
+// ***************************
+//   {1}
+//   {0}
+//
+// Sparsity Coloring Rows
+// ************************
+//   {1}
+//   {0}
+//
+//
+//
+// *********************
+// * SimCode Equations *
+// *********************
+//
+//
+// allEquations:
+// ========================================
+//
+// 8:  (NONLINEAR) index:1 jacobian: false
+// crefs: $DER.x , $DER.y
+// 	6: -($DER.x ^ 3.0 - (x + y + $DER.y ^ 2.0)) (RESIDUAL)
+// 	7: -($DER.x ^ 2.0 + $DER.y ^ 3.0 - x * y) (RESIDUAL)
+//
+// ========================================
+//
+//
+//
+// odeEquations (1 systems):
+// ========================================
+// 8:  (NONLINEAR) index:1 jacobian: false
+// crefs: $DER.x , $DER.y
+// 	6: -($DER.x ^ 3.0 - (x + y + $DER.y ^ 2.0)) (RESIDUAL)
+// 	7: -($DER.x ^ 2.0 + $DER.y ^ 3.0 - x * y) (RESIDUAL)
+//
+// ========================================
+//
+//
+//
+// algebraicEquations (0 systems):
+// ========================================
+// ========================================
+//
+//
+// clockPartitions (0 systems):
+//
+// ========================================
+//
+//
+//
+// initialEquations: (3)
+// ========================================
+// 5: x=$START.x [Real]
+// 4: y=$START.y [Real]
+// 3:  (NONLINEAR) index:0 jacobian: false
+// crefs: $DER.y , $DER.x
+// 	1: -($DER.x ^ 2.0 + $DER.y ^ 3.0 - x * y) (RESIDUAL)
+// 	2: -($DER.x ^ 3.0 - (x + y + $DER.y ^ 2.0)) (RESIDUAL)
+//
+// ========================================
+//
+//
+//
+// initialEquations_lambda0: (0)
+// ========================================
+//
+// removedInitialEquations:
+// ========================================
+//
+// startValueEquations:
+// ========================================
+//
+// nominalValueEquations:
+// ========================================
+//
+// minValueEquations:
+// ========================================
+//
+// maxValueEquations:
+// ========================================
+//
+// parameterEquations:
+// ========================================
+//
+// removedEquations:
+// ========================================
+//
+// algorithmAndEquationAsserts:
+// ========================================
+//
+// equationsForZeroCrossings:
+// ========================================
+//
+// generic calls:
+// ========================================
+//
+// jacobianEquations:
+// ========================================
+// 15: $pDER_ODE_JAC_ADJ.x=(-1.0) * ($pDER_ODE_JAC_ADJ.$TMP_2 * y + $pDER_ODE_JAC_ADJ.$TMP_1) [Real]
+// 14: $pDER_ODE_JAC_ADJ.y=(-1.0) * ($pDER_ODE_JAC_ADJ.$TMP_2 * x + $pDER_ODE_JAC_ADJ.$TMP_1) [Real]
+// 13:  (NONLINEAR) index:2 jacobian: false
+// crefs: $pDER_ODE_JAC_ADJ.$TMP_1 , $pDER_ODE_JAC_ADJ.$TMP_2
+// 	11: $SEED_INI_LS_JAC_1.$DER.x - (0.0 - (2.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.x + 3.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.x ^ 2.0)) (RESIDUAL)
+// 	12: $SEED_INI_LS_JAC_1.$DER.y - (2.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.y - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.y ^ 2.0) (RESIDUAL)
+//
+//
+// jacobianMatrices:
+// ========================================
+// 	Jacobian idx: 0
+// 	
+// 	Jacobian idx: 2
+// 	
+// 	Jacobian idx: 3
+// 	
+// 	Jacobian idx: 4
+// 	
+// 	Jacobian idx: 5
+// 	
+// 	Jacobian idx: 6
+// 	
+// 	Jacobian idx: 1
+// 	13:  (NONLINEAR) index:2 jacobian: false
+// crefs: $pDER_ODE_JAC_ADJ.$TMP_1 , $pDER_ODE_JAC_ADJ.$TMP_2
+// 	11: $SEED_INI_LS_JAC_1.$DER.x - (0.0 - (2.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.x + 3.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.x ^ 2.0)) (RESIDUAL)
+// 	12: $SEED_INI_LS_JAC_1.$DER.y - (2.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.y - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.y ^ 2.0) (RESIDUAL)
+//
+// 	10: $pDER_ODE_JAC_ADJ.y=(-1.0) * ($pDER_ODE_JAC_ADJ.$TMP_2 * x + $pDER_ODE_JAC_ADJ.$TMP_1) [Real]
+// 	9: $pDER_ODE_JAC_ADJ.x=(-1.0) * ($pDER_ODE_JAC_ADJ.$TMP_2 * y + $pDER_ODE_JAC_ADJ.$TMP_1) [Real]
+// 	
+// columnVars(4)
+// ----------------------
+// index:0: $pDER_ODE_JAC_ADJ.y (no alias)  initial: 	no arrCref index:(1) []
+// index:1: $pDER_ODE_JAC_ADJ.x (no alias)  initial: 	no arrCref index:(2) []
+// index:0: $pDER_ODE_JAC_ADJ.y (no alias)  initial: 	no arrCref index:(1) []
+// index:1: $pDER_ODE_JAC_ADJ.x (no alias)  initial: 	no arrCref index:(2) []
+//
+// modelInfo:
+// ========================================
+// stateVars (2)
+// ----------------------
+// index:0: y (no alias)  initial: 0.0	no arrCref index:(1) []
+// index:1: x (no alias)  initial: 0.5	no arrCref index:(2) []
+// derivativeVars
+// ----------------------
+// index:2: $DER.y (no alias)  initial: 	no arrCref index:(3) []
+// index:3: $DER.x (no alias)  initial: 	no arrCref index:(4) []
+// functions:
+// -----------
+//
+// {"", ""}
+// "Warning: NBJacobian.jacobianSymbolicAdjoint supports ALGEBRAIC_LOOP but there is an unrelated error currently in codegen!
+// Error: Error building simulator. Build log: /usr/lib/ccache/cc  -O0 -DOM_HAVE_PTHREADS -fPIC -DOM_HAVE_PTHREADS     -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc/c\" -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc\" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=scalarAdjointJacobian3 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=0 -DOMC_NUM_NONLINEAR_SYSTEMS=3 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o scalarAdjointJacobian3.o scalarAdjointJacobian3.c
+// /usr/lib/ccache/cc  -O0 -DOM_HAVE_PTHREADS -fPIC -DOM_HAVE_PTHREADS     -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc/c\" -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc\" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=scalarAdjointJacobian3 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=0 -DOMC_NUM_NONLINEAR_SYSTEMS=3 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o scalarAdjointJacobian3_functions.o scalarAdjointJacobian3_functions.c
+// /usr/lib/ccache/cc  -O0 -DOM_HAVE_PTHREADS -fPIC -DOM_HAVE_PTHREADS     -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc/c\" -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc\" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=scalarAdjointJacobian3 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=0 -DOMC_NUM_NONLINEAR_SYSTEMS=3 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o scalarAdjointJacobian3_records.o scalarAdjointJacobian3_records.c
+// /usr/lib/ccache/cc  -O0 -DOM_HAVE_PTHREADS -fPIC -DOM_HAVE_PTHREADS     -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc/c\" -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc\" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=scalarAdjointJacobian3 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=0 -DOMC_NUM_NONLINEAR_SYSTEMS=3 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o scalarAdjointJacobian3_01exo.o scalarAdjointJacobian3_01exo.c
+// /usr/lib/ccache/cc  -O0 -DOM_HAVE_PTHREADS -fPIC -DOM_HAVE_PTHREADS     -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc/c\" -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc\" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=scalarAdjointJacobian3 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=0 -DOMC_NUM_NONLINEAR_SYSTEMS=3 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o scalarAdjointJacobian3_02nls.o scalarAdjointJacobian3_02nls.c
+// /usr/lib/ccache/cc  -O0 -DOM_HAVE_PTHREADS -fPIC -DOM_HAVE_PTHREADS     -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc/c\" -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc\" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=scalarAdjointJacobian3 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=0 -DOMC_NUM_NONLINEAR_SYSTEMS=3 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o scalarAdjointJacobian3_03lsy.o scalarAdjointJacobian3_03lsy.c
+// /usr/lib/ccache/cc  -O0 -DOM_HAVE_PTHREADS -fPIC -DOM_HAVE_PTHREADS     -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc/c\" -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc\" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=scalarAdjointJacobian3 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=0 -DOMC_NUM_NONLINEAR_SYSTEMS=3 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o scalarAdjointJacobian3_04set.o scalarAdjointJacobian3_04set.c
+// /usr/lib/ccache/cc  -O0 -DOM_HAVE_PTHREADS -fPIC -DOM_HAVE_PTHREADS     -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc/c\" -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc\" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=scalarAdjointJacobian3 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=0 -DOMC_NUM_NONLINEAR_SYSTEMS=3 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o scalarAdjointJacobian3_05evt.o scalarAdjointJacobian3_05evt.c
+// /usr/lib/ccache/cc  -O0 -DOM_HAVE_PTHREADS -fPIC -DOM_HAVE_PTHREADS     -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc/c\" -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc\" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=scalarAdjointJacobian3 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=0 -DOMC_NUM_NONLINEAR_SYSTEMS=3 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o scalarAdjointJacobian3_06inz.o scalarAdjointJacobian3_06inz.c
+// /usr/lib/ccache/cc  -O0 -DOM_HAVE_PTHREADS -fPIC -DOM_HAVE_PTHREADS     -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc/c\" -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc\" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=scalarAdjointJacobian3 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=0 -DOMC_NUM_NONLINEAR_SYSTEMS=3 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o scalarAdjointJacobian3_07dly.o scalarAdjointJacobian3_07dly.c
+// /usr/lib/ccache/cc  -O0 -DOM_HAVE_PTHREADS -fPIC -DOM_HAVE_PTHREADS     -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc/c\" -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc\" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=scalarAdjointJacobian3 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=0 -DOMC_NUM_NONLINEAR_SYSTEMS=3 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o scalarAdjointJacobian3_08bnd.o scalarAdjointJacobian3_08bnd.c
+// /usr/lib/ccache/cc  -O0 -DOM_HAVE_PTHREADS -fPIC -DOM_HAVE_PTHREADS     -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc/c\" -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc\" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=scalarAdjointJacobian3 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=0 -DOMC_NUM_NONLINEAR_SYSTEMS=3 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o scalarAdjointJacobian3_09alg.o scalarAdjointJacobian3_09alg.c
+// /usr/lib/ccache/cc  -O0 -DOM_HAVE_PTHREADS -fPIC -DOM_HAVE_PTHREADS     -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc/c\" -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc\" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=scalarAdjointJacobian3 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=0 -DOMC_NUM_NONLINEAR_SYSTEMS=3 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o scalarAdjointJacobian3_10asr.o scalarAdjointJacobian3_10asr.c
+// /usr/lib/ccache/cc  -O0 -DOM_HAVE_PTHREADS -fPIC -DOM_HAVE_PTHREADS     -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc/c\" -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc\" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=scalarAdjointJacobian3 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=0 -DOMC_NUM_NONLINEAR_SYSTEMS=3 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o scalarAdjointJacobian3_11mix.o scalarAdjointJacobian3_11mix.c
+// /usr/lib/ccache/cc  -O0 -DOM_HAVE_PTHREADS -fPIC -DOM_HAVE_PTHREADS     -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc/c\" -I\"/home/fbrandt3/arbeit/OpenModelica2/OpenModelica/build_cmake/install_cmake/bin/../include/omc\" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=scalarAdjointJacobian3 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=0 -DOMC_NUM_NONLINEAR_SYSTEMS=3 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o scalarAdjointJacobian3_12jac.o scalarAdjointJacobian3_12jac.c
+// scalarAdjointJacobian3_12jac.c: In function 'scalarAdjointJacobian3_eqFunction_13':
+// scalarAdjointJacobian3_12jac.c:68:61: error: '_omcQ_24pDER_5FODE_5FJAC_5FADJ' undeclared (first use in this function)
+//    68 |   data->simulationInfo->nonlinearSystemData[2].nlsxOld[0] = _omcQ_24pDER_5FODE_5FJAC_5FADJ.__omcQ_24TMP_5F1;
+//       |                                                             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// scalarAdjointJacobian3_12jac.c:68:61: note: each undeclared identifier is reported only once for each function it appears in
+// make: *** [<builtin>: scalarAdjointJacobian3_12jac.o] Error 1
+// "
+// endResult
