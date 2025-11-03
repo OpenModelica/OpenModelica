@@ -1634,7 +1634,8 @@ void ElementParameters::setUpDialog()
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
   connect(mpOkButton, SIGNAL(clicked()), this, SLOT(updateElementParameters()));
-  mpOkButton->setDisabled(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() || mpGraphicsView->isVisualizationView());
+  mpOkButton->setDisabled(!mpGraphicsView->getModelWidget()->isElementMode() && (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary()
+                                                                                 || mpGraphicsView->isVisualizationView()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
   connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
@@ -1946,7 +1947,7 @@ void ElementParameters::updateElementParameters()
 {
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   ModelInfo oldModelInfo = pModelWidget->createModelInfo();
-  QString className = pModelWidget->getLibraryTreeItem()->getNameStructure();
+  QString className = pModelWidget->isElementMode() ? pModelWidget->getRootLibraryTreeItem()->getNameStructure() : pModelWidget->getLibraryTreeItem()->getNameStructure();
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   bool valueChanged = false;
   QList<ElementModifier> elementModifiersList;

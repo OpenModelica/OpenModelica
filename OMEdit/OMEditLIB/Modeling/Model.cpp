@@ -1284,12 +1284,34 @@ namespace ModelInstance
     }
   }
 
+  /*!
+   * \brief Model::getNameIfReplaceable
+   * Returns the name of first extends model if the model is replaceable and has only one element which is an extends element.
+   * For example,
+   *  replaceable model MyCustomType = Modelica.Blocks.Sources.Constant;
+   *  Here, MyCustomType is replaceable and has only one element which is an extends element.
+   *  So, this function returns "Modelica.Blocks.Sources.Constant" as the name in this case.
+   * \return
+   */
+  QString Model::getNameIfReplaceable() const
+  {
+    if (getReplaceable() && mElements.size() == 1 && mElements.first()->isExtend() && mElements.first()->getModel()) {
+      return mElements.first()->getModel()->getName();
+    }
+    return QString();
+  }
+
   const QString &Model::getRootType() const
   {
     if (isDerivedType() && mElements.size() > 0) {
       return mElements.at(0)->getRootType();
     }
     return mName;
+  }
+
+  Replaceable *Model::getReplaceable() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->getReplaceable() : nullptr;
   }
 
   bool Model::isConnector() const
@@ -2061,7 +2083,13 @@ namespace ModelInstance
 
   Replaceable *Element::getReplaceable() const
   {
-    return mpPrefixes ? mpPrefixes.get()->getReplaceable() : nullptr;
+    if (mpPrefixes) {
+      return mpPrefixes.get()->getReplaceable();
+    } else if (mpModel) {
+      return mpModel->getReplaceable();
+    } else {
+      return nullptr;
+    }
   }
 
   bool Element::isRedeclare() const
