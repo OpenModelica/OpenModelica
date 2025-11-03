@@ -399,7 +399,6 @@ protected
   NSimCode.SimCode simCode;
   SimCode.SimCode oldSimCode;
 algorithm
-  print("Generating SimCode using the new backend...\n");
   numCheckpoints := ErrorExt.getNumCheckpoints();
   StackOverflow.clearStacktraceMessages();
   try

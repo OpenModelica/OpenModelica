@@ -885,7 +885,7 @@ constant ConfigFlag GENERATE_DYNAMIC_JACOBIAN = CONFIG_FLAG(51, "generateDynamic
     ("none", Gettext.gettext("Does not generate Jacobian. For use with explicit solvers.")),
     ("numeric", Gettext.gettext("Generates sparsity pattern for numeric Jacobian.")),
     ("symbolic", Gettext.gettext("Generates symbolic Jacobian. Used by dassl or ida solver with simulation flag '-jacobian'.")),
-    ("adjoint", Gettext.gettext("Generates adjoint Jacobian."))
+    ("symbolicadjoint", Gettext.gettext("Generates adjoint Jacobian symbolically."))
     })),
   Gettext.gettext("Select how Jacobian matrix is generated, where der(x) is differentiated w.r.t. x."));
 constant ConfigFlag GENERATE_SYMBOLIC_LINEARIZATION = CONFIG_FLAG(52, "generateSymbolicLinearization",

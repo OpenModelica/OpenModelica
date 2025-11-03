@@ -45,13 +45,9 @@ protected
   list<tuple<Integer, list<Integer>>> pattern;
   list<list<Integer>> colorList;
 algorithm
-  // TODO: redo naming variables
   for jac in code.jacobianMatrices loop
     // pick sparsity and coloring depending on adjoint
     adj := jac.isAdjoint;
-    print("adjoint in serialize: " + boolString(adj) + " for jacobian matrix: " + jac.matrixName + "\n");
-    print("colored rows laenge: " + intString(listLength(jac.coloredRows)) + " " + boolString(listEmpty(jac.coloredRows)) + "\n");
-    print("colored cols laenge: " + intString(listLength(jac.coloredCols)) + " " + boolString(listEmpty(jac.coloredCols)) + "\n");
     pattern := if adj then jac.sparsityT else jac.sparsity;
     // prefer row coloring if available for adjoint, otherwise fall back to column coloring
     colorList := if adj then (if not listEmpty(jac.coloredRows) then jac.coloredRows else jac.coloredCols) else jac.coloredCols;

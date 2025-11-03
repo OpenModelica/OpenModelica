@@ -190,47 +190,33 @@ public
   protected
     Pointer<DifferentiationArguments> diffArguments_ptr = Pointer.create(diffArguments);
     list<StrongComponent> newComps = {};
-    Option<UnorderedMap<ComponentRef,ComponentRef>> diff_map_opt = diffArguments.diff_map;
     UnorderedMap<ComponentRef,ComponentRef> diff_map;
     ComponentRef lhsCref;
     ComponentRef gradCref;
     list<VariablePointer> compVars;
     list<Slice<VariablePointer>> itVarSlices;
     DifferentiationArguments da;
-    Integer ci = 0, total = listLength(comps);
   algorithm
-    dbg("=== differentiateStrongComponentListAdjoint: " + intString(total) + " components ===");
-    if Util.isSome(diff_map_opt) then
-      SOME(diff_map) := diff_map_opt;
-      dbg("diff_map present; " + tryAdjointMapKeysToString(diffArguments.adjoint_map));
-    else
-      dbg("diff_map = NONE()");
-    end if;
-
+    diff_map := Util.getOption(diffArguments.diff_map);
     for comp in comps loop
       // Determine LHS cref of this component
-      // this is the faulty assumption that each component is explicitly assigned to exactly one variable
-      ci := ci + 1;
-      dbg("--- Component " + intString(ci) + "/" + intString(total) + " [" + compKindString(comp) + "] ---");
       dbg("Component: " + StrongComponent.toString(comp));
-      compVars := match comp
-        case StrongComponent.ALGEBRAIC_LOOP() then StrongComponent.getLoopIterationVars(comp);
-        else StrongComponent.getVariables(comp);
-      end match;
-      dbg("Vars: " + varPtrsToString(compVars));
+      // compVars := match comp
+      //   case StrongComponent.ALGEBRAIC_LOOP() then StrongComponent.getLoopIterationVars(comp);
+      //   else StrongComponent.getVariables(comp);
+      // end match;
+      compVars := StrongComponent.getVariables(comp);
       for var in compVars loop
         lhsCref := BVariable.getVarName(var);
-        dbg(" LHS cref: " + ComponentRef.toString(lhsCref));
         // Update current_grad if we have a mapping for lhsCref
-        if (not ComponentRef.isEmpty(lhsCref)) and Util.isSome(diff_map_opt) and UnorderedMap.contains(lhsCref, diff_map) then
+        if (not ComponentRef.isEmpty(lhsCref)) then
           gradCref := UnorderedMap.getOrFail(lhsCref, diff_map);
+          // this is currently not needed, but in case we have subscripts on LHS later, we need to copy them to the seed
           gradCref := match comp
             case StrongComponent.RESIZABLE_COMPONENT() then ComponentRef.copySubscripts(StrongComponent.getVarCref(comp), gradCref); // put subscript on the seed;
             case StrongComponent.SLICED_COMPONENT() then ComponentRef.copySubscripts(StrongComponent.getVarCref(comp), gradCref); // put subscript on the seed;
             else gradCref;
           end match;
-          dbg("  Seed selected from diff_map: " + ComponentRef.toString(gradCref));
-          dbg("Seed has dimensions: " + intString(Type.dimensionCount(ComponentRef.getComponentType(gradCref))));
           da := Pointer.access(diffArguments_ptr);
           da.current_grad := Expression.fromCref(gradCref);
           Pointer.update(diffArguments_ptr, da);
@@ -241,14 +227,12 @@ public
         dbg("  Differentiating component...");
         comp := differentiateStrongComponent(comp, diffArguments_ptr, idx, context, name);
         newComps := comp :: newComps;
-        da := Pointer.access(diffArguments_ptr);
-        dbg("  Done. " + tryAdjointMapKeysToString(da.adjoint_map));
+        dbg("  Done differentiating component.");
       end for;
     end for;
 
     comps := listReverse(newComps);
     diffArguments := Pointer.access(diffArguments_ptr);
-    dbg("=== done differentiateStrongComponentListAdjoint ===");
   end differentiateStrongComponentListAdjoint;
 
   function differentiateStrongComponent
@@ -351,28 +335,6 @@ public
   algorithm
     ite_vars := list(Slice.apply(var, function differentiateVariablePointer(diffArguments_ptr = diffArguments_ptr)) for var in tearing.iteration_vars);
     res_eqns := list(Slice.apply(eqn, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr, name = name)) for eqn in tearing.residual_eqns);
-
-     // Debug: print diffed ite_vars
-    print("[NBDifferentiate] differentiateTearing: ite_vars (diffed) count="
-          + intString(listLength(ite_vars)) + "\n");
-    i := 1;
-    for var_slice in ite_vars loop
-      print("  [ite " + intString(i) + "] "
-            + BVariable.pointerToString(Slice.getT(var_slice)) + "\n");
-      i := i + 1;
-    end for;
-
-
-    // Debug: print diffed res_eqns
-    print("[NBDifferentiate] differentiateTearing: res_eqns (diffed) count="
-          + intString(listLength(res_eqns)) + "\n");
-    i := 1;
-    for eq_slice in res_eqns loop
-      eq := Pointer.access(Slice.getT(eq_slice));
-      print("  [res " + intString(i) + "] " + Equation.toString(eq) + "\n");
-      i := i + 1;
-    end for;
-
     // filter discretes?
     inner_eqns := listArray(list(differentiateStrongComponent(ie, diffArguments_ptr, idx, context, name) for ie in tearing.innerEquations));
 
@@ -573,7 +535,6 @@ public
 
       case Equation.FOR_EQUATION() algorithm
         for body_eqn in eq.body loop
-          print("Diff For body eqn: " + Equation.toString(body_eqn) + "\n");
           (body_eqn, diffArguments) := differentiateEquation(body_eqn, diffArguments);
           forBody := body_eqn :: forBody;
         end for;
@@ -806,7 +767,6 @@ public
 
       // (x(1))' = x'(1)
       case Expression.SUBSCRIPTED_EXP() algorithm
-        print("[NBDifferentiate] Differentiating SUBSCRIPTED_EXP: " + Expression.toString(exp) + "\n");
         (elem1, diffArguments) := differentiateExpression(exp.exp, diffArguments);
       then (Expression.SUBSCRIPTED_EXP(elem1, exp.subscripts, exp.ty, exp.split), diffArguments);
 
@@ -918,7 +878,6 @@ public
       ));
     end buildOneHotVectorAdjoint;
 
-
     // Build a multi-hot scatter vector for a SLICE subscript:
     // result = sum_t [onehot(idx_t) * seed_elem_t]
     // Handles:
@@ -981,7 +940,7 @@ public
 
         //       scatter := SOME(acc);
         //     then scatter;
-         // SLICE with range lo:hi (unit step)
+        // SLICE with range lo:hi (unit step)
         case Subscript.SLICE(slice = Expression.RANGE(
             start = Expression.INTEGER(loI),
             step  = NONE(),
@@ -1021,13 +980,6 @@ public
       end match;
     end buildMultiHotVectorAdjoint;
 
-    // Small debug helpers (local)
-    function boolStr
-      input Boolean b; output String s;
-    algorithm
-      s := if b then "true" else "false";
-    end boolStr;
-
     function subsToString
       input List<Subscript> subs; output String s;
     algorithm
@@ -1047,23 +999,20 @@ public
       then fail();
     end match;
 
-    // Debug entry summary
-    if debugOn() then
-      dbg("[dCREF] exp=" + Expression.toString(exp)
-          + " | diffType=" + DifferentiationArguments.diffTypeStr(diffArguments.diffType)
-          + " | scalarized=" + boolStr(diffArguments.scalarized)
-          + " | collectAdjoints=" + boolStr(diffArguments.collectAdjoints));
-      if Util.isSome(diffArguments.adjoint_map) then
-        dbg("[dCREF] current_grad=" + Expression.toString(diffArguments.current_grad));
-      end if;
-    end if;
+    // // Debug entry summary
+    // dbg("[dCREF] exp=" + Expression.toString(exp)
+    //     + " | diffType=" + DifferentiationArguments.diffTypeStr(diffArguments.diffType)
+    //     + " | scalarized=" + boolString(diffArguments.scalarized)
+    //     + " | collectAdjoints=" + boolString(diffArguments.collectAdjoints));
+    // if Util.isSome(diffArguments.adjoint_map) then
+    //   dbg("[dCREF] current_grad=" + Expression.toString(diffArguments.current_grad));
+    // end if;
 
     (exp, diffArguments) := match (exp, diffArguments.diffType, diffArguments.diff_map)
       local
         Expression res, adjExpr;
         UnorderedMap<ComponentRef,ComponentRef> diff_map;
         List<Subscript> expCrefSubscripts;
-
 
       // -------------------------------------
       //    EMPTY and WILD crefs do nothing
@@ -1253,7 +1202,6 @@ public
             dbg("[dCREF:JAC] collectAdjoints=false, skip append");
           end if;
         else
-          dbg("[dCREF:JAC] no diff_map entry for " + ComponentRef.toString(strippedCref) + " -> 0");
           res     := Expression.makeZero(exp.ty);
         end if;
       then (res, diffArguments);
@@ -1337,13 +1285,11 @@ public
 
       // handle reductions
       case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
-        print("Differentiate Reduction Call: " + Expression.toString(exp) + "\n");
         (ret, diffArguments) := differentiateReduction(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)), exp, diffArguments);
       then (ret, diffArguments);
 
       // builtin functions
       case Expression.CALL(call = call as Call.TYPED_CALL()) guard(Function.isBuiltin(call.fn)) algorithm
-        print("Differentiate Builtin Call: " + Expression.toString(exp) + "\n");
         (ret, diffArguments) := differentiateBuiltinCall(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)), exp, diffArguments);
       then (ret, diffArguments);
 
@@ -2111,7 +2057,6 @@ public
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + name});
       then fail();
     end match;
-    print("BUILTIN name derFuncCall" + name + Expression.toString(derFuncCall) + "\n");
   end differentiateBuiltinCall1Arg;
 
   function differentiateBuiltinCall2Arg
@@ -2606,7 +2551,9 @@ public
     input output Expression exp "Has to be Expression.BINARY()";
     input output DifferentiationArguments diffArguments;
   algorithm
-    print("differentiateBinary: " + Expression.toString(exp) + "\n");
+    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
+      print("differentiateBinary: " + Expression.toString(exp) + "\n");
+    end if;
     (exp, diffArguments) := match exp
       local
         Expression exp1, exp2, diffExp1, diffExp2, e1, e2, e3, res;
@@ -2686,11 +2633,9 @@ public
 
         // Original size classification (kept for forward combination)
         (_, sizeClass) := Operator.classify(operator);
-        print("differentiateBinary: sizeClass " + Operator.sizeClassificationString(sizeClass) + "\n");
         // Decide shape case
+        // Inner product
         if isVec1 and isVec2 and sizeClass == NFOperator.SizeClassification.SCALAR then
-          print("differentiateBinary: inner product case\n");
-          // Inner product
           grad_exp1 := Expression.BINARY(
             current_grad,
             Operator.fromClassification(
@@ -2703,30 +2648,22 @@ public
               (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.SCALAR_ARRAY),
               operator.ty),
             exp1); // G * x
-
+        // outer product
         elseif isMat1 and isMat2 and sizeClass == NFOperator.SizeClassification.MATRIX and listGet(dim1, 1) > 1 and listGet(dim1, 2) == 1 and listGet(dim2, 1) == 1 and listGet(dim2, 2) > 1 then
-          print("differentiateBinary: outer product case\n");
-          // outer product
           grad_exp1 := Expression.BINARY(
             current_grad,
             Operator.fromClassification(
               (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX),
               operator.ty),
             exp2); // G * y
-          print(Expression.toString(grad_exp1) + "\n");
           grad_exp2 := Expression.BINARY(
             typeTransposeCall(current_grad),
             Operator.fromClassification(
               (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX),
               operator.ty),
             exp1); // G^T * x
-          print(Expression.toString(grad_exp2) + "\n");
-
+        // Matrix * Vector
         elseif isMat1 and isVec2 then
-          print("differentiateBinary: matrix * vector case\n");
-          // Matrix * Vector
-          // first rule might be wrong
-          // has to be an outer product
           grad_exp1 := Expression.BINARY(
             current_grad,
             Operator.fromClassification(
@@ -2739,10 +2676,8 @@ public
               (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX_VECTOR),
               operator.ty),
             current_grad); // Aᵀ * G
-
+        // Vector * Matrix
         elseif isVec1 and isMat2 then
-          print("differentiateBinary: vector * matrix case\n");
-          // Vector * Matrix
           // grad w.r.t exp1 (x): B * Gᵀ  -> treat Gᵀ via transpose(current_grad)
           grad_exp1 := Expression.BINARY(
             exp2,
@@ -2757,10 +2692,8 @@ public
               (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX),
               operator.ty),
             current_grad);                   // xᵀ * G  (outer product)
-
+        // Matrix * Matrix
         elseif isMat1 and isMat2 then
-          print("differentiateBinary: matrix * matrix case\n");
-          // Matrix * Matrix
           grad_exp1 := Expression.BINARY(
             current_grad,
             Operator.fromClassification(
@@ -2773,34 +2706,24 @@ public
               (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX),
               operator.ty),
             current_grad);                     // Aᵀ * G
-
+        // k * A
         elseif isScalar1 and isMat2 then
-          print("differentiateBinary: scalar * matrix case\n");
-          // k * A
-          // need to implement the double dot product for grad_exp1
-          // it can be implemented as sum(G .* A) for grad_exp1
           grad_exp1 := Expression.BINARY(current_grad, Operator.fromClassification(
               (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ELEMENT_WISE),
               operator.ty), exp2);
-          grad_exp1 := typeSumCall(grad_exp1); // G : A
+          grad_exp1 := typeSumCall(grad_exp1); // G : A = sum(G .* A)
           grad_exp2 := Expression.BINARY(current_grad, Operator.fromClassification(
               (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ARRAY_SCALAR),
               operator.ty), exp1); // G * k
-
+        // c = k * x
         elseif isScalar1 and isVec2 then
-          // c = k * x
           // \bar{k} = \bar{c} * x, inner product
           // \bar{x} = \bar{c} * k, scalar multiplication
-
-          print("differentiateBinary: scalar * vector case\n");
           grad_exp1 := Expression.BINARY(current_grad, Operator.makeScalarProduct(operator.ty), exp2); 
           grad_exp2 := Expression.BINARY(current_grad, Operator.fromClassification(
               (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ARRAY_SCALAR),
               operator.ty), exp1);
-
         else
-          print("differentiateBinary: fallback case\n");
-          // Fallback (scalar / mixed / broadcast)
           grad_exp1 := Expression.MULTARY({current_grad, exp2}, {}, makeMulFromOperator(operator));
           grad_exp2 := Expression.MULTARY({current_grad, exp1}, {}, makeMulFromOperator(operator));
         end if;
@@ -2833,16 +2756,9 @@ public
       case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.DIVISION)
         algorithm
-          print("differentiateBinary: division case\n");
-          print("Current grad: " + Expression.toString(diffArguments.current_grad) + "\n");
-          print("Exp1: " + Expression.toString(exp1) + "\n");
-          print("Exp2: " + Expression.toString(exp2) + "\n");
-          print("Operator: " + Operator.toDebugString(operator) + "\n");
           powSizeClass := NFOperator.SizeClassification.SCALAR;
           powOp := Operator.fromClassification((NFOperator.MathClassification.POWER, powSizeClass), Type.REAL());
           current_grad := diffArguments.current_grad; // upstream gradient
-          print(Operator.toDebugString(powOp) + "\n");
-
           diffArguments.current_grad := Expression.MULTARY({current_grad}, {exp2}, Operator.fromClassification(
             (NFOperator.MathClassification.MULTIPLICATION, if Type.isArray(Expression.typeOf(current_grad)) then NFOperator.SizeClassification.ARRAY_SCALAR else NFOperator.SizeClassification.SCALAR),
             operator.ty)); // z = f/g going into f
@@ -2954,7 +2870,9 @@ public
     input output Expression exp "Has to be Expression.MULTARY()";
     input output DifferentiationArguments diffArguments;
   algorithm
-    print("differentiateMultary: " + Expression.toString(exp) + "\n");
+    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
+      print("differentiateMultary: " + Expression.toString(exp) + "\n");
+    end if;
     exp := match exp
       local
         Expression diff_arg, divisor, diff_enumerator, diff_divisor;
@@ -2966,7 +2884,6 @@ public
         Expression current_grad, upstream, e_over_f, term, e_over_g;
         List<Expression> add_terms, arg_rest;
         Integer idxN, idxD;
-
 
       // Dash calculations (ADD, SUB, ADD_EW, SUB_EW, ...)
       // NOTE: Multary always contains ADDITION
@@ -3434,83 +3351,13 @@ public
     v := Expression.ARRAY(vecTy, listArray(listReverse(elems)), false);
   end extractDiagonalVector;
 
-
-  // ================================
-  //           DEBUG HELPERS
-  // ================================
-
-  function debugOn
-    output Boolean on;
-  algorithm
-    on := true;
-  end debugOn;
-
   function dbg
     input String s;
   algorithm
-    if debugOn() then
+    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
       print(s + "\n");
     end if;
   end dbg;
 
-  function compKindString
-    input StrongComponent comp;
-    output String kind;
-  algorithm
-    kind := match comp
-      case StrongComponent.SINGLE_COMPONENT()     then "SINGLE";
-      case StrongComponent.MULTI_COMPONENT()      then "MULTI";
-      case StrongComponent.SLICED_COMPONENT()     then "SLICED";
-      case StrongComponent.RESIZABLE_COMPONENT()  then "RESIZABLE";
-      case StrongComponent.GENERIC_COMPONENT()    then "GENERIC";
-      case StrongComponent.ALGEBRAIC_LOOP()       then "ALGEBRAIC_LOOP";
-      case StrongComponent.ENTWINED_COMPONENT()   then "ENTWINED";
-      case StrongComponent.ALIAS()                then "ALIAS";
-      else "UNKNOWN";
-    end match;
-  end compKindString;
-
-  function varPtrsToString
-    input list<VariablePointer> vps;
-    output String s;
-  protected
-    list<String> names = {};
-  algorithm
-    for vp in vps loop
-      names := ComponentRef.toString(BVariable.getVarName(vp)) :: names;
-    end for;
-    s := "{" + stringDelimitList(listReverse(names), ", ") + "}";
-  end varPtrsToString;
-
-  function slicesToVarPtrs
-    input list<Slice<VariablePointer>> sls;
-    output list<VariablePointer> vps = {};
-  algorithm
-    for sl in sls loop
-      vps := Slice.getT(sl) :: vps;
-    end for;
-    vps := listReverse(vps);
-  end slicesToVarPtrs;
-
-  function tryAdjointMapKeysToString
-    input Option<UnorderedMap<ComponentRef, ExpressionList>> omap;
-    output String s;
-  protected
-    list<ComponentRef> keys = {};
-    String ks;
-  algorithm
-    if Util.isSome(omap) then
-      try
-        keys := UnorderedMap.keyList(Util.getOption(omap));
-        ks := "{" + stringDelimitList(list(ComponentRef.toString(k) for k in keys), ", ") + "}";
-        s := "adjoint_map keys = " + ks;
-      else
-        s := "adjoint_map keys = <unavailable>";
-      end try;
-    else
-      s := "adjoint_map = NONE()";
-    end if;
-  end tryAdjointMapKeysToString;
-  
   annotation(__OpenModelica_Interface="backend");
 end NBDifferentiate;

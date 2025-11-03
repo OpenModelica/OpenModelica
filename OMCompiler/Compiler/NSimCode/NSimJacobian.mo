@@ -223,12 +223,11 @@ public
           SimStrongComponent.Block columnEqn;
           list<SimStrongComponent.Block> columnEqns = {};
           VarData varData;
-          VariablePointers seed_scalar, res_scalar, tmp_scalar, seed_sparsity_scalar, seed_vec, res_vec, tmp_vec;
+          VariablePointers seed_scalar, res_scalar, tmp_scalar, seed_vec, res_vec, tmp_vec;
           Pointer<list<SimVar>> seedVars_ptr = Pointer.create({});
           Pointer<list<SimVar>> resVars_ptr = Pointer.create({});
           Pointer<list<SimVar>> tmpVars_ptr = Pointer.create({});
-          Pointer<list<SimVar>> seed_sparsity_Vars_ptr = Pointer.create({});
-          list<SimVar> seedVars, resVars, tmpVars, loopVars, seed_sparsity_Vars;
+          list<SimVar> seedVars, resVars, tmpVars, loopVars;
           UnorderedMap<ComponentRef, SimVar> jac_map;
           UnorderedMap<ComponentRef, Integer> idx_map;
           ComponentRef cref;
@@ -258,12 +257,10 @@ public
           seed_scalar := VariablePointers.scalarize(varData.seedVars);
           res_scalar  := VariablePointers.scalarize(varData.resultVars);
           tmp_scalar  := VariablePointers.scalarize(varData.tmpVars);
-          seed_sparsity_scalar := VariablePointers.scalarize(BVariable.VariablePointers.variablePointersFromExistingCrefs(Bpattern.seed_vars));
           // use dummy simcode indices to always start at 0 for column and seed vars
           VariablePointers.map(seed_scalar, function SimVar.traverseCreate(acc = seedVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType = VarType.SIMULATION));
           VariablePointers.map(res_scalar,  function SimVar.traverseCreate(acc = resVars_ptr,  indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType = VarType.SIMULATION));
           VariablePointers.map(tmp_scalar,  function SimVar.traverseCreate(acc = tmpVars_ptr,  indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType = VarType.SIMULATION));
-          VariablePointers.map(seed_sparsity_scalar,  function SimVar.traverseCreate(acc = seed_sparsity_Vars_ptr,  indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType = VarType.SIMULATION));
           
           if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
             seed_vec := VariablePointers.scalarize(varData.seedVars);
@@ -282,7 +279,6 @@ public
           seedVars  := listReverse(Pointer.access(seedVars_ptr));
           resVars   := listReverse(Pointer.access(resVars_ptr));
           tmpVars   := listReverse(Pointer.access(tmpVars_ptr));
-          seed_sparsity_Vars := listReverse(Pointer.access(seed_sparsity_Vars_ptr));
 
           jac_map := UnorderedMap.new<SimVar>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars) + listLength(tmpVars));
           SimCodeUtil.addListSimCodeMap(seedVars, jac_map);
@@ -292,8 +288,8 @@ public
           try
             idx_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars));
             if Jacobian.isDynamic(jacobian.jacType) then
-              if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "adjoint" then
-                loopVars := seed_sparsity_Vars;
+              if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolicadjoint" then
+                loopVars := resVars;
               else
                 loopVars := seedVars;
               end if;
@@ -301,19 +297,18 @@ public
                 cref := SimVar.getName(var);
                 if BVariable.checkCref(cref, BVariable.isSeed, sourceInfo()) then
                   // FIXME this should not happen, fix it when collecting seedVars!
-                  print("is seed" + ComponentRef.toString(cref) + "\n");
+                  // this case is for forward symbolic jacobians
                   cref := BVariable.getPartnerCref(cref, BVariable.getVarSeed);
+                elseif BVariable.checkCref(cref, BVariable.isPDer, sourceInfo()) then
+                  // this case is for adjoint symbolic jacobians
+                  cref := BVariable.getPartnerCref(cref, BVariable.getVarPDer);
                 end if;
                 UnorderedMap.add(cref, var.index, idx_map);
                 if BVariable.checkCref(cref, BVariable.isState, sourceInfo()) then
-                  print("is state" + ComponentRef.toString(cref) + "\n");
                   cref := BVariable.getPartnerCref(cref, BVariable.getVarDer);
                   UnorderedMap.add(cref, var.index, idx_map);
                 end if;
               end for;
-
-              print("Index map for jacobian:\n");
-              print(UnorderedMap.toString(idx_map, ComponentRef.toString, intString) + "\n");
 
               // also add residuals if its DAE Mode
               if jacobian.jacType == NBJacobian.JacobianType.DAE then
@@ -339,10 +334,7 @@ public
               end for;
             end if;
 
-            print("vor createSparsity\n");
             (sparsity, sparsityT, coloring, rowColoring) := createSparsity(jacobian, idx_map);
-            print("nach createSparsity\n");
-            print("adjoint in nsimjaccobian create: " + boolString(jacobian.isAdjoint) + " for jacobian matrix: " + jacobian.name + "\n");
 
             jac := SIM_JAC(
               name                = jacobian.name,
@@ -362,9 +354,6 @@ public
               jac_map             = SOME(jac_map),
               isAdjoint           = jacobian.isAdjoint
             );
-
-            print("Created simcode jacobian:\n" + toString(jac) + "\n");
-
             indices.jacobianIndex := indices.jacobianIndex + 1;
             simJacobian := SOME(jac);
           else
@@ -445,15 +434,9 @@ public
           Jacobian.SparsityColoring Bcoloring;
 
         case BackendDAE.JACOBIAN(sparsityPattern = Bpattern, sparsityColoring = Bcoloring) algorithm
-          print("vor col wise pattern\n");
           sparsity  := createSparsityPattern(Bpattern.col_wise_pattern, idx_map);
-          print("nach col wise pattern\n");
-          print("vor row wise pattern\n");
           sparsityT := createSparsityPattern(Bpattern.row_wise_pattern, idx_map);
-          print("nach row wise pattern\n");
-          print("vor coloring\n");
           (coloring, rowColoring) := createSparsityColoring(Bcoloring, idx_map);
-          print("nach coloring\n");
         then (sparsity, sparsityT, coloring, rowColoring);
 
         else algorithm

@@ -284,7 +284,7 @@ public
   algorithm
     func := match Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN)
       case "symbolic" then jacobianSymbolic;
-      case "adjoint" then jacobianSymbolicAdjoint;
+      case "symbolicadjoint" then jacobianSymbolicAdjoint;
       case "numeric"  then jacobianNumeric;
       case "none"     then jacobianNone;
     end match;
@@ -491,9 +491,6 @@ public
         then fail();
 
       end match;
-
-      print(adjacencyMapToString(map) + "\n");
-
       // create coloring
       //sparsityColoring := SparsityColoring.PartialD2ColoringAlgC(sparsityPattern, jacType);
       sparsityColoring := SparsityColoring.PartialD2ColoringAlgColumnAndRow(sparsityPattern, map);
@@ -830,7 +827,7 @@ protected
 
     (jacobian, funcTree) := func(name, jacType, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcTree, kind ==  NBPartition.Kind.INI);
 
-    if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "adjoint" and Util.isSome(jacobian) then
+    if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolicadjoint" and Util.isSome(jacobian) then
       part.association := Partition.Association.CONTINUOUS(kind, NONE(), jacobian);
     else
       part.association := Partition.Association.CONTINUOUS(kind, jacobian, NONE());
@@ -864,12 +861,12 @@ protected
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no strong components were given!"});
     end if;
 
-    // print strong components
-    print("Strong components for symboli differentiation:\n");
-    print(jacobianTypeString(jacType) + "\n");
-    for c in comps loop
-      print(StrongComponent.toString(c, 2) + "\n");
-    end for;
+    // // print strong components
+    // print("Strong components for symboli differentiation:\n");
+    // print(jacobianTypeString(jacType) + "\n");
+    // for c in comps loop
+    //   print(StrongComponent.toString(c, 2) + "\n");
+    // end for;
 
     // create seed vars
     VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map, makeVar = BVariable.makeSeedVar, init = init));
@@ -998,7 +995,7 @@ protected
     input NBEquation.EquationAttributes attr;
     output Pointer<NBEquation.Equation> eqPtr;
   algorithm
-    print("Creating adjoint ASSIGNMENT for lhs = " + Expression.toString(lhs) + " with rhs = " + Expression.toString(rhs) + "\n");
+    // print("Creating adjoint ASSIGNMENT for lhs = " + Expression.toString(lhs) + " with rhs = " + Expression.toString(rhs) + "\n");
     eqPtr := NBEquation.Equation.makeAssignment(
       lhs,
       rhs,
@@ -1129,10 +1126,10 @@ protected
       // only allow single components and algebraic loops
       for c in comps loop
         if not StrongComponent.isSingleComponent(c) and not StrongComponent.isAlgebraicLoop(c) then
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " adjoint differentiation only supports single variable components!"});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " adjoint differentiation only supports SINGLE_COMPONENT!"});
           fail();
         elseif StrongComponent.isAlgebraicLoop(c) then
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " adjoint differentiation supports algebraic loops but there is an unrelated error currently!"});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " adjoint differentiation supports ALGEBRAIC_LOOP but there is an unrelated error currently!"});
           fail();
         end if;
       end for;
@@ -1141,32 +1138,27 @@ protected
       fail();
     end if;
 
-    // print strong components
-    print("Strong components for adjoint differentiation:\n");
-    for c in comps loop
-      print(StrongComponent.toString(c, 2) + "\n");
-    end for;
-
-    print("Seed candidates before pDer creation:\n" + BVariable.VariablePointers.toString(seedCandidates, "Seed Candidates") + "\n");
-    print("Partial candidates before pDer creation:\n" + BVariable.VariablePointers.toString(partialCandidates, "Partial Candidates") + "\n");
+    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
+      print("Seed candidates before pDer creation:\n" + BVariable.VariablePointers.toString(seedCandidates, "Seed Candidates") + "\n");
+      print("Partial candidates before pDer creation:\n" + BVariable.VariablePointers.toString(partialCandidates, "Partial Candidates") + "\n");
+    end if;
 
     // create seed vars
     for v in VariablePointers.toList(seedCandidates) loop makeVarTraverse(v, newName, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), init = init); end for;
-    //VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = pDer_vars_ptr, map = diff_map, makeVar = BVariable.makePDerVar(isTmp = false), init = init));
     res_vars := Pointer.access(pDer_vars_ptr);
-
-    print("res vars after pDer creation:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(res_vars), "Res Vars") + "\n");
 
     // create pDer vars (also filters out discrete vars)
     (old_res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
     (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(init = init));
 
-    print("tmp vars after pDer creation:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(tmp_vars), "Tmp Vars") + "\n");
-
     for v in old_res_vars loop makeVarTraverse(v, newName, seed_vars_ptr, diff_map, BVariable.makeSeedVar, init = init); end for;
     seed_vars := Pointer.access(seed_vars_ptr);
 
-    print("seed vars after seed creation:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(seed_vars), "Seed Vars") + "\n");
+    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
+      print("seed vars after seed creation:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(seed_vars), "Seed Vars") + "\n");
+      print("res vars after pDer creation:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(res_vars), "Res Vars") + "\n");
+      print("tmp vars after pDer creation:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(tmp_vars), "Tmp Vars") + "\n");
+    end if;
 
     pDer_vars_ptr := Pointer.create({});
     for v in tmp_vars loop makeVarTraverse(v, newName, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), init = init); end for;
@@ -1177,8 +1169,10 @@ protected
     addVarsToAdjointMap(adjoint_map, res_vars, newName, false);
     addVarsToAdjointMap(adjoint_map, tmp_vars, newName, true);
 
-    print("Adjoint map before:\n" + adjointMapToString(SOME(adjoint_map)) + "\n");
-    print("Diff map before:\n" + diffMapToString(diff_map) + "\n");
+    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
+      print("Adjoint map before:\n" + adjointMapToString(SOME(adjoint_map)) + "\n");
+      print("Diff map before:\n" + diffMapToString(diff_map) + "\n");
+    end if;
 
     comps_non_alg := {};
     for c in comps loop
@@ -1259,8 +1253,6 @@ protected
             residuals := listReverse(residuals);
 
             m := listLength(residuals);
-            print("[adjoint] ALGEBRAIC_LOOP: m residuals=" + intString(m) + "\n");
-
             // Create scalar lambda_i temporaries (Real), referenced as seeds for reverse mode
             for iIdx in 1:m loop
               // make an auxiliary scalar Real variable which will hold lambda_i
@@ -1271,7 +1263,7 @@ protected
               lambdaPtrs := lhsVarPtr :: lambdaPtrs;
               lambdaCrefs := newC :: lambdaCrefs;
 
-              if Flags.isSet(Flags.JAC_DUMP) then
+              if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
                 print("[adjoint] created lambda_" + intString(iIdx) + " = " + ComponentRef.toString(newC) + "\n");
               end if;
             end for;
@@ -1356,7 +1348,9 @@ protected
 
               iRes := iRes + 1;
             end for;
-            print("[adjoint] loop_product_adjoint_map after: \n" + adjointMapToString(SOME(loop_product_adjoint_map)) + "\n");
+            if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
+              print("[adjoint] loop_product_adjoint_map after: \n" + adjointMapToString(SOME(loop_product_adjoint_map)) + "\n");
+            end if;
 
 
             // Build a linear algebraic loop for lambda: sum_i (d r_i / d y_j) * lambda_i = y_bar_j
@@ -1457,7 +1451,9 @@ protected
     // keep original order
     comps := listReverse(comps_non_alg);
 
-    print("Adjoint map after loop adding:\n" + adjointMapToString(SOME(adjoint_map)) + "\n");
+    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
+      print("Adjoint map after loop adding:\n" + adjointMapToString(SOME(adjoint_map)) + "\n");
+    end if;
 
     // Build differentiation argument structure
     diffArguments := Differentiate.DIFFERENTIATION_ARGUMENTS(
@@ -1472,16 +1468,13 @@ protected
       collectAdjoints  = true
     );
 
-    print(BVariable.VariablePointers.toString(seedCandidates, "Seed Candidates"));
-    print(boolString(seedCandidates.scalarized));
-    print(BVariable.VariablePointers.toString(partialCandidates, "Partial Candidates"));
-    print(boolString(partialCandidates.scalarized));
-
     // differentiate all strong components
     (_, diffArguments) := Differentiate.differentiateStrongComponentListAdjoint(comps, diffArguments, idx, newName, getInstanceName());
     funcTree := diffArguments.funcTree;
 
-    print("Adjoint map after:\n" + adjointMapToString(diffArguments.adjoint_map) + "\n");
+    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
+      print("Adjoint map after:\n" + adjointMapToString(diffArguments.adjoint_map) + "\n");
+    end if;
 
     adjoint_map := Util.getOption(diffArguments.adjoint_map);
     // New list of strong components replacing original diffed_comps
@@ -1494,11 +1487,9 @@ protected
 
       if listEmpty(terms) then
         // No contributions -> assign zero
-        print("[adjoint] No terms for " + ComponentRef.toString(lhsKey) + ", assigning zero.\n");
         rhsExpr := Expression.makeZero(ComponentRef.getComponentType(lhsKey));
       else
         // Build RHS
-        print("[adjoint] Building RHS for " + ComponentRef.toString(lhsKey) + " with " + intString(listLength(terms)) + " terms.\n");
         rhsExpr := buildAdjointRhs(lhsKey, terms);
       end if;
 
@@ -1583,10 +1574,6 @@ protected
         then fail();
       end match;
       diffed_comps := diffed_comp :: diffed_comps;
-
-      if Flags.isSet(Flags.JAC_DUMP) then
-        print("[adjoint] " + ComponentRef.toString(lhsKey) + " = " + Expression.toString(rhsExpr) + "\n");
-      end if;
     end for;
 
     // append pre_adjoint_components (lambda := solve(...)) to other components
@@ -1617,7 +1604,10 @@ protected
 
     (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
 
-    print(SparsityPattern.toString(sparsityPattern) + "\n" + SparsityColoring.toString(sparsityColoring) + "\n");
+    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
+      print("Adjoint sparsity pattern and coloring:\n");
+      print(SparsityPattern.toString(sparsityPattern) + "\n" + SparsityColoring.toString(sparsityColoring) + "\n");
+    end if;
 
     jacobian := SOME(Jacobian.JACOBIAN(
       name              = newName,
