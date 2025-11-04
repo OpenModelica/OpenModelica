@@ -317,12 +317,7 @@ GDOP::Problem create_gdop(InfoGDOP& info, const Mesh& mesh) {
 
     /* set *fixed* initial, final states */
     for (int x = 0; x < info.x_size; x++) {
-        if (data->modelData->realVarsData[x].dimension.numberOfDimensions > 0) {
-            Log::error("Support for array variables not yet implemented!");
-            abort();
-        }
-
-        x0_fixed[x] = real_get(data->modelData->realVarsData[x].attribute.start, 0);
+        x0_fixed[x] = data->modelData->realVarsData[x].attribute.start;
     }
 
     /* create CSC <-> COO exchange, init jacobians */

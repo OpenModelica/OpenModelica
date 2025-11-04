@@ -4,9 +4,9 @@
 // COMPLIANCEEXTRAOMFLAGS=-d=newInst COMPLIANCEPREFIX=openmodelica-newinst can be used as well
 
 setCommandLineOptions("-g=Modelica");
-loadModel(ModelicaCompliance); getErrorString();
+loadModel(ModelicaCompliance);getErrorString();
 setCommandLineOptions("-g=MetaModelica");
-writeFile("version","omc "+getVersion()+" compliance suite "+getVersion(ModelicaCompliance)); getErrorString();
+writeFile("version","omc "+getVersion()+" compliance suite "+getVersion(ModelicaCompliance));getErrorString();
 
 COMPLIANCEEXTRAOMFLAGS := getEnvironmentVar("COMPLIANCEEXTRAFLAGS");
 COMPLIANCEEXTRAREPORTFLAGS := getEnvironmentVar("COMPLIANCEEXTRAREPORTFLAGS");
@@ -26,12 +26,12 @@ function fixName
 algorithm
   out := OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(str,\"'\",\"\"),\"\\\"\",\"\"),\"\\\\\",\"\");
 end fixName;
-"); getErrorString();
+");getErrorString();
 
-system("rm -f ModelicaCompliance.*.res"); getErrorString();
+system("rm -f ModelicaCompliance.*.res");getErrorString();
 
 echo(false);
-allClasses:={cl for cl guard classAnnotationExists(cl,__ModelicaAssociation.TestCase.shouldPass) in getClassNames(recursive=true)}; getErrorString();
+allClasses:={cl for cl guard classAnnotationExists(cl,__ModelicaAssociation.TestCase.shouldPass) in getClassNames(recursive=true)};getErrorString();
 commands:={"ulimit -t 120 && ("+getInstallationDirectoryPath()+"/bin/omc -d=nogen "+COMPLIANCEEXTRAOMFLAGS+" \"" + fixName(OpenModelica.Scripting.typeNameString(cl)) + ".mos\"  > /dev/null 2>&1)" for cl in allClasses};
 echo(true);
 String(size(allClasses,1)) + " number of classes";
@@ -39,14 +39,23 @@ String(size(allClasses,1)) + " number of classes";
 min(OpenModelica.Scripting.writeFile(fixName(typeNameString(cl))+".mos","
 OpenModelica.Scripting.writeFile(\""+fixName(typeNameString(cl))+".res\",\"{\\\"killed\\\":true}\");
 
-loadModel(ModelicaCompliance); getErrorString();
+loadModel(ModelicaCompliance);getErrorString();
+// delete classes that generate errors all the time
+/*
+deleteClass(ModelicaCompliance.Components.Declarations.DoubleDeclarationComps); getErrorString();
+deleteClass(ModelicaCompliance.Components.Declarations.DoubleDeclarationMixed); getErrorString();
+deleteClass(ModelicaCompliance.Components.Declarations.TypeNameAsComponentName); getErrorString();
+deleteClass(ModelicaCompliance.Classes.Enumeration.EnumDuplicateLiteral); getErrorString();
+deleteClass(ModelicaCompliance.Scoping.NameLookup.Imports.QualifiedImportConflict); getErrorString();
+deleteClass(ModelicaCompliance.Redeclare.ClassExtends.ClassExtendsNonReplaceable); getErrorString();
+*/
 
 loadString(\"record OpenModelicaSimulationResult
   String resultFile, messages;
 end OpenModelicaSimulationResult;\");
 // Give rec a value even if we overflow the stack and fail to execute the command
 rec:=OpenModelicaSimulationResult(\"\", \"\");
-rec:=simulate("+OpenModelica.Scripting.typeNameString(cl)+"); err:=getErrorString();
+rec:=simulate("+OpenModelica.Scripting.typeNameString(cl)+");err:=getErrorString();
 resultFile := rec.resultFile;
 loadString(\"
 function length input String str; output Integer len; external \\\"C\\\" len=ModelicaStrings_length(str); end length;
@@ -78,7 +87,7 @@ writeFile(\""+fixName(typeNameString(cl))+".res\",\"{\\\"time\\\":\"+String(time
 ") for cl in allClasses);
 getErrorString();
 
-filename := OpenModelica.Scripting.uriToFilename("modelica://ModelicaCompliance/Resources/tools/xml-report/report.xsl"); getErrorString();
-system_parallel(commands); getErrorString();
-system("python3 "+getInstallationDirectoryPath()+"/share/doc/omc/testmodels/ComplianceSuite.py --version=\"`cat version`\" --outPrefix=\"" + COMPLIANCEPREFIX + "\" " + COMPLIANCEEXTRAREPORTFLAGS); getErrorString();
-system("xsltproc -o "+COMPLIANCEPREFIX+".html '" + filename + "' "+COMPLIANCEPREFIX+".xml"); getErrorString();
+filename := OpenModelica.Scripting.uriToFilename("modelica://ModelicaCompliance/Resources/tools/xml-report/report.xsl");getErrorString();
+system_parallel(commands);getErrorString();
+system("python3 "+getInstallationDirectoryPath()+"/share/doc/omc/testmodels/ComplianceSuite.py --version=\"`cat version`\" --outPrefix=\"" + COMPLIANCEPREFIX + "\" " + COMPLIANCEEXTRAREPORTFLAGS);getErrorString();
+system("xsltproc -o "+COMPLIANCEPREFIX+".html '" + filename + "' "+COMPLIANCEPREFIX+".xml");getErrorString();

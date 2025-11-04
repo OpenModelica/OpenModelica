@@ -60,6 +60,9 @@ extern void alloc_real_array(real_array* dest,int ndims,...);
 /* Allocation of real data */
 extern void alloc_real_array_data(real_array* a);
 
+/* Frees memory*/
+extern void free_real_array_data(real_array* a);
+
 /* Clones data*/
 static inline void clone_real_array_spec(const real_array *src, real_array* dst)
 { clone_base_array_spec(src, dst); }
@@ -83,9 +86,6 @@ extern void put_real_matrix_element(modelica_real value, int r, int c, real_arra
 
 extern void print_real_matrix(const real_array * source);
 extern void print_real_array(const real_array * source);
-
-const char* real_vector_to_string(const real_array *source, modelica_boolean isScalar);
-
 /*
 
  a[1:3] := b;
