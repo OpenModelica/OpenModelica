@@ -192,21 +192,11 @@ std::unique_ptr<PrimalDualTrajectory> ConstantInitialization::operator()(const G
     InterpolationMethod interpolation = InterpolationMethod::LINEAR;
 
     for (int x = 0; x < info.x_size; x++) {
-        if (data->modelData->realVarsData[x].dimension.numberOfDimensions > 0) {
-            Log::error("Support for array variables not yet implemented!");
-            abort();
-        }
-        modelica_real* start = (modelica_real *)data->modelData->realVarsData[x].attribute.start.data;
-        x_guess.push_back({start[0], start[0]});
+        x_guess.push_back({data->modelData->realVarsData[x].attribute.start, data->modelData->realVarsData[x].attribute.start});
     }
 
     for (int u : info.u_indices_real_vars) {
-        if (data->modelData->realVarsData[u].dimension.numberOfDimensions > 0) {
-            Log::error("Support for array variables not yet implemented!");
-            abort();
-        }
-        modelica_real* start = (modelica_real *)data->modelData->realVarsData[u].attribute.start.data;
-        u_guess.push_back({start[0], start[0]});
+        u_guess.push_back({data->modelData->realVarsData[u].attribute.start, data->modelData->realVarsData[u].attribute.start});
     }
 
     // TODO: PARAMETERS add p

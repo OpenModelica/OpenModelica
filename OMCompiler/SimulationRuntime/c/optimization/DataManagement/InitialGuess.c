@@ -187,10 +187,7 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
          lookupRingBuffer(data->simulationData, (void**) data->localData);
          importStartValues(data, threadData, cflags, (double)optData->time.t[i][j]);
          for(l=0; l<nReal; ++l){
-            if(data->modelData->realVarsData[l].dimension.numberOfDimensions > 0){
-              throwStreamPrint(NULL, "Support for array variables not yet implemented!");
-            }
-            data->localData[0]->realVars[l] = real_get(data->modelData->realVarsData[l].attribute.start, 0);
+            data->localData[0]->realVars[l] = data->modelData->realVarsData[l].attribute.start;
          }
        }
 

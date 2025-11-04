@@ -53,7 +53,6 @@
 #include <string.h>
 #include <ctype.h>
 #include <expat.h>
-#include <inttypes.h>
 
 typedef struct hash_string_string
 {
@@ -218,8 +217,7 @@ static const double INTEGER_MIN = (double)MODELICA_INT_MIN;
 static const double INTEGER_MAX = (double)MODELICA_INT_MAX;
 
 /* Private function prototypes */
-static modelica_real read_value_real_default(const char *s, modelica_real default_value);
-static inline modelica_real read_value_real(const char *s);
+static modelica_real read_value_real(const char *s, modelica_real default_value);
 static modelica_integer read_value_long(const char *s, modelica_integer default_value);
 static int read_value_int(const char *s, int default_value);
 static modelica_boolean read_value_bool(const char *s);
@@ -455,16 +453,16 @@ static void read_var_dimension(omc_ModelVariable *v, DIMENSION_INFO *dimension_i
 
   dimension_info->dimensions = (DIMENSION_ATTRIBUTE*) calloc(dimension_info->numberOfDimensions, sizeof(DIMENSION_ATTRIBUTE));
 
-  len = snprintf(NULL, 0, "dim-%"PRIdPTR"-valueReference", (intptr_t)dimension_info->numberOfDimensions); // longest string we ever write into key
+  len = snprintf(NULL, 0, "dim-%lu-valueReference", dimension_info->numberOfDimensions); // longest string we ever write into key
   key = calloc(sizeof(char), len + 1);
 
   for (i = 0; i < dimension_info->numberOfDimensions; i++) {
     dim = &dimension_info->dimensions[i];
 
-    sprintf(key, "dim-%"PRIdPTR"-start", (intptr_t)(i + 1));
+    sprintf(key, "dim-%lu-start", i + 1);
     dim->start = read_value_long(findHashStringStringEmpty(v, key), -1);
 
-    sprintf(key, "dim-%"PRIdPTR"-valueReference", (intptr_t)(i + 1));
+    sprintf(key, "dim-%lu-valueReference", i + 1);
     dim->valueReference = read_value_long(findHashStringStringEmpty(v, key), -1);
 
     if (dim->start > 0 && dim->valueReference == -1) {
@@ -486,87 +484,18 @@ static void read_var_dimension(omc_ModelVariable *v, DIMENSION_INFO *dimension_i
   free(key);
 }
 
-/**
- * @brief Read string with multiple real values into `array`.
- *
- * @param str           String to read values from.
- * @param array         Array to fill. Needs enough memory to store
- *                      `num_elements` elements.
- *                      If `NULL` only counts number of elements, but doesn't
- *                      write into `array`.
- * @param num_elements  Number of elements to read from `str`.
- * @return size_t       Returns number of elements read.
- */
-size_t read_str(const char* str,  real_array* array, size_t num_elements) {
-  const char* delimeter = " ";
-  size_t count = 0;
-
-  char* copy = strdup(str);
-  assertStreamPrint(NULL, copy != NULL, "Out of memory!");
-  char* rest = copy;
-
-  char *token = strtok_r(rest, delimeter, &rest);
-  while (token != NULL) {
-      count++;
-      if (count <= num_elements && array != NULL) {
-        put_real_element(read_value_real(token), count-1, array);
-      }
-      token = strtok_r(rest, delimeter, &rest);
-  }
-
-  free(copy);
-
-  return count;
-}
-
-/**
- * @brief Read string into array variable.
- *
- * @param array           Array variable to populate.
- * @param str             String with numbers to be read into real array.
- *                        Values delimited by space `" "`.
- * @param default_value
- */
-void read_array_var_real(real_array* array, const char* str, modelica_real default_value) {
-
-  size_t length;
-
-  length = read_str(str, NULL, 0);
-  if (length == 0) {
-    length = 1;
-    simple_alloc_1d_real_array(array, length);
-    put_real_element(default_value, 0, array);
-  } else {
-    simple_alloc_1d_real_array(array, length);
-    read_str(str, array, length);
-  }
-}
-
-/**
- * @brief Read attributes of real variable.
- *
- * @param var_map   Hash map for variable with attributes as keys.
- * @param attribute Attributes to write values into.
- */
-static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *attribute, modelica_boolean isArrayVar)
+static void read_var_attribute_real(omc_ModelVariable *v, REAL_ATTRIBUTE *attribute)
 {
-  read_array_var_real(&attribute->start, findHashStringStringEmpty(var_map, "start"), 0.0);
-  attribute->fixed = read_value_bool(findHashStringString(var_map, "fixed"));
-  attribute->useNominal = read_value_bool(findHashStringString(var_map, "useNominal"));
-  attribute->nominal = read_value_real_default(findHashStringStringEmpty(var_map, "nominal"), 1.0);
-  attribute->min = read_value_real_default(findHashStringStringEmpty(var_map, "min"), REAL_MIN);
-  attribute->max = read_value_real_default(findHashStringStringEmpty(var_map, "max"), REAL_MAX);
-  attribute->unit = read_value_string(findHashStringStringEmpty(var_map, "unit"));
-  attribute->displayUnit = read_value_string(findHashStringStringEmpty(var_map, "displayUnit"));
+  attribute->start = read_value_real(findHashStringStringEmpty(v,"start"), 0.0);
+  attribute->fixed = read_value_bool(findHashStringString(v,"fixed"));
+  attribute->useNominal = read_value_bool(findHashStringString(v,"useNominal"));
+  attribute->nominal = read_value_real(findHashStringStringEmpty(v,"nominal"), 1.0);
+  attribute->min = read_value_real(findHashStringStringEmpty(v,"min"), REAL_MIN);
+  attribute->max = read_value_real(findHashStringStringEmpty(v,"max"), REAL_MAX);
+  attribute->unit = read_value_string(findHashStringStringEmpty(v,"unit"));
+  attribute->displayUnit = read_value_string(findHashStringStringEmpty(v,"displayUnit"));
 
-  infoStreamPrint(OMC_LOG_DEBUG, 0,
-                  "Real %s(start=%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)",
-                  findHashStringString(var_map, "name"),
-                  real_vector_to_string(&attribute->start, isArrayVar),
-                  (attribute->fixed) ? "true" : "false",
-                  (attribute->useNominal) ? "" : "{", attribute->nominal, attribute->useNominal ? "" : "}",
-                  attribute->min,
-                  attribute->max);
+  infoStreamPrint(OMC_LOG_DEBUG, 0, "Real %s(start=%g, fixed=%s, %snominal=%g%s, min=%g, max=%g)", findHashStringString(v,"name"), attribute->start, (attribute->fixed)?"true":"false", (attribute->useNominal)?"":"{", attribute->nominal, attribute->useNominal?"":"}", attribute->min, attribute->max);
 }
 
 static void read_var_attribute_int(omc_ModelVariable *v, INTEGER_ATTRIBUTE *attribute)
@@ -688,13 +617,10 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           strncpy(type_name, "real", 8);
           STATIC_REAL_DATA* realVarsData = (STATIC_REAL_DATA*) out;
           REAL_ATTRIBUTE* attribute = &realVarsData[j].attribute;
-          dimension = &realVarsData[j].dimension;
+          read_var_attribute_real(v, attribute);
           info = &realVarsData[j].info;
+          dimension = &realVarsData[j].dimension;
           filterOutput = &realVarsData[j].filterOutput;
-          read_var_dimension(v, dimension);
-          read_var_attribute_real(v, attribute, dimension->numberOfDimensions == 0);
-          read_var_info(v, info);
-          *filterOutput = shouldFilterOutput(v, info->name);
         }
         break;
       case T_INTEGER:
@@ -702,13 +628,10 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           strncpy(type_name, "integer", 8);
           STATIC_INTEGER_DATA* intVarsData = (STATIC_INTEGER_DATA*) out;
           INTEGER_ATTRIBUTE* attribute = &intVarsData[j].attribute;
-          dimension = &intVarsData[j].dimension;
-          info = &intVarsData[j].info;
-          filterOutput = &intVarsData[j].filterOutput;
-          read_var_dimension(v, dimension);
           read_var_attribute_int(v, attribute);
-          read_var_info(v, info);
-          *filterOutput = shouldFilterOutput(v, info->name);
+          info = &intVarsData[j].info;
+          dimension = &intVarsData[j].dimension;
+          filterOutput = &intVarsData[j].filterOutput;
         }
         break;
       case T_BOOLEAN:
@@ -716,13 +639,10 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           strncpy(type_name, "boolean", 8);
           STATIC_BOOLEAN_DATA* boolVarsData = (STATIC_BOOLEAN_DATA*) out;
           BOOLEAN_ATTRIBUTE* attribute = &boolVarsData[j].attribute;
-          dimension = &boolVarsData[j].dimension;
-          info = &boolVarsData[j].info;
-          filterOutput = &boolVarsData[j].filterOutput;
-          read_var_dimension(v, dimension);
           read_var_attribute_bool(v, attribute);
-          read_var_info(v, info);
-          *filterOutput = shouldFilterOutput(v, info->name);
+          info = &boolVarsData[j].info;
+          dimension = &boolVarsData[j].dimension;
+          filterOutput = &boolVarsData[j].filterOutput;
         }
         break;
       case T_STRING:
@@ -730,19 +650,20 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           strncpy(type_name, "string", 8);
           STATIC_STRING_DATA* stringVarsData = (STATIC_STRING_DATA*) out;
           STRING_ATTRIBUTE* attribute = &stringVarsData[j].attribute;
-          dimension = &stringVarsData[j].dimension;
-          info = &stringVarsData[j].info;
-          filterOutput = &stringVarsData[j].filterOutput;
-          read_var_dimension(v, dimension);
           read_var_attribute_string(v, attribute);
-          read_var_info(v, info);
-          *filterOutput = shouldFilterOutput(v, info->name);
+          info = &stringVarsData[j].info;
+          dimension = &stringVarsData[j].dimension;
+          filterOutput = &stringVarsData[j].filterOutput;
         }
         break;
       default:
         throwStreamPrint(NULL, "simulation_input_xml.c: Error: Unsupported type in read_variables.");
         break;
     }
+
+    read_var_dimension(v, dimension);
+    read_var_info(v, info);
+    *filterOutput = shouldFilterOutput(v, info->name);
 
     /* create a mapping for Alias variable to get the correct index */
     addHashStringLong(mapAlias, info->name, j);
@@ -870,8 +791,8 @@ omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, t
  * @param reCalcStepSize    If true step size is recalculated instead of read from hash map.
  */
 void read_default_experiment(SIMULATION_INFO* simulationInfo, omc_DefaultExperiment *de, modelica_boolean reCalcStepSize) {
-  simulationInfo->startTime = read_value_real_default(findHashStringString(de,"startTime"), 0);
-  simulationInfo->stopTime = read_value_real_default(findHashStringString(de,"stopTime"), 1.0);
+  simulationInfo->startTime = read_value_real(findHashStringString(de,"startTime"), 0);
+  simulationInfo->stopTime = read_value_real(findHashStringString(de,"stopTime"), 1.0);
   if (reCalcStepSize) {
     simulationInfo->stepSize = (simulationInfo->stopTime - simulationInfo->startTime) / 500;
     warningStreamPrint(OMC_LOG_STDOUT, 1, "Start or stop time was overwritten, but no new integrator step size was provided.");
@@ -879,9 +800,9 @@ void read_default_experiment(SIMULATION_INFO* simulationInfo, omc_DefaultExperim
     infoStreamPrint(OMC_LOG_STDOUT, 0, "Add `stepSize=<value>` to `-override=` or override file to silence this warning.");
     messageClose(OMC_LOG_STDOUT);
   } else {
-    simulationInfo->stepSize = read_value_real_default(findHashStringString(de, "stepSize"), (simulationInfo->stopTime - simulationInfo->startTime) / 500);
+    simulationInfo->stepSize = read_value_real(findHashStringString(de, "stepSize"), (simulationInfo->stopTime - simulationInfo->startTime) / 500);
   }
-  simulationInfo->tolerance = read_value_real_default(findHashStringString(de, "tolerance"), 1e-5);
+  simulationInfo->tolerance = read_value_real(findHashStringString(de, "tolerance"), 1e-5);
   simulationInfo->solverMethod = GC_strdup(findHashStringString(de, "solver"));
   simulationInfo->outputFormat = GC_strdup(findHashStringString(de, "outputFormat"));
   simulationInfo->variableFilter = GC_strdup(findHashStringString(de, "variableFilter"));
@@ -1092,7 +1013,7 @@ void read_input_xml(MODEL_DATA* modelData,
 }
 
 /**
- * @brief Read double value from a string.
+ * @brief Read double value from a string
  *
  * @param s               Null terminated string.
  *                        Treat string value `"true"` as `1.0` and `"false"`
@@ -1100,34 +1021,11 @@ void read_input_xml(MODEL_DATA* modelData,
  * @param default_value   Default value to return if string is empty.
  * @return modelica_real  Real value.
  */
-static inline modelica_real read_value_real_default(const char *s, modelica_real default_value)
+static inline modelica_real read_value_real(const char *s, modelica_real default_value)
 {
   if (*s == '\0') {
     return default_value;
   } else if (0 == strcmp(s, "true")) {
-    return 1.0;
-  } else if (0 == strcmp(s, "false")) {
-    return 0.0;
-  } else {
-    return atof(s);
-  }
-}
-
-/**
- * @brief Read double value from a string.
- *
- * @param s               Null terminated string.
- *                        Treat string value `"true"` as `1.0` and `"false"`
- *                        as `0.0`.
- * @return modelica_real  Real value.
- */
-static inline modelica_real read_value_real(const char *s)
-{
-  if (*s == '\0') {
-    throwStreamPrint(NULL, "read_value_real: Nothing to read!");
-  }
-
-  if (0 == strcmp(s, "true")) {
     return 1.0;
   } else if (0 == strcmp(s, "false")) {
     return 0.0;

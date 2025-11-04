@@ -331,9 +331,9 @@ void printParameters(DATA *data, int stream)
   {
     infoStreamPrint(stream, 1, "real parameters");
     for(i=0; i<mData->nParametersReal; ++i)
-      infoStreamPrint(stream, 0, "[%ld] parameter Real %s(start=%s, fixed=%s) = %g", i+1,
+      infoStreamPrint(stream, 0, "[%ld] parameter Real %s(start=%g, fixed=%s) = %g", i+1,
                                  mData->realParameterData[i].info.name,
-                                 real_vector_to_string(&mData->realParameterData[i].attribute.start, mData->realParameterData[i].dimension.numberOfDimensions == 0),
+                                 mData->realParameterData[i].attribute.start,
                                  mData->realParameterData[i].attribute.fixed ? "true" : "false",
                                  data->simulationInfo->realParameter[i]);
     messageClose(stream);
@@ -719,40 +719,29 @@ void setAllVarsToStart(DATA *data)
 {
   TRACE_PUSH
   SIMULATION_DATA *sData = data->localData[0];
-  MODEL_DATA *mData = data->modelData;
-  long array_idx;
-  long scalar_idx = 0;
-  long dim_idx;
+  MODEL_DATA      *mData = data->modelData;
+  long i;
 
-  for (array_idx = 0; array_idx < mData->nVariablesRealArray; ++array_idx)
+  for(i=0; i<mData->nVariablesReal; ++i)
   {
-    debugStreamPrint(OMC_LOG_DEBUG, 1, "set Real var %s:", mData->realVarsData[array_idx].info.name);
-    for (dim_idx = 0; dim_idx < mData->realVarsData[array_idx].attribute.start.dim_size[0]; dim_idx++)
-    {
-      sData->realVars[scalar_idx] = real_get(mData->realVarsData[array_idx].attribute.start, dim_idx);
-      debugStreamPrint(OMC_LOG_DEBUG, 0, "%g", sData->realVars[scalar_idx]);
-      scalar_idx++;
-    }
-    messageClose(OMC_LOG_DEBUG);
+    sData->realVars[i] = mData->realVarsData[i].attribute.start;
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "set Real var %s = %g", mData->realVarsData[i].info.name, sData->realVars[i]);
   }
-
-  for (array_idx = 0; array_idx < mData->nVariablesInteger; ++array_idx)
+  for(i=0; i<mData->nVariablesInteger; ++i)
   {
-    sData->integerVars[array_idx] = mData->integerVarsData[array_idx].attribute.start;
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "set Integer var %s = %ld", mData->integerVarsData[array_idx].info.name, sData->integerVars[array_idx]);
+    sData->integerVars[i] = mData->integerVarsData[i].attribute.start;
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "set Integer var %s = %ld", mData->integerVarsData[i].info.name, sData->integerVars[i]);
   }
-
-  for (array_idx = 0; array_idx < mData->nVariablesBoolean; ++array_idx)
+  for(i=0; i<mData->nVariablesBoolean; ++i)
   {
-    sData->booleanVars[array_idx] = mData->booleanVarsData[array_idx].attribute.start;
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "set Boolean var %s = %s", mData->booleanVarsData[array_idx].info.name, sData->booleanVars[array_idx] ? "true" : "false");
+    sData->booleanVars[i] = mData->booleanVarsData[i].attribute.start;
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "set Boolean var %s = %s", mData->booleanVarsData[i].info.name, sData->booleanVars[i] ? "true" : "false");
   }
-
-#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING > 0
-  for (array_idx = 0; array_idx < mData->nVariablesString; ++array_idx)
+#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
+  for(i=0; i<mData->nVariablesString; ++i)
   {
-    sData->stringVars[array_idx] = mmc_mk_scon_persist(mData->stringVarsData[array_idx].attribute.start);
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "set String var %s = %s", mData->stringVarsData[array_idx].info.name, MMC_STRINGDATA(sData->stringVars[array_idx]));
+    sData->stringVars[i] = mmc_mk_scon_persist(mData->stringVarsData[i].attribute.start);
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "set String var %s = %s", mData->stringVarsData[i].info.name, MMC_STRINGDATA(sData->stringVars[i]));
   }
 #endif
   TRACE_POP
@@ -770,39 +759,28 @@ void setAllParamsToStart(DATA *data)
 {
   TRACE_PUSH
   SIMULATION_INFO *sInfo = data->simulationInfo;
-  MODEL_DATA *mData = data->modelData;
-  long array_idx;
-  long scalar_idx = 0;
-  long dim_idx;
+  MODEL_DATA      *mData = data->modelData;
+  long i;
 
-  for (array_idx = 0; array_idx < mData->nParametersRealArray; ++array_idx)
+  for(i=0; i<mData->nParametersReal; ++i)
   {
-    debugStreamPrint(OMC_LOG_DEBUG, 1, "set Real var %s:", mData->realParameterData[array_idx].info.name);
-    for (dim_idx = 0; dim_idx < mData->realParameterData[array_idx].attribute.start.dim_size[0]; dim_idx++)
-    {
-      debugStreamPrint(OMC_LOG_DEBUG, 0, "%g", sInfo->realParameter[scalar_idx]);
-      sInfo->realParameter[scalar_idx] = real_get(mData->realParameterData[array_idx].attribute.start, dim_idx);
-      scalar_idx++;
-    }
-    messageClose(OMC_LOG_DEBUG);
+    sInfo->realParameter[i] = mData->realParameterData[i].attribute.start;
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "set Real var %s = %g", mData->realParameterData[i].info.name, sInfo->realParameter[i]);
   }
-
-  for (array_idx = 0; array_idx < mData->nParametersInteger; ++array_idx)
+  for(i=0; i<mData->nParametersInteger; ++i)
   {
-    sInfo->integerParameter[array_idx] = mData->integerParameterData[array_idx].attribute.start;
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "set Integer var %s = %ld", mData->integerParameterData[array_idx].info.name, sInfo->integerParameter[array_idx]);
+    sInfo->integerParameter[i] = mData->integerParameterData[i].attribute.start;
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "set Integer var %s = %ld", mData->integerParameterData[i].info.name, sInfo->integerParameter[i]);
   }
-
-  for (array_idx = 0; array_idx < mData->nParametersBoolean; ++array_idx)
+  for(i=0; i<mData->nParametersBoolean; ++i)
   {
-    sInfo->booleanParameter[array_idx] = mData->booleanParameterData[array_idx].attribute.start;
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "set Boolean var %s = %s", mData->booleanParameterData[array_idx].info.name, sInfo->booleanParameter[array_idx] ? "true" : "false");
+    sInfo->booleanParameter[i] = mData->booleanParameterData[i].attribute.start;
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "set Boolean var %s = %s", mData->booleanParameterData[i].info.name, sInfo->booleanParameter[i] ? "true" : "false");
   }
-
-  for (array_idx = 0; array_idx < mData->nParametersString; ++array_idx)
+  for(i=0; i<mData->nParametersString; ++i)
   {
-    sInfo->stringParameter[array_idx] = mData->stringParameterData[array_idx].attribute.start;
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "set String var %s = %s", mData->stringParameterData[array_idx].info.name, MMC_STRINGDATA(sInfo->stringParameter[array_idx]));
+    sInfo->stringParameter[i] = mData->stringParameterData[i].attribute.start;
+    debugStreamPrint(OMC_LOG_DEBUG, 0, "set String var %s = %s", mData->stringParameterData[i].info.name, MMC_STRINGDATA(sInfo->stringParameter[i]));
   }
 
   TRACE_POP
@@ -1033,6 +1011,7 @@ void allocModelDataVars(MODEL_DATA* modelData, modelica_boolean allocAlias, thre
     modelData->booleanAlias = NULL;
     modelData->stringAlias = NULL;
   }
+
 }
 
 /**
@@ -1123,30 +1102,6 @@ void freeModelDataVars(MODEL_DATA* modelData)
       freeVarInfo(&modelData->stringAlias[i].info);
     }
     omc_alloc_interface.free_uncollectable(modelData->stringAlias);
-  }
-}
-
-/**
- * @brief Allocate memory for scalar attributes.
- *
- * Only allocate arrays of length 1 for the scalar case.
- * Used for scalar only FMI case.
- *
- * Memory is freed with `freeModelDataVars`.
- *
- * @param modelData   Pointer to model data.
- */
-void scalarAllocArrayAttributes(MODEL_DATA* modelData) {
-  size_t i;
-
-  // Variables
-  for(i = 0; i < modelData->nVariablesRealArray; i++) {
-    simple_alloc_1d_real_array(&modelData->realVarsData[i].attribute.start, 1);
-  }
-
-  // Parameter
-  for(i = 0; i < modelData->nParametersRealArray; i++) {
-    simple_alloc_1d_real_array(&modelData->realParameterData[i].attribute.start, 1);
   }
 }
 

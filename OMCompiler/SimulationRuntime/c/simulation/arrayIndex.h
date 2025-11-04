@@ -36,8 +36,6 @@ void freeArrayIndexMaps(SIMULATION_INFO *simulationInfo);
 
 size_t calculateLength(DIMENSION_INFO *dimensionInfo, STATIC_INTEGER_DATA *integerParameterData, long nParametersIntegerArray);
 
-void printFlattenedNames(FILE *stream, const char* separator, const char *name, DIMENSION_INFO *dimension_info);
-
 size_t multiDimArrayToLinearIndex(DIMENSION_INFO* dimension, size_t* array_index);
 
 size_t* linearToMultiDimArrayIndex(DIMENSION_INFO* dimension, size_t linear_address);

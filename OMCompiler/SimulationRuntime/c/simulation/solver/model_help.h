@@ -70,8 +70,6 @@ void allocModelDataVars(MODEL_DATA* modelData, modelica_boolean allocAlias, thre
 
 void freeModelDataVars(MODEL_DATA* modelData);
 
-void scalarAllocArrayAttributes(MODEL_DATA* modelData);
-
 void initializeDataStruc(DATA *data, threadData_t *threadData);
 
 void deInitializeDataStruc(DATA *data);
