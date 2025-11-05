@@ -555,6 +555,8 @@ constant DebugFlag DUMP_SOLVE = DEBUG_FLAG(195, "dumpSolve", false,
   Gettext.gettext("Dumps information about equation solving."));
 constant DebugFlag FORCE_SCALARIZE = DEBUG_FLAG(196, "forceScalarize", false,
   Gettext.gettext("Forces scalarization to be done when it would normally be automatically disabled."));
+constant DebugFlag DEBUG_ADJOINT = DEBUG_FLAG(197, "debugAdjoint", false,
+  Gettext.gettext("Dumps debug output for the adjoint differentiation process in the new backend."));
 
 public
 // CONFIGURATION FLAGS

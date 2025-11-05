@@ -2551,9 +2551,9 @@ public
     input output Expression exp "Has to be Expression.BINARY()";
     input output DifferentiationArguments diffArguments;
   algorithm
-    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
-      print("differentiateBinary: " + Expression.toString(exp) + "\n");
-    end if;
+    // if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
+    //   print("differentiateBinary: " + Expression.toString(exp) + "\n");
+    // end if;
     (exp, diffArguments) := match exp
       local
         Expression exp1, exp2, diffExp1, diffExp2, e1, e2, e3, res;
@@ -2870,9 +2870,9 @@ public
     input output Expression exp "Has to be Expression.MULTARY()";
     input output DifferentiationArguments diffArguments;
   algorithm
-    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
-      print("differentiateMultary: " + Expression.toString(exp) + "\n");
-    end if;
+    // if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
+    //   print("differentiateMultary: " + Expression.toString(exp) + "\n");
+    // end if;
     exp := match exp
       local
         Expression diff_arg, divisor, diff_enumerator, diff_divisor;
@@ -3354,7 +3354,7 @@ public
   function dbg
     input String s;
   algorithm
-    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
+    if Flags.isSet(Flags.DEBUG_ADJOINT) then
       print(s + "\n");
     end if;
   end dbg;

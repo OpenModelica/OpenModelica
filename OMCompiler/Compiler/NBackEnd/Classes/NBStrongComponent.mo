@@ -197,9 +197,8 @@ public
       then str;
 
       case RESIZABLE_COMPONENT() algorithm
-        str := StringUtil.headline_3("BLOCK" + indexStr + ": Resizable Component (status = " + Solve.statusString(comp.status) + ")");
-        str := str + "### Variable Cref:\n\t" + ComponentRef.toString(comp.var_cref) + "\n";
-        str := str + "### Variable Slice:\n" + BVariable.pointerToString(Slice.getT(comp.var)) + "\n";
+        str := StringUtil.headline_3("BLOCK" + indexStr + ": Resizable Component (status = " + Solve.statusString(comp.status) + ", size = " + intString(s) + ")");
+        str := str + "### Variable:\n\t" + ComponentRef.toString(comp.var_cref) + "\n";
         str := str + "### Equation:\n\t" + Equation.pointerToString(Slice.getT(comp.eqn)) + "\n";
       then str;
 
