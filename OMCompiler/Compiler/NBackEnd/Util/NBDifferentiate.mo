@@ -2551,9 +2551,9 @@ public
     input output Expression exp "Has to be Expression.BINARY()";
     input output DifferentiationArguments diffArguments;
   algorithm
-    // if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
-    //   print("differentiateBinary: " + Expression.toString(exp) + "\n");
-    // end if;
+    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
+      print("differentiateBinary: " + Expression.toString(exp) + "\n");
+    end if;
     (exp, diffArguments) := match exp
       local
         Expression exp1, exp2, diffExp1, diffExp2, e1, e2, e3, res;
@@ -2718,11 +2718,11 @@ public
         // c = k * x
         elseif isScalar1 and isVec2 then
           // \bar{k} = \bar{c} * x, inner product
-          // \bar{x} = \bar{c} * k, scalar multiplication
-          grad_exp1 := Expression.BINARY(current_grad, Operator.makeScalarProduct(operator.ty), exp2); 
-          grad_exp2 := Expression.BINARY(current_grad, Operator.fromClassification(
-              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ARRAY_SCALAR),
-              operator.ty), exp1);
+          // \bar{x} = \bar{c} * k, scalar vector multiplication
+          grad_exp1 := Expression.BINARY(current_grad, Operator.makeScalarProduct(Type.REAL()), exp2); 
+          grad_exp2 := Expression.BINARY(exp1, Operator.fromClassification(
+              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.SCALAR_ARRAY),
+              Type.REAL()), current_grad);
         else
           grad_exp1 := Expression.MULTARY({current_grad, exp2}, {}, makeMulFromOperator(operator));
           grad_exp2 := Expression.MULTARY({current_grad, exp1}, {}, makeMulFromOperator(operator));
@@ -2870,9 +2870,9 @@ public
     input output Expression exp "Has to be Expression.MULTARY()";
     input output DifferentiationArguments diffArguments;
   algorithm
-    // if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
-    //   print("differentiateMultary: " + Expression.toString(exp) + "\n");
-    // end if;
+    if Flags.isSet(Flags.DEBUG_DIFFERENTIATION) then
+      print("differentiateMultary: " + Expression.toString(exp) + "\n");
+    end if;
     exp := match exp
       local
         Expression diff_arg, divisor, diff_enumerator, diff_divisor;
@@ -2919,17 +2919,11 @@ public
       case Expression.MULTARY(arguments = arguments, inv_arguments = {}, operator = operator)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
         algorithm
-          if listLength(arguments) == 2 and (Type.isArray(Expression.typeOf(listGet(arguments, 1))) or Type.isArray(Expression.typeOf(listGet(arguments, 2)))) then
-            // for "pure" multiplication of exactly two arguments where atleast one is an array just use binary differentiation
-            (diff_arg, diffArguments) := differentiateBinary(Expression.BINARY(listGet(arguments, 1), operator, listGet(arguments, 2)), diffArguments);
-            new_arguments := {diff_arg};
-          else
-            // create addition operator
-            sizeClass := Operator.classifyAddition(operator);
-            addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
-            // the adjoint is handled inside here
-            (new_arguments, diffArguments) := differentiateMultaryMultiplicationArgs(arguments, diffArguments, operator);
-          end if;
+          // create addition operator
+          sizeClass := Operator.classifyAddition(operator);
+          addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
+          // the adjoint is handled inside here
+          (new_arguments, diffArguments) := differentiateMultaryMultiplicationArgs(arguments, diffArguments, operator);
       then Expression.MULTARY(new_arguments, {}, addOp);
       // Dot calculations (MUL, DIV, MUL_EW, DIV_EW, ...)
       // NOTE: Multary always contains MULTIPLICATION
@@ -2950,65 +2944,57 @@ public
               and (not listEmpty(inv_arguments)))
         algorithm
           (_, sizeClass) := Operator.classify(operator);
-          if listLength(arguments) == 1 and listLength(inv_arguments) == 1 and Type.isArray(Expression.typeOf(listGet(arguments, 1))) then
-            // for "pure" division of exactly two arguments and the numerator is an array just use binary differentiation
-            (diff_arg, diffArguments) := differentiateBinary(Expression.BINARY(listGet(arguments, 1), Operator.fromClassification(
-              (NFOperator.MathClassification.DIVISION, sizeClass),
-              operator.ty), listGet(inv_arguments, 1)), diffArguments);
-            add_terms := {diff_arg};
-          else
-            // Determine operators
-            addOp := Operator.fromClassification(
-              (NFOperator.MathClassification.ADDITION, sizeClass),
-              operator.ty);
-            mulOp := makeMulFromOperator(operator);
+          // Determine operators
+          addOp := Operator.fromClassification(
+            (NFOperator.MathClassification.ADDITION, sizeClass),
+            operator.ty);
+          mulOp := makeMulFromOperator(operator);
 
-            // Forward derivative term accumulator
-            add_terms := {};
-            upstream := diffArguments.current_grad;
+          // Forward derivative term accumulator
+          add_terms := {};
+          upstream := diffArguments.current_grad;
 
-            // Differentiate numerator factors
-            idxN := 1;
-            for f in arguments loop
-              // Remove first occurrence of f from numerator list using List.deleteMemberOnTrue
-              // this may be an issue if f occurs multiple times
-              (arg_rest, _) := List.deleteMemberOnTrue(f, arguments, Expression.isEqual);
+          // Differentiate numerator factors
+          idxN := 1;
+          for f in arguments loop
+            // Remove first occurrence of f from numerator list using List.deleteMemberOnTrue
+            // this may be an issue if f occurs multiple times
+            (arg_rest, _) := List.deleteMemberOnTrue(f, arguments, Expression.isEqual);
 
-              e_over_f := Expression.MULTARY(arg_rest, inv_arguments, operator);
+            e_over_f := Expression.MULTARY(arg_rest, inv_arguments, operator);
 
-              // Reverse current_grad for f: upstream * (exp / f)
-              diffArguments.current_grad := Expression.MULTARY({upstream, e_over_f}, {}, mulOp);
-              (diff_arg, diffArguments) := differentiateExpression(f, diffArguments);
+            // Reverse current_grad for f: upstream * (exp / f)
+            diffArguments.current_grad := Expression.MULTARY({upstream, e_over_f}, {}, mulOp);
+            (diff_arg, diffArguments) := differentiateExpression(f, diffArguments);
 
-              // Forward term: f' * (exp / f)
-              term := Expression.MULTARY({diff_arg, e_over_f}, {}, mulOp);
-              add_terms := term :: add_terms;
-              idxN := idxN + 1;
-            end for;
+            // Forward term: f' * (exp / f)
+            term := Expression.MULTARY({diff_arg, e_over_f}, {}, mulOp);
+            add_terms := term :: add_terms;
+            idxN := idxN + 1;
+          end for;
 
-            // Differentiate denominator factors
-            idxD := 1;
-            for g in inv_arguments loop
-              // exp / g : add one more g to denominator list
-              e_over_g := Expression.MULTARY(arguments, g :: inv_arguments, operator);
+          // Differentiate denominator factors
+          idxD := 1;
+          for g in inv_arguments loop
+            // exp / g : add one more g to denominator list
+            e_over_g := Expression.MULTARY(arguments, g :: inv_arguments, operator);
 
-              // Reverse current_grad for g: - upstream * (exp / g)
-              diffArguments.current_grad :=
-                Expression.MULTARY({Expression.REAL(-1.0), upstream, e_over_g}, {}, mulOp);
-              (diff_arg, diffArguments) := differentiateExpression(g, diffArguments);
+            // Reverse current_grad for g: - upstream * (exp / g)
+            diffArguments.current_grad :=
+              Expression.MULTARY({Expression.REAL(-1.0), upstream, e_over_g}, {}, mulOp);
+            (diff_arg, diffArguments) := differentiateExpression(g, diffArguments);
 
-              // Forward term: - g' * (exp / g)
-              term := Expression.MULTARY({Expression.REAL(-1.0), diff_arg, e_over_g}, {}, mulOp);
-              add_terms := term :: add_terms;
-              idxD := idxD + 1;
-            end for;
+            // Forward term: - g' * (exp / g)
+            term := Expression.MULTARY({Expression.REAL(-1.0), diff_arg, e_over_g}, {}, mulOp);
+            add_terms := term :: add_terms;
+            idxD := idxD + 1;
+          end for;
 
-            // Restore upstream gradient
-            diffArguments.current_grad := upstream;
+          // Restore upstream gradient
+          diffArguments.current_grad := upstream;
 
-            // Assemble sum of all terms
-            add_terms := listReverse(add_terms);
-        end if;
+          // Assemble sum of all terms
+          add_terms := listReverse(add_terms);
       then Expression.MULTARY(add_terms, {}, addOp);
 
       else algorithm
