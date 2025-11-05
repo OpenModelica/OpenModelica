@@ -160,6 +160,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_MR_PAR */                       "gbratio",
   /* FLAG_RT */                           "rt",
   /* FLAG_S */                            "s",
+  /* FLAG_SAVE_INITIAL_GUESS_SYSTEM */    "saveInitialGuess_system",
   /* FLAG_SINGLE_PRECISION */             "single",
   /* FLAG_SOLVER_STEPS */                 "steps",
   /* FLAG_STEADY_STATE */                 "steadyState",
@@ -304,6 +305,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_MR_PAR */                       "Define percentage of states for the fast states selection of solver gbode",
   /* FLAG_RT */                           "value specifies the scaling factor for real-time synchronization (0 disables)",
   /* FLAG_S */                            "value specifies the integration method",
+  /* FLAG_SAVE_INITIAL_GUESS_SYSTEM */    "[string (.mat file), uint (NLS index)] debug flag that performs standard initialization until the specified system is reached, computes only the torn part and saves the results obtained so far to a .mat file",
   /* FLAG_SINGLE */                       "output in single precision",
   /* FLAG_SOLVER_STEPS */                 "dumps the number of integration steps into the result file",
   /* FLAG_STEADY_STATE */                 "aborts if steady state is reached",
@@ -648,6 +650,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  A value > 1 means the simulation takes a longer time to simulate.\n",
   /* FLAG_S */
   "  Value specifies the integration method. For additional information see the :ref:`User's Guide <cruntime-integration-methods>`",
+  /* FLAG_SAVE_INITIAL_GUESS_SYSTEM */
+  "  Debug flag that performs standard initialization until the specified system is reached, computes only the torn part and saves the results obtained so far to a .mat file",
   /* FLAG_SINGLE */
   "  Output results in single precision (mat-format only).",
   /* FLAG_SOLVER_STEPS */
@@ -803,6 +807,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_MR_PAR */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_RT */                           FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_S */                            FLAG_REPEAT_POLICY_REPLACE,
+  /* FLAG_SAVE_INITIAL_GUESS_SYSTEM */    FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SINGLE_PRECISION */             FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SOLVER_STEPS */                 FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_STEADY_STATE */                 FLAG_REPEAT_POLICY_FORBID,
@@ -946,6 +951,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_MR_PAR */                       FLAG_TYPE_OPTION,
   /* FLAG_RT */                           FLAG_TYPE_OPTION,
   /* FLAG_S */                            FLAG_TYPE_OPTION,
+  /* FLAG_SAVE_INITIAL_GUESS_SYSTEM */    FLAG_TYPE_OPTION,
   /* FLAG_SINGLE */                       FLAG_TYPE_FLAG,
   /* FLAG_SOLVER_STEPS */                 FLAG_TYPE_FLAG,
   /* FLAG_STEADY_STATE */                 FLAG_TYPE_FLAG,
