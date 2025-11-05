@@ -252,15 +252,6 @@ public
           // extract generic loop calls and put the old generic call map back
           generic_loop_calls := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(indices.generic_call_map));
           indices.generic_call_map := sim_map;
-
-          // scalarize variables for sim code
-          seed_scalar := VariablePointers.scalarize(varData.seedVars);
-          res_scalar  := VariablePointers.scalarize(varData.resultVars);
-          tmp_scalar  := VariablePointers.scalarize(varData.tmpVars);
-          // use dummy simcode indices to always start at 0 for column and seed vars
-          VariablePointers.map(seed_scalar, function SimVar.traverseCreate(acc = seedVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType = VarType.SIMULATION));
-          VariablePointers.map(res_scalar,  function SimVar.traverseCreate(acc = resVars_ptr,  indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType = VarType.SIMULATION));
-          VariablePointers.map(tmp_scalar,  function SimVar.traverseCreate(acc = tmpVars_ptr,  indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType = VarType.SIMULATION));
           
           if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
             seed_vec := VariablePointers.scalarize(varData.seedVars);
