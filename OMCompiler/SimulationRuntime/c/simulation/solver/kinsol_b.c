@@ -1623,7 +1623,8 @@ static void B_save_initial_guess_system(DATA *data, threadData_t *threadData, NO
   {
     /* compute the residuals (will compute the torn part of the system and write them to localData[0]->realVars)
      * this function should have been called before as long as scaling is used (as we require the residual for the scalings),
-     * but if no scaling is involved we must compute the residual here */
+     * but if no scaling is involved we must compute the residual here
+     * TODO: replace this with call to list of inner equations */
     B_nlsKinsolResiduals(kinsolData->initialGuess, kinsolData->fTmp, kinsolData->userData);
 
     /* write out current localData[0] to .mat file */
