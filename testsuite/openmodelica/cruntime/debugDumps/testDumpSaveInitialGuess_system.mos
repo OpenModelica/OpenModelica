@@ -24,7 +24,7 @@ simulate(SaveInitialGuess,
          startTime=0,
          stopTime=0); getErrorString();
 
-readSimulationResultSize("savedInitialGuess.mat"); getErrorString();
+readSimulationResult("savedInitialGuess.mat", {x,y}); getErrorString();
 
 // Result:
 // true
@@ -41,6 +41,6 @@ readSimulationResultSize("savedInitialGuess.mat"); getErrorString();
 // "
 // end SimulationResult;
 // ""
-// 1
+// {{1.0}, {-0.5}}
 // ""
 // endResult
