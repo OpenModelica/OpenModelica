@@ -51,6 +51,7 @@
 #include "events.h"
 #include "model_help.h"
 #include "openmodelica.h"
+#include "../results/simulation_result_mat4.h"
 #include "openmodelica_func.h"
 #include "util/read_matlab4.h"
 #include "util/varinfo.h"
@@ -1585,6 +1586,78 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
 }
 
 /**
+ * @brief Function dedicated for flag '--saveInitialGuess_system=/path/to/file.mat,nls_index' that computes only the
+ *        torn part of a given nonlinear system with index nls_index and writes it to a specified path. Will abort the simulation
+ *        if used incorrectly or if the file has been written.
+ *
+ * @param data                Runtime data struct.
+ * @param threadData          Thread data for error handling.
+ * @param nlsData             Pointer to non-linear system data.
+ * @return NLS_SOLVER_STATUS  Return NLS_SOLVED on success and NLS_FAILED otherwise.
+ */
+static void B_save_initial_guess_system(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *nlsData)
+{
+  char buf[512];
+  strncpy(buf, omc_flagValue[FLAG_SAVE_INITIAL_GUESS_SYSTEM], sizeof(buf));
+  buf[sizeof(buf)-1] = '\0';
+
+  char *comma = strchr(buf, ',');
+  if (!comma)
+  {
+    throwStreamPrint(threadData, "Error: Invalid format for --saveInitialGuess_system flag - Expected: '--saveInitialGuess_system=/path/to/file.mat,nls_index')");
+  }
+  *comma = '\0';
+
+  const char *path = buf;
+  int nls_idx = atoi(comma + 1);
+  if (nls_idx < 0 && strcmp(comma + 1, "0") != 0)
+  {
+    throwStreamPrint(threadData, "Error: Invalid format for --saveInitialGuess_system flag - Expected: '--saveInitialGuess_system=/path/to/file.mat,nls_index')");
+  }
+
+  B_NLS_KINSOL_DATA *kinsolData = (B_NLS_KINSOL_DATA *) nlsData->solverData;
+  if (nlsData->equationIndex == nls_idx)
+  {
+    /* compute the residuals (will compute the torn part of the system and write them to localData[0]->realVars)
+     * this function should have been called before as long as scaling is used (as we require the residual for the scalings),
+     * but if no scaling is involved we must compute the residual here
+     * TODO: replace this with call to list of inner equations */
+    B_nlsKinsolResiduals(kinsolData->initialGuess, kinsolData->fTmp, kinsolData->userData);
+
+    /* write out current localData[0] to .mat file */
+    simulation_result file_result;
+
+    file_result.filename = path;
+    file_result.numpoints = 2;
+    file_result.cpuTime = 0;
+
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Trying to write write initial guess for NLS system with index %d to file %s.\n", nls_idx, path);
+
+    mat4_init4(&file_result, data, threadData);
+    mat4_writeParameterData4(&file_result, data, threadData);
+    mat4_emit4(&file_result, data, threadData);
+    mat4_free4(&file_result, data, threadData);
+
+    /* exit as we do not want to compute any of the following variables */
+    throwStreamPrint(threadData, "Success: Initial guess has been written to disk (path = %s). The program will terminate now.\n", path);
+  }
+  else
+  {
+    /* not the NLS index that had been specified, continue with the systems prior to the user specified one */
+    return;
+  }
+}
+
+static void B_check_stop_at_system(threadData_t *threadData, NONLINEAR_SYSTEM_DATA *nlsData)
+{
+  int nls_idx = atoi(omc_flagValue[FLAG_STOP_AT_SYSTEM]);
+  if (nls_idx == nlsData->equationIndex)
+  {
+    throwStreamPrint(threadData, "Success: Finished solving specified NLS system with index %d. The program will terminate now.\n", nls_idx);
+  }
+}
+
+/**
  * @brief Solve non-linear system with KINSol
  *
  * @param data                Runtime data struct.
@@ -1658,6 +1731,10 @@ NLS_SOLVER_STATUS B_nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINE
       svd_compute(data, nlsData, SM_DATA_S(kinsolData->J), kinsolData->useScaling, KINSOL_B_ENTRY_POINT /* called at entry point */);
     }
 
+    if (omc_flag[FLAG_SAVE_INITIAL_GUESS_SYSTEM]) {
+      B_save_initial_guess_system(data, threadData, nlsData);
+    }
+
     flag = KINSol(
         kinsolData->kinsolMemory,   /* KINSol memory block */
         kinsolData->initialGuess,   /* initial guess on input; solution vector */
@@ -1719,6 +1796,10 @@ NLS_SOLVER_STATUS B_nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINE
   }
 
   messageClose(OMC_LOG_NLS_V);
+
+  if (omc_flag[FLAG_STOP_AT_SYSTEM]) {
+    B_check_stop_at_system(threadData, nlsData);
+  }
 
   return kinsolData->solved;
 }
