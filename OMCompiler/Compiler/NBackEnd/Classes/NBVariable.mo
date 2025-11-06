@@ -507,25 +507,11 @@ public
     input Pointer<Variable> varPointer;
     input TearingSelect compareTS;
     input compare func = intEq;
-    output Boolean b = func(tearingSelectToInt(getTearingSelect(varPointer)), tearingSelectToInt(compareTS));
+    output Boolean b = func(Integer(getTearingSelect(varPointer)), Integer(compareTS));
     partial function compare
       input Integer i1, i2;
       output Boolean b;
     end compare;
-  protected
-    function tearingSelectToInt
-      input TearingSelect s1;
-      output Integer i;
-    algorithm
-      i := match s1
-        case TearingSelect.NEVER then 0;
-        case TearingSelect.AVOID then 1;
-        case TearingSelect.DEFAULT then 2;
-        case TearingSelect.PREFER then 3;
-        case TearingSelect.ALWAYS then 4;
-        else 2;
-      end match;
-    end tearingSelectToInt;
   end hasTearingSelect;
 
   partial function getVarPartner
