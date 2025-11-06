@@ -1731,7 +1731,7 @@ NLS_SOLVER_STATUS B_nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINE
       svd_compute(data, nlsData, SM_DATA_S(kinsolData->J), kinsolData->useScaling, KINSOL_B_ENTRY_POINT /* called at entry point */);
     }
 
-    if (omc_flagValue[FLAG_SAVE_INITIAL_GUESS_SYSTEM]) {
+    if (omc_flag[FLAG_SAVE_INITIAL_GUESS_SYSTEM]) {
       B_save_initial_guess_system(data, threadData, nlsData);
     }
 
