@@ -3054,20 +3054,25 @@ protected
     input Expression exp;
     input ParameterTree ptree;
     output Expression outExp;
+  protected
+    list<ComponentRef> cref_parts;
+    ComponentRef cref;
+    Option<Expression> oexp;
   algorithm
     outExp := match exp
-      local
-        InstNode node;
-        Option<Expression> oexp;
-        Expression e;
-
-      case Expression.CREF(cref = ComponentRef.CREF(node = node, restCref = ComponentRef.EMPTY()))
+      case Expression.CREF(cref = ComponentRef.CREF())
         algorithm
-          oexp := ParameterTree.getOpt(ptree, InstNode.name(node));
+          cref :: cref_parts := ComponentRef.toListReverse(exp.cref);
+          oexp := ParameterTree.getOpt(ptree, InstNode.name(ComponentRef.node(cref)));
 
           if isSome(oexp) then
             SOME(outExp) := oexp;
-            // TODO: Apply subscripts.
+            outExp := Expression.applySubscripts(ComponentRef.getSubscripts(cref), outExp);
+
+            for cr in cref_parts loop
+              outExp := Expression.recordElement(InstNode.name(ComponentRef.node(cr)), outExp);
+              outExp := Expression.applySubscripts(ComponentRef.getSubscripts(cr), outExp);
+            end for;
           else
             outExp := exp;
           end if;
