@@ -157,13 +157,3 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         # are instead added to c/fmi folders. Until we fix those we keep this for now :(
         PATTERN "fmi" EXCLUDE
 )
-
-# ######################################################################################################################
-# Add C Simulation Runtime unit tests
-# Build with target "ctestsuite-depends"
-# Run test with ctest
-add_subdirectory(
-  ${CMAKE_SOURCE_DIR}/testsuite/CTest/SimulationRuntime/c
-  ${CMAKE_BINARY_DIR}/testsuite/CTest/SimulationRuntime/c
-  EXCLUDE_FROM_ALL
-)

@@ -28,6 +28,13 @@
  *
  */
 
+#ifndef ARRAY_INDEX_H
+#define ARRAY_INDEX_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "../simulation_data.h"
 
 void allocateArrayIndexMaps(MODEL_DATA *modelData, SIMULATION_INFO *simulationInfo, threadData_t *threadData);
@@ -45,3 +52,9 @@ void calculateAllScalarLength(MODEL_DATA* modelData);
 size_t scalarArrayVariableSize(void *variableData, enum var_type type, size_t num_variables);
 
 void computeVarIndices(SIMULATION_INFO *simulationInfo, MODEL_DATA *modelData);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* ARRAY_INDEX_H */
