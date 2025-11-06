@@ -63,6 +63,7 @@ GetModelInstanceIcon1.mos \
 GetModelInstanceIcon2.mos \
 GetModelInstanceIcon3.mos \
 GetModelInstanceIcon4.mos \
+GetModelInstanceIcon5.mos \
 GetModelInstanceImport1.mos \
 GetModelInstanceImport2.mos \
 GetModelInstanceInnerOuter1.mos \
