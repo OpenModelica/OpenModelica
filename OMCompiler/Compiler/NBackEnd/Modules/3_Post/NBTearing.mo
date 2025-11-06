@@ -402,7 +402,7 @@ protected
         // create seed and partial candidates
         seed_candidates := list(Slice.getT(var) for var in strict.iteration_vars);
         residual_vars   := list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in strict.residual_eqns);
-        inner_vars      := List.flatten(list(StrongComponent.getVariables(comp) for comp in strict.innerEquations));
+        inner_vars      := listAppend(StrongComponent.getVariables(comp) for comp in strict.innerEquations);
 
         // update jacobian to take slices (just to have correct inner variables and such)
         (jacobian, funcTree) := BJacobian.nonlinear(
