@@ -1595,18 +1595,16 @@ static modelica_boolean nlsKinsolErrorHandler(int errorCode, DATA *data,
  * @param nlsData             Pointer to non-linear system data.
  * @return NLS_SOLVER_STATUS  Return NLS_SOLVED on success and NLS_FAILED otherwise.
  */
-static void B_save_initial_guess_system(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *nlsData, const char *arg)
+static void B_save_initial_guess_system(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA *nlsData)
 {
-  /* split the args of --saveInitialGuess_system (TODO: might want to seperate them into 2 flags) */
   char buf[512];
-  strncpy(buf, arg, sizeof(buf));
+  strncpy(buf, omc_flagValue[FLAG_SAVE_INITIAL_GUESS_SYSTEM], sizeof(buf));
   buf[sizeof(buf)-1] = '\0';
 
   char *comma = strchr(buf, ',');
   if (!comma)
   {
-    errorStreamPrint(OMC_LOG_STDOUT, 0, "Invalid format for --saveInitialGuess_system flag - Expected: '--saveInitialGuess_system=/path/to/file.mat,nls_index')");
-    exit(-1);
+    throwStreamPrint(threadData, "Error: Invalid format for --saveInitialGuess_system flag - Expected: '--saveInitialGuess_system=/path/to/file.mat,nls_index')");
   }
   *comma = '\0';
 
@@ -1614,8 +1612,7 @@ static void B_save_initial_guess_system(DATA *data, threadData_t *threadData, NO
   int nls_idx = atoi(comma + 1);
   if (nls_idx < 0 && strcmp(comma + 1, "0") != 0)
   {
-    errorStreamPrint(OMC_LOG_STDOUT, 0, "Invalid format for --saveInitialGuess_system flag - Expected: '--saveInitialGuess_system=/path/to/file.mat,nls_index')");
-    exit(-1);
+    throwStreamPrint(threadData, "Error: Invalid format for --saveInitialGuess_system flag - Expected: '--saveInitialGuess_system=/path/to/file.mat,nls_index')");
   }
 
   B_NLS_KINSOL_DATA *kinsolData = (B_NLS_KINSOL_DATA *) nlsData->solverData;
@@ -1641,15 +1638,22 @@ static void B_save_initial_guess_system(DATA *data, threadData_t *threadData, NO
     mat4_emit4(&file_result, data, threadData);
     mat4_free4(&file_result, data, threadData);
 
-    infoStreamPrint(OMC_LOG_SUCCESS, 0, "Initial guess has been written to disk (path = %s). The program will terminate now.\n", path);
-
     /* exit as we do not want to compute any of the following variables */
-    exit(0);
+    throwStreamPrint(threadData, "Success: Initial guess has been written to disk (path = %s). The program will terminate now.\n", path);
   }
   else
   {
     /* not the NLS index that had been specified, continue with the systems prior to the user specified one */
     return;
+  }
+}
+
+static void B_check_stop_at_system(threadData_t *threadData, NONLINEAR_SYSTEM_DATA *nlsData)
+{
+  int nls_idx = atoi(omc_flagValue[FLAG_STOP_AT_SYSTEM]);
+  if (nls_idx == nlsData->equationIndex)
+  {
+    throwStreamPrint(threadData, "Success: Finished solving specified NLS system with index %d. The program will terminate now.\n", nls_idx);
   }
 }
 
@@ -1727,9 +1731,8 @@ NLS_SOLVER_STATUS B_nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINE
       svd_compute(data, nlsData, SM_DATA_S(kinsolData->J), kinsolData->useScaling, KINSOL_B_ENTRY_POINT /* called at entry point */);
     }
 
-    const char *arg = omc_flagValue[FLAG_SAVE_INITIAL_GUESS_SYSTEM];
-    if (arg) {
-      B_save_initial_guess_system(data, threadData, nlsData, arg);
+    if (omc_flagValue[FLAG_SAVE_INITIAL_GUESS_SYSTEM]) {
+      B_save_initial_guess_system(data, threadData, nlsData);
     }
 
     flag = KINSol(
@@ -1793,6 +1796,10 @@ NLS_SOLVER_STATUS B_nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINE
   }
 
   messageClose(OMC_LOG_NLS_V);
+
+  if (omc_flagValue[FLAG_STOP_AT_SYSTEM]) {
+    B_check_stop_at_system(threadData, nlsData);
+  }
 
   return kinsolData->solved;
 }
