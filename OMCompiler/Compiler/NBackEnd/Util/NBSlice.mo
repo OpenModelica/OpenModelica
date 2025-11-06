@@ -78,6 +78,12 @@ public
     output T t = slice.t;
   end getT;
 
+  function hash
+    input Slice<T> slice;
+    input hashT func;
+    output Integer i = func(slice.t);
+  end hash;
+
   function isEqual
     input Slice<T> slice1;
     input Slice<T> slice2;
@@ -174,6 +180,12 @@ public
     func(slice.t);
   end applyMutable;
 
+  function check<T2>
+    input Slice<T> slice;
+    input checkT func;
+    output T2 t2 = func(slice.t);
+  end check;
+
   // ############################################################
   //                Partial Functions
   // ############################################################
@@ -188,6 +200,11 @@ public
     output Integer s;
   end sizeT;
 
+  partial function hashT
+    input T t;
+    output Integer i;
+  end hashT;
+
   partial function isEqualT
     input T t1;
     input T t2;
@@ -201,6 +218,11 @@ public
   partial function applyMutableT
     input T t;
   end applyMutableT;
+
+  partial function checkT<T2>
+    input T t;
+    output T2 t2;
+  end checkT;
 
   partial function filterCref
     "partial function that needs to be provided.

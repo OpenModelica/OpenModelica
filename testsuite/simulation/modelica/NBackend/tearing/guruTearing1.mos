@@ -1,0 +1,44 @@
+// name:      guruTearing1
+// keywords:  linear, dynamic tearing
+// status:    correct
+
+loadString("
+model guruTearing1
+   Real x1, x4, x6, x8;
+   Real x2 annotation(__OpenModelica_tearingSelect = TearingSelect.always);
+   Real x3 annotation(__OpenModelica_tearingSelect = TearingSelect.always);
+   Real x5 annotation(__OpenModelica_tearingSelect = TearingSelect.always);
+   Real x7 annotation(__OpenModelica_tearingSelect = TearingSelect.always);
+equation
+   x1 + x2 + sin(time) = 0;
+   x1 + 2*x2 - sin(time)*x3 = 0;
+   cos(time)*x2 - 2*x3 + 4*x4  = 0;
+   x3 - 2*x4 - cos(time)*x5  = 0;
+   sin(time)*x4 + 5*x5 - x6  = 0;
+   x5 + x6 + sin(time)*cos(time)*x7  = 0;
+   cos(time)*x6 + x7 - x8 = 0;
+   x7 - 7*x8 - sin(time) = 0;
+end guruTearing1;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --tearingMethod=guruTearing"); getErrorString();
+
+simulate(guruTearing1); getErrorString();
+
+diffSimulationResults("guruTearing1_res.mat", "ReferenceFiles/guruTearing1_res.mat", "guruTearing1_diff.csv", 1e-8);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "guruTearing1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'guruTearing1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// endResult

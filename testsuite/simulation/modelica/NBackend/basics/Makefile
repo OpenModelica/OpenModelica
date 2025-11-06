@@ -12,7 +12,6 @@ partitioning.mos \
 variability.mos \
 enumeration.mos \
 simpleForLoop.mos \
-minimalTearing.mos \
 solveSingleEquation.mos \
 detectStates.mos \
 for_if_if.mos \
