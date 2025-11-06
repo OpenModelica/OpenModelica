@@ -90,7 +90,9 @@ public
   constant String PRE_STR         = "PRE";
   constant String TMP_STR         = "TMP";
 
-  type EquationPointer = Pointer<Equation> "mainly used for mapping purposes";
+  // mainly used for mapping purposes
+  type EquationPointer = Pointer<Equation>;
+  type EqnSlice = Slice<Pointer<Equation>>;
 
   // used to process different outcomes of slicing from Util/Slice.mo
   // have to be defined here and not in Util/Slice.mo because it is a uniontype and not a package
@@ -2251,6 +2253,12 @@ public
       attr := getAttributes(Pointer.access(eqn_ptr));
       b := attr.kind == EquationKind.CONTINUOUS;
     end isContinuous;
+
+    function isDiscontinuous "only for function interface purposes"
+      extends checkEqn;
+    algorithm
+      b := not isContinuous(eqn_ptr);
+    end isDiscontinuous;
 
     function isInitial extends checkEqn;
     protected

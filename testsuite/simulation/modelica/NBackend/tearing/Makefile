@@ -3,6 +3,7 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 minimalTearing_simple.mos \
 loopSizeOne.mos \
+guruTearing1.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

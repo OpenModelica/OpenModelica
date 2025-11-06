@@ -46,7 +46,7 @@ public
   //NF Imports
   import Attributes = NFAttributes;
   import BackendExtension = NFBackendExtension;
-  import NFBackendExtension.{BackendInfo, StateSelect, VariableAttributes, VariableKind};
+  import NFBackendExtension.{BackendInfo, StateSelect, TearingSelect, VariableAttributes, VariableKind};
   import NFBinding.Binding;
   import Ceval = NFCeval;
   import Class = NFClass;
@@ -79,7 +79,9 @@ public
   import Util;
 
 public
-  type VariablePointer = Pointer<Variable> "mainly used for mapping purposes";
+  // mainly used for mapping purposes
+  type VariablePointer = Pointer<Variable>;
+  type VarSlice = Slice<Pointer<Variable>>;
 
   // ==========================================================================
   //               Single Variable constants and functions
@@ -406,6 +408,13 @@ public
     end match;
   end isContinuous;
 
+  function isDiscontinuous "only for function interface purposes"
+    extends checkVar;
+    input Boolean init  "true if it's an initial system";
+  algorithm
+    b := not isContinuous(var_ptr, init);
+  end isDiscontinuous;
+
   function isDiscreteState
     extends checkVar;
   algorithm
@@ -490,6 +499,34 @@ public
       else false;
     end match;
   end isIterator;
+
+  function hasTearingSelect
+    "checks if the variable has given tearing select.
+    When provided with different functions can also check other relations.
+    intEq, intNe, intGt, intGe, intLt, intLe"
+    input Pointer<Variable> varPointer;
+    input TearingSelect compareTS;
+    input compare func = intEq;
+    output Boolean b = func(tearingSelectToInt(getTearingSelect(varPointer)), tearingSelectToInt(compareTS));
+    partial function compare
+      input Integer i1, i2;
+      output Boolean b;
+    end compare;
+  protected
+    function tearingSelectToInt
+      input TearingSelect s1;
+      output Integer i;
+    algorithm
+      i := match s1
+        case TearingSelect.NEVER then 0;
+        case TearingSelect.AVOID then 1;
+        case TearingSelect.DEFAULT then 2;
+        case TearingSelect.PREFER then 3;
+        case TearingSelect.ALWAYS then 4;
+        else 2;
+      end match;
+    end tearingSelectToInt;
+  end hasTearingSelect;
 
   partial function getVarPartner
     input Pointer<Variable> var_ptr;
@@ -848,7 +885,7 @@ public
 
   function setTearingSelect
     input output Variable var;
-    input BackendExtension.TearingSelect tearingSelect_val;
+    input TearingSelect tearingSelect_val;
     input Boolean overwrite = false;
   algorithm
     var := match var
@@ -856,12 +893,27 @@ public
         BackendExtension.BackendInfo backendinfo;
         BackendExtension.VariableAttributes variableAttributes;
       case NFVariable.VARIABLE(backendinfo = backendinfo as BackendExtension.BACKEND_INFO(attributes = variableAttributes)) algorithm
-
         backendinfo.attributes := BackendExtension.VariableAttributes.setTearingSelect(variableAttributes, tearingSelect_val, overwrite);
         var.backendinfo := backendinfo;
       then var;
+      else var;
     end match;
   end setTearingSelect;
+
+  function getTearingSelect
+    input Pointer<Variable> varPointer;
+    output BackendExtension.TearingSelect tearingSelect_val;
+  algorithm
+    tearingSelect_val :=  match Pointer.access(varPointer)
+      local
+        BackendExtension.VariableAttributes variableAttributes;
+      case NFVariable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = variableAttributes))
+      then BackendExtension.VariableAttributes.getTearingSelect(variableAttributes);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + BVariable.pointerToString(varPointer)});
+      then fail();
+    end match;
+  end getTearingSelect;
 
   function setVarKind
     "use with caution: some variable kinds have extra information that needs to be correct"
