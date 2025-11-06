@@ -2979,7 +2979,6 @@ void LibraryTreeView::showContextMenu(QPoint point)
       QFileInfo fileInfo(pLibraryTreeItem->getFileName());
       switch (pLibraryTreeItem->getLibraryType()) {
         case LibraryTreeItem::Modelica:
-        default:
           menu.addAction(mpOpenClassAction);
           menu.addAction(mpInformationAction);
           if (!pLibraryTreeItem->isSystemLibrary()) {
@@ -3117,6 +3116,9 @@ void LibraryTreeView::showContextMenu(QPoint point)
           }
           menu.addSeparator();
           menu.addAction(mpCopyPathAction);
+          break;
+        default:
+          qDebug() << "Unhanled library type" << pLibraryTreeItem->getLibraryType();
           break;
       }
     }
@@ -3815,8 +3817,7 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
   mpLibraryTreeProxyModel->setSourceModel(mpLibraryTreeModel);
   mpLibraryTreeView = new LibraryTreeView(this);
   mpLibraryTreeView->setModel(mpLibraryTreeProxyModel);
-  mpTreeSearchFilters->getExpandAllButton()->setEnabled(false);
-  mpTreeSearchFilters->getExpandAllButton()->setToolTip(tr("Expanding the Library Browser is a time consuming and non-responsive operation so this button is disabled intentionally."));
+  connect(mpTreeSearchFilters->getExpandAllButton(), SIGNAL(clicked()), mpLibraryTreeView, SLOT(expandAll()));
   connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpLibraryTreeView, SLOT(collapseAll()));
   // create the layout
   QGridLayout *pMainLayout = new QGridLayout;

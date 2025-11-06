@@ -86,13 +86,11 @@ SearchWidget::SearchWidget(QWidget *pParent)
   mpClearAction->setDisabled(false);
   connect(mpClearAction, SIGNAL(triggered()), SLOT(clearAll()));
   // expand action
-  mpExpandAction = new QAction(QIcon(":/Resources/icons/down.svg"), tr("Expand All"), this);
-  mpExpandAction->setStatusTip(tr("expand"));
+  mpExpandAction = new QAction(QIcon(":/Resources/icons/down.svg"), Helper::expandAll, this);
   mpExpandAction->setDisabled(true);
   connect(mpExpandAction, SIGNAL(triggered()), SLOT(expandAll()));
   // Collapse action
-  mpCollapseAction = new QAction(QIcon(":/Resources/icons/up.svg"), tr("Collapse All"), this);
-  mpCollapseAction->setStatusTip(tr("collapse"));
+  mpCollapseAction = new QAction(QIcon(":/Resources/icons/up.svg"), Helper::collapseAll, this);
   mpCollapseAction->setDisabled(true);
   connect(mpCollapseAction, SIGNAL(triggered()), SLOT(collapseAll()));
   // search history widget
