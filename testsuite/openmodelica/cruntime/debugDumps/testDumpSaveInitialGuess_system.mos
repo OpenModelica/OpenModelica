@@ -24,6 +24,8 @@ simulate(SaveInitialGuess,
          startTime=0,
          stopTime=0); getErrorString();
 
+readSimulationResultSize("savedInitialGuess.mat"); getErrorString();
+
 // Result:
 // true
 // ""
@@ -38,5 +40,7 @@ simulate(SaveInitialGuess,
 // LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
 // "
 // end SimulationResult;
+// ""
+// 1
 // ""
 // endResult
