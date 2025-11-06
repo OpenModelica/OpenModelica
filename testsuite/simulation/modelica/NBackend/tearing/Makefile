@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+minimalTearing.mos \
 minimalTearing_simple.mos \
 loopSizeOne.mos \
 guruTearing1.mos \

@@ -381,6 +381,7 @@ protected
     EqData eqData = EqData.EQ_DATA_EMPTY();
     list<StrongComponent> inner_comps, tmp;
     list<VariablePointer> seed_candidates, residual_vars, inner_vars;
+    constant Boolean init = kind == NBPartition.Kind.INI;
   algorithm
     comp := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
@@ -402,7 +403,7 @@ protected
         // create seed and partial candidates
         seed_candidates := list(Slice.getT(var) for var in strict.iteration_vars);
         residual_vars   := list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in strict.residual_eqns);
-        inner_vars      := listAppend(StrongComponent.getVariables(comp) for comp in strict.innerEquations);
+        inner_vars      := listAppend(list(var for var guard(BVariable.isContinuous(var, init)) in StrongComponent.getVariables(comp)) for comp in strict.innerEquations);
 
         // update jacobian to take slices (just to have correct inner variables and such)
         (jacobian, funcTree) := BJacobian.nonlinear(
