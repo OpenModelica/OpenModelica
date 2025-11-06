@@ -1797,7 +1797,7 @@ NLS_SOLVER_STATUS B_nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINE
 
   messageClose(OMC_LOG_NLS_V);
 
-  if (omc_flagValue[FLAG_STOP_AT_SYSTEM]) {
+  if (omc_flag[FLAG_STOP_AT_SYSTEM]) {
     B_check_stop_at_system(threadData, nlsData);
   }
 
