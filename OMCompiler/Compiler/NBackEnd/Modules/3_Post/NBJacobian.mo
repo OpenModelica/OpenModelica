@@ -964,7 +964,7 @@ protected
       else if rnk == 2 then
         NFOperator.SizeClassification.MATRIX
       else 
-        NFOperator.SizeClassification.SCALAR; // fallback
+        NFOperator.SizeClassification.ELEMENT_WISE;
   end sizeClassificationFromType;
 
   // Helper: build addition (or single term) expression from a list of terms for a given LHS cref.
@@ -999,6 +999,7 @@ protected
     );
 
     rhs := SimplifyExp.simplify(Expression.MULTARY(terms, {}, addOp));
+    rhs := Expression.map(rhs, Expression.repairOperator);
   end buildAdjointRhs;
 
   function createAdjointEquation

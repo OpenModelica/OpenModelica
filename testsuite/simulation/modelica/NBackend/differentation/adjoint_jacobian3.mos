@@ -62,10 +62,6 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 //
 // Event Partition
 // -----------------
-//   (8) Nonlinear System (size = 2, homotopy = false, mixed = false, torn = true)
-//   --Iteration Vars:{$DER.x, $DER.y}
-//   --(6) 0 = -($DER.x ^ 3.0 - (x + y + $DER.y ^ 2.0))
-//   --(7) 0 = -(($DER.x ^ 2.0 + $DER.y ^ 3.0) - x * y)
 //
 // ======================================================
 //   [EMPTY] SimCode Jacobian A(idx = 0, partition = 0)

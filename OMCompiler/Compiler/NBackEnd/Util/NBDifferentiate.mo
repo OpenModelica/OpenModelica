@@ -2907,7 +2907,6 @@ public
           for arg in inv_arguments loop
             hasArray := hasArray or Type.isArray(Expression.typeOf(arg));
           end for;
-          print("hasArray: " + boolString(hasArray) + "\n");
           // go over addition arguments
           for arg in listReverse(arguments) loop
             current_grad := diffArguments.current_grad;
@@ -3046,7 +3045,7 @@ public
               localUpG := typeSumCall(localUpG);
             end if;
 
-            diffArguments.current_grad := localUpG;
+            diffArguments.current_grad :=  localUpG;
             (diff_arg, diffArguments) := differentiateExpression(g, diffArguments);
 
             // Forward term: - g' * (exp / g)
@@ -3108,7 +3107,7 @@ public
       localUp := Expression.MULTARY(
         listAppend({current_grad}, restArgs),
         {},
-        mulEWOp);
+        mulEWOp); // may need to adapt this aswell to scalar when scalar
 
       // If current argument is scalar but the rest-product is array-shaped,
       // sum-reduce the local upstream to a scalar before recursing.

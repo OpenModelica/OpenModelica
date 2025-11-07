@@ -82,10 +82,6 @@ buildModel(scalarAdjointJacobian1); getErrorString();
 //
 // Event Partition
 // -----------------
-//   (10) Alias of 4
-//   (9) Alias of 3
-//   (8) Alias of 2
-//   (7) Alias of 1
 //
 // ======================================================
 //   [EMPTY] SimCode Jacobian A(idx = 0, partition = 0)
@@ -107,7 +103,7 @@ buildModel(scalarAdjointJacobian1); getErrorString();
 //
 // Column Equations (size = 2)
 // -----------------------------
-//   (14) $pDER_ODE_JAC_ADJ.i_C := $SEED_ODE_JAC_ADJ.$DER.V * (1/C)
+//   (14) $pDER_ODE_JAC_ADJ.i_C := $SEED_ODE_JAC_ADJ.$DER.V .* 1/C
 //   (13) $pDER_ODE_JAC_ADJ.i_R := -$pDER_ODE_JAC_ADJ.i_C
 //   (12) $pDER_ODE_JAC_ADJ.i_L := (-1.0) * (-$pDER_ODE_JAC_ADJ.i_C)
 //   (11) $pDER_ODE_JAC_ADJ.V := $pDER_ODE_JAC_ADJ.i_R * (1/R) - $SEED_ODE_JAC_ADJ.$DER.i_L * (1/L)

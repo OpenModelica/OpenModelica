@@ -6702,6 +6702,57 @@ public
     end match;
   end replaceResizableParameter;
 
+  // Helper: compute multiplication result type from operand types.
+  function mulResultType
+    input Type tl;
+    input Type tr;
+    output Type tres;
+  protected
+    Type el;
+  algorithm
+    if Type.isArray(tl) and Type.isArray(tr) then
+      // Both arrays: keep (left) array type (sizes should already match semantically)
+      tres := tl;
+    elseif Type.isArray(tl) then
+      tres := tl; // array * scalar
+    elseif Type.isArray(tr) then
+      tres := tr; // scalar * array
+    else
+      // both scalar -> promote numeric type (use left for now; scalar promotion elsewhere already handled)
+      tres := tl;
+    end if;
+  end mulResultType;
+
+  // Helper: binary multiply with simple scalar/array size classification.
+  function mmul
+    input Expression lhs;
+    input Expression rhs;
+    input Operator baseOp;
+    output Expression prod;
+  protected
+    Type tl = typeOf(lhs);
+    Type tr = typeOf(rhs);
+    Boolean lArr = Type.isArray(tl);
+    Boolean rArr = Type.isArray(tr);
+    Operator.SizeClassification sizeClass;
+    Type resTy;
+    Operator op;
+  algorithm
+    if not lArr and not rArr then
+      sizeClass := NFOperator.SizeClassification.SCALAR;
+    elseif not lArr and rArr then
+      sizeClass := NFOperator.SizeClassification.SCALAR_ARRAY;
+    elseif lArr and not rArr then
+      sizeClass := NFOperator.SizeClassification.ARRAY_SCALAR;
+    else
+      sizeClass := NFOperator.SizeClassification.ELEMENT_WISE;
+    end if;
+
+    resTy := mulResultType(tl, tr);
+    op := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), resTy);
+    prod := BINARY(lhs, op, rhs);
+  end mmul;
+
   function productOfListExceptSelf
     "prod(f_k | k <> i) for each i.
      For arguments = {f1, f2, ..., fn} returns list:
@@ -6710,24 +6761,27 @@ public
      https://leetcode.com/problems/product-of-array-except-self/solutions/65622/simple-java-solution-in-o-n-without-extra-space/
      If n = 0 -> {}, if n = 1 -> {1} (multiplicative identity of operator.ty)."
     input list<Expression> arguments;
-    input Operator mulOp "Multiplication operator to use (its type & size classification are preserved)";
+    input Operator mulOp "Base multiplication operator (will be repaired per pair)";
     output list<Expression> products;
   protected
     Integer n = listLength(arguments);
     array<Expression> argsArr;
-    array<Expression> pref; // prefix products up to (i-1)
+    array<Expression> pref;
     array<Expression> res;
     Integer i;
     Expression rightProd;
     Type baseTy = mulOp.ty;
+    Type elTy;
   algorithm
     if n == 0 then
       products := {};
       return;
     end if;
 
-    // Load args into 1-based array
-    argsArr := arrayCreate(n, Expression.makeOne(baseTy));
+    // Determine element (scalar) type to build multiplicative identity
+    elTy := if Type.isArray(baseTy) then Type.arrayElementType(baseTy) else baseTy;
+    // Load arguments into array for indexed access
+    argsArr := arrayCreate(n, Expression.makeOne(elTy));
     i := 1;
     for a in arguments loop
       argsArr[i] := a;
@@ -6735,26 +6789,27 @@ public
     end for;
 
     // Allocate prefix array & result
-    pref := arrayCreate(n, Expression.makeOne(baseTy));
-    res  := arrayCreate(n, Expression.makeOne(baseTy));
+    pref := arrayCreate(n, Expression.makeOne(elTy)); // pref[i] = product of args before i with pref[1] = 1.
+    res  := arrayCreate(n, Expression.makeOne(elTy));
 
     // Build prefix products: pref[i] = f1 * f2 * ... * f_{i-1}
     for i in 2:n loop
-      pref[i] := Expression.MULTARY({pref[i-1], argsArr[i-1]}, {}, mulOp);
+      pref[i] := mmul(pref[i-1], argsArr[i-1], mulOp);
     end for;
 
     // Suffix accumulation
-    rightProd := Expression.makeOne(baseTy);
+    rightProd := Expression.makeOne(elTy);
     for i in n:-1:1 loop
       // res[i] = (product of left side) * (product of right side)
-      res[i] := Expression.MULTARY({pref[i], rightProd}, {}, mulOp);
+      res[i] := mmul(pref[i], rightProd, mulOp);
       // update rightProd *= argsArr[i]
-      rightProd := Expression.MULTARY({rightProd, argsArr[i]}, {}, mulOp);
+      rightProd := mmul(rightProd, argsArr[i], mulOp);
     end for;
 
     // Collect back to list (in order)
     products := {};
     for i in n:-1:1 loop
+      //res[i] := map(res[i], repairOperator);
       products := SimplifyExp.simplify(res[i]) :: products;
     end for;
   end productOfListExceptSelf;
