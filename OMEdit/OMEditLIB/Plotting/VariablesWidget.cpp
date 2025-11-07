@@ -1610,6 +1610,11 @@ void VariablesWidget::variablesUpdated()
   foreach (QMdiSubWindow *pSubWindow, MainWindow::instance()->getPlotWindowContainer()->subWindowList(QMdiArea::StackingOrder)) {
     PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
     if (pPlotWindow) { // we can have an AnimateWindow there as well so always check
+      /* Issue #14586 Do not add automatic prefix unit when updating variables.
+       * The display unit and prefix are already set when the variable is first plotted.
+       */
+      bool prefixUnitsState = pPlotWindow->getPrefixUnits();
+      pPlotWindow->setPrefixUnits(false);
       foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
         if (pPlotWindow->isPlot() || pPlotWindow->isPlotArray()) {
           QString curveNameStructure = pPlotCurve->getNameStructure();
@@ -1658,6 +1663,7 @@ void VariablesWidget::variablesUpdated()
           }
         }
       }
+      pPlotWindow->setPrefixUnits(prefixUnitsState);
       pPlotWindow->updatePlot();
     }
   }

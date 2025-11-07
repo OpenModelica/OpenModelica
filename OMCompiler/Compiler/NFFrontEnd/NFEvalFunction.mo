@@ -1192,6 +1192,7 @@ algorithm
     (mapped_args, specs) := mapExternalArgs(fn, args, extArgs);
     ret_ty := if ComponentRef.isCref(outputRef) then ComponentRef.nodeType(outputRef) else Type.NORETCALL();
     (res, output_vals) := FFI.callFunction(fn_handle, mapped_args, specs, ret_ty);
+    freeLibraryFunction(fn_handle, debug);
   else
     freeLibraryFunction(fn_handle, debug);
     fail();
@@ -1369,7 +1370,7 @@ algorithm
   ErrorExt.rollBack(getInstanceName());
 
   if not found then
-    paths := list("  " + Testsuite.friendly(uriToFilename(p)) for p in paths);
+    paths := list("  " + Testsuite.friendly(uriToFilename(p)) for p guard not stringEmpty(p) in paths);
     Error.addSourceMessage(Error.EXTERNAL_FUNCTION_NOT_FOUND,
       {fnName, stringDelimitList(paths, "\n")}, info);
     fail();

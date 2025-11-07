@@ -999,8 +999,26 @@ public
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
       then fail();
-    end match;
   end getVarPointer;
+  
+  function getSolveStatus
+    input StrongComponent comp;
+    output Solve.Status status;
+  algorithm
+    status := match comp
+      case SINGLE_COMPONENT()   then comp.status;
+      case MULTI_COMPONENT()    then comp.status;
+      case SLICED_COMPONENT()   then comp.status;
+      case RESIZABLE_COMPONENT()then comp.status;
+      case GENERIC_COMPONENT()  then NBSolve.Status.EXPLICIT;
+      case ENTWINED_COMPONENT() then NBSolve.Status.EXPLICIT;
+      case ALGEBRAIC_LOOP()     then comp.status;
+      case ALIAS()              then getSolveStatus(comp.original);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
+      then fail();
+    end match;
+  end getSolveStatus;
 
   function isDiscrete
     "checks if all equations are discrete"

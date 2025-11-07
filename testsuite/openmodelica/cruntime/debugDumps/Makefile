@@ -5,6 +5,7 @@ TESTFILES = \
 testDumpEvents.mos \
 testDumpDerivativeTest.mos \
 testDumpSparseSVD.mos \
+testDumpSaveInitialGuess_system.mos \
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing

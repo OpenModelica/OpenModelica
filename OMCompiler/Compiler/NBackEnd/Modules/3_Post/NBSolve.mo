@@ -227,7 +227,7 @@ public
               // Y = set of inputs
               inputs := List.flatten(list(BVariable.getRecordChildrenCrefOrSelf(i) for i in alg.inputs));
               input_crefs := UnorderedSet.fromList(inputs, ComponentRef.hash, ComponentRef.isEqual);
-              // Y^ <- Y U X set of inputs that are solved (iteration vars, no need to create temporary variables)
+              // Y^ <- Y n X set of inputs that are solved (iteration vars, no need to create temporary variables)
               solved_inputs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
               for solved_cref in solved_crefs loop
                 if UnorderedSet.contains(solved_cref, input_crefs) then
@@ -290,7 +290,7 @@ public
                 VarData.addTypedList(varData, tmp_vars, NBVariable.VarData.VarType.ALGEBRAIC);
                 // ToDo: create sub routine for this (?)
               end if;
-            then (solved_comp, Status.EXPLICIT);
+            then (solved_comp, solve_status);
 
             else algorithm
               (eqn_slice, funcTree, solve_status, implicit_index) := solveMultiStrongComponent(comp.eqn, comp.vars, funcTree, kind, implicit_index, slicing_map, Iterator.EMPTY(), varData, eqData);
@@ -299,8 +299,13 @@ public
         then ({solved_comp}, solve_status);
 
         case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
-          for inner_comp in Array.reverse(strict.innerEquations) loop
-            (tmp, funcTree, implicit_index) := solveStrongComponent(inner_comp, funcTree, kind, implicit_index, slicing_map, varData, eqData);
+          for index in arrayLength(strict.innerEquations):-1:1 loop
+            // ToDo: fail for non explicit inner equations?
+            if StrongComponent.getSolveStatus(strict.innerEquations[index]) <> Status.EXPLICIT then
+              (tmp, funcTree, implicit_index) := solveStrongComponent(strict.innerEquations[index], funcTree, kind, implicit_index, slicing_map, varData, eqData);
+            else
+              tmp := {strict.innerEquations[index]};
+            end if;
             inner_comps := listAppend(tmp, inner_comps);
           end for;
           strict.innerEquations := listArray(inner_comps);

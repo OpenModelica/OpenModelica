@@ -242,7 +242,7 @@ public
         str := str + SimStrongComponent.Block.listToString(blck_lst, "  ", "Algebraic Partition " + intString(idx)) + "\n";
         idx := idx + 1;
       end for;
-      str := str + SimStrongComponent.Block.listToString(simCode.allSim, "  ", "Event Partition") + "\n";
+      str := str + SimStrongComponent.Block.listToString(simCode.event_blocks, "  ", "Event Partition") + "\n";
       if not listEmpty(simCode.clockedPartitions) then
         str := str + SimPartition.listToString(simCode.clockedPartitions, "  ", "Clocked Partitions") + "\n";
       end if;

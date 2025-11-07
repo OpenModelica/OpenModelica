@@ -241,7 +241,7 @@ public
     end NONLINEAR;
 
     record HYBRID
-      "Hyprid system containing both continuous and discrete equations."
+      "Hybrid system containing both continuous and discrete equations."
       Integer index;
       Block continuous;
       list<SimVar> discreteVars;
@@ -758,7 +758,8 @@ public
 
         case StrongComponent.ALIAS() algorithm
           aliasOf := UnorderedMap.getOrDefault(comp.aliasInfo, simCodeIndices.alias_map, -1);
-          tmp := ALIAS(simCodeIndices.equationIndex, comp.aliasInfo, aliasOf, StrongComponent.isDiscrete(comp));
+          tmp := ALIAS(simCodeIndices.equationIndex, comp.aliasInfo, aliasOf,
+            StrongComponent.isDiscrete(comp) and not StrongComponent.isAlgebraicLoop(comp.original));
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then (tmp, getIndex(tmp));
 
