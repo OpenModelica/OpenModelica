@@ -999,6 +999,7 @@ public
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
       then fail();
+    end match;
   end getVarPointer;
   
   function getSolveStatus
