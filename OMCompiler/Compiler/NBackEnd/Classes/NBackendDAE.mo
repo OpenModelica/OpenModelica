@@ -371,7 +371,7 @@ public
           fail();
         end try;
         clock_time := System.realtimeTock(clock_idx);
-        ExecStat.execStat(name);
+        ExecStat.execStat("[" + ClockIndexes.toString(clock_idx) + "] " + name);
         module_clocks := (name, clock_time) :: module_clocks;
         if Flags.isSet(Flags.FAILTRACE) then
           (varSizes, eqnSizes) := sizes(bdae);

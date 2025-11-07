@@ -60,12 +60,14 @@ protected
   import NBEquation.{Equation, EquationPointers, EqData};
   import Jacobian = NBackendDAE.BackendDAE;
   import Matching = NBMatching;
+  import Partition = NBPartition;
   import Replacements = NBReplacements;
+  import Slice = NBSlice;
   import Sorting = NBSorting;
   import StrongComponent = NBStrongComponent;
-  import Partition = NBPartition;
+  import Tearing = NBTearing;
   import NFOperator.{MathClassification, SizeClassification};
-  import NBVariable.{VariablePointers, VarData};
+  import NBVariable.{VariablePointer, VariablePointers, VarData};
 
   // Old Backend Import (remove once coloring ins ported)
   import SymbolicJacobian;
@@ -700,7 +702,9 @@ protected
     VariablePointers seedCandidates, partialCandidates;
     Option<Jacobian> jacobian                             "Resulting jacobian";
     Partition.Kind kind = Partition.Partition.getKind(part);
+    Boolean updated;
   algorithm
+    // create the simulation jacobian
     partialCandidates := part.unknowns;
     unknowns  := if Partition.Partition.getKind(part) == NBPartition.Kind.DAE then Util.getOption(part.daeUnknowns) else part.unknowns;
     jacType   := if Partition.Partition.getKind(part) == NBPartition.Kind.DAE then JacobianType.DAE else JacobianType.ODE;
@@ -710,12 +714,64 @@ protected
     seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
 
     (jacobian, funcTree) := func(name, jacType, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcTree, kind ==  NBPartition.Kind.INI);
-
     part.association := Partition.Association.CONTINUOUS(kind, jacobian);
+
+    // create algebraic loop jacobians
+    part.strongComponents := match part.strongComponents
+      local
+        array<StrongComponent> comps;
+        StrongComponent tmp;
+      case SOME(comps) algorithm
+        for i in 1:arrayLength(comps) loop
+          (tmp, funcTree, updated) := compJacobian(comps[i], funcTree, kind);
+          if updated then arrayUpdate(comps, i, tmp); end if;
+        end for;
+      then SOME(comps);
+      else part.strongComponents;
+    end match;
+
     if Flags.isSet(Flags.JAC_DUMP) then
       print(Partition.Partition.toString(part, 2));
     end if;
   end partJacobian;
+
+  function compJacobian
+    input output StrongComponent comp;
+    input output FunctionTree funcTree;
+    input Partition.Kind kind;
+    output Boolean updated;
+  protected
+    Tearing strict;
+    list<StrongComponent> residual_comps;
+    list<VariablePointer> seed_candidates, residual_vars, inner_vars;
+    Option<Jacobian> jacobian;
+    constant Boolean init = kind == NBPartition.Kind.INI;
+  algorithm
+    (comp, updated) := match comp
+      case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
+        // create residual components
+        residual_comps        := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
+
+        // create seed and partial candidates
+        seed_candidates := list(Slice.getT(var) for var in strict.iteration_vars);
+        residual_vars   := list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in strict.residual_eqns);
+        inner_vars      := listAppend(list(var for var guard(BVariable.isContinuous(var, init)) in StrongComponent.getVariables(comp)) for comp in strict.innerEquations);
+
+        // update jacobian to take slices (just to have correct inner variables and such)
+        (jacobian, funcTree) := nonlinear(
+          seedCandidates    = VariablePointers.fromList(seed_candidates),
+          partialCandidates = VariablePointers.fromList(listAppend(residual_vars, inner_vars)),
+          equations         = EquationPointers.fromList(list(Slice.getT(eqn) for eqn in strict.residual_eqns)),
+          comps             = Array.appendList(strict.innerEquations, residual_comps),
+          funcTree          = funcTree,
+          name              = Partition.Partition.kindToString(kind) + (if comp.linear then "_LS_JAC_" else "_NLS_JAC_") + intString(comp.idx),
+          init              = kind == NBPartition.Kind.INI);
+        strict.jac := jacobian;
+        comp.strict := strict;
+      then (comp, true);
+      else (comp, false);
+    end match;
+  end compJacobian;
 
   function jacobianSymbolic extends Module.jacobianInterface;
   protected
