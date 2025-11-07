@@ -62,14 +62,14 @@ static inline const char* skipTo(const char *str, char c)
  */
 static inline char* quote(const char *str)
 {
-  char* tmp;
-  const char* quot = "\"";
-  tmp = (char*) malloc(sizeof(char) * 200);
-  strcpy(tmp, quot);
-  strcat(tmp, str);
-  strcat(tmp, quot);
+  size_t len = strlen(str) + 3; // +2 for quotes, +1 for null terminator
+  char* tmp = (char*) malloc(len);
+  if (tmp == NULL) {
+    return NULL;
+  }
+  snprintf(tmp, len, "\"%s\"", str);
   return tmp;
-}
+ }
 
 /**
  * @brief Parse and sets the solver method string
@@ -82,16 +82,20 @@ static inline const char* setSolverMethod(SOLVER_INFO *solverInfo, const char *s
 {
   /* Variables */
   int i;
-  int len;
   char* value;
   for(i=1; i<S_MAX; i++)
   {
     value = quote(SOLVER_METHOD_NAME[i]);
+    if (value == NULL) {
+      continue;
+    }
     if (strncmp(str, value, strlen(SOLVER_METHOD_NAME[i]) + 2) == 0)
     {
       solverInfo->solverMethod = i;
+      free(value);
       break;
     }
+    free(value);
   }
   return skipTo(str, '\n');
 }
@@ -118,6 +122,11 @@ void parseFlags(SOLVER_INFO *solverInfo, const char *str)
     {
       // map the fmu flags to regular flags
       value = quote(FLAG_NAME[FMU_FLAG_MAP[i]]);
+      if (value == NULL) {
+        /* If allocation failed, skip this entry */
+        continue;
+      }
+
       if (strncmp(str, value, strlen(FLAG_NAME[FMU_FLAG_MAP[i]]) + 2) == 0)
       {
         str = skipTo(str, ':');
@@ -128,6 +137,8 @@ void parseFlags(SOLVER_INFO *solverInfo, const char *str)
           default: str = skipTo(str, '\n'); break;
         }
       }
+
+      free(value);
     }
     str = skipTo(str, '\"');
    }
@@ -173,12 +184,11 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
   solverInfo->sampleEvents = 0;
 
   /* read fmu flags from flags.json */
-  char* flags_filename = functions->allocateMemory(strlen(comp->fmuData->modelData->resourcesDir) + strlen(comp->fmuData->modelData->modelFilePrefix) + 20, sizeof(char));
-  flags_filename[0] = 0;
-  strcat(flags_filename, comp->fmuData->modelData->resourcesDir);
-  strcat(flags_filename, "/");
-  strcat(flags_filename, comp->fmuData->modelData->modelFilePrefix);
-  strcat(flags_filename, "_flags.json");
+  size_t filename_len = strlen(comp->fmuData->modelData->resourcesDir) + strlen(comp->fmuData->modelData->modelFilePrefix) + 13;
+  char* flags_filename = functions->allocateMemory(filename_len, sizeof(char));
+  snprintf(flags_filename, filename_len, "%s/%s_flags.json",
+           comp->fmuData->modelData->resourcesDir,
+           comp->fmuData->modelData->modelFilePrefix);
   FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2Instantiate: Trying to find simulation settings %s.", flags_filename)
 
   if( omc_file_exists( flags_filename) )
@@ -216,6 +226,8 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
       cvodeData = (CVODE_SOLVER*) functions->allocateMemory(1, sizeof(CVODE_SOLVER));
       if (!cvodeData) {
         FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: Out of memory.")
+        functions->freeMemory(solverInfo);
+        return -1;
         retValue = -1;
       } else {
         retValue = cvode_solver_initial(data, threadData, solverInfo, cvodeData, 1 /* is FMI */);   /* TODO: cvode_solver_initial needs to use malloc and free from fmi2CallbackFunctions */
