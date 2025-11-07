@@ -6,7 +6,9 @@ project(UnitTests
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Download GoogleTest
+
+# Download GoogleTest, avoid global collisions with a unique fetchContent source directory
+set(FETCHCONTENT_BASE_DIR "${CMAKE_BINARY_DIR}/_deps_ctest")
 include(FetchContent)
 FetchContent_Declare(
   googletest

@@ -19,6 +19,12 @@ cmake --build build_cmake --target test
 The tests are using the testing framework
 [GoogleTest](https://github.com/google/googletest).
 
+- Add a new C++ file matching the directory structure of the source files.
+- Add the C++ test file to an existing or new CMakeLists.txt and link all needed
+  dependencies to it.
+- Keep tests as simple and logic-free as possible.
+
 ### GoogleTest
 
-Needs at least C++ 17 for GoogleTest.
+GoogleTest requires at least C++17.
+Ensure your compiler supports C++17 features when building tests.
