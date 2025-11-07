@@ -152,7 +152,8 @@ public
   end main;
 
   function nonlinear
-    input VariablePointers variables;
+    input VariablePointers seedCandidates;
+    input VariablePointers partialCandidates;
     input EquationPointers equations;
     input array<StrongComponent> comps;
     output Option<Jacobian> jacobian;
@@ -167,8 +168,8 @@ public
     (jacobian, funcTree) := func(
         name              = name,
         jacType           = JacobianType.NLS,
-        seedCandidates    = variables,
-        partialCandidates = EquationPointers.getResiduals(equations),      // these have to be updated once there are inner equations in torn partitions
+        seedCandidates    = seedCandidates,
+        partialCandidates = partialCandidates,
         equations         = equations,
         knowns            = VariablePointers.empty(0),      // remove them? are they necessary?
         strongComponents  = SOME(comps),
@@ -534,6 +535,23 @@ public
       list<ComponentRef> deps;
       array<list<Integer>> cols, rows, colored_cols;
       array<SparsityColoringCol> cref_colored_cols;
+      function getIndices
+        input ComponentRef cref;
+        input UnorderedMap<ComponentRef, Integer> seed_indices;
+        input UnorderedMap<ComponentRef, Integer> partial_indices;
+        input array<list<Integer>> rows;
+        output list<Integer> indices;
+      algorithm
+        if UnorderedMap.contains(cref, seed_indices) then
+          indices := {UnorderedMap.getSafe(cref, seed_indices, sourceInfo())};
+        elseif UnorderedMap.contains(cref, partial_indices) then
+          indices := rows[UnorderedMap.getSafe(cref, partial_indices, sourceInfo())];
+        else
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because cref " + ComponentRef.toString(cref)
+            + " is neither a seed nor a partial candidate!"});
+          fail();
+        end if;
+      end getIndices;
     algorithm
       // create index -> cref arrays
       seeds := listArray(sparsityPattern.seed_vars);
@@ -565,7 +583,7 @@ public
       end for;
       for tpl in sparsityPattern.row_wise_pattern loop
         (idx_cref, deps) := tpl;
-        rows[UnorderedMap.getSafe(idx_cref, partial_indices, sourceInfo())] := list(UnorderedMap.getSafe(dep, seed_indices, sourceInfo()) for dep in deps);
+        rows[UnorderedMap.getSafe(idx_cref, partial_indices, sourceInfo())] := listAppend(getIndices(dep, seed_indices,partial_indices, rows) for dep in deps);
       end for;
 
       // call C function (old backend - ToDo: port to new backend!)

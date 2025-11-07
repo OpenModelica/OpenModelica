@@ -117,7 +117,29 @@ typedef struct {
   modelica_string* stringParameter;
 } INTERNAL_FMU_STATE;
 
-void filteredLog(ModelInstance *instance, fmi2Status status, int categoryIndex, const char *fmt, ...);
+fmi2Boolean isCategoryLogged(ModelInstance *comp, int categoryIndex);
+
+static fmi2String logCategoriesNames[] = {"logEvents", "logSingularLinearSystems", "logNonlinearSystems", "logDynamicStateSelection",
+    "logStatusWarning", "logStatusDiscard", "logStatusError", "logStatusFatal", "logStatusPending", "logAll", "logFmi2Call"};
+
+#ifndef FILTERED_LOG
+/**
+ * @brief Macro to be used to log messages.
+ *
+ * The macro check if current log category is active and, if true, call the
+ * logger provided by simulator. Prevents evaluation of arguments if logging
+ * category is disabled.
+ *
+ * @param instance        FMU instance.
+ * @param status          FMI2 status.
+ * @param categoryIndex   Category name index of array `logCategoriesNames`.
+ * @param message         Pointer to null-terminated format string to log.
+ * @param ...             Arguments specifying data to log.
+ */
+#define FILTERED_LOG(instance, status, categoryIndex, message, ...) if (isCategoryLogged(instance, categoryIndex)) { \
+    instance->functions->logger(instance->functions->componentEnvironment, instance->instanceName, status, \
+        logCategoriesNames[categoryIndex], message, ##__VA_ARGS__); }
+#endif
 
 /* reset alignment policy to the one set before reading this file */
 #if defined _MSC_VER || defined __GNUC__

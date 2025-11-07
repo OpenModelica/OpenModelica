@@ -4857,7 +4857,11 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
       });
       connect(menu, &QuickInsertWidget::destroyed, &loop, &QEventLoop::quit);
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+      menu->showAt(event->globalPosition().toPoint());
+#else
       menu->showAt(event->globalPos());
+#endif
       loop.exec(); // blocking until loop.quit() call
 
       if (!selectedClass.isEmpty()) {

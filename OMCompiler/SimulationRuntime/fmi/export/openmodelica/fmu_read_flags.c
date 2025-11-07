@@ -189,10 +189,11 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
   snprintf(flags_filename, filename_len, "%s/%s_flags.json",
            comp->fmuData->modelData->resourcesDir,
            comp->fmuData->modelData->modelFilePrefix);
+  FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2Instantiate: Trying to find simulation settings %s.", flags_filename)
 
   if( omc_file_exists( flags_filename) )
   {
-    filteredLog(comp, fmi2OK, LOG_ALL, "fmi2Instantiate: Found simulation settings %s.", flags_filename);
+    FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2Instantiate: Found simulation settings %s.", flags_filename)
     omc_mmap_read mmap_reader = {0};
     mmap_reader = omc_mmap_open_read(flags_filename);
     parseFlags(solverInfo, mmap_reader.data);
@@ -200,14 +201,14 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
   }
   else
   {
-    filteredLog(comp, fmi2OK, LOG_ALL, "fmi2Instantiate: Using default simulation settings.");
+    FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2Instantiate: Using default simulation settings.")
     solverInfo->solverMethod = S_EULER;
   }
 
   /* If no states are present, we can use Euler's method since it is doing nothing. */
   if (data->modelData->nStates < 1)
   {
-    filteredLog(comp, fmi2OK, LOG_ALL, "fmi2Instantiate: No states present, continuing without ODE solver.");
+    FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2Instantiate: No states present, continuing without ODE solver.")
     solverInfo->solverMethod = S_EULER;
   }
 
@@ -221,10 +222,10 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
 #ifdef WITH_SUNDIALS
       omc_useStream[OMC_LOG_SOLVER] = 1;
       CVODE_SOLVER* cvodeData = NULL;
-      filteredLog(comp, fmi2OK, LOG_ALL, "Initializing CVODE ODE Solver");
+      FILTERED_LOG(comp, fmi2OK, LOG_ALL, "Initializing CVODE ODE Solver")
       cvodeData = (CVODE_SOLVER*) functions->allocateMemory(1, sizeof(CVODE_SOLVER));
       if (!cvodeData) {
-        filteredLog(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: Out of memory.");
+        FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: Out of memory.")
         functions->freeMemory(solverInfo);
         return -1;
         retValue = -1;
@@ -235,12 +236,12 @@ int FMI2CS_initializeSolverData(ModelInstance* comp)
       omc_useStream[OMC_LOG_SOLVER] = 0;
 #else
       solverInfo->solverData = NULL;
-      filteredLog(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: FMU not compiled with SUNDIALS but solver CVODE selected.");
+      FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: FMU not compiled with SUNDIALS but solver CVODE selected.")
       retValue = -1;
 #endif /* WITH_SUNDIALS */
       break;
     default:
-      filteredLog(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: Unknown solver method.");
+      FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: Unknown solver method.")
       retValue = -1;
   }
 
@@ -275,7 +276,7 @@ int FMI2CS_deInitializeSolverData(ModelInstance* comp)
   solverInfo = comp->solverInfo;
 
   /* Log function call */
-  filteredLog(comp, fmi2OK, LOG_ALL, "fmi2FreeInstance: Freeing solver data.");
+  FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2FreeInstance: Freeing solver data.")
 
   switch (solverInfo->solverMethod)
   {
@@ -288,12 +289,12 @@ int FMI2CS_deInitializeSolverData(ModelInstance* comp)
       retValue = cvode_solver_deinitial(solverInfo->solverData);
       break;
 #else
-      filteredLog(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: FMU not compiled with SUNDIALS but solver CVODE selected.");
+      FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2Instantiate: FMU not compiled with SUNDIALS but solver CVODE selected.")
       retValue = -1;
       break;
 #endif /* WITH_SUNDIALS */
     default:
-      filteredLog(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2FreeInstance: Unknown solver method.");
+      FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2FreeInstance: Unknown solver method.")
       retValue = -1;
   }
 

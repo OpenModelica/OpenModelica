@@ -748,7 +748,13 @@ uniontype InstNode
   algorithm
     while not isTopScope(scope) loop
       res := scope :: res;
-      scope := classScope(enclosingScope(scope, ignoreRedeclare, ignoreBaseClass));
+      scope := enclosingScope(scope, ignoreRedeclare, ignoreBaseClass);
+
+      if isEmpty(scope) then
+        break;
+      end if;
+
+      scope := classScope(scope);
     end while;
   end enclosingScopeList;
 
