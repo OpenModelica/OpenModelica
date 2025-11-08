@@ -1717,6 +1717,17 @@ algorithm
   end match;
 end getArrayOrMatrixContents;
 
+public function expandArray
+  input DAE.Exp exp;
+  output list<DAE.Exp> contents;
+algorithm
+  contents := match exp
+    case DAE.ARRAY() then listAppend(expandArray(e) for e in exp.array);
+    case DAE.MATRIX() then getArrayOrMatrixContents(exp);
+    else {exp};
+  end match;
+end expandArray;
+
 protected function makeASUBsForDimension"makes all asubs for the complete dimension of the exp."
   input DAE.Exp eIn;
   output list<DAE.Exp> eLstOut={};
