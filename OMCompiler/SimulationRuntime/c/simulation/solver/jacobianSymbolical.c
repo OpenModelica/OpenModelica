@@ -141,7 +141,11 @@ void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATT
     }
 
     /* Evaluate with updated seed vector */
-    data->callback->functionJacA_column(data, threadData, t_jac, NULL);
+    if (data->callback->functionJacADJ_column) {
+      data->callback->functionJacADJ_column(data, threadData, t_jac, NULL);
+    } else {
+      data->callback->functionJacA_column(data, threadData, t_jac, NULL);
+    }
     /* Save jacobian elements in matrixA*/
     for (j=0; j < columns; j++) {
       if (t_jac->seedVars[j] == 1) {
