@@ -198,7 +198,8 @@ public
           StrongComponent generic_comp, solved_comp;
           list<StrongComponent> entwined_slices = {};
           Tearing strict;
-          list<StrongComponent> tmp, inner_comps = {};
+          list<StrongComponent> tmp, inner_comps = {}, failed_inner = {};
+          String err_str;
 
           Algorithm alg;
           list<ComponentRef> solved_crefs, inputs, outputs;
@@ -303,7 +304,24 @@ public
             // ToDo: fail for non explicit inner equations?
             (tmp, funcTree, implicit_index) := solveStrongComponent(strict.innerEquations[index], funcTree, kind, implicit_index, slicing_map, varData, eqData);
             inner_comps := listAppend(tmp, inner_comps);
+            for elem in tmp loop
+              if StrongComponent.getSolveStatus(elem) <> NBSolve.Status.EXPLICIT then
+                failed_inner := elem :: failed_inner;
+              end if;
+            end for;
           end for;
+          // throw an error if there are non explicit inner equations
+          if not listEmpty(failed_inner) then
+            if Flags.isSet(Flags.TEARING_DUMP) then
+              err_str := " Following inner equations could not be solved explicitely:\n"
+                + List.toString(failed_inner, function StrongComponent.toString(index = -1), "" ,"" , "\n", "");
+            else
+              err_str := " Use -d=tearingdump for more information.";
+            end if;
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. " + err_str});
+            fail();
+          end if;
+
           strict.innerEquations := listArray(inner_comps);
           comp.strict := strict;
           comp.status := Status.IMPLICIT;
