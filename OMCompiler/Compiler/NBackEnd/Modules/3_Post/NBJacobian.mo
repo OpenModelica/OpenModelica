@@ -44,7 +44,6 @@ protected
   // NF imports
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
-  import NFExpandExp;
   import NFFlatten.FunctionTree;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
@@ -70,8 +69,6 @@ protected
   import Tearing = NBTearing;
   import NFOperator.{MathClassification, SizeClassification};
   import NBVariable.{VariablePointers, VariablePointer, VarData};
-  import Slice = NBSlice;
-  import Tearing = NBTearing;
 
   // Old Backend Import (remove once coloring ins ported)
   import SymbolicJacobian;
