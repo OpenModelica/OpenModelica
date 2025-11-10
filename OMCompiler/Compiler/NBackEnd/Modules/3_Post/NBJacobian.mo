@@ -491,9 +491,10 @@ public
         then fail();
 
       end match;
+
       // create coloring
-      //sparsityColoring := SparsityColoring.PartialD2ColoringAlgC(sparsityPattern, jacType);
-      sparsityColoring := SparsityColoring.PartialD2ColoringAlgColumnAndRow(sparsityPattern, map);
+      sparsityColoring := SparsityColoring.PartialD2ColoringAlgC(sparsityPattern, jacType);
+      // sparsityColoring := SparsityColoring.PartialD2ColoringAlgColumnAndRow(sparsityPattern, map);
 
       if Flags.isSet(Flags.DUMP_SPARSE) then
         print(toString(sparsityPattern) + "\n" + SparsityColoring.toString(sparsityColoring) + "\n");
@@ -566,8 +567,8 @@ public
       Integer sizeCols, sizeRows;
       ComponentRef idx_cref;
       list<ComponentRef> deps;
-      array<list<Integer>> cols, rows, colored_cols;
-      array<SparsityColoringCol> cref_colored_cols;
+      array<list<Integer>> cols, rows, colored_cols, colored_rows;
+      array<SparsityColoringCol> cref_colored_cols, cref_colored_rows;
       function getIndices
         input ComponentRef cref;
         input UnorderedMap<ComponentRef, Integer> seed_indices;
@@ -622,16 +623,53 @@ public
       // call C function (old backend - ToDo: port to new backend!)
       //colored_cols := SymbolicJacobian.createColoring(cols, rows, sizeRows, sizeCols);
       colored_cols := SymbolicJacobian.createColoring(rows, cols, sizeCols, sizeRows);
-
-      // get cref based coloring - currently no row coloring
+      // get cref based coloring
       cref_colored_cols := arrayCreate(arrayLength(colored_cols), {});
       for i in 1:arrayLength(colored_cols) loop
         cref_colored_cols[i] := list(seeds[idx] for idx in colored_cols[i]);
       end for;
 
-      sparsityColoring := SPARSITY_COLORING(cref_colored_cols, arrayCreate(sizeRows, {}));
+      // Row coloring (color partials)
+      colored_rows := SymbolicJacobian.createColoring(cols, rows, sizeRows, sizeCols);
+      cref_colored_rows := arrayCreate(arrayLength(colored_rows), {});
+      for i in 1:arrayLength(colored_rows) loop
+        cref_colored_rows[i] := list(partials[idx] for idx in colored_rows[i]);
+      end for;
+
+      //sparsityColoring := SPARSITY_COLORING(cref_colored_cols, arrayCreate(sizeRows, {}));
+      sparsityColoring := SPARSITY_COLORING(cref_colored_cols, cref_colored_rows);
     end PartialD2ColoringAlgC;
 
+    function PartialD2ColoringAlgColumnAndRow
+      "author: fbrandt 2025-10
+      taken from: 'What Color Is Your Jacobian? Graph Coloring for Computing Derivatives'
+      https://doi.org/10.1137/S0036144504444711 (Algorithm 3.2)
+      A greedy partial distance-2 coloring algorithm done twice to compute both column and row coloring."
+      input SparsityPattern sparsityPattern;
+      input UnorderedMap<ComponentRef, list<ComponentRef>> map;
+      output SparsityColoring sparsityColoring;
+    protected
+      array<ComponentRef> seed_nodes, partial_nodes;
+      list<SparsityColoringCol> col_groups = {};
+      list<SparsityColoringRow> row_groups = {};
+      Integer nCols, nRows, pad, k;
+      array<SparsityColoringCol> cols_arr;
+      array<SparsityColoringRow> rows_arr;
+    algorithm
+      // Nodes to color: seeds (columns) and partials (rows)
+      seed_nodes := listArray(sparsityPattern.seed_vars);
+      partial_nodes  := listArray(sparsityPattern.partial_vars);
+
+      // Column coloring (seeds -> partials -> seeds)
+      col_groups := GreedyPartialD2Color(seed_nodes, map);
+      // Row coloring (partials -> seeds -> partials)
+      row_groups := GreedyPartialD2Color(partial_nodes, map);
+      // Build arrays for result
+      cols_arr := listArray(col_groups);
+      rows_arr := listArray(row_groups);
+
+      sparsityColoring := SPARSITY_COLORING(cols_arr, rows_arr);
+    end PartialD2ColoringAlgColumnAndRow;
 
     // Distance-2 greedy coloring on a bipartite graph represented by 'map':
     // Given a node set 'nodes' (either seeds or partials), assign colors so that
@@ -696,39 +734,6 @@ public
       end for;
     end GreedyPartialD2Color;
 
-    function PartialD2ColoringAlgColumnAndRow
-      "author: fbrandt 2025-10
-      taken from: 'What Color Is Your Jacobian? Graph Coloring for Computing Derivatives'
-      https://doi.org/10.1137/S0036144504444711 (Algorithm 3.2)
-      A greedy partial distance-2 coloring algorithm done twice to compute both column and row coloring."
-      input SparsityPattern sparsityPattern;
-      input UnorderedMap<ComponentRef, list<ComponentRef>> map;
-      output SparsityColoring sparsityColoring;
-    protected
-      array<ComponentRef> seed_nodes, partial_nodes;
-      list<SparsityColoringCol> col_groups = {};
-      list<SparsityColoringRow> row_groups = {};
-      Integer nCols, nRows, pad, k;
-      array<SparsityColoringCol> cols_arr;
-      array<SparsityColoringRow> rows_arr;
-    algorithm
-      // Nodes to color: seeds (columns) and partials (rows)
-      seed_nodes := listArray(sparsityPattern.seed_vars);
-      partial_nodes  := listArray(sparsityPattern.partial_vars);
-
-      // Column coloring (seeds -> partials -> seeds)
-      col_groups := GreedyPartialD2Color(seed_nodes, map);
-
-      // Row coloring (partials -> seeds -> partials)
-      row_groups := GreedyPartialD2Color(partial_nodes, map);
-
-      // Build arrays for result
-      cols_arr := listArray(col_groups);
-      rows_arr := listArray(row_groups);
-
-      sparsityColoring := SPARSITY_COLORING(cols_arr, rows_arr);
-    end PartialD2ColoringAlgColumnAndRow;
-
     function PartialD2ColoringAlg
       "author: kabdelhak 2022-03
       taken from: 'What Color Is Your Jacobian? Graph Coloring for Computing Derivatives'
@@ -748,10 +753,10 @@ public
       list<SparsityColoringRow> rows_lst = {};
     algorithm
       // integer to cref and reverse lookup arrays
-      cref_lookup := listArray(sparsityPattern.seed_vars);
+      cref_lookup := listArray(sparsityPattern.seed_vars); // x, y, z
       index_lookup := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(sparsityPattern.seed_vars)));
       for i in 1:arrayLength(cref_lookup) loop
-        UnorderedMap.add(cref_lookup[i], i, index_lookup);
+        UnorderedMap.add(cref_lookup[i], i, index_lookup); // x->1, y->2, z->3
       end for;
 
       // create empty colorings
