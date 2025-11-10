@@ -727,7 +727,7 @@ protected
     end match;
 
     // create the simulation jacobian
-    if Partition.Partition.isODE(part) then
+    if Partition.Partition.isODEorDAE(part) then
       partialCandidates := part.unknowns;
       unknowns  := if Partition.Partition.getKind(part) == NBPartition.Kind.DAE then Util.getOption(part.daeUnknowns) else part.unknowns;
       jacType   := if Partition.Partition.getKind(part) == NBPartition.Kind.DAE then JacobianType.DAE else JacobianType.ODE;

@@ -252,17 +252,17 @@ public
       output Boolean b = EquationPointers.size(partition.equations) == 0;
     end isEmpty;
 
-    function isODE
+    function isODEorDAE
       input Partition part;
       output Boolean b;
     algorithm
       b := match part.association
         local
           Kind kind;
-        case Association.CONTINUOUS(kind = kind) then kind == Kind.ODE or kind == Kind.ODE_EVT;
+        case Association.CONTINUOUS(kind = kind) then kind == Kind.ODE or kind == Kind.ODE_EVT or kind == Kind.DAE;
         else false;
       end match;
-    end isODE;
+    end isODEorDAE;
 
     function categorize
       input Partition partition;
