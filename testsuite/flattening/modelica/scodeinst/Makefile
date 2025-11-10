@@ -912,6 +912,7 @@ NoScalarize1.mo \
 NoScalarize2.mo \
 NoScalarizeConnect1.mo \
 NoScalarizeConnect2.mo \
+NoScalarizeConnect3.mo \
 OperationAdd1.mo \
 OperationAddEW1.mo \
 OperationDiv1.mo \
