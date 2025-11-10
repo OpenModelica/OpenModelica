@@ -73,6 +73,8 @@ extern void ASSC_setMatrix(modelica_integer nvars, modelica_integer neqns, model
   col_val = (int*) malloc(nz * sizeof(int));
   // initialize rows
   rows = (LIST**) malloc(ne * sizeof(LIST*));
+  // initialize mapping
+  mapping = (int*) malloc(ne * sizeof(int));
 
   col_ptrs[0] = 0;
   for (i=0; i<ne; ++i) {
@@ -118,17 +120,22 @@ extern void ASSC_printMatrix()
 {
   cout << "Sparse Matrix:" << endl << "================" << endl;
 
-  for (int i=0; i<ne; ++i) {
+  /*for (int i=0; i<ne; ++i) {
     cout << i << ": ";
     for (int j=col_ptrs[i]; j < col_ptrs[i+1]; ++j)
       cout << "(" << col_ids[j] << "," << col_val[j] << ")";
     cout << endl;
-  }
+  }*/
 
   for (int i=0; i<ne; ++i) {
     applyList(rows[i], printAsscElement);
     printf("\n");
   }
+}
+
+extern void ASSC_bareiss()
+{
+  bareiss();
 }
 
 #ifdef __cplusplus
