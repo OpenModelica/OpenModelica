@@ -69,17 +69,9 @@ protected
   import StrongComponent = NBStrongComponent;
   import Tearing = NBTearing;
   import NFOperator.{MathClassification, SizeClassification};
-<<<<<<< HEAD
   import NBVariable.{VariablePointers, VariablePointer, VarData};
   import Slice = NBSlice;
   import Tearing = NBTearing;
-
-  import Call = NFCall;
-  import NFBuiltinFuncs;
-  import NFPrefixes;
-=======
-  import NBVariable.{VariablePointer, VariablePointers, VarData};
->>>>>>> master
 
   // Old Backend Import (remove once coloring ins ported)
   import SymbolicJacobian;
