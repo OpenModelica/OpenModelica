@@ -275,6 +275,10 @@ public
           SimCodeUtil.addListSimCodeMap(seedVars, jac_map);
           SimCodeUtil.addListSimCodeMap(resVars, jac_map);
           SimCodeUtil.addListSimCodeMap(tmpVars, jac_map);
+          // also add to the global simcode map
+          SimCodeUtil.addListSimCodeMap(seedVars, simcode_map);
+          SimCodeUtil.addListSimCodeMap(resVars, simcode_map);
+          SimCodeUtil.addListSimCodeMap(tmpVars, simcode_map);
 
           try
             idx_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars));

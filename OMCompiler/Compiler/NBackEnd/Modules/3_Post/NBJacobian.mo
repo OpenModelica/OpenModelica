@@ -1199,10 +1199,8 @@ protected
       // only allow single components and algebraic loops
       for c in comps loop
         if not StrongComponent.isSingleComponent(c) and not StrongComponent.isAlgebraicLoop(c) then
-          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " only supports SINGLE_COMPONENT!"});
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " only supports SINGLE_COMPONENT and ALGEBRAIC_LOOP!"});
           fail();
-        elseif StrongComponent.isAlgebraicLoop(c) then
-          Error.addCompilerWarning(getInstanceName() + " supports ALGEBRAIC_LOOP but there is an unrelated error currently in codegen!");
         end if;
       end for;
     else
