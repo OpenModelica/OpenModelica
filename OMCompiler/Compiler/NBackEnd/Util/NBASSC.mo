@@ -67,7 +67,7 @@ public
     list<ComponentRef> cref_lst;
     Expression res, diff_res;
     DifferentiationArguments args;
-    Integer diff_res_int, eqn_index, var_index, nv, ne, nz, count = 0;
+    Integer diff_res_int, eqn_index, var_index, var_index1, var_index2, nv, ne, nz, count = 0;
     Tuple_Id id;
     UnorderedMap<Tuple_Id,Integer> diffs = UnorderedMap.new<Integer>(Tuple_Id.hash, Tuple_Id.isEqual);
     UnorderedSet<EquationPointer> int_eqns = UnorderedSet.new(Equation.hash, Equation.isEqualPtr);
@@ -149,13 +149,24 @@ public
     enum_eqns := UnorderedMap.fromLists(eqns, lst_enum, Equation.hash, Equation.isEqualPtr);
     lst_enum := List.intRange(UnorderedSet.size(int_crefs));
     enum_crefs := UnorderedMap.fromLists(vars, lst_enum, ComponentRef.hash, ComponentRef.isEqual);
+    print(UnorderedMap.toString(enum_crefs, ComponentRef.toString, intString));
     indices := arrayCreate(UnorderedSet.size(int_eqns), {});
     values := arrayCreate(UnorderedSet.size(int_eqns), {});
     // create matrix elements for sparse matrix
     lst_eqns := UnorderedSet.toList(int_eqns);
     for eq_ptr in lst_eqns loop
       crefs_rows := UnorderedMap.getSafe(eq_ptr, rows, sourceInfo());
-      for cr in crefs_rows loop
+      print(List.toString(crefs_rows, ComponentRef.toString));
+      // help section in order to sort the matrix elements
+      // TODO: list.sort
+      var_index1 := UnorderedMap.getSafe(listGet(crefs_rows,1), enum_crefs, sourceInfo());
+      var_index2 := UnorderedMap.getSafe(listGet(crefs_rows,2), enum_crefs, sourceInfo());
+      if var_index1 > var_index2 then
+        crefs_rows := listReverse(crefs_rows);
+      end if;
+      //
+      print(List.toString(crefs_rows, ComponentRef.toString));
+      for cr in listReverse(crefs_rows) loop
         eqn_index := UnorderedMap.getSafe(eq_ptr, enum_eqns, sourceInfo());
         var_index := UnorderedMap.getSafe(cr, enum_crefs, sourceInfo());
         indices[eqn_index] := var_index :: indices[eqn_index];
@@ -164,6 +175,8 @@ public
     end for;
 
     setMatrix(UnorderedSet.size(int_crefs),UnorderedSet.size(int_eqns),UnorderedMap.size(diffs),indices,values);
+    printMatrix();
+    bareiss();
     printMatrix();
     freeMatrix();
 
@@ -207,6 +220,10 @@ public
   function printMatrix
     external "C" ASSC_printMatrix() annotation(Library = "omcruntime");
   end printMatrix;
+
+  function bareiss
+    external "C" ASSC_bareiss() annotation(Library = "omcruntime");
+  end bareiss;
 
 protected
   type CrefLst = list<ComponentRef>;
