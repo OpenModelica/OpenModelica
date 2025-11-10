@@ -8595,10 +8595,19 @@ protected function extractVarFromVar
 protected
   list<DAE.ComponentRef> scalar_crefs;
   BackendDAE.Var scalarVar;
+  DAE.Exp binding;
+  list<Option<DAE.Exp>> scalar_bindings;
+  Option<DAE.Exp> binding_opt;
+  DAE.ComponentRef cref;
 algorithm
   // if it is an array parameter split it up. Do not do it for Cpp runtime, they can handle array parameters
   if Types.isArray(dlowVar.varType) then
     scalar_crefs := ComponentReference.expandCref(dlowVar.varName, false);
+    scalar_bindings := match dlowVar.bindExp
+      case SOME(binding as DAE.ARRAY())   then list(SOME(b) for b in Expression.expandArray(binding));
+      case SOME(binding as DAE.MATRIX())  then list(SOME(b) for b in Expression.expandArray(binding));
+      else List.fill(dlowVar.bindExp, listLength(scalar_crefs));
+    end match;
     if Config.simCodeTarget() <> "Cpp" then
       // Make sure the array does not get expanded again. The check for existence is made by the caller
       // of this function, extractVarsFromList. Which checks for the whole unxpanded array, which is never
@@ -8607,9 +8616,11 @@ algorithm
       // However that means we do the exapnsion of the array for nothing. So add it here so that it does
       // not get expanded again (and every entry checked again).
       Mutable.update(hs, BaseHashSet.add(dlowVar.varName, Mutable.access(hs)));
-      for cref in scalar_crefs loop
+      for tpl in List.zip(scalar_crefs, scalar_bindings) loop
+        (cref, binding_opt) := tpl;
         // extract the expanded sim var
         scalarVar := BackendVariable.copyVarNewName(cref, dlowVar);
+        scalarVar.bindExp := binding_opt;
         scalarVar.varType := ComponentReference.crefTypeFull(cref);
         extractVarFromVar2(scalarVar, inAliasVars, inVars, simVars, hs, timeInterval, iterationVars);
       end for;

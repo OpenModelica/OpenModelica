@@ -301,11 +301,7 @@ public
         case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
           for index in arrayLength(strict.innerEquations):-1:1 loop
             // ToDo: fail for non explicit inner equations?
-            if StrongComponent.getSolveStatus(strict.innerEquations[index]) <> Status.EXPLICIT then
-              (tmp, funcTree, implicit_index) := solveStrongComponent(strict.innerEquations[index], funcTree, kind, implicit_index, slicing_map, varData, eqData);
-            else
-              tmp := {strict.innerEquations[index]};
-            end if;
+            (tmp, funcTree, implicit_index) := solveStrongComponent(strict.innerEquations[index], funcTree, kind, implicit_index, slicing_map, varData, eqData);
             inner_comps := listAppend(tmp, inner_comps);
           end for;
           strict.innerEquations := listArray(inner_comps);

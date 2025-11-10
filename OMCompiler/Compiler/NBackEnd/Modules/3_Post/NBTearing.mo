@@ -376,53 +376,19 @@ protected
 
   function finalize extends Module.tearingInterface;
   protected
-    list<StrongComponent> residual_comps;
-    Option<Jacobian> jacobian;
     Tearing strict;
-  protected
     list<list<Slice<EquationPointer>>> acc;
     UnorderedSet<VariablePointer> dummy_set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
-    type EquationPointerList = list<Pointer<Equation>>;
-    UnorderedMap<ComponentRef, EquationPointerList> dummy_map = UnorderedMap.new<EquationPointerList>(ComponentRef.hash, ComponentRef.isEqual);
-    VarData varData = VarData.VAR_DATA_EMPTY();
-    EqData eqData = EqData.EQ_DATA_EMPTY();
-    list<StrongComponent> inner_comps, tmp;
-    list<VariablePointer> seed_candidates, residual_vars, inner_vars;
-    constant Boolean init = kind == NBPartition.Kind.INI;
   algorithm
     comp := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
         // inline potential records
         acc := list(Inline.inlineRecordSliceEquation(eqn, variables, dummy_set, eq_index, true) for eqn in strict.residual_eqns);
 
-        // create residual equations and components
+        // create residual equations
         strict.residual_eqns  := list(Slice.apply(eqn, function Equation.createResidual(new = true, allowFail = false)) for eqn in List.flatten(acc));
-        residual_comps        := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
-
-        // solve inner components before differentiating
-        inner_comps := {};
-        for index in arrayLength(strict.innerEquations):-1:1 loop
-          (tmp, funcTree, _) := Solve.solveStrongComponent(strict.innerEquations[index], funcTree, kind, 0, dummy_map, varData, eqData);
-          inner_comps := listAppend(tmp, inner_comps);
-        end for;
-        strict.innerEquations := listArray(inner_comps);
-
-        // create seed and partial candidates
-        seed_candidates := list(Slice.getT(var) for var in strict.iteration_vars);
-        residual_vars   := list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in strict.residual_eqns);
-        inner_vars      := listAppend(list(var for var guard(BVariable.isContinuous(var, init)) in StrongComponent.getVariables(comp)) for comp in strict.innerEquations);
-
-        // update jacobian to take slices (just to have correct inner variables and such)
-        (jacobian, funcTree) := BJacobian.nonlinear(
-          seedCandidates    = VariablePointers.fromList(seed_candidates),
-          partialCandidates = VariablePointers.fromList(listAppend(residual_vars, inner_vars)),
-          equations         = EquationPointers.fromList(list(Slice.getT(eqn) for eqn in strict.residual_eqns)),
-          comps             = Array.appendList(strict.innerEquations, residual_comps),
-          funcTree          = funcTree,
-          name              = Partition.Partition.kindToString(kind) + (if comp.linear then "_LS_JAC_" else "_NLS_JAC_") + intString(index),
-          init              = kind == NBPartition.Kind.INI);
-        strict.jac := jacobian;
         comp.strict := strict;
+
         if Flags.isSet(Flags.TEARING_DUMP) then
           print(StrongComponent.toString(comp) + "\n");
         end if;
