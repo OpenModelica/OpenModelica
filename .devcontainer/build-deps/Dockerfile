@@ -9,8 +9,9 @@ ARG USER_GID=$USER_UID
 
 # Additional software (gdb, valgrind)
 RUN apt-get update \
-    && apt-get install -qy build-essential gdb valgrind
-
+    && apt-get install -qy build-essential gdb valgrind \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 # Create the user
 RUN groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME

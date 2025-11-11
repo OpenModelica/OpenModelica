@@ -9,7 +9,7 @@ in our continuous integration.
 ## Available Containers
 
 We added three images that are used by the continuous integration used to
-compile or test the pull requests on github.com/OpenModelica/OpenMOdelica.
+compile or test the pull requests on github.com/OpenModelica/OpenModelica.
 
 - [build-deps](./build-deps/devcontainer.json): Default Ubuntu based build
   container to compile OpenModelica.
