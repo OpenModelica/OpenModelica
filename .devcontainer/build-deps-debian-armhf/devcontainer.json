@@ -1,30 +1,31 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
 {
-  "name": "fmuchecker",
+  "name": "build-deps:bookworm.nightly.armhf",
 
   // Dockerfile
   "build": {
     "dockerfile": "Dockerfile",
     "args": {
+        "BASE_IMAGE": "docker.openmodelica.org/build-deps:bookworm.nightly.armhf",
         // On Windows USERNAME is set, on Linux USER is set
         // We hope only one is set
         "USERNAME": "${localEnv:USER}${localEnv:USERNAME}"
     }
   },
 
-  // Features to add to the dev container. More info: https://containers.dev/features.
-  "features": {
-    "ghcr.io/devcontainers/features/git:1": {
-      "version": "latest"
-    }
-  },
-
-  // Configure tool-specific properties.
-  //"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  // Additional VSCode extensions
   "customizations": {
     "vscode": {
-      "extensions": []
+      "extensions": [
+        "AnHeuermann.metamodelica",
+        "ms-vscode.cpptools-extension-pack",
+        "njpwerner.autodocstring",
+        "lextudio.restructuredtext",
+        "trond-snekvik.simple-rst",
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ]
     }
   },
 
