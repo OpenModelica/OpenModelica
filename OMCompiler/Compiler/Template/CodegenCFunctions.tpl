@@ -7845,12 +7845,12 @@ template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isSta
           "ERROR: Not implemented in varArrayNameValues"
         case SIMVAR(__) then
           let c_comment = CodegenUtil.crefCCommentWithVariability(var)
-          <<
-          <%if isStart then '<%varAttributes(var, &sub)%>.start'
-            else if isPre then '(<%arr%>this_function->pre_vars-><%crefTypeOMSIC(name)%>[<%index%>]<%c_comment%>)<%&sub%>'
-            else '(<%arr%>this_function->function_vars-><%crefTypeOMSIC(name)%>[<%index%>]<%c_comment%>)<%&sub%>'
-          %>
-          >>
+          if isStart then
+            '<%varAttributes(var, &sub)%>.start'
+          else if isPre then
+            '(<%arr%>this_function->pre_vars-><%crefTypeOMSIC(name)%>[<%index%>]<%c_comment%>)<%&sub%>'
+          else
+            '(<%arr%>this_function->function_vars-><%crefTypeOMSIC(name)%>[<%index%>]<%c_comment%>)<%&sub%>'
       end match
     else
       match var
@@ -7867,9 +7867,17 @@ template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isSta
         case SIMVAR(__) then
           let c_comment = CodegenUtil.crefCCommentWithVariability(var)
           let ty = crefShortType(name)
-          '<%if isStart then '<%varAttributes(var, &sub)%>.start'
-             else if isPre then '(<%arr%>data->simulationInfo-><%ty%>VarsPre[<%index%>]<%c_comment%>)<%&sub%>'
-             else '(<%arr%>data->localData[<%ix%>]-><%ty%>Vars[data->simulationInfo-><%ty%>VarsIndex[<%index%>]]<%c_comment%>)<%sub%>'%>'
+          if isStart then
+            // TODO: How to handle array case?
+            match ty
+              case "real" then
+                '((modelica_real *)(<%varAttributes(var, &sub)%>.start.data))[0]'
+              else
+                '<%varAttributes(var, &sub)%>.start'
+          else if isPre then
+            '(<%arr%>data->simulationInfo-><%ty%>VarsPre[<%index%>]<%c_comment%>)<%&sub%>'
+          else
+            '(<%arr%>data->localData[<%ix%>]-><%ty%>Vars[data->simulationInfo-><%ty%>VarsIndex[<%index%>]]<%c_comment%>)<%sub%>'
       end match
   end match
 end varArrayNameValues;
