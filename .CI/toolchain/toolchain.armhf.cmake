@@ -11,6 +11,10 @@ set(CMAKE_FIND_ROOT_PATH
   /usr/lib/arm-linux-gnueabihf
   /usr/include/arm-linux-gnueabihf)
 
+# Set path to FindBoost.cmake
+set(Boost_DIR
+  /usr/lib/arm-linux-gnueabihf/cmake/Boost-1.74.0/)
+
 # Only search in target paths for libraries and includes
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)

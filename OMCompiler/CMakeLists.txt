@@ -36,9 +36,6 @@ omc_option(OM_OMC_USE_CORBA "Should use corba." OFF)
 
 omc_option(OM_OMC_USE_LAPACK "Should we use lapack." ON)
 
-omc_option(OM_OMC_ENABLE_PARMODELICA "Enable ParModelica runtime." ON)
-
-
 # Remove -DNDEBUG from release build command lines. The reason is that -DNDEBUG completely
 # removes assert(...) statements. We have some assert statements with side effects. Of course,
 # these should be removed and the flag enabled so that we can benefit from removing asserts from

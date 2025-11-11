@@ -19,7 +19,7 @@ endif()
 
 # ParModelica
 # Disable for MSVC. There are some issues with Boost which need to be fixed.
-if(OM_OMC_ENABLE_PARMODELICA AND NOT MSVC)
+if(NOT MSVC)
   omc_add_subdirectory(ParModelica)
 endif()
 

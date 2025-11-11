@@ -223,7 +223,6 @@ pipeline {
                 -DOM_OMC_ENABLE_CPP_RUNTIME=OFF \
                 -DOM_OMC_ENABLE_MOO=OFF \
                 -DOM_OMC_ENABLE_OPTIMIZATION=OFF \
-                -DOM_OMC_ENABLE_PARMODELICA=OFF \
                 -DOM_OMC_ENABLE_FORTRAN=OFF \
                 -DNEED_FORTRAN_NAME_MANGLING=OFF \
                 -DOM_ENABLE_GUI_CLIENTS=OFF \
