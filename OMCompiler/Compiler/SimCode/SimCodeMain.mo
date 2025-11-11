@@ -394,6 +394,7 @@ function generateModelCodeNewBackend
   output String fileDir;
   output Real timeSimCode = 0.0;
   output Real timeTemplates = 0.0;
+  output DAE.FunctionTree oldFunctionTree;
 protected
   Integer numCheckpoints;
   NSimCode.SimCode simCode;
@@ -403,7 +404,7 @@ algorithm
   StackOverflow.clearStacktraceMessages();
   try
     System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
-    simCode := NSimCode.SimCode.create(bdae, className, fileNamePrefix, simSettingsOpt);
+    (simCode, oldFunctionTree) := NSimCode.SimCode.create(bdae, className, fileNamePrefix, simSettingsOpt);
     if Flags.isSet(Flags.DUMP_SIMCODE) then
       print(NSimCode.SimCode.toString(simCode));
     end if;
@@ -1172,7 +1173,9 @@ algorithm
     ExecStat.execStat("FrontEnd");
 
     if runBackend then
-      (outLibs, outFileDir, resultValues) := translateModelCallBackendNB(flatModel, funcTree, className, inFileNamePrefix, inSimSettingsOpt);
+      (outLibs, outFileDir, resultValues, funcs) := translateModelCallBackendNB(flatModel, funcTree, className, inFileNamePrefix, inSimSettingsOpt);
+    else
+      funcs := NFConvertDAE.convertFunctionTree(funcTree);
     end if;
 
     // This must be done after calling the backend since it uses the FlatModel,
@@ -1180,7 +1183,7 @@ algorithm
     if dumpValidFlatModelicaNF then
       flatString := NFFlatString;
     elseif not runSilent then
-      (dae, funcs) := NFConvertDAE.convert(flatModel, funcTree);
+      dae := NFConvertDAE.convertModel(flatModel);
       flatString := DAEDump.dumpStr(dae, funcs);
     end if;
 
@@ -1476,6 +1479,7 @@ protected function translateModelCallBackendNB
   output list<String> outLibs;
   output String outFileDir;
   output list<tuple<String, Values.Value>> resultValues;
+  output DAE.FunctionTree oldFunctionTree;
 protected
   Real timeSimCode=0.0, timeTemplates=0.0, timeBackend=0.0;
   NBackendDAE bdae;
@@ -1493,7 +1497,7 @@ algorithm
   timeBackend := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
   ExecStat.execStat("backend");
 
-  (outLibs, outFileDir, timeSimCode, timeTemplates) := generateModelCodeNewBackend(bdae, inClassName, inFileNamePrefix, inSimSettingsOpt);
+  (outLibs, outFileDir, timeSimCode, timeTemplates, oldFunctionTree) := generateModelCodeNewBackend(bdae, inClassName, inFileNamePrefix, inSimSettingsOpt);
 
   resultValues := {("timeTemplates", Values.REAL(timeTemplates)),
                   ("timeSimCode", Values.REAL(timeSimCode)),
