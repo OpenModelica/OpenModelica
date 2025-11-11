@@ -1410,7 +1410,7 @@ public
 
         Type elTy;
         // sumG = G + Gᵀ
-        Operator addM;
+        Operator addM, subM;
         Expression sumG, triuG;
 
         // diagG = G .* I(n), I(n) from diagonal(ones(n))
@@ -1492,7 +1492,7 @@ public
         exp.call := Call.setArguments(exp.call, {ret1});
       then exp;
 
-      // symmetric(A): 
+      // symmetric(A):
       // Forward: symmetric(dA/dz)
       // Reverse: grad_A = triu(G + Gᵀ) - diag(G)
       case (Expression.CALL()) guard(name == "symmetric")
@@ -1506,35 +1506,55 @@ public
 
         current_grad := diffArguments.current_grad;
 
-        // Only apply reverse mask for matrix upstream
+        // upstream gradient type (matrix)
         ty := Expression.typeOf(current_grad);
-        elTy := Type.arrayElementType(ty);
+        // element type
+        elTy := if Type.isArray(ty) then Type.arrayElementType(ty) else ty;
+        // matrix dimension (assume square)
         nExp := Dimension.size(listHead(Type.arrayDims(Expression.typeOf(arg1))));
+
+        // element-wise add / mul operators with full matrix type (not element type)
         addM := Operator.fromClassification(
-          (NFOperator.MathClassification.ADDITION, NFOperator.SizeClassification.MATRIX),
-          elTy);
+          (NFOperator.MathClassification.ADDITION, NFOperator.SizeClassification.ELEMENT_WISE),
+          ty);
+        subM := Operator.fromClassification(
+          (NFOperator.MathClassification.SUBTRACTION, NFOperator.SizeClassification.ELEMENT_WISE),
+          ty);
         mulEW := Operator.fromClassification(
           (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ELEMENT_WISE),
-          elTy);
+          ty);
 
-        // sumG = G + Gᵀ
-        sumG := Expression.MULTARY({current_grad, typeTransposeCall(current_grad)}, {}, addM);
-        //  triu(sumG) = sumG .* triu(ones(n,n))
-        triuG := Expression.MULTARY({sumG, Expression.makeTriuMask(nExp, elTy)}, {}, mulEW);
-        
-        // Build I(n): n = size(arg1,1)
-        eyeNN  := Expression.makeIdentityMatrix(nExp, elTy);
+        // sumG = G + Gᵀ   (binary)
+        sumG := Expression.BINARY(
+          current_grad,
+          addM,
+          typeTransposeCall(current_grad));
 
-        // diagG = G .* I
-        diagG := Expression.MULTARY({current_grad, eyeNN}, {}, mulEW);
+        // triu(sumG) = sumG .* triu(ones(n,n))  (binary)
+        triuG := Expression.BINARY(
+          sumG,
+          mulEW,
+          Expression.makeTriuMask(nExp, elTy));
 
-        // triu(G + Gᵀ) - diag(G)
-        diffArguments.current_grad := Expression.MULTARY({triuG}, {diagG}, addM);
+        // I(n)
+        eyeNN := Expression.makeIdentityMatrix(nExp, elTy);
+
+        // diagG = G .* I  (binary)
+        diagG := Expression.BINARY(
+          current_grad,
+          mulEW,
+          eyeNN);
+
+        // triu(G + Gᵀ) - diag(G)  (binary)
+        diffArguments.current_grad := Expression.BINARY(
+          triuG,
+          subM,
+          diagG);
 
         // Forward: symmetric(dA/dz)
         (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
 
-        // Restore upstream and return updated call
+        // restore upstream
         diffArguments.current_grad := current_grad;
         exp.call := Call.setArguments(exp.call, {ret1});
       then exp;
@@ -1687,7 +1707,7 @@ public
         rX := if Type.isArray(Expression.typeOf(arg1)) then Type.dimensionCount(Expression.typeOf(arg1)) else 0;
         current_grad := diffArguments.current_grad;
         old_grad := current_grad;
-        for i in 1:(if rY > rX then rY - rX else 0) loop // reduce over all added dimensions with sum
+        for i in 1:(if rY > rX then rY - rX else 0) loop // reduce over all added dimensions with sum (TODO: change to only sum over added dimensions)
           current_grad := typeSumCall(current_grad); // sum over first (or last?) dimension
         end for;
         diffArguments.current_grad := current_grad;
@@ -2558,12 +2578,12 @@ public
     (exp, diffArguments) := match exp
       local
         Expression exp1, exp2, diffExp1, diffExp2, e1, e2, e3, res;
-        Operator operator, addOp, mulOp, powOp, mulOpAdjoint, mulEWOp, divOp;
+        Operator operator, addOp, mulOp, powOp, mulEWOp, divOp;
         Operator.SizeClassification sizeClass, powSizeClass;
         Expression current_grad;
         // Local reverse grads (to assign before recursing)
         Expression grad_exp1, grad_exp2, denom2, numUF;
-        Boolean isVec1, isVec2, isMat1, isMat2, isScalar1, isScalar2, isArrUp, isArrF;
+        Boolean isVec1, isVec2, isMat1, isMat2;
         Type ty1, ty2;
         Integer r1, r2;
         list<Integer> dim1, dim2;
@@ -2625,8 +2645,6 @@ public
         dim1 := if r1 > 0 then NFDimension.sizes(Type.arrayDims(ty1)) else {};
         dim2 := if r2 > 0 then NFDimension.sizes(Type.arrayDims(ty2)) else {};
 
-        isScalar1 := (r1 == 0);
-        isScalar2 := (r2 == 0);
         isVec1 := (r1 == 1);
         isVec2 := (r2 == 1);
         isMat1 := (r1 == 2);
@@ -2707,23 +2725,6 @@ public
               (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX),
               operator.ty),
             current_grad);                     // Aᵀ * G
-        // k * A
-        elseif isScalar1 and isMat2 then
-          grad_exp1 := Expression.BINARY(current_grad, Operator.fromClassification(
-              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ELEMENT_WISE),
-              operator.ty), exp2);
-          grad_exp1 := typeSumCall(grad_exp1); // G : A = sum(G .* A)
-          grad_exp2 := Expression.BINARY(current_grad, Operator.fromClassification(
-              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ARRAY_SCALAR),
-              operator.ty), exp1); // G * k
-        // c = k * x
-        elseif isScalar1 and isVec2 then
-          // \bar{k} = \bar{c} * x, inner product
-          // \bar{x} = \bar{c} * k, scalar vector multiplication
-          grad_exp1 := Expression.BINARY(current_grad, Operator.makeScalarProduct(Type.REAL()), exp2); 
-          grad_exp2 := Expression.BINARY(exp1, Operator.fromClassification(
-              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.SCALAR_ARRAY),
-              Type.REAL()), current_grad);
         else
           grad_exp1 := Expression.MULTARY({current_grad, exp2}, {}, makeMulFromOperator(operator));
           grad_exp2 := Expression.MULTARY({current_grad, exp1}, {}, makeMulFromOperator(operator));
@@ -3311,11 +3312,12 @@ public
 
 
   function typeSumCall
-      "Create a typed builtin sum(A) call without expanding A.
-       Semantics (matching Modelica):
-         - If A is not an array => return A (defensive fallback).
-         - If A has 1 dimension (vector[n]) -> scalar result (element type).
-         - If A has k>1 dimensions (d1,d2,...,dk) -> array result of shape (d2,...,dk)."
+      "
+      Create a typed builtin sum(A) call without expanding A.
+        Semantics:
+          - If A is not an array => return A (defensive fallback).
+          - If A is an array => return sum over all elements, resulting in a scalar of element type.
+      "
       input Expression arr;
       output Expression s;
     protected
@@ -3336,14 +3338,7 @@ public
 
       elTy := Type.arrayElementType(inTy);
       dims := Type.arrayDims(inTy);
-
-      // 1D vector -> scalar (element type)
-      if listLength(dims) == 1 then
-        resTy := elTy;
-      else
-        // Reduce first dimension: keep tail dims
-        resTy := Type.ARRAY(elTy, listRest(dims));
-      end if;
+      resTy := elTy; // always reduce to scalar of element type
 
       // Build minimal builtin function descriptor for 'sum'
       SUM_FUNC :=

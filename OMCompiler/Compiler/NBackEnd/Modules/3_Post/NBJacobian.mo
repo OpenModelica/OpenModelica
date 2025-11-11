@@ -1551,7 +1551,7 @@ protected
     diffed_comps := {};
     i := 1;
 
-    // first the reversed tmp vars then res vars
+    // first the reversed tmp vars then algebraic loops then res vars
     for lhsKey in buildAdjointProcessingOrder(adjoint_map, res_vars, tmp_vars) loop
       terms := UnorderedMap.getOrFail(lhsKey, adjoint_map);
 
@@ -1600,7 +1600,6 @@ protected
             );
           end if;
         then diffed_comp;
-
         case NBEquation.ARRAY_EQUATION() then
           NBStrongComponent.SINGLE_COMPONENT(
             var    = lhsVarPtr,
@@ -1613,32 +1612,6 @@ protected
             eqn    = eqPtr,
             status = NBSolve.Status.EXPLICIT
           );
-        // case NBEquation.FOR_EQUATION() then
-        //   NBStrongComponent.RESIZABLE_COMPONENT(
-        //     var_cref = lhsKey,
-        //     var    = Slice.SLICE(lhsVarPtr, {}),
-        //     eqn    = Slice.SLICE(eqPtr, {}),
-        //     order = NONE(), // get order of original strong component
-        //     status = NBSolve.Status.EXPLICIT
-        //   );
-        case NBEquation.IF_EQUATION() then
-          NBStrongComponent.MULTI_COMPONENT(
-            vars    = {Slice.SLICE(lhsVarPtr, {})},
-            eqn    = Slice.SLICE(eqPtr, {}),
-            status = NBSolve.Status.EXPLICIT
-          );
-        case NBEquation.WHEN_EQUATION() then
-          NBStrongComponent.MULTI_COMPONENT(
-            vars    = {Slice.SLICE(lhsVarPtr, {})},
-            eqn    = Slice.SLICE(eqPtr, {}),
-            status = NBSolve.Status.EXPLICIT
-          );
-        // case NBEquation.ALGORITHM() then 
-        //   NBStrongComponent.MULTI_COMPONENT(
-        //     vars    = {Slice.SLICE(lhsVarPtr, {})},
-        //     eqn    = Slice.SLICE(eqPtr, {}),
-        //     status = NBSolve.Status.EXPLICIT
-        //   );
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " cannot create adjoint strong component for equation " + NBEquation.Equation.toString(eq)});
         then fail();
