@@ -3150,6 +3150,7 @@ protected
   Variability var;
   list<Equation> eql;
   Ceval.EvalTarget target;
+  list<Equation.Branch> bl = {};
 algorithm
   equations := match eq
     case Equation.IF()
@@ -3167,18 +3168,32 @@ algorithm
               cond := Ceval.evalExp(cond, target);
             end if;
 
-            if Expression.isTrue(cond) then
-              eql := evaluateIfWithConnects(eql);
-              equations := listAppend(eql, equations);
-              break;
-            elseif not Expression.isFalse(cond) then
+            if not Expression.isBoolean(cond) then
               Error.addInternalError(
                 "Failed to evaluate branch condition in if equation containing connect equations: `" +
                 Expression.toString(cond) + "`", Equation.info(eq));
               fail();
             end if;
           end if;
+
+          if Expression.isTrue(cond) then
+            if listEmpty(bl) then
+              eql := evaluateIfWithConnects(eql);
+              equations := listAppend(eql, equations);
+              bl := {};
+            else
+              bl := Equation.makeBranch(cond, eql, var) :: bl;
+            end if;
+
+            break;
+          elseif not Expression.isFalse(cond) then
+            bl := Equation.makeBranch(cond, eql, var) :: bl;
+          end if;
         end for;
+
+        if not listEmpty(bl) then
+          equations := Equation.IF(listReverseInPlace(bl), eq.scope, eq.source) :: equations;
+        end if;
       then
         equations;
 
