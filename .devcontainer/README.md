@@ -17,12 +17,16 @@ compile or test the pull requests on github.com/OpenModelica/OpenModelica.
   based container to compile for `aarch64-linux-gnu` and cross-compile for
   `arm-linux-gnueabihf`.
 
-  > **Note**
+  > [!NOTE]
   > Running the container on a non-ARM CPU relies on QUEMU for emulation of an
   > ARM architecture and is very slow.
 
 - [fmuchecker](./fmuchecker/devcontainer.json): Container with FMU checker to
   test generated FMUs.
+
+  > [!IMPORTANT]
+  > The Docker image is using a too old version of glibs to work with recent
+  > versions of VS Code.
 
 ## Usage in Visual Studio Code
 
