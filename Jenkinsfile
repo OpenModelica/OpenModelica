@@ -1,5 +1,6 @@
 def common
 def shouldWeBuildUCRT
+def shouldWeBuildARMHF
 def shouldWeDisableAllCMakeBuilds_value
 def shouldWeEnableMacOSCMakeBuild_value
 def shouldWeEnableUCRTCMakeBuild_value
@@ -16,6 +17,7 @@ pipeline {
   }
   parameters {
     booleanParam(name: 'BUILD_MSYS2_UCRT64', defaultValue: false, description: 'Build with Win/MSYS2-UCRT64')
+    booleanParam(name: 'BUILD_DEBIAN_ARMHF', defaultValue: false, description: 'Build with Linux Debian armhf')
     booleanParam(name: 'DISABLE_ALL_CMAKE_BUILDS', defaultValue: false, description: 'Skip building omc with CMake (CMake 3.17.2) on all platforms')
     booleanParam(name: 'ENABLE_MSYS2_UCRT64_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on MSYS2-UCRT64')
     booleanParam(name: 'ENABLE_MACOS_CMAKE_BUILD', defaultValue: false, description: 'Enable building omc with CMake on MacOS')
@@ -39,6 +41,8 @@ pipeline {
           print "isPR: ${isPR}"
           shouldWeBuildUCRT = common.shouldWeBuildUCRT()
           print "shouldWeBuildUCRT: ${shouldWeBuildUCRT}"
+          shouldWeBuildARMHF = common.shouldWeBuildARMHF()
+          print "shouldWeBuildARMHF: ${shouldWeBuildARMHF}"
           shouldWeDisableAllCMakeBuilds_value = common.shouldWeDisableAllCMakeBuilds()
           print "shouldWeDisableAllCMakeBuilds: ${shouldWeDisableAllCMakeBuilds_value}"
           shouldWeEnableMacOSCMakeBuild_value = common.shouldWeEnableMacOSCMakeBuild()
@@ -173,6 +177,62 @@ pipeline {
               sh "build/bin/omc --version"
             }
             //stash name: 'omc-cmake-gcc', includes: 'build_cmake/**, build/**'
+          }
+        }
+        stage('bookworm-armhf-clang') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:bookworm.nightly.armhf'
+              label 'linux-arm32'
+              alwaysPull true
+            }
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeBuildARMHF }
+          }
+          steps {
+            script {
+              sh 'autoreconf --install'
+              sh './configure CC=clang CXX=clang++ FC=gfortran CFLAGS=-Os --host=arm-linux-gnueabihf --build=arm-linux-gnueabihf --with-lapack="-llapack -lblas -lm" --without-omc --without-cppruntime --without-omlibrary --without-omniORB --prefix=`pwd`/install'
+              sh label: 'build', script: "make -j${common.numPhysicalCPU()} ${common.outputSync()} omc"
+              common.getVersion()
+            }
+          }
+        }
+        stage('bookworm-armhf-cmake') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:bookworm.nightly.armhf'
+              label 'linux-arm32'
+              alwaysPull true
+            }
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeBuildARMHF }
+          }
+          steps {
+            script {
+              sh 'cmake --version'
+              sh '''
+              cmake -S ./ -B ./build_cmake \
+                -DCMAKE_TOOLCHAIN_FILE=.CI/toolchain/toolchain.armhf.cmake \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DOM_USE_CCACHE=OFF \
+                -DOM_OMC_ENABLE_CPP_RUNTIME=OFF \
+                -DOM_OMC_ENABLE_MOO=OFF \
+                -DOM_OMC_ENABLE_OPTIMIZATION=OFF \
+                -DOM_OMC_ENABLE_PARMODELICA=OFF \
+                -DOM_OMC_ENABLE_FORTRAN=OFF \
+                -DNEED_FORTRAN_NAME_MANGLING=OFF \
+                -DOM_ENABLE_GUI_CLIENTS=OFF \
+                -DCMAKE_SYSTEM_VERSION=$(cmake --version | grep -oE '[0-9]+\\.[0-9]+\\.[0-9]+') \
+                -DCMAKE_INSTALL_PREFIX=install_cmake
+              '''
+              sh "cmake --build ./build_cmake --parallel ${common.numPhysicalCPU()}"
+              sh 'build_cmake/bin/omc --version'
+            }
           }
         }
         stage('cmake-macos-arm64-gcc') {
