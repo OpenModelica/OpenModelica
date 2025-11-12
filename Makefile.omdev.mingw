@@ -223,6 +223,8 @@ else
 endif
 
 	for f in $(QT_EXTRA_DLLS); do cp -puf $(OM_MSYS_ENV_DIR)/bin/$$f $(builddir_bin)/; done
+	mkdir -p $(builddir_bin)/osgPlugins-3.6.5/
+	cp -pufr $(OM_MSYS_ENV_DIR)/bin/osgPlugins-3.6.5/* $(builddir_bin)/osgPlugins-3.6.5/
 
 clean-qtclients:
 	rm -f $(OMBUILDDIR)/bin/OMPlot.exe $(OMBUILDDIR)/bin/OMEdit.exe $(OMBUILDDIR)/bin/OMNotebook.exe $(OMBUILDDIR)/bin/OMShell.exe $(OMBUILDDIR)/bin/OMOptim.exe
