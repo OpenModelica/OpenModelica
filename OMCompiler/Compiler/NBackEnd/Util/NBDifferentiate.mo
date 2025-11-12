@@ -817,176 +817,6 @@ public
   protected
     Pointer<Variable> var_ptr, der_ptr;
     ComponentRef derCref, strippedCref;
-
-    function updateAdjointList
-      input Option<ExpressionList> oldOpt;
-      input Expression current_grad;
-      output ExpressionList newList;
-    protected
-        ExpressionList oldList;
-    algorithm
-      newList := match oldOpt
-        // probably the only case since empty list is used to initialize
-        case SOME(oldList) then (current_grad :: oldList);
-        else {current_grad};
-      end match;
-    end updateAdjointList;
-
-    // Build a 1D one-hot array of the same type as derBaseCref:
-    // zeros(n) with value placed at index idx.
-    function buildOneHotVectorAdjoint
-      input ComponentRef derBaseCref;
-      input Integer idx;                // 1-based
-      input Expression value;           // scalar element to place
-      output Option<Expression> onehot; // NONE if sizes unknown or not vector
-    protected
-      Type arrTy;
-      list<Type.Dimension> dims;
-      list<Integer> sizes;
-      Integer n, i;
-      Type elTy;
-      list<Expression> elems = {};
-    algorithm
-      // Array type of the pDER base cref
-      arrTy := ComponentRef.getSubscriptedType(derBaseCref);
-      if not Type.isArray(arrTy) then
-        onehot := NONE(); return;
-      end if;
-
-      dims := Type.arrayDims(arrTy);
-      if listLength(dims) <> 1 then
-        // Only handle simple vectors here
-        onehot := NONE(); return;
-      end if;
-
-      sizes := NFDimension.sizes(dims);
-      if listEmpty(sizes) then
-        onehot := NONE(); return;
-      end if;
-
-      n := listHead(sizes);
-      elTy := Type.arrayElementType(arrTy);
-
-      // Build [0,0,...,value,...,0]
-      for i in 1:n loop
-        elems := (if i == idx then value else Expression.makeZero(elTy)) :: elems;
-      end for;
-
-      onehot := SOME(Expression.ARRAY(
-        arrTy,
-        listArray(listReverse(elems)),
-        false
-      ));
-    end buildOneHotVectorAdjoint;
-
-    // Build a multi-hot scatter vector for a SLICE subscript:
-    // result = sum_t [onehot(idx_t) * seed_elem_t]
-    // Handles:
-    //   - WHOLE()                     -> returns seed
-    //   - SLICE {i1,i2,...}           -> sum of one-hots; indices must be literal integers
-    //   - SLICE range lo[:st]:hi      -> sum over lo, lo+st, ..., hi; lo,st,hi must be literal integers
-    function buildMultiHotVectorAdjoint
-      input ComponentRef derBaseCref;
-      input Subscript sub;        // SLICE or WHOLE
-      input Expression seed;      // upstream gradient for the sliced view (scalar or vector)
-      output Option<Expression> scatter; // NONE() if not handled
-    protected
-      Type arrTy;
-      Type elTy;
-      Operator addOp;
-      Boolean seedIsArray;
-      Integer m, j, loI, hiI, stI;
-      array<Expression> elems = arrayCreate(0, Expression.INTEGER(0));
-      Option<Expression> accOpt;
-      Option<Expression> ohOpt;
-      Expression acc, seedElem, term;
-      list<Expression> idxElems;
-    algorithm
-      arrTy := ComponentRef.getSubscriptedType(derBaseCref);
-      elTy  := Type.arrayElementType(arrTy);
-      addOp := Operator.fromClassification(
-        (NFOperator.MathClassification.ADDITION, NFOperator.SizeClassification.ELEMENT_WISE),
-        elTy
-      );
-      seedIsArray := Type.isArray(Expression.typeOf(seed));
-
-      scatter := match sub
-        // case Subscript.SLICE(slice = Expression.ARRAY(elements = elems))
-        //     algorithm
-        //       m := arrayLength(elems);
-        //       if m == 0 then
-        //         scatter := SOME(Expression.makeZero(arrTy)); return;
-        //       end if;
-
-        //       acc := Expression.makeZero(arrTy);
-
-        //       for j in 1:m loop
-        //         // slice index must be a literal integer
-        //         if match elems[j] case Expression.INTEGER() then true else false end match then
-        //           // pick element seed[j] if seed is a vector, else reuse scalar seed
-        //           seedElem := if seedIsArray
-        //             then Expression.applySubscripts({Subscript.INDEX(Expression.INTEGER(j))}, seed, true)
-        //             else seed;
-
-        //           ohOpt := buildOneHotVectorAdjoint(derBaseCref, Expression.toInteger(elems[j]), seedElem);
-        //           if Util.isSome(ohOpt) then
-        //             acc := Expression.MULTARY({acc, Util.getOption(ohOpt)}, {}, addOp);
-        //           else
-        //             scatter := NONE(); return;
-        //           end if;
-        //         else
-        //           scatter := NONE(); return;
-        //         end if;
-        //       end for;
-
-        //       scatter := SOME(acc);
-        //     then scatter;
-        // SLICE with range lo:hi (unit step)
-        case Subscript.SLICE(slice = Expression.RANGE(
-            start = Expression.INTEGER(loI),
-            step  = NONE(),
-            stop  = Expression.INTEGER(hiI)))
-          algorithm
-            if hiI < loI then
-              scatter := SOME(Expression.makeZero(arrTy)); return;
-            end if;
-
-            accOpt := NONE();
-            m := hiI - loI + 1;
-            for j in 0:(m-1) loop
-              ohOpt := buildOneHotVectorAdjoint(
-                derBaseCref,
-                loI + j,
-                if seedIsArray
-                  then Expression.applySubscripts({Subscript.INDEX(Expression.INTEGER(j+1))}, seed, true)
-                  else seed
-              );
-              if Util.isSome(ohOpt) then
-                if Util.isSome(accOpt) then
-                  acc := Util.getOption(accOpt);
-                  term := Util.getOption(ohOpt);
-                  accOpt := SOME(Expression.MULTARY({acc, term}, {}, addOp));
-                else
-                  accOpt := ohOpt;
-                end if;
-              else
-                scatter := NONE(); return;
-              end if;
-            end for;
-
-            scatter := if Util.isSome(accOpt) then accOpt else SOME(Expression.makeZero(arrTy));
-          then scatter;
-
-        else NONE();
-      end match;
-    end buildMultiHotVectorAdjoint;
-
-    function subsToString
-      input List<Subscript> subs; output String s;
-    algorithm
-      s := "{" + List.toString(subs, Subscript.toString) + "}";
-    end subsToString;
-
   algorithm
     // extract var pointer first to have following code more readable
     var_ptr := match exp
@@ -1000,14 +830,14 @@ public
       then fail();
     end match;
 
-    // // Debug entry summary
-    // dbg("[dCREF] exp=" + Expression.toString(exp)
-    //     + " | diffType=" + DifferentiationArguments.diffTypeStr(diffArguments.diffType)
-    //     + " | scalarized=" + boolString(diffArguments.scalarized)
-    //     + " | collectAdjoints=" + boolString(diffArguments.collectAdjoints));
-    // if Util.isSome(diffArguments.adjoint_map) then
-    //   dbg("[dCREF] current_grad=" + Expression.toString(diffArguments.current_grad));
-    // end if;
+    // Debug entry summary
+    dbg("[dCREF] exp=" + Expression.toString(exp)
+        + " | diffType=" + DifferentiationArguments.diffTypeStr(diffArguments.diffType)
+        + " | scalarized=" + boolString(diffArguments.scalarized)
+        + " | collectAdjoints=" + boolString(diffArguments.collectAdjoints));
+    if Util.isSome(diffArguments.adjoint_map) then
+      dbg("[dCREF] current_grad=" + Expression.toString(diffArguments.current_grad));
+    end if;
 
     (exp, diffArguments) := match (exp, diffArguments.diffType, diffArguments.diff_map)
       local
@@ -2619,7 +2449,7 @@ public
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
 
           // differentiate second argument
-          diffArguments.current_grad := Expression.MULTARY({Expression.REAL(-1.0), current_grad}, {}, makeMulFromOperator(operator));
+          diffArguments.current_grad := Expression.negate(current_grad);
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
 
           diffArguments.current_grad := current_grad;
@@ -2866,6 +2696,32 @@ public
     // simplify?
   end differentiateBinary;
 
+  function removeExpAtIndex
+    input list<Expression> es;
+    input Integer i;
+    output list<Expression> outEs;
+  protected
+    Integer k = 1;
+    list<Expression> acc = {};
+    Expression e;
+    list<Expression> rest = es;
+  algorithm
+    // Traverse until end or index hit
+    while not listEmpty(rest) loop
+      e :: rest := rest;
+      if k == i then
+        // Skip this element; append remaining tail to reversed prefix
+        outEs := List.append_reverse(acc, rest);
+        return;
+      else
+        acc := e :: acc;
+        k := k + 1;
+      end if;
+    end while;
+    // i out of range -> return original list
+    outEs := es;
+  end removeExpAtIndex;
+
   function differentiateMultary
     "Differentiates a multary expression. Expression.MULTARY()
     Note: these can only contain commutative operators"
@@ -2881,14 +2737,13 @@ public
         list<Expression> arguments, new_arguments = {};
         list<Expression> inv_arguments, new_inv_arguments = {};
         list<Expression> diff_arguments, diff_inv_arguments;
-        Operator operator, addOp, powOp, mulOp, mulEWOp;
+        Operator operator, addOp, powOp, mulOp, mulEWOp, addEWOp;
         Operator.SizeClassification sizeClass, powSizeClass;
-        Expression current_grad, upstream, e_over_f, term, e_over_g;
-        List<Expression> add_terms, arg_rest;
-        Integer idxN, idxD;
-        // NEW locals for ADD/SUB reverse-mode reduction:
+        Expression current_grad, upstream, e_over_f, term, e_over_g, numProd, denomProd;
+        List<Expression> add_terms, sub_terms, arg_rest, arg_products;
         Boolean hasArray, hasArrayNum;
         Expression local_grad, localUpF, localUpG;
+        Integer i;
 
       // Dash calculations (ADD, SUB, ADD_EW, SUB_EW, ...)
       // NOTE: Multary always contains ADDITION
@@ -2928,13 +2783,12 @@ public
           for arg in listReverse(inv_arguments) loop
             current_grad := diffArguments.current_grad;
 
-            local_grad := Expression.MULTARY({Expression.REAL(-1.0), current_grad}, {}, makeMulFromOperator(operator));
+            local_grad := Expression.negate(current_grad);
             if Type.isScalar(Expression.typeOf(arg)) and hasArray then
               local_grad := typeSumCall(local_grad);
             end if;
             diffArguments.current_grad := local_grad;
 
-            diffArguments.current_grad := Expression.MULTARY({Expression.REAL(-1.0), current_grad}, {}, makeMulFromOperator(operator));
             (diff_arg, diffArguments) := differentiateExpression(arg, diffArguments);
 
             diffArguments.current_grad := current_grad;
@@ -2995,6 +2849,9 @@ public
           mulEWOp := Operator.fromClassification(
             (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ELEMENT_WISE),
             operator.ty);
+          addEWOp := Operator.fromClassification(
+            (NFOperator.MathClassification.ADDITION, NFOperator.SizeClassification.ELEMENT_WISE),
+            operator.ty);
 
           // Does the numerator contain any arrays?
           hasArrayNum := false;
@@ -3002,17 +2859,19 @@ public
             hasArrayNum := hasArrayNum or Type.isArray(Expression.typeOf(f));
           end for;
 
+          numProd := Expression.MULTARY(arguments, {}, operator);
+          denomProd := Expression.MULTARY(inv_arguments, {}, operator);
+
           // Forward derivative term accumulator
           add_terms := {};
           upstream := diffArguments.current_grad;
-
           // Differentiate numerator factors
-          idxN := 1;
+          i := 1;
           for f in arguments loop
             // Remove first occurrence of f from numerator list using List.deleteMemberOnTrue
             // this may be an issue if f occurs multiple times
-            (arg_rest, _) := List.deleteMemberOnTrue(f, arguments, Expression.isEqual);
-            e_over_f := Expression.MULTARY(arg_rest, inv_arguments, operator);
+            arg_rest := removeExpAtIndex(arguments, i);
+            e_over_f := Expression.MULTARY(arg_rest, {denomProd}, operator);
 
             // Reverse local upstream for f: G_f = upstream .* (exp / f)
             localUpF := Expression.MULTARY({upstream, e_over_f}, {}, mulEWOp);
@@ -3027,40 +2886,42 @@ public
             (diff_arg, diffArguments) := differentiateExpression(f, diffArguments);
 
             // Forward term: f' * (exp / f)
-            term := Expression.MULTARY({diff_arg, e_over_f}, {}, mulOp);
+            term := Expression.MULTARY({diff_arg, e_over_f}, {}, mulEWOp);
             add_terms := term :: add_terms;
-            idxN := idxN + 1;
+
+            i := i + 1;
           end for;
 
+          sub_terms := {};
           // Differentiate denominator factors
-          idxD := 1;
+          i := 1;
+          powSizeClass := if Type.isArray(Expression.typeOf(listHead(inv_arguments))) then NFOperator.SizeClassification.ARRAY_SCALAR else NFOperator.SizeClassification.SCALAR;
+          powOp := Operator.fromClassification((NFOperator.MathClassification.POWER, powSizeClass), Type.REAL());
           for g in inv_arguments loop
+            arg_rest := removeExpAtIndex(inv_arguments, i);
             // exp / g : add one more g to denominator list
-            e_over_g := Expression.MULTARY(arguments, g :: inv_arguments, operator);
+            e_over_g := Expression.MULTARY({numProd}, g :: inv_arguments, operator);
 
             // Reverse local upstream for g: G_g = - upstream .* (exp / g)
-            localUpG := Expression.MULTARY({Expression.REAL(-1.0), upstream, e_over_g}, {}, mulEWOp);
+            localUpG := Expression.negate(Expression.MULTARY({upstream, e_over_g}, {}, mulEWOp));
 
             // If numerator has arrays -> sum-reduce scalar denominator upstream
             if hasArrayNum then
               localUpG := typeSumCall(localUpG);
             end if;
 
-            diffArguments.current_grad :=  localUpG;
+            diffArguments.current_grad := localUpG;
             (diff_arg, diffArguments) := differentiateExpression(g, diffArguments);
 
             // Forward term: - g' * (exp / g)
-            term := Expression.MULTARY({Expression.REAL(-1.0), diff_arg, e_over_g}, {}, mulOp);
+            term := Expression.negate(Expression.MULTARY({diff_arg, e_over_g}, {}, mulEWOp));
             add_terms := term :: add_terms;
-            idxD := idxD + 1;
+            i := i + 1;
           end for;
-
           // Restore upstream gradient
           diffArguments.current_grad := upstream;
 
-          // Assemble sum of all terms
-          add_terms := listReverse(add_terms);
-      then Expression.MULTARY(add_terms, {}, addOp);
+      then Expression.MULTARY(add_terms, {}, addEWOp);
 
       else algorithm
         // maybe add failtrace here and allow failing
@@ -3118,7 +2979,6 @@ public
       end if;
       diffArguments.current_grad := localUp;
       (diff_arg, diffArguments) := differentiateExpression(arg, diffArguments);
-
       diffArguments.current_grad := current_grad;
 
       for i in 1:arrayLength(diff_lists) loop
@@ -3426,6 +3286,176 @@ public
       print(s + "\n");
     end if;
   end dbg;
+
+
+  function updateAdjointList
+      input Option<ExpressionList> oldOpt;
+      input Expression current_grad;
+      output ExpressionList newList;
+    protected
+        ExpressionList oldList;
+    algorithm
+      newList := match oldOpt
+        // probably the only case since empty list is used to initialize
+        case SOME(oldList) then (current_grad :: oldList);
+        else {current_grad};
+      end match;
+    end updateAdjointList;
+
+    // Build a 1D one-hot array of the same type as derBaseCref:
+    // zeros(n) with value placed at index idx.
+    function buildOneHotVectorAdjoint
+      input ComponentRef derBaseCref;
+      input Integer idx;                // 1-based
+      input Expression value;           // scalar element to place
+      output Option<Expression> onehot; // NONE if sizes unknown or not vector
+    protected
+      Type arrTy;
+      list<Type.Dimension> dims;
+      list<Integer> sizes;
+      Integer n, i;
+      Type elTy;
+      list<Expression> elems = {};
+    algorithm
+      // Array type of the pDER base cref
+      arrTy := ComponentRef.getSubscriptedType(derBaseCref);
+      if not Type.isArray(arrTy) then
+        onehot := NONE(); return;
+      end if;
+
+      dims := Type.arrayDims(arrTy);
+      if listLength(dims) <> 1 then
+        // Only handle simple vectors here
+        onehot := NONE(); return;
+      end if;
+
+      sizes := NFDimension.sizes(dims);
+      if listEmpty(sizes) then
+        onehot := NONE(); return;
+      end if;
+
+      n := listHead(sizes);
+      elTy := Type.arrayElementType(arrTy);
+
+      // Build [0,0,...,value,...,0]
+      for i in 1:n loop
+        elems := (if i == idx then value else Expression.makeZero(elTy)) :: elems;
+      end for;
+
+      onehot := SOME(Expression.ARRAY(
+        arrTy,
+        listArray(listReverse(elems)),
+        false
+      ));
+    end buildOneHotVectorAdjoint;
+
+    // Build a multi-hot scatter vector for a SLICE subscript:
+    // result = sum_t [onehot(idx_t) * seed_elem_t]
+    // Handles:
+    //   - WHOLE()                     -> returns seed
+    //   - SLICE {i1,i2,...}           -> sum of one-hots; indices must be literal integers
+    //   - SLICE range lo[:st]:hi      -> sum over lo, lo+st, ..., hi; lo,st,hi must be literal integers
+    function buildMultiHotVectorAdjoint
+      input ComponentRef derBaseCref;
+      input Subscript sub;        // SLICE or WHOLE
+      input Expression seed;      // upstream gradient for the sliced view (scalar or vector)
+      output Option<Expression> scatter; // NONE() if not handled
+    protected
+      Type arrTy;
+      Type elTy;
+      Operator addOp;
+      Boolean seedIsArray;
+      Integer m, j, loI, hiI, stI;
+      array<Expression> elems = arrayCreate(0, Expression.INTEGER(0));
+      Option<Expression> accOpt;
+      Option<Expression> ohOpt;
+      Expression acc, seedElem, term;
+      list<Expression> idxElems;
+    algorithm
+      arrTy := ComponentRef.getSubscriptedType(derBaseCref);
+      elTy  := Type.arrayElementType(arrTy);
+      addOp := Operator.fromClassification(
+        (NFOperator.MathClassification.ADDITION, NFOperator.SizeClassification.ELEMENT_WISE),
+        elTy
+      );
+      seedIsArray := Type.isArray(Expression.typeOf(seed));
+
+      scatter := match sub
+        // case Subscript.SLICE(slice = Expression.ARRAY(elements = elems))
+        //     algorithm
+        //       m := arrayLength(elems);
+        //       if m == 0 then
+        //         scatter := SOME(Expression.makeZero(arrTy)); return;
+        //       end if;
+
+        //       acc := Expression.makeZero(arrTy);
+
+        //       for j in 1:m loop
+        //         // slice index must be a literal integer
+        //         if match elems[j] case Expression.INTEGER() then true else false end match then
+        //           // pick element seed[j] if seed is a vector, else reuse scalar seed
+        //           seedElem := if seedIsArray
+        //             then Expression.applySubscripts({Subscript.INDEX(Expression.INTEGER(j))}, seed, true)
+        //             else seed;
+
+        //           ohOpt := buildOneHotVectorAdjoint(derBaseCref, Expression.toInteger(elems[j]), seedElem);
+        //           if Util.isSome(ohOpt) then
+        //             acc := Expression.MULTARY({acc, Util.getOption(ohOpt)}, {}, addOp);
+        //           else
+        //             scatter := NONE(); return;
+        //           end if;
+        //         else
+        //           scatter := NONE(); return;
+        //         end if;
+        //       end for;
+
+        //       scatter := SOME(acc);
+        //     then scatter;
+        // SLICE with range lo:hi (unit step)
+        case Subscript.SLICE(slice = Expression.RANGE(
+            start = Expression.INTEGER(loI),
+            step  = NONE(),
+            stop  = Expression.INTEGER(hiI)))
+          algorithm
+            if hiI < loI then
+              scatter := SOME(Expression.makeZero(arrTy)); return;
+            end if;
+
+            accOpt := NONE();
+            m := hiI - loI + 1;
+            for j in 0:(m-1) loop
+              ohOpt := buildOneHotVectorAdjoint(
+                derBaseCref,
+                loI + j,
+                if seedIsArray
+                  then Expression.applySubscripts({Subscript.INDEX(Expression.INTEGER(j+1))}, seed, true)
+                  else seed
+              );
+              if Util.isSome(ohOpt) then
+                if Util.isSome(accOpt) then
+                  acc := Util.getOption(accOpt);
+                  term := Util.getOption(ohOpt);
+                  accOpt := SOME(Expression.MULTARY({acc, term}, {}, addOp));
+                else
+                  accOpt := ohOpt;
+                end if;
+              else
+                scatter := NONE(); return;
+              end if;
+            end for;
+
+            scatter := if Util.isSome(accOpt) then accOpt else SOME(Expression.makeZero(arrTy));
+          then scatter;
+
+        else NONE();
+      end match;
+    end buildMultiHotVectorAdjoint;
+
+    function subsToString
+      input List<Subscript> subs; output String s;
+    algorithm
+      s := "{" + List.toString(subs, Subscript.toString) + "}";
+    end subsToString;
 
   annotation(__OpenModelica_Interface="backend");
 end NBDifferentiate;
