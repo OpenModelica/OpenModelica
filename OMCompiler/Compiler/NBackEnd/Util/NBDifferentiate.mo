@@ -659,6 +659,7 @@ public
         list<list<Expression>> new_matrix_elements = {};
         array<Expression> arr;
         ComponentRef d_fn;
+        Boolean isReverse = Util.isSome(diffArguments.adjoint_map);
 
       // differentiation of constant expressions results in zero
       case Expression.INTEGER()   then (Expression.INTEGER(0), diffArguments);
@@ -714,7 +715,9 @@ public
       //   grad_a = IF(c, G, 0)
       //   grad_b = IF(c, 0, G)
       // Then recurse with those masked gradients.
-      case Expression.IF() algorithm
+      case Expression.IF() 
+        guard(isReverse)
+      algorithm
         // Keep original upstream
         current_grad := diffArguments.current_grad;
 
@@ -734,6 +737,11 @@ public
         diffArguments.current_grad := current_grad;
       then (Expression.IF(exp.ty, exp.condition, elem1, elem2), diffArguments);
 
+      case Expression.IF() algorithm
+        (elem1, diffArguments) := differentiateExpression(exp.trueBranch, diffArguments);
+        (elem2, diffArguments) := differentiateExpression(exp.falseBranch, diffArguments);
+      then (Expression.IF(exp.ty, exp.condition, elem1, elem2), diffArguments);
+
       // e.g. (fg)' = fg' + f'g (more rules in differentiateBinary)
       case Expression.BINARY() then differentiateBinary(exp, diffArguments);
 
@@ -741,7 +749,9 @@ public
       case Expression.MULTARY() then differentiateMultary(exp, diffArguments);
 
       // (-x)' = -(x')
-      case Expression.UNARY() algorithm
+      case Expression.UNARY()
+        guard(isReverse) 
+      algorithm
         current_grad := diffArguments.current_grad;
 
         // apply same unary operator to current_grad
@@ -749,6 +759,10 @@ public
         (elem1, diffArguments) := differentiateExpression(exp.exp, diffArguments);
 
         diffArguments.current_grad := current_grad;
+      then (Expression.UNARY(exp.operator, elem1), diffArguments);
+
+      case Expression.UNARY() algorithm
+        (elem1, diffArguments) := differentiateExpression(exp.exp, diffArguments);
       then (Expression.UNARY(exp.operator, elem1), diffArguments);
 
       // ((Real) x)' = (Real) x'
@@ -1237,6 +1251,7 @@ public
         Type ty;
         DifferentiationType diffType;
         Integer rY, rX;
+        Boolean isReverse = Util.isSome(diffArguments.adjoint_map);
 
         Type elTy;
         // sumG = G + Gᵀ
@@ -1307,18 +1322,24 @@ public
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
           then fail();
         end match;
-        current_grad := diffArguments.current_grad;
-        // sum is linear -> multiply upstream gradient with ones of the right size
-        diffArguments.current_grad := Expression.BINARY(
-          Expression.makeOne(Expression.typeOf(arg1)),
-          Operator.fromClassification(
-            (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ARRAY_SCALAR),
-            Expression.typeOf(arg1)
-          ),
-          current_grad);
+        if isReverse then
+          current_grad := diffArguments.current_grad;
+          // sum is linear -> multiply upstream gradient with ones of the right size
+          diffArguments.current_grad := Expression.BINARY(
+            Expression.makeOne(Expression.typeOf(arg1)),
+            Operator.fromClassification(
+              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ARRAY_SCALAR),
+              Expression.typeOf(arg1)
+            ),
+            current_grad);
+        end if;
+
         (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
 
-        diffArguments.current_grad := current_grad;
+        if isReverse then
+          // restore upstream
+          diffArguments.current_grad := current_grad;
+        end if;
         exp.call := Call.setArguments(exp.call, {ret1});
       then exp;
 
@@ -1334,58 +1355,62 @@ public
           then fail();
         end match;
 
-        current_grad := diffArguments.current_grad;
+        if isReverse then
+          current_grad := diffArguments.current_grad;
 
-        // upstream gradient type (matrix)
-        ty := Expression.typeOf(current_grad);
-        // element type
-        elTy := if Type.isArray(ty) then Type.arrayElementType(ty) else ty;
-        // matrix dimension (assume square)
-        nExp := Dimension.size(listHead(Type.arrayDims(Expression.typeOf(arg1))));
+          // upstream gradient type (matrix)
+          ty := Expression.typeOf(current_grad);
+          // element type
+          elTy := if Type.isArray(ty) then Type.arrayElementType(ty) else ty;
+          // matrix dimension (assume square)
+          nExp := Dimension.size(listHead(Type.arrayDims(Expression.typeOf(arg1))));
 
-        // element-wise add / mul operators with full matrix type (not element type)
-        addM := Operator.fromClassification(
-          (NFOperator.MathClassification.ADDITION, NFOperator.SizeClassification.ELEMENT_WISE),
-          ty);
-        subM := Operator.fromClassification(
-          (NFOperator.MathClassification.SUBTRACTION, NFOperator.SizeClassification.ELEMENT_WISE),
-          ty);
-        mulEW := Operator.fromClassification(
-          (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ELEMENT_WISE),
-          ty);
+          // element-wise add / mul operators with full matrix type (not element type)
+          addM := Operator.fromClassification(
+            (NFOperator.MathClassification.ADDITION, NFOperator.SizeClassification.ELEMENT_WISE),
+            ty);
+          subM := Operator.fromClassification(
+            (NFOperator.MathClassification.SUBTRACTION, NFOperator.SizeClassification.ELEMENT_WISE),
+            ty);
+          mulEW := Operator.fromClassification(
+            (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ELEMENT_WISE),
+            ty);
 
-        // sumG = G + Gᵀ   (binary)
-        sumG := Expression.BINARY(
-          current_grad,
-          addM,
-          typeTransposeCall(current_grad));
+          // sumG = G + Gᵀ   (binary)
+          sumG := Expression.BINARY(
+            current_grad,
+            addM,
+            typeTransposeCall(current_grad));
 
-        // triu(sumG) = sumG .* triu(ones(n,n))  (binary)
-        triuG := Expression.BINARY(
-          sumG,
-          mulEW,
-          Expression.makeTriuMask(nExp, elTy));
+          // triu(sumG) = sumG .* triu(ones(n,n))  (binary)
+          triuG := Expression.BINARY(
+            sumG,
+            mulEW,
+            Expression.makeTriuMask(nExp, elTy));
 
-        // I(n)
-        eyeNN := Expression.makeIdentityMatrix(nExp, elTy);
+          // I(n)
+          eyeNN := Expression.makeIdentityMatrix(nExp, elTy);
 
-        // diagG = G .* I  (binary)
-        diagG := Expression.BINARY(
-          current_grad,
-          mulEW,
-          eyeNN);
+          // diagG = G .* I  (binary)
+          diagG := Expression.BINARY(
+            current_grad,
+            mulEW,
+            eyeNN);
 
-        // triu(G + Gᵀ) - diag(G)  (binary)
-        diffArguments.current_grad := Expression.BINARY(
-          triuG,
-          subM,
-          diagG);
+          // triu(G + Gᵀ) - diag(G)  (binary)
+          diffArguments.current_grad := Expression.BINARY(
+            triuG,
+            subM,
+            diagG);
+        end if;
 
         // Forward: symmetric(dA/dz)
         (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
 
-        // restore upstream
-        diffArguments.current_grad := current_grad;
+        if isReverse then
+          // restore upstream
+          diffArguments.current_grad := current_grad;
+        end if;
         exp.call := Call.setArguments(exp.call, {ret1});
       then exp;
 
@@ -1401,18 +1426,21 @@ public
           then fail();
         end match;
 
-        current_grad := diffArguments.current_grad;
-
-        // number of elements in v and in diagonal of G
-        nExp := Dimension.size(listHead(Type.arrayDims(Expression.typeOf(arg1))));
-        // Literal: [ G[1,1], G[2,2], ..., G[n,n] ]
-        diffArguments.current_grad := extractDiagonalVector(current_grad, nExp, Expression.typeOf(arg1));
+        if isReverse then
+          current_grad := diffArguments.current_grad;
+          // number of elements in v and in diagonal of G
+          nExp := Dimension.size(listHead(Type.arrayDims(Expression.typeOf(arg1))));
+          // Literal: [ G[1,1], G[2,2], ..., G[n,n] ]
+          diffArguments.current_grad := extractDiagonalVector(current_grad, nExp, Expression.typeOf(arg1));
+        end if;
 
         // Forward: diagonal(dv/dz)
         (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
 
-        // Restore upstream and return updated call
-        diffArguments.current_grad := current_grad;
+        if isReverse then
+          // Restore upstream and return updated call
+          diffArguments.current_grad := current_grad;
+        end if;
         exp.call := Call.setArguments(exp.call, {ret1});
       then exp;
 
@@ -1431,30 +1459,35 @@ public
           then fail();
         end match;
 
-        current_grad := diffArguments.current_grad;
+        if isReverse then
+          current_grad := diffArguments.current_grad;
+          // Rank of input A
+          ty := Expression.typeOf(arg1);
+          rX := if Type.isArray(ty) then Type.dimensionCount(ty) else 0;
 
-        // Rank of input A
-        ty := Expression.typeOf(arg1);
-        rX := if Type.isArray(ty) then Type.dimensionCount(ty) else 0;
+          // Map upstream gradient back to A's shape
+          grad_x := current_grad;
 
-        // Map upstream gradient back to A's shape
-        grad_x := current_grad;
+          // If A has rank < 2, drop trailing dims by indexing with 1
+          if rX < 2 then
+            for i in 1:(2 - rX) loop
+              grad_x := dropLastDimIndex1(grad_x);
+            end for;
+          elseif rX > 2 then
+            // If A has rank > 2 (with trailing singleton dims), promote G to rank rX
+            grad_x := typePromoteCall(grad_x, rX);
+          end if;
 
-        // If A has rank < 2, drop trailing dims by indexing with 1
-        if rX < 2 then
-          for i in 1:(2 - rX) loop
-            grad_x := dropLastDimIndex1(grad_x);
-          end for;
-        elseif rX > 2 then
-          // If A has rank > 2 (with trailing singleton dims), promote G to rank rX
-          grad_x := typePromoteCall(grad_x, rX);
+          // Recurse into A with mapped upstream gradient
+          diffArguments.current_grad := grad_x;
+
+          (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+
+          // restore upstream
+          diffArguments.current_grad := current_grad;
+        else
+          (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
         end if;
-
-        // Recurse into A with mapped upstream gradient
-        diffArguments.current_grad := grad_x;
-        (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
-        diffArguments.current_grad := current_grad;
-
         // Forward: matrix(dA/dz)
         exp.call := Call.setArguments(exp.call, {ret1});
       then exp;
@@ -1498,16 +1531,20 @@ public
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
           then fail();
         end match;
-        rY := if Type.isArray(Expression.typeOf(exp)) then Type.dimensionCount(Expression.typeOf(exp)) else 0;
-        rX := if Type.isArray(Expression.typeOf(arg1)) then Type.dimensionCount(Expression.typeOf(arg1)) else 0;
-        current_grad := diffArguments.current_grad;
-        old_grad := current_grad;
-        for i in 1:(if rY > rX then rY - rX else 0) loop
-            current_grad := dropLastDimIndex1(current_grad);
-          end for;
-        diffArguments.current_grad := current_grad;
-        (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
-        diffArguments.current_grad := old_grad;
+        if isReverse then
+          rY := if Type.isArray(Expression.typeOf(exp)) then Type.dimensionCount(Expression.typeOf(exp)) else 0;
+          rX := if Type.isArray(Expression.typeOf(arg1)) then Type.dimensionCount(Expression.typeOf(arg1)) else 0;
+          current_grad := diffArguments.current_grad;
+          old_grad := current_grad;
+          for i in 1:(if rY > rX then rY - rX else 0) loop
+              current_grad := dropLastDimIndex1(current_grad);
+            end for;
+          diffArguments.current_grad := current_grad;
+          (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+          diffArguments.current_grad := old_grad;
+        else
+          (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+        end if;
         exp.call := Call.setArguments(exp.call, {ret1, arg2});
       then exp;
 
@@ -1533,16 +1570,20 @@ public
       algorithm
         // only differentiate 1st input
         arg1 :: rest := Call.arguments(exp.call);
-        rY := if Type.isArray(Expression.typeOf(exp)) then Type.dimensionCount(Expression.typeOf(exp)) else 0;
-        rX := if Type.isArray(Expression.typeOf(arg1)) then Type.dimensionCount(Expression.typeOf(arg1)) else 0;
-        current_grad := diffArguments.current_grad;
-        old_grad := current_grad;
-        for i in 1:(if rY > rX then rY - rX else 0) loop // reduce over all added dimensions with sum (TODO: change to only sum over added dimensions)
-          current_grad := typeSumCall(current_grad); // sum over first (or last?) dimension
-        end for;
-        diffArguments.current_grad := current_grad;
-        (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
-        diffArguments.current_grad := old_grad;
+        if isReverse then
+          rY := if Type.isArray(Expression.typeOf(exp)) then Type.dimensionCount(Expression.typeOf(exp)) else 0;
+          rX := if Type.isArray(Expression.typeOf(arg1)) then Type.dimensionCount(Expression.typeOf(arg1)) else 0;
+          current_grad := diffArguments.current_grad;
+          old_grad := current_grad;
+          for i in 1:(if rY > rX then rY - rX else 0) loop // reduce over all added dimensions with sum (TODO: change to only sum over added dimensions)
+            current_grad := typeSumCall(current_grad); // sum over first (or last?) dimension
+          end for;
+          diffArguments.current_grad := current_grad;
+          (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+          diffArguments.current_grad := old_grad;
+        else
+          (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+        end if;
         exp.call := Call.setArguments(exp.call, ret1 :: rest);
       then exp;
 
@@ -1621,46 +1662,52 @@ public
           then ret;
 
           case {arg1, arg2} algorithm
-            current_grad := diffArguments.current_grad;
-            // Relation: for min use x<y; for max use x>y
-            cond := Expression.RELATION(
-              arg1,
-              if name == "min" then Operator.makeLess(Expression.typeOf(arg1))
-                               else Operator.makeGreater(Expression.typeOf(arg1)),
-              arg2,
-              -1);
+            if isReverse then
+              current_grad := diffArguments.current_grad;
+              // Relation: for min use x<y; for max use x>y
+              cond := Expression.RELATION(
+                arg1,
+                if name == "min" then Operator.makeLess(Expression.typeOf(arg1))
+                                else Operator.makeGreater(Expression.typeOf(arg1)),
+                arg2,
+                -1);
 
-            // Reverse local masks:
-            // For min: grad_x = upstream if x<y else 0; grad_y = upstream if x>=y else 0
-            // For max: grad_x = upstream if x>y else 0; grad_y = upstream if x<=y else 0
-            zero1 := Expression.makeZero(Expression.typeOf(arg1));
-            zero2 := Expression.makeZero(Expression.typeOf(arg2));
+              // Reverse local masks:
+              // For min: grad_x = upstream if x<y else 0; grad_y = upstream if x>=y else 0
+              // For max: grad_x = upstream if x>y else 0; grad_y = upstream if x<=y else 0
+              zero1 := Expression.makeZero(Expression.typeOf(arg1));
+              zero2 := Expression.makeZero(Expression.typeOf(arg2));
 
-            grad_x := Expression.IF(
-              Expression.typeOf(arg1),
-              cond,
-              current_grad,
-              zero1);
+              grad_x := Expression.IF(
+                Expression.typeOf(arg1),
+                cond,
+                current_grad,
+                zero1);
 
-            grad_y := Expression.IF(
-              Expression.typeOf(arg2),
-              cond, // same condition
-              current_grad,
-              zero2);
+              grad_y := Expression.IF(
+                Expression.typeOf(arg2),
+                cond, // same condition
+                current_grad,
+                zero2);
 
-            // Reverse recurse arg1 with grad_x
-            old_grad := diffArguments.current_grad;
-            diffArguments.current_grad := grad_x;
-            // dx/dz
-            (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
+              // Reverse recurse arg1 with grad_x
+              old_grad := diffArguments.current_grad;
+              diffArguments.current_grad := grad_x;
+              // dx/dz
+              (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
 
-            // Reverse recurse arg2 with grad_y
-            diffArguments.current_grad := grad_y;
-            // dy/dz
-            (diffArg2, diffArguments) := differentiateExpression(arg2, diffArguments);
+              // Reverse recurse arg2 with grad_y
+              diffArguments.current_grad := grad_y;
+              // dy/dz
+              (diffArg2, diffArguments) := differentiateExpression(arg2, diffArguments);
 
-            // Restore upstream
-            diffArguments.current_grad := old_grad;
+              // Restore upstream
+              diffArguments.current_grad := old_grad;
+            else
+              // Forward: dx/dz and dy/dz
+              (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
+              (diffArg2, diffArguments) := differentiateExpression(arg2, diffArguments);
+            end if;
 
             ty := Expression.typeOf(diffArg1);
             if Expression.isZero(diffArg1) and Expression.isZero(diffArg2) then
@@ -2593,32 +2640,36 @@ public
         algorithm
           powSizeClass := NFOperator.SizeClassification.SCALAR;
           powOp := Operator.fromClassification((NFOperator.MathClassification.POWER, powSizeClass), Type.REAL());
-          current_grad := diffArguments.current_grad; // upstream gradient
-          diffArguments.current_grad := Expression.MULTARY({current_grad}, {exp2}, Operator.fromClassification(
-            (NFOperator.MathClassification.MULTIPLICATION, if Type.isArray(Expression.typeOf(current_grad)) then NFOperator.SizeClassification.ARRAY_SCALAR else NFOperator.SizeClassification.SCALAR),
-            operator.ty)); // z = f/g going into f
+          if isReverse then
+            current_grad := diffArguments.current_grad; // upstream gradient
+            diffArguments.current_grad := Expression.MULTARY({current_grad}, {exp2}, Operator.fromClassification(
+              (NFOperator.MathClassification.MULTIPLICATION, if Type.isArray(Expression.typeOf(current_grad)) then NFOperator.SizeClassification.ARRAY_SCALAR else NFOperator.SizeClassification.SCALAR),
+              operator.ty)); // z = f/g going into f
+          end if;
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
+          if isReverse then
+            // Reverse local grad for denominator g: G_g = - ( (upstream .* f) / g^2 )
+            // Build g^2
+            denom2 := Expression.BINARY(exp2, powOp, Expression.REAL(2.0));
 
-          // Reverse local grad for denominator g: G_g = - ( (upstream .* f) / g^2 )
-          // Build g^2
-          denom2 := Expression.BINARY(exp2, powOp, Expression.REAL(2.0));
+            // Build numerator = upstream .* f  with proper size classification
+            numUF := Expression.BINARY(current_grad, if Type.isArray(Expression.typeOf(exp1)) then Operator.makeScalarProduct(operator.ty) else Operator.fromClassification(
+              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.SCALAR),
+              Type.REAL()), exp1);
 
-          // Build numerator = upstream .* f  with proper size classification
-          numUF := Expression.BINARY(current_grad, if Type.isArray(Expression.typeOf(exp1)) then Operator.makeScalarProduct(operator.ty) else Operator.fromClassification(
-            (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.SCALAR),
-            Type.REAL()), exp1);
-
-          // Divide by g^2 (array/scalar-safe)
-          divOp := Operator.fromClassification(
-            (NFOperator.MathClassification.DIVISION, NFOperator.SizeClassification.SCALAR),
-            Type.REAL());
-          diffArguments.current_grad := Expression.negate(
-            Expression.BINARY(numUF, divOp, denom2));
-
+            // Divide by g^2 (array/scalar-safe)
+            divOp := Operator.fromClassification(
+              (NFOperator.MathClassification.DIVISION, NFOperator.SizeClassification.SCALAR),
+              Type.REAL());
+            diffArguments.current_grad := Expression.negate(
+              Expression.BINARY(numUF, divOp, denom2));
+          end if;
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
 
-          // Restore upstream
-          diffArguments.current_grad := current_grad;
+          if isReverse then
+            // Restore upstream
+            diffArguments.current_grad := current_grad;
+          end if;
           // create subtraction and multiplication operator from the size classification of original division operator
           (_, sizeClass) := Operator.classify(operator);
           // the frontend treats multiplication equally for element and nen elementwise, but pow needs to have the correct operator
