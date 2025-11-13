@@ -2417,6 +2417,7 @@ public
         Type ty1, ty2;
         Integer r1, r2;
         list<Integer> dim1, dim2;
+        Boolean isReverse = Util.isSome(diffArguments.adjoint_map);
 
       // Addition calculations (ADD, ADD_EW, ...)
       // (f + g)' = f' + g'
@@ -2464,7 +2465,7 @@ public
       case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
       algorithm
-        if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolicadjoint" then
+        if isReverse then
           // Upstream gradient
           current_grad := diffArguments.current_grad;
 
@@ -2746,6 +2747,7 @@ public
         Boolean hasArray, hasArrayNum;
         Expression local_grad, localUpF, localUpG;
         Integer i;
+        Boolean isReverse = Util.isSome(diffArguments.adjoint_map);
 
       // Dash calculations (ADD, SUB, ADD_EW, SUB_EW, ...)
       // NOTE: Multary always contains ADDITION
@@ -2757,44 +2759,54 @@ public
       case Expression.MULTARY(arguments = arguments, inv_arguments = inv_arguments, operator = operator)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.ADDITION)
         algorithm
-          // Detect if any term is an array (for mixed scalar/array broadcasting)
-          hasArray := false;
-          for arg in arguments loop
-            hasArray := hasArray or Type.isArray(Expression.typeOf(arg));
-          end for;
-          for arg in inv_arguments loop
-            hasArray := hasArray or Type.isArray(Expression.typeOf(arg));
-          end for;
+          if isReverse then
+            // Detect if any term is an array (for mixed scalar/array broadcasting)
+            hasArray := false;
+            for arg in arguments loop
+              hasArray := hasArray or Type.isArray(Expression.typeOf(arg));
+            end for;
+            for arg in inv_arguments loop
+              hasArray := hasArray or Type.isArray(Expression.typeOf(arg));
+            end for;
+          end if;
           // go over addition arguments
           for arg in listReverse(arguments) loop
-            current_grad := diffArguments.current_grad;
-
-            // For scalar arg in mixed case: sum-reduce upstream to scalar
-            if Type.isScalar(Expression.typeOf(arg)) and hasArray then
-              diffArguments.current_grad := typeSumCall(current_grad);
-            else
-              diffArguments.current_grad := current_grad;
+            if isReverse then
+              current_grad := diffArguments.current_grad;
+              // For scalar arg in mixed case: sum-reduce upstream to scalar
+              if Type.isScalar(Expression.typeOf(arg)) and hasArray then
+                diffArguments.current_grad := typeSumCall(current_grad);
+              else
+                diffArguments.current_grad := current_grad;
+              end if;
             end if;
 
             (diff_arg, diffArguments) := differentiateExpression(arg, diffArguments);
-
-            diffArguments.current_grad := current_grad;
-            new_arguments := diff_arg :: new_arguments;
+            if isReverse then
+              diffArguments.current_grad := current_grad;
+            else
+              new_arguments := diff_arg :: new_arguments;
+            end if;
           end for;
           // go over subtraction arguments
           for arg in listReverse(inv_arguments) loop
-            current_grad := diffArguments.current_grad;
+            if isReverse then
+              current_grad := diffArguments.current_grad;
 
-            local_grad := Expression.negate(current_grad);
-            if Type.isScalar(Expression.typeOf(arg)) and hasArray then
-              local_grad := typeSumCall(local_grad);
+              local_grad := Expression.negate(current_grad);
+              if Type.isScalar(Expression.typeOf(arg)) and hasArray then
+                local_grad := typeSumCall(local_grad);
+              end if;
+              diffArguments.current_grad := local_grad;
             end if;
-            diffArguments.current_grad := local_grad;
 
             (diff_arg, diffArguments) := differentiateExpression(arg, diffArguments);
 
-            diffArguments.current_grad := current_grad;
-            new_inv_arguments := diff_arg :: new_inv_arguments;
+            if isReverse then
+              diffArguments.current_grad := current_grad;
+            else
+              new_inv_arguments := diff_arg :: new_inv_arguments;
+            end if;
           end for;
       then Expression.MULTARY(new_arguments, new_inv_arguments, operator);
 
@@ -2836,7 +2848,7 @@ public
       //  - For denominator g_j (scalar) if numerator is an array.
       case Expression.MULTARY(arguments = arguments, inv_arguments = inv_arguments, operator = operator)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION
-              and (not listEmpty(inv_arguments)) and Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolicadjoint")
+              and (not listEmpty(inv_arguments)) and isReverse)
         algorithm
           (_, sizeClass) := Operator.classify(operator);
           // Determine operators
@@ -2923,7 +2935,7 @@ public
           // Restore upstream gradient
           diffArguments.current_grad := upstream;
           then Expression.MULTARY(add_terms, {}, addEWOp);
-        case Expression.MULTARY(arguments = arguments, inv_arguments = inv_arguments, operator = operator)
+      case Expression.MULTARY(arguments = arguments, inv_arguments = inv_arguments, operator = operator)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION
               and (not listEmpty(inv_arguments)))
         algorithm
@@ -2950,7 +2962,6 @@ public
                   {Expression.BINARY(divisor, powOp, Expression.REAL(2.0))},
                   operator
               );
-
       else algorithm
         // maybe add failtrace here and allow failing
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
@@ -2971,52 +2982,64 @@ public
     Array<List<Expression>> diff_lists;
     List<Expression> arg_products, restArgs;
     Integer idx = 1;
+    Boolean isReverse = Util.isSome(diffArguments.adjoint_map);
     Operator mulEWOp = Operator.fromClassification(
       (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ELEMENT_WISE),
       operator.ty);
   algorithm
-    diff_lists := arrayCreate(listLength(arguments), {});
-    arg_products := Expression.productOfListExceptSelf(arguments, makeMulFromOperator(operator));
+    if isReverse then
+      arg_products := Expression.productOfListExceptSelf(arguments, makeMulFromOperator(operator));
+    else
+      diff_lists := arrayCreate(listLength(arguments), {});
+    end if;
     for arg in arguments loop
-      current_grad := diffArguments.current_grad;
+      if isReverse then
+        current_grad := diffArguments.current_grad;
 
-      // product of remaining factors (k <> i)
-      restProd := listGet(arg_products, idx);
+        // product of remaining factors (k <> i)
+        restProd := listGet(arg_products, idx);
 
-      // Build local upstream = current_grad .* restProd, but flatten if restProd is also a MULTARY product.
-      restArgs := match restProd
-        local
-          Operator mOp;
-          list<Expression> rA;
-        case Expression.MULTARY(operator = mOp, arguments = rA)
-          guard Operator.getMathClassification(mOp) == NFOperator.MathClassification.MULTIPLICATION
-        then rA;
-        else {restProd};
-      end match;
+        // Build local upstream = current_grad .* restProd, but flatten if restProd is also a MULTARY product.
+        restArgs := match restProd
+          local
+            Operator mOp;
+            list<Expression> rA;
+          case Expression.MULTARY(operator = mOp, arguments = rA)
+            guard Operator.getMathClassification(mOp) == NFOperator.MathClassification.MULTIPLICATION
+          then rA;
+          else {restProd};
+        end match;
 
-      localUp := Expression.MULTARY(
-        listAppend({current_grad}, restArgs),
-        {},
-        mulEWOp); // may need to adapt this aswell to scalar when scalar
+        localUp := Expression.MULTARY(
+          listAppend({current_grad}, restArgs),
+          {},
+          mulEWOp); // may need to adapt this aswell to scalar when scalar
 
-      // If current argument is scalar but the rest-product is array-shaped,
-      // sum-reduce the local upstream to a scalar before recursing.
-      if Type.isScalar(Expression.typeOf(arg)) and
-         Type.isArray(Expression.typeOf(restProd)) then
-        localUp := typeSumCall(localUp);
+        // If current argument is scalar but the rest-product is array-shaped,
+        // sum-reduce the local upstream to a scalar before recursing.
+        if Type.isScalar(Expression.typeOf(arg)) and
+          Type.isArray(Expression.typeOf(restProd)) then
+          localUp := typeSumCall(localUp);
+        end if;
+        diffArguments.current_grad := localUp;
       end if;
-      diffArguments.current_grad := localUp;
-      (diff_arg, diffArguments) := differentiateExpression(arg, diffArguments);
-      diffArguments.current_grad := current_grad;
 
-      for i in 1:arrayLength(diff_lists) loop
-        diff_lists[i] := if i == idx then diff_arg :: diff_lists[i] else arg :: diff_lists[i];
-      end for;
+      (diff_arg, diffArguments) := differentiateExpression(arg, diffArguments);
+
+      if isReverse then
+        diffArguments.current_grad := current_grad;
+      else
+        for i in 1:arrayLength(diff_lists) loop
+          diff_lists[i] := if i == idx then diff_arg :: diff_lists[i] else arg :: diff_lists[i];
+        end for;
+      end if;
       idx := idx + 1;
     end for;
-    for i in arrayLength(diff_lists):-1:1 loop
-      new_arguments := Expression.MULTARY(listReverse(diff_lists[i]), {}, operator) :: new_arguments;
-    end for;
+    if not isReverse then
+      for i in arrayLength(diff_lists):-1:1 loop
+        new_arguments := Expression.MULTARY(listReverse(diff_lists[i]), {}, operator) :: new_arguments;
+      end for;
+    end if;
   end differentiateMultaryMultiplicationArgs;
 
   function differentiateEquationAttributes
@@ -3314,7 +3337,6 @@ public
       print(s + "\n");
     end if;
   end dbg;
-
 
   function updateAdjointList
       input Option<ExpressionList> oldOpt;
