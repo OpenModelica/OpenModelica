@@ -842,24 +842,7 @@ protected
     Option<Jacobian> jacobian                             "Resulting jacobian";
     Partition.Kind kind = Partition.Partition.getKind(part);
     Boolean updated;
-  algorithm
-    // create the simulation jacobian
-    partialCandidates := part.unknowns;
-    unknowns  := if Partition.Partition.getKind(part) == NBPartition.Kind.DAE then Util.getOption(part.daeUnknowns) else part.unknowns;
-    jacType   := if Partition.Partition.getKind(part) == NBPartition.Kind.DAE then JacobianType.DAE else JacobianType.ODE;
-
-    derivative_vars := list(var for var guard(BVariable.isStateDerivative(var)) in VariablePointers.toList(unknowns));
-    state_vars := list(Util.getOption(BVariable.getVarState(var)) for var in derivative_vars);
-    seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
-
-    (jacobian, funcTree) := func(name, jacType, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcTree, kind ==  NBPartition.Kind.INI);
-
-    if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolicadjoint" and Util.isSome(jacobian) then
-      part.association := Partition.Association.CONTINUOUS(kind, NONE(), jacobian);
-    else
-      part.association := Partition.Association.CONTINUOUS(kind, jacobian, NONE());
-    end if;
-    
+  algorithm    
     // create algebraic loop jacobians
     part.strongComponents := match part.strongComponents
       local
@@ -885,7 +868,12 @@ protected
       seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
 
       (jacobian, funcTree) := func(name, jacType, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcTree, kind ==  NBPartition.Kind.INI);
-      part.association := Partition.Association.CONTINUOUS(kind, jacobian);
+      
+      if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolicadjoint" and Util.isSome(jacobian) then
+        part.association := Partition.Association.CONTINUOUS(kind, NONE(), jacobian);
+      else
+        part.association := Partition.Association.CONTINUOUS(kind, jacobian, NONE());
+      end if;
       if Flags.isSet(Flags.JAC_DUMP) then
         print(Partition.Partition.toString(part, 2));
       end if;
