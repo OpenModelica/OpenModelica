@@ -80,10 +80,12 @@ public
       list<SimVar> seedVars                               "corresponds to the number of columns";
       SparsityPattern sparsity                            "sparsity pattern in index form";
       SparsityPattern sparsityT                           "transposed sparsity pattern";
-      SparsityColoring coloring                           "coloring groups in index form";
+      SparsityColoring coloring                           "coloring columns in index form (column coloring)";
+      SparsityColoring rowColoring                        "coloring rows in index form (row coloring)";
       Integer numColors                                   "number of colors";
       list<SimGenericCall> generic_loop_calls             "Generic for-loop and array calls";
       Option<UnorderedMap<ComponentRef, SimVar>> jac_map  "hash table for cref -> simVar";
+      Boolean isAdjoint                                 "indicates if this is an adjoint jacobian";
     end SIM_JAC;
 
     function toString
@@ -131,9 +133,15 @@ public
                 str := str + "  " + intString(idx) + ":\t" + List.toString(dependencies, intString) + "\n";
               end for;
             end if;
-            str := str + "\n" + StringUtil.headline_4("Sparsity Coloring Groups");
+            str := str + "\n" + StringUtil.headline_4("Sparsity Coloring Columns");
             if not listEmpty(simJac.coloring) then
               for lst in simJac.coloring loop
+                str := str +  "  " + List.toString(lst, intString) + "\n";
+              end for;
+            end if;
+            str := str + "\n" + StringUtil.headline_4("Sparsity Coloring Rows");
+            if not listEmpty(simJac.rowColoring) then
+              for lst in simJac.rowColoring loop
                 str := str +  "  " + List.toString(lst, intString) + "\n";
               end for;
             end if;
@@ -215,22 +223,23 @@ public
           SimStrongComponent.Block columnEqn;
           list<SimStrongComponent.Block> columnEqns = {};
           VarData varData;
-          VariablePointers seed_vec, res_vec, tmp_vec;
+          VariablePointers seed_scalar, res_scalar, tmp_scalar, seed_vec, res_vec, tmp_vec;
           Pointer<list<SimVar>> seedVars_ptr = Pointer.create({});
           Pointer<list<SimVar>> resVars_ptr = Pointer.create({});
           Pointer<list<SimVar>> tmpVars_ptr = Pointer.create({});
-          list<SimVar> seedVars, resVars, tmpVars;
+          list<SimVar> seedVars, resVars, tmpVars, loopVars;
           UnorderedMap<ComponentRef, SimVar> jac_map;
           UnorderedMap<ComponentRef, Integer> idx_map;
           ComponentRef cref;
           list<Subscript> subscripts;
           SparsityPattern sparsity, sparsityT;
-          SparsityColoring coloring;
+          Jacobian.SparsityPattern Bpattern;
+          SparsityColoring coloring, rowColoring;
           SimJacobian jac;
           UnorderedMap<Identifier, Integer> sim_map;
           list<SimGenericCall> generic_loop_calls;
 
-        case BackendDAE.JACOBIAN(varData = varData as BVariable.VAR_DATA_JAC()) algorithm
+        case BackendDAE.JACOBIAN(varData = varData as BVariable.VAR_DATA_JAC(), sparsityPattern = Bpattern) algorithm
           // temporarily save the generic call map from simcode to recover it afterwards
           // we use a local map to have seperated generic call lists for each jacobian
           sim_map := indices.generic_call_map;
@@ -243,8 +252,7 @@ public
           // extract generic loop calls and put the old generic call map back
           generic_loop_calls := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(indices.generic_call_map));
           indices.generic_call_map := sim_map;
-
-          // scalarize variables for sim code
+          
           if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
             seed_vec := VariablePointers.scalarize(varData.seedVars);
             res_vec  := VariablePointers.scalarize(varData.resultVars);
@@ -267,15 +275,24 @@ public
           SimCodeUtil.addListSimCodeMap(seedVars, jac_map);
           SimCodeUtil.addListSimCodeMap(resVars, jac_map);
           SimCodeUtil.addListSimCodeMap(tmpVars, jac_map);
-
+          
           try
             idx_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars));
             if Jacobian.isDynamic(jacobian.jacType) then
-              for var in seedVars loop
+              if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolicadjoint" then
+                loopVars := resVars;
+              else
+                loopVars := seedVars;
+              end if;
+              for var in loopVars loop
                 cref := SimVar.getName(var);
                 if BVariable.checkCref(cref, BVariable.isSeed, sourceInfo()) then
                   // FIXME this should not happen, fix it when collecting seedVars!
+                  // this case is for forward symbolic jacobians
                   cref := BVariable.getPartnerCref(cref, BVariable.getVarSeed);
+                elseif BVariable.checkCref(cref, BVariable.isPDer, sourceInfo()) then
+                  // this case is for adjoint symbolic jacobians
+                  cref := BVariable.getPartnerCref(cref, BVariable.getVarPDer);
                 end if;
                 UnorderedMap.add(cref, var.index, idx_map);
                 if BVariable.checkCref(cref, BVariable.isState, sourceInfo()) then
@@ -308,7 +325,15 @@ public
               end for;
             end if;
 
-            (sparsity, sparsityT, coloring) := createSparsity(jacobian, idx_map);
+            (sparsity, sparsityT, coloring, rowColoring) := createSparsity(jacobian, idx_map);
+
+            if listLength(columnEqns) > 0 then
+              // also add to the global simcode map when we have a non-empty jacobian
+              // TODO: think about this, is this always desired?
+              SimCodeUtil.addListSimCodeMap(seedVars, simcode_map);
+              SimCodeUtil.addListSimCodeMap(resVars, simcode_map);
+              SimCodeUtil.addListSimCodeMap(tmpVars, simcode_map);
+            end if;
 
             jac := SIM_JAC(
               name                = jacobian.name,
@@ -322,11 +347,12 @@ public
               sparsity            = sparsity,
               sparsityT           = sparsityT,
               coloring            = coloring,
+              rowColoring         = rowColoring,
               numColors           = listLength(coloring),
               generic_loop_calls  = generic_loop_calls,
-              jac_map             = SOME(jac_map)
+              jac_map             = SOME(jac_map),
+              isAdjoint           = jacobian.isAdjoint
             );
-
             indices.jacobianIndex := indices.jacobianIndex + 1;
             simJacobian := SOME(jac);
           else
@@ -344,13 +370,14 @@ public
     function createSimulationJacobian
       input list<Partition.Partition> partitions;
       output SimJacobian simJac;
+      output SimJacobian simJacAdjoint;
       input output SimCode.SimCodeIndices simCodeIndices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
     protected
-      list<BackendDAE> jacobians = {};
-      BackendDAE simJacobian;
-      Option<SimJacobian> simJac_opt;
-      Option<BackendDAE> jacobian;
+      list<BackendDAE> jacobians = {}, jacobiansAdjoint = {};
+      BackendDAE simJacobian, simJacobianAdjoint;
+      Option<SimJacobian> simJac_opt, simJacAdj_opt;
+      Option<BackendDAE> jacobian, jacobianAdjoint;
     algorithm
       for partition in partitions loop
         // save jacobian if existent
@@ -358,9 +385,14 @@ public
         if Util.isSome(jacobian) then
           jacobians := Util.getOption(jacobian) :: jacobians;
         end if;
+        jacobianAdjoint := Partition.Partition.getJacobianAdjoint(partition);
+        if Util.isSome(jacobianAdjoint) then
+          jacobiansAdjoint := Util.getOption(jacobianAdjoint) :: jacobiansAdjoint;
+        end if;
       end for;
 
       // create empty jacobian as fallback
+      // ToDo: handle simCodeIndices correctly here
       if listEmpty(jacobians) then
         (simJac, simCodeIndices) := SimJacobian.empty("A", simCodeIndices);
       else
@@ -372,6 +404,19 @@ public
           (simJac, simCodeIndices) := SimJacobian.empty("A", simCodeIndices);
         end if;
       end if;
+
+      // create empty adjoint jacobian as fallback
+      if listEmpty(jacobiansAdjoint) then
+        (simJacAdjoint, simCodeIndices) := SimJacobian.empty("ADJ", simCodeIndices);
+      else
+        simJacobianAdjoint := Jacobian.combine(jacobiansAdjoint, "ADJ");
+        (simJacAdj_opt, simCodeIndices) := SimJacobian.create(simJacobianAdjoint, simCodeIndices, simcode_map);
+        if Util.isSome(simJacAdj_opt) then
+          simJacAdjoint := Util.getOption(simJacAdj_opt);
+        else
+          (simJacAdjoint, simCodeIndices) := SimJacobian.empty("ADJ", simCodeIndices);
+        end if;
+      end if;
     end createSimulationJacobian;
 
     function createSparsity
@@ -380,8 +425,9 @@ public
       output SparsityPattern sparsity;
       output SparsityPattern sparsityT;
       output SparsityColoring coloring;
+      output SparsityColoring rowColoring;
     algorithm
-      (sparsity, sparsityT, coloring) := match jacobian
+      (sparsity, sparsityT, coloring, rowColoring) := match jacobian
         local
           Jacobian.SparsityPattern Bpattern;
           Jacobian.SparsityColoring Bcoloring;
@@ -389,8 +435,8 @@ public
         case BackendDAE.JACOBIAN(sparsityPattern = Bpattern, sparsityColoring = Bcoloring) algorithm
           sparsity  := createSparsityPattern(Bpattern.col_wise_pattern, idx_map);
           sparsityT := createSparsityPattern(Bpattern.row_wise_pattern, idx_map);
-          coloring  := createSparsityColoring(Bcoloring, idx_map);
-        then (sparsity, sparsityT, coloring);
+          (coloring, rowColoring) := createSparsityColoring(Bcoloring, idx_map);
+        then (sparsity, sparsityT, coloring, rowColoring);
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
@@ -424,9 +470,11 @@ public
     function createSparsityColoring
       input Jacobian.SparsityColoring coloring;
       input UnorderedMap<ComponentRef, Integer> idx_map;
-      output SparsityColoring simColoring;
+      output SparsityColoring simColoringCols;
+      output SparsityColoring simColoringRows;
     algorithm
-      simColoring := list(List.map(group, function UnorderedMap.getOrFail(map = idx_map)) for group in coloring.cols);
+      simColoringCols := list(List.map(group, function UnorderedMap.getOrFail(map = idx_map)) for group in coloring.cols);
+      simColoringRows := list(List.map(group, function UnorderedMap.getOrFail(map = idx_map)) for group in coloring.rows);
     end createSparsityColoring;
 
     function empty
@@ -503,11 +551,13 @@ public
             nonlinear           = {}, // kabdelhak: these have to be computed in the backend using the jacobian
             nonlinearT          = {},
             coloredCols         = simJac.coloring,
+            coloredRows         = simJac.rowColoring,
             maxColorCols        = simJac.numColors,
             jacobianIndex       = simJac.jacobianIndex,
             partitionIndex      = simJac.partitionIndex,
             generic_loop_calls  = list(SimGenericCall.convert(gc) for gc in simJac.generic_loop_calls),
-            crefsHT             = Util.applyOption(simJac.jac_map, SimCodeUtil.convertSimCodeMap)
+            crefsHT             = Util.applyOption(simJac.jac_map, SimCodeUtil.convertSimCodeMap),
+            isAdjoint           = simJac.isAdjoint
           );
         then oldJac;
 
@@ -518,7 +568,7 @@ public
     end convert;
   end SimJacobian;
 
-  constant SimJacobian EMPTY_SIM_JAC = SIM_JAC("", 0, 0, 0, {}, {}, {}, {}, {}, {}, {}, 0, {}, NONE());
+  constant SimJacobian EMPTY_SIM_JAC = SIM_JAC("", 0, 0, 0, {}, {}, {}, {}, {}, {}, {}, {}, 0, {}, NONE(), false);
 
   annotation(__OpenModelica_Interface="backend");
 end NSimJacobian;

@@ -5527,8 +5527,32 @@ end genVector;
 template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String modelNamePrefix, String fileNamePrefix) "template functionAnalyticJacobians
   This template generates source code for all given jacobians."
 ::=
-  let initialjacMats = (JacobianMatrices |> JAC_MATRIX() =>
-    initialAnalyticJacobians(columns, seedVars, matrixName, sparsity, coloredCols, maxColorCols, modelNamePrefix, fileNamePrefix); separator="\n")
+   let initialjacMats =
+    (JacobianMatrices |> JAC_MATRIX() =>
+      // Adjoint: use transposed sparsity and row coloring
+      if isAdjoint then
+        initialAnalyticJacobians(
+          columns,
+          seedVars,
+          matrixName,
+          sparsityT,
+          coloredRows,
+          listLength(coloredRows),
+          modelNamePrefix,
+          fileNamePrefix)
+      // Normal: use regular sparsity and column coloring
+      else
+        initialAnalyticJacobians(
+          columns,
+          seedVars,
+          matrixName,
+          sparsity,
+          coloredCols,
+          maxColorCols,
+          modelNamePrefix,
+          fileNamePrefix)
+      ;separator="\n")
+
   let jacMats = (JacobianMatrices |> JAC_MATRIX() =>
     generateMatrix(columns, seedVars, matrixName, partitionIndex, crefsHT, modelNamePrefix) ;separator="\n")
   let jacGenericCalls = (JacobianMatrices |> JAC_MATRIX() =>

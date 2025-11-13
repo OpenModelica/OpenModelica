@@ -116,7 +116,7 @@ public
   end TYPENAME;
 
   record ARRAY
-    Type ty;
+    Type ty; 
     array<Expression> elements;
     Boolean literal "True if the array is known to only contain literal expressions.";
   end ARRAY;
@@ -1863,6 +1863,21 @@ public
     newlst := listReverse(newlst);
     outExp := arrayFromList_impl(newlst, ty, restdims);
   end arrayFromList_impl;
+
+  // build a matrix from list<list<Expression>> using arrayFromList
+  function makeMatrixFromRows
+    input list<list<Expression>> rows;
+    output Expression mat;
+  protected
+    Integer nRows = listLength(rows);
+    Integer nCols = if nRows == 0 then 0 else listLength(listHead(rows));
+    list<Expression> flat = List.flatten(rows);
+    Type elemTy = if listEmpty(flat) then Type.REAL() else Expression.typeOf(listHead(flat));
+    list<Dimension> dims = {Dimension.fromInteger(nRows), Dimension.fromInteger(nCols)};
+  algorithm
+    // dims are given in normal order [rows, cols]
+    mat := Expression.arrayFromList(flat, elemTy, dims);
+  end makeMatrixFromRows;
 
   function makeEnumLiteral
     input Type enumType;
@@ -4736,6 +4751,16 @@ public
     end match;
   end isRecord;
 
+  function isIf
+    input Expression exp;
+    output Boolean isIf;
+  algorithm
+    isIf := match exp
+      case IF() then true;
+      else false;
+    end match;
+  end isIf;
+
   function isRecordOrRecordArray
     input Expression exp;
     output Boolean isRecord;
@@ -5234,6 +5259,38 @@ public
 
     matrix := makeExpArray(rows, row_ty, true);
   end makeIdentityMatrix;
+
+
+  // Upper-triangular mask (including diagonal) as a literal matrix.
+  // Mask U[i,j] = 1 if i <= j else 0
+  function makeTriuMask
+    input Integer n;
+    input Type elTy;
+    output Expression mask;
+  protected
+    array<Expression> row, rows;
+    Expression zero, one;
+    Type row_ty;
+    Integer i, j;
+  algorithm
+    zero := Expression.makeZero(elTy);
+    one  := Expression.makeOne(elTy);
+
+    rows := arrayCreateNoInit(n, zero);
+    row_ty := Type.ARRAY(elTy, {Dimension.fromInteger(n)});
+
+    for i in 1:n loop
+      row := arrayCreateNoInit(n, zero);
+
+      for j in 1:n loop
+        arrayUpdateNoBoundsChecking(row, j, if i <= j then one else zero);
+      end for;
+
+      arrayUpdateNoBoundsChecking(rows, i, Expression.makeArray(row_ty, row, true));
+    end for;
+
+    mask := Expression.makeExpArray(rows, row_ty, true);
+  end makeTriuMask;
 
   function promote
     input output Expression e;
@@ -6657,5 +6714,117 @@ public
       else exp;
     end match;
   end replaceResizableParameter;
+
+  // Helper: compute multiplication result type from operand types.
+  function mulResultType
+    input Type tl;
+    input Type tr;
+    output Type tres;
+  protected
+    Type el;
+  algorithm
+    if Type.isArray(tl) and Type.isArray(tr) then
+      // Both arrays: keep (left) array type (sizes should already match semantically)
+      tres := tl;
+    elseif Type.isArray(tl) then
+      tres := tl; // array * scalar
+    elseif Type.isArray(tr) then
+      tres := tr; // scalar * array
+    else
+      // both scalar -> promote numeric type (use left for now; scalar promotion elsewhere already handled)
+      tres := tl;
+    end if;
+  end mulResultType;
+
+  // Helper: binary multiply with simple scalar/array size classification.
+  function mmul
+    input Expression lhs;
+    input Expression rhs;
+    input Operator baseOp;
+    output Expression prod;
+  protected
+    Type tl = typeOf(lhs);
+    Type tr = typeOf(rhs);
+    Boolean lArr = Type.isArray(tl);
+    Boolean rArr = Type.isArray(tr);
+    Operator.SizeClassification sizeClass;
+    Type resTy;
+    Operator op;
+  algorithm
+    if not lArr and not rArr then
+      sizeClass := NFOperator.SizeClassification.SCALAR;
+    elseif not lArr and rArr then
+      sizeClass := NFOperator.SizeClassification.SCALAR_ARRAY;
+    elseif lArr and not rArr then
+      sizeClass := NFOperator.SizeClassification.ARRAY_SCALAR;
+    else
+      sizeClass := NFOperator.SizeClassification.ELEMENT_WISE;
+    end if;
+
+    resTy := mulResultType(tl, tr);
+    op := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), resTy);
+    prod := BINARY(lhs, op, rhs);
+  end mmul;
+
+  function productOfListExceptSelf
+    "prod(f_k | k <> i) for each i.
+     For arguments = {f1, f2, ..., fn} returns list:
+       { Π_{k≠1} fk, Π_{k≠2} fk, ..., Π_{k≠n} fk }.
+     Uses a prefix/suffix O(n) algorithm (no repeated full products).
+     https://leetcode.com/problems/product-of-array-except-self/solutions/65622/simple-java-solution-in-o-n-without-extra-space/
+     If n = 0 -> {}, if n = 1 -> {1} (multiplicative identity of operator.ty)."
+    input list<Expression> arguments;
+    input Operator mulOp "Base multiplication operator (will be repaired per pair)";
+    output list<Expression> products;
+  protected
+    Integer n = listLength(arguments);
+    array<Expression> argsArr;
+    array<Expression> pref;
+    array<Expression> res;
+    Integer i;
+    Expression rightProd;
+    Type baseTy = mulOp.ty;
+    Type elTy;
+  algorithm
+    if n == 0 then
+      products := {};
+      return;
+    end if;
+
+    // Determine element (scalar) type to build multiplicative identity
+    elTy := if Type.isArray(baseTy) then Type.arrayElementType(baseTy) else baseTy;
+    // Load arguments into array for indexed access
+    argsArr := arrayCreate(n, Expression.makeOne(elTy));
+    i := 1;
+    for a in arguments loop
+      argsArr[i] := a;
+      i := i + 1;
+    end for;
+
+    // Allocate prefix array & result
+    pref := arrayCreate(n, Expression.makeOne(elTy)); // pref[i] = product of args before i with pref[1] = 1.
+    res  := arrayCreate(n, Expression.makeOne(elTy));
+
+    // Build prefix products: pref[i] = f1 * f2 * ... * f_{i-1}
+    for i in 2:n loop
+      pref[i] := mmul(pref[i-1], argsArr[i-1], mulOp);
+    end for;
+
+    // Suffix accumulation
+    rightProd := Expression.makeOne(elTy);
+    for i in n:-1:1 loop
+      // res[i] = (product of left side) * (product of right side)
+      res[i] := mmul(pref[i], rightProd, mulOp);
+      // update rightProd *= argsArr[i]
+      rightProd := mmul(rightProd, argsArr[i], mulOp);
+    end for;
+
+    // Collect back to list (in order)
+    products := {};
+    for i in n:-1:1 loop
+      //res[i] := map(res[i], repairOperator);
+      products := SimplifyExp.simplify(res[i]) :: products;
+    end for;
+  end productOfListExceptSelf;
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;
