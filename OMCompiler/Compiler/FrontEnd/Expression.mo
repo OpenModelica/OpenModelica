@@ -1722,7 +1722,7 @@ public function expandArray
   output list<DAE.Exp> contents;
 algorithm
   contents := match exp
-    case DAE.ARRAY() then listAppend(expandArray(e) for e in exp.array);
+    case DAE.ARRAY() then listAppend(expandArray(e) for e in listReverse(exp.array));
     case DAE.MATRIX() then getArrayOrMatrixContents(exp);
     else {exp};
   end match;

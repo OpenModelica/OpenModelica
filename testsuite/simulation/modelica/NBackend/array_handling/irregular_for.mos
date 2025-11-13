@@ -49,11 +49,11 @@ val(x[3],1);
 // BLOCK 3: Resizable Component (status = Solve.UNPROCESSED, size = 9)
 // ---------------------------------------------------------------------
 // ### Variable:
-// 	$FUN_1[integer(1.0 + 0.5 * ((-2) + $i1))]
+// 	$FUN_1[integer(1 + 0.5 * ((-2) + $i1))]
 // ### Equation:
 // 	[FOR-] (9) ($RES_AUX_4)
 // [----] for $i1 in 2:2:18 loop
-// [----]   [SCAL] (1) $FUN_1[integer(1.0 + 0.5 * ((-2) + $i1))] = sin((0.5 * $i1) * time) ($RES_AUX_5)
+// [----]   [SCAL] (1) $FUN_1[integer(1 + 0.5 * ((-2) + $i1))] = sin((0.5 * $i1) * time) ($RES_AUX_5)
 // [----] end for;
 //
 // BLOCK 4: Sliced Component (status = Solve.UNPROCESSED, size = 3)
@@ -63,7 +63,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for $i1 in 2:2:18 loop
-// 	[----]   [SCAL] (1) x[integer(0.5 * $i1)] = x[1 + integer(0.5 * $i1)] + $FUN_1[integer(1.0 + 0.5 * ((-2) + $i1))] ($RES_SIM_2)
+// 	[----]   [SCAL] (1) x[integer(0.5 * $i1)] = x[1 + integer(0.5 * $i1)] + $FUN_1[integer(1 + 0.5 * ((-2) + $i1))] ($RES_SIM_2)
 // 	[----] end for;
 // 	slice: {2, 1, 0}
 //
@@ -74,7 +74,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for $i1 in 2:2:18 loop
-// 	[----]   [SCAL] (1) x[integer(0.5 * $i1)] = x[1 + integer(0.5 * $i1)] + $FUN_1[integer(1.0 + 0.5 * ((-2) + $i1))] ($RES_SIM_2)
+// 	[----]   [SCAL] (1) x[integer(0.5 * $i1)] = x[1 + integer(0.5 * $i1)] + $FUN_1[integer(1 + 0.5 * ((-2) + $i1))] ($RES_SIM_2)
 // 	[----] end for;
 // 	slice: {3, 4, 5, 6, 7, 8}
 //
@@ -105,11 +105,11 @@ val(x[3],1);
 // BLOCK 3: Resizable Component (status = Solve.UNPROCESSED, size = 9)
 // ---------------------------------------------------------------------
 // ### Variable:
-// 	$FUN_1[integer(1.0 + 0.5 * ((-2) + $i1))]
+// 	$FUN_1[integer(1 + 0.5 * ((-2) + $i1))]
 // ### Equation:
 // 	[FOR-] (9) ($RES_AUX_4)
 // [----] for $i1 in 2:2:18 loop
-// [----]   [SCAL] (1) $FUN_1[integer(1.0 + 0.5 * ((-2) + $i1))] = sin((0.5 * $i1) * time) ($RES_AUX_5)
+// [----]   [SCAL] (1) $FUN_1[integer(1 + 0.5 * ((-2) + $i1))] = sin((0.5 * $i1) * time) ($RES_AUX_5)
 // [----] end for;
 //
 // BLOCK 4: Sliced Component (status = Solve.UNPROCESSED, size = 3)
@@ -119,7 +119,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for $i1 in 2:2:18 loop
-// 	[----]   [SCAL] (1) x[integer(0.5 * $i1)] = x[1 + integer(0.5 * $i1)] + $FUN_1[integer(1.0 + 0.5 * ((-2) + $i1))] ($RES_SIM_2)
+// 	[----]   [SCAL] (1) x[integer(0.5 * $i1)] = x[1 + integer(0.5 * $i1)] + $FUN_1[integer(1 + 0.5 * ((-2) + $i1))] ($RES_SIM_2)
 // 	[----] end for;
 // 	slice: {2, 1, 0}
 //
@@ -130,7 +130,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for $i1 in 2:2:18 loop
-// 	[----]   [SCAL] (1) x[integer(0.5 * $i1)] = x[1 + integer(0.5 * $i1)] + $FUN_1[integer(1.0 + 0.5 * ((-2) + $i1))] ($RES_SIM_2)
+// 	[----]   [SCAL] (1) x[integer(0.5 * $i1)] = x[1 + integer(0.5 * $i1)] + $FUN_1[integer(1 + 0.5 * ((-2) + $i1))] ($RES_SIM_2)
 // 	[----] end for;
 // 	slice: {3, 4, 5, 6, 7, 8}
 //
@@ -161,11 +161,11 @@ val(x[3],1);
 // BLOCK 3: Resizable Component (status = Solve.UNPROCESSED, size = 9)
 // ---------------------------------------------------------------------
 // ### Variable:
-// 	$FUN_1[integer(1.0 + 0.5 * ((-2) + $i1))]
+// 	$FUN_1[integer(1 + 0.5 * ((-2) + $i1))]
 // ### Equation:
 // 	[FOR-] (9) ($RES_AUX_4)
 // [----] for $i1 in 2:2:18 loop
-// [----]   [SCAL] (1) $FUN_1[integer(1.0 + 0.5 * ((-2) + $i1))] = sin((0.5 * $i1) * time) ($RES_AUX_5)
+// [----]   [SCAL] (1) $FUN_1[integer(1 + 0.5 * ((-2) + $i1))] = sin((0.5 * $i1) * time) ($RES_AUX_5)
 // [----] end for;
 //
 // BLOCK 4: Sliced Component (status = Solve.UNPROCESSED, size = 3)
@@ -175,7 +175,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for $i1 in 2:2:18 loop
-// 	[----]   [SCAL] (1) x[integer(0.5 * $i1)] = x[1 + integer(0.5 * $i1)] + $FUN_1[integer(1.0 + 0.5 * ((-2) + $i1))] ($RES_SIM_2)
+// 	[----]   [SCAL] (1) x[integer(0.5 * $i1)] = x[1 + integer(0.5 * $i1)] + $FUN_1[integer(1 + 0.5 * ((-2) + $i1))] ($RES_SIM_2)
 // 	[----] end for;
 // 	slice: {2, 1, 0}
 //
@@ -186,7 +186,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for $i1 in 2:2:18 loop
-// 	[----]   [SCAL] (1) x[integer(0.5 * $i1)] = x[1 + integer(0.5 * $i1)] + $FUN_1[integer(1.0 + 0.5 * ((-2) + $i1))] ($RES_SIM_2)
+// 	[----]   [SCAL] (1) x[integer(0.5 * $i1)] = x[1 + integer(0.5 * $i1)] + $FUN_1[integer(1 + 0.5 * ((-2) + $i1))] ($RES_SIM_2)
 // 	[----] end for;
 // 	slice: {3, 4, 5, 6, 7, 8}
 //
@@ -197,7 +197,7 @@ val(x[3],1);
 // ################################
 //
 // ================================
-//   (1) Continuous ODE Partition
+//   (1) Continuous ALG Partition
 // ================================
 //
 // --- Alias of INI[1 | 1] ---
@@ -220,11 +220,11 @@ val(x[3],1);
 // BLOCK 3: Resizable Component (status = Solve.EXPLICIT, size = 9)
 // ------------------------------------------------------------------
 // ### Variable:
-// 	$FUN_1[integer(1.0 + 0.5 * ((-2) + $i1))]
+// 	$FUN_1[integer(1 + 0.5 * ((-2) + $i1))]
 // ### Equation:
 // 	[FOR-] (9) ($RES_AUX_4)
 // [----] for $i1 in 2:2:18 loop
-// [----]   [SCAL] (1) $FUN_1[integer(1.0 + 0.5 * ((-2) + $i1))] = sin((0.5 * $i1) * time) ($RES_AUX_5)
+// [----]   [SCAL] (1) $FUN_1[integer(1 + 0.5 * ((-2) + $i1))] = sin((0.5 * $i1) * time) ($RES_AUX_5)
 // [----] end for;
 //
 // --- Alias of INI[1 | 4] ---
@@ -235,7 +235,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for $i1 in 2:2:18 loop
-// 	[----]   [SCAL] (1) x[integer(0.5 * $i1)] = x[1 + integer(0.5 * $i1)] + $FUN_1[integer(1.0 + 0.5 * ((-2) + $i1))] ($RES_SIM_2)
+// 	[----]   [SCAL] (1) x[integer(0.5 * $i1)] = x[1 + integer(0.5 * $i1)] + $FUN_1[integer(1 + 0.5 * ((-2) + $i1))] ($RES_SIM_2)
 // 	[----] end for;
 // 	slice: {2, 1, 0}
 //
@@ -247,7 +247,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for $i1 in 2:2:18 loop
-// 	[----]   [SCAL] (1) x[1 + integer(0.5 * $i1)] = -($FUN_1[integer(1.0 + 0.5 * ((-2) + $i1))] - x[integer(0.5 * $i1)]) ($RES_SIM_2)
+// 	[----]   [SCAL] (1) x[1 + integer(0.5 * $i1)] = -($FUN_1[integer(1 + 0.5 * ((-2) + $i1))] - x[integer(0.5 * $i1)]) ($RES_SIM_2)
 // 	[----] end for;
 // 	slice: {3, 4, 5, 6, 7, 8}
 //
@@ -278,11 +278,11 @@ val(x[3],1);
 // BLOCK 3: Resizable Component (status = Solve.EXPLICIT, size = 9)
 // ------------------------------------------------------------------
 // ### Variable:
-// 	$FUN_1[integer(1.0 + 0.5 * ((-2) + $i1))]
+// 	$FUN_1[integer(1 + 0.5 * ((-2) + $i1))]
 // ### Equation:
 // 	[FOR-] (9) ($RES_AUX_4)
 // [----] for $i1 in 2:2:18 loop
-// [----]   [SCAL] (1) $FUN_1[integer(1.0 + 0.5 * ((-2) + $i1))] = sin((0.5 * $i1) * time) ($RES_AUX_5)
+// [----]   [SCAL] (1) $FUN_1[integer(1 + 0.5 * ((-2) + $i1))] = sin((0.5 * $i1) * time) ($RES_AUX_5)
 // [----] end for;
 //
 // BLOCK 4: Generic Component (status = Solve.EXPLICIT, size = 3)
@@ -292,7 +292,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for $i1 in 2:2:18 loop
-// 	[----]   [SCAL] (1) x[integer(0.5 * $i1)] = x[1 + integer(0.5 * $i1)] + $FUN_1[integer(1.0 + 0.5 * ((-2) + $i1))] ($RES_SIM_2)
+// 	[----]   [SCAL] (1) x[integer(0.5 * $i1)] = x[1 + integer(0.5 * $i1)] + $FUN_1[integer(1 + 0.5 * ((-2) + $i1))] ($RES_SIM_2)
 // 	[----] end for;
 // 	slice: {2, 1, 0}
 //
@@ -303,7 +303,7 @@ val(x[3],1);
 // ### Equation:
 // 	[FOR-] (9) ($RES_SIM_1)
 // 	[----] for $i1 in 2:2:18 loop
-// 	[----]   [SCAL] (1) x[1 + integer(0.5 * $i1)] = -($FUN_1[integer(1.0 + 0.5 * ((-2) + $i1))] - x[integer(0.5 * $i1)]) ($RES_SIM_2)
+// 	[----]   [SCAL] (1) x[1 + integer(0.5 * $i1)] = -($FUN_1[integer(1 + 0.5 * ((-2) + $i1))] - x[integer(0.5 * $i1)]) ($RES_SIM_2)
 // 	[----] end for;
 // 	slice: {3, 4, 5, 6, 7, 8}
 //

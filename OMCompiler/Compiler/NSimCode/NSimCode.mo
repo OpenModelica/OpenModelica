@@ -270,6 +270,7 @@ public
       input String fileNamePrefix;
       input Option<OldSimCode.SimulationSettings> simSettingsOpt;
       output SimCode simCode;
+      output DAE.FunctionTree oldFunctionTree;
     protected
       partial function mapExp
         input output Expression exp;
@@ -400,7 +401,10 @@ public
             // Will probably be mostly the same in all other regards
             program := SymbolTable.getAbsyn();
             directory := CevalScriptBackend.getFileDir(AbsynUtil.pathToCref(name), program);
-            (libs, libPaths, _, includeDirs, recordDecls, functions, _) := OldSimCodeUtil.createFunctions(program, ConvertDAE.convertFunctionTree(funcTree));
+            // The OB function tree is needed both here and when dumping the flat model,
+            // but converting it is destructive so return it to avoid doing it again.
+            oldFunctionTree := ConvertDAE.convertFunctionTree(funcTree);
+            (libs, libPaths, _, includeDirs, recordDecls, functions, _) := OldSimCodeUtil.createFunctions(program, oldFunctionTree);
             makefileParams := OldSimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
 
             (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := collectAlgebraicLoops(init, init_0, ode, algebraic, daeModeData, simCodeIndices, simcode_map);

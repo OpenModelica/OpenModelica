@@ -3,10 +3,7 @@
 {
   "name": "build-deps:v1.22",
 
-  // Build and tag base Docker image from .CI/cache/Dockerfile
-  //"initializeCommand": "docker build --tag build-deps-v1.22.0-base ${localWorkspaceFolder}/.CI/cache/",
-
-  // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+  // Dockerfile
   "build": {
     "dockerfile": "Dockerfile",
     "args": {

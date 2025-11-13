@@ -367,6 +367,19 @@ public
     end match;
   end isCallNamed;
 
+  function isConnectionCall
+    input Expression exp;
+    output Boolean isConnection;
+  algorithm
+    isConnection := match exp
+      case CALL()
+        then Call.isConnectionsOperator(exp.call) or
+             Call.isStreamOperator(exp.call) or
+             Call.isCardinality(exp.call);
+      else false;
+    end match;
+  end isConnectionCall;
+
   function isTrue
     input Expression exp;
     output Boolean isTrue;

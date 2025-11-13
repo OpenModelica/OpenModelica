@@ -80,7 +80,17 @@ protected
   DAE.Element class_elem;
 algorithm
   daeFunctions := convertFunctionTree(functions);
+  dae := convertModel(flatModel);
+  execStat(getInstanceName());
+end convert;
 
+function convertModel
+  input FlatModel flatModel;
+  output DAE.DAElist dae;
+protected
+  list<DAE.Element> elems;
+  DAE.Element class_elem;
+algorithm
   elems := convertVariables(flatModel.variables, {});
   elems := convertEquations(flatModel.equations, elems);
   elems := convertInitialEquations(flatModel.initialEquations, elems);
@@ -89,9 +99,7 @@ algorithm
 
   class_elem := DAE.COMP(FlatModel.fullName(flatModel), elems, flatModel.source, ElementSource.getOptComment(flatModel.source));
   dae := DAE.DAE({class_elem});
-
-  execStat(getInstanceName());
-end convert;
+end convertModel;
 
 function convertStatements
   input list<Statement> statements;

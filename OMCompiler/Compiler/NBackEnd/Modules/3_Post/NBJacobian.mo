@@ -109,8 +109,8 @@ public
         String name                                     "Context name for jacobian";
         VariablePointers knowns                         "Variable array of knowns";
         FunctionTree funcTree                           "Function call bodies";
-        list<Partition.Partition> oldPartitions, newPartitions = {} "Equation partitions before and afterwards";
-        list<Partition.Partition> oldEvents, newEvents = {}   "Event Equation partitions before and afterwards";
+        list<Partition.Partition> oldPartitions, newPartitions = {}               "Equation partitions before and afterwards";
+        list<Partition.Partition> newEvents = {}, newAlg = {}, newAlgEvents = {}  "Event/Algebraic Equation partitions afterwards";
 
       case BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(knowns = knowns), funcTree = funcTree)
         algorithm
@@ -121,7 +121,6 @@ public
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Partition.Partition.kindToString(kind)});
             then fail();
           end match;
-          oldEvents := bdae.ode_event;
 
           if Flags.isSet(Flags.JAC_DUMP) then
             print(StringUtil.headline_1("[symjacdump] Creating symbolic Jacobians:") + "\n");
@@ -132,17 +131,26 @@ public
             newPartitions := part::newPartitions;
           end for;
 
-          for part in listReverse(oldEvents) loop
+          for part in listReverse(bdae.ode_event) loop
             (part, funcTree) := partJacobian(part, funcTree, knowns, name, func);
             newEvents := part::newEvents;
           end for;
-
+          for part in listReverse(bdae.algebraic) loop
+            (part, funcTree) := partJacobian(part, funcTree, knowns, name, func);
+            newAlg := part::newAlg;
+          end for;
+          for part in listReverse(bdae.alg_event) loop
+            (part, funcTree) := partJacobian(part, funcTree, knowns, name, func);
+            newAlgEvents := part::newAlgEvents;
+          end for;
           () := match kind
             case NBPartition.Kind.ODE algorithm bdae.ode := newPartitions; then ();
             case NBPartition.Kind.DAE algorithm bdae.dae := SOME(newPartitions); then ();
             else ();
           end match;
           bdae.ode_event := newEvents;
+          bdae.algebraic := newAlg;
+          bdae.alg_event := newAlgEvents;
           bdae.funcTree := funcTree;
       then bdae;
 
@@ -866,8 +874,21 @@ protected
       else part.strongComponents;
     end match;
 
-    if Flags.isSet(Flags.JAC_DUMP) then
-      print(Partition.Partition.toString(part, 2));
+    // create the simulation jacobian
+    if Partition.Partition.isODEorDAE(part) then
+      partialCandidates := part.unknowns;
+      unknowns  := if Partition.Partition.getKind(part) == NBPartition.Kind.DAE then Util.getOption(part.daeUnknowns) else part.unknowns;
+      jacType   := if Partition.Partition.getKind(part) == NBPartition.Kind.DAE then JacobianType.DAE else JacobianType.ODE;
+
+      derivative_vars := list(var for var guard(BVariable.isStateDerivative(var)) in VariablePointers.toList(unknowns));
+      state_vars := list(Util.getOption(BVariable.getVarState(var)) for var in derivative_vars);
+      seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
+
+      (jacobian, funcTree) := func(name, jacType, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcTree, kind ==  NBPartition.Kind.INI);
+      part.association := Partition.Association.CONTINUOUS(kind, jacobian);
+      if Flags.isSet(Flags.JAC_DUMP) then
+        print(Partition.Partition.toString(part, 2));
+      end if;
     end if;
   end partJacobian;
 
@@ -904,6 +925,10 @@ protected
           init              = kind == NBPartition.Kind.INI);
         strict.jac := jacobian;
         comp.strict := strict;
+
+        if Flags.isSet(Flags.JAC_DUMP) then
+          print(StrongComponent.toString(comp) + "\n");
+        end if;
       then (comp, true);
       else (comp, false);
     end match;

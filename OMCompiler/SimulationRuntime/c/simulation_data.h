@@ -276,7 +276,7 @@ typedef struct REAL_ATTRIBUTE
   modelica_boolean fixed;              /* depends on the type */
   modelica_boolean useNominal;         /* = false */
   modelica_real nominal;               /* = 1.0 */
-  modelica_real start;                 /* = 0.0 */
+  real_array start;                    /* = 0.0 */
 } REAL_ATTRIBUTE;
 
 typedef struct INTEGER_ATTRIBUTE
@@ -306,16 +306,20 @@ enum DIMENSION_ATTRIBUTE_TYPE{
 
 typedef struct DIMENSION_ATTRIBUTE
 {
-  enum DIMENSION_ATTRIBUTE_TYPE type;   /* How the dimension is defined */
-  modelica_integer start;               /* If type=DIMENSION_BY_START: Dimension */
-  modelica_integer valueReference;      /* If type=DIMENSION_BY_VALUE_REFERENCE: Value reference of structural parameter specifying dimension */
+  /** How the dimension is defined */
+  enum DIMENSION_ATTRIBUTE_TYPE type;
+  /** If `type` is `DIMENSION_BY_START`: Dimension
+    * If `type` is `DIMENSION_BY_VALUE_REFERENCE`: Will be set to start value of referenced variable in function `calculateLength`. */
+  modelica_integer start;
+  /** If `type` is `DIMENSION_BY_VALUE_REFERENCE`: Value reference of structural parameter specifying dimension. */
+  modelica_integer valueReference;
 } DIMENSION_ATTRIBUTE;
 
 typedef struct DIMENSION_INFO
 {
-  size_t numberOfDimensions;            /* Number of dimension tags <dimension>, scalar if 0*/
+  size_t numberOfDimensions;            /* Number of dimension tags <dimension>, scalar if equal to 0. */
   DIMENSION_ATTRIBUTE* dimensions;      /* Array of dimension sizes */
-  size_t scalar_length;                 /* Length of variable after scalarization to 1-dimensional array*/
+  size_t scalar_length;                 /* Length of variable after scalarization to 1-dimensional array */
 } DIMENSION_INFO;
 
 typedef struct STATIC_REAL_DATA

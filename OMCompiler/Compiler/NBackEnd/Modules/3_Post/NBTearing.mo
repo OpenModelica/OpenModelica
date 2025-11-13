@@ -390,7 +390,7 @@ protected
         comp.strict := strict;
 
         if Flags.isSet(Flags.TEARING_DUMP) then
-          print(StrongComponent.toString(comp) + "\n");
+          print(StringUtil.headline_2("[" + Partition.Partition.kindToString(kind) + "] Tearing Result " + intString(comp.idx)) + "\n" + StrongComponent.toString(comp) + "\n");
         end if;
       then comp;
       else comp;

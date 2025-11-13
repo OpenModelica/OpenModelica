@@ -256,20 +256,17 @@ public
       output Boolean b = EquationPointers.size(partition.equations) == 0;
     end isEmpty;
 
-    function isAlgebraicContinuous
+    function isODEorDAE
       input Partition part;
-      output Boolean alg = true;
-      output Boolean con = true;
+      output Boolean b;
     algorithm
-      for var in VariablePointers.toList(part.unknowns) loop
-        alg := if alg then not BVariable.isStateDerivative(var) else false;
-        con := if con then not BVariable.isDiscrete(var) else false;
-        // stop searching if both
-        if not (alg or con) then
-          break;
-        end if;
-      end for;
-    end isAlgebraicContinuous;
+      b := match part.association
+        local
+          Kind kind;
+        case Association.CONTINUOUS(kind = kind) then kind == Kind.ODE or kind == Kind.ODE_EVT or kind == Kind.DAE;
+        else false;
+      end match;
+    end isODEorDAE;
 
     function categorize
       input Partition partition;
@@ -282,6 +279,20 @@ public
       Boolean algebraic, continuous;
       Kind kind;
       Association association;
+      function isAlgebraicContinuous
+        input Partition part;
+        output Boolean alg = true;
+        output Boolean con = true;
+      algorithm
+        for var in VariablePointers.toList(part.unknowns) loop
+          alg := if alg then not BVariable.isStateDerivative(var) else false;
+          con := if con then not BVariable.isDiscrete(var) else false;
+          // stop searching if both
+          if not (alg or con) then
+            break;
+          end if;
+        end for;
+      end isAlgebraicContinuous;
     algorithm
       (algebraic, continuous) := isAlgebraicContinuous(partition);
       kind  := match (algebraic, continuous)
@@ -297,18 +308,22 @@ public
         then partition.association;
         case (Kind.ALG, association as Association.CONTINUOUS()) algorithm
           association.kind := kind;
+          partition.association := association;
           DoubleEnded.push_back(alg, partition);
         then association;
         case (Kind.ODE, association as Association.CONTINUOUS()) algorithm
           association.kind := kind;
+          partition.association := association;
           DoubleEnded.push_back(ode, partition);
         then association;
         case (Kind.ALG_EVT, association as Association.CONTINUOUS()) algorithm
           association.kind := kind;
+          partition.association := association;
           DoubleEnded.push_back(alg_evt, partition);
         then association;
         case (Kind.ODE_EVT, association as Association.CONTINUOUS()) algorithm
           association.kind := kind;
+          partition.association := association;
           DoubleEnded.push_back(ode_evt, partition);
         then association;
         else fail();

@@ -391,6 +391,10 @@ algorithm
   InstUtil.dumpFlatModelDebug("flatten", flatModel);
 
   if getConnectionResolved then
+    if settings.newBackend then
+      flatModel.equations := evaluateIfWithConnects(flatModel.equations);
+    end if;
+
     if settings.arrayConnect then
       flatModel := resolveArrayConnections(flatModel);
     else
@@ -1313,21 +1317,14 @@ function vectorizeEquation
   input output list<Equation> equations;
 protected
   list<Equation> eql;
+  Type ty;
+  Expression lhs, rhs;
 algorithm
   // Flatten with an empty prefix to get rid of any split indices.
   eql := flattenEquation(eqn, EMPTY_PREFIX, {}, settings);
 
   for eq in eql loop
     equations := match eq
-      local
-        Type ty;
-        InstNode iter, scope;
-        list<InstNode> iters;
-        Expression lhs, rhs, range;
-        list<Expression> ranges;
-        list<Subscript> subs;
-        DAE.ElementSource src;
-
       // convert simple equality of crefs to array equality
       // kabdelhak: only do it if all subscripts are simple enough
       //            will lead to complicated code if not index or whole dim
@@ -1351,27 +1348,40 @@ algorithm
       // wrap general equation into for loop
       else
         algorithm
-          (iters, ranges, subs) := makeIterators(Prefix.prefix(prefix), dimensions);
-          subs := listReverseInPlace(subs);
-          eq := Equation.mapExp(eq, function addIterator(prefix = prefix, subscripts = subs));
-          scope := Equation.scope(eqn);
-          src := Equation.source(eqn);
-
-          iter :: iters := iters;
-          range :: ranges := ranges;
-          eq := Equation.FOR(iter, SOME(range), {eq}, scope, src);
-
-          while not listEmpty(iters) loop
-            iter :: iters := iters;
-            range :: ranges := ranges;
-            eq := Equation.FOR(iter, SOME(range), {eq}, scope, src);
-          end while;
+          eq := vectorizeEquationGeneric(eq, dimensions, prefix);
         then
           splitForLoop(eq, EMPTY_PREFIX, equations, settings);
 
     end match;
   end for;
 end vectorizeEquation;
+
+function vectorizeEquationGeneric
+  input Equation eqn;
+  input list<Dimension> dimensions;
+  input Prefix prefix;
+  output Equation vectorizedEqn;
+protected
+  InstNode iter;
+  list<InstNode> iters;
+  Expression range;
+  list<Expression> ranges;
+  list<Subscript> subs;
+  InstNode scope;
+  DAE.ElementSource src;
+algorithm
+  (iters, ranges, subs) := makeIterators(Prefix.prefix(prefix), dimensions);
+  subs := listReverseInPlace(subs);
+  vectorizedEqn := Equation.mapExp(eqn, function addIterator(prefix = prefix, subscripts = subs));
+  scope := Equation.scope(eqn);
+  src := Equation.source(eqn);
+
+  while not listEmpty(iters) loop
+    iter :: iters := iters;
+    range :: ranges := ranges;
+    vectorizedEqn := Equation.FOR(iter, SOME(range), {vectorizedEqn}, scope, src);
+  end while;
+end vectorizeEquationGeneric;
 
 function vectorizeAlgorithms
   input list<Algorithm> algs;
@@ -1974,8 +1984,10 @@ algorithm
           if var <= Variability.STRUCTURAL_PARAMETER then
             if Expression.isPure(cond) then
               if has_connect then
-                // If-equations containing connects must be evaluated.
-                should_eval := true;
+                // If-equations containing connects must be evaluated, but with
+                // the new backend it needs to be done after vectorization.
+                should_eval := not settings.newBackend;
+                structural := true;
               elseif settings.minimalEval then
                 // Don't evaluate if --evaluateStructuralParameters=strictlyNecessary
                 should_eval := false;
@@ -2008,7 +2020,7 @@ algorithm
             end if;
 
             // Conditions in an if-equation that contains connects must be possible to evaluate.
-            if not Expression.isBoolean(cond) and has_connect then
+            if not Expression.isBoolean(cond) and has_connect and not settings.newBackend then
               Error.addInternalError(
                 "Failed to evaluate branch condition in if equation containing connect equations: `" +
                 Expression.toString(cond) + "`", info);
@@ -2128,7 +2140,7 @@ protected
 algorithm
   Equation.FOR(iter, opt_range, body, scope, src) := forLoop;
   body := flattenEquations(body, EMPTY_PREFIX, settings);
-  (connects, non_connects) := splitForLoop2(body);
+  (connects, non_connects) := splitForLoop2(body, settings);
 
   if not listEmpty(connects) then
     if isSome(opt_range) then
@@ -2154,23 +2166,12 @@ end splitForLoop;
 
 function splitForLoop2
   input list<Equation> forBody;
+  input FlattenSettings settings;
   output list<Equation> connects = {};
   output list<Equation> nonConnects = {};
 protected
-  function is_conn_operator
-    input Expression exp;
-    output Boolean res;
-  algorithm
-    res := match exp
-      case Expression.CALL()
-        then Call.isConnectionsOperator(exp.call) or
-             Call.isStreamOperator(exp.call) or
-             Call.isCardinality(exp.call);
-      else false;
-    end match;
-  end is_conn_operator;
-protected
-  list<Equation> conns, nconns;
+  list<Equation> conns, nconns, eql;
+  Expression cond;
 algorithm
   for eq in forBody loop
     () := match eq
@@ -2182,7 +2183,7 @@ algorithm
 
       case Equation.FOR()
         algorithm
-          (conns, nconns) := splitForLoop2(eq.body);
+          (conns, nconns) := splitForLoop2(eq.body, settings);
 
           if not listEmpty(conns) then
             connects := Equation.FOR(eq.iterator, eq.range, conns, eq.scope, eq.source) :: connects;
@@ -2196,7 +2197,8 @@ algorithm
 
       else
         algorithm
-          if Equation.containsExp(eq, function Expression.contains(func = is_conn_operator)) then
+          if Equation.contains(eq, Equation.isConnect) or
+             Equation.containsExp(eq, function Expression.contains(func = Expression.isConnectionCall)) then
             connects := eq :: connects;
           else
             nonConnects := eq :: nonConnects;
@@ -3128,6 +3130,76 @@ algorithm
     end if;
   end if;
 end updateVariability;
+
+function evaluateIfWithConnects
+  input list<Equation> eql;
+  output list<Equation> outEql = {};
+algorithm
+  for eq in eql loop
+    outEql := evaluateIfWithConnects2(eq, outEql);
+  end for;
+
+  outEql := listReverseInPlace(outEql);
+end evaluateIfWithConnects;
+
+function evaluateIfWithConnects2
+  input Equation eq;
+  input output list<Equation> equations;
+protected
+  Expression cond;
+  Variability var;
+  list<Equation> eql;
+  Ceval.EvalTarget target;
+  list<Equation.Branch> bl = {};
+algorithm
+  equations := match eq
+    case Equation.IF()
+      guard Equation.contains(eq, Equation.isConnect) or
+            Equation.containsExp(eq, function Expression.contains(func = Expression.isConnectionCall))
+      algorithm
+        target := Ceval.EvalTarget.new(Equation.info(eq));
+
+        for branch in eq.branches loop
+          Equation.Branch.BRANCH(cond, var, eql) := branch;
+
+          if var <= Variability.STRUCTURAL_PARAMETER then
+            if Expression.isPure(cond) then
+              Structural.markExp(cond);
+              cond := Ceval.evalExp(cond, target);
+            end if;
+
+            if not Expression.isBoolean(cond) then
+              Error.addInternalError(
+                "Failed to evaluate branch condition in if equation containing connect equations: `" +
+                Expression.toString(cond) + "`", Equation.info(eq));
+              fail();
+            end if;
+          end if;
+
+          if Expression.isTrue(cond) then
+            if listEmpty(bl) then
+              eql := evaluateIfWithConnects(eql);
+              equations := listAppend(eql, equations);
+              bl := {};
+            else
+              bl := Equation.makeBranch(cond, eql, var) :: bl;
+            end if;
+
+            break;
+          elseif not Expression.isFalse(cond) then
+            bl := Equation.makeBranch(cond, eql, var) :: bl;
+          end if;
+        end for;
+
+        if not listEmpty(bl) then
+          equations := Equation.IF(listReverseInPlace(bl), eq.scope, eq.source) :: equations;
+        end if;
+      then
+        equations;
+
+    else eq :: equations;
+  end match;
+end evaluateIfWithConnects2;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFFlatten;
