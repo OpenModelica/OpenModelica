@@ -620,7 +620,7 @@ public
       end for;
       for tpl in sparsityPattern.row_wise_pattern loop
         (idx_cref, deps) := tpl;
-        rows[UnorderedMap.getSafe(idx_cref, partial_indices, sourceInfo())] := listAppend(getIndices(dep, seed_indices,partial_indices, rows) for dep in deps);
+        rows[UnorderedMap.getSafe(idx_cref, partial_indices, sourceInfo())] := listAppend(getIndices(dep, seed_indices, partial_indices, rows) for dep in deps);
       end for;
 
       // call C function (old backend - ToDo: port to new backend!)
@@ -868,7 +868,7 @@ protected
       seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
 
       (jacobian, funcTree) := func(name, jacType, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcTree, kind ==  NBPartition.Kind.INI);
-      
+
       if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolicadjoint" and Util.isSome(jacobian) then
         part.association := Partition.Association.CONTINUOUS(kind, NONE(), jacobian);
       else

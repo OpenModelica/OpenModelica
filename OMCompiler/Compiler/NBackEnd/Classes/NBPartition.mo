@@ -117,7 +117,7 @@ public
     end toString;
 
     function create
-      "create an associtation for a partition from the equation array and the clocked info
+      "create an association for a partition from the equation array and the clocked info
       holdEvents is updated later for clocked associations"
       input EquationPointers equations;
       input Kind kind;

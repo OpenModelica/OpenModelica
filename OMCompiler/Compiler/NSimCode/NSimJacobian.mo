@@ -275,11 +275,7 @@ public
           SimCodeUtil.addListSimCodeMap(seedVars, jac_map);
           SimCodeUtil.addListSimCodeMap(resVars, jac_map);
           SimCodeUtil.addListSimCodeMap(tmpVars, jac_map);
-          // also add to the global simcode map
-          SimCodeUtil.addListSimCodeMap(seedVars, simcode_map);
-          SimCodeUtil.addListSimCodeMap(resVars, simcode_map);
-          SimCodeUtil.addListSimCodeMap(tmpVars, simcode_map);
-
+          
           try
             idx_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars));
             if Jacobian.isDynamic(jacobian.jacType) then
@@ -330,6 +326,14 @@ public
             end if;
 
             (sparsity, sparsityT, coloring, rowColoring) := createSparsity(jacobian, idx_map);
+
+            if listLength(columnEqns) > 0 then
+              // also add to the global simcode map when we have a non-empty jacobian
+              // TODO: think about this, is this always desired?
+              SimCodeUtil.addListSimCodeMap(seedVars, simcode_map);
+              SimCodeUtil.addListSimCodeMap(resVars, simcode_map);
+              SimCodeUtil.addListSimCodeMap(tmpVars, simcode_map);
+            end if;
 
             jac := SIM_JAC(
               name                = jacobian.name,

@@ -15359,8 +15359,9 @@ algorithm
     SimCode.SIMCODE(crefToSimVarHT = crefToSimVarHT) := simCode;
     cref := if simCode.scalarized then inCref else ComponentReference.crefStripSubs(inCref);
     outSimVar := simVarFromHT(cref, crefToSimVarHT);
+    // print("cref2simvar found via HT for cref: " + ComponentReference.printComponentRefStr(outSimVar.name) + "\n");
   else
-    //print("cref2simvar: " + ComponentReference.printComponentRefStr(inCref) + " not found!\n");
+    // print("cref2simvar: " + ComponentReference.printComponentRefStr(inCref) + " not found!\n");
     badcref := ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed " + ComponentReference.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
     outSimVar := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false);
   end try;

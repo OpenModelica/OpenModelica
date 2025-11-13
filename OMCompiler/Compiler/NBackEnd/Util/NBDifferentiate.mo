@@ -2833,6 +2833,7 @@ public
             end if;
 
             (diff_arg, diffArguments) := differentiateExpression(arg, diffArguments);
+
             if isReverse then
               diffArguments.current_grad := current_grad;
             else
