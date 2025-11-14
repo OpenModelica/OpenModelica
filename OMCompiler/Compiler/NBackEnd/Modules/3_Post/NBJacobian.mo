@@ -65,6 +65,7 @@ protected
   import Replacements = NBReplacements;
   import Slice = NBSlice;
   import Sorting = NBSorting;
+  import Causalize = NBCausalize;
   import StrongComponent = NBStrongComponent;
   import Tearing = NBTearing;
   import NFOperator.{MathClassification, SizeClassification};
@@ -632,6 +633,7 @@ public
         cref_colored_cols[i] := list(seeds[idx] for idx in colored_cols[i]);
       end for;
 
+      // THNK: is this correct? -> I think so
       // Row coloring (color partials)
       colored_rows := SymbolicJacobian.createColoring(cols, rows, sizeRows, sizeCols);
       cref_colored_rows := arrayCreate(arrayLength(colored_rows), {});
@@ -947,7 +949,7 @@ protected
     end if;
 
     // // print strong components
-    // print("Strong components for symboli differentiation:\n");
+    // print("Strong components for symbolic differentiation:\n");
     // print(jacobianTypeString(jacType) + "\n");
     // for c in comps loop
     //   print(StrongComponent.toString(c, 2) + "\n");
@@ -959,6 +961,7 @@ protected
     // create pDer vars (also filters out discrete vars)
     (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
     (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(init = init));
+    print("tmp vars in symbolic:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(tmp_vars), "Tmp Vars") + "\n");
 
     for v in res_vars loop makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), init = init); end for;
     res_vars := Pointer.access(pDer_vars_ptr);
@@ -1292,6 +1295,74 @@ protected
     end for;
   end populateDiffMap;
 
+  // Collect all ComponentRefs used in an expression (shallow helper).
+  function collectCrefsFromExpr
+    input Expression exp;
+    output list<ComponentRef> crefs;
+  algorithm
+    crefs := Expression.fold(exp, collectCrefsFold, {});
+  end collectCrefsFromExpr;
+
+  function collectCrefsFold
+    input Expression e;
+    input output list<ComponentRef> acc;
+  algorithm
+    () := match e
+      case Expression.CREF(cref = _) algorithm
+        acc := e.cref :: acc;
+      then ();
+      else ();
+    end match;
+  end collectCrefsFold;
+
+  // True iff expr references any tmp var in tmpSet (excluding self).
+  function exprDependsOnTmpVar
+    input Expression expr;
+    input UnorderedSet<ComponentRef> tmpSet;
+    input ComponentRef self;
+    output Boolean doesDepend = false;
+  protected
+    list<ComponentRef> deps;
+  algorithm
+    deps := collectCrefsFromExpr(expr);
+    for c in deps loop
+      if ComponentRef.isEqual(c, self) then
+        // ignore self
+      elseif UnorderedSet.contains(c, tmpSet) then
+        doesDepend := true;
+        return;
+      end if;
+    end for;
+  end exprDependsOnTmpVar;
+
+  // Partition tmpKeys into those whose RHS depends only on seeds (no tmp refs) and the rest.
+  function partitionTmpBySeedFirst
+    input list<ComponentRef> tmpKeys;
+    input UnorderedMap<ComponentRef, ExpressionList> adjoint_map;
+    output list<ComponentRef> seedOnlyFirst = {};
+    output list<ComponentRef> rest = {};
+  protected
+    UnorderedSet<ComponentRef> tmpSet = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(tmpKeys)));
+    list<Expression> terms;
+    Expression rhs;
+  algorithm
+    for k in tmpKeys loop UnorderedSet.add(k, tmpSet); end for;
+
+    for k in tmpKeys loop
+      terms := UnorderedMap.getOrDefault(k, adjoint_map, {});
+      rhs := buildAdjointRhs(k, terms);
+      if exprDependsOnTmpVar(rhs, tmpSet, k) then
+        rest := k :: rest;
+      else
+        seedOnlyFirst := k :: seedOnlyFirst;
+      end if;
+    end for;
+
+    // keep original relative order
+    seedOnlyFirst := listReverse(seedOnlyFirst);
+    rest := listReverse(rest);
+  end partitionTmpBySeedFirst;
+
   function jacobianSymbolicAdjoint extends Module.jacobianInterface;
   protected
     list<StrongComponent> comps, diffed_comps, comps_non_alg;
@@ -1326,6 +1397,17 @@ protected
     list<StrongComponent> pre_adjoint_comps = {};
     list<ComponentRef> tmpKeys;
     list<ComponentRef> resKeys;
+
+    // added locals for causalization of tmp equations
+    list<Pointer<Variable>> tmpVarPtrs_causal = {};
+    list<Pointer<NBEquation.Equation>> tmpEqPtrs_causal = {};
+    VariablePointers tmpVarsVP;
+    EquationPointers tmpEqnsEP;
+    Matching matchingTmp;
+    list<StrongComponent> tmpComps, resComps;
+
+    list<ComponentRef> tmpKeysSeedOnly, tmpKeysRest;
+    list<StrongComponent> tmpCompsFirst = {}, tmpCompsRest = {};
   algorithm
     newName := name + "_ADJ";
     if Util.isSome(strongComponents) then
@@ -1341,6 +1423,10 @@ protected
       Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because no strong components were given!"});
       fail();
     end if;
+
+    for c in comps loop
+      print("start component:\n" + StrongComponent.toString(c) + "\n");
+    end for;
 
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
       print("Seed candidates before pDer creation:\n" + BVariable.VariablePointers.toString(seedCandidates, "Seed Candidates") + "\n");
@@ -1603,7 +1689,7 @@ protected
       scalarized      = seedCandidates.scalarized,
       adjoint_map     = SOME(adjoint_map),
       current_grad    = Expression.EMPTY(Type.REAL()),
-      collectAdjoints  = true
+      collectAdjoints = true
     );
 
     // differentiate all strong components
@@ -1619,28 +1705,43 @@ protected
     diffed_comps := {};
     i := 1;
     (tmpKeys, resKeys) := buildAdjointProcessingOrder(adjoint_map, res_vars, tmp_vars);
+    // 1. TMP VAR equations: simple heuristic ordering
+    (tmpKeysSeedOnly, tmpKeysRest) := partitionTmpBySeedFirst(tmpKeys, adjoint_map);
 
-    // 1. TMP VAR equations
-    for lhsKey in tmpKeys loop
+    // Emit tmp vars that only depend on seeds first
+    tmpCompsFirst := {};
+    for lhsKey in tmpKeysSeedOnly loop
       diffed_comp := makeAdjointComponent(lhsKey, adjoint_map, newName, i);
+      tmpCompsFirst := diffed_comp :: tmpCompsFirst;
       i := i + 1;
-      diffed_comps := diffed_comp :: diffed_comps;
     end for;
-    // Reverse tmp components list to maintain intended reverse-mode ordering
-    diffed_comps := listReverse(diffed_comps);
+    // no reversal needed as order does not matter?
 
-    // 2. Algebraic loop components (pre_adjoint_comps) inserted after tmp vars, before result vars
-    for compAL in pre_adjoint_comps loop
-      diffed_comps := compAL :: diffed_comps;
+    // Emit remaining tmp vars afterwards
+    tmpCompsRest := {};
+    for lhsKey in tmpKeysRest loop
+      diffed_comp := makeAdjointComponent(lhsKey, adjoint_map, newName, i);
+      tmpCompsRest := diffed_comp :: tmpCompsRest;
+      i := i + 1;
     end for;
+    // THNK: is this enough to ensure correct execution order?
+    tmpCompsRest := listReverse(tmpCompsRest);
 
     // 3. RESULT VAR equations
+    resComps := {};
     for lhsKey in resKeys loop
       diffed_comp := makeAdjointComponent(lhsKey, adjoint_map, newName, i);
+      resComps := diffed_comp :: resComps;
       i := i + 1;
-      diffed_comps := diffed_comp :: diffed_comps;
     end for;
-    diffed_comps := listReverse(diffed_comps);
+    // no reversal needed as order does not matter?
+
+    // here are also the loop components from above which might be empty though if there are none
+    diffed_comps := listAppend(listAppend(tmpCompsFirst, tmpCompsRest), listAppend(pre_adjoint_comps, resComps));
+
+    // for c in diffed_comps loop
+    //   print("Diffed component:\n" + StrongComponent.toString(c) + "\n");
+    // end for;
 
     // collect var data (most of this can be removed)
     unknown_vars  := listAppend(res_vars, tmp_vars);

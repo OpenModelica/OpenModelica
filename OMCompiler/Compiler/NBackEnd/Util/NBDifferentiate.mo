@@ -218,6 +218,7 @@ public
             case StrongComponent.SLICED_COMPONENT() then ComponentRef.copySubscripts(StrongComponent.getVarCref(comp), gradCref); // put subscript on the seed;
             else gradCref;
           end match;
+          // and update in diffArguments
           da := Pointer.access(diffArguments_ptr);
           da.current_grad := Expression.fromCref(gradCref);
           Pointer.update(diffArguments_ptr, da);
@@ -271,14 +272,9 @@ public
       then StrongComponent.MULTI_COMPONENT(new_var_slices, new_eqn_slice, comp.status);
 
       case StrongComponent.SLICED_COMPONENT() algorithm
-        // Map the subscripted LHS cref without collecting into the adjoint_map
-        diffArguments := Pointer.access(diffArguments_ptr);
-        oldCollect := diffArguments.collectAdjoints;
-        diffArguments.collectAdjoints := false;
+        // Map the subscripted LHS cref without collecting into the adjoint_map if one exists
         (Expression.CREF(cref = new_cref), diffArguments) :=
-          differentiateComponentRef(Expression.fromCref(comp.var_cref), diffArguments);
-        // restore flag and write back
-        diffArguments.collectAdjoints := oldCollect;
+          differentiateComponentRefNoCollect(Expression.fromCref(comp.var_cref), Pointer.access(diffArguments_ptr));
         Pointer.update(diffArguments_ptr, diffArguments);
         new_var_slice := Slice.apply(comp.var, function differentiateVariablePointer(diffArguments_ptr = diffArguments_ptr));
         new_eqn_slice := Slice.apply(comp.eqn, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr, name = name));
@@ -434,25 +430,13 @@ public
       
       case Equation.SCALAR_EQUATION() algorithm
         // For adjoint: map LHS variable but do NOT accumulate adjoint.
-        oldCollect := diffArguments.collectAdjoints;
-        diffArguments.collectAdjoints := false;
-        (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
-        diffArguments.collectAdjoints := oldCollect;
-
+        (lhs, diffArguments) := differentiateExpressionNoCollect(eq.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
       then (Equation.SCALAR_EQUATION(eq.ty, lhs, rhs, eq.source, attr), diffArguments);
 
       case Equation.ARRAY_EQUATION() algorithm
-        if Util.isSome(diffArguments.adjoint_map) then
-          oldCollect := diffArguments.collectAdjoints;
-          diffArguments.collectAdjoints := false;
-          (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
-          diffArguments.collectAdjoints := oldCollect;
-        else
-          (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
-        end if;
-
+        (lhs, diffArguments) := differentiateExpressionNoCollect(eq.lhs, diffArguments);
         // Only do per-element reverse seeding for explicit element-wise array assembly on RHS
         if Util.isSome(diffArguments.adjoint_map) and
           diffArguments.diffType == DifferentiationType.JACOBIAN and
@@ -504,10 +488,7 @@ public
             diffArguments.collectAdjoints := collect_save;
 
             // Also differentiate the full RHS without collecting (avoid duplicates)
-            oldCollect := diffArguments.collectAdjoints;
-            diffArguments.collectAdjoints := false;
-            (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
-            diffArguments.collectAdjoints := oldCollect;
+            (rhs, diffArguments) := differentiateExpressionNoCollect(eq.rhs, diffArguments);
           else
             // Fallback: regular vector reverse-mode
             (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
@@ -520,11 +501,7 @@ public
       then (Equation.ARRAY_EQUATION(eq.ty, lhs, rhs, eq.source, attr, eq.recordSize), diffArguments);
 
       case Equation.RECORD_EQUATION() algorithm
-        oldCollect := diffArguments.collectAdjoints;
-        diffArguments.collectAdjoints := false;
-        (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
-        diffArguments.collectAdjoints := oldCollect;
-
+        (lhs, diffArguments) := differentiateExpressionNoCollect(eq.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
       then (Equation.RECORD_EQUATION(eq.ty, lhs, rhs, eq.source, attr, eq.recordSize), diffArguments);
@@ -824,6 +801,21 @@ public
     end match;
   end differentiateExpression;
 
+  function differentiateExpressionNoCollect
+    input output Expression expr;
+    input output DifferentiationArguments diffArguments;
+  protected
+    Boolean oldCollect;
+  algorithm
+    if Util.isSome(diffArguments.adjoint_map) then
+      oldCollect := diffArguments.collectAdjoints;
+      diffArguments.collectAdjoints := false;
+      (expr, diffArguments) := differentiateExpression(expr, diffArguments);
+      diffArguments.collectAdjoints := oldCollect;
+    else
+      (expr, diffArguments) := differentiateExpression(expr, diffArguments);
+    end if;
+  end differentiateExpressionNoCollect;
 
   function differentiateComponentRef
     input output Expression exp "Has to be Expression.CREF()";
@@ -998,6 +990,7 @@ public
 
       // Types: (JACOBIAN)
       // cref in diff_map => get $SEED or $pDER variable from hash table
+      // THNK: this is difficult to read i think.
       case (Expression.CREF(), DifferentiationType.JACOBIAN, SOME(diff_map))
         guard(not diffArguments.scalarized)
       algorithm
@@ -1059,6 +1052,22 @@ public
     end match;
   end differentiateComponentRef;
 
+  function differentiateComponentRefNoCollect
+    input output Expression exp;
+    input output DifferentiationArguments diffArguments;
+  protected
+    Boolean oldCollect;
+  algorithm
+    if Util.isSome(diffArguments.adjoint_map) then
+      oldCollect := diffArguments.collectAdjoints;
+      diffArguments.collectAdjoints := false;
+      (exp, diffArguments) := differentiateComponentRef(exp, diffArguments);
+      diffArguments.collectAdjoints := oldCollect;
+    else
+      (exp, diffArguments) := differentiateComponentRef(exp, diffArguments);
+    end if;
+  end differentiateComponentRefNoCollect;
+
   function differentiateVariablePointer
     input Pointer<Variable> var_ptr;
     input Pointer<DifferentiationArguments> diffArguments_ptr;
@@ -1069,12 +1078,7 @@ public
     Expression crefExp;
     Boolean oldCollect;
   algorithm
-    oldCollect := diffArguments.collectAdjoints;
-    diffArguments.collectAdjoints := false;
-
-    (crefExp, diffArguments) := differentiateComponentRef(Expression.fromCref(var.name), diffArguments);
-
-    diffArguments.collectAdjoints := oldCollect;
+    (crefExp, diffArguments) := differentiateComponentRefNoCollect(Expression.fromCref(var.name), diffArguments);
     diff_ptr := match crefExp
       case Expression.CREF(cref = ComponentRef.EMPTY()) then Pointer.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF(cref = ComponentRef.WILD())  then Pointer.create(NBVariable.DUMMY_VARIABLE);
@@ -1246,7 +1250,7 @@ public
     exp := match (exp)
       local
         Integer i;
-        Expression ret, ret1, ret2, arg1, arg2, arg3, diffArg1, diffArg2, diffArg3, current_grad, cond, zero1, zero2, grad_x, grad_y, old_grad;
+        Expression ret, ret1, ret2, arg1, arg2, arg3, diffArg1, diffArg2, diffArg3, current_grad, cond1, cond2, cond, zero1, zero2, grad_x, grad_y, old_grad;
         list<Expression> rest;
         Type ty;
         DifferentiationType diffType;
@@ -1665,11 +1669,17 @@ public
             if isReverse then
               current_grad := diffArguments.current_grad;
               // Relation: for min use x<y; for max use x>y
-              cond := Expression.RELATION(
+              cond1 := Expression.RELATION(
                 arg1,
                 if name == "min" then Operator.makeLess(Expression.typeOf(arg1))
                                 else Operator.makeGreater(Expression.typeOf(arg1)),
                 arg2,
+                -1);
+              cond2 := Expression.RELATION(
+                arg2,
+                if name == "min" then Operator.makeLess(Expression.typeOf(arg2))
+                                else Operator.makeGreater(Expression.typeOf(arg2)),
+                arg1,
                 -1);
 
               // Reverse local masks:
@@ -1680,13 +1690,13 @@ public
 
               grad_x := Expression.IF(
                 Expression.typeOf(arg1),
-                cond,
+                cond1,
                 current_grad,
                 zero1);
 
               grad_y := Expression.IF(
                 Expression.typeOf(arg2),
-                cond, // same condition
+                cond2,
                 current_grad,
                 zero2);
 
@@ -2798,6 +2808,7 @@ public
         Boolean hasArray, hasArrayNum;
         Expression local_grad, localUpF, localUpG;
         Integer i;
+        // THNK: should this be solved without the flag?
         Boolean isReverse = Util.isSome(diffArguments.adjoint_map);
 
       // Dash calculations (ADD, SUB, ADD_EW, SUB_EW, ...)
@@ -2851,7 +2862,7 @@ public
               end if;
               diffArguments.current_grad := local_grad;
             end if;
-
+            
             (diff_arg, diffArguments) := differentiateExpression(arg, diffArguments);
 
             if isReverse then
