@@ -483,6 +483,153 @@ void get_kinsol_statistics(NLS_KINSOL_DATA* kin_mem)
   // Report numbers
   infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "Kinsol statistics: nIters = %ld, nFuncEvals = %ld, nJacEvals = %ld,  fnorm:  %14.12g", nIters, nFuncEvals, nJacEvals, fnorm);
 }
+
+static void createGbScales(DATA *data,
+                           threadData_t *threadData,
+                           double *scal,
+                           DATA_GBODE *gbData,
+                           NONLINEAR_SYSTEM_DATA *nlsData,
+                           double *newtonThrsh)
+{
+  double atol = data->simulationInfo->tolerance;
+  double rtol = data->simulationInfo->tolerance;
+
+  for (int i = 0; i < nlsData->size; i++)
+  {
+    scal[i] = 1. / (atol + fmax(fabs(nlsData->nlsxOld[i]), fabs(nlsData->nlsxExtrapolation[i])) * rtol);
+  }
+
+  *newtonThrsh = 3e-2;
+}
+
+typedef struct KLUInternals
+{
+    klu_common common;
+    klu_symbolic *symbolic;
+    klu_numeric *numeric;
+} KLUInternals;
+
+static double gbScalesNorm(double *scal, double *z, int size)
+{
+  double sum = 0.0;
+  for (int i = 0; i < size; i++)
+  {
+    double tmp = z[i] * scal[i];
+    sum += tmp * tmp;
+  }
+  return sqrt(sum / (double)size);
+}
+
+int gbInternal_dKLU_analyze(KLUInternals *internals, int size, int *Ap, int *Ai)
+{
+    klu_defaults(&internals->common);
+    internals->symbolic = klu_analyze(size, Ap, Ai, &internals->common);
+    return internals->common.status;
+}
+
+int gbInternal_dKLU_factorize(KLUInternals *internals, int size, int *Ap, int *Ai, double *values)
+{
+    internals->numeric = klu_factor(Ap, Ai, values, internals->symbolic, &internals->common);
+    return internals->common.status;
+}
+
+int gbInternal_dKLU_solve(KLUInternals *internals, int size, int *Ap, int *Ai, double *rhs)
+{
+    int nrhs = 1; /* we could solve all of ESDIRK at once this way */
+    int ok = klu_solve(internals->symbolic, internals->numeric, size, nrhs, rhs, &internals->common);
+    return ok;
+}
+
+double GLOBAL_JAC[8];
+
+static NLS_SOLVER_STATUS solveNLS_gbInternal(DATA *data,
+                                             threadData_t *threadData,
+                                             NONLINEAR_SYSTEM_DATA* nonlinsys,
+                                             DATA_GBODE* gbData)
+{
+    int size = nonlinsys->size;
+    size_t size_bytes = nonlinsys->size * sizeof(double);
+    double *x = nonlinsys->nlsx;
+    double *scal = malloc(size_bytes);
+    double *tmp = malloc(size_bytes);
+    double *res = malloc(size_bytes);
+    double fnewt;
+    createGbScales(data, threadData, scal, gbData, nonlinsys, &fnewt);
+
+    RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=gbData};
+    KLUInternals internals;
+
+    const int flag = 1;
+
+    // initial guess
+    //if (gbData->act_stage == 1)
+    {
+      memcpy(data->localData[0]->realVars, nonlinsys->nlsxOld, size_bytes);
+      data->localData[0]->timeValue = gbData->timeRight;
+      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+      evalJacobian(data, threadData, gbData->jacobian, NULL, GLOBAL_JAC, FALSE);
+    }
+    memcpy(x, nonlinsys->nlsxOld, size_bytes);
+
+    /* symbolic factorization */
+    gbInternal_dKLU_analyze(&internals, size, nonlinsys->sparsePattern->leadindex, nonlinsys->sparsePattern->index);
+    gbInternal_dKLU_factorize(&internals, size, nonlinsys->sparsePattern->leadindex, nonlinsys->sparsePattern->index, GLOBAL_JAC);
+
+    // norms, convergence rate
+    double nrm_delta = 0;
+    double nrm_delta_prev = 0;
+    double theta = 0;
+    double eta = 1e300;
+
+    int nit = 8;
+
+    // Newton iteration count - we start with newt_it = 1, because we need this for the step size selection and conditions below
+    for (int newt_it = 1 ;; newt_it++)
+    {
+        nonlinsys->residualFunc(&resUserData, x, res, &flag);
+
+        // Newton step
+        gbData->stats.nNewtonStepsTotal++;
+        gbInternal_dKLU_solve(&internals, size, nonlinsys->sparsePattern->leadindex, nonlinsys->sparsePattern->index, res);
+        for (int i = 0; i < size; i++)
+        {
+          x[i] -= res[i];
+        }
+
+        nrm_delta_prev = nrm_delta;
+        nrm_delta = gbScalesNorm(scal, res, size);
+
+        if (newt_it > 1)
+        {
+            theta = nrm_delta / nrm_delta_prev;
+
+            // Newton failed -> divergence
+            if (theta >= 0.99)
+            {
+                return NLS_FAILED;
+            }
+
+            eta = theta / (1 - theta);
+        }
+        else
+        {
+            eta = pow(fmax(eta, DBL_EPSILON), 0.8);
+        }
+
+        // Newton converged
+        if (eta * nrm_delta < fnewt)
+        {
+            return NLS_SOLVED;
+        }
+
+        // Newton failed -> iteration limit exceeded or too slow convergence
+        if (newt_it == nit || (pow(theta, nit - newt_it) / (1 - theta) * nrm_delta > fnewt))
+        {
+          return NLS_FAILED;
+        }
+    }
+}
+
 /**
  * @brief Special treatment when solving non linear systems of equations
  *
@@ -509,7 +656,11 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
     rt_ext_tp_tick(&clock);
   }
 
-  if (gbData->nlsSolverMethod == GB_NLS_KINSOL || gbData->nlsSolverMethod == GB_NLS_KINSOL_B) {
+  if (gbData->nlsSolverMethod == GB_NLS_KINSOL)
+  {
+    solved = solveNLS_gbInternal(data, threadData, nlsData, gbData);
+  }
+  else if (gbData->nlsSolverMethod == GB_NLS_KINSOL || gbData->nlsSolverMethod == GB_NLS_KINSOL_B) {
     // Get kinsol data object
     void* kin_mem;
     if (gbData->nlsSolverMethod == GB_NLS_KINSOL){
@@ -695,6 +846,7 @@ void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res,
   // Evaluate residuals
   for (i = 0; i < nStates; i++) {
     assertStreamPrint(threadData, !isnan(fODE[i]), "residual_DIRK: fODE is NAN");
+    // catastrophic cancellation?? Don't we lose all digits of `gbData->res_const[i] - xloc[i] < O(TOL)`
     res[i] = gbData->res_const[i] - xloc[i] + fac * fODE[i];
   }
 

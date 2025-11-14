@@ -311,9 +311,9 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS_V)) {
         infoStreamPrint(OMC_LOG_GBODE_NLS_V, 1, "NLS - start values and solution of the NLS:");
-        printVector_gb(OMC_LOG_GBODE_NLS_V, "x0", nlsData->nlsxOld, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-        printVector_gb(OMC_LOG_GBODE_NLS_V, "xS", nlsData->nlsxExtrapolation, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-        printVector_gb(OMC_LOG_GBODE_NLS_V, "xL", nlsData->nlsx,              nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+        printVector_gb(OMC_LOG_GBODE_NLS_V, "nlsxOld x0 (start)", nlsData->nlsxOld, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+        printVector_gb(OMC_LOG_GBODE_NLS_V, "nlsxExtr x0 (yOld)", nlsData->nlsxExtrapolation, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+        printVector_gb(OMC_LOG_GBODE_NLS_V, "nlsx (solution)", nlsData->nlsx, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
         messageClose(OMC_LOG_GBODE_NLS_V);
       }
 
