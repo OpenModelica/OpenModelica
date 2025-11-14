@@ -503,6 +503,7 @@ if true then /* Suppress output */
 
     // "../Util/BasePVector.mo",
     "../Util/Curl.mo",
+    "../Util/ContainerImage.mo",
     "../Util/DiffAlgorithm.mo",
     "../Util/DisjointSets.mo",
     "../Util/ExpandableArray.mo",
