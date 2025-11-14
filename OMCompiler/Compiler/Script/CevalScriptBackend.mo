@@ -78,7 +78,7 @@ import DAEQuery;
 import DAEUtil;
 import Debug;
 import DiffAlgorithm;
-import DockerImage;
+import ContainerImage;
 import Dump;
 import Error;
 import ErrorExt;
@@ -3777,9 +3777,9 @@ algorithm
       String cmakeCall;
       String crossTriple, buildDir, fmiTarget;
       list<String> dockerImgArgs;
-      DockerImage.DockerImage dockerImage;
+      ContainerImage.ContainerImage dockerImage;
       list<String> dockerArguments;
-      Boolean isOpenModelicaImage;
+      Boolean isOpenModelicaImage, hasKnownDigest;
       Integer uid;
       String cidFile, volumeID, containerID, userID;
       String dockerLogFile;
@@ -3825,9 +3825,10 @@ algorithm
         then();
     case crossTriple::"docker"::"run"::dockerImgArgs
       algorithm
-        (dockerImage, dockerArguments) := DockerImage.parseWithArgs(dockerImgArgs);
-        Error.addCompilerNotification("Using docker image '" + DockerImage.toString(dockerImage) + "' for cross compilation.");
-        isOpenModelicaImage := DockerImage.isTrustedOpenModelicaImage(dockerImage);
+        (dockerImage, dockerArguments) := ContainerImage.parseWithArgs(dockerImgArgs);
+        dockerImage := ContainerImage.getDigestSha(dockerImage);
+        Error.addCompilerNotification("Using docker image '" + ContainerImage.toString(dockerImage) + "' for cross compilation.");
+        (isOpenModelicaImage, hasKnownDigest) := ContainerImage.isTrustedOpenModelicaImage(dockerImage);
 
         uid := System.getuid();
         cidFile := fmutmp+".cidfile";
@@ -3837,6 +3838,12 @@ algorithm
         // Remove old log file
         if System.regularFileExists(dockerLogFile) then
           System.removeFile(dockerLogFile);
+        end if;
+
+        // Only automatically pull trusted images
+        if hasKnownDigest then
+          ContainerImage.pull(dockerImage);
+          ContainerImage.assertSignature(dockerImage);
         end if;
 
         // Create a docker volume for the FMU since we can't forward volumes
@@ -3887,7 +3894,7 @@ algorithm
         end if;
 
         if isOpenModelicaImage then
-          cmake_toolchain := "-DCMAKE_TOOLCHAIN_FILE=/opt/cmake/toolchain/" + crossTriple + ".cmake ";
+          cmake_toolchain := "-DCMAKE_TOOLCHAIN_FILE=/opt/cmake/toolchain/" + crossTriple + ".cmake -DRUNTIME_DEPENDENCIES_LEVEL=none ";
         else
           cmake_toolchain := "";
         end if;

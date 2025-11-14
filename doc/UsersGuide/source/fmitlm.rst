@@ -143,6 +143,9 @@ The CMake compilation accepts the following settings:
   * ``all``: Add system and Modelica runtime dependencies. Needs CMake version v3.21 or
     newer.
 
+  CMake install TARGETS RUNTIME_DEPENDENCIES is not supported when cross compiling.
+  Use ``none`` when cross compiling FMUs.
+
 * ``NEED_CVODE``:
   Boolean value to integrate CVODE integrator into CoSimulation FMU.
 
@@ -191,14 +194,17 @@ The ``platforms`` setting specifies for what target system the FMU is compiled:
   E.g. ``x86_64-linux-gnu`` for a 64 bit Linux OS or ``i686-w64-mingw32`` for a 32 bit
   Windows OS using MINGW.
 
-* ``<cpu>-<vendor>-<os> docker run openmodelica/crossbuild`` Host triple with
-  Docker image provided by OpenModelica: OpenModelica will use the
-  `openmodelica/crossbuild <https://github.com/OpenModelica/openmodelica-crossbuild>`_
-  Docker image to cross compile. The image provides compiler toolchain files to
+* ``<cpu>-<vendor>-<os> docker run ghcr.io/openmodelica/crossbuild:v1.26.0-dev`` Host triple with
+  Docker image provided by OpenModelica: OpenModelica will use Docker image
+  `ghcr.io/openmodelica/crossbuild:v1.26.0-dev <https://github.com/OpenModelica/openmodelica-crossbuild>`_
+  to cross compile. The image provides compiler toolchain files to
   cross compile with CMake for the following host triples:
 
     * ``i686-linux-gnu``
     * ``x86_64-linux-gnu``
+    * ``aarch64-linux-gnu``
+    * ``arm-linux-gnueabi``
+    * ``arm-linux-gnueabihf``
     * ``i686-w64-mingw32``
     * ``x86_64-w64-mingw32``
 
