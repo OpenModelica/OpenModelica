@@ -68,7 +68,7 @@
 #include "epsilon.h"
 
 extern void communicateStatus(const char *phase, double completionPercent, double currentTime, double currentStepSize);
-
+double GLOBAL_STEP_SIZE = 0;
 /**
  * @brief Calculate function values of function ODE f(t,y).
  *
@@ -1076,7 +1076,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   }
   /* Solver statistics */
   if (!gbfData->isExplicit)
-    gbfData->stats.nCallsJacobian = gbfData->nlsData->numberOfJEval;
+    // gbfData->stats.nCallsJacobian = gbfData->nlsData->numberOfJEval;
 
   infoStreamPrint(OMC_LOG_SOLVER, 0, "gbodef finished (inner steps).");
   messageClose(OMC_LOG_SOLVER);  // FIXME what does this belong to?
@@ -1358,19 +1358,16 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       }
 
       // Calculate error estimators and tolerance scaling for each state variable
-      for (i = 0; i < nStates; i++) {
-        // Compute error tolerance for the i-th state based on relative and absolute tolerances:
-        // errtol = Rtol * max(|current state|, |previous state|) + Atol
-        gbData->errtol[i] = Rtol * fmax(fabs(gbData->y[i]), fabs(gbData->yOld[i])) + Atol;
-        // TODO make errtol and errest local variables
-
-        // Calculate the estimated local error as the absolute difference between
-        // the current state approximation and its second approximation.
+      for (i = 0, err=0; i < nStates; i++) {
+        // calculate corresponding values for the error estimator and step size control
+        gbData->errtol[i] = Rtol * fmax(fabs(gbData->y[i]), fabs(gbData->yt[i])) + Atol;
         gbData->errest[i] = fabs(gbData->y[i] - gbData->yt[i]);
-
-        // Compute the scaled error using a tableau-specific factor, to be used in step size control.
         gbData->err[i] = gbData->tableau->fac * gbData->errest[i] / gbData->errtol[i];
+        err += gbData->err[i] * gbData->err[i];
       }
+
+      err = sqrt(err / (double) nStates);
+
       if (gbData->multi_rate) {
         // Multi-rate integration enabled:
         //
@@ -1424,8 +1421,8 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         }
       } else {
         // If multi-rate is not enabled, use the maximum norm of the error vector over all states.
-        err_states = _omc_gen_maximumVectorNorm(gbData->err, nStates);
-        err = err_states;
+        //err_states = _omc_gen_maximumVectorNorm(gbData->err, nStates);
+        //err = err_states;
       }
 
       // Reject the current integration step if the estimated error exceeds the tolerance,
@@ -1499,7 +1496,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         if (gbData->multi_rate && gbData->nFastStates>0) {
           gbData->err_int = error_interpolation_gb(gbData, gbData->nSlowStates, gbData->slowStatesIdx, Rtol);
         } else {
-          gbData->err_int = error_interpolation_gb(gbData, nStates, NULL, Rtol);
+          gbData->err_int = 0; //error_interpolation_gb(gbData, nStates, NULL, Rtol);
         }
       }
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
@@ -1597,7 +1594,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
       // Update the step size using the step size controller
       gbData->lastStepSize = gbData->stepSize;  // Save the current step size before updating
-
+      GLOBAL_STEP_SIZE = fmax(gbData->lastStepSize, GLOBAL_STEP_SIZE);
       // Calculate a new step size based on recent error and step size history,
       // the method’s error order, and the control method in use
       gbData->stepSize *= GenericController(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order, gbData->ctrl_method);
@@ -1858,7 +1855,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
   /* Solver statistics */
   if (!gbData->isExplicit)
-    gbData->stats.nCallsJacobian = gbData->nlsData->numberOfJEval;
+   // gbData->stats.nCallsJacobian = gbData->nlsData->numberOfJEval;
   if (!solverInfo->solverNoEquidistantGrid && fabs(targetTime - stopTime) < GB_MINIMAL_STEP_SIZE && OMC_ACTIVE_STREAM(OMC_LOG_STATS)) {
     if (gbData->multi_rate) {
       infoStreamPrint(OMC_LOG_STATS, 0, "gbode (birate integration): slow: %s / fast: %s",
@@ -1874,5 +1871,8 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   memcpy(&solverInfo->solverStatsTmp, &gbData->stats, sizeof(SOLVERSTATS));
 
   messageClose(OMC_LOG_SOLVER);
+
+  infoStreamPrint(OMC_LOG_STATS, 0, "Global maximum step size used: %1.6e", GLOBAL_STEP_SIZE);
+
   return 0;
 }
