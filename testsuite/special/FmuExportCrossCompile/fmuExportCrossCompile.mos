@@ -68,7 +68,7 @@ platforms := {
   "i686-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.26.0-dev",
   "x86_64-w64-mingw32 docker run ghcr.io/openmodelica/crossbuild:v1.26.0-dev",
   "i686-w64-mingw32 docker run ghcr.io/openmodelica/crossbuild:v1.26.0-dev"
-}
+};
 
 for c in {"FmuExportCrossCompile","RoomHeating_OM.RH","WaterTank.Control","WaterTank.TestSingleWaterTank","BouncingBall"} loop
   c2 := stringReplace(c, ".", "_");
