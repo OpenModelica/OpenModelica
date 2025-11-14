@@ -3,8 +3,11 @@ OpenModelica Python Interface
 
 This chapter describes the OpenModelica Python integration facilities.
 
--  OMPython - the OpenModelica Python scripting interface, see :ref:`ompython`.
--  EnhancedOMPython - Enhanced OMPython scripting interface, see :ref:`enhancedompython`.
+-  OMCSession - the OpenModelica Python scripting interface, see :ref:`ompython`.
+-  ModelicaSystem - Enhanced OMPython scripting interface, see :ref:`enhancedompython`.
+
+It is based on OMPython version v4.0.0 with some **previews** for version v4.1.0 and hints for **depreciated**
+functionality which is scheduled for removal in version v5.0.0.
 
 .. _ompython:
 
@@ -37,7 +40,7 @@ OMPython provides user friendly features like:
 -  Interactive session handling, parsing, interpretation of commands and
    Modelica expressions for evaluation, simulation, plotting, etc.
 
--  Interface to the latest OpenModelica API calls.
+-  Interface to the latest OpenModelica API calls. **depreciated**
 
 -  Optimized parser results that give control over every element of the output.
 
@@ -45,10 +48,26 @@ OMPython provides user friendly features like:
 
 -  Easy access to the library and testing of OpenModelica commands.
 
+-  Possibility to run DoEs (design of experiments) based on parameter variation of an existing model.
+
 Test Commands
 ~~~~~~~~~~~~~
 
 OMPython provides a OMCSessionZMQ class that uses ZeroMQ to communicate with OpenModelica.
+
+To use OMCSessionZMQ, the definition of an OMCProcess is needed. The following options exist:
+
+-  OMCProcessLocal
+
+-  OMCProcessPort
+
+-  OMCProcessDocker
+
+-  OMCDockerContainer
+
+-  OMCProcessWSL
+
+By default (if not data is provided), OMCSessionZMQ starts with a local process (OMCProcessLocal).
 
 To test the command outputs, simply create an OMCSessionZMQ object by
 importing from the OMPython library within Python interepreter. The
