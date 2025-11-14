@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2025, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -59,23 +59,17 @@ public
   function parseWithArgs
     "Parse container image reference with arguments string:
         [[HOST[:PORT]/]NAMESPACE/]REPOSITORY[:TAG] [ARGUMENTS]"
-    input List<String> containerReferenceWithArgs;
+    input list<String> containerReferenceWithArgs;
     output ContainerImage image;
     output List<String> arguments;
   algorithm
-    (image, arguments) := match containerReferenceWithArgs
-    local
-      String imageReferenceStr;
-      List<String> rest;
-    case imageReferenceStr::rest
-      then(parseContainerReference(imageReferenceStr), rest);
-    case {imageReferenceStr}
-      then(parseContainerReference(imageReferenceStr), {});
-    else
-    algorithm
-      Error.addCompilerError("Failed to parse container image reference with arguments\"" + stringDelimitList(containerReferenceWithArgs, " ") + "\".");
-      then fail();
-    end match;
+    if listEmpty(containerReferenceWithArgs) then
+      Error.addCompilerError("Failed to parse container image reference with arguments \"" + stringDelimitList(containerReferenceWithArgs, " ") + "\".");
+      fail();
+    end if;
+
+    image := parseContainerReference(listHead(containerReferenceWithArgs));
+    arguments := listRest(containerReferenceWithArgs);
   end parseWithArgs;
 
   function parseContainerReference
@@ -98,15 +92,15 @@ public
     algorithm
       (host, port) := parseContainerHostPort(host_and_port);
       (repository, tag) := parseContainerRepository(repository_and_tag);
-      then(CONTAINER_IMAGE(SOME(host), port, SOME(namespace), repository, tag, NONE()));
+      then CONTAINER_IMAGE(SOME(host), port, SOME(namespace), repository, tag, NONE());
     case {namespace, repository_and_tag}
     algorithm
       (repository, tag) := parseContainerRepository(repository_and_tag);
-      then(CONTAINER_IMAGE(NONE(), NONE(), SOME(namespace), repository, tag, NONE()));
+      then CONTAINER_IMAGE(NONE(), NONE(), SOME(namespace), repository, tag, NONE());
     case {repository_and_tag}
     algorithm
       (repository, tag) := parseContainerRepository(repository_and_tag);
-      then(CONTAINER_IMAGE(NONE(), NONE(), NONE(), repository, tag, NONE()));
+      then CONTAINER_IMAGE(NONE(), NONE(), NONE(), repository, tag, NONE());
     else
     algorithm
       Error.addCompilerError("Failed to parse container image '" + containerReference + "'.");
@@ -136,7 +130,7 @@ public
     // TODO: docker manifest inspect is experimental!
     // See https://docs.docker.com/reference/cli/docker/manifest/inspect/
     cmd := ContainerImage.containerTool + " manifest inspect " + imageName + " -v";
-    if not System.systemCall(cmd, outFile=manifestFile) == 0 then
+    if System.systemCall(cmd, outFile=manifestFile) <> 0 then
       Error.addCompilerError("Failed to retrieve manifest of container image '" + imageName + "'.");
       Error.addCompilerNotification(System.readFile(manifestFile) + "\n");
       System.removeFile(manifestFile);
@@ -149,11 +143,9 @@ public
     descriptor := JSON.get(manifest, "Descriptor");
     digest := JSON.get(descriptor, "digest");
 
-    // Set digest
+    // Get digest
     digest_sha256_str := match digest
-      local
-        String sha256;
-      case JSON.STRING(sha256) then (sha256);
+      case JSON.STRING() then digest.str;
       else algorithm
         Error.addCompilerError("Failed to retrieve digest SHA from manifest of container image '" + imageName + "'.");
         System.removeFile(manifestFile);
@@ -187,46 +179,46 @@ public
   algorithm
     // Check host
     isKnownHost := match image.host
-      case NONE() then(false);
-      case SOME("docker.io") then(false); // We trust Docker Hub, but don't have an official image stored there.
-      case SOME("ghcr.io") then(true);
+      case NONE() then false;
+      case SOME("docker.io") then false; // We trust Docker Hub, but don't have an official image stored there.
+      case SOME("ghcr.io") then true;
       case SOME(host)
       algorithm
         Error.addCompilerWarning("Using container registry \"" + host + "\". Make sure you trust the registry.");
-        then(false);
+        then false;
     end match;
 
     // Check combination host+namespace
     isKnownNamespace := match (image.namespace, isKnownHost)
-      case (SOME("openmodelica"), true) then(true);
+      case (SOME("openmodelica"), true) then true;
       case (_, true)
       algorithm
         Error.addCompilerWarning("Container image \"" + toString(image) + "\" is an external image. Make sure you trust the image.");
-        then(false);
+        then false;
       else
-        then(false);
+        then false;
     end match;
 
     // Check combination host+namespace+repository
     isOpenModelicaImage := match (image.repository, isKnownNamespace)
-      case ("crossbuild", true) then(true);
+      case ("crossbuild", true) then true;
       case (_, true)
         algorithm
         Error.addCompilerWarning("Container image \"" + toString(image) + "\" is not a known OpenModelica image.");
-        then(false);
+        then false;
       else
-        then(false);
+        then false;
     end match;
 
     // Check combination host+namespace+repository+tag
     isKnownTag := match (image.tag, isOpenModelicaImage)
-      case (SOME("v1.26.0-dev"), true) then(true);
+      case (SOME("v1.26.0-dev"), true) then true;
       case (_, true)
         algorithm
           Error.addCompilerWarning("Container image \"" + toString(image) + "\" is not tested for this OpenModelica version.");
-        then(false);
+        then false;
       else
-        then(false);
+        then false;
     end match;
 
     // Check host+namespace+repository+tag+digest
@@ -234,18 +226,18 @@ public
       local
         String digest;
       // https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild/577190934?tag=v1.26.0-dev
-      case (SOME("sha256:"), true) then (true);
+      case (SOME("sha256:"), true) then true;
       case (SOME(digest), true)
       algorithm
         Error.addCompilerWarning("Container image \"" + toString(image) + "\" has unknown digest \"" + digest + "\".");
         Error.addCompilerNotification("Check https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild/ for available cross-build images managed by OpenModelica.");
-        then(false);
+        then false;
       case (NONE(), true)
       algorithm
         Error.addCompilerError("Container image \"" + toString(image) + "\" has no digest. That shouldn't be possible.");
         then fail();
       else
-        then(false);
+        then false;
     end match;
   end isTrustedOpenModelicaImage;
 
@@ -333,9 +325,9 @@ public
         String namespace_str;
         String repository;
       case CONTAINER_IMAGE(namespace = SOME(namespace_str), repository = repository)
-        then(namespace_str + "/" + repository);
+        then namespace_str + "/" + repository;
       case CONTAINER_IMAGE(namespace = NONE(), repository = repository)
-        then(repository);
+        then repository;
       else
       algorithm
         Error.addCompilerError("Failed to get name of image reference.");
@@ -350,7 +342,7 @@ protected
         HOST[:PORT]"
     input String host_and_port;
     output String host;
-    output Option<String> port := NONE();
+    output Option<String> port = NONE();
   algorithm
     host := match Util.stringSplitAtChar(host_and_port, ":")
     local
@@ -359,8 +351,8 @@ protected
       case {host_str, port_str}
       algorithm
         port := SOME(port_str);
-      then(host_str);
-      case {host_str} then(host_str);
+      then host_str;
+      case {host_str} then host_str;
       else
       algorithm
         Error.addCompilerError("Failed to parse container host '" + host_and_port + "'.");
@@ -375,20 +367,12 @@ protected
     output String repository;
     output Option<String> tag;
   algorithm
-    _ := match Util.stringSplitAtChar(repositoryString, ":")
+    (repository, tag) := match Util.stringSplitAtChar(repositoryString, ":")
     local
       String repository_str;
       String tag_str;
-    case {repository_str, tag_str}
-    algorithm
-      repository := repository_str;
-      tag := SOME(tag_str);
-      then();
-    case {repository_str}
-    algorithm
-      repository := repository_str;
-      tag := NONE();
-      then();
+    case {repository_str, tag_str} then (repository_str, SOME(tag_str));
+    case {repository_str} then (repository_str, NONE());
     else
     algorithm
       Error.addCompilerError("Failed to parse container image name '" + repositoryString + "'.");
@@ -407,15 +391,15 @@ protected
         String hostStr;
         String portStr;
       case CONTAINER_IMAGE(host = SOME(hostStr), port = SOME(portStr))
-        then(hostStr + ":" + portStr);
+        then hostStr + ":" + portStr;
       case CONTAINER_IMAGE(host = SOME(hostStr), port = NONE())
-        then(hostStr);
+        then hostStr;
       case CONTAINER_IMAGE(host = NONE(), port = SOME(_))
         algorithm
           Error.addCompilerError("Port specified without host.");
           then fail();
       case CONTAINER_IMAGE(host = NONE(), port = NONE())
-        then("");
+        then "";
       else
         algorithm
           Error.addCompilerError("Failed to get host and port of image reference.");
