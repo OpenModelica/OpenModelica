@@ -149,14 +149,14 @@ public
     enum_eqns := UnorderedMap.fromLists(eqns, lst_enum, Equation.hash, Equation.isEqualPtr);
     lst_enum := List.intRange(UnorderedSet.size(int_crefs));
     enum_crefs := UnorderedMap.fromLists(vars, lst_enum, ComponentRef.hash, ComponentRef.isEqual);
-    print(UnorderedMap.toString(enum_crefs, ComponentRef.toString, intString));
+    print(UnorderedMap.toString(enum_crefs, ComponentRef.toString, intString)+"\n");
     indices := arrayCreate(UnorderedSet.size(int_eqns), {});
     values := arrayCreate(UnorderedSet.size(int_eqns), {});
     // create matrix elements for sparse matrix
     lst_eqns := UnorderedSet.toList(int_eqns);
     for eq_ptr in lst_eqns loop
       crefs_rows := UnorderedMap.getSafe(eq_ptr, rows, sourceInfo());
-      print(List.toString(crefs_rows, ComponentRef.toString));
+      //print(List.toString(crefs_rows, ComponentRef.toString));
       // help section in order to sort the matrix elements
       // TODO: list.sort
       var_index1 := UnorderedMap.getSafe(listGet(crefs_rows,1), enum_crefs, sourceInfo());
@@ -165,7 +165,7 @@ public
         crefs_rows := listReverse(crefs_rows);
       end if;
       //
-      print(List.toString(crefs_rows, ComponentRef.toString));
+      //print(List.toString(crefs_rows, ComponentRef.toString));
       for cr in listReverse(crefs_rows) loop
         eqn_index := UnorderedMap.getSafe(eq_ptr, enum_eqns, sourceInfo());
         var_index := UnorderedMap.getSafe(cr, enum_crefs, sourceInfo());
@@ -175,6 +175,7 @@ public
     end for;
 
     setMatrix(UnorderedSet.size(int_crefs),UnorderedSet.size(int_eqns),UnorderedMap.size(diffs),indices,values);
+    print("\n");
     printMatrix();
     bareiss();
     printMatrix();
