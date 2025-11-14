@@ -19,8 +19,8 @@ end if;
 
 // Build FMU
 platforms := {
-  "x86_64-linux-gnu docker run openmodelica/crossbuild",
-  "i686-linux-gnu docker run openmodelica/crossbuild",
-  "x86_64-w64-mingw32 docker run openmodelica/crossbuild",
-  "i686-w64-mingw32 docker run openmodelica/crossbuild"};
+  "x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.26.0-dev",
+  "i686-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.26.0-dev",
+  "x86_64-w64-mingw32 docker run ghcr.io/openmodelica/crossbuild:v1.26.0-dev",
+  "i686-w64-mingw32 docker run ghcr.io/openmodelica/crossbuild:v1.26.0-dev"};
 buildModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version="2.0", fmuType="me_cs", fileNamePrefix="Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum", platforms=platforms); getErrorString();
