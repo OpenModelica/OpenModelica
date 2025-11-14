@@ -250,9 +250,15 @@ void bareiss()
             // case 1: k.index == i.index
             else if(next_elem_pivot_row->index == next_elem_update_row->index){
               printf("case 1\n");
-              new_val = (next_elem_update_row->value * pivot->value - m_ik_elem->value * next_elem_pivot_row->value) / prev_pivot->value;
+              new_val = (next_elem_update_row->value * pivot->value - m_ik_elem->value * next_elem_pivot_row->value);// / prev_pivot->value;
               printf("new val %d \n", new_val);
-              next_elem_update_row->value = new_val; // remove if 0
+              // remove if 0
+              /*if(new_val == 0){
+                freeNode(rows[mapping[i]], next_elem_update_row_node);
+                //next_elem_update_row = (ASSC_ELEMENT*) listNodeData(next_elem_update_row_node);
+              }else{
+                next_elem_update_row->value = new_val;
+              }*/
               // both next
               // i.next
               if(listNextNode(next_elem_update_row_node)){
@@ -306,9 +312,15 @@ void bareiss()
             // case 2: k.index > i.index
             else if(next_elem_pivot_row->index > next_elem_update_row->index){
               printf("case 2\n");
-              new_val = (next_elem_update_row->value * pivot->value) / prev_pivot->value;
+              new_val = (next_elem_update_row->value * pivot->value);// / prev_pivot->value;
               printf("new val %d \n", new_val);
-              next_elem_update_row->value = new_val; // remove if 0
+              // remove if 0
+              /*if(new_val == 0){
+                freeNode(rows[mapping[i]], next_elem_update_row_node);
+                //next_elem_update_row = (ASSC_ELEMENT*) listNodeData(next_elem_update_row_node);
+              }else{
+                next_elem_update_row->value = new_val;
+              }*/
               // i.next
               if(listNextNode(next_elem_update_row_node)){
                 prev_update_node = next_elem_update_row_node;
@@ -337,7 +349,7 @@ void bareiss()
             // case 3: k.index < i.index
             else if(next_elem_pivot_row->index < next_elem_update_row->index){
               printf("case 3\n");
-              new_val = (-m_ik_elem->value * next_elem_pivot_row->value) / prev_pivot->value;
+              new_val = (-m_ik_elem->value * next_elem_pivot_row->value);// / prev_pivot->value;
               printf("new val %d \n", new_val);
               // insert (i,j)
               new_elem = (ASSC_ELEMENT*) allocAsscElement(NULL);
