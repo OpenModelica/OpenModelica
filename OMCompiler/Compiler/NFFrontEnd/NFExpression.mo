@@ -1732,7 +1732,7 @@ public
     end if;
 
     dim_count := Type.dimensionCount(ty);
-    (subs, extra_subs) := Subscript.mergeList(subscripts, subs, dim_count, backend);
+    (subs, extra_subs) := Subscript.mergeList(subscripts, subs, dim_count, backend, false);
 
     // Check that the expression has enough dimensions to be subscripted.
     if not listEmpty(extra_subs) then
