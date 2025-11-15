@@ -233,6 +233,11 @@ public
               Expression e;
               Integer i1, i2;
 
+            // sample: default subclock sampling
+            case ("sample", {_, e}) algorithm
+              (subClock, baseClock) := fromExp(e);
+            then (baseClock, subClock);
+
             // subclock: subset sampling
             case ("subSample", {e, Expression.INTEGER(i1)}) algorithm
               (subClock, baseClock) := fromExp(e);
@@ -503,8 +508,8 @@ protected
 
   uniontype Cluster
     record CLUSTER
-      UnorderedSet<ComponentRef> variables    "list of all variables in this set";
-      UnorderedSet<ComponentRef> eqn_idnts    "list of all equations in this set";
+      UnorderedSet<ComponentRef> variables  "set of all variables in this cluster";
+      UnorderedSet<ComponentRef> eqn_idnts  "set of all equations in this cluster";
     end CLUSTER;
 
     function toString
@@ -512,7 +517,7 @@ protected
       output String str;
     algorithm
       str := "### Cluster Variables:\n" + UnorderedSet.toString(cluster.variables, ComponentRef.toString)
-        + "### Cluster Equation Identifiers:\n" + UnorderedSet.toString(cluster.eqn_idnts, ComponentRef.toString);
+        + "\n### Cluster Equation Identifiers:\n" + UnorderedSet.toString(cluster.eqn_idnts, ComponentRef.toString);
     end toString;
 
     function addElement
@@ -535,6 +540,9 @@ protected
         case ClusterElementType.EQUATION algorithm
           UnorderedSet.add(cref, cluster.eqn_idnts);
         then cluster;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for " + ComponentRef.toString(cref) + " because of unknown cluster element type."});
+        then fail();
       end match;
     end addElement;
 
@@ -701,7 +709,6 @@ protected
     Pointer<Integer> index = Pointer.create(1);
     array<Boolean> marked_vars;
     list<Pointer<Variable>> single_vars;
-    list<Pointer<Equation>> clocked_eqns = {};
     UnorderedSet<ComponentRef> held_crefs = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
   algorithm
     // parse clock assignments
@@ -709,7 +716,6 @@ protected
       if eq_idx > 0 then
         eqn := EquationPointers.getEqnAt(clocked, eq_idx);
         BClock.add(Pointer.access(eqn), info);
-        clocked_eqns := eqn :: clocked_eqns;
       end if;
     end for;
 
@@ -723,7 +729,7 @@ protected
         var_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
 
         // collect all crefs in equation
-        _ := Equation.map(Pointer.access(eqn), function collectPartitioningCrefs(var_crefs = var_crefs), NONE(), Expression.mapReverse);
+        Equation.map(Pointer.access(eqn), function collectPartitioningCrefs(var_crefs = var_crefs), NONE(), Expression.fakeMap);
 
         // find all indices of connected variables
         var_indices := list(VariablePointers.getVarIndex(variables, cref) for cref in UnorderedSet.toList(var_crefs));
@@ -751,35 +757,67 @@ protected
       fail();
     end if;
 
-    // collect clusters excluding clocked stuff (not considered unknowns)
+    // collect cluster equations
     for eq_idx in UnorderedMap.valueList(equations.map) loop
       if eq_idx > 0 then
-        eqn := EquationPointers.getEqnAt(equations, eq_idx);
+        // add the equation
+        eqn       := EquationPointers.getEqnAt(equations, eq_idx);
         name_cref := Equation.getEqnName(eqn);
-        UnorderedMap.addUpdate(DisjointSetForest.find(eqn_dsf, eq_idx), function Cluster.addElement(cref = name_cref, ty = ClusterElementType.EQUATION), cluster_map);
+        part_idx  := DisjointSetForest.find(eqn_dsf, eq_idx);
+        UnorderedMap.addUpdate(part_idx, function Cluster.addElement(cref = name_cref, ty = ClusterElementType.EQUATION), cluster_map);
       end if;
     end for;
 
+    // collect cluster variables
     for var_idx in UnorderedMap.valueList(variables.map) loop
       if var_idx > 0 then
-        var := VariablePointers.getVarAt(variables, var_idx);
+        var       := VariablePointers.getVarAt(variables, var_idx);
         name_cref := BVariable.getVarName(var);
-        UnorderedMap.addUpdate(DisjointSetForest.find(eqn_dsf, var_map[var_idx]), function Cluster.addElement(cref = name_cref, ty = ClusterElementType.VARIABLE), cluster_map);
+        part_idx  := DisjointSetForest.find(eqn_dsf, var_map[var_idx]);
+        UnorderedMap.addUpdate(part_idx, function Cluster.addElement(cref = name_cref, ty = ClusterElementType.VARIABLE), cluster_map);
       end if;
     end for;
 
-    // get the actual partitions from the clusters
+    // get the actual partitions from the clusters and split continuous/clocked
     partitions := list(Cluster.toPartition(cl, variables, equations, kind, info, held_crefs, index) for cl in UnorderedMap.valueList(cluster_map));
-    // update the clocked partitions if one of their variables is in a hold() function
+    // update the partitions if one of their variables is in a hold() function
     partitions := list(Partition.Partition.updateHeldVars(part, held_crefs) for part in partitions);
 
     if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
-      print(StringUtil.headline_1("[dumpSynchronous] Partitioning result:") + "\n" + List.toString(partitions, function Partition.Partition.toString(level = 0), "", "", "\n", "\n"));
+      print(StringUtil.headline_1("[dumpSynchronous] Partitioning result:") + "\n" + List.toString(partitions, function Partition.Partition.toString(level = 2), "", "", "\n", "\n"));
       print(ClockedInfo.toString(info));
     end if;
   end partitioningClocked;
 
-  function collectPartitioningCrefs
+  public function collectPartitioningClockDependencies
+    "clock dependencies are only relevant for sub clocks to the same base clock.
+    used in sim code after merging equally clocked partitions.
+    needs the $getPart replacement beforhand to work properly"
+    input output Expression exp;
+    input UnorderedMap<ComponentRef, BClock> clock_map  "only for sub clocks";
+    input UnorderedSet<BClock> clock_deps               "found dependencies";
+  algorithm
+    exp := match exp
+      local
+        Call call;
+        ComponentRef arg;
+
+      // collect clocked dependencies from sub sampling
+      case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {Expression.CREF(cref = arg)}))
+        guard("$getPart"  == AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn))) algorithm
+        // ToDo: maybe need to strip subscripts and all that
+        if UnorderedMap.contains(arg, clock_map) then
+          UnorderedSet.add(UnorderedMap.getSafe(arg, clock_map, sourceInfo()), clock_deps);
+        else
+          Expression.mapShallow(exp, function collectPartitioningClockDependencies(clock_map = clock_map, clock_deps = clock_deps));
+        end if;
+      then exp;
+
+      else Expression.mapShallow(exp, function collectPartitioningClockDependencies(clock_map = clock_map, clock_deps = clock_deps));
+    end match;
+  end collectPartitioningClockDependencies;
+
+  protected function collectPartitioningCrefs
     input output Expression exp;
     input UnorderedSet<ComponentRef> var_crefs;
   algorithm
@@ -794,8 +832,14 @@ protected
       // clocked partitioning special rules
       case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
         newExp := match AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn))
-          case "previous" then Expression.EMPTY(Type.INTEGER());
-          case "hold"     then Expression.EMPTY(Type.INTEGER());
+          // skip these as they do not cause dependency
+          case "subSample"    then exp;
+          case "superSample"  then exp;
+          case "shiftSample"  then exp;
+          case "backSample"   then exp;
+          case "previous"     then exp;
+          case "hold"         then exp;
+          // sample can have dependencies
           case "sample" algorithm
             arg := match Call.arguments(exp.call)
               // not collected samples have 2 arguments
@@ -806,9 +850,8 @@ protected
                 Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
               then fail();
             end match;
-            _ := collectPartitioningCrefs(arg, var_crefs);
-          then Expression.EMPTY(Type.INTEGER());
-          else exp;
+          then Expression.mapShallow(arg, function collectPartitioningCrefs(var_crefs = var_crefs));
+          else Expression.mapShallow(exp, function collectPartitioningCrefs(var_crefs = var_crefs));
         end match;
       then newExp;
 
@@ -832,7 +875,7 @@ protected
         end for;
       then exp;
 
-      else exp;
+      else Expression.mapShallow(exp, function collectPartitioningCrefs(var_crefs = var_crefs));
     end match;
   end collectPartitioningCrefs;
 
@@ -844,7 +887,6 @@ protected
   algorithm
     // states and there derivatives belong to one partition
     // discrete states and there pre value also
-    // todo: difference between pre and previous for clocked
     if BVariable.isState(var_ptr) then
       UnorderedSet.add(BVariable.getPartnerCref(cref, BVariable.getVarDer), set);
     elseif BVariable.isPrevious(var_ptr) then
@@ -858,6 +900,31 @@ protected
     "replaces sample() and hold() calls using clocks as condition with the $getPart function"
     input output Expression exp;
     input UnorderedSet<ComponentRef> held_crefs;
+    function replaceSample
+      input output Expression exp;
+      input Call call;
+      input Boolean basic;
+    protected
+      Expression arg, arg1, arg2;
+    algorithm
+      {arg1, arg2} := match Call.arguments(call)
+        // not collected samples have 2 arguments
+        case {arg1, arg2} then {arg1, arg2};
+        // collected samples have 3 arguments
+        case {_, arg1, arg2} guard(basic) then {arg1, arg2};
+        // non basic with 3 arguments only care for the first argument as signal
+        case {arg1, arg2, _} then {arg1, arg2};
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
+        then fail();
+      end match;
+      // if it's the basic sample operator, the second argument is supposed to be the clock, otherwise the first
+      if basic then
+        exp := if Type.isClock(Expression.typeOf(arg2)) then replaceClockedFunctionExp(arg1) else exp;
+      else
+        exp := replaceClockedFunctionExp(arg1);
+      end if;
+    end replaceSample;
   algorithm
     exp := match exp
       local
@@ -866,19 +933,14 @@ protected
 
       case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
         newExp := match AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn))
-          case "sample" algorithm
-            {arg, arg2} := match Call.arguments(exp.call)
-              // not collected samples have 2 arguments
-              case {arg, arg2} then {arg, arg2};
-              // collected samples have 3 arguments
-              case {_, arg, arg2} then {arg, arg2};
-              else algorithm
-                Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
-              then fail();
-            end match;
-            newExp := if Type.isClock(Expression.typeOf(arg2)) then replaceClockedFunctionExp(arg) else exp;
-          then newExp;
+          // sample cases
+          case "sample"       then replaceSample(exp, call, true);
+          case "subSample"    then replaceSample(exp, call, false);
+          case "superSample"  then replaceSample(exp, call, false);
+          case "shiftSample"  then replaceSample(exp, call, false);
+          case "backSample"   then replaceSample(exp, call, false);
 
+          // hold case
           case "hold" algorithm
             arg := match Call.arguments(exp.call)
               // hold can only have one argument
@@ -907,8 +969,10 @@ protected
       case Type.REAL()    then NFBuiltinFuncs.GET_PART_REAL;
       case Type.INTEGER() then NFBuiltinFuncs.GET_PART_INT;
       case Type.BOOLEAN() then NFBuiltinFuncs.GET_PART_BOOL;
+      case Type.CLOCK()   then NFBuiltinFuncs.GET_PART_CLOCK;
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. " + Expression.toString(exp) + " is not of correct type."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. " + Expression.toString(exp) + " is of type "
+         + Type.toString(Expression.typeOf(exp)) + ", only real, integer, boolean and clock are allowed."});
       then fail();
     end match;
     exp := Expression.CALL(Call.makeTypedCall(

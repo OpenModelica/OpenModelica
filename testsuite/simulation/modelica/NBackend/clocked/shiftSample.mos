@@ -1,22 +1,21 @@
-// name:     subSample
-// keywords: synchronous features, sample, subSample, sorting
+// name:     shiftSample
+// keywords: synchronous features, sample, shiftSample, sorting
 // status: correct
 // cflags:
 
 // ticket: #14610
 loadString("
-model subSample_MWE
+model shiftSample_MWE
   Clock clk = Clock(0.1);
   Real a = sample(time, clk);
-  Real sub1 = subSample(a, 2);
-  Real sub2 = subSample(a, 2);
-end subSample_MWE;
+  Real sub1 = shiftSample(a, 2);
+end shiftSample_MWE;
 "); getErrorString();
 
 setCommandLineOptions("--newBackend"); getErrorString();
 
-simulate(subSample_MWE, simflags="-lv=LOG_SYNCHRONOUS"); getErrorString();
-diffSimulationResults("subSample_MWE_res.mat", "ReferenceFiles/subSample_MWE_res.mat", "subSample_MWE_diff.csv", 1e-8);
+simulate(shiftSample_MWE, simflags="-lv=LOG_SYNCHRONOUS"); getErrorString();
+diffSimulationResults("shiftSample_MWE_res.mat", "ReferenceFiles/shiftSample_MWE_res.mat", "shiftSample_MWE_diff.csv", 1e-8);
 
 // Result:
 // true
@@ -24,8 +23,8 @@ diffSimulationResults("subSample_MWE_res.mat", "ReferenceFiles/subSample_MWE_res
 // true
 // ""
 // record SimulationResult
-//     resultFile = "subSample_MWE_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'subSample_MWE', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_SYNCHRONOUS'",
+//     resultFile = "shiftSample_MWE_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'shiftSample_MWE', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_SYNCHRONOUS'",
 //     messages = "LOG_SYNCHRONOUS   | info    | Initialized synchronous timers.
 // |                 | |       | | Number of base clocks: 1
 // |                 | |       | | Base clock 1
@@ -37,26 +36,29 @@ diffSimulationResults("subSample_MWE_res.mat", "ReferenceFiles/subSample_MWE_res
 // |                 | |       | | | | solverMethod: none
 // |                 | |       | | | | holdEvents: false
 // |                 | |       | | | Sub-clock 2 of base clock 1
-// |                 | |       | | | | shift: 0/1
-// |                 | |       | | | | factor: 2/1
+// |                 | |       | | | | shift: 2/1
+// |                 | |       | | | | factor: 1/1
 // |                 | |       | | | | solverMethod: none
 // |                 | |       | | | | holdEvents: false
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.000000
-// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.000000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.100000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.200000
 // LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.200000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.300000
+// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.300000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.400000
 // LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.400000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.500000
+// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.500000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.600000
 // LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.600000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.700000
+// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.700000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.800000
 // LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.800000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 0.900000
+// LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 0.900000
 // LOG_SYNCHRONOUS   | info    | Activated base-clock 0 at time 1.000000
 // LOG_SYNCHRONOUS   | info    | Activated sub-clock (0,1) at time 1.000000
 // LOG_SUCCESS       | info    | The simulation finished successfully.

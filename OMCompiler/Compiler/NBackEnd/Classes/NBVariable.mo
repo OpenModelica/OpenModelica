@@ -491,6 +491,16 @@ public
     end match;
   end isClocked;
 
+  function isClockOrClocked
+    extends checkVar;
+  algorithm
+    b := match var.backendinfo.varKind
+      case VariableKind.CLOCK()   then true;
+      case VariableKind.CLOCKED() then true;
+      else false;
+    end match;
+  end isClockOrClocked;
+
   function isIterator
     extends checkVar;
   algorithm
