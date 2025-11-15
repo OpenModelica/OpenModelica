@@ -79,6 +79,16 @@ public
     str := str + toStringSingle(matching.eqn_to_var, true) + "\n";
   end toString;
 
+  function trivial
+    "produces a trivial soluation where e1 matches v1 etc."
+    input Integer n;
+    output Matching matching;
+  protected
+    array<Integer> arr = Array.createIntRange(n);
+  algorithm
+    matching := MATCHING(arr, arr);
+  end trivial;
+
   function regular
     "author: kabdelhak
     Regular matching algorithm for bipartite graphs by Constantinos C. Pantelides.

@@ -156,14 +156,11 @@ public
     algorithm
       if not Util.isSome(Pointer.access(clock_ptr)) then
         _ := match exp
-          case Expression.CREF() guard(Type.isClock(exp.ty)) algorithm
+          case Expression.CREF() guard(BVariable.isClockOrClocked(BVariable.getVarPointer(exp.cref, sourceInfo()))) algorithm
             if UnorderedMap.contains(exp.cref, info.baseClocks) then
               Pointer.update(clock_ptr, SOME((exp.cref, UnorderedMap.getSafe(exp.cref, info.baseClocks, sourceInfo()))));
             elseif UnorderedMap.contains(exp.cref, info.subClocks) then
               Pointer.update(clock_ptr, SOME((exp.cref, UnorderedMap.getSafe(exp.cref, info.subClocks, sourceInfo()))));
-            else
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed becase of unhandled clock: " + Expression.toString(exp)});
-              fail();
             end if;
           then ();
           else ();
@@ -190,6 +187,10 @@ public
       output String str;
     algorithm
       str := StringUtil.headline_2("(" + intString(partition.index) + ") " + Association.toStringShort(partition.association) + " Partition") + "\n";
+      if level == 2 then
+        str := str + Association.toString(partition.association) + "\n";
+      end if;
+
       str := match partition.strongComponents
         local
           array<StrongComponent> comps;
@@ -204,7 +205,7 @@ public
         else
           algorithm
             str := str + VariablePointers.toString(partition.unknowns, "Unknown") + "\n" +
-                         EquationPointers.toString(partition.equations, "Equations") + "\n";
+                         EquationPointers.toString(partition.equations, "") + "\n";
         then str;
       end match;
 
@@ -216,10 +217,6 @@ public
         if isSome(partition.matching) then
           str := str + Matching.toString(Util.getOption(partition.matching)) + "\n";
         end if;
-      end if;
-
-      if level == 2 then
-        str := str + Association.toString(partition.association);
       end if;
     end toString;
 
@@ -263,6 +260,18 @@ public
         else false;
       end match;
     end isODEorDAE;
+
+    function isClocked
+      input Partition part;
+      output Boolean b;
+    algorithm
+      b := match part.association
+        local
+          Kind kind;
+        case Association.CLOCKED() then true;
+        else false;
+      end match;
+    end isClocked;
 
     function categorize
       input Partition partition;

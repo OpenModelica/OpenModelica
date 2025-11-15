@@ -13,6 +13,10 @@ eventConstructor.mos \
 inferredConstructor2.mos \
 rationalConstructor1.mos \
 subSuperSample2.mos \
+subSample.mos \
+superSample.mos \
+shiftSample.mos \
+backSample.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

@@ -4286,6 +4286,7 @@ public
       input output EquationPointers equations;
       input MapFuncExp funcExp;
       input Option<MapFuncCref> funcCrefOpt = NONE();
+      input MapFuncExpWrapper mapFunc = Expression.map;
     protected
       Pointer<Equation> eq_ptr;
       Equation eq, new_eq;
@@ -4294,7 +4295,7 @@ public
         if ExpandableArray.occupied(i, equations.eqArr) then
           eq_ptr := ExpandableArray.get(i, equations.eqArr);
           eq := Pointer.access(eq_ptr);
-          new_eq := Equation.map(eq, funcExp, funcCrefOpt);
+          new_eq := Equation.map(eq, funcExp, funcCrefOpt, mapFunc);
           if not referenceEq(eq, new_eq) then
             // Do not update the expandable array entry, but the pointer itself
             Pointer.update(eq_ptr, new_eq);
