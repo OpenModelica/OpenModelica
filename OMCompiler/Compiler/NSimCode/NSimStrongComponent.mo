@@ -827,7 +827,7 @@ public
         // they can be executed in any order
         case (BEquation.FOR_EQUATION(body = {_}), {}) algorithm
           (names, ranges) := Iterator.getFrames(eqn.iter);
-          tmp := FOR_RESIDUAL(simCodeIndices.equationIndex, res_idx, List.zip(names, ranges), Equation.getRHS(eqn), eqn.source, eqn.attr);
+          tmp := FOR_RESIDUAL(simCodeIndices.equationIndex, res_idx, List.zip(names, ranges), Util.getOption(Equation.getRHS(eqn)), eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
           res_idx := res_idx + Equation.size(Slice.getT(slice));
         then tmp;
@@ -835,7 +835,7 @@ public
         // generic residual, for loop could not be fully recovered
         case (BEquation.FOR_EQUATION(body = {_}), _) algorithm
           (names, ranges) := Iterator.getFrames(eqn.iter);
-          tmp := GENERIC_RESIDUAL(simCodeIndices.equationIndex, res_idx, slice.indices, List.zip(names, ranges), Equation.getRHS(eqn), eqn.source, eqn.attr);
+          tmp := GENERIC_RESIDUAL(simCodeIndices.equationIndex, res_idx, slice.indices, List.zip(names, ranges), Util.getOption(Equation.getRHS(eqn)), eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
           res_idx := res_idx + listLength(slice.indices);
         then tmp;

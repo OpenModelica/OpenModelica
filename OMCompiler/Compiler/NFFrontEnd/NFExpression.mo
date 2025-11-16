@@ -6233,7 +6233,7 @@ public
     end match;
   end isFunctionPointer;
 
-  function isClockSampleFunction
+  function isClockOrSampleFunction
     "returns true if the expression is any form of clock sampling function"
     input Expression exp;
     output Boolean b;
@@ -6250,9 +6250,10 @@ public
         case "backSample"   then true;
         else false;
       end match;
+      case Expression.CLKCONST() then true;
       else false;
     end match;
-  end isClockSampleFunction;
+  end isClockOrSampleFunction;
 
   function isConnector
     "Returns true if the expression is a component reference that refers to a

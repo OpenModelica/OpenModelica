@@ -812,7 +812,7 @@ protected
             (solved_eqn, _, status, _) := Solve.solveBody(eqn, cref, FunctionTreeImpl.EMPTY());
             if status == NBSolve.Status.EXPLICIT then
               // try to used solved value as new parameter value to fulfill constraint
-              _ := match checkConstraint(Equation.getRHS(solved_eqn), optimal_values)
+              _ := match checkConstraint(Util.getOption(Equation.getRHS(solved_eqn)), optimal_values)
                 case SOME(value) algorithm
                   // saving previous optimal value and checking new one
                   old_optimal_value := UnorderedMap.getSafe(cref, optimal_values, sourceInfo());

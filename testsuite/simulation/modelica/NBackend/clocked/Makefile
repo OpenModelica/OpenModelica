@@ -14,6 +14,7 @@ inferredConstructor2.mos \
 rationalConstructor1.mos \
 subSuperSample2.mos \
 subSample.mos \
+subSample_eq.mos \
 superSample.mos \
 shiftSample.mos \
 backSample.mos \
