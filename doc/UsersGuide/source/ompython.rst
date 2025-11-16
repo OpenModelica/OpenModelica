@@ -1,18 +1,18 @@
-OpenModelica Python Interface
-=============================
+OMPython - OpenModelica Python Interface
+========================================
 
 This chapter describes the OpenModelica Python integration facilities.
 
--  OMCSession - the OpenModelica Python scripting interface, see :ref:`ompython`.
--  ModelicaSystem - Enhanced OMPython scripting interface, see :ref:`enhancedompython`.
+-  OMPython.OMCSession - the OpenModelica Python scripting interface, see :ref:`omcsession`.
+-  OMPython.ModelicaSystem - Enhanced OMPython scripting interface, see :ref:`modelicasystem`.
 
 It is based on OMPython version v4.0.0 with some **previews** for version v4.1.0 and hints for **depreciated**
 functionality which is scheduled for removal in version v5.0.0.
 
-.. _ompython:
+.. _omcsession:
 
-OMPython - OpenModelica Python Interface
-----------------------------------------
+OMPython.OMCSession - OpenModelica Python Interface
+---------------------------------------------------
 
 OMPython - OpenModelica Python API is a free, open source, highly
 portable Python based interactive session handler for Modelica
@@ -161,10 +161,10 @@ OMPython is designed to,
 
 -  Return or display the results.
 
-.. _enhancedompython :
+.. _modelicasystem :
 
-Enhanced OMPython Features
---------------------------
+OMPython.ModelicaSystem - Enhanced OMPython Features
+----------------------------------------------------
 Some more improvements are added to OMPython functionality for querying more information about the models
 and simulate them. A list of new user friendly API functionality allows user to extract information about models using python
 objects. A list of API functionality is described below.
