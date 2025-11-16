@@ -124,7 +124,7 @@ public
         (solvedEq, _, status, _) := Solve.solveBody(Pointer.access(comp.eqn), varName, FunctionTreeImpl.EMPTY());
         if status == NBSolve.Status.EXPLICIT then
           // apply all previous replacements on the RHS
-          replace_exp := Equation.getRHS(solvedEq);
+          SOME(replace_exp) := Equation.getRHS(solvedEq);
           replace_exp := Expression.map(replace_exp, function applySimpleExp(replacements = replacements));
           replace_exp := SimplifyExp.simplifyDump(replace_exp, true, getInstanceName());
           // add the new replacement rule

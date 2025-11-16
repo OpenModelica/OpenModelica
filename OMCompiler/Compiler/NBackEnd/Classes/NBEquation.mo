@@ -791,10 +791,10 @@ public
               range := UnorderedMap.getSafe(cref, iter_map, sourceInfo());
               try
                 (range, status) := match range
-                  case Expression.RANGE() then (adaptRange(UnorderedMap.getSafe(cref, iter_map, sourceInfo()), Equation.getRHS(tmpEqn), operator), status);
+                  case Expression.RANGE() then (adaptRange(UnorderedMap.getSafe(cref, iter_map, sourceInfo()), Util.getOption(Equation.getRHS(tmpEqn)), operator), status);
 
                   // ToDo: intercepting this
-                  case Expression.ARRAY() then (adaptArray(UnorderedMap.getSafe(cref, iter_map, sourceInfo()), Equation.getRHS(tmpEqn), operator), status);
+                  case Expression.ARRAY() then (adaptArray(UnorderedMap.getSafe(cref, iter_map, sourceInfo()), Util.getOption(Equation.getRHS(tmpEqn)), operator), status);
 
                   // can't do anything here
                   else (range, NBSolve.Status.UNSOLVABLE);
@@ -1679,42 +1679,36 @@ public
     function getLHS
       "gets the left hand side expression of an equation."
       input Equation eq;
-      output Expression lhs;
+      output Option<Expression> lhs;
     protected
       Boolean success;
     algorithm
       lhs := match(eq)
-        case SCALAR_EQUATION()        then eq.lhs;
-        case ARRAY_EQUATION()         then eq.lhs;
-        case RECORD_EQUATION()        then eq.lhs;
+        local
+          Expression exp;
+        case SCALAR_EQUATION()        then SOME(eq.lhs);
+        case ARRAY_EQUATION()         then SOME(eq.lhs);
+        case RECORD_EQUATION()        then SOME(eq.lhs);
         case FOR_EQUATION(body = {_}) then getLHS(listHead(eq.body));
         case IF_EQUATION()            algorithm
-          (lhs, success) := IfEquationBody.getLHS(eq.body);
-          if not success then
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because LHS was ambiguous for: " + toString(eq)});
-            fail();
-          end if;
-        then lhs;
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because LHS was ambiguous for: " + toString(eq)});
-        then fail();
+          (exp, success) := IfEquationBody.getLHS(eq.body);
+        then if success then SOME(exp) else NONE();
+        else NONE();
       end match;
     end getLHS;
 
     function getRHS
       "gets the right hand side expression of an equation."
       input Equation eq;
-      output Expression rhs;
+      output Option<Expression> rhs;
     algorithm
       rhs := match(eq)
-        case SCALAR_EQUATION()        then eq.rhs;
-        case ARRAY_EQUATION()         then eq.rhs;
-        case RECORD_EQUATION()        then eq.rhs;
+        case SCALAR_EQUATION()        then SOME(eq.rhs);
+        case ARRAY_EQUATION()         then SOME(eq.rhs);
+        case RECORD_EQUATION()        then SOME(eq.rhs);
         case FOR_EQUATION(body = {_}) then getRHS(listHead(eq.body));
-        case IF_EQUATION()            then IfEquationBody.getRHS(eq.body);
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because RHS was ambiguous for: " + toString(eq)});
-        then fail();
+        case IF_EQUATION()            then SOME(IfEquationBody.getRHS(eq.body));
+        else NONE();
       end match;
     end getRHS;
 
@@ -3064,7 +3058,7 @@ public
     algorithm
       exp := match body.then_eqns
         case {eqn_ptr} algorithm
-          new_exp := Equation.getLHS(Pointer.access(eqn_ptr));
+          SOME(new_exp) := Equation.getLHS(Pointer.access(eqn_ptr));
           if Expression.isEnd(exp) or Expression.isEqual(exp, new_exp) then
             if Util.isSome(body.else_if) then
               (new_exp, success) := getLHS(Util.getOption(body.else_if), new_exp);
@@ -3092,7 +3086,7 @@ public
     algorithm
       exp := match body.then_eqns
         case {eqn_ptr} algorithm
-          new_exp := Equation.getRHS(Pointer.access(eqn_ptr));
+          SOME(new_exp) := Equation.getRHS(Pointer.access(eqn_ptr));
           if Util.isSome(body.else_if) then
             new_exp := Expression.IF(Expression.typeOf(new_exp), body.condition, new_exp, getRHS(Util.getOption(body.else_if)));
           end if;
@@ -3183,7 +3177,9 @@ public
          sorting them in the same way makes the split nice without algebraic loops."
         input Pointer<Equation> eqn1;
         input Pointer<Equation> eqn2;
-        output Boolean b = Expression.compare(Equation.getLHS(Pointer.access(eqn1)), Equation.getLHS(Pointer.access(eqn2))) > 0;
+        output Boolean b = 0 < Expression.compare(
+          Util.getOption(Equation.getLHS(Pointer.access(eqn1))),
+          Util.getOption(Equation.getLHS(Pointer.access(eqn2))));
       end compareLHS;
     algorithm
       (discretes, continuous) := List.splitOnTrue(body.then_eqns, Equation.isDiscrete);

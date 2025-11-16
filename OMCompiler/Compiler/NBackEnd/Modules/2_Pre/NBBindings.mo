@@ -83,10 +83,6 @@ public
             else
               binding_disc := bind_eqn :: binding_disc;
             end if;
-            // also add to clocks if is clocked
-            if BVariable.isClocked(var) then
-              binding_clck := bind_eqn :: binding_clck;
-            end if;
           end if;
         end for;
 

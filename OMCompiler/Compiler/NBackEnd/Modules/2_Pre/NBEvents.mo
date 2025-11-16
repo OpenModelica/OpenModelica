@@ -437,7 +437,7 @@ public
             if Pointer.access(containsTime) then
               (tmpEqn, _, status, invert) := Solve.solveBody(tmpEqn, NFBuiltin.TIME_CREF, funcTree);
               if status == NBSolve.Status.EXPLICIT and invert <> NBSolve.RelationInversion.UNKNOWN then
-                trigger := Equation.getRHS(tmpEqn);
+                SOME(trigger) := Equation.getRHS(tmpEqn);
                 // only cases for RelationInversion == TRUE or FALSE can be present
                 exp.operator := if invert == NBSolve.RelationInversion.TRUE then Operator.invert(exp.operator) else exp.operator;
                 if Equation.isWhenEquation(eqn) then

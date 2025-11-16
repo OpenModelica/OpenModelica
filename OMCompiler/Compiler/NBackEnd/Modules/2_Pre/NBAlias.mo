@@ -1394,7 +1394,7 @@ protected
       Option<Expression> nominal_opt = UnorderedMap.get(var_cref, attrcollector.nominal_map);
       Type ty;
     algorithm
-      rhs := Equation.getRHS(solved_eq);
+      SOME(rhs) := Equation.getRHS(solved_eq);
       // min:
       if Util.isSome(min_val_opt) then
         UnorderedMap.add(var_cref, Util.getOption(min_val_opt), repl);

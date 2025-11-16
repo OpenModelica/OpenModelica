@@ -117,18 +117,17 @@ public
           ComponentRef clock_name;
           Expression exp;
 
-        case (Expression.CREF(cref = clock_name), exp) algorithm
+        case (SOME(Expression.CREF(cref = clock_name)), SOME(exp))
+        guard(Expression.isClockOrSampleFunction(exp)) algorithm
           create(clock_name, exp, info);
         then ();
 
-        case (exp, Expression.CREF(cref = clock_name)) algorithm
+        case (SOME(exp), SOME(Expression.CREF(cref = clock_name)))
+        guard(Expression.isClockOrSampleFunction(exp)) algorithm
           create(clock_name, exp, info);
         then ();
 
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + Equation.toString(eqn)});
-          fail();
-        then fail();
+        else ();
       end match;
     end add;
 
@@ -193,6 +192,7 @@ public
     protected
       BClock clock;
       Option<ComponentRef> baseClock;
+      Pointer<Variable> clock_var;
     algorithm
       try
         // parse the clock and see if it depends on another clock
@@ -204,6 +204,13 @@ public
         else
           // base clock
           UnorderedMap.add(clock_name, clock, info.baseClocks);
+        end if;
+
+        // if this is from the equation block and not from variable binding, the variable needs to updated
+        // such that the clock can be found for the partitioning clocked association
+        clock_var := BVariable.getVarPointer(clock_name, sourceInfo());
+        if not BVariable.isClockOrClocked(clock_var) then
+          BVariable.setVarKind(clock_var, VariableKind.CLOCKED());
         end if;
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(clock_name) + "."});
@@ -218,14 +225,14 @@ public
     algorithm
       (subClock, baseClock) := match exp
         local
-          ComponentRef cref;
           Call call;
 
         case Expression.CLKCONST() algorithm
         then (BASE_CLOCK(exp.clk), NONE());
 
-        case Expression.CREF(cref = cref)
-        then (DEFAULT_SUB_CLOCK, SOME(cref));
+        case Expression.CREF() algorithm
+        then (DEFAULT_SUB_CLOCK, SOME(exp.cref));
+
 
         case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
           (baseClock, subClock) := match (AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)), Call.arguments(call))
@@ -719,16 +726,14 @@ protected
       end if;
     end for;
 
-    // resolve inner sub clock dependencies
-    ClockedInfo.resolveSubClocks(info);
-
-    // non clock assignment equations - collect all variables
+    // other equations - collect all variables and check for clocked signals
     for eq_idx in UnorderedMap.valueList(equations.map) loop
       if eq_idx > 0 then
         eqn := EquationPointers.getEqnAt(equations, eq_idx);
-        var_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+        BClock.add(Pointer.access(eqn), info);
 
         // collect all crefs in equation
+        var_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
         Equation.map(Pointer.access(eqn), function collectPartitioningCrefs(var_crefs = var_crefs), NONE(), Expression.fakeMap);
 
         // find all indices of connected variables
@@ -745,6 +750,9 @@ protected
         end for;
       end if;
     end for;
+
+    // resolve inner sub clock dependencies
+    ClockedInfo.resolveSubClocks(info);
 
     // find and report variables that could not be assigned to a partition (exclude clocks)
     marked_vars := listArray(list(var_map[var_idx] < 0 for var_idx in UnorderedMap.valueList(variables.map)));
