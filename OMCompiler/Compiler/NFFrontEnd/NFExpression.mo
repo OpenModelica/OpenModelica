@@ -6241,9 +6241,10 @@ public
     b := match exp
       local
         Call call;
-      case CALL(call = call as Call.TYPED_CALL())
+        Expression arg;
+      case CALL(call = call as Call.TYPED_CALL(arguments = arg :: _))
       then match AbsynUtil.pathString(Function.Function.nameConsiderBuiltin(call.fn))
-        case "sample"       then true;
+        case "sample"       then not isLiteral(arg); // sample has a non clocked meaning as well
         case "subSample"    then true;
         case "superSample"  then true;
         case "shiftSample"  then true;
