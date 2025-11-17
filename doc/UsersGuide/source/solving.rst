@@ -514,6 +514,56 @@ Several compiler and simulation flags influence initialization with homotopy:
 
 .. _cruntime-algebraic-solvers :
 
+Tearing
+-------
+
+The size of linear and nonlinear equation systems can be substantially reduced by
+means of the Tearing method. Consider a system of :math:`N` equations. The Tearing method requires
+to pick :math:`M << N` variables :math:`x_t` as *tearing* or *iteration* variables, so that
+assuming their values are known, :math:`N - M` *torn* equations can be solved explicitly for the
+remaining :math:`N - M` *torn* variables, by sorting them appropriately. Then, the remaining
+M equations are put in *residual* form :math:`f(x_t) = 0`, where the residuals can ultimately be
+computed by explicit computations as a function of the tearing variables :math:`x_t` only. 
+The result is thus an equivalent implicit system of :math:`M << N` equations in the :math:`M`
+tearing variables, with an explicit procedure to compute the residual function :math:`f(x_t)`.
+The Jacobian of that function, which is required by the Newton method, can then be obtained
+by either symbolic or numerical differentiation techniques.
+
+The Tearing method has three main advantages:
+
+- the size of the Jacobian matrix to be factorized in order to solve it is greatly reduced;
+- for nonlinear systems solved by iterative methods like Newton-Raphson, it is only necessary
+  to give initial guess values to the much smaller set of variables :math:`x_t`; the initial
+  guess values are set to the start attributes of the tearing variables;
+- the method allows to solve mixed systems containing Real and discrete (Boolean or Integer)
+  variables and equations by means of standard nonlinear equation solvers, as long as the
+  discrete variables are selected as torn variables and the resulting residual equations have 
+  a continuous dependency on the Real tearing variables.
+  
+OpenModelica implements some heuristic algorithms to automatically choose the set of
+tearing variables. The tearing algorithm can be selected with the compiler flags:
+:ref:`--tearingMethod <omcflag-tearingMethod>`,
+:ref:`--tearingHeuristic <omcflag-tearingHeuristic>`.
+Since the tearing algorithms can be very time-consuming for large systems, they are automatically
+disabled for systems above a certain size, see
+:ref:`--maxSizeLinearTearing <omcflag-maxSizeLinearTearing>`,
+:ref:`--maxSizeNonlinearTearing <omcflag-maxSizeNonlinearTearing>`.
+
+As of Modelica 3.6, there is no standardized way to influence the choice of tearing variables. OpenModelica
+provides a custom `__OpenModelica_tearingSelect` annotation that can be added to variable declarations to
+influence the choice of tearing variables:
+	
+.. code-block:: modelica
+Real x annotation(__OpenModelica_tearingSelect = TearingSelect.always);
+Real y annotation(__OpenModelica_tearingSelect = TearingSelect.prefer);
+Real z annotation(__OpenModelica_tearingSelect = TearingSelect.default);
+Real v annotation(__OpenModelica_tearingSelect = TearingSelect.avoid);
+Real w annotation(__OpenModelica_tearingSelect = TearingSelect.never);
+
+This feature is currently experimental. There is discussion going on within the MAP-Lang group of the
+Modelica Association to standardize features for the selection of tearing variables and residual
+equations.
+
 Algebraic Solvers
 -----------------
 
