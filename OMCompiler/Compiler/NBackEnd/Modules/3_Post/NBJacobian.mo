@@ -961,7 +961,6 @@ protected
     // create pDer vars (also filters out discrete vars)
     (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
     (tmp_vars, _) := List.splitOnTrue(tmp_vars, function BVariable.isContinuous(init = init));
-    print("tmp vars in symbolic:\n" + BVariable.VariablePointers.toString(VariablePointers.fromList(tmp_vars), "Tmp Vars") + "\n");
 
     for v in res_vars loop makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = false), init = init); end for;
     res_vars := Pointer.access(pDer_vars_ptr);
@@ -1120,8 +1119,6 @@ protected
   function buildAdjointProcessingOrder
     input UnorderedMap<ComponentRef, ExpressionList> adjoint_map;
     input list<Pointer<Variable>> res_vars;
-    input list<Pointer<Variable>> tmp_vars;
-    output list<ComponentRef> tmpKeys;
     output list<ComponentRef> resKeys;
   protected
     UnorderedSet<ComponentRef> seen = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
@@ -1129,15 +1126,6 @@ protected
     list<ComponentRef> tail = {};
     ExpressionList terms;
   algorithm
-    tmpKeys := {};
-    // reverse order of tmp vars
-    for v in tmp_vars loop
-      c := BVariable.getVarName(v);
-      if UnorderedMap.contains(c, adjoint_map) then
-        tmpKeys := c :: tmpKeys;
-      end if;
-    end for;
-
     // original order for result vars
     resKeys := {};
     for v in res_vars loop
@@ -1294,74 +1282,6 @@ protected
       end if;
     end for;
   end populateDiffMap;
-
-  // Collect all ComponentRefs used in an expression (shallow helper).
-  function collectCrefsFromExpr
-    input Expression exp;
-    output list<ComponentRef> crefs;
-  algorithm
-    crefs := Expression.fold(exp, collectCrefsFold, {});
-  end collectCrefsFromExpr;
-
-  function collectCrefsFold
-    input Expression e;
-    input output list<ComponentRef> acc;
-  algorithm
-    () := match e
-      case Expression.CREF(cref = _) algorithm
-        acc := e.cref :: acc;
-      then ();
-      else ();
-    end match;
-  end collectCrefsFold;
-
-  // True iff expr references any tmp var in tmpSet (excluding self).
-  function exprDependsOnTmpVar
-    input Expression expr;
-    input UnorderedSet<ComponentRef> tmpSet;
-    input ComponentRef self;
-    output Boolean doesDepend = false;
-  protected
-    list<ComponentRef> deps;
-  algorithm
-    deps := collectCrefsFromExpr(expr);
-    for c in deps loop
-      if ComponentRef.isEqual(c, self) then
-        // ignore self
-      elseif UnorderedSet.contains(c, tmpSet) then
-        doesDepend := true;
-        return;
-      end if;
-    end for;
-  end exprDependsOnTmpVar;
-
-  // Partition tmpKeys into those whose RHS depends only on seeds (no tmp refs) and the rest.
-  function partitionTmpBySeedFirst
-    input list<ComponentRef> tmpKeys;
-    input UnorderedMap<ComponentRef, ExpressionList> adjoint_map;
-    output list<ComponentRef> seedOnlyFirst = {};
-    output list<ComponentRef> rest = {};
-  protected
-    UnorderedSet<ComponentRef> tmpSet = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(tmpKeys)));
-    list<Expression> terms;
-    Expression rhs;
-  algorithm
-    for k in tmpKeys loop UnorderedSet.add(k, tmpSet); end for;
-
-    for k in tmpKeys loop
-      terms := UnorderedMap.getOrDefault(k, adjoint_map, {});
-      rhs := buildAdjointRhs(k, terms);
-      if exprDependsOnTmpVar(rhs, tmpSet, k) then
-        rest := k :: rest;
-      else
-        seedOnlyFirst := k :: seedOnlyFirst;
-      end if;
-    end for;
-
-    // keep original relative order
-    seedOnlyFirst := listReverse(seedOnlyFirst);
-    rest := listReverse(rest);
-  end partitionTmpBySeedFirst;
 
   // Flattened across all components: preserve component order and in-component order
   function getAllAlgbVars
@@ -1717,7 +1637,6 @@ protected
     // New list of strong components replacing original diffed_comps
     diffed_comps := {};
     i := 1;
-    (tmpKeys, resKeys) := buildAdjointProcessingOrder(adjoint_map, res_vars, tmp_vars);
 
     // they are already in reverse order
     allTmpVarsList := getAllAlgbVars(comps, init);
@@ -1750,6 +1669,7 @@ protected
     end for;
 
     // 3. RESULT VAR equations
+    resKeys := buildAdjointProcessingOrder(adjoint_map, res_vars);
     resComps := {};
     for lhsKey in resKeys loop
       diffed_comp := makeAdjointComponent(lhsKey, adjoint_map, newName, i);

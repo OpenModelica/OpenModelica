@@ -2791,6 +2791,8 @@ public
     Note: these can only contain commutative operators"
     input output Expression exp "Has to be Expression.MULTARY()";
     input output DifferentiationArguments diffArguments;
+  protected
+    Boolean isReverse = Util.isSome(diffArguments.adjoint_map);
   algorithm
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
       print("differentiateMultary: " + Expression.toString(exp) + "\n");
@@ -2808,8 +2810,6 @@ public
         Boolean hasArray, hasArrayNum;
         Expression local_grad, localUpF, localUpG;
         Integer i;
-        // THNK: should this be solved without the flag?
-        Boolean isReverse = Util.isSome(diffArguments.adjoint_map);
 
       // Dash calculations (ADD, SUB, ADD_EW, SUB_EW, ...)
       // NOTE: Multary always contains ADDITION
@@ -2940,7 +2940,6 @@ public
           denomProd := Expression.MULTARY(inv_arguments, {}, operator);
 
           // Forward derivative term accumulator
-          add_terms := {};
           upstream := diffArguments.current_grad;
           // Differentiate numerator factors
           i := 1;
@@ -2964,8 +2963,6 @@ public
 
             // Forward term: f' * (exp / f)
             term := Expression.MULTARY({diff_arg, e_over_f}, {}, mulEWOp);
-            add_terms := term :: add_terms;
-
             i := i + 1;
           end for;
 
@@ -2992,12 +2989,12 @@ public
 
             // Forward term: - g' * (exp / g)
             term := Expression.negate(Expression.MULTARY({diff_arg, e_over_g}, {}, mulEWOp));
-            add_terms := term :: add_terms;
             i := i + 1;
           end for;
           // Restore upstream gradient
           diffArguments.current_grad := upstream;
-          then Expression.MULTARY(add_terms, {}, addEWOp);
+          then (Expression.END());
+
       case Expression.MULTARY(arguments = arguments, inv_arguments = inv_arguments, operator = operator)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION
               and (not listEmpty(inv_arguments)))
