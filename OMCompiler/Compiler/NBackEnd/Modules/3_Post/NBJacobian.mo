@@ -1363,6 +1363,22 @@ protected
     rest := listReverse(rest);
   end partitionTmpBySeedFirst;
 
+  // Flattened across all components: preserve component order and in-component order
+  function getAllAlgbVars
+    input list<StrongComponent> comps;
+    input Boolean init;
+    output list<NBVariable.VariablePointer> vars = {};
+  protected
+    list<NBVariable.VariablePointer> vs;
+  algorithm
+    for c in comps loop
+      vs := list(v for v guard(BVariable.isAlgebraic(v)) in StrongComponent.getVariables(c));
+      for v in vs loop
+        vars := v :: vars;
+      end for;
+    end for;
+  end getAllAlgbVars;
+
   function jacobianSymbolicAdjoint extends Module.jacobianInterface;
   protected
     list<StrongComponent> comps, diffed_comps, comps_non_alg;
@@ -1394,7 +1410,7 @@ protected
       UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
     UnorderedMap<ComponentRef, ComponentRef> mapSeedToNewPDer =
       UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
-    list<StrongComponent> pre_adjoint_comps = {};
+    list<StrongComponent> algebraicLoopComps = {};
     list<ComponentRef> tmpKeys;
     list<ComponentRef> resKeys;
 
@@ -1404,10 +1420,11 @@ protected
     VariablePointers tmpVarsVP;
     EquationPointers tmpEqnsEP;
     Matching matchingTmp;
-    list<StrongComponent> tmpComps, resComps;
+    list<StrongComponent> tmpComps = {}, resComps = {};
 
-    list<ComponentRef> tmpKeysSeedOnly, tmpKeysRest;
-    list<StrongComponent> tmpCompsFirst = {}, tmpCompsRest = {};
+    list<Pointer<Variable>> allTmpVarsList = {};
+    list<ComponentRef> orderedTmpCrefs = {};
+    ComponentRef baseCref, pDerCref;
   algorithm
     newName := name + "_ADJ";
     if Util.isSome(strongComponents) then
@@ -1423,10 +1440,6 @@ protected
       Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because no strong components were given!"});
       fail();
     end if;
-
-    for c in comps loop
-      print("start component:\n" + StrongComponent.toString(c) + "\n");
-    end for;
 
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
       print("Seed candidates before pDer creation:\n" + BVariable.VariablePointers.toString(seedCandidates, "Seed Candidates") + "\n");
@@ -1623,13 +1636,13 @@ protected
 
             // Wrap into a linear algebraic loop with lambda as iteration vars
             if not listEmpty(linResEqnPtrs) then
-              pre_adjoint_comps := makeLinearAlgebraicLoop(
+              algebraicLoopComps := makeLinearAlgebraicLoop(
                 lambdaPtrs,                  // iteration vars: lambda_1..m
                 linResEqnPtrs,               // residuals: sum(...) - y_bar = 0
                 NONE(),
                 mixed = false,
                 homotopy = false
-              ) :: pre_adjoint_comps;
+              ) :: algebraicLoopComps;
             end if;
             
             // -------------------------------------------------------------
@@ -1705,27 +1718,36 @@ protected
     diffed_comps := {};
     i := 1;
     (tmpKeys, resKeys) := buildAdjointProcessingOrder(adjoint_map, res_vars, tmp_vars);
-    // 1. TMP VAR equations: simple heuristic ordering
-    (tmpKeysSeedOnly, tmpKeysRest) := partitionTmpBySeedFirst(tmpKeys, adjoint_map);
 
-    // Emit tmp vars that only depend on seeds first
-    tmpCompsFirst := {};
-    for lhsKey in tmpKeysSeedOnly loop
+    // they are already in reverse order
+    allTmpVarsList := getAllAlgbVars(comps, init);
+    for v in allTmpVarsList loop
+      baseCref := BVariable.getVarName(v);
+      if UnorderedMap.contains(baseCref, diff_map) then
+        pDerCref := UnorderedMap.getOrFail(baseCref, diff_map);
+        // only emit if we actually collected adjoint terms (key exists in map)
+        if UnorderedMap.contains(pDerCref, adjoint_map) then
+          orderedTmpCrefs := pDerCref :: orderedTmpCrefs;
+        end if;
+      end if;
+    end for;
+    // Emit tmp components in requested order
+    for lhsKey in orderedTmpCrefs loop
       diffed_comp := makeAdjointComponent(lhsKey, adjoint_map, newName, i);
-      tmpCompsFirst := diffed_comp :: tmpCompsFirst;
+      tmpComps := diffed_comp :: tmpComps;
       i := i + 1;
     end for;
-    // no reversal needed as order does not matter?
 
-    // Emit remaining tmp vars afterwards
-    tmpCompsRest := {};
-    for lhsKey in tmpKeysRest loop
-      diffed_comp := makeAdjointComponent(lhsKey, adjoint_map, newName, i);
-      tmpCompsRest := diffed_comp :: tmpCompsRest;
-      i := i + 1;
+    // Emit any remaining tmp vars (e.g. lambda temporaries) not in orderedTmpCrefs.
+    for v in tmp_vars loop
+      baseCref := BVariable.getVarName(v); // for tmp_vars (already pDer/lambda names)
+      if (not listMember(baseCref, orderedTmpCrefs))
+         and UnorderedMap.contains(baseCref, adjoint_map) then
+        diffed_comp := makeAdjointComponent(baseCref, adjoint_map, newName, i);
+        tmpComps := diffed_comp :: tmpComps;
+        i := i + 1;
+      end if;
     end for;
-    // THNK: is this enough to ensure correct execution order?
-    tmpCompsRest := listReverse(tmpCompsRest);
 
     // 3. RESULT VAR equations
     resComps := {};
@@ -1737,11 +1759,7 @@ protected
     // no reversal needed as order does not matter?
 
     // here are also the loop components from above which might be empty though if there are none
-    diffed_comps := listAppend(listAppend(tmpCompsFirst, tmpCompsRest), listAppend(pre_adjoint_comps, resComps));
-
-    // for c in diffed_comps loop
-    //   print("Diffed component:\n" + StrongComponent.toString(c) + "\n");
-    // end for;
+    diffed_comps := listAppend(listAppend(tmpComps), listAppend(algebraicLoopComps, resComps));
 
     // collect var data (most of this can be removed)
     unknown_vars  := listAppend(res_vars, tmp_vars);

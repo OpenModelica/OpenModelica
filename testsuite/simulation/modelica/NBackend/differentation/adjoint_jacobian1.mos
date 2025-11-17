@@ -105,8 +105,8 @@ buildModel(scalarAdjointJacobian1); getErrorString();
 // -----------------------------
 //   (14) $pDER_ODE_JAC_ADJ.i_C := $SEED_ODE_JAC_ADJ.$DER.V .* 1/(C)
 //   (13) $pDER_ODE_JAC_ADJ.i_R := -$pDER_ODE_JAC_ADJ.i_C
-//   (12) $pDER_ODE_JAC_ADJ.V := $pDER_ODE_JAC_ADJ.i_R * (1/R) - $SEED_ODE_JAC_ADJ.$DER.i_L * (1/L)
-//   (11) $pDER_ODE_JAC_ADJ.i_L := $pDER_ODE_JAC_ADJ.i_C
+//   (12) $pDER_ODE_JAC_ADJ.i_L := $pDER_ODE_JAC_ADJ.i_C
+//   (11) $pDER_ODE_JAC_ADJ.V := $pDER_ODE_JAC_ADJ.i_R * (1/R) - $SEED_ODE_JAC_ADJ.$DER.i_L * (1/L)
 //
 // Sparsity Pattern Cols
 // ***********************
@@ -234,8 +234,8 @@ buildModel(scalarAdjointJacobian1); getErrorString();
 //
 // jacobianEquations:
 // ========================================
-// 18: $pDER_ODE_JAC_ADJ.i_L=$pDER_ODE_JAC_ADJ.i_C [Real]
-// 17: $pDER_ODE_JAC_ADJ.V=$pDER_ODE_JAC_ADJ.i_R * 1.0 / R - $SEED_ODE_JAC_ADJ.$DER.i_L * 1.0 / L [Real]
+// 18: $pDER_ODE_JAC_ADJ.V=$pDER_ODE_JAC_ADJ.i_R * 1.0 / R - $SEED_ODE_JAC_ADJ.$DER.i_L * 1.0 / L [Real]
+// 17: $pDER_ODE_JAC_ADJ.i_L=$pDER_ODE_JAC_ADJ.i_C [Real]
 // 16: $pDER_ODE_JAC_ADJ.i_R=-$pDER_ODE_JAC_ADJ.i_C [Real]
 // 15: $pDER_ODE_JAC_ADJ.i_C=$SEED_ODE_JAC_ADJ.$DER.V * 1.0 / C [Real]
 //
@@ -246,8 +246,8 @@ buildModel(scalarAdjointJacobian1); getErrorString();
 // 	Jacobian idx: 1
 // 	14: $pDER_ODE_JAC_ADJ.i_C=$SEED_ODE_JAC_ADJ.$DER.V * 1.0 / C [Real]
 // 	13: $pDER_ODE_JAC_ADJ.i_R=-$pDER_ODE_JAC_ADJ.i_C [Real]
-// 	12: $pDER_ODE_JAC_ADJ.V=$pDER_ODE_JAC_ADJ.i_R * 1.0 / R - $SEED_ODE_JAC_ADJ.$DER.i_L * 1.0 / L [Real]
-// 	11: $pDER_ODE_JAC_ADJ.i_L=$pDER_ODE_JAC_ADJ.i_C [Real]
+// 	12: $pDER_ODE_JAC_ADJ.i_L=$pDER_ODE_JAC_ADJ.i_C [Real]
+// 	11: $pDER_ODE_JAC_ADJ.V=$pDER_ODE_JAC_ADJ.i_R * 1.0 / R - $SEED_ODE_JAC_ADJ.$DER.i_L * 1.0 / L [Real]
 // 	
 // columnVars(2)
 // ----------------------

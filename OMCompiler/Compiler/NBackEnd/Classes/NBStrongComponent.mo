@@ -948,7 +948,7 @@ public
     var_cref := match comp
       case SLICED_COMPONENT()   then comp.var_cref;
       case RESIZABLE_COMPONENT()then comp.var_cref;
-      case GENERIC_COMPONENT() then comp.var_cref;
+      case GENERIC_COMPONENT()  then comp.var_cref;
       case ALIAS()              then getVarCref(comp.original);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
