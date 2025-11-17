@@ -66,7 +66,6 @@ public
   type Kind = enumeration(ODE, ALG, ODE_EVT, ALG_EVT, INI, DAE, JAC, CLK);
 
   uniontype Association
-    type ClockTpl = tuple<ComponentRef, BClock>;
     record CONTINUOUS
       Kind kind;
       Option<Jacobian> jacobian "Analytic jacobian for the integrator";
@@ -123,14 +122,24 @@ public
       output Association association;
     protected
       Pointer<Option<ClockTpl>> clock_ptr = Pointer.create(NONE());
+      UnorderedSet<ClockTpl> failed_set = UnorderedSet.new(hashClockTpl, isEqualClockTpl);
       Option<ClockTpl> clock_tpl;
       ComponentRef name, base_name;
       BClock clock;
     algorithm
-      EquationPointers.mapExp(equations, function expClocked(info = info, clock_ptr = clock_ptr));
+      EquationPointers.mapExp(equations, function expClocked(info = info, clock_ptr = clock_ptr, failed_set = failed_set), NONE(), Expression.fakeMap);
       clock_tpl := Pointer.access(clock_ptr);
+
       if Util.isSome(clock_tpl) then
         SOME((name, clock)) := clock_tpl;
+
+        // throw an error if there are different clocks in this partition
+        if not UnorderedSet.isEmpty(failed_set) then
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there are non-identical clocks in the same partition:\n"
+            + "### First clock found:\n" + clockTplString((name, clock)) + "\n### Conflicting clocks:\n" + UnorderedSet.toString(failed_set, clockTplString) + "."});
+          fail();
+        end if;
+
         if BClock.isBaseClock(clock) then
           association := CLOCKED(clock, NONE(), false);
         else
@@ -149,25 +158,67 @@ public
      b := match association case CLOCKED() then true; else false; end match;
     end isClocked;
 
+    // clock tpl for collecting and comparing clocks in a partition
+    type ClockTpl = tuple<ComponentRef, BClock>;
+
+    function clockTplString
+      input ClockTpl tpl;
+      output String str = "(" + ComponentRef.toString(Util.tuple21(tpl)) + " = " + BClock.toString(Util.tuple22(tpl)) + ")";
+    end clockTplString;
+
+    function hashClockTpl
+      input ClockTpl tpl;
+      output Integer hash = 5381;
+    algorithm
+      hash := stringHashDjb2Continue(ComponentRef.toString(Util.tuple21(tpl)), hash);
+      hash := stringHashDjb2Continue(BClock.toString(Util.tuple22(tpl)), hash);
+    end hashClockTpl;
+
+    function isEqualClockTpl
+      input ClockTpl tpl1;
+      input ClockTpl tpl2;
+      output Boolean b =  ComponentRef.isEqual(Util.tuple21(tpl1), Util.tuple21(tpl2)) and
+                          BClock.isEqual(Util.tuple22(tpl1), Util.tuple22(tpl2));
+    end isEqualClockTpl;
+
   protected
     function expClocked
       "checks if an expression is a clock. used in mapping functions"
       input output Expression exp;
       input ClockedInfo info;
       input Pointer<Option<ClockTpl>> clock_ptr;
+      input UnorderedSet<ClockTpl> failed_set;
     algorithm
-      if not Util.isSome(Pointer.access(clock_ptr)) then
-        _ := match exp
-          case Expression.CREF() guard(BVariable.isClockOrClocked(BVariable.getVarPointer(exp.cref, sourceInfo()))) algorithm
-            if UnorderedMap.contains(exp.cref, info.baseClocks) then
-              Pointer.update(clock_ptr, SOME((exp.cref, UnorderedMap.getSafe(exp.cref, info.baseClocks, sourceInfo()))));
-            elseif UnorderedMap.contains(exp.cref, info.subClocks) then
-              Pointer.update(clock_ptr, SOME((exp.cref, UnorderedMap.getSafe(exp.cref, info.subClocks, sourceInfo()))));
-            end if;
-          then ();
-          else ();
-        end match;
-      end if;
+      exp := match exp
+        local
+          Option<BClock> clock_opt;
+
+        // ignore and do not go deeper on sample functions dependencies
+        case Expression.CALL() guard(Expression.isClockOrSampleFunction(exp)) then exp;
+
+        // check if its a variable that defines a clock
+        case Expression.CREF() guard(BVariable.isClockOrClocked(BVariable.getVarPointer(exp.cref, sourceInfo()))) algorithm
+          if UnorderedMap.contains(exp.cref, info.baseClocks) then
+            clock_opt := SOME(UnorderedMap.getSafe(exp.cref, info.baseClocks, sourceInfo()));
+          elseif UnorderedMap.contains(exp.cref, info.subClocks) then
+            clock_opt := SOME( UnorderedMap.getSafe(exp.cref, info.subClocks, sourceInfo()));
+          end if;
+          _ := match (clock_opt, Pointer.access(clock_ptr))
+            local
+              BClock new, old;
+            case (SOME(new), SOME((_, old))) guard(not BClock.isEqual(new, old)) algorithm
+              UnorderedSet.add((exp.cref, new), failed_set);
+            then ();
+            case (SOME(new), NONE()) algorithm
+              Pointer.update(clock_ptr, SOME((exp.cref, new)));
+            then ();
+            else ();
+          end match;
+        then exp;
+
+        // go deeper on everything else
+        else Expression.mapShallow(exp, function expClocked(info = info, clock_ptr = clock_ptr, failed_set = failed_set));
+      end match;
     end expClocked;
   end Association;
 
@@ -363,7 +414,7 @@ public
       (clock, baseClock, holdEvents) := match part.association
         case Association.CLOCKED(clock = clock, baseClock = baseClock, holdEvents = holdEvents) then (clock, baseClock, holdEvents);
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. There is no clock in continuous partition:\n" + toString(part)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Cannot get clock for continuous partition:\n" + toString(part)});
         then fail();
       end match;
     end getClocks;
