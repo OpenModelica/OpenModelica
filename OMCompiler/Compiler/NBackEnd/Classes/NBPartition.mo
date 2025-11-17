@@ -202,6 +202,8 @@ public
             clock_opt := SOME(UnorderedMap.getSafe(exp.cref, info.baseClocks, sourceInfo()));
           elseif UnorderedMap.contains(exp.cref, info.subClocks) then
             clock_opt := SOME( UnorderedMap.getSafe(exp.cref, info.subClocks, sourceInfo()));
+          else
+            clock_opt := NONE();
           end if;
           _ := match (clock_opt, Pointer.access(clock_ptr))
             local
