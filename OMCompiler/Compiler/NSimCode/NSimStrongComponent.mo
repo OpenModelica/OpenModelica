@@ -62,6 +62,7 @@ protected
   import Solve = NBSolve;
   import StrongComponent = NBStrongComponent;
   import Partition = NBPartition;
+  import Partitioning = NBPartitioning;
   import NBPartitioning.{BClock, ClockedInfo};
   import Tearing = NBTearing;
   import BVariable = NBVariable;
@@ -76,7 +77,6 @@ protected
   import NSimGenericCall.SimIterator;
   import NSimJacobian.SimJacobian;
   import SimPartition = NSimPartition;
-  import NSimPartition.SimPartitions;
   import NSimVar.{SimVar, SimVars, VarType};
 
   // Util imports
@@ -502,29 +502,39 @@ public
 
     function createClockedBlocks
       input list<Partition.Partition> partitions;
-      output SimPartitions baseParts;
+      output list<SimPartition> baseParts;
       output list<Block> eventClocks;
       input output SimCodeIndices simCodeIndices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
       input UnorderedMap<ComponentRef, Block> equation_map;
       input ClockedInfo info;
     protected
-      UnorderedMap<BClock, SimPartitions> clock_collector = UnorderedMap.new<SimPartitions>(BClock.hash, BClock.isEqual);
+      // type for for double map. base clock -> {sub_clock -> partition}
+      type SubMap = UnorderedMap<BClock, SimPartition>;
+      UnorderedMap<BClock, SubMap> clock_collector = UnorderedMap.new<SubMap>(BClock.hash, BClock.isEqual);
+      // set to collect the dependencies of a block
+      UnorderedSet<BClock> clock_dependencies;
       list<Block> blcks;
       list<SimVar> vars;
       BClock clock, subClock, baseClock;
       Boolean holdEvents;
       Option<BClock> baseClock_opt;
-      SimPartition basePart, subPart;
+      SimPartition basePart, subPart, subPart2;
+      SubMap baseClockMap;
     algorithm
       // collect all base clocks
       for c in UnorderedMap.valueList(info.baseClocks) loop
-        UnorderedMap.add(c, {}, clock_collector);
+        UnorderedMap.add(c, UnorderedMap.new<SimPartition>(BClock.hash, BClock.isEqual), clock_collector);
       end for;
 
       // create all sub partition blocks and find the base partitions
       for partition in listReverse(partitions) loop
+        // create the partition and get all clock dependencies
         (blcks, simCodeIndices)             := fromPartition(partition, simCodeIndices, simcode_map, equation_map);
+        clock_dependencies                  := UnorderedSet.new(BClock.hash, BClock.isEqual);
+        EquationPointers.mapExp(partition.equations, function Partitioning.collectPartitioningClockDependencies(
+          clock_map = info.subClocks, clock_deps = clock_dependencies), NONE(), Expression.fakeMap);
+
         vars                                := SimVars.getPartitionVars(partition, simcode_map);
         (clock, baseClock_opt, holdEvents)  := Partition.Partition.getClocks(partition);
         if Util.isSome(baseClock_opt) then
@@ -536,8 +546,16 @@ public
           baseClock       := clock;
           subClock        := NBPartitioning.DEFAULT_SUB_CLOCK;
         end if;
-        subPart := SimPartition.createSubPartition(subClock, blcks, vars, holdEvents);
-        UnorderedMap.add(baseClock, subPart :: UnorderedMap.getSafe(baseClock, clock_collector, sourceInfo()), clock_collector);
+        // check if sub clock to this base clock already exists - if yes partition merge
+        subPart       := SimPartition.createSubPartition(subClock, blcks, vars, clock_dependencies, holdEvents);
+        baseClockMap  := UnorderedMap.getSafe(baseClock, clock_collector, sourceInfo());
+
+        subPart := match UnorderedMap.get(subClock, baseClockMap)
+          case SOME(subPart2) then SimPartition.merge(subPart2, subPart);
+          else subPart;
+        end match;
+
+        UnorderedMap.add(subClock, subPart, baseClockMap);
       end for;
 
       // create base partitions
@@ -809,7 +827,7 @@ public
         // they can be executed in any order
         case (BEquation.FOR_EQUATION(body = {_}), {}) algorithm
           (names, ranges) := Iterator.getFrames(eqn.iter);
-          tmp := FOR_RESIDUAL(simCodeIndices.equationIndex, res_idx, List.zip(names, ranges), Equation.getRHS(eqn), eqn.source, eqn.attr);
+          tmp := FOR_RESIDUAL(simCodeIndices.equationIndex, res_idx, List.zip(names, ranges), Util.getOption(Equation.getRHS(eqn)), eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
           res_idx := res_idx + Equation.size(Slice.getT(slice));
         then tmp;
@@ -817,7 +835,7 @@ public
         // generic residual, for loop could not be fully recovered
         case (BEquation.FOR_EQUATION(body = {_}), _) algorithm
           (names, ranges) := Iterator.getFrames(eqn.iter);
-          tmp := GENERIC_RESIDUAL(simCodeIndices.equationIndex, res_idx, slice.indices, List.zip(names, ranges), Equation.getRHS(eqn), eqn.source, eqn.attr);
+          tmp := GENERIC_RESIDUAL(simCodeIndices.equationIndex, res_idx, slice.indices, List.zip(names, ranges), Util.getOption(Equation.getRHS(eqn)), eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
           res_idx := res_idx + listLength(slice.indices);
         then tmp;

@@ -96,7 +96,9 @@ public
       str := match association
         case CONTINUOUS() algorithm
           if Util.isSome(association.jacobian) then
-            str := BJacobian.toString(Util.getOption(association.jacobian), Partition.kindToString(association.kind)) + "\n";
+            str := BJacobian.toString(Util.getOption(association.jacobian), Partition.kindToString(association.kind));
+          else
+            str := StringUtil.headline_1("No Jacobian");
           end if;
           if Util.isSome(association.jacobianAdjoint) then
             str := BJacobian.toString(Util.getOption(association.jacobianAdjoint), Partition.kindToString(association.kind) + " Adjoint") + "\n";
@@ -105,14 +107,14 @@ public
         case CLOCKED() algorithm
           str := BClock.toString(association.clock);
           if Util.isSome(association.baseClock) then
-            str := "Sub clock: " + str + " of base clock  " + BClock.toString(Util.getOption(association.baseClock)) + "\n";
+            str := StringUtil.headline_1("Sub clock: " + str + " of base clock  " + BClock.toString(Util.getOption(association.baseClock)));
           else
-            str := "Base clock: " + str + "\n";
+            str := StringUtil.headline_1("Base clock: " + str);
           end if;
         then str;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Unknown partition association in match."});
-          then fail();
+        then fail();
       end match;
     end toString;
 
@@ -160,14 +162,11 @@ public
     algorithm
       if not Util.isSome(Pointer.access(clock_ptr)) then
         _ := match exp
-          case Expression.CREF() guard(Type.isClock(exp.ty)) algorithm
+          case Expression.CREF() guard(BVariable.isClockOrClocked(BVariable.getVarPointer(exp.cref, sourceInfo()))) algorithm
             if UnorderedMap.contains(exp.cref, info.baseClocks) then
               Pointer.update(clock_ptr, SOME((exp.cref, UnorderedMap.getSafe(exp.cref, info.baseClocks, sourceInfo()))));
             elseif UnorderedMap.contains(exp.cref, info.subClocks) then
               Pointer.update(clock_ptr, SOME((exp.cref, UnorderedMap.getSafe(exp.cref, info.subClocks, sourceInfo()))));
-            else
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed becase of unhandled clock: " + Expression.toString(exp)});
-              fail();
             end if;
           then ();
           else ();
@@ -198,17 +197,14 @@ public
         local
           array<StrongComponent> comps;
 
-        case SOME(comps)
-          algorithm
-            for i in 1:arrayLength(comps) loop
-              str := str + StrongComponent.toString(comps[i], i) + "\n";
-            end for;
+        case SOME(comps) algorithm
+          for i in 1:arrayLength(comps) loop
+            str := str + StrongComponent.toString(comps[i], i) + "\n";
+          end for;
         then str;
 
-        else
-          algorithm
-            str := str + VariablePointers.toString(partition.unknowns, "Unknown") + "\n" +
-                         EquationPointers.toString(partition.equations, "Equations") + "\n";
+        else algorithm
+          str := str + VariablePointers.toString(partition.unknowns, "Unknown") + "\n" + EquationPointers.toString(partition.equations, "") + "\n";
         then str;
       end match;
 
@@ -223,7 +219,7 @@ public
       end if;
 
       if level == 2 then
-        str := str + Association.toString(partition.association);
+        str := str + Association.toString(partition.association) + "\n";
       end if;
     end toString;
 
@@ -267,6 +263,18 @@ public
         else false;
       end match;
     end isODEorDAE;
+
+    function isClocked
+      input Partition part;
+      output Boolean b;
+    algorithm
+      b := match part.association
+        local
+          Kind kind;
+        case Association.CLOCKED() then true;
+        else false;
+      end match;
+    end isClocked;
 
     function categorize
       input Partition partition;

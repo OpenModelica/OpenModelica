@@ -456,7 +456,6 @@ public
             VariablePointers.removeList(acc_discrete_states_accessed, varData.unknowns);
             VariablePointers.removeList(acc_discrete_states_accessed, varData.discretes);
             VariablePointers.removeList(acc_discrete_states_accessed, varData.discrete_states);
-            // TODO: CLOCKED?
 
             VariablePointers.removeList(Pointer.access(acc_previous), varData.previous);
             VariablePointers.removeList(Pointer.access(acc_previous), varData.variables);
@@ -653,6 +652,13 @@ protected
           clocks_lst := lowVar_ptr :: clocks_lst;
         then ();
 
+        // clocked variables are handled just as algebraics, the clocked type is just for partitioning
+        case VariableKind.CLOCKED() algorithm
+          algebraics_lst := lowVar_ptr :: algebraics_lst;
+          unknowns_lst := lowVar_ptr :: unknowns_lst;
+          initials_lst := lowVar_ptr :: initials_lst;
+        then ();
+
         case VariableKind.EXTOBJ() algorithm
           lowVar_ptr := BVariable.setFixed(lowVar_ptr);
           external_objects_lst := lowVar_ptr :: external_objects_lst;
@@ -786,7 +792,9 @@ protected
         Type elemTy;
         list<Pointer<Variable>> children = {};
 
-      case (_, _, Type.CLOCK()) then VariableKind.CLOCK();
+      // clocks and clocked signals
+      case (_, _, Type.CLOCK())                                           then VariableKind.CLOCK();
+      case (_,_ , _) guard(Binding.isClockOrSampleFunction(var.binding))  then VariableKind.CLOCKED();
 
       // variable -> artificial state if it has stateSelect = StateSelect.always
       case (NFPrefixes.Variability.CONTINUOUS, VariableAttributes.VAR_ATTR_REAL(stateSelect = SOME(NFBackendExtension.StateSelect.ALWAYS)), _)

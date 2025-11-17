@@ -668,10 +668,10 @@ public
     Pointer<Equation> eqn = Slice.getT(eqn_slice);
   algorithm
     comp := match Pointer.access(eqn)
-      case Equation.SCALAR_EQUATION() then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn))), sourceInfo()), eqn, NBSolve.Status.EXPLICIT);
-      case Equation.ARRAY_EQUATION()  then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn))), sourceInfo()), eqn, NBSolve.Status.EXPLICIT);
-      case Equation.RECORD_EQUATION() then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn))), sourceInfo()), eqn, NBSolve.Status.EXPLICIT);
-      case Equation.IF_EQUATION()     then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Equation.getLHS(Pointer.access(eqn))), sourceInfo()), eqn, NBSolve.Status.EXPLICIT);
+      case Equation.SCALAR_EQUATION() then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Util.getOption(Equation.getLHS(Pointer.access(eqn)))), sourceInfo()), eqn, NBSolve.Status.EXPLICIT);
+      case Equation.ARRAY_EQUATION()  then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Util.getOption(Equation.getLHS(Pointer.access(eqn)))), sourceInfo()), eqn, NBSolve.Status.EXPLICIT);
+      case Equation.RECORD_EQUATION() then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Util.getOption(Equation.getLHS(Pointer.access(eqn)))), sourceInfo()), eqn, NBSolve.Status.EXPLICIT);
+      case Equation.IF_EQUATION()     then SINGLE_COMPONENT(BVariable.getVarPointer(Expression.toCref(Util.getOption(Equation.getLHS(Pointer.access(eqn)))), sourceInfo()), eqn, NBSolve.Status.EXPLICIT);
       case Equation.FOR_EQUATION()    then SLICED_COMPONENT(ComponentRef.EMPTY(), Slice.SLICE(Pointer.create(NBVariable.DUMMY_VARIABLE), {}), eqn_slice, NBSolve.Status.EXPLICIT);
       // ToDo: the other types
       else algorithm
@@ -872,7 +872,7 @@ public
     Equation.FOR_EQUATION(iter = iter, body = {body}) := eqn;
     dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set), Expression.fakeMap);
     if ComponentRef.isEmpty(var_cref) then
-      Expression.CREF(cref = cref) := Equation.getLHS(body);
+      SOME(Expression.CREF(cref = cref)) := Equation.getLHS(body);
     else
       cref := var_cref;
     end if;

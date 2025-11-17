@@ -6290,6 +6290,29 @@ public
     end match;
   end isFunctionPointer;
 
+  function isClockOrSampleFunction
+    "returns true if the expression is any form of clock sampling function"
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      local
+        Call call;
+        Expression arg;
+      case CALL(call = call as Call.TYPED_CALL(arguments = arg :: _))
+      then match AbsynUtil.pathString(Function.Function.nameConsiderBuiltin(call.fn))
+        case "sample"       then not isLiteral(arg); // sample has a non clocked meaning as well
+        case "subSample"    then true;
+        case "superSample"  then true;
+        case "shiftSample"  then true;
+        case "backSample"   then true;
+        else false;
+      end match;
+      case Expression.CLKCONST() then true;
+      else false;
+    end match;
+  end isClockOrSampleFunction;
+
   function isConnector
     "Returns true if the expression is a component reference that refers to a
      connector, otherwise false."

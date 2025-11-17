@@ -925,5 +925,17 @@ public
     end match;
   end expandEach;
 
+  function isClockOrSampleFunction
+    input Binding binding;
+    output Boolean b;
+  algorithm
+    b := match getExpOpt(binding)
+      local
+        Expression exp;
+      case SOME(exp) then Expression.isClockOrSampleFunction(exp);
+      else false;
+    end match;
+  end isClockOrSampleFunction;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFBinding;

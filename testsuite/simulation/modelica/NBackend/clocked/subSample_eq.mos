@@ -1,22 +1,23 @@
-// name:     subSample
+// name:     subSample_eq
 // keywords: synchronous features, sample, subSample, sorting
 // status: correct
 // cflags:
 
 // ticket: #14610
 loadString("
-model subSample_MWE
+model subSample_eq_MWE
   Clock clk = Clock(0.1);
   Real a = sample(time, clk);
-  Real sub1 = subSample(a, 2);
-  Real sub2 = subSample(a, 2);
-end subSample_MWE;
+  Real sub;
+equation
+  sub = subSample(a, 2);
+end subSample_eq_MWE;
 "); getErrorString();
 
 setCommandLineOptions("--newBackend"); getErrorString();
 
-simulate(subSample_MWE, simflags="-lv=LOG_SYNCHRONOUS"); getErrorString();
-diffSimulationResults("subSample_MWE_res.mat", "ReferenceFiles/subSample_MWE_res.mat", "subSample_MWE_diff.csv", 1e-8);
+simulate(subSample_eq_MWE, simflags="-lv=LOG_SYNCHRONOUS"); getErrorString();
+diffSimulationResults("subSample_eq_MWE_res.mat", "ReferenceFiles/subSample_eq_MWE_res.mat", "subSample_eq_MWE_diff.csv", 1e-8);
 
 // Result:
 // true
@@ -24,8 +25,8 @@ diffSimulationResults("subSample_MWE_res.mat", "ReferenceFiles/subSample_MWE_res
 // true
 // ""
 // record SimulationResult
-//     resultFile = "subSample_MWE_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'subSample_MWE', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_SYNCHRONOUS'",
+//     resultFile = "subSample_eq_MWE_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'subSample_eq_MWE', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_SYNCHRONOUS'",
 //     messages = "LOG_SYNCHRONOUS   | info    | Initialized synchronous timers.
 // |                 | |       | | Number of base clocks: 1
 // |                 | |       | | Base clock 1
