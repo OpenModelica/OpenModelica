@@ -520,7 +520,7 @@ Tearing
 The size of linear and nonlinear equation systems can be substantially reduced by
 means of the Tearing method. Consider a system of :math:`N` equations. The Tearing method requires
 to pick :math:`M << N` variables :math:`x_t` as *tearing* or *iteration* variables, so that
-assuing their values are known, :math:`N - M` *torn* equations can be solved explicitly for the
+assuming their values are known, :math:`N - M` *torn* equations can be solved explicitly for the
 remaining :math:`N - M` *torn* variables, by sorting them appropriately. Then, the remaining
 M equations are put in *residual* form :math:`f(x_t) = 0`, where the residuals can ultimately be
 computed by explicit computations as a function of the tearing variables :math:`x_t` only. 
