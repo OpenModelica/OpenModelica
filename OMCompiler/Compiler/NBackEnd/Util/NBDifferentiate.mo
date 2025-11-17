@@ -427,7 +427,7 @@ public
       //   (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
       //   attr := differentiateEquationAttributes(eq.attr, diffArguments);
       // then (Equation.SCALAR_EQUATION(eq.ty, lhs, rhs, eq.source, attr), diffArguments);
-      
+
       case Equation.SCALAR_EQUATION() algorithm
         // For adjoint: map LHS variable but do NOT accumulate adjoint.
         (lhs, diffArguments) := differentiateExpressionNoCollect(eq.lhs, diffArguments);
@@ -692,7 +692,7 @@ public
       //   grad_a = IF(c, G, 0)
       //   grad_b = IF(c, 0, G)
       // Then recurse with those masked gradients.
-      case Expression.IF() 
+      case Expression.IF()
         guard(isReverse)
       algorithm
         // Keep original upstream
@@ -727,12 +727,12 @@ public
 
       // (-x)' = -(x')
       case Expression.UNARY()
-        guard(isReverse) 
+        guard(isReverse)
       algorithm
         current_grad := diffArguments.current_grad;
 
         // apply same unary operator to current_grad
-        diffArguments.current_grad := Expression.UNARY(exp.operator, current_grad); 
+        diffArguments.current_grad := Expression.UNARY(exp.operator, current_grad);
         (elem1, diffArguments) := differentiateExpression(exp.exp, diffArguments);
 
         diffArguments.current_grad := current_grad;
@@ -1496,7 +1496,7 @@ public
         exp.call := Call.setArguments(exp.call, {ret1});
       then exp;
 
-      // Functions with one argument that differentiate "through" 
+      // Functions with one argument that differentiate "through"
       // through means that the derivative of the function wrt. its input is equal to the function of derivative of input
       // d/dz f(x) -> f(dx/dz)
       case (Expression.CALL()) guard(List.contains({"pre", "noEvent", "scalar", "vector", "transpose", "skew"}, name, stringEqual))
@@ -1749,7 +1749,7 @@ public
         ret := differentiateBuiltinCall1Arg(name, arg1);
         if not Expression.isZero(ret) then
           current_grad := diffArguments.current_grad;
-          
+
           diffArguments.current_grad := Expression.MULTARY({current_grad, ret}, {}, mulOp);
           // differentiate the argument (inner derivative) dx/dz
           (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
@@ -2862,7 +2862,7 @@ public
               end if;
               diffArguments.current_grad := local_grad;
             end if;
-            
+
             (diff_arg, diffArguments) := differentiateExpression(arg, diffArguments);
 
             if isReverse then

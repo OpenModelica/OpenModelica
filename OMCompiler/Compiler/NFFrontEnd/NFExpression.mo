@@ -116,7 +116,7 @@ public
   end TYPENAME;
 
   record ARRAY
-    Type ty; 
+    Type ty;
     array<Expression> elements;
     Boolean literal "True if the array is known to only contain literal expressions.";
   end ARRAY;

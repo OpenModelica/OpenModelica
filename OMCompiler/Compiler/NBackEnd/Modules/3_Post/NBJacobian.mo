@@ -844,7 +844,7 @@ protected
     Option<Jacobian> jacobian                             "Resulting jacobian";
     Partition.Kind kind = Partition.Partition.getKind(part);
     Boolean updated;
-  algorithm    
+  algorithm
     // create algebraic loop jacobians
     part.strongComponents := match part.strongComponents
       local
@@ -1027,13 +1027,13 @@ protected
   protected
     Integer rnk = Type.dimensionCount(ty);
   algorithm
-    sc := if rnk == 0 then 
+    sc := if rnk == 0 then
         NFOperator.SizeClassification.SCALAR
-      else if rnk == 1 then 
+      else if rnk == 1 then
         NFOperator.SizeClassification.ELEMENT_WISE
       else if rnk == 2 then
         NFOperator.SizeClassification.MATRIX
-      else 
+      else
         NFOperator.SizeClassification.ELEMENT_WISE;
   end sizeClassificationFromType;
 
@@ -1473,7 +1473,7 @@ protected
               // Combine both into diff_map_union and collect adjoints into loop_product_adjoint_map
             // diff_map_y: keep only iteration vars that have a $SEED mapping in the global diff_map
             diff_map_y := populateDiffMap(itVarPtrs, diff_map);
-            
+
             // diff_map_x: keep only inputs x (seedCandidates) that have a $pDER mapping in the global diff_map
             seedPtrListX := BVariable.VariablePointers.toList(seedCandidates);
             diff_map_x := populateDiffMap(seedPtrListX, diff_map);
@@ -1564,7 +1564,7 @@ protected
                 homotopy = false
               ) :: algebraicLoopComps;
             end if;
-            
+
             // -------------------------------------------------------------
             // Build x_bar = - lambda^T * (d r / d x)
             // Use the unified loop_product_adjoint_map:

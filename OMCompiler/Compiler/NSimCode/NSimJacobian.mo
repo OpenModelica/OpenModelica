@@ -252,7 +252,7 @@ public
           // extract generic loop calls and put the old generic call map back
           generic_loop_calls := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(indices.generic_call_map));
           indices.generic_call_map := sim_map;
-          
+
           if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
             seed_vec := VariablePointers.scalarize(varData.seedVars);
             res_vec  := VariablePointers.scalarize(varData.resultVars);
@@ -275,7 +275,7 @@ public
           SimCodeUtil.addListSimCodeMap(seedVars, jac_map);
           SimCodeUtil.addListSimCodeMap(resVars, jac_map);
           SimCodeUtil.addListSimCodeMap(tmpVars, jac_map);
-          
+
           try
             idx_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars));
             if Jacobian.isDynamic(jacobian.jacType) then
