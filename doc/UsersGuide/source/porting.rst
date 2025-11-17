@@ -83,10 +83,11 @@ appropriate.
 Access to conditional components
 --------------------------------
 
-According to `Section 4.4.5 <https://specification.modelica.org/maint/3.5/class-predefined-types-and-declarations.html#conditional-component-declaration>`_
+Up to Modelica 3.6, according to `Section 4.4.5 <https://specification.modelica.org/maint/3.6/class-predefined-types-and-declarations.html#conditional-component-declaration>`_
 of the language specification, "A component declared with a condition-attribute
-can only be modified and/or used in connections". When dealing, e.g., with
-conditional input connectors, one can use the following patterns:
+can only be modified and/or used in connections". This required to use the following, slightly
+convoluted patterns when dealing, e.g., with conditional input connectors, making use of internal
+auxiliary variables or connectors:
 
 .. code-block:: modelica
 
@@ -94,7 +95,7 @@ conditional input connectors, one can use the following patterns:
     parameter Boolean activateIn1 = true;
     parameter Boolean activateIn2 = true;
     Modelica.Blocks.Interfaces.RealInput u1_in if activateIn1;
-    Modelica.Blocks.Interfaces.RealInput u2_in = u2 if activateIn2;
+    Modelica.Blocks.Interfaces.RealInput u2_in = u2 if activateIn2 "binding equation only holds if activateIn2 = true";
     Real u2 "internal variable corresponding to u2_in";
     Real y;
   protected
@@ -110,8 +111,9 @@ conditional input connectors, one can use the following patterns:
     end if;
   end M;
 
-where conditional components are only used in connect equations. The following
-patterns instead are not legal:
+where conditional components 'u1_in' and 'u2_in' were only used in connect equations. Other Modelica
+tools accepted code that was more straightforward and easier to understand, but actually not compliant
+with this restriction, causing compatibility issues, e.g.:
 
 .. code-block:: modelica
 
@@ -120,23 +122,30 @@ patterns instead are not legal:
     parameter Boolean activateIn2 = true;
     Modelica.Blocks.Interfaces.RealInput u1_in if activateIn1;
     Modelica.Blocks.Interfaces.RealInput u2_in if activateIn2;
-    Real u1 "internal variable corresponding to u1_in";
-    Real u2 "internal variable corresponding to u2_in";
+    Real u1;
+    Real u2;
     Real y;
   equation
+    y = u1 + u2;
     if activateIn1 then
-      u1 = u1_in "invalid: uses conditional u1_in outside connect equations";
+      u1 = u1_in;
+    else
+      u1 = 0 "default value for protected connector value when u1_in is disabled";
     end if;
     if activateIn2 then
-      u2 = u2_in "invalid: uses conditional u1_in outside connect equations";
+      u2 = u2_in;
+    else
+      u2 = 0 "default value for protected connector value when u2_in is disabled";
     end if;
-    y = u1 + u2;
   end M;
 
-because those components are also used in other
-equations. The fact that those equations are conditional and are not activated
-when the corresponding conditional components are also not activated is
-irrelevant, according to the language specification.
+Although this restriction makes identifying structurally inconsistent models easier, it requires to
+write code that can be pretty obscure when handling use cases that would be very straightforward to handle othewise.
+Hence, this restriction will be removed in Modelica 3.7. In particular, the current 
+`draft of Modelica 3.7 <https://specification.modelica.org/master/class-predefined-types-and-declarations.html#conditional-component-declaration>`_
+explicitly states that if the Boolean expression activating the component is true, there are no
+restrictions on the use of such component. Since version 1.26.0, OpenModelica complies with
+these new relaxed rules.
 
 Access to classes defined in partial packages
 ---------------------------------------------
