@@ -533,7 +533,8 @@ The Tearing method has three main advantages:
 
 - the size of the Jacobian matrix to be factorized in order to solve it is greatly reduced;
 - for nonlinear systems solved by iterative methods like Newton-Raphson, it is only necessary
-  to give initial guess values to the much smaller set of variables :math:`x_t`;
+  to give initial guess values to the much smaller set of variables :math:`x_t`; the initial
+  guess values are set to the start attributes of the tearing variables;
 - the method allows to solve mixed systems containing Real and discrete (Boolean or Integer)
   variables and equations by means of standard nonlinear equation solvers, as long as the
   discrete variables are selected as torn variables and the resulting residual equations have 
