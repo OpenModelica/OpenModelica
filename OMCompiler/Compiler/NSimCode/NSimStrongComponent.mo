@@ -520,7 +520,7 @@ public
       Boolean holdEvents;
       Option<BClock> baseClock_opt;
       SimPartition basePart, subPart, subPart2;
-      SubMap baseClockMap;
+      SubMap subClockMap "maps sub clock to it's partition for current base clock";
     algorithm
       // collect all base clocks
       for c in UnorderedMap.valueList(info.baseClocks) loop
@@ -546,16 +546,16 @@ public
           baseClock       := clock;
           subClock        := NBPartitioning.DEFAULT_SUB_CLOCK;
         end if;
-        // check if sub clock to this base clock already exists - if yes partition merge
-        subPart       := SimPartition.createSubPartition(subClock, blcks, vars, clock_dependencies, holdEvents);
-        baseClockMap  := UnorderedMap.getSafe(baseClock, clock_collector, sourceInfo());
 
-        subPart := match UnorderedMap.get(subClock, baseClockMap)
+        // check if sub clock to this base clock already exists - if yes partition merge
+        subPart     := SimPartition.createSubPartition(subClock, blcks, vars, clock_dependencies, holdEvents);
+        subClockMap := UnorderedMap.getSafe(baseClock, clock_collector, sourceInfo());
+        subPart := match UnorderedMap.get(subClock, subClockMap)
           case SOME(subPart2) then SimPartition.merge(subPart2, subPart);
           else subPart;
         end match;
 
-        UnorderedMap.add(subClock, subPart, baseClockMap);
+        UnorderedMap.add(subClock, subPart, subClockMap);
       end for;
 
       // create base partitions

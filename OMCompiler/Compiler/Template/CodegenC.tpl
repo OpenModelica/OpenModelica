@@ -6489,8 +6489,8 @@ template equationNonlinear(SimEqSystem eq, Context context, String modelNamePref
       %>
       /* get old value */
       <%nls.crefs |> name hasindex i0 =>
-        let &sub = buffer ""
-        let START = cref(name, &sub)
+        let &auxFunction = buffer ""
+        let START = contextCrefNoPrevExp(name, context, &auxFunction)
         'data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsxOld[<%i0%>] = <%START%>;'
       ;separator="\n"%>
       retValue = solve_nonlinear_system(data, threadData, <%nls.indexNonLinearSystem%>);
@@ -6502,8 +6502,8 @@ template equationNonlinear(SimEqSystem eq, Context context, String modelNamePref
       }
       /* write solution */
       <%nls.crefs |> name hasindex i0 =>
-        let &sub = buffer ""
-        '<%cref(name, &sub)%> = data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
+        let &auxFunction = buffer ""
+        '<%contextCrefNoPrevExp(name, context, &auxFunction)%> = data->simulationInfo->nonlinearSystemData[<%nls.indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
       <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%nls.index%>).profileBlockIndex);' %>
       <%match at case SOME(__) then 'return 1;'%>
       >>
