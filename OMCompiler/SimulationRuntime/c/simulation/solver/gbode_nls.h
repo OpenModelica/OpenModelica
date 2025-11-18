@@ -48,8 +48,10 @@ typedef struct KLUInternals KLUInternals;
 typedef struct GB_INTERNAL_NLS_DATA
 {
   NLS_USERDATA *nls_user_data; // pointer to data, gbode data, etc.
-  KLUInternals *klu_internals;  // internal data structures for klu linear solver (might change for ptr + enum, e.g. to have LAPACK)
+  KLUInternals *klu_internals; // internal data structures for klu linear solver (might change for ptr + enum, e.g. to have LAPACK)
   double *jacobian_callback;   // buffer for continuous ODE Jacobian (size = nnz(J_f))
+  int *ode_to_nls;             // mapping ODE Jacobian nnz -> NLS Jacobian nnz
+  int *nls_diag_indices;       // all diagonal nz indices of NLS Jacobian (size = cols)
   double *nls_jacobian;        // Jacobian of the NLS e.g. 1/(h * gamma) * I - J_f (size <= nnz(J_f) + n)
   double *scal;                // scaling vector for termination of Newton loop
   double *etas;                // Newton contraction factors for each NLS stage (size == number of stages)
@@ -81,6 +83,9 @@ void residual_MS_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *res
 void residual_DIRK_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag);
 
 GB_INTERNAL_NLS_DATA* gbInternalNlsAllocate(int size, NLS_USERDATA* userData, modelica_boolean attemptRetry, modelica_boolean isPatternAvailable);
+
+int jacobian_SR_DIRK_full(DATA *data, threadData_t *threadData, DATA_GBODE* gbData, GB_INTERNAL_NLS_DATA *nls,
+                          JACOBIAN *jac_ode, double *jac_buf_ode, double *jac_buf_nls);
 
 #ifdef __cplusplus
 };
