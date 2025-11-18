@@ -51,7 +51,7 @@ protected
   // Backend Imports
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import NBEquation.EquationArray;
+  import NBEquation.{Equation, EquationKind};
   import BJacobian = NBJacobian;
   import NBEquation.EquationPointers;
   import NBPartitioning.{BClock, ClockedInfo};
@@ -425,6 +425,19 @@ public
         else fail();
       end match;
     end categorize;
+
+    function setIndex
+      input output Partition part;
+      input Pointer<Integer> index;
+    protected
+      Integer clock_idx = Pointer.access(index);
+    algorithm
+      part.index := clock_idx;
+      if isClocked(part) then
+        part.equations := EquationPointers.map(part.equations, function Equation.setKind(kind = EquationKind.CLOCKED, clock_idx = SOME(clock_idx)));
+      end if;
+      Pointer.update(index, clock_idx + 1);
+    end setIndex;
 
     function getJacobian
       input Partition part;

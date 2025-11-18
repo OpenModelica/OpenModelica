@@ -563,7 +563,6 @@ protected
       input Partition.Kind kind;
       input ClockedInfo info;
       input UnorderedSet<ComponentRef> held_crefs;
-      input Pointer<Integer> index;
       output Partition.Partition partition;
     protected
       list<ComponentRef> cvars = UnorderedSet.toList(cluster.variables);
@@ -574,7 +573,7 @@ protected
       list<Pointer<Equation>> eqn_lst;
       VariablePointers partVariables;
       EquationPointers partEquations;
-      Integer var_idx, clock_idx = Pointer.access(index);
+      Integer var_idx;
     algorithm
       // find all variables and equations
       var_lst := list(BVariable.getVarPointer(cref, sourceInfo()) for cref in cvars);
@@ -592,12 +591,11 @@ protected
       partEquations := EquationPointers.mapExp(partEquations, function replaceClockedFunctions(held_crefs = held_crefs));
       if Partition.Association.isClocked(association) then
         partEquations := EquationPointers.map(partEquations, replaceClockedWhen);
-        partEquations := EquationPointers.map(partEquations, function Equation.setKind(kind = EquationKind.CLOCKED, clock_idx = SOME(clock_idx)));
         partVariables := VariablePointers.mapPtr(partVariables, function BVariable.setVarKind(varKind = VariableKind.CLOCKED()));
       end if;
 
       partition := Partition.PARTITION(
-        index             = clock_idx,
+        index             = 0,
         association       = association,
         unknowns          = partVariables,
         daeUnknowns       = NONE(),
@@ -606,7 +604,6 @@ protected
         matching          = NONE(),
         strongComponents  = NONE()
       );
-      Pointer.update(index, Pointer.access(index) + 1);
     end toPartition;
   end Cluster;
 
@@ -716,7 +713,6 @@ protected
     Integer part_idx;
     UnorderedMap<Integer, Cluster> cluster_map = UnorderedMap.new<Cluster>(Util.id, intEq);
     ComponentRef name_cref;
-    Pointer<Integer> index = Pointer.create(1);
     array<Boolean> marked_vars;
     list<Pointer<Variable>> single_vars;
     UnorderedSet<ComponentRef> held_crefs = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
@@ -790,7 +786,7 @@ protected
     end for;
 
     // get the actual partitions from the clusters and split continuous/clocked
-    partitions := list(Cluster.toPartition(cl, variables, equations, kind, info, held_crefs, index) for cl in UnorderedMap.valueList(cluster_map));
+    partitions := list(Cluster.toPartition(cl, variables, equations, kind, info, held_crefs) for cl in UnorderedMap.valueList(cluster_map));
     // update the partitions if one of their variables is in a hold() function
     partitions := list(Partition.Partition.updateHeldVars(part, held_crefs) for part in partitions);
     // merge all clocked partitions with equal base and sub clock and find the proper order
@@ -815,6 +811,7 @@ protected
     Option<BClock> baseClock_opt;
     SubMap subClockMap "maps sub clock to it's partition for current base clock";
     Partition.Partition new_part;
+    Pointer<Integer> index = Pointer.create(1);
   algorithm
     // filter all clocked partitions
     (clocked_partitions, partitions) := List.splitOnTrue(partitions, Partition.Partition.isClocked);
@@ -850,8 +847,9 @@ protected
       new_clocked := sortClockedPartitions(UnorderedMap.valueList(subClockMap)) :: new_clocked;
     end for;
 
-    // append all partitions in the end
+    // append all clocked partitions in the end and apply proper indexing
     partitions := listAppend(partition for partition in listReverse(partitions :: new_clocked));
+    partitions := list(Partition.Partition.setIndex(partition, index) for partition in partitions);
   end sortAndMergeClockedPartitions;
 
   function sortClockedPartitions
