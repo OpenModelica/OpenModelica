@@ -10,6 +10,7 @@ model splitPartition_MWE
   Real a = sample(time, clk);     // (Clock ticks 0.1, 0.2, 0.3, ...)
   Real sub1 = subSample(a, 2);    // (Clock ticks 0.2, 0.4, 0.6, ...)
   Real b = superSample(sub1, 2);  // (Clock ticks 0.1, 0.2, 0.3, ...)
+  Real c = a + b;
 end splitPartition_MWE;
 "); getErrorString();
 

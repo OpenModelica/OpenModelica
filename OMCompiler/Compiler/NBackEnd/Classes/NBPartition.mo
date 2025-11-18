@@ -240,12 +240,27 @@ public
           _ := match (clock_opt, Pointer.access(clock_ptr))
             local
               BClock new, old;
-            case (SOME(new), SOME((_, old))) guard(not BClock.isEqual(new, old)) algorithm
-              UnorderedSet.add((exp.cref, new), failed_set);
+
+            // old sub clock and new base clock -> no conflict
+            case (SOME(new as BClock.BASE_CLOCK()), SOME((_, old as BClock.SUB_CLOCK()))) then ();
+
+            // old base clock getting updated to new sub clock
+            case (SOME(new as BClock.SUB_CLOCK()), SOME((_, old as BClock.BASE_CLOCK()))) algorithm
+              Pointer.update(clock_ptr, SOME((exp.cref, new)));
             then ();
+
+            // clocks -> equal: success / different: fail
+            case (SOME(new), SOME((_, old))) algorithm
+              if not BClock.isEqual(new, old) then
+                UnorderedSet.add((exp.cref, new), failed_set);
+              end if;
+            then ();
+
+            // new clock
             case (SOME(new), NONE()) algorithm
               Pointer.update(clock_ptr, SOME((exp.cref, new)));
             then ();
+
             else ();
           end match;
         then exp;
