@@ -310,14 +310,6 @@ public
 
             (sparsity, sparsityT, coloring) := createSparsity(jacobian, idx_map);
 
-            if listLength(columnEqns) > 0 then
-              // also add to the global simcode map when we have a non-empty jacobian
-              // so the vars can be found by cref2simvar
-              SimCodeUtil.addListSimCodeMap(seedVars, simcode_map);
-              SimCodeUtil.addListSimCodeMap(resVars, simcode_map);
-              SimCodeUtil.addListSimCodeMap(tmpVars, simcode_map);
-            end if;
-
             jac := SIM_JAC(
               name                = jacobian.name,
               jacobianIndex       = indices.jacobianIndex,
