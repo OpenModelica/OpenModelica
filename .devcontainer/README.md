@@ -53,8 +53,8 @@ container.
 
 ## Caveats
 
-- The images need an additional Dockerfile to add an non-root user with your
-  user name and UID.
+- The images need an additional Dockerfile to add a non-root user with your
+  user name and UID or rename an existing user.
 - Because on Windows and Unix the environment variable containing the user name
   are different and only one should be set both are added to devcontainer.json:
   If your user name isn't correct update it:

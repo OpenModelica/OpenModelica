@@ -23,7 +23,7 @@ pipeline {
     stage('Ubuntu-Noble') {
       agent {
         docker {
-          image 'docker.openmodelica.org/build-deps:noble.nightly.amd64'
+          image 'ghcr.io/openmodelica/build-deps:v1.26.0-dev'
           label 'linux'
           alwaysPull true
           args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
