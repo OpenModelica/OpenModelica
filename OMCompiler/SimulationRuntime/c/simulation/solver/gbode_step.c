@@ -316,8 +316,18 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
         printVector_gb(OMC_LOG_GBODE_NLS_V, "nlsx (solution)", nlsData->nlsx, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
         messageClose(OMC_LOG_GBODE_NLS_V);
       }
-
-      memcpy(gbData->x + stage_ * nStates, nlsData->nlsx, nStates*sizeof(double));
+      if (stage_ != 0)
+      {
+        memcpy(gbData->x + stage_ * nStates, nlsData->nlsx, nStates*sizeof(double));
+        //memcpy(data->localData[0]->realVars, nlsData->nlsx, nStates * sizeof(double));
+        //int avoidable_rhs_calls = 0;
+        //gbode_fODE(data, threadData, &(avoidable_rhs_calls));
+        double ifac = 1.0 / (gbData->stepSize * gbData->tableau->A[stage_ * nStages + stage_]);
+        for (int i = 0; i < nStates; i++)
+        {
+          fODE[i] = ifac * (nlsData->nlsx[i] - gbData->res_const[i]);
+        }
+      }
     }
     // copy last calculation of fODE, which should coincide with k[i], here, it yields stage == stage_
     memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
