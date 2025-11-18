@@ -510,8 +510,8 @@ public
       input ClockedInfo info;
     protected
       // type for for double map. base clock -> {sub_clock -> partition}
-      type SubMap = UnorderedMap<BClock, SimPartition>;
-      UnorderedMap<BClock, SubMap> clock_collector = UnorderedMap.new<SubMap>(BClock.hash, BClock.isEqual);
+      type SimPartitions = list<SimPartition>;
+      UnorderedMap<BClock, SimPartitions> clock_collector = UnorderedMap.new<SimPartitions>(BClock.hash, BClock.isEqual);
       // set to collect the dependencies of a block
       UnorderedSet<BClock> clock_dependencies;
       list<Block> blcks;
@@ -519,22 +519,17 @@ public
       BClock clock, subClock, baseClock;
       Boolean holdEvents;
       Option<BClock> baseClock_opt;
-      SimPartition basePart, subPart, subPart2;
-      SubMap subClockMap "maps sub clock to it's partition for current base clock";
+      SimPartition subPart;
     algorithm
-      // collect all base clocks
+      // initialize all base clocks
       for c in UnorderedMap.valueList(info.baseClocks) loop
-        UnorderedMap.add(c, UnorderedMap.new<SimPartition>(BClock.hash, BClock.isEqual), clock_collector);
+        UnorderedMap.add(c, {}, clock_collector);
       end for;
 
       // create all sub partition blocks and find the base partitions
       for partition in listReverse(partitions) loop
         // create the partition and get all clock dependencies
         (blcks, simCodeIndices)             := fromPartition(partition, simCodeIndices, simcode_map, equation_map);
-        clock_dependencies                  := UnorderedSet.new(BClock.hash, BClock.isEqual);
-        EquationPointers.mapExp(partition.equations, function Partitioning.collectPartitioningClockDependencies(
-          clock_map = info.subClocks, clock_deps = clock_dependencies), NONE(), Expression.fakeMap);
-
         vars                                := SimVars.getPartitionVars(partition, simcode_map);
         (clock, baseClock_opt, holdEvents)  := Partition.Partition.getClocks(partition);
         if Util.isSome(baseClock_opt) then
@@ -547,15 +542,9 @@ public
           subClock        := NBPartitioning.DEFAULT_SUB_CLOCK;
         end if;
 
-        // check if sub clock to this base clock already exists - if yes partition merge
-        subPart     := SimPartition.createSubPartition(subClock, blcks, vars, clock_dependencies, holdEvents);
-        subClockMap := UnorderedMap.getSafe(baseClock, clock_collector, sourceInfo());
-        subPart := match UnorderedMap.get(subClock, subClockMap)
-          case SOME(subPart2) then SimPartition.merge(subPart2, subPart);
-          else subPart;
-        end match;
-
-        UnorderedMap.add(subClock, subPart, subClockMap);
+        // create and add sub partition
+        subPart := SimPartition.createSubPartition(subClock, blcks, vars, holdEvents);
+        UnorderedMap.add(baseClock, subPart :: UnorderedMap.getSafe(baseClock, clock_collector, sourceInfo()), clock_collector);
       end for;
 
       // create base partitions

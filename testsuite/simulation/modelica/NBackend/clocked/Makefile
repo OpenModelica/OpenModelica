@@ -18,6 +18,7 @@ subSample_eq.mos \
 superSample.mos \
 shiftSample.mos \
 backSample.mos \
+splitPartition.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
