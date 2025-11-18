@@ -633,7 +633,6 @@ public
         cref_colored_cols[i] := list(seeds[idx] for idx in colored_cols[i]);
       end for;
 
-      // THNK: is this correct? -> I think so
       // Row coloring (color partials)
       colored_rows := SymbolicJacobian.createColoring(cols, rows, sizeRows, sizeCols);
       cref_colored_rows := arrayCreate(arrayLength(colored_rows), {});

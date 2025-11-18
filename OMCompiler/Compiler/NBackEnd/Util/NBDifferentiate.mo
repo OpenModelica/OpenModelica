@@ -990,7 +990,6 @@ public
 
       // Types: (JACOBIAN)
       // cref in diff_map => get $SEED or $pDER variable from hash table
-      // THNK: this is difficult to read i think.
       case (Expression.CREF(), DifferentiationType.JACOBIAN, SOME(diff_map))
         guard(not diffArguments.scalarized)
       algorithm

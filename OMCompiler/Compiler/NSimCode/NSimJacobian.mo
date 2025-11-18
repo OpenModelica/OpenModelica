@@ -279,7 +279,6 @@ public
           try
             idx_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars));
             if Jacobian.isDynamic(jacobian.jacType) then
-              // THNK: is this safe?
               if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolicadjoint" then
                 loopVars := resVars;
               else
@@ -328,10 +327,8 @@ public
 
             (sparsity, sparsityT, coloring, rowColoring) := createSparsity(jacobian, idx_map);
 
-            // THNK: is this safe?
             if listLength(columnEqns) > 0 then
               // also add to the global simcode map when we have a non-empty jacobian
-              // TODO: think about this, is this always desired?
               SimCodeUtil.addListSimCodeMap(seedVars, simcode_map);
               SimCodeUtil.addListSimCodeMap(resVars, simcode_map);
               SimCodeUtil.addListSimCodeMap(tmpVars, simcode_map);
