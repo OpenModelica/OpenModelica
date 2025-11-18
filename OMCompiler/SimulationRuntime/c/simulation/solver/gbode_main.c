@@ -68,7 +68,7 @@
 #include "epsilon.h"
 
 extern void communicateStatus(const char *phase, double completionPercent, double currentTime, double currentStepSize);
-double GLOBAL_STEP_SIZE = 0;
+
 /**
  * @brief Calculate function values of function ODE f(t,y).
  *
@@ -439,6 +439,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
 
     /* Allocate memory for the nonlinear solver */
     gbData->nlsSolverMethod = getGB_NLS_method(FLAG_SR_NLS);
+    gbData->nlsSolverMethod = GB_NLS_INTERNAL;
     gbData->nlsData = initRK_NLS_DATA(data, threadData, gbData);
     if (!gbData->nlsData) {
       return -1;
@@ -1105,6 +1106,13 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   double Atol = data->simulationInfo->tolerance;
   double Rtol = Atol;
 
+  if (gbData->nlsSolverMethod == GB_NLS_INTERNAL)
+  {
+    GB_INTERNAL_NLS_DATA *internal_nls_data = (GB_INTERNAL_NLS_DATA *)((struct dataSolver *)gbData->nlsData->solverData)->ordinaryData;
+    Atol = internal_nls_data->atol_sc;
+    Rtol = internal_nls_data->rtol_sc;
+  }
+
   int nStates = gbData->nStates;
   int nStages = gbData->tableau->nStages;
 
@@ -1360,7 +1368,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       // Calculate error estimators and tolerance scaling for each state variable
       for (i = 0, err=0; i < nStates; i++) {
         // calculate corresponding values for the error estimator and step size control
-        gbData->errtol[i] = Rtol * fmax(fabs(gbData->y[i]), fabs(gbData->yt[i])) + Atol;
+        gbData->errtol[i] = Atol + fmax(fabs(gbData->y[i]), fabs(gbData->yt[i])) * Rtol;
         gbData->errest[i] = fabs(gbData->y[i] - gbData->yt[i]);
         gbData->err[i] = gbData->tableau->fac * gbData->errest[i] / gbData->errtol[i];
         err += gbData->err[i] * gbData->err[i];
@@ -1496,7 +1504,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         if (gbData->multi_rate && gbData->nFastStates>0) {
           gbData->err_int = error_interpolation_gb(gbData, gbData->nSlowStates, gbData->slowStatesIdx, Rtol);
         } else {
-          gbData->err_int = 0; //error_interpolation_gb(gbData, nStates, NULL, Rtol);
+          gbData->err_int = error_interpolation_gb(gbData, nStates, NULL, Rtol);
         }
       }
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
@@ -1594,7 +1602,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
       // Update the step size using the step size controller
       gbData->lastStepSize = gbData->stepSize;  // Save the current step size before updating
-      GLOBAL_STEP_SIZE = fmax(gbData->lastStepSize, GLOBAL_STEP_SIZE);
       // Calculate a new step size based on recent error and step size history,
       // the method’s error order, and the control method in use
       gbData->stepSize *= GenericController(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order, gbData->ctrl_method);
@@ -1871,8 +1878,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   memcpy(&solverInfo->solverStatsTmp, &gbData->stats, sizeof(SOLVERSTATS));
 
   messageClose(OMC_LOG_SOLVER);
-
-  infoStreamPrint(OMC_LOG_STATS, 0, "Global maximum step size used: %1.6e", GLOBAL_STEP_SIZE);
 
   return 0;
 }
