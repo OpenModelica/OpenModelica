@@ -385,7 +385,7 @@ void ExpressionTest::parseJSON_data()
     {"op", ".+"},
     {"rhs", QJsonArray{4, 5, 6}}
   };
-  QTest::newRow("json_binary1") << value << "({1,2,3} .+ {4,5,6})";
+  QTest::newRow("json_binary1") << value << "{1,2,3} .+ {4,5,6}";
 
   value = QJsonObject{
     {"$kind", "unary_op"},
@@ -401,6 +401,19 @@ void ExpressionTest::parseJSON_data()
     {"false", 2}
   };
   QTest::newRow("json_if1") << value << "if true then 1 else 2";
+
+  value = QJsonObject{
+    {"$kind", "binary_op"},
+    {"lhs", QJsonObject{
+      {"$kind", "if"},
+      {"condition", true},
+      {"true", 1},
+      {"false", 2}
+    }},
+    {"op", "<"},
+    {"rhs", 0.7}
+  };
+  QTest::newRow("json_if2") << value << "(if true then 1 else 2) < 0.7";
 
   value = QJsonObject{
     {"$kind", "enum"},

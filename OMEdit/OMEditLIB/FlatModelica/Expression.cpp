@@ -459,6 +459,9 @@ namespace FlatModelica
       Operator(OpType op);
 
       OpType type() const { return _op; }
+      bool isAssociative() const;
+      bool isNonAssociative() const;
+      int priority(bool lhs) const;
       const std::string& toString() const;
 
       void deserialize(const QJsonValue &value);
@@ -490,6 +493,10 @@ namespace FlatModelica
       virtual bool isEnum()       const { return false; }
       virtual bool isLiteral() const = 0;
 
+      virtual int priority(bool /*lhs*/) const { return 0; }
+      virtual bool isAssociative() const { return false; }
+      virtual bool isNonAssociative() const { return false; }
+
       virtual std::unique_ptr<ExpressionBase> clone() const = 0;
       virtual Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level = 0) const = 0;
 
@@ -509,6 +516,8 @@ namespace FlatModelica
       bool isBooleanish() const override { return true; }
       bool isLiteral() const override { return true; }
       int64_t value() const { return _value; }
+
+      int priority(bool) const override { return _value < 0 ? 4 : 0; }
 
       void print(std::ostream &os) const override;
       QJsonValue serialize() const override;
@@ -532,6 +541,8 @@ namespace FlatModelica
       bool isBooleanish() const override { return true; }
       bool isLiteral() const override { return true; }
       double value() const { return _value; }
+
+      int priority(bool) const override { return _value < 0 ? 4 : 0; }
 
       void print(std::ostream &os) const override;
       QJsonValue serialize() const override;
@@ -668,6 +679,8 @@ namespace FlatModelica
 
       bool isLiteral() const override;
 
+      int priority(bool) const override { return 10; }
+
       void print(std::ostream &os) const override;
       QJsonValue serialize() const override;
 
@@ -758,6 +771,10 @@ namespace FlatModelica
       Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
 
       bool isLiteral() const override { return false; }
+      bool isAssociative() const override { return _op.isAssociative(); }
+      bool isNonAssociative() const override { return _op.isNonAssociative(); }
+
+      int priority(bool lhs) const override { return _op.priority(lhs); }
       void print(std::ostream &os) const override;
       QJsonValue serialize() const override;
 
@@ -781,6 +798,7 @@ namespace FlatModelica
       Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
 
       bool isLiteral() const override { return false; }
+      int priority(bool) const override;
       void print(std::ostream &os) const override;
       QJsonValue serialize() const override;
 
@@ -804,6 +822,7 @@ namespace FlatModelica
       Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
 
       bool isLiteral() const override { return false; }
+      int priority(bool lhs) const override { return 11; }
       void print(std::ostream &os) const override;
       QJsonValue serialize() const override;
 
@@ -814,6 +833,28 @@ namespace FlatModelica
       Expression _true_e;
       Expression _false_e;
   };
+
+  void print_operand(std::ostream &os, const Expression &operand, const ExpressionBase &op, bool lhs)
+  {
+    int operand_prio = operand.priority(lhs);
+    bool parenthesize = false;
+
+    if (operand_prio == 4) {
+      parenthesize = true;
+    } else {
+      int operator_prio = op.priority(lhs);
+
+      if (operand_prio > operator_prio) {
+        parenthesize = true;
+      } else if (operand_prio == operator_prio) {
+        parenthesize = lhs ? operand.isNonAssociative() : !operand.isAssociative();
+      }
+    }
+
+    if (parenthesize) os << '(';
+    os << operand;
+    if (parenthesize) os << ')';
+  }
 
   Operator::Operator()
     : _op(Unknown)
@@ -833,6 +874,51 @@ namespace FlatModelica
   Operator::Operator(OpType op)
     : _op(op)
   {
+  }
+
+  bool Operator::isAssociative() const
+  {
+    switch (_op) {
+      case Add:   return true;
+      case AddEW: return true;
+      case MulEW: return true;
+      default:    return false;
+    }
+  }
+
+  bool Operator::isNonAssociative() const
+  {
+    switch (_op) {
+      case Pow:   return true;
+      case PowEW: return true;
+      default:    return false;
+    }
+  }
+
+  int Operator::priority(bool lhs) const
+  {
+    switch (_op) {
+      case Add:       return lhs ? 5 : 6;
+      case Sub:       return 5;
+      case Mul:       return 2;
+      case Div:       return 2;
+      case Pow:       return 1;
+      case AddEW:     return lhs ? 5 : 6;
+      case SubEW:     return 5;
+      case MulEW:     return lhs ? 2 : 3;
+      case DivEW:     return 2;
+      case PowEW:     return 1;
+      case And:       return 8;
+      case Or:        return 9;
+      case Equal:     return 6;
+      case NotEqual:  return 6;
+      case Less:      return 6;
+      case LessEq:    return 6;
+      case Greater:   return 6;
+      case GreaterEq: return 6;
+      case Not:       return 7;
+      default:        return 0;
+    }
   }
 
   Operator::OpType Operator::parse(const std::string &str)
@@ -1570,13 +1656,15 @@ namespace FlatModelica
 
   void Range::print(std::ostream &os) const
   {
-    os << _start << ':';
+    print_operand(os, _start, *this, false);
+    os << ':';
 
     if (!_step.isNull()) {
-      os << _step << ':';
+      print_operand(os, _step, *this, false);
+      os << ':';
     }
 
-    os << _stop;
+    print_operand(os, _stop, *this, false);
   }
 
   QJsonValue Range::serialize() const
@@ -1886,11 +1974,9 @@ namespace FlatModelica
 
   void Binary::print(std::ostream &os) const
   {
-    os << "(";
-    os << _e1;
+    print_operand(os, _e1, *this, true);
     os << " " << _op << " ";
-    os << _e2;
-    os << ")";
+    print_operand(os, _e2, *this, false);
   }
 
   QJsonValue Binary::serialize() const
@@ -1934,6 +2020,15 @@ namespace FlatModelica
     throw std::runtime_error("Unary::eval unknown operator");
   }
 
+  int Unary::priority(bool) const
+  {
+    switch (_op.type()) {
+      case Operator::Sub: return 4;
+      case Operator::Not: return 7;
+      default: return 0;
+    }
+  }
+
   void Unary::print(std::ostream &os) const
   {
     os << _op;
@@ -1941,7 +2036,7 @@ namespace FlatModelica
     if (_op.type() == Operator::Not) {
       os << " ";
     }
-    os << _e;
+    print_operand(os, _e, *this, false);
   }
 
   QJsonValue Unary::serialize() const
@@ -2361,6 +2456,26 @@ namespace FlatModelica
   }
 
   /*!
+   * \brief Expression::isAssociative
+   * Returns whether the expression is associative or not.
+   * \return Whether the expression is associative or not.
+   */
+  bool Expression::isAssociative() const
+  {
+    return _value && _value->isAssociative();
+  }
+
+  /*!
+   * \brief Expression::isNonAssociative
+   * Returns whether the expression is non-associative or not.
+   * \return Whether the expression is non-associative or not.
+   */
+  bool Expression::isNonAssociative() const
+  {
+    return _value && _value->isNonAssociative();
+  }
+
+  /*!
    * \brief Expression::ndims
    * Returns the number of dimensions an Expression has if it's an array,
    * otherwise 0 (even if it's e.g. a function call that returns an array).
@@ -2548,6 +2663,18 @@ namespace FlatModelica
       return QString::fromStdString(dynamic_cast<const Call&>(*_value).name());
     }
     return QString("");
+  }
+
+  /*
+   * \brief Expression::priority
+   * Returns the operator priority of the expression that can be used to determine
+   * whether the expression needs to be parenthesized when dumped or not.
+   * \param lhs Whether the expression occurs on the left hand side of an operation or not.
+   * \return The priority of the expression.
+   */
+  int Expression::priority(bool lhs) const
+  {
+    return _value ? _value->priority(lhs) : 0;
   }
 
   /*!
