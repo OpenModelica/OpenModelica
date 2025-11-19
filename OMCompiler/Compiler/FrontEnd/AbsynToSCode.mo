@@ -1726,7 +1726,7 @@ protected
   SCode.Element elem;
   SCode.SubMod sub;
   Absyn.ComponentRef cr1, cr2;
-  String s, s1, s2;
+  String name, s, s1, s2;
 algorithm
   for arg in args loop
     subMods := match arg
@@ -1755,20 +1755,20 @@ algorithm
               elem));
         then
           sub :: subMods;
+
       case Absyn.ELEMENTARGCOMMENT() then subMods;
-      case Absyn.INHERITANCEBREAK(Absyn.EQ_CONNECT(cr1, cr2), _)
+
+      case Absyn.INHERITANCEBREAK(Absyn.EQ_CONNECT(connector1 = Absyn.ComponentRef.CREF_IDENT(name = name),
+                                                   connector2 = Absyn.ComponentRef.CREF_IDENT(name = "break")))
+        then SCode.SubMod.NAMEMOD(name, SCode.Mod.BREAK_COMPONENT(arg.info)) :: subMods;
+
+      case Absyn.INHERITANCEBREAK(Absyn.EQ_CONNECT(connector1 = cr1, connector2 = cr2))
         algorithm
-          s1 := Dump.printComponentRefStr(cr1);
-          s2 := Dump.printComponentRefStr(cr2);
-          if s2 == "break" then
-            s := s2 + " " + s1;
-          else
-            s := Dump.unparseEquationStr(arg.cnct);
-          end if;
           Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,
-          {"'7.4 Selective Model Extension': [" + s + "]",
-          "ignoring feature"}, arg.info);
-        then subMods;
+            {"'7.4 Selective Model Extension': [" + Dump.unparseEquationStr(arg.cnct) + "]",
+             "ignoring feature"}, arg.info);
+        then SCode.SubMod.NAMEMOD("", SCode.Mod.BREAK_CONNECT(cr1, cr2, arg.info)) :: subMods;
+
     end match;
   end for;
 
