@@ -50,12 +50,15 @@ protected
 
   // Backend
   import BackendDAE = NBackendDAE;
+  import Causalize = NBCausalize;
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationPointer, EquationPointers, EqData, EquationKind, WhenEquationBody, WhenStatement};
+  import Matching = NBMatching;
+  import Sorting = NBSorting;
   import StrongComponent = NBStrongComponent;
   import Partition = NBPartition;
   import BVariable = NBVariable;
-  import NBVariable.VariablePointers;
+  import NBVariable.{VariablePointer, VariablePointers};
 
   // Util
   import MetaModelica.Dangerous;
@@ -534,7 +537,7 @@ protected
       output Cluster cluster;
     algorithm
       cluster := match cluster_opt
-        case SOME(cluster)  then cluster;
+        case SOME(cluster) then cluster;
         else CLUSTER(
           variables = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual),
           eqn_idnts = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
@@ -560,7 +563,6 @@ protected
       input Partition.Kind kind;
       input ClockedInfo info;
       input UnorderedSet<ComponentRef> held_crefs;
-      input Pointer<Integer> index;
       output Partition.Partition partition;
     protected
       list<ComponentRef> cvars = UnorderedSet.toList(cluster.variables);
@@ -571,7 +573,7 @@ protected
       list<Pointer<Equation>> eqn_lst;
       VariablePointers partVariables;
       EquationPointers partEquations;
-      Integer var_idx, clock_idx = Pointer.access(index);
+      Integer var_idx;
     algorithm
       // find all variables and equations
       var_lst := list(BVariable.getVarPointer(cref, sourceInfo()) for cref in cvars);
@@ -589,12 +591,11 @@ protected
       partEquations := EquationPointers.mapExp(partEquations, function replaceClockedFunctions(held_crefs = held_crefs));
       if Partition.Association.isClocked(association) then
         partEquations := EquationPointers.map(partEquations, replaceClockedWhen);
-        partEquations := EquationPointers.map(partEquations, function Equation.setKind(kind = EquationKind.CLOCKED, clock_idx = SOME(clock_idx)));
         partVariables := VariablePointers.mapPtr(partVariables, function BVariable.setVarKind(varKind = VariableKind.CLOCKED()));
       end if;
 
       partition := Partition.PARTITION(
-        index             = clock_idx,
+        index             = 0,
         association       = association,
         unknowns          = partVariables,
         daeUnknowns       = NONE(),
@@ -603,7 +604,6 @@ protected
         matching          = NONE(),
         strongComponents  = NONE()
       );
-      Pointer.update(index, Pointer.access(index) + 1);
     end toPartition;
   end Cluster;
 
@@ -713,7 +713,6 @@ protected
     Integer part_idx;
     UnorderedMap<Integer, Cluster> cluster_map = UnorderedMap.new<Cluster>(Util.id, intEq);
     ComponentRef name_cref;
-    Pointer<Integer> index = Pointer.create(1);
     array<Boolean> marked_vars;
     list<Pointer<Variable>> single_vars;
     UnorderedSet<ComponentRef> held_crefs = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
@@ -787,9 +786,11 @@ protected
     end for;
 
     // get the actual partitions from the clusters and split continuous/clocked
-    partitions := list(Cluster.toPartition(cl, variables, equations, kind, info, held_crefs, index) for cl in UnorderedMap.valueList(cluster_map));
+    partitions := list(Cluster.toPartition(cl, variables, equations, kind, info, held_crefs) for cl in UnorderedMap.valueList(cluster_map));
     // update the partitions if one of their variables is in a hold() function
     partitions := list(Partition.Partition.updateHeldVars(part, held_crefs) for part in partitions);
+    // merge all clocked partitions with equal base and sub clock and find the proper order
+    partitions := sortAndMergeClockedPartitions(partitions, info);
 
     if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
       print(StringUtil.headline_1("[dumpSynchronous] Partitioning result:") + "\n" + List.toString(partitions, function Partition.Partition.toString(level = 2), "", "", "\n", "\n"));
@@ -797,35 +798,191 @@ protected
     end if;
   end partitioningClocked;
 
-  public function collectPartitioningClockDependencies
-    "clock dependencies are only relevant for sub clocks to the same base clock.
-    used in sim code after merging equally clocked partitions.
-    needs the $getPart replacement beforhand to work properly"
-    input output Expression exp;
-    input UnorderedMap<ComponentRef, BClock> clock_map  "only for sub clocks";
-    input UnorderedSet<BClock> clock_deps               "found dependencies";
+  function sortAndMergeClockedPartitions
+    input output list<Partition.Partition> partitions;
+    input ClockedInfo info;
+  protected
+    list<Partition.Partition> clocked_partitions;
+    list<list<Partition.Partition>> new_clocked = {};
+    // type for for double map. base clock -> {sub_clock -> partition}
+    type SubMap = UnorderedMap<BClock, Partition.Partition>;
+    UnorderedMap<BClock, SubMap> clock_collector = UnorderedMap.new<SubMap>(BClock.hash, BClock.isEqual);
+    BClock clock, baseClock, subClock;
+    Option<BClock> baseClock_opt;
+    SubMap subClockMap "maps sub clock to it's partition for current base clock";
+    Partition.Partition new_part;
+    Pointer<Integer> index = Pointer.create(1);
   algorithm
-    exp := match exp
-      local
-        Call call;
-        ComponentRef arg;
+    // filter all clocked partitions
+    (clocked_partitions, partitions) := List.splitOnTrue(partitions, Partition.Partition.isClocked);
 
-      // collect clocked dependencies from sub sampling
-      case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {Expression.CREF(cref = arg)}))
-        guard("$getPart"  == AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn))) algorithm
-        // ToDo: maybe need to strip subscripts and all that
-        if UnorderedMap.contains(arg, clock_map) then
-          UnorderedSet.add(UnorderedMap.getSafe(arg, clock_map, sourceInfo()), clock_deps);
-        else
-          Expression.mapShallow(exp, function collectPartitioningClockDependencies(clock_map = clock_map, clock_deps = clock_deps));
-        end if;
-      then exp;
+    // initialize for all base clocks
+    for baseClock in UnorderedMap.valueList(info.baseClocks) loop
+      UnorderedMap.add(baseClock, UnorderedMap.new<Partition.Partition>(BClock.hash, BClock.isEqual), clock_collector);
+    end for;
 
-      else Expression.mapShallow(exp, function collectPartitioningClockDependencies(clock_map = clock_map, clock_deps = clock_deps));
-    end match;
-  end collectPartitioningClockDependencies;
+    // merge clocked partitions by bclock, subclock
+    for partition in clocked_partitions loop
+      (clock, baseClock_opt, _)  := Partition.Partition.getClocks(partition);
+      if Util.isSome(baseClock_opt) then
+        // it is a sub clock
+        SOME(baseClock) := baseClock_opt;
+        subClock        := clock;
+      else
+        // it is a base clock, use the default sub clock
+        baseClock       := clock;
+        subClock        := DEFAULT_SUB_CLOCK;
+      end if;
+      subClockMap := UnorderedMap.getSafe(baseClock, clock_collector, sourceInfo());
+      new_part := match UnorderedMap.get(subClock, subClockMap)
+        case SOME(new_part) then Partition.Partition.merge(new_part, partition, true);
+        else partition;
+      end match;
+      UnorderedMap.add(subClock, new_part, subClockMap);
+    end for;
 
-  protected function collectPartitioningCrefs
+    // recollect all clocked partitions and sort the sub partitions. resolve potential artifical algebraic loops
+    for tpl in UnorderedMap.toList(clock_collector) loop
+      (baseClock, subClockMap) := tpl;
+      new_clocked := sortClockedPartitions(UnorderedMap.valueList(subClockMap)) :: new_clocked;
+    end for;
+
+    // append all clocked partitions in the end and apply proper indexing
+    partitions := listAppend(partition for partition in listReverse(partitions :: new_clocked));
+    partitions := list(Partition.Partition.setIndex(partition, index) for partition in partitions);
+  end sortAndMergeClockedPartitions;
+
+  function sortClockedPartitions
+    "use tarjan to sort sub partitions that rely on order. if an artificial algebraic loop occurs,
+    break up the partitions such that the loop does not occur anymore. Actual algebraic loops with
+    different clocks are forbidden by Section 16.7.4 in the Modelica Specification Version 3.7,
+    therefore an issue will be raised in that case."
+    input list<Partition.Partition> unsorted;
+    output list<Partition.Partition> sorted = {};
+  protected
+    Integer n = listLength(unsorted);
+    array<Partition.Partition> partitions = listArray(listReverse(unsorted));
+    array<list<Integer>> m = arrayCreate(n, {});
+    // create a trivial matching for an artificially matched bipartite graph (tarjan implementation needs it)
+    Matching matching = Matching.trivial(n);
+    UnorderedMap<BClock, Integer> index_map = UnorderedMap.new<Integer>(BClock.hash, BClock.isEqual);
+    list<list<Integer>> partition_order;
+    Integer j;
+  algorithm
+    // prepare the clock to partition index map
+    for i in 1:n loop
+      UnorderedMap.add(Partition.Partition.getClocks(partitions[i]), i, index_map);
+    end for;
+
+    // fill the adjacency matrix
+    for i in 1:n loop
+      for clock in UnorderedSet.toList(Partition.Partition.getClockDependencies(partitions[i])) loop
+        j := UnorderedMap.getSafe(clock, index_map, sourceInfo());
+        m[i] := j :: m[i];
+      end for;
+    end for;
+
+    // use tarjan to sort the artificial bipartite graph
+    partition_order := Sorting.tarjanScalar(m, matching);
+
+    // use the strong components to sort partitions. no algebraic loops allowed
+    for comp in listReverse(partition_order) loop
+      sorted := match comp
+        local
+          UnorderedMap<VariablePointer, BClock> var_clock_map;
+          Partition.Partition part;
+          list<StrongComponent> sub_comps;
+          list<Pointer<Variable>> sub_comp_vars;
+          list<Pointer<Equation>> sub_comp_eqns;
+          Option<tuple<list<Pointer<Variable>>, list<Pointer<Equation>>, BClock>> collector;
+          UnorderedSet<BClock> var_clocks;
+          Option<BClock> baseClock;
+
+          list<Pointer<Variable>> vars;
+          list<Pointer<Equation>> eqns;
+          BClock clock, new_clock;
+
+        // standard non loop partition
+        case {j} then partitions[j] :: sorted;
+
+        // multiple partitions form an artificial algebraic loop
+        else algorithm
+          // save which variable listens to which clock
+          var_clock_map := UnorderedMap.new<BClock>(BVariable.hash, BVariable.equalName);
+          for i in comp loop
+            part := partitions[i];
+            for var in VariablePointers.toList(part.unknowns) loop
+              UnorderedMap.add(var, Partition.Partition.getClocks(part), var_clock_map);
+            end for;
+          end for;
+
+          // merge all partitions (allow different clocks)
+          j :: comp := comp;
+          part := partitions[j];
+          for i in comp loop
+            part := Partition.Partition.merge(part, partitions[i], false);
+          end for;
+
+          // all base clocks have to be equal, just get any of them
+          (_, baseClock, _) := Partition.Partition.getClocks(part);
+
+          // causalize
+          (_, sub_comps) := Causalize.simple(part.unknowns, part.equations);
+
+          // split the resulting strong components into partitions by clocks
+          collector := NONE();
+          for sub_comp in listReverse(sub_comps) loop
+            sub_comp_vars := StrongComponent.getVariables(sub_comp);
+            sub_comp_eqns := StrongComponent.getEquations(sub_comp);
+            var_clocks    := UnorderedSet.new(BClock.hash, BClock.isEqual);
+
+            for var in sub_comp_vars loop
+              UnorderedSet.add(UnorderedMap.getSafe(var, var_clock_map, sourceInfo()), var_clocks);
+            end for;
+
+            // update the collector, either 1) make new collector, 2) add to existing collector 3) finalize partition and make new collector
+            collector := match (collector, UnorderedSet.toList(var_clocks))
+              // 1) no previous collector, make new one
+              case (NONE(), {new_clock}) then SOME((sub_comp_vars, sub_comp_eqns, new_clock));
+
+              // previous collector, check if still same clock
+              case (SOME((vars, eqns, clock)), {new_clock}) algorithm
+                if BClock.isEqual(clock, new_clock) then
+                  // 2) same clock, just append to partition
+                  collector := SOME((listAppend(sub_comp_vars, vars), listAppend(sub_comp_eqns, eqns), clock));
+                else
+                  // 3) new clock, split partition
+                  // ToDo: keep sorting and reuse later
+                  part := Partition.PARTITION(0, Partition.Association.CLOCKED(clock, baseClock, UnorderedSet.new(BClock.hash, BClock.isEqual), false),
+                    VariablePointers.fromList(vars), NONE(), EquationPointers.fromList(eqns), NONE(), NONE(), NONE());
+                  sorted := part :: sorted;
+
+                  // open new collector
+                  collector := SOME((sub_comp_vars, sub_comp_eqns, new_clock));
+                end if;
+              then collector;
+
+              else algorithm
+                Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for sub-partitions with cyclic dependency that could not be resolved:\n"
+                 + "There are contradicting sub-clocks: " + List.toString(UnorderedSet.toList(var_clocks), BClock.toString) + " in strong component:\n"
+                 + StrongComponent.toString(sub_comp)});
+              then fail();
+            end match;
+          end for;
+
+          // finalize last partition
+          if Util.isSome(collector) then
+            SOME((vars, eqns, clock)) := collector;
+            part := Partition.PARTITION(0, Partition.Association.CLOCKED(clock, baseClock, UnorderedSet.new(BClock.hash, BClock.isEqual), false),
+              VariablePointers.fromList(vars), NONE(), EquationPointers.fromList(eqns), NONE(), NONE(), NONE());
+            sorted := part :: sorted;
+          end if;
+        then sorted;
+      end match;
+    end for;
+  end sortClockedPartitions;
+
+  function collectPartitioningCrefs
     input output Expression exp;
     input UnorderedSet<ComponentRef> var_crefs;
   algorithm

@@ -42,6 +42,7 @@ public
 
 protected
   // NF imports
+  import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import Type = NFType;
@@ -50,7 +51,7 @@ protected
   // Backend Imports
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import NBEquation.EquationArray;
+  import NBEquation.{Equation, EquationKind};
   import BJacobian = NBJacobian;
   import NBEquation.EquationPointers;
   import NBPartitioning.{BClock, ClockedInfo};
@@ -74,6 +75,7 @@ public
     record CLOCKED
       BClock clock;
       Option<BClock> baseClock;
+      UnorderedSet<BClock> clock_deps "dependencies of this clocked partition";
       Boolean holdEvents;
     end CLOCKED;
 
@@ -106,7 +108,7 @@ public
         case CLOCKED() algorithm
           str := BClock.toString(association.clock);
           if Util.isSome(association.baseClock) then
-            str := StringUtil.headline_1("Sub clock: " + str + " of base clock  " + BClock.toString(Util.getOption(association.baseClock)));
+            str := StringUtil.headline_1("Sub clock: " + str + " of base clock " + BClock.toString(Util.getOption(association.baseClock)));
           else
             str := StringUtil.headline_1("Base clock: " + str);
           end if;
@@ -127,11 +129,12 @@ public
     protected
       Pointer<Option<ClockTpl>> clock_ptr = Pointer.create(NONE());
       UnorderedSet<ClockTpl> failed_set = UnorderedSet.new(hashClockTpl, isEqualClockTpl);
+      UnorderedSet<BClock> clock_deps = UnorderedSet.new(BClock.hash, BClock.isEqual);
       Option<ClockTpl> clock_tpl;
       ComponentRef name, base_name;
       BClock clock;
     algorithm
-      EquationPointers.mapExp(equations, function expClocked(info = info, clock_ptr = clock_ptr, failed_set = failed_set), NONE(), Expression.fakeMap);
+      EquationPointers.mapExp(equations, function expClocked(info = info, clock_ptr = clock_ptr, failed_set = failed_set, clock_deps = clock_deps), NONE(), Expression.fakeMap);
       clock_tpl := Pointer.access(clock_ptr);
 
       if Util.isSome(clock_tpl) then
@@ -145,15 +148,45 @@ public
         end if;
 
         if BClock.isBaseClock(clock) then
-          association := CLOCKED(clock, NONE(), false);
+          association := CLOCKED(clock, NONE(), clock_deps, false);
         else
           base_name := UnorderedMap.getSafe(name, info.subToBase, sourceInfo());
-          association := CLOCKED(clock, SOME(UnorderedMap.getSafe(base_name, info.baseClocks, sourceInfo())), false);
+          association := CLOCKED(clock, SOME(UnorderedMap.getSafe(base_name, info.baseClocks, sourceInfo())), clock_deps, false);
         end if;
       else
         association := CONTINUOUS(kind, NONE(), NONE());
       end if;
     end create;
+
+    function merge
+      input output Association ass1;
+      input Association ass2;
+      input Boolean strict;
+    algorithm
+      ass1 := match (ass1, ass2)
+        local
+          BackendDAE jac1, jac2;
+
+        // merging jacobians
+        case (CONTINUOUS(jacobian = SOME(jac1 as BackendDAE.JACOBIAN())), CONTINUOUS(jacobian = SOME(jac2))) guard(ass1.kind == ass2.kind or not strict) algorithm
+          ass1.jacobian := SOME(BJacobian.combine({jac1, jac2}, jac1.name));
+        then ass1;
+
+        // no jacobians to merge
+        case (CONTINUOUS(), CONTINUOUS()) guard(ass1.kind == ass2.kind or not strict) then ass1;
+
+        // merging clocked partitions
+        case (CLOCKED(), CLOCKED()) guard(not strict or (BClock.isEqual(ass1.clock, ass2.clock) and Util.optionEqual(ass1.baseClock, ass2.baseClock, BClock.isEqual))) algorithm
+          ass1.clock_deps := UnorderedSet.union(ass1.clock_deps, ass2.clock_deps);
+          ass1.holdEvents := ass1.holdEvents or ass2.holdEvents;
+        then ass1;
+
+        // unmergable
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Cannot merge " + toString(ass1) + " and " + toString(ass2) + "."});
+        then fail();
+      end match;
+    end merge;
 
     function isClocked
       input Association association;
@@ -187,18 +220,17 @@ public
 
   protected
     function expClocked
-      "checks if an expression is a clock. used in mapping functions"
-      input output Expression exp;
-      input ClockedInfo info;
-      input Pointer<Option<ClockTpl>> clock_ptr;
-      input UnorderedSet<ClockTpl> failed_set;
+      "checks if an expression is a clock and collects it. Also finds all other clock dependencies"
+      input output Expression exp               "the examined expression";
+      input ClockedInfo info                    "contains all base- and sub-clocks";
+      input Pointer<Option<ClockTpl>> clock_ptr "the first found clock";
+      input UnorderedSet<ClockTpl> failed_set   "clocks that are not equal to the first found clock";
+      input UnorderedSet<BClock> clock_deps     "clock dependencies found in sub sampling functions";
     algorithm
       exp := match exp
         local
           Option<BClock> clock_opt;
-
-        // ignore and do not go deeper on sample functions dependencies
-        case Expression.CALL() guard(Expression.isClockOrSampleFunction(exp)) then exp;
+          ComponentRef arg;
 
         // check if its a variable that defines a clock
         case Expression.CREF() guard(BVariable.isClockOrClocked(BVariable.getVarPointer(exp.cref, sourceInfo()))) algorithm
@@ -212,18 +244,40 @@ public
           _ := match (clock_opt, Pointer.access(clock_ptr))
             local
               BClock new, old;
-            case (SOME(new), SOME((_, old))) guard(not BClock.isEqual(new, old)) algorithm
-              UnorderedSet.add((exp.cref, new), failed_set);
+
+            // old sub clock and new base clock -> no conflict
+            case (SOME(new as BClock.BASE_CLOCK()), SOME((_, old as BClock.SUB_CLOCK()))) then ();
+
+            // old base clock getting updated to new sub clock
+            case (SOME(new as BClock.SUB_CLOCK()), SOME((_, old as BClock.BASE_CLOCK()))) algorithm
+              Pointer.update(clock_ptr, SOME((exp.cref, new)));
             then ();
+
+            // clocks -> equal: success / different: fail
+            case (SOME(new), SOME((_, old))) algorithm
+              if not BClock.isEqual(new, old) then
+                UnorderedSet.add((exp.cref, new), failed_set);
+              end if;
+            then ();
+
+            // new clock
             case (SOME(new), NONE()) algorithm
               Pointer.update(clock_ptr, SOME((exp.cref, new)));
             then ();
+
             else ();
           end match;
         then exp;
 
+        // only look for clock dependencies on sample functions
+        case Expression.CALL(call = Call.TYPED_CALL(arguments = Expression.CREF(cref = arg) :: _)) guard(Expression.isClockOrSampleFunction(exp)) algorithm
+          if UnorderedMap.contains(arg, info.subClocks) then
+            UnorderedSet.add(UnorderedMap.getSafe(arg, info.subClocks, sourceInfo()), clock_deps);
+          end if;
+        then exp;
+
         // go deeper on everything else
-        else Expression.mapShallow(exp, function expClocked(info = info, clock_ptr = clock_ptr, failed_set = failed_set));
+        else Expression.mapShallow(exp, function expClocked(info = info, clock_ptr = clock_ptr, failed_set = failed_set, clock_deps = clock_deps));
       end match;
     end expClocked;
   end Association;
@@ -391,6 +445,19 @@ public
       end match;
     end categorize;
 
+    function setIndex
+      input output Partition part;
+      input Pointer<Integer> index;
+    protected
+      Integer clock_idx = Pointer.access(index);
+    algorithm
+      part.index := clock_idx;
+      if isClocked(part) then
+        part.equations := EquationPointers.map(part.equations, function Equation.setKind(kind = EquationKind.CLOCKED, clock_idx = SOME(clock_idx)));
+      end if;
+      Pointer.update(index, clock_idx + 1);
+    end setIndex;
+
     function getJacobian
       input Partition part;
       output Option<Jacobian> jac;
@@ -434,6 +501,18 @@ public
         then fail();
       end match;
     end getClocks;
+
+    function getClockDependencies
+      input Partition part;
+      output UnorderedSet<BClock> clock_deps;
+    algorithm
+      clock_deps := match part.association
+        case Association.CLOCKED(clock_deps = clock_deps) then clock_deps;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Cannot get clock dependencies for continuous partition:\n" + toString(part)});
+        then fail();
+      end match;
+    end getClockDependencies;
 
     function getLoopResiduals
       input Partition part;
@@ -573,6 +652,27 @@ public
         else par.association;
       end match;
     end updateHeldVars;
+
+    function merge
+      input output Partition part1;
+      input Partition part2;
+      input Boolean strict;
+    algorithm
+      if Util.isSome(part1.daeUnknowns) or Util.isSome(part2.daeUnknowns) then
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Cannot merge DAE-Mode partitions."}); fail();
+      elseif Util.isSome(part1.strongComponents) or Util.isSome(part2.strongComponents) then
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Should not merge sorted partitions."}); fail();
+      elseif Util.isSome(part1.matching) or Util.isSome(part2.matching) then
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Should not merge matched partitions."}); fail();
+      elseif Util.isSome(part1.adjacencyMatrix) or Util.isSome(part2.adjacencyMatrix) then
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Should not merge partitions with adjacency matrix."}); fail();
+      end if;
+
+      // index irrelevant, should be updated after use
+      part1.association := Association.merge(part1.association, part2.association, strict);
+      part1.unknowns    := VariablePointers.addList(VariablePointers.toList(part2.unknowns), part1.unknowns);
+      part1.equations   := EquationPointers.addList(EquationPointers.toList(part2.equations), part1.equations);
+    end merge;
   end Partition;
 
   annotation(__OpenModelica_Interface="backend");
