@@ -22,7 +22,7 @@ end Record1;
 //   record 'R'
 //     Real 'x';
 //     Real 'y';
-//     final constant Integer 'n' = 3;
+//     constant Integer 'n' = 3;
 //   end 'R';
 //
 //   model 'Record1'
