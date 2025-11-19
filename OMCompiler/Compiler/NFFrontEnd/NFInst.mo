@@ -1528,6 +1528,7 @@ protected
   list<Mutable<InstNode>> node_ptrs;
   InstNode node;
   Component comp;
+  Boolean found;
 algorithm
   // Split the modifier into a list of submodifiers.
   mods := Modifier.toList(modifier);
@@ -1562,19 +1563,22 @@ algorithm
           try
             node_ptrs := ClassTree.lookupElementsPtr(Modifier.name(mod), cls);
           else
-            Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
-              {Modifier.name(mod), InstNode.name(parent)}, Modifier.info(mod));
-
-            if InstContext.inInstanceAPI(context) then
-              node_ptrs := {};
-            else
-              fail();
-            end if;
+            node_ptrs := {};
           end try;
+
+          found := false;
 
           // Apply the modifier to each found node.
           for node_ptr in node_ptrs loop
-            node := InstNode.resolveOuter(Mutable.access(node_ptr));
+            node := Mutable.access(node_ptr);
+
+            if InstNode.isEmpty(node) then
+              // Component removed by 'break'.
+              continue;
+            end if;
+
+            found := true;
+            node := InstNode.resolveOuter(node);
 
             if InstNode.isProtected(node) and not (InstNode.isExtends(parent) or InstNode.isBaseClass(parent)) then
               Error.addMultiSourceMessage(Error.NF_MODIFY_PROTECTED,
@@ -1608,6 +1612,12 @@ algorithm
               Mutable.update(node_ptr, node);
             end if;
           end for;
+
+          if not found and not InstContext.inInstanceAPI(context) then
+            Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+              {Modifier.name(mod), InstNode.name(parent)}, Modifier.info(mod));
+            fail();
+          end if;
         end for;
       then
         ();
@@ -1877,6 +1887,10 @@ protected
   InstContext.Type next_context;
   list<Subscript> propagated_subs;
 algorithm
+  if InstNode.isEmpty(node) then
+    return;
+  end if;
+
   checkOuterComponentMod(node);
   comp_node := InstNode.resolveInner(node);
   comp := InstNode.component(comp_node);
@@ -2675,10 +2689,17 @@ function instComponentExpressions
   input InstContext.Type context;
   input InstSettings settings;
 protected
-  InstNode node = InstNode.resolveInner(component);
-  Component c = InstNode.component(node);
+  InstNode node;
+  Component c;
   array<Dimension> dims;
 algorithm
+  if InstNode.isEmpty(component) then
+    return;
+  end if;
+
+  node := InstNode.resolveInner(component);
+  c := InstNode.component(node);
+
   () := match c
     case Component.COMPONENT(ty = Type.UNTYPED(dimensions = dims))
       guard c.state == ComponentState.PartiallyInstantiated
@@ -3245,24 +3266,22 @@ function instEquations
   input list<SCode.Equation> scodeEql;
   input InstNode scope;
   input InstContext.Type context;
-  output list<Equation> instEql;
-protected
-  list<SCode.Equation> scode_eql = scodeEql;
+  output list<Equation> instEql = {};
 algorithm
   if InstContext.inInstanceAPI(context) then
-    scode_eql := filterInstanceAPIEquations(scodeEql);
-
-    instEql := {};
-    for eq in scode_eql loop
+    for eq in filterInstanceAPIEquations(scodeEql) loop
       try
-        instEql := instEquation(eq, scope, context) :: instEql;
+        instEql := instEquation(eq, scope, context, instEql);
       else
       end try;
     end for;
-    instEql := listReverseInPlace(instEql);
   else
-    instEql := list(instEquation(eq, scope, context) for eq in scode_eql);
+    for eq in scodeEql loop
+      instEql := instEquation(eq, scope, context, instEql);
+    end for;
   end if;
+
+  instEql := listReverseInPlace(instEql);
 end instEquations;
 
 function filterInstanceAPIEquations
@@ -3303,9 +3322,9 @@ function instEquation
   input SCode.Equation scodeEq;
   input InstNode scope;
   input InstContext.Type context;
-  output Equation instEq;
+  input output list<Equation> equations;
 algorithm
-  instEq := match scodeEq
+  equations := match scodeEq
     local
       Expression exp1, exp2, exp3;
       Option<Expression> oexp;
@@ -3322,7 +3341,7 @@ algorithm
         exp1 := instExp(scodeEq.expLeft, scope, context, info);
         exp2 := instExp(scodeEq.expRight, scope, context, info);
       then
-        Equation.EQUALITY(exp1, exp2, Type.UNKNOWN(), scope, makeSource(scodeEq.comment, info));
+        Equation.EQUALITY(exp1, exp2, Type.UNKNOWN(), scope, makeSource(scodeEq.comment, info)) :: equations;
 
     case SCode.Equation.EQ_CONNECT(info = info)
       algorithm
@@ -3333,10 +3352,17 @@ algorithm
           fail();
         end if;
 
-        exp1 := instConnectorCref(scodeEq.crefLeft, scope, context, info);
-        exp2 := instConnectorCref(scodeEq.crefRight, scope, context, info);
+        lhs_cr := instConnectorCref(scodeEq.crefLeft, scope, context, info);
+        rhs_cr := instConnectorCref(scodeEq.crefRight, scope, context, info);
+
+        // Add the connection, unless either connector has been disabled with a 'break' modifier.
+        if not (InstNode.isEmpty(ComponentRef.node(lhs_cr)) or InstNode.isEmpty(ComponentRef.node(rhs_cr))) then
+          exp1 := Expression.CREF(Type.UNKNOWN(), lhs_cr);
+          exp2 := Expression.CREF(Type.UNKNOWN(), rhs_cr);
+          equations := Equation.CONNECT(exp1, exp2, scope, makeSource(scodeEq.comment, info)) :: equations;
+        end if;
       then
-        Equation.CONNECT(exp1, exp2, scope, makeSource(scodeEq.comment, info));
+        equations;
 
     case SCode.Equation.EQ_FOR(info = info)
       algorithm
@@ -3346,7 +3372,7 @@ algorithm
         next_origin := InstContext.set(context, NFInstContext.FOR);
         eql := instEquations(scodeEq.eEquationLst, for_scope, next_origin);
       then
-        Equation.FOR(iter, oexp, eql, scope, makeSource(scodeEq.comment, info));
+        Equation.FOR(iter, oexp, eql, scope, makeSource(scodeEq.comment, info)) :: equations;
 
     case SCode.Equation.EQ_IF(info = info)
       algorithm
@@ -3369,7 +3395,7 @@ algorithm
           branches := Equation.makeBranch(Expression.BOOLEAN(true), eql) :: branches;
         end if;
       then
-        Equation.IF(listReverse(branches), scope, makeSource(scodeEq.comment, info));
+        Equation.IF(listReverse(branches), scope, makeSource(scodeEq.comment, info)) :: equations;
 
     case SCode.Equation.EQ_WHEN(info = info)
       algorithm
@@ -3390,7 +3416,7 @@ algorithm
           branches := Equation.makeBranch(exp1, eql) :: branches;
         end for;
       then
-        Equation.WHEN(listReverse(branches), scope, makeSource(scodeEq.comment, info));
+        Equation.WHEN(listReverse(branches), scope, makeSource(scodeEq.comment, info)) :: equations;
 
     case SCode.Equation.EQ_ASSERT(info = info)
       algorithm
@@ -3398,13 +3424,13 @@ algorithm
         exp2 := instExp(scodeEq.message, scope, context, info);
         exp3 := instExp(scodeEq.level, scope, context, info);
       then
-        Equation.ASSERT(exp1, exp2, exp3, scope, makeSource(scodeEq.comment, info));
+        Equation.ASSERT(exp1, exp2, exp3, scope, makeSource(scodeEq.comment, info)) :: equations;
 
     case SCode.Equation.EQ_TERMINATE(info = info)
       algorithm
         exp1 := instExp(scodeEq.message, scope, context, info);
       then
-        Equation.TERMINATE(exp1, scope, makeSource(scodeEq.comment, info));
+        Equation.TERMINATE(exp1, scope, makeSource(scodeEq.comment, info)) :: equations;
 
     case SCode.Equation.EQ_REINIT(info = info)
       algorithm
@@ -3416,13 +3442,13 @@ algorithm
         exp1 := instExp(scodeEq.cref, scope, context, info);
         exp2 := instExp(scodeEq.expReinit, scope, context, info);
       then
-        Equation.REINIT(exp1, exp2, scope, makeSource(scodeEq.comment, info));
+        Equation.REINIT(exp1, exp2, scope, makeSource(scodeEq.comment, info)) :: equations;
 
     case SCode.Equation.EQ_NORETCALL(info = info)
       algorithm
         exp1 := instExp(scodeEq.exp, scope, context, info);
       then
-        Equation.NORETCALL(exp1, scope, makeSource(scodeEq.comment, info));
+        Equation.NORETCALL(exp1, scope, makeSource(scodeEq.comment, info)) :: equations;
 
     else
       algorithm
@@ -3438,15 +3464,14 @@ function instConnectorCref
   input InstNode scope;
   input InstContext.Type context;
   input SourceInfo info;
-  output Expression outExp;
+  output ComponentRef cref;
 protected
-  ComponentRef cref, prefix;
+  ComponentRef prefix;
   InstNode found_scope;
 algorithm
   (cref, found_scope) := Lookup.lookupConnector(absynCref, scope, context, info);
   cref := instCrefSubscripts(cref, scope, context, info);
   cref := ComponentRef.appendScope(found_scope, cref);
-  outExp := Expression.CREF(Type.UNKNOWN(), cref);
 end instConnectorCref;
 
 function makeSource
@@ -3897,9 +3922,16 @@ function updateImplicitVariabilityComp
   input Boolean parentEval;
   input InstContext.Type context;
 protected
-  InstNode node = InstNode.resolveOuter(component);
-  Component c = InstNode.component(node);
+  InstNode node;
+  Component c;
 algorithm
+  if InstNode.isEmpty(component) then
+    return;
+  end if;
+
+  node := InstNode.resolveOuter(component);
+  c := InstNode.component(node);
+
   () := match c
     local
       Binding binding, condition;

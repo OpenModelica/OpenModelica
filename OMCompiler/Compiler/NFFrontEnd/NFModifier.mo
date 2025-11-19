@@ -174,6 +174,7 @@ public
   algorithm
     newMod := match mod
       local
+        list<SCode.SubMod> submods;
         list<tuple<String, Modifier>> submod_lst;
         ModTable.Tree submod_table;
         Binding binding;
@@ -189,7 +190,7 @@ public
         algorithm
           is_each := SCodeUtil.eachBool(mod.eachPrefix);
           binding := Binding.fromAbsyn(mod.binding, is_each, ModifierScope.isClass(modScope), scope, mod.info);
-          submod_lst := list((m.ident, createSubMod(m, modScope, scope)) for m in mod.subModLst);
+          submod_lst := list((m.ident, createSubMod(m, modScope, scope)) for m guard not SCodeUtil.isBreakSubMod(m) in mod.subModLst);
           submod_table := ModTable.fromList(submod_lst,
             function mergeLocal(scope = modScope, prefix = {}));
         then
@@ -604,6 +605,7 @@ public
           if printName then mod.name + subs_str + binding_str else subs_str + binding_str;
 
       case REDECLARE() then InstNode.toString(mod.element);
+
       else "";
     end match;
   end toString;

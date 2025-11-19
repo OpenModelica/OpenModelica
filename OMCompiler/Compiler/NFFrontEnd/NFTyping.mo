@@ -432,15 +432,18 @@ function typeComponent
   input Boolean typeChildren = true;
   output Type ty;
 protected
-  InstNode node = InstNode.resolveOuter(component);
-  Component c = InstNode.component(node);
+  InstNode node;
+  Component c;
   Expression cond;
   Boolean is_deleted;
   array<Dimension> dims;
 algorithm
-  if InstNode.isOnlyOuter(component) then
+  if InstNode.isEmpty(component) or InstNode.isOnlyOuter(component) then
     return;
   end if;
+
+  node := InstNode.resolveOuter(component);
+  c := InstNode.component(node);
 
   ty := match c
     // An untyped component, type it.
@@ -992,7 +995,7 @@ function typeComponentBinding
   input InstContext.Type context;
   input Boolean typeChildren = true;
 protected
-  InstNode node = InstNode.resolveOuter(component);
+  InstNode node;
   Component c;
   Binding binding;
   InstNode cls;
@@ -1002,11 +1005,12 @@ protected
   Attributes attrs;
   Type ty;
 algorithm
-  c := InstNode.component(node);
-
-  if InstNode.isOnlyOuter(component) then
+  if InstNode.isEmpty(component) or InstNode.isOnlyOuter(component) then
     return;
   end if;
+
+  node := InstNode.resolveOuter(component);
+  c := InstNode.component(node);
 
   () := match c
     case Component.COMPONENT()
@@ -2998,6 +3002,10 @@ function typeComponentSections
 protected
   Component comp;
 algorithm
+  if InstNode.isEmpty(component) then
+    return;
+  end if;
+
   comp := InstNode.component(component);
 
   if Component.isDeleted(comp) or InstNode.isOnlyOuter(component) then
