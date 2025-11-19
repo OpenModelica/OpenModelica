@@ -93,29 +93,38 @@ buildModel(algebraicLoop); getErrorString();
 //   0:	{0, 1}
 //   1:	{0, 1}
 //
-// Sparsity Coloring Groups
-// **************************
+// Sparsity Coloring Columns
+// ***************************
 //   {1}
 //   {0}
 //
+// Sparsity Coloring Rows
+// ************************
+//   {1}
+//   {0}
+//
+// ========================================================
+//   [EMPTY] SimCode Jacobian ADJ(idx = 1, partition = 0)
+// ========================================================
+//
 // ======================================================
-//   [EMPTY] SimCode Jacobian B(idx = 1, partition = 0)
+//   [EMPTY] SimCode Jacobian B(idx = 2, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian C(idx = 2, partition = 0)
+//   [EMPTY] SimCode Jacobian C(idx = 3, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian D(idx = 3, partition = 0)
+//   [EMPTY] SimCode Jacobian D(idx = 4, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian F(idx = 4, partition = 0)
+//   [EMPTY] SimCode Jacobian F(idx = 5, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian H(idx = 5, partition = 0)
+//   [EMPTY] SimCode Jacobian H(idx = 6, partition = 0)
 // ======================================================
 //
 //
@@ -235,6 +244,8 @@ buildModel(algebraicLoop); getErrorString();
 // 	Jacobian idx: 4
 //
 // 	Jacobian idx: 5
+//
+// 	Jacobian idx: 6
 //
 //
 // modelInfo:
