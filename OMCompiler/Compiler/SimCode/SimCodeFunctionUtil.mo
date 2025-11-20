@@ -2458,7 +2458,7 @@ protected function addDestructor2
   output HashTableStringToPath.HashTable ht = inHt;
 algorithm
   if not BaseHashTable.hasKey(pathstr, ht) then
-    BaseHashTable.add((pathstr, path), ht);
+    ht := BaseHashTable.add((pathstr, path), ht);
   end if;
 end addDestructor2;
 
