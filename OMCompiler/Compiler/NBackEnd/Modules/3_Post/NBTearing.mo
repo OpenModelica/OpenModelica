@@ -261,6 +261,13 @@ public
     end match;
   end getModule;
 
+  function getVariables
+    input Tearing tearing;
+    output list<Pointer<Variable>> variables;
+  algorithm
+     variables := listAppend(var for var in list(Slice.getT(var) for var in tearing.iteration_vars) :: list(StrongComponent.getVariables(comp) for comp in tearing.innerEquations));
+  end getVariables;
+
   function getResidualVars
     input Tearing tearing;
     output list<Pointer<Variable>> residuals;

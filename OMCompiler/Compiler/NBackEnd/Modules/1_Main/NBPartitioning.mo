@@ -392,7 +392,8 @@ public
       input UnorderedMap<ComponentRef, ComponentRef> clock_map;
       output ComponentRef base_clock;
     protected
-      ComponentRef parent_clock = UnorderedMap.getSafe(clock_name, info.subToBase, sourceInfo());
+      ComponentRef implicit_clock, parent_clock = UnorderedMap.getSafe(clock_name, info.subToBase, sourceInfo());
+      Option<ComponentRef> implicit_clock_opt = NONE();
       BClock dest, src;
     algorithm
       if UnorderedMap.contains(parent_clock, info.baseClocks) then
@@ -402,6 +403,7 @@ public
         // not a base, update necessary
         if not UnorderedMap.contains(parent_clock, info.subClocks) then
           // neither base nor sub clock --> implicit clock. map it
+          implicit_clock_opt := SOME(parent_clock);
           parent_clock := UnorderedMap.getSafe(parent_clock, clock_map, sourceInfo());
         end if;
         base_clock := resolveSubClock(parent_clock, info, clock_map);
@@ -411,6 +413,14 @@ public
         src   := UnorderedMap.getSafe(clock_name, info.subClocks, sourceInfo());
         UnorderedMap.add(clock_name, BClock.updateSubClock(dest, src), info.subClocks);
         UnorderedMap.add(clock_name, base_clock, info.subToBase);
+
+        // also update and add the implicit clock
+        if Util.isSome(implicit_clock_opt) then
+          SOME(implicit_clock) := implicit_clock_opt;
+          // add the implicit clock as a sub clock
+          UnorderedMap.add(implicit_clock, dest, info.subClocks);
+          UnorderedMap.add(implicit_clock, base_clock, info.subToBase);
+        end if;
       end if;
     end resolveSubClock;
 
