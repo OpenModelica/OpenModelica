@@ -378,11 +378,14 @@ public
       input ComponentRef key;
       input UnorderedMap<ComponentRef, ComponentRef> clock_map;
       input UnorderedMap<ComponentRef, BClock> sub_clocks;
-      output ComponentRef clock = UnorderedMap.getSafe(key, clock_map, sourceInfo());
+      output ComponentRef clock = key;
     algorithm
-      if not UnorderedMap.contains(clock, sub_clocks) then
-        clock := resolveImplicitSubClock(clock, clock_map, sub_clocks);
-        UnorderedMap.add(key, clock, clock_map);
+      if UnorderedMap.contains(key, clock_map) then
+        clock := UnorderedMap.getSafe(key, clock_map, sourceInfo());
+        if not UnorderedMap.contains(clock, sub_clocks) then
+          clock := resolveImplicitSubClock(clock, clock_map, sub_clocks);
+          UnorderedMap.add(key, clock, clock_map);
+        end if;
       end if;
     end resolveImplicitSubClock;
 
