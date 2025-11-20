@@ -200,7 +200,8 @@ static NLS_SOLVER_STATUS solveNLS_gbInternal(DATA *data,
     int size = nonlinsys->size;
     int stage = gbData->act_stage;
     double *x = nonlinsys->nlsx;
-    double *x_start = nonlinsys->nlsxExtrapolation;
+    double *x_start = nonlinsys->nlsxOld;              // currently the extrapolated (e.g. dense output / hermite guess)
+    // double *x_start = nonlinsys->nlsxExtrapolation; // currently the constant guess (k = 0)
     double *res = nonlinsys->resValues;
 
     createGbScales(nls, x, x_start);
