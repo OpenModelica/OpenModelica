@@ -923,7 +923,7 @@ public
       case RESIZABLE_COMPONENT()then {Slice.getT(comp.var)};
       case GENERIC_COMPONENT()  then {Slice.getT(comp.var)};
       case ENTWINED_COMPONENT() then List.flatten(list(getVariables(slice) for slice in comp.entwined_slices));
-      case ALGEBRAIC_LOOP()     then Tearing.getResidualVars(comp.strict); // + inner?
+      case ALGEBRAIC_LOOP()     then Tearing.getVariables(comp.strict);
       case ALIAS()              then getVariables(comp.original);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});

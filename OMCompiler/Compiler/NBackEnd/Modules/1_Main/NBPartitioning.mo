@@ -352,11 +352,18 @@ public
 
     function resolveSubClocks
       input ClockedInfo info;
+      input UnorderedMap<ComponentRef, ComponentRef> clock_map;
     algorithm
+      // resolve the implicit clock map
+      for cref in UnorderedMap.keyList(clock_map) loop
+        resolveImplicitSubClock(cref, clock_map, info.subClocks);
+      end for;
+
       // update sub to base clock
       for sub_clock in UnorderedMap.keyList(info.subClocks) loop
-        resolveSubClock(sub_clock, info);
+        resolveSubClock(sub_clock, info, clock_map);
       end for;
+
       // update base to sub clocks
       for sub_clock in UnorderedMap.keyList(info.subClocks) loop
         addSubClock(sub_clock, info);
@@ -364,24 +371,59 @@ public
     end resolveSubClocks;
 
   protected
+    function resolveImplicitSubClock
+      "implicite sub clocks are signals that are clocked but not defined by a sampling function themselves.
+      they infer their clock by the partition they are in. this function resolves each implicit clock to it's
+      root clock that has a sample function definition"
+      input ComponentRef key;
+      input UnorderedMap<ComponentRef, ComponentRef> clock_map;
+      input UnorderedMap<ComponentRef, BClock> sub_clocks;
+      output ComponentRef clock = key;
+    algorithm
+      if UnorderedMap.contains(key, clock_map) then
+        clock := UnorderedMap.getSafe(key, clock_map, sourceInfo());
+        if not UnorderedMap.contains(clock, sub_clocks) then
+          clock := resolveImplicitSubClock(clock, clock_map, sub_clocks);
+          UnorderedMap.add(key, clock, clock_map);
+        end if;
+      end if;
+    end resolveImplicitSubClock;
+
     function resolveSubClock
       input ComponentRef clock_name;
       input ClockedInfo info;
+      input UnorderedMap<ComponentRef, ComponentRef> clock_map;
       output ComponentRef base_clock;
     protected
-      ComponentRef parent_clock = UnorderedMap.getSafe(clock_name, info.subToBase, sourceInfo());
+      ComponentRef implicit_clock, parent_clock = UnorderedMap.getSafe(clock_name, info.subToBase, sourceInfo());
+      Option<ComponentRef> implicit_clock_opt = NONE();
       BClock dest, src;
     algorithm
-      if not UnorderedMap.contains(parent_clock, info.baseClocks) then
+      if UnorderedMap.contains(parent_clock, info.baseClocks) then
+        // just a base clock
+        base_clock := parent_clock;
+      else
         // not a base, update necessary
-        base_clock := resolveSubClock(parent_clock, info);
+        if not UnorderedMap.contains(parent_clock, info.subClocks) then
+          // neither base nor sub clock --> implicit clock. map it
+          implicit_clock_opt := SOME(parent_clock);
+          parent_clock := UnorderedMap.getSafe(parent_clock, clock_map, sourceInfo());
+        end if;
+        base_clock := resolveSubClock(parent_clock, info, clock_map);
+
         // update the sub clock and add the new base clock
         dest  := UnorderedMap.getSafe(parent_clock, info.subClocks, sourceInfo());
         src   := UnorderedMap.getSafe(clock_name, info.subClocks, sourceInfo());
         UnorderedMap.add(clock_name, BClock.updateSubClock(dest, src), info.subClocks);
         UnorderedMap.add(clock_name, base_clock, info.subToBase);
-      else
-        base_clock := parent_clock;
+
+        // also update and add the implicit clock
+        if Util.isSome(implicit_clock_opt) then
+          SOME(implicit_clock) := implicit_clock_opt;
+          // add the implicit clock as a sub clock
+          UnorderedMap.add(implicit_clock, dest, info.subClocks);
+          UnorderedMap.add(implicit_clock, base_clock, info.subToBase);
+        end if;
       end if;
     end resolveSubClock;
 
@@ -556,6 +598,59 @@ protected
       end match;
     end addElement;
 
+    function addToClockMap
+      "finds the first clock in the map and adds cref->clock for all crefs in this cluster.
+      Note: does not check if there are different clocks that contradict, this check will be done later.
+      this is only for naive clock inference that will be checked for consistency later."
+      input Cluster cluster;
+      input EquationPointers equations;
+      input ClockedInfo info;
+      input UnorderedMap<ComponentRef, ComponentRef> clock_map;
+    protected
+      function findClock
+        "finds the first clock/clocked signal and skips everything afterwards"
+        input output Expression exp;
+        input ClockedInfo info;
+        input Pointer<Option<ComponentRef>> clock_ptr;
+      protected
+        Option<ComponentRef> clock_opt = Pointer.access(clock_ptr);
+      algorithm
+        exp := match (exp, clock_opt)
+          // already found clock, do nothing
+          case (_, SOME(_)) then exp;
+
+          case (Expression.CREF(), NONE()) guard(BVariable.isClockOrClocked(BVariable.getVarPointer(exp.cref, sourceInfo()))) algorithm
+            // add the clock cref
+            Pointer.update(clock_ptr, SOME(exp.cref));
+          then exp;
+
+          // do nothing on clock sampling functions as they do not imply a clock for this cluster
+          case (Expression.CALL(), _) guard(Expression.isClockOrSampleFunction(exp)) then exp;
+
+          // go deeper
+          else Expression.mapShallow(exp, function findClock(info = info, clock_ptr = clock_ptr));
+        end match;
+      end findClock;
+      Pointer<Option<ComponentRef>> clock_ptr = Pointer.create(NONE());
+      Option<ComponentRef> clock_opt = NONE();
+      ComponentRef clock;
+    algorithm
+      // search all equations until first clock/clocked signal is found
+      for eqn_name in UnorderedSet.toList(cluster.eqn_idnts) loop
+        Equation.map(Pointer.access(EquationPointers.getEqnByName(equations, eqn_name)), function findClock(info = info, clock_ptr = clock_ptr), NONE(), Expression.fakeMap);
+        clock_opt := Pointer.access(clock_ptr);
+        if Util.isSome(clock_opt) then break; end if;
+      end for;
+
+      // if a clock/clocked signal was found, add all a mapping for each variable in the cluster to the clock
+      if Util.isSome(clock_opt) then
+        SOME(clock) := clock_opt;
+        for var_name in UnorderedSet.toList(cluster.variables) loop
+          UnorderedMap.add(var_name, clock, clock_map);
+        end for;
+      end if;
+    end addToClockMap;
+
     function toPartition
       input Cluster cluster;
       input VariablePointers variables;
@@ -716,6 +811,8 @@ protected
     array<Boolean> marked_vars;
     list<Pointer<Variable>> single_vars;
     UnorderedSet<ComponentRef> held_crefs = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    // maps each cref to the clock it is listening to
+    UnorderedMap<ComponentRef, ComponentRef> clock_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
   algorithm
     // parse clock assignments
     for eq_idx in UnorderedMap.valueList(clocked.map) loop
@@ -750,9 +847,6 @@ protected
       end if;
     end for;
 
-    // resolve inner sub clock dependencies
-    ClockedInfo.resolveSubClocks(info);
-
     // find and report variables that could not be assigned to a partition (exclude clocks)
     marked_vars := listArray(list(var_map[var_idx] < 0 for var_idx in UnorderedMap.valueList(variables.map)));
     single_vars := list(var_ptr for var_ptr in VariablePointers.getMarkedVars(variables, marked_vars));
@@ -784,6 +878,13 @@ protected
         UnorderedMap.addUpdate(part_idx, function Cluster.addElement(cref = name_cref, ty = ClusterElementType.VARIABLE), cluster_map);
       end if;
     end for;
+
+    for cluster in UnorderedMap.valueList(cluster_map) loop
+      Cluster.addToClockMap(cluster, equations, info, clock_map);
+    end for;
+
+    // resolve inner sub clock dependencies
+    ClockedInfo.resolveSubClocks(info, clock_map);
 
     // get the actual partitions from the clusters and split continuous/clocked
     partitions := list(Cluster.toPartition(cl, variables, equations, kind, info, held_crefs) for cl in UnorderedMap.valueList(cluster_map));
