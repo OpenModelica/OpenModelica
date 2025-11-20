@@ -146,7 +146,7 @@ GB_INTERNAL_NLS_DATA *gbInternalNlsAllocate(int size, NLS_USERDATA* userData, mo
 
   double quot = nls->atol / nls->rtol;
   nls->rtol_sc = pow(nls->rtol, (double)tabl->order_bt / (double)tabl->order_b);
-  nls->atol_sc = quot * nls->rtol;
+  nls->atol_sc = quot * nls->rtol_sc;
   nls->fnewt = fmax(10 * DBL_EPSILON / nls->rtol_sc, fmin(3e-2, pow(nls->rtol_sc, (double)tabl->order_b / (double)tabl->order_bt - 1.0)));
   nls->theta_keep = 1e-3;
   nls->call_jac = TRUE;
@@ -213,7 +213,10 @@ static NLS_SOLVER_STATUS solveNLS_gbInternal(DATA *data,
     const int flag = 1;
     modelica_boolean jac_called = FALSE;
 
-    if (stage == 1 || gbData->type != GM_TYPE_DIRK)
+    modelica_boolean sdirk_first_stage = (stage == 0 && gbData->tableau->A[0] != 0);
+    modelica_boolean esdirk_first_stage = (stage == 1 && gbData->tableau->A[0] == 0);
+
+    if ((sdirk_first_stage || esdirk_first_stage) && gbData->type == GM_TYPE_DIRK)
     {
         if (nls->call_jac /* split ODE jac call and factorization */)
         {
@@ -236,6 +239,7 @@ static NLS_SOLVER_STATUS solveNLS_gbInternal(DATA *data,
 
             /* perform factorization */
             gbInternal_dKLU_factorize(nls->klu_internals, size, nonlinsys->sparsePattern->leadindex, nonlinsys->sparsePattern->index, nls->nls_jacobian);
+            gbData->stats.nJacobianFactorizations++;
         }
     }
 
@@ -1262,6 +1266,21 @@ int jacobian_IRK_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian
   return 0;
 }
 
+/**
+ * @brief Assemble (E)SDIRK stage Jacobian for the nonlinear system.
+ *
+ * Scales the ODE Jacobian by `h * gamma`, maps it into the NLS Jacobian buffer,
+ * and subtracts the identity on the diagonal:  J = -I + h*a_ii * dfdx.
+ *
+ * @param data        Runtime data (unused)
+ * @param threadData  Thread data
+ * @param gbData      GBODE integrator data (step size, tableau, stage)
+ * @param nls         Internal NLS data with index mapping
+ * @param jac_ode     ODE Jacobian (structures)
+ * @param jac_buf_ode ODE Jacobian values
+ * @param jac_buf_nls Output buffer for NLS Jacobian
+ * @return 0 on success
+ */
 int jacobian_SR_DIRK_full(DATA *data,
                           threadData_t *threadData,
                           DATA_GBODE* gbData,

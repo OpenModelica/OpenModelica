@@ -46,12 +46,13 @@
  * @brief Solver statistics.
  */
 typedef struct SOLVERSTATS {
-  unsigned int nStepsTaken;             /* Number of steps taken by the solver */
-  unsigned int nCallsODE;               /* Number of calls on functionODE */
-  unsigned int nCallsJacobian;          /* Number of evaluations of Jacobian */
-  unsigned int nErrorTestFailures;      /* Number of error test failures */
-  unsigned int nConvergenveTestFailures;  /* Number of convergence test failures */
+  unsigned int nStepsTaken;              /* Number of steps taken by the solver */
+  unsigned int nCallsODE;                /* Number of calls on functionODE */
+  unsigned int nCallsJacobian;           /* Number of evaluations of Jacobian */
+  unsigned int nErrorTestFailures;       /* Number of error test failures */
+  unsigned int nConvergenceTestFailures; /* Number of convergence test failures */
   unsigned int nNewtonStepsTotal;        /* Number of Newton steps (total) */
+  unsigned int nJacobianFactorizations;  /* Number of Jacobian / LU factorizations (total) */
 } SOLVERSTATS;
 
 /**
