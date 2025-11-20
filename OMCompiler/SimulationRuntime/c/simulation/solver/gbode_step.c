@@ -316,7 +316,8 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
         printVector_gb(OMC_LOG_GBODE_NLS_V, "nlsx (solution)", nlsData->nlsx, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
         messageClose(OMC_LOG_GBODE_NLS_V);
       }
-      if (stage_ != 0)
+
+      if (/* non explicit stage of (E)SDIRK integrator */ (stage_ != 0 || gbData->tableau->A[0] != 0) && gbData->nlsSolverMethod == GB_NLS_INTERNAL)
       {
         memcpy(gbData->x + stage_ * nStates, nlsData->nlsx, nStates*sizeof(double));
         //memcpy(data->localData[0]->realVars, nlsData->nlsx, nStates * sizeof(double));
@@ -529,7 +530,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
   if (solved != NLS_SOLVED) {
-    gbData->stats.nConvergenveTestFailures++;
+    gbData->stats.nConvergenceTestFailures++;
     warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_RK at time t=%g", gbData->time);
     return -1;
   }

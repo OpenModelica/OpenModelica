@@ -226,6 +226,7 @@ enum GB_METHOD {
   RK_TRAPEZOID,       /* trapezoid */
   RK_SDIRK2,          /* sdirk2*/
   RK_SDIRK3,          /* sdirk3*/
+  RK_SDIRK4,          /* sdirk4*/
   RK_ESDIRK2,         /* esdirk2*/
   RK_ESDIRK3,         /* esdirk3*/
   RK_ESDIRK4,         /* esdirk4*/
