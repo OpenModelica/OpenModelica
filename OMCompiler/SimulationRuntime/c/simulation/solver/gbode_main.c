@@ -880,7 +880,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
 
       // error handling: try half of the step size!
       if (integrator_step_info != 0) {
-        (gbfData->stats).nConvergenveTestFailures++;
+        (gbfData->stats).nConvergenceTestFailures++;
         infoStreamPrint(OMC_LOG_SOLVER, 0, "gbodef_main: Failed to calculate step at time = %5g.", gbfData->time);
         gbfData->stepSize *= 0.5;
         infoStreamPrint(OMC_LOG_SOLVER, 0, "Try half of the step size = %g", gbfData->stepSize);
@@ -1340,7 +1340,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       //
       // If none of the abort conditions occur, the loop continues to retry with the reduced step size.
       if (gb_step_info != 0) {
-        gbData->stats.nConvergenveTestFailures++;
+        gbData->stats.nConvergenceTestFailures++;
         infoStreamPrint(OMC_LOG_STDOUT, 0, "gbode_main: Failed to calculate step at time = %5g.", gbData->time + gbData->stepSize);
         if (gbData->ctrl_method == GB_CTRL_CNST) {
           errorStreamPrint(OMC_LOG_STDOUT, 0, "Simulation aborted since gbode is running with fixed step size!");

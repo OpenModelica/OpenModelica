@@ -268,7 +268,7 @@ void getButcherTableau_ESDIRK4(BUTCHER_TABLEAU* tableau)
   tableau->isKRightAvailable = FALSE;
 }
 
-// TODO: Describe me
+// 3-stage order 3(2), L-stable SDIRK, embedded bt might be bad, dense output missing
 void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau)
 {
   tableau->nStages = 3;
@@ -276,15 +276,54 @@ void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau)
   tableau->order_bt = 2;
   tableau->fac = 1.0;
 
-  const double c[] = {0.788675134594812882254574390252, 0.21132486540518711774542560975,                               1};
+  const double c[] = {0.4358665215084589994160194, 0.7179332607542294997080097,                               1};
   const double A[] = {
-                          0.788675134594812882254574390252,                                0,                                0,
-                          -0.577350269189625764509148780509, 0.788675134594812882254574390252,                                0,
-                                                        0, 0.211324865405187117745425609748, 0.788675134594812882254574390252};
-  const double b[] = {0.5, 0.5, 0.0};
-  const double bt[] = {-3.52072594216369017578202073251, 1.57735026918962576450914878069, 2.94337567297406441127287195182};
+                      0.4358665215084589994160194,                           0,                           0,
+                      0.2820667392457705002919903, 0.4358665215084589994160194,                           0,
+                      1.2084966491760100703364772, -0.644363170684469069752496, 0.4358665215084589994160194};
+
+  const double b[] = {1.2084966491760100703364772, -0.644363170684469069752496, 0.4358665215084589994160194};
+  const double bt[] = {0.0, 1.7726301276675510709204584, -0.7726301276675510709204578};
 
   setButcherTableau(tableau, c, A, b, bt);
+}
+
+void denseOutput_SDIRK4(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = (((-20./9.  * dt +  217./36.)   * dt -  463./72.)    * dt + 11./3.);
+  tableau->b_dt[1] = (((-10.     * dt +  661./24.)   * dt -  385./16.)    * dt + 11./2.);
+  tableau->b_dt[2] = (((250./27. * dt -  8875./216.) * dt +  20125./432.) * dt - 125./18.);
+  tableau->b_dt[3] = ((                  85./6.      * dt -  85./4.)      * dt);
+  tableau->b_dt[4] = ((( 80./27. * dt -  359./54.)   * dt +  557./108.)    * dt - 11./9.);
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
+// L-stable, SDIRK, order 4(3), 5 stages, gamma = 0.25
+// also implemented in Hairer and Wanner legacy Fortran code `SDIRK4`
+void getButcherTableau_SDIRK4(BUTCHER_TABLEAU* tableau)
+{
+  tableau->nStages = 5;
+  tableau->order_b = 4;
+  tableau->order_bt = 3;
+  tableau->fac = 1.0;
+
+  const double c[] = {0.25, 0.75, 0.55, 0.5, 1.0};
+  const double A[] = {
+                          0.25,       0.0,         0.0,      0.0,      0.0,
+                          0.5,        0.25,        0.0,      0.0,      0.0,
+                          17./50.,    -1./25.,     0.25,     0.0,      0.0,
+                          371./1360., -137./2720., 15./544., 0.25,     0.0,
+                          25./24.,    -49./48.,    125./16., -85./12., 0.25};
+  const double b[]  = {25./24., -49./48., 125./16., -85./12., 0.25};
+  const double bt[] = {59./48., -17./96., 225./32., -85./12., 0.0};
+
+  setButcherTableau(tableau, c, A, b, bt);
+
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_SDIRK4;
+  tableau->isKLeftAvailable = FALSE;
+  tableau->isKRightAvailable = FALSE; // TODO: ??? isnt this available due to node at c_last = 1 ???
 }
 
 // TODO: Describe me
@@ -293,13 +332,13 @@ void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
   tableau->nStages = 2;
   tableau->order_b = 2;
   tableau->order_bt = 1;
-  tableau->fac = 1.5;
+  tableau->fac = 1.0;
 
   /* Butcher Tableau */
-  const double c[] = {0.5, 1.0};
-  const double A[] = {0.5, 0.0,
-                      0.5, 0.5};
-  const double b[] = { 0.5,  0.5};
+  const double c[] = {0.29289321881345247559915563789, 1.0};
+  const double A[] = {0.29289321881345247559915563789, 0.0,
+                      0.707106781186547524400844362104849, 0.29289321881345247559915563789};
+  const double b[] = {0.707106781186547524400844362104849, 0.29289321881345247559915563789};
   const double bt[] = {0.25, 0.75};
 
   setButcherTableau(tableau, c, A, b, bt);
@@ -1491,6 +1530,9 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag)
       break;
     case RK_SDIRK3:
       getButcherTableau_SDIRK3(tableau);
+      break;
+    case RK_SDIRK4:
+      getButcherTableau_SDIRK4(tableau);
       break;
     case RK_ESDIRK2:
       getButcherTableau_ESDIRK2(tableau);
