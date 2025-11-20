@@ -109,6 +109,10 @@ int jacA_sym(double *t, double *y, double *yprime, double *deltaD,
              double *pd, double *cj, double *h, double *wt,
              double *rpar, int* ipar);
 
+int jacADJ_sym(double *t, double *y, double *yprime, double *deltaD,
+               double *pd, double *cj, double *h, double *wt,
+               double *rpar, int* ipar);
+
 int jacA_symColored(double *t, double *y, double *yprime,
                    double *deltaD, double *pd, double *cj, double *h,
                    double *wt, double *rpar, int* ipar);
@@ -352,12 +356,12 @@ int dassl_initial(DATA* data, threadData_t *threadData,
   }
 
   JACOBIAN* jacobian = NULL;
-  if (dasslData->dasslJacobian == COLOREDSYMJACADJ)
+  if (dasslData->dasslJacobian == COLOREDSYMJACADJ || dasslData->dasslJacobian == SYMJACADJ)
   {
     jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ]);
     data->callback->initialAnalyticJacobianADJ(data, threadData, jacobian);
   }
-  else 
+  else
   {
     jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
     data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
@@ -401,6 +405,8 @@ int dassl_initial(DATA* data, threadData_t *threadData,
       break;
     case SYMJAC:
       dasslData->jacobianFunction = jacA_sym;
+    case SYMJACADJ:
+      dasslData->jacobianFunction = jacADJ_sym;
 #ifdef USE_PARJAC
       allocateThreadLocalJacobians(data, &(dasslData->jacColumns));
       dasslData->allocatedParMem = 1;   /* true */
@@ -479,7 +485,7 @@ int dassl_deinitial(DATA* data, DASSL_DATA *dasslData)
   free(dasslData->states);
 
   /* Free Jacobians */
-  if (dasslData->dasslJacobian == COLOREDSYMJACADJ)
+  if (dasslData->dasslJacobian == COLOREDSYMJACADJ || dasslData->dasslJacobian == SYMJACADJ)
   {
     JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ]);
     freeJacobian(jacobian);
@@ -1038,6 +1044,28 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
   return 0;
 }
 
+/**
+ * @brief Set element of dense Jacobian matrix transposed.
+ * Needed when calculating adjoint Jacobian.
+ * Adjoint setter: flip indices to correct transposed storage
+ * Jac(row, column) = val.
+ *
+ * @param row       Row of matrix element.
+ * @param column    Column of matrix element.
+ * @param nth       Sparsity pattern lead index, unused.
+ * @param value     Value to set in position (i,j)
+ * @param Jac       Pointer to double array storing matrix.
+ * @param nRows     Number of rows of Jacobian matrix
+ */
+void setJacElementDasslSparseAdj(int row, int column, int nth, double value,
+                                 void* Jac, int nRows)
+{
+  UNUSED(nth);
+  /* Store so that resulting matrix matches forward layout */
+  double* A = (double*) Jac;
+  A[row * nRows + column] = value;
+}
+
 /* \fn jacADJ_symColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
    double *rpar, int* ipar)
  *
@@ -1071,7 +1099,7 @@ int jacADJ_symColored(double *t, double *y, double *yprime, double *delta,
   }
 
   genericColoredSymbolicJacobianEvaluation(rows, columns, spp, matrixA, t_jac,
-                                           data, threadData, &setJacElementDasslSparse);
+                                           data, threadData, &setJacElementDasslSparseAdj);
 
   TRACE_POP
   return 0;
@@ -1142,6 +1170,70 @@ int jacA_sym(double *t, double *y, double *yprime, double *delta,
     t_jac->seedVars[i] = 0.0;
   } // for loop
 } // omp parallel
+
+  TRACE_POP
+  return 0;
+}
+
+int jacADJ_sym(double *t, double *y, double *yprime, double *delta,
+               double *matrixA, double *cj, double *h, double *wt,
+               double *rpar, int *ipar)
+{
+  TRACE_PUSH
+
+  DATA* data = (DATA*)(void*)((double**)rpar)[0];
+  DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
+  threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
+
+  const int index = data->callback->INDEX_JAC_ADJ;
+  JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
+  unsigned int columns = jac->sizeCols;
+  unsigned int rows = jac->sizeRows;
+  unsigned int sizeTmpVars = jac->sizeTmpVars;
+  unsigned int i;
+
+  /* Evaluate constant equations if available */
+  if (jac->constantEqns != NULL) {
+    jac->constantEqns(data, threadData, jac, NULL);
+  }
+
+#ifdef USE_PARJAC
+  GC_allow_register_threads();
+#endif
+
+#pragma omp parallel default(none) firstprivate(columns, rows, sizeTmpVars) shared(i, matrixA, data, threadData, dasslData)
+{
+#ifdef USE_PARJAC
+  /* Register omp-thread in GC */
+  if(!GC_thread_is_registered()) {
+     struct GC_stack_base sb;
+     memset (&sb, 0, sizeof(sb));
+     GC_get_stack_base(&sb);
+     GC_register_my_thread (&sb);
+  }
+  /* Use thread local analytic Jacobians */
+  JACOBIAN* t_jac = &(dasslData->jacColumns[omc_get_thread_num()]);
+#else
+  JACOBIAN* t_jac = jac;
+#endif
+  unsigned int j;
+
+#pragma omp for schedule(runtime)
+  for(i = 0; i < columns; i++)
+  {
+    t_jac->seedVars[i] = 1.0;
+    /* Adjoint column evaluation */
+    data->callback->functionJacADJ_column(data, threadData, t_jac, NULL);
+
+    for(j = 0; j < rows; j++)
+    {
+      /* Store in same layout as jacA_sym */
+      matrixA[i*columns + j] = t_jac->resultVars[j];
+    }
+
+    t_jac->seedVars[i] = 0.0;
+  } /* for i */
+} /* omp parallel */
 
   TRACE_POP
   return 0;

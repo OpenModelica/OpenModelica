@@ -1287,7 +1287,8 @@ const char *JACOBIAN_METHOD_NAME[JAC_MAX] = {
   "coloredSymbolical",
   "coloredSymbolicalAdjoint",
   "numerical",
-  "symbolical"
+  "symbolical",
+  "symbolicalAdjoint"
 };
 
 const char *JACOBIAN_METHOD_DESC[JAC_MAX] = {

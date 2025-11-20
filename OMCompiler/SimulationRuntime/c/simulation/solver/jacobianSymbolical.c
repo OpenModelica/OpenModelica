@@ -131,8 +131,10 @@ void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATT
 
   unsigned int i, j, currentIndex, nth;
 
+
 #pragma omp for
   for (i=0; i < spp->maxColors; i++) {
+
     /* Set seed vector for current color */
     for (j=0; j < columns; j++) {
       if (spp->colorCols[j]-1 == i) {
@@ -141,11 +143,12 @@ void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATT
     }
 
     /* Evaluate with updated seed vector */
-    if (data->callback->functionJacADJ_column) {
+    if (t_jac->isRowEval == 1) {
       data->callback->functionJacADJ_column(data, threadData, t_jac, NULL);
     } else {
       data->callback->functionJacA_column(data, threadData, t_jac, NULL);
     }
+
     /* Save jacobian elements in matrixA*/
     for (j=0; j < columns; j++) {
       if (t_jac->seedVars[j] == 1) {
