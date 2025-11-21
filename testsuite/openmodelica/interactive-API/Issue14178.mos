@@ -22,31 +22,12 @@ simulate(ThermofluidStream.Examples.EspressoMachine, simflags="-logFormat=xml");
 // <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"The default linear solver fails, the fallback solver with total pivoting is started at time 0.000000. That might raise performance issues, for more information use -lv LOG_LS.\" />
 // <message stream=\"LOG_STDOUT\" type=\"info\" text=\"Too many warnings, reached display limit of 3. Suppressing further warning messages of the same type.\" />
 // <message stream=\"LOG_STDOUT\" type=\"info\" text=\"Change limit with simulation flag -lvMaxWarn=&lt;newLimit&gt;\" />
-// <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"While solving non-linear system an assertion failed at time 1175.89.\">
+// <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"While solving non-linear system an assertion failed at time 1326.38.\">
 // <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"The non-linear solver tries to solve the problem that could take some time.\" />
 // <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"It could help to provide better start-values for the iteration variables.\" />
 // <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"For more information simulate with -lv LOG_NLS_V\" />
 // </message>
-// <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"While solving non-linear system an assertion failed at time 1175.89.\">
-// <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"The non-linear solver tries to solve the problem that could take some time.\" />
-// <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"It could help to provide better start-values for the iteration variables.\" />
-// <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"For more information simulate with -lv LOG_NLS_V\" />
-// </message>
-// <message stream=\"LOG_ASSERT\" type=\"debug\" text=\"Solving non-linear system 1006 failed at time=1175.89229351755.
-// For more information please use -lv LOG_NLS.\">
-// <used index=\"1006\" />
-// </message>
-// <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"While solving non-linear system an assertion failed at time 1233.76.\">
-// <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"The non-linear solver tries to solve the problem that could take some time.\" />
-// <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"It could help to provide better start-values for the iteration variables.\" />
-// <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"For more information simulate with -lv LOG_NLS_V\" />
-// </message>
-// <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"While solving non-linear system an assertion failed at time 1233.75.\">
-// <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"The non-linear solver tries to solve the problem that could take some time.\" />
-// <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"It could help to provide better start-values for the iteration variables.\" />
-// <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"For more information simulate with -lv LOG_NLS_V\" />
-// </message>
-// <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"While solving non-linear system an assertion failed at time 1316.64.\">
+// <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"While solving non-linear system an assertion failed at time 1346.32.\">
 // <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"The non-linear solver tries to solve the problem that could take some time.\" />
 // <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"It could help to provide better start-values for the iteration variables.\" />
 // <message stream=\"LOG_STDOUT\" type=\"warning\" text=\"For more information simulate with -lv LOG_NLS_V\" />
@@ -55,3 +36,4 @@ simulate(ThermofluidStream.Examples.EspressoMachine, simflags="-logFormat=xml");
 // "
 // end SimulationResult;
 // endResult
+
