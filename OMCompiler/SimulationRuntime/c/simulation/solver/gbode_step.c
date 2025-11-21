@@ -294,10 +294,19 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       memcpy(nlsData->nlsx,    gbData->yOld, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxExtrapolation,    gbData->yOld, nStates*sizeof(modelica_real));
 
-      if (stage>1) {
+      if (gbData->time != data->simulationInfo->startTime && gbData->tableau->dense_output != NULL)
+      {
+        double theta = (gbData->time + gbData->tableau->c[stage_] * gbData->stepSize - gbData->extrapolationBaseTime) / gbData->extrapolationStepSize;
+        gbData->tableau->dense_output(gbData->tableau, gbData->yLast, NULL, gbData->kLast,
+                                      theta, gbData->extrapolationStepSize, nlsData->nlsxOld, 0, NULL, nStates);
+      }
+      else if (stage>1)
+      {
         extrapolation_hermite_gb(nlsData->nlsxOld, gbData->nStates, gbData->time + gbData->tableau->c[stage_-2] * gbData->stepSize, gbData->x + (stage_-2) * nStates, gbData->k + (stage_-2) * nStates,
                              gbData->time + gbData->tableau->c[stage_-1] * gbData->stepSize, gbData->x + (stage_-1) * nStates, gbData->k + (stage_-1) * nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-      } else {
+      }
+      else
+      {
         extrapolation_gb(gbData, nlsData->nlsxOld, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
       }
 

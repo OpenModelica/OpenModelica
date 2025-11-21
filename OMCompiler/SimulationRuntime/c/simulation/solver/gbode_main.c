@@ -383,6 +383,8 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   gbData->kLeft     = malloc(sizeof(double) * gbData->nStates);
   gbData->yRight    = malloc(sizeof(double) * gbData->nStates);
   gbData->kRight    = malloc(sizeof(double) * gbData->nStates);
+  gbData->kLast     = malloc(sizeof(double) * gbData->nStates * gbData->tableau->nStages);
+  gbData->yLast     = malloc(sizeof(double) * gbData->nStates);
   gbData->yt        = malloc(sizeof(double) * gbData->nStates);
   gbData->y1        = malloc(sizeof(double) * gbData->nStates);
   gbData->y2        = malloc(sizeof(double) * gbData->nStates);
@@ -620,8 +622,10 @@ void gbode_freeData(DATA* data, DATA_GBODE *gbData)
   /* Free remaining arrays */
   free(gbData->y);
   free(gbData->yOld);
+  free(gbData->yLast);
   free(gbData->yLeft);
   free(gbData->kLeft);
+  free(gbData->kLast);
   free(gbData->yRight);
   free(gbData->kRight);
   free(gbData->yt);
@@ -1077,7 +1081,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   }
   /* Solver statistics */
   if (!gbfData->isExplicit)
-    // gbfData->stats.nCallsJacobian = gbfData->nlsData->numberOfJEval;
+    gbfData->stats.nCallsJacobian = gbfData->nlsData->numberOfJEval;
 
   infoStreamPrint(OMC_LOG_SOLVER, 0, "gbodef finished (inner steps).");
   messageClose(OMC_LOG_SOLVER);  // FIXME what does this belong to?
@@ -1310,6 +1314,12 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         gb_step_info = gbData->step_fun(data, threadData, solverInfo);
       }
 
+      /* remember kLast and yLast for dense output extrapolation */
+      gbData->extrapolationBaseTime = gbData->time;
+      gbData->extrapolationStepSize = gbData->stepSize;
+      memcpy(gbData->kLast, gbData->k, nStates * nStages * sizeof(double));
+      memcpy(gbData->yLast, gbData->yOld, nStates * sizeof(double));
+
       // debug the approximations after performed step
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) {
         infoStreamPrint(OMC_LOG_GBODE, 1, "Approximations after step calculation:");
@@ -1368,7 +1378,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       // Calculate error estimators and tolerance scaling for each state variable
       for (i = 0, err=0; i < nStates; i++) {
         // calculate corresponding values for the error estimator and step size control
-        gbData->errtol[i] = Atol + fmax(fabs(gbData->y[i]), fabs(gbData->yt[i])) * Rtol;
+        gbData->errtol[i] = Atol * data->modelData->realVarsData[i].attribute.nominal + fmax(fabs(gbData->y[i]), fabs(gbData->yt[i])) * Rtol;
         gbData->errest[i] = fabs(gbData->y[i] - gbData->yt[i]);
         gbData->err[i] = gbData->tableau->fac * gbData->errest[i] / gbData->errtol[i];
         err += gbData->err[i] * gbData->err[i];

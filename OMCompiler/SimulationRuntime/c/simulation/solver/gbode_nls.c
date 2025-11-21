@@ -144,10 +144,16 @@ GB_INTERNAL_NLS_DATA *gbInternalNlsAllocate(int size, NLS_USERDATA* userData, mo
   nls->rtol = userData->data->simulationInfo->tolerance;
   nls->atol = userData->data->simulationInfo->tolerance;
 
+  // TODO: some refactoring for tolerances here?
+  // TODO: is this transform of ATOL and RTOL only valid for superconvergened FIRK (Radau, Lobatto, Gauss)?
+  // nls->rtol_sc = userData->data->simulationInfo->tolerance;
+  // nls->atol_sc = userData->data->simulationInfo->tolerance;
+
+  double order_quot = (double)tabl->order_bt / (double)tabl->order_b;
   double quot = nls->atol / nls->rtol;
-  nls->rtol_sc = pow(nls->rtol, (double)tabl->order_bt / (double)tabl->order_b);
+  nls->rtol_sc = pow(nls->rtol, order_quot > 1 ? 1.0 : order_quot);
   nls->atol_sc = quot * nls->rtol_sc;
-  nls->fnewt = fmax(10 * DBL_EPSILON / nls->rtol_sc, fmin(3e-2, pow(nls->rtol_sc, (double)tabl->order_b / (double)tabl->order_bt - 1.0)));
+  nls->fnewt = fmax(10 * DBL_EPSILON / nls->rtol_sc, fmin(3e-2, pow(nls->rtol_sc, 1.0 / order_quot - 1.0)));
   nls->theta_keep = 1e-3;
   nls->call_jac = TRUE;
   nls->theta_divergence = 0.99;
@@ -176,7 +182,7 @@ static void createGbScales(GB_INTERNAL_NLS_DATA *nls, double *y1, double *y2)
 {
   for (int i = 0; i < nls->size; i++)
   {
-    nls->scal[i] = 1. / (nls->atol_sc + fmax(fabs(y1[i]), fabs(y2[i])) * nls->rtol_sc);
+    nls->scal[i] = 1. / (nls->atol_sc * nls->nls_user_data->data->modelData->realVarsData[i].attribute.nominal + fmax(fabs(y1[i]), fabs(y2[i])) * nls->rtol_sc);
   }
 }
 
@@ -200,7 +206,7 @@ static NLS_SOLVER_STATUS solveNLS_gbInternal(DATA *data,
     int size = nonlinsys->size;
     int stage = gbData->act_stage;
     double *x = nonlinsys->nlsx;
-    double *x_start = nonlinsys->nlsxOld;              // currently the extrapolated (e.g. dense output / hermite guess)
+    double *x_start = nonlinsys->nlsxOld;              // currently the extrapolated (e.g. dense output / hermite guess) | Its awful for Robertson! Something is fishy here!
     // double *x_start = nonlinsys->nlsxExtrapolation; // currently the constant guess (k = 0)
     double *res = nonlinsys->resValues;
 
