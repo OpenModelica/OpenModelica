@@ -109,7 +109,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
   gbfData->tableau = initButcherTableau(gbfData->GM_method, FLAG_MR_ERR);
   if (gbfData->tableau == NULL) {
     // ERROR
-    messageClose(OMC_LOG_STDOUT);
+    messageClose(OMC_LOG_STDOUT);  // FIXME what does this belong to?
     omc_throw_function(threadData);
   }
 
@@ -839,7 +839,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       // if (gbfData->time - gbfData->stepSize > gbData->timeLeft) {
       //   gbData->timeRight = gbfData->timeRight;
       //   gbData->lastStepSize = gbData->timeRight - gbData->timeLeft;
-      //   messageClose(OMC_LOG_SOLVER);
+      //   messageClose(OMC_LOG_SOLVER);  // FIXME what does this belong to?
       //   return 0;
       // } else {
         gbfData->stepSize = gbData->timeRight - gbfData->time;
@@ -885,7 +885,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         infoStreamPrint(OMC_LOG_SOLVER, 0, "Try half of the step size = %g", gbfData->stepSize);
         if (gbfData->stepSize < GB_MINIMAL_STEP_SIZE) {
           errorStreamPrint(OMC_LOG_STDOUT, 0, "Simulation aborted! Minimum step size %g reached, but error still to large.", GB_MINIMAL_STEP_SIZE);
-          messageClose(OMC_LOG_SOLVER);
+          messageClose(OMC_LOG_SOLVER);  // FIXME what does this belong to?
           return -1;
         }
         err = 100;
@@ -996,7 +996,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       }
 
       // Get out of the integration routine for event handling
-      messageClose(OMC_LOG_SOLVER);
+      messageClose(OMC_LOG_SOLVER);  // FIXME what does this belong to?
       return 1;
     }
 
@@ -1079,7 +1079,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     gbfData->stats.nCallsJacobian = gbfData->nlsData->numberOfJEval;
 
   infoStreamPrint(OMC_LOG_SOLVER, 0, "gbodef finished (inner steps).");
-  messageClose(OMC_LOG_SOLVER);
+  messageClose(OMC_LOG_SOLVER);  // FIXME what does this belong to?
 
   return 0;
 }

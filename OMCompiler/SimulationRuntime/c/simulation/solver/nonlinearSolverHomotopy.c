@@ -966,7 +966,7 @@ static int wrapper_fvec_der(DATA_HOMOTOPY* solverData, double* x, double* fJac)
     debugDouble(OMC_LOG_NLS_JAC_TEST,"error between analytical and numerical jacobian = ", vecMaxNorm(n*n, solverData->debug_fJac));
     vecDivScaling(n*(n+1), solverData->debug_fJac , fJac, solverData->debug_fJac);
     debugDouble(OMC_LOG_NLS_JAC_TEST,"relative error between analytical and numerical jacobian = ", vecMaxNorm(n*n, solverData->debug_fJac));
-    messageClose(OMC_LOG_NLS_JAC_TEST);
+    messageClose(OMC_LOG_NLS_JAC_TEST); // FIXME what does this belong to?
   }
   /* performance measurement and statistics */
   nlsData->jacobianTime += rt_ext_tp_tock(&(nlsData->jacobianTimeClock));
@@ -1279,7 +1279,7 @@ int linearSolverWrapper(DATA *data, int n, double* x, double* A, int* indRow, in
     debugVectorDouble(OMC_LOG_NLS_JAC,"test solution:", res, n);
     debugDouble(OMC_LOG_NLS_JAC,"error of linear system = ", vec2Norm(n, res));
     free(res);
-    messageClose(OMC_LOG_NLS_JAC);
+    messageClose(OMC_LOG_NLS_JAC); // FIXME what does this belong to?
   }
 
   return returnValue;
