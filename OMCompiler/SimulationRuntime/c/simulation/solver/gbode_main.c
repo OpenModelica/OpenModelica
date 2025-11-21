@@ -443,7 +443,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     if (!gbData->nlsData) {
       return -1;
     } else {
-      infoStreamPrint(OMC_LOG_SOLVER, 1, "Nominal values of  the states:");
+      infoStreamPrint(OMC_LOG_SOLVER, 1, "Nominal values of the states:");
       for (int i = 0; i < gbData->nStates; i++) {
         infoStreamPrint(OMC_LOG_SOLVER, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gbData->nlsData->nominal[i]);
       }
@@ -1799,11 +1799,12 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       printVector_gb(OMC_LOG_GBODE, " y", sData->realVars, nStates, sData->timeValue);
       messageClose(OMC_LOG_GBODE);
     }
-    // return to solver main routine for proper event handling (iteration)
-    messageClose(OMC_LOG_SOLVER);
 
     listClear(solverInfo->eventLst);
     gbData->eventTime = DBL_MAX; // reset event time, if eventTime is reached
+
+    // return to solver main routine for proper event handling (iteration)
+    messageClose(OMC_LOG_SOLVER);
 
     return 0;
   }

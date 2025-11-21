@@ -3437,22 +3437,22 @@ let &sub = buffer ""
     /* min ******************************************************** */
     infoStreamPrint(OMC_LOG_INIT, 1, "updating min-values");
     <%minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix, contextOther)%>
-    if (OMC_ACTIVE_STREAM(OMC_LOG_INIT)) messageClose(OMC_LOG_INIT);
+    messageClose(OMC_LOG_INIT);
 
     /* max ******************************************************** */
     infoStreamPrint(OMC_LOG_INIT, 1, "updating max-values");
     <%maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix, contextOther)%>
-    if (OMC_ACTIVE_STREAM(OMC_LOG_INIT)) messageClose(OMC_LOG_INIT);
+    messageClose(OMC_LOG_INIT);
 
     /* nominal **************************************************** */
     infoStreamPrint(OMC_LOG_INIT, 1, "updating nominal-values");
     <%nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix, contextOther)%>
-    if (OMC_ACTIVE_STREAM(OMC_LOG_INIT)) messageClose(OMC_LOG_INIT);
+    messageClose(OMC_LOG_INIT);
 
     /* start ****************************************************** */
     infoStreamPrint(OMC_LOG_INIT, 1, "updating primary start-values");
     <%(startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix, contextOther) ; separator="\n")%>
-    if (OMC_ACTIVE_STREAM(OMC_LOG_INIT)) messageClose(OMC_LOG_INIT);
+    messageClose(OMC_LOG_INIT);
 
     TRACE_POP
     return 0;
@@ -6362,11 +6362,7 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = at) th
   /* Linear equation system */
   int retValue;
   double aux_x[<%listLength(ls.vars)%>] = { <%ls.vars |> SIMVAR(__) hasindex i0 => '<%contextCrefOld(name, context, auxFunctions, 1)%>' ;separator=","%> };
-  if(OMC_ACTIVE_STREAM(OMC_LOG_DT))
-  {
-    infoStreamPrint(OMC_LOG_DT, 1, "Solving linear system <%ls.index%> (STRICT TEARING SET if tearing enabled) at time = %18.10e", data->localData[0]->timeValue);
-    messageClose(OMC_LOG_DT);
-  }
+  infoStreamPrint(OMC_LOG_DT, 0, "Solving linear system <%ls.index%> (STRICT TEARING SET if tearing enabled) at time = %18.10e", data->localData[0]->timeValue);
   <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%ls.index%>).profileBlockIndex);' %>
   <% if ls.partOfJac then
      'data->simulationInfo->linearSystemData[<%ls.indexLinearSystem%>].parDynamicData[omc_get_thread_num()].parentJacobian = jacobian;'
@@ -6399,11 +6395,7 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(a
   /* Linear equation system */
   int retValue;
 
-  if(OMC_ACTIVE_STREAM(OMC_LOG_DT))
-  {
-    infoStreamPrint(OMC_LOG_DT, 1, "Solving linear system <%at.index%> (CASUAL TEARING SET, strict: <%ls.index%>) at time = %18.10e", data->localData[0]->timeValue);
-    messageClose(OMC_LOG_DT);
-  }
+  infoStreamPrint(OMC_LOG_DT, 0, "Solving linear system <%at.index%> (CASUAL TEARING SET, strict: <%ls.index%>) at time = %18.10e", data->localData[0]->timeValue);
   <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%at.index%>).profileBlockIndex);' %>
   if (data->simulationInfo->linearSystemData[<%at.indexLinearSystem%>].checkConstraints(data, threadData) == 1)
   {
@@ -6418,11 +6410,7 @@ case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(a
   }
   else
   {
-    if(OMC_ACTIVE_STREAM(OMC_LOG_DT))
-    {
-      infoStreamPrint(OMC_LOG_DT, 1, "Constraints of the casual tearing set are violated! Now the strict tearing set is used.");
-      messageClose(OMC_LOG_DT);
-    }
+    infoStreamPrint(OMC_LOG_DT, 0, "Constraints of the casual tearing set are violated! Now the strict tearing set is used.");
     /* Global constraints are violated. Use the strict tearing set now. */
     data->simulationInfo->linearSystemData[<%at.indexLinearSystem%>].strictTearingFunctionCall(data, threadData);
   }
@@ -6455,11 +6443,7 @@ template equationNonlinear(SimEqSystem eq, Context context, String modelNamePref
     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing = at) then
       <<
       int retValue;
-      if(OMC_ACTIVE_STREAM(OMC_LOG_DT))
-      {
-        infoStreamPrint(OMC_LOG_DT, 1, "Solving nonlinear system <%nls.index%> (STRICT TEARING SET if tearing enabled) at time = %18.10e", data->localData[0]->timeValue);
-        messageClose(OMC_LOG_DT);
-      }
+      infoStreamPrint(OMC_LOG_DT, 0, "Solving nonlinear system <%nls.index%> (STRICT TEARING SET if tearing enabled) at time = %18.10e", data->localData[0]->timeValue);
       <% if profileSome() then
       <<
       SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%nls.index%>).profileBlockIndex);
@@ -6495,11 +6479,7 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, St
     case eq as SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__), alternativeTearing = SOME(at as NONLINEARSYSTEM(__))) then
       <<
       int retValue;
-      if(OMC_ACTIVE_STREAM(OMC_LOG_DT))
-      {
-        infoStreamPrint(OMC_LOG_DT, 1, "Solving nonlinear system <%at.index%> (CASUAL TEARING SET, strict: <%nls.index%>) at time = %18.10e", data->localData[0]->timeValue);
-        messageClose(OMC_LOG_DT);
-      }
+      infoStreamPrint(OMC_LOG_DT, 0, "Solving nonlinear system <%at.index%> (CASUAL TEARING SET, strict: <%nls.index%>) at time = %18.10e", data->localData[0]->timeValue);
       <% if profileSome() then
       <<
       SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%at.index%>).profileBlockIndex);
@@ -6527,11 +6507,7 @@ template equationNonlinearAlternativeTearing(SimEqSystem eq, Context context, St
       }
       else
       {
-        if(OMC_ACTIVE_STREAM(OMC_LOG_DT))
-        {
-          infoStreamPrint(OMC_LOG_DT, 1, "Constraints of the casual tearing set are violated! Now the strict tearing set is used.");
-          messageClose(OMC_LOG_DT);
-        }
+        infoStreamPrint(OMC_LOG_DT, 0, "Constraints of the casual tearing set are violated! Now the strict tearing set is used.");
         /* Global constraints are violated. Use the strict tearing set now. */
         data->simulationInfo->nonlinearSystemData[<%at.indexNonLinearSystem%>].strictTearingFunctionCall(data, threadData);
       }

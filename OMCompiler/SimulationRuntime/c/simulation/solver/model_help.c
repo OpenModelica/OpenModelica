@@ -780,8 +780,8 @@ void setAllParamsToStart(DATA *data)
     debugStreamPrint(OMC_LOG_DEBUG, 1, "set Real var %s:", mData->realParameterData[array_idx].info.name);
     for (dim_idx = 0; dim_idx < mData->realParameterData[array_idx].attribute.start.dim_size[0]; dim_idx++)
     {
-      debugStreamPrint(OMC_LOG_DEBUG, 0, "%g", sInfo->realParameter[scalar_idx]);
       sInfo->realParameter[scalar_idx] = real_get(mData->realParameterData[array_idx].attribute.start, dim_idx);
+      debugStreamPrint(OMC_LOG_DEBUG, 0, "%g", sInfo->realParameter[scalar_idx]);
       scalar_idx++;
     }
     messageClose(OMC_LOG_DEBUG);

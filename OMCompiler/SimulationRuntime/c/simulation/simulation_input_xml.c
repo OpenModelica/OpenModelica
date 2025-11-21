@@ -877,7 +877,7 @@ void read_default_experiment(SIMULATION_INFO* simulationInfo, omc_DefaultExperim
     warningStreamPrint(OMC_LOG_STDOUT, 1, "Start or stop time was overwritten, but no new integrator step size was provided.");
     infoStreamPrint(OMC_LOG_STDOUT, 0, "Re-calculating step size for 500 intervals.");
     infoStreamPrint(OMC_LOG_STDOUT, 0, "Add `stepSize=<value>` to `-override=` or override file to silence this warning.");
-    messageClose(OMC_LOG_STDOUT);
+    messageCloseWarning(OMC_LOG_STDOUT);
   } else {
     simulationInfo->stepSize = read_value_real_default(findHashStringString(de, "stepSize"), (simulationInfo->stopTime - simulationInfo->startTime) / 500);
   }
