@@ -240,41 +240,41 @@ void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, 
  */
 bool Plot::prefixableUnit(const QString &unit)
 {
-  static QStringList prefixableUnits;
-  prefixableUnits << "s"
-                  << "m"
-                  << "m/s"
-                  << "m/s2"
-                  << "rad"
-                  << "rad/s"
-                  << "rad/s2"
-                  << "rpm"
-                  << "Hz"
-                  << "N"
-                  << "N.m"
-                  << "Pa"
-                  << "Pa.s"
-                  << "J"
-                  << "J/kg"
-                  << "J/(kg.K)"
-                  << "K"
-                  << "V"
-                  << "V/m"
-                  << "A"
-                  << "C"
-                  << "F"
-                  << "T"
-                  << "Wb"
-                  << "Wb/m"
-                  << "H"
-                  << "Ohm"
-                  << "S"
-                  << "W"
-                  << "W/m"
-                  << "W/m2"
-                  << "Wh"
-                  << "var";
-
+  static const QSet<QString> prefixableUnits = {
+    "s",
+    "m",
+    "m/s",
+    "m/s2",
+    "rad",
+    "rad/s",
+    "rad/s2",
+    "rpm",
+    "Hz",
+    "N",
+    "N.m",
+    "Pa",
+    "Pa.s",
+    "J",
+    "J/kg",
+    "J/(kg.K)",
+    "K",
+    "V",
+    "V/m",
+    "A",
+    "C",
+    "F",
+    "T",
+    "Wb",
+    "Wb/m",
+    "H",
+    "Ohm",
+    "S",
+    "W",
+    "W/m",
+    "W/m2",
+    "Wh",
+    "var"
+  };
   return prefixableUnits.contains(unit);
 }
 
