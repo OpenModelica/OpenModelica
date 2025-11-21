@@ -277,7 +277,7 @@ public
         comps             = listArray(comps),
         sparsityPattern   = sparsityPattern,
         sparsityColoring  = sparsityColoring,
-        isAdjoint         = if name == "ADJ" then true else false // this is maybe bad (e.g. when name changes)
+        isAdjoint         = if name == "ODE_JAC_ADJ" then true else false // this is maybe bad (e.g. when name changes)
       );
     end if;
   end combine;
@@ -947,13 +947,6 @@ protected
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no strong components were given!"});
     end if;
 
-    // // print strong components
-    // print("Strong components for symbolic differentiation:\n");
-    // print(jacobianTypeString(jacType) + "\n");
-    // for c in comps loop
-    //   print(StrongComponent.toString(c, 2) + "\n");
-    // end for;
-
     // create seed vars
     VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map, makeVar = BVariable.makeSeedVar, init = init));
 
@@ -1100,7 +1093,6 @@ protected
     input output UnorderedMap<ComponentRef, ExpressionList> adjoint_map;
     input output list<Pointer<Variable>> vars;
     input String newName;
-    input Boolean isTmp;
   protected
     ComponentRef baseCref;
   algorithm
@@ -1345,13 +1337,14 @@ protected
     list<ComponentRef> orderedTmpCrefs = {};
     ComponentRef baseCref, pDerCref;
   algorithm
+
     newName := name + "_ADJ";
     if Util.isSome(strongComponents) then
       comps := list(comp for comp guard(not StrongComponent.isDiscrete(comp)) in Util.getOption(strongComponents));
       // only allow single components and algebraic loops
       for c in comps loop
-        if not StrongComponent.isSingleComponent(c) and not StrongComponent.isAlgebraicLoop(c) then
-          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " only supports SINGLE_COMPONENT and ALGEBRAIC_LOOP!"});
+        if not (StrongComponent.isSingleComponent(c) or StrongComponent.isAlgebraicLoop(c)) then
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " only supports SINGLE_COMPONENT and ALGEBRAIC_LOOP for now. Got: " + StrongComponent.compTypeString(c)});
           fail();
         end if;
       end for;
@@ -1388,8 +1381,8 @@ protected
 
     // create adjoint map with seed vars and tmp vars as keys mapping to empty lists
     adjoint_map := UnorderedMap.new<ExpressionList>(ComponentRef.hash, ComponentRef.isEqual);
-    addVarsToAdjointMap(adjoint_map, res_vars, newName, false);
-    addVarsToAdjointMap(adjoint_map, tmp_vars, newName, true);
+    addVarsToAdjointMap(adjoint_map, res_vars, newName);
+    addVarsToAdjointMap(adjoint_map, tmp_vars, newName);
 
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
       print("Adjoint map before:\n" + adjointMapToString(SOME(adjoint_map)) + "\n");
@@ -1655,18 +1648,16 @@ protected
       tmpComps := diffed_comp :: tmpComps;
       i := i + 1;
     end for;
-
     // Emit any remaining tmp vars (e.g. lambda temporaries) not in orderedTmpCrefs.
     for v in tmp_vars loop
       baseCref := BVariable.getVarName(v); // for tmp_vars (already pDer/lambda names)
-      if (not listMember(baseCref, orderedTmpCrefs))
+      if (not List.contains(orderedTmpCrefs, baseCref, ComponentRef.isEqual))
          and UnorderedMap.contains(baseCref, adjoint_map) then
         diffed_comp := makeAdjointComponent(baseCref, adjoint_map, newName, i);
         tmpComps := diffed_comp :: tmpComps;
         i := i + 1;
       end if;
     end for;
-
     // 3. RESULT VAR equations
     resKeys := buildAdjointProcessingOrder(adjoint_map, res_vars);
     resComps := {};
@@ -1676,9 +1667,8 @@ protected
       i := i + 1;
     end for;
     // no reversal needed as order does not matter?
-
     // here are also the loop components from above which might be empty though if there are none
-    diffed_comps := listAppend(listAppend(tmpComps), listAppend(algebraicLoopComps, resComps));
+    diffed_comps := listAppend(tmpComps, listAppend(algebraicLoopComps, resComps));
 
     // collect var data (most of this can be removed)
     unknown_vars  := listAppend(res_vars, tmp_vars);

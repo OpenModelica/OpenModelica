@@ -349,6 +349,36 @@ public
     end match;
   end size;
 
+  public function compTypeString
+    "Returns the constructor name of the strong component as a string.
+     If resolveAlias=true, ALIAS() will be unwrapped to the original component."
+    input StrongComponent comp;
+    input Boolean resolveAlias = true;
+    output String kind;
+  protected
+    StrongComponent comp_;
+  algorithm
+    if resolveAlias then
+      comp_ := removeAlias(comp);
+    else
+      comp_ := comp;
+    end if;
+
+    kind := match comp_
+      case SINGLE_COMPONENT()    then "SINGLE_COMPONENT";
+      case MULTI_COMPONENT()     then "MULTI_COMPONENT";
+      case SLICED_COMPONENT()    then "SLICED_COMPONENT";
+      case RESIZABLE_COMPONENT() then "RESIZABLE_COMPONENT";
+      case GENERIC_COMPONENT()   then "GENERIC_COMPONENT";
+      case ENTWINED_COMPONENT()  then "ENTWINED_COMPONENT";
+      case ALGEBRAIC_LOOP()      then "ALGEBRAIC_LOOP";
+      case ALIAS()               then "ALIAS";
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed in compTypeString."});
+      then fail();
+    end match;
+  end compTypeString;
+
   function removeAlias
     input output StrongComponent comp;
   algorithm

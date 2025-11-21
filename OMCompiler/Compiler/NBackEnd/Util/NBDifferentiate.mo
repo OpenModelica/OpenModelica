@@ -2992,7 +2992,7 @@ public
           end for;
           // Restore upstream gradient
           diffArguments.current_grad := upstream;
-          then (Expression.END());
+          then Expression.EMPTY(Type.REAL()); // Dummy, actual assembly happens in the recursive calls
 
       case Expression.MULTARY(arguments = arguments, inv_arguments = inv_arguments, operator = operator)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION

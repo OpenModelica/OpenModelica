@@ -124,6 +124,9 @@ int jacADJ_symColored(double *t, double *y, double *yprime,
 void setJacElementDasslSparse(int l, int k, int nth, double val,
                                      void* matrixA, int rows);
 
+void setJacElementDasslSparseAdj(int row, int column, int nth, double value,
+                                 void* Jac, int nRows);
+
 void  DDASKR(
     int (*res) (double *t, double *y, double *yprime, double* cj, double *delta, int *ires, double *rpar, int* ipar),
     int *neq,
@@ -1437,12 +1440,70 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
     pd[i] -= *cj;
   }
 
-  /* debug */
-  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC)){
-    _omc_matrix* dumpJac = _omc_createMatrix(dasslData->N, dasslData->N, pd);
-    _omc_printMatrix(dumpJac, "DASSL-Solver: Matrix A", OMC_LOG_JAC);
-    _omc_destroyMatrix(dumpJac);
+  /* Debug compare: analytical pd vs dense numerical Jacobian */
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC)) {
+    int N = dasslData->N;
+    size_t len = (size_t)N * (size_t)N;
+    double *numJac = (double*)malloc(len * sizeof(double));
+    if (numJac != NULL) {
+      /* Compute dense numerical J = (∂F)/(∂y) into numJac */
+      if (jacA_num(t, y, yprime, deltaD, numJac, cj, h, wt, rpar, ipar) == 0) {
+        /* Add cj*(-I) to numeric to match pd */
+        for (i = 0; i < N*N; i += N + 1) {
+          numJac[i] -= *cj;
+        }
+
+        /* Compare */
+        double maxAbs = 0.0, maxRel = 0.0;
+        int maxIdx = -1;
+        for (i = 0; i < (int)len; ++i) {
+          double a = pd[i];
+          double b = numJac[i];
+          double ad = fabs(a - b);
+          if (ad > maxAbs) { maxAbs = ad; maxIdx = i; }
+          /* relative to max(|a|,|b|,1) to avoid division by 0 */
+          double denom = fmax(1.0, fmax(fabs(a), fabs(b)));
+          double rd = ad / denom;
+          if (rd > maxRel) maxRel = rd;
+        }
+
+        /* thresholds: defaults from simulation tolerance; override via env */
+        double baseTol = data->simulationInfo->tolerance;
+        double absTol = baseTol;       /* default absolute threshold */
+        double relTol = 10.0*baseTol;  /* default relative threshold */
+
+        // infoStreamPrint(OMC_LOG_JAC, 1, "Jacobian debug compare (analytical vs dense numeric, after cj)");
+        // infoStreamPrint(OMC_LOG_JAC, 0, "N=%d, max abs diff = %.3e at flat index %d", N, maxAbs, maxIdx);
+        // infoStreamPrint(OMC_LOG_JAC, 0, "max rel diff = %.3e", maxRel);
+        // infoStreamPrint(OMC_LOG_JAC, 0, "thresholds: absTol=%.3e relTol=%.3e", absTol, relTol);
+        // messageClose(OMC_LOG_JAC);
+
+        if (maxAbs > absTol || maxRel > relTol) {
+          free(numJac);
+          warningStreamPrint(OMC_LOG_JAC, 0, "Jacobian mismatch too large");
+          _omc_matrix* dumpJacSym = _omc_createMatrix(dasslData->N, dasslData->N, pd);
+          _omc_printMatrix(dumpJacSym, "Matrix Symbolic:", OMC_LOG_JAC);
+          _omc_destroyMatrix(dumpJacSym);
+          _omc_matrix* dumpJacNum = _omc_createMatrix(dasslData->N, dasslData->N, numJac);
+          _omc_printMatrix(dumpJacNum, "Matrix Numeric: ", OMC_LOG_JAC);
+          _omc_destroyMatrix(dumpJacNum);
+        }
+
+      } else {
+        warningStreamPrint(OMC_LOG_JAC, 0, "jacA_num failed during debug comparison.");
+      }
+      free(numJac);
+    } else {
+      warningStreamPrint(OMC_LOG_JAC, 0, "Failed to allocate buffer for numeric Jacobian debug comparison.");
+    }
   }
+
+  // /* debug */
+  // if (OMC_ACTIVE_STREAM(OMC_LOG_JAC)){
+  //   _omc_matrix* dumpJac = _omc_createMatrix(dasslData->N, dasslData->N, pd);
+  //   _omc_printMatrix(dumpJac, "DASSL-Solver: Matrix A", OMC_LOG_JAC);
+  //   _omc_destroyMatrix(dumpJac);
+  // }
 
   /* set context for the start values extrapolation of non-linear algebraic loops */
   unsetContext(data);
