@@ -326,7 +326,7 @@ void getButcherTableau_SDIRK4(BUTCHER_TABLEAU* tableau)
   tableau->isKRightAvailable = FALSE; // TODO: ??? isnt this available due to node at c_last = 1 ???
 }
 
-// TODO: Describe me
+// 2 stage, L-stable, order 2(1), SDIRK with gamma = 0.29289
 void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
 {
   tableau->nStages = 2;
