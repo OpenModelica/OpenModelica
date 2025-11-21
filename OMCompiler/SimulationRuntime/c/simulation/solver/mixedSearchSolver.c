@@ -184,7 +184,8 @@ int solveMixedSearch(DATA *data, int sysNumber)
   int mixedIterations = 0;
   int success = 0;
 
-  debugStreamPrint(OMC_LOG_MIXED, 1, "\n####  Start solver mixed equation system at time %f.", data->localData[0]->timeValue);
+  // FIXME there is no messageCloseDebug so we use infoStreamPrint here
+  infoStreamPrint(OMC_LOG_MIXED, 1, "\n####  Start solver mixed equation system at time %f.", data->localData[0]->timeValue);
 
   memset(solverData->stateofSearch, 0, systemData->size);
 

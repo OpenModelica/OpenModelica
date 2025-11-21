@@ -726,7 +726,8 @@ void setAllVarsToStart(DATA *data)
 
   for (array_idx = 0; array_idx < mData->nVariablesRealArray; ++array_idx)
   {
-    debugStreamPrint(OMC_LOG_DEBUG, 1, "set Real var %s:", mData->realVarsData[array_idx].info.name);
+    // FIXME there is no messageCloseDebug so we use infoStreamPrint here
+    infoStreamPrint(OMC_LOG_DEBUG, 1, "set Real var %s:", mData->realVarsData[array_idx].info.name);
     for (dim_idx = 0; dim_idx < mData->realVarsData[array_idx].attribute.start.dim_size[0]; dim_idx++)
     {
       sData->realVars[scalar_idx] = real_get(mData->realVarsData[array_idx].attribute.start, dim_idx);
@@ -777,7 +778,8 @@ void setAllParamsToStart(DATA *data)
 
   for (array_idx = 0; array_idx < mData->nParametersRealArray; ++array_idx)
   {
-    debugStreamPrint(OMC_LOG_DEBUG, 1, "set Real var %s:", mData->realParameterData[array_idx].info.name);
+    // FIXME there is no messageCloseDebug so we use infoStreamPrint here
+    infoStreamPrint(OMC_LOG_DEBUG, 1, "set Real var %s:", mData->realParameterData[array_idx].info.name);
     for (dim_idx = 0; dim_idx < mData->realParameterData[array_idx].attribute.start.dim_size[0]; dim_idx++)
     {
       sInfo->realParameter[scalar_idx] = real_get(mData->realParameterData[array_idx].attribute.start, dim_idx);

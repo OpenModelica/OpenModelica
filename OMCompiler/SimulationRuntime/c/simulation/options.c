@@ -91,12 +91,14 @@ int checkCommandLineArguments(int argc, char **argv)
   }
 
 #ifdef USE_DEBUG_OUTPUT
-  debugStreamPrint(OMC_LOG_STDOUT, 1, "used command line options");
+  // FIXME there is no messageCloseDebug so we use infoStreamPrint here
+  infoStreamPrint(OMC_LOG_STDOUT, 1, "used command line options");
   for(i=1; i<argc; ++i)
     debugStreamPrint(OMC_LOG_STDOUT, 0, "%s", argv[i]);
   messageClose(OMC_LOG_STDOUT);
 
-  debugStreamPrint(OMC_LOG_STDOUT, 1, "interpreted command line options");
+  // FIXME there is no messageCloseDebug so we use infoStreamPrint here
+  infoStreamPrint(OMC_LOG_STDOUT, 1, "interpreted command line options");
 #endif
 
   for(i=1; i<argc; ++i)
