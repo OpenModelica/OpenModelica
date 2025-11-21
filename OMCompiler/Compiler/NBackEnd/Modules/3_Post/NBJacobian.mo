@@ -1659,7 +1659,7 @@ protected
     // Emit any remaining tmp vars (e.g. lambda temporaries) not in orderedTmpCrefs.
     for v in tmp_vars loop
       baseCref := BVariable.getVarName(v); // for tmp_vars (already pDer/lambda names)
-      if (not listMember(baseCref, orderedTmpCrefs))
+      if (not List.contains(orderedTmpCrefs, baseCref, ComponentRef.isEqual))
          and UnorderedMap.contains(baseCref, adjoint_map) then
         diffed_comp := makeAdjointComponent(baseCref, adjoint_map, newName, i);
         tmpComps := diffed_comp :: tmpComps;
