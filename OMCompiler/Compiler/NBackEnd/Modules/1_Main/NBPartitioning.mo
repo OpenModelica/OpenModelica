@@ -141,6 +141,13 @@ public
       b := match clock case BASE_CLOCK() then true; else false; end match;
     end isBaseClock;
 
+    function isInferredClock
+      input BClock clock;
+      output Boolean b;
+    algorithm
+      b := match clock case BASE_CLOCK(clock = ClockKind.INFERRED_CLOCK()) then true; else false; end match;
+    end isInferredClock;
+
     function isEventClock
       input BClock clock;
       output Boolean b;
@@ -356,7 +363,7 @@ public
     algorithm
       // resolve the implicit clock map
       for cref in UnorderedMap.keyList(clock_map) loop
-        resolveImplicitSubClock(cref, clock_map, info.subClocks);
+        resolveImplicitSubClock(cref, info, clock_map);
       end for;
 
       // update sub to base clock
@@ -370,20 +377,35 @@ public
       end for;
     end resolveSubClocks;
 
+    function baseClockCount
+      input ClockedInfo info;
+      input Boolean countInferred = false;
+      output Integer count = UnorderedMap.size(info.baseClocks);
+    algorithm
+      if not countInferred then
+        count := count - List.count(UnorderedMap.valueList(info.baseClocks), BClock.isInferredClock);
+      end if;
+    end baseClockCount;
+
+    function subClockCount
+      input ClockedInfo info;
+      output Integer count = UnorderedMap.size(info.subClocks);
+    end subClockCount;
+
   protected
     function resolveImplicitSubClock
       "implicite sub clocks are signals that are clocked but not defined by a sampling function themselves.
       they infer their clock by the partition they are in. this function resolves each implicit clock to it's
       root clock that has a sample function definition"
       input ComponentRef key;
+      input ClockedInfo info;
       input UnorderedMap<ComponentRef, ComponentRef> clock_map;
-      input UnorderedMap<ComponentRef, BClock> sub_clocks;
       output ComponentRef clock = key;
     algorithm
       if UnorderedMap.contains(key, clock_map) then
         clock := UnorderedMap.getSafe(key, clock_map, sourceInfo());
-        if not UnorderedMap.contains(clock, sub_clocks) then
-          clock := resolveImplicitSubClock(clock, clock_map, sub_clocks);
+        if not (UnorderedMap.contains(clock, info.subClocks) or UnorderedMap.contains(clock, info.baseClocks)) then
+          clock := resolveImplicitSubClock(clock, info, clock_map);
           UnorderedMap.add(key, clock, clock_map);
         end if;
       end if;

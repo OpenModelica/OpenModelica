@@ -96,7 +96,9 @@ public
     // create all base partitions, sort the sub partitions according to their clock dependencies
     for tpl in UnorderedMap.toList(clock_collector) loop
       (baseClock, subClocks) := tpl;
-      baseParts := BASE_PARTITION(baseClock, subClocks) :: baseParts;
+      if not BClock.isInferredClock(baseClock) then
+        baseParts := BASE_PARTITION(baseClock, subClocks) :: baseParts;
+      end if;
     end for;
 
     // collect all event clocks
