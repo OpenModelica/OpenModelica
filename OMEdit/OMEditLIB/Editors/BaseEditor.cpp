@@ -2158,6 +2158,11 @@ void BaseEditor::initialize()
 {
   mpInfoBar = new InfoBar(this);
   mpInfoBar->hide();
+  mpReloadAsModelicaInfoBar = new ReloadAsModelicaInfoBar(this);
+  // Show the Reload as Modelica info bar only for text files which are internal.
+  if (!(mpModelWidget && mpModelWidget->getLibraryTreeItem() && mpModelWidget->getLibraryTreeItem()->isText() && mpModelWidget->getLibraryTreeItem()->isModelicaFile())) {
+    mpReloadAsModelicaInfoBar->hide();
+  }
   mpPlainTextEdit = new PlainTextEdit(this);
   mpFindReplaceWidget = new FindReplaceWidget(this);
   mpFindReplaceWidget->hide();
@@ -2168,6 +2173,7 @@ void BaseEditor::initialize()
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
   pMainLayout->addWidget(mpInfoBar, 0, Qt::AlignTop);
+  pMainLayout->addWidget(mpReloadAsModelicaInfoBar, 0, Qt::AlignTop);
   pMainLayout->addWidget(mpPlainTextEdit, 1);
   pMainLayout->addWidget(mpFindReplaceWidget, 0, Qt::AlignBottom);
   setLayout(pMainLayout);
@@ -2591,6 +2597,17 @@ void BaseEditor::toggleCommentSelection()
 }
 
 /*!
+ * \brief BaseEditor::reloadAsModelica
+ * Slot activated when reload button is clicked.
+ */
+void BaseEditor::reloadAsModelica()
+{
+  if (mpModelWidget && mpModelWidget->getLibraryTreeItem()) {
+    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->reloadClass(mpModelWidget->getLibraryTreeItem());
+  }
+}
+
+/*!
  * \class FindReplaceWidget
  * Creates a widget within editor for find and replace.
  */
@@ -2987,4 +3004,34 @@ void InfoBar::showMessage(QString message)
 {
   mpInfoLabel->setText(message);
   show();
+}
+
+/*!
+ * \class ReloadAsModelicaInfoBar
+ * \brief Display message to reload as Modelica model above the BaseEditor.
+ */
+/*!
+ * \brief ReloadAsModelicaInfoBar::ReloadAsModelicaInfoBar
+ * \param pBaseEditor
+ */
+ReloadAsModelicaInfoBar::ReloadAsModelicaInfoBar(BaseEditor *pBaseEditor)
+  : QFrame(pBaseEditor)
+{
+  QPalette pal = palette();
+  pal.setColor(QPalette::Window, QColor(255, 255, 225));
+  pal.setColor(QPalette::WindowText, Qt::black);
+  setPalette(pal);
+  setFrameStyle(QFrame::StyledPanel);
+  setAutoFillBackground(true);
+  mpInfoLabel = new Label;
+  mpInfoLabel->setWordWrap(true);
+  mpInfoLabel->setText(tr("This Modelica file is opened in text mode. If syntactically correct, it can be reloaded in Modelica mode."));
+  mpReloadButton = new QPushButton(ResourceCache::getIcon(":/Resources/icons/refresh.svg"), Helper::reload);
+  connect(mpReloadButton, &QToolButton::clicked, pBaseEditor, &BaseEditor::reloadAsModelica);
+  // set the layout
+  QHBoxLayout *pMainLayout = new QHBoxLayout;
+  pMainLayout->setContentsMargins(2, 2, 2, 2);
+  pMainLayout->addWidget(mpInfoLabel);
+  pMainLayout->addWidget(mpReloadButton, 0, Qt::AlignRight);
+  setLayout(pMainLayout);
 }

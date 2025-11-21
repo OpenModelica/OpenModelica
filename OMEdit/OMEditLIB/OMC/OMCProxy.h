@@ -162,10 +162,10 @@ public:
   QString getClassComment(QString className);
   QString changeDirectory(QString directory = QString(""));
   bool loadModel(QString className, QString priorityVersion = QString("default"), bool notify = true, QString languageStandard = QString(""), bool requireExactVersion = false);
-  bool loadFile(QString fileName, QString encoding = Helper::utf8, bool uses = true, bool notify = true, bool requireExactVersion = false, bool allowWithin = false);
+  bool loadFile(QString fileName, QString encoding = Helper::utf8, bool uses = true, bool notify = true, bool requireExactVersion = false, bool allowWithin = false, bool printErrors = true);
   bool loadString(QString value, QString fileName, QString encoding = Helper::utf8, bool merge = false, bool checkError = true);
   bool loadClassContentString(const QString &data, const QString &className, int offsetX = 0, int offsetY = 0);
-  QList<QString> parseFile(QString fileName, QString encoding = Helper::utf8);
+  QList<QString> parseFile(QString fileName, QString encoding = Helper::utf8, bool printErrors = true);
   QList<QString> parseString(QString value, QString fileName, bool printErrors = true);
   bool createClass(QString type, QString className, LibraryTreeItem *pExtendsLibraryTreeItem);
   bool createSubClass(QString type, QString className, LibraryTreeItem *pParentLibraryTreeItem, LibraryTreeItem *pExtendsLibraryTreeItem);

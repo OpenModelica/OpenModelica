@@ -81,14 +81,14 @@ LibraryTreeItem::LibraryTreeItem(QAbstractItemModel *pParent)
  * \param isSaved
  * \param pParent
  */
-LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStructure, QString fileName, bool isSaved, LibraryTreeItem *pParent)
+LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStructure, QString fileName, bool isSaved, bool isInternal, LibraryTreeItem *pParent)
   : QObject(pParent), mLibraryType(type), mSystemLibrary(false), mpModelWidget(0)
 {
   mIsRootItem = false;
   mpParentLibraryTreeItem = pParent;
   setName(text);
   setNameStructure(nameStructure);
-  setInternal(pParent->isInternal());
+  setInternal(isInternal);
   setAccessAnnotations(false);
   setSaveContentsType(LibraryTreeItem::SaveInOneFile);
   if (type == LibraryTreeItem::Modelica) {
@@ -1311,20 +1311,20 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, LibraryTr
  * \param nameStructure
  * \param path
  * \param isSaved
- * \param internal
+ * \param isInternal
  * \param pParentLibraryTreeItem
  * \param row
  * \return
  */
 LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path,
-                                                         bool isSaved, bool internal, LibraryTreeItem *pParentLibraryTreeItem, int row)
+                                                         bool isSaved, bool isInternal, LibraryTreeItem *pParentLibraryTreeItem, int row)
 {
   if (row == -1) {
     row = pParentLibraryTreeItem->childrenSize();
   }
   QModelIndex index = libraryTreeItemIndex(pParentLibraryTreeItem);
   beginInsertRows(index, row, row);
-  LibraryTreeItem *pLibraryTreeItem = createLibraryTreeItemImpl(type, name, nameStructure, path, isSaved, internal, pParentLibraryTreeItem, row);
+  LibraryTreeItem *pLibraryTreeItem = createLibraryTreeItemImpl(type, name, nameStructure, path, isSaved, isInternal, pParentLibraryTreeItem, row);
   endInsertRows();
   return pLibraryTreeItem;
 }
@@ -1366,12 +1366,15 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, QString n
  * Creates the LibraryTreeItems from the folder.
  * \param fileInfo
  * \param pParentLibraryTreeItem
+ * \param row
  */
-void LibraryTreeModel::createLibraryTreeItems(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem)
+void LibraryTreeModel::createLibraryTreeItems(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem, int row)
 {
-  int row = pParentLibraryTreeItem->childrenSize();
+  if (row == -1) {
+    row = pParentLibraryTreeItem->childrenSize();
+  }
   beginInsertRows(libraryTreeItemIndex(pParentLibraryTreeItem), row, row);
-  createLibraryTreeItemsImpl(fileInfo, pParentLibraryTreeItem);
+  createLibraryTreeItemsImpl(fileInfo, pParentLibraryTreeItem, row);
   endInsertRows();
 }
 
@@ -1724,23 +1727,54 @@ bool LibraryTreeModel::reloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQu
     }
   }
 
-  const QString nameStructure = pLibraryTreeItem->getNameStructure();
-  const QString filePath = pLibraryTreeItem->getFileName();
-  int row = pLibraryTreeItem->row();
+  QString nameStructure;
+  QString filePath;
+  int row;
   // get the active model
   QString activeModel;
   ModelWidget *pCurrentModelWidget = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget();
   if (pCurrentModelWidget && pCurrentModelWidget->getLibraryTreeItem()) {
     activeModel = pCurrentModelWidget->getLibraryTreeItem()->getNameStructure();
   }
-  // Save the expanded LibraryTreeItems list
   QStringList expandedLibraryTreeItemsList;
-  getExpandedLibraryTreeItemsList(pLibraryTreeItem, &expandedLibraryTreeItemsList);
-  // save the opened ModelWidgets that belong to this class and save the selected elements
   QHash<QString, QPair<QStringList, QStringList> > openedModelWidgetsAndSelectedElements;
-  MainWindow::instance()->getModelWidgetContainer()->getOpenedModelWidgetsAndSelectedElementsOfClass(nameStructure, &openedModelWidgetsAndSelectedElements);
   // unload the class
-  if (unloadClass(pLibraryTreeItem, false, true)) {
+  bool unloadSuccessful = false;
+  /* We only allow reloading LibraryTreeItem of types Modelica and Text.
+   * This function is only called when LibraryTreeItem is either Modelica or Text (only files that ends with .mo).
+   */
+  if (pLibraryTreeItem->isText()) {
+    /* Find the top level LibraryTreeItem
+     * call LibraryWidget::OpenModelicaFile with package.mo if its a directory else call openModelicaFile with the file name
+     */
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pLibraryTreeItem);
+    if (pTopLevelLibraryTreeItem) {
+      // Save the expanded LibraryTreeItems list
+      getExpandedLibraryTreeItemsList(pTopLevelLibraryTreeItem, &expandedLibraryTreeItemsList);
+      // save the opened ModelWidgets that belong to this class and save the selected elements
+      MainWindow::instance()->getModelWidgetContainer()->getOpenedModelWidgetsAndSelectedElementsOfClass(pTopLevelLibraryTreeItem, &openedModelWidgetsAndSelectedElements);
+      nameStructure = pTopLevelLibraryTreeItem->getNameStructure();
+      QFileInfo fileInfo(pTopLevelLibraryTreeItem->getNameStructure());
+      if (fileInfo.isDir()) {
+        filePath = pTopLevelLibraryTreeItem->getNameStructure() + "/package.mo";
+      } else {
+        filePath = pTopLevelLibraryTreeItem->getNameStructure();
+      }
+      row = pTopLevelLibraryTreeItem->row();
+      unloadSuccessful = unloadTextFile(pTopLevelLibraryTreeItem, false);
+    }
+  } else { // pLibraryTreeItem->isModelica()
+    // Save the expanded LibraryTreeItems list
+    getExpandedLibraryTreeItemsList(pLibraryTreeItem, &expandedLibraryTreeItemsList);
+    // save the opened ModelWidgets that belong to this class and save the selected elements
+    MainWindow::instance()->getModelWidgetContainer()->getOpenedModelWidgetsAndSelectedElementsOfClass(pLibraryTreeItem, &openedModelWidgetsAndSelectedElements);
+    nameStructure = pLibraryTreeItem->getNameStructure();
+    filePath = pLibraryTreeItem->getFileName();
+    row = pLibraryTreeItem->row();
+    unloadSuccessful = unloadClass(pLibraryTreeItem, false, true);
+  }
+
+  if (unloadSuccessful) {
     // load the class again if unload was successful
     mpLibraryWidget->openModelicaFile(filePath, Helper::utf8, true, false, row);
     // find the newly created LibraryTreeItem
@@ -2383,7 +2417,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(QString name, Libra
                                                              bool isSystemLibrary, bool load, int row, bool activateAccessAnnotations)
 {
   QString nameStructure = pParentLibraryTreeItem->getNameStructure().isEmpty() ? name : pParentLibraryTreeItem->getNameStructure() + "." + name;
-  LibraryTreeItem *pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::Modelica, name, nameStructure, "", isSaved, pParentLibraryTreeItem);
+  LibraryTreeItem *pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::Modelica, name, nameStructure, "", isSaved, pParentLibraryTreeItem->isInternal(), pParentLibraryTreeItem);
   pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem == mpRootLibraryTreeItem ? isSystemLibrary : pParentLibraryTreeItem->isSystemLibrary());
   pLibraryTreeItem->setAccessAnnotations(activateAccessAnnotations);
   if (row == -1) {
@@ -2405,12 +2439,13 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(QString name, Libra
  * Creates the LibraryTreeItems for a folder structure.
  * \param fileInfo
  * \param pParentLibraryTreeItem
+ * \param row
  */
-void LibraryTreeModel::createLibraryTreeItemsImpl(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem)
+void LibraryTreeModel::createLibraryTreeItemsImpl(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem, int row)
 {
   // create root project folder
   LibraryTreeItem *pLibraryTreeItem = createLibraryTreeItemImpl(LibraryTreeItem::Text, fileInfo.fileName(), fileInfo.absoluteFilePath(),
-                                                                fileInfo.absoluteFilePath(), true, pParentLibraryTreeItem->isInternal(), pParentLibraryTreeItem);
+                                                                fileInfo.absoluteFilePath(), true, pParentLibraryTreeItem->isInternal(), pParentLibraryTreeItem, row);
   // get the files in the directory
   if (fileInfo.isDir()) {
     QDir directory(fileInfo.absoluteFilePath());
@@ -2430,16 +2465,16 @@ void LibraryTreeModel::createLibraryTreeItemsImpl(QFileInfo fileInfo, LibraryTre
  * \param nameStructure
  * \param path
  * \param isSaved
- * \param internal
+ * \param isInternal
  * \param pParentLibraryTreeItem
  * \param row
  * \return
  */
 LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(LibraryTreeItem::LibraryType type, QString name, QString nameStructure,
-                                                             QString path, bool isSaved, bool internal, LibraryTreeItem *pParentLibraryTreeItem, int row)
+                                                             QString path, bool isSaved, bool isInternal, LibraryTreeItem *pParentLibraryTreeItem, int row)
 {
-  LibraryTreeItem *pLibraryTreeItem = new LibraryTreeItem(type, name, nameStructure, path, isSaved, pParentLibraryTreeItem);
-  pLibraryTreeItem->setInternal(internal);
+  LibraryTreeItem *pLibraryTreeItem = new LibraryTreeItem(type, name, nameStructure, path, isSaved, isInternal, pParentLibraryTreeItem);
+  pLibraryTreeItem->setInternal(isInternal);
   if (row == -1) {
     row = pParentLibraryTreeItem->childrenSize();
   }
@@ -2469,7 +2504,7 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
                                                                 LibraryTreeItem *pParentLibraryTreeItem, oms_element_t *pOMSElement,
                                                                 oms_connector_t *pOMSConnector, oms_busconnector_t *pOMSBusConnector)
 {
-  LibraryTreeItem *pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::OMS, name, nameStructure, path, isSaved, pParentLibraryTreeItem);
+  LibraryTreeItem *pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::OMS, name, nameStructure, path, isSaved, pParentLibraryTreeItem->isInternal(), pParentLibraryTreeItem);
   pLibraryTreeItem->setOMSElement(pOMSElement);
   if (pLibraryTreeItem->isSystemElement()) {
     oms_system_enu_t systemType;
@@ -2769,6 +2804,7 @@ void LibraryTreeView::createActions()
   connect(mpReloadClassAction, SIGNAL(triggered()), SLOT(reloadClass()));
   // unload Text file Action
   mpUnloadTextFileAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
+  mpUnloadTextFileAction->setShortcut(QKeySequence::Delete);
   mpUnloadTextFileAction->setStatusTip(Helper::unloadTextFileTip);
   connect(mpUnloadTextFileAction, SIGNAL(triggered()), SLOT(unloadTextFile()));
   // new file Action
@@ -2793,7 +2829,6 @@ void LibraryTreeView::createActions()
   connect(mpRenameAction, SIGNAL(triggered()), SLOT(renameLibraryTreeItem()));
   // Delete Action
   mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::deleteStr, this);
-  mpDeleteAction->setShortcut(QKeySequence::Delete);
   mpDeleteAction->setStatusTip(tr("Deletes the file"));
   connect(mpDeleteAction, SIGNAL(triggered()), SLOT(deleteTextFile()));
   // convert class to use newer uses libraries
@@ -3101,6 +3136,10 @@ void LibraryTreeView::showContextMenu(QPoint point)
           if (pLibraryTreeItem->isTopLevel()) {
             menu.addSeparator();
             menu.addAction(mpUnloadTextFileAction);
+          }
+          if (pLibraryTreeItem->isModelicaFile() || QFile::exists(pLibraryTreeItem->getNameStructure() + "/package.mo")) {
+            menu.addSeparator();
+            menu.addAction(mpReloadClassAction);
           }
           break;
         case LibraryTreeItem::OMS:
@@ -3476,7 +3515,8 @@ void LibraryTreeView::unloadClass()
 
 /*!
  * \brief LibraryTreeView::reloadClass
- * Reloads the Modelica LibraryTreeItem.
+ * Reloads the LibraryTreeItem.
+ * If LibraryTreeItem is Modelica type then reloads the class else it will be Text type and we are trying to reload as Modelica.
  */
 void LibraryTreeView::reloadClass()
 {
@@ -3758,7 +3798,7 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
       } else if (isTopLevel && isOMSimulatorLibraryType) {
         unloadOMSModel();
       } else if (isTopLevel) {
-        deleteTextFile();
+        unloadTextFile();
       }
     } else if (event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return) {
       if (pLibraryTreeItem->isText()) {
@@ -3898,7 +3938,11 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileName));
   }
-  QStringList classesList = MainWindow::instance()->getOMCProxy()->parseFile(fileName, encoding);
+  MainWindow::instance()->addRecentFile(fileName, encoding);
+  /* Call parseFile with printErrors = false to skip printing errors in the MessagesWidget
+   * we will add the errors after loading the file as text file so the errors are linked properly.
+   */
+  QStringList classesList = MainWindow::instance()->getOMCProxy()->parseFile(fileName, encoding, false);
   if (!classesList.isEmpty()) {
     if (multipleTopLevelClasses(classesList, fileName)) {
       if (showProgress) {
@@ -3930,8 +3974,10 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
     } else { // if no conflicting model found then just load the file simply
       setLoadingLibraries(true);
       QStringList classes = MainWindow::instance()->getOMCProxy()->getClassNames();
-      // load the file in OMC
-      if (MainWindow::instance()->getOMCProxy()->loadFile(fileName, encoding)) {
+      /* load the file in OMC
+       * Same as parseFile above, call loadFile with printErrors = false to skip printing errors in the MessagesWidget
+       */
+      if (MainWindow::instance()->getOMCProxy()->loadFile(fileName, encoding, true, true, false, false, false)) {
         if (MainWindow::instance()->getOMCProxy()->isLoadModelError()) {
           if (secondAttempt) {
             // clear loadModelCallback classes
@@ -3960,14 +4006,17 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
               MainWindow::instance()->getProgressBar()->setValue(++progressvalue);
             }
           }
-          MainWindow::instance()->addRecentFile(fileName, encoding);
           if (showProgress) {
             MainWindow::instance()->hideProgressBar();
           }
         }
+      } else {
+        openModelicaFileHelper(fileName, encoding, showProgress, false, row);
       }
       setLoadingLibraries(false);
     }
+  } else {
+    openModelicaFileHelper(fileName, encoding, showProgress, true, row);
   }
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->clearMessage();
@@ -4061,8 +4110,10 @@ void LibraryWidget::openEncryptedModelicaLibrary(QString fileName, QString encod
  * Opens a text file and creates a LibraryTreeItem for it.
  * \param fileInfo
  * \param showProgress
+ * \param skipAddRecentFile - if true then do not add the file to recent files list.
+ * \param row
  */
-void LibraryWidget::openTextFile(QFileInfo fileInfo, bool showProgress)
+void LibraryWidget::openTextFile(QFileInfo fileInfo, bool showProgress, bool skipAddRecentFile, int row)
 {
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
@@ -4094,10 +4145,12 @@ void LibraryWidget::openTextFile(QFileInfo fileInfo, bool showProgress)
   } else {
     // create a LibraryTreeItem for new loaded file.
     LibraryTreeItem *pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileInfo.fileName(), fileInfo.absoluteFilePath(),
-                                                                                  fileInfo.absoluteFilePath(), true, false, mpLibraryTreeModel->getRootLibraryTreeItem());
+                                                                                  fileInfo.absoluteFilePath(), true, false, mpLibraryTreeModel->getRootLibraryTreeItem(), row);
     if (pLibraryTreeItem) {
       mpLibraryTreeModel->readLibraryTreeItemClassText(pLibraryTreeItem);
-      MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
+      if (!skipAddRecentFile) {
+        MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
+      }
     }
   }
   if (showProgress) {
@@ -4161,8 +4214,10 @@ void LibraryWidget::openOMSModelFile(QFileInfo fileInfo, bool showProgress)
  * Opens the directory and starts creating LibraryTreeItems for it.
  * \param fileInfo
  * \param showProgress
+ * \param skipAddRecentFile - if true then do not add the file to recent files list.
+ * \param row
  */
-void LibraryWidget::openDirectory(QFileInfo fileInfo, bool showProgress)
+void LibraryWidget::openDirectory(QFileInfo fileInfo, bool showProgress, bool skipAddRecentFile, int row)
 {
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
@@ -4188,8 +4243,10 @@ void LibraryWidget::openDirectory(QFileInfo fileInfo, bool showProgress)
     }
   }
   // create a LibraryTreeItem for new loaded file.
-  mpLibraryTreeModel->createLibraryTreeItems(fileInfo, mpLibraryTreeModel->getRootLibraryTreeItem());
-  MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
+  mpLibraryTreeModel->createLibraryTreeItems(fileInfo, mpLibraryTreeModel->getRootLibraryTreeItem(), row);
+  if (!skipAddRecentFile) {
+    MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
+  }
   if (showProgress) {
     MainWindow::instance()->getStatusBar()->clearMessage();
   }
@@ -4504,6 +4561,33 @@ bool LibraryWidget::multipleTopLevelClasses(const QStringList &classesList, cons
     return true;
   }
   return false;
+}
+
+/*!
+ * \brief LibraryWidget::openModelicaFileHelper
+ * Helper function for LibraryWidget::openModelicaFile
+ * Handles the case when parseFile or loadFile fails.
+ * Loads the file/directory as text files and let the user fix the errors.
+ * \param fileName
+ * \param encoding
+ * \param showProgress
+ * \param parse - Use parseFile when true otherwise use loadFile.
+ * \param row
+ */
+void LibraryWidget::openModelicaFileHelper(QString fileName, QString encoding, bool showProgress, bool parse, int row)
+{
+  QFileInfo fileInfo(fileName);
+  if (fileInfo.fileName().compare(QStringLiteral("package.mo")) == 0) {
+    openDirectory(QFileInfo(fileInfo.absoluteDir().path()), showProgress, true, row);
+  } else {
+    openTextFile(fileInfo, showProgress, true, row);
+  }
+  // Call parseFile/loadFile again to show the clickable errors in MessagesWidget
+  if (parse) {
+    MainWindow::instance()->getOMCProxy()->parseFile(fileName, encoding);
+  } else {
+    MainWindow::instance()->getOMCProxy()->loadFile(fileName, encoding);
+  }
 }
 
 /*!

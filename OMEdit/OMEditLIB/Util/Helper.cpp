@@ -882,7 +882,7 @@ QString GUIMessages::getMessage(int type)
     case UNLOAD_CLASS_MSG:
       return tr("Are you sure you want to unload <b>%1</b>? Everything contained inside this class will also be unloaded.");
     case RELOAD_CLASS_MSG:
-      return tr("Are you sure you want to reload <b>%1</b>? Any unsaved changes to the class and its containing classes will be lost.");
+      return tr("Are you sure you want to reload <b>%1</b>? Any unsaved changes will be lost.");
     case DELETE_CLASS_MSG:
       return tr("Are you sure you want to delete <b>%1</b>? Everything contained inside this class will also be deleted.");
     case UNLOAD_TEXT_FILE_MSG:
