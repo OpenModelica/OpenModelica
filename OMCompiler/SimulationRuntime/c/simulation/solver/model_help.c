@@ -647,7 +647,7 @@ void printRingBufferSimulationData(RINGBUFFER *rb, DATA* data)
 
   for (int i = 0; i < ringBufferLength(rb); i++)
   {
-    messageClose(OMC_LOG_STDOUT);
+    messageClose(OMC_LOG_STDOUT); // FIXME what does this belong to?
     SIMULATION_DATA *sdata = (SIMULATION_DATA *)getRingData(rb, i);
     infoStreamPrint(OMC_LOG_STDOUT, 1, "Time: %g ", sdata->timeValue);
 

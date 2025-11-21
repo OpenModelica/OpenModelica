@@ -79,7 +79,7 @@ int pickUpModelData(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   pickUpTime(&optData->time, &optData->dim, data, optData->bounds.preSim);
   setRKCoeff(&optData->rk, optData->dim.np);
   calculatedScalingHelper(&optData->bounds,&optData->time, &optData->dim, &optData->rk);
-  messageClose(OMC_LOG_SOLVER);
+  messageClose(OMC_LOG_SOLVER); // FIXME what does this belong to?
 
   dim = &optData->dim;
 
