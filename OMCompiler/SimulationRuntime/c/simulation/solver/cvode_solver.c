@@ -972,7 +972,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
     }
 
     /* Closing new step message */
-    messageClose(OMC_LOG_SOLVER);
+    messageClose(OMC_LOG_SOLVER); // TODO make sure this is called even if something in between fails
 
     /* Set time to current time */
     simulationData->timeValue = solverInfo->currentTime;

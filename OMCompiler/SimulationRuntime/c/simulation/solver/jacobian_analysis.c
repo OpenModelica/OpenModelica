@@ -204,6 +204,7 @@ static void svd_general_matrix_print_info(DATA *data, NONLINEAR_SYSTEM_DATA *nls
     infoStreamPrint(OMC_LOG_NLS_SVD, 0, "Curr Time    = %-11.5e", data->localData[0]->timeValue);
 
     messageClose(OMC_LOG_NLS_SVD);
+    messageClose(OMC_LOG_NLS_SVD);
 }
 
 static void svd_general_matrix_print_cond(modelica_real cond)
@@ -247,8 +248,7 @@ static void svd_dense_dump_statistics(const SVD_DATA *svd_data)
     NONLINEAR_SOLVER solver = nls_data->nlsMethod;
 
     if (!svd_data || !svd_data->S) {
-        infoStreamPrint(OMC_LOG_NLS_SVD, 1, "No SVD data available.");
-        messageClose(OMC_LOG_NLS_SVD);
+        infoStreamPrint(OMC_LOG_NLS_SVD, 0, "No SVD data available.");
         return;
     }
 
@@ -366,7 +366,6 @@ static void svd_dense_dump_statistics(const SVD_DATA *svd_data)
     messageClose(OMC_LOG_NLS_SVD);
 
     free(entries);
-    messageClose(OMC_LOG_NLS_SVD);
 }
 
 static int svd_dense_main(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, modelica_real *values, modelica_boolean scaled, SolverCaller caller)
@@ -849,8 +848,6 @@ static void svd_sparse_dump_statistics(primme_callback_ctx_t *ctx, primme_handle
     svd_general_matrix_print_cond(cond);
     svd_sparse_print_singular_values(ctx, handle_top, handle_least, res_top, res_least);
     svd_sparse_print_vectors(ctx, handle_least, res_least, TRUE);
-
-    messageClose(OMC_LOG_NLS_SVD);
 }
 
 static int svd_sparse_main(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, modelica_real *values, modelica_boolean scaled, SolverCaller caller, int svd_count) {
