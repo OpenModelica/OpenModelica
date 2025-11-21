@@ -595,6 +595,7 @@ pipeline {
           agent {
             docker {
               image 'ghcr.io/openmodelica/build-deps:v1.26.0-dev'
+              label 'linux'
               alwaysPull true
               // No runtest.db cache necessary; the tests run in serial and do not load libraries!
             }
