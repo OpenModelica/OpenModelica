@@ -2268,7 +2268,7 @@ template functionInitialLinearSystems(list<SimEqSystem> linearSystems, String mo
   "Generates functions in simulation file."
 ::=
   let &tempeqns = buffer ""
-  let &tempeqns += (linearSystems |> eq as SES_LINEAR(alternativeTearing = SOME(__)) => 'int <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*);' ; separator = "\n")
+  let &tempeqns += (linearSystems |> eq as SES_LINEAR(alternativeTearing = SOME(__)) => 'int <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA* data, threadData_t* threadData);' ; separator = "\n")
   let &globalConstraintsFunctions = buffer ""
   let linearbody = functionInitialLinearSystemsTemp(linearSystems, modelNamePrefix, &globalConstraintsFunctions)
   <<
@@ -2661,7 +2661,7 @@ template functionInitialNonLinearSystems(list<SimEqSystem> nonlinearSystems, Str
   "Generates functions in simulation file."
 ::=
   let &tempeqns = buffer ""
-  let &tempeqns += (nonlinearSystems |> eq as SES_NONLINEAR(alternativeTearing = SOME(__)) => 'int <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*, threadData_t*);' ; separator = "\n")
+  let &tempeqns += (nonlinearSystems |> eq as SES_NONLINEAR(alternativeTearing = SOME(__)) => 'int <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA* data, threadData_t* threadData);' ; separator = "\n")
   let &globalConstraintsFunctions = buffer ""
   let nlsbody = functionInitialNonLinearSystemsTemp(nonlinearSystems, modelNamePrefix, &globalConstraintsFunctions)
   <<
