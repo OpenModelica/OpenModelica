@@ -409,7 +409,8 @@ static void read_var_info(omc_ModelVariable *var, VAR_INFO *info)
   info->info.colEnd = read_value_long(findHashStringString(var,"endColumn"), 0);
   info->info.readonly = read_value_long(findHashStringString(var,"fileWritable"), 0);
 
-  debugStreamPrint(OMC_LOG_DEBUG, 1, "read var %s from setup file", info->name);
+  // FIXME there is no messageCloseDebug so we use infoStreamPrint here
+  infoStreamPrint(OMC_LOG_DEBUG, 1, "read var %s from setup file", info->name);
   debugStreamPrint(OMC_LOG_DEBUG, 0, "read input index %d from setup file", info->inputIndex);
   debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s id %d from setup file", info->name, info->id);
   debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s description \"%s\" from setup file", info->name, info->comment);
@@ -877,7 +878,7 @@ void read_default_experiment(SIMULATION_INFO* simulationInfo, omc_DefaultExperim
     warningStreamPrint(OMC_LOG_STDOUT, 1, "Start or stop time was overwritten, but no new integrator step size was provided.");
     infoStreamPrint(OMC_LOG_STDOUT, 0, "Re-calculating step size for 500 intervals.");
     infoStreamPrint(OMC_LOG_STDOUT, 0, "Add `stepSize=<value>` to `-override=` or override file to silence this warning.");
-    messageClose(OMC_LOG_STDOUT);
+    messageCloseWarning(OMC_LOG_STDOUT);
   } else {
     simulationInfo->stepSize = read_value_real_default(findHashStringString(de, "stepSize"), (simulationInfo->stopTime - simulationInfo->startTime) / 500);
   }

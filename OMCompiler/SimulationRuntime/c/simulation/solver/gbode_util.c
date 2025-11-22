@@ -891,6 +891,6 @@ void deprecationWarningGBODE(enum SOLVER_METHOD method)
   }
 
   infoStreamPrint(OMC_LOG_STDOUT, 0 , "See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode");
-  messageClose(OMC_LOG_STDOUT);
+  messageCloseWarning(OMC_LOG_STDOUT);
   return;
 }
