@@ -216,10 +216,10 @@ public
     output Boolean b;
   algorithm
     b := match operator.op
-      case Op.AND   then true;
-      case Op.OR    then true;
-      case Op.NOT   then true;
-                    else false;
+      case Op.AND then true;
+      case Op.OR  then true;
+      case Op.NOT then true;
+                  else false;
     end match;
   end isLogical;
 
