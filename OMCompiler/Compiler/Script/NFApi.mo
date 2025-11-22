@@ -1236,7 +1236,7 @@ protected
 algorithm
   InstanceTree.CLASS(node = node) := ext;
   cls_def := InstNode.definition(node);
-  ext_def := InstNode.extendsDefinition(node);
+  SOME(ext_def) := InstNode.extendsDefinition(node);
 
   json := JSON.addPair("$kind", JSON.makeString("extends"), json);
   json := dumpJSONSCodeMod(getExtendsModifier(ext_def, node), node, json);

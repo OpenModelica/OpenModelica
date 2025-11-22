@@ -537,7 +537,7 @@ protected
   list<Variable> children;
 algorithm
   // Remove components that are only outer.
-  if InstNode.isOnlyOuter(component) then
+  if InstNode.isEmpty(component) or InstNode.isOnlyOuter(component) then
     return;
   end if;
 
