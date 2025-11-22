@@ -529,6 +529,14 @@ def shouldWeBuildUCRT() {
   return params.BUILD_MSYS2_UCRT64
 }
 
+def shouldWeBuildARMHF() {
+  if (isPR()) {
+    if (pullRequest.labels.contains("CI/Build DEBIAN-ARMHF")) {
+      return true
+    }
+  }
+}
+
 def shouldWeDisableAllCMakeBuilds() {
   if (isPR()) {
     if (pullRequest.labels.contains("CI/CMake/Disable/All")) {
