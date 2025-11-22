@@ -22,10 +22,10 @@ pipeline {
     }
     stage('build') {
       parallel {
-        stage('autoconf-jammy-gcc') {
+        stage('autoconf-noble-gcc') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:v1.22.2'
+              image 'ghcr.io/openmodelica/build-deps:v1.26.0-dev'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -37,7 +37,7 @@ pipeline {
             stash name: 'omc-gcc', includes: 'build/bin/OMCppOSUSimulation, build/include/omc/omsi/**, build/include/omc/omsic/**, build/lib/x86_64-linux-gnu/omc/omsi/**, build/lib/x86_64-linux-gnu/omc/omsicpp/**, **/config.status'
           }
         }
-        stage('cmake-jammy-gcc') {
+        stage('cmake-noble-gcc') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
