@@ -1,0 +1,41 @@
+// name: isChangeable1
+// keywords: xml, init, changeable value
+// status: correct
+
+loadString("
+model isChangeable1
+  Real x = 1;
+end isChangeable1;
+"); getErrorString();
+
+translateModel(isChangeable1); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" isChangeable1_init.xml > isChangeable1.xml"); getErrorString();
+readFile("isChangeable1.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//
+//   <ScalarVariable
+//     name = \"x\"
+//     valueReference = \"1000\"
+//     variability = \"continuous\" isDiscrete = \"false\"
+//     causality = \"local\" isValueChangeable = \"false\"
+//     alias = \"noAlias\"
+//     classIndex = \"0\" classType = \"rAlg\"
+//     isProtected = \"false\" hideResult = \"\" isEncrypted = \"false\" initNonlinear = \"false\"
+//     fileName = \"&lt;interactive&gt;\" startLine = \"3\" startColumn = \"3\" endLine = \"3\" endColumn = \"13\" fileWritable = \"true\">
+//     <Real fixed=\"false\" useNominal=\"false\" />
+//   </ScalarVariable>
+//
+//
+//
+//   </ModelVariables>
+// "
+// ""
+// endResult
