@@ -2,7 +2,7 @@ if(OPENMODELICA_NEW_CMAKE_BUILD)
   include(cmake_3.14.cmake)
 else(OPENMODELICA_NEW_CMAKE_BUILD)
 
-cmake_minimum_required(VERSION 2.8.9)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 
 project(${FMUName})
 

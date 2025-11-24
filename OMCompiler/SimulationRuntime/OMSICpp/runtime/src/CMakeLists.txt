@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.9)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 
 
 # Needs to be included before Core/Modelica othwise environment variables are not set.
@@ -84,8 +84,3 @@ if(NOT FMU_TARGET)
 endif(NOT FMU_TARGET)
 
 add_subdirectory(FMU)
-
-
-
-
-

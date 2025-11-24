@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.9)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 include_directories ("../../../../../OMSI/include")
 project(${ExtendedSystemName})
 set(BASE_LIB "" CACHE INTERNAL "" )

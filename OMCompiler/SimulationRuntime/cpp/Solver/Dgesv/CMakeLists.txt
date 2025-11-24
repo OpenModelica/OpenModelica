@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.9)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 
 project(${DgesvName})
 
@@ -37,4 +37,3 @@ IF(DGESV_FOUND)
 ELSE()
   MESSAGE(STATUS "DGESV disabled")
 ENDIF(DGESV_FOUND)
-

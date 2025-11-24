@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.9)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 
 project(${SolverName})
 
@@ -31,4 +31,3 @@ install(FILES
   ${CMAKE_SOURCE_DIR}/runtime/include/Core/Solver/SimulationMonitor.h
   ${CMAKE_SOURCE_DIR}/runtime/include/Core/Solver/FactoryExport.h
   DESTINATION include/omc/omsicpp/Core/Solver)
-
