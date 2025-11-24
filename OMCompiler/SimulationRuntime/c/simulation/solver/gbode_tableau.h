@@ -50,6 +50,114 @@ typedef struct BUTCHER_TABLEAU BUTCHER_TABLEAU;
 typedef void (*gb_dense_output)(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates);
 
 /**
+ * @brief Transformation structures for decoupling fully implicit Runge–Kutta systems.
+ *
+ * Fully implicit Runge–Kutta (FIRK) schemes require solving a coupled system of
+ * size (S * N) × (S * N), where S is the number of stages and N is the number
+ * of ODE states, which is (almost impractically) costly.
+ *
+ * The T-transformation diagonalizes (or block-diagonalizes) the Runge–Kutta
+ * coefficient matrix A, converting the single large system into several
+ * independent N × N systems. These can be solved either as:
+ *   - real-valued systems (for real eigenvalues of A^{-1}), or
+ *   - 2×2 real block systems (for complex conjugate eigenpairs of A^{-1})
+ *     Exploiting complex arithmetic, work can be further reduced
+ *     for complex conjugate eigenpairs to a single N × N system.
+ *
+ * For dense systems, this T-transformation avoids the O((S * N)^3) cost of solving the fully
+ * coupled system and instead reduces the work to
+ *    C * S * O(N^3), with C <= 2 + an neglectable transformation overhead of O(S^2 * N).
+ *    For example, 3-step RadauIIA: 27 * N^3 -> 5 * N^3; 6-step Gauss: 216 * N^3 -> 12 * N^3
+ *
+ * For methods with explicit stages (e.g. Lobatto IIIA/IIIB), only the implicit
+ * parts are transformed and solved via T; explicit stages are evaluated normally.
+ * Thus, the system we transform is only of size S_r = size member in T_TRANSFORM.
+ */
+typedef struct T_TRANSFORM {
+  /**
+   * @brief Inverse of the Runge-Kutta matrix (used for mapping Z -> K)
+   *        If A not invertible -> only invertible part of A.
+   *        For collocation methods Gauss, RadauIIA, Lobatto IIIA:
+   *        these values are part of the schemes differentiation matrix.
+   *
+   * Stored row-major, dimension S_r × S_r.
+   */
+  double *A_part_inv;
+
+  /**
+   * @brief Inverse transformation matrix T^{-1} such that:
+   *        vec(W) = (T_inv ⊗ I_N) * vec(Z)
+   *
+   * Maps the coupled stage vector Z into the decoupled stage vector W.
+   * Stored row-major, dimension S_r × S_r.
+   */
+  double *T_inv;
+
+  /**
+   * @brief Transformation matrix T such that:
+   *        vec(Z) = (T ⊗ I_N) * vec(W)
+   *
+   * Reconstructs the coupled stage values after solving the decoupled systems.
+   * Stored row-major, dimension S_r × S_r.
+   */
+  double *T;
+
+  /**
+   * @brief Real eigenvalues of A^{-1} for modes that diagonalize to real scalars.
+   *
+   * Size: nRealEigenvalues (<= S_r).
+   */
+  double *gamma;
+
+  /**
+   * @brief Real parts of complex eigenvalues of A^{-1} (for complex pairs).
+   *
+   * Size: nComplexEigenpairs. Paired with `beta` to form conjugate pairs
+   * (alpha, beta) and (alpha, -beta) which produce 2×2 real block systems or a 1x1 complex system in the decoupled basis.
+   */
+  double *alpha;
+
+  /**
+   * @brief Imaginary parts of complex eigenvalues of A^{-1}.
+   *
+   * Size: nComplexEigenpairs.
+   */
+  double *beta;
+
+  /**
+   * @brief Factor for residual k1. If firstRowZero, then is stage 1 explicit and we need to
+   *        weight the k1 vector with this res vector in the residual of the decoupled system.
+   *
+   * Size: S - 1.
+   */
+  double *res;
+
+  /**
+   * @brief True if the first stage is explicit, i.e. a_{1,:} == 0 (e.g. in Lobatto IIIA).
+   *
+   * When true, the first stage does not need to be included in the implicit
+   * decoupled solve and can be evaluated explicitly.
+   */
+  modelica_boolean firstRowZero;
+
+  /**
+   * @brief True if the last stage is explicit and not involved in the NLS, i.e. a_{:,s} == 0 (e.g. in Lobatto IIIB).
+   */
+  modelica_boolean lastColumnZero;
+
+  /**
+   * @brief Number of real eigenvalues and complex eigenpairs.
+   */
+  int nRealEigenvalues;
+  int nComplexEigenpairs;
+
+  /**
+   * @brief Size of the T-transformations size_{transform} = #stages - int(explicit_first) - int(explicit_last)
+   */
+  int size;
+} T_TRANSFORM;
+
+/**
  * @brief Butcher tableau specifiying a Runge-Kutta method.
  *
  * c | A
@@ -83,7 +191,8 @@ typedef struct BUTCHER_TABLEAU {
   modelica_boolean withDenseOutput;   /* Availability of dense output interpolation formulas */
   modelica_boolean isKLeftAvailable;  /* Availability of function values on left hand side */
   modelica_boolean isKRightAvailable; /* Availability of function values on right hand side */
-  gb_dense_output dense_output;
+  gb_dense_output dense_output;       /* Generic dense output function */
+  T_TRANSFORM *t_transform;           /* T-transformation for FIRK methods */
 } BUTCHER_TABLEAU;
 
 /**
