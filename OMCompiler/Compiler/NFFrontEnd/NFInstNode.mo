@@ -1049,7 +1049,7 @@ uniontype InstNode
       case CLASS_NODE() then node.definition;
       case COMPONENT_NODE(definition = SOME(definition)) then definition;
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non clasS/component node: " + toString(node)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non class/component node: " + toString(node)});
       then fail();
     end match;
   end definition;
@@ -1062,16 +1062,23 @@ uniontype InstNode
       case CLASS_NODE()     then node.definition;
       case COMPONENT_NODE() then classDefinition(Component.classInstance(Pointer.access(node.component)));
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non clasS/component node: " + toString(node)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non class/component node: " + toString(node)});
       then fail();
     end match;
   end classDefinition;
 
   function extendsDefinition
     input InstNode node;
-    output SCode.Element definition;
+    output Option<SCode.Element> definition;
+  protected
+    InstNodeType ty;
   algorithm
-    InstNodeType.BASE_CLASS(definition = definition) := derivedNodeType(node);
+    ty := derivedNodeType(node);
+
+    definition := match ty
+      case InstNodeType.BASE_CLASS() then SOME(ty.definition);
+      else NONE();
+    end match;
   end extendsDefinition;
 
   function setDefinition
