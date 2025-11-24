@@ -52,6 +52,8 @@ int jacobian_SR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian,
 int jacobian_MR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian);
 int jacobian_IRK_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian);
 
+void mapSparsePatterns(NLS_USERDATA *userData, JACOBIAN *jacobian_ODE, GB_INTERNAL_NLS_DATA *nls);
+
 typedef struct KLUInternals
 {
     klu_common common;
@@ -59,7 +61,7 @@ typedef struct KLUInternals
     klu_numeric *numeric;
 } KLUInternals;
 
-int gbInternal_dKLU_analyze(KLUInternals *internals, int size, int *Ap, int *Ai)
+int gbInternal_KLU_analyze(KLUInternals *internals, int size, int *Ap, int *Ai)
 {
     klu_defaults(&internals->common);
     internals->symbolic = klu_analyze(size, Ap, Ai, &internals->common);
@@ -79,61 +81,29 @@ int gbInternal_dKLU_solve(KLUInternals *internals, int size, int *Ap, int *Ai, d
     return ok;
 }
 
+int gbInternal_zKLU_factorize(KLUInternals *internals, int size, int *Ap, int *Ai, double *values)
+{
+    internals->numeric = klu_z_factor(Ap, Ai, values, internals->symbolic, &internals->common);
+    return internals->common.status;
+}
+
 GB_INTERNAL_NLS_DATA *gbInternalNlsAllocate(int size, NLS_USERDATA* userData, modelica_boolean attemptRetry, modelica_boolean isPatternAvailable)
 {
   BUTCHER_TABLEAU *tabl = ((DATA_GBODE *)userData->solverData)->tableau;
+  T_TRANSFORM *trfm = tabl->t_transform;
   JACOBIAN* jacobian_ODE = &(userData->data->simulationInfo->analyticJacobians[userData->data->callback->INDEX_JAC_A]);
 
   GB_INTERNAL_NLS_DATA *nls = (GB_INTERNAL_NLS_DATA *) malloc(sizeof(GB_INTERNAL_NLS_DATA));
   nls->nls_user_data = userData;
-  nls->klu_internals = (KLUInternals *) malloc(sizeof(KLUInternals));
   nls->jacobian_callback = (double *) malloc(jacobian_ODE->sparsePattern->numberOfNonZeros * sizeof(double));
   nls->ode_to_nls = malloc(jacobian_ODE->sparsePattern->numberOfNonZeros * sizeof(int));
   nls->nls_diag_indices = malloc(jacobian_ODE->sizeRows * sizeof(int));
+  nls->tabl = tabl;
+  nls->use_t_transform = (trfm != NULL);
 
-  for (int col = 0; col < userData->nlsData->size; col++)
-  {
-    for (int nz = userData->nlsData->sparsePattern->leadindex[col]; nz < userData->nlsData->sparsePattern->leadindex[col + 1]; nz++)
-    {
-      int row = userData->nlsData->sparsePattern->index[nz];
-      if (row == col)
-      {
-        nls->nls_diag_indices[col] = nz;
-      }
-    }
-  }
+  // create ODE Jac -> NLS Jacobian mapping
+  mapSparsePatterns(userData, jacobian_ODE, nls);
 
-  SPARSE_PATTERN *pat_ode = jacobian_ODE->sparsePattern;
-  SPARSE_PATTERN *pat_nls = userData->nlsData->sparsePattern;
-
-  for (int col = 0; col < userData->nlsData->size; col++)
-  {
-    int ode_start = pat_ode->leadindex[col];
-    int ode_end = pat_ode->leadindex[col + 1];
-    int nls_start = pat_nls->leadindex[col];
-    int nls_end = pat_nls->leadindex[col + 1];
-
-    int ptr_ode = ode_start;
-    int ptr_nls = nls_start;
-
-    while (ptr_ode < ode_end && ptr_nls < nls_end)
-    {
-      int row_ode = pat_ode->index[ptr_ode];
-      int row_nls = pat_nls->index[ptr_nls];
-
-      if (row_ode == row_nls)
-      {
-        nls->ode_to_nls[ptr_ode++] = ptr_nls++;
-      }
-      else
-      {
-        ptr_nls++;
-      }
-    }
-  }
-
-
-  nls->nls_jacobian = (double *) malloc(userData->nlsData->sparsePattern->numberOfNonZeros * sizeof(double));
   nls->scal = (double *) malloc(userData->nlsData->size * sizeof(double));
   nls->etas = (double *) malloc(tabl->nStages * sizeof(double));
   for (int i = 0; i < tabl->nStages; i++)
@@ -141,40 +111,90 @@ GB_INTERNAL_NLS_DATA *gbInternalNlsAllocate(int size, NLS_USERDATA* userData, mo
     nls->etas[i] = 1e300;
   }
 
-  nls->rtol = userData->data->simulationInfo->tolerance;
-  nls->atol = userData->data->simulationInfo->tolerance;
-
   // TODO: some refactoring for tolerances here?
   // TODO: is this transform of ATOL and RTOL only valid for superconvergened FIRK (Radau, Lobatto, Gauss)?
-  // nls->rtol_sc = userData->data->simulationInfo->tolerance;
-  // nls->atol_sc = userData->data->simulationInfo->tolerance;
 
+  nls->rtol = userData->data->simulationInfo->tolerance;
+  nls->atol = userData->data->simulationInfo->tolerance;
   double order_quot = (double)tabl->order_bt / (double)tabl->order_b;
   double quot = nls->atol / nls->rtol;
-  nls->rtol_sc = pow(nls->rtol, order_quot > 1 ? 1.0 : order_quot);
+  nls->rtol_sc = pow(nls->rtol, order_quot > 1 && !trfm ? 1.0 : order_quot);
   nls->atol_sc = quot * nls->rtol_sc;
   nls->fnewt = fmax(10 * DBL_EPSILON / nls->rtol_sc, fmin(3e-2, pow(nls->rtol_sc, 1.0 / order_quot - 1.0)));
   nls->theta_keep = 1e-3;
   nls->call_jac = TRUE;
   nls->theta_divergence = 0.99;
-  nls->max_newton_it = 5;
+  nls->max_newton_it = !trfm ? 5 : 4 + 2 * trfm->size; // = 5 for each (E)SDIRK stage and e.g. 10 for full RadauIIA 3-step
   nls->size = userData->nlsData->size;
 
-  // symbolic factorization
-  gbInternal_dKLU_analyze(nls->klu_internals, size, userData->nlsData->sparsePattern->leadindex, userData->nlsData->sparsePattern->index);
+  if (!trfm)
+  {
+    nls->klu_internals_real = (KLUInternals *) malloc(sizeof(KLUInternals));
+    nls->klu_internals_cmplx = NULL;
+    nls->real_nls_jacs = (double **) malloc(sizeof(double));
+    nls->real_nls_jacs[0] = (double *) malloc(userData->nlsData->sparsePattern->numberOfNonZeros * sizeof(double));
+    gbInternal_KLU_analyze(nls->klu_internals_real, size, userData->nlsData->sparsePattern->leadindex, userData->nlsData->sparsePattern->index);
+  }
+  else
+  {
+    nls->klu_internals_real = (KLUInternals *) malloc(trfm->nRealEigenvalues * sizeof(KLUInternals));
+    nls->klu_internals_cmplx = (KLUInternals *) malloc(trfm->nComplexEigenpairs * sizeof(KLUInternals));
+
+    nls->real_nls_jacs = (double **) malloc(trfm->nRealEigenvalues * sizeof(double));
+    nls->cmplx_nls_jacs = (double **) malloc(trfm->nComplexEigenpairs * sizeof(double));
+    for (int sys_real = 0; sys_real < trfm->nRealEigenvalues; sys_real++)
+    {
+      nls->real_nls_jacs[sys_real] = (double *) malloc(userData->nlsData->sparsePattern->numberOfNonZeros * sizeof(double));
+      gbInternal_KLU_analyze(&nls->klu_internals_real[sys_real], size, userData->nlsData->sparsePattern->leadindex, userData->nlsData->sparsePattern->index);
+    }
+    for (int sys_cmplx = 0; sys_cmplx < trfm->nComplexEigenpairs; sys_cmplx++)
+    {
+      nls->real_nls_jacs[sys_cmplx] = (double *) malloc(2 * userData->nlsData->sparsePattern->numberOfNonZeros * sizeof(double));
+      gbInternal_KLU_analyze(&nls->klu_internals_cmplx[sys_cmplx], size, userData->nlsData->sparsePattern->leadindex, userData->nlsData->sparsePattern->index);
+    }
+  }
 
   return nls;
 }
 
 void gbInternalNlsFree(GB_INTERNAL_NLS_DATA *nls)
 {
-  free(nls->nls_jacobian);
   free(nls->jacobian_callback);
   free(nls->ode_to_nls);
   free(nls->nls_diag_indices);
-  free(nls->klu_internals);
   free(nls->scal);
   free(nls->etas);
+
+  if (!nls->tabl->t_transform)
+  {
+    if (nls->klu_internals_real->numeric) klu_free_numeric(&nls->klu_internals_real->numeric, &nls->klu_internals_real->common);
+    if (nls->klu_internals_real->symbolic) klu_free_symbolic(&nls->klu_internals_real->symbolic, &nls->klu_internals_real->common);
+    free(nls->klu_internals_real);
+    free(nls->real_nls_jacs[0]);
+    free(nls->real_nls_jacs);
+  }
+  else
+  {
+    for (int sys_real = 0; sys_real < nls->tabl->t_transform->nRealEigenvalues; sys_real++)
+    {
+      free(nls->real_nls_jacs[sys_real]);
+      if (nls->klu_internals_real[sys_real].numeric) klu_free_numeric(&nls->klu_internals_real[sys_real].numeric, &nls->klu_internals_real->common);
+      if (nls->klu_internals_real[sys_real].symbolic) klu_free_symbolic(&nls->klu_internals_real[sys_real].symbolic, &nls->klu_internals_real->common);
+    }
+    for (int sys_cmplx = 0; sys_cmplx < nls->tabl->t_transform->nComplexEigenpairs; sys_cmplx++)
+    {
+      free(nls->cmplx_nls_jacs[sys_cmplx]);
+      if (nls->klu_internals_cmplx[sys_cmplx].numeric) klu_free_numeric(&nls->klu_internals_cmplx[sys_cmplx].numeric, &nls->klu_internals_cmplx->common);
+      if (nls->klu_internals_cmplx[sys_cmplx].symbolic) klu_free_symbolic(&nls->klu_internals_cmplx[sys_cmplx].symbolic, &nls->klu_internals_cmplx->common);
+    }
+
+    free(nls->real_nls_jacs);
+    free(nls->cmplx_nls_jacs);
+
+    if (nls->klu_internals_real) free(nls->klu_internals_real);
+    if (nls->klu_internals_cmplx) free(nls->klu_internals_cmplx);
+  }
+
   free(nls);
 }
 
@@ -186,22 +206,27 @@ static void createGbScales(GB_INTERNAL_NLS_DATA *nls, double *y1, double *y2)
   }
 }
 
-static double gbScalesNorm(GB_INTERNAL_NLS_DATA *nls, double *vec)
+static double gbScalesNorm(GB_INTERNAL_NLS_DATA *nls, double *vec, int repeat)
 {
   double sum = 0.0;
-  for (int i = 0; i < nls->size; i++)
+  for (int j = 0; j < repeat; j++)
   {
-    double tmp = vec[i] * nls->scal[i];
-    sum += tmp * tmp;
+    double *vec_stride = &vec[j * nls->size];
+    for (int i = 0; i < nls->size; i++)
+    {
+      double tmp = vec_stride[i] * nls->scal[i];
+      sum += tmp * tmp;
+    }
   }
-  return sqrt(sum / (double)nls->size);
+
+  return sqrt(sum / ((double)nls->size * (double)repeat));
 }
 
-static NLS_SOLVER_STATUS solveNLS_gbInternal(DATA *data,
-                                             threadData_t *threadData,
-                                             NONLINEAR_SYSTEM_DATA* nonlinsys,
-                                             DATA_GBODE* gbData,
-                                             GB_INTERNAL_NLS_DATA *nls)
+static NLS_SOLVER_STATUS solveNLS_gbInternal_DIRK(DATA *data,
+                                                  threadData_t *threadData,
+                                                  NONLINEAR_SYSTEM_DATA* nonlinsys,
+                                                  DATA_GBODE* gbData,
+                                                  GB_INTERNAL_NLS_DATA *nls)
 {
     int size = nonlinsys->size;
     int stage = gbData->act_stage;
@@ -224,7 +249,7 @@ static NLS_SOLVER_STATUS solveNLS_gbInternal(DATA *data,
 
     if ((sdirk_first_stage || esdirk_first_stage) && gbData->type == GM_TYPE_DIRK)
     {
-        if (nls->call_jac /* split ODE jac call and factorization */)
+        if (nls->call_jac)
         {
             /* set values for known last point (simplified Newton) */
             memcpy(data->localData[0]->realVars, gbData->yOld, size * sizeof(double));
@@ -241,10 +266,10 @@ static NLS_SOLVER_STATUS solveNLS_gbInternal(DATA *data,
         if (jac_called || gbData->stepSize != gbData->lastStepSize)
         {
             /* fill NLS Jacobian as h * gamma * J_f - I, where J_f is old or newly computed ODE Jacobian nls->nls->jacobian_callback */
-            jacobian_SR_DIRK_full(data, threadData, gbData, nls, jacobian_ODE, nls->jacobian_callback, nls->nls_jacobian);
+            jacobian_SR_DIRK_assemble(data, threadData, gbData, nls, jacobian_ODE, nls->jacobian_callback, nls->real_nls_jacs[0]);
 
             /* perform factorization */
-            gbInternal_dKLU_factorize(nls->klu_internals, size, nonlinsys->sparsePattern->leadindex, nonlinsys->sparsePattern->index, nls->nls_jacobian);
+            gbInternal_dKLU_factorize(nls->klu_internals_real, size, nonlinsys->sparsePattern->leadindex, nonlinsys->sparsePattern->index, nls->real_nls_jacs[0]);
             gbData->stats.nJacobianFactorizations++;
         }
     }
@@ -262,7 +287,7 @@ static NLS_SOLVER_STATUS solveNLS_gbInternal(DATA *data,
         nonlinsys->residualFunc(&resUserData, x, res, &flag);
 
         gbData->stats.nNewtonStepsTotal++;
-        gbInternal_dKLU_solve(nls->klu_internals, size, nonlinsys->sparsePattern->leadindex, nonlinsys->sparsePattern->index, res);
+        gbInternal_dKLU_solve(nls->klu_internals_real, size, nonlinsys->sparsePattern->leadindex, nonlinsys->sparsePattern->index, res);
 
         for (int i = 0; i < size; i++)
         {
@@ -270,7 +295,7 @@ static NLS_SOLVER_STATUS solveNLS_gbInternal(DATA *data,
         }
 
         nrm_delta_prev = nrm_delta;
-        nrm_delta = gbScalesNorm(nls, res);
+        nrm_delta = gbScalesNorm(nls, res, 1);
 
         if (newt_it > 1)
         {
@@ -311,6 +336,143 @@ static NLS_SOLVER_STATUS solveNLS_gbInternal(DATA *data,
           return NLS_FAILED;
         }
     }
+}
+
+static NLS_SOLVER_STATUS solveNLS_gbInternal_T_Transform(DATA *data,
+                                                         threadData_t *threadData,
+                                                         NONLINEAR_SYSTEM_DATA* nonlinsys,
+                                                         DATA_GBODE* gbData,
+                                                         GB_INTERNAL_NLS_DATA *nls)
+{
+    int size = nonlinsys->size;
+    double *x = nonlinsys->nlsx;
+    double *x_start = nonlinsys->nlsxOld;
+    double *res = nonlinsys->resValues;
+
+    createGbScales(nls, x, x_start);
+    double *scal = nls->scal;
+
+    RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=gbData};
+    JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+
+    const int flag = 1;
+    modelica_boolean jac_called = FALSE;
+
+    if (nls->call_jac)
+    {
+        /* set values for known last point (simplified Newton) */
+        memcpy(data->localData[0]->realVars, gbData->yOld, size * sizeof(double));
+        data->localData[0]->timeValue = gbData->timeRight;
+
+        /* callback ODE + callback Jacobian of ODE -> nls_jacobian buffer */
+        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+        evalJacobian(data, threadData, jacobian_ODE, NULL, nls->jacobian_callback, FALSE);
+        gbData->stats.nCallsJacobian++;
+
+        jac_called = TRUE;
+    }
+
+    if (jac_called || gbData->stepSize != gbData->lastStepSize)
+    {
+        /* create Jacobian real: gamma/h * I - J_f or complex: (alpha + i * beta)/h * I - J_f */
+
+        for (int sys_real = 0; sys_real < nls->tabl->t_transform->nRealEigenvalues; sys_real++)
+        {
+          jacobian_SR_real_assemble(data, threadData, gbData, nls, nls->tabl->t_transform->gamma[sys_real],
+                                    jacobian_ODE, nls->jacobian_callback, nls->real_nls_jacs[sys_real]);
+          gbInternal_dKLU_factorize(nls->klu_internals_real, size, nonlinsys->sparsePattern->leadindex,
+                                    nonlinsys->sparsePattern->index,nls->real_nls_jacs[sys_real]);
+        }
+        for (int sys_cmplx = 0; sys_cmplx < nls->tabl->t_transform->nComplexEigenpairs; sys_cmplx++)
+        {
+          jacobian_SR_cmplx_assemble(data, threadData, gbData, nls, nls->tabl->t_transform->alpha[sys_cmplx], nls->tabl->t_transform->beta[sys_cmplx],
+                                    jacobian_ODE, nls->jacobian_callback, nls->cmplx_nls_jacs[sys_cmplx]);
+          gbInternal_zKLU_factorize(nls->klu_internals_real, size, nonlinsys->sparsePattern->leadindex,
+                                    nonlinsys->sparsePattern->index, nls->cmplx_nls_jacs[sys_cmplx]);
+        }
+
+        gbData->stats.nJacobianFactorizations++;
+    }
+
+    memcpy(x, x_start, size * sizeof(double));
+
+    // norms, convergence rate
+    double nrm_delta = 0;
+    double nrm_delta_prev = 0;
+    double theta = 0;
+
+    // Newton iteration count - we start with newt_it = 1, because we need this for the step size selection and conditions below
+    for (int newt_it = 1 ;; newt_it++)
+    {
+        nonlinsys->residualFunc(&resUserData, x, res, &flag);
+
+        gbData->stats.nNewtonStepsTotal++;
+        gbInternal_dKLU_solve(nls->klu_internals_real, size, nonlinsys->sparsePattern->leadindex, nonlinsys->sparsePattern->index, res);
+
+        for (int i = 0; i < size; i++)
+        {
+            x[i] -= res[i];
+        }
+
+        nrm_delta_prev = nrm_delta;
+        nrm_delta = gbScalesNorm(nls, res, nls->tabl->t_transform->size);
+
+        if (newt_it > 1)
+        {
+            theta = nrm_delta / nrm_delta_prev;
+
+            // Newton failed -> divergence
+            if (theta >= nls->theta_divergence)
+            {
+                nls->call_jac = TRUE;
+                return NLS_FAILED;
+            }
+
+            *nls->etas = theta / (1 - theta);
+        }
+        else
+        {
+            *nls->etas = pow(fmax(*nls->etas, DBL_EPSILON), 0.8);
+        }
+
+        // Newton converged
+        if (*nls->etas * nrm_delta < nls->fnewt)
+        {
+            if (theta < nls->theta_keep)
+            {
+                nls->call_jac = FALSE;
+            }
+            else
+            {
+                nls->call_jac = TRUE;
+            }
+            return NLS_SOLVED;
+        }
+
+        // Newton failed -> iteration limit exceeded or too slow convergence
+        if (newt_it == nls->max_newton_it || (pow(theta, nls->max_newton_it - newt_it) / (1 - theta) * nrm_delta > nls->fnewt))
+        {
+          nls->call_jac = TRUE;
+          return NLS_FAILED;
+        }
+    }
+}
+
+// wrap everyhting for now
+static NLS_SOLVER_STATUS solveNLS_gbInternal(DATA *data,
+                                             threadData_t *threadData,
+                                             NONLINEAR_SYSTEM_DATA* nonlinsys,
+                                             DATA_GBODE* gbData,
+                                             GB_INTERNAL_NLS_DATA *nls)
+{
+  if (nls->use_t_transform)
+  {
+    return solveNLS_gbInternal_T_Transform(data, threadData, nonlinsys, gbData, nls);
+  }
+  else
+  {
+    return solveNLS_gbInternal_DIRK(data, threadData, nonlinsys, gbData, nls);
+  }
 }
 
 /**
@@ -1272,6 +1434,59 @@ int jacobian_IRK_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian
   return 0;
 }
 
+
+void mapSparsePatterns(NLS_USERDATA *userData,
+                       JACOBIAN *jacobian_ODE,
+                       GB_INTERNAL_NLS_DATA *nls)
+{
+    SPARSE_PATTERN *pat_nls = userData->nlsData->sparsePattern;
+    int size = userData->nlsData->size;
+
+    for (int col = 0; col < size; col++)
+    {
+        int start = pat_nls->leadindex[col];
+        int end   = pat_nls->leadindex[col + 1];
+
+        for (int nz = start; nz < end; nz++)
+        {
+            int row = pat_nls->index[nz];
+            if (row == col)
+            {
+                nls->nls_diag_indices[col] = nz;
+                break;
+            }
+        }
+    }
+
+    SPARSE_PATTERN *pat_ode = jacobian_ODE->sparsePattern;
+
+    for (int col = 0; col < size; col++)
+    {
+        int ode_start = pat_ode->leadindex[col];
+        int ode_end   = pat_ode->leadindex[col + 1];
+        int nls_start = pat_nls->leadindex[col];
+        int nls_end   = pat_nls->leadindex[col + 1];
+
+        int ptr_ode = ode_start;
+        int ptr_nls = nls_start;
+
+        while (ptr_ode < ode_end && ptr_nls < nls_end)
+        {
+            int row_ode = pat_ode->index[ptr_ode];
+            int row_nls = pat_nls->index[ptr_nls];
+
+            if (row_ode == row_nls)
+            {
+                nls->ode_to_nls[ptr_ode++] = ptr_nls++;
+            }
+            else
+            {
+                ptr_nls++;
+            }
+        }
+    }
+}
+
 /**
  * @brief Assemble (E)SDIRK stage Jacobian for the nonlinear system.
  *
@@ -1287,13 +1502,13 @@ int jacobian_IRK_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian
  * @param jac_buf_nls Output buffer for NLS Jacobian
  * @return 0 on success
  */
-int jacobian_SR_DIRK_full(DATA *data,
-                          threadData_t *threadData,
-                          DATA_GBODE* gbData,
-                          GB_INTERNAL_NLS_DATA *nls,
-                          JACOBIAN *jac_ode,
-                          double *jac_buf_ode,
-                          double *jac_buf_nls)
+int jacobian_SR_DIRK_assemble(DATA *data,
+                              threadData_t *threadData,
+                              DATA_GBODE* gbData,
+                              GB_INTERNAL_NLS_DATA *nls,
+                              JACOBIAN *jac_ode,
+                              double *jac_buf_ode,
+                              double *jac_buf_nls)
 {
     NONLINEAR_SYSTEM_DATA *nlsData = nls->nls_user_data->nlsData;
     SPARSE_PATTERN *ode_jac_sp = jac_ode->sparsePattern;
@@ -1315,3 +1530,97 @@ int jacobian_SR_DIRK_full(DATA *data,
 
     return 0;
 }
+
+/**
+ * @brief Assemble Jacobian for the nonlinear system.
+ *
+ * Jacobian has form gamma / h * I - J_f
+ *
+ * @param data        Runtime data (unused)
+ * @param threadData  Thread data
+ * @param gbData      GBODE integrator data (step size, tableau, stage)
+ * @param nls         Internal NLS data with index mapping
+ * @param jac_ode     ODE Jacobian (structures)
+ * @param jac_buf_ode ODE Jacobian values
+ * @param jac_buf_nls Output buffer for NLS Jacobian
+ * @return 0 on success
+ */
+int jacobian_SR_real_assemble(DATA *data,
+                              threadData_t *threadData,
+                              DATA_GBODE* gbData,
+                              GB_INTERNAL_NLS_DATA *nls,
+                              double gamma,
+                              JACOBIAN *jac_ode,
+                              double *jac_buf_ode,
+                              double *jac_buf_nls)
+{
+    NONLINEAR_SYSTEM_DATA *nlsData = nls->nls_user_data->nlsData;
+    SPARSE_PATTERN *ode_jac_sp = jac_ode->sparsePattern;
+
+    memset(jac_buf_nls, 0, nlsData->sparsePattern->numberOfNonZeros * sizeof(double));
+
+    const double weight = gamma / gbData->stepSize;
+
+    for (int nz = 0; nz < ode_jac_sp->numberOfNonZeros; nz++)
+    {
+        int idx = nls->ode_to_nls[nz];
+        jac_buf_nls[idx] = -jac_buf_ode[nz];
+    }
+
+    for (int d = 0; d < jac_ode->sizeRows; d++)
+    {
+        jac_buf_nls[nls->nls_diag_indices[d]] += weight;
+    }
+
+    return 0;
+}
+
+/**
+ * @brief Assemble complex Jacobian for the nonlinear system.
+ *
+ * Jacobian has form (alpha + i * beta) / h * I - J_f
+ *
+ * @param data        Runtime data (unused)
+ * @param threadData  Thread data
+ * @param gbData      GBODE integrator data (step size, tableau, stage)
+ * @param nls         Internal NLS data with index mapping
+ * @param alpha       Real part of complex weight
+ * @param beta       Imaginary part of complex weight
+ * @param jac_ode     ODE Jacobian (structures)
+ * @param jac_buf_ode ODE Jacobian values
+ * @param jac_buf_nls Output buffer for NLS Jacobian
+ * @return 0 on success
+ */
+int jacobian_SR_cmplx_assemble(DATA *data,
+                               threadData_t *threadData,
+                               DATA_GBODE* gbData,
+                               GB_INTERNAL_NLS_DATA *nls,
+                               double alpha,
+                               double beta,
+                               JACOBIAN *jac_ode,
+                               double *jac_buf_ode,
+                               double *jac_buf_nls)
+{
+    NONLINEAR_SYSTEM_DATA *nlsData = nls->nls_user_data->nlsData;
+    SPARSE_PATTERN *ode_jac_sp = jac_ode->sparsePattern;
+
+    memset(jac_buf_nls, 0, 2 * nlsData->sparsePattern->numberOfNonZeros * sizeof(double));
+
+    const double weight_real = alpha / gbData->stepSize;
+    const double weight_imag = beta / gbData->stepSize;
+
+    for (int nz = 0; nz < ode_jac_sp->numberOfNonZeros; nz++)
+    {
+        int idx = nls->ode_to_nls[nz];
+        jac_buf_nls[2 * idx] = -jac_buf_ode[2 * nz];
+    }
+
+    for (int d = 0; d < jac_ode->sizeRows; d++)
+    {
+        jac_buf_nls[nls->nls_diag_indices[d]] += weight_real;
+        jac_buf_nls[nls->nls_diag_indices[d] + 1] += weight_imag;
+    }
+
+    return 0;
+}
+
