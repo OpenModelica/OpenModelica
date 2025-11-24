@@ -768,6 +768,7 @@ void MainWindow::beforeClosingMainWindow()
   delete mpLibraryWidget;
   delete mpElementWidget;
   delete mpModelWidgetContainer;
+  mpModelWidgetContainer = nullptr;
   // delete the ArchivedSimulationsWidget object
   ArchivedSimulationsWidget::destroy();
   if (mpSimulationDialog) {

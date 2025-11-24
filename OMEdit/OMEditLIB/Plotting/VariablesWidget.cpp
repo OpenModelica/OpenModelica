@@ -2851,7 +2851,9 @@ void VariablesWidget::timeUnitChanged(int index)
  */
 void VariablesWidget::updateVariablesTree(QMdiSubWindow *pSubWindow)
 {
-  MainWindow::instance()->getModelWidgetContainer()->currentModelWidgetChanged(0);
+  if (MainWindow::instance()->isPlottingPerspectiveActive() && MainWindow::instance()->getModelWidgetContainer()) {
+    MainWindow::instance()->getModelWidgetContainer()->currentModelWidgetChanged(0);
+  }
   if (!pSubWindow && MainWindow::instance()->getPlotWindowContainer()->subWindowList().size() != 0) {
     return;
   }
