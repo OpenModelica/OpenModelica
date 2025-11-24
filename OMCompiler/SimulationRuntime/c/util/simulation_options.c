@@ -1072,14 +1072,16 @@ const char *GB_NLS_METHOD_NAME[GB_NLS_MAX] = {
   /* GB_NLS_UNKNOWN = 0*/ "unknown",
   /* GB_NLS_NEWTON */     "newton",
   /* GB_NLS_KINSOL */     "kinsol",
-  /* GB_NLS_KINSOL_B */   "experimental-kinsol"
+  /* GB_NLS_KINSOL_B */   "experimental-kinsol",
+  /* GB_NLS_INTERNAL */   "internal"
 };
 
 const char *GB_NLS_METHOD_DESC[GB_NLS_MAX] = {
   /* GB_NLS_UNKNOWN = 0*/ "unknown",
   /* GB_NLS_NEWTON */     "Newton method, dense",
   /* GB_NLS_KINSOL */     "SUNDIALS KINSOL: Inexact Newton, sparse",
-  /* GB_NLS_KINSOL_B */   "experimental kinsol"
+  /* GB_NLS_KINSOL_B */   "experimental kinsol",
+  /* GB_NLS_INTERNAL */   "Internal simplified Newton iteration with decoupling transformation (uses KLU)"
 };
 
 const char *GB_CTRL_METHOD_NAME[GB_CTRL_MAX] = {

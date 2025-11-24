@@ -441,7 +441,6 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
 
     /* Allocate memory for the nonlinear solver */
     gbData->nlsSolverMethod = getGB_NLS_method(FLAG_SR_NLS);
-    gbData->nlsSolverMethod = GB_NLS_INTERNAL;
     gbData->nlsData = initRK_NLS_DATA(data, threadData, gbData);
     if (!gbData->nlsData) {
       return -1;

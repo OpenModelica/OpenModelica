@@ -47,24 +47,28 @@ typedef struct KLUInternals KLUInternals;
 
 typedef struct GB_INTERNAL_NLS_DATA
 {
-  NLS_USERDATA *nls_user_data; // pointer to data, gbode data, etc.
-  KLUInternals *klu_internals; // internal data structures for klu linear solver (might change for ptr + enum, e.g. to have LAPACK)
-  double *jacobian_callback;   // buffer for continuous ODE Jacobian (size = nnz(J_f))
-  int *ode_to_nls;             // mapping ODE Jacobian nnz -> NLS Jacobian nnz
-  int *nls_diag_indices;       // all diagonal nz indices of NLS Jacobian (size = cols)
-  double *nls_jacobian;        // Jacobian of the NLS e.g. 1/(h * gamma) * I - J_f (size <= nnz(J_f) + n)
-  double *scal;                // scaling vector for termination of Newton loop
-  double *etas;                // Newton contraction factors for each NLS stage (size == number of stages)
-  double rtol;                 // Integrator RTOL
-  double atol;                 // Integrator ATOL
-  double rtol_sc;              // scaled Integrator RTOL
-  double atol_sc;              // scaled Integrator ATOL
-  double fnewt;                // Newton tolerance: if eta * norm(dx) <= fnewt -> convergence
-  double theta_keep;           // if norm(dx_k) / norm(dx_{k-1}) = theta_{k} < theta_keep -> keep old jacobian_callback
-  modelica_boolean call_jac;   // call jacobian in the next call to NLS solve
-  double theta_divergence;     // if norm(dx_k) / norm(dx_{k-1}) = theta_{k} > theta_divergence -> divergence of Newton
-  int max_newton_it;           // maximum number of Newton iterations
-  int size;                    // size of the system
+  NLS_USERDATA *nls_user_data;       // pointer to data, gbode data, etc.
+  KLUInternals *klu_internals_real;  // internal data structures for real systems with klu linear solver (might change for ptr + enum, e.g. to have LAPACK)
+  KLUInternals *klu_internals_cmplx; // internal data structures for complex systems with klu linear solver (might change for ptr + enum, e.g. to have LAPACK)
+  double *jacobian_callback;         // buffer for continuous ODE Jacobian (size = nnz(J_f))
+  int *ode_to_nls;                   // mapping ODE Jacobian nnz -> NLS Jacobian nnz
+  int *nls_diag_indices;             // all diagonal nz indices of NLS Jacobian (size = cols)
+  double *scal;                      // scaling vector for termination of Newton loop
+  double *etas;                      // Newton contraction factors for each NLS stage (size == number of stages)
+  double rtol;                       // Integrator RTOL
+  double atol;                       // Integrator ATOL
+  double rtol_sc;                    // scaled Integrator RTOL
+  double atol_sc;                    // scaled Integrator ATOL
+  double fnewt;                      // Newton tolerance: if eta * norm(dx) <= fnewt -> convergence
+  double theta_keep;                 // if norm(dx_k) / norm(dx_{k-1}) = theta_{k} < theta_keep -> keep old jacobian_callback
+  modelica_boolean call_jac;         // call jacobian in the next call to NLS solve
+  double theta_divergence;           // if norm(dx_k) / norm(dx_{k-1}) = theta_{k} > theta_divergence -> divergence of Newton
+  int max_newton_it;                 // maximum number of Newton iterations
+  int size;                          // size of the system
+  BUTCHER_TABLEAU *tabl;             // butcher tableau of the method
+  modelica_boolean use_t_transform;  // use T transform to solve the system (false for (E)SDIRK, true for FIRK)
+  double **real_nls_jacs;            // real NLS jacobians
+  double **cmplx_nls_jacs;           // complex NLS jacobians (packed as real, imag)
 } GB_INTERNAL_NLS_DATA;
 
 NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DATA_GBODE* gbData);
@@ -84,8 +88,14 @@ void residual_DIRK_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *r
 
 GB_INTERNAL_NLS_DATA* gbInternalNlsAllocate(int size, NLS_USERDATA* userData, modelica_boolean attemptRetry, modelica_boolean isPatternAvailable);
 
-int jacobian_SR_DIRK_full(DATA *data, threadData_t *threadData, DATA_GBODE* gbData, GB_INTERNAL_NLS_DATA *nls,
-                          JACOBIAN *jac_ode, double *jac_buf_ode, double *jac_buf_nls);
+int jacobian_SR_DIRK_assemble(DATA *data, threadData_t *threadData, DATA_GBODE* gbData, GB_INTERNAL_NLS_DATA *nls,
+                              JACOBIAN *jac_ode, double *jac_buf_ode, double *jac_buf_nls);
+
+int jacobian_SR_real_assemble(DATA *data, threadData_t *threadData, DATA_GBODE* gbData, GB_INTERNAL_NLS_DATA *nls,
+                              double gamma, JACOBIAN *jac_ode, double *jac_buf_ode, double *jac_buf_nls);
+
+int jacobian_SR_cmplx_assemble(DATA *data, threadData_t *threadData, DATA_GBODE* gbData, GB_INTERNAL_NLS_DATA *nls,
+                               double alpha, double beta, JACOBIAN *jac_ode, double *jac_buf_ode, double *jac_buf_nls);
 
 #ifdef __cplusplus
 };
