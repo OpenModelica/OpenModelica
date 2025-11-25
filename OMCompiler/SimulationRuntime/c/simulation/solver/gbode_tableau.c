@@ -85,7 +85,7 @@ void setButcherTableau(BUTCHER_TABLEAU* tableau, const double *c, const double *
 }
 
 void setTTransform(BUTCHER_TABLEAU *tableau, const double *A_part_inv, const double *T, const double *T_inv, const double *gamma, const double *alpha, const double *beta,
-                   modelica_boolean f_row_zero, modelica_boolean l_col_zero, int n_real_eigs, int n_cmplx_eigs, const double *res)
+                   modelica_boolean f_row_zero, modelica_boolean l_col_zero, int n_real_eigs, int n_cmplx_eigs, const double *phi, const double *rho)
 {
   tableau->t_transform = (T_TRANSFORM *) malloc(sizeof(T_TRANSFORM));
 
@@ -104,10 +104,24 @@ void setTTransform(BUTCHER_TABLEAU *tableau, const double *A_part_inv, const dou
   tr->alpha = (double *) malloc(n_cmplx_eigs * sizeof(double));
   tr->beta = (double *) malloc(n_cmplx_eigs * sizeof(double));
 
-  if (res)
+  if (phi)
   {
-    tr->res = (double *) malloc(tr->size * sizeof(double));
-    memcpy(tr->res, res, tr->size * sizeof(double));
+    tr->phi = (double *) malloc(tr->size * sizeof(double));
+    memcpy(tr->phi, phi, tr->size * sizeof(double));
+  }
+  else
+  {
+    tr->phi = NULL;
+  }
+
+  if (rho)
+  {
+    tr->rho = (double *) malloc(tr->size * sizeof(double));
+    memcpy(tr->rho, rho, tr->size * sizeof(double));
+  }
+  else
+  {
+    tr->rho = NULL;
   }
 
   memcpy(tr->A_part_inv, A_part_inv, tr->size * tr->size * sizeof(double));
@@ -541,7 +555,7 @@ void getButcherTableau_RADAU_IA_2(BUTCHER_TABLEAU* tableau)
       -1.5, 1.5,
   };
 
-  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 1, NULL);
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 1, NULL, NULL);
 }
 
 // TODO: Describe me
@@ -586,7 +600,7 @@ void getButcherTableau_RADAU_IA_3(BUTCHER_TABLEAU* tableau)
       1.632993161855452065464856049803927594644, -4.857738033247041114563498087156873290626, 3.224744871391589049098642037352945695983,
   };
 
-  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 1, NULL);
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 1, NULL, NULL);
 }
 
 // TODO: Describe me
@@ -595,7 +609,7 @@ void getButcherTableau_RADAU_IA_4(BUTCHER_TABLEAU* tableau)
   tableau->nStages = 4;
   tableau->order_b = 2*tableau->nStages - 1;
   tableau->order_bt = tableau->nStages - 1;
-  tableau->fac = 1.0e2;
+  tableau->fac = 1.0;
 
   const double c[] = {                                         0, 0.2123405382391529439747581101240003766519, 0.5905331355592652891350737479311701059481, 0.9114120404872960526044538562305438031143};
   const double A[] = {
@@ -635,7 +649,7 @@ void getButcherTableau_RADAU_IA_4(BUTCHER_TABLEAU* tableau)
       -1.962776358443053620978703803915304218474, 5.209408237612634665779116203558318805905, -8.890739755119670519986285523982295923106, 5.644107875950089475185873124339281335674,
   };
 
-  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 2, NULL);
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 2, NULL, NULL);
 }
 
 // TODO: Describe me
@@ -676,7 +690,7 @@ void getButcherTableau_RADAU_IIA_2(BUTCHER_TABLEAU* tableau)
       -4.5, 2.5,
   };
 
-  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 1, NULL);
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 1, NULL, NULL);
 }
 
 // TODO: Describe me
@@ -722,7 +736,7 @@ void getButcherTableau_RADAU_IIA_3(BUTCHER_TABLEAU* tableau)
       5.531972647421808261859424199215710378576, -7.531972647421808261859424199215710378577, 5.0,
   };
 
-  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 1, NULL);
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 1, NULL, NULL);
 }
 
 // TODO: Describe me
@@ -771,7 +785,7 @@ void getButcherTableau_RADAU_IIA_4(BUTCHER_TABLEAU* tableau)
       -6.923488256445454508537916405090468743462, 6.595237669628143898443354470278302412971, -12.17174941318268938990543806518783366951, 8.5,
   };
 
-  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 2, NULL);
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 2, NULL, NULL);
 }
 
 // TODO: add RADAU (5, 7, 9 stage methods) as its L-stable and order 2S-1
@@ -806,8 +820,12 @@ void getButcherTableau_LOBATTO_IIIA_3(BUTCHER_TABLEAU* tableau)
       -4.618802153517006116073190244015659645181, 0.5773502691896257645091487805019574556476,
   };
 
-  const double res[] = {
+  const double phi[] = {
       -1.0, -2.886751345948128822545743902509787278238,
+  };
+
+  const double rho[] = {
+    -0.5, 1.0
   };
 
   const double gamma[] = {  };
@@ -819,7 +837,7 @@ void getButcherTableau_LOBATTO_IIIA_3(BUTCHER_TABLEAU* tableau)
       -8.0, 4.0
   };
 
-  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, TRUE, FALSE, 0, 1, res);
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, TRUE, FALSE, 0, 1, phi, rho);
 }
 
 // TODO: Describe me
@@ -855,8 +873,12 @@ void getButcherTableau_LOBATTO_IIIA_4(BUTCHER_TABLEAU* tableau)
       -1.066660885401270392058552736086175818405, 3.146358406832537460764521760668933441691, -0.7732056038202974770406168510664737222942,
   };
 
-  const double res[] = {
+  const double phi[] = {
       4.136608679244136045317158325069029505281, -3.13660867924413604531715832506902950528, -2.657325109410866710940683346427133588849,
+  };
+
+  const double rho[] = {
+      -0.447213595499957939281834733746255247088313521, 0.447213595499957939281834733746255247088313521, -1.0,
   };
 
   const double gamma[] = { 4.644370709252171185822941421408063969864 };
@@ -869,7 +891,7 @@ void getButcherTableau_LOBATTO_IIIA_4(BUTCHER_TABLEAU* tableau)
       11.18033988749894848204586834365638117721, -11.1803398874989484820458683436563811772, 7.0
   };
 
-  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, TRUE, FALSE, 1, 1, res);
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, TRUE, FALSE, 1, 1, phi, rho);
 }
 
 // TODO: Describe me
@@ -893,25 +915,25 @@ void getButcherTableau_LOBATTO_IIIB_3(BUTCHER_TABLEAU* tableau)
   tableau->isKRightAvailable = FALSE;
 
   const double T[] = {
-      -2.61803398874989484820458683436563811772, 1.341640786499873817845504201238765741264,
-      1.0, -3.512461179749810726768256301858148611897,
+      -0.5, -0.8660254037844386467637231707529361834716,
+      1.0, 0.0,
   };
 
   const double T_inv[] = {
-      -0.4472135954999579392818347337462552470881, -0.1708203932499369089227521006193828706322,
-      -0.1273220037500350505984710552114539607599, -0.3333333333333333333333333333333333333333,
+      0.0, 1.0,
+      -1.154700538379251529018297561003914911295, -0.5773502691896257645091487805019574556471,
   };
 
-  const double gamma[] = { 4.341640786499873817845504201238765741264, 1.658359213500126182154495798761234258736 };
-  const double alpha[] = {  };
-  const double beta[] = {  };
+  const double gamma[] = {  };
+  const double alpha[] = { 3.0 };
+  const double beta[] = { -1.732050807568877293527446341505872366943 };
 
   const double A_part_inv[] = {
       4.0, 2.0,
       -2.0, 2.0,
   };
 
-  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, TRUE, 2, 0, NULL);
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, TRUE, 0, 1, NULL, NULL);
 }
 
 // TODO: Describe me
@@ -957,7 +979,7 @@ void getButcherTableau_LOBATTO_IIIB_4(BUTCHER_TABLEAU* tableau)
       2.236067977499789696409173668731276235441, -5.854101966249684544613760503096914353162, 3.618033988749894848204586834365638117721,
   };
 
-  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 1, NULL);
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, TRUE, 1, 1, NULL, NULL);
 }
 
 // TODO: Describe me
@@ -1002,7 +1024,7 @@ void getButcherTableau_LOBATTO_IIIC_3(BUTCHER_TABLEAU* tableau)
       1.0, -4.0, 3.0,
   };
 
-  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 1, NULL);
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 1, NULL, NULL);
 }
 
 // TODO: Describe me
@@ -1051,7 +1073,7 @@ void getButcherTableau_LOBATTO_IIIC_4(BUTCHER_TABLEAU* tableau)
       -1.0, 3.090169943749474241022934171828190588602, -8.090169943749474241022934171828190588603, 6.0,
   };
 
-  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 2, NULL);
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 2, NULL, NULL);
 }
 
 // TODO: Describe me
@@ -1106,7 +1128,7 @@ void getButcherTableau_GAUSS2(BUTCHER_TABLEAU* tableau)
       -6.464101615137754587054892683011744733886, 3.0,
   };
 
-  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 1, NULL);
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 1, NULL, NULL);
 }
 
 // TODO: Describe me
@@ -1152,7 +1174,7 @@ void getButcherTableau_GAUSS3(BUTCHER_TABLEAU* tableau)
       -5.727486121839514070982721166429537582427, 2.0, 0.7274861218395140709827211664861235829424,
       10.16397779494322251357235386648904159981, -9.163977794943222513572353866527039952332, 5.0,
   };
-  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 1, NULL);
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 1, NULL, NULL);
 }
 
 // TODO: Describe me
@@ -1202,7 +1224,7 @@ void getButcherTableau_GAUSS4(BUTCHER_TABLEAU* tableau)
       6.343622218624971332778961412625599489274, -5.97155645948202011786179480801143352169, 2.261387212474169432715151085995989330236, 1.090852762294335797807515881185812535556,
       -15.56386959855492280922642636102863747553, 11.89278387805684136460746043690763843845, -13.50080272596495124624053229272463057475, 7.738612787525830567284848914004010669764,
   };
-  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 2, NULL);
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 2, NULL, NULL);
 }
 
 // TODO: Describe me
@@ -1257,7 +1279,7 @@ void getButcherTableau_GAUSS5(BUTCHER_TABLEAU* tableau)
       22.42091502590609440348995489986372984221, -16.19339023999923498465294893223300242602, 15.4154432215698509221250420904575008083, -19.08560117865735976998433012273430467822, 11.18330013267037773989086012892593744696,
   };
 
-  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 2, NULL);
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 2, NULL, NULL);
 }
 
 // TODO: Describe me
@@ -1268,7 +1290,7 @@ void getButcherTableau_GAUSS6(BUTCHER_TABLEAU* tableau)
   tableau->nStages = 6;
   tableau->order_b = 2*tableau->nStages;
   tableau->order_bt = tableau->nStages - 1;
-  tableau->fac = 0.01;
+  tableau->fac = 1.0;
 
   const double c[] = {0.03376524289842398609384922275300269543262, 0.1693953067668677431693002024900473264968, 0.3806904069584015456847491391596440322907, 0.6193095930415984543152508608403559677093, 0.8306046932331322568306997975099526735032, 0.9662347571015760139061507772469973045674};
   const double A[] = {
@@ -1316,7 +1338,7 @@ void getButcherTableau_GAUSS6(BUTCHER_TABLEAU* tableau)
       -30.68867482146992733548308478279637556212, 21.57160573829669739604721954283601850167, -19.25696288835293632212376234618755233478, 19.97909959690134352356743708299354161816, -25.84665393768877653561610120790911572958, 15.32559943877134810291330377951104089402,
   };
 
-  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 3, NULL);
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 3, NULL, NULL);
 }
 
 // TODO: Describe me
@@ -2090,7 +2112,8 @@ void freeTTransform(T_TRANSFORM *t_transform)
   free(t_transform->alpha);
   free(t_transform->beta);
   free(t_transform->gamma);
-  if (t_transform->res) free(t_transform->res);
+  if (t_transform->phi) free(t_transform->phi);
+  if (t_transform->rho) free(t_transform->rho);
   free(t_transform);
 }
 
