@@ -2908,6 +2908,83 @@ algorithm
   end match;
 end crefEqualNoSubs;
 
+public function crefCompare
+  input Absyn.ComponentRef cr1;
+  input Absyn.ComponentRef cr2;
+  output Integer comp;
+protected
+  String name;
+  Absyn.ComponentRef cr;
+  list<Absyn.Subscript> subs;
+algorithm
+  if referenceEq(cr1, cr2) then
+    comp := 0;
+    return;
+  end if;
+
+  comp := Util.intCompare(valueConstructor(cr1), valueConstructor(cr2));
+
+  if comp <> 0 then
+    return;
+  end if;
+
+  comp := match cr1
+    case Absyn.ComponentRef.CREF_FULLYQUALIFIED()
+      algorithm
+        Absyn.ComponentRef.CREF_FULLYQUALIFIED(cr) := cr2;
+      then
+        crefCompare(cr1.componentRef, cr);
+
+    case Absyn.ComponentRef.CREF_QUAL()
+      algorithm
+        Absyn.ComponentRef.CREF_QUAL(name, subs, cr) := cr2;
+        comp := stringCompare(cr1.name, name);
+
+        if comp == 0 then
+          comp := List.compare(cr1.subscripts, subs, subscriptCompare);
+        end if;
+      then
+        if comp == 0 then crefCompare(cr1.componentRef, cr) else comp;
+
+    case Absyn.ComponentRef.CREF_IDENT()
+      algorithm
+        Absyn.ComponentRef.CREF_IDENT(name, subs) := cr2;
+        comp := stringCompare(cr1.name, name);
+      then
+        if comp == 0 then List.compare(cr1.subscripts, subs, subscriptCompare) else comp;
+
+    else 0;
+  end match;
+end crefCompare;
+
+public function subscriptCompare
+  input Absyn.Subscript sub1;
+  input Absyn.Subscript sub2;
+  output Integer comp;
+protected
+  Absyn.Exp exp;
+algorithm
+  if referenceEq(sub1, sub2) then
+    comp := 0;
+  end if;
+
+  comp := Util.intCompare(valueConstructor(sub1), valueConstructor(sub2));
+
+  if comp <> 0 then
+    return;
+  end if;
+
+  comp := match sub1
+    case Absyn.Subscript.NOSUB() then 0;
+    case Absyn.Subscript.SUBSCRIPT()
+      algorithm
+        Absyn.Subscript.SUBSCRIPT(exp) := sub2;
+      then
+        // TODO: Implement compare for Absyn.Exp instead of converting to strings.
+        stringCompare(Dump.printExpStr(sub1.subscript), Dump.printExpStr(exp));
+  end match;
+end subscriptCompare;
+
 public function isPackageRestriction "checks if the provided parameter is a package or not"
   input Absyn.Restriction inRestriction;
   output Boolean outIsPackage;

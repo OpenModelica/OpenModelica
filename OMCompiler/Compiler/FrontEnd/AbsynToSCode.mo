@@ -1758,15 +1758,11 @@ algorithm
 
       case Absyn.ELEMENTARGCOMMENT() then subMods;
 
-      case Absyn.INHERITANCEBREAK(Absyn.EQ_CONNECT(connector1 = Absyn.ComponentRef.CREF_IDENT(name = name),
-                                                   connector2 = Absyn.ComponentRef.CREF_IDENT(name = "break")))
+      case Absyn.INHERITANCEBREAK(Absyn.EQ_CONNECT(connector1 = Absyn.ComponentRef.CREF_IDENT(name = "break"),
+                                                   connector2 = Absyn.ComponentRef.CREF_IDENT(name = name)))
         then SCode.SubMod.NAMEMOD(name, SCode.Mod.BREAK_COMPONENT(arg.info)) :: subMods;
 
       case Absyn.INHERITANCEBREAK(Absyn.EQ_CONNECT(connector1 = cr1, connector2 = cr2))
-        algorithm
-          Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,
-            {"'7.4 Selective Model Extension': [" + Dump.unparseEquationStr(arg.cnct) + "]",
-             "ignoring feature"}, arg.info);
         then SCode.SubMod.NAMEMOD("", SCode.Mod.BREAK_CONNECT(cr1, cr2, arg.info)) :: subMods;
 
     end match;
