@@ -425,6 +425,7 @@ QString Helper::moveUp;
 QString Helper::moveDown;
 QString Helper::fixErrorsManually;
 QString Helper::revertToLastCorrectVersion;
+QString Helper::saveWithErrors;
 QString Helper::translationFlagsTip;
 QString Helper::saveExperimentAnnotation;
 QString Helper::saveOpenModelicaSimulationFlagsAnnotation;
@@ -753,6 +754,7 @@ void Helper::initHelperVariables()
   Helper::moveDown = tr("Move Down");
   Helper::fixErrorsManually = tr("Fix error(s) manually");
   Helper::revertToLastCorrectVersion = tr("Revert to last correct version");
+  Helper::saveWithErrors = tr("Save with Errors");
   Helper::translationFlagsTip = tr("Space separated list of OMC command line options e.g., -d=initialization --cheapmatchingAlgorithm=3");
   Helper::saveExperimentAnnotation = tr("Save experiment annotation inside model i.e., experiment annotation");
   Helper::saveOpenModelicaSimulationFlagsAnnotation = tr("Save simulation flags inside model i.e., __OpenModelica_simulationFlags annotation");
