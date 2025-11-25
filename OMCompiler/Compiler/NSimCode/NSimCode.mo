@@ -439,7 +439,7 @@ public
             generic_loop_calls  := list(SimGenericCall.mapShallow(call, collect_literals) for call in generic_loop_calls);
             literals            := UnorderedMap.keyList(literals_map);
 
-            (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, bdae.clockedInfo, simCodeIndices);
+            (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, clockedPartitions, simCodeIndices);
 
             simCode := SIM_CODE(
               modelInfo                 = modelInfo,
@@ -650,7 +650,7 @@ public
       input list<SimStrongComponent.Block> linearLoops;
       input list<SimStrongComponent.Block> nonlinearLoops;
       input EventInfo eventInfo;
-      input ClockedInfo clockedInfo;
+      input list<SimPartition> clockedPartitions;
       output ModelInfo modelInfo;
       input output SimCodeIndices simCodeIndices;
     protected
@@ -672,8 +672,8 @@ public
         labels                          = {},
         resourcePaths                   = {},
         sortedClasses                   = {},
-        nClocks                         = ClockedInfo.baseClockCount(clockedInfo),
-        nSubClocks                      = ClockedInfo.subClockCount(clockedInfo),
+        nClocks                         = listLength(clockedPartitions),
+        nSubClocks                      = sum(i for i in list(SimPartition.numSubPart(part) for part in clockedPartitions)),
         nSpatialDistributions           = 0,
         hasLargeLinearEquationSystems   = true,
         linearLoops                     = linearLoops,
