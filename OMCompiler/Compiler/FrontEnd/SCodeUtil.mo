@@ -4340,6 +4340,16 @@ algorithm
   end match;
 end isBreakComponentSubMod;
 
+public function isBreakConnectSubMod
+  input SCode.SubMod subMod;
+  output Boolean isBreak;
+algorithm
+  isBreak := match subMod
+    case SCode.NAMEMOD(mod = SCode.Mod.BREAK_CONNECT()) then true;
+    else false;
+  end match;
+end isBreakConnectSubMod;
+
 public function componentMod
   input SCode.Element inElement;
   output SCode.Mod outMod;
