@@ -440,13 +440,13 @@ static NLS_SOLVER_STATUS solveNLS_gbInternal_DIRK(DATA *data,
   }
 }
 
-static const double ONE = 1.0;
-static const double MINUS_ONE = -1.0;
-static const double ZERO = 0.0;
-static const int INC_ONE = 1;
-static const int INC_TWO = 2;
-static const char TRANS = 'T';
-static const char NO_TRANS = 'N';
+static const double DBL_ONE = 1.0;
+static const double DBL_MINUS_ONE = -1.0;
+static const double DBL_ZERO = 0.0;
+static const int INT_ONE = 1;
+static const int INT_TWO = 2;
+static const char CHAR_TRANS = 'T';
+static const char CHAR_NO_TRANS = 'N';
 
 extern void daxpy_(const int *n,
                    const double *alpha,
@@ -490,12 +490,12 @@ void dense_kron_id_vec(int block_count,
                        double *out)
 {
   dgemm_(
-    &NO_TRANS, &NO_TRANS,
+    &CHAR_NO_TRANS, &CHAR_NO_TRANS,
     &block_size, &block_count, &block_count,
-    &ONE,
+    &DBL_ONE,
     v, &block_size,
     T, &block_count,
-    &ZERO,
+    &DBL_ZERO,
     out, &block_size
   );
 }
@@ -545,7 +545,7 @@ void scaled_blockdiag_matvec(T_TRANSFORM *transform,
   // 1x1 real blocks: out_i += a_i * v
   for (int real_eig = 0; real_eig < transform->nRealEigenvalues; real_eig++)
   {
-    daxpy_(&block_size, &gammas_scaled[0], &v[real_eig * block_size], &INC_ONE, &out[real_eig * block_size], &INC_ONE);
+    daxpy_(&block_size, &gammas_scaled[0], &v[real_eig * block_size], &INT_ONE, &out[real_eig * block_size], &INT_ONE);
   }
 
   int offset = transform->nRealEigenvalues * block_size;
@@ -565,12 +565,12 @@ void scaled_blockdiag_matvec(T_TRANSFORM *transform,
     double *out1 = &out[offset + block_size];
 
     // out0 = a*v0 - b*v1
-    daxpy_(&block_size, &a, v0, &INC_ONE, out0, &INC_ONE);  // out0 += a*v0
-    daxpy_(&block_size, &mb, v1, &INC_ONE, out0, &INC_ONE); // out0 -= b*v1
+    daxpy_(&block_size, &a, v0, &INT_ONE, out0, &INT_ONE);  // out0 += a*v0
+    daxpy_(&block_size, &mb, v1, &INT_ONE, out0, &INT_ONE); // out0 -= b*v1
 
     // out1 = a*v1 + b*v0
-    daxpy_(&block_size, &a, v1, &INC_ONE, out1, &INC_ONE);  // out1 += a*v1
-    daxpy_(&block_size, &b, v0, &INC_ONE, out1, &INC_ONE);  // out1 += b*v0
+    daxpy_(&block_size, &a, v1, &INT_ONE, out1, &INT_ONE);  // out1 += a*v1
+    daxpy_(&block_size, &b, v0, &INT_ONE, out1, &INT_ONE);  // out1 += b*v0
 
     offset += 2 * block_size;
   }
@@ -653,7 +653,7 @@ static NLS_SOLVER_STATUS solveNLS_gbInternal_T_Transform(DATA *data,
   for (int j = 0; j < transform->size; j++)
   {
     memcpy(&nls->Z[j * size], &x_start[j * size], size * sizeof(double));
-    daxpy_(&size, &MINUS_ONE, x0, &INC_ONE, &nls->Z[j * size], &INC_ONE);
+    daxpy_(&size, &DBL_MINUS_ONE, x0, &INT_ONE, &nls->Z[j * size], &INT_ONE);
   }
 
   // W = (T^{-1} otimes I) * Z
@@ -679,7 +679,7 @@ static NLS_SOLVER_STATUS solveNLS_gbInternal_T_Transform(DATA *data,
     for (int j = 0; j < transform->size; j++)
     {
       memcpy(data->localData[0]->realVars, x0, size * sizeof(double));
-      daxpy_(&size, &ONE, &nls->Z[j * size], &INC_ONE, data->localData[0]->realVars, &INC_ONE);
+      daxpy_(&size, &DBL_ONE, &nls->Z[j * size], &INT_ONE, data->localData[0]->realVars, &INT_ONE);
       data->localData[0]->timeValue = gbData->time + gbData->tableau->c[j + (int)transform->firstRowZero] * gbData->stepSize;
       gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
       memcpy(&nls->work[j * size], &data->localData[0]->realVars[size], size * sizeof(double));
@@ -691,12 +691,13 @@ static NLS_SOLVER_STATUS solveNLS_gbInternal_T_Transform(DATA *data,
     // rhs[j] += -1 / h * (Lambda otimes I) * W
     scaled_blockdiag_matvec(transform, size, minvh, nls->W, flat_res);
 
-    // add Phi = T^{-1} * A_part^{-1} * a{:, 1} * K_1 if first stage is explicit, else skip (we computed nls->phi = T^{-1} * A_part^{-1} * a{:, 1})
+    // add Phi = T^{-1} * A_part^{-1} * a{r, 1} * K_1 if first stage is explicit, else skip (we computed nls->phi = T^{-1} * A_part^{-1} * a{r, 1})
+    // where r are all rows that belong to A_part
     if (transform->firstRowZero)
     {
       for (int j = 0; j < transform->size; j++)
       {
-        daxpy_(&size, &transform->phi[j], gbData->k, &INC_ONE, &flat_res[j * size], &INC_ONE);
+        daxpy_(&size, &transform->phi[j], gbData->k, &INT_ONE, &flat_res[j * size], &INT_ONE);
       }
     }
 
@@ -704,9 +705,9 @@ static NLS_SOLVER_STATUS solveNLS_gbInternal_T_Transform(DATA *data,
     for (int sys_cmplx = 0; sys_cmplx < nls->tabl->t_transform->nComplexEigenpairs; sys_cmplx++)
     {
       stride_copy(&size, &flat_res[(2 * sys_cmplx + transform->nRealEigenvalues) * size],
-                  &INC_ONE, &nls->cmplx_nls_res[sys_cmplx][0], &INC_TWO);     // .real
+                  &INT_ONE, &nls->cmplx_nls_res[sys_cmplx][0], &INT_TWO);     // .real
       stride_copy(&size, &flat_res[(2 * sys_cmplx + transform->nRealEigenvalues + 1) * size],
-                  &INC_ONE, &nls->cmplx_nls_res[sys_cmplx][1], &INC_TWO);     // .imag
+                  &INT_ONE, &nls->cmplx_nls_res[sys_cmplx][1], &INT_TWO);     // .imag
     }
 
     // solve linear systems
@@ -725,14 +726,14 @@ static NLS_SOLVER_STATUS solveNLS_gbInternal_T_Transform(DATA *data,
     // copy solutions of complex systems back to flat buffer
     for (int sys_cmplx = 0; sys_cmplx < nls->tabl->t_transform->nComplexEigenpairs; sys_cmplx++)
     {
-      stride_copy(&size, &nls->cmplx_nls_res[sys_cmplx][0], &INC_TWO,
-                  &flat_res[(2 * sys_cmplx + transform->nRealEigenvalues) * size], &INC_ONE);     // r1
-      stride_copy(&size, &nls->cmplx_nls_res[sys_cmplx][1], &INC_TWO,
-                  &flat_res[(2 * sys_cmplx + transform->nRealEigenvalues + 1) * size], &INC_ONE); // r2
+      stride_copy(&size, &nls->cmplx_nls_res[sys_cmplx][0], &INT_TWO,
+                  &flat_res[(2 * sys_cmplx + transform->nRealEigenvalues) * size], &INT_ONE);     // r1
+      stride_copy(&size, &nls->cmplx_nls_res[sys_cmplx][1], &INT_TWO,
+                  &flat_res[(2 * sys_cmplx + transform->nRealEigenvalues + 1) * size], &INT_ONE); // r2
     }
 
     // Newton step (we must do W += dW)
-    daxpy_(&w_size, &ONE, flat_res, &INC_ONE, nls->W, &INC_ONE);
+    daxpy_(&w_size, &DBL_ONE, flat_res, &INT_ONE, nls->W, &INT_ONE);
     gbData->stats.nNewtonStepsTotal++;
 
     nrm_delta_prev = nrm_delta;
@@ -776,10 +777,11 @@ static NLS_SOLVER_STATUS solveNLS_gbInternal_T_Transform(DATA *data,
       for (int j = 0; j < transform->size; j++)
       {
         memcpy(&x[j * size + offset], &nls->Z[j * size], size * sizeof(double));
-        daxpy_(&size, &ONE, x0, &INC_ONE, &x[j * size + offset], &INC_ONE);
+        daxpy_(&size, &DBL_ONE, x0, &INT_ONE, &x[j * size + offset], &INT_ONE);
       }
 
-      // recompute weights K from Z via K = 1 / h * (A^{-1} otimes I) * Z + rho * k_1 if k_1 explicit else 0 (rho := -A_part^{-1} * A_{:, 1})
+      // recompute weights K from Z via K = 1 / h * (A_part^{-1} otimes I) * Z + rho * k_1 if k_1 explicit else 0 (rho := -A_part^{-1} * A_{r, 1})
+      // where r are all rows that belong to A_part
       dense_kron_id_vec(transform->size, size, transform->A_part_inv, nls->Z, &gbData->k[offset]);
       for (int i = offset; i < w_size + offset; i++)
       {
@@ -788,10 +790,10 @@ static NLS_SOLVER_STATUS solveNLS_gbInternal_T_Transform(DATA *data,
 
       if (transform->firstRowZero)
       {
-        // add k[j] += rho[j] * k_1 or k[j] -= (-A_part^{-1} * A_{:, 1} * k_1)[j] * k_1
+        // add k[j] += rho[j] * k_1 or k[j] -= (-A_part^{-1} * A_{r, 1} * k_1)[j] * k_1
         for (int j = 0; j < transform->size; j++)
         {
-          daxpy_(&size, &transform->rho[j], gbData->k, &INC_ONE, &gbData->k[offset + j * size], &INC_ONE);
+          daxpy_(&size, &transform->rho[j], gbData->k, &INT_ONE, &gbData->k[offset + j * size], &INT_ONE);
         }
       }
 
@@ -808,12 +810,12 @@ static NLS_SOLVER_STATUS solveNLS_gbInternal_T_Transform(DATA *data,
 
         // X_s = x0 + h * sum{j=1}^{s-1} A_{s, j} * k_j as A_{s, s} == 0!
         memcpy(&x[size * s_minus1], x0, size * sizeof(double));
-        dgemm_(&NO_TRANS, &TRANS,
-               &size, &INC_ONE, &s_minus1,
+        dgemm_(&CHAR_NO_TRANS, &CHAR_TRANS,
+               &size, &INT_ONE, &s_minus1,
                &gbData->stepSize,
                gbData->k, &size,
-               &gbData->tableau->A[s_minus1 * nls->tabl->nStages], &INC_ONE,
-               &ONE,
+               &gbData->tableau->A[s_minus1 * nls->tabl->nStages], &INT_ONE,
+               &DBL_ONE,
                &x[size * s_minus1], &size);
 
         memcpy(data->localData[0]->realVars, &x[size * s_minus1], size * sizeof(double));

@@ -536,8 +536,18 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     extrapolation_gb(gbData, nlsData->nlsxExtrapolation + stage_*nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
   }
 
+  if (gbData->time != data->simulationInfo->startTime && gbData->tableau->dense_output != NULL)
+  {
+    for (stage_ = 0; stage_ < nStages; stage_++) {
+      double theta = (gbData->time + gbData->tableau->c[stage_] * gbData->stepSize - gbData->extrapolationBaseTime) / gbData->extrapolationStepSize;
+      gbData->tableau->dense_output(gbData->tableau, gbData->yLast, NULL, gbData->kLast,
+                                    theta, gbData->extrapolationStepSize, nlsData->nlsxOld + stage_*nStates, 0, NULL, nStates);
+      }
+  }
+
   solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
+  // TODO: segfault here if LOG_SOLVER is set?!
   if (solved != NLS_SOLVED) {
     gbData->stats.nConvergenceTestFailures++;
     warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_RK at time t=%g", gbData->time);
