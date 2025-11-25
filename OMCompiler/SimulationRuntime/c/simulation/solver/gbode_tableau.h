@@ -87,9 +87,13 @@ typedef void (*gb_dense_output)(BUTCHER_TABLEAU* tableau, double* yOld, double* 
 typedef struct T_TRANSFORM {
   /**
    * @brief Inverse of the Runge-Kutta matrix (used for mapping Z -> K)
-   *        If A not invertible -> only invertible part of A.
-   *        For collocation methods Gauss, RadauIIA, Lobatto IIIA:
-   *        these values are part of the schemes differentiation matrix.
+   *        If A is not invertible, this is only the invertible part of A.
+   *        For the standard methods A_part_inv = A_part^{-1} is given by:
+   *          - Gauss, RadauIA, RadauIIA, LobattoIIIC are invertible: A^{-1} = A_part_inv
+   *          - LobattoIIIA: A(2:s, 2:s)^{-1} = A_part_inv (bottom right square, first stage explicit)
+   *          - LobattoIIIB: A(1:s-1, 1:s-1)^{-1} = A_part_inv (top left square, last stage explicit)
+   *          - LobattoIIIC*: A(2:s-1, 2:s-1)^{-1} = A_part_inv (middle square: remove first and last rows and cols from A,
+   *                                                             first and last stage explicit)
    *
    * Stored row-major, dimension S_r × S_r.
    */
@@ -108,7 +112,7 @@ typedef struct T_TRANSFORM {
    * @brief Transformation matrix T such that:
    *        vec(Z) = (T ⊗ I_N) * vec(W)
    *
-   * Reconstructs the coupled stage values after solving the decoupled systems.
+   * Reconstructs the coupled stage values from the decoupled values.
    * Stored row-major, dimension S_r × S_r.
    */
   double *T;
@@ -138,7 +142,7 @@ typedef struct T_TRANSFORM {
   /**
    * @brief Factor for weighting the residual k1. If firstRowZero, then stage 1 is explicit and we need to
    *        weight the k1 vector with this phi vector in the residual of the decoupled system.
-   *        phi := T^{-1} * A_part^{-1} * A_{:, 1}, note A_part is the invertible part of the matrix (e.g. lower right square for LobattoIIIA)
+   *              phi := T^{-1} * A_part^{-1} * A_{r,1} = -T^{-1} * rho, where r are all rows that belong to A_part.
    *
    * Size: S - 1.
    */
@@ -146,8 +150,8 @@ typedef struct T_TRANSFORM {
 
   /**
   * @brief Offset for reconstructing K when the first stage is explicit.
-  *        rho = -A_part_inv * A_{2:end,1}; used in
-  *        K_{2:end} = (1/h) * A_part_inv * Z + rho * k1.
+  *        rho = -A_part_inv * A_{r,1} = -T * phi; used in
+  *        K_{r} = (1/h) * A_part_inv * Z + rho * k1, where r are all rows that belong to A_part.
   *
   * Size: S - 1.
   */
@@ -173,7 +177,7 @@ typedef struct T_TRANSFORM {
   int nComplexEigenpairs;
 
   /**
-   * @brief Size of the T-transformations size_{transform} = #stages - int(explicit_first) - int(explicit_last)
+   * @brief Size S_r of the T-transformations size_{transform} = #stages - int(explicit_first) - int(explicit_last)
    */
   int size;
 } T_TRANSFORM;
