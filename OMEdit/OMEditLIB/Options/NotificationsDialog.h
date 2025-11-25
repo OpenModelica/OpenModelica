@@ -58,12 +58,14 @@ public:
   QCheckBox* getNotificationCheckBox() {return mpNotificationCheckBox;}
   QPushButton* getOkButton() {return mpOkButton;}
   QPushButton* getCancelButton() {return mpCancelButton;}
+  QPushButton *getSaveWithErrorsButton() const {return mpSaveWithErrorsButton;}
   QDialogButtonBox* getButtonBox() {return mpButtonBox;}
 private:
   Label *mpNotificationLabel;
   QCheckBox *mpNotificationCheckBox;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
+  QPushButton *mpSaveWithErrorsButton;
   QDialogButtonBox *mpButtonBox;
   NotificationType mNotificationType;
   QPixmap getNotificationIcon(NotificationIcon notificationIcon);
@@ -79,6 +81,7 @@ private:
 private slots:
   void saveNotification();
   void rejectNotification();
+  void saveWithErrors();
 };
 
 #endif // NOTIFICATIONSDIALOG_H

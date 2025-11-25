@@ -3027,7 +3027,7 @@ ReloadAsModelicaInfoBar::ReloadAsModelicaInfoBar(BaseEditor *pBaseEditor)
   mpInfoLabel->setWordWrap(true);
   mpInfoLabel->setText(tr("This Modelica file is opened in text mode. If syntactically correct, it can be reloaded in Modelica mode."));
   mpReloadButton = new QPushButton(ResourceCache::getIcon(":/Resources/icons/refresh.svg"), Helper::reload);
-  connect(mpReloadButton, &QToolButton::clicked, pBaseEditor, &BaseEditor::reloadAsModelica);
+  connect(mpReloadButton, &QPushButton::clicked, pBaseEditor, &BaseEditor::reloadAsModelica);
   // set the layout
   QHBoxLayout *pMainLayout = new QHBoxLayout;
   pMainLayout->setContentsMargins(2, 2, 2, 2);

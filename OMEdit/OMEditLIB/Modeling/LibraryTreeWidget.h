@@ -455,7 +455,7 @@ public:
   void openOMSModelFile(QFileInfo fileInfo, bool showProgress = true);
   void parseAndLoadModelicaText(QString modelText);
   bool saveFile(QString fileName, QString contents);
-  bool saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  bool saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool skipValidate = false);
   void saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void openLibraryTreeItem(QString nameStructure);
