@@ -557,6 +557,8 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   // Apply RK-scheme for determining the approximations at (gbData->time + gbData->stepSize)
   // y       = yold+h*sum(b[stage_]  * k[stage_], stage_=1..nStages);
   // yt      = yold+h*sum(bt[stage_] * k[stage_], stage_=1..nStages);
+
+  // TODO: refactor me !!
   for (i = 0; i < nStates; i++) {
     gbData->y[i]  = gbData->yOld[i];
     gbData->yt[i] = gbData->yOld[i];

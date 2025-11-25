@@ -50,6 +50,7 @@ typedef struct GB_INTERNAL_NLS_DATA
   NLS_USERDATA *nls_user_data;       // pointer to data, gbode data, etc.
   KLUInternals *klu_internals_real;  // internal data structures for real systems with klu linear solver (might change for ptr + enum, e.g. to have LAPACK)
   KLUInternals *klu_internals_cmplx; // internal data structures for complex systems with klu linear solver (might change for ptr + enum, e.g. to have LAPACK)
+  SPARSE_PATTERN *sparsePattern;     // sparse pattern struct(I + J) (for DIRK == NLS sparse pattern, else created)
   double *jacobian_callback;         // buffer for continuous ODE Jacobian (size = nnz(J_f))
   int *ode_to_nls;                   // mapping ODE Jacobian nnz -> NLS Jacobian nnz
   int *nls_diag_indices;             // all diagonal nz indices of NLS Jacobian (size = cols)
@@ -69,6 +70,11 @@ typedef struct GB_INTERNAL_NLS_DATA
   modelica_boolean use_t_transform;  // use T transform to solve the system (false for (E)SDIRK, true for FIRK)
   double **real_nls_jacs;            // real NLS jacobians
   double **cmplx_nls_jacs;           // complex NLS jacobians (packed as real, imag)
+  double **real_nls_res;             // real NLS residuum
+  double **cmplx_nls_res;            // complex NLS residuum
+  double *Z;                         // update variables Z = Y(t_ij) - Y0 for T-transformation (coupled space)
+  double *W;                         // update variables W = (T^{-1} otimes I) Z for T-transformation (decoupled space)
+  double *work;                      // some work memory for the T transformation (size: transform->size * x.size)
 } GB_INTERNAL_NLS_DATA;
 
 NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DATA_GBODE* gbData);

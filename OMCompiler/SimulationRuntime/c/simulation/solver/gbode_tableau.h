@@ -49,6 +49,8 @@ typedef struct BUTCHER_TABLEAU BUTCHER_TABLEAU;
  */
 typedef void (*gb_dense_output)(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates);
 
+#define MAX_GBODE_FIRK_STAGES 6
+
 /**
  * @brief Transformation structures for decoupling fully implicit Runge–Kutta systems.
  *
@@ -56,8 +58,8 @@ typedef void (*gb_dense_output)(BUTCHER_TABLEAU* tableau, double* yOld, double* 
  * size (S * N) × (S * N), where S is the number of stages and N is the number
  * of ODE states, which is (almost impractically) costly.
  *
- * The T-transformation diagonalizes (or block-diagonalizes) the Runge–Kutta
- * coefficient matrix A, converting the single large system into several
+ * The T-transformation (T^{-1} * A^{-1} * T = Lambda) diagonalizes (or block-diagonalizes)
+ * the Runge–Kutta coefficient matrix A, converting the single large system into several
  * independent N × N systems. These can be solved either as:
  *   - real-valued systems (for real eigenvalues of A^{-1}), or
  *   - 2×2 real block systems (for complex conjugate eigenpairs of A^{-1})
@@ -72,6 +74,15 @@ typedef void (*gb_dense_output)(BUTCHER_TABLEAU* tableau, double* yOld, double* 
  * For methods with explicit stages (e.g. Lobatto IIIA/IIIB), only the implicit
  * parts are transformed and solved via T; explicit stages are evaluated normally.
  * Thus, the system we transform is only of size S_r = size member in T_TRANSFORM.
+ *
+ * @attention The T, T^{-1} and the block diagonal Lambda(alpha, beta, gamma) matrices must be permutated such that
+ *            the real blocks are in the left upper corner and the complex blocks in right bottom corner:
+ *
+ *            *
+ *               *  *
+ *               *  *       = Lambda of Gauss 5-step (2 complex blocks, 1 real block)
+ *                    *  *
+ *                    *  *
  */
 typedef struct T_TRANSFORM {
   /**
@@ -125,12 +136,22 @@ typedef struct T_TRANSFORM {
   double *beta;
 
   /**
-   * @brief Factor for residual k1. If firstRowZero, then is stage 1 explicit and we need to
-   *        weight the k1 vector with this res vector in the residual of the decoupled system.
+   * @brief Factor for weighting the residual k1. If firstRowZero, then stage 1 is explicit and we need to
+   *        weight the k1 vector with this phi vector in the residual of the decoupled system.
+   *        phi := T^{-1} * A_part^{-1} * A_{:, 1}, note A_part is the invertible part of the matrix (e.g. lower right square for LobattoIIIA)
    *
    * Size: S - 1.
    */
-  double *res;
+  double *phi;
+
+  /**
+  * @brief Offset for reconstructing K when the first stage is explicit.
+  *        rho = -A_part_inv * A_{2:end,1}; used in
+  *        K_{2:end} = (1/h) * A_part_inv * Z + rho * k1.
+  *
+  * Size: S - 1.
+  */
+  double *rho;
 
   /**
    * @brief True if the first stage is explicit, i.e. a_{1,:} == 0 (e.g. in Lobatto IIIA).
