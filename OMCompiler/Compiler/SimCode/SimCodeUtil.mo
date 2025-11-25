@@ -8604,8 +8604,8 @@ algorithm
   if Types.isArray(dlowVar.varType) then
     scalar_crefs := ComponentReference.expandCref(dlowVar.varName, false);
     scalar_bindings := match dlowVar.bindExp
-      case SOME(binding as DAE.ARRAY())   then list(SOME(b) for b in Expression.expandArray(binding));
-      case SOME(binding as DAE.MATRIX())  then list(SOME(b) for b in Expression.expandArray(binding));
+      case SOME(binding as DAE.ARRAY())  guard(Expression.isSimpleLiteralValue(binding)) then list(SOME(b) for b in Expression.expandArray(binding));
+      case SOME(binding as DAE.MATRIX()) guard(Expression.isSimpleLiteralValue(binding)) then list(SOME(b) for b in Expression.expandArray(binding));
       else List.fill(dlowVar.bindExp, listLength(scalar_crefs));
     end match;
     if Config.simCodeTarget() <> "Cpp" then
