@@ -882,9 +882,6 @@ algorithm
           equation
             otherVariables = BackendVariable.addVar(v, otherVariables);
             //v = BackendVariable.setVarFixed(v, true);
-            if BackendVariable.varHasConstantBindExp(v) then
-              v = BackendVariable.setVarStartValueOption(v, v.bindExp);
-            end if;
             outGlobalKnownVars = BackendVariable.addVar(v, outGlobalKnownVars);
             hs = BaseHashSet.add(BackendVariable.varCref(v), hs);
           then ();
