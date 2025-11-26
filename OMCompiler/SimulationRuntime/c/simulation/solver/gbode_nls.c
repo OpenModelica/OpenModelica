@@ -539,7 +539,7 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
 
   if (gbData->nlsSolverMethod == GB_NLS_INTERNAL)
   {
-    solved = gbInternalSolveNLS(data, threadData, nlsData, gbData, solverData->ordinaryData);
+    solved = gbInternalSolveNls(data, threadData, nlsData, gbData, solverData->ordinaryData);
   }
   else if (gbData->nlsSolverMethod == GB_NLS_KINSOL || gbData->nlsSolverMethod == GB_NLS_KINSOL_B) {
     // Get kinsol data object
