@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2022, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2025, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,38 +28,48 @@
  *
  */
 
-/*! \file gbode_nls.h
- */
-
-#ifndef GBODE_NLS_H
-#define GBODE_NLS_H
+#ifndef GBODE_INTERNAL_NLS_H
+#define GBODE_INTERNAL_NLS_H
 
 #include "simulation_data.h"
 #include "nonlinearSystem.h"
-
-#include "gbode_main.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DATA_GBODE* gbData);
-NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, DATA_GBODEF* gbfData);
-void freeRK_NLS_DATA( NONLINEAR_SYSTEM_DATA* nlsData);
+typedef struct DATA_GBODE DATA_GBODE;
 
-//Specific treatment of NLS within gbode
-NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, DATA_GBODE* gbData);
+typedef struct Tolerances
+{
+    double atol;
+    double rtol;
+} Tolerances;
 
-// Residuum and Jacobian functions for diagonal implicit (DIRK) and implicit (IRK) Runge-Kutta methods.
-void residual_MS(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag);
-void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag);
-void residual_IRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag);
+Tolerances *gbInternalNlsGetScaledTolerances(void *nls_ptr);
 
-void residual_MS_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag);
-void residual_DIRK_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag);
+void *gbInternalNlsAllocate(int size,
+                            NLS_USERDATA *userData,
+                            modelica_boolean attemptRetry,
+                            modelica_boolean isPatternAvailable);
+
+void gbInternalNlsFree(void *nls_ptr);
+
+NLS_SOLVER_STATUS gbInternalSolveNLS(DATA *data,
+                                     threadData_t *threadData,
+                                     NONLINEAR_SYSTEM_DATA *nonlinsys,
+                                     DATA_GBODE *gbData,
+                                     void *nls_ptr);
+
+void gbInternalContraction(DATA *data,
+                           threadData_t *threadData,
+                           NONLINEAR_SYSTEM_DATA *nonlinsys,
+                           DATA_GBODE *gbData,
+                           double *yt,
+                           double *y);
 
 #ifdef __cplusplus
 };
 #endif
 
-#endif  /* #ifndef GBODE_NLS_H*/
+#endif  /* GBODE_INTERNAL_NLS_H */

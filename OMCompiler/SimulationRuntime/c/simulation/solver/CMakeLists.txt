@@ -21,6 +21,7 @@ SET(solver_sources  ../../../../3rdParty/Cdaskr/solver/daux.c
                     gbode_events.c
                     gbode_main.c
                     gbode_nls.c
+                    gbode_internal_nls.c
                     gbode_sparse.c
                     gbode_step.c
                     gbode_tableau.c
@@ -60,6 +61,7 @@ SET(solver_headers  ../../../../3rdParty/Cdaskr/solver/ddaskr_types.h
                     gbode_events.h
                     gbode_main.h
                     gbode_nls.h
+                    gbode_internal_nls.h
                     gbode_sparse.h
                     gbode_step.h
                     gbode_tableau.h
