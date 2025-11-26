@@ -571,7 +571,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   // y       = yold+h*sum(b[stage_]  * k[stage_], stage_=1..nStages);
   // yt      = yold+h*sum(bt[stage_] * k[stage_], stage_=1..nStages);
 
-  if (gbData->nlsSolverMethod == GB_NLS_INTERNAL && gbData->tableau->t_transform->nRealEigenvalues >= 1)
+  if (FALSE /* disable for now */ && gbData->nlsSolverMethod == GB_NLS_INTERNAL && gbData->tableau->t_transform->nRealEigenvalues >= 1)
   {
     // construct a contractive error via a single LU solve
     gbInternalContraction(data, threadData, gbData->nlsData, gbData, gbData->yt, gbData->y);
