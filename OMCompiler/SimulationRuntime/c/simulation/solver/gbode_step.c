@@ -33,7 +33,10 @@
 
 #include "gbode_main.h"
 #include "gbode_nls.h"
+#include "gbode_internal_nls.h"
 #include "gbode_util.h"
+
+#include "kinsolSolver.h"
 
 /**
  * @brief Generic multi-step function.
@@ -568,13 +571,20 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   // y       = yold+h*sum(b[stage_]  * k[stage_], stage_=1..nStages);
   // yt      = yold+h*sum(bt[stage_] * k[stage_], stage_=1..nStages);
 
-  // TODO: refactor me !!
-  for (i = 0; i < nStates; i++) {
-    gbData->y[i]  = gbData->yOld[i];
-    gbData->yt[i] = gbData->yOld[i];
-    for (stage_ = 0; stage_ < nStages; stage_++) {
-      gbData->y[i]  += gbData->stepSize * gbData->tableau->b[stage_]  * (gbData->k + stage_ * nStates)[i];
-      gbData->yt[i] += gbData->stepSize * gbData->tableau->bt[stage_] * (gbData->k + stage_ * nStates)[i];
+  if (gbData->nlsSolverMethod == GB_NLS_INTERNAL && gbData->tableau->t_transform->nRealEigenvalues >= 1)
+  {
+    // construct a contractive error via a single LU solve
+    gbInternalContraction(data, threadData, gbData->nlsData, gbData, gbData->yt, gbData->y);
+  }
+  else
+  {
+    for (i = 0; i < nStates; i++) {
+      gbData->y[i]  = gbData->yOld[i];
+      gbData->yt[i] = gbData->yOld[i];
+      for (stage_ = 0; stage_ < nStages; stage_++) {
+        gbData->y[i]  += gbData->stepSize * gbData->tableau->b[stage_]  * (gbData->k + stage_ * nStates)[i];
+        gbData->yt[i] += gbData->stepSize * gbData->tableau->bt[stage_] * (gbData->k + stage_ * nStates)[i];
+      }
     }
   }
 

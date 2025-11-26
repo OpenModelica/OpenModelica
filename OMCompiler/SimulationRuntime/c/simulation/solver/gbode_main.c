@@ -45,6 +45,7 @@
 #include "gbode_ctrl.h"
 #include "gbode_events.h"
 #include "gbode_nls.h"
+#include "gbode_internal_nls.h"
 #include "gbode_sparse.h"
 #include "gbode_step.h"
 #include "gbode_util.h"
@@ -1111,9 +1112,10 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
   if (gbData->nlsSolverMethod == GB_NLS_INTERNAL)
   {
-    GB_INTERNAL_NLS_DATA *internal_nls_data = (GB_INTERNAL_NLS_DATA *)((struct dataSolver *)gbData->nlsData->solverData)->ordinaryData;
-    Atol = internal_nls_data->atol_sc;
-    Rtol = internal_nls_data->rtol_sc;
+    // use internal tolerances, beneficial for superconvergent methods Gauss, Radau, Lobatto
+    Tolerances *internal_tolerances = gbInternalNlsGetScaledTolerances(((struct dataSolver *)gbData->nlsData->solverData)->ordinaryData);
+    Atol = internal_tolerances->atol;
+    Rtol = internal_tolerances->rtol;
   }
 
   int nStates = gbData->nStates;

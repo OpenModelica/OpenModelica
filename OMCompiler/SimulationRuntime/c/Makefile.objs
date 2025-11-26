@@ -161,6 +161,7 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               gbode_ctrl$(OBJ_EXT) \
               gbode_events$(OBJ_EXT) \
               gbode_main$(OBJ_EXT) \
+              gbode_internal_nls$(OBJ_EXT) \
               gbode_nls$(OBJ_EXT) \
               gbode_sparse$(OBJ_EXT) \
               gbode_step$(OBJ_EXT) \
