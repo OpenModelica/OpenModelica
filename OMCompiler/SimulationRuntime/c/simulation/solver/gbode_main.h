@@ -50,7 +50,6 @@
 #include "../results/simulation_result.h"
 #include "epsilon.h"
 #include "jacobianSymbolical.h"
-#include "kinsolSolver.h"
 #include "model_help.h"
 #include "newtonIteration.h"
 #include "nonlinearSystem.h"

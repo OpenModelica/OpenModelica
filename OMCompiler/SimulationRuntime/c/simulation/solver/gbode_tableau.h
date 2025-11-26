@@ -101,7 +101,7 @@ typedef struct T_TRANSFORM {
 
   /**
    * @brief Inverse transformation matrix T^{-1} such that:
-   *        vec(W) = (T_inv ⊗ I_N) * vec(Z)
+   *        vec(W) = (T_inv otimes I_N) * vec(Z)
    *
    * Maps the coupled stage vector Z into the decoupled stage vector W.
    * Stored row-major, dimension S_r × S_r.
@@ -110,7 +110,7 @@ typedef struct T_TRANSFORM {
 
   /**
    * @brief Transformation matrix T such that:
-   *        vec(Z) = (T ⊗ I_N) * vec(W)
+   *        vec(Z) = (T otimes I_N) * vec(W)
    *
    * Reconstructs the coupled stage values from the decoupled values.
    * Stored row-major, dimension S_r × S_r.
