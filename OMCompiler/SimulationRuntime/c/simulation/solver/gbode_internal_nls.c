@@ -84,6 +84,7 @@ typedef struct GB_INTERNAL_NLS_DATA
   KLUInternals *klu_internals_real;  // internal data structures for real systems with klu linear solver (might change for ptr + enum, e.g. to have LAPACK)
   KLUInternals *klu_internals_cmplx; // internal data structures for complex systems with klu linear solver (might change for ptr + enum, e.g. to have LAPACK)
   SPARSE_PATTERN *sparsePattern;     // sparse pattern struct(I + J) (for DIRK == NLS sparse pattern, else created)
+  modelica_boolean createdPattern;   // true if sparse pattern was created or false if taken from the NLS
   double *jacobian_callback;         // buffer for continuous ODE Jacobian (size = nnz(J_f))
   int *ode_to_nls;                   // mapping ODE Jacobian nnz -> NLS Jacobian nnz
   int *nls_diag_indices;             // all diagonal nz indices of NLS Jacobian (size = cols)
@@ -362,7 +363,14 @@ static int gbInternal_KLU_analyze(KLUInternals *internals, int size, int *Ap, in
 
 static int gbInternal_dKLU_factorize(KLUInternals *internals, int size, int *Ap, int *Ai, double *values)
 {
-  internals->numeric = klu_factor(Ap, Ai, values, internals->symbolic, &internals->common);
+  if (internals->numeric)
+  {
+    klu_refactor(Ap, Ai, values, internals->symbolic, internals->numeric, &internals->common);
+  }
+  else
+  {
+    internals->numeric = klu_factor(Ap, Ai, values, internals->symbolic, &internals->common);
+  }
   return internals->common.status;
 }
 
@@ -375,7 +383,14 @@ static int gbInternal_dKLU_solve(KLUInternals *internals, int size, int *Ap, int
 
 static int gbInternal_zKLU_factorize(KLUInternals *internals, int size, int *Ap, int *Ai, double *values)
 {
-  internals->numeric = klu_z_factor(Ap, Ai, values, internals->symbolic, &internals->common);
+  if (internals->numeric)
+  {
+    klu_z_refactor(Ap, Ai, values, internals->symbolic, internals->numeric, &internals->common);
+  }
+  else
+  {
+    internals->numeric = klu_z_factor(Ap, Ai, values, internals->symbolic, &internals->common);
+  }
   return internals->common.status;
 }
 
@@ -410,7 +425,7 @@ static double gbScalesNorm(GB_INTERNAL_NLS_DATA *nls, double *vec, int stack_siz
   return sqrt(sum / ((double)nls->size * (double)stack_size));
 }
 
-static NLS_SOLVER_STATUS gbInternalSolveNLS_DIRK(DATA *data,
+static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
                                                   threadData_t *threadData,
                                                   NONLINEAR_SYSTEM_DATA* nonlinsys,
                                                   DATA_GBODE* gbData,
@@ -620,7 +635,7 @@ static void scaled_blockdiag_matvec(T_TRANSFORM *transform,
   }
 }
 
-static NLS_SOLVER_STATUS gbInternalSolveNLS_T_Transform(DATA *data,
+static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
                                                          threadData_t *threadData,
                                                          NONLINEAR_SYSTEM_DATA* nonlinsys,
                                                          DATA_GBODE* gbData,
@@ -899,10 +914,12 @@ void *gbInternalNlsAllocate(int size,
   if (nls->use_t_transform)
   {
     nls->sparsePattern = buildSparsePatternWithDiagonal(jacobian_ODE->sparsePattern, jacobian_ODE->sizeRows);
+    nls->createdPattern = TRUE;
   }
   else
   {
     nls->sparsePattern = userData->nlsData->sparsePattern;
+    nls->createdPattern = FALSE;
   }
 
   // create ODE Jac -> NLS Jacobian mapping
@@ -938,6 +955,7 @@ void *gbInternalNlsAllocate(int size,
   if (!trfm)
   {
     nls->klu_internals_real = (KLUInternals *) malloc(sizeof(KLUInternals));
+    nls->klu_internals_real->numeric = NULL;
     nls->klu_internals_cmplx = NULL;
     nls->real_nls_jacs = (double **) malloc(sizeof(double));
     nls->real_nls_jacs[0] = (double *) malloc(nls->sparsePattern->numberOfNonZeros * sizeof(double));
@@ -958,12 +976,14 @@ void *gbInternalNlsAllocate(int size,
       nls->real_nls_res[sys_real] = (double *) malloc(nls->size * sizeof(double));
       nls->real_nls_jacs[sys_real] = (double *) malloc(nls->sparsePattern->numberOfNonZeros * sizeof(double));
       gbInternal_KLU_analyze(&nls->klu_internals_real[sys_real], nls->size, nls->sparsePattern->leadindex, nls->sparsePattern->index);
+      nls->klu_internals_real[sys_real].numeric = NULL;
     }
     for (int sys_cmplx = 0; sys_cmplx < trfm->nComplexEigenpairs; sys_cmplx++)
     {
       nls->cmplx_nls_res[sys_cmplx] = (double *) malloc(2 * nls->size * sizeof(double));
       nls->cmplx_nls_jacs[sys_cmplx] = (double *) malloc(2 * nls->sparsePattern->numberOfNonZeros * sizeof(double));
       gbInternal_KLU_analyze(&nls->klu_internals_cmplx[sys_cmplx], nls->size, nls->sparsePattern->leadindex, nls->sparsePattern->index);
+      nls->klu_internals_cmplx[sys_cmplx].numeric = NULL;
     }
 
     // iterate
@@ -985,6 +1005,12 @@ void gbInternalNlsFree(void *nls_ptr)
   free(nls->nls_diag_indices);
   free(nls->scal);
   free(nls->etas);
+
+  if (nls->createdPattern)
+  {
+    freeSparsePattern(nls->sparsePattern);
+    free(nls->sparsePattern);
+  }
 
   if (!nls->tabl->t_transform)
   {
@@ -1033,7 +1059,7 @@ Tolerances *gbInternalNlsGetScaledTolerances(void *nls_ptr)
 }
 
 // wrap everyhting for now
-NLS_SOLVER_STATUS gbInternalSolveNLS(DATA *data,
+NLS_SOLVER_STATUS gbInternalSolveNls(DATA *data,
                                      threadData_t *threadData,
                                      NONLINEAR_SYSTEM_DATA* nonlinsys,
                                      DATA_GBODE* gbData,
@@ -1043,11 +1069,11 @@ NLS_SOLVER_STATUS gbInternalSolveNLS(DATA *data,
 
   if (nls->use_t_transform)
   {
-    return gbInternalSolveNLS_T_Transform(data, threadData, nonlinsys, gbData, nls);
+    return gbInternalSolveNls_T_Transform(data, threadData, nonlinsys, gbData, nls);
   }
   else
   {
-    return gbInternalSolveNLS_DIRK(data, threadData, nonlinsys, gbData, nls);
+    return gbInternalSolveNls_DIRK(data, threadData, nonlinsys, gbData, nls);
   }
 }
 
