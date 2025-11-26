@@ -881,7 +881,8 @@ algorithm
         case (_) guard BackendVariable.isVarAlg(v) and 0 == secondary[i] and BaseHashSet.hasAll(crefs, hs)
           equation
             otherVariables = BackendVariable.addVar(v, otherVariables);
-            //v = BackendVariable.setVarFixed(v, true);
+            v = BackendVariable.setVarFixed(v, true);
+            v = BackendVariable.setVarFinal(v, true);
             outGlobalKnownVars = BackendVariable.addVar(v, outGlobalKnownVars);
             hs = BaseHashSet.add(BackendVariable.varCref(v), hs);
           then ();
