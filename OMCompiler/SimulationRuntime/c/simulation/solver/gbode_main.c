@@ -897,15 +897,16 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         continue;
       }
 
+      /* use same error estimate (scaled 2-norm) as for the SR case */
       for (i = 0, err=0; i < nFastStates; i++) {
         ii = gbData->fastStatesIdx[i];
         // calculate corresponding values for the error estimator and step size control
-        gbfData->errtol[ii] = Rtol * fmax(fabs(gbfData->y[ii]), fabs(gbfData->yt[ii])) + Atol;
+        gbfData->errtol[ii] = Atol * data->modelData->realVarsData[ii].attribute.nominal + fmax(fabs(gbfData->y[ii]), fabs(gbfData->yt[ii])) * Rtol;
         gbfData->errest[ii] = fabs(gbfData->y[ii] - gbfData->yt[ii]);
-        gbfData->err[ii] = gbfData->tableau->fac * gbfData->errest[ii] / gbfData->errtol[ii];
-        err = fmax(err, gbfData->err[ii]);
+        gbfData->err[ii] = gbData->tableau->fac * gbfData->errest[ii] / gbfData->errtol[ii];
+        err += gbfData->err[ii] * gbfData->err[ii];
       }
-
+      err = sqrt(err / (double) nFastStates);
       gbData->err_fast = err;
 
       // Rotate and update buffer
@@ -1113,6 +1114,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   if (gbData->nlsSolverMethod == GB_NLS_INTERNAL)
   {
     // use internal tolerances, beneficial for superconvergent methods Gauss, Radau, Lobatto
+    // TODO: How does this work for Richardson????
     Tolerances *internal_tolerances = gbInternalNlsGetScaledTolerances(((struct dataSolver *)gbData->nlsData->solverData)->ordinaryData);
     Atol = internal_tolerances->atol;
     Rtol = internal_tolerances->rtol;
@@ -1377,6 +1379,10 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       }
 
       // Calculate error estimators and tolerance scaling for each state variable
+      // Compute error tolerance for the i-th state based on relative and absolute tolerances:
+      // errtol = Rtol * max(|current state|, |previous state|) + Atol * nominal(state)
+      // TODO: make errtol and errest local variables
+
       for (i = 0, err=0; i < nStates; i++) {
         // calculate corresponding values for the error estimator and step size control
         gbData->errtol[i] = Atol * data->modelData->realVarsData[i].attribute.nominal + fmax(fabs(gbData->y[i]), fabs(gbData->yt[i])) * Rtol;
@@ -1438,11 +1444,14 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
             gbData->err_slow = fmax(gbData->err_slow, gbData->err[i]);
           }
         }
-      } else {
-        // If multi-rate is not enabled, use the maximum norm of the error vector over all states.
-        //err_states = _omc_gen_maximumVectorNorm(gbData->err, nStates);
-        //err = err_states;
       }
+
+      // LL: we use the scaled 2-norm error measure now, so this part is not needed.
+      // else {
+      //   // If multi-rate is not enabled, use the maximum norm of the error vector over all states.
+      //   err_states = _omc_gen_maximumVectorNorm(gbData->err, nStates);
+      //   err = err_states;
+      // }
 
       // Reject the current integration step if the estimated error exceeds the tolerance,
       // and if the solver is not running with a fixed (constant) step size.

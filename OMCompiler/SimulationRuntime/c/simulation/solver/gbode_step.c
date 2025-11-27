@@ -297,7 +297,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       memcpy(nlsData->nlsx,    gbData->yOld, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxExtrapolation,    gbData->yOld, nStates*sizeof(modelica_real));
 
-      if (gbData->time != data->simulationInfo->startTime && gbData->tableau->dense_output != NULL)
+      if (gbData->time != data->simulationInfo->startTime && gbData->tableau->dense_output != NULL /* TODO: what if event in last step? -> skip i guess */)
       {
         double theta = (gbData->time + gbData->tableau->c[stage_] * gbData->stepSize - gbData->extrapolationBaseTime) / gbData->extrapolationStepSize;
         gbData->tableau->dense_output(gbData->tableau, gbData->yLast, NULL, gbData->kLast,
@@ -331,10 +331,8 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
       if (/* non explicit stage of (E)SDIRK integrator */ (stage_ != 0 || gbData->tableau->A[0] != 0) && gbData->nlsSolverMethod == GB_NLS_INTERNAL)
       {
+        // reconstruct k_{stage_} from the solution, avoids repeated call to functionODE()
         memcpy(gbData->x + stage_ * nStates, nlsData->nlsx, nStates*sizeof(double));
-        //memcpy(data->localData[0]->realVars, nlsData->nlsx, nStates * sizeof(double));
-        //int avoidable_rhs_calls = 0;
-        //gbode_fODE(data, threadData, &(avoidable_rhs_calls));
         double ifac = 1.0 / (gbData->stepSize * gbData->tableau->A[stage_ * nStages + stage_]);
         for (int i = 0; i < nStates; i++)
         {
@@ -550,7 +548,6 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
-  // TODO: segfault here if LOG_SOLVER is set?!
   if (solved != NLS_SOLVED) {
     gbData->stats.nConvergenceTestFailures++;
     warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_RK at time t=%g", gbData->time);

@@ -408,6 +408,11 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     nlsData->solverData = solverData;
     break;
   case GB_NLS_INTERNAL:
+    /* throw as multi-rate with internal NLS is not implemented */
+    throwStreamPrint(NULL, "GBODE Multi-Rate integration with '-gbnls=internal' is not yet implemented. Proceed by setting '-gbnls' as 'kinsol', 'newton', "
+                            "or 'experimental-kinsol'. Alternatively, you may disable Multi-Rate integration.");
+
+    /* WIP: multi-rate with internal NLS */
     nlsData->nlsMethod = NLS_GB_INTERNAL;
     if (nlsData->isPatternAvailable) {
       nlsData->nlsLinearSolver = NLS_LS_KLU;
