@@ -51,8 +51,6 @@ typedef struct SOLVERSTATS {
   unsigned int nCallsJacobian;           /* Number of evaluations of Jacobian */
   unsigned int nErrorTestFailures;       /* Number of error test failures */
   unsigned int nConvergenceTestFailures; /* Number of convergence test failures */
-  unsigned int nNewtonStepsTotal;        /* Number of Newton steps (total) */
-  unsigned int nJacobianFactorizations;  /* Number of Jacobian / LU factorizations (total) */
 } SOLVERSTATS;
 
 /**
