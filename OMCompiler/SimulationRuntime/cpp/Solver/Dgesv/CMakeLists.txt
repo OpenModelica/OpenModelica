@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5)
 
 project(${DgesvName})
 
@@ -9,6 +9,7 @@ IF(DGESV_FOUND)
   install(TARGETS ${DgesvName} DESTINATION ${LIBINSTALLEXT})
   install(FILES ${DGESV_HEADERS} DESTINATION include/omc/cpp/Solver/Dgesv)
   if(MSVC)
+    get_target_property(TARGET_TYPE ${DgesvName} TYPE)
     if(TARGET_TYPE STREQUAL "STATIC_LIBRARY")
       set(libDgesvExt ${CMAKE_STATIC_LIBRARY_SUFFIX})
     elseif(TARGET_TYPE STREQUAL "SHARED_LIBRARY")

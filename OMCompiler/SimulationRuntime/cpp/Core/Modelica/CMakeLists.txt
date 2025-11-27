@@ -12,6 +12,7 @@ endif(NOT BUILD_SHARED_LIBS)
 
 target_link_libraries(${ModelicaName} ${Boost_LIBRARIES})
 
+get_target_property(TARGET_TYPE ${ModelicaName} TYPE)
 if(TARGET_TYPE STREQUAL "STATIC_LIBRARY")
   set(libModelicaSystemNameExt ${CMAKE_STATIC_LIBRARY_SUFFIX})
 elseif(TARGET_TYPE STREQUAL "SHARED_LIBRARY")

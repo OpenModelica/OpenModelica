@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5)
 #OMSI base simulation runtime
 PROJECT(OMSIBASE)
 SET(CMAKE_VERBOSE_MAKEFILE ON)

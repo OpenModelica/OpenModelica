@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.5)
 PROJECT(OMCWrapper)
 
 SET(CMAKE_VERBOSE_MAKEFILE ON)
-#SET(CMAKE_FIND_DEBUG_MODE ON)
 
 OPTION(USE_ZEROMQ "USE zeromq and cppzmq" ON)
 

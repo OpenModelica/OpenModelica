@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5)
 #OpenModelica Simulation Unit C Runtime
 PROJECT(OMSU)
 SET(CMAKE_VERBOSE_MAKEFILE ON)
