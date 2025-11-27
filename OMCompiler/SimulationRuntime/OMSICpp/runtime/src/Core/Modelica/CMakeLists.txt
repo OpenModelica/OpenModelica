@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.5)
 
 project(${ModelicaName})
 
@@ -11,9 +11,6 @@ if(NOT BUILD_SHARED_LIBS)
 endif(NOT BUILD_SHARED_LIBS)
 
 target_link_libraries(${ModelicaName} ${Boost_LIBRARIES})
-
-GET_TARGET_PROPERTY(libModelicaSystem ${ModelicaName} LOCATION)
-GET_FILENAME_COMPONENT(libModelicaSystemNameExt ${libModelicaSystem} EXT)
 
 IF(MSVC)
 	SET(LINKER_LIB_PREFIX "")
@@ -40,7 +37,11 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
 set (BOOST_INCLUDE ${Boost_INCLUDE_DIRS})
 
-set (MODELICA_SYSTEM_LIB_EXT ${libModelicaSystemNameExt})
+if(TARGET_TYPE STREQUAL "STATIC_LIBRARY")
+  set(MODELICA_SYSTEM_LIB_EXT ${CMAKE_STATIC_LIBRARY_SUFFIX})
+elseif(TARGET_TYPE STREQUAL "SHARED_LIBRARY")
+  set(MODELICA_SYSTEM_LIB_EXT ${CMAKE_SHARED_LIBRARY_SUFFIX})
+endif()
 
 #Fix to enable debugging for gcc
 #Problem: The ModelicaConfig.inc file contains something like "optimized;<lib>;debug;<lib>" if the debug or relwithdebinfo -flag is set. The gcc is not able to handle this after the linker-flag (-L).
@@ -245,8 +246,6 @@ MESSAGE(STATUS " ")
 
 if(BUILD_SHARED_LIBS)
   create_precompiled_header(${ModelicaName} runtime/include/Core/Modelica.h)
- 
-
 endif(BUILD_SHARED_LIBS)
 
 IF(MSVC)
@@ -302,6 +301,3 @@ install (FILES  ${CMAKE_SOURCE_DIR}/runtime/include/Core/DataExchange/Policies/B
 #if(REDUCE_DAE)
 #install (FILES Policies/BufferReaderWriter.h DESTINATION include/omc/omsicpp/policies)
 #endif()
-
-
-

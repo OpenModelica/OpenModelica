@@ -6,11 +6,27 @@ include_directories (${OMCCAPI_INCLUDE_DIR})
 
 if(USE_ZEROMQ)
     ADD_DEFINITIONS(-DUSE_ZEROMQ)
-    add_library(${SimControllerName} Configuration.cpp  FactoryExport.cpp Initialization.cpp SimController.cpp SimManager.cpp threading/Communicator.cpp threading/ProgressThread threading/SimulationThread threading/ToZeroMQEvent.cpp)
+    add_library(${SimControllerName}
+      Configuration.cpp
+      FactoryExport.cpp
+      Initialization.cpp
+      SimController.cpp
+      SimManager.cpp
+      threading/Communicator.cpp
+      threading/ProgressThread.cpp
+      threading/SimulationThread.cpp
+      threading/ToZeroMQEvent.cpp
+    )
     message (STATUS "Using ZMQ library ${ZeroMQ_LIBRARY} in SimController" )
 else(USE_ZEROMQ)
     message (STATUS "Using ZMQ library disabled")
-    add_library(${SimControllerName} Configuration.cpp  FactoryExport.cpp Initialization.cpp SimController.cpp SimManager.cpp )
+    add_library(${SimControllerName}
+      Configuration.cpp
+      FactoryExport.cpp
+      Initialization.cpp
+      SimController.cpp
+      SimManager.cpp
+    )
 endif(USE_ZEROMQ)
 
 

@@ -6,11 +6,9 @@ IF(DGESV_FOUND)
   MESSAGE(STATUS "DGESV enabled")
   include_directories (${DGESV_INCLUDE_DIR})
 
-  add_library(${DgesvName}_static STATIC ${DGESV_SRCS})
-  install(TARGETS ${DgesvName}_static DESTINATION ${LIBINSTALLEXT})
+  add_library(${DgesvName} STATIC ${DGESV_SRCS})
+  install(TARGETS ${DgesvName} DESTINATION ${LIBINSTALLEXT})
   install(FILES ${DGESV_HEADERS} DESTINATION include/omc/omsicpp/Solver/Dgesv)
-  GET_TARGET_PROPERTY(libDgesvLocation ${DgesvName}_static LOCATION)
-  GET_FILENAME_COMPONENT(libDgesvExt ${libDgesvLocation} EXT CACHE)
 
   add_library(${DgesvSolverName} STATIC DgesvSolver.cpp DgesvSolverSettings.cpp FactoryExport.cpp)
 
