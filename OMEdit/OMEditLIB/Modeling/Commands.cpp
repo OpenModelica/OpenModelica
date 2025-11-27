@@ -803,7 +803,8 @@ OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInf
  */
 void OMCUndoCommand::redoInternal()
 {
-  MainWindow::instance()->getOMCProxy()->loadString(mNewModelText, mpParentContainingLibraryTreeItem->getFileName());
+  MainWindow::instance()->getOMCProxy()->loadString(mNewModelText, mpParentContainingLibraryTreeItem->getFileName(), Helper::utf8,
+                                                    mpParentContainingLibraryTreeItem->isSaveFolderStructure());
   if (!mSkipGetModelInstance || mUndoCalledOnce) {
     mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mNewModelInfo);
   }
@@ -816,6 +817,7 @@ void OMCUndoCommand::redoInternal()
 void OMCUndoCommand::undo()
 {
   mUndoCalledOnce = true;
-  MainWindow::instance()->getOMCProxy()->loadString(mOldModelText, mpParentContainingLibraryTreeItem->getFileName());
+  MainWindow::instance()->getOMCProxy()->loadString(mOldModelText, mpParentContainingLibraryTreeItem->getFileName(), Helper::utf8,
+                                                    mpParentContainingLibraryTreeItem->isSaveFolderStructure());
   mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mOldModelInfo);
 }
