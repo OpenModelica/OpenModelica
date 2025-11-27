@@ -667,7 +667,7 @@ public
     algorithm
       attributes := match attributes
 
-        case VAR_ATTR_REAL() guard(overwrite or isNone(attributes.max))algorithm
+        case VAR_ATTR_REAL() guard(overwrite or isNone(attributes.max)) algorithm
           attributes.max := max_val;
         then attributes;
 
