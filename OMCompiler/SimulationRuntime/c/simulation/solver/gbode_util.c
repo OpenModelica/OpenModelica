@@ -833,8 +833,6 @@ void logSolverStats(enum OMC_LOG_STREAM stream, const char* name, double timeVal
     infoStreamPrint(stream, 0, "number of calculation of jacobian : %d", stats->nCallsJacobian);
     infoStreamPrint(stream, 0, "error test failure : %d", stats->nErrorTestFailures);
     infoStreamPrint(stream, 0, "convergence failure : %d", stats->nConvergenceTestFailures);
-    infoStreamPrint(stream, 0, "total newton steps / LU solves : %d", stats->nNewtonStepsTotal);
-    infoStreamPrint(stream, 0, "total jacobian / LU factorizations : %d", stats->nJacobianFactorizations);
     messageClose(stream);
   }
 }

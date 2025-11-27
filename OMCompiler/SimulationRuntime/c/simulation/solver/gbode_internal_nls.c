@@ -33,6 +33,13 @@
 #include "gbode_main.h"
 #include "gbode_internal_nls.h"
 
+// TODO: some refactoring for tolerances?
+// TODO: is the transform of ATOL and RTOL only valid for superconvergened FIRK (Radau, Lobatto, Gauss)?
+// TODO: How to choose it for Richardson???
+// TODO: update guess routines
+// TODO: update embedded for FIRK with real eigenvalue: we have the contractive error, but
+//       it looks like its only useful for defect-based errors in collocation methods
+
 /* some constants for less verbose BLAS calls */
 static const double DBL_ZERO = 0.0;
 static const double DBL_ONE = 1.0;
@@ -109,6 +116,13 @@ typedef struct GB_INTERNAL_NLS_DATA
   double *work;                      // some work memory for the T transformation (size: transform->size * x.size)
 } GB_INTERNAL_NLS_DATA;
 
+/**
+ * @brief Map ODE sparsity pattern indices into the enlarged (I+J) pattern.
+ *
+ * Locates diagonal entries of (I + J) and records their positions in `nls_diag_indices`.
+ * Builds a mapping `ode_to_nls` from ODE Jacobian nonzero positions to the corresponding
+ * positions in the (I + J) pattern column-wise.
+ */
 static void mapSparsePatterns(SPARSE_PATTERN *I_plus_J_pat,
                               JACOBIAN *jacobian_ODE,
                               GB_INTERNAL_NLS_DATA *nls,
@@ -156,67 +170,81 @@ static void mapSparsePatterns(SPARSE_PATTERN *I_plus_J_pat,
   }
 }
 
-/* this should be somewhere in GBODE already!! */
-static SPARSE_PATTERN* buildSparsePatternWithDiagonal(const SPARSE_PATTERN *pat_ode, int n)
+/**
+ * @brief Build a new CSC sparsity pattern containing base_pat plus identity: struct(I + J).
+ *
+ * @param base_pat  Input CSC pattern
+ * @param size      Matrix dimension (cols / rows)
+ *
+ * @note This should be somewhere in GBODE already!!
+ */
+/**
+ * @brief Build a new CSC sparsity pattern containing base_pat plus identity: struct(I + J).
+ *
+ * @param base_pat  Input CSC pattern
+ * @param size      Matrix dimension (cols / rows)
+ *
+ * @note This should be somewhere in GBODE already!!
+ */
+static SPARSE_PATTERN* buildSparsePatternWithDiagonal(const SPARSE_PATTERN *base_pat, int size)
 {
-  unsigned int i = 0, j = 0;
-  unsigned int diags = 0;
-  unsigned int row;
-  unsigned int shift = 0;
-  modelica_boolean diag_elem_nonzero;
+  int diag_cnt = 0;
 
-  for (row = 0; row < n; row++) {
-    for (; i < pat_ode->leadindex[row+1]; i++) {
-      if (pat_ode->index[i] == row)
-        diags++;
-    }
-  }
-
-  int missing_diags = n - diags;
-  int new_nnz = pat_ode->numberOfNonZeros + missing_diags;
-
-  SPARSE_PATTERN *pat = allocSparsePattern(n, new_nnz, n);
-
-  i = 0;
-  j = 0;
-  pat->leadindex[0] = pat_ode->leadindex[0];
-
-  for (row = 0; row < n; row++) {
-    diag_elem_nonzero = FALSE;
-
-    int ode_end = pat_ode->leadindex[row+1];
-
-    for (; j < ode_end; ) {
-      int r = pat_ode->index[j];
-
-      if (r > row && !diag_elem_nonzero) {
-        pat->index[i++] = row;
-        shift++;
-        pat->leadindex[row+1] = pat_ode->leadindex[row+1] + shift;
-        diag_elem_nonzero = TRUE;
-      }
-
-      if (r == row)
+  /* Count existing diagonal entries */
+  for (int col = 0; col < size; col++)
+  {
+    for (int nz = base_pat->leadindex[col]; nz < base_pat->leadindex[col + 1]; nz++)
+    {
+      if (base_pat->index[nz] == col)
       {
-        diag_elem_nonzero = TRUE;
+        diag_cnt++;
       }
-
-      pat->index[i++] = r;
-      j++;
     }
-
-    if (!diag_elem_nonzero) {
-      pat->index[i++] = row;
-      shift++;
-    }
-
-    pat->leadindex[row+1] = pat_ode->leadindex[row+1] + shift;
   }
 
-  pat->numberOfNonZeros = i;
-  pat->sizeofIndex = i;
+  int missing_diags = size - diag_cnt;
+  int total_nnz = base_pat->numberOfNonZeros + missing_diags;
 
-  return pat;
+  // accumulate pattern = struct(I + J), where J is base_pat
+  SPARSE_PATTERN *acc_pat = allocSparsePattern(size, total_nnz, size);
+
+  int acc_nz = 0;
+  acc_pat->leadindex[0] = 0;
+
+  for (int col = 0; col < size; col++) {
+
+    modelica_boolean diag_present = FALSE;
+
+    for (int ode_nz = base_pat->leadindex[col]; ode_nz < base_pat->leadindex[col + 1]; ode_nz++)
+    {
+      int row = base_pat->index[ode_nz];
+
+      if (!diag_present && row > col)
+      {
+        acc_pat->index[acc_nz++] = col;
+        diag_present = TRUE;
+      }
+
+      if (row == col)
+      {
+        diag_present = TRUE;
+      }
+
+      acc_pat->index[acc_nz++] = row;
+    }
+
+    if (!diag_present)
+    {
+      acc_pat->index[acc_nz++] = col;
+    }
+
+    acc_pat->leadindex[col + 1] = acc_nz;
+  }
+
+  acc_pat->numberOfNonZeros = acc_nz;
+  acc_pat->sizeofIndex = acc_nz;
+
+  return acc_pat;
 }
 
 /**
@@ -225,13 +253,13 @@ static SPARSE_PATTERN* buildSparsePatternWithDiagonal(const SPARSE_PATTERN *pat_
  * Scales the ODE Jacobian by `h * gamma`, maps it into the NLS Jacobian buffer,
  * and subtracts the identity on the diagonal:  J = -I + h*a_ii * dfdx.
  *
- * @param data        Runtime data (unused)
- * @param threadData  Thread data
- * @param gbData      GBODE integrator data (step size, tableau, stage)
- * @param nls         Internal NLS data with index mapping
- * @param jac_ode     ODE Jacobian (structures)
- * @param jac_buf_ode ODE Jacobian values
- * @param jac_buf_nls Output buffer for NLS Jacobian
+ * @param[in]  data         Runtime data (unused)
+ * @param[in]  threadData   Thread data
+ * @param[in]  gbData       GBODE integrator data
+ * @param[in]  nls          Internal NLS data with index mapping
+ * @param[in]  jac_ode      ODE Jacobian (structures)
+ * @param[in]  jac_buf_ode  ODE Jacobian values (already filled)
+ * @param[out] jac_buf_nls  Output buffer for NLS Jacobian
  * @return 0 on success
  */
 static int jacobian_SR_DIRK_assemble(DATA *data,
@@ -267,13 +295,13 @@ static int jacobian_SR_DIRK_assemble(DATA *data,
  *
  * Jacobian has form gamma / h * I - J_f
  *
- * @param data        Runtime data (unused)
- * @param threadData  Thread data
- * @param gbData      GBODE integrator data (step size, tableau, stage)
- * @param nls         Internal NLS data with index mapping
- * @param jac_ode     ODE Jacobian (structures)
- * @param jac_buf_ode ODE Jacobian values
- * @param jac_buf_nls Output buffer for NLS Jacobian
+ * @param[in]  data         Runtime data (unused)
+ * @param[in]  threadData   Thread data
+ * @param[in]  gbData       GBODE integrator data
+ * @param[in]  nls          Internal NLS data with index mapping
+ * @param[in]  jac_ode      ODE Jacobian (structures)
+ * @param[in]  jac_buf_ode  ODE Jacobian values
+ * @param[out] jac_buf_nls  Output buffer for NLS Jacobian
  * @return 0 on success
  */
 static int jacobian_SR_real_assemble(DATA *data,
@@ -310,15 +338,15 @@ static int jacobian_SR_real_assemble(DATA *data,
  *
  * Jacobian has form (alpha + i * beta) / h * I - J_f
  *
- * @param data        Runtime data (unused)
- * @param threadData  Thread data
- * @param gbData      GBODE integrator data (step size, tableau, stage)
- * @param nls         Internal NLS data with index mapping
- * @param alpha       Real part of complex weight
- * @param beta        Imaginary part of complex weight
- * @param jac_ode     ODE Jacobian (structures)
- * @param jac_buf_ode ODE Jacobian values
- * @param jac_buf_nls Output buffer for NLS Jacobian
+ * @param[in]  data         Runtime data (unused)
+ * @param[in]  threadData   Thread data
+ * @param[in]  gbData       GBODE integrator data (step size, tableau, stage)
+ * @param[in]  nls          Internal NLS data with index mapping
+ * @param[in]  alpha        Real part of complex weight
+ * @param[in]  beta         Imaginary part of complex weight
+ * @param[in]  jac_ode      ODE Jacobian (structures)
+ * @param[in]  jac_buf_ode  ODE Jacobian values
+ * @param[out] jac_buf_nls  Output buffer for NLS Jacobian
  * @return 0 on success
  */
 static int jacobian_SR_cmplx_assemble(DATA *data,
@@ -335,8 +363,9 @@ static int jacobian_SR_cmplx_assemble(DATA *data,
 
   memset(jac_buf_nls, 0, 2 * nls->sparsePattern->numberOfNonZeros * sizeof(double));
 
-  const double weight_real = alpha / gbData->stepSize;
-  const double weight_imag = beta / gbData->stepSize;
+  const double inv_step = 1.0 / gbData->stepSize;
+  const double weight_real = inv_step * alpha;
+  const double weight_imag = inv_step * beta;
 
   for (int nz = 0; nz < ode_jac_sp->numberOfNonZeros; nz++)
   {
@@ -353,7 +382,7 @@ static int jacobian_SR_cmplx_assemble(DATA *data,
   return 0;
 }
 
-
+/** @brief Run symbolic analysis for a CSC matrix using KLU. */
 static int gbInternal_KLU_analyze(KLUInternals *internals, int size, int *Ap, int *Ai)
 {
   klu_defaults(&internals->common);
@@ -361,6 +390,7 @@ static int gbInternal_KLU_analyze(KLUInternals *internals, int size, int *Ap, in
   return internals->common.status;
 }
 
+/** @brief Perform or update real-valued KLU numeric factorization. */
 static int gbInternal_dKLU_factorize(KLUInternals *internals, int size, int *Ap, int *Ai, double *values)
 {
   if (internals->numeric)
@@ -374,6 +404,7 @@ static int gbInternal_dKLU_factorize(KLUInternals *internals, int size, int *Ap,
   return internals->common.status;
 }
 
+/** @brief Solve a real linear system using KLU. */
 static int gbInternal_dKLU_solve(KLUInternals *internals, int size, int *Ap, int *Ai, double *rhs)
 {
   int nrhs = 1; /* we could solve all of ESDIRK at once this way */
@@ -381,6 +412,7 @@ static int gbInternal_dKLU_solve(KLUInternals *internals, int size, int *Ap, int
   return ok;
 }
 
+/** @brief Perform or update complex-valued KLU numeric factorization (values packed as struct {double real, double imag}). */
 static int gbInternal_zKLU_factorize(KLUInternals *internals, int size, int *Ap, int *Ai, double *values)
 {
   if (internals->numeric)
@@ -394,6 +426,7 @@ static int gbInternal_zKLU_factorize(KLUInternals *internals, int size, int *Ap,
   return internals->common.status;
 }
 
+/** @brief Solve a complex linear system using KLU (values packed as struct {double real, double imag}). */
 static int gbInternal_zKLU_solve(KLUInternals *internals, int size, int *Ap, int *Ai, double *rhs)
 {
   int nrhs = 1;
@@ -401,6 +434,7 @@ static int gbInternal_zKLU_solve(KLUInternals *internals, int size, int *Ap, int
   return ok;
 }
 
+/** @brief Create scalings for scaled 2-norms: used for Newton convergence and integration acceptance criteria. */
 static void createGbScales(GB_INTERNAL_NLS_DATA *nls, double *y1, double *y2)
 {
   for (int i = 0; i < nls->size; i++)
@@ -409,6 +443,7 @@ static void createGbScales(GB_INTERNAL_NLS_DATA *nls, double *y1, double *y2)
   }
 }
 
+/** @brief Compute scaled norm of possible vector stack vec = (v1, v2, ..., v_{stacksize}). */
 static double gbScalesNorm(GB_INTERNAL_NLS_DATA *nls, double *vec, int stack_size)
 {
   double sum = 0.0;
@@ -425,6 +460,7 @@ static double gbScalesNorm(GB_INTERNAL_NLS_DATA *nls, double *vec, int stack_siz
   return sqrt(sum / ((double)nls->size * (double)stack_size));
 }
 
+/** @brief Solve one stage of a DIRK method with the internal solve routine. */
 static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
                                                   threadData_t *threadData,
                                                   NONLINEAR_SYSTEM_DATA* nonlinsys,
@@ -434,8 +470,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
   int size = nonlinsys->size;
   int stage = gbData->act_stage;
   double *x = nonlinsys->nlsx;
-  double *x_start = nonlinsys->nlsxOld;              // currently the extrapolated (e.g. dense output / hermite guess) | Its awful for Robertson! Something is fishy here!
-  // double *x_start = nonlinsys->nlsxExtrapolation; // currently the constant guess (k = 0)
+  double *x_start = nonlinsys->nlsxOld;              // currently the extrapolated (e.g. dense output / hermite guess)
   double *res = nonlinsys->resValues;
 
   createGbScales(nls, x, x_start);
@@ -473,7 +508,6 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
 
       /* perform factorization */
       gbInternal_dKLU_factorize(nls->klu_internals_real, size, nonlinsys->sparsePattern->leadindex, nonlinsys->sparsePattern->index, nls->real_nls_jacs[0]);
-      gbData->stats.nJacobianFactorizations++;
     }
   }
 
@@ -489,13 +523,8 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
   {
     nonlinsys->residualFunc(&resUserData, x, res, &flag);
 
-    gbData->stats.nNewtonStepsTotal++;
     gbInternal_dKLU_solve(nls->klu_internals_real, size, nonlinsys->sparsePattern->leadindex, nonlinsys->sparsePattern->index, res);
-
-    for (int i = 0; i < size; i++)
-    {
-        x[i] -= res[i];
-    }
+    daxpy_(&size, &DBL_MINUS_ONE, res, &INT_ONE, x, &INT_ONE);
 
     nrm_delta_prev = nrm_delta;
     nrm_delta = gbScalesNorm(nls, res, 1);
@@ -518,7 +547,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
       nls->etas[stage] = pow(fmax(nls->etas[stage], DBL_EPSILON), 0.8);
     }
 
-      // Newton converged
+    // Newton converged
     if (nls->etas[stage] * nrm_delta < nls->fnewt)
     {
         if (theta < nls->theta_keep)
@@ -541,7 +570,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
   }
 }
 
-// Compute out[j] := (T otimes I) * v[j] (block-wise)
+/** @brief Compute (T otimes I) * v for block vectors (applies T to block_count blocks of size block_size). */
 static void dense_kron_id_vec(int block_count,
                               int block_size,
                               const double *T,
@@ -635,11 +664,17 @@ static void scaled_blockdiag_matvec(T_TRANSFORM *transform,
   }
 }
 
+/** @brief Solve entire NLS of FIRK with possibly singular Runge-Kutta matrix
+ *         via the T-transformation (decoupled space).
+ *
+ * After convergence the solutions are written into nonlinsys->x and the stage updates are
+ * written into gbData->k.
+*/
 static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
-                                                         threadData_t *threadData,
-                                                         NONLINEAR_SYSTEM_DATA* nonlinsys,
-                                                         DATA_GBODE* gbData,
-                                                         GB_INTERNAL_NLS_DATA *nls)
+                                                        threadData_t *threadData,
+                                                        NONLINEAR_SYSTEM_DATA* nonlinsys,
+                                                        DATA_GBODE* gbData,
+                                                        GB_INTERNAL_NLS_DATA *nls)
 {
   int size = nls->size;
   int w_size = nls->size * nls->tabl->t_transform->size;
@@ -653,10 +688,9 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
   double *scal = nls->scal;
 
   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=gbData};
-  JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  JACOBIAN *jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
   T_TRANSFORM *transform = nls->tabl->t_transform;
 
-  const int flag = 1;
   modelica_boolean jac_called = FALSE;
 
   if (nls->call_jac || transform->firstRowZero)
@@ -701,8 +735,6 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
       gbInternal_zKLU_factorize(&nls->klu_internals_cmplx[sys_cmplx], size, nls->sparsePattern->leadindex,
                                 nls->sparsePattern->index, nls->cmplx_nls_jacs[sys_cmplx]);
     }
-
-    gbData->stats.nJacobianFactorizations++;
   }
 
   // we solve for Z = X(t_ij) - X0 or W = (T^{-1} otimes I) * Z, then get K back via K = 1/h * A^{-1} * Z
@@ -793,7 +825,6 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
 
     // Newton step (we must do W += dW)
     daxpy_(&w_size, &DBL_ONE, flat_res, &INT_ONE, nls->W, &INT_ONE);
-    gbData->stats.nNewtonStepsTotal++;
 
     nrm_delta_prev = nrm_delta;
     nrm_delta = gbScalesNorm(nls, flat_res, nls->tabl->t_transform->size);
@@ -894,12 +925,14 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
   }
 }
 
+/* Allocate the internal memory + do symbolic analysis. */
 void *gbInternalNlsAllocate(int size,
                             NLS_USERDATA* userData,
                             modelica_boolean attemptRetry,
                             modelica_boolean isPatternAvailable)
 {
-  BUTCHER_TABLEAU *tabl = ((DATA_GBODE *)userData->solverData)->tableau;
+  DATA_GBODE *gbData = (DATA_GBODE *)userData->solverData;
+  BUTCHER_TABLEAU *tabl = gbData->tableau;
   T_TRANSFORM *trfm = tabl->t_transform;
   JACOBIAN* jacobian_ODE = &(userData->data->simulationInfo->analyticJacobians[userData->data->callback->INDEX_JAC_A]);
 
@@ -932,22 +965,33 @@ void *gbInternalNlsAllocate(int size,
     nls->etas[i] = 1e300;
   }
 
-  // TODO: some refactoring for tolerances here?
-  // TODO: is this transform of ATOL and RTOL only valid for superconvergened FIRK (Radau, Lobatto, Gauss)?
-  // TODO: check leaks
-  // TODO: add dense output for FIRK
-  // TODO: update guess routines
-  // TODO: update embedded for FIRK with real eigenvalue
-
   nls->tol_integrator = (Tolerances){ userData->data->simulationInfo->tolerance, userData->data->simulationInfo->tolerance };
-  double order_quot = ((double)tabl->order_bt + 1.0) / ((double)tabl->order_b + 1.0);
-  double quot = nls->tol_integrator.atol / nls->tol_integrator.rtol;
-  nls->tol_scaled.rtol = pow(nls->tol_integrator.rtol, order_quot > 1 && !trfm ? 1.0 : order_quot);
-  nls->tol_scaled.atol = quot * nls->tol_scaled.rtol;
-  nls->fnewt = fmax(10 * DBL_EPSILON / nls->tol_scaled.rtol, fmin(3e-2, pow(nls->tol_scaled.rtol, 1.0 / order_quot - 1.0)));
+
+
+  // We transform the error such that the error term err = || v || = sqrt(1/n * sum (v[i] / scal[i])^2) is scaled with same measure
+  // As we later have v = sum (b - bt) * k = min of local error of b and bt -> scale ATOL and RTOL w.r.t. (min(b, bt) + 1) / (b + 1)
+  // TODO: check correctness of this! Do we cheat here?!
+  // TODO: what to do for Richardson?
+
+  if (tabl->richardson)
+  {
+    nls->tol_scaled.rtol = nls->tol_integrator.rtol;
+    nls->tol_scaled.atol = nls->tol_integrator.atol;
+    nls->fnewt = fmax(10 * DBL_EPSILON / nls->tol_scaled.rtol, 3e-2);
+  }
+  else
+  {
+    // scale error measure to embedded method
+    const double safety = 0.4;
+    double quot = nls->tol_integrator.atol / nls->tol_integrator.rtol;
+    double order_quot = ((double)tabl->error_order + 1.0) / ((double)tabl->order_b + 1.0);
+    nls->tol_scaled.rtol = safety * pow(nls->tol_integrator.rtol, order_quot);
+    nls->tol_scaled.atol = quot * nls->tol_scaled.rtol;
+    nls->fnewt = fmax(10 * DBL_EPSILON / nls->tol_scaled.rtol, fmin(3e-2, pow(nls->tol_scaled.rtol, 1.0 / order_quot - 1.0)));
+  }
 
   // add a history of thetas_last + #newt iterations to detect nearly linear systems, similar to err controller
-  nls->theta_keep = pow(10.0, -3.0 + 2.0 * log(1.0 + (double)jacobian_ODE->sparsePattern->maxColors) / log(1.0 + (double)nls->size));
+  nls->theta_keep = pow(10.0, -3.0 + 1.75 * log(1.0 + (double)jacobian_ODE->sparsePattern->maxColors) / log(1.0 + (double)nls->size));
   nls->call_jac = TRUE;
   nls->theta_divergence = 0.99;
   nls->max_newton_it = !trfm ? 5 : 4 + 2 * trfm->size; // = 5 for each (E)SDIRK stage and e.g. 10 for full RadauIIA 3-step
@@ -971,6 +1015,7 @@ void *gbInternalNlsAllocate(int size,
     nls->cmplx_nls_jacs = (double **) malloc(trfm->nComplexEigenpairs * sizeof(double));
     nls->cmplx_nls_res = (double **) malloc(trfm->nComplexEigenpairs * sizeof(double));
 
+    // We might be able to remove these redundant analysis parts, as we can use 1 analysis (symbolic) and compute different factorizations.
     for (int sys_real = 0; sys_real < trfm->nRealEigenvalues; sys_real++)
     {
       nls->real_nls_res[sys_real] = (double *) malloc(nls->size * sizeof(double));
@@ -997,6 +1042,7 @@ void *gbInternalNlsAllocate(int size,
   return (void *) nls;
 }
 
+/* Free the internal memory. */
 void gbInternalNlsFree(void *nls_ptr)
 {
   GB_INTERNAL_NLS_DATA *nls = (GB_INTERNAL_NLS_DATA *) nls_ptr;
@@ -1053,12 +1099,13 @@ void gbInternalNlsFree(void *nls_ptr)
   free(nls);
 }
 
+/* Get internal, scaled tolerances. */
 Tolerances *gbInternalNlsGetScaledTolerances(void *nls_ptr)
 {
   return &((GB_INTERNAL_NLS_DATA *) nls_ptr)->tol_scaled;
 }
 
-// wrap everyhting for now
+/* Entry point for `internal` solve routine: DIRK or FIRK */
 NLS_SOLVER_STATUS gbInternalSolveNls(DATA *data,
                                      threadData_t *threadData,
                                      NONLINEAR_SYSTEM_DATA* nonlinsys,
@@ -1085,7 +1132,12 @@ NLS_SOLVER_STATUS gbInternalSolveNls(DATA *data,
  * I am not sure if this inversion (gamma / h * I - J)^{-1} * (gamma * sum (b - bt) * k) is beneficial in general,
  * esp. if the embedded method is not A-stable.
  *
- * Tested on Gauss5 for the Robertson example at TOL = 1e-10, it worked pretty well compared to the standard error estimate.
+ * However, tested on Gauss5 for the Robertson example at TOL = 1e-10, it worked pretty well compared to the standard error estimate.
+ *
+ * This might only be useful for defect-based error estimates: err = h * gamma * f(t0, x0) + sum (b - bt) * (k or z). Since that is
+ * O(h * gamma * lambda * y0) for h * lambda -> inf, we must contract the term to get -> -1 asympotically. This allows for 1 order
+ * higher error estimate, but requires 1 additional RHS call and 1 additional LU solve. TODO: inspect this.
+ *
  */
 void gbInternalContraction(DATA *data,
                            threadData_t *threadData,

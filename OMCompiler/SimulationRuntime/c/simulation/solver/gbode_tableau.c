@@ -372,7 +372,7 @@ void getButcherTableau_SDIRK4(BUTCHER_TABLEAU* tableau)
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_SDIRK4;
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = FALSE; // TODO: ??? isnt this available due to node at c_last = 1 ???
+  tableau->isKRightAvailable = FALSE;
 }
 
 // 2 stage, L-stable, order 2(1), SDIRK with gamma = 0.29289

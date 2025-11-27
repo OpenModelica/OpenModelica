@@ -520,8 +520,6 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       infoStreamPrint(OMC_LOG_STATS, 0, "%5d evaluations of jacobian", solverInfo->solverStats.nCallsJacobian);
       infoStreamPrint(OMC_LOG_STATS, 0, "%5d error test failures", solverInfo->solverStats.nErrorTestFailures);
       infoStreamPrint(OMC_LOG_STATS, 0, "%5d convergence test failures", solverInfo->solverStats.nConvergenceTestFailures);
-      infoStreamPrint(OMC_LOG_STATS, 0, "%5d newton iterations / LU solves", solverInfo->solverStats.nNewtonStepsTotal);
-      infoStreamPrint(OMC_LOG_STATS, 0, "%5d jacobian / LU factorizations", solverInfo->solverStats.nJacobianFactorizations);
       infoStreamPrint(OMC_LOG_STATS, 0, "%gs time of jacobian evaluation", rt_accumulated(SIM_TIMER_JACOBIAN));
 #ifdef USE_PARJAC
       infoStreamPrint(OMC_LOG_STATS, 0, "%i OpenMP-threads used for jacobian evaluation", omc_get_max_threads());
@@ -1019,8 +1017,6 @@ void resetSolverStats(SOLVERSTATS* stats) {
   stats->nCallsJacobian = 0;
   stats->nErrorTestFailures = 0;
   stats->nConvergenceTestFailures = 0;
-  stats->nNewtonStepsTotal = 0;
-  stats->nJacobianFactorizations = 0;
 }
 
 /**
@@ -1038,6 +1034,4 @@ void addSolverStats(SOLVERSTATS* destStats, SOLVERSTATS* addStats) {
   destStats->nCallsJacobian           += addStats->nCallsJacobian;
   destStats->nErrorTestFailures       += addStats->nErrorTestFailures;
   destStats->nConvergenceTestFailures += addStats->nConvergenceTestFailures;
-  destStats->nNewtonStepsTotal        += addStats->nNewtonStepsTotal;
-  destStats->nJacobianFactorizations  += addStats->nJacobianFactorizations;
 }
