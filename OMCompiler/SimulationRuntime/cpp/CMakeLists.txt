@@ -40,13 +40,13 @@ else(OPENMODELICA_NEW_CMAKE_BUILD)
 CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 
 IF(UNIX)
-IF(APPLE)
-# We set the rpath manually, later...
-ELSE(APPLE)
-# Needed to find Sundials; actually only the Sundials objects need this,
-# but there are so many of them
-SET(CMAKE_INSTALL_RPATH "$ORIGIN:$ORIGIN/..")
-ENDIF(APPLE)
+  IF(APPLE)
+    # We set the rpath manually, later...
+  ELSE(APPLE)
+    # Needed to find Sundials; actually only the Sundials objects need this,
+    # but there are so many of them
+    SET(CMAKE_INSTALL_RPATH "$ORIGIN:$ORIGIN/..")
+  ENDIF(APPLE)
 ENDIF(UNIX)
 
 if(NOT PLATFORM OR PLATFORM STREQUAL "dynamic")
@@ -127,15 +127,12 @@ SET(LibZName zlib) # only static version
 SET(SimulationSettings ${LIBPREFIX}SimulationSettings${LIBSUFFIX})
 SET(SimControllerName ${LIBPREFIX}SimController${LIBSUFFIX})
 SET(CVodeName ${LIBPREFIX}CVode${LIBSUFFIX})
-SET(ARKodeName ${LIBPREFIX}ARKode${LIBSUFFIX})
 SET(IDAName ${LIBPREFIX}IDA${LIBSUFFIX})
 SET(PeerName ${LIBPREFIX}Peer${LIBSUFFIX})
 SET(DASSLName ${LIBPREFIX}DASSL${LIBSUFFIX})
 SET(CppDASSLName ${LIBPREFIX}CppDASSL${LIBSUFFIX})
-SET(RTRKName ${LIBPREFIX}RTRK${LIBSUFFIX})
 SET(EulerName ${LIBPREFIX}Euler${LIBSUFFIX})
 SET(RK12Name ${LIBPREFIX}RK12${LIBSUFFIX})
-#SET(kluName ${LIBPREFIX}klu${LIBSUFFIX})
 SET(RTEulerName ${LIBPREFIX}RTEuler${LIBSUFFIX})
 SET(IdaName ${LIBPREFIX}Ida${LIBSUFFIX})
 SET(IdasName ${LIBPREFIX}Idas${LIBSUFFIX})
@@ -151,9 +148,8 @@ SET(DataExchangeName ${LIBPREFIX}DataExchange${LIBSUFFIX})
 SET(ModelicaUtilitiesName ${LIBPREFIX}ModelicaUtilities${LIBSUFFIX})
 SET(ExtensionUtilitiesName ${LIBPREFIX}ExtensionUtilities${LIBSUFFIX})
 SET(BasiLibName ${LIBPREFIX}Base${LIBSUFFIX})
-SET(ModelicaCompilerName ${LIBPREFIX}ModelicaCompiler${LIBSUFFIX})
 SET(FMUName ${LIBPREFIX}FMU${LIBSUFFIX})
-SET(DgesvName ${LIBPREFIX}Dgesv) # only static version
+SET(DgesvName ${LIBPREFIX}Dgesv_static) # only static version
 SET(ReduceDAEName ${LIBPREFIX}ReduceDAE) # only static version
 
 SET(USE_MICO OFF)
@@ -605,11 +601,6 @@ IF(USE_SUNDIALS)
     MESSAGE(FATAL_ERROR "Could not find libsundials_cvodes!")
   ENDIF()
 
-#  FIND_LIBRARY(SUNDIALS_ARKODE_LIB "sundials_arkode" PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME}  $ENV{SUNDIALS_ROOT}/lib)
-#  IF(NOT SUNDIALS_ARKODE_LIB)
-#    MESSAGE(FATAL_ERROR "Could not find libsundials_ARKODE!")
-#  ENDIF()
-
   FIND_LIBRARY(SUNDIALS_IDA_LIB "sundials_idas" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH  PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME}  $ENV{SUNDIALS_ROOT}/lib)
   IF(NOT SUNDIALS_IDA_LIB)
     MESSAGE(FATAL_ERROR "Could not find libsundials_ida!")
@@ -619,7 +610,7 @@ IF(USE_SUNDIALS)
   IF(NOT SUNDIALS_KINSOL_LIB)
     MESSAGE(FATAL_ERROR "Could not find libsundials_kinsol!")
   ENDIF()
-  SET(SUNDIALS_LIBRARIES ${SUNDIALS_NVECSERIAL_LIB} ${SUNDIALS_CVODE_LIB} ${SUNDIALS_CVODES_LIB} ${SUNDIALS_IDA_LIB} ${SUNDIALS_KINSOL_LIB} ${SUNDIALS_ARKODE_LIB})
+  SET(SUNDIALS_LIBRARIES ${SUNDIALS_NVECSERIAL_LIB} ${SUNDIALS_CVODE_LIB} ${SUNDIALS_CVODES_LIB} ${SUNDIALS_IDA_LIB} ${SUNDIALS_KINSOL_LIB})
 
   MESSAGE(STATUS "Sundials Libraries:")
   MESSAGE(STATUS "${SUNDIALS_LIBRARIES}")
@@ -740,17 +731,10 @@ endif(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")
 #set (CMAKE_CXX_FLAGS "-Winvalid-pch")
 #build of simulation.core
 include_directories ("Include")
-#include_directories ("Solver/KLU")
 
-#add_subdirectory (Solver/KLU)
 # Needs to be included before Core/Modelica othwise environment variables are not set.
 IF(USE_DGESV)
   ADD_SUBDIRECTORY(Solver/Dgesv)
-
-  IF(DGESV_FOUND)
-    GET_TARGET_PROPERTY(libDgesv ${DgesvName} LOCATION)
-    GET_FILENAME_COMPONENT(libDgesvName ${libDgesv} NAME)
-  ENDIF()
 ENDIF(USE_DGESV)
 
 # add base definitions for generating a target
@@ -768,14 +752,10 @@ add_subdirectory(Core/Utils/extension)
 add_subdirectory(Core/ModelicaExternalC)
 
 # add projects for generating a simulator
-# (add them to FMU_TARGET as well due to include dependencies)
-#if(NOT FMU_TARGET)
-  add_subdirectory(SimCoreFactory/OMCFactory)
-  add_subdirectory(Core/DataExchange)
-  add_subdirectory(Core/SimulationSettings)
-  add_subdirectory(Core/SimController)
-  #add_subdirectory(ModelicaCompiler)
-#endif(NOT FMU_TARGET)
+add_subdirectory(SimCoreFactory/OMCFactory)
+add_subdirectory(Core/DataExchange)
+add_subdirectory(Core/SimulationSettings)
+add_subdirectory(Core/SimController)
 
 # add Newton solver
 add_subdirectory(Solver/Newton)
@@ -808,7 +788,6 @@ if(NOT FMU_TARGET)
   else(OPENMP_FOUND)
     message(STATUS "CppDassl disabled, because of missing OpenMP support")
   endif(OPENMP_FOUND)
-  ##add_subdirectory(Solver/RTRK)
 endif(NOT FMU_TARGET)
 
 add_subdirectory(FMU)
@@ -817,119 +796,66 @@ if(REDUCE_DAE)
   add_subdirectory(Core/ReduceDAE)
 endif()
 
-
+# Helper function to extract library filename from target using generator expressions
+# This replaces deprecated GET_TARGET_PROPERTY with LOCATION
+function(get_target_filename TARGET_NAME OUTPUT_VAR)
+  # Use file(GENERATE) with generator expression to extract filename at build time
+  file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/get_target_filename_${TARGET_NAME}.cmake"
+    CONTENT "file(WRITE \"${CMAKE_BINARY_DIR}/target_filename_${TARGET_NAME}.txt\" \"$<TARGET_FILE_NAME:${TARGET_NAME}>\")"
+  )
+  # For now, we'll use a simpler approach: just use the target name variable
+  # Since we're extracting library names for configuration, we can derive them from the known target naming
+  get_target_property(TARGET_TYPE ${TARGET_NAME} TYPE)
+  if(TARGET_TYPE STREQUAL "SHARED_LIBRARY")
+    set(${OUTPUT_VAR} "${CMAKE_SHARED_LIBRARY_PREFIX}${TARGET_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX}" PARENT_SCOPE)
+  else()
+    set(${OUTPUT_VAR} "${CMAKE_STATIC_LIBRARY_PREFIX}${TARGET_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX}" PARENT_SCOPE)
+  endif()
+endfunction()
 
 IF(USE_SUNDIALS)
   #add  Cvode solver project
   ADD_SUBDIRECTORY (Solver/CVode)
-  #add_subdirectory (Solver/ARKode)
   ADD_SUBDIRECTORY(Solver/IDA)
   ADD_SUBDIRECTORY(Solver/Kinsol)
-  #add  Idas solver project
-  ##add_subdirectory (Solver/Idas/Implementation)
-  ##add_subdirectory (Solver/Ida/Implementation)
-  GET_TARGET_PROPERTY(libCVode ${CVodeName} LOCATION)
-  GET_TARGET_PROPERTY(libARKode ${ARKodeName} LOCATION)
-  GET_FILENAME_COMPONENT(libCVodeName ${libCVode} NAME)
-  GET_FILENAME_COMPONENT(libARKodeName ${libARKode} NAME)
 
-  GET_TARGET_PROPERTY(libIDA ${IDAName} LOCATION)
-  GET_FILENAME_COMPONENT(libIDAName ${libIDA} NAME)
+  get_target_filename(${CVodeName} libCVodeName)
+  get_target_filename(${IDAName} libIDAName)
+  get_target_filename(${KinsolName} libKinsolName)
 
-  GET_TARGET_PROPERTY(libKinsol ${KinsolName} LOCATION)
-  GET_FILENAME_COMPONENT(libKinsolName ${libKinsol} NAME)
-
-  #GET_TARGET_PROPERTY(libIdas ${IdasName} LOCATION)
-  #GET_FILENAME_COMPONENT(libIdasName ${libIdas} NAME)
-  #GET_TARGET_PROPERTY(libIda ${IdaName} LOCATION)
-  #GET_FILENAME_COMPONENT(libIdaName ${libIda} NAME)
-
-  #set (IDAS_LIB ${libIdasName})
   SET(CVODE_LIB ${libCVodeName})
-  SET(ARKODE_LIB ${libARKodeName})
   SET(IDA_LIB ${libIDAName})
   SET(KINSOL_LIB ${libKinsolName})
-  #set(IDA_LIB ${libIdaName})
 ENDIF(USE_SUNDIALS)
 
-
-GET_TARGET_PROPERTY(libLinearSolver ${LinearSolverName} LOCATION)
-GET_FILENAME_COMPONENT(libLinearSolverName ${libLinearSolver} NAME)
-
-GET_TARGET_PROPERTY(libDgesvSolver ${DgesvSolverName} LOCATION)
-GET_FILENAME_COMPONENT(libDgesvSolverName ${libDgesvSolver} NAME)
-
-GET_TARGET_PROPERTY(libPeer ${PeerName} LOCATION)
-GET_FILENAME_COMPONENT(libPeerName ${libPeer} NAME)
+get_target_filename(${LinearSolverName} libLinearSolverName)
+get_target_filename(${DgesvSolverName} libDgesvSolverName)
+get_target_filename(${PeerName} libPeerName)
 
 IF(CDASKR_FOUND)
-  GET_TARGET_PROPERTY(libDASSL ${DASSLName} LOCATION)
-  GET_FILENAME_COMPONENT(libDASSLName ${libDASSL} NAME)
+  get_target_filename("${DASSLName}" libDASSLName)
 ENDIF(CDASKR_FOUND)
 
-IF(OPENMP_FOUND)
-  GET_TARGET_PROPERTY(libCppDASSL ${CppDASSLName} LOCATION)
-  GET_FILENAME_COMPONENT(libCppDASSLName ${libCppDASSL} NAME)
-ENDIF(OPENMP_FOUND)
+IF(OPENMP_FOUND AND SUITESPARSE_UMFPACK_FOUND)
+  get_target_filename(${CppDASSLName} libCppDASSLName)
+ENDIF(OPENMP_FOUND AND SUITESPARSE_UMFPACK_FOUND)
 
-GET_TARGET_PROPERTY(libRTRK ${RTRKName} LOCATION)
-GET_FILENAME_COMPONENT(libRTRKName ${libRTRK} NAME)
+get_target_filename(${NewtonName} libNewtonName)
+get_target_filename(${BroydenName} libBroydenName)
+get_target_filename(${UmfPackName} libUmfPackName)
+get_target_filename(${EulerName} libEulerName)
+get_target_filename(${RK12Name} libRK12Name)
+get_target_filename(${RTEulerName} libRTEulerName)
+get_target_filename(${HybrjName} libHybrjName)
+get_target_filename(${SimulationSettings} libSetFactoryName)
+get_target_filename(${ModelicaName} libModelicaName)
+get_target_filename(${SystemName} libSystemName)
+get_target_filename(${SolverName} libSolverName)
+get_target_filename(${SimControllerName} libSimControllerName)
+get_target_filename(${MathName} libMathName)
+get_target_filename(${DataExchangeName} libDataExchangeName)
+get_target_filename(${DgesvName} libDgesvName)
 
-GET_TARGET_PROPERTY(libNewton ${NewtonName} LOCATION)
-GET_FILENAME_COMPONENT(libNewtonName ${libNewton} NAME)
-
-GET_TARGET_PROPERTY(libBroyden ${BroydenName} LOCATION)
-GET_FILENAME_COMPONENT(libBroydenName ${libBroyden} NAME)
-
-GET_TARGET_PROPERTY(libUmfPack ${UmfPackName} LOCATION)
-GET_FILENAME_COMPONENT(libUmfPackName ${libUmfPack} NAME)
-
-GET_TARGET_PROPERTY(libEuler ${EulerName} LOCATION)
-GET_FILENAME_COMPONENT(libEulerName ${libEuler} NAME)
-
-GET_TARGET_PROPERTY(libRK12 ${RK12Name} LOCATION)
-GET_FILENAME_COMPONENT(libRK12Name ${libRK12} NAME)
-
-#GET_TARGET_PROPERTY(libKlu ${kluName} LOCATION)
-#GET_FILENAME_COMPONENT(libKluName ${libKlu} NAME)
-
-GET_TARGET_PROPERTY(libRTEuler ${RTEulerName} LOCATION)
-GET_FILENAME_COMPONENT(libRTEulerName ${libRTEuler} NAME)
-
-GET_TARGET_PROPERTY(libHybrj ${HybrjName} LOCATION)
-GET_FILENAME_COMPONENT(libHybrjName ${libHybrj} NAME)
-
-GET_TARGET_PROPERTY(libSetFactory ${SimulationSettings} LOCATION)
-GET_FILENAME_COMPONENT(libSetFactoryName ${libSetFactory} NAME)
-
-GET_TARGET_PROPERTY(libModelica ${ModelicaName} LOCATION)
-GET_FILENAME_COMPONENT(libModelicaName ${libModelica} NAME)
-
-GET_TARGET_PROPERTY(libSystem ${SystemName} LOCATION)
-GET_FILENAME_COMPONENT(libSystemName ${libSystem} NAME)
-
-GET_TARGET_PROPERTY(libSolver ${SolverName} LOCATION)
-GET_FILENAME_COMPONENT(libSolverName ${libSolver} NAME)
-
-GET_TARGET_PROPERTY(libSimController ${SimControllerName} LOCATION)
-GET_FILENAME_COMPONENT(libSimControllerName ${libSimController} NAME)
-
-GET_TARGET_PROPERTY(libMath ${MathName} LOCATION)
-GET_FILENAME_COMPONENT(libMathName ${libMath} NAME)
-
-GET_TARGET_PROPERTY(libDataExchange ${DataExchangeName} LOCATION)
-GET_FILENAME_COMPONENT(libDataExchangeName ${libDataExchange} NAME)
-
-GET_TARGET_PROPERTY(libModelicaCompiler ${ModelicaCompilerName} LOCATION)
-GET_FILENAME_COMPONENT(libModelicaCompilerName ${libModelicaCompiler} NAME)
-
-GET_TARGET_PROPERTY(libSimObjFactory ${OMCFactoryName} LOCATION)
-GET_FILENAME_COMPONENT(libSimObjFactoryName ${libSimObjFactory} NAME)
-
-GET_TARGET_PROPERTY(libFMU ${FMUName} LOCATION)
-GET_FILENAME_COMPONENT(libFMUName ${libFMU} NAME)
-
-#set (KLU_LIB ${libKluName})
 set (EULER_LIB ${libEulerName})
 set (RK12_LIB ${libRK12Name})
 set (RTEULER_LIB ${libRTEulerName})
@@ -941,20 +867,14 @@ set (UMFPACK_LIB ${libUmfPackName})
 set (PEER_LIB ${libPeerName})
 set (DASSL_LIB ${libDASSLName})
 set (CPPDASSL_LIB ${libCppDASSLName})
-set (RTRK_LIB ${libRTRKName})
 set (SYSTEM_LIB ${libSystemName})
 set (SOLVER_LIB ${libSolverName})
 SET (LINEARSOLVER_LIB ${libLinearSolverName})
 SET (DGESVSOLVER_LIB ${libDgesvSolverName})
 set (MATH_LIB ${libMathName})
 set (HYBRJ_LIB ${libHybrjName})
-set (SIMOBJFACTORY_LIB ${libSimObjFactoryName})
 set (DATAEXCHANGE_LIB ${libDataExchangeName})
 set (SIMCONTROLLER_LIB ${libSimControllerName})
-set (EXTENSIONUTILITIES_LIB ${libExtensionUtilitiesName})
-set (MODELICACOMPILER_LIB ${libModelicaCompilerName})
-set (FMU_LIB ${libFMUName})
-set (DGESV_LIB ${libDgesvName})
 
 # configure a header file to pass some library names
 # to the source code which are used to dynamic load and instantiate

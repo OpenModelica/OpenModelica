@@ -167,13 +167,11 @@ SET(LibZName zlib) # only static version
 SET(SimulationSettings ${LIBPREFIX}SimulationSettings${LIBSUFFIX})
 SET(SimControllerName ${LIBPREFIX}SimController${LIBSUFFIX})
 SET(CVodeName ${LIBPREFIX}CVode${LIBSUFFIX})
-#SET(ARKodeName ${LIBPREFIX}ARKode${LIBSUFFIX})
 SET(IDAName ${LIBPREFIX}IDA${LIBSUFFIX})
 SET(PeerName ${LIBPREFIX}Peer${LIBSUFFIX})
 SET(CppDASSLName ${LIBPREFIX}CppDASSL${LIBSUFFIX})
 SET(EulerName ${LIBPREFIX}Euler${LIBSUFFIX})
 SET(RK12Name ${LIBPREFIX}RK12${LIBSUFFIX})
-#SET(kluName ${LIBPREFIX}klu${LIBSUFFIX})
 SET(RTEulerName ${LIBPREFIX}RTEuler${LIBSUFFIX})
 SET(IdaName ${LIBPREFIX}Ida${LIBSUFFIX})
 SET(IdasName ${LIBPREFIX}Idas${LIBSUFFIX})
@@ -616,11 +614,6 @@ IF(USE_SUNDIALS)
     MESSAGE(FATAL_ERROR "Could not find libsundials_cvodes!")
   ENDIF()
 
-#  FIND_LIBRARY(SUNDIALS_ARKODE_LIB "sundials_arkode" PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME}  $ENV{SUNDIALS_ROOT}/lib)
-#  IF(NOT SUNDIALS_ARKODE_LIB)
-#    MESSAGE(FATAL_ERROR "Could not find libsundials_ARKODE!")
-#  ENDIF()
-
   FIND_LIBRARY(SUNDIALS_IDA_LIB "sundials_idas" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
   IF(NOT SUNDIALS_IDA_LIB)
     MESSAGE(FATAL_ERROR "Could not find libsundials_ida!")
@@ -630,7 +623,7 @@ IF(USE_SUNDIALS)
   IF(NOT SUNDIALS_KINSOL_LIB)
     MESSAGE(FATAL_ERROR "Could not find libsundials_kinsol!")
   ENDIF()
-  SET(SUNDIALS_LIBRARIES ${SUNDIALS_NVECSERIAL_LIB} ${SUNDIALS_CVODE_LIB} ${SUNDIALS_CVODES_LIB} ${SUNDIALS_IDA_LIB} ${SUNDIALS_KINSOL_LIB} ${SUNDIALS_ARKODE_LIB})
+  SET(SUNDIALS_LIBRARIES ${SUNDIALS_NVECSERIAL_LIB} ${SUNDIALS_CVODE_LIB} ${SUNDIALS_CVODES_LIB} ${SUNDIALS_IDA_LIB} ${SUNDIALS_KINSOL_LIB})
 
   MESSAGE(STATUS "Sundials Libraries for omsicpp:")
   MESSAGE(STATUS "${SUNDIALS_LIBRARIES}")
@@ -888,7 +881,6 @@ SET(ModelicaMatIOName ModelicaMatIO) # only static version
 SET(SimulationSettings ${LIBPREFIX}SimulationSettings${LIBSUFFIX})
 SET(SimControllerName ${LIBPREFIX}SimController${LIBSUFFIX})
 SET(CVodeName ${LIBPREFIX}CVode${LIBSUFFIX})
-SET(ARKodeName ${LIBPREFIX}ARKode${LIBSUFFIX})
 SET(IDAName ${LIBPREFIX}IDA${LIBSUFFIX})
 SET(PeerName ${LIBPREFIX}Peer${LIBSUFFIX})
 SET(CppDASSLName ${LIBPREFIX}CppDASSL${LIBSUFFIX})
@@ -942,95 +934,52 @@ endfunction()
 
 IF(USE_SUNDIALS)
   get_target_filename(${CVodeName} libCVodeName)
-  if(TARGET ${ARKodeName})
-    get_target_filename(${ARKodeName} libARKodeName)
-  else()
-    set(libARKodeName "")
-  endif()
-
   get_target_filename(${IDAName} libIDAName)
-
   get_target_filename(${KinsolName} libKinsolName)
 
   SET(CVODE_LIB ${libCVodeName})
-  SET(ARKODE_LIB ${libARKodeName})
   SET(IDA_LIB ${libIDAName})
   SET(KINSOL_LIB ${libKinsolName})
 ENDIF(USE_SUNDIALS)
 
-GET_TARGET_PROPERTY(libLinearSolver ${LinearSolverName} TYPE)
 get_target_filename(${LinearSolverName} libLinearSolverName)
-
-GET_TARGET_PROPERTY(libDgesvSolver ${DgesvSolverName} TYPE)
 get_target_filename(${DgesvSolverName} libDgesvSolverName)
 
 if(BUILD_PEER)
-  GET_TARGET_PROPERTY(libPeer ${PeerName} TYPE)
   get_target_filename(${PeerName} libPeerName)
 endif(BUILD_PEER)
 
 IF(OPENMP_FOUND AND SUITESPARSE_UMFPACK_FOUND)
-  GET_TARGET_PROPERTY(libCppDASSL ${CppDASSLName} TYPE)
   get_target_filename(${CppDASSLName} libCppDASSLName)
 ENDIF(OPENMP_FOUND AND SUITESPARSE_UMFPACK_FOUND)
 
-GET_TARGET_PROPERTY(libNewton ${NewtonName} TYPE)
 get_target_filename(${NewtonName} libNewtonName)
 
 if(BUILD_BROYDEN)
-  GET_TARGET_PROPERTY(libBroyden ${BroydenName} TYPE)
   get_target_filename(${BroydenName} libBroydenName)
 endif(BUILD_BROYDEN)
 
-GET_TARGET_PROPERTY(libUmfPack ${UmfPackName} TYPE)
 get_target_filename(${UmfPackName} libUmfPackName)
-
-GET_TARGET_PROPERTY(libEuler ${EulerName} TYPE)
 get_target_filename(${EulerName} libEulerName)
-
-GET_TARGET_PROPERTY(libRK12 ${RK12Name} TYPE)
 get_target_filename(${RK12Name} libRK12Name)
-
-GET_TARGET_PROPERTY(libRTEuler ${RTEulerName} TYPE)
 get_target_filename(${RTEulerName} libRTEulerName)
 
 if(USE_MINPACK)
-  GET_TARGET_PROPERTY(libHybrj ${HybrjName} TYPE)
   get_target_filename(${HybrjName} libHybrjName)
 endif(USE_MINPACK)
 
-GET_TARGET_PROPERTY(libSetFactory ${SimulationSettings} TYPE)
 get_target_filename(${SimulationSettings} libSetFactoryName)
-
-GET_TARGET_PROPERTY(libModelica ${ModelicaName} TYPE)
 get_target_filename(${ModelicaName} libModelicaName)
-
-GET_TARGET_PROPERTY(libSystemBase ${SystemBaseName} TYPE)
 get_target_filename(${SystemBaseName} libSystemBaseName)
-
-GET_TARGET_PROPERTY(libSystemOMSI ${SystemOMSIName} TYPE)
 get_target_filename(${SystemOMSIName} libSystemOMSIName)
-
-GET_TARGET_PROPERTY(libExtendedSystem ${ExtendedSystemName} TYPE)
 get_target_filename(${ExtendedSystemName} libExtendedSystemName)
-
-GET_TARGET_PROPERTY(libSolver ${SolverName} TYPE)
 get_target_filename(${SolverName} libSolverName)
-
-GET_TARGET_PROPERTY(libSimController ${SimControllerName} TYPE)
 get_target_filename(${SimControllerName} libSimControllerName)
-
-GET_TARGET_PROPERTY(libMath ${MathName} TYPE)
 get_target_filename(${MathName} libMathName)
-
-GET_TARGET_PROPERTY(libDataExchange ${DataExchangeName} TYPE)
 get_target_filename(${DataExchangeName} libDataExchangeName)
-
-GET_TARGET_PROPERTY(libSimObjFactory ${OMCFactoryName} TYPE)
 get_target_filename(${OMCFactoryName} libSimObjFactoryName)
-
-GET_TARGET_PROPERTY(libFMU ${FMUName} TYPE)
 get_target_filename(${FMUName} libFMUName)
+get_target_filename(${DgesvName} libDgesvName)
 
 set (EULER_LIB ${libEulerName})
 set (RK12_LIB ${libRK12Name})
@@ -1052,9 +1001,6 @@ set (HYBRJ_LIB ${libHybrjName})
 set (SIMOBJFACTORY_LIB ${libSimObjFactoryName})
 set (DATAEXCHANGE_LIB ${libDataExchangeName})
 set (SIMCONTROLLER_LIB ${libSimControllerName})
-set (EXTENSIONUTILITIES_LIB ${libExtensionUtilitiesName})
-set (FMU_LIB ${libFMUName})
-set (DGESV_LIB ${libDgesvName})
 
 # configure a header file to pass some library names
 # to the source code which are used to dynamic load and instantiate
