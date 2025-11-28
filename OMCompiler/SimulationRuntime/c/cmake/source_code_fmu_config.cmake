@@ -42,6 +42,7 @@ set(SOURCE_FMU_COMMON_FILES_LIST ./gc/memory_pool.c
                                  ./util/utility.c
                                  ./util/varinfo.c
                                  ./math-support/pivot.c
+                                 ./simulation/arrayIndex.c
                                  ./simulation/jacobian_util.c
                                  ./simulation/omc_simulation_util.c
                                  ./simulation/options.c
@@ -87,6 +88,7 @@ set(SOURCE_FMU_COMMON_HEADERS \"./omc_inline.h\",
                               \"./optimization/OptimizerData.h\",
                               \"./optimization/OptimizerLocalFunction.h\",
                               \"./optimization/OptimizerInterface.h\",
+                              \"./simulation/arrayIndex.h\",
                               \"./simulation/jacobian_util.h\",
                               \"./simulation/modelinfo.h\",
                               \"./simulation/options.h\",
@@ -212,19 +214,18 @@ string(REPLACE ";" "," SOURCE_FMU_NLS_FILES "${SOURCE_FMU_NLS_FILES_LIST_QUOTED}
 
 
 # CMinPack files for NLS
-set(3RD_CMINPACK_FMU_FILES ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/cminpack.h
-                            ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/minpack.h
-                            ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/enorm_.c
-                            ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/hybrj_.c
-                            ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/dpmpar_.c
-                            ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/qrfac_.c
-                            ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/qform_.c
-                            ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/dogleg_.c
-                            ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/r1updt_.c
-                            ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/r1mpyq_.c)
+set(3RD_CMINPACK_FMU_FILES ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/enorm_.c
+                           ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/hybrj_.c
+                           ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/dpmpar_.c
+                           ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/qrfac_.c
+                           ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/qform_.c
+                           ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/dogleg_.c
+                           ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/r1updt_.c
+                           ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/r1mpyq_.c)
 
 set(3RD_CMINPACK_HEADERS  ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/cminpack.h
-                            ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/minpack.h)
+                          ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/minpack.h
+                          ${OMCompiler_3rdParty_SOURCE_DIR}/CMinpack/minpackP.h)
 
 install(FILES ${3RD_CMINPACK_HEADERS}
               ${3RD_CMINPACK_FMU_FILES}

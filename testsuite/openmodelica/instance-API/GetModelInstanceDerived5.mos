@@ -1,0 +1,165 @@
+// name: GetModelInstanceDerived5
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model HierarchicalEditingGUI
+    model Nested1
+      parameter Real p1A;
+      parameter Real p1B;
+      replaceable model InnerNestedModel = Nested2 annotation(choicesAllMatching = true);
+      InnerNestedModel nested2;
+    equation
+    end Nested1;
+
+    model Nested2
+      parameter Real p2A;
+    equation
+    end Nested2;
+
+    model Main
+      parameter Real passthrough_p1A;
+      replaceable model NestModel = Nested1 annotation(choicesAllMatching = true);
+      NestModel nested1(p1A=passthrough_p1A) annotation(
+        Placement(transformation(extent = {{-10, -10}, {10, 10}})));
+    equation
+    end Main;
+
+    model Problem1
+    Main main(
+          passthrough_p1A = 11,
+          nested1(p1B=2, nested2(p2A=3))
+        )  annotation(
+        Placement(transformation(extent = {{-10, -10}, {10, 10}})));
+    equation
+    end Problem1;
+  equation
+  end HierarchicalEditingGUI;
+");
+
+getModelInstance(HierarchicalEditingGUI.Main.NestModel, prettyPrint = true); getErrorString();
+
+// Result:
+// true
+// "{
+//   \"name\": \"HierarchicalEditingGUI.Main.NestModel\",
+//   \"restriction\": \"model\",
+//   \"prefixes\": {
+//     \"replaceable\": true
+//   },
+//   \"annotation\": {
+//     \"choicesAllMatching\": true
+//   },
+//   \"elements\": [
+//     {
+//       \"$kind\": \"extends\",
+//       \"baseClass\": {
+//         \"name\": \"HierarchicalEditingGUI.Nested1\",
+//         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"p1A\",
+//             \"type\": \"Real\",
+//             \"prefixes\": {
+//               \"variability\": \"parameter\"
+//             }
+//           },
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"p1B\",
+//             \"type\": \"Real\",
+//             \"prefixes\": {
+//               \"variability\": \"parameter\"
+//             }
+//           },
+//           {
+//             \"$kind\": \"class\",
+//             \"name\": \"InnerNestedModel\",
+//             \"restriction\": \"model\",
+//             \"prefixes\": {
+//               \"replaceable\": true
+//             },
+//             \"baseClass\": \"HierarchicalEditingGUI.Nested2\",
+//             \"annotation\": {
+//               \"choicesAllMatching\": true
+//             },
+//             \"source\": {
+//               \"filename\": \"<interactive>\",
+//               \"lineStart\": 6,
+//               \"columnStart\": 19,
+//               \"lineEnd\": 6,
+//               \"columnEnd\": 89
+//             }
+//           },
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"nested2\",
+//             \"type\": {
+//               \"name\": \"HierarchicalEditingGUI.Main.NestModel.InnerNestedModel\",
+//               \"restriction\": \"model\",
+//               \"prefixes\": {
+//                 \"replaceable\": true
+//               },
+//               \"annotation\": {
+//                 \"choicesAllMatching\": true
+//               },
+//               \"elements\": [
+//                 {
+//                   \"$kind\": \"extends\",
+//                   \"baseClass\": {
+//                     \"name\": \"HierarchicalEditingGUI.Nested2\",
+//                     \"restriction\": \"model\",
+//                     \"elements\": [
+//                       {
+//                         \"$kind\": \"component\",
+//                         \"name\": \"p2A\",
+//                         \"type\": \"Real\",
+//                         \"prefixes\": {
+//                           \"variability\": \"parameter\"
+//                         }
+//                       }
+//                     ],
+//                     \"source\": {
+//                       \"filename\": \"<interactive>\",
+//                       \"lineStart\": 11,
+//                       \"columnStart\": 5,
+//                       \"lineEnd\": 14,
+//                       \"columnEnd\": 16
+//                     }
+//                   }
+//                 }
+//               ],
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"lineStart\": 6,
+//                 \"columnStart\": 19,
+//                 \"lineEnd\": 6,
+//                 \"columnEnd\": 89
+//               }
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 3,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 9,
+//           \"columnEnd\": 16
+//         }
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 18,
+//     \"columnStart\": 19,
+//     \"lineEnd\": 18,
+//     \"columnEnd\": 82
+//   }
+// }"
+// ""
+// endResult

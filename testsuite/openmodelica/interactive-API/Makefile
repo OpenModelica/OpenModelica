@@ -31,6 +31,7 @@ CopyClass3.mos \
 CopyClass4.mos \
 CopyClass5.mos \
 CopyClass6.mos \
+CopyClass7.mos \
 CopyClassInvalid1.mos \
 CopyClassRedeclare1.mos \
 DefaultComponentName.mos \
@@ -49,6 +50,7 @@ GetAllSubtypeOf1.mos \
 GetAllSubtypeOf2.mos \
 GetAllSubtypeOf3.mos \
 GetAllSubtypeOf4.mos \
+GetAllSubtypeOf5.mos \
 getClassComment.mos \
 getClassNames.mos \
 getCommandLineOptions.mos \
@@ -68,6 +70,7 @@ getNthComponentAnnotation.mos \
 getNthConnector.mos \
 getNthConnectorIconAnnotation.mos \
 getNthImport.mos \
+GetReplaceableChoices1.mos \
 getSimulationOptions1.mos \
 getSimulationOptions2.mos \
 getSimulationOptions3.mos \
@@ -154,7 +157,7 @@ UsesAnnotation2.mos \
 variables.mos \
 VendorAnnotation.mos \
 TestSpace.mos \
-
+Issue14178.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

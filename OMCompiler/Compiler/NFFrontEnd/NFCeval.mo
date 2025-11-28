@@ -214,10 +214,8 @@ algorithm
       then
         evalCast(exp1, exp.ty);
 
-    case Expression.UNBOX()
-      algorithm
-        exp1 := evalExp(exp.exp, target);
-      then Expression.UNBOX(exp1, exp.ty);
+    case Expression.BOX()   then evalExp(exp.exp, target);
+    case Expression.UNBOX() then evalExp(exp.exp, target);
 
     case Expression.SUBSCRIPTED_EXP()
       then evalSubscriptedExp(exp.exp, exp.subscripts, target);
@@ -236,6 +234,9 @@ algorithm
         exp1 := evalExp(Mutable.access(exp.exp), target);
       then
         exp1;
+
+    case Expression.INSTANCE_NAME()
+      then evalGetInstanceName(exp.scope);
 
     else exp;
   end match;
@@ -636,7 +637,7 @@ algorithm
       algorithm
         exp := makeRecordFieldBindingFromParent(cref, target);
       then
-        Binding.CEVAL_BINDING(exp);
+        if Expression.isEmpty(exp) then NFBinding.EMPTY_BINDING else Binding.CEVAL_BINDING(exp);
 
     // A record component without an explicit binding, create one from its children.
     case Component.COMPONENT(ty = Type.COMPLEX(complexTy = ComplexType.RECORD(rec_node)))
@@ -968,6 +969,12 @@ function evalBinaryAdd
   output Expression exp;
 algorithm
   exp := match (exp1, exp2)
+    // while technically not allowed to mix integers and reals, it occurs when solving in the new backend
+    case (Expression.REAL(), Expression.INTEGER())
+      then Expression.REAL(exp1.value + exp2.value);
+    case (Expression.INTEGER(), Expression.REAL())
+      then Expression.REAL(exp1.value + exp2.value);
+
     case (Expression.INTEGER(), Expression.INTEGER())
       then Expression.INTEGER(exp1.value + exp2.value);
 
@@ -995,14 +1002,18 @@ algorithm
     // technically the following two are incorrect because they need element wise addition
     // but the backend can create these and immediately tries to evaluate them.
     // kabdelhak: instead of fixing the operators we will just allow this to be immediately evaluated
-    case (Expression.ARRAY(), Expression.INTEGER())
+    case (Expression.ARRAY(), _)
       then Expression.makeArray(exp1.ty,
         Array.map(exp1.elements, function evalBinaryAdd(exp2 = exp2)),
         literal = exp1.literal);
-    case (Expression.INTEGER(), Expression.ARRAY())
+    case (_, Expression.ARRAY())
       then Expression.makeArray(exp2.ty,
         Array.map(exp2.elements, function evalBinaryAdd(exp1 = exp1)),
         literal = exp2.literal);
+
+    // first element is added to nothing. To make sure the right typing is used
+    case (Expression.EMPTY(), _) then exp2;
+    case (_, Expression.EMPTY()) then exp1;
 
     else
       algorithm
@@ -1019,6 +1030,12 @@ function evalBinarySub
   output Expression exp;
 algorithm
   exp := match (exp1, exp2)
+    // while technically not allowed to mix integers and reals, it occurs when solving in the new backend
+    case (Expression.REAL(), Expression.INTEGER())
+      then Expression.REAL(exp1.value - exp2.value);
+    case (Expression.INTEGER(), Expression.REAL())
+      then Expression.REAL(exp1.value - exp2.value);
+
     case (Expression.INTEGER(), Expression.INTEGER())
       then Expression.INTEGER(exp1.value - exp2.value);
 
@@ -1031,6 +1048,22 @@ algorithm
         Array.threadMap(exp1.elements, exp2.elements, evalBinarySub),
         literal = true);
 
+    // technically the following two are incorrect because they need element wise addition
+    // but the backend can create these and immediately tries to evaluate them.
+    // kabdelhak: instead of fixing the operators we will just allow this to be immediately evaluated
+    case (Expression.ARRAY(), _)
+      then Expression.makeArray(exp1.ty,
+        Array.map(exp1.elements, function evalBinarySub(exp2 = exp2)),
+        literal = exp1.literal);
+    case (_, Expression.ARRAY())
+      then Expression.makeArray(exp2.ty,
+        Array.map(exp2.elements, function evalBinarySub(exp1 = exp1)),
+        literal = exp2.literal);
+
+    // first element is subtracted from nothing. To make sure the right typing is used
+    case (Expression.EMPTY(), _) then evalBinarySub(Expression.makeZero(Expression.typeOf(exp2)), exp2);
+    case (_, Expression.EMPTY()) then exp1;
+
     else
       algorithm
         exp := Expression.BINARY(exp1, Operator.makeSub(Type.UNKNOWN()), exp2);
@@ -1040,12 +1073,38 @@ algorithm
   end match;
 end evalBinarySub;
 
+function evalMultaryAddSub
+  input list<Expression> arguments;
+  input list<Expression> inv_arguments;
+  input Type operator_ty;
+  output Expression exp = Expression.EMPTY(operator_ty);
+algorithm
+  // add up all arguments
+  for arg in arguments loop
+    exp := evalBinaryAdd(exp, arg);
+  end for;
+
+  // subtract all inverse arguments
+  for arg in inv_arguments loop
+    exp := evalBinarySub(exp, arg);
+  end for;
+
+  // fix expression if its still empty at the end
+  exp := if Expression.isEmpty(exp) then Expression.makeZero(operator_ty) else exp;
+end evalMultaryAddSub;
+
 function evalBinaryMul
   input Expression exp1;
   input Expression exp2;
   output Expression exp;
 algorithm
   exp := match (exp1, exp2)
+    // while technically not allowed to mix integers and reals, it occurs when solving in the new backend
+    case (Expression.REAL(), Expression.INTEGER())
+      then Expression.REAL(exp1.value * exp2.value);
+    case (Expression.INTEGER(), Expression.REAL())
+      then Expression.REAL(exp1.value * exp2.value);
+
     case (Expression.INTEGER(), Expression.INTEGER())
       then Expression.INTEGER(exp1.value * exp2.value);
 
@@ -1057,6 +1116,22 @@ algorithm
       then Expression.makeArray(exp1.ty,
         Array.threadMap(exp1.elements, exp2.elements, evalBinaryMul),
         literal = true);
+
+    // technically the following two are incorrect because they need element wise addition
+    // but the backend can create these and immediately tries to evaluate them.
+    // kabdelhak: instead of fixing the operators we will just allow this to be immediately evaluated
+    case (Expression.ARRAY(), _)
+      then Expression.makeArray(exp1.ty,
+        Array.map(exp1.elements, function evalBinaryMul(exp2 = exp2)),
+        literal = exp1.literal);
+    case (_, Expression.ARRAY())
+      then Expression.makeArray(exp2.ty,
+        Array.map(exp2.elements, function evalBinaryMul(exp1 = exp1)),
+        literal = exp2.literal);
+
+    // first element is multiplied to nothing. To make sure the right typing is used
+    case (Expression.EMPTY(), _) then exp2;
+    case (_, Expression.EMPTY()) then exp1;
 
     else
       algorithm
@@ -1074,6 +1149,13 @@ function evalBinaryDiv
   output Expression exp;
 algorithm
   exp := match (exp1, exp2)
+    // while technically not allowed to devide integers, it occurs when solving in the new backend
+    case (_, Expression.INTEGER(1)) then exp1;
+    case (Expression.REAL(), Expression.INTEGER()) then Expression.REAL(exp1.value / exp2.value);
+    case (Expression.INTEGER(), Expression.REAL()) then Expression.REAL(exp1.value / exp2.value);
+    case (Expression.INTEGER(), Expression.INTEGER()) then
+      if intMod(exp1.value, exp2.value) == 0 then Expression.INTEGER(intDiv(exp1.value, exp2.value)) else Expression.REAL(exp1.value / exp2.value);
+
     case (_, Expression.REAL(0.0))
       algorithm
         if EvalTarget.hasInfo(target) then
@@ -1095,6 +1177,22 @@ algorithm
         Array.threadMap(exp1.elements, exp2.elements, function evalBinaryDiv(target = target)),
         literal = true);
 
+    // technically the following two are incorrect because they need element wise addition
+    // but the backend can create these and immediately tries to evaluate them.
+    // kabdelhak: instead of fixing the operators we will just allow this to be immediately evaluated
+    case (Expression.ARRAY(), _)
+      then Expression.makeArray(exp1.ty,
+        Array.map(exp1.elements, function evalBinaryDiv(exp2 = exp2, target = target)),
+        literal = exp1.literal);
+    case (_, Expression.ARRAY())
+      then Expression.makeArray(exp2.ty,
+        Array.map(exp2.elements, function evalBinaryDiv(exp1 = exp1, target = target)),
+        literal = exp2.literal);
+
+    // first element is divided from nothing. To make sure the right typing is used
+    case (Expression.EMPTY(), _) then evalBinaryDiv(Expression.makeOne(Expression.typeOf(exp2)), exp2, target);
+    case (_, Expression.EMPTY()) then exp1;
+
     else
       algorithm
         exp := Expression.BINARY(exp1, Operator.makeDiv(Type.UNKNOWN()), exp2);
@@ -1103,6 +1201,26 @@ algorithm
         fail();
   end match;
 end evalBinaryDiv;
+
+function evalMultaryMulDiv
+  input list<Expression> arguments;
+  input list<Expression> inv_arguments;
+  input Type operator_ty;
+  output Expression exp = Expression.EMPTY(operator_ty);
+algorithm
+  // multiply all arguments
+  for arg in arguments loop
+    exp := evalBinaryMul(exp, arg);
+  end for;
+
+  // divide all inverse arguments
+  for arg in inv_arguments loop
+    exp := evalBinaryDiv(exp, arg, noTarget);
+  end for;
+
+  // fix expression if its still empty at the end
+  exp := if Expression.isEmpty(exp) then Expression.makeOne(operator_ty) else exp;
+end evalMultaryMulDiv;
 
 function evalBinaryPow
   input Expression exp1;
@@ -1973,7 +2091,6 @@ algorithm
     case "realClock" then evalRealClock(args);
     case "booleanClock" then evalBooleanClock(args);
     case "solverClock" then evalSolverClock(args);
-    case "getInstanceName" then evalGetInstanceName(listHead(args));
     case "$OMC$PositiveMax" then evalPositiveMax(listGet(args,1),listGet(args,2));
     case "$OMC$inStreamDiv" then listHead(args);
     else
@@ -3101,16 +3218,13 @@ algorithm
 end evalSolverClock;
 
 public function evalGetInstanceName
-  input Expression scopeArg;
+  input InstNode scope;
   output Expression result;
-protected
-  ComponentRef cref;
 algorithm
   // getInstanceName is normally evaluated by the flattening, but we might get
   // here when getInstanceName is used in e.g. a package. In that case use the
-  // scope that was added as an argument during the typing.
-  cref := Expression.toCref(scopeArg);
-  result := Expression.STRING(AbsynUtil.pathString(InstNode.rootPath(ComponentRef.node(cref))));
+  // scope that was saved during the typing.
+  result := Expression.STRING(AbsynUtil.pathString(InstNode.rootPath(scope)));
 end evalGetInstanceName;
 
 protected function evalArrayConstructor

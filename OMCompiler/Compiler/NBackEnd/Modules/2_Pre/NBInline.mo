@@ -243,7 +243,7 @@ public
       case (node, range as Expression.ARRAY()) algorithm
         node2   := InstNode.newIterator("$" + InstNode.name(node), Type.INTEGER(), sourceInfo());
         range2  := Expression.makeRange(Expression.INTEGER(1), NONE(), Expression.INTEGER(Type.sizeOf(Expression.typeOf(range))));
-        map     := Iterator.fromFrames({(ComponentRef.makeIterator(node, Type.INTEGER()), range, NONE())});
+        map     := Iterator.fromFrames({(ComponentRef.makeIterator(node, Type.arrayElementType(Expression.typeOf(range))), range, NONE())});
 
         // create the new iterator variable
         iter_cref := ComponentRef.makeIterator(node2, Type.INTEGER());
@@ -328,6 +328,7 @@ protected
     end if;
   end inlineRecordsTuplesArrays;
 
+public
   function inlineRecordTupleArrayEquation
     input output Equation eqn;
     input Iterator iter;
@@ -365,12 +366,12 @@ protected
 
         // CREF = {...} array equation
         case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.ARRAY()) algorithm
-          elements := list(NFExpression.applySubscripts({Subscript.INDEX(Expression.INTEGER(i))}, lhs) for i in 1:arrayLength(rhs.elements));
+          elements := list(NFExpression.applySubscripts({Subscript.INDEX(Expression.INTEGER(i))}, lhs, true) for i in 1:arrayLength(rhs.elements));
         then inlineArrayEquation(eqn, listArray(elements), rhs.elements, eqn.attr, iter, variables, new_eqns, set, index);
 
         // {...} = CREF array equation
         case Equation.ARRAY_EQUATION(lhs = lhs as Expression.ARRAY(), rhs = rhs as Expression.CREF()) algorithm
-          elements := list(NFExpression.applySubscripts({Subscript.INDEX(Expression.INTEGER(i))}, rhs) for i in 1:arrayLength(lhs.elements));
+          elements := list(NFExpression.applySubscripts({Subscript.INDEX(Expression.INTEGER(i))}, rhs, true) for i in 1:arrayLength(lhs.elements));
         then inlineArrayEquation(eqn, lhs.elements, listArray(elements), eqn.attr, iter, variables, new_eqns, set, index);
 
         // CREF = {... for i in []} array constructor equation
@@ -403,6 +404,7 @@ protected
     end try;
   end inlineRecordTupleArrayEquation;
 
+protected
   function inlineRecordTupleArrayIfEquation
     "Documentation"
     input output Equation eqn;

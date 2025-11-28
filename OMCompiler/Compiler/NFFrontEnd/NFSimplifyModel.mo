@@ -337,11 +337,9 @@ algorithm
 
     case Statement.WHEN()
       algorithm
-        stmt.branches := list(
-          (SimplifyExp.simplify(Util.tuple21(b)), simplifyStatements(Util.tuple22(b)))
-          for b in stmt.branches);
+        stmt.branches := simplifyWhenBranches(stmt.branches);
       then
-        stmt :: statements;
+        if listEmpty(stmt.branches) then statements else stmt :: statements;
 
     case Statement.ASSERT()
       algorithm
@@ -378,6 +376,23 @@ algorithm
     else stmt :: statements;
   end match;
 end simplifyStatement;
+
+function simplifyWhenBranches
+  input output list<tuple<Expression, list<Statement>>> branches;
+algorithm
+  branches := match branches
+    local
+      Expression condition;
+      list<Statement> body;
+      list<tuple<Expression, list<Statement>>> tail;
+    case (condition, body) :: tail algorithm
+      condition := SimplifyExp.simplify(condition);
+      body      := simplifyStatements(body);
+      // if the condition is a constant boolean -> skip this unreachable branch
+    then if Expression.isBoolean(condition) then simplifyWhenBranches(tail) else (condition, body) :: simplifyWhenBranches(tail);
+    else branches;
+  end match;
+end simplifyWhenBranches;
 
 function simplifyAssignment
   input Statement stmt;

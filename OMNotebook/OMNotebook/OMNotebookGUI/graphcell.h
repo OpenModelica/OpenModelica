@@ -83,7 +83,7 @@ namespace IAEX
 
     static void PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char* title, const char* grid,
                                      const char* plotType, const char* logX, const char* logY, const char* xLabel, const char* yLabel,
-                                     const char* x1, const char* x2, const char* y1, const char* y2, const char* curveWidth,
+                                     const char* xRange1, const char* xRange2, const char* yRange1, const char* yRange2, const char* curveWidth,
                                      const char* curveStyle, const char* legendPosition, const char* footer, const char* autoScale,
                                      const char* variables);
 

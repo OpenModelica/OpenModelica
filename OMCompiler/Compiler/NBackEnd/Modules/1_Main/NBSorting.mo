@@ -376,15 +376,15 @@ public
       end match;
     end toString;
 
-    function isNotArrayBucket
+    function isArrayBucket
       input SuperNode node;
       output Boolean b;
     algorithm
       b := match node
-        case ARRAY_BUCKET() then false;
-        else true;
+        case ARRAY_BUCKET() then true;
+        else false;
       end match;
-    end isNotArrayBucket;
+    end isArrayBucket;
 
     function getEqnIndices
       input SuperNode node;
@@ -524,7 +524,7 @@ public
           array<list<Integer>> m_local;
           Matching matching_local;
           Boolean indep = true;
-          UnorderedSet<Integer> vars_local;
+          array<Integer> map_back     "local to global equation indices";
           Integer eqn_arr_idx, var_arr_idx;
 
         // a single scalar equation that has nothing to do with arrays
@@ -538,9 +538,11 @@ public
         // a single array equation
         case {node as ARRAY_BUCKET()} algorithm
           // sort local system to determine in what order the equations have to be solved
-          (m_local, matching_local) := BackendUtil.getLocalSystem(m, matching, node.eqn_indices);
+          (m_local, matching_local, map_back) := BackendUtil.getLocalSystem(m, matching, node.eqn_indices);
           sorted_body_components := tarjanScalar(m_local, matching_local);
           sorted_body_indices := List.flatten(sorted_body_components);
+          sorted_body_indices := list(map_back[i] for i in sorted_body_indices);
+
           // if new strong components of size > 1 were created it is an error, this should
           // have occured in sorting phase I
           if List.compareLength(sorted_body_components, sorted_body_indices) <> 0 then
@@ -552,19 +554,19 @@ public
 
           // check for independence of the element equations
           // if locally each variable occurs in only one equation, then they are all independent
-          for i in node.eqn_indices loop
-            indep := indep and List.hasOneElement(m_local[i]);
-          end for;
+          indep := Array.all(m_local, List.hasOneElement);
+
           eqn_arr_idx := mapping.eqn_StA[listHead(node.eqn_indices)];
           var_arr_idx := mapping.var_StA[matching.eqn_to_var[listHead(node.eqn_indices)]];
         then StrongComponent.createPseudoSlice(var_arr_idx, eqn_arr_idx, node.cref_to_solve, sorted_body_indices, matching.eqn_to_var, eqns, mapping, indep);
 
         // entwined array equations
-        case _ guard(not List.any(node_comp, isNotArrayBucket)) algorithm
+        case _ guard(List.all(node_comp, isArrayBucket)) algorithm
           // sort local system to determine in what order the equations have to be solved
-          (m_local, matching_local) := BackendUtil.getLocalSystem(m, matching, List.flatten(list(getEqnIndices(n) for n in node_comp)));
+          (m_local, matching_local, map_back) := BackendUtil.getLocalSystem(m, matching, List.flatten(list(getEqnIndices(n) for n in node_comp)));
           sorted_body_components := tarjanScalar(m_local, matching_local);
           sorted_body_indices := List.flatten(sorted_body_components);
+          sorted_body_indices := list(map_back[i] for i in sorted_body_indices);
 
           if List.compareLength(sorted_body_components, sorted_body_indices) == 0 then
             // create entwined for loop if there was no algebraic loop

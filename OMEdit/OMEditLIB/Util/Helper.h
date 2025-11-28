@@ -207,6 +207,7 @@ public:
   static QString FMU;
   static QString exportt;
   static QString exportFMUTip;
+  static QString sensitivityOptimization;
   static QString exportReadonlyPackage;
   static QString exportRealonlyPackageTip;
   static QString exportEncryptedPackage;
@@ -431,6 +432,7 @@ public:
   static QString moveDown;
   static QString fixErrorsManually;
   static QString revertToLastCorrectVersion;
+  static QString saveWithErrors;
   static QString translationFlagsTip;
   static QString saveExperimentAnnotation;
   static QString saveOpenModelicaSimulationFlagsAnnotation;

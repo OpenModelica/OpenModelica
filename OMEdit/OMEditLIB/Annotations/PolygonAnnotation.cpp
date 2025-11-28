@@ -130,8 +130,9 @@ void PolygonAnnotation::parseShapeAnnotation(QString annotation)
 
 void PolygonAnnotation::parseShapeAnnotation()
 {
-  GraphicItem::parseShapeAnnotation(mpPolygon);
-  FilledShape::parseShapeAnnotation(mpPolygon);
+  GraphicsView *pGraphicsView = getContainingGraphicsView();
+  GraphicItem::parseShapeAnnotation(mpPolygon, pGraphicsView);
+  FilledShape::parseShapeAnnotation(mpPolygon, pGraphicsView);
 
   mPoints = mpPolygon->getPoints();
   /* The polygon is automatically closed, if the first and the last points are not identical. */
@@ -146,9 +147,9 @@ void PolygonAnnotation::parseShapeAnnotation()
       mPoints.append(mPoints.at(0));
     }
   }
-  mPoints.evaluate(mpPolygon->getParentModel());
+  mPoints.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mSmooth = mpPolygon->getSmooth();
-  mSmooth.evaluate(mpPolygon->getParentModel());
+  mSmooth.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
 }
 
 QPainterPath PolygonAnnotation::getShape() const

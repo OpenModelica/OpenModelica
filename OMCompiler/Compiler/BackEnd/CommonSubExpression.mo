@@ -66,6 +66,7 @@ import List;
 import ResolveLoops;
 import StringUtil;
 import Types;
+import UnorderedSet;
 
 uniontype CSE_Equation
   record CSE_EQUATION
@@ -407,7 +408,7 @@ algorithm
       id2 := BaseHashTable.get(call, ht);
       CSE_EQUATION(cse=cse2, call=call2, dependencies=dependencies2) := ExpandableArray.get(id2, exarray);
       cse2 := mergeCSETuples(cse, cse2);
-      ExpandableArray.update(id2, CSE_EQUATION(cse2, call, List.unique(listAppend(dependencies,dependencies2))), exarray);
+      ExpandableArray.update(id2, CSE_EQUATION(cse2, call, UnorderedSet.unique_list(listAppend(dependencies,dependencies2), Util.id, intEq)), exarray);
       ExpandableArray.update(id, CSE_EQUATION(cse, cse2, {}), exarray);
 
 
@@ -2028,7 +2029,6 @@ protected function commonSubExpressionFind
 protected
   Integer numVars;
   list<Integer> eqIdcs, varIdcs,lengthLst, range;
-  list<list<Integer>> arrLst;
   list<list<Integer>> partitions;
   BackendDAE.Variables vars, linPathVars;
   BackendDAE.EquationArray eqs;
@@ -2042,15 +2042,14 @@ protected
 algorithm
   try
     range := List.intRange(arrayLength(mIn));
-    arrLst := arrayList(mIn);
-    lengthLst := List.map(arrLst, listLength);
+    lengthLst := List.mapArray(mIn, listLength);
 
     // check for CSE of length 1 (all eqs with 2 variables)
       //print("CHECK FOR CSE 2\n");
     (_, eqIdcs) := List.filter1OnTrueSync(lengthLst, intEq, 2, range);
     (eqLst, eqIdcs) := List.filterOnTrueSync(BackendEquation.getList(eqIdcs, eqsIn),BackendEquation.isNotAlgorithm,eqIdcs); // no algorithms
     eqs := BackendEquation.listEquation(eqLst);
-    varIdcs := List.unique(List.flatten(List.map1(eqIdcs, Array.getIndexFirst, mIn)));
+    varIdcs := UnorderedSet.unique_list(List.flatten(List.map1(eqIdcs, Array.getIndexFirst, mIn)), Util.id, intEq);
     varLst := List.map1(varIdcs, BackendVariable.getVarAtIndexFirst, varsIn);
     //(varLst,varIdcs) := List.filterOnTrueSync(varLst,BackendVariable.isVarNonDiscrete,varIdcs);// no discrete vars
     vars := BackendVariable.listVar1(varLst);
@@ -2062,7 +2061,7 @@ algorithm
         //varAtts := List.threadMap(List.fill(false, listLength(varIdcs)), List.fill("", listLength(varIdcs)), Util.makeTuple);
         //eqAtts := List.threadMap(List.fill(false, listLength(eqIdcs)), List.fill("", listLength(eqIdcs)), Util.makeTuple);
         //BackendDump.dumpBipartiteGraphStrongComponent2(vars, eqs, m, varAtts, eqAtts, "CSE2_"+intString(arrayLength(mIn)));
-    partitions := arrayList(ResolveLoops.partitionBipartiteGraph(m, mT));
+    partitions := ResolveLoops.partitionBipartiteGraph(m, mT);
     partitions := List.filterOnFalse(partitions,listEmpty);
         //print("the partitions for system  : \n"+stringDelimitList(List.map(partitions, HpcOmTaskGraph.intLstString), "\n")+"\n");
     cseLst2 := List.fold(partitions, function getCSE2(m=m, mT=mT, vars=vars, eqs=eqs, eqMap=eqIdcs, varMap=varIdcs), {});
@@ -2089,7 +2088,7 @@ algorithm
         //varAtts := List.threadMap(List.fill(false, listLength(varIdcs)), List.fill("", listLength(varIdcs)), Util.makeTuple);
         //eqAtts := List.threadMap(List.fill(false, listLength(eqIdcs)), List.fill("", listLength(eqIdcs)), Util.makeTuple);
         //BackendDump.dumpBipartiteGraphStrongComponent2(vars, eqs, m, varAtts, eqAtts, "CSE3_"+intString(arrayLength(mIn)));
-    partitions := arrayList(ResolveLoops.partitionBipartiteGraph(m, mT));
+    partitions := ResolveLoops.partitionBipartiteGraph(m, mT);
         //print("the partitions for system  : \n"+stringDelimitList(List.map(partitions, HpcOmTaskGraph.intLstString), "\n")+"\n");
     cseLst3 := List.fold(partitions, function getCSE3(m=m, mT=mT, vars=vars, eqs=eqs, eqMap=eqIdcs, varMap=varIdcs), {});
     cseOut := listAppend(cseLst2, listAppend(cseLst3,shortenPathsCSE));
@@ -2115,11 +2114,10 @@ author:Waurich TUD 2016-05"
   output list<CommonSubExp> cseOut;
 protected
   BackendDAE.AdjacencyMatrix m, mT;
-  BackendDAE.AdjacencyMatrixEnhanced me,meT;
   BackendDAE.EqSystem eqSys;
   BackendDAE.Variables vars, pathVars;
   list<BackendDAE.Var> varLst;
-  list<BackendDAE.Equation> eqLst, eqLst_all;
+  list<BackendDAE.Equation> eqLst;
   BackendDAE.EquationArray eqs;
   list<tuple<Boolean, String>> varAtts, eqAtts;
   Integer numVars, varIdx;
@@ -2130,18 +2128,17 @@ algorithm
   try
     // getall vars with only 2 adjacent equations
     numVars := BackendVariable.varsSize(allVars);
-    (_, pathVarIdcs) := List.filter1OnTrueSync(List.map(arrayList(mTIn), listLength), intEq, 2, List.intRange(numVars));
+    (_, pathVarIdcs) := List.filter1OnTrueSync(List.mapArray(mTIn, listLength), intEq, 2, List.intRange(numVars));
     pathVars := BackendVariable.listVar1(List.map1(pathVarIdcs, BackendVariable.getVarAtIndexFirst, allVars));
     pathVarIdxMap := listArray(List.map1(pathVarIdcs,Array.getIndexFirst,varMap));
     cses := cseIn;
-    eqLst_all := BackendEquation.equationList(allEqs);
     if BackendVariable.varsSize(pathVars) > 0 then
       for partition in allPartitions loop
         //print("partition "+stringDelimitList(List.map(partition, intString), ", ")+"\n");
         //print("pathVarIdxMap "+stringDelimitList(List.map(List.map1(pathVarIdcs,Array.getIndexFirst,varMap), intString), ", ")+"\n");
 
         //get only the partition equations
-        eqLst := List.map1(partition,List.getIndexFirst,eqLst_all);
+        eqLst := list(BackendEquation.get(allEqs, i) for i in partition);
         eqs := BackendEquation.listEquation(eqLst);
 
         eqSys := BackendDAEUtil.createEqSystem(pathVars, eqs);
@@ -2154,7 +2151,7 @@ algorithm
           //BackendDump.dumpBipartiteGraphStrongComponent2(pathVars, eqs, m, varAtts, eqAtts, "shortenPaths"+stringDelimitList(List.map(partition,intString),"_"));
 
        for idx in 1:arrayLength(mT) loop
-         adjEqs := arrayGet(mT,idx);
+         adjEqs := MetaModelica.Dangerous.arrayGetNoBoundsChecking(mT,idx);
 
          if listLength(adjEqs)==2 then
          //print("varIdx1 "+intString(varIdx)+"\n");

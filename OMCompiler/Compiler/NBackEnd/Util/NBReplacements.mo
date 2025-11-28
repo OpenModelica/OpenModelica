@@ -124,7 +124,7 @@ public
         (solvedEq, _, status, _) := Solve.solveBody(Pointer.access(comp.eqn), varName, FunctionTreeImpl.EMPTY());
         if status == NBSolve.Status.EXPLICIT then
           // apply all previous replacements on the RHS
-          replace_exp := Equation.getRHS(solvedEq);
+          SOME(replace_exp) := Equation.getRHS(solvedEq);
           replace_exp := Expression.map(replace_exp, function applySimpleExp(replacements = replacements));
           replace_exp := SimplifyExp.simplifyDump(replace_exp, true, getInstanceName());
           // add the new replacement rule
@@ -178,7 +178,7 @@ public
     entries := UnorderedMap.toList(replacements);
     for entry in entries loop
       (aliasCref, replacement) := entry;
-      var_ptr := BVariable.getVarPointer(aliasCref);
+      var_ptr := BVariable.getVarPointer(aliasCref, sourceInfo());
       var := Pointer.access(var_ptr);
       var.binding := Binding.update(var.binding, replacement);
       Pointer.update(var_ptr, var);
@@ -243,7 +243,7 @@ public
   algorithm
     cref := UnorderedMap.get(BVariable.getVarName(var_ptr), replacements);
     if Util.isSome(cref) then
-      var_ptr := BVariable.getVarPointer(Util.getOption(cref));
+      var_ptr := BVariable.getVarPointer(Util.getOption(cref), sourceInfo());
     end if;
   end replaceVarPtr;
 
@@ -286,7 +286,7 @@ public
     input VariablePointers variables;
     input UnorderedMap<Absyn.Path, Function> replacements;
   algorithm
-        // do nothing if replacements are empty
+    // do nothing if replacements are empty
     if UnorderedMap.isEmpty(replacements) then return; end if;
     eqData := EqData.mapExp(eqData, function applyFuncExp(replacements = replacements, variables = variables));
   end replaceFunctions;
@@ -321,7 +321,7 @@ public
 
         // add replacement rules for local (protected) variables
         for local_node in fn.locals loop
-          local_cref    := ComponentRef.fromNode(local_node, InstNode.getType(local_node));
+          local_cref      := ComponentRef.fromNode(local_node, InstNode.getType(local_node));
           binding_exp_opt := InstNode.getBindingExpOpt(local_node);
           if Util.isSome(binding_exp_opt) then
             // replace binding expression with already gathered input replacements
@@ -342,7 +342,7 @@ public
           body_exp := Typing.typeExp(body_exp, NFInstContext.RHS, sourceInfo(), true);
         end if;
         body_exp := SimplifyExp.combineBinaries(body_exp);
-        body_exp := SimplifyExp.simplifyDump(body_exp, true, getInstanceName(), "\n");
+        body_exp := SimplifyExp.simplifyDump(body_exp, true, getInstanceName());
 
         if Flags.isSet(Flags.DUMPBACKENDINLINE) then
           print("[" + getInstanceName() + "] Inlining: " + Expression.toString(exp) + "\n");

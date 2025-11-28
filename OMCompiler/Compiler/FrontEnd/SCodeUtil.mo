@@ -327,6 +327,18 @@ algorithm
   end match;
 end elementInfo;
 
+function setElementName
+  input output SCode.Element e;
+  input String name;
+algorithm
+  e := match e
+    case SCode.CLASS()      algorithm e.name := name; then e;
+    case SCode.COMPONENT()  algorithm e.name := name; then e;
+    case SCode.DEFINEUNIT() algorithm e.name := name; then e;
+    else e;
+  end match;
+end setElementName;
+
 function elementName ""
   input SCode.Element e;
   output String s;
@@ -1084,6 +1096,11 @@ algorithm
         true = elementEqual(elt1, elt2);
       then
         true;
+
+    case (SCode.BREAK_COMPONENT(), SCode.BREAK_COMPONENT()) then true;
+
+    case (SCode.BREAK_CONNECT(), SCode.BREAK_CONNECT())
+      then AbsynUtil.crefEqual(mod1.lhs, mod2.lhs) and AbsynUtil.crefEqual(mod1.rhs, mod2.lhs);
 
     else false;
 
@@ -3536,6 +3553,8 @@ algorithm
 
     case SCode.MOD(info = info) then info;
     case SCode.REDECL(element = el) then elementInfo(el);
+    case SCode.BREAK_COMPONENT() then inMod.info;
+    case SCode.BREAK_CONNECT() then inMod.info;
     else AbsynUtil.dummyInfo;
   end match;
 end getModifierInfo;
@@ -4299,6 +4318,37 @@ algorithm
     else false;
   end match;
 end isRedeclareSubMod;
+
+public function isBreakSubMod
+  input SCode.SubMod subMod;
+  output Boolean isBreak;
+algorithm
+  isBreak := match subMod.mod
+    case SCode.Mod.BREAK_COMPONENT() then true;
+    case SCode.Mod.BREAK_CONNECT() then true;
+    else false;
+  end match;
+end isBreakSubMod;
+
+public function isBreakComponentSubMod
+  input SCode.SubMod subMod;
+  output Boolean isBreak;
+algorithm
+  isBreak := match subMod
+    case SCode.NAMEMOD(mod = SCode.Mod.BREAK_COMPONENT()) then true;
+    else false;
+  end match;
+end isBreakComponentSubMod;
+
+public function isBreakConnectSubMod
+  input SCode.SubMod subMod;
+  output Boolean isBreak;
+algorithm
+  isBreak := match subMod
+    case SCode.NAMEMOD(mod = SCode.Mod.BREAK_CONNECT()) then true;
+    else false;
+  end match;
+end isBreakConnectSubMod;
 
 public function componentMod
   input SCode.Element inElement;

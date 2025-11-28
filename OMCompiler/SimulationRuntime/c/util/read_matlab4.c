@@ -55,7 +55,17 @@ typedef struct {
 static const char *binTrans_char = "binTrans";
 static const char *binNormal_char = "binNormal";
 
-/* strcmp ignore whitespace */
+/**
+ * @brief Compare two null-terminated strings while ignoring whitespace.
+ *
+ * This comparison advances over any whitespace characters in either
+ * string before comparing the next non-whitespace character. It is
+ * useful for comparing variable names where spacing may differ.
+ *
+ * @param a First null-terminated string.
+ * @param b Second null-terminated string.
+ * @return 0 if equal when ignoring whitespace, >0 if a>b, <0 if a<b.
+ */
 static OMC_INLINE int strcmp_iws(const char *a, const char *b)
 {
   while (*a && *b) {
@@ -76,6 +86,17 @@ static OMC_INLINE int strcmp_iws(const char *a, const char *b)
   return *a == *b ? 0 : (*a ? 1 : -1);
 }
 
+/**
+ * @brief Comparator wrapper used for sorting/searching Modelica variables.
+ *
+ * Compares two ModelicaMatVariable_t objects by their name fields using
+ * whitespace-ignoring comparison (`strcmp_iws`). This function is suitable
+ * for use with `qsort` and `bsearch`.
+ *
+ * @param a Pointer to the first ModelicaMatVariable_t.
+ * @param b Pointer to the second ModelicaMatVariable_t.
+ * @return See `strcmp_iws`: 0 if equal, >0 if a>b, <0 if a<b.
+ */
 int omc_matlab4_comp_var(const void *a, const void *b)
 {
   char *as = ((ModelicaMatVariable_t*)a)->name;
@@ -84,6 +105,15 @@ int omc_matlab4_comp_var(const void *a, const void *b)
   return strcmp_iws(as,bs);
 }
 
+/**
+ * @brief Determine the byte-length of an element from MATLAB v4 type code.
+ *
+ * The MATLAB v4 matrix type encodes element size and format. This helper
+ * extracts the relevant fields and returns the element length in bytes.
+ *
+ * @param type MATLAB v4 matrix type code.
+ * @return Element length in bytes on success, or -1 if unsupported/invalid.
+ */
 int mat_element_length(int type)
 {
   int m = (type/1000);
@@ -106,7 +136,14 @@ int mat_element_length(int type)
   }
 }
 
-/* Do not double-free this :) */
+/**
+ * @brief Free resources held by a ModelicaMatReader.
+ *
+ * Frees any allocated memory and closes the file associated with `reader`.
+ * After this call the contents of `reader` should not be accessed.
+ *
+ * @param reader Pointer to an initialized ModelicaMatReader.
+ */
 void omc_free_matlab4_reader(ModelicaMatReader *reader)
 {
   unsigned int i;
@@ -141,6 +178,15 @@ void omc_free_matlab4_reader(ModelicaMatReader *reader)
   }
 }
 
+/**
+ * @brief Trim leading and trailing whitespace in-place.
+ *
+ * Modifies the provided C string by removing leading and trailing
+ * whitespace characters. The operation moves characters forward when
+ * needed and ensures the result is null-terminated.
+ *
+ * @param str Null-terminated string to trim (modified in-place).
+ */
 void trimWhitespace(char *str)
 {
   char *start = str;
@@ -164,7 +210,20 @@ void trimWhitespace(char *str)
   }
 }
 
-/* Read n elements into str; convert from double if necessary, etc */
+/**
+ * @brief Read character data from a MATLAB v4 matrix into a buffer.
+ *
+ * Depending on the encoded precision in `type`, elements may be stored as
+ * doubles or as bytes. If stored as doubles they will be converted to
+ * characters by casting. The function attempts to read exactly `n`
+ * elements into `str`.
+ *
+ * @param type MATLAB v4 matrix type code.
+ * @param n Number of elements to read.
+ * @param file Open FILE pointer positioned at the matrix payload.
+ * @param str Destination buffer with space for at least `n` bytes.
+ * @return 0 on success, non-zero on read/format error.
+ */
 static int read_chars(int type, size_t n, FILE *file, char *str)
 {
   int p = (type%100)/10;
@@ -184,6 +243,18 @@ static int read_chars(int type, size_t n, FILE *file, char *str)
   return 1;
 }
 
+/**
+ * @brief Read 32-bit integer data from a MATLAB v4 matrix into an array.
+ *
+ * If the stored element type is double, values are read as doubles and
+ * converted to int32_t. If stored as int32 they are read directly.
+ *
+ * @param type MATLAB v4 matrix type code.
+ * @param n Number of integers to read.
+ * @param file Open FILE pointer positioned at the matrix payload.
+ * @param val Destination array of at least `n` int32_t elements.
+ * @return 0 on success, non-zero on read/format error.
+ */
 static int read_int32(int type, size_t n, FILE *file, int32_t *val)
 {
   int p = (type%100)/10;
@@ -203,6 +274,19 @@ static int read_int32(int type, size_t n, FILE *file, int32_t *val)
   return 1;
 }
 
+/**
+ * @brief Read floating point (double/float) data from a MATLAB v4 matrix.
+ *
+ * If the stored precision is double the function reads doubles directly.
+ * If the stored precision is float the values are read as floats and cast
+ * to double in the destination array.
+ *
+ * @param type MATLAB v4 matrix type code.
+ * @param n Number of floating point elements to read.
+ * @param file Open FILE pointer positioned at the matrix payload.
+ * @param val Destination array of at least `n` doubles.
+ * @return 0 on success, non-zero on read/format error.
+ */
 static int read_double(int type, size_t n, FILE *file, double *val)
 {
   int p = (type%100)/10;
@@ -225,8 +309,30 @@ static int read_double(int type, size_t n, FILE *file, double *val)
   return 1;
 }
 
-
-/* Returns 0 on success; the error message on error */
+/**
+ * @brief Open and parse a MATLAB v4 file into a ModelicaMatReader.
+ *
+ * This function opens `filename`, validates that it contains the expected
+ * set of MATLAB v4 matrices for OpenModelica (`Aclass`, `name`,
+ * `description`, `dataInfo`, `data_1`, `data_2`) and populates the
+ * provided `reader` structure with metadata and file offsets for later
+ * value reads. The reader is initialized (zeroed) by this call.
+ *
+ * The function uses a subset of MATLAB v4 files accepted by OpenModelica
+ * and will return a textual error describing the first problem found.
+ *
+ * #### Notes:
+ *
+ * The internal data is free'd by `omc_free_matlab4_reader`.
+ * The data persists until free'd, and is safe to use in your own data
+ * structures.
+ *
+ * @param filename Path to the MATLAB v4 file to open (must be readable).
+ * @param reader Pointer to an allocated ModelicaMatReader that will be
+ *               initialized by this function.
+ * @return 0 on success, or a pointer to a static error string on failure.
+ *         The returned string should not be freed by the caller.
+ */
 const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *reader)
 {
   const int nMatrix=6;
@@ -494,6 +600,19 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
   return 0;
 }
 
+/**
+ * @brief Convert an OpenModelica variable name into Dymola "der" style.
+ *
+ * If `varName` contains a dot and is of the form "der(X.Y)" in Dymola
+ * style, this function returns a malloc'd string with the converted
+ * representation. If no conversion is needed the function returns NULL.
+ *
+ * Caller must free the returned string when non-NULL.
+ *
+ * @param varName Input variable name.
+ * @return Newly allocated converted name, or NULL if no conversion was
+ *         necessary or on allocation failure.
+ */
 static char* dymolaStyleVariableName(const char *varName)
 {
   int len,is_der=0==strncmp("der(", varName, 4);
@@ -520,6 +639,17 @@ static char* dymolaStyleVariableName(const char *varName)
   return res;
 }
 
+/**
+ * @brief Convert a Dymola-style variable name into OpenModelica style.
+ *
+ * Transforms occurrences where the derivative is expressed at the end of
+ * the name (e.g. "x.der(y)") into OpenModelica's "der(x.y)" style.
+ * Returns a malloc'd string on success or NULL if no transformation is
+ * necessary. Caller must free the returned string.
+ *
+ * @param varName Input variable name.
+ * @return Newly allocated converted name or NULL.
+ */
 char* openmodelicaStyleVariableName(const char *varName)
 {
   int len;
@@ -540,6 +670,19 @@ char* openmodelicaStyleVariableName(const char *varName)
   return res;
 }
 
+/**
+ * @brief Find a variable by name in the reader's variable metadata.
+ *
+ * Performs a binary search (via `bsearch`) over the sorted variable list
+ * and tries a few name conversion fallbacks if the direct lookup fails:
+ * - checks for "time"/"Time" aliases
+ * - attempts Dymola/OpenModelica style conversions
+ *
+ * @param reader Pointer to an initialized ModelicaMatReader.
+ * @param varName Null-terminated variable name to search for.
+ * @return Pointer to the matching ModelicaMatVariable_t in `reader->allInfo`,
+ *         or NULL if not found.
+ */
 ModelicaMatVariable_t *omc_matlab4_find_var(ModelicaMatReader *reader, const char *varName)
 {
   ModelicaMatVariable_t key;
@@ -573,7 +716,22 @@ ModelicaMatVariable_t *omc_matlab4_find_var(ModelicaMatReader *reader, const cha
   return res;
 }
 
-/* Writes the number of values in the returned array if nvals is non-NULL */
+/**
+ * @brief Read (or lazily load) the full time series for a variable.
+ *
+ * If the requested variable's data has not been loaded yet this function
+ * reads the column from the file, converts if necessary and stores it in
+ * the reader cache (`reader->vars`). The `varIndex` follows the file
+ * convention where negative indices refer to the negative alias of a
+ * variable (i.e. sign-inverted values).
+ *
+ * @param reader Pointer to an initialized ModelicaMatReader.
+ * @param varIndex 1-based variable index; negative values select the
+ *                 negative alias of the variable.
+ * @return Pointer to an array of `reader->nrows` doubles containing the
+ *         time series for the variable, or NULL on failure or if there are
+ *         no rows.
+ */
 double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex)
 {
   size_t absVarIndex = abs(varIndex);
@@ -631,6 +789,17 @@ double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex)
   return reader->vars[ix];
 }
 
+/**
+ * @brief In-place transpose of a w-by-h matrix stored in row-major order.
+ *
+ * The algorithm performs the transpose without allocating a separate
+ * buffer. The matrix is assumed to be stored contiguous in `m` with
+ * dimensions w (width) and h (height).
+ *
+ * @param m Pointer to the matrix data (length w*h).
+ * @param w Width (number of columns) of the original matrix.
+ * @param h Height (number of rows) of the original matrix.
+ */
 void matrix_transpose(double *m, int w, int h)
 {
   int start;
@@ -653,6 +822,14 @@ void matrix_transpose(double *m, int w, int h)
   }
 }
 
+/**
+ * @brief In-place transpose for a uint32_t matrix (same semantics as
+ *        matrix_transpose).
+ *
+ * @param m Pointer to the uint32_t matrix data (length w*h).
+ * @param w Width (number of columns) of the original matrix.
+ * @param h Height (number of rows) of the original matrix.
+ */
 void matrix_transpose_uint32(uint32_t *m, int w, int h)
 {
   int start;
@@ -675,6 +852,16 @@ void matrix_transpose_uint32(uint32_t *m, int w, int h)
   }
 }
 
+/**
+ * @brief Read all variable values from the file into memory.
+ *
+ * Allocates buffers for all variables and reads the entire data block
+ * from disk. After a successful call all `reader->vars[i]` pointers will
+ * be non-NULL and `reader->readAll` will be set.
+ *
+ * @param reader Pointer to an initialized ModelicaMatReader.
+ * @return 0 on success, 1 on failure (allocation or read error).
+ */
 int omc_matlab4_read_all_vals(ModelicaMatReader *reader)
 {
   int done = reader->readAll;
@@ -722,6 +909,20 @@ int omc_matlab4_read_all_vals(ModelicaMatReader *reader)
   return 0;
 }
 
+/**
+ * @brief Read a single value for a variable at a specific time index.
+ *
+ * If the variable has been cached in memory the value is read from the
+ * cache. Otherwise the function seeks to the appropriate file position
+ * and reads either a double or float depending on `reader->doublePrecision`.
+ *
+ * @param res Output pointer where the value will be stored.
+ * @param reader Pointer to an initialized ModelicaMatReader.
+ * @param varIndex 1-based variable index; negative values select the
+ *                 negative alias of the variable.
+ * @param timeIndex Zero-based index into the time series (0..nrows-1).
+ * @return 0 on success, non-zero on failure (read error or invalid index).
+ */
 double omc_matlab4_read_single_val(double *res, ModelicaMatReader *reader, int varIndex, int timeIndex)
 {
   size_t absVarIndex = abs(varIndex);
@@ -752,6 +953,23 @@ double omc_matlab4_read_single_val(double *res, ModelicaMatReader *reader, int v
   return 0;
 }
 
+/**
+ * @brief Find the two closest points surrounding `key` in a sorted vector.
+ *
+ * Performs a binary search over `vec` (length `nelem`) which is expected
+ * to be sorted in ascending order. If an exact match is found the function
+ * returns that index in `index1`, sets `index2` to -1 and `weight1`=1.
+ * Otherwise it returns the two neighboring indices and linear
+ * interpolation weights so that value(key) = weight1 * vec[index1] + weight2 * vec[index2].
+ *
+ * @param key Value to locate.
+ * @param vec Sorted array of doubles (length `nelem`).
+ * @param nelem Number of elements in `vec`.
+ * @param index1 Output index for the right-side neighbour (or exact match).
+ * @param weight1 Output interpolation weight for index1.
+ * @param index2 Output index for the left-side neighbour, or -1 on exact match.
+ * @param weight2 Output interpolation weight for index2.
+ */
 void find_closest_points(double key, double *vec, int nelem, int *index1, double *weight1, int *index2, double *weight2)
 {
   int min = 0;
@@ -786,6 +1004,15 @@ void find_closest_points(double key, double *vec, int nelem, int *index1, double
   *weight2 = 1.0 - *weight1;
 }
 
+/**
+ * @brief Populate `reader->startTime` and `reader->stopTime` from the time column.
+ *
+ * Attempts to read the time series (variable index 1) and sets start/stop
+ * time to the first and last entry respectively. If the time vector cannot
+ * be read the function leaves the values unchanged.
+ *
+ * @param reader Pointer to an initialized ModelicaMatReader.
+ */
 static void read_start_stop_time(ModelicaMatReader *reader)
 {
   double *d = omc_matlab4_read_vals(reader, 1);
@@ -796,6 +1023,15 @@ static void read_start_stop_time(ModelicaMatReader *reader)
   reader->stopTime = d[reader->nrows-1];
 }
 
+/**
+ * @brief Get the start time of the dataset managed by `reader`.
+ *
+ * If the start time has not yet been determined this function will read
+ * the time column lazily to extract the first timestamp.
+ *
+ * @param reader Pointer to an initialized ModelicaMatReader.
+ * @return Start time as a double (NaN if unknown/unreadable).
+ */
 double omc_matlab4_startTime(ModelicaMatReader *reader)
 {
   if (reader->startTime != reader->startTime /* NaN */) {
@@ -804,6 +1040,15 @@ double omc_matlab4_startTime(ModelicaMatReader *reader)
   return reader->startTime;
 }
 
+/**
+ * @brief Get the stop time of the dataset managed by `reader`.
+ *
+ * If the stop time has not yet been determined this function will read
+ * the time column lazily to extract the last timestamp.
+ *
+ * @param reader Pointer to an initialized ModelicaMatReader.
+ * @return Stop time as a double (NaN if unknown/unreadable).
+ */
 double omc_matlab4_stopTime(ModelicaMatReader *reader)
 {
   if (reader->stopTime != reader->stopTime /* NaN */) {
@@ -812,7 +1057,19 @@ double omc_matlab4_stopTime(ModelicaMatReader *reader)
   return reader->stopTime;
 }
 
-/* Returns 0 on success */
+/**
+ * @brief Evaluate a variable (parameter or time-dependent) at a given time.
+ *
+ * If `var` represents a parameter the value is returned directly from
+ * `reader->params`. For time-dependent variables a nearest-neighbour or
+ * linear interpolation between the two surrounding time points is used.
+ *
+ * @param res Output pointer where the evaluated value will be stored.
+ * @param reader Pointer to an initialized ModelicaMatReader.
+ * @param var Pointer to the variable metadata (from `omc_matlab4_find_var`).
+ * @param time Time at which to evaluate the variable.
+ * @return 0 on success, non-zero on error (out of range, read failure).
+ */
 int omc_matlab4_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_t *var, double time)
 {
   if(var->isParam) {
@@ -850,6 +1107,28 @@ int omc_matlab4_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_
   return 0;
 }
 
+/**
+ * @brief Read multiple variables at a given time into a result array.
+ *
+ * For each variable in `vars` this function either returns the parameter
+ * value or performs interpolation from the time-series data. Results are
+ * written into the `res` array (length N).
+ *
+ * #### Note
+ *
+ * This function is not defined for parameters.
+ * Check `var->isParam` and then send the index.
+ *
+ * No bounds checking is performed.
+ * The returned data persists until the reader is closed.
+ *
+ * @param res Output array of length N where values will be stored.
+ * @param reader Pointer to an initialized ModelicaMatReader.
+ * @param vars Array of N pointers to ModelicaMatVariable_t descriptors.
+ * @param N Number of variables to read.
+ * @param time Time at which to evaluate the variables.
+ * @return 0 on success, non-zero on failure (out-of-range or read error).
+ */
 int omc_matlab4_read_vars_val(double *res, ModelicaMatReader *reader, ModelicaMatVariable_t **vars, int N, double time){
     double w1,w2,y1,y2;
     int i,i1,i2;
@@ -884,6 +1163,16 @@ int omc_matlab4_read_vars_val(double *res, ModelicaMatReader *reader, ModelicaMa
     return 0;
 }
 
+/**
+ * @brief Print all variables to file.
+ *
+ * #### Notes:
+ *
+ * For debugging purpose
+ *
+ * @param stream    Text file to write to.
+ * @param reader    Pointer to an initialized ModelicaMatReader.
+ */
 void omc_matlab4_print_all_vars(FILE *stream, ModelicaMatReader *reader)
 {
   unsigned int i;
@@ -892,56 +1181,3 @@ void omc_matlab4_print_all_vars(FILE *stream, ModelicaMatReader *reader)
     fprintf(stream, "\"%s\",", reader->allInfo[i].name);
   fprintf(stream, "}\n");
 }
-
-#if 0
-int main(int argc, char** argv)
-{
-  ModelicaMatReader reader;
-  const char *msg;
-  int i;
-  double r;
-  ModelicaMatVariable_t *var;
-  if(argc < 2) {
-    fprintf(stderr, "Usage: %s filename.mat var0 ... varn\n", *argv);
-    exit(1);
-  }
-  if(0 != (msg=omc_new_matlab4_reader(argv[1],&reader))) {
-    fprintf(stderr, "%s is not in the MATLAB4 subset accepted by OpenModelica: %s\n", argv[1], msg);
-    exit(1);
-  }
-  omc_matlab4_print_all_vars(stderr, &reader);
-  for(i=2; i<argc; i++) {
-    int printAll = *argv[i] == '.';
-    char *name = argv[i] + printAll;
-    var = omc_matlab4_find_var(&reader, name);
-    if(!var) {
-      fprintf(stderr, "%s not found\n", name);
-    } else if(printAll) {
-      int n,j;
-      if(var->isParam) {
-        fprintf(stderr, "%s is param, but tried to read all values", name);
-        continue;
-      }
-      double *vals = omc_matlab4_read_vals(&n,&reader,var->index);
-      if(!vals) {
-        fprintf(stderr, "%s = #FAILED TO READ VALS", name);
-      } else {
-        fprintf(stderr, "  allValues(%s) => {", name);
-        for(j=0; j<n; j++)
-          fprintf(stderr, "%g,", vals[j]);
-        fprintf(stderr, "}\n");
-      }
-    } else {
-      int j;
-      double ts[4] = {-1.0,0.0,0.1,1.0};
-      for(j=0; j<4; j++)
-        if(0==omc_matlab4_val(&r,&reader,var,ts[j]))
-          fprintf(stderr, "  val(\"%s\",%4g) => %g\n", name, ts[j], r);
-        else
-          fprintf(stderr, "  val(\"%s\",%4g) => fail()\n", name, ts[j]);
-    }
-  }
-  omc_free_matlab4_reader(&reader);
-  return 0;
-}
-#endif

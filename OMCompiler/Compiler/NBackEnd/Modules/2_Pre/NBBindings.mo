@@ -51,6 +51,7 @@ public
   algorithm
     bdae := match bdae
       local
+        Pointer<Equation> bind_eqn                  "binding equation";
         VarData varData                             "Data containing variable pointers";
         EqData eqData                               "Data containing equation pointers";
         list<Pointer<Variable>> bound_vars          "list of bound unknown variables";
@@ -76,10 +77,11 @@ public
           end match;
 
           if not skip_record_element then
+            bind_eqn := Equation.generateBindingEquation(var, eqData.uniqueIndex, false, new_iters);
             if BVariable.isContinuous(var, false) then
-              binding_cont := Equation.generateBindingEquation(var, eqData.uniqueIndex, false, new_iters) :: binding_cont;
+              binding_cont := bind_eqn :: binding_cont;
             else
-              binding_disc := Equation.generateBindingEquation(var, eqData.uniqueIndex, false, new_iters) :: binding_disc;
+              binding_disc := bind_eqn :: binding_disc;
             end if;
           end if;
         end for;

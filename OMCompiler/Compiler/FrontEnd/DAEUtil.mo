@@ -3129,7 +3129,7 @@ protected function verifyClockWhenEquation
 protected
   SourceInfo info;
 algorithm
-  if not isNone(ew) then
+  if isSome(ew) then
     info := ElementSource.getElementSourceFileInfo(source);
     Error.addSourceMessageAndFail(Error.ELSE_WHEN_CLOCK, {}, info);
   end if;

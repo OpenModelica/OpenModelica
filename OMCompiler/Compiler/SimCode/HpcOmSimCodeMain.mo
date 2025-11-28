@@ -631,7 +631,7 @@ algorithm
       then tmpContractedTasks;
     case(_,_,_,_,_,(bigTaskIdx, bigTaskChilds, mergedGroupExecTime),tmpContractedTasks)
       equation
-        //print("applyGRSForLevelFixSchedulerLevel:In with current group size: " + realString(mergedGroupExecTime) + " \n");
+        //print("applyGRSForLevelFixSchedulerLevel:In with current group size: " + realString(mergedGroupExecTime) + "\n");
         mergedGroupExecTime = mergedGroupExecTime + HpcOmTaskGraph.getExeCostReqCycles(arrayGet(iSortedLevelTasks, iCurrentSmallTask), iTaskGraphMeta);
         if(realGe(mergedGroupExecTime, iCriticalSize)) then
           if not listEmpty(bigTaskChilds) then
@@ -648,7 +648,7 @@ algorithm
           tmpContractedTasks = applyGRSForLevelFixSchedulerLevel(iTaskGraphMeta, iContractedTasks, iCriticalSize, iSortedLevelTasks, iCurrentSmallTask, (bigTaskIdx-1, {}, mergedGroupExecTime), tmpContractedTasks);
         else
           //print("applyGRSForLevelFixSchedulerLevel: merging small node " + intString(arrayGet(iSortedLevelTasks ,iCurrentSmallTask)) + " with big task " + intString(arrayGet(iSortedLevelTasks ,bigTaskIdx)) + "\n");
-          //print("applyGRSForLevelFixSchedulerLevel: current group size: " + realString(mergedGroupExecTime) + " \n");
+          //print("applyGRSForLevelFixSchedulerLevel: current group size: " + realString(mergedGroupExecTime) + "\n");
           //merge small and big task into one
           tmpContractedTasks = applyGRSForLevelFixSchedulerLevel(iTaskGraphMeta, iContractedTasks, iCriticalSize, iSortedLevelTasks, iCurrentSmallTask+1, (bigTaskIdx, arrayGet(iSortedLevelTasks, iCurrentSmallTask)::bigTaskChilds, mergedGroupExecTime), tmpContractedTasks);
         end if;
@@ -669,7 +669,7 @@ protected
   list<Integer> notRemovedNodes,removedNodes;
   array<list<Integer>> inComps,inCompsNew;
 algorithm
-  //print("GRS_newGraph: " + stringDelimitList(List.map(arrayList(contrTasks), intString), ",") + "\n");
+  //print("GRS_newGraph: " + stringDelimitList(List.mapArray(contrTasks, intString), ",") + "\n");
   HpcOmTaskGraph.TASKGRAPHMETA(inComps = inComps) := metaIn;
   notRemovedNodes := HpcOmTaskGraph.filterContractedNodes(List.intRange(arrayLength(graphIn)),contrTasks);
   removedNodes := HpcOmTaskGraph.filterNonContractedNodes(List.intRange(arrayLength(graphIn)),contrTasks);
@@ -1058,7 +1058,7 @@ protected
 algorithm
   BackendDAE.DAE(eqs=eqSystems, shared=shared) := dae;
   HpcOmTaskGraph.TASKGRAPHMETA(exeCosts=exeCosts) := graphData;
-  numCycles := List.map(arrayList(exeCosts),Util.tuple22);
+  numCycles := List.mapArray(exeCosts, Util.tuple22);
     print("start cost benchmark\n");
   outputTimeBenchmark2(BackendDAEUtil.getStrongComponents(listHead(eqSystems)),numCycles,eqSystems,shared,1);
     print("finish cost benchmark\n");

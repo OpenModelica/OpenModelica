@@ -194,6 +194,18 @@ public function strtokIncludingDelimiters
   external "C" strings=System_strtokIncludingDelimiters(string,token) annotation(Library = "omcruntime");
 end strtokIncludingDelimiters;
 
+public function splitOnNewline
+  "Splits a string on new lines (\n and \r\n). If includeDelimiter is true then
+   the new line delimiters are included in the list as separate tokens.
+     splitOnNewline(a\nb\r\nc) = {a, b, c}
+     splitOnNewline(a\nb\r\nc, true) = {a, \n, b, \r\n, c}"
+  input String str;
+  input Boolean includeDelimiter = false;
+  output list<String> strings;
+
+  external "C" strings=System_splitOnNewline(str, includeDelimiter) annotation(Library = "omcruntime");
+end splitOnNewline;
+
 public function setCCompiler
   input String inString;
 
@@ -1006,11 +1018,18 @@ end modelicaPlatform;
 
 public function openModelicaPlatform "
   Returns uname -sm (with spaces replaced by dashes and only lower-case letters) on Unix platforms
-  mingw32 or mingw64 is returned for OMDev mingw
+  ucrt64 or mingw32 or mingw64 is returned for OMDev mingw
   "
   output String platform;
   external "C" platform=System_openModelicaPlatform() annotation(Library = "omcruntime");
 end openModelicaPlatform;
+
+public function openModelicaPlatformAlternative "
+  in case openModelicaPlatform is ucrt64 then mingw64 is returned, else nothing
+  "
+  output String platform;
+  external "C" platform=System_openModelicaPlatformAlternative() annotation(Library = "omcruntime");
+end openModelicaPlatformAlternative;
 
 public function gccDumpMachine "
   Returns gcc -dumpmachine

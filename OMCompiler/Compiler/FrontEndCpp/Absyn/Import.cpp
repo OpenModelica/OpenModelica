@@ -30,6 +30,11 @@ MetaModelica::Value Import::toSCode() const noexcept
   });
 }
 
+const ImportPath& Import::importPath() const noexcept
+{
+  return _path;
+}
+
 std::unique_ptr<Element> Import::clone() const noexcept
 {
   return std::make_unique<Import>(*this);

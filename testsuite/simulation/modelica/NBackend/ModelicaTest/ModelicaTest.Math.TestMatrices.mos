@@ -2,7 +2,7 @@
 // keywords: NewBackend
 // status: correct
 
-loadModel(ModelicaTest);getErrorString();
+loadModel(ModelicaTest, {"4.0.0"}); getErrorString();
 setCommandLineOptions("--newBackend"); getErrorString();
 
 simulate(ModelicaTest.Math.TestMatrices); getErrorString();
@@ -21,6 +21,7 @@ diffSimulationResults("ModelicaTest.Math.TestMatrices_res.mat", "ReferenceFiles/
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "[ModelicaTest 4.0.0+maint.om/Math.mo:171:3-212:15:writable] Warning: Pure function 'ModelicaTest.Math.Matrices' contains a call to impure function 'Modelica.Utilities.Streams.print'.
+// "
 // (true, {})
 // endResult

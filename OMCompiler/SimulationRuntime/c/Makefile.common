@@ -15,7 +15,7 @@ LIBSIMULATIONFMI=libSimulationRuntimeFMI.a
 OMC_MINIMAL_RUNTIME=
 INCLUDE_NONFMI=-I. -I$(builddir_inc)/c
 
-CPPFLAGS = -I$(OMC_CONFIG_INC) -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(RYUDIR) -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(builddir_inc)/sundials/ -I$(builddir_inc)/c/suitesparse/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL -DLINK_SUNDIALS_STATIC -DWIN32_LEAN_AND_MEAN
+CPPFLAGS = -I$(OMC_CONFIG_INC) -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(RYUDIR) -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/primme-3.2.3/include -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(builddir_inc)/sundials/ -I$(builddir_inc)/c/suitesparse/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL -DLINK_SUNDIALS_STATIC -DWIN32_LEAN_AND_MEAN
 
 # If we are using the Makefiles then assume we have PThreads available.
 CPPFLAGS += -DOM_HAVE_PTHREADS
@@ -24,6 +24,10 @@ CPPFLAGS += -DOM_HAVE_PTHREADS
 # configured by autoconf.
 ifeq (MINGW,$(findstring MINGW,$(shell uname)))
 	CPPFLAGS += -DOMC_HAVE_IPOPT
+endif
+
+ifeq (MINGW,$(findstring MINGW,$(shell uname)))
+	CPPFLAGS += -DOMC_HAVE_PRIMME
 endif
 
 override CFLAGS += $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS)
@@ -56,6 +60,9 @@ CDASKRDIR=$(top_builddir)/3rdParty/Cdaskr/solver/
 CMINPACKDIR=$(top_builddir)/3rdParty/CMinpack/
 LAPACKDIR=$(top_builddir)/3rdParty/dgesv/
 RYUDIR=$(top_builddir)/3rdParty/ryu/ryu/
+IPOPTDIR := $(top_builddir)/3rdParty/moo-0.1.0/third-party/Ipopt.cmake/Ipopt/sources/src
+IPOPT_HEADERS := Interfaces Common Linalg Apps Algorithm
+IPOPT_INCLUDES := $(addprefix -I$(IPOPTDIR)/,$(IPOPT_HEADERS))
 
 RUNTIME_HEADERS = \
 ./omc_inline.h \
@@ -73,6 +80,7 @@ RUNTIMEDATARECONCILE_HEADERS = ./dataReconciliation/dataReconciliation.h
 RUNTIMEOPTIMZ_HEADERS = ./optimization/OptimizerData.h ./optimization/OptimizerLocalFunction.h ./optimization/OptimizerInterface.h
 
 RUNTIMESIMULATION_HEADERS = ./simulation/modelinfo.h \
+./simulation/arrayIndex.h \
 ./simulation/jacobian_util.h \
 ./simulation/options.h \
 ./simulation/simulation_info_json.h \
@@ -188,7 +196,8 @@ libSimulationRuntimeC.dll: $(ALL_OBJS) $(CDASKRDIR)/libcdaskr.a $(RYUDIR)/libryu
 		-L$(CDASKRDIR) -lcdaskr -L$(RYUDIR) -lryu \
 		-lklu -lumfpack -lamd -lbtf -lcolamd -lsuitesparseconfig \
 		-lsundials_cvode -lsundials_idas -lsundials_kinsol -lsundials_sunlinsolklu -lsundials_sunlinsollapackdense \
-		-lipopt -lcoinmumps -lgfortran \
+		-lipopt -ldmumps -lmumps_common -lseq -lgfortran \
+		-lprimme \
 		-llis -lcminpack -lomcgc \
 		-lopenblas -lexpat -ldbghelp -lregex -lwsock32 \
 		-Wl,--export-all-symbols,--out-implib,$@.a
@@ -280,7 +289,7 @@ $(SIMOBJSPATHC):$(BUILDPATH)/%$(OBJ_EXT): %.c $(SIMHFILESPATH) $(COMMON_HEADERS)
 
 $(OPTIMIZATIONOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(OPTIMIZATIONHFILESPATH) $(COMMON_HEADERS)
 	$(MKBUILDDIR)
-	$(CC) -c -I. -I$(builddir_inc) $(CFLAGS) -o $@ $<
+	$(CC) -c -I. $(IPOPT_INCLUDES) $(CFLAGS) -o $@ $<
 
 $(FMIOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(COMMON_HEADERS)
 	$(MKBUILDDIR)
@@ -350,21 +359,23 @@ endif
 	# copy fmi stuff
 	mkdir -p $(builddir_inc)/c/fmi-export
 	cp -p ../fmi/export/fmi/*.h $(builddir_inc)/c/fmi
-	cp -p ../fmi/export/openmodelica/*.inc ../fmi/export/openmodelica/*.h $(builddir_inc)/c/fmi-export
+	cp -p ../fmi/export/openmodelica/fmu1_model_interface.c.inc \
+	      ../fmi/export/openmodelica/fmu1_model_interface.h  $(builddir_inc)/c/fmi-export
+	cp -p ../fmi/export/openmodelica/fmu2_model_interface.c \
+	      ../fmi/export/openmodelica/fmu2_model_interface.h \
+	      ../fmi/export/openmodelica/fmu_read_flags.c \
+	      ../fmi/export/openmodelica/fmu_read_flags.h  $(builddir_inc)/c/fmi-export
 
 clean:
 	rm -rf $(ALL_PATHS_CLEAN_OBJS) fmi/*.o *.a *.so optimization/*/*.o build/
 	(! test -f $(EXTERNALCBUILDDIR)/Makefile) || make -C $(EXTERNALCBUILDDIR) clean
 	(! test -f $(EXTERNALCBUILDDIR)/Makefile) || make -C $(EXTERNALCBUILDDIR) distclean
 
-sourcedist: sourcedist1 sourcedist2 sourcedist3
+sourcedist: sourcedist1 sourcedist2
 sourcedist1:
 	$(MAKE) -f $(LIBMAKEFILE) OMC_MINIMAL_RUNTIME=1 OMC_FMI_RUNTIME=1 sourcedist_internal
 sourcedist2:
 	$(MAKE) -C ../fmi/export/buildproject -f $(defaultMakefileTarget)
-sourcedist3:
-	mkdir -p $(builddir_inc)/c/ModelicaExternalC
-	cp -p ../ModelicaExternalC/C-Sources/*.h ../ModelicaExternalC/C-Sources/*.c $(builddir_inc)/c/ModelicaExternalC
 
 # Copied files need to preserve the time-stamp or the external solvers builds
 # over and over again

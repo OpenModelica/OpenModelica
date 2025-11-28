@@ -437,7 +437,7 @@ public
             if Pointer.access(containsTime) then
               (tmpEqn, _, status, invert) := Solve.solveBody(tmpEqn, NFBuiltin.TIME_CREF, funcTree);
               if status == NBSolve.Status.EXPLICIT and invert <> NBSolve.RelationInversion.UNKNOWN then
-                trigger := Equation.getRHS(tmpEqn);
+                SOME(trigger) := Equation.getRHS(tmpEqn);
                 // only cases for RelationInversion == TRUE or FALSE can be present
                 exp.operator := if invert == NBSolve.RelationInversion.TRUE then Operator.invert(exp.operator) else exp.operator;
                 if Equation.isWhenEquation(eqn) then
@@ -491,13 +491,12 @@ public
     algorithm
       (failed, clocked) := match (AbsynUtil.pathLastIdent(Call.functionName(call)), Call.arguments(call))
         local
-          Type ty;
           Integer value;
-          Expression start, interval;
+          Expression clock, start, interval;
           TimeEvent timeEvent;
 
         // don't create samples for clocks
-        case ("sample", {_, Expression.CREF(ty = ty)}) guard(Type.isClock(ty)) then (false, true);
+        case ("sample", {_, clock})    guard(Type.isClock(Expression.typeOf(clock))) then (false, true);
 
         case ("sample", {start, interval}) algorithm
           timeEvent := SAMPLE(UnorderedSet.size(bucket.time_set), start, interval);
@@ -648,7 +647,7 @@ public
 
         else algorithm
           iter := Iterator.fromFrames(listReverse(frames));
-          stmt := Statement.mapExp(stmt, function Expression.mapReverse(
+          stmt := Statement.mapExp(stmt, function Expression.fakeMap(
               func = function collectEventsTraverse(
                 bucket_ptr  = bucket_ptr,
                 iter        = iter,
@@ -1128,7 +1127,7 @@ protected
         (exp, bucket) := CompositeEvent.add(exp, iter, Pointer.access(bucket_ptr), createEqn);
         Pointer.update(bucket_ptr, bucket);
       then exp;
-      case Expression.CREF() guard(BVariable.isPrevious(BVariable.getVarPointer(exp.cref))) algorithm
+      case Expression.CREF() guard(BVariable.isPrevious(BVariable.getVarPointer(exp.cref, sourceInfo()))) algorithm
         (exp, bucket) := CompositeEvent.add(exp, iter, Pointer.access(bucket_ptr), createEqn);
         Pointer.update(bucket_ptr, bucket);
       then exp;
@@ -1140,6 +1139,9 @@ protected
         call.exp := collectEventsTraverse(call.exp, bucket_ptr, Iterator.addFrames(iter, new_frames), eqn, funcTree, createEqn);
         exp.call := call;
       then exp;
+
+      // don't traverse noEvent() calls
+      case Expression.CALL() guard(Call.isNamed(exp.call, "noEvent")) then exp;
 
       // don't traverse cref subscripts
       case Expression.CREF() then exp;

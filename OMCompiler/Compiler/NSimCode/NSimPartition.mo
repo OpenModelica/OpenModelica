@@ -59,8 +59,6 @@ public
   import DAE;
   import OldSimCode = SimCode;
 
-  type SimPartitions = list<SimPartition>;
-
   record BASE_PARTITION
     BClock baseClock;
     list<SimPartition> subPartitions;
@@ -86,18 +84,21 @@ public
   end createSubPartition;
 
   function createBasePartitions
-    input UnorderedMap<BClock, SimPartitions> clock_collector;
-    output SimPartitions baseParts = {};
+    input UnorderedMap<BClock, list<SimPartition>> clock_collector;
+    output list<SimPartition> baseParts = {};
     output list<Block> eventClocks = {};
     input output SimCodeIndices simCodeIndices;
   protected
     BClock baseClock;
-    SimPartitions subClocks;
+    list<SimPartition> subClocks;
     Integer clock_idx = 1;
   algorithm
+    // create all base partitions, sort the sub partitions according to their clock dependencies
     for tpl in UnorderedMap.toList(clock_collector) loop
       (baseClock, subClocks) := tpl;
-      baseParts := BASE_PARTITION(baseClock, subClocks) :: baseParts;
+      if not BClock.isInferredClock(baseClock) then
+        baseParts := BASE_PARTITION(baseClock, subClocks) :: baseParts;
+      end if;
     end for;
 
     // collect all event clocks
@@ -134,6 +135,19 @@ public
       clock_idx := clock_idx + 1;
     end for;
   end createBasePartitions;
+
+  function getClock
+    input SimPartition part;
+    output BClock clock;
+  algorithm
+    clock := match part
+      case BASE_PARTITION() then part.baseClock;
+      case SUB_PARTITION()  then part.subClock;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for unknown partition:\n" + toString(part)});
+      then fail();
+    end match;
+  end getClock;
 
   function listToString
     input list<SimPartition> parts;

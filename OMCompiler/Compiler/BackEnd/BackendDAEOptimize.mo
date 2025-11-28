@@ -76,6 +76,7 @@ import ExpressionSimplify;
 import Error;
 import Flags;
 import GCExt;
+import HashSet;
 import HashTableExpToIndex;
 import HpcOmTaskGraph;
 import List;
@@ -292,8 +293,14 @@ algorithm
       (zero, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
     then (zero, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name=idn), expLst={e as DAE.CREF(componentRef=cr)}), (globalKnownVars, aliasvars, _)) guard idn=="pre" or idn=="previous" equation
-      (_, _) = BackendVariable.getVarSingle(cr, globalKnownVars);
+    case (DAE.CALL(path=Absyn.IDENT(name=idn), expLst={e as DAE.CREF(componentRef=cr)}), (globalKnownVars, aliasvars, _)) guard idn=="pre" or idn=="previous"
+      equation
+        (var, _) = BackendVariable.getVarSingle(cr, globalKnownVars);
+        /* https://github.com/OpenModelica/OpenModelica/issues/13811
+        * check if var is a top level input and keep the expression as it pre(param) = pre(param)
+        * for parameter and constat apply pre(param) = param
+        */
+        false = BackendVariable.isInput(var);
     then(e, (globalKnownVars, aliasvars, true));
 
     case (DAE.CALL(path=Absyn.IDENT(name=idn), expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (globalKnownVars, aliasvars, _)) guard idn=="pre" or idn=="previous"
@@ -420,7 +427,7 @@ algorithm
     case (e as DAE.CREF(cr,_), (_,vars,globalKnownVars,b1,b2))
       equation
         (vlst,_::_)= BackendVariable.getVar(cr, globalKnownVars) "input variables stored in known variables are input on top level";
-        false = List.mapAllValueBool(vlst,toplevelInputOrUnfixed,false);
+        false = List.none(vlst, toplevelInputOrUnfixed);
       then (e,false,(true,vars,globalKnownVars,b1,b2));
     case (e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_,_}), (_,vars,globalKnownVars,b1,b2)) then (e,false,(true,vars,globalKnownVars,b1,b2));
     case (e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), (_,vars,globalKnownVars,b1,b2)) then (e,false,(true,vars,globalKnownVars,b1,b2));
@@ -2489,7 +2496,7 @@ algorithm
         iHt;
     case (c::explst,eqns::rest,_)
       equation
-        ht = simplifySolvedIfEqns1(c,eqns,iHt);
+        ht = simplifySolvedIfEqns1(c,eqns,iHt, HashSet.emptyHashSet());
       then
         simplifySolvedIfEqns(explst,rest,ht);
   end match;
@@ -2501,14 +2508,24 @@ protected function simplifySolvedIfEqns1
   input DAE.Exp condition;
   input list<BackendDAE.Equation> brancheqns;
   input HashTable2.HashTable iHt;
+  input HashSet.HashSet iHs;
   output HashTable2.HashTable oHt;
 algorithm
+  // ticket #13927
+  // Only proceed if `cr` was not already assigned within current branch.
+  // This is checked by collecting all `cr` in `hs`.
+  // Prevents errors like:
+  // if b then a = r1; a = r2; else a = r3; c = r4; end if;
+  // to
+  // a = if b then r2 else if b then r1 else r3; c = r4;
+
   oHt := match(condition,brancheqns,iHt)
     local
       DAE.ComponentRef cr;
       DAE.Exp e,exp;
       DAE.ElementSource source;
       HashTable2.HashTable ht;
+      HashSet.HashSet hs;
       list<BackendDAE.Equation> rest;
     case (_,{},_)
       then
@@ -2516,20 +2533,22 @@ algorithm
     case (_,BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr), scalar=e)::rest,_)
       equation
         false = Expression.expHasCref(e, cr);
+        hs = BaseHashSet.addUnique(cr, iHs);
         exp = BaseHashTable.get(cr, iHt);
         exp = DAE.IFEXP(condition, e, exp);
         ht = BaseHashTable.add((cr,exp), iHt);
       then
-        simplifySolvedIfEqns1(condition,rest,ht);
+        simplifySolvedIfEqns1(condition,rest,ht, hs);
     case (_,BackendDAE.EQUATION(exp=DAE.UNARY(operator=DAE.UMINUS(), exp=DAE.CREF(componentRef=cr)), scalar=e)::rest,_)
       equation
         false = Expression.expHasCref(e, cr);
+        hs = BaseHashSet.addUnique(cr, iHs);
         exp = BaseHashTable.get(cr, iHt);
         e = Expression.negate(e);
         exp = DAE.IFEXP(condition, e, exp);
         ht = BaseHashTable.add((cr,exp), iHt);
       then
-        simplifySolvedIfEqns1(condition,rest,ht);
+        simplifySolvedIfEqns1(condition,rest,ht, hs);
   end match;
 end simplifySolvedIfEqns1;
 
@@ -2975,7 +2994,7 @@ algorithm
         // ..
         // sn = sn-1
         // y = semiLinear(x,sa,sb)
-        eqnslst := List.fold(arrayList(eqnsarray), semiLinearOptimize, {});
+        eqnslst := Array.fold(eqnsarray, semiLinearOptimize, {});
         // replace the equations in the system
         syst.orderedEqs := List.fold(eqnslst, semiLinearReplaceEqns, eqns);
       then (BackendDAEUtil.clearEqSyst(syst), ishared);

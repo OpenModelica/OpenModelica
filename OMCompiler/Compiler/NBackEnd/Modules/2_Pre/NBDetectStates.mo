@@ -238,7 +238,7 @@ protected
       case Expression.CALL(call = Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "der")),
         arguments = {Expression.CREF(cref = state_cref)}))
         algorithm
-          state_var := BVariable.getVarPointer(state_cref);
+          state_var := BVariable.getVarPointer(state_cref, sourceInfo());
 
           if not BVariable.isContinuous(state_var, false) then
             // if the variable is not continuous, its derivative is zero
@@ -250,7 +250,7 @@ protected
             else
               // create new derivative variable
               (der_cref, der_var) := BVariable.makeDerVar(state_cref, scalarized);
-              state_var := BVariable.getVarPointer(state_cref);
+              state_var := BVariable.getVarPointer(state_cref, sourceInfo());
               BVariable.setStateDerivativeVar(state_var, der_var);
               Pointer.update(acc_states, state_var :: Pointer.access(acc_states));
               Pointer.update(acc_derivatives, der_var :: Pointer.access(acc_derivatives));
@@ -319,7 +319,7 @@ protected
     input output Integer i;
   algorithm
     i := match exp
-      case Expression.CREF() guard(BVariable.isAlgebraic(BVariable.getVarPointer(exp.cref))) then i + 1;
+      case Expression.CREF() guard(BVariable.isAlgebraic(BVariable.getVarPointer(exp.cref, sourceInfo()))) then i + 1;
       else i;
     end match;
   end checkAlgebraic;
@@ -393,7 +393,7 @@ protected
         (new_exp, old_exp) := preFromArgs(args, acc_previous, scalarized, "previous");
         _ := match old_exp
           case Expression.CREF() algorithm
-            Pointer.update(acc_clocked_states, BVariable.getVarPointer(old_exp.cref) :: Pointer.access(acc_clocked_states));
+            Pointer.update(acc_clocked_states, BVariable.getVarPointer(old_exp.cref, sourceInfo()) :: Pointer.access(acc_clocked_states));
           then ();
 
           else algorithm
@@ -441,8 +441,8 @@ protected
     Boolean negated;
   algorithm
     (state_var, old_exp, negated) := match args
-      case {old_exp as Expression.CREF(cref = state_cref)}                           then (BVariable.getVarPointer(state_cref), old_exp, false);
-      case {old_exp as Expression.LUNARY(exp = Expression.CREF(cref = state_cref))}  then (BVariable.getVarPointer(state_cref), old_exp, true);
+      case {old_exp as Expression.CREF(cref = state_cref)}                           then (BVariable.getVarPointer(state_cref, sourceInfo()), old_exp, false);
+      case {old_exp as Expression.LUNARY(exp = Expression.CREF(cref = state_cref))}  then (BVariable.getVarPointer(state_cref, sourceInfo()), old_exp, true);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unexpected expression " + context + "("
           + List.toString(args, Expression.toString, "", "", ", ", "") + ")."});
@@ -450,7 +450,7 @@ protected
     end match;
     pre_cref := getPreVar(state_cref, state_var, acc_previous, scalarized);
     if not scalarized then
-      pre_cref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(state_cref)), pre_cref);
+      pre_cref := ComponentRef.copySubscripts(state_cref, pre_cref);
     end if;
     new_exp := Expression.fromCref(pre_cref);
     if negated then
@@ -543,7 +543,7 @@ protected
         case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = state_cref)) algorithm
           // the function getPreVar() does all necessary collecting of information
           // but we don't need the actual pre cref it returns
-          state_var := BVariable.getVarPointer(state_cref);
+          state_var := BVariable.getVarPointer(state_cref, sourceInfo());
           BVariable.makeDiscreteStateVar(state_var);
           getPreVar(state_cref, state_var, acc_previous, scalarized);
           Pointer.update(acc_discrete_states, state_var :: Pointer.access(acc_discrete_states));
@@ -585,7 +585,7 @@ protected
       if not scalarized then
         // prevent the created pre variable from having the subscripts, but add it to the pre_cref
         (pre_cref, pre_var) := BVariable.makePreVar(ComponentRef.stripSubscriptsAll(var_cref));
-        pre_cref := ComponentRef.setSubscriptsList(listReverse(ComponentRef.subscriptsAll(var_cref)), pre_cref);
+        pre_cref := ComponentRef.copySubscripts(var_cref, pre_cref);
       else
         (pre_cref, pre_var) := BVariable.makePreVar(var_cref);
       end if;
@@ -606,7 +606,7 @@ protected
           Pointer<Variable> state_var, pre_var;
 
         case WhenStatement.ASSIGN(lhs = Expression.CREF(cref = state_cref)) algorithm
-          state_var := BVariable.getVarPointer(state_cref);
+          state_var := BVariable.getVarPointer(state_cref, sourceInfo());
           _ := match BVariable.getVarPre(state_var)
             case SOME(pre_var) algorithm
               Pointer.update(acc_previous, pre_var :: Pointer.access(acc_previous));
@@ -654,14 +654,14 @@ protected
     Pointer<Variable> state;
     VariableKind lhs_k, rhs_k;
   algorithm
-    _ := match (BVariable.getVarKind(BVariable.getVarPointer(lhs)), BVariable.getVarKind(BVariable.getVarPointer(rhs)))
+    _ := match (BVariable.getVarKind(BVariable.getVarPointer(lhs, sourceInfo())), BVariable.getVarKind(BVariable.getVarPointer(rhs, sourceInfo())))
       // a = der(b)
       case (_, VariableKind.STATE_DER(state = state)) algorithm
-        UnorderedMap.add(BVariable.getVarName(state), lhs, state_order);
+        UnorderedMap.add(BVariable.getVarName(state), ComponentRef.stripSubscriptsAll(lhs), state_order);
       then ();
       // der(b) = a
       case (VariableKind.STATE_DER(state = state), _) algorithm
-        UnorderedMap.add(BVariable.getVarName(state), rhs, state_order);
+        UnorderedMap.add(BVariable.getVarName(state), ComponentRef.stripSubscriptsAll(rhs), state_order);
       then ();
       else ();
     end match;

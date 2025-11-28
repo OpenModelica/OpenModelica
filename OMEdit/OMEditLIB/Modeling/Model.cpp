@@ -1109,6 +1109,9 @@ namespace ModelInstance
 
   Model::~Model()
   {
+    qDeleteAll(mGeneratedInnerComponents);
+    mGeneratedInnerComponents.clear();
+
     qDeleteAll(mElements);
     mElements.clear();
 
@@ -1220,7 +1223,12 @@ namespace ModelInstance
       if (kind.compare(QStringLiteral("extends")) == 0) {
         mElements.append(new Extend(this, elementObject));
       } else if (kind.compare(QStringLiteral("component")) == 0) {
-        mElements.append(new Component(this, elementObject));
+        // store generated inner components separately
+        if (elementObject.contains("generated") && elementObject.value("generated").toBool(false)) {
+          mGeneratedInnerComponents.append(new Component(this, elementObject));
+        } else {
+          mElements.append(new Component(this, elementObject));
+        }
       } else if (kind.compare(QStringLiteral("class")) == 0) {
         mElements.append(new ReplaceableClass(this, elementObject));
       } else {
@@ -1276,12 +1284,34 @@ namespace ModelInstance
     }
   }
 
+  /*!
+   * \brief Model::getNameIfReplaceable
+   * Returns the name of first extends model if the model is replaceable and has only one element which is an extends element.
+   * For example,
+   *  replaceable model MyCustomType = Modelica.Blocks.Sources.Constant;
+   *  Here, MyCustomType is replaceable and has only one element which is an extends element.
+   *  So, this function returns "Modelica.Blocks.Sources.Constant" as the name in this case.
+   * \return
+   */
+  QString Model::getNameIfReplaceable() const
+  {
+    if (getReplaceable() && mElements.size() == 1 && mElements.first()->isExtend() && mElements.first()->getModel()) {
+      return mElements.first()->getModel()->getName();
+    }
+    return QString();
+  }
+
   const QString &Model::getRootType() const
   {
     if (isDerivedType() && mElements.size() > 0) {
       return mElements.at(0)->getRootType();
     }
     return mName;
+  }
+
+  Replaceable *Model::getReplaceable() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->getReplaceable() : nullptr;
   }
 
   bool Model::isConnector() const
@@ -1506,7 +1536,7 @@ namespace ModelInstance
     if (connector.size() == 1) return true;
 
     auto elem = model.lookupElement(connector.first().getName(false));
-    return elem && elem->getModel() && elem->getModel()->isConnector();
+    return elem && elem->isConnector();
   }
 
   bool isCompatibleConnectorDirection(const Element &lhs, bool lhsOutside, const Element &rhs, bool rhsOutside)
@@ -1623,54 +1653,37 @@ namespace ModelInstance
     return true;
   }
 
-  QPair<QString, bool> Model::getParameterValue(const QString &parameter, QString &typeName)
+  QPair<QString, bool> Model::getVariableValue(QStringList variables)
   {
     QPair<QString, bool> value("", false);
     foreach (auto pElement, mElements) {
-      if (pElement->isComponent()) {
-        auto pComponent = dynamic_cast<Component*>(pElement);
-        if (pComponent->getName().compare(StringHandler::getFirstWordBeforeDot(parameter)) == 0) {
-          if (pComponent->getModifier() && pComponent->getModifier()->isValueDefined()) {
-            value = qMakePair(pComponent->getModifier()->getValueWithoutQuotes(), true);
-          }
-          // Fixes issue #7493. Handles the case where value is from instance name e.g., %instanceName.parameterName
-          if (!value.second && pComponent->getModel()) {
-            value = pComponent->getModel()->getParameterValue(StringHandler::getLastWordAfterDot(parameter), typeName);
-          }
-          typeName = pComponent->getType();
-          break;
-        }
+      value = pElement->getVariableValue(variables);
+      if (value.second) { // If we found the value, break the loop.
+        break;
       }
     }
     return value;
   }
 
-  QPair<QString, bool> Model::getParameterValueFromExtendsModifiers(const QStringList &parameter)
+  QString Model::getVariableType(QStringList variables)
   {
-    QPair<QString, bool> value("", false);
+    QString value;
     foreach (auto pElement, mElements) {
-      if (pElement->isExtend()) {
-        auto pExtend = dynamic_cast<Extend*>(pElement);
-        if (pExtend->getModifier()) {
-          value = pExtend->getModifier()->getModifierValue(parameter);
-        }
-        if (value.second) {
-          return value;
+      if (!variables.isEmpty() && pElement->getName().compare(variables.at(0)) == 0) {
+        variables.removeFirst();
+        if (variables.isEmpty()) {
+          return pElement->getType();
+        } else if (pElement->getModel()) {
+          return pElement->getModel()->getVariableType(variables);
         } else {
-          if (pExtend->getModel()) {
-            value = pExtend->getModel()->getParameterValueFromExtendsModifiers(parameter);
-            if (value.second) {
-              return value;
-            }
-          }
+          return "";
         }
       }
     }
-
     return value;
   }
 
-  FlatModelica::Expression* Model::getVariableBinding(const QString &variableName)
+  FlatModelica::Expression* Model::getVariableValueOrBinding(const QString &variableName, bool value) const
   {
     QString curName;
     bool last;
@@ -1686,20 +1699,29 @@ namespace ModelInstance
       last = true;
     }
 
-    foreach (auto pElement, mElements) {
+    /* https://github.com/OpenModelica/OpenModelica/issues/13992#issuecomment-2969807849
+     * We need the generated inner component to be able to evaluate the expressions.
+     * We don't store the generated inner components together with the other components
+     * So we need to add it here.
+     */
+    QList<Element*> elements;
+    elements.append(mGeneratedInnerComponents);
+    elements.append(mElements);
+
+    foreach (auto pElement, elements) {
       if (pElement->isComponent()) {
         if (pElement->getName().compare(curName) == 0) {
           if (last) {
-            return &pElement->getBinding();
+            return value ? &pElement->getValue() : &pElement->getBinding();
           } else {
             if (!pElement->getModel()) {
               return nullptr;
             }
-            return pElement->getModel()->getVariableBinding(StringHandler::removeFirstWordAfterDot(variableName));
+            return pElement->getModel()->getVariableValueOrBinding(StringHandler::removeFirstWordAfterDot(variableName), value);
           }
         }
       } else if (pElement->isExtend() && pElement->getModel()) {
-        auto expression = pElement->getModel()->getVariableBinding(variableName);
+        auto expression = pElement->getModel()->getVariableValueOrBinding(variableName, value);
         if (expression) {
           return expression;
         }
@@ -1755,6 +1777,7 @@ namespace ModelInstance
     mMissing = false;
     mRestriction = "";
     mComment = "";
+    mGeneratedInnerComponents.clear();
     mElements.clear();
     mConnections.clear();
     mTransitions.clear();
@@ -1866,6 +1889,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("showStartAttribute")) {
+      mHasShowStartAttribute = true;
       mShowStartAttribute.deserialize(jsonObject.value("showStartAttribute"));
     }
 
@@ -1988,6 +2012,36 @@ namespace ModelInstance
     return pElement;
   }
 
+  QPair<QString, bool> Element::getVariableValue(QStringList variables)
+  {
+    QPair<QString, bool> value("", false);
+
+    if (isComponent() && variables.size() > 1 && getName().compare(variables.at(0)) == 0) {
+      variables.removeFirst();
+    }
+
+    if (mpModifier) {
+      // if we found the variable in the modifier and its value is defined then use it.
+      if (mpModifier->isValueDefined() && variables.size() == 1 && getName().compare(variables.at(0)) == 0) {
+        value = qMakePair(mpModifier->getValueWithoutQuotes(), true);
+      } else {
+        value = mpModifier->getModifierValue(variables);
+      }
+      if (value.second) {
+        return value;
+      }
+    }
+
+    if (mpModel) {
+      value = mpModel->getVariableValue(variables);
+      if (value.second) {
+        return value;
+      }
+    }
+
+    return value;
+  }
+
   /*!
    * \brief Element::getTopLevelExtendName
    * Returns the top level extend name where the element is located.
@@ -2041,14 +2095,40 @@ namespace ModelInstance
     return mpPrefixes ? mpPrefixes.get()->isOuter() : false;
   }
 
+  bool Element::isParameter() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->getVariability().compare(QStringLiteral("parameter")) == 0 : false;
+  }
+
+  bool Element::isInput() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->getDirection().compare(QStringLiteral("input")) == 0 : false;
+  }
+
   Replaceable *Element::getReplaceable() const
   {
-    return mpPrefixes ? mpPrefixes.get()->getReplaceable() : nullptr;
+    if (mpPrefixes) {
+      return mpPrefixes.get()->getReplaceable();
+    } else if (mpModel) {
+      return mpModel->getReplaceable();
+    } else {
+      return nullptr;
+    }
   }
 
   bool Element::isRedeclare() const
   {
     return mpPrefixes ? mpPrefixes.get()->isRedeclare() : false;
+  }
+
+  bool Element::isConnector() const
+  {
+    return mpModel && mpModel->isConnector();
+  }
+
+  bool Element::isExpandableConnector() const
+  {
+    return mpModel && mpModel->isExpandableConnector();
   }
 
   QString Element::getConnector() const
@@ -2317,13 +2397,14 @@ namespace ModelInstance
 
       if (valueObject.contains("value")) {
         try {
-          mBinding.deserialize(valueObject.value("value"));
-          mBindingForReset = mBinding;
+          mValue.deserialize(valueObject.value("value"));
         } catch (const std::exception &e) {
           qDebug() << "Failed to deserialize json: " << valueObject.value("value");
           qDebug() << e.what();
         }
-      } else if (valueObject.contains("binding")) {
+      }
+
+      if (valueObject.contains("binding")) {
         try {
           mBinding.deserialize(valueObject.value("binding"));
           mBindingForReset = mBinding;

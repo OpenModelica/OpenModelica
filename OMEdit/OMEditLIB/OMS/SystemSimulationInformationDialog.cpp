@@ -43,22 +43,7 @@ SystemSimulationInformationWidget::SystemSimulationInformationWidget(ModelWidget
 {
   mpModelWidget = pModelWidget;
 
-  QIntValidator *pIntValidator = new QIntValidator(this);
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
-
-  if (mpModelWidget->getLibraryTreeItem()->isTLMSystem()) {
-    // IP address
-    mpIpAddressLabel = new Label(tr("IP Adress:"));
-    mpIpAddressTextBox = new QLineEdit("127.0.1.1");
-    // manager port
-    mpManagerPortLabel = new Label(tr("Manager Port:"));
-    mpManagerPortTextBox = new QLineEdit("11117");
-    mpManagerPortTextBox->setValidator(pIntValidator);
-    // monitor port
-    mpMonitorPortLabel = new Label(tr("Monitor Port:"));
-    mpMonitorPortTextBox = new QLineEdit("12117");
-    mpMonitorPortTextBox->setValidator(pIntValidator);
-  }
 
   if (mpModelWidget->getLibraryTreeItem()->isWCSystem() || mpModelWidget->getLibraryTreeItem()->isSCSystem()) {
     // solver
@@ -134,14 +119,7 @@ SystemSimulationInformationWidget::SystemSimulationInformationWidget(ModelWidget
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
   int row = 0;
-  if (mpModelWidget->getLibraryTreeItem()->isTLMSystem()) {
-    pMainLayout->addWidget(mpIpAddressLabel, row, 0);
-    pMainLayout->addWidget(mpIpAddressTextBox, row++, 1);
-    pMainLayout->addWidget(mpManagerPortLabel, row, 0);
-    pMainLayout->addWidget(mpManagerPortTextBox, row++, 1);
-    pMainLayout->addWidget(mpMonitorPortLabel, row, 0);
-    pMainLayout->addWidget(mpMonitorPortTextBox, row++, 1);
-  } else if (mpModelWidget->getLibraryTreeItem()->isWCSystem() || mpModelWidget->getLibraryTreeItem()->isSCSystem()) {
+  if (mpModelWidget->getLibraryTreeItem()->isWCSystem() || mpModelWidget->getLibraryTreeItem()->isSCSystem()) {
     pMainLayout->addWidget(mpSolverLabel, row, 0);
     pMainLayout->addWidget(mpSolverComboBox, row++, 1);
     pMainLayout->addWidget(mpFixedStepSizeLabel, row, 0);
@@ -198,23 +176,7 @@ void SystemSimulationInformationWidget::solverChanged(int index)
  */
 bool SystemSimulationInformationWidget::setSystemSimulationInformation(bool pushOnStack)
 {
-  if (mpModelWidget->getLibraryTreeItem()->isTLMSystem()) {
-    if (mpIpAddressTextBox->text().isEmpty()) {
-      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("IP Address"), QMessageBox::Ok);
-      return false;
-    }
-    if (mpManagerPortTextBox->text().isEmpty()) {
-      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Manager Port"), QMessageBox::Ok);
-      return false;
-    }
-    if (mpMonitorPortTextBox->text().isEmpty()) {
-      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Monitor Port"), QMessageBox::Ok);
-      return false;
-    }
-  } else if (mpModelWidget->getLibraryTreeItem()->isWCSystem() || mpModelWidget->getLibraryTreeItem()->isSCSystem()) {
+  if (mpModelWidget->getLibraryTreeItem()->isWCSystem() || mpModelWidget->getLibraryTreeItem()->isSCSystem()) {
     oms_solver_enu_t solver = (oms_solver_enu_t)mpSolverComboBox->itemData(mpSolverComboBox->currentIndex()).toInt();
     switch (solver) {
       case oms_solver_wc_mav:
@@ -262,11 +224,7 @@ bool SystemSimulationInformationWidget::setSystemSimulationInformation(bool push
 
   LibraryTreeItem *pLibraryTreeItem = mpModelWidget->getLibraryTreeItem();
   const QString cref = pLibraryTreeItem->getNameStructure();
-  if (pLibraryTreeItem->isTLMSystem()) {
-    if (!OMSProxy::instance()->setTLMSocketData(cref, mpIpAddressTextBox->text(), mpManagerPortTextBox->text().toInt(), mpMonitorPortTextBox->text().toInt())) {
-      return false;
-    }
-  } else if (pLibraryTreeItem->isWCSystem() || pLibraryTreeItem->isSCSystem()) {
+  if (pLibraryTreeItem->isWCSystem() || pLibraryTreeItem->isSCSystem()) {
     // set solver
     oms_solver_enu_t solver = (oms_solver_enu_t)mpSolverComboBox->itemData(mpSolverComboBox->currentIndex()).toInt();
     if (!OMSProxy::instance()->setSolver(cref, solver)) {

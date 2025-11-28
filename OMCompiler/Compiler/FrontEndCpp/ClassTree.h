@@ -6,10 +6,12 @@
 #include <unordered_map>
 
 #include "Absyn/AbsynFwd.h"
+#include "MetaModelica.h"
 
 namespace OpenModelica
 {
   class InstNode;
+  class Import;
 
   class ClassTree
   {
@@ -17,7 +19,7 @@ namespace OpenModelica
       enum class State
       {
         Partial,      // Allows lookup of local classes and imported elements.
-        Expanded,     // Lookup table has all elements, but elements have now
+        Expanded,     // Lookup table has all elements, but elements have not
                       // yet been added to the arrays.
         Instantiated, // Allows lookup of both local and inherited elements.
         Flat
@@ -39,7 +41,9 @@ namespace OpenModelica
       void expand();
       void instantiate();
 
-    private:
+      MetaModelica::Record toNF() const;
+
+    public:
       enum class EntryType
       {
         Class,
@@ -52,6 +56,7 @@ namespace OpenModelica
         EntryType type;
         size_t index;
 
+        operator MetaModelica::Value() const noexcept;
         Entry offset(size_t classOffset, size_t componentOffset) const;
       };
 
@@ -73,6 +78,7 @@ namespace OpenModelica
         std::vector<Duplicate> children;
       };
 
+    private:
       using LookupTable = std::unordered_map<std::string, Entry>;
       using DuplicateTable = std::unordered_map<std::string, Duplicate>;
 
@@ -86,11 +92,14 @@ namespace OpenModelica
       InstNode *_parent;
       State _state;
       LookupTable _table;
-      std::vector<std::unique_ptr<InstNode>> _classes;
-      std::vector<std::unique_ptr<InstNode>> _components;
+      // TODO: These are shared_ptr:s to mimic the MetaModelica implementation,
+      //       but for C++ it might be better to store references to the pointers
+      //       in the lookup table instead and only store the local elements here.
+      std::vector<std::shared_ptr<InstNode>> _classes;
+      std::vector<std::shared_ptr<InstNode>> _components;
       std::vector<int> _localComponents;
       std::vector<std::unique_ptr<InstNode>> _extends;
-      //std::vector<Import> _imports;
+      std::vector<Import> _imports;
       DuplicateTable _duplicates;
   };
 }

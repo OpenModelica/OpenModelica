@@ -409,9 +409,10 @@ protected
 algorithm
   cache := InstNode.getFuncCache(constructor);
 
-  recordTy := match cache
-    case CachedData.FUNCTION(funcs = fn :: _)
+  recordTy := matchcontinue cache
+    case CachedData.FUNCTION()
       algorithm
+        fn := List.find(cache.funcs, Function.isDefaultRecordConstructor);
         (fields, indexMap) := Record.collectRecordFields(fn.node);
       then
         ComplexType.RECORD(constructor, fields, indexMap);
@@ -422,7 +423,7 @@ algorithm
           " got record type without constructor", sourceInfo());
       then
         fail();
-  end match;
+  end matchcontinue;
 end makeRecordType;
 
 function typeComponent
@@ -431,15 +432,18 @@ function typeComponent
   input Boolean typeChildren = true;
   output Type ty;
 protected
-  InstNode node = InstNode.resolveOuter(component);
-  Component c = InstNode.component(node);
+  InstNode node;
+  Component c;
   Expression cond;
   Boolean is_deleted;
   array<Dimension> dims;
 algorithm
-  if InstNode.isOnlyOuter(component) then
+  if InstNode.isEmpty(component) or InstNode.isOnlyOuter(component) then
     return;
   end if;
+
+  node := InstNode.resolveOuter(component);
+  c := InstNode.component(node);
 
   ty := match c
     // An untyped component, type it.
@@ -991,7 +995,7 @@ function typeComponentBinding
   input InstContext.Type context;
   input Boolean typeChildren = true;
 protected
-  InstNode node = InstNode.resolveOuter(component);
+  InstNode node;
   Component c;
   Binding binding;
   InstNode cls;
@@ -1001,11 +1005,12 @@ protected
   Attributes attrs;
   Type ty;
 algorithm
-  c := InstNode.component(node);
-
-  if InstNode.isOnlyOuter(component) then
+  if InstNode.isEmpty(component) or InstNode.isOnlyOuter(component) then
     return;
   end if;
+
+  node := InstNode.resolveOuter(component);
+  c := InstNode.component(node);
 
   () := match c
     case Component.COMPONENT()
@@ -1278,6 +1283,10 @@ algorithm
       guard Binding.isUnbound(attribute.binding)
       then
         NFModifier.NOMOD();
+
+    // Modifier that has already been typed.
+    case Modifier.MODIFIER(binding = Binding.TYPED_BINDING())
+      then attribute;
 
     // Normal modifier with no submodifiers.
     case Modifier.MODIFIER(name = name, binding = binding)
@@ -1724,6 +1733,11 @@ algorithm
       algorithm
         (e, ty, _) := typeExp(exp, next_context, info);
 
+        if Type.isTuple(ty) then
+          ty := Type.firstTupleType(ty);
+          e := Expression.tupleElement(e, ty, 1);
+        end if;
+
         if Type.isConditionalArray(ty) then
           e := Expression.map(e,
             function evaluateArrayIf(target = Ceval.EvalTarget.new(info, next_context)));
@@ -2011,13 +2025,6 @@ algorithm
 
     case ComponentRef.CREF(node = InstNode.COMPONENT_NODE())
       algorithm
-        if Component.hasCondition(InstNode.component(cref.node)) and
-           not Config.languageStandardAtLeast(Config.LanguageStandard.experimental) and
-           (not InstContext.inConnect(context) or InstContext.inSubscript(context)) and not InstContext.inRelaxed(context) then
-          Error.addStrictMessage(Error.CONDITIONAL_COMPONENT_INVALID_CONTEXT,
-            {InstNode.name(cref.node)}, info);
-        end if;
-
         // The context used when typing a component node depends on where the
         // component was declared, not where it's used. This can be different to
         // the given context, e.g. for package constants used in a function.
@@ -2044,6 +2051,16 @@ algorithm
       then
         (cref, Variability.CONSTANT);
 
+    case ComponentRef.CREF(node = InstNode.NAME_NODE())
+      algorithm
+        (subs, subs_var) := typeSubscripts(cref.subscripts, cref.ty,
+          Expression.CREF(cref.ty, cref), context, info, checkSubscripts = false);
+        (rest_cr, rest_var) := typeCref2(cref.restCref, context, info, false);
+        cref.restCref := rest_cr;
+        subsVariability := Prefixes.variabilityMax(subs_var, rest_var);
+      then
+        (cref, rest_var);
+
     else (cref, Variability.CONSTANT);
   end match;
 end typeCref2;
@@ -2054,6 +2071,7 @@ function typeSubscripts
   input Expression subscriptedExp;
   input InstContext.Type context;
   input SourceInfo info;
+  input Boolean checkSubscripts = true;
   output list<Subscript> typedSubs;
   output Variability variability = Variability.CONSTANT;
 protected
@@ -2073,15 +2091,20 @@ algorithm
   next_context := InstContext.set(context, NFInstContext.SUBSCRIPT);
   i := 1;
 
-  if listLength(subscripts) > listLength(dims) then
+  if listLength(subscripts) > listLength(dims) and checkSubscripts then
     Error.addSourceMessage(Error.WRONG_NUMBER_OF_SUBSCRIPTS,
       {Expression.toString(subscriptedExp), String(listLength(subscripts)), String(listLength(dims))}, info);
     fail();
   end if;
 
   for s in subscripts loop
-    dim :: dims := dims;
-    (sub, var) := typeSubscript(s, dim, subscriptedExp, i, next_context, info);
+    if checkSubscripts then
+      dim :: dims := dims;
+    else
+      dim := Dimension.UNKNOWN();
+    end if;
+
+    (sub, var) := typeSubscript(s, dim, subscriptedExp, i, next_context, info, checkSubscripts);
     typedSubs := sub :: typedSubs;
     variability := Prefixes.variabilityMax(variability, var);
     i := i + 1;
@@ -2104,6 +2127,7 @@ function typeSubscript
   input Integer index;
   input InstContext.Type context;
   input SourceInfo info;
+  input Boolean checkSubscript;
   output Subscript outSubscript = subscript;
   output Variability variability = Variability.CONSTANT;
 protected
@@ -2117,7 +2141,12 @@ algorithm
       algorithm
         e := evaluateEnd(subscript.exp, dimension, subscriptedExp, index, context, info);
         (e, ty, variability) := typeExp(e, context, info);
-        (e, matched_ty) := checkSubscriptType(e, Type.arrayElementType(ty), dimension, info);
+
+        if checkSubscript then
+          (e, matched_ty) := checkSubscriptType(e, Type.arrayElementType(ty), dimension, info);
+        else
+          matched_ty := ty;
+        end if;
 
         if Type.isArray(ty) then
           outSubscript := Subscript.SLICE(e);
@@ -2134,14 +2163,24 @@ algorithm
     // Other subscripts have already been typed, but still need to be type checked.
     case Subscript.INDEX(index = e)
       algorithm
-        (e, ty) := checkSubscriptType(e, Expression.typeOf(e), dimension, info);
+        if checkSubscript then
+          (e, ty) := checkSubscriptType(e, Expression.typeOf(e), dimension, info);
+        else
+          ty := Expression.typeOf(e);
+        end if;
+
         outSubscript := Subscript.INDEX(e);
       then
         (ty, Expression.variability(e));
 
     case Subscript.SLICE(slice = e)
       algorithm
-        (e, ty) := checkSubscriptType(e, Type.unliftArray(Expression.typeOf(e)), dimension, info);
+        if checkSubscript then
+          (e, ty) := checkSubscriptType(e, Type.unliftArray(Expression.typeOf(e)), dimension, info);
+        else
+          ty := Type.unliftArray(Expression.typeOf(e));
+        end if;
+
         outSubscript := Subscript.SLICE(e);
       then
         (ty, Expression.variability(e));
@@ -2963,6 +3002,10 @@ function typeComponentSections
 protected
   Component comp;
 algorithm
+  if InstNode.isEmpty(component) then
+    return;
+  end if;
+
   comp := InstNode.component(component);
 
   if Component.isDeleted(comp) or InstNode.isOnlyOuter(component) then

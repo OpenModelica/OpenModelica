@@ -45,6 +45,7 @@ protected
   import Expression = NFExpression;
   import FunctionTree = NFFlatten.FunctionTree;
   import SimplifyExp = NFSimplifyExp;
+  import Statement = NFStatement;
   import Subscript = NFSubscript;
   import Type = NFType;
   import Operator = NFOperator;
@@ -210,7 +211,6 @@ public
           Subscript sub;
           list<list<Subscript>> subs_lst;
           list<Integer> slice = {}, dim_sizes, values;
-          list<tuple<Integer, Integer>> ranges;
 
         // no subscripts -> create full index list
         case {} then subscriptedIndices(start, length, {});
@@ -230,8 +230,7 @@ public
           dim_sizes := list(Dimension.size(dim) for dim in dims);
           for sub_lst in listReverse(subs_lst) loop
             values  := list(Subscript.toInteger(s) for s in sub_lst);
-            ranges  := List.zip(dim_sizes, values);
-            slice   := Slice.locationToIndex(ranges, start) :: slice;
+            slice   := Slice.locationToIndex(dim_sizes, values, start) :: slice;
           end for;
         then slice;
 
@@ -302,7 +301,7 @@ public
 
     function hash
       input Mode mode;
-      output Integer hash = stringHashDjb2(toString(mode));
+      output Integer hash = ComponentRef.hash(mode.eqn_name);
     end hash;
 
     function isEqual
@@ -346,7 +345,12 @@ public
 
     function keyHash
       input Key key;
-      output Integer hash = stringHashDjb2(keyString(key));
+      output Integer hash;
+    protected
+      Integer e,v;
+    algorithm
+      (e,v) := key;
+      hash := e * 31 + v;
     end keyHash;
 
     function keyEqual
@@ -732,7 +736,7 @@ public
                 sol := UnorderedMap.getSafe(var, full.solvabilities[eqn_idx], sourceInfo());
                 if Solvability.rank(sol) < Solvability.rank(Solvability.IMPLICIT()) then
                   // booleans or (todo: enumerations)
-                  if eqnIsDiscrete or not BVariable.checkCref(var, function BVariable.isContinuous(init = init)) then
+                  if eqnIsDiscrete or not BVariable.checkCref(var, function BVariable.isContinuous(init = init), sourceInfo()) then
                     // if the equation or cref type is boolean, it can only be solved if its isolated in the LHS or RHS
                     // Use solveSimple for this and check if status is EXPLICIT
                     (_, status, _) := Solve.solveSimple(Pointer.access(eqn_ptr), var);
@@ -754,8 +758,8 @@ public
                     else
                       // linear -> find all contained crefs and split them by kind. remove constants and save params / variables
                       linear_set  := Expression.extractCrefs(exp);
-                      linear_set  := UnorderedSet.filterOnFalse(linear_set, function BVariable.checkCref(func = BVariable.isConst));
-                      (param_set, var_set) := UnorderedSet.splitOnTrue(linear_set, function BVariable.checkCref(func = BVariable.isParamOrConst));
+                      linear_set  := UnorderedSet.filterOnFalse(linear_set, function BVariable.checkCref(func = BVariable.isConst, info = sourceInfo()));
+                      (param_set, var_set) := UnorderedSet.splitOnTrue(linear_set, function BVariable.checkCref(func = BVariable.isParamOrConst, info = sourceInfo()));
                       sol := Solvability.EXPLICIT_LINEAR(
                         pars = if UnorderedSet.isEmpty(param_set) then NONE() else SOME(param_set),
                         vars = if UnorderedSet.isEmpty(var_set) then NONE() else SOME(var_set));
@@ -1241,11 +1245,11 @@ public
       end kindString;
       String str1, str2;
     algorithm
-      str1 := List.toString(arrayList(dep.skips), function List.toString(
+      str1 := Array.toString(dep.skips, function List.toString(
         inPrintFunc   = intString,
-        inListNameStr = "",
+        inNameStr     = "",
         inBeginStr    = "{",
-        inDelimitStr   = ", ",
+        inDelimitStr  = ", ",
         inEndStr      = "}",
         inPrintEmpty  = false,
         maxLength     = 0), "", "", ", ", "");
@@ -1426,7 +1430,7 @@ public
           local
             array<list<Integer>> skips;
             list<Kind> kinds;
-          case DEPENDENCY(skips = skips) guard(not listEmpty(List.flatten(arrayList(skips))))
+          case DEPENDENCY(skips = skips) guard(not Array.all(skips, listEmpty))
             algorithm K := cref :: K; then ();
           case DEPENDENCY(kinds = {}) guard(repeats)
             algorithm E := cref :: E; then ();
@@ -1626,8 +1630,10 @@ public
       then UnorderedSet.union(occ1, occ2);
 
       case Equation.ALGORITHM() algorithm
+        // filter inputs for solvable (not occuring only in conditions)
+        inputs := collectDependenciesAlgorithmInputs(eqn.alg.statements, eqn.alg.inputs);
         // collect all crefs expanding potential records
-        inputs  := List.flatten(list(collectDependenciesCref(c, 0, map, dep_map, sol_map) for c in eqn.alg.inputs));
+        inputs  := List.flatten(list(collectDependenciesCref(c, 0, map, dep_map, sol_map) for c in inputs));
         outputs := List.flatten(list(collectDependenciesCref(c, 0, map, dep_map, sol_map) for c in eqn.alg.outputs));
         // create dependencies for inputs and outputs
         Dependency.addListFull(inputs, 0, dep_map, rep_set);
@@ -1705,10 +1711,11 @@ public
         set := UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
       then set;
 
-      // reduce the dependency for these
+      // reduce the dependency and remove skips for these
       case Expression.SUBSCRIPTED_EXP() algorithm
         set := collectDependencies(exp.exp, depth, map, dep_map, sol_map, rep_set);
         Dependency.updateList(UnorderedSet.toList(set), listLength(exp.subscripts), true, dep_map);
+        Dependency.removeSkipsList(UnorderedSet.toList(set), dep_map);
       then set;
 
       // should not change anything
@@ -1881,7 +1888,7 @@ public
       Solvability.update(cref, Solvability.EXPLICIT_LINEAR(NONE(), NONE()), sol_map);
       crefs := {cref};
     else
-      var := BVariable.getVarPointer(cref);
+      var := BVariable.getVarPointer(cref, sourceInfo());
       if BVariable.isRecord(var) then
         subs := ComponentRef.subscriptsAllFlat(cref);
         // get all Record children
@@ -2045,6 +2052,71 @@ public
       then (set1, set2);
     end match;
   end collectDependenciesStmt;
+
+  function collectDependenciesAlgorithmInputs
+    "collects dependencies from algorithm inputs.
+    Only consider inputs that appear outside of when/if conditions"
+    input list<Statement> stmts;
+    input output list<ComponentRef> inputs;
+  protected
+    UnorderedSet<ComponentRef> candidates = UnorderedSet.fromList(inputs, ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedSet<ComponentRef> result = UnorderedSet.fromList(inputs, ComponentRef.hash, ComponentRef.isEqual);
+  algorithm
+    for stmt in stmts loop
+      collectDependenciesAlgorithmStatement(stmt, candidates, result);
+    end for;
+    inputs := UnorderedSet.toList(result);
+  end collectDependenciesAlgorithmInputs;
+
+  function collectDependenciesAlgorithmStatement
+    input Statement stmt;
+    input UnorderedSet<ComponentRef> candidates;
+    input UnorderedSet<ComponentRef> result;
+  algorithm
+    _ := match stmt
+
+      // actual occurence can only happen here
+      case Statement.ASSIGNMENT() algorithm
+        Slice.filterExp(stmt.lhs, function Equation.collectFromSet(check_set = candidates), result);
+        Slice.filterExp(stmt.rhs, function Equation.collectFromSet(check_set = candidates), result);
+      then ();
+
+      // map body
+      case Statement.FOR() algorithm
+        for s in stmt.body loop
+          collectDependenciesAlgorithmStatement(s, candidates, result);
+        end for;
+      then ();
+
+      // map body
+      case Statement.WHILE() algorithm
+        for s in stmt.body loop
+          collectDependenciesAlgorithmStatement(s, candidates, result);
+        end for;
+      then ();
+
+      // skip conditions but map body
+      case Statement.IF() algorithm
+        for branch in stmt.branches loop
+          for s in Util.tuple22(branch) loop
+            collectDependenciesAlgorithmStatement(s, candidates, result);
+          end for;
+        end for;
+      then ();
+
+      // skip conditions but map body
+      case Statement.WHEN() algorithm
+        for branch in stmt.branches loop
+          for s in Util.tuple22(branch) loop
+            collectDependenciesAlgorithmStatement(s, candidates, result);
+          end for;
+        end for;
+      then ();
+
+      // all other cases do not produce an occurence
+      else ();
+    end match;
+  end collectDependenciesAlgorithmStatement;
 
   function updateConditionCrefs
     "variables in conditions are unsolvable, reduced and get their skips removed"

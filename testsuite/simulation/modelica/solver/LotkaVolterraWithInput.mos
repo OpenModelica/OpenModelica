@@ -1,11 +1,8 @@
-// name:     TestExternalInputs
+// name:     LotkaVolterraWithInput
 // keywords: der inputs
 // status: correct
 // teardown_command: rm -rf LotkaVolterra_* LotkaVolterra LotkaVolterra.exe LotkaVolterra.cpp LotkaVolterra.makefile LotkaVolterra.libs LotkaVolterra.log output.log
 // cflags: -d=-newInst
-//
-//
-//
 
 loadString("
 
@@ -70,7 +67,7 @@ val(foxes,760);
 val(derrabbits,42);
 val(derrabbits,420);
 
-simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="impeuler", simflags="-csvInput=LotkaVolterra_res.csv");
+simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="gbode", simflags="-gbm=impl_euler -gbctrl=const -csvInput=LotkaVolterra_res.csv");
 val(rabbits,180);
 val(foxes,200);
 val(rabbits,666);
@@ -78,7 +75,7 @@ val(foxes,760);
 val(derrabbits,42);
 val(derrabbits,420);
 
-simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="imprungekutta", simflags="-impRKOrder=5 -csvInput=LotkaVolterra_res.csv");
+simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="gbode", simflags="-gbm=radauIIA3 -gbctrl=const -csvInput=LotkaVolterra_res.csv");
 val(rabbits,180);
 val(foxes,200);
 val(rabbits,666);
@@ -86,7 +83,7 @@ val(foxes,760);
 val(derrabbits,42);
 val(derrabbits,420);
 
-simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="imprungekutta", simflags="-impRKOrder=6 -csvInput=LotkaVolterra_res.csv");
+simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="gbode", simflags="-gbm=lobattoIIIA4 -gbctrl=const -csvInput=LotkaVolterra_res.csv");
 val(rabbits,180);
 val(foxes,200);
 val(rabbits,666);
@@ -146,7 +143,13 @@ val(derrabbits,420);
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'rungekutta', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-csvInput=LotkaVolterra_res.csv'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "LOG_STDOUT        | warning | Integration method 'rungekutta' is deprecated and will be removed in a future version of OpenModelica.
+// |                 | info    | | Use integration method GBODE with method 'rungekutta' and constant step size instead:
+// |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=rungekutta -gbctrl=const' in Simulation Setup->Simulation Flags.
+// |                 | |       | | | or
+// |                 | |       | | | Simulation flags '-s=gbode -gbm=rungekutta -gbctrl=const'.
+// |                 | |       | | See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
@@ -158,13 +161,8 @@ val(derrabbits,420);
 // 76.41278732145514
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'impeuler', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-csvInput=LotkaVolterra_res.csv'",
-//     messages = "LOG_STDOUT        | warning | Integration method 'impeuler' is deprecated and will be removed in a future version of OpenModelica.
-// |                 | info    | | Use integration method GBODE with method 'impl_euler' and constant step size instead:
-// |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=impl_euler -gbctrl=const' in Simulation Setup->Simulation Flags.
-// |                 | |       | | | or
-// |                 | |       | | | Simulation flags '-s=gbode -gbm=impl_euler -gbctrl=const'.
-// |                 | |       | | See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode
+//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'gbode', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=impl_euler -gbctrl=const -csvInput=LotkaVolterra_res.csv'",
+//     messages = "LOG_STDOUT        | warning | Numerical Jacobians without coloring are currently not supported by GBODE. Colored numerical Jacobian will be used.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -177,13 +175,8 @@ val(derrabbits,420);
 // 63.26222998849814
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'imprungekutta', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-impRKOrder=5 -csvInput=LotkaVolterra_res.csv'",
-//     messages = "LOG_STDOUT        | warning | Integration method 'imprungekutta' is deprecated and will be removed in a future version of OpenModelica.
-// |                 | info    | | Use integration method GBODE with method 'radauIA2' and constant step size instead:
-// |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=radauIA2 -gbctrl=const' in Simulation Setup->Simulation Flags.
-// |                 | |       | | | or
-// |                 | |       | | | Simulation flags '-s=gbode -gbm=radauIA2 -gbctrl=const'.
-// |                 | |       | | See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode
+//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'gbode', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=radauIIA3 -gbctrl=const -csvInput=LotkaVolterra_res.csv'",
+//     messages = "LOG_STDOUT        | warning | Numerical Jacobians without coloring are currently not supported by GBODE. Colored numerical Jacobian will be used.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -196,13 +189,8 @@ val(derrabbits,420);
 // 76.4126067599769
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'imprungekutta', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-impRKOrder=6 -csvInput=LotkaVolterra_res.csv'",
-//     messages = "LOG_STDOUT        | warning | Integration method 'imprungekutta' is deprecated and will be removed in a future version of OpenModelica.
-// |                 | info    | | Use integration method GBODE with method 'radauIA2' and constant step size instead:
-// |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=radauIA2 -gbctrl=const' in Simulation Setup->Simulation Flags.
-// |                 | |       | | | or
-// |                 | |       | | | Simulation flags '-s=gbode -gbm=radauIA2 -gbctrl=const'.
-// |                 | |       | | See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode
+//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'gbode', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=lobattoIIIA4 -gbctrl=const -csvInput=LotkaVolterra_res.csv'",
+//     messages = "LOG_STDOUT        | warning | Numerical Jacobians without coloring are currently not supported by GBODE. Colored numerical Jacobian will be used.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

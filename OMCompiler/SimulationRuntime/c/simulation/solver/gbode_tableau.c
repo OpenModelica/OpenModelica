@@ -147,7 +147,7 @@ void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau)
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_ESDIRK2;
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = TRUE;
+  tableau->isKRightAvailable = FALSE;
 }
 
 // TODO: Describe me
@@ -183,7 +183,7 @@ void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau)
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_ESDIRK3;
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = TRUE;
+  tableau->isKRightAvailable = FALSE;
 }
 
 // TODO: Describe me
@@ -225,7 +225,7 @@ void getButcherTableau_TSIT5(BUTCHER_TABLEAU* tableau)
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_TSIT5;
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = TRUE;
+  tableau->isKRightAvailable = FALSE;
 }
 
 // TODO: Describe me
@@ -265,7 +265,7 @@ void getButcherTableau_ESDIRK4(BUTCHER_TABLEAU* tableau)
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_ESDIRK4;
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = TRUE;
+  tableau->isKRightAvailable = FALSE;
 }
 
 // TODO: Describe me
@@ -304,7 +304,7 @@ void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = TRUE;
+  tableau->isKRightAvailable = FALSE;
 }
 
 // TODO: Describe me
@@ -329,7 +329,7 @@ void getButcherTableau_MS(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = TRUE;
+  tableau->isKRightAvailable = FALSE;
 }
 
 // https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods
@@ -425,7 +425,7 @@ void getButcherTableau_RUNGEKUTTA(BUTCHER_TABLEAU* tableau)
 
     setButcherTableau(tableau, c, A, b, bt);
     tableau->isKLeftAvailable = TRUE;
-    tableau->isKRightAvailable = TRUE;
+    tableau->isKRightAvailable = FALSE;
   }
 }
 
@@ -509,7 +509,7 @@ void getButcherTableau_RADAU_IIA_2(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = TRUE;
+  tableau->isKRightAvailable = FALSE;
 }
 
 // TODO: Describe me
@@ -530,7 +530,7 @@ void getButcherTableau_RADAU_IIA_3(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = TRUE;
+  tableau->isKRightAvailable = FALSE;
 }
 
 // TODO: Describe me
@@ -552,7 +552,7 @@ void getButcherTableau_RADAU_IIA_4(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = TRUE;
+  tableau->isKRightAvailable = FALSE;
 }
 
 // TODO: Describe me
@@ -573,7 +573,7 @@ void getButcherTableau_LOBATTO_IIIA_3(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = TRUE;
+  tableau->isKRightAvailable = FALSE;
 }
 
 // TODO: Describe me
@@ -595,7 +595,7 @@ void getButcherTableau_LOBATTO_IIIA_4(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = TRUE;
+  tableau->isKRightAvailable = FALSE;
 }
 
 // TODO: Describe me
@@ -616,7 +616,7 @@ void getButcherTableau_LOBATTO_IIIB_3(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = TRUE;
+  tableau->isKRightAvailable = FALSE;
 }
 
 // TODO: Describe me
@@ -638,7 +638,7 @@ void getButcherTableau_LOBATTO_IIIB_4(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = TRUE;
+  tableau->isKRightAvailable = FALSE;
 }
 
 // TODO: Describe me
@@ -659,7 +659,7 @@ void getButcherTableau_LOBATTO_IIIC_3(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = TRUE;
+  tableau->isKRightAvailable = FALSE;
 }
 
 // TODO: Describe me
@@ -681,7 +681,7 @@ void getButcherTableau_LOBATTO_IIIC_4(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = TRUE;
+  tableau->isKRightAvailable = FALSE;
 }
 
 // TODO: Describe me
@@ -869,7 +869,7 @@ void getButcherTableau_TRAPEZOID(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
 
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = TRUE;
+  tableau->isKRightAvailable = FALSE;
 }
 
 // TODO: Describe me
@@ -982,7 +982,7 @@ void getButcherTableau_DOPRI45(BUTCHER_TABLEAU* tableau)
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_DOPRI45;
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = TRUE;
+  tableau->isKRightAvailable = FALSE;
 }
 
 // TODO: Describe me
@@ -1061,7 +1061,7 @@ void getButcherTableau_FEHLBERG12(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = TRUE;
+  tableau->isKRightAvailable = FALSE;
 }
 
 // TODO: Describe me
@@ -1394,7 +1394,7 @@ void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* 
     tableau->order_bt = tableau->order_b + 1;
   }
   // set order for error control!
-  tableau->error_order = fmin(tableau->order_b, tableau->order_bt) + 1;
+  tableau->error_order = fmin(tableau->order_b, tableau->order_bt);
 }
 
 /**
@@ -1570,7 +1570,7 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag)
       getButcherTableau_GAUSS6(tableau);
       break;
     default:
-      throwStreamPrint(NULL, "Error: Unknown Runge Kutta method %i.", method);
+      throwStreamPrint(NULL, "Error: Unknown Runge Kutta method.");
   }
 
   return tableau;
@@ -1629,11 +1629,13 @@ void printButcherTableau(BUTCHER_TABLEAU* tableau)
       ct += snprintf(buffer+ct, buffSize-ct, "%10g", tableau->b[j]);
     }
     infoStreamPrint(OMC_LOG_SOLVER, 0, "%s", buffer);
-    ct = snprintf(buffer, buffSize, "%10s | ", "");
-    for (j = 0; j<tableau->nStages; j++) {
-      ct += snprintf(buffer+ct, buffSize-ct, "%10g", tableau->bt[j]);
+    if (!tableau->richardson){
+      ct = snprintf(buffer, buffSize, "%10s | ", "");
+      for (j = 0; j<tableau->nStages; j++) {
+        ct += snprintf(buffer+ct, buffSize-ct, "%10g", tableau->bt[j]);
+      }
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "%s", buffer);
     }
-    infoStreamPrint(OMC_LOG_SOLVER, 0, "%s", buffer);
     messageClose(OMC_LOG_SOLVER);
   }
 }

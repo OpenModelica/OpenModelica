@@ -62,7 +62,7 @@ void addSmultVec_gbf(double* a, double* b, double *c, double s, int nIdx, int* i
 }
 
 /**
- * @brief Scalar multiplication and vector addition a = b + s*c for selected indices.
+ * @brief Scalar multiplication and vector addition a = b + s*c.
  *
  * Determines the scalar multiplication of an vector and adds the result
  * to another vector.
@@ -340,19 +340,19 @@ double error_interpolation_gb(DATA_GBODE* gbData, int nIdx, int* idx, double tol
   }
   hermite_interpolation(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                         gbData->timeRight, gbData->yRight, gbData->kRight,
-                        (gbData->timeLeft + gbData->timeRight)/2, gbData->errest,
+                        (gbData->timeLeft + gbData->timeRight)/2, gbData->y2,
                          nIdx, idx);
   if (idx == NULL) {
     for (i=0; i<nIdx; i++) {
       errtol = tol * fmax(fabs(gbData->yLeft[i]), fabs(gbData->yRight[i])) + tol;
-      gbData->errest[i] = fabs(gbData->errest[i] - gbData->y1[i]) / errtol;
+      gbData->errest[i] = fabs(gbData->y2[i] - gbData->y1[i]) / errtol;
       errint = fmax(errint, gbData->errest[i]);
     }
   } else {
     for (ii=0; ii<nIdx; ii++) {
       i = idx[ii];
       errtol = tol * fmax(fabs(gbData->yLeft[i]), fabs(gbData->yRight[i])) + tol;
-      gbData->errest[i] = fabs(gbData->errest[i] - gbData->y1[i]) / errtol;
+      gbData->errest[i] = fabs(gbData->y2[i] - gbData->y1[i]) / errtol;
       errint = fmax(errint, gbData->errest[i]);
     }
   }
@@ -371,8 +371,8 @@ double error_interpolation_gb(DATA_GBODE* gbData, int nIdx, int* idx, double tol
 void extrapolation_gbf(DATA_GBODE* gbData, double* nlsxExtrapolation, double time)
 {
   DATA_GBODEF* gbfData = gbData->gbfData;
-  int nStates = gbData->nStates;
-  int nFastStates = gbData->nFastStates;
+  const int nStates = gbData->nStates;
+  const int nFastStates = gbData->nFastStates;
 
   if (fabs(gbfData->tv[1]-gbfData->tv[0]) <= GBODE_EPSILON) {
     addSmultVec_gbf(nlsxExtrapolation, gbfData->yv, gbfData->kv, time - gbfData->tv[0], nFastStates, gbData->fastStatesIdx);
@@ -384,6 +384,24 @@ void extrapolation_gbf(DATA_GBODE* gbData, double* nlsxExtrapolation, double tim
                      time, nlsxExtrapolation,
                      nFastStates, gbData->fastStatesIdx, nStates, gbfData->tableau, gbfData->x, gbfData->k);
   }
+}
+
+/**
+ * @brief Extrapolation for all states.
+ *
+ * Using interpolation method specified in gbData->interpolation.
+ *
+ * @param gbData              Generic ODE solver data.
+ * @param nlsxExtrapolation   On output contains function values at extrapolation point time.
+ * @param time                Extrapolation time.
+ */
+void extrapolation_hermite_gb(double* nlsxExtrapolation, int nStates, double t0, double *x0, double* k0, double t1, double *x1, double* k1, double time)
+{
+  gb_interpolation(GB_INTERPOL_HERMITE,
+                   t0, x0,  k0,
+                   t1, x1,  k1,
+                   time, nlsxExtrapolation,
+                   nStates, NULL, nStates, NULL, NULL, NULL);
 }
 
 /**
@@ -460,7 +478,7 @@ void projVector_gbf(double* a, double* b, int nIndx, int* indx)
  * @param nStates  Number of states
  * @param size     Size of buffer
  */
-void debugRingBufferSteps(enum OMC_LOG_STREAM stream, double* x, double* k, double *t, int nStates, int size)
+void debugRingBufferSteps_gb(enum OMC_LOG_STREAM stream, double* x, double* k, double *t, int nStates, int size)
 {
   // If stream is not active do nothing
   if (!OMC_ACTIVE_STREAM(stream)) return;
@@ -483,6 +501,40 @@ void debugRingBufferSteps(enum OMC_LOG_STREAM stream, double* x, double* k, doub
 /**
  * @brief Output debug information of the states and derivatives
  *
+ * that have been evaluated at the past accepted time points.
+ *
+ * @param stream   Prints only, if stream is active
+ * @param x        States at the past accepted time points
+ * @param k        Derivatives at the past accepted time points
+ * @param t        Past accepted time points
+ * @param nStates  Number of states
+ * @param size     Size of buffer
+ * @param nIndx    Size of index vector
+ * @param indx     Index vector
+ */
+void debugRingBufferSteps_gbf(enum OMC_LOG_STREAM stream, double* x, double* k, double *t, int nStates, int size, int nIndx, int* indx)
+{
+  // If stream is not active do nothing
+  if (!OMC_ACTIVE_STREAM(stream)) return;
+
+  infoStreamPrint(stream, 1, "States and derivatives at past accepted time steps (inner integration):");
+
+  int i;
+
+  infoStreamPrint(stream, 0, "states:");
+  for (i = 0; i < size; i++) {
+    printVector_gbf(stream, "x", x + i * nStates, nStates, t[i], nIndx, indx);
+  }
+  infoStreamPrint(stream, 0, "derivatives:");
+  for (i = 0; i < size; i++) {
+    printVector_gbf(stream, "k", k + i * nStates, nStates, t[i], nIndx, indx);
+  }
+  messageClose(stream);
+}
+
+/**
+ * @brief Output debug information of the states and derivatives
+ *
  * that have been evaluated at the intermediate points given by the
  * Butcher tableau.
  *
@@ -494,7 +546,7 @@ void debugRingBufferSteps(enum OMC_LOG_STREAM stream, double* x, double* k, doub
  * @param time     Current time of the inegrator (left hand side)
  * @param stepSize Current step size of the integrator
  */
-void debugRingBuffer(enum OMC_LOG_STREAM stream, double* x, double* k, int nStates, BUTCHER_TABLEAU* tableau, double time, double stepSize)
+void debugRingBuffer_gb(enum OMC_LOG_STREAM stream, double* x, double* k, int nStates, BUTCHER_TABLEAU* tableau, double time, double stepSize)
 {
   // If stream is not active do nothing
   if (!OMC_ACTIVE_STREAM(stream)) return;
@@ -508,6 +560,39 @@ void debugRingBuffer(enum OMC_LOG_STREAM stream, double* x, double* k, int nStat
   infoStreamPrint(stream, 0, "derivatives:");
   for (int stage_ = 0; stage_ < nStages; stage_++) {
     printVector_gb(stream, "k", k + stage_ * nStates, nStates, time + tableau->c[stage_] * stepSize);
+  }
+}
+
+/**
+ * @brief Output debug information of the states and derivatives
+ *
+ * that have been evaluated at the intermediate points given by the
+ * Butcher tableau.
+ *
+ * @param stream   Prints only, if stream is active
+ * @param x        States at the intermediate time points
+ * @param k        Derivatives at the intermediate time points
+ * @param nStates  Number of states
+ * @param tableau  Tableau of the Runge Kutta method
+ * @param time     Current time of the inegrator (left hand side)
+ * @param stepSize Current step size of the integrator
+ * @param nIndx    Size of index vector
+ * @param indx     Index vector
+ */
+void debugRingBuffer_gbf(enum OMC_LOG_STREAM stream, double* x, double* k, int nStates, BUTCHER_TABLEAU* tableau, double time, double stepSize, int nIndx, int* indx)
+{
+  // If stream is not active do nothing
+  if (!OMC_ACTIVE_STREAM(stream)) return;
+
+  int nStages = tableau->nStages, stage_;
+
+  infoStreamPrint(stream, 0, "states:");
+  for (int stage_ = 0; stage_ < nStages; stage_++) {
+    printVector_gbf(stream, "x", x + stage_ * nStates, nStates, time + tableau->c[stage_] * stepSize, nIndx, indx);
+  }
+  infoStreamPrint(stream, 0, "derivatives:");
+  for (int stage_ = 0; stage_ < nStages; stage_++) {
+    printVector_gbf(stream, "k", k + stage_ * nStates, nStates, time + tableau->c[stage_] * stepSize, nIndx, indx);
   }
 }
 
@@ -533,9 +618,8 @@ void printVector_gb(enum OMC_LOG_STREAM stream, char name[], double* a, int n, d
   unsigned int bufSize = 40960;
   unsigned int ct;
   ct = snprintf(row_to_print, bufSize, "%s(%8g) =\t", name, time);
-  for (int i=0;i<n;i++) {
-    ct += snprintf(row_to_print+ct, bufSize-ct, "%18.12g", a[i]);
-  }
+  for (int i=0;i<n;i++)
+    ct += snprintf(row_to_print+ct, bufSize-ct, " %16.12g", a[i]);
   infoStreamPrint(stream, 0, "%s", row_to_print);
 }
 
@@ -559,7 +643,7 @@ void printIntVector_gb(enum OMC_LOG_STREAM stream, char name[], int* a, int n, d
   unsigned int ct;
   ct = snprintf(row_to_print, bufSize, "%s(%8g) =\t", name, time);
   for (int i=0;i<n;i++)
-    ct += snprintf(row_to_print+ct, bufSize-ct, "%d ", a[i]);
+    ct += snprintf(row_to_print+ct, bufSize-ct, " %d", a[i]);
   infoStreamPrint(stream, 0, "%s", row_to_print);
 }
 
@@ -587,7 +671,7 @@ void printVector_gbf(enum OMC_LOG_STREAM stream, char name[], double* a, int n, 
   unsigned int ct;
   ct = snprintf(row_to_print, bufSize, "%s(%8g) =\t", name, time);
   for (int i=0;i<nIndx;i++)
-    ct += snprintf(row_to_print+ct, bufSize-ct, "%16.12g", a[indx[i]]);
+    ct += snprintf(row_to_print+ct, bufSize-ct, " %16.12g", a[indx[i]]);
   infoStreamPrint(stream, 0, "%s", row_to_print);
 }
 
@@ -784,19 +868,14 @@ void replacementString(enum GB_METHOD gbMethod, modelica_boolean constant)
 /**
  * @brief Display deprecation warning for integration methods replaced by GBODE.
  *
- * Deprecated methods: heun, impeuler, trapezoid, imprungekutta, irksco, rungekuttaSsc
+ * Deprecated methods: None
  *
  * @param solverMethod  Integration method.
  */
 void deprecationWarningGBODE(enum SOLVER_METHOD method)
 {
   switch (method) {
-    case S_HEUN:
-    case S_IMPEULER:
-    case S_TRAPEZOID:
-    case S_IMPRUNGEKUTTA:
-    case S_IRKSCO:
-    case S_ERKSSC:
+    case S_RUNGEKUTTA:
       break;
     default:
       return;
@@ -804,23 +883,8 @@ void deprecationWarningGBODE(enum SOLVER_METHOD method)
 
   warningStreamPrint(OMC_LOG_STDOUT, 1, "Integration method '%s' is deprecated and will be removed in a future version of OpenModelica.", SOLVER_METHOD_NAME[method]);
   switch (method) {
-    case S_HEUN:
-      replacementString(RK_HEUN, TRUE);
-      break;
-    case S_IMPEULER:
-      replacementString(RK_IMPL_EULER, TRUE);
-      break;
-    case S_TRAPEZOID:
-      replacementString(RK_TRAPEZOID, TRUE);
-      break;
-    case S_IMPRUNGEKUTTA:
-      replacementString(RK_RADAU_IA_2, TRUE);
-      break;
-    case S_IRKSCO:
-      replacementString(RK_TRAPEZOID, FALSE);
-      break;
-    case S_ERKSSC:
-      replacementString(RK_RKSSC, FALSE);
+    case S_RUNGEKUTTA:
+      replacementString(RK_RUNGEKUTTA, TRUE);
       break;
     default:
       throwStreamPrint(NULL, "Not reachable state");

@@ -153,6 +153,8 @@ public
     "DAEMode
      This function is only allowed to create a list of new partitions for dae Mode."
     input output list<Partition.Partition> partitions;
+    input VariablePointers variables;
+    input Pointer<Integer> uniqueIndex;
   end daeModeInterface;
 
 // =========================================================================
@@ -271,7 +273,7 @@ public
     [!] This function can not only be used as an optimization module but also for
     nonlinear partitions, state sets, linearization and dynamic optimization."
     input String name                                     "Name of jacobian";
-    input JacobianType jacType                            "Type of jacobian (sim/nonlin)";
+    input JacobianType jacType                            "Type of jacobian (ode/dae/lin/nonlin)";
     input VariablePointers seedCandidates                 "differentiate by these";
     input VariablePointers partialCandidates              "solve the equations for these";
     input EquationPointers equations                      "Equations array";

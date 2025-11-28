@@ -1406,7 +1406,7 @@ public
 
       case UNTYPED_CALL()
         algorithm
-          res := List.exist(call.arguments, func);
+          res := List.any(call.arguments, func);
 
           if not res then
             for arg in call.named_args loop
@@ -1439,7 +1439,7 @@ public
         then
           false;
 
-      case TYPED_CALL() then List.exist(call.arguments, func);
+      case TYPED_CALL() then List.any(call.arguments, func);
       case UNTYPED_ARRAY_CONSTRUCTOR() then func(call.exp);
       case TYPED_ARRAY_CONSTRUCTOR() then func(call.exp);
       case UNTYPED_REDUCTION() then func(call.exp);
@@ -2220,7 +2220,7 @@ public
           body :: rest  := iCall.arguments;
           start         := Expression.INTEGER(1);
           step          := NONE();
-          for stop in rest loop
+          for stop in listReverse(rest) loop
             iter_name   := InstNode.newIndexedIterator(index, "f");
             iter_range  := Expression.makeRange(start, step, stop);
             iterators   := (iter_name, iter_range) :: iterators;
@@ -2878,7 +2878,7 @@ protected
             exp := Expression.RANGE(ty, Expression.INTEGER(1), NONE(), Dimension.sizeExp(dim));
 
             // Create the iterator.
-            iter := InstNode.newIterator("$i" + intString(i), Type.INTEGER(), info);
+            iter := InstNode.newUniqueIterator(info);
             iters := (iter, exp) :: iters;
 
             // Now that iterator is ready apply it, as a subscript, to each argument that is supposed to be vectorized
@@ -2941,29 +2941,61 @@ protected
   end devectorizeCall;
 
   function evaluateCallType
+    "Replaces references to inputs in a call's return type with the call's
+     arguments, in order to determine e.g. the sizes of output arrays."
     input output Type ty;
     input Function fn;
     input list<Expression> args;
+    input Integer outputIndex = 1;
     input output ParameterTree ptree = ParameterTree.EMPTY();
+  protected
+    list<Dimension> dims;
+    list<Type> tys;
+    Binding binding;
+    Expression binding_exp;
+    Type t;
+    Integer output_index;
   algorithm
     ty := match ty
-      local
-        list<Dimension> dims;
-        list<Type> tys;
-
       case Type.ARRAY()
         algorithm
-          (dims, ptree) := List.map1Fold(ty.dimensions, evaluateCallTypeDim, (fn, args), ptree);
+          (dims, ptree) := List.mapFold(ty.dimensions, function evaluateCallTypeDim(fn = fn, args = args), ptree);
           ty.dimensions := dims;
         then
           ty;
 
       case Type.TUPLE()
         algorithm
-          (tys, ptree) := List.map2Fold(ty.types, evaluateCallType, fn, args, ptree);
-          ty.types := tys;
+          tys := {};
+          output_index := 1;
+
+          for t in ty.types loop
+            (t, ptree) := evaluateCallType(t, fn, args, output_index, ptree);
+            tys := t :: tys;
+            output_index := output_index + 1;
+          end for;
+
+          ty.types := listReverseInPlace(tys);
         then
           ty;
+
+      // A normal record output
+      case Type.COMPLEX()
+        guard Type.isRecord(ty) and not Function.isNonDefaultRecordConstructor(fn)
+        algorithm
+          binding := Component.getBinding(InstNode.component(listGet(fn.outputs, outputIndex)));
+
+          if Binding.isBound(binding) then
+            // If the output has a binding, replace inputs in it and update the type of the output.
+            binding_exp := Binding.getExp(binding);
+            ptree := buildParameterTree(fn, args, ptree);
+            binding_exp := Expression.map(binding_exp, function evaluateCallTypeDimExp(ptree = ptree));
+            t := Expression.typeOf(binding_exp);
+          else
+            t := ty;
+          end if;
+        then
+          t;
 
       else ty;
     end match;
@@ -2971,7 +3003,8 @@ protected
 
   function evaluateCallTypeDim
     input output Dimension dim;
-    input tuple<Function, list<Expression>> fnArgs;
+    input Function fn;
+    input list<Expression> args;
     input output ParameterTree ptree;
   algorithm
     dim := match dim
@@ -2980,7 +3013,7 @@ protected
 
       case Dimension.EXP()
         algorithm
-          ptree := buildParameterTree(fnArgs, ptree);
+          ptree := buildParameterTree(fn, args, ptree);
           exp := Expression.map(dim.exp, function evaluateCallTypeDimExp(ptree = ptree));
 
           ErrorExt.setCheckpoint(getInstanceName());
@@ -2998,21 +3031,19 @@ protected
   end evaluateCallTypeDim;
 
   function buildParameterTree
-    input tuple<Function, list<Expression>> fnArgs;
+    input Function fn;
+    input list<Expression> args;
     input output ParameterTree ptree;
   protected
-    Function fn;
-    list<Expression> args;
     Expression arg;
+    list<Expression> rest_args = args;
   algorithm
     if not ParameterTree.isEmpty(ptree) then
       return;
     end if;
 
-    (fn, args) := fnArgs;
-
     for i in fn.inputs loop
-      arg :: args := args;
+      arg :: rest_args := rest_args;
       ptree := ParameterTree.add(ptree, InstNode.name(i), arg);
     end for;
 
@@ -3023,20 +3054,25 @@ protected
     input Expression exp;
     input ParameterTree ptree;
     output Expression outExp;
+  protected
+    list<ComponentRef> cref_parts;
+    ComponentRef cref;
+    Option<Expression> oexp;
   algorithm
     outExp := match exp
-      local
-        InstNode node;
-        Option<Expression> oexp;
-        Expression e;
-
-      case Expression.CREF(cref = ComponentRef.CREF(node = node, restCref = ComponentRef.EMPTY()))
+      case Expression.CREF(cref = ComponentRef.CREF())
         algorithm
-          oexp := ParameterTree.getOpt(ptree, InstNode.name(node));
+          cref :: cref_parts := ComponentRef.toListReverse(exp.cref);
+          oexp := ParameterTree.getOpt(ptree, InstNode.name(ComponentRef.node(cref)));
 
           if isSome(oexp) then
             SOME(outExp) := oexp;
-            // TODO: Apply subscripts.
+            outExp := Expression.applySubscripts(ComponentRef.getSubscripts(cref), outExp);
+
+            for cr in cref_parts loop
+              outExp := Expression.recordElement(InstNode.name(ComponentRef.node(cr)), outExp);
+              outExp := Expression.applySubscripts(ComponentRef.getSubscripts(cr), outExp);
+            end for;
           else
             outExp := exp;
           end if;

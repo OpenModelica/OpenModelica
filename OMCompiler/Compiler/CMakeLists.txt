@@ -7,6 +7,12 @@ omc_add_subdirectory(FrontEndCpp)
 # set(OMC_EXE ${PROJECT_SOURCE_DIR}/../build/bin/omc)
 set(OMC_EXE $<TARGET_FILE:bomc>)
 
+# Enable MetaModelica debug symbols when doing a debug build, which is needed
+# for the debugger to work.
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(GEN_DEBUG_SYMBOLS "-d=gendebugsymbols")
+endif()
+
 # list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/.cmake")
 # enable_language(MODELICA)
 
@@ -84,7 +90,7 @@ macro(add_compile_step mo_source_file)
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo.stamp
                 ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.compile.mos
 
-        COMMAND ${OMC_EXE} -g=MetaModelica -n=1 ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.compile.mos
+        COMMAND ${OMC_EXE} -g=MetaModelica -n=1 ${GEN_DEBUG_SYMBOLS} ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.compile.mos
 
         OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/c_files/${file_name_no_ext}.c
                 ${CMAKE_CURRENT_BINARY_DIR}/c_files/${file_name_no_ext}_records.c
@@ -295,16 +301,25 @@ endif()
 # install just the files in this component by specifying its name.
 if(WIN32)
   # Escape the environment variable path
+  if(NOT DEFINED ENV{OMDEV})
+    message(FATAL_ERROR "Environment variable \"OMDEV\" is not set.")
+  endif()
   if(NOT DEFINED ENV{MSYSTEM_PREFIX})
     message(FATAL_ERROR "Environment variable \"MSYSTEM_PREFIX\" is not set.")
   endif()
-  string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
+
+  if (CMAKE_GENERATOR STREQUAL "MinGW Makefiles" AND "$ENV{VisualStudioVersion}" STREQUAL "")
+    string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{OMDEV}\\tools\\msys\\$ENV{MSYSTEM_PREFIX}")
+  else()
+    string(REPLACE "\\" "/" MSYSTEM_PREFIX_ESCAPED "$ENV{MSYSTEM_PREFIX}")
+  endif()
 
   set(OMCOMPILER_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/Compiler/bin)
   set(SIMULATION_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/SimulationRuntime/c)
   set(GC_RUNTIME_LIB_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}OMCompiler/3rdParty/gc)
   set(RUNTIME_LIB_DIRS ${OMPLOT_LIB_DIR} ${OMSIMULATOR_LIB_DIR} ${OMCOMPILER_LIB_DIR} ${SIMULATION_RUNTIME_LIB_DIR} ${GC_RUNTIME_LIB_DIR})
 
+  message(STATUS "Looking for runtime dependencies of OpenModelicaCompiler in ${MSYSTEM_PREFIX_ESCAPED}/bin ${RUNTIME_LIB_DIRS}")
   install(TARGETS OpenModelicaCompiler
           RUNTIME_DEPENDENCIES
             DIRECTORIES ${MSYSTEM_PREFIX_ESCAPED}/bin ${RUNTIME_LIB_DIRS}

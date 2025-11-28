@@ -147,8 +147,7 @@ public
 
       case MAIN()
         algorithm
-          if (listEmpty(bdae.ode) and listEmpty(bdae.algebraic) and listEmpty(bdae.ode_event) and listEmpty(bdae.alg_event) and listEmpty(bdae.clocked))
-             or not Flags.isSet(Flags.BLT_DUMP) then
+          if not Flags.isSet(Flags.BLT_DUMP) or (listEmpty(bdae.ode) and listEmpty(bdae.algebraic) and listEmpty(bdae.ode_event) and listEmpty(bdae.alg_event) and listEmpty(bdae.clocked) and isNone(bdae.dae)) then
             tmp := StringUtil.headline_1("BackendDAE: " + str) + "\n";
             tmp := tmp +  VarData.toString(bdae.varData, 2) + "\n" +
                           EqData.toString(bdae.eqData, 1);
@@ -268,6 +267,7 @@ public
     list<String> followEquations = Flags.getConfigStringList(Flags.DEBUG_FOLLOW_EQUATIONS);
     Option<UnorderedSet<String>> eq_filter_opt;
     list<DAE.InlineType> inline_types = {DAE.NORM_INLINE(), DAE.BUILTIN_EARLY_INLINE(), DAE.EARLY_INLINE(), DAE.DEFAULT_INLINE()};
+    NBPartition.Kind kind;
   algorithm
     // if we filter dump for equations
     if listEmpty(followEquations) then
@@ -291,24 +291,30 @@ public
       (Events.main,        "Events")
     };
 
-    mainModules := {
+    if Flags.getConfigBool(Flags.DAE_MODE) then
+      mainModules := {(DAEMode.main, "DAE-Mode")};
+      kind := NBPartition.Kind.DAE;
+    else
+      mainModules := {};
+      kind := NBPartition.Kind.ODE;
+    end if;
+
+    // all main modules are always done in ODE mode
+    mainModules := listAppend({
       (function Partitioning.main(kind = NBPartition.Kind.ODE),             "Partitioning"),
       (function Causalize.main(kind = NBPartition.Kind.ODE),                "Causalize"),
       (function Inline.main(inline_types = {DAE.AFTER_INDEX_RED_INLINE()}, init = false), "After Index Reduction Inline"),
       (Initialization.main,                                                 "Initialization")
-    };
+    }, mainModules);
 
-    if Flags.getConfigBool(Flags.DAE_MODE) then
-      mainModules := (DAEMode.main, "DAE-Mode") :: mainModules;
-    end if;
 
     // (do not change order SOLVE -> JACOBIAN)
     postOptModules := {
-      (Evaluation.removeDummies,    "Remove Dummies"),
-      (function Tearing.main(kind = NBPartition.Kind.ODE),    "Tearing"),
-      (Partitioning.categorize,                               "Categorize"),
-      (Solve.main,                                            "Solve"),
-      (function Jacobian.main(kind = NBPartition.Kind.ODE),   "Jacobian")
+      (Evaluation.removeDummies,              "Remove Dummies"),
+      (function Tearing.main(kind = kind),    "Tearing"),
+      (Partitioning.categorize,               "Categorize"),
+      (Solve.main,                            "Solve"),
+      (function Jacobian.main(kind = kind),   "Jacobian")
     };
 
     (bdae, preOptClocks)  := applyModules(bdae, preOptModules, eq_filter_opt, ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE);
@@ -365,7 +371,7 @@ public
           fail();
         end try;
         clock_time := System.realtimeTock(clock_idx);
-        ExecStat.execStat(name);
+        ExecStat.execStat("[" + ClockIndexes.toString(clock_idx) + "] " + name);
         module_clocks := (name, clock_time) :: module_clocks;
         if Flags.isSet(Flags.FAILTRACE) then
           (varSizes, eqnSizes) := sizes(bdae);
@@ -437,7 +443,6 @@ public
             VariablePointers.removeList(acc_discrete_states_accessed, varData.unknowns);
             VariablePointers.removeList(acc_discrete_states_accessed, varData.discretes);
             VariablePointers.removeList(acc_discrete_states_accessed, varData.discrete_states);
-            // TODO: CLOCKED?
 
             VariablePointers.removeList(Pointer.access(acc_previous), varData.previous);
             VariablePointers.removeList(Pointer.access(acc_previous), varData.variables);
@@ -634,6 +639,13 @@ protected
           clocks_lst := lowVar_ptr :: clocks_lst;
         then ();
 
+        // clocked variables are handled just as algebraics, the clocked type is just for partitioning
+        case VariableKind.CLOCKED() algorithm
+          algebraics_lst := lowVar_ptr :: algebraics_lst;
+          unknowns_lst := lowVar_ptr :: unknowns_lst;
+          initials_lst := lowVar_ptr :: initials_lst;
+        then ();
+
         case VariableKind.EXTOBJ() algorithm
           lowVar_ptr := BVariable.setFixed(lowVar_ptr);
           external_objects_lst := lowVar_ptr :: external_objects_lst;
@@ -767,7 +779,9 @@ protected
         Type elemTy;
         list<Pointer<Variable>> children = {};
 
-      case (_, _, Type.CLOCK()) then VariableKind.CLOCK();
+      // clocks and clocked signals
+      case (_, _, Type.CLOCK())                                           then VariableKind.CLOCK();
+      case (_,_ , _) guard(Binding.isClockOrSampleFunction(var.binding))  then VariableKind.CLOCKED();
 
       // variable -> artificial state if it has stateSelect = StateSelect.always
       case (NFPrefixes.Variability.CONTINUOUS, VariableAttributes.VAR_ATTR_REAL(stateSelect = SOME(NFBackendExtension.StateSelect.ALWAYS)), _)
@@ -838,7 +852,7 @@ protected
         BackendInfo binfo;
         VariableKind varKind;
       case Variable.VARIABLE(backendinfo = binfo as BackendInfo.BACKEND_INFO(varKind = varKind as VariableKind.RECORD())) algorithm
-        varKind.children := list(VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(child.name)) for child in var.children);
+        varKind.children := list(VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(child.name), SOME(sourceInfo())) for child in var.children);
         // set parent for all children
         varKind.children := list(BVariable.setParent(child, var_ptr) for child in varKind.children);
         binfo.varKind := varKind;
@@ -1176,39 +1190,43 @@ protected
   end lowerIfBranchBody;
 
   function lowerWhenEquation
-    input FEquation frontend_equation;
+    input FEquation frontend_eq;
     input Boolean init;
     output list<Pointer<Equation>> backend_equations;
   algorithm
-    backend_equations := match frontend_equation
+    backend_equations := match frontend_eq
       local
-        list<FEquation.Branch> branches;
-        DAE.ElementSource source;
-        Expression condition, message, level;
         BEquation.WhenEquationBody whenEqBody;
         list<BEquation.WhenEquationBody> bodies;
         EquationAttributes attr;
+        Call call;
+        Algorithm alg;
 
-      case FEquation.WHEN(branches = branches, source = source)
-        algorithm
-          // When equation inside initial actually not allowed. Throw error?
-          SOME(whenEqBody) := lowerWhenEquationBody(branches);
-          bodies := BEquation.WhenEquationBody.split(whenEqBody);
+      case FEquation.WHEN() algorithm
+        // When equation inside initial actually not allowed. Throw error?
+        SOME(whenEqBody) := lowerWhenEquationBody(frontend_eq.branches);
+        bodies := BEquation.WhenEquationBody.split(whenEqBody);
       then list(Pointer.create(BEquation.WHEN_EQUATION(
         size    = BEquation.WhenEquationBody.size(b),
         body    = b,
-        source  = source,
+        source  = frontend_eq.source,
         attr    = EquationAttributes.default(if BEquation.WhenEquationBody.size(b) > 0 then EquationKind.DISCRETE else EquationKind.EMPTY, init)
       )) for b in bodies);
 
-      case FEquation.ASSERT(condition = condition, message = message, level = level, source = source)
-        algorithm
-          attr := EquationAttributes.default(EquationKind.EMPTY, init);
-          whenEqBody := BEquation.WHEN_EQUATION_BODY(condition, {BEquation.ASSERT(condition, message, level, source)}, NONE());
-      then {Pointer.create(BEquation.WHEN_EQUATION(0, whenEqBody, source, attr))};
+      case FEquation.ASSERT(condition = Expression.CALL(call = call)) guard(Call.isNamed(call, "noEvent")) algorithm
+        attr := EquationAttributes.default(EquationKind.EMPTY, init);
+        alg := Algorithm.ALGORITHM({Statement.ASSERT(frontend_eq.condition, frontend_eq.message, frontend_eq.level, frontend_eq.source)},
+          {}, {}, frontend_eq.scope, frontend_eq.source);
+      then {lowerAlgorithm(alg, init)};
+
+      case FEquation.ASSERT() algorithm
+        attr := EquationAttributes.default(EquationKind.EMPTY, init);
+        whenEqBody := BEquation.WHEN_EQUATION_BODY(frontend_eq.condition,
+          {BEquation.ASSERT(frontend_eq.condition, frontend_eq.message, frontend_eq.level, frontend_eq.source)}, NONE());
+      then {Pointer.create(BEquation.WHEN_EQUATION(0, whenEqBody, frontend_eq.source, attr))};
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + FEquation.toString(frontend_equation)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + FEquation.toString(frontend_eq)});
       then fail();
 
     end match;
@@ -1288,30 +1306,14 @@ protected
   algorithm
     stmt := match eq
       local
-        Expression message, exp, lhs, rhs;
-        ComponentRef cref, lhs_cref, rhs_cref;
-        Type lhs_ty, rhs_ty;
-        DAE.ElementSource source;
-      // These should hopefully not occur since they have their own top level condition, check assert for same condition?
-      // case FEquation.WHEN()       then fail();
-      // case FEquation.ASSERT()     then fail();
+        ComponentRef cref;
 
-      // These do not provide their own conditions and are therefore body branches
-      case FEquation.TERMINATE(message = message, source = source)
-      then BEquation.TERMINATE(message, source);
-
-      case FEquation.REINIT(cref = Expression.CREF(cref = cref), reinitExp = exp, source = source)
-      then BEquation.REINIT(cref, exp, source);
-
-      case FEquation.NORETCALL(exp = exp, source = source)
-      then BEquation.NORETCALL(exp, source);
-
-      // Convert other equations to assignments
-      case FEquation.EQUALITY(lhs = lhs, rhs = rhs, source = source)
-      then BEquation.ASSIGN(lhs, rhs, source);
-
-      case FEquation.ARRAY_EQUALITY(lhs = lhs, rhs = rhs, source = source)
-      then BEquation.ASSIGN(lhs, rhs, source);
+      case FEquation.TERMINATE()                                  then BEquation.TERMINATE(eq.message, eq.source);
+      case FEquation.REINIT(cref = Expression.CREF(cref = cref))  then BEquation.REINIT(cref, eq.reinitExp, eq.source);
+      case FEquation.NORETCALL()                                  then BEquation.NORETCALL(eq.exp, eq.source);
+      case FEquation.ASSERT()                                     then BEquation.ASSERT(eq.condition, eq.message, eq.level, eq.source);
+      case FEquation.EQUALITY()                                   then BEquation.ASSIGN(eq.lhs, eq.rhs, eq.source);
+      case FEquation.ARRAY_EQUALITY()                             then BEquation.ASSIGN(eq.lhs, eq.rhs, eq.source);
 
       /* ToDo! implement proper cases for FOR and IF --> need FOR_ASSIGN and IF_ASSIGN ?
       case FEquation.FOR(iterator = iterator, range = SOME(range), body = body, source = source)
@@ -1337,7 +1339,7 @@ protected
 
     if listEmpty(alg.outputs) then
       attr := EquationAttributes.default(EquationKind.EMPTY, init);
-    elseif ComponentRef.listHasDiscrete(alg.outputs) then
+    elseif Algorithm.isDiscrete(alg) then
       attr := EquationAttributes.default(EquationKind.DISCRETE, init);
     else
       attr := EquationAttributes.default(EquationKind.CONTINUOUS, init);
@@ -1406,7 +1408,7 @@ protected
   algorithm
     try
       if not ComponentRef.isWild(cref) then
-        var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref), complete);
+        var  := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref), if complete then SOME(sourceInfo()) else NONE());
         cref := lowerComponentReferenceInstNode(cref, var);
         cref := ComponentRef.mapSubscripts(cref, function Subscript.mapExp(func = function lowerComponentReferenceExp(variables = variables, complete = true)));
       end if;
@@ -1488,7 +1490,7 @@ protected
     ComponentRef cref = ComponentRef.fromNode(node, Type.INTEGER(), {}, NFComponentRef.Origin.ITERATOR);
     Pointer<Variable> var;
   algorithm
-    var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref));
+    var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref), SOME(sourceInfo()));
     node := InstNode.VAR_NODE(InstNode.name(node), var);
   end lowerInstNode;
 

@@ -166,7 +166,7 @@ public
       case Expression.ENUM_LITERAL() then exp.index; // ty !!
       case Expression.CLKCONST() then 0; // clk !!
       case Expression.CREF() algorithm
-        var := BVariable.getVar(exp.cref);
+        var := BVariable.getVar(exp.cref, sourceInfo());
       then stringHashDjb2Mod(BackendInfo.toString(var.backendinfo), mod);
       case Expression.TYPENAME() then 1; // ty !!
       case Expression.ARRAY() algorithm // ty !!
@@ -277,7 +277,7 @@ public
   algorithm
     if b then
       b := match exp
-        case Expression.CREF() then ComponentRef.isTime(exp.cref) or BVariable.checkCref(exp.cref, BVariable.isParamOrConst);
+        case Expression.CREF() then ComponentRef.isTime(exp.cref) or BVariable.checkCref(exp.cref, BVariable.isParamOrConst, sourceInfo());
         else true;
       end match;
     end if;
@@ -298,7 +298,7 @@ public
   algorithm
     if b then
       b := match exp
-        case Expression.CREF() then BVariable.checkCref(exp.cref, function BVariable.isContinuous(init = init));
+        case Expression.CREF() then BVariable.checkCref(exp.cref, function BVariable.isContinuous(init = init), sourceInfo());
         else true;
       end match;
     end if;
@@ -308,27 +308,47 @@ public
     input array<list<Integer>> m          "global adjacency matrix";
     input Matching matching               "global matching";
     input list<Integer> eqn_indices       "global equation indices to keep";
-    output array<list<Integer>> m_loc;
-    output Matching matching_loc;
+    output array<list<Integer>> m_loc     "local adjacency matrix";
+    output Matching matching_loc          "local matching";
+    output array<Integer> map_back        "local to global equation indices";
   protected
-    array<Integer> var_to_eqn = arrayCreate(arrayLength(matching.var_to_eqn), -1);
-    array<Integer> eqn_to_var = arrayCreate(arrayLength(matching.eqn_to_var), -1);
-    UnorderedSet<Integer> vars_set = UnorderedSet.new(Util.id, intEq, arrayLength(var_to_eqn));
+    constant Integer N = listLength(eqn_indices);
+    array<Integer> var_to_eqn = arrayCreate(N, -1);
+    array<Integer> eqn_to_var = arrayCreate(N, -1);
+    UnorderedMap<Integer, Integer> var_loc = UnorderedMap.new<Integer>(Util.id, intEq, N) "global to local variable indices";
+    Integer j = 1;
   algorithm
-    // TODO create smaller system with local indices and return a map to go back to global indices
-    m_loc := arrayCreate(arrayLength(m), {});
-    // copy matching from full system
+    // map matching from full system and save eqn map back
+    map_back := arrayCreate(N, -1);
     for i in eqn_indices loop
-      eqn_to_var[i] := matching.eqn_to_var[i];
-      var_to_eqn[eqn_to_var[i]] := matching.var_to_eqn[eqn_to_var[i]];
-      UnorderedSet.add(eqn_to_var[i], vars_set);
-    end for;
-    // filter only local edges of adjacency matrix
-    for i in eqn_indices loop
-      m_loc[i] := list(j for j guard UnorderedSet.contains(j, vars_set) in m[i]);
+      // set equation map (local -> global)
+      map_back[j] := i;
+
+      // set var from matching (global -> local)
+      UnorderedMap.addUnique(matching.eqn_to_var[i], j, var_loc);
+
+      // set local matching
+      eqn_to_var[j] := j;
+      var_to_eqn[j] := j;
+
+      j := j + 1;
     end for;
     matching_loc := MATCHING(var_to_eqn, eqn_to_var);
+
+    // filter only local edges of adjacency matrix
+    m_loc := arrayCreate(N, {});
+    for j in 1:N loop
+      m_loc[j] := UnorderedMap.getList(m[map_back[j]], var_loc);
+    end for;
   end getLocalSystem;
 
+  public function makeFDerString
+    input output String str;
+    input Option<Integer> i_opt = NONE();
+  protected
+    String i = if Util.isSome(i_opt) then intString(Util.getOption(i_opt)) else "";
+  algorithm
+    str := NBVariable.FUNCTION_DERIVATIVE_STR + i + "_" + str;
+  end makeFDerString;
   annotation(__OpenModelica_Interface="backend");
 end NBBackendUtil;

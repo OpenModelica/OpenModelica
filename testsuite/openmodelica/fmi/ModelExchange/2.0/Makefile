@@ -28,6 +28,7 @@ fmi_attributes_24.mos \
 fmi_attributes_25.mos \
 fmiFilterTest.mos \
 FMUResourceTest.mos \
+ModelWithAlias.mos \
 QuotedIdentifierExport.mos \
 RealFFT1.mos \
 testBug2764.mos \
@@ -36,9 +37,10 @@ testBug3049.mos \
 testBug3763.mos \
 testBug3846.mos \
 testBug5673.mos \
+testDgesvSources.mos \
 testDisableDep.mos \
 testDiscreteStructe.mos \
-testDgesvSources.mos \
+testModelicaStandardTables.mos \
 TestSourceCodeFMU.mos \
 ticket5670.mos \
 ticket6262.mos \

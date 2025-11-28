@@ -53,7 +53,6 @@ static inline void real_set(real_array *a, size_t i, modelica_real r)
     ((modelica_real *) a->data)[i] = r;
 }
 
-
 modelica_real real_get(const real_array a, size_t i)
 {
   return ((modelica_real *) a.data)[i];
@@ -244,10 +243,46 @@ void print_real_array(const real_array *source)
                 printf("\n");
             }
             if((k + 1) < n) {
-                printf("\n ================= \n");
+                printf("\n =================\n");
             }
         }
     }
+}
+
+/**
+ * @brief Write real vector into null-terminated string.
+ *
+ * @param source        Real vector to write to buffer.
+ * @param isScalar      Treat vector as scalar.
+ * @return const char*  Pointer to static buffer. Not thread-safe!
+ */
+const char* real_vector_to_string(const real_array *source, modelica_boolean isScalar) {
+    _index_t i;
+    modelica_real *data;
+    static char buffer[2048];
+    size_t pos = 0;
+
+    omc_assert_macro(base_array_ok(source));
+    assert(source->ndims == 1);
+
+    data = (modelica_real *) source->data;
+
+    if (isScalar && source->ndims == 1 && source->dim_size[0] == 1) {
+        pos += snprintf(buffer + pos, sizeof(buffer) - pos,
+                        "%g", data[0]);
+    } else {
+        pos += snprintf(buffer + pos, sizeof(buffer) - pos, "{");
+        for(i = 0; i < source->dim_size[0]; i++) {
+            pos += snprintf(buffer + pos, sizeof(buffer) - pos,
+                            "%g%s", data[i], (i < source->dim_size[0] - 1) ? ", " : "");
+            if (pos >= sizeof(buffer)) {
+                break;
+            }
+        }
+        snprintf(buffer + pos, sizeof(buffer) - pos, "}");
+    }
+
+    return buffer;
 }
 
 void put_real_element(modelica_real value, int i1, real_array *dest)

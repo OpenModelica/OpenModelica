@@ -877,7 +877,7 @@ protected
       size := Mutable.access(single.size);
       for tmp in tmp_lst loop
         if func(Mutable.access(tmp.size), size) then
-          size := Mutable.access(single.size);
+          size := Mutable.access(tmp.size);
           rest := single :: rest;
           single := tmp;
         else

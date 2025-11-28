@@ -135,7 +135,7 @@ public
           e := SimplifyExp.simplify(e);
         then match e
           case Expression.INTEGER(value) then RESIZABLE(value, NONE(), exp, var);
-        // otherwise it is just an expression
+          // otherwise it is just an expression
           else EXP(exp, var);
         end match;
       end match;
@@ -451,6 +451,15 @@ public
       case UNTYPED() then Expression.toString(dim.dimension);
     end match;
   end toString;
+
+  function hashList
+    input list<Dimension> dims;
+    output Integer hash = 5381;
+  algorithm
+    for dim in dims loop
+      hash := stringHashDjb2Continue(toString(dim), hash);
+    end for;
+  end hashList;
 
   function toStringList
     input list<Dimension> dims;

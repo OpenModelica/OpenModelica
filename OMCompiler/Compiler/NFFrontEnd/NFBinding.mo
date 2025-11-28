@@ -461,6 +461,7 @@ public
       case FLAT_BINDING() then prefix + Expression.toString(binding.bindingExp);
       case CEVAL_BINDING() then prefix + Expression.toString(binding.bindingExp);
       case INVALID_BINDING() then toString(binding.binding, prefix);
+      else "";
     end match;
   end toString;
 
@@ -478,6 +479,7 @@ public
       case FLAT_BINDING() then prefix + Expression.toFlatString(binding.bindingExp, format);
       case CEVAL_BINDING() then prefix + Expression.toFlatString(binding.bindingExp, format);
       case INVALID_BINDING() then toFlatString(binding.binding, format, prefix);
+      else "";
     end match;
   end toFlatString;
 
@@ -486,6 +488,7 @@ public
     output String string;
   algorithm
     string := match binding
+      case WILD() then "WILD";
       case UNBOUND() then "UNBOUND";
       case RAW_BINDING() then "RAW_BINDING";
       case UNTYPED_BINDING() then "UNTYPED_BINDING";
@@ -493,6 +496,7 @@ public
       case FLAT_BINDING() then "FLAT_BINDING";
       case CEVAL_BINDING() then "CEVAL_BINDING";
       case INVALID_BINDING() then "INVALID_BINDING";
+      else "UNKNOWN";
     end match;
   end toDebugString;
 
@@ -523,6 +527,7 @@ public
     output DAE.Binding outBinding;
   algorithm
     outBinding := match binding
+      case WILD()    then DAE.UNBOUND();
       case UNBOUND() then DAE.UNBOUND();
       case TYPED_BINDING() then makeDAEBinding(binding.bindingExp, binding.variability);
       case FLAT_BINDING() then makeDAEBinding(binding.bindingExp, binding.variability);
@@ -919,6 +924,18 @@ public
       else ();
     end match;
   end expandEach;
+
+  function isClockOrSampleFunction
+    input Binding binding;
+    output Boolean b;
+  algorithm
+    b := match getExpOpt(binding)
+      local
+        Expression exp;
+      case SOME(exp) then Expression.isClockOrSampleFunction(exp);
+      else false;
+    end match;
+  end isClockOrSampleFunction;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBinding;

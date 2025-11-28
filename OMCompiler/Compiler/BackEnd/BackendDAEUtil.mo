@@ -5777,21 +5777,20 @@ end getEqnAndVarsFromInnerEquation;
 
 public function getEqnAndVarsFromInnerEquationLst
   input BackendDAE.InnerEquations innerEquations;
-  output tuple<list<Integer>,list<list<Integer>>,list<BackendDAE.Constraints>> eqnVarConstTpl;
+  output list<Integer> eqns = {};
+  output list<list<Integer>> allVars = {};
+  output list<BackendDAE.Constraints> allConstraints = {};
 protected
   Integer eqn;
-  list<Integer> eqns = {}, vars;
-  list<list<Integer>> allVars = {};
+  list<Integer> vars;
   BackendDAE.Constraints constraints;
-  list<BackendDAE.Constraints> allConstraints = {};
 algorithm
   for innerEq in innerEquations loop
     (eqn,vars,constraints) := getEqnAndVarsFromInnerEquation(innerEq);
     eqns := eqn::eqns;
-    allVars := vars::allVars;
-    allConstraints := constraints::allConstraints;
+    if isPresent(allVars) then allVars := vars::allVars; end if;
+    if isPresent(allConstraints) then allConstraints := constraints::allConstraints; end if;
   end for;
-  eqnVarConstTpl := (eqns,allVars,allConstraints);
 end getEqnAndVarsFromInnerEquationLst;
 
 protected function transformSolvabilityForCasualTearingSet

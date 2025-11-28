@@ -125,7 +125,7 @@ public constant ErrorTypes.Message UNBOUND_VALUE = ErrorTypes.MESSAGE(24, ErrorT
 public constant ErrorTypes.Message NEGATIVE_SQRT = ErrorTypes.MESSAGE(25, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Negative value as argument to sqrt."));
 public constant ErrorTypes.Message NO_CONSTANT_BINDING = ErrorTypes.MESSAGE(26, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("No constant value for variable %s in scope %s."));
+  Gettext.gettext("Constant '%s' has no value."));
 public constant ErrorTypes.Message TYPE_NOT_FROM_PREDEFINED = ErrorTypes.MESSAGE(27, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("In class %s, class specialization 'type' can only be derived from predefined types."));
 public constant ErrorTypes.Message INCOMPATIBLE_CONNECTOR_VARIABILITY = ErrorTypes.MESSAGE(28, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -581,7 +581,7 @@ public constant ErrorTypes.Message OPERATOR_FUNCTION_NOT_EXPECTED = ErrorTypes.M
 public constant ErrorTypes.Message OPERATOR_FUNCTION_EXPECTED = ErrorTypes.MESSAGE(253, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("'operator record' classes may only contain elements of type 'operator function'; %s has restriction '%s'."));
 public constant ErrorTypes.Message STRUCTURAL_SINGULAR_INITIAL_SYSTEM = ErrorTypes.MESSAGE(254, ErrorTypes.SYMBOLIC(), ErrorTypes.ERROR(),
-  Gettext.gettext("Initialization problem is structurally singular, error found sorting equations \n %s for variables \n %s"));
+  Gettext.gettext("Initialization problem is structurally singular, error found sorting equations\n %s for variables\n %s"));
 public constant ErrorTypes.Message UNFIXED_PARAMETER_WITH_BINDING = ErrorTypes.MESSAGE(255, ErrorTypes.SYMBOLIC(), ErrorTypes.WARNING(),
   Gettext.gettext("The parameter %s has fixed = false and a binding equation %s = %s, which is probably redundant.\nSetting fixed = false usually means there is an additional initial equation to determine the parameter value. The binding was ignored by old Modelica tools, but this is not according to the Modelica specification. Please remove the parameter binding, or bind the parameter to another parameter with fixed = false and no binding."));
 public constant ErrorTypes.Message UNFIXED_PARAMETER_WITH_BINDING_31 = ErrorTypes.MESSAGE(256, ErrorTypes.SYMBOLIC(), ErrorTypes.WARNING(),
@@ -903,6 +903,14 @@ public constant ErrorTypes.Message CONFLICTING_INHERITED_ANNOTATIONS = ErrorType
   Gettext.gettext("Conflicting '%s' annotations inherited by class '%s':\n  %s from 'extends %s'\n  %s from 'extends %s'"));
 public constant ErrorTypes.Message ASSIGN_ITERATOR_ERROR = ErrorTypes.MESSAGE(415, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Assignment to iterator '%s'."));
+public constant ErrorTypes.Message INVALID_CONNECTOR_VARIABILITY = ErrorTypes.MESSAGE(416, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Invalid variability %s on connector '%s'."));
+public constant ErrorTypes.Message NON_BREAKABLE_ELEMENT = ErrorTypes.MESSAGE(417, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Invalid use of break on non-component '%s'."));
+public constant ErrorTypes.Message NON_BREAKABLE_COMPONENT = ErrorTypes.MESSAGE(418, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Invalid use of break on component '%s', component must be a model, block, or connector."));
+public constant ErrorTypes.Message UNMATCHED_BREAK_CONNECT = ErrorTypes.MESSAGE(419, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("No matching element found for 'break connect(%s, %s)'."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
@@ -1137,6 +1145,8 @@ public constant ErrorTypes.Message NOTIFY_PKG_ALREADY_INSTALLED = ErrorTypes.MES
   Gettext.gettext("%s %s is already installed, skipping."));
 public constant ErrorTypes.Message REINIT_IN_ALGORITHM = ErrorTypes.MESSAGE(618, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Operator reinit may not be used in an algorithm section (use translation flag --allowNonStandardModelica=reinitInAlgorithms to ignore)."));
+public constant ErrorTypes.Message HIDE_RESULT_NOT_EVALUATED = ErrorTypes.MESSAGE(619, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  Gettext.gettext("Ignoring the hideResult annotation on '%s' which could not be evaluated, probably due to missing annotation(Evaluate=true)."));
 
 public constant ErrorTypes.Message MATCH_SHADOWING = ErrorTypes.MESSAGE(5001, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Local variable '%s' shadows another variable."));

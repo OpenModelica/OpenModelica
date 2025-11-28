@@ -57,6 +57,7 @@ protected
 
   // Backend imports
   import BVariable = NBVariable;
+  import NBEquation.Equation;
   import NBEvents.{EventInfo, Condition};
   import NBPartition.Partition;
   import Slice = NBSlice;
@@ -252,6 +253,20 @@ public
       Pointer.update(indices_ptr, simCodeIndices);
     end traverseCreate;
 
+    function createFromResidualComponent
+      input output StrongComponent comp;
+      input Pointer<list<SimVar>> acc;
+      input Pointer<SimCode.SimCodeIndices> indices_ptr;
+      input VarType varType = VarType.SIMULATION;
+    algorithm
+      _ := match comp
+        case StrongComponent.SINGLE_COMPONENT() guard(Equation.isResidual(comp.eqn)) algorithm
+          traverseCreate(Pointer.access(Equation.getResidualVar(comp.eqn)), acc, indices_ptr, varType);
+        then ();
+        else ();
+      end match;
+    end createFromResidualComponent;
+
     function size
       input SimVar var;
       output Integer s = Type.sizeOf(var.type_);
@@ -369,6 +384,7 @@ public
             max := varAttr.max;
             start := varAttr.start;
             nominal := varAttr.nominal;
+            // FIXME parameters have default fixed = true
             isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
             isDiscrete := match varKind
               case VariableKind.DISCRETE()        then true;
@@ -874,7 +890,7 @@ public
     algorithm
       for tpl in hash_tpl loop
         (cref, var) := tpl;
-        if BVariable.checkCref(cref, BVariable.isSeed) then
+        if BVariable.checkCref(cref, BVariable.isSeed, sourceInfo()) then
           seed_vars := var :: seed_vars;
         else
           jacobian_vars := var :: jacobian_vars;
@@ -965,7 +981,7 @@ public
       input SplitType splitType;
       input VarType varType;
     protected
-      VariablePointers scalar_vars;
+      VariablePointers sim_vars = if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then VariablePointers.scalarize(vars) else vars;
       Pointer<list<SimVar>> acc = Pointer.create({});
       Pointer<list<SimVar>> real_lst = Pointer.create({});
       Pointer<list<SimVar>> int_lst = Pointer.create({});
@@ -974,17 +990,15 @@ public
       Pointer<list<SimVar>> enum_lst = Pointer.create({});
       Pointer<SimCode.SimCodeIndices> indices_ptr = Pointer.create(simCodeIndices);
     algorithm
-      // scalarize variables for simcode
-      scalar_vars := VariablePointers.scalarize(vars);
       if splitType == SplitType.NONE then
         // Do not split and return everything as one single list
-        VariablePointers.map(scalar_vars, function SimVar.traverseCreate(acc = acc, indices_ptr = indices_ptr, varType = varType));
+        VariablePointers.map(sim_vars, function SimVar.traverseCreate(acc = acc, indices_ptr = indices_ptr, varType = varType));
         simVars := {listReverse(Pointer.access(acc))};
         simCodeIndices := Pointer.access(indices_ptr);
       elseif splitType == SplitType.TYPE then
         // Split the variables by basic type (real, integer, boolean, string)
         // and return a list for each type
-        VariablePointers.map(scalar_vars, function splitByType(real_lst = real_lst, int_lst = int_lst, bool_lst = bool_lst, string_lst = string_lst, enum_lst = enum_lst, indices_ptr = indices_ptr, varType = varType));
+        VariablePointers.map(sim_vars, function splitByType(real_lst = real_lst, int_lst = int_lst, bool_lst = bool_lst, string_lst = string_lst, enum_lst = enum_lst, indices_ptr = indices_ptr, varType = varType));
         simVars := {listReverse(Pointer.access(real_lst)),
                     listReverse(Pointer.access(int_lst)),
                     listReverse(Pointer.access(bool_lst)),
@@ -1009,7 +1023,7 @@ public
     protected
       SimCode.SimCodeIndices simCodeIndices = Pointer.access(indices_ptr);
     algorithm
-      () := match (var.ty, varType)
+      () := match (Type.arrayElementType(var.ty), varType)
 
         case (Type.REAL(), VarType.SIMULATION)
           algorithm
@@ -1158,7 +1172,7 @@ public
           then List.flatten(result);
 
           else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Partition.Partition.toString(partition)});
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + Partition.Partition.toString(partition)});
           then fail();
         end match;
     end getPartitionVars;
@@ -1173,12 +1187,12 @@ public
         case StrongComponent.MULTI_COMPONENT()      then List.flatten(list(getVars(Slice.getT(v), simcode_map) for v in comp.vars));
         case StrongComponent.SLICED_COMPONENT()     then getVars(Slice.getT(comp.var), simcode_map);
         case StrongComponent.RESIZABLE_COMPONENT()  then getVars(Slice.getT(comp.var), simcode_map);
-        case StrongComponent.GENERIC_COMPONENT()    then getVars(BVariable.getVarPointer(comp.var_cref), simcode_map);
+        case StrongComponent.GENERIC_COMPONENT()    then getVars(BVariable.getVarPointer(comp.var_cref, sourceInfo()), simcode_map);
         case StrongComponent.ENTWINED_COMPONENT()   then List.flatten(list(getStrongComponentVars(c, simcode_map) for c in comp.entwined_slices));
         case StrongComponent.ALGEBRAIC_LOOP()       then List.flatten(list(getVars(Slice.getT(v), simcode_map) for v in comp.strict.iteration_vars));
         case StrongComponent.ALIAS()                then getStrongComponentVars(comp.original, simcode_map);
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with unknown reason for \n" + StrongComponent.toString(comp)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with unknown reason for\n" + StrongComponent.toString(comp)});
         then fail();
       end match;
     end getStrongComponentVars;
@@ -1189,8 +1203,13 @@ public
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
       output list<SimVar> vars = {};
     algorithm
-      vars := list(UnorderedMap.getSafe(BVariable.getVarName(v), simcode_map, sourceInfo()) for v in VariablePointers.scalarizeList({var}));
+      if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
+        vars := list(UnorderedMap.getSafe(BVariable.getVarName(v), simcode_map, sourceInfo()) for v in VariablePointers.scalarizeList({var}));
+      else
+        vars := {UnorderedMap.getSafe(BVariable.getVarName(var), simcode_map, sourceInfo())};
+      end if;
     end getVars;
+
   end SimVars;
 
   constant SimVars emptySimVars = SIMVARS(

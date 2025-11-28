@@ -62,7 +62,7 @@ public:
   void setDefaults();
   void setDefaults(ShapeAnnotation *pShapeAnnotation);
   void parseShapeAnnotation(QString annotation);
-  void parseShapeAnnotation(ModelInstance::Shape *pShape);
+  void parseShapeAnnotation(ModelInstance::Shape *pShape, GraphicsView *pGraphicsView);
   QStringList getOMCShapeAnnotation();
   QStringList getShapeAnnotation();
   void setOrigin(QPointF origin) {mOrigin = origin;}
@@ -82,7 +82,7 @@ public:
   void setDefaults();
   void setDefaults(ShapeAnnotation *pShapeAnnotation);
   void parseShapeAnnotation(QString annotation);
-  void parseShapeAnnotation(ModelInstance::Shape *pShape);
+  void parseShapeAnnotation(ModelInstance::Shape *pShape, GraphicsView *pGraphicsView);
   QStringList getOMCShapeAnnotation();
   QStringList getShapeAnnotation();
   QStringList getTextShapeAnnotation();
@@ -158,6 +158,7 @@ public:
   void updateExtent(const int index, const QPointF point);
   void setOriginItemPos(const QPointF point);
   GraphicsView* getGraphicsView() {return mpGraphicsView;}
+  GraphicsView* getContainingGraphicsView();
   Element* getParentComponent() const {return mpParentComponent;}
   OriginItem* getOriginItem() {return mpOriginItem;}
   void setPoints(QVector<QPointF> points) {mPoints = points;}

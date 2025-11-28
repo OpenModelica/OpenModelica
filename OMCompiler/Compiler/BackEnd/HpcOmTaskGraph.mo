@@ -1428,7 +1428,7 @@ protected
 algorithm
   tmpMappingArray := arrayCreate(iNumberOfSccs,-1);
   TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) := iTaskGraphMeta;
-  ((oMapping,_)) := Array.fold1(inComps, getSccNodeMapping0, nodeMark, (tmpMappingArray,1));
+  (oMapping,_) := Array.fold(inComps, function getSccNodeMapping0(iNodeMarks = nodeMark), (tmpMappingArray,1));
 end getSccNodeMapping;
 
 protected function getSccNodeMapping0 "author: marcusw
@@ -1574,7 +1574,7 @@ algorithm
       varLst = BackendVariable.varList(orderedVars);
       stateVars = getStates(varLst,{},1);
       //print("stateVars: " + stringDelimitList(List.map(stateVars,intString),",") + " varOffset: " + intString(varOffset) + "\n");
-      //print("varCompMapping: " + stringDelimitList(arrayList(Array.map(varCompMapping,tuple3ToString)),",") + "\n");
+      //print("varCompMapping: " + stringDelimitList(List.mapArray(varCompMapping, tuple3ToString),",") + "\n");
       false = listEmpty(stateVars);
       stateVars = List.map1(stateVars,intAdd,varOffset);
       stateNodes = getArrayTuple31(stateVars,varCompMapping);
@@ -1900,7 +1900,7 @@ algorithm
   lstOut := match(lstIn,deleteEntriesIn)
     local
       Integer start;
-      list<Integer> deleteEntries, rest, lstTmp;
+      list<Integer> rest, lstTmp;
       array<Integer> deleteArr;
    case({},_)
      then {};
@@ -1910,8 +1910,7 @@ algorithm
      equation
         deleteArr = arrayCreate(List.fold(listAppend(rest,deleteEntriesIn),intMax,start),0);
         List.map2_0(deleteEntriesIn,Array.updateIndexFirst,1,deleteArr);
-        (deleteEntries,_) = List.mapFold(arrayList(deleteArr),setDeleteArr,0);
-        deleteArr = listArray(deleteEntries);
+        (deleteArr,_) = Array.mapFold(deleteArr,setDeleteArr,0);
         lstTmp = List.map1(lstIn,removeContinuousEntries1,deleteArr);
      then lstTmp;
     end match;
@@ -3364,9 +3363,8 @@ algorithm
         exeCosts = listReverse(exeCosts);
         // cluster these singleNodes
         (cluster,_) = distributeToClusters(singleNodes,exeCosts,numProc);
-        //print("cluster "+stringDelimitList(List.map(arrayList(cluster),intLstString),"\n")+"\n");
+        //print("cluster "+stringDelimitList(List.mapArray(cluster, intLstString),"\n")+"\n");
         //update taskgraph and taskgraphMeta
-        _ = arrayList(cluster);
         //(oTaskGraph,oTaskGraphMeta) = contractNodesInGraph(clusterLst,iTaskGraph,iTaskGraphMeta);
         changed = intGt(listLength(singleNodes),numProc);
   then (iTaskGraph,iTaskGraphMeta,changed);
@@ -3529,7 +3527,7 @@ algorithm
   //print("oneChildren "+stringDelimitList(List.map(oneChildren,intLstString),"\n")+"\n");
   (graphOut,graphTOut,graphDataOut,contractedTasksOut) := contractNodesInGraph(oneChildren,graphIn,graphTIn,graphDataIn,contractedTasksIn);
   changed := not listEmpty(oneChildren);
-  //print("contractedTasksOut "+stringDelimitList(List.map(arrayList(contractedTasksOut),intString),"\n")+"\n");
+  //print("contractedTasksOut "+stringDelimitList(List.mapArray(contractedTasksOut, intString),"\n")+"\n");
 end mergeSimpleNodes;
 
 public function mergeParentNodes "author: marcusw, waurich
@@ -3552,7 +3550,7 @@ algorithm
   //print("mergedNodes "+stringDelimitList(List.map(mergedNodes,intLstString),"\n")+"\n");
   (graphOut,graphTOut,graphDataOut,contractedTasksOut) := contractNodesInGraph(mergedNodes,graphIn,graphTIn,graphDataIn,contractedTasksIn);
   changed := not listEmpty(mergedNodes);
-  //print("contractedTasksOut "+stringDelimitList(List.map(arrayList(contractedTasksOut),intString),"\n")+"\n");
+  //print("contractedTasksOut "+stringDelimitList(List.mapArray(contractedTasksOut,intString),"\n")+"\n");
 end mergeParentNodes;
 
 protected function mergeParentNodes0
@@ -3634,7 +3632,7 @@ algorithm
   //print("mergedNodes "+stringDelimitList(List.map(mergedNodes,intLstString),"\n")+"\n");
   (graphOut,graphTOut,graphDataOut,contractedTasksOut) := contractNodesInGraph(mergedNodes,graphIn,graphTIn,graphDataIn,contractedTasksIn);
   changed := not listEmpty(mergedNodes);
-  //print("contractedTasksOut "+stringDelimitList(List.map(arrayList(contractedTasksOut),intString),"\n")+"\n");
+  //print("contractedTasksOut "+stringDelimitList(List.mapArray(contractedTasksOut, intString),"\n")+"\n");
 end mergeSinkNodes;
 
 public function markSystemComponents "author: marcusw
@@ -3826,8 +3824,8 @@ algorithm
     //Set the mark of all nodeList-nodes to 'nodeListHeadIdx'
     nodeMarks := arrayUpdate(nodeMarks, nodeListHeadIdx, nodeListHeadIdx);
     nodeMarksT := arrayUpdate(nodeMarksT, nodeListHeadIdx, nodeListHeadIdx);
-    //print("contractNodesInGraph: Node marks " + stringDelimitList(arrayList(Array.map(nodeMarks,intString)),",") + "\n");
-    //print("contractNodesInGraph: Contracted nodes " + stringDelimitList(arrayList(Array.map(tmpContractedTasks,intString)),",") + "\n");
+    //print("contractNodesInGraph: Node marks " + stringDelimitList(List.mapArray(nodeMarks,intString),",") + "\n");
+    //print("contractNodesInGraph: Contracted nodes " + stringDelimitList(List.mapArray(tmpContractedTasks,intString),",") + "\n");
 
     //Set the mark of all nodes connected with 'nodeListHeadIdx' to 'nodeListHeadIdx'
     outgoingEdges := arrayGet(tmpTaskGraph, nodeListHeadIdx);
@@ -3838,7 +3836,7 @@ algorithm
     List.map_0(outgoingEdges, function Array.updateIndexFirst(inValue=nodeListHeadIdx, inArray=nodeMarks)); //O(n)
     List.map_0(incomingEdges, function Array.updateIndexFirst(inValue=nodeListHeadIdx, inArray=nodeMarksT)); //O(n)
 
-    //print("contractNodesInGraph: Node marks " + stringDelimitList(arrayList(Array.map(nodeMarks,intString)),",") + "\n");
+    //print("contractNodesInGraph: Node marks " + stringDelimitList(List.mapArray(nodeMarks,intString),",") + "\n");
 
     //Get all child-nodes (parent-nodes) of the nodes in the node-list and remove the nodes that are part of the node-list itself or connected to 'nodeListHeadIdx'
     childNodes := List.flatten(List.map(nodeListRestIdc,function getContractedNodeChildren(iRefValue=nodeListHeadIdx,iTaskGraph=tmpTaskGraph,iContractedTasks=tmpContractedTasks,iNodeMarks=nodeMarks))); //O(e)
@@ -4524,7 +4522,7 @@ algorithm
         reqTimeOp = convertSimEqToSccCosts(reqTimeOpSimCode, iSimEqCompMapping, reqTimeOp);
         //print("createCosts: scc costs converted\n");
         commCosts = createCommCosts(commCosts,1,reqTimeCom);
-        ((_,tmpTaskGraphMeta)) = Array.fold4(inComps,createCosts0,(comps,shared),compMapping, reqTimeOp, reqTimeCom, (1,iTaskGraphMeta));
+        (_, tmpTaskGraphMeta) = Array.fold(inComps, function createCosts0(iComps_shared = (comps,shared), iCompMapping = compMapping, reqTimeOp = reqTimeOp, reqTimeCom = reqTimeCom), (1,iTaskGraphMeta));
       then tmpTaskGraphMeta;
     else
       equation
@@ -4783,7 +4781,7 @@ protected function convertSimEqToSccCosts
   input array<Real> iReqTimeOp;
   output array<Real> oReqTimeOp; //calcTime for each scc
 algorithm
-  ((_,oReqTimeOp)) := Array.fold1(iReqTimeOpSimCode, convertSimEqToSccCosts1, iSimeqCompMapping, (1,iReqTimeOp));
+  (_,oReqTimeOp) := Array.fold(iReqTimeOpSimCode, function convertSimEqToSccCosts1(iSimeqCompMapping = iSimeqCompMapping), (1,iReqTimeOp));
 end convertSimEqToSccCosts;
 
 protected function convertSimEqToSccCosts1
@@ -5135,8 +5133,8 @@ algorithm
   tmpComps := {};
   tmpMapping := {};
   TASKGRAPHMETA(inComps=inComps, nodeMark=nodeMarks) := iTaskGraphMeta;
-  ((tmpComps,tmpMapping)) := Array.fold2(inComps,getGraphComponents0,iSystComps,iCompEqSysMapping,(tmpComps,tmpMapping));
-  ((_,(tmpComps,tmpMapping))) := Array.fold2(nodeMarks,getGraphComponents2, iSystComps, iCompEqSysMapping, (1,(tmpComps,tmpMapping)));
+  ((tmpComps,tmpMapping)) := Array.fold(inComps, function getGraphComponents0(systComps = iSystComps, iCompEqSysMapping = iCompEqSysMapping),(tmpComps,tmpMapping));
+  ((_,(tmpComps,tmpMapping))) := Array.fold(nodeMarks, function getGraphComponents2(systComps = iSystComps, iCompEqSysMapping = iCompEqSysMapping), (1,(tmpComps,tmpMapping)));
   oComps := tmpComps;
   oCompEqGraphMapping := listArray(tmpMapping);
 end getGraphComponents;
@@ -5569,7 +5567,7 @@ algorithm
   nodeCoords := arrayCreate(size,((0,0)));
   nodeCoords := List.fold1(List.intRange(size),getYCoordForNode,parallelSets,nodeCoords);
   nodeCoordsOut := nodeCoords;
-  //print("nodeCoords"+stringDelimitList(List.map(arrayList(nodeCoords),tupleToString),",")+"\n");
+  //print("nodeCoords"+stringDelimitList(List.mapArray(nodeCoords, tupleToString),",")+"\n");
 end getNodeCoords;
 
 protected function getYCoordForNode "author: Waurich TUD 2013-07
@@ -6587,7 +6585,7 @@ end appendToElementUnique;
 protected function dumpStateAssign
   input array<list<Integer>> stateAssign;
 algorithm
-  print("stateAssign "+stringDelimitList(List.map(arrayList(stateAssign),intLstString),"\n")+"\n");
+  print("stateAssign "+stringDelimitList(List.mapArray(stateAssign, intLstString),"\n")+"\n");
 end dumpStateAssign;
 
 protected function dumpPartitionData"dumps the partitiondata info.

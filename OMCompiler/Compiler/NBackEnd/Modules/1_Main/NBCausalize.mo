@@ -1,7 +1,7 @@
 /*
 * This file is part of OpenModelica.
 *
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
+* Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
 * c/o Linköpings universitet, Department of Computer and Information Science,
 * SE-58183 Linköping, Sweden.
 *
@@ -52,6 +52,7 @@ protected
 
   // Backend imports
   import Adjacency = NBAdjacency;
+  import ASSC = NBASSC;
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
   import Differentiate = NBDifferentiate;
@@ -299,11 +300,16 @@ protected
         variables := VariablePointers.compress(partition.unknowns);
         equations := EquationPointers.compress(partition.equations);
 
+        // perform ASSC on the system
+        ASSC.main(equations, variables);
+
         // create full matrix
         full := Adjacency.Matrix.createFull(variables, equations);
 
         // create solvable adjacency matrix for matching
         adj_matching := Adjacency.Matrix.fromFull(full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.MATCHING);
+
+        // perform matching
         (matching, adj_matching, full, variables, equations, funcTree, varData, eqData) := Matching.singular(NBMatching.EMPTY_MATCHING, adj_matching, full, variables, equations, funcTree, varData, eqData, kind, false);
 
         // create all occurence adjacency matrix for sorting, upgrading the matching matrix
@@ -320,13 +326,8 @@ protected
   end causalizePseudoArray;
 
   function causalizeDAEMode extends Module.causalizeInterface;
-  protected
-    Pointer<list<StrongComponent>> acc = Pointer.create({});
   algorithm
-    // create all components as residuals for now
-    // ToDo: use tearing to get inner/tmp equations
-    EquationPointers.mapPtr(partition.equations, function StrongComponent.makeDAEModeResidualTraverse(acc = acc));
-    partition.strongComponents := SOME(List.listArrayReverse(Pointer.access(acc)));
+    // nothing to do?
   end causalizeDAEMode;
 
   annotation(__OpenModelica_Interface="backend");

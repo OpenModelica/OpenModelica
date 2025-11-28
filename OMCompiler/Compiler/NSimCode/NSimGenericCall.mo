@@ -78,6 +78,28 @@ public
     Boolean resizable;
   end WHEN_GENERIC_CALL;
 
+  function mapShallow
+    input output SimGenericCall call;
+    input mapExp func;
+    partial function mapExp
+      input output Expression exp;
+    end mapExp;
+  algorithm
+    call := match call
+      case SINGLE_GENERIC_CALL() algorithm
+        call.lhs := func(call.lhs);
+        call.rhs := func(call.rhs);
+      then call;
+      case IF_GENERIC_CALL() algorithm
+        call.branches := list(SimBranch.mapShallow(branch, func) for branch in call.branches);
+      then call;
+      case WHEN_GENERIC_CALL() algorithm
+        call.branches := list(SimBranch.mapShallow(branch, func) for branch in call.branches);
+      then call;
+      else call;
+    end match;
+  end mapShallow;
+
   function toString
     input SimGenericCall call;
     output String str;
@@ -132,8 +154,8 @@ public
       then SINGLE_GENERIC_CALL(
           index     = index,
           iters     = iters,
-          lhs       = Equation.getLHS(body),
-          rhs       = Equation.getRHS(body),
+          lhs       = Util.getOption(Equation.getLHS(body)),
+          rhs       = Util.getOption(Equation.getRHS(body)),
           resizable = resizable);
 
       else algorithm
@@ -201,6 +223,8 @@ public
     end toString;
 
     function fromIterator
+      "create sim iterator from backend iterator.
+      Note: needs to reverse the order of iterators since it needs to be mapped inner first"
       input Iterator iter;
       output list<SimIterator> sim_iter = {};
     protected
@@ -215,7 +239,7 @@ public
       list<DependentIterator> sub_iter;
     algorithm
       (names, ranges, maps) := Iterator.getFrames(iter);
-      for tpl in listReverse(List.zip3(names, ranges, maps)) loop
+      for tpl in List.zip3(names, ranges, maps) loop
         (name, range, map) := tpl;
         sim_iter := match range
           case Expression.RANGE() algorithm
@@ -293,6 +317,25 @@ public
       list<Statement> body;
     end SIM_BRANCH_STMT;
 
+    function mapShallow
+      input output SimBranch branch;
+      input mapExp func;
+    protected
+      partial function mapExp
+        input output Expression exp;
+      end mapExp;
+    algorithm
+      branch := match branch
+        case SIM_BRANCH() algorithm
+          branch.body := list((func(Util.tuple21(tpl)), func(Util.tuple22(tpl))) for tpl in branch.body);
+        then branch;
+        case SIM_BRANCH_STMT() algorithm
+          branch.body := list(Statement.mapExp(stmt, func) for stmt in branch.body);
+        then branch;
+        else branch;
+      end match;
+    end mapShallow;
+
     function toString
       input SimBranch branch;
       output String str;
@@ -324,7 +367,7 @@ public
     algorithm
       for eqn in listReverse(if_body.then_eqns) loop
         // ToDo: what if there are more complex things inside?
-        body := (Equation.getLHS(Pointer.access(eqn)), Equation.getRHS(Pointer.access(eqn))) :: body;
+        body := (Util.getOption(Equation.getLHS(Pointer.access(eqn))), Util.getOption(Equation.getRHS(Pointer.access(eqn)))) :: body;
       end for;
       branch := SIM_BRANCH(if_body.condition, body);
       if Util.isSome(if_body.else_if) then

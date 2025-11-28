@@ -1114,11 +1114,6 @@ bool SimulationDialog::translateModel(QString simulationParameters)
   bool result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
   // reset simulation settings
   OptionsDialog::instance()->saveSimulationSettings();
-  OptionsDialog::instance()->saveNFAPISettings();
-  // set the infoXMLOperations flag
-  if (OptionsDialog::instance()->getDebuggerPage()->getGenerateOperationsCheckBox()->isChecked()) {
-    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=infoXmlOperations");
-  }
   return result;
 }
 
@@ -1989,7 +1984,7 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
   bool profiling = simulationOptions.getProfiling().compare(QStringLiteral("none")) != 0;
   if (OptionsDialog::instance()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
       simulationOptions.getLaunchTransformationalDebugger() || profiling) {
-    MainWindow::instance()->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getOutputFileName() + "_info.json", profiling);
+    MainWindow::instance()->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getOutputFileName() + "_info.json", profiling, false);
   }
   // Show the data reconciliation report
   if (simulationOptions.getEnableDataReconciliation()) {

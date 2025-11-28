@@ -597,7 +597,7 @@ protected
 
     // add all state candidates to the array
     for candidate in UnorderedSet.toList(state_candidates) loop
-      var_ptr := BVariable.getVarPointer(candidate);
+      var_ptr := BVariable.getVarPointer(candidate, sourceInfo());
       states  := VariablePointers.add(var_ptr, states);
     end for;
   end getConstraintsAndCandidates;
@@ -616,7 +616,7 @@ protected
       end if;
     end getStateCandidateVar;
   algorithm
-    var := BVariable.getVarPointer(cref);
+    var := BVariable.getVarPointer(cref, sourceInfo());
     if BVariable.isRecord(var) then
       for child in BVariable.getRecordChildren(var) loop
         getStateCandidateVar(child, acc);
@@ -659,7 +659,7 @@ protected
       priorities := (candidatePriority(candidate), candidate) :: priorities;
     end for;
     priorities := List.sort(priorities, BackendUtil.indexTplGt);
-    (_, candidates) := List.unzip(priorities);
+    candidates := List.unzipSecond(priorities);
   end sortCandidates;
 
   function toStringCandidatesConstraints

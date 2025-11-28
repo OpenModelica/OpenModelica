@@ -37,15 +37,16 @@ index. When the array runs out of space, it get automatically resized. It is
 also possible to delete an element from any position."
 
 record EXPANDABLE_ARRAY
-  array<Integer> numberOfElements "This is an array of one Integer, to make numberOfElements mutable";
-  array<Integer> lastUsedIndex "This is an array of one Integer, to make lastUsedIndex mutable";
-  array<Integer> capacity "This is an array of one Integer, to make capacity mutable";
-  array<array<Option<T>>> data "This is an array of one array<Option<T>>, to make data mutable";
+  Mutable<Integer> numberOfElements;
+  Mutable<Integer> lastUsedIndex;
+  Mutable<Integer> capacity;
+  Mutable<array<Option<T>>> data;
 end EXPANDABLE_ARRAY;
 
 protected
 import Array;
 import MetaModelica.Dangerous;
+import Mutable;
 import Util;
 
 public
@@ -55,19 +56,19 @@ impure function new "O(n)
   input T dummy "This is needed to determine the type information, the actual value is not used";
   output ExpandableArray<T> exarray;
 algorithm
-  exarray := EXPANDABLE_ARRAY(arrayCreate(1, 0), arrayCreate(1, 0), arrayCreate(1, capacity), arrayCreate(1, arrayCreate(capacity, NONE())));
+  exarray := EXPANDABLE_ARRAY(Mutable.create(0), Mutable.create(0), Mutable.create(capacity), Mutable.create(arrayCreate(capacity, NONE())));
 end new;
 
 function clear "O(n)
   Deletes all elements."
   input output ExpandableArray<T> exarray;
 protected
-  Integer n = Dangerous.arrayGetNoBoundsChecking(exarray.numberOfElements, 1);
-  Integer lastUsedIndex = Dangerous.arrayGetNoBoundsChecking(exarray.lastUsedIndex, 1);
-  array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
+  Integer n = Mutable.access(exarray.numberOfElements);
+  Integer lastUsedIndex = Mutable.access(exarray.lastUsedIndex);
+  array<Option<T>> data = Mutable.access(exarray.data);
 algorithm
-  Dangerous.arrayUpdateNoBoundsChecking(exarray.numberOfElements, 1, 0);
-  Dangerous.arrayUpdateNoBoundsChecking(exarray.lastUsedIndex, 1, 0);
+  Mutable.update(exarray.numberOfElements, 0);
+  Mutable.update(exarray.lastUsedIndex, 0);
   for i in 1:lastUsedIndex loop
     if isSome(Dangerous.arrayGetNoBoundsChecking(data, i)) then
       n := n-1;
@@ -84,11 +85,11 @@ function copy
   input T dummy "This is needed to determine the type information, the actual value is not used";
   output ExpandableArray<T> outExarray;
 algorithm
-  outExarray := new(inExarray.capacity[1], dummy);
-  outExarray.numberOfElements := arrayCopy(inExarray.numberOfElements);
-  outExarray.lastUsedIndex := arrayCopy(inExarray.lastUsedIndex);
-  outExarray.capacity := arrayCopy(inExarray.capacity);
-  outExarray.data := arrayCreate(1, arrayCopy(Dangerous.arrayGetNoBoundsChecking(inExarray.data, 1)));
+  outExarray := new(Mutable.access(inExarray.capacity), dummy);
+  outExarray.numberOfElements := Mutable.create(Mutable.access(inExarray.numberOfElements));
+  outExarray.lastUsedIndex := Mutable.create(Mutable.access(inExarray.lastUsedIndex));
+  outExarray.capacity := Mutable.create(Mutable.access((inExarray.capacity)));
+  outExarray.data := Mutable.create(arrayCopy(Mutable.access(inExarray.data)));
 end copy;
 
 function occupied "O(1)
@@ -97,8 +98,8 @@ function occupied "O(1)
   input ExpandableArray<T> exarray;
   output Boolean b;
 protected
-  Integer lastUsedIndex = Dangerous.arrayGetNoBoundsChecking(exarray.lastUsedIndex, 1);
-  array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
+  Integer lastUsedIndex = Mutable.access(exarray.lastUsedIndex);
+  array<Option<T>> data = Mutable.access(exarray.data);
 algorithm
   b := index >= 1 and index <= lastUsedIndex and isSome(Dangerous.arrayGetNoBoundsChecking(data, index));
 end occupied;
@@ -110,13 +111,10 @@ function get "O(1)
   input ExpandableArray<T> exarray;
   output T value;
 protected
-  array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
+  array<Option<T>> data = Mutable.access(exarray.data);
 algorithm
-  if occupied(index, exarray) then
-    SOME(value) := Dangerous.arrayGetNoBoundsChecking(data, index);
-  else
-    fail();
-  end if;
+  true := index >= 1 and index <= Mutable.access(exarray.lastUsedIndex);
+  SOME(value) := Dangerous.arrayGetNoBoundsChecking(data, index);
 end get;
 
 function expandToSize "O(n)
@@ -125,13 +123,13 @@ function expandToSize "O(n)
   input Integer minCapacity;
   input output ExpandableArray<T> exarray;
 protected
-  Integer capacity = Dangerous.arrayGetNoBoundsChecking(exarray.capacity, 1);
-  array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
+  Integer capacity = Mutable.access(exarray.capacity);
+  array<Option<T>> data = Mutable.access(exarray.data);
 algorithm
   if minCapacity > capacity then
-    Dangerous.arrayUpdateNoBoundsChecking(exarray.capacity, 1, minCapacity);
+    Mutable.update(exarray.capacity, minCapacity);
     data := Array.expandToSize(minCapacity, data, NONE());
-    Dangerous.arrayUpdateNoBoundsChecking(exarray.data, 1, data);
+    Mutable.update(exarray.data, data);
   end if;
 end expandToSize;
 
@@ -142,10 +140,10 @@ function set "if index <= capacity then O(1) otherwise O(n)
   input T value;
   input output ExpandableArray<T> exarray;
 protected
-  Integer numberOfElements = Dangerous.arrayGetNoBoundsChecking(exarray.numberOfElements, 1);
-  Integer lastUsedIndex = Dangerous.arrayGetNoBoundsChecking(exarray.lastUsedIndex, 1);
-  Integer capacity = Dangerous.arrayGetNoBoundsChecking(exarray.capacity, 1);
-  array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
+  Integer numberOfElements = Mutable.access(exarray.numberOfElements);
+  Integer lastUsedIndex = Mutable.access(exarray.lastUsedIndex);
+  Integer capacity = Mutable.access(exarray.capacity);
+  array<Option<T>> data = Mutable.access(exarray.data);
 algorithm
   if index > 0 and (index > capacity or isNone(Dangerous.arrayGetNoBoundsChecking(data, index))) then
     if index > capacity then
@@ -156,13 +154,13 @@ algorithm
       end while;
 
       expandToSize(capacity, exarray);
-      data := Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
+      data := Mutable.access(exarray.data);
     end if;
 
     arrayUpdate(data, index, SOME(value));
-    Dangerous.arrayUpdateNoBoundsChecking(exarray.numberOfElements, 1, numberOfElements+1);
+    Mutable.update(exarray.numberOfElements, numberOfElements+1);
     if index > lastUsedIndex then
-      Dangerous.arrayUpdateNoBoundsChecking(exarray.lastUsedIndex, 1, index);
+      Mutable.update(exarray.lastUsedIndex, index);
     end if;
   else
     fail();
@@ -175,7 +173,7 @@ function add "if index <= capacity then O(1) otherwise O(n)
   input output ExpandableArray<T> exarray;
   output Integer index;
 protected
-  Integer lastUsedIndex = Dangerous.arrayGetNoBoundsChecking(exarray.lastUsedIndex, 1);
+  Integer lastUsedIndex = Mutable.access(exarray.lastUsedIndex);
 algorithm
   index := lastUsedIndex+1;
   exarray := set(index, value, exarray);
@@ -187,20 +185,20 @@ function delete "O(1)
   input Integer index;
   input output ExpandableArray<T> exarray;
 protected
-  Integer numberOfElements = Dangerous.arrayGetNoBoundsChecking(exarray.numberOfElements, 1);
-  Integer lastUsedIndex = Dangerous.arrayGetNoBoundsChecking(exarray.lastUsedIndex, 1);
-  array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
+  Integer numberOfElements = Mutable.access(exarray.numberOfElements);
+  Integer lastUsedIndex = Mutable.access(exarray.lastUsedIndex);
+  array<Option<T>> data = Mutable.access(exarray.data);
 algorithm
   if index >= 1 and index <= lastUsedIndex and isSome(Dangerous.arrayGetNoBoundsChecking(data, index)) then
     arrayUpdate(data, index, NONE());
-    Dangerous.arrayUpdateNoBoundsChecking(exarray.numberOfElements, 1, numberOfElements-1);
+    Mutable.update(exarray.numberOfElements, numberOfElements-1);
 
     if index == lastUsedIndex then
       lastUsedIndex := lastUsedIndex-1;
       while lastUsedIndex > 0 and isNone(Dangerous.arrayGetNoBoundsChecking(data, lastUsedIndex)) loop
         lastUsedIndex := lastUsedIndex-1;
       end while;
-      Dangerous.arrayUpdateNoBoundsChecking(exarray.lastUsedIndex, 1, lastUsedIndex);
+      Mutable.update(exarray.lastUsedIndex, lastUsedIndex);
     end if;
   else
     fail();
@@ -214,8 +212,8 @@ function update "O(1)
   input T value;
   input output ExpandableArray<T> exarray;
 protected
-  Integer lastUsedIndex = Dangerous.arrayGetNoBoundsChecking(exarray.lastUsedIndex, 1);
-  array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
+  Integer lastUsedIndex = Mutable.access(exarray.lastUsedIndex);
+  array<Option<T>> data = Mutable.access(exarray.data);
 algorithm
   if index >= 1 and index <= lastUsedIndex and isSome(Dangerous.arrayGetNoBoundsChecking(data, index)) then
     arrayUpdate(data, index, SOME(value));
@@ -228,9 +226,9 @@ function toList
   input ExpandableArray<T> exarray;
   output list<T> listT = {};
 protected
-  Integer numberOfElements = Dangerous.arrayGetNoBoundsChecking(exarray.numberOfElements, 1);
-  Integer lastUsedIndex = Dangerous.arrayGetNoBoundsChecking(exarray.lastUsedIndex, 1);
-  array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
+  Integer numberOfElements = Mutable.access(exarray.numberOfElements);
+  Integer lastUsedIndex = Mutable.access(exarray.lastUsedIndex);
+  array<Option<T>> data = Mutable.access(exarray.data);
   T dummy;
 algorithm
   if numberOfElements == 0 then
@@ -247,9 +245,9 @@ function compress "O(n)
   Be careful: This changes the indices of the elements."
   input output ExpandableArray<T> exarray;
 protected
-  Integer numberOfElements = Dangerous.arrayGetNoBoundsChecking(exarray.numberOfElements, 1);
-  Integer lastUsedIndex = Dangerous.arrayGetNoBoundsChecking(exarray.lastUsedIndex, 1);
-  array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
+  Integer numberOfElements = Mutable.access(exarray.numberOfElements);
+  Integer lastUsedIndex = Mutable.access(exarray.lastUsedIndex);
+  array<Option<T>> data = Mutable.access(exarray.data);
   Integer i = 0;
 algorithm
   while lastUsedIndex > numberOfElements loop
@@ -264,7 +262,7 @@ algorithm
     end if;
   end while;
 
-  Dangerous.arrayUpdateNoBoundsChecking(exarray.lastUsedIndex, 1, lastUsedIndex);
+  Mutable.update(exarray.lastUsedIndex, lastUsedIndex);
 end compress;
 
 function shrink "O(n)
@@ -272,17 +270,17 @@ function shrink "O(n)
   Be careful: This may change the indices of the elements."
   input output ExpandableArray<T> exarray;
 protected
-  Integer numberOfElements = Dangerous.arrayGetNoBoundsChecking(exarray.numberOfElements, 1);
-  array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
+  Integer numberOfElements = Mutable.access(exarray.numberOfElements);
+  array<Option<T>> data = Mutable.access(exarray.data);
   array<Option<T>> newData;
 algorithm
   exarray := compress(exarray);
-  Dangerous.arrayUpdateNoBoundsChecking(exarray.capacity, 1, numberOfElements);
+  Mutable.update(exarray.capacity, numberOfElements);
   newData := Dangerous.arrayCreateNoInit(numberOfElements, Dangerous.arrayGetNoBoundsChecking(data, 1));
   for i in 1:numberOfElements loop
     Dangerous.arrayUpdateNoBoundsChecking(newData, i, Dangerous.arrayGetNoBoundsChecking(data, i));
   end for;
-  Dangerous.arrayUpdateNoBoundsChecking(exarray.data, 1, newData);
+  Mutable.update(exarray.data, newData);
 end shrink;
 
 function toString "O(n)
@@ -298,10 +296,10 @@ function toString "O(n)
     output String str;
   end PrintFunction;
 protected
-  Integer numberOfElements = Dangerous.arrayGetNoBoundsChecking(exarray.numberOfElements, 1);
-  Integer capacity = Dangerous.arrayGetNoBoundsChecking(exarray.capacity, 1);
+  Integer numberOfElements = Mutable.access(exarray.numberOfElements);
+  Integer capacity = Mutable.access(exarray.capacity);
   T value;
-  array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
+  array<Option<T>> data = Mutable.access(exarray.data);
 algorithm
   if debug then
     str := header + " (" + intString(numberOfElements) +  "/" + intString(capacity) + ")\n";
@@ -329,22 +327,22 @@ end toString;
 
 function getNumberOfElements
   input ExpandableArray<T> exarray;
-  output Integer numberOfElements = Dangerous.arrayGetNoBoundsChecking(exarray.numberOfElements, 1);
+  output Integer numberOfElements = Mutable.access(exarray.numberOfElements);
 end getNumberOfElements;
 
 function getLastUsedIndex
   input ExpandableArray<T> exarray;
-  output Integer lastUsedIndex = Dangerous.arrayGetNoBoundsChecking(exarray.lastUsedIndex, 1);
+  output Integer lastUsedIndex = Mutable.access(exarray.lastUsedIndex);
 end getLastUsedIndex;
 
 function getCapacity
   input ExpandableArray<T> exarray;
-  output Integer capacity = Dangerous.arrayGetNoBoundsChecking(exarray.capacity, 1);
+  output Integer capacity = Mutable.access(exarray.capacity);
 end getCapacity;
 
 function getData
   input ExpandableArray<T> exarray;
-  output array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
+  output array<Option<T>> data = Mutable.access(exarray.data);
 end getData;
 
 annotation(__OpenModelica_Interface="util");

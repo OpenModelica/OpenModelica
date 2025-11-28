@@ -44,6 +44,8 @@ GetModelInstanceConnection6.mos \
 GetModelInstanceDerived1.mos \
 GetModelInstanceDerived2.mos \
 GetModelInstanceDerived3.mos \
+GetModelInstanceDerived4.mos \
+GetModelInstanceDerived5.mos \
 GetModelInstanceDim1.mos \
 GetModelInstanceDim2.mos \
 GetModelInstanceDim3.mos \
@@ -61,6 +63,7 @@ GetModelInstanceIcon1.mos \
 GetModelInstanceIcon2.mos \
 GetModelInstanceIcon3.mos \
 GetModelInstanceIcon4.mos \
+GetModelInstanceIcon5.mos \
 GetModelInstanceImport1.mos \
 GetModelInstanceImport2.mos \
 GetModelInstanceInnerOuter1.mos \

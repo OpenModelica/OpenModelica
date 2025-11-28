@@ -307,6 +307,7 @@ if true then /* Suppress output */
     "../NBackEnd/Modules/3_Post/NBEvaluation.mo",
   // "NBackend Util"
     "../NBackEnd/Util/NBAdjacency.mo",
+    "../NBackEnd/Util/NBASSC.mo",
     "../NBackEnd/Util/NBBackendUtil.mo",
     "../NBackEnd/Util/NBDifferentiate.mo",
     "../NBackEnd/Util/NBReplacements.mo",
@@ -375,6 +376,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFComplexType.mo",
     "../NFFrontEnd/NFComponent.mo",
     "../NFFrontEnd/NFComponentRef.mo",
+    "../NFFrontEnd/NFConnectBreakTree.mo",
     "../NFFrontEnd/NFConnectEquations.mo",
     "../NFFrontEnd/NFConnection.mo",
     "../NFFrontEnd/NFConnectionSets.mo",

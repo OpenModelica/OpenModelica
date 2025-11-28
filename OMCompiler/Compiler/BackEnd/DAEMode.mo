@@ -277,7 +277,7 @@ protected
   Boolean isStateVarInvoled;
 algorithm
   varCrefLst := list(v.varName for v in inVars);
-  isStateVarInvoled := Util.boolOrList(list(BackendVariable.isStateVar(v) for v in inVars));
+  isStateVarInvoled := not Flags.getConfigBool(Flags.CAUSALIZE_DAE_MODE) or List.any(inVars, BackendVariable.isStateVar);
   (traverserArgs) :=
   matchcontinue(inEqns, traverserArgs.recursiveStrongComponentRun, isStateVarInvoled)
     local
@@ -306,7 +306,7 @@ algorithm
       constant Boolean debug = false;
 
     case ({eq}, false, false)
-      guard(Util.boolAndList(list(BackendVariable.isCSEVar(v) for v in vars)))
+      guard(List.all(vars, BackendVariable.isCSEVar))
       equation
         newResVars = list(BackendVariable.setVarKind(v, BackendDAE.DAE_AUX_VAR()) for v in vars);
         new_eq = BackendEquation.setEquationAttributes(eq, BackendDAE.EQ_ATTR_DEFAULT_AUX);
@@ -446,7 +446,7 @@ algorithm
     // recordCref = f(...)
     case ({eq as BackendDAE.COMPLEX_EQUATION(left=exp)}, _, _)
       guard(Expression.isCref(exp))
-      //guard( Util.boolAndList(list( Expression.isRecordType(ComponentReference.crefTypeFull(v.varName)) for v in vars)) )
+      //guard( List.all(list(ComponentReference.crefTypeFull(v.varName) for v in vars), Expression.isRecordType))
       equation
         if debug then print("case: Complex: " + BackendDump.equationListString(inEqns, "") + "\n"); end if;
         /*

@@ -37,7 +37,7 @@
 
 /* eval object function
  */
-Bool evalfF(Index n, Number * vopt, Bool new_x, Number *objValue, void * useData){
+Bool evalfF(ipindex n, ipnumber * vopt, Bool new_x, ipnumber *objValue, void * useData){
 
   OptData *optData = (OptData*)useData;
 
@@ -84,7 +84,7 @@ Bool evalfF(Index n, Number * vopt, Bool new_x, Number *objValue, void * useData
     mayer = v[nsi-1][np-1][im];
   }
 
-  *objValue = (Number)(lagrange + mayer);
+  *objValue = (ipnumber)(lagrange + mayer);
 
   return TRUE;
 }
@@ -94,7 +94,7 @@ Bool evalfF(Index n, Number * vopt, Bool new_x, Number *objValue, void * useData
  *  eval derivation (object func)
  *  author: Vitalij Ruge
  **/
-Bool evalfDiffF(Index n, double * vopt, Bool new_x, Number *gradF, void * useData){
+Bool evalfDiffF(ipindex n, double * vopt, Bool new_x, ipnumber *gradF, void * useData){
   OptData *optData = (OptData*)useData;
 
   const int nv = optData->dim.nv;
@@ -127,7 +127,7 @@ Bool evalfDiffF(Index n, double * vopt, Bool new_x, Number *gradF, void * useDat
     }
 
   }else{
-    memset(gradF,0.0,n*sizeof(Number));
+    memset(gradF,0.0,n*sizeof(ipnumber));
   }
 
   if(ma){

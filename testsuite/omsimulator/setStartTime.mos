@@ -41,6 +41,7 @@ val(u, 2.5, "start_time_res.mat");
 // 0
 // "info:    maximum step size for 'model.root': 0.002000
 // info:    Result file: start_time_res.mat (bufferSize=1)
+// info:    Parameter model.root.setstartTime.scheme.delimiter will not be stored in the result file, because the signal type is not supported
 // info:    Parameter model.root.setstartTime.scheme.fileName will not be stored in the result file, because the signal type is not supported
 // info:    Parameter model.root.setstartTime.scheme.tableName will not be stored in the result file, because the signal type is not supported
 // info:    Final Statistics for 'model.root':

@@ -53,6 +53,7 @@
 #include "Util/ResourceCache.h"
 #include "Plotting/PlotWindowContainer.h"
 #include "Util/NetworkAccessManager.h"
+#include "QuickInsertWidget.h"
 
 #include <QNetworkReply>
 #include <QMessageBox>
@@ -370,7 +371,7 @@ void GraphicsView::drawElements(ModelInstance::Model *pModelInstance, bool inher
       if (pModelInstanceElement->isComponent() && pModelInstanceElement->getModel()) {
         auto pModelInstanceComponent = dynamic_cast<ModelInstance::Component*>(pModelInstanceElement);
         elementIndex++;
-        if (pModelInstanceComponent->getModel()->isConnector()) {
+        if (pModelInstanceComponent->isConnector()) {
           connectorIndex++;
         }
         if (modelInfo.mDiagramElementsList.isEmpty() || inherited) {
@@ -386,7 +387,7 @@ void GraphicsView::drawElements(ModelInstance::Model *pModelInstance, bool inher
               pDiagramGraphicsView->addElementItem(pDiagramElement);
               pDiagramGraphicsView->addElementToList(pDiagramElement);
               pDiagramGraphicsView->deleteElementFromOutOfSceneList(pDiagramElement);
-              if (pModelInstanceComponent->getModel()->isConnector() && connectorIndex < modelInfo.mIconElementsList.size()) {
+              if (pModelInstanceComponent->isConnector() && connectorIndex < modelInfo.mIconElementsList.size()) {
                 Element *pIconElement = modelInfo.mIconElementsList.at(connectorIndex);
                 if (pIconElement) {
                   pIconElement->setModelComponent(pModelInstanceComponent);
@@ -938,14 +939,14 @@ void GraphicsView::addElementToView(ModelInstance::Component *pComponent, bool i
   GraphicsView *pDiagramGraphicsView = mpModelWidget->getDiagramGraphicsView();
 
   // if element is of connector type.
-  if (pComponent && pComponent->getModel()->isConnector()) {
+  if (pComponent && pComponent->isConnector()) {
     // Connector type elements exists on icon view as well
     pIconElement = new Element(pComponent, inherited, pIconGraphicsView, createTransformation, position, placementAnnotation);
   }
   pDiagramElement = new Element(pComponent, inherited, pDiagramGraphicsView, createTransformation, position, placementAnnotation);
 
   // if element is of connector type && containing class is Modelica type.
-  if (pIconElement && pComponent->getModel()->isConnector()) {
+  if (pIconElement && pComponent->isConnector()) {
     // Connector type elements exists on icon view as well
     if (pIconElement->mTransformation.isValid() && pIconElement->mTransformation.getVisible()) {
       pIconGraphicsView->addElementItem(pIconElement);
@@ -1120,7 +1121,7 @@ void GraphicsView::deleteElement(Element *pElement)
   if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
     OMSProxy::instance()->omsDelete(pElement->getLibraryTreeItem()->getNameStructure());
   } else {
-    if (pElement->getModel() && pElement->getModel()->isConnector()) {
+    if (pElement->isConnector()) {
       GraphicsView *pGraphicsView;
       if (isIconView()) {
         pGraphicsView = mpModelWidget->getDiagramGraphicsView();
@@ -1473,15 +1474,8 @@ bool GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
   if (mpModelWidget->getLibraryTreeItem()->isSSP()) {
     // if TLM connection
     bool connectionSuccessful = false;
-    if (pConnectionLineAnnotation->getOMSConnectionType() == oms_connection_tlm) {
-      connectionSuccessful = OMSProxy::instance()->addTLMConnection(pConnectionLineAnnotation->getStartElement()->getLibraryTreeItem()->getNameStructure(),
-                                                                    pConnectionLineAnnotation->getEndElement()->getLibraryTreeItem()->getNameStructure(),
-                                                                    pConnectionLineAnnotation->getDelay().toDouble(), pConnectionLineAnnotation->getAlpha().toDouble(),
-                                                                    pConnectionLineAnnotation->getZf().toDouble(), pConnectionLineAnnotation->getZfr().toDouble());
-    } else {
-      connectionSuccessful = OMSProxy::instance()->addConnection(pConnectionLineAnnotation->getStartElement()->getLibraryTreeItem()->getNameStructure(),
+    connectionSuccessful = OMSProxy::instance()->addConnection(pConnectionLineAnnotation->getStartElement()->getLibraryTreeItem()->getNameStructure(),
                                                                  pConnectionLineAnnotation->getEndElement()->getLibraryTreeItem()->getNameStructure());
-    }
     if (connectionSuccessful) {
       pConnectionLineAnnotation->updateOMSConnection();
       return true;
@@ -3113,15 +3107,15 @@ Element* GraphicsView::connectorElementAtPosition(QPoint position)
         return 0;
       } else if (pRootElement && !pRootElement->isSelected()) {
         // Issue #11310. If both root and element are connectors then use the root.
-        if (pRootElement->getModel() && pRootElement->getModel()->isConnector() && pElement && pElement->getModel() && pElement->getModel()->isConnector()) {
+        if (pRootElement->isConnector() && pElement && pElement->isConnector()) {
           pElement = pRootElement;
         }
         if (MainWindow::instance()->getConnectModeAction()->isChecked() && isDiagramView() &&
             !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || mpModelWidget->isElementMode() || isVisualizationView()) &&
-            ((pElement->getModel() && pElement->getModel()->isConnector()) ||
+            (pElement->isConnector() ||
              (mpModelWidget->getLibraryTreeItem()->isSSP() &&
               (pElement->getLibraryTreeItem()->getOMSConnector() || pElement->getLibraryTreeItem()->getOMSBusConnector()
-               || pElement->getLibraryTreeItem()->getOMSTLMBusConnector() || pElement->isPort())))) {
+               || pElement->isPort())))) {
           return pElement;
         }
       }
@@ -3340,13 +3334,6 @@ void GraphicsView::addConnection(Element *pElement, bool createConnector)
         BusConnectionDialog *pBusConnectionDialog = new BusConnectionDialog(this, mpConnectionLineAnnotation);
         // if user cancels the bus connection
         if (!pBusConnectionDialog->exec()) {
-          removeCurrentConnection();
-        }
-      } else if ((pStartElement->getLibraryTreeItem() && pStartElement->getLibraryTreeItem()->getOMSTLMBusConnector())
-                 && (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->getOMSTLMBusConnector())) {
-        TLMConnectionDialog *pTLMBusConnectionDialog = new TLMConnectionDialog(this, mpConnectionLineAnnotation);
-        // if user cancels the tlm bus connection
-        if (!pTLMBusConnectionDialog->exec()) {
           removeCurrentConnection();
         }
       } else {
@@ -3640,7 +3627,7 @@ void GraphicsView::copyItems(bool cut)
           QJsonObject componentJsonObject;
           componentJsonObject.insert(QLatin1String("classname"), pElement->getClassName());
           componentJsonObject.insert(QLatin1String("name"), pElement->getName());
-          componentJsonObject.insert(QLatin1String("connector"), pElement->getModel() ? pElement->getModel()->isConnector() : false);
+          componentJsonObject.insert(QLatin1String("connector"), pElement->isConnector());
           componentJsonObject.insert(QLatin1String("placement"), pElement->getOMCPlacementAnnotation(QPointF(0, 0)));
           componentsJsonArray.append(componentJsonObject);
         } else if (ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(itemsList.at(i))) {
@@ -3856,7 +3843,6 @@ void GraphicsView::omsGraphicsViewContextMenu(QMenu *pMenu)
     pMenu->addSeparator();
     pMenu->addAction(MainWindow::instance()->getAddConnectorAction());
     pMenu->addAction(MainWindow::instance()->getAddBusAction());
-    pMenu->addAction(MainWindow::instance()->getAddTLMBusAction());
     if (mpModelWidget->getLibraryTreeItem()->isSystemElement()) {
       pMenu->addSeparator();
       pMenu->addAction(MainWindow::instance()->getAddSubModelAction());
@@ -4025,7 +4011,7 @@ void GraphicsView::pasteItems(QPointF positionOffset)
       QPointF cursorPositionAtCopy = MainWindow::instance()->getModelWidgetContainer()->mCursorPositionAtCopy;
       QRect copiedItemsBoundingRect = MainWindow::instance()->getModelWidgetContainer()->mCopiedItemsBoundingRect;
       if (!cursorPositionAtCopy.isNull() && cursorPositionAtCopy != cursorPosition) {
-        cursorPosition = cursorPosition - QPointF(copiedItemsBoundingRect.left(), copiedItemsBoundingRect.bottom());
+        cursorPosition = snapPointToGrid(cursorPosition - QPointF(copiedItemsBoundingRect.left(), copiedItemsBoundingRect.bottom()));
       } else {
         cursorPosition = QPointF(0, 0);
       }
@@ -4856,6 +4842,34 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
     return;
   }
   const bool removeLastAddedPoint = true;
+  // if double clicking on an empty space, show a searchable quick insert menu.
+  if (!itemAt(event->pos())) {
+    if (mpModelWidget->getLibraryTreeItem()->isModelica() && !mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+      LibraryTreeModel *treeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+      QuickInsertWidget *menu = new QuickInsertWidget(treeModel, this);
+
+      QString selectedClass;
+
+      QEventLoop loop;
+      connect(menu, &QuickInsertWidget::classSelected, [&](const QString &className) {
+          selectedClass = className;
+          loop.quit();
+      });
+      connect(menu, &QuickInsertWidget::destroyed, &loop, &QEventLoop::quit);
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+      menu->showAt(event->globalPosition().toPoint());
+#else
+      menu->showAt(event->globalPos());
+#endif
+      loop.exec(); // blocking until loop.quit() call
+
+      if (!selectedClass.isEmpty()) {
+          addComponent(selectedClass, mapToScene(event->pos()));
+      }
+      return;
+    }
+  }
   if (isCreatingLineShape()) {
     finishDrawingLineShape(removeLastAddedPoint);
     setFocus(Qt::ActiveWindowFocusReason);
@@ -5182,8 +5196,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
         // No context menu for component of type OMS connector i.e., input/output signal or OMS bus connector.
         if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isSSP()
             && (pComponent->getLibraryTreeItem()->getOMSConnector()
-                || pComponent->getLibraryTreeItem()->getOMSBusConnector()
-                || pComponent->getLibraryTreeItem()->getOMSTLMBusConnector())) {
+                || pComponent->getLibraryTreeItem()->getOMSBusConnector())) {
           return;
         }
         omsOneComponentContextMenu(pComponent, &menu);
@@ -5697,20 +5710,6 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mpDiagramGraphicsScene = 0;
     mpDiagramGraphicsView = 0;
   }
-  // Read the file for LibraryTreeItem::Text
-  if (mpLibraryTreeItem->isText() && !mpLibraryTreeItem->isFilePathValid()) {
-    QString contents = "";
-    QFile file(mpLibraryTreeItem->getFileName());
-    if (!file.open(QIODevice::ReadOnly)) {
-      //      QMessageBox::critical(mpLibraryWidget->MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
-      //                            GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(pLibraryTreeItem->getFileName())
-      //                            .arg(file.errorString()), QMessageBox::Ok);
-    } else {
-      contents = QString(file.readAll());
-      file.close();
-    }
-    mpLibraryTreeItem->setClassText(contents);
-  }
 }
 
 ModelWidget::~ModelWidget()
@@ -5842,8 +5841,12 @@ void ModelWidget::loadModelInstance(bool icon, const ModelInfo &modelInfo)
     MainWindow::instance()->writeNewApiProfiling(QString("Time for parsing JSON %1 secs").arg(QString::number(elapsed, 'f', 6)));
   }
   timer.restart();
+  // enable skip expression evaluation flag if we are drawing the icon only
+  MainWindow::instance()->setSkipExpressionEvaluation(icon);
   // drawing
   drawModel(modelInfo);
+  // disable skip expression evaluation flag
+  MainWindow::instance()->setSkipExpressionEvaluation(false);
   if (MainWindow::instance()->isNewApiProfiling()) {
     double elapsed = (double)timer.elapsed() / 1000.0;
     MainWindow::instance()->writeNewApiProfiling(QString("Time for drawing graphical objects %1 secs").arg(QString::number(elapsed, 'f', 6)));
@@ -6384,6 +6387,7 @@ void ModelWidget::reDrawModelWidget(const ModelInfo &modelInfo)
   if (isElementMode()) {
     clearGraphicsViewsExceptOutOfSceneItems();
     mModelInstanceList.clear();
+    mLibraryTreeItemList.clear();
     mModelInstancesPos = -1;
     mpElementModeLabel->setText("");
     mpIconGraphicsView->setShapesList(mPreservedIconShapesList);
@@ -6492,15 +6496,19 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
     /* if a class inside a package one file is renamed then it is already deleted by calling loadString using the whole package contents
      * so we tell unloadLibraryTreeItem to don't try deleteClass since it will only produce error
      */
-    pLibraryTreeModel->unloadLibraryTreeItem(mpLibraryTreeItem, !mpLibraryTreeItem->isInPackageOneFile());
-    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(mpLibraryTreeItem->getNameStructure(), false);
     disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString,bool)), this, SLOT(updateModelIfDependsOn(QString,bool)));
+    // set this to null before calling unloadLibraryTreeItem to this ModelWidget is not deleted.
     mpLibraryTreeItem->setModelWidget(0);
+    const QString nameStructure = mpLibraryTreeItem->getNameStructure();
+    LibraryTreeItem *pParentLibraryTreeItem = mpLibraryTreeItem->parent();
+    LibraryTreeItem::SaveContentsType saveContentsType =  mpLibraryTreeItem->getSaveContentsType();
+    pLibraryTreeModel->unloadLibraryTreeItem(mpLibraryTreeItem, !mpLibraryTreeItem->isInPackageOneFile());
+    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->emitModelStateChanged(nameStructure, false);
     QString name = StringHandler::getLastWordAfterDot(className);
-    LibraryTreeItem *pNewLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(name, mpLibraryTreeItem->parent(), false, false, true, row);
+    LibraryTreeItem *pNewLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(name, pParentLibraryTreeItem, false, false, true, row);
     setWindowTitle(pNewLibraryTreeItem->getName() + (pNewLibraryTreeItem->isSaved() ? "" : "*"));
     setModelClassPathLabel(pNewLibraryTreeItem->getNameStructure());
-    pNewLibraryTreeItem->setSaveContentsType(mpLibraryTreeItem->getSaveContentsType());
+    pNewLibraryTreeItem->setSaveContentsType(saveContentsType);
     // make the new created LibraryTreeItem selected
     QModelIndex modelIndex = pLibraryTreeModel->libraryTreeItemIndex(pNewLibraryTreeItem);
     LibraryTreeProxyModel *pLibraryTreeProxyModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeProxyModel();
@@ -6511,7 +6519,6 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
     // update class text
     pNewLibraryTreeItem->setModelWidget(this);
     pNewLibraryTreeItem->setClassText(modelicaText);
-    mpLibraryTreeItem->deleteLater();
     setLibraryTreeItem(pNewLibraryTreeItem);
     setModelFilePathLabel(pNewLibraryTreeItem->getFileName());
     reDrawModelWidget();
@@ -6534,7 +6541,7 @@ void ModelWidget::updateChildClasses(LibraryTreeItem *pLibraryTreeItem)
   while(i != pLibraryTreeItem->childrenSize()) {
     LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
     if (!classNames.contains(pChildLibraryTreeItem->getName())) {
-      pLibraryTreeModel->removeLibraryTreeItem(pChildLibraryTreeItem);
+      pLibraryTreeModel->removeLibraryTreeItem(pChildLibraryTreeItem, false);
       i = 0;  //Restart iteration if list has changed
     } else {
       i++;
@@ -6580,8 +6587,7 @@ bool ModelWidget::omsimulatorEditorTextChanged()
       return true;
     }
   } else {
-    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-    LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+    LibraryTreeItem *pModelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpLibraryTreeItem);
     if (pModelLibraryTreeItem && OMSProxy::instance()->importSnapshot(pModelLibraryTreeItem->getNameStructure(), mpEditor->getPlainTextEdit()->toPlainText(), &newCref)) {
       QString newEditedCref = QString("%1.%2").arg(mpLibraryTreeItem->parent()->getNameStructure(), newCref);
       createOMSimulatorUndoCommand("Text edited", true, false, mpLibraryTreeItem->getNameStructure(), newEditedCref);
@@ -6629,10 +6635,9 @@ void ModelWidget::updateClassAnnotationIfNeeded()
  */
 void ModelWidget::updateModelText()
 {
-  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
   // Don't allow updating the child LibraryTreeItems of OMS model
   if (mpLibraryTreeItem->isSSP()) {
-    LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+    LibraryTreeItem *pModelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpLibraryTreeItem);
     if (pModelLibraryTreeItem->getModelWidget()) {
       pModelLibraryTreeItem->getModelWidget()->setWindowTitle(QString("%1*").arg(pModelLibraryTreeItem->getName()));
       if (pModelLibraryTreeItem->getModelWidget()->isLoadedWidgetComponents()) {
@@ -6852,7 +6857,7 @@ QList<QVariant> ModelWidget::toOMSensData()
 void ModelWidget::createOMSimulatorUndoCommand(const QString &commandText, const bool doSnapShot, const bool switchToEdited, const QString oldEditedCref, const QString newEditedCref)
 {
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-  LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+  LibraryTreeItem *pModelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpLibraryTreeItem);
   if (!pModelLibraryTreeItem->getModelWidget()) {
     pLibraryTreeModel->showModelWidget(pModelLibraryTreeItem, false);
   }
@@ -6874,7 +6879,7 @@ void ModelWidget::createOMSimulatorUndoCommand(const QString &commandText, const
 void ModelWidget::createOMSimulatorRenameModelUndoCommand(const QString &commandText, const QString &cref, const QString &newCref)
 {
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-  LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+  LibraryTreeItem *pModelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpLibraryTreeItem);
   if (!pModelLibraryTreeItem->getModelWidget()) {
     pLibraryTreeModel->showModelWidget(pModelLibraryTreeItem, false);
   }
@@ -6959,6 +6964,7 @@ void ModelWidget::showElement(ModelInstance::Model *pModelInstance, bool addToLi
   QApplication::setOverrideCursor(Qt::WaitCursor);
   if (mModelInstancesPos < 0) {
     mpRootModelInstance = mpModelInstance;
+    mpRootLibraryTreeItem = mpLibraryTreeItem;
     mPreservedIconShapesList = mpIconGraphicsView->getShapesList();
     mPreservedDiagramShapesList = mpDiagramGraphicsView->getShapesList();
     mModelInfo = createModelInfo();
@@ -6990,13 +6996,28 @@ void ModelWidget::showElement(ModelInstance::Model *pModelInstance, bool addToLi
   if (addToList) {
     while (mModelInstanceList.count() > (mModelInstancesPos+1)) {
       mModelInstanceList.removeLast();
+      mLibraryTreeItemList.removeLast();
     }
     mModelInstanceList.append(pModelInstance);
+    // find correct LibraryTreeItem for ModelInstance.
+    QString name = pModelInstance->getReplaceable() ? pModelInstance->getNameIfReplaceable() : pModelInstance->getName();
+    LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(name);
+    if (!pLibraryTreeItem) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Could not find the LibraryTreeItem for model " + name +
+                                                            ". This is a fatal error. Please report a bug.", Helper::scriptingKind, Helper::errorLevel));
+      exitElement();
+      return;
+    }
+    mLibraryTreeItemList.append(pLibraryTreeItem);
+    mpLibraryTreeItem = pLibraryTreeItem;
     mModelInstancesPos++;
+  } else {
+    mpLibraryTreeItem = mLibraryTreeItemList.at(mModelInstancesPos);
   }
   mpModelInstance = pModelInstance;
   mpElementModeLabel->setText(tr("Showing element <b>%1</b> in <b>%2</b>").arg(mpModelInstance->getParentElement()->getQualifiedName(), mpRootModelInstance->getName()));
   drawModel(ModelInfo());
+  updateViewButtonsBasedOnAccess();
   updateElementModeButtons();
   // update the coordinate system according to new values
   mpIconGraphicsView->resetZoom();
@@ -7018,7 +7039,7 @@ void ModelWidget::selectDeselectElement(const QString &name, bool selected)
       pDiagramElement->setIgnoreSelection(true);
       pDiagramElement->setSelected(selected);
       pDiagramElement->setIgnoreSelection(false);
-      if (mpIconGraphicsView && pDiagramElement->getModel() && pDiagramElement->getModel()->isConnector()) {
+      if (mpIconGraphicsView && pDiagramElement->isConnector()) {
         Element *pIconElement = mpIconGraphicsView->getElementObjectFromQualifiedName(name);
         pIconElement->setIgnoreSelection(true);
         pIconElement->setSelected(selected);
@@ -7084,7 +7105,7 @@ void ModelWidget::createUndoStack()
    */
   if (mpLibraryTreeItem && !mpLibraryTreeItem->isTopLevel() && mpLibraryTreeItem->isSSP()) {
     LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-    LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+    LibraryTreeItem *pModelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpLibraryTreeItem);
     if (pModelLibraryTreeItem) {
       if (pModelLibraryTreeItem->getModelWidget()) {
         mpUndoStack = pModelLibraryTreeItem->getModelWidget()->getUndoStack();
@@ -7137,8 +7158,7 @@ void ModelWidget::drawOMSModelIconElements()
       if ((pChildLibraryTreeItem->getOMSConnector()
           && (pChildLibraryTreeItem->getOMSConnector()->causality == oms_causality_input
               || pChildLibraryTreeItem->getOMSConnector()->causality == oms_causality_output))
-          || (pChildLibraryTreeItem->getOMSBusConnector())
-          || (pChildLibraryTreeItem->getOMSTLMBusConnector())) {
+          || (pChildLibraryTreeItem->getOMSBusConnector())) {
         double x = 0.5;
         double y = 0.5;
         if (pChildLibraryTreeItem->getOMSConnector() && pChildLibraryTreeItem->getOMSConnector()->geometry) {
@@ -7147,16 +7167,13 @@ void ModelWidget::drawOMSModelIconElements()
         } else if (pChildLibraryTreeItem->getOMSBusConnector() && pChildLibraryTreeItem->getOMSBusConnector()->geometry) {
           x = pChildLibraryTreeItem->getOMSBusConnector()->geometry->x;
           y = pChildLibraryTreeItem->getOMSBusConnector()->geometry->y;
-        } else if (pChildLibraryTreeItem->getOMSTLMBusConnector() && pChildLibraryTreeItem->getOMSTLMBusConnector()->geometry) {
-          x = pChildLibraryTreeItem->getOMSTLMBusConnector()->geometry->x;
-          y = pChildLibraryTreeItem->getOMSTLMBusConnector()->geometry->y;
         }
         QString annotation = QString("Placement(true,%1,%2,-10.0,-10.0,10.0,10.0,0,%1,%2,-10.0,-10.0,10.0,10.0,)")
                              .arg(Utilities::mapToCoordinateSystem(x, 0, 1, -100, 100))
                              .arg(Utilities::mapToCoordinateSystem(y, 0, 1, -100, 100));
         drawOMSElement(pChildLibraryTreeItem, annotation);
         // assoicated the bus component with each of its connector component
-        if ((pChildLibraryTreeItem->getOMSBusConnector()) || (pChildLibraryTreeItem->getOMSTLMBusConnector())) {
+        if (pChildLibraryTreeItem->getOMSBusConnector()) {
           associateBusWithConnectors(pChildLibraryTreeItem->getName());
         }
       }
@@ -7235,8 +7252,7 @@ void ModelWidget::drawOMSElement(LibraryTreeItem *pLibraryTreeItem, const QStrin
   if ((pLibraryTreeItem->getOMSConnector()
       && (pLibraryTreeItem->getOMSConnector()->causality == oms_causality_input
           || pLibraryTreeItem->getOMSConnector()->causality == oms_causality_output))
-      || (pLibraryTreeItem->getOMSBusConnector())
-      || (pLibraryTreeItem->getOMSTLMBusConnector())) {
+      || (pLibraryTreeItem->getOMSBusConnector())) {
     Element *pIconComponent = new Element(pLibraryTreeItem->getName(), pLibraryTreeItem, annotation, QPointF(0, 0), mpIconGraphicsView);
     mpIconGraphicsView->addElementItem(pIconComponent);
     mpIconGraphicsView->addElementToList(pIconComponent);
@@ -7344,14 +7360,8 @@ void ModelWidget::drawOMSModelConnections()
           pConnectionLineAnnotation->setVisible(false);
         }
         // Check if bus connection
-        if (pConnections[i]->type == oms_connection_bus || pConnections[i]->type == oms_connection_tlm) {
+        if (pConnections[i]->type == oms_connection_bus) {
           pConnectionLineAnnotation->setLineThickness(0.5);
-          if (pConnections[i]->type == oms_connection_tlm) {
-            pConnectionLineAnnotation->setDelay(QString::number(pConnections[i]->tlmparameters->delay));
-            pConnectionLineAnnotation->setAlpha(QString::number(pConnections[i]->tlmparameters->alpha));
-            pConnectionLineAnnotation->setZf(QString::number(pConnections[i]->tlmparameters->linearimpedance));
-            pConnectionLineAnnotation->setZfr(QString::number(pConnections[i]->tlmparameters->angularimpedance));
-          }
         }
       }
     }
@@ -7372,16 +7382,6 @@ void ModelWidget::associateBusWithConnectors(Element *pBusComponent, GraphicsVie
     if (pBusConnector->connectors) {
       for (int i = 0 ; pBusConnector->connectors[i] ; i++) {
         Element *pConnectorComponent = pGraphicsView->getElementObject(QString(pBusConnector->connectors[i]));
-        if (pConnectorComponent) {
-          pConnectorComponent->setBusComponent(pBusComponent);
-        }
-      }
-    }
-  } else if (pBusComponent && pBusComponent->getLibraryTreeItem() && pBusComponent->getLibraryTreeItem()->getOMSTLMBusConnector()) {
-    oms_tlmbusconnector_t *pTLMBusConnector = pBusComponent->getLibraryTreeItem()->getOMSTLMBusConnector();
-    if (pTLMBusConnector->connectornames) {
-      for (int i = 0 ; pTLMBusConnector->connectornames[i] ; i++) {
-        Element *pConnectorComponent = pGraphicsView->getElementObject(QString(pTLMBusConnector->connectornames[i]));
         if (pConnectorComponent) {
           pConnectorComponent->setBusComponent(pBusComponent);
         }
@@ -7480,7 +7480,6 @@ void ModelWidget::showIconView(bool checked)
   if (pSubWindow) {
     pSubWindow->setWindowIcon(ResourceCache::getIcon(":/Resources/icons/model.svg"));
   }
-  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpIconGraphicsView->setFocus(Qt::ActiveWindowFocusReason);
   if (!checked || (checked && mpIconGraphicsView->isVisible())) {
     return;
@@ -7493,7 +7492,7 @@ void ModelWidget::showIconView(bool checked)
   mpIconGraphicsView->show();
   mpIconGraphicsView->setFocus();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::Icon);
-  updateUndoRedoActions();
+  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   MainWindow::instance()->getPositionLabel()->clear();
 }
 
@@ -7515,7 +7514,6 @@ void ModelWidget::showDiagramView(bool checked)
   if (pSubWindow) {
     pSubWindow->setWindowIcon(ResourceCache::getIcon(":/Resources/icons/modeling.png"));
   }
-  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpDiagramGraphicsView->setFocus(Qt::ActiveWindowFocusReason);
   if (!checked || (checked && mpDiagramGraphicsView->isVisible())) {
     return;
@@ -7530,7 +7528,7 @@ void ModelWidget::showDiagramView(bool checked)
   mpDiagramGraphicsView->show();
   mpDiagramGraphicsView->setFocus();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::Diagram);
-  updateUndoRedoActions();
+  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   MainWindow::instance()->getPositionLabel()->clear();
 }
 
@@ -7548,7 +7546,6 @@ void ModelWidget::showTextView(bool checked)
   if (QMdiSubWindow *pSubWindow = mpModelWidgetContainer->getCurrentMdiSubWindow()) {
     pSubWindow->setWindowIcon(ResourceCache::getIcon(":/Resources/icons/modeltext.svg"));
   }
-  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::ModelicaText));
   if (mpIconGraphicsView) {
     mpIconGraphicsView->hide();
@@ -7560,7 +7557,7 @@ void ModelWidget::showTextView(bool checked)
     mpEditor->getPlainTextEdit()->updateCursorPosition();
   }
   mpModelWidgetContainer->setPreviousViewType(StringHandler::ModelicaText);
-  updateUndoRedoActions();
+  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
 }
 
 /*!
@@ -7604,12 +7601,14 @@ void ModelWidget::exitElement()
   clearGraphicsViewsExceptOutOfSceneItems();
   // call clearGraphicsViewsExceptOutOfSceneItems before resetting the model instances list so the icon update signal can be ignored.
   mModelInstanceList.clear();
+  mLibraryTreeItemList.clear();
   mModelInstancesPos = -1;
   mpElementModeLabel->setText("");
   // reset the CoordinateSystem
   mpIconGraphicsView->resetCoordinateSystem();
   mpDiagramGraphicsView->resetCoordinateSystem();
   mpModelInstance = mpRootModelInstance;
+  mpLibraryTreeItem = mpRootLibraryTreeItem;
   mpIconGraphicsView->setShapesList(mPreservedIconShapesList);
   mPreservedIconShapesList.clear();
   mpDiagramGraphicsView->setShapesList(mPreservedDiagramShapesList);
@@ -7626,6 +7625,7 @@ void ModelWidget::exitElement()
     setRestoringModel(false);
   }
   setComponentModified(false);
+  updateViewButtonsBasedOnAccess();
   updateElementModeButtons();
   // update the coordinate system according to new values
   mpIconGraphicsView->resetZoom();
@@ -7756,7 +7756,6 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   connect(MainWindow::instance()->getDeleteIconAction(), SIGNAL(triggered()), SLOT(deleteIcon()));
   connect(MainWindow::instance()->getAddConnectorAction(), SIGNAL(triggered()), SLOT(addConnector()));
   connect(MainWindow::instance()->getAddBusAction(), SIGNAL(triggered()), SLOT(addBus()));
-  connect(MainWindow::instance()->getAddTLMBusAction(), SIGNAL(triggered()), SLOT(addTLMBus()));
   connect(MainWindow::instance()->getAddSubModelAction(), SIGNAL(triggered()), SLOT(addSubModel()));
 }
 
@@ -8106,29 +8105,39 @@ void collectSelectedElements(GraphicsView *pGraphicsView, QStringList *pSelected
 /*!
  * \brief ModelWidgetContainer::getOpenedModelWidgetsAndSelectedElementsOfClass
  * Creates the list of opened ModelWidgets and its selected icon and diagram view elements.
- * \param modelName
+ * \param pLibraryTreeItem
  * \param pOpenedModelWidgetsAndSelectedElements
- * \param pIconSelectedItemsList
- * \param pDiagramSelectedItemsList
  */
-void ModelWidgetContainer::getOpenedModelWidgetsAndSelectedElementsOfClass(const QString &modelName,
+void ModelWidgetContainer::getOpenedModelWidgetsAndSelectedElementsOfClass(LibraryTreeItem *pLibraryTreeItem,
                                                                            QHash<QString, QPair<QStringList, QStringList> > *pOpenedModelWidgetsAndSelectedElements)
 {
   QList<QMdiSubWindow*> subWindowsList = subWindowList(QMdiArea::StackingOrder);
   foreach (QMdiSubWindow *pSubWindow, subWindowsList) {
     ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(pSubWindow->widget());
-    if (pModelWidget && pModelWidget->getLibraryTreeItem()
-        && StringHandler::getFirstWordBeforeDot(pModelWidget->getLibraryTreeItem()->getNameStructure()).compare(modelName) == 0) {
-      QStringList iconSelectedItemsList, diagramSelectedItemsList;
-      // icon view selected elements
-      if (pModelWidget->getIconGraphicsView()) {
-        collectSelectedElements(pModelWidget->getIconGraphicsView(), &iconSelectedItemsList);
+    if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+      LibraryTreeItem *pParentLibraryTreeItem = pModelWidget->getLibraryTreeItem()->parent();
+      bool isChild = false;
+
+      while (pParentLibraryTreeItem) {
+        if (pParentLibraryTreeItem == pLibraryTreeItem) {
+          isChild = true;
+          break;
+        }
+        pParentLibraryTreeItem = pParentLibraryTreeItem->parent();
       }
-      // diagram view selected elements
-      if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
-        collectSelectedElements(pModelWidget->getDiagramGraphicsView(), &diagramSelectedItemsList);
+
+      if (isChild) {
+        QStringList iconSelectedItemsList, diagramSelectedItemsList;
+        // icon view selected elements
+        if (pModelWidget->getIconGraphicsView()) {
+          collectSelectedElements(pModelWidget->getIconGraphicsView(), &iconSelectedItemsList);
+        }
+        // diagram view selected elements
+        if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
+          collectSelectedElements(pModelWidget->getDiagramGraphicsView(), &diagramSelectedItemsList);
+        }
+        pOpenedModelWidgetsAndSelectedElements->insert(pModelWidget->getLibraryTreeItem()->getNameStructure(), qMakePair(iconSelectedItemsList, diagramSelectedItemsList));
       }
-      pOpenedModelWidgetsAndSelectedElements->insert(pModelWidget->getLibraryTreeItem()->getNameStructure(), qMakePair(iconSelectedItemsList, diagramSelectedItemsList));
     }
   }
 }
@@ -8333,9 +8342,8 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getAddSystemAction()->setEnabled(enabled && !iconGraphicsView && !textView && (omsModel || (omsSystem && (!pLibraryTreeItem->isSCSystem()))));
   MainWindow::instance()->getAddOrEditIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel));
   MainWindow::instance()->getDeleteIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel));
-  MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && !textView && (omsSystem && (!pLibraryTreeItem->isTLMSystem())));
-  MainWindow::instance()->getAddBusAction()->setEnabled(enabled && !textView && ((omsSystem || omsSubmodel)  && (!pLibraryTreeItem->isTLMSystem())));
-  MainWindow::instance()->getAddTLMBusAction()->setEnabled(enabled && !textView && ((omsSystem || omsSubmodel)  && (!pLibraryTreeItem->isTLMSystem())));
+  MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && !textView && omsSystem);
+  MainWindow::instance()->getAddBusAction()->setEnabled(enabled && !textView && (omsSystem || omsSubmodel));
   MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && !iconGraphicsView && !textView && omsSystem);
   MainWindow::instance()->getLogCurrentFileAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getStageCurrentFileForCommitAction()->setEnabled(enabled && gitWorkingDirectory);
@@ -8359,13 +8367,18 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     }
     // update the Undo/Redo actions
     pModelWidget->updateUndoRedoActions();
+    // We always hide DiagramGraphicsView here and then show it depending on the view type. See issue #14101.
+    if (pModelWidget->getDiagramGraphicsView()) {
+      pModelWidget->getDiagramGraphicsView()->hide();
+    }
     // set the focus when ModelWidget is changed so that the keyboard shortcuts can work e.g., ctrl+v
     if (pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) {
       pModelWidget->getIconGraphicsView()->setFocus(Qt::ActiveWindowFocusReason);
-    } else if (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()) {
-      pModelWidget->getDiagramGraphicsView()->setFocus(Qt::ActiveWindowFocusReason);
-    } else if (pModelWidget->getEditor() && pModelWidget->getEditor()) {
+    } else if (pModelWidget->getEditor() && pModelWidget->getEditor()->isVisible()) {
       pModelWidget->getEditor()->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
+    } else if (pModelWidget->getDiagramGraphicsView()) {
+      pModelWidget->getDiagramGraphicsView()->show();
+      pModelWidget->getDiagramGraphicsView()->setFocus(Qt::ActiveWindowFocusReason);
     }
   } else {
     MainWindow::instance()->getUndoAction()->setEnabled(false);
@@ -8380,6 +8393,10 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     MainWindow::instance()->showDebuggingPerspectiveToolBars(pModelWidget);
   }
   if (!pSubWindow || mpLastActiveSubWindow == pSubWindow) {
+    // Clear Element Browser when no ModelWidget is opened
+    if (subWindowList().isEmpty()) {
+      MainWindow::instance()->getElementWidget()->getElementTreeModel()->removeElements();
+    }
     return;
   }
   mpLastActiveSubWindow = pSubWindow;
@@ -8684,34 +8701,6 @@ void ModelWidgetContainer::addBus()
 }
 
 /*!
- * \brief ModelWidgetContainer::addTLMBus
- * Opens the AddTLMBusDialog.
- */
-void ModelWidgetContainer::addTLMBus()
-{
-  ModelWidget *pModelWidget = getCurrentModelWidget();
-  if (pModelWidget) {
-    GraphicsView *pGraphicsView = 0;
-    if (pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) {
-      pGraphicsView = pModelWidget->getIconGraphicsView();
-    } else if (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()) {
-      pGraphicsView = pModelWidget->getDiagramGraphicsView();
-    }
-    QList<Element*> components;
-    QList<QGraphicsItem*> selectedItems = pGraphicsView->scene()->selectedItems();
-    for (int i = 0 ; i < selectedItems.size() ; i++) {
-      // check the selected components.
-      Element *pComponent = dynamic_cast<Element*>(selectedItems.at(i));
-      if (pComponent && pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getOMSConnector()) {
-        components.append(pComponent);
-      }
-    }
-    AddTLMBusDialog *pAddTLMBusDialog = new AddTLMBusDialog(components, 0, pGraphicsView);
-    pAddTLMBusDialog->exec();
-  }
-}
-
-/*!
  * \brief ModelWidgetContainer::addSubModel
  * Opens the AddFMUDialog.
  */
@@ -8720,7 +8709,7 @@ void ModelWidgetContainer::addSubModel()
   ModelWidget *pModelWidget = getCurrentModelWidget();
   if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
     QString name = "";
-    QString path = AddSubModelDialog::browseSubModelPath(pModelWidget->getDiagramGraphicsView(), &name);
+    QString path = AddSubModelDialog::browseSubModelPath(&name);
     if (!path.isEmpty()) {
       AddSubModelDialog *pAddFMUDialog = new AddSubModelDialog(pModelWidget->getDiagramGraphicsView(), path, name);
       pAddFMUDialog->exec();

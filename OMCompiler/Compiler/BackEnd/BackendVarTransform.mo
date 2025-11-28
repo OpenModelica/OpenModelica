@@ -54,7 +54,6 @@ protected import DAEUtil;
 protected import Debug;
 protected import DoubleEnded;
 protected import ElementSource;
-protected import EvaluateFunctions;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
@@ -761,6 +760,7 @@ algorithm
       DAE.Ident ident;
       CrefExpTable derConst;
       list<String> fields;
+      list<DAE.Dimension> dims;
 
       // Note: Most of these functions check if a subexpression did a replacement.
       // If it did not, we do not create a new copy of the expression (to save some memory).
@@ -777,9 +777,13 @@ algorithm
         e2 = avoidDoubleHashLookup(e1,t);
       then
         (e2,true);
-    case ((e as DAE.CREF(componentRef = cr)),repl,cond)
+    case ((e as DAE.CREF(componentRef = cr, ty = t)),repl,cond)
         guard replaceExpCond(cond, e)
       equation
+        // only expand cref if dimensions are fixed
+        (_, dims) = Types.flattenArrayType(t);
+        true = List.none(list(Types.dimNotFixed(dim) for dim in dims), Util.id);
+
         (cr,_) = replaceCrefSubs(cr,repl,cond);
         true = hasExtendReplacement(repl, cr);
         (e2,true) = Expression.extendArrExp(e,false);
@@ -1470,7 +1474,7 @@ algorithm
       equation
         crefs = Expression.getLhsCrefsFromStatements(stmts);
         // if there is no need for expanding the original equation, the replaced one shouldn't either
-        hasArrayCref = List.exist(crefs,ComponentReference.isArrayElement);
+        hasArrayCref = List.any(crefs,ComponentReference.isArrayElement);
         crefExpand = if hasArrayCref then crefExpand else DAE.NOT_EXPAND();
 
         (stmts1,true) = replaceStatementLst(stmts,repl,inFuncTypeExpExpToBooleanOption,{},false);
@@ -1505,7 +1509,7 @@ algorithm
     case (BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns, source=source, attr=eqAttr),repl,_,_,_)
       equation
         (expl1,blst) = replaceExpList1(expl, repl, inFuncTypeExpExpToBooleanOption);
-        b1 = Util.boolOrList(blst);
+        b1 = List.any(blst, Util.id);
         source = ElementSource.addSymbolicTransformationSubstitutionLst(blst,source,expl,expl1);
         (expl2,blst) = ExpressionSimplify.condsimplifyList1(blst,expl1);
         source = ElementSource.addSymbolicTransformationSimplifyLst(blst,source,expl1,expl2);
@@ -2484,20 +2488,6 @@ algorithm
   // Normal debugging, without type&dimension information on crefs.
   str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) + " -> " + ExpressionDump.printExpStr(Util.tuple22(tpl));
 end printReplacementTupleStr;
-
-public function simplifyReplacements"applies ExpressionSimplify.simplify on all replacement expressions"
-  input VariableReplacements replIn;
-  input DAE.FunctionTree functions;
-  output VariableReplacements replOut;
-protected
-  list<DAE.ComponentRef> crefs;
-  list<DAE.Exp> exps;
-algorithm
-  (crefs,exps) := getAllReplacements(replIn);
-  (exps,_) := List.map_2(exps,ExpressionSimplify.simplify);
-  exps := List.map2(exps, EvaluateFunctions.evaluateConstantFunctionCallExp, functions, false);
-  replOut := addReplacements(replIn,crefs,exps,NONE());
-end simplifyReplacements;
 
 public function getConstantReplacements"gets a clean replacement set containing only constant replacement rules"
   input VariableReplacements replIn;

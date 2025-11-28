@@ -81,6 +81,7 @@
 #include "simulation/results/simulation_result_wall.h"
 #include "simulation/results/simulation_result_ia.h"
 #include "simulation/solver/solver_main.h"
+#include "simulation/solver/gbode_util.h"
 #include "simulation_info_json.h"
 #include "modelinfo.h"
 #include "simulation/solver/events.h"
@@ -365,12 +366,12 @@ void initializeOutputFilter(MODEL_DATA *modelData, const char *variableFilter, i
     modelData->realVarsData[i].filterOutput = regexec(&myregex, modelData->realVarsData[i].info.name, 0, NULL, 0) != 0;
   }
   for(mmc_sint_t i=0; i<modelData->nAliasReal; i++) if(!modelData->realAlias[i].filterOutput) {
-    if(modelData->realAlias[i].aliasType == 0)  /* variable */ {
+    if(modelData->realAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
       modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
       if (0 == modelData->realAlias[i].filterOutput) {
         modelData->realVarsData[modelData->realAlias[i].nameID].filterOutput = 0;
       }
-    } else if(modelData->realAlias[i].aliasType == 1)  /* parameter */ {
+    } else if(modelData->realAlias[i].aliasType == ALIAS_TYPE_PARAMETER) {
       modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
       if (0 == modelData->realAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
         modelData->realParameterData[modelData->realAlias[i].nameID].filterOutput = 0;
@@ -381,12 +382,12 @@ void initializeOutputFilter(MODEL_DATA *modelData, const char *variableFilter, i
     modelData->integerVarsData[i].filterOutput = regexec(&myregex, modelData->integerVarsData[i].info.name, 0, NULL, 0) != 0;
   }
   for (mmc_sint_t i=0; i<modelData->nAliasInteger; i++) if(!modelData->integerAlias[i].filterOutput) {
-    if(modelData->integerAlias[i].aliasType == 0)  /* variable */ {
+    if(modelData->integerAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
       modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
       if (0 == modelData->integerAlias[i].filterOutput) {
         modelData->integerVarsData[modelData->integerAlias[i].nameID].filterOutput = 0;
       }
-    } else if(modelData->integerAlias[i].aliasType == 1)  /* parameter */ {
+    } else if(modelData->integerAlias[i].aliasType == ALIAS_TYPE_PARAMETER) {
       modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
       if (0 == modelData->integerAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
         modelData->integerParameterData[modelData->integerAlias[i].nameID].filterOutput = 0;
@@ -397,12 +398,12 @@ void initializeOutputFilter(MODEL_DATA *modelData, const char *variableFilter, i
     modelData->booleanVarsData[i].filterOutput = regexec(&myregex, modelData->booleanVarsData[i].info.name, 0, NULL, 0) != 0;
   }
   for (mmc_sint_t i=0; i<modelData->nAliasBoolean; i++) if(!modelData->booleanAlias[i].filterOutput) {
-    if(modelData->booleanAlias[i].aliasType == 0)  /* variable */ {
+    if(modelData->booleanAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
       modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
       if (0 == modelData->booleanAlias[i].filterOutput) {
         modelData->booleanVarsData[modelData->booleanAlias[i].nameID].filterOutput = 0;
       }
-    } else if(modelData->booleanAlias[i].aliasType == 1)  /* parameter */ {
+    } else if(modelData->booleanAlias[i].aliasType == ALIAS_TYPE_PARAMETER) {
       modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
       if (0 == modelData->booleanAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
         modelData->booleanParameterData[modelData->booleanAlias[i].nameID].filterOutput = 0;
@@ -413,12 +414,12 @@ void initializeOutputFilter(MODEL_DATA *modelData, const char *variableFilter, i
     modelData->stringVarsData[i].filterOutput = regexec(&myregex, modelData->stringVarsData[i].info.name, 0, NULL, 0) != 0;
   }
   for (mmc_sint_t i=0; i<modelData->nAliasString; i++) if(!modelData->stringAlias[i].filterOutput) {
-    if(modelData->stringAlias[i].aliasType == 0)  /* variable */ {
+    if(modelData->stringAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
       modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
       if (0 == modelData->stringAlias[i].filterOutput) {
         modelData->stringVarsData[modelData->stringAlias[i].nameID].filterOutput = 0;
       }
-    } else if(modelData->stringAlias[i].aliasType == 1)  /* parameter */ {
+    } else if(modelData->stringAlias[i].aliasType == ALIAS_TYPE_PARAMETER) {
       modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
       if (0 == modelData->stringAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
         modelData->stringParameterData[modelData->stringAlias[i].nameID].filterOutput = 0;
@@ -755,7 +756,7 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
   TRACE_PUSH
   int retVal = -1;
   mmc_sint_t i;
-  mmc_sint_t solverID = S_UNKNOWN;
+  enum SOLVER_METHOD solverID = S_UNKNOWN;
   const char* outVars = (outputVariablesAtEnd.size() == 0) ? NULL : outputVariablesAtEnd.c_str();
   MMC_TRY_INTERNAL(mmc_jumper)
   MMC_TRY_INTERNAL(globalJumpBuffer)
@@ -775,10 +776,25 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
   } else {
     for(i=1; i<S_MAX; ++i) {
       if(std::string(SOLVER_METHOD_NAME[i]) == simData->simulationInfo->solverMethod) {
-        solverID = i;
+        solverID = (enum SOLVER_METHOD) i;
       }
     }
   }
+
+  /* Deprecation warnings */
+   deprecationWarningGBODE(solverID);
+  switch (solverID)
+  {
+    case S_SYM_SOLVER:
+    case S_SYM_SOLVER_SSC:
+    case S_QSS:
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Integration method '%s' is deprecated and will be removed in a future version of OpenModelica.",
+      SOLVER_METHOD_NAME[solverID]);
+    break;
+    default:
+    break;
+  }
+
   /* if no states are present, then we can
    * use euler method, since it does nothing.
    */
@@ -1063,8 +1079,11 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     data->simulationInfo->maxWarnDisplays = DEFAULT_FLAG_LV_MAX_WARN;
   }
 
-  // TODO this needs to happen after read_init_xml,
-  // or we need to read resizable parameters before this.
+  rt_tick(SIM_TIMER_INIT_XML);
+  read_input_xml(data->modelData, data->simulationInfo, threadData);
+  rt_accumulate(SIM_TIMER_INIT_XML);
+  data->simulationInfo->minStepSize = 4.0 * DBL_EPSILON * fmax(fabs(data->simulationInfo->startTime),fabs(data->simulationInfo->stopTime));
+
   initializeDataStruc(data, threadData);
   if(!data)
   {
@@ -1166,9 +1185,31 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     infoStreamPrint(OMC_LOG_STDOUT, 0, "Tolerance for accepting accuracy in Newton solver changed to %g", newtonFTol);
   }
 
+  if(omc_flag[FLAG_NEWTON_MAX_STEPS]) {
+    newtonMaxSteps = atoi(omc_flagValue[FLAG_NEWTON_MAX_STEPS]);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Maximum number of Newton steps for GBODE changed to %d", newtonMaxSteps);
+  }
+
   if(omc_flag[FLAG_NEWTON_MAX_STEP_FACTOR]) {
     maxStepFactor = atof(omc_flagValue[FLAG_NEWTON_MAX_STEP_FACTOR]);
     infoStreamPrint(OMC_LOG_STDOUT, 0, "Maximum step size factor for a Newton step changed to %g", newtonFTol);
+  }
+
+  if(omc_flag[FLAG_NEWTON_JAC_UPDATES]) {
+    int j = 0;
+    const char* p = omc_flagValue[FLAG_NEWTON_JAC_UPDATES];
+    char* endptr;
+    do {
+      errno = 0;
+      int i = strtol(p, &endptr, 10);
+      if (errno == ERANGE) {
+        throwStreamPrint(threadData,
+          "newtonJacUpdates: takes non-negative integers (got '%s')", omc_flagValue[FLAG_NEWTON_JAC_UPDATES]);
+      }
+      assertStreamPrint(threadData, i >= 0, "jac update must be non-negative, got %d", i);
+      maxJacUpdate[j++] = i;
+      p = endptr;
+    } while(*(p++) == ',' && i < 4);
   }
 
   if(omc_flag[FLAG_STEADY_STATE_TOL]) {
@@ -1180,11 +1221,6 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     warningStreamPrint(OMC_LOG_STDOUT, 0, "The daeMode flag is *deprecated*, because it is not needed any more.\n"
       "If a model is compiled in \"DAEmode\" with compiler flag --daeMode, then it simulates automatically in DAE mode.");
   }
-
-  rt_tick(SIM_TIMER_INIT_XML);
-  read_input_xml(data->modelData, data->simulationInfo);
-  data->simulationInfo->minStepSize = 4.0 * DBL_EPSILON * fmax(fabs(data->simulationInfo->startTime),fabs(data->simulationInfo->stopTime));
-  rt_accumulate(SIM_TIMER_INIT_XML);
 
   /* Set the maximum number of threads prior to any allocation w.r.t.
    * linear systems and Jacobians in order to avoid memory leaks.
@@ -1335,6 +1371,15 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *thre
 
   return retVal;
 }
+
+#ifndef OMC_HAVE_MOO
+
+int _main_OptimizationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData) {
+  errorStreamPrint(OMC_LOG_STDOUT, 0, "MOO has not been built and can not be called: Set -DOM_OMC_ENABLE_MOO=ON to build MOO.");
+  return -1;
+}
+
+#endif // OMC_HAVE_MOO
 
 #if !defined(OMC_MINIMAL_RUNTIME)
 const char* prettyPrintNanoSec(int64_t ns, int *v)

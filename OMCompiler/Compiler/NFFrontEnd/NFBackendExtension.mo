@@ -540,7 +540,6 @@ public
       Option<Expression> step;
       InstNode iter_name;
       list<tuple<InstNode, Expression>> iterators = {};
-      Integer index = 1;
     algorithm
       // make array constructor if it is an array
       if Type.isArray(ty) then
@@ -548,10 +547,9 @@ public
         start         := Expression.INTEGER(1);
         step          := NONE();
         for stop in sizes loop
-          iter_name   := InstNode.newIndexedIterator(index);
+          iter_name   := InstNode.newUniqueIterator();
           iter_range  := Expression.RANGE(Type.INTEGER(), start, step, Expression.INTEGER(stop));
           iterators   := (iter_name, iter_range) :: iterators;
-          index       := index + 1;
         end for;
         binding := Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(ty, Expression.variability(binding), NFPrefixes.Purity.PURE, binding, listReverse(iterators)));
       end if;
@@ -639,16 +637,6 @@ public
       end match;
     end getStartAttribute;
 
-    function getStateSelect
-      input VariableAttributes attributes;
-      output StateSelect stateSelect;
-    algorithm
-      stateSelect := match attributes
-        case VAR_ATTR_REAL(stateSelect = SOME(stateSelect)) then stateSelect;
-        else StateSelect.DEFAULT;
-      end match;
-    end getStateSelect;
-
     function setMin
       input output VariableAttributes attributes;
       input Option<Expression> min_val;
@@ -679,7 +667,7 @@ public
     algorithm
       attributes := match attributes
 
-        case VAR_ATTR_REAL() guard(overwrite or isNone(attributes.max))algorithm
+        case VAR_ATTR_REAL() guard(overwrite or isNone(attributes.max)) algorithm
           attributes.max := max_val;
         then attributes;
 
@@ -710,6 +698,16 @@ public
       end match;
     end setStateSelect;
 
+    function getStateSelect
+      input VariableAttributes attributes;
+      output StateSelect stateSelect;
+    algorithm
+      stateSelect := match attributes
+        case VAR_ATTR_REAL(stateSelect = SOME(stateSelect)) then stateSelect;
+        else StateSelect.DEFAULT;
+      end match;
+    end getStateSelect;
+
     function setTearingSelect
       input output VariableAttributes attributes;
       input TearingSelect tearingSelect_val;
@@ -724,6 +722,16 @@ public
         else attributes;
       end match;
     end setTearingSelect;
+
+    function getTearingSelect
+      input VariableAttributes attributes;
+      output TearingSelect tearingSelect;
+    algorithm
+      tearingSelect := match attributes
+        case VAR_ATTR_REAL(tearingSelect = SOME(tearingSelect)) then tearingSelect;
+        else TearingSelect.DEFAULT;
+      end match;
+    end getTearingSelect;
 
     function getNominal
       input VariableAttributes attr;
@@ -1107,39 +1115,35 @@ public
       Option<StateSelect> state_select = NONE();
       Option<TearingSelect> tearing_select = NONE();
     algorithm
-      if listEmpty(attrs) and not isFinal then
-        attributes := EMPTY_VAR_ATTR_REAL;
-      else
-        for attr in attrs loop
-          (name, b) := attr;
-          () := match name
-            case "displayUnit"    algorithm displayUnit   := createAttribute(b); then ();
-            case "fixed"          algorithm fixed         := createAttribute(b); then ();
-            case "max"            algorithm max           := createAttribute(b); then ();
-            case "min"            algorithm min           := createAttribute(b); then ();
-            case "nominal"        algorithm nominal       := createAttribute(b); then ();
-            case "quantity"       algorithm quantity      := createAttribute(b); then ();
-            case "start"          algorithm start         := createAttribute(b); then ();
-            case "stateSelect"    algorithm state_select  := createStateSelect(b); then ();
-            // TODO: VAR_ATTR_REAL has no field for unbounded (which should be named unbound).
-            case "unbounded"      then ();
-            case "unit"           algorithm unit := createAttribute(b); then ();
+      for attr in attrs loop
+        (name, b) := attr;
+        () := match name
+          case "displayUnit"    algorithm displayUnit   := createAttribute(b); then ();
+          case "fixed"          algorithm fixed         := createAttribute(b); then ();
+          case "max"            algorithm max           := createAttribute(b); then ();
+          case "min"            algorithm min           := createAttribute(b); then ();
+          case "nominal"        algorithm nominal       := createAttribute(b); then ();
+          case "quantity"       algorithm quantity      := createAttribute(b); then ();
+          case "start"          algorithm start         := createAttribute(b); then ();
+          case "stateSelect"    algorithm state_select  := createStateSelect(b); then ();
+          // TODO: VAR_ATTR_REAL has no field for unbounded (which should be named unbound).
+          case "unbounded"      then ();
+          case "unit"           algorithm unit := createAttribute(b); then ();
 
-            // The attributes should already be type checked, so we shouldn't get any
-            // unknown attributes here.
-            else
-              algorithm
-                Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
-              then
-                fail();
-          end match;
-        end for;
-        tearing_select := createTearingSelect(comment);
+          // The attributes should already be type checked, so we shouldn't get any
+          // unknown attributes here.
+          else
+            algorithm
+              Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
+            then
+              fail();
+        end match;
+      end for;
+      tearing_select := createTearingSelect(comment);
 
-        attributes := VariableAttributes.VAR_ATTR_REAL(
-          quantity, unit, displayUnit, min, max, start, fixed, nominal,
-          state_select, tearing_select, NONE(), NONE(), NONE(), NONE(), SOME(isFinal), NONE());
-        end if;
+      attributes := VariableAttributes.VAR_ATTR_REAL(
+        quantity, unit, displayUnit, min, max, start, fixed, nominal,
+        state_select, tearing_select, NONE(), NONE(), NONE(), NONE(), SOME(isFinal), NONE());
     end createReal;
 
     function createInt

@@ -511,17 +511,17 @@ algorithm
       //R_PACKAGE
      case(Absyn.CLASS(_, _, _, _, Absyn.R_PACKAGE(), Absyn.PARTS(_, _, classParts, _, _), _) :: _)
        equation
-      // print("In package: "); print(id2); print(" \n");
+      // print("In package: "); print(id2); print("\n");
 
        (eqs, mods, true) = lookThroughClasses(id, instNo,  fargs, classParts, oldEqs, oldModif);
        then
        (eqs, mods, true, instNo + 1) ;
     case(Absyn.CLASS(id2, _, _, _, Absyn.R_BLOCK(), Absyn.PARTS(_, _, classParts, _, _), _) :: _)
       equation
-        //print("TESTING1: "); print(id); print(" "); print(id2); print(" \n");
+        //print("TESTING1: "); print(id); print(" "); print(id2); print("\n");
         true = (id2 == id);
         (eqs, mods) = parseArgs("_autogen_" + id + intString(instNo), classParts, fargs, oldEqs, oldModif);
-        //print("TESTING2: "); print(id); print(" "); print(id2); print(" \n");
+        //print("TESTING2: "); print(id); print(" "); print(id2); print("\n");
       then
         (eqs, mods, true, instNo + 1) ;
     case(_ :: r_classes) then parseClassesDefs(id, instNo, r_classes, fargs, oldEqs, oldModif);

@@ -119,19 +119,16 @@ modelica_real nobox_stringReal(threadData_t *threadData,metamodelica_string s)
  * hash functions which could be useful to replace System__hash:
  */
 /*** djb2 hash ***/
-static inline unsigned long djb2_hash(const unsigned char *str)
-{
-  unsigned long hash = 5381;
-  int c;
-  while (0 != (c = *str++))  hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-  return hash;
-}
-
 static inline unsigned long djb2_hash_continue(const unsigned char *str, unsigned long hash)
 {
   int c;
   while (0 != (c = *str++)) hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
   return hash;
+}
+
+static inline unsigned long djb2_hash(const unsigned char *str)
+{
+  return djb2_hash_continue(str, 5381);
 }
 
 /*** sdbm hash ***/
@@ -524,11 +521,6 @@ modelica_metatype boxptr_listGet(threadData_t *threadData,modelica_metatype lst,
   MMC_THROW_INTERNAL(); /* List was not long enough */
 }
 
-modelica_metatype boxptr_listNth(threadData_t *threadData,modelica_metatype lst, modelica_metatype i)
-{
-  return boxptr_listGet(threadData,lst,mmc_mk_icon(mmc_unbox_integer(i)+1));
-}
-
 modelica_metatype boxptr_listDelete(threadData_t *threadData, modelica_metatype lst, modelica_metatype iix)
 {
   /* TODO: If we assume the index exists we can do this in a much better way */
@@ -591,8 +583,7 @@ modelica_metatype boxptr_listHead(threadData_t *threadData, modelica_metatype ls
 
 modelica_metatype arrayList(modelica_metatype arr)
 {
-  modelica_metatype result;
-  int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr))-1;
+  int nelts = arrayLength(arr)-1;
   void **vecp = MMC_STRUCTDATA(arr);
   void *res = mmc_mk_nil();
   for(; nelts >= 0; --nelts) {
@@ -621,7 +612,7 @@ modelica_metatype listArrayLiteral(modelica_metatype lst)
 
 modelica_metatype arrayCopy(modelica_metatype arr)
 {
-  int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));
+  int nelts = arrayLength(arr);
   void* res = (struct mmc_struct*)mmc_mk_box_no_assign(nelts, MMC_ARRAY_TAG, MMC_IS_IMMEDIATE(MMC_STRUCTDATA(arr)[0]));
   void **arrp = MMC_STRUCTDATA(arr);
   void **resp = MMC_STRUCTDATA(res);
@@ -631,8 +622,8 @@ modelica_metatype arrayCopy(modelica_metatype arr)
 
 modelica_metatype arrayAppend(modelica_metatype arr1, modelica_metatype arr2)
 {
-  int nelts1 = MMC_HDRSLOTS(MMC_GETHDR(arr1));
-  int nelts2 = MMC_HDRSLOTS(MMC_GETHDR(arr2));
+  int nelts1 = arrayLength(arr1);
+  int nelts2 = arrayLength(arr2);
   void* res = (struct mmc_struct*)mmc_mk_box_no_assign(nelts1 + nelts2, MMC_ARRAY_TAG, MMC_IS_IMMEDIATE(MMC_STRUCTDATA(arr1)[0]));
   void **arr1p = MMC_STRUCTDATA(arr1);
   void **arr2p = MMC_STRUCTDATA(arr2);
@@ -645,11 +636,6 @@ modelica_metatype arrayAppend(modelica_metatype arr1, modelica_metatype arr2)
     resp[i+nelts1] = arr2p[i];
   }
   return res;
-}
-
-modelica_metatype boxptr_arrayNth(threadData_t *threadData,modelica_metatype arr,modelica_metatype ix)
-{
-  return arrayGet(arr, mmc_unbox_integer(ix)+1);
 }
 
 /* Misc Operations */

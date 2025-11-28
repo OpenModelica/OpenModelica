@@ -1529,14 +1529,20 @@ algorithm
     case ("getAllSubtypeOf",{
           Values.CODE(Absyn.C_TYPENAME(path)),
           Values.CODE(Absyn.C_TYPENAME(parentClass)),
-          Values.BOOL(qualified),
+          _, // qualified not used
           Values.BOOL(includePartial),
           Values.BOOL(sort)})
       algorithm
-        paths := InteractiveUtil.getAllSubtypeOf(path, parentClass, SymbolTable.getAbsyn(), qualified, includePartial, sort);
-        paths := if sort then List.sort(paths, AbsynUtil.pathGe) else paths;
+        paths := InteractiveUtil.getAllSubtypeOf(path, parentClass, SymbolTable.getAbsyn(), includePartial, sort);
       then
         ValuesUtil.makeCodeTypeNameArray(paths);
+
+    case ("getReplaceableChoices", {
+          Values.CODE(Absyn.C_TYPENAME(path)),
+          Values.CODE(Absyn.C_TYPENAME(parentClass)),
+          Values.BOOL(includePartial),
+          Values.BOOL(sort)})
+      then InteractiveUtil.getReplaceableChoices(path, parentClass, SymbolTable.getAbsyn(), includePartial, sort);
 
     // check for OMSimulator API calls
     case (_,_)
@@ -2024,7 +2030,7 @@ protected
 algorithm
   skip := match cl
     case SCode.CLASS(classDef=SCode.CLASS_EXTENDS()) then false;
-    case SCode.CLASS(classDef=SCode.PARTS(elementLst=eltsTmp)) then not List.exist(eltsTmp, SCodeUtil.isElementExtendsOrClassExtends);
+    case SCode.CLASS(classDef=SCode.PARTS(elementLst=eltsTmp)) then not List.any(eltsTmp, SCodeUtil.isElementExtendsOrClassExtends);
     else true;
   end match;
   if not skip then
@@ -2661,7 +2667,7 @@ algorithm
       list<SCode.Element> elts;
       String name;
     case SCode.CLASS(restriction=SCode.R_PACKAGE(), encapsulatedPrefix=SCode.ENCAPSULATED(), classDef=SCode.PARTS(elementLst=elts))
-      then List.exist(elts, containsPublicInterface2);
+      then List.any(elts, containsPublicInterface2);
     else
       equation
         name = SCodeUtil.elementName(elt);

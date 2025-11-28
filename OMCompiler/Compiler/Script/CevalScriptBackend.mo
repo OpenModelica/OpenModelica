@@ -1606,6 +1606,51 @@ algorithm
       then
         ret_val;
 
+    case ("moo",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_))
+      equation
+        System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+
+        FlagsUtil.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION,true);
+        FlagsUtil.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
+        FlagsUtil.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,true);
+
+        (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,dirs) = buildModel(outCache,inEnv,vals,msg);
+        simflags = stringAppend(simflags, " -moo");
+        if b then
+          exeDir=compileDir;
+          (outCache,simSettings) = calculateSimulationSettings(outCache, vals);
+          SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) = simSettings;
+          result_file = stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
+          executableSuffixedExe = stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
+          logFile = stringAppend(executable,".log");
+          // adrpo: log file is deleted by buildModel! do NOT DELTE IT AGAIN!
+          // we should really have different log files for simulation/compilation!
+          // as the buildModel log file will be deleted here and that gives less information to the user!
+          if System.regularFileExists(logFile) then
+            0 = System.removeFile(logFile);
+          end if;
+          sim_call = stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
+          System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+          SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
+          resI = System.systemCallRestrictedEnv(sim_call, logFile);
+          timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+        else
+          result_file = "";
+          timeSimulation = 0.0;
+          resI = 1;
+        end if;
+        timeTotal = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+        (outCache,simValue) = createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,outCache,className,vals,result_file,logFile);
+      then
+        simValue;
+
+    case ("moo",vals as Values.CODE(Absyn.C_TYPENAME(className))::_)
+      equation
+        str = AbsynUtil.pathString(className);
+        res = "Failed to run the moo command: " + str;
+      then
+        createSimulationResultFailure(res, simOptionsAsString(vals));
+
     case ("importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(inputConnectors), Values.BOOL(outputConnectors), Values.CODE(Absyn.C_TYPENAME(classpath))})
       equation
         Error.clearMessages() "Clear messages";
@@ -1727,8 +1772,8 @@ algorithm
   outValue := matchcontinue (inFunctionName, inVals)
     local
       String s1,s2,str,str1,str2,str3,str4,method_str, pd,filename_1,filename,
-             call,name, title,xLabel,yLabel,filename2,varNameStr,xml_filename,pwd,omhome,os,
-             gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str, curveWidthStr, curveStyleStr, legendPosition, footer, autoScaleStr,
+             call,name, title,xLabel,yLabel,yLabelRight,filename2,varNameStr,xml_filename,pwd,omhome,os,
+             gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str, y1RStr, y2RStr, yAxis, curveWidthStr, curveStyleStr, legendPosition, footer, autoScaleStr,
              cname, annStr, annotationname, modifiername;
       list<Values.Value> vals,vals2,cvars;
       Absyn.Path path,classpath,baseClassPath;
@@ -1747,7 +1792,7 @@ algorithm
       Integer size,i,n,curveStyle,numberOfIntervals,x,y;
       Access access;
       list<String> vars_1,args,strings,strs1,strs2,files;
-      Real timeStamp,val,x1,x2,y1,y2,r1,r2,curveWidth, interval;
+      Real timeStamp,val,x1,x2,y1,y2,y1R,y2R,r1,r2,curveWidth, interval;
       GlobalScript.Statements istmts;
       Boolean b, b1, b2, b3, externalWindow, logX, logY, autoScale, forceOMPlot, keepRedeclares, hintReadAllVars;
       list<Real> realVals;
@@ -2374,7 +2419,10 @@ algorithm
           Values.STRING(legendPosition),
           Values.STRING(footer),
           Values.BOOL(autoScale),
-          Values.BOOL(forceOMPlot)
+          Values.BOOL(forceOMPlot),
+          Values.STRING(yAxis),
+          Values.STRING(yLabelRight),
+          Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)})
         })
       equation
         // get OPENMODELICAHOME
@@ -2392,7 +2440,7 @@ algorithm
           // create the path till OMPlot
           str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
           // create the list of arguments for OMPlot
-          str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotAll --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale);
+          str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotAll --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale);
           call = stringAppendList({"\"",str2,"\""," ",str3});
           0 = System.spawnCall(str2, call);
         elseif b then
@@ -2432,7 +2480,10 @@ algorithm
           Values.STRING(legendPosition),
           Values.STRING(footer),
           Values.BOOL(autoScale),
-          Values.BOOL(forceOMPlot)
+          Values.BOOL(forceOMPlot),
+          Values.STRING(yAxis),
+          Values.STRING(yLabelRight),
+          Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)})
         })
       equation
         // get the variables list
@@ -2454,7 +2505,7 @@ algorithm
           // create the path till OMPlot
           str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
           // create the list of arguments for OMPlot
-          str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plot --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " \"" + str + "\"";
+          str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plot --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " \"" + str + "\"";
           call = stringAppendList({"\"",str2,"\""," ",str3});
           0 = System.spawnCall(str2, call);
         elseif b then
@@ -2956,7 +3007,10 @@ algorithm
           Values.STRING(legendPosition),
           Values.STRING(footer),
           Values.BOOL(autoScale),
-          Values.BOOL(forceOMPlot)
+          Values.BOOL(forceOMPlot),
+          Values.STRING(yAxis),
+          Values.STRING(yLabelRight),
+          Values.ARRAY(valueLst={Values.REAL(y1R),Values.REAL(y2R)})
         })
       equation
         // get OPENMODELICAHOME
@@ -2976,7 +3030,7 @@ algorithm
           // create the path till OMPlot
           str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
           // create the list of arguments for OMPlot
-          str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotParametric --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " \"" + str + "\"";
+          str3 = "--filename=\"" + filename + "\" --title=\"" + title + "\" --grid=" + gridStr + " --plotParametric --logx=" + boolString(logX) + " --logy=" + boolString(logY) + " --yaxis=\"" + yAxis + "\" --xlabel=\"" + xLabel + "\" --ylabel=\"" + yLabel + "\" --ylabel-right=\"" + yLabelRight + "\" --xrange=" + realString(x1) + ":" + realString(x2) + " --yrange=" + realString(y1) + ":" + realString(y2) + " --yrange-right=" + realString(y1R) + ":" + realString(y2R) + " --new-window=" + boolString(externalWindow) + " --curve-width=" + realString(curveWidth) + " --curve-style=" + intString(curveStyle) + " --legend-position=\"" + legendPosition + "\" --footer=\"" + footer + "\" --auto-scale=" + boolString(autoScale) + " \"" + str + "\"";
           call = stringAppendList({"\"",str2,"\""," ",str3});
           0 = System.spawnCall(str2, call);
         elseif b then
@@ -3606,6 +3660,7 @@ algorithm
       NFInst.instClassInProgram(cls_name, scode_p, annotation_p, relaxedFrontend, dumpFlat);
   else
     inst_failed := true;
+    NFInst.clearCaches();
   end try;
 
   FlagsUtil.set(Flags.NF_API, nf_api);
@@ -3616,96 +3671,43 @@ algorithm
 end runFrontEndWorkNF;
 
 public function translateModel
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
+  input FCore.Cache cache;
+  input FCore.Graph env;
   input Absyn.Path className "path for the model";
-  input String inFileNamePrefix;
+  input String fileNamePrefix;
   input Boolean runBackend "if true, run the backend as well. This will run SimCode and Codegen as well.";
   input Boolean runSilent "if true, flat modelica code will not be dumped to out stream";
-  input Option<SimCode.SimulationSettings> inSimSettingsOpt;
+  input Option<SimCode.SimulationSettings> simSettingsOpt;
   output Boolean success;
   output FCore.Cache outCache;
   output list<String> outLibs;
   output String outFileDir;
   output list<tuple<String,Values.Value>> resultValues;
+protected
+  Flags.Flag flags;
+  GlobalScript.SimulationOptions defaultSimOpt;
+  Option<SimCode.SimulationSettings> simSettings;
 algorithm
-  (outCache,outLibs,outFileDir,resultValues):=
-  match (inCache,inEnv,className,inFileNamePrefix,inSimSettingsOpt)
-    local
-      FCore.Cache cache;
-      FCore.Graph env;
-      list<String> libs;
-      String file_dir, fileNamePrefix;
-      Absyn.Program p;
-      Flags.Flag flags;
-      String commandLineOptions;
-      list<String> args;
-      Boolean haveAnnotation;
-      SimCode.SimulationSettings simSettings;
-      GlobalScript.SimulationOptions defaultSimOpt;
+  if isSome(simSettingsOpt)  then
+    simSettings := simSettingsOpt;
+  else
+    defaultSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, fileNamePrefix, SOME(defaultSimulationOptions));
+    simSettings := SOME(convertSimulationOptionsToSimCode(defaultSimOpt));
+  end if;
 
-    case (cache,env,_,fileNamePrefix,_)
-      algorithm
-        if isSome(inSimSettingsOpt)  then
-          SOME(simSettings) := inSimSettingsOpt;
-        else
-          defaultSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, fileNamePrefix, SOME(defaultSimulationOptions));
-          simSettings := convertSimulationOptionsToSimCode(defaultSimOpt);
-        end if;
+  flags := loadCommandLineOptionsFromModel(className);
 
-        if Config.ignoreCommandLineOptionsAnnotation() then
-          (success, cache, libs, file_dir, resultValues) :=
-            callTranslateModel(cache, env, className, fileNamePrefix, runBackend, runSilent, SOME(simSettings));
-        else
-          // read the __OpenModelica_commandLineOptions
-          Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotationExp(className, SymbolTable.getAbsyn(), Absyn.IDENT
-                          ("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
-          haveAnnotation := boolNot(stringEq(commandLineOptions, ""));
-          // backup the flags.
-          flags := if haveAnnotation then FlagsUtil.backupFlags() else FlagsUtil.loadFlags();
-          try
-            // apply if there are any new flags
-            if haveAnnotation then
-              args := System.strtok(commandLineOptions, " ");
-              FlagsUtil.readArgs(args);
-            end if;
-
-            (success, cache, libs, file_dir, resultValues) :=
-              callTranslateModel(cache, env, className, fileNamePrefix, runBackend, runSilent, SOME(simSettings));
-            // reset to the original flags
-            FlagsUtil.saveFlags(flags);
-          else
-            FlagsUtil.saveFlags(flags);
-            fail();
-          end try;
-        end if;
-      then
-        (cache,libs,file_dir,resultValues);
-
-  end match;
+  try
+    (success, outCache, outLibs, outFileDir, resultValues) :=
+      SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(), cache, env, className, fileNamePrefix,
+        runBackend, Flags.getConfigBool(Flags.DAE_MODE), runSilent, simSettings, Absyn.FUNCTIONARGS({},{}));
+    // reset to the original flags
+    FlagsUtil.saveFlags(flags);
+  else
+    FlagsUtil.saveFlags(flags);
+    fail();
+  end try;
 end translateModel;
-
-protected function callTranslateModel
-"Call the main translate function. This function
- distinguish between the modes. Now between DAEMode and ODEmode.
- The appropriate function create model code and writes also a makefile"
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input Absyn.Path className "path for the model";
-  input String inFileNamePrefix;
-  input Boolean runBackend "if true, run the backend as well. This will run SimCode and Codegen as well.";
-  input Boolean runSilent "if true, flat modelica code will not be dumped to out stream";
-  input Option<SimCode.SimulationSettings> inSimSettingsOpt;
-  output Boolean success;
-  output FCore.Cache outCache;
-  output list<String> outStringLst;
-  output String outFileDir;
-  output list<tuple<String,Values.Value>> resultValues;
-algorithm
-  (success, outCache, outStringLst, outFileDir, resultValues) :=
-    SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(), inCache, inEnv,
-      className, inFileNamePrefix, runBackend, Flags.getConfigBool(Flags.DAE_MODE), runSilent, inSimSettingsOpt, Absyn.FUNCTIONARGS({},{}));
-end callTranslateModel;
 
 protected function getProcsStr
   input Boolean isMake = false;
@@ -4159,9 +4161,6 @@ protected function translateModelFMU
 protected
   Absyn.Program p;
   Flags.Flag flags;
-  String commandLineOptions;
-  list<String> args;
-  Boolean haveAnnotation;
 algorithm
   // handle encryption
   // if AST contains encrypted class show nothing
@@ -4170,21 +4169,10 @@ algorithm
     Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
     cache := inCache;
     outValue := Values.STRING("");
-  elseif Config.ignoreCommandLineOptionsAnnotation() then
-    (success, cache, outValue) := callTranslateModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
   else
-    // read the __OpenModelica_commandLineOptions
-    Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotationExp(className, SymbolTable.getAbsyn(), Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
-    haveAnnotation := boolNot(stringEq(commandLineOptions, ""));
-    // backup the flags.
-    flags := if haveAnnotation then FlagsUtil.backupFlags() else FlagsUtil.loadFlags();
-    try
-      // apply if there are any new flags
-      if haveAnnotation then
-        args := System.strtok(commandLineOptions, " ");
-        FlagsUtil.readArgs(args);
-      end if;
+    flags := loadCommandLineOptionsFromModel(className);
 
+    try
       (success, cache, outValue) := callTranslateModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
       // reset to the original flags
       FlagsUtil.saveFlags(flags);
@@ -4279,9 +4267,6 @@ protected function buildModelFMU
 protected
   Absyn.Program p;
   Flags.Flag flags;
-  String commandLineOptions;
-  list<String> args;
-  Boolean haveAnnotation;
 algorithm
   // handle encryption
   // if AST contains encrypted class show nothing
@@ -4290,21 +4275,10 @@ algorithm
     Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
     cache := inCache;
     outValue := Values.STRING("");
-  elseif Config.ignoreCommandLineOptionsAnnotation() then
-    (cache, outValue) := callBuildModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
   else
-    // read the __OpenModelica_commandLineOptions
-    Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotationExp(className, SymbolTable.getAbsyn(), Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
-    haveAnnotation := boolNot(stringEq(commandLineOptions, ""));
-    // backup the flags.
-    flags := if haveAnnotation then FlagsUtil.backupFlags() else FlagsUtil.loadFlags();
-    try
-      // apply if there are any new flags
-      if haveAnnotation then
-        args := System.strtok(commandLineOptions, " ");
-        FlagsUtil.readArgs(args);
-      end if;
+    flags := loadCommandLineOptionsFromModel(className);
 
+    try
       (cache, outValue) := callBuildModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
       // reset to the original flags
       FlagsUtil.saveFlags(flags);
@@ -4391,7 +4365,7 @@ algorithm
 
   isWindows := Autoconf.os == "Windows_NT";
 
-  fmutmp := substring(intString(stringHashDjb2(filenameprefix)), 1, 3) + ".fmutmp";
+  fmutmp := Util.hashFileNamePrefix(filenameprefix) + ".fmutmp";
   logfile := filenameprefix + ".log";
   dir := fmutmp+"/sources/";
 
@@ -6115,40 +6089,40 @@ end getFileDir;
 
 public function checkModel " checks a model and returns number of variables and equations"
   input output FCore.Cache cache;
-  input FCore.Graph inEnv;
+  input FCore.Graph env;
   input Absyn.Path className;
-  output Values.Value outValue;
   input Absyn.Msg inMsg;
+        output Values.Value outValue;
 algorithm
-  outValue := matchcontinue (inEnv,className,inMsg)
+  outValue := matchcontinue ()
     local
       Option<DAE.DAElist> odae;
       DAE.DAElist dae;
-      FCore.Graph env;
-      Absyn.Program p;
-      Absyn.Msg msg;
       Integer eqnSize,varSize,simpleEqnSize;
-      String errorMsg,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr;
-      Boolean strEmpty;
-      Absyn.Restriction restriction;
-      Absyn.Class c;
+      String retStr,classNameStr;
+      Flags.Flag flags;
 
     // handle normal models
-    case (env,_,_)
-      equation
-        (cache,env,odae) = runFrontEnd(cache,env,className,false);
-        SOME(dae) = odae;
-        (varSize,eqnSize,simpleEqnSize) = CheckModel.checkModel(dae);
-        eqnSizeStr = intString(eqnSize);
-        varSizeStr = intString(varSize);
-        simpleEqnSizeStr = intString(simpleEqnSize);
+    case ()
+      algorithm
+        flags := loadCommandLineOptionsFromModel(className);
 
-        classNameStr = AbsynUtil.pathString(className);
-        retStr = stringAppendList({"Check of ",classNameStr," completed successfully.","\nClass ",classNameStr," has ",eqnSizeStr," equation(s) and ",
-          varSizeStr," variable(s).\n",simpleEqnSizeStr," of these are trivial equation(s)."});
+        try
+          (cache, _, odae) := runFrontEnd(cache, env, className, false);
+          SOME(dae) := odae;
+          (varSize, eqnSize, simpleEqnSize) := CheckModel.checkModel(dae);
+          FlagsUtil.saveFlags(flags);
+        else
+          FlagsUtil.saveFlags(flags);
+          fail();
+        end try;
+
+        classNameStr := AbsynUtil.pathString(className);
+        retStr := stringAppendList({"Check of ",classNameStr," completed successfully.\nClass ",classNameStr," has ",String(eqnSize)," equation(s) and ",
+          String(varSize)," variable(s).\n",String(simpleEqnSize)," of these are trivial equation(s)."});
       then Values.STRING(retStr);
 
-    case (_,_,_)
+    case ()
       equation
         false = Interactive.existClass(className, SymbolTable.getAbsyn());
         Error.addMessage(Error.LOOKUP_ERROR, {AbsynUtil.pathString(className), "<TOP>"});
@@ -6157,11 +6131,9 @@ algorithm
     // errors
     else
       equation
-        classNameStr = AbsynUtil.pathString(className);
-        strEmpty = Error.getNumMessages() == 0;
-        errorMsg = "Check of " + classNameStr + " failed with no error message";
-        if strEmpty then
-          Error.addMessage(Error.INTERNAL_ERROR, {errorMsg,"<TOP>"});
+        if Error.getNumMessages() == 0 then
+          Error.addMessage(Error.INTERNAL_ERROR,
+            {"Check of " + AbsynUtil.pathString(className) + " failed with no error message","<TOP>"});
         end if;
       then Values.STRING("");
 
@@ -6536,7 +6508,7 @@ algorithm
       equation
         allClassPaths = getAllClassPathsRecursive(className, b, SymbolTable.getAbsyn());
         print("Number of classes to check: " + intString(listLength(allClassPaths)) + "\n");
-        // print ("All paths: \n" + stringDelimitList(List.map(allClassPaths, AbsynUtil.pathString), "\n") + "\n");
+        // print ("All paths:\n" + stringDelimitList(List.map(allClassPaths, AbsynUtil.pathString), "\n") + "\n");
         failed = checkAll(cache, env, allClassPaths, msg, not Testsuite.isRunning(), 0);
         ret = "Number of classes checked / failed: " + intString(listLength(allClassPaths)) + "/" + intString(failed);
       then
@@ -7682,7 +7654,7 @@ algorithm
     local
       list<Absyn.ElementArg> arglst;
     case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
-      then List.exist(arglst,hasStopTime2);
+      then List.any(arglst,hasStopTime2);
 
   end match;
 end hasStopTime;
@@ -7900,7 +7872,7 @@ protected
   Integer sl,sc,el,ec;
   Absyn.Path classPath;
 algorithm
-  Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,_,_,SOURCEINFO(file,isReadOnly,sl,sc,el,ec,_)) := InteractiveUtil.getPathedClassInProgram(path, p);
+  Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,_,_,_,SOURCEINFO(file,isReadOnly,sl,sc,el,ec,_)) := InteractiveUtil.getPathedClassInProgram(path, p);
   res := Dump.unparseRestrictionStr(restr);
   cmt := getClassDefComment(cdef);
   file := Testsuite.friendly(file);
@@ -8787,6 +8759,7 @@ protected
   Option<DAE.DAElist> odae;
   NFFlatModel flat_model;
   NFFlatten.FunctionTree funcs;
+  Flags.Flag flags;
 algorithm
   str := matchcontinue ()
     // handle encryption
@@ -8802,21 +8775,30 @@ algorithm
     case ()
       algorithm
         ExecStat.execStatReset();
-        (cache, _, odae, str) := runFrontEnd(cache, env, path, relaxedFrontEnd = false,
-          dumpFlat = Config.flatModelica() and not Config.silent());
-        ExecStat.execStat("runFrontEnd");
+        flags := loadCommandLineOptionsFromModel(path);
 
-        if not stringEmpty(str) then
-          // str already contains flat model.
-        elseif isNone(odae) then
-          str := "";
-        elseif Config.silent() then
-          str := "model " + AbsynUtil.pathString(path) + "\n  /* Silent mode */\nend" +
-            AbsynUtil.pathString(path) + ";\n"; // Not the empty string, so we can
+        try
+          (cache, _, odae, str) := runFrontEnd(cache, env, path, relaxedFrontEnd = false,
+            dumpFlat = Config.flatModelica() and not Config.silent());
+          ExecStat.execStat("runFrontEnd");
+
+          if not stringEmpty(str) then
+            // str already contains flat model.
+          elseif isNone(odae) then
+            str := "";
+          elseif Config.silent() then
+            str := "model " + AbsynUtil.pathString(path) + "\n  /* Silent mode */\nend" +
+              AbsynUtil.pathString(path) + ";\n"; // Not the empty string, so we can
+          else
+            str := DAEDump.dumpStr(Util.getOption(odae), FCore.getFunctionTree(cache));
+            ExecStat.execStat("DAEDump.dumpStr");
+          end if;
+
+          FlagsUtil.saveFlags(flags);
         else
-          str := DAEDump.dumpStr(Util.getOption(odae), FCore.getFunctionTree(cache));
-          ExecStat.execStat("DAEDump.dumpStr");
-        end if;
+          FlagsUtil.saveFlags(flags);
+          fail();
+        end try;
       then
         str;
 
@@ -9037,6 +9019,33 @@ algorithm
     scripts := Util.getOption(script) :: scripts;
   end if;
 end findConversionPath;
+
+public function loadCommandLineOptionsFromModel
+  "Applies flags from the __OpenModelica_commandLineOptions annotation of a given class and returns the old flags."
+  input Absyn.Path className;
+  output Flags.Flag oldFlags;
+protected
+  String opts;
+  list<String> args;
+algorithm
+  if Config.ignoreCommandLineOptionsAnnotation() then
+    oldFlags := FlagsUtil.loadFlags();
+    return;
+  end if;
+
+  // read the __OpenModelica_commandLineOptions
+  Absyn.STRING(opts) := Interactive.getNamedAnnotationExp(className, SymbolTable.getAbsyn(),
+    Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
+
+  if not stringEmpty(opts) then
+    // backup the current flags and apply the flags from the annotation
+    oldFlags := FlagsUtil.backupFlags();
+    args := System.strtok(opts, " ");
+    FlagsUtil.readArgs(args);
+  else
+    oldFlags := FlagsUtil.loadFlags();
+  end if;
+end loadCommandLineOptionsFromModel;
 
 annotation(__OpenModelica_Interface="backend");
 

@@ -28,6 +28,9 @@ file(GLOB_RECURSE OMC_SIMRT_DATA_RECONCILIATION_HEADERS ${CMAKE_CURRENT_SOURCE_D
 file(GLOB_RECURSE OMC_SIMRT_OPTIMIZATION_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/optimization/*.c)
 file(GLOB_RECURSE OMC_SIMRT_OPTIMIZATION_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/optimization/*.h)
 
+file(GLOB_RECURSE OMC_SIMRT_MOO_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/moo/*.cpp)
+file(GLOB_RECURSE OMC_SIMRT_MOO_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/moo/*.h)
+
 
 # ######################################################################################################################
 # Library: OpenModelicaRuntimeC
@@ -42,7 +45,11 @@ endif()
 add_library(omc::simrt::runtime ALIAS OpenModelicaRuntimeC)
 
 target_sources(OpenModelicaRuntimeC PRIVATE ${OMC_SIMRT_GC_SOURCES} ${OMC_SIMRT_UTIL_SOURCES} ${OMC_SIMRT_META_SOURCES})
-target_include_directories(OpenModelicaRuntimeC PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(OpenModelicaRuntimeC
+  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/simulation
+  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver
+  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/util)
 
 # Add the define WIN32_LEAN_AND_MEAN to this lib and anything that links to it.
 # The reason is that the define tells windows.h not to include winsock.h. We want
@@ -106,10 +113,21 @@ elseif(MSVC)
   set_target_properties(SimulationRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif(MINGW)
 
-if(OM_OMC_ENABLE_IPOPT)
+if(OM_OMC_ENABLE_OPTIMIZATION)
   target_sources(SimulationRuntimeC PRIVATE ${OMC_SIMRT_OPTIMIZATION_SOURCES})
   target_compile_definitions(SimulationRuntimeC PRIVATE OMC_HAVE_IPOPT)
   target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::ipopt)
+endif()
+
+if(OM_OMC_ENABLE_MOO)
+  target_sources(SimulationRuntimeC PRIVATE ${OMC_SIMRT_MOO_SOURCES})
+  target_compile_definitions(SimulationRuntimeC PRIVATE OMC_HAVE_MOO)
+  target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::moo)
+endif()
+
+if(OM_OMC_ENABLE_PRIMME)
+  target_compile_definitions(SimulationRuntimeC PRIVATE OMC_HAVE_PRIMME)
+  target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::primme)
 endif()
 
 install(TARGETS SimulationRuntimeC)
@@ -140,3 +158,12 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         PATTERN "fmi" EXCLUDE
 )
 
+# ######################################################################################################################
+# Add C Simulation Runtime unit tests
+# Build with target "ctestsuite-depends"
+# Run test with ctest
+add_subdirectory(
+  ${CMAKE_SOURCE_DIR}/testsuite/CTest/SimulationRuntime/c
+  ${CMAKE_BINARY_DIR}/testsuite/CTest/SimulationRuntime/c
+  EXCLUDE_FROM_ALL
+)

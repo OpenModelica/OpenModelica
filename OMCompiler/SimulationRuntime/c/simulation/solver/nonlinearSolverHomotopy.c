@@ -832,7 +832,8 @@ int getAnalyticalJacobianHomotopy(DATA_HOMOTOPY* solverData, double* jac)
   JACOBIAN* jacobian = solverData->userData->analyticJacobian;
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
 
-  evalJacobian(data, threadData, jacobian, NULL, jac);
+  /* call generic dense Jacobian */
+  evalJacobian(data, threadData, jacobian, NULL, jac, TRUE);
 
   /* apply scaling to each column */
   for (j = 0; j < jacobian->sizeCols; j++) {
@@ -1696,11 +1697,11 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     if(solverData->initHomotopy && OMC_ACTIVE_STREAM(OMC_LOG_INIT_HOMOTOPY))
     {
       if (omc_flag[FLAG_OUTPUT_PATH]) { /* Add output path to file name */
-        sprintf(buffer, "%s/%s_nonlinsys%d_adaptive_%s_homotopy_%s.csv", omc_flagValue[FLAG_OUTPUT_PATH], data->modelData->modelFilePrefix, sysNumber, data->callback->useHomotopy == 2 ? "global" : "local", solverData->startDirection > 0 ? "pos" : "neg");
+        sprintf(buffer, "%s/%s_nonlinsys%d_adaptive_%s_homotopy_%s.csv", omc_flagValue[FLAG_OUTPUT_PATH], data->modelData->modelFilePrefix, sysNumber, data->callback->homotopyMethod == GLOBAL_ADAPTIVE_HOMOTOPY ? "global" : "local", solverData->startDirection > 0 ? "pos" : "neg");
       }
       else
       {
-        sprintf(buffer, "%s_nonlinsys%d_adaptive_%s_homotopy_%s.csv", data->modelData->modelFilePrefix, sysNumber, data->callback->useHomotopy == 2 ? "global" : "local", solverData->startDirection > 0 ? "pos" : "neg");
+        sprintf(buffer, "%s_nonlinsys%d_adaptive_%s_homotopy_%s.csv", data->modelData->modelFilePrefix, sysNumber, data->callback->homotopyMethod == GLOBAL_ADAPTIVE_HOMOTOPY ? "global" : "local", solverData->startDirection > 0 ? "pos" : "neg");
       }
       infoStreamPrint(OMC_LOG_INIT_HOMOTOPY, 0, "The homotopy path will be exported to %s.", buffer);
       pFile = omc_fopen(buffer, "wt");
@@ -2128,7 +2129,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
 
   int i, j;
   NLS_SOLVER_STATUS success = NLS_FAILED;
-  double error_f_sqrd, error_f1_sqrd;
+  double error_f_sqrd, error_f_sqrd_scaled, error_f1_sqrd;
 
   int assert = 1;
   int giveUp = 0;
@@ -2232,19 +2233,31 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
 
       /* Try to get out of here!!! */
       error_f_sqrd        = vec2NormSqrd(homotopyData->n, homotopyData->f1);
+      vecDivScaling(homotopyData->n, homotopyData->f1, homotopyData->resScaling, homotopyData->fvecScaled);
+      error_f_sqrd_scaled = vec2NormSqrd(homotopyData->n, homotopyData->fvecScaled);
 
-      homotopyData->fJac_f(homotopyData, homotopyData->x0, homotopyData->fJac);
-      vecCopy(homotopyData->n, homotopyData->f1, homotopyData->fJac + homotopyData->n*homotopyData->n);
-      vecCopy(homotopyData->n*homotopyData->m, homotopyData->fJac, homotopyData->fJacx0);
-      if (mixedSystem)
-        memcpy(relationsPreBackup, data->simulationInfo->relations, sizeof(modelica_boolean)*data->modelData->nRelations);
-      /* calculate scaling factor of residuals */
-      matVecMultAbsBB(homotopyData->n, homotopyData->fJac, homotopyData->ones, homotopyData->resScaling);
-      debugVectorDouble(OMC_LOG_NLS_JAC, "residuum scaling:", homotopyData->resScaling, homotopyData->n);
-      scaleMatrixRows(homotopyData->n, homotopyData->m, homotopyData->fJac);
+      if (error_f_sqrd < homotopyData->ftol_sqrd*1e-4 || error_f_sqrd_scaled < homotopyData->ftol_sqrd*1e-4)
+      {
+        success = NLS_SOLVED;
+        /* take the solution */
+        vecCopy(homotopyData->n, homotopyData->x, nlsData->nlsx);
+        /* reset continous flag */
+        data->simulationInfo->solveContinuous = 0;
+        assert = 0;
+      } else {
+        homotopyData->fJac_f(homotopyData, homotopyData->x0, homotopyData->fJac);
+        vecCopy(homotopyData->n, homotopyData->f1, homotopyData->fJac + homotopyData->n*homotopyData->n);
+        vecCopy(homotopyData->n*homotopyData->m, homotopyData->fJac, homotopyData->fJacx0);
+        if (mixedSystem)
+          memcpy(relationsPreBackup, data->simulationInfo->relations, sizeof(modelica_boolean)*data->modelData->nRelations);
+        /* calculate scaling factor of residuals */
+        matVecMultAbsBB(homotopyData->n, homotopyData->fJac, homotopyData->ones, homotopyData->resScaling);
+        debugVectorDouble(OMC_LOG_NLS_JAC, "residuum scaling:", homotopyData->resScaling, homotopyData->n);
+        scaleMatrixRows(homotopyData->n, homotopyData->m, homotopyData->fJac);
 
-      pos = homotopyData->n;
-      assert = (solveSystemWithTotalPivotSearch(data, homotopyData->n, homotopyData->dy0, homotopyData->fJac, homotopyData->indRow, homotopyData->indCol, &pos, &rank, homotopyData->casualTearingSet) == -1);
+        pos = homotopyData->n;
+        assert = (solveSystemWithTotalPivotSearch(data, homotopyData->n, homotopyData->dy0, homotopyData->fJac, homotopyData->indRow, homotopyData->indCol, &pos, &rank, homotopyData->casualTearingSet) == -1);
+      }
       if (!assert)
         debugString(OMC_LOG_NLS_V, "regular initial point!!!");
       giveUp = 0;
@@ -2262,8 +2275,8 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
       }
       else
         break;
-      /* break symmetry, when varying start values */
-      /* try to find regular initial point, if necessary */
+    /* break symmetry, when varying start values */
+    /* try to find regular initial point, if necessary */
       if (tries == 1)
       {
         debugString(OMC_LOG_NLS_V, "assert handling:\t vary initial guess by +1%.");
@@ -2277,9 +2290,11 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
           homotopyData->x0[i] = homotopyData->xStart[i] + homotopyData->xScaling[i]*i/homotopyData->n*0.1;
       }
     }
-    data->simulationInfo->solveContinuous = 1;
-    vecCopy(homotopyData->n, homotopyData->x0, homotopyData->x);
-    vecCopy(homotopyData->n, homotopyData->f1, homotopyData->fx0);
+    if (success != NLS_SOLVED) {
+      data->simulationInfo->solveContinuous = 1;
+      vecCopy(homotopyData->n, homotopyData->x0, homotopyData->x);
+      vecCopy(homotopyData->n, homotopyData->f1, homotopyData->fx0);
+    }
   }
 
   /* start solving loop */

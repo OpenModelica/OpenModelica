@@ -92,6 +92,7 @@ public:
       Each _each;
       std::vector<Modifier::SubMod> _subMods;
       std::optional<Expression> _binding;
+      std::optional<std::string> _comment;
       SourceInfo _info;
   };
 

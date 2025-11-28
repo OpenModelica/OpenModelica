@@ -50,6 +50,7 @@ import NFModifier.Modifier;
 import SCodeDump;
 import DAE;
 import Expression = NFExpression;
+import Global;
 
 protected
 import List;
@@ -330,6 +331,14 @@ uniontype InstNode
     iterator := fromComponent(name, Component.newIterator(ty, info), EMPTY_NODE());
   end newIterator;
 
+  function newUniqueIterator
+    input SourceInfo info = AbsynUtil.dummyInfo;
+    input Type ty = Type.INTEGER();
+    output InstNode iterator;
+  algorithm
+    iterator := newIterator("$i" + String(System.tmpTickIndex(Global.iteratorIndex)), ty, info);
+  end newUniqueIterator;
+
   function newIndexedIterator
     input Integer index;
     input String name = "i";
@@ -415,7 +424,8 @@ uniontype InstNode
     output Boolean isFunc;
   algorithm
     isFunc := match node
-      case CLASS_NODE() then Class.isFunction(Pointer.access(node.cls));
+      case CLASS_NODE()     then Class.isFunction(Pointer.access(node.cls));
+      case COMPONENT_NODE() then Class.isFunction(getClass(node));
       else false;
     end match;
   end isFunction;
@@ -720,25 +730,57 @@ uniontype InstNode
     "Returns the enclosing scopes of a node as a path."
     input InstNode node;
     input Boolean ignoreRedeclare = false;
+    input Boolean ignoreBaseClass = false;
     output Absyn.Path path;
   algorithm
     path := AbsynUtil.stringListPath(
-      list(InstNode.name(n) for n in enclosingScopeList(node, ignoreRedeclare)));
+      list(InstNode.name(n) for n in enclosingScopeList(node, ignoreRedeclare, ignoreBaseClass)));
   end enclosingScopePath;
 
   function enclosingScopeList
     "Returns the enclosing scopes of a node as a list of nodes."
     input InstNode node;
     input Boolean ignoreRedeclare = false;
+    input Boolean ignoreBaseClass = false;
     output list<InstNode> res = {};
   protected
     InstNode scope = node;
   algorithm
     while not isTopScope(scope) loop
       res := scope :: res;
-      scope := classScope(parentScope(scope, ignoreRedeclare));
+      scope := enclosingScope(scope, ignoreRedeclare, ignoreBaseClass);
+
+      if isEmpty(scope) then
+        break;
+      end if;
+
+      scope := classScope(scope);
     end while;
   end enclosingScopeList;
+
+  function enclosingScope
+    input InstNode node;
+    input Boolean ignoreRedeclare = false;
+    input Boolean ignoreBaseClass = false;
+    output InstNode scope;
+  protected
+    InstNodeType it;
+    InstNode orig_node;
+  algorithm
+    scope := match node
+      case CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(originalNode = SOME(orig_node)))
+        guard ignoreRedeclare
+        then enclosingScope(orig_node, ignoreRedeclare, ignoreBaseClass);
+
+      case CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(parent = scope))
+        guard ignoreRedeclare
+        then scope;
+
+      case CLASS_NODE() then if ignoreBaseClass then getDerivedNode(node.parentScope) else node.parentScope;
+      case COMPONENT_NODE() then enclosingScope(classScope(node), ignoreRedeclare, ignoreBaseClass);
+      case IMPLICIT_SCOPE() then node.parentScope;
+    end match;
+  end enclosingScope;
 
   function classScope
     input InstNode node;
@@ -1006,14 +1048,37 @@ uniontype InstNode
     definition := match node
       case CLASS_NODE() then node.definition;
       case COMPONENT_NODE(definition = SOME(definition)) then definition;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non class/component node: " + toString(node)});
+      then fail();
     end match;
   end definition;
 
-  function extendsDefinition
+  function classDefinition
     input InstNode node;
     output SCode.Element definition;
   algorithm
-    InstNodeType.BASE_CLASS(definition = definition) := derivedNodeType(node);
+    definition := match node
+      case CLASS_NODE()     then node.definition;
+      case COMPONENT_NODE() then classDefinition(Component.classInstance(Pointer.access(node.component)));
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non class/component node: " + toString(node)});
+      then fail();
+    end match;
+  end classDefinition;
+
+  function extendsDefinition
+    input InstNode node;
+    output Option<SCode.Element> definition;
+  protected
+    InstNodeType ty;
+  algorithm
+    ty := derivedNodeType(node);
+
+    definition := match ty
+      case InstNodeType.BASE_CLASS() then SOME(ty.definition);
+      else NONE();
+    end match;
   end extendsDefinition;
 
   function setDefinition
@@ -1024,6 +1089,12 @@ uniontype InstNode
       case CLASS_NODE()
         algorithm
           node.definition := definition;
+        then
+          ();
+
+      case COMPONENT_NODE()
+        algorithm
+          node.definition := SOME(definition);
         then
           ();
 
@@ -1946,6 +2017,18 @@ uniontype InstNode
     end match;
   end clone;
 
+  function cloneComponent
+    input InstNode component;
+    input InstNode newParent;
+    output InstNode outComponent;
+  algorithm
+    outComponent := match component
+      case COMPONENT_NODE()
+        then COMPONENT_NODE(component.name, component.definition, component.visibility,
+          Pointer.create(Pointer.access(component.component)), newParent, component.nodeType);
+    end match;
+  end cloneComponent;
+
   function getComments
     input InstNode node;
     input list<SCode.Comment> accumCmts = {};
@@ -2028,10 +2111,16 @@ uniontype InstNode
     binding_exp := match node
       local
         Variable var;
-      case COMPONENT_NODE() guard(Component.hasBinding(Pointer.access(node.component)))
-        then Binding.getExpOpt(Component.getBinding(Pointer.access(node.component)));
-      case COMPONENT_NODE()
-        then getBindingExpOpt(instanceParent(node));
+        InstNode scope;
+
+      case COMPONENT_NODE() algorithm
+        scope := instanceParent(node);
+        try
+          binding_exp := Binding.getExpOpt(Component.getImplicitBinding(Pointer.access(node.component), scope));
+        else
+          binding_exp := getBindingExpOpt(scope);
+        end try;
+      then binding_exp;
       case VAR_NODE() algorithm
           var := Pointer.access(node.varPointer);
         then Binding.getExpOpt(var.binding);

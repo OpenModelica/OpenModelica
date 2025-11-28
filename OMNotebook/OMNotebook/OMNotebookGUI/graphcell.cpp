@@ -1446,31 +1446,35 @@ namespace IAEX {
 
   void GraphCell::PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char *title, const char *grid,
                                        const char *plotType, const char *logX, const char *logY, const char *xLabel, const char *yLabel,
-                                       const char *x1, const char *x2, const char *y1, const char *y2, const char *curveWidth,
+                                       const char *xRange1, const char *xRange2, const char *yRange1, const char *yRange2, const char *curveWidth,
                                        const char *curveStyle, const char *legendPosition, const char *footer, const char *autoScale,
                                        const char *variables)
   {
     GraphCell *pGraphCell = (GraphCell*)p;
     if (pGraphCell) {
       QStringList lst;
-      lst << ""; // yes the first one has to be empty.
-      lst << filename;
-      lst << title;
-      lst << grid;
-      lst << plotType;
-      lst << logX;
-      lst << logY;
-      lst << xLabel;
-      lst << yLabel;
-      lst << x1;
-      lst << x2;
-      lst << y1;
-      lst << y2;
-      lst << curveWidth;
-      lst << curveStyle;
-      lst << legendPosition;
-      lst << footer;
-      lst << autoScale;
+      lst << "";              // yes the first one has to be empty.
+      lst << filename;        // 1st argument
+      lst << title;           // 2nd argument
+      lst << grid;            // 3rd argument
+      lst << plotType;        // 4th argument
+      lst << logX;            // 5th argument
+      lst << logY;            // 6th argument
+      lst << xLabel;          // 7th argument
+      lst << yLabel;          // 8th argument
+      lst << xRange1;         // 9th argument
+      lst << xRange2;         // 10th argument
+      lst << yRange1;         // 11th argument
+      lst << yRange2;         // 12th argument
+      lst << curveWidth;      // 13th argument
+      lst << curveStyle;      // 14th argument
+      lst << legendPosition;  // 15th argument
+      lst << footer;          // 16th argument
+      lst << autoScale;       // 17th argument
+      lst << "";              // Skip --yaxis 18th argument
+      lst << "";              // Skip --ylabel-right 19th argument
+      lst << "";              // Skip --yrange-right first value 20th argument
+      lst << ""; // Skip --yrange-right second value 21st argument
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
       lst << QString(variables).split(" ", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK

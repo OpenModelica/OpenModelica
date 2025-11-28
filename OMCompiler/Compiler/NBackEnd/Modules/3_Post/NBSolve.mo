@@ -81,6 +81,7 @@ public
       case Status.EXPLICIT    then "Solve.EXPLICIT";
       case Status.IMPLICIT    then "Solve.IMPLICIT";
       case Status.UNSOLVABLE  then "Solve.UNSOLVABLE";
+                              else "Solve.FAILED";
     end match;
   end statusString;
 
@@ -105,6 +106,9 @@ public
         bdae.init       := list(solvePartition(par, funcTree_ptr, implicit_index_ptr, duplicate_map, bdae.varData, bdae.eqData) for par in bdae.init);
         if Util.isSome(bdae.init_0) then
           bdae.init_0   := SOME(list(solvePartition(par, funcTree_ptr, implicit_index_ptr, duplicate_map, bdae.varData, bdae.eqData) for par in Util.getOption(bdae.init_0)));
+        end if;
+        if Util.isSome(bdae.dae) then
+          bdae.dae      := SOME(list(solvePartition(par, funcTree_ptr, implicit_index_ptr, duplicate_map, bdae.varData, bdae.eqData) for par in Util.getOption(bdae.dae)));
         end if;
         bdae.ode        := list(solvePartition(par, funcTree_ptr, implicit_index_ptr, duplicate_map, bdae.varData, bdae.eqData) for par in bdae.ode);
         bdae.algebraic  := list(solvePartition(par, funcTree_ptr, implicit_index_ptr, duplicate_map, bdae.varData, bdae.eqData) for par in bdae.algebraic);
@@ -194,7 +198,8 @@ public
           StrongComponent generic_comp, solved_comp;
           list<StrongComponent> entwined_slices = {};
           Tearing strict;
-          list<StrongComponent> tmp, inner_comps = {};
+          list<StrongComponent> tmp, inner_comps = {}, failed_inner = {};
+          String err_str;
 
           Algorithm alg;
           list<ComponentRef> solved_crefs, inputs, outputs;
@@ -223,7 +228,7 @@ public
               // Y = set of inputs
               inputs := List.flatten(list(BVariable.getRecordChildrenCrefOrSelf(i) for i in alg.inputs));
               input_crefs := UnorderedSet.fromList(inputs, ComponentRef.hash, ComponentRef.isEqual);
-              // Y^ <- Y U X set of inputs that are solved (iteration vars, no need to create temporary variables)
+              // Y^ <- Y n X set of inputs that are solved (iteration vars, no need to create temporary variables)
               solved_inputs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
               for solved_cref in solved_crefs loop
                 if UnorderedSet.contains(solved_cref, input_crefs) then
@@ -249,7 +254,7 @@ public
                 idx := Pointer.create(0);
                 // create temporary variables for all outputs that are not solved for
                 tmp_crefs := list((cref, BVariable.makeTmpVar(cref)) for cref in UnorderedSet.toList(output_crefs));
-                tmp_vars := list(BVariable.getVarPointer(Util.tuple22(tpl)) for tpl in tmp_crefs);
+                tmp_vars := list(BVariable.getVarPointer(Util.tuple22(tpl), sourceInfo()) for tpl in tmp_crefs);
 
                 // create equations equalizing the temporary variables and the real ones
                 // res = z - z^ for z^ in Z^
@@ -271,13 +276,13 @@ public
                 end for;
                 // replace z -> z^ in the algorithm outputs and set the solved variables to those outputs
                 alg.outputs := list(UnorderedMap.getOrDefault(c, cref_repl, c) for c in eqn.alg.outputs);
-                comp.vars   := list(Slice.SLICE(BVariable.getVarPointer(c), {}) for c in alg.outputs);
+                comp.vars   := list(Slice.SLICE(BVariable.getVarPointer(c, sourceInfo()), {}) for c in alg.outputs);
                 comp.status := Status.EXPLICIT;
                 eqn.alg     := alg;
                 // replace z -> z^  in the algorithm body
                 Pointer.update(eqn_ptr, Equation.map(eqn, function Replacements.applySimpleExp(replacements = exp_repl)));
                 // create the algebraic loop, already torn
-                strict := Tearing.TEARING_SET(list(Slice.SLICE(BVariable.getVarPointer(c), {}) for c in UnorderedSet.toList(solved_inputs)), list(Slice.SLICE(e, {}) for e in tmp_eqns), listArray({comp}), NONE());
+                strict := Tearing.TEARING_SET(list(Slice.SLICE(BVariable.getVarPointer(c, sourceInfo()), {}) for c in UnorderedSet.toList(solved_inputs)), list(Slice.SLICE(e, {}) for e in tmp_eqns), listArray({comp}), NONE());
                 // ToDo: set all the booleans correctly
                 solved_comp := StrongComponent.ALGEBRAIC_LOOP(implicit_index, strict, NONE(), false, false, false, solve_status);
 
@@ -286,7 +291,7 @@ public
                 VarData.addTypedList(varData, tmp_vars, NBVariable.VarData.VarType.ALGEBRAIC);
                 // ToDo: create sub routine for this (?)
               end if;
-            then (solved_comp, Status.EXPLICIT);
+            then (solved_comp, solve_status);
 
             else algorithm
               (eqn_slice, funcTree, solve_status, implicit_index) := solveMultiStrongComponent(comp.eqn, comp.vars, funcTree, kind, implicit_index, slicing_map, Iterator.EMPTY(), varData, eqData);
@@ -295,10 +300,28 @@ public
         then ({solved_comp}, solve_status);
 
         case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
-          for inner_comp in listReverse(arrayList(strict.innerEquations)) loop
-            (tmp, funcTree, implicit_index) := solveStrongComponent(inner_comp, funcTree, kind, implicit_index, slicing_map, varData, eqData);
+          for index in arrayLength(strict.innerEquations):-1:1 loop
+            // ToDo: fail for non explicit inner equations?
+            (tmp, funcTree, implicit_index) := solveStrongComponent(strict.innerEquations[index], funcTree, kind, implicit_index, slicing_map, varData, eqData);
             inner_comps := listAppend(tmp, inner_comps);
+            for elem in tmp loop
+              if StrongComponent.getSolveStatus(elem) <> NBSolve.Status.EXPLICIT then
+                failed_inner := elem :: failed_inner;
+              end if;
+            end for;
           end for;
+          // throw an error if there are non explicit inner equations
+          if not listEmpty(failed_inner) then
+            if Flags.isSet(Flags.TEARING_DUMP) then
+              err_str := " Following inner equations could not be solved explicitely:\n"
+                + List.toString(failed_inner, function StrongComponent.toString(index = -1), "" ,"" , "\n", "");
+            else
+              err_str := " Use -d=tearingdump for more information.";
+            end if;
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. " + err_str});
+            fail();
+          end if;
+
           strict.innerEquations := listArray(inner_comps);
           comp.strict := strict;
           comp.status := Status.IMPLICIT;
@@ -423,17 +446,24 @@ public
   algorithm
     if listLength(eqn_slice.indices) == 1 then
       replacements    := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
-      (eqn, funcTree) := Equation.singleSlice(eqn_ptr, listHead(eqn_slice.indices), Equation.sizes(eqn_ptr), cref, replacements, funcTree);
+      (eqn, funcTree, solve_status) := Equation.singleSlice(eqn_ptr, listHead(eqn_slice.indices), Equation.sizes(eqn_ptr), cref, replacements, funcTree);
     else
       (eqn, funcTree, solve_status, implicit_index, _) := solveEquation(Pointer.access(eqn_ptr), cref, funcTree, kind, implicit_index, slicing_map, varData, eqData);
     end if;
+
+    // ToDo: if solve_status not explicit -> algebraic loop with residual and Status.IMPLICIT
     if solve_status < Status.UNSOLVABLE then
       solved_slice := Slice.SLICE(Pointer.create(eqn), eqn_slice.indices);
     else
       (solved_slice, funcTree, implicit_index, solve_status) := solveForVarSlice(eqn_slice, var_slice, funcTree, kind, implicit_index, slicing_map, varData, eqData);
     end if;
-    // ToDo: if solve_status not explicit -> algebraic loop with residual and Status.IMPLICIT
-    comp := StrongComponent.GENERIC_COMPONENT(cref, solved_slice);
+
+    // create a generic component if its a for-equation, otherwise create a sliced component
+    if Equation.isForEquation(Slice.getT(solved_slice)) then
+      comp := StrongComponent.GENERIC_COMPONENT(cref, var_slice, solved_slice);
+    else
+      comp := StrongComponent.SLICED_COMPONENT(cref, var_slice, solved_slice, solve_status);
+    end if;
   end solveGenericEquationSlice;
 
   function solveSingleStrongComponent
@@ -557,7 +587,7 @@ public
       // For equations are expected to only have one body equation at this point
       case Equation.FOR_EQUATION(body = {body as Equation.IF_EQUATION()}) algorithm
         // create indexed variable to trick matching algorithm to solve for it
-        indexed_var := BVariable.makeVarPtrCyclic(BVariable.getVar(cref), cref);
+        indexed_var := BVariable.makeVarPtrCyclic(BVariable.getVar(cref, sourceInfo()), cref);
         dummy := Iterator.dummy(eqn.iter);
         (body_slice, funcTree, status, implicit_index) := solveMultiStrongComponent(Slice.SLICE(Pointer.create(body), {}), {Slice.SLICE(indexed_var, {})}, funcTree, kind, implicit_index, slicing_map, dummy, varData, eqData);
         eqn.body := {Pointer.access(Slice.getT(body_slice))};
@@ -759,8 +789,8 @@ protected
       then (Equation.updateLHSandRHS(eqn, Expression.logicNegate(rhs), Expression.logicNegate(lhs)), Status.EXPLICIT, RelationInversion.FALSE);
 
       // simple solve tuples
-      case (exp as Expression.TUPLE(), _) guard(tupleSolvable(exp.elements, {BVariable.getVarPointer(cref)})) then (eqn, Status.EXPLICIT, RelationInversion.FALSE);
-      case (_, exp as Expression.TUPLE()) guard(tupleSolvable(exp.elements, {BVariable.getVarPointer(cref)})) then (Equation.swapLHSandRHS(eqn), Status.EXPLICIT, RelationInversion.FALSE);
+      case (exp as Expression.TUPLE(), _) guard(tupleSolvable(exp.elements, {BVariable.getVarPointer(cref, sourceInfo())})) then (eqn, Status.EXPLICIT, RelationInversion.FALSE);
+      case (_, exp as Expression.TUPLE()) guard(tupleSolvable(exp.elements, {BVariable.getVarPointer(cref, sourceInfo())})) then (Equation.swapLHSandRHS(eqn), Status.EXPLICIT, RelationInversion.FALSE);
 
       else (eqn, Status.UNPROCESSED, RelationInversion.FALSE);
     end match;
@@ -1449,7 +1479,7 @@ protected
       solve_status := Status.UNPROCESSED;
     else
       // check if the record parents occur (todo: vice versa?)
-      record_parent := BVariable.getParent(BVariable.getVarPointer(var_cref));
+      record_parent := BVariable.getParent(BVariable.getVarPointer(var_cref, sourceInfo()));
       if Util.isSome(record_parent) then
         (var_cref, solve_status) := getVarSlice(BVariable.getVarName(Util.getOption(record_parent)), eqn);
       else

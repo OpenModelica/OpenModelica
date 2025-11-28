@@ -201,6 +201,7 @@ QString Helper::instantiateModelTip;
 QString Helper::FMU;
 QString Helper::exportt;
 QString Helper::exportFMUTip;
+QString Helper::sensitivityOptimization;
 QString Helper::exportEncryptedPackage;
 QString Helper::exportEncryptedPackageTip;
 QString Helper::exportReadonlyPackage;
@@ -424,6 +425,7 @@ QString Helper::moveUp;
 QString Helper::moveDown;
 QString Helper::fixErrorsManually;
 QString Helper::revertToLastCorrectVersion;
+QString Helper::saveWithErrors;
 QString Helper::translationFlagsTip;
 QString Helper::saveExperimentAnnotation;
 QString Helper::saveOpenModelicaSimulationFlagsAnnotation;
@@ -528,6 +530,7 @@ void Helper::initHelperVariables()
   Helper::FMU = tr("FMU");
   Helper::exportt = tr("Export");
   Helper::exportFMUTip = tr("Exports the model as Functional Mockup Unit (FMU)");
+  Helper::sensitivityOptimization = tr("Sensitivity Optimization");
   Helper::exportReadonlyPackage = tr("Read-only Package");
   Helper::exportRealonlyPackageTip = tr("Exports the package as read-only package");
   Helper::exportEncryptedPackage = tr("Encrypted Package");
@@ -751,6 +754,7 @@ void Helper::initHelperVariables()
   Helper::moveDown = tr("Move Down");
   Helper::fixErrorsManually = tr("Fix error(s) manually");
   Helper::revertToLastCorrectVersion = tr("Revert to last correct version");
+  Helper::saveWithErrors = tr("Save with Errors");
   Helper::translationFlagsTip = tr("Space separated list of OMC command line options e.g., -d=initialization --cheapmatchingAlgorithm=3");
   Helper::saveExperimentAnnotation = tr("Save experiment annotation inside model i.e., experiment annotation");
   Helper::saveOpenModelicaSimulationFlagsAnnotation = tr("Save simulation flags inside model i.e., __OpenModelica_simulationFlags annotation");
@@ -880,7 +884,7 @@ QString GUIMessages::getMessage(int type)
     case UNLOAD_CLASS_MSG:
       return tr("Are you sure you want to unload <b>%1</b>? Everything contained inside this class will also be unloaded.");
     case RELOAD_CLASS_MSG:
-      return tr("Are you sure you want to reload <b>%1</b>? Any unsaved changes to the class and its containing classes will be lost.");
+      return tr("Are you sure you want to reload <b>%1</b>? Any unsaved changes will be lost.");
     case DELETE_CLASS_MSG:
       return tr("Are you sure you want to delete <b>%1</b>? Everything contained inside this class will also be deleted.");
     case UNLOAD_TEXT_FILE_MSG:
@@ -890,7 +894,7 @@ QString GUIMessages::getMessage(int type)
     case WRONG_MODIFIER:
       return tr("The Modifier <b>%1</b> format is invalid. The correct format is <b>phi(start=1)</b>");
     case SET_INFO_XML_FLAG:
-      return tr("The operations were not generated. Check Generate Operations in <b>%1->Debugger->Transformational Debugger</b> OR you must set the -d=infoXmlOperations flag via <b>%2->Simulation->OMC Command Line Options</b> and simulate again.");
+      return tr("The operations were not generated. Check Generate Operations in <b>%1->Debugger->Transformational Debugger</b> OR you must set the -d=infoXmlOperations flag via <b>Simulation Setup->Translation Flags->Additional Translation Flags</b> and simulate again.");
     case DEBUG_CONFIGURATION_EXISTS_MSG:
       return tr("A debug configuration with name <b>%1</b> already exists. Error occurred while saving the debug configuration <b>%2<b>.");
     case DEBUG_CONFIGURATION_SIZE_EXCEED:

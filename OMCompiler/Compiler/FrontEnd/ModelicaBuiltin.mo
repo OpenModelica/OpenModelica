@@ -2675,7 +2675,7 @@ annotation(Documentation(info="<html>
 end importFMUModelDescription;
 
 function translateModelFMU
-  "Deprecated: Translates a model into C code for a FMU without building it."
+  "Translates a model into C code for a FMU without building it."
   input TypeName className "the class that should translated";
   input String version = "2.0" "FMU version, 1.0 or 2.0.";
   input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation), me_cs (both model exchange and co-simulation)";
@@ -2689,13 +2689,12 @@ function translateModelFMU
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
-<p><b>Deprecated: Use buildModelFMU instead.</b></p>
 <p>The only required argument is the className, while all others have some default values.</p>
 <p>Example command:
 <pre>translateModelFMU(className, version=\"2.0\");</pre>
 </p>
 </html>"),
-  preferredView="text", version="Deprecated");
+  preferredView="text");
 end translateModelFMU;
 
 function buildModelFMU
@@ -3122,6 +3121,17 @@ external "builtin";
 annotation(preferredView="text");
 end getAllSubtypeOf;
 
+function getReplaceableChoices
+  "Returns all replaceable choices for a class with choicesAllMatching."
+  input TypeName baseClass;
+  input TypeName parentClass;
+  input Boolean includePartial = false;
+  input Boolean sort = false;
+  output String choices[:, :];
+external "builtin";
+annotation(preferredView="text");
+end getReplaceableChoices;
+
 function plot
   "Displays a plot with selected variables using OMPlot."
   input VariableNames vars "The variables you want to plot";
@@ -3132,15 +3142,18 @@ function plot
   input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
   input String xLabel = "time" "This text will be used as the horizontal label in the diagram.";
-  input String yLabel = "" "This text will be used as the vertical label in the diagram.";
+  input String yLabel = "" "This text will be used as the left vertical label in the diagram.";
   input Real xRange[2] = {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
-  input Real yRange[2] = {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real yRange[2] = {0.0,0.0} "Determines the left vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real curveWidth = 1.0 "Sets the width of the curve.";
   input Integer curveStyle = 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
   input String legendPosition = "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
   input String footer = "" "This text will be used as the diagram footer.";
   input Boolean autoScale = true "Use auto scale while plotting.";
   input Boolean forceOMPlot = false "if true launches OMPlot and doesn't call callback function even if it is defined.";
+  input String yAxis = "L" "Sets the variable to be plotted on the left (L) or right (R) y-axis.";
+  input String yLabelRight = "" "This text will be used as the right vertical label in the diagram.";
+  input Real yRangeRight[2] = {0.0,0.0} "Determines the right vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(preferredView="text",Documentation(info="<html>
@@ -3164,15 +3177,18 @@ function plotAll
   input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
   input String xLabel = "time" "This text will be used as the horizontal label in the diagram.";
-  input String yLabel = "" "This text will be used as the vertical label in the diagram.";
+  input String yLabel = "" "This text will be used as the left vertical label in the diagram.";
   input Real xRange[2] = {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
-  input Real yRange[2] = {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real yRange[2] = {0.0,0.0} "Determines the left vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real curveWidth = 1.0 "Sets the width of the curve.";
   input Integer curveStyle = 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
   input String legendPosition = "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
   input String footer = "" "This text will be used as the diagram footer.";
   input Boolean autoScale = true "Use auto scale while plotting.";
   input Boolean forceOMPlot = false "if true launches OMPlot and doesn't call callback function even if it is defined.";
+  input String yAxis = "L" "Sets the variable to be plotted on the left (L) or right (R) y-axis.";
+  input String yLabelRight = "" "This text will be used as the right vertical label in the diagram.";
+  input Real yRangeRight[2] = {0.0,0.0} "Determines the right vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(Documentation(info="<html>
@@ -3199,15 +3215,18 @@ function plotParametric
   input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
   input String xLabel = "" "This text will be used as the horizontal label in the diagram.";
-  input String yLabel = "" "This text will be used as the vertical label in the diagram.";
+  input String yLabel = "" "This text will be used as the left vertical label in the diagram.";
   input Real xRange[2] = {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
-  input Real yRange[2] = {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real yRange[2] = {0.0,0.0} "Determines the left vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real curveWidth = 1.0 "Sets the width of the curve.";
   input Integer curveStyle = 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
   input String legendPosition = "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
   input String footer = "" "This text will be used as the diagram footer.";
   input Boolean autoScale = true "Use auto scale while plotting.";
   input Boolean forceOMPlot = false "if true launches OMPlot and doesn't call callback function even if it is defined.";
+  input String yAxis = "L" "Sets the variable to be plotted on the left (L) or right (R) y-axis.";
+  input String yLabelRight = "" "This text will be used as the right vertical label in the diagram.";
+  input Real yRangeRight[2] = {0.0,0.0} "Determines the right vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(Documentation(info="<html>
@@ -6316,7 +6335,7 @@ package AutoCompletion "Auto completion information for OMEdit."
 
     String __OpenModelica_commandLineOptions "annotation(__OpenModelica_commandLineOptions = \"--matchingAlgorithm=BFSB --indexReductionMethod=dynamicStateSelection\");";
 
-    record __OpenModelica_simulationFlags "annotation(__OpenModelica_simulationFlags(s = \"heun\", cpu = \"()\"));"
+    record __OpenModelica_simulationFlags "annotation(__OpenModelica_simulationFlags(s = \"ida\", cpu = \"()\"));"
     end __OpenModelica_simulationFlags;
 
     // TODO: Annotation for External Libraries and Include Files

@@ -55,12 +55,8 @@ void residual_MS(RESIDUAL_USERDATA* userData, const double *xloc, double *res, c
 void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag);
 void residual_IRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag);
 
-int jacobian_SR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian);
-int jacobian_IRK_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian);
-
 void residual_MS_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag);
 void residual_DIRK_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *res, const int *iflag);
-int jacobian_MR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian);
 
 #ifdef __cplusplus
 };

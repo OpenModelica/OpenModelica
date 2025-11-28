@@ -610,7 +610,7 @@ algorithm
         //print(" List size 2 " + intString(listLength(edges)) + "\n");
         //print(" List size 3 " + intString(listLength(edges)) + "\n");
         M = listAppend(edges,M);
-        //print("Start new round! \n");
+        //print("Start new round!\n");
       then allReachableNodesWork((M,L),inGraph,inEqualFunc);
     else
       equation

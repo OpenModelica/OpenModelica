@@ -20,7 +20,11 @@ FRONTEND_CPP_OBJ = \
 	Class.o \
 	ClassNode.o \
 	ClassTree.o \
+	Component.o \
+	ComponentNode.o \
+	Import.o \
 	Inst.o \
+	InstNode.o \
 	InstNodeType.o \
 	MetaModelica.o \
 	Path.o \

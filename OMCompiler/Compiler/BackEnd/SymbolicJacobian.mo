@@ -544,7 +544,7 @@ protected
   list<DAE.Exp> exps;
 algorithm
   eqs := List.map(jac, Util.tuple33);
-  isConst := not List.exist(eqs, variableResidual);
+  isConst := not List.any(eqs, variableResidual);
 end jacobianIsConstant;
 
 protected function variableResidual
@@ -651,10 +651,10 @@ algorithm
   for row in 1:n loop
     arrayUpdate(b,(row-1)*n+row,1.0);
   end for;
-    //print("b\n"+stringDelimitList(List.map(arrayList(b),realString),", ")+"\n\n");
-    //print("A\n"+stringDelimitList(List.map(arrayList(A),realString),", ")+"\n\n");
+    //print("b\n"+stringDelimitList(List.mapArray(b,realString),", ")+"\n\n");
+    //print("A\n"+stringDelimitList(List.mapArray(A,realString),", ")+"\n\n");
   gauss(A,b,1,n,List.intRange(n),order);
-    //print("the order: "+stringDelimitList(List.map(arrayList(order),intString),",")+"\n");
+    //print("the order: "+stringDelimitList(List.mapArray(order,intString),",")+"\n");
 
   (bVarsOut,bEqsOut) := createBVecVars(sysIdxIn,compIdxIn,n,DAE.T_REAL_DEFAULT,beqs);
   sysEqsOut := createSysEquations(A,b,n,order,var_lst,bVarsOut);
@@ -792,11 +792,11 @@ algorithm
             arrayUpdate(b,pos,b_entry);
           end for;
       end for;
-        //print("A\n"+stringDelimitList(List.map(arrayList(A),realString),", ")+"\n\n");
-        //print("b\n"+stringDelimitList(List.map(arrayList(b),realString),", ")+"\n\n");
+        //print("A\n"+stringDelimitList(List.mapArray(A, realString),", ")+"\n\n");
+        //print("b\n"+stringDelimitList(List.mapArray(b, realString),", ")+"\n\n");
 
-      //print("new permutation: "+stringDelimitList(List.map(arrayList(permutation),intString),",")+"\n");
-      //print("JACB "+intString(indxIn)+" \n"+stringDelimitList(List.map(arrayList(jacB),rListStr),"\n ")+"\n\n");
+      //print("new permutation: "+stringDelimitList(List.mapArray(permutation, intString),",")+"\n");
+      //print("JACB "+intString(indxIn)+" \n"+stringDelimitList(List.mapArray(jacB, rListStr),"\n ")+"\n\n");
       gauss(A,b,indxIn+1,n,range,permutation);
     then();
   else ();
@@ -3260,7 +3260,7 @@ algorithm
     case DAE.T_ARRAY(ty=ty) then isRecordInvoled(ty);
     case DAE.T_FUNCTION(funcResultType=ty) then isRecordInvoled(ty);
     case DAE.T_TUPLE(types)
-    then List.mapBoolOr(types, isRecordInvoled);
+    then List.any(types, isRecordInvoled);
     else false;
   end match;
 end isRecordInvoled;
@@ -4654,7 +4654,7 @@ uniontype LinearJacobian
         // ToDo: updating the pivot row would also need an update for the rhs!
 
         for j in i+1:arrayLength(linJac.rows) loop
-          row_value := getElementValue(linJac.rows[j], col_index);
+          row_value := UnorderedMap.getOrDefault(col_index, linJac.rows[j], 0.0);
           if not realEq(row_value, 0.0) then
             // set row to processed and perform pivot step
             linJac.eq_marks[j] := true;
@@ -4732,7 +4732,7 @@ uniontype LinearJacobian
   algorithm
     if not realEq(piv_value, 1.0) then
       for idx in UnorderedMap.keyList(pivot_row) loop
-        SOME(value) := UnorderedMap.get(idx, pivot_row);
+        value := UnorderedMap.getOrFail(idx, pivot_row);
         UnorderedMap.add(idx, value/piv_value, pivot_row);
       end for;
     end if;
@@ -4742,31 +4742,17 @@ uniontype LinearJacobian
   "author: kabdelhak FHB 03-2021
    Returns the first element that can be chosen as pivot, fails if none can be chosen."
     input LinearJacobianRow pivot_row;
-    output tuple<Integer, Real> pivot_elem;
-  protected
-    Integer idx;
+    output Integer idx;
+    output Real value;
   algorithm
     if Vector.isEmpty(pivot_row.keys) then
       /* singular row */
       fail();
     else
       idx := UnorderedMap.firstKey(pivot_row);
-      pivot_elem := (idx, Util.getOption(UnorderedMap.get(idx, pivot_row)));
+      value := UnorderedMap.getOrFail(idx, pivot_row);
     end if;
   end getPivot;
-
-  protected function getElementValue
-  "author: kabdelhak FHB 03-2021
-   Returns the value at given column and zero if it does not exist in sparse structure."
-    input LinearJacobianRow row;
-    input Integer col_index;
-    output Real value;
-  algorithm
-    value := match UnorderedMap.get(col_index, row)
-      case SOME(value) then value;
-      else 0.0;
-    end match;
-  end getElementValue;
 
   public function resolveASSC
   "author: kabdelhak FHB 03-2021

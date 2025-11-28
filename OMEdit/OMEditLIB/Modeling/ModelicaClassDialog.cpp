@@ -1333,7 +1333,7 @@ void SaveTotalFileDialog::saveTotalModel()
   QString fileName;
   QString name = QString("%1Total").arg(mpLibraryTreeItem->getName());
   fileName = StringHandler::getSaveFileName(this, tr("%1 - Save %2 %3 as Total File").arg(Helper::applicationName, mpLibraryTreeItem->mClassInformation.restriction,
-                                                                                          mpLibraryTreeItem->getName()), NULL, Helper::omFileTypes, NULL, "mo", &name);
+                                                                                          mpLibraryTreeItem->getName()), NULL, "", NULL, "mo", &name);
   if (fileName.isEmpty()) { // if user press ESC
     reject();
   } else {
@@ -2282,7 +2282,7 @@ void CreateNewItemDialog::createNewFileOrFolder()
   // if file or folder creation is successful.
   if (success) {
     LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileInfo.fileName(), fileInfo.absoluteFilePath(),
-                                                                                 fileInfo.absoluteFilePath(), true, pParentLibraryTreeItem);
+                                                                                 fileInfo.absoluteFilePath(), true, pParentLibraryTreeItem->isInternal(), pParentLibraryTreeItem);
     if (mIsCreateFile) {
       pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
     }

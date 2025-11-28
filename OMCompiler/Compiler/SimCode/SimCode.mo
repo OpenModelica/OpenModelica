@@ -161,6 +161,7 @@ uniontype SimCode
     Option<DaeModeData> daeModeData;
     list<SimEqSystem> inlineEquations;
     Option<OMSIData> omsiData "used for OMSI to generate equations code";
+    Boolean scalarized;
   end SIMCODE;
 end SimCode;
 
@@ -268,6 +269,7 @@ uniontype ModelInfo "Container for metadata about a Modelica model."
     String license;
     String copyright;
     String directory;
+    String fileName;
     VarInfo varInfo;
     SimCodeVar.SimVars vars;
     list<SimCodeFunction.Function> functions;

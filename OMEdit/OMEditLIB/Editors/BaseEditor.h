@@ -45,6 +45,7 @@
 
 class ModelWidget;
 class InfoBar;
+class ReloadAsModelicaInfoBar;
 class LineNumberArea;
 class FindReplaceWidget;
 class Label;
@@ -336,12 +337,14 @@ public:
   virtual QString wordUnderCursor();
   virtual void symbolAtPosition(const QPoint &pos);
   bool isModelicaModelInPackageOneFile();
+  static QStringList completerItemsToStringList(const QList<CompleterItem> &items);
 private:
   void initialize();
   void createActions();
 protected:
   ModelWidget *mpModelWidget;
   InfoBar *mpInfoBar;
+  ReloadAsModelicaInfoBar *mpReloadAsModelicaInfoBar;
   PlainTextEdit *mpPlainTextEdit;
   FindReplaceWidget *mpFindReplaceWidget;
   QAction *mpFindReplaceAction;
@@ -372,6 +375,7 @@ public slots:
   void showGotoLineNumberDialog();
   void openClass();
   virtual void toggleCommentSelection();
+  void reloadAsModelica();
 };
 
 class LineNumberArea : public QWidget
@@ -466,6 +470,15 @@ public:
 private:
   Label *mpInfoLabel;
   QToolButton *mpCloseButton;
+};
+
+class ReloadAsModelicaInfoBar : public QFrame
+{
+public:
+  ReloadAsModelicaInfoBar(BaseEditor *pBaseEditor);
+private:
+  Label *mpInfoLabel;
+  QPushButton *mpReloadButton;
 };
 
 #endif // BASEEDITOR_H

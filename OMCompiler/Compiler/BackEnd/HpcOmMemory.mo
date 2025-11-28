@@ -1335,10 +1335,10 @@ import Util;
           if(boolOr(intLt(numBytesFree, iVarSize), List.exist1(prefetchLevel,intEq, iLevelIdx))) then //The CL has not enough space or is used for prefetching -- can not be used for writing
             tmpMatchedCacheLine = findMatchingSharedCLLevelfix0(iNodeVar, iVarSize, iLevelIdx, iThreadIdx, iCurrentListIdx+1, rest);
           else
-            if(List.exist(writeLevel, function isCLWrittenByOtherThread(iLevelIdx=iLevelIdx, iThreadIdx=iThreadIdx))) then //The CL is written by another thread in the same level -- can not be used for writing
+            if(List.any(writeLevel, function isCLWrittenByOtherThread(iLevelIdx=iLevelIdx, iThreadIdx=iThreadIdx))) then //The CL is written by another thread in the same level -- can not be used for writing
               tmpMatchedCacheLine = findMatchingSharedCLLevelfix0(iNodeVar, iVarSize, iLevelIdx, iThreadIdx, iCurrentListIdx+1, rest);
             else
-              if(List.exist(writeLevel, function isCLWrittenByOtherThread(iLevelIdx=iLevelIdx-1, iThreadIdx=iThreadIdx))) then //The CL is written by another thread in the previous level -- can not be used for writing
+              if(List.any(writeLevel, function isCLWrittenByOtherThread(iLevelIdx=iLevelIdx-1, iThreadIdx=iThreadIdx))) then //The CL is written by another thread in the previous level -- can not be used for writing
                 tmpMatchedCacheLine = findMatchingSharedCLLevelfix0(iNodeVar, iVarSize, iLevelIdx, iThreadIdx, iCurrentListIdx+1, rest);
               else //CL matches
                 tmpMatchedCacheLine = SOME((head, iCurrentListIdx));
@@ -2556,7 +2556,7 @@ import Util;
     scVarTaskMapping := arrayCreate(iNumScVars,-1);
     HpcOmTaskGraph.TASKGRAPHMETA(varCompMapping=varCompMapping) := iTaskGraphMeta;
     //iterate over all variables
-    ((oScVarTaskMapping,_)) := Array.fold3(varCompMapping, getSimCodeVarNodeMapping0, iEqSystems, iVarNameSCVarIdxMapping, iCompNodeMapping, (scVarTaskMapping,1));
+    ((oScVarTaskMapping,_)) := Array.fold(varCompMapping, function getSimCodeVarNodeMapping0(iEqSystems = iEqSystems, iVarNameSCVarIdxMapping = iVarNameSCVarIdxMapping, iCompNodeMapping = iCompNodeMapping), (scVarTaskMapping,1));
   end getSimCodeVarNodeMapping;
 
   protected function getSimCodeVarNodeMapping0 "author: marcusw
@@ -2716,7 +2716,7 @@ import Util;
     scVarTaskMapping := arrayCreate(arrayLength(iSCVarCLMapping),-1);
     HpcOmTaskGraph.TASKGRAPHMETA(varCompMapping=varCompMapping) := iTaskGraphMeta;
     //iterate over all variables
-    ((tmpCLTaskMapping,oScVarTaskMapping,_)) := Array.fold3(varCompMapping, getCacheLineTaskMapping0, iEqSystems, iVarNameSCVarIdxMapping, iSCVarCLMapping, (tmpCLTaskMapping,scVarTaskMapping,1));
+    ((tmpCLTaskMapping,oScVarTaskMapping,_)) := Array.fold(varCompMapping, function getCacheLineTaskMapping0( iEqSystems = iEqSystems, iVarNameSCVarIdxMapping = iVarNameSCVarIdxMapping, iSCVarCLMapping = iSCVarCLMapping), (tmpCLTaskMapping,scVarTaskMapping,1));
     tmpCLTaskMapping := Array.map1(tmpCLTaskMapping, List.sort, intLt);
     oCLTaskMapping := Array.map1(tmpCLTaskMapping, List.sortedUnique, intEq);
   end getCacheLineTaskMapping;

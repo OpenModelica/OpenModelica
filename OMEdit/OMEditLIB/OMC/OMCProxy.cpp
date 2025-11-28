@@ -756,7 +756,7 @@ void OMCProxy::loadSystemLibraries(const QVector<QPair<QString, QString> > libra
   if (MainWindow::instance()->isTestsuiteRunning()) {
     QPair<QString, QString> library;
     foreach (library, libraries) {
-      loadModel(library.first, library.second);
+      loadModel(library.first, library.second, true, "", true);
     }
   } else {
     const bool loadLatestModelica = OptionsDialog::instance()->getLibrariesPage()->getLoadLatestModelicaCheckbox()->isChecked();
@@ -765,9 +765,9 @@ void OMCProxy::loadSystemLibraries(const QVector<QPair<QString, QString> > libra
     }
     QSettings *pSettings = Utilities::getApplicationSettings();
     pSettings->beginGroup("libraries");
-    QStringList libraries = pSettings->childKeys();
+    const QStringList librariesList = pSettings->childKeys();
     pSettings->endGroup();
-    foreach (QString lib, libraries) {
+    foreach (QString lib, librariesList) {
       QString version = pSettings->value("libraries/" + lib).toString();
       if (loadLatestModelica && (lib.compare(QStringLiteral("Modelica")) == 0 || lib.compare(QStringLiteral("ModelicaServices")) == 0 || lib.compare(QStringLiteral("Complex")) == 0)) {
         QString msg = tr("Skip loading <b>%1</b> version <b>%2</b> since latest version is already loaded because of the setting <b>Load latest Modelica version on startup</b>.").arg(lib, version);
@@ -782,7 +782,7 @@ void OMCProxy::loadSystemLibraries(const QVector<QPair<QString, QString> > libra
             pLibraryTreeModel->createLibraryTreeItem(lib, pLibraryTreeModel->getRootLibraryTreeItem(), true, true, true);
           }
         } else {
-          loadModel(lib, version);
+          loadModel(lib, version, true, "", true);
         }
       }
     }
@@ -1639,17 +1639,29 @@ bool OMCProxy::loadModel(QString className, QString priorityVersion, bool notify
 }
 
 /*!
-  Loads a file in OMC
-  \param fileName - the file to load.
-  \return true on success
-  */
-bool OMCProxy::loadFile(QString fileName, QString encoding, bool uses, bool notify, bool requireExactVersion, bool allowWithin)
+ * \brief OMCProxy::loadFile
+ * Loads a file in OMC.
+ * \param fileName
+ * \param encoding
+ * \param uses
+ * \param notify
+ * \param requireExactVersion
+ * \param allowWithin
+ * \param printErrors
+ * \return
+ */
+bool OMCProxy::loadFile(QString fileName, QString encoding, bool uses, bool notify, bool requireExactVersion, bool allowWithin, bool printErrors)
 {
   mLoadModelError = false;
   bool result = false;
   fileName = fileName.replace('\\', '/');
   result = mpOMCInterface->loadFile(fileName, encoding, uses, notify, requireExactVersion, allowWithin);
-  printMessagesStringInternal();
+  /* If result is true then print messages anyway, because there might be warnings/notifications
+   * If result is false then print messages only if printErrors is true.
+   */
+  if (result || (!result && printErrors)) {
+    printMessagesStringInternal();
+  }
   return result;
 }
 
@@ -1687,16 +1699,19 @@ bool OMCProxy::loadClassContentString(const QString &data, const QString &classN
 }
 
 /*!
-  Parse the file. Doesn't load it into OMC.
-  \param fileName - the file to parse.
-  \return true on success
-  */
-QList<QString> OMCProxy::parseFile(QString fileName, QString encoding)
+ * \brief OMCProxy::parseFile
+ * Parse the file. Doesn't load it into OMC.
+ * \param fileName
+ * \param encoding
+ * \param printErrors
+ * \return
+ */
+QList<QString> OMCProxy::parseFile(QString fileName, QString encoding, bool printErrors)
 {
   QList<QString> result;
   fileName = fileName.replace('\\', '/');
   result = mpOMCInterface->parseFile(fileName, encoding);
-  if (result.isEmpty()) {
+  if (result.isEmpty() && printErrors) {
     printMessagesStringInternal();
   }
   return result;
@@ -2926,19 +2941,32 @@ int OMCProxy::numProcessors()
 
 /*!
  * \brief OMCProxy::getAllSubtypeOf
- * Returns the list of all classes that extend from className given a parentClass where the lookup for className should start.
- * \param parentClassName = $TypeName(AllLoadedClasses) - is the name of the class whose sub classes are retrieved.
- * \param className - the name of the class that is subtype of
- * \param qualified = false
+ * Returns the list of all classes that extend from baseClass given a parentClass that the subtypes should be reachable from.
+ * \param baseClass - the name of the base class to look for subtypes of
+ * \param parentClass - the class that the subtypes should be reachable from
  * \param includePartial = false
  * \param sort = false
  * \return
  */
-QStringList OMCProxy::getAllSubtypeOf(QString className, QString parentClassName, bool qualified, bool includePartial, bool sort)
+QStringList OMCProxy::getAllSubtypeOf(QString baseClass, QString parentClass, bool includePartial, bool sort)
 {
-  return mpOMCInterface->getAllSubtypeOf(className, parentClassName, qualified, includePartial, sort);
+  return mpOMCInterface->getAllSubtypeOf(baseClass, parentClass, false /*deprecated*/, includePartial, sort);
 }
 
+
+/*!
+ * \brief OMCProxy::getReplaceableChoices
+ * Returns class names and comments for choicesAllMatching candidates
+ * \param baseClass - the name of the base class to look for subtypes of
+ * \param parentClass - the class that the subtypes should be reachable from
+ * \param includePartial = false
+ * \param sort = false
+ * \return
+ */
+QList<QList<QString>> OMCProxy::getReplaceableChoices(QString baseClass, QString parentClass, bool includePartial, bool sort)
+{
+  return mpOMCInterface->getReplaceableChoices(baseClass, parentClass, includePartial, sort);
+}
 
 /*!
  * \brief OMCProxy::help

@@ -302,6 +302,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Modules/3_Post/NBEvaluation.mo
     # "NBackend Util";
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBAdjacency.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBASSC.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBBackendUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBDifferentiate.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NBackEnd/Util/NBReplacements.mo
@@ -330,6 +331,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFComplexType.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFComponent.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFComponentRef.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnectBreakTree.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnectEquations.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnection.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnectionSets.mo

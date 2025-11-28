@@ -111,6 +111,8 @@ public:
   void setCRMLEnabled(bool crmlEnabled) {mCRMLEnabled = crmlEnabled;}
   bool isTestsuiteRunning() const {return mTestsuiteRunning;}
   void setTestsuiteRunning(bool testsuiteRunning) {mTestsuiteRunning = testsuiteRunning;}
+  bool isSkipExpressionEvaluation() const {return mSkipExpressionEvaluation;}
+  void setSkipExpressionEvaluation(bool skipExpressionEvaluation) {mSkipExpressionEvaluation = skipExpressionEvaluation;}
   OMCProxy* getOMCProxy() {return mpOMCProxy;}
   void setExitApplicationStatus(bool status) {mExitApplicationStatus = status;}
   bool getExitApplicationStatus() {return mExitApplicationStatus;}
@@ -199,7 +201,6 @@ public:
   QAction* getDeleteIconAction() {return mpDeleteIconAction;}
   QAction* getAddConnectorAction() {return mpAddConnectorAction;}
   QAction* getAddBusAction() {return mpAddBusAction;}
-  QAction* getAddTLMBusAction() {return mpAddTLMBusAction;}
   QAction* getAddSubModelAction() {return mpAddSubModelAction;}
   QAction* getLogCurrentFileAction() {return mpLogCurrentFileAction;}
   QAction* getStageCurrentFileForCommitAction() {return mpStageCurrentFileForCommitAction;}
@@ -245,7 +246,7 @@ public:
   void createOMNotebookTitleCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement);
   void createOMNotebookImageCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement, QString filePath);
   void createOMNotebookCodeCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement);
-  TransformationsWidget* showTransformationsWidget(QString fileName, bool profiling);
+  TransformationsWidget* showTransformationsWidget(QString fileName, bool profiling, bool checkProfilingExists);
   void findFileAndGoToLine(QString fileName, QString lineNumber);
   void printStandardOutAndErrorFilesMessages();
   static void PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char* title, const char* grid, const char* plotType, const char* logX,
@@ -265,6 +266,7 @@ private:
   FILE *mpNewApiProfilingFile = nullptr;
   bool mCRMLEnabled = false;
   bool mTestsuiteRunning = false;
+  bool mSkipExpressionEvaluation = false;
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
   int mNumberOfProcessors;
@@ -442,7 +444,6 @@ private:
   QAction *mpDeleteIconAction;
   QAction *mpAddConnectorAction;
   QAction *mpAddBusAction;
-  QAction *mpAddTLMBusAction;
   QAction *mpAddSubModelAction;
   QAction *mpOMSSimulateAction;
   // Toolbars

@@ -334,6 +334,7 @@ private:
     const StringAnnotation &getTab() const {return mTab;}
     const StringAnnotation &getGroup() const {return mGroup;}
     const BooleanAnnotation &isEnabled() const {return mEnable;}
+    bool hasShowStartAttribute() const {return mHasShowStartAttribute;}
     const BooleanAnnotation &getShowStartAttribute() const {return mShowStartAttribute;}
     const BooleanAnnotation &isColorSelector() const {return mColorSelector;}
     const Selector &getLoadSelector() const {return mLoadSelector;}
@@ -345,6 +346,7 @@ private:
     StringAnnotation mTab;
     StringAnnotation mGroup;
     BooleanAnnotation mEnable;
+    bool mHasShowStartAttribute = false;
     BooleanAnnotation mShowStartAttribute;
     BooleanAnnotation mColorSelector;
     Selector mLoadSelector;
@@ -608,10 +610,12 @@ private:
     bool isModelJsonEmpty() const {return mModelJson.isEmpty();}
     void setModelJson(const QJsonObject &modelJson) {mModelJson = modelJson;}
     const QString &getName() const {return mName;}
+    QString getNameIfReplaceable() const;
     const QString &getRootType() const;
     bool isMissing() const {return mMissing;}
     void setRestriction(const QString &restriction) {mRestriction = restriction;}
     const QString &getRestriction() const {return mRestriction;}
+    Replaceable *getReplaceable() const;
     bool isConnector() const;
     bool isExpandableConnector() const;
     bool isEnumeration() const;
@@ -643,10 +647,10 @@ private:
     bool isParameterConnectorSizing(const QString &parameter);
     bool isValidConnection(const Name &lhsConnector, const Name &rhsConnector) const;
     bool isTypeCompatibleWith(const Model &other, bool lhsOutside, bool rhsOutside) const;
-    QPair<QString, bool> getParameterValue(const QString &parameter, QString &typeName);
-    QPair<QString, bool> getParameterValueFromExtendsModifiers(const QStringList &parameter);
+    QPair<QString, bool> getVariableValue(QStringList variables);
+    QString getVariableType(QStringList variables);
 
-    FlatModelica::Expression* getVariableBinding(const QString &variableName);
+    FlatModelica::Expression* getVariableValueOrBinding(const QString &variableName, bool value) const;
     const Element *lookupElement(const QString &name) const;
     Element *lookupElement(const QString &name);
     const Element *lookupElement(const Name &name) const;
@@ -664,6 +668,7 @@ private:
     std::unique_ptr<Prefixes> mpPrefixes;
     QString mComment;
     std::unique_ptr<Annotation> mpAnnotation;
+    QList<Element*> mGeneratedInnerComponents;
     QList<Element*> mElements;
     QList<Import> mImports;
     QList<Connection*> mConnections;
@@ -685,19 +690,26 @@ private:
     void setModel(Model *pModel) {mpModel = pModel;}
     Model *getModel() const {return mpModel;}
     Modifier *getModifier() const {return mpModifier;}
+    QPair<QString, bool> getVariableValue(QStringList variables);
     QPair<QString, bool> getModifierValueFromType(QStringList modifierNames);
     const Dimensions &getDimensions() const {return mDims;}
     bool isPublic() const;
     bool isFinal() const;
     bool isInner() const;
     bool isOuter() const;
+    bool isParameter() const;
+    bool isInput() const;
     Replaceable *getReplaceable() const;
     bool isRedeclare() const;
+    bool isConnector() const;
+    bool isExpandableConnector() const;
     QString getConnector() const;
     QString getVariability() const;
     QString getDirectionPrefix() const;
     const QString &getComment() const;
     Annotation *getAnnotation() const;
+    const FlatModelica::Expression &getValue() const {return mValue;}
+    FlatModelica::Expression &getValue() {return mValue;}
     const FlatModelica::Expression &getBinding() const {return mBinding;}
     FlatModelica::Expression &getBinding() {return mBinding;}
     void setBinding(const FlatModelica::Expression expression) {mBinding = expression;}
@@ -730,6 +742,7 @@ private:
     std::unique_ptr<Prefixes> mpPrefixes;
     QString mComment;
     std::unique_ptr<Annotation> mpAnnotation;
+    FlatModelica::Expression mValue;
     FlatModelica::Expression mBinding;
     FlatModelica::Expression mBindingForReset;
   };

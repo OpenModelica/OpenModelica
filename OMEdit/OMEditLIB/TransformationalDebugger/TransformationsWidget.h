@@ -54,6 +54,7 @@ class TVariablesTreeItem
 public:
   TVariablesTreeItem(const QVector<QVariant> &tVariableItemData, TVariablesTreeItem *pParent = 0, bool isRootItem = false);
   ~TVariablesTreeItem();
+  int childrenSize() const {return mChildren.size();}
   QList<TVariablesTreeItem*> getChildren() const {return mChildren;}
   bool isRootItem() {return mIsRootItem;}
   QString getVariableName() {return mVariableName;}
@@ -61,7 +62,6 @@ public:
   void insertChild(int position, TVariablesTreeItem *pVariablesTreeItem);
   TVariablesTreeItem *child(int row);
   void removeChildren();
-  void removeChild(TVariablesTreeItem *pTVariablesTreeItem);
   int columnCount() const;
   QVariant data(int column, int role = Qt::DisplayRole) const;
   int row() const;
@@ -99,7 +99,6 @@ private:
   TVariablesTreeItem *mpRootTVariablesTreeItem;
   QHash<QString, QHash<QString,QString> > mScalarVariablesList;
 
-  QModelIndex tVariablesTreeItemIndexHelper(const TVariablesTreeItem *pTVariablesTreeItem, const TVariablesTreeItem *pParentTVariablesTreeItem, const QModelIndex &parentIndex) const;
   void insertVariablesItems(VariableNode *pParentVariableNode, TVariablesTreeItem *pParentTVariablesTreeItem);
 };
 
@@ -162,7 +161,7 @@ class TransformationsWidget : public QWidget
 {
   Q_OBJECT
 public:
-  TransformationsWidget(QString infoJSONFullFileName, bool profiling, QWidget *pParent = 0);
+  TransformationsWidget(QString infoJSONFullFileName, bool profiling, bool checkForProfilingFiles, QWidget *pParent = 0);
   MyHandler* getInfoXMLFileHandler() {return mpInfoXMLFileHandler;}
   QTreeWidget* getEquationsTreeWidget() {return mpEquationsTreeWidget;}
   InfoBar* getTSourceEditorInfoBar() {return mpTSourceEditorInfoBar;}
@@ -173,7 +172,7 @@ public:
   QSplitter* getEquationsNestedVerticalSplitter() {return mpEquationsNestedVerticalSplitter;}
   QSplitter* getEquationsHorizontalSplitter() {return mpEquationsHorizontalSplitter;}
   QSplitter* getTransformationsVerticalSplitter() {return mpTransformationsVerticalSplitter;}
-  void loadTransformations();
+  void loadTransformations(bool profiling, bool checkForProfilingFiles);
   void fetchDefinedInEquations(const OMVariable &variable);
   void fetchUsedInEquations(const OMVariable &variable);
   void fetchOperations(const OMVariable &variable);
@@ -186,7 +185,9 @@ public:
   void fetchOperations(OMEquation *equation, HtmlDiff htmlDiff);
   void clearTreeWidgetItems(QTreeWidget *pTreeWidget);
 private:
-  QString mInfoJSONFullFileName, mProfJSONFullFileName, mProfilingDataRealFileName;
+  QString mInfoJSONFullFileName, mProfilingJSONFullFileName, mProfilingDataRealFileName;
+  bool mProfilingEnabled = false;
+  bool mCheckForProfilingFiles = false;
   int profilingNumSteps;
   int mCurrentEquationIndex;
   MyHandler *mpInfoXMLFileHandler;
@@ -218,8 +219,9 @@ private:
 
   void parseProfiling(QString fileName);
   QTreeWidgetItem* makeEquationTreeWidgetItem(int equationIndex, int allowChild);
+private slots:
+  void loadTransformations();
 public slots:
-  void reloadTransformations();
   void findVariables();
   void fetchVariableData(const QModelIndex &index);
   void fetchEquationData(QTreeWidgetItem *pEquationTreeItem, int column);

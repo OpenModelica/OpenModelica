@@ -553,6 +553,8 @@ constant DebugFlag DUMP_RESIZABLE = DEBUG_FLAG(194, "dumpResizable", false,
   Gettext.gettext("Dumps information about resizable paremeter handling."));
 constant DebugFlag DUMP_SOLVE = DEBUG_FLAG(195, "dumpSolve", false,
   Gettext.gettext("Dumps information about equation solving."));
+constant DebugFlag FORCE_SCALARIZE = DEBUG_FLAG(196, "forceScalarize", false,
+  Gettext.gettext("Forces scalarization to be done when it would normally be automatically disabled."));
 
 public
 // CONFIGURATION FLAGS
@@ -831,7 +833,8 @@ constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(41, "tearingMethod",
     ("noTearing", Gettext.gettext("Deprecated, use minimalTearing.")),
     ("minimalTearing", Gettext.gettext("Minimal tearing method to only tear discrete variables.")),
     ("omcTearing", Gettext.gettext("Tearing method developed by TU Dresden: Frenkel, Schubert.")),
-    ("cellier", Gettext.gettext("Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick"))})),
+    ("cellier", Gettext.gettext("Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick")),
+    ("guruTearing", Gettext.gettext("Tearing based solely on TearingSelect annotation. Forces prefer/always variables to be iteration variables."))})),
   Gettext.gettext("Sets the tearing method to use. Select no tearing or choose tearing method."));
 constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(42, "tearingHeuristic",
   NONE(), EXTERNAL(), STRING_FLAG("MC3"),
@@ -1151,13 +1154,13 @@ constant ConfigFlag LABELED_REDUCTION = CONFIG_FLAG(110,
   Gettext.gettext("Turns on labeling and reduce terms to do whole process of reduction."));
 constant ConfigFlag DISABLE_EXTRA_LABELING = CONFIG_FLAG(111,
   "disableExtraLabeling", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
-  Gettext.gettext("Disable adding extra label into the whole experssion with more than one term and +,- operations."));
+  Gettext.gettext("Disable adding extra label into the whole expression with more than one term and +,- operations."));
 constant ConfigFlag LOAD_MSL_MODEL = CONFIG_FLAG(112,
   "loadMSLModel", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Used to know loadFile doesn't need to be called in cpp-runtime (for labeled model reduction)."));
 constant ConfigFlag LOAD_PACKAGE_FILE = CONFIG_FLAG(113,
   "loadPackageFile", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
-  Gettext.gettext("used when the outside name is different with the inside name of the packge, in cpp-runtime (for labeled model reduction)."));
+  Gettext.gettext("Used when the outside name is different with the inside name of the packge, in cpp-runtime (for labeled model reduction)."));
 constant ConfigFlag BUILDING_FMU = CONFIG_FLAG(114,
   "", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Is true when building an FMU (so the compiler can look for URIs to package as FMI resources)."));
@@ -1375,6 +1378,13 @@ constant ConfigFlag EVALUATE_STRUCTURAL_PARAMETERS = CONFIG_FLAG(158, "evaluateS
 constant ConfigFlag LOAD_MISSING_LIBRARIES = CONFIG_FLAG(159, "loadMissingLibraries",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   Gettext.gettext("Automatically try to load a matching library if a name can't be found during name lookup."));
+constant ConfigFlag CAUSALIZE_DAE_MODE = CONFIG_FLAG(160, "causalizeDaeMode",
+  NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
+  Gettext.gettext("The system is partially causalized and simple assignments are generated for equations that can be solved explicitly. Only works with --daeMode."));
+/* please remove me once this is supported */
+constant ConfigFlag SIM_CODE_SCALARIZE = CONFIG_FLAG(161, "simCodeScalarize",
+  NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
+  Gettext.gettext("Sclarizes variables during simcode phase."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

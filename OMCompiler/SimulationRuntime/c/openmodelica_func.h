@@ -101,9 +101,6 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   */
   int (*initializeDAEmodeData)(DATA *data, DAEMODE_DATA* daeModeData);
 
-  /* computes index map with the sizes of all (resizable) variables */
-  void (*computeVarIndices)(size_t* realIndex, size_t* integerIndex, size_t* booleanIndex, size_t* stringIndex);
-
   /* functionODE contains those equations that are needed
   * to calculate the dynamic part of the system */
   int (*functionODE)(DATA *data, threadData_t*);
@@ -168,8 +165,9 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   * 1: global homotopy approach (equidistant lambda steps)
   * 2: new global homotopy approach (adaptive lambda steps)
   * 3: new local homotopy approach (adaptive lambda steps)
+  * 4: no homotopy
   */
-  int useHomotopy;
+  HOMOTOPY_METHOD homotopyMethod;
 
   /*! \fn functionInitialEquations_lambda0
   *
@@ -193,7 +191,6 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   *
   *  This function calculates bound parameters that depend on other parameters,
   *  e.g. parameter Real n=1/m;
-  *  obsolete: bound_parameters
   *
   *  \param [ref] [data]
   */

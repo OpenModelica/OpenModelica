@@ -123,6 +123,7 @@ import ReduceDAE;
 import Settings;
 import UnorderedSet;
 import Interactive;
+import InteractiveUtil;
 
 protected constant String UNDERLINE = "========================================";
 
@@ -622,8 +623,8 @@ algorithm
 
     // map index also odeEquations and algebraicEquations
     systemIndexMap := List.fold(allEquations, getSystemIndexMap, arrayCreate(uniqueEqIndex, -1));
-    odeEquations := List.mapList1_1(odeEquations, setSystemIndexMap, systemIndexMap);
-    algebraicEquations := List.mapList1_1(algebraicEquations, setSystemIndexMap, systemIndexMap);
+    odeEquations := List.map1List(odeEquations, setSystemIndexMap, systemIndexMap);
+    algebraicEquations := List.map1List(algebraicEquations, setSystemIndexMap, systemIndexMap);
     modelInfo := addNumEqns(modelInfo, uniqueEqIndex /* This is a *much* better estimate than the guessed number of equations */ );
 
     odeEquations := makeEqualLengthLists(odeEquations, Config.noProc());
@@ -737,7 +738,7 @@ algorithm
     end if;
 
     // fix issue https://github.com/OpenModelica/OpenModelica/issues/12916
-    fileNamePrefixHash := substring(intString(stringHashDjb2(filenamePrefix)), 1, 3);
+    fileNamePrefixHash := Util.hashFileNamePrefix(filenamePrefix);
 
     // Set fullPathPrefix for FMUs
     if isFMU then
@@ -801,7 +802,8 @@ algorithm
       partitionData               = SimCode.emptyPartitionData,
       daeModeData                 = NONE(),
       inlineEquations             = inlineEquations,
-      omsiData                    = omsiOptData
+      omsiData                    = omsiOptData,
+      scalarized                  = true
     );
 
     (simCode, (_, _, lits)) := traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literals);
@@ -868,7 +870,7 @@ algorithm
       crefs := List.fold(stmts,DAEUtil.getAssertConditionCrefs,{});
       (varLstLst,_) := List.map1_2(crefs,BackendVariable.getVar,vars);
       varLst := List.flatten(varLstLst);
-      true := List.exist(varLst,BackendVariable.isParam);
+      true := List.any(varLst,BackendVariable.isParam);
   then ((varDep,eqIn::paramDep));
   else
     algorithm
@@ -1745,9 +1747,9 @@ algorithm
     BackendDump.dumpVarList(varlst,"Variables:");
   end if;
   // skip is when equations
-  skip := List.mapBoolAnd(eqnlst, BackendEquation.isWhenEquation);
+  skip := List.all(eqnlst, BackendEquation.isWhenEquation);
   // skip is discrete
-  skip := skip or List.mapBoolAnd(varlst, BackendVariable.isVarDiscrete);
+  skip := skip or List.all(varlst, BackendVariable.isVarDiscrete);
 
   outFold := match comp
     local
@@ -2452,7 +2454,7 @@ algorithm
           else
             algStr :=  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg, source)});
             message := ComponentReference.printComponentRefStr(BackendVariable.varCref(v));
-            message := stringAppendList({"Inverse Algorithm needs to be solved for ", message, " in \n", algStr, "This has not been implemented yet.\n"});
+            message := stringAppendList({"Inverse Algorithm needs to be solved for ", message, " in\n", algStr, "This has not been implemented yet.\n"});
             Error.addInternalError(message, sourceInfo());
             fail();
           end try;
@@ -5544,7 +5546,6 @@ protected
   DAE.ComponentRef cref;
   Integer size, i, j;
   list<Integer> intLst;
-  array<Integer> intArr;
   list<DAE.ComponentRef> crefs;
 algorithm
   //create HT
@@ -5574,9 +5575,7 @@ algorithm
             intLst := j :: intLst;
           end if;
         end for;
-        intArr := listArray(intLst);
-        Array.heapSort(intArr);
-        intLst := arrayList(intArr);
+        intLst := List.heapSortIntList(intLst);
         outSparse := (i, intLst) :: outSparse;
       end if;
     end for;
@@ -6233,7 +6232,7 @@ algorithm
           _ :=  match stmt
             case BackendDAE.ASSIGN(left = DAE.CREF(componentRef = left)) equation
               crefs = List.map(inVars, BackendVariable.varCref);
-              List.map1rAllValue(crefs, ComponentReference.crefPrefixOf, true, left);
+              true = List.all(crefs, function ComponentReference.crefPrefixOf(prefixCref = left));
             then ();
             else ();
           end match;
@@ -6286,7 +6285,7 @@ algorithm
         _ :=  match stmt
           case BackendDAE.ASSIGN(left = DAE.CREF(componentRef = left)) equation
             crefs = List.map(inVars, BackendVariable.varCref);
-            List.map1rAllValue(crefs, ComponentReference.crefPrefixOf, true, left);
+            true = List.all(crefs, function ComponentReference.crefPrefixOf(prefixCref = left));
           then ();
           else ();
         end match;
@@ -6616,7 +6615,7 @@ algorithm
 
     case (_, e1 as DAE.CREF(componentRef = cr2), e2, _, _, _)
       equation
-        List.map1rAllValue(crefs, ComponentReference.crefPrefixOf, true, cr2);
+        true = List.all(crefs, function ComponentReference.crefPrefixOf(prefixCref = cr2));
         // ((e1_1, _)) = Expression.extendArrExp((e1, false));
         (e2_1, _) = Expression.extendArrExp(e2, false);
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
@@ -6627,7 +6626,7 @@ algorithm
 
     case (_, e1, e2 as DAE.CREF(componentRef = cr2), _, _, _)
       equation
-        List.map1rAllValue(crefs, ComponentReference.crefPrefixOf, true, cr2);
+        true = List.all(crefs, function ComponentReference.crefPrefixOf(prefixCref = cr2));
         // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         (e1_1, _) = Expression.extendArrExp(e1, false);
         // ((e2_1, _)) = Expression.extendArrExp((e2, false));
@@ -7050,7 +7049,7 @@ algorithm
     // inverse algorithms
     case (BackendDAE.ALGORITHM(alg=alg as DAE.ALGORITHM_STMTS(algStatements), source=source, expand=crefExpand, attr=eqAttr)::_, _) equation
       if debug then
-        print("createSingleAlgorithmCode -> \n");
+        print("createSingleAlgorithmCode ->\n");
         BackendDump.dumpAlgorithms({DAE.ALGORITHM_STMTS(algStatements)}, 0);
       end if;
 
@@ -7312,7 +7311,7 @@ algorithm
   startValueEquations := matchcontinue (syst, shared, acc)
     local
       BackendDAE.Variables vars, av;
-      list<BackendDAE.Equation>  startValueEquationsTmp2;
+      list<BackendDAE.Equation> startValueEquationsTmp2;
       list<SimCode.SimEqSystem> simeqns, simeqns1;
       Integer uniqueEqIndex;
       BackendDAE.Variables globalKnownVars;
@@ -7523,7 +7522,9 @@ algorithm
   end if;
 
   // Create SimCode Equation for special globalKnownVars
-  if (BackendVariable.isParam(globalKnownVar) and BackendVariable.varFixed(globalKnownVar) and (BackendVariable.isFinalOrProtectedVar(globalKnownVar) or BackendVariable.varHasNonConstantBindExpOrStartValue(globalKnownVar)))
+  if (BackendVariable.isParam(globalKnownVar) and
+         ((BackendVariable.varFixed(globalKnownVar) and (BackendVariable.isFinalOrProtectedVar(globalKnownVar) or BackendVariable.varHasNonConstantBindExpOrStartValue(globalKnownVar)))
+      or (BackendVariable.varHasStartValue(globalKnownVar) and not BackendVariable.varHasConstantStartExp(globalKnownVar))))
     or (BackendVariable.isVarAlg(globalKnownVar) and not BackendVariable.isInput(globalKnownVar)) and BackendVariable.varFixed(globalKnownVar)
     or (BackendVariable.isExtObj(globalKnownVar) and BackendVariable.varHasBindExp(globalKnownVar) and BackendVariable.varFixed(globalKnownVar))
    then
@@ -7719,7 +7720,7 @@ public function createModelInfo
   input list<SimCodeVar.SimVar> tempVars;
   output SimCode.ModelInfo modelInfo;
 protected
-  String description, directory, version, author, license, copyright;
+  String description, directory, version, author, license, copyright, fileName;
   SimCode.VarInfo varInfo;
   SimCodeVar.SimVars vars;
   Integer nx, ny, ndy, np, na, next, numOutVars, numInVars, ny_int, np_int, na_int, ny_bool, np_bool, dim_1, dim_2, numOptimizeConstraints, numOptimizeFinalConstraints, numRealInputVars;
@@ -7740,6 +7741,8 @@ algorithm
     license := System.trim(Interactive.getNamedAnnotationExp(class_, program, Absyn.IDENT("__OpenModelica_license"), SOME(""), Interactive.getDefaultComponentPrefixesModStr), "\"");
     copyright := System.trim(Interactive.getNamedAnnotationExp(class_, program, Absyn.IDENT("__OpenModelica_copyright"), SOME(""), Interactive.getDefaultComponentPrefixesModStr), "\"");
 
+    // get fileName as the filename and model name can be different which will be used in dataReconciliation Report
+    fileName := System.basename(AbsynUtil.classFilename(InteractiveUtil.getPathedClassInProgram(class_, program)));
     (vars, unitDefinitions) := createVars(dlow, inInitDAE, tempVars);
 
     if debug then execStat("simCode: createVars"); end if;
@@ -7771,7 +7774,7 @@ algorithm
     if debug then execStat("simCode: createVarInfo"); end if;
     hasLargeEqSystems := hasLargeEquationSystems(dlow, inInitDAE);
     if debug then execStat("simCode: hasLargeEquationSystems"); end if;
-    modelInfo := SimCode.MODELINFO(class_, dlow.shared.info.description, version, author, license, copyright, directory, varInfo, vars, functions,
+    modelInfo := SimCode.MODELINFO(class_, dlow.shared.info.description, version, author, license, copyright, directory, fileName, varInfo, vars, functions,
                                    labels,
                                    if Flags.getConfigBool(Flags.BUILDING_FMU) then getResources(program.classes, dlow, inInitDAE) else {},
                                    List.sort(program.classes, AbsynUtil.classNameGreater),
@@ -8592,10 +8595,30 @@ protected function extractVarFromVar
 protected
   list<DAE.ComponentRef> scalar_crefs;
   BackendDAE.Var scalarVar;
+  DAE.Exp binding;
+  list<Option<DAE.Exp>> scalar_bindings;
+  Option<DAE.Exp> binding_opt;
+  DAE.ComponentRef cref;
 algorithm
   // if it is an array parameter split it up. Do not do it for Cpp runtime, they can handle array parameters
   if Types.isArray(dlowVar.varType) then
     scalar_crefs := ComponentReference.expandCref(dlowVar.varName, false);
+
+    // try to scalarize bindings
+    try
+      scalar_bindings := match dlowVar.bindExp
+        case SOME(binding as DAE.ARRAY())  then list(SOME(b) for b in Expression.expandArray(binding));
+        case SOME(binding as DAE.MATRIX()) then list(SOME(b) for b in Expression.expandArray(binding));
+        else List.fill(dlowVar.bindExp, listLength(scalar_crefs));
+      end match;
+
+      // fail if they are not of equal length
+      if listLength(scalar_bindings) <> listLength(scalar_crefs) then fail(); end if;
+    else
+      scalar_bindings := List.fill(dlowVar.bindExp, listLength(scalar_crefs));
+    end try;
+
+
     if Config.simCodeTarget() <> "Cpp" then
       // Make sure the array does not get expanded again. The check for existence is made by the caller
       // of this function, extractVarsFromList. Which checks for the whole unxpanded array, which is never
@@ -8604,9 +8627,11 @@ algorithm
       // However that means we do the exapnsion of the array for nothing. So add it here so that it does
       // not get expanded again (and every entry checked again).
       Mutable.update(hs, BaseHashSet.add(dlowVar.varName, Mutable.access(hs)));
-      for cref in scalar_crefs loop
+      for tpl in List.zip(scalar_crefs, scalar_bindings) loop
+        (cref, binding_opt) := tpl;
         // extract the expanded sim var
         scalarVar := BackendVariable.copyVarNewName(cref, dlowVar);
+        scalarVar.bindExp := binding_opt;
         scalarVar.varType := ComponentReference.crefTypeFull(cref);
         extractVarFromVar2(scalarVar, inAliasVars, inVars, simVars, hs, timeInterval, iterationVars);
       end for;
@@ -9187,7 +9212,7 @@ algorithm
     // dynamic tearing
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=idx,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,eqs=eqs, crefs=crefs), SOME(SimCode.NONLINEARSYSTEM())))
       equation
-        s = "strict set: \n"+intString(idx) +": "+ " (NONLINEAR) index:"+intString(idxNLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
+        s = "strict set:\n"+intString(idx) +": "+ " (NONLINEAR) index:"+intString(idxNLS)+" jacobian: "+boolString(Util.isSome(jac))+"\n";
         s = s+"crefs: "+stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr)," , ")+"\n";
         s = s+"\t";
         s = s+stringDelimitList(List.map(eqs,simEqSystemString),"\n\t");
@@ -9499,7 +9524,7 @@ algorithm
     SimCode.DaeModeData dmd;
     SimCode.SparsityPattern sparsity, sparsityT;
   case(SOME(dmd)) algorithm
-    print("\ndaeMode: \n" + UNDERLINE + "\n");
+    print("\ndaeMode:\n" + UNDERLINE + "\n");
     str := "residual Equations:\n"+UNDERLINE+"\n";
     print(str);
     dumpSimEqSystemLst(List.flatten(dmd.daeEquations),"\n");
@@ -10081,7 +10106,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = BackendVariable.isProtected(dlowVar);
-        hideResult = getHideResult(hideResultExp);
+        hideResult = getHideResult(hideResultExp, cr, source);
         initVal = dlowVar.bindExp;
         isFixed = BackendVariable.varFixed(dlowVar);
         type_ = tp;
@@ -10117,7 +10142,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = BackendVariable.isProtected(dlowVar);
-        hideResult = getHideResult(hideResultExp);
+        hideResult = getHideResult(hideResultExp, cr, source);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
@@ -10163,7 +10188,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = BackendVariable.isProtected(dlowVar);
-        hideResult = getHideResult(hideResultExp);
+        hideResult = getHideResult(hideResultExp, cr, source);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
@@ -10210,7 +10235,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = BackendVariable.isProtected(dlowVar);
-        hideResult = getHideResult(hideResultExp);
+        hideResult = getHideResult(hideResultExp, cr, source);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
@@ -10773,7 +10798,7 @@ algorithm outOrder := matchcontinue(inDlow, inEqSystems)
     then variableIndex3;
   else
     equation
-      print(" Failure in setVariableDerIndex \n");
+      print(" Failure in setVariableDerIndex\n");
     then fail();
  end matchcontinue;
 end setVariableDerIndex;
@@ -10815,11 +10840,11 @@ algorithm outOrder := matchcontinue(inDlow, syst)
       // fcall(Flags.FAILTRACE, print, "filtered eq's " + eq_str + "\n");
       (variableIndex, firstOrderVars) = List.map2_2(derExps, locateDerAndSerachOtherSide, eqns, eqns);
       if Flags.isSet(Flags.FAILTRACE) then
-        print("united variables \n");
+        print("united variables\n");
       end if;
       firstOrderVarsFiltered = List.fold(firstOrderVars, List.union, {});
       if Flags.isSet(Flags.FAILTRACE) then
-        print("list fold variables \n");
+        print("list fold variables\n");
       end if;
       variableIndex = setFirstOrderInSecondOrderVarIndex(variableIndex, firstOrderVarsFiltered);
      // fcall(Flags.FAILTRACE, print, "Deriving Variable indexis:\n" + dumpVariableindex(variableIndex) + "\n");
@@ -10827,7 +10852,7 @@ algorithm outOrder := matchcontinue(inDlow, syst)
       variableIndex;
   else
       equation
-         print(" Failure in setVariableDerIndex2 \n");
+         print(" Failure in setVariableDerIndex2\n");
          then fail();
  end matchcontinue;
 end setVariableDerIndex2;
@@ -11000,7 +11025,7 @@ algorithm (out, sysOrdOneVars) := matchcontinue(derExp, inEqns, inEqnsOrg)
   case(_, (BackendDAE.IF_EQUATION())::eqs, _)
     equation
       if Flags.isSet(Flags.FAILTRACE) then
-        print("\nFound  if equation is not supported yet  searching for varibale index  \n");
+        print("\nFound  if equation is not supported yet  searching for varibale index\n");
       end if;
       (highestIndex, crefs) = locateDerAndSerachOtherSide(derExp, eqs, inEqnsOrg);
     then
@@ -11008,7 +11033,7 @@ algorithm (out, sysOrdOneVars) := matchcontinue(derExp, inEqns, inEqnsOrg)
  case(_, (BackendDAE.ALGORITHM())::eqs, _)
     equation
       if Flags.isSet(Flags.FAILTRACE) then
-        print("\nFound  algorithm is not supported yet  searching for varibale index  \n");
+        print("\nFound  algorithm is not supported yet  searching for varibale index\n");
       end if;
       (highestIndex, crefs) = locateDerAndSerachOtherSide(derExp, eqs, inEqnsOrg);
     then
@@ -11094,7 +11119,7 @@ algorithm (outRefs) := matchcontinue(inRefs, firstOrderInSec)
   case({}, _) then {};
   case((cr, _)::rest, _)
     equation
-      true = List.map1BoolOr(firstOrderInSec, ComponentReference.crefEqual, cr);
+      true = List.any(firstOrderInSec, function ComponentReference.crefEqual(inComponentRef2 = cr));
       rest = setFirstOrderInSecondOrderVarIndex(rest, firstOrderInSec);
     then
       (cr, 2)::rest;
@@ -11153,7 +11178,7 @@ algorithm (OutInteger1, OutInteger2):= matchcontinue(dae_low)
       then
         (nvar1, nvar2);
   else
-    equation print(" failure in dimensions  \n"); then fail();
+    equation print(" failure in dimensions\n"); then fail();
 end matchcontinue;
 end dimensions;
 
@@ -12215,6 +12240,8 @@ end eqSystemWCET;
 protected function getHideResult
   "Returns the value of the hideResult attribute."
   input Option<DAE.Exp> hideResultExp;
+  input DAE.ComponentRef name;
+  input DAE.ElementSource source;
   output Option<Boolean> hideResult;
 algorithm
   hideResult := match(hideResultExp)
@@ -12223,85 +12250,70 @@ algorithm
     case(SOME(DAE.BCONST(true))) then SOME(true);
     else
       equation
-        Error.addCompilerWarning("The hideResult annotation could not be evaluated, probably due to missing annotation(Evaluate=true). It is removed.");
+        Error.addSourceMessage(Error.HIDE_RESULT_NOT_EVALUATED,
+          {ComponentReference.printComponentRefStr(name)}, ElementSource.getInfo(source));
      then NONE();
   end match;
 end getHideResult;
 
-public function createVarToArrayIndexMapping "author: marcusw
-  Creates a mapping for each array-cref to the array dimensions (int list) and to the indices (for the code generation) used to store the array content."
+public function createVarToArrayIndexMapping
+  "Creates a mapping for each array-cref to the array dimensions (int list) and to the indices (for the code generation) used to store the array content."
   input SimCode.ModelInfo iModelInfo;
   output HashTableCrIListArray.HashTable oVarToArrayIndexMapping;
   output HashTableCrILst.HashTable oVarToIndexMapping; //same as oVarToArrayIndexMapping, but does not merge array variables into one list
 protected
-  list<SimCodeVar.SimVar> stateVars;
-  list<SimCodeVar.SimVar> derivativeVars;
-  list<SimCodeVar.SimVar> algVars;
-  list<SimCodeVar.SimVar> discreteAlgVars;
-  list<SimCodeVar.SimVar> intAlgVars;
-  list<SimCodeVar.SimVar> boolAlgVars;
-  list<SimCodeVar.SimVar> inputVars;
-  list<SimCodeVar.SimVar> outputVars;
-  list<SimCodeVar.SimVar> aliasVars;
-  list<SimCodeVar.SimVar> intAliasVars;
-  list<SimCodeVar.SimVar> boolAliasVars;
-  list<SimCodeVar.SimVar> paramVars;
-  list<SimCodeVar.SimVar> intParamVars;
-  list<SimCodeVar.SimVar> boolParamVars;
-  list<SimCodeVar.SimVar> stringAlgVars;
-  list<SimCodeVar.SimVar> stringParamVars;
-  list<SimCodeVar.SimVar> stringAliasVars;
-  //list<SimCodeVar.SimVar> extObjVars;
-  list<SimCodeVar.SimVar> constVars;
-  list<SimCodeVar.SimVar> intConstVars;
-  list<SimCodeVar.SimVar> boolConstVars;
-  list<SimCodeVar.SimVar> stringConstVars;
-  //list<SimCodeVar.SimVar> jacobianVars;
-  //list<SimCodeVar.SimVar> seedVars;
-  list<SimCodeVar.SimVar> realOptimizeConstraintsVars;
-  list<SimCodeVar.SimVar> realOptimizeFinalConstraintsVars;
-  HashTableCrILst.HashTable varIndexMappingHashTable;
-  HashTableCrIListArray.HashTable varArrayIndexMappingHashTable;
+  SimCodeVar.SimVars sim_vars;
+  list<tuple<list<SimCodeVar.SimVar>, Integer>> vars;
+  Integer table_size = 0;
+  list<SimCodeVar.SimVar> var_lst;
+  Integer var_type;
   array<Integer> currentVarIndices; //current variable index real,int,bool,string
 algorithm
-  (oVarToArrayIndexMapping,oVarToIndexMapping) := match(iModelInfo)
-    case(SimCode.MODELINFO(vars = SimCodeVar.SIMVARS(stateVars=stateVars,derivativeVars=derivativeVars,algVars=algVars,discreteAlgVars=discreteAlgVars,
-        intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,stringAlgVars=stringAlgVars,aliasVars=aliasVars,intAliasVars=intAliasVars,boolAliasVars=boolAliasVars,stringAliasVars=stringAliasVars,paramVars=paramVars,
-        intParamVars=intParamVars,boolParamVars=boolParamVars,stringParamVars=stringParamVars,inputVars=inputVars,outputVars=outputVars, constVars=constVars, intConstVars=intConstVars, boolConstVars=boolConstVars,
-        stringConstVars=stringConstVars,realOptimizeConstraintsVars=realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars=realOptimizeFinalConstraintsVars)))
-      equation
-        varArrayIndexMappingHashTable = HashTableCrIListArray.emptyHashTableSized(BaseHashTable.biggerBucketSize);
-        varIndexMappingHashTable = HashTableCrILst.emptyHashTableSized(BaseHashTable.biggerBucketSize);
-        currentVarIndices = arrayCreate(4,1); //0 is reserved for unused variables
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(stateVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(derivativeVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+  // Collect the variable lists into a list for easier handling.
+  sim_vars := iModelInfo.vars;
+  vars := {
+    (sim_vars.stateVars, 1),
+    (sim_vars.derivativeVars, 1),
+    (sim_vars.algVars, 1),
+    (sim_vars.discreteAlgVars, 1),
+    (sim_vars.intAlgVars, 2),
+    (sim_vars.boolAlgVars, 3),
+    (sim_vars.stringAlgVars, 4),
+    (sim_vars.paramVars, 1),
+    (sim_vars.intParamVars, 2),
+    (sim_vars.boolParamVars, 3),
+    (sim_vars.stringParamVars, 4),
+    //(sim_vars.inputVars, 1),
+    //(sim_vars.utputVars, 1),
+    (sim_vars.constVars, 1),
+    (sim_vars.intConstVars, 2),
+    (sim_vars.boolConstVars, 3),
+    (sim_vars.stringConstVars, 4),
+    (sim_vars.realOptimizeConstraintsVars, 1),
+    (sim_vars.realOptimizeFinalConstraintsVars, 1),
+    (sim_vars.aliasVars, 1),
+    (sim_vars.intAliasVars, 2),
+    (sim_vars.boolAliasVars, 3),
+    (sim_vars.stringAliasVars, 4)
+  };
 
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(algVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(discreteAlgVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(intAlgVars, 2, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(boolAlgVars, 3, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(stringAlgVars, 4, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(paramVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(intParamVars, 2, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(boolParamVars, 3, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(stringParamVars, 4, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        //(currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTabl) = addVarToArrayIndexMappings(inputVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        //(currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTabl) = addVarToArrayIndexMappings(outputVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(constVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(intConstVars, 2, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(boolConstVars, 3, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(stringConstVars, 4, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(realOptimizeConstraintsVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(realOptimizeFinalConstraintsVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+  // Count the number of variables to determine an appropriate size for the hash tables.
+  for vl in vars loop
+    (var_lst, _) := vl;
+    table_size := table_size + listLength(var_lst);
+  end for;
+  table_size := Util.nextPrime(realInt(table_size * 1.4));
 
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(aliasVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(intAliasVars, 2, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(boolAliasVars, 3, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(stringAliasVars, 4, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
-      then (varArrayIndexMappingHashTable, varIndexMappingHashTable);
-    else
-      then (HashTableCrIListArray.emptyHashTableSized(0), HashTableCrILst.emptyHashTableSized(0));
-  end match;
+  oVarToArrayIndexMapping := HashTableCrIListArray.emptyHashTableSized(table_size);
+  oVarToIndexMapping := HashTableCrILst.emptyHashTableSized(table_size);
+  currentVarIndices := arrayCreate(4, 1); //0 is reserved for unused variables
+
+  // Add the variables to the tables.
+  for vl in vars loop
+    (var_lst, var_type) := vl;
+    (currentVarIndices, oVarToArrayIndexMapping, oVarToIndexMapping) :=
+      addVarToArrayIndexMappings(var_lst, var_type, currentVarIndices, oVarToArrayIndexMapping, oVarToIndexMapping);
+  end for;
 end createVarToArrayIndexMapping;
 
 public function addVarToArrayIndexMappings
@@ -12745,7 +12757,7 @@ protected function createAllSCVarMapping0 "author: marcusw
 protected
   Integer simVarIdx;
 algorithm
-  //print("createAllSCVarMapping0: Mapping variable \n");
+  //print("createAllSCVarMapping0: Mapping variable\n");
   //dumpVar(iSimVar);
   //print(" to index " + intString(simVarIdx) + "\n");
   SimCodeVar.SIMVAR(index=simVarIdx) := iSimVar;
@@ -12920,7 +12932,7 @@ algorithm
   depVars := arrayGet(m,beq);
   depVars := List.filter1OnTrue(depVars,setUpEqTree_Help,assVar);
   preEqs := List.map1(depVars,Array.getIndexFirst,varMatch);
-  Array.updateElementListAppend(beq,preEqs,treeIn);
+  arrayUpdate(treeIn, beq, listAppend(treeIn[beq], preEqs));
   treeOut := treeIn;
 end setUpEqTree;
 
@@ -13462,7 +13474,7 @@ algorithm
     local
       DAE.Exp lhs;
       DAE.ComponentRef cref;
-      list<DAE.ComponentRef> crefs,crefs2;
+      list<DAE.ComponentRef> crefs, crefs2;
       list<SimCodeVar.SimVar> simVars;
       list<SimCode.SimEqSystem> residual;
     case(SimCode.SES_RESIDUAL())
@@ -14152,7 +14164,7 @@ algorithm
 
     // get derivatives pattern
     intLst := list(getVariableFMIIndex(v) for v in inModelInfo.vars.derivativeVars);
-    derivatives := list(fmiUnknown for fmiUnknown guard(Util.boolOrList(list(isFmiUnknown(i, fmiUnknown) for i in intLst))) in allUnknowns);
+    derivatives := list(fmiUnknown for fmiUnknown guard(List.any(intLst, function isFmiUnknown(inFMIUnknown = fmiUnknown))) in allUnknowns);
 
     // get output pattern
     varsA := List.filterOnTrue(inModelInfo.vars.algVars, isOutputSimVar);
@@ -14161,12 +14173,12 @@ algorithm
     varsD := List.filterOnTrue(inModelInfo.vars.stringAlgVars, isOutputSimVar); // check for outputs in stringAlgVars
     allOutputVars := listAppend(listAppend(varsA,varsB),listAppend(varsC,varsD));
     intLst := list(getVariableFMIIndex(v) for v in allOutputVars);
-    outputs := list(fmiUnknown for fmiUnknown guard(Util.boolOrList(list(isFmiUnknown(i, fmiUnknown) for i in intLst))) in allUnknowns);
+    outputs := list(fmiUnknown for fmiUnknown guard(List.any(intLst, function isFmiUnknown(inFMIUnknown = fmiUnknown))) in allUnknowns);
 
     // get discrete states pattern
     clockedStates := List.filterOnTrue(inModelInfo.vars.algVars, isClockedStateSimVar);
     intLst := list(getVariableFMIIndex(v) for v in clockedStates);
-    discreteStates := list(fmiUnknown for fmiUnknown guard(Util.boolOrList(list(isFmiUnknown(i, fmiUnknown) for i in intLst))) in allUnknowns);
+    discreteStates := list(fmiUnknown for fmiUnknown guard(List.any(intLst, function isFmiUnknown(inFMIUnknown = fmiUnknown))) in allUnknowns);
 
     // discreteStates
     if not checkForEmptyBDAE(optcontPartDer) then
@@ -15352,11 +15364,12 @@ public function cref2simvar
   output SimCodeVar.SimVar outSimVar;
 protected
   HashTableCrefSimVar.HashTable crefToSimVarHT;
-  DAE.ComponentRef badcref;
+  DAE.ComponentRef cref, badcref;
 algorithm
   try
     SimCode.SIMCODE(crefToSimVarHT = crefToSimVarHT) := simCode;
-    outSimVar := simVarFromHT(inCref, crefToSimVarHT);
+    cref := if simCode.scalarized then inCref else ComponentReference.crefStripSubs(inCref);
+    outSimVar := simVarFromHT(cref, crefToSimVarHT);
   else
     //print("cref2simvar: " + ComponentReference.printComponentRefStr(inCref) + " not found!\n");
     badcref := ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed " + ComponentReference.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
@@ -15408,7 +15421,7 @@ algorithm
     end match;
   else
     //print("cref2simvar: " + ComponentReference.printComponentRefStr(inCref) + " not found!\n");
-    badcref := ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed " + ComponentReference.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
+    badcref := ComponentReference.makeCrefIdent("ERROR_simVarFromHT_failed " + ComponentReference.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
     sv := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false);
   end try;
   outSimVar := sv;

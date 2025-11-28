@@ -13,6 +13,14 @@ eventConstructor.mos \
 inferredConstructor2.mos \
 rationalConstructor1.mos \
 subSuperSample2.mos \
+subSample.mos \
+subSample_eq.mos \
+superSample.mos \
+shiftSample.mos \
+backSample.mos \
+splitPartition.mos \
+implicitSignal.mos \
+MSL_timeBasedStep.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

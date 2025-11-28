@@ -234,7 +234,7 @@ void UpdateComponentTransformationsCommand::redoInternal()
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   if (mMoveConnectorsTogether && pModelWidget->getLibraryTreeItem()->isModelica()
-      && (mpComponent->getModel() && mpComponent->getModel()->isConnector())) {
+      && mpComponent->isConnector()) {
     GraphicsView *pGraphicsView;
     if (mpComponent->getGraphicsView()->isIconView()) {
       pGraphicsView = pModelWidget->getDiagramGraphicsView();
@@ -274,8 +274,7 @@ void UpdateComponentTransformationsCommand::redoInternal()
 void UpdateComponentTransformationsCommand::undo()
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
-  if (mMoveConnectorsTogether && pModelWidget->getLibraryTreeItem()->isModelica()
-      && (mpComponent->getModel() && mpComponent->getModel()->isConnector())) {
+  if (mMoveConnectorsTogether && pModelWidget->getLibraryTreeItem()->isModelica() && mpComponent->isConnector()) {
     GraphicsView *pGraphicsView;
     if (mpComponent->getGraphicsView()->isIconView()) {
       pGraphicsView = pModelWidget->getDiagramGraphicsView();
@@ -713,7 +712,7 @@ void OMSimulatorUndoCommand::redoInternal()
   // Save the expanded LibraryTreeItems list
   pLibraryTreeModel->getExpandedLibraryTreeItemsList(pModelLibraryTreeItem, &mExpandedLibraryTreeItemsList);
   // save the opened ModelWidgets that belong to this model and save the selected elements
-  MainWindow::instance()->getModelWidgetContainer()->getOpenedModelWidgetsAndSelectedElementsOfClass(mModelName, &mOpenedModelWidgetsAndSelectedElements);
+  MainWindow::instance()->getModelWidgetContainer()->getOpenedModelWidgetsAndSelectedElementsOfClass(pModelLibraryTreeItem, &mOpenedModelWidgetsAndSelectedElements);
   // load the new snapshot
   if (mDoSnapShot) {
     OMSProxy::instance()->importSnapshot(mModelName, mNewSnapshot, &mModelName);
@@ -804,7 +803,8 @@ OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInf
  */
 void OMCUndoCommand::redoInternal()
 {
-  MainWindow::instance()->getOMCProxy()->loadString(mNewModelText, mpParentContainingLibraryTreeItem->getFileName());
+  MainWindow::instance()->getOMCProxy()->loadString(mNewModelText, mpParentContainingLibraryTreeItem->getFileName(), Helper::utf8,
+                                                    mpParentContainingLibraryTreeItem->isSaveFolderStructure());
   if (!mSkipGetModelInstance || mUndoCalledOnce) {
     mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mNewModelInfo);
   }
@@ -817,6 +817,7 @@ void OMCUndoCommand::redoInternal()
 void OMCUndoCommand::undo()
 {
   mUndoCalledOnce = true;
-  MainWindow::instance()->getOMCProxy()->loadString(mOldModelText, mpParentContainingLibraryTreeItem->getFileName());
+  MainWindow::instance()->getOMCProxy()->loadString(mOldModelText, mpParentContainingLibraryTreeItem->getFileName(), Helper::utf8,
+                                                    mpParentContainingLibraryTreeItem->isSaveFolderStructure());
   mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mOldModelInfo);
 }

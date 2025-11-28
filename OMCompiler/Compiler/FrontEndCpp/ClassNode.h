@@ -3,6 +3,8 @@
 
 #include "InstNode.h"
 
+#include <optional>
+
 namespace OpenModelica
 {
   class ClassNode : public InstNode
@@ -24,6 +26,8 @@ namespace OpenModelica
       void expand() override;
       void instantiate() override;
 
+      MetaModelica::Value toMetaModelica() const override;
+
     private:
       std::string _name;
       Absyn::Class *_definition;
@@ -32,6 +36,8 @@ namespace OpenModelica
       // array<CachedData> caches;
       InstNode *_parentScope [[maybe_unused]];
       std::unique_ptr<InstNodeType> _nodeType;
+
+      mutable std::optional<MetaModelica::Value> _mmCache;
   };
 }
 

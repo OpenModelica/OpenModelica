@@ -1539,19 +1539,28 @@ public function pathStripSamePrefix
   "strips the same prefix paths and returns the stripped path. e.g pathStripSamePrefix(P.M.A, P.M.B) => A"
   input Absyn.Path inPath1;
   input Absyn.Path inPath2;
-  output Absyn.Path outPath = inPath1;
+  output Option<Absyn.Path> outPath;
 protected
-  Absyn.Path path2 = inPath2;
+  Absyn.Path path1 = inPath1, path2 = inPath2;
 algorithm
-  while pathFirstIdent(outPath) == pathFirstIdent(path2) loop
-    outPath := pathRest(outPath);
+  while pathFirstIdent(path1) == pathFirstIdent(path2) loop
+    if pathIsIdent(path1) then
+      // The whole first path is a prefix of the second.
+      outPath := NONE();
+      return;
+    end if;
+
+    path1 := pathRest(path1);
 
     if pathIsIdent(path2) then
-      return;
+      // The whole second path is a prefix of the first.
+      break;
     end if;
 
     path2 := pathRest(path2);
   end while;
+
+  outPath := SOME(path1);
 end pathStripSamePrefix;
 
 public function pathPrefix
@@ -2899,6 +2908,83 @@ algorithm
   end match;
 end crefEqualNoSubs;
 
+public function crefCompare
+  input Absyn.ComponentRef cr1;
+  input Absyn.ComponentRef cr2;
+  output Integer comp;
+protected
+  String name;
+  Absyn.ComponentRef cr;
+  list<Absyn.Subscript> subs;
+algorithm
+  if referenceEq(cr1, cr2) then
+    comp := 0;
+    return;
+  end if;
+
+  comp := Util.intCompare(valueConstructor(cr1), valueConstructor(cr2));
+
+  if comp <> 0 then
+    return;
+  end if;
+
+  comp := match cr1
+    case Absyn.ComponentRef.CREF_FULLYQUALIFIED()
+      algorithm
+        Absyn.ComponentRef.CREF_FULLYQUALIFIED(cr) := cr2;
+      then
+        crefCompare(cr1.componentRef, cr);
+
+    case Absyn.ComponentRef.CREF_QUAL()
+      algorithm
+        Absyn.ComponentRef.CREF_QUAL(name, subs, cr) := cr2;
+        comp := stringCompare(cr1.name, name);
+
+        if comp == 0 then
+          comp := List.compare(cr1.subscripts, subs, subscriptCompare);
+        end if;
+      then
+        if comp == 0 then crefCompare(cr1.componentRef, cr) else comp;
+
+    case Absyn.ComponentRef.CREF_IDENT()
+      algorithm
+        Absyn.ComponentRef.CREF_IDENT(name, subs) := cr2;
+        comp := stringCompare(cr1.name, name);
+      then
+        if comp == 0 then List.compare(cr1.subscripts, subs, subscriptCompare) else comp;
+
+    else 0;
+  end match;
+end crefCompare;
+
+public function subscriptCompare
+  input Absyn.Subscript sub1;
+  input Absyn.Subscript sub2;
+  output Integer comp;
+protected
+  Absyn.Exp exp;
+algorithm
+  if referenceEq(sub1, sub2) then
+    comp := 0;
+  end if;
+
+  comp := Util.intCompare(valueConstructor(sub1), valueConstructor(sub2));
+
+  if comp <> 0 then
+    return;
+  end if;
+
+  comp := match sub1
+    case Absyn.Subscript.NOSUB() then 0;
+    case Absyn.Subscript.SUBSCRIPT()
+      algorithm
+        Absyn.Subscript.SUBSCRIPT(exp) := sub2;
+      then
+        // TODO: Implement compare for Absyn.Exp instead of converting to strings.
+        stringCompare(Dump.printExpStr(sub1.subscript), Dump.printExpStr(exp));
+  end match;
+end subscriptCompare;
+
 public function isPackageRestriction "checks if the provided parameter is a package or not"
   input Absyn.Restriction inRestriction;
   output Boolean outIsPackage;
@@ -3548,7 +3634,7 @@ public function allFieldsAreCrefs
   input list<Absyn.Exp> expLst;
   output Boolean b;
 algorithm
-  b := List.mapAllValueBool(expLst, complexIsCref, true);
+  b := List.all(expLst, complexIsCref);
 end allFieldsAreCrefs;
 
 public function complexIsCref
@@ -4184,7 +4270,7 @@ algorithm
         res := {};
         for arg1 in args1 loop
           Absyn.MODIFICATION(path=p) := arg1;
-          if List.exist(args2, function isModificationOfPath(path=p)) then
+          if List.any(args2, function isModificationOfPath(path=p)) then
             res := arg1::res;
           end if;
         end for;
@@ -5368,7 +5454,7 @@ algorithm
   res := match elementSpec
     case Absyn.ElementSpec.CLASSDEF() then isClassNamed(name, elementSpec.class_);
     case Absyn.ElementSpec.COMPONENTS()
-      then List.exist(elementSpec.components, function isComponentItemNamed(name = name));
+      then List.any(elementSpec.components, function isComponentItemNamed(name = name));
     else false;
   end match;
 end isElementSpecNamed;
@@ -6903,6 +6989,21 @@ algorithm
   Absyn.ElementItem.ELEMENTITEM(element = Absyn.Element.ELEMENT(specification =
     Absyn.ElementSpec.CLASSDEF(class_ = cls))) := item;
 end elementItemClass;
+
+function classDefStringComment
+  input Absyn.ClassDef def;
+  output String comment;
+algorithm
+  comment := match def
+    case Absyn.ClassDef.PARTS(comment = SOME(comment)) then comment;
+    case Absyn.ClassDef.DERIVED(comment = SOME(Absyn.Comment.COMMENT(comment = SOME(comment)))) then comment;
+    case Absyn.ClassDef.ENUMERATION(comment = SOME(Absyn.Comment.COMMENT(comment = SOME(comment)))) then comment;
+    case Absyn.ClassDef.OVERLOAD(comment = SOME(Absyn.Comment.COMMENT(comment = SOME(comment)))) then comment;
+    case Absyn.ClassDef.CLASS_EXTENDS(comment = SOME(comment)) then comment;
+    case Absyn.ClassDef.PDER(comment = SOME(Absyn.Comment.COMMENT(comment = SOME(comment)))) then comment;
+    else "";
+  end match;
+end classDefStringComment;
 
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

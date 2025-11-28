@@ -55,6 +55,7 @@ void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double*
                         int nIdx, int* idx, int nStates, BUTCHER_TABLEAU* tableau, double* x, double *k);
 double error_interpolation_gb(DATA_GBODE* gbData, int nIdx, int* idx, double tol);
 void extrapolation_gb(DATA_GBODE* gbData, double* nlsxExtrapolation, double time);
+void extrapolation_hermite_gb(double* nlsxExtrapolation, int nStates, double t0, double *x0, double* k0, double t1, double *x1, double* k1, double time);
 void extrapolation_gbf(DATA_GBODE* gbData, double* nlsxExtrapolation, double time);
 
 // Copy only specific values referenced by an index vector
@@ -67,8 +68,10 @@ void printIntVector_gb(enum OMC_LOG_STREAM stream, char name[], int* a, int n, d
 void printVector_gbf(enum OMC_LOG_STREAM stream, char name[], double* a, int n, double time, int nIndx, int* indx);
 void printSparseJacobianLocal(JACOBIAN* jacobian, const char* name);
 
-void debugRingBuffer(enum OMC_LOG_STREAM stream, double* x, double* k, int nStates, BUTCHER_TABLEAU* tableau, double time, double stepSize);
-void debugRingBufferSteps(enum OMC_LOG_STREAM stream, double* x, double* k, double* t, int nStates, int size);
+void debugRingBuffer_gb(enum OMC_LOG_STREAM stream, double* x, double* k, int nStates, BUTCHER_TABLEAU* tableau, double time, double stepSize);
+void debugRingBuffer_gbf(enum OMC_LOG_STREAM stream, double* x, double* k, int nStates, BUTCHER_TABLEAU* tableau, double time, double stepSize, int nIndx, int* indx);
+void debugRingBufferSteps_gb(enum OMC_LOG_STREAM stream, double* x, double* k, double* t, int nStates, int size);
+void debugRingBufferSteps_gbf(enum OMC_LOG_STREAM stream, double* x, double* k, double *t, int nStates, int size, int nIndx, int* indx);
 void dumpFastStates_gb(DATA_GBODE *gbData, modelica_boolean event, double time, int rejectedType);
 void dumpFastStates_gbf(DATA_GBODE *gbData, double time, int rejectedType);
 

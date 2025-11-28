@@ -38,8 +38,22 @@ public
     output Boolean exists;
   algorithm
     exists := NFLookupTree.Entry.isEqual(id, entry.entry) or
-        List.exist(entry.children, function idExistsInEntry(id = id));
+        List.any(entry.children, function idExistsInEntry(id = id));
   end idExistsInEntry;
+
+  function getLookupEntries
+    input Entry entry;
+    output list<NFLookupTree.Entry> entries;
+  algorithm
+    entries := entry.entry :: listAppend(getLookupEntries(c) for c in entry.children);
+  end getLookupEntries;
+
+  function entryToList
+    input Entry entry;
+    output list<Entry> entries;
+  algorithm
+    entries := entry :: listAppend(entryToList(c) for c in entry.children);
+  end entryToList;
 
 import BaseAvlTree;
 extends BaseAvlTree(redeclare type Key = String,

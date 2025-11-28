@@ -60,12 +60,14 @@ protected
   import NBEquation.{Equation, EquationPointers, EqData};
   import Jacobian = NBackendDAE.BackendDAE;
   import Matching = NBMatching;
+  import Partition = NBPartition;
   import Replacements = NBReplacements;
+  import Slice = NBSlice;
   import Sorting = NBSorting;
   import StrongComponent = NBStrongComponent;
-  import Partition = NBPartition;
+  import Tearing = NBTearing;
   import NFOperator.{MathClassification, SizeClassification};
-  import NBVariable.{VariablePointers, VarData};
+  import NBVariable.{VariablePointer, VariablePointers, VarData};
 
   // Old Backend Import (remove once coloring ins ported)
   import SymbolicJacobian;
@@ -106,8 +108,8 @@ public
         String name                                     "Context name for jacobian";
         VariablePointers knowns                         "Variable array of knowns";
         FunctionTree funcTree                           "Function call bodies";
-        list<Partition.Partition> oldPartitions, newPartitions = {} "Equation partitions before and afterwards";
-        list<Partition.Partition> oldEvents, newEvents = {}   "Event Equation partitions before and afterwards";
+        list<Partition.Partition> oldPartitions, newPartitions = {}               "Equation partitions before and afterwards";
+        list<Partition.Partition> newEvents = {}, newAlg = {}, newAlgEvents = {}  "Event/Algebraic Equation partitions afterwards";
 
       case BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(knowns = knowns), funcTree = funcTree)
         algorithm
@@ -118,7 +120,6 @@ public
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Partition.Partition.kindToString(kind)});
             then fail();
           end match;
-          oldEvents := bdae.ode_event;
 
           if Flags.isSet(Flags.JAC_DUMP) then
             print(StringUtil.headline_1("[symjacdump] Creating symbolic Jacobians:") + "\n");
@@ -129,16 +130,26 @@ public
             newPartitions := part::newPartitions;
           end for;
 
-          for part in listReverse(oldEvents) loop
+          for part in listReverse(bdae.ode_event) loop
             (part, funcTree) := partJacobian(part, funcTree, knowns, name, func);
             newEvents := part::newEvents;
           end for;
-
+          for part in listReverse(bdae.algebraic) loop
+            (part, funcTree) := partJacobian(part, funcTree, knowns, name, func);
+            newAlg := part::newAlg;
+          end for;
+          for part in listReverse(bdae.alg_event) loop
+            (part, funcTree) := partJacobian(part, funcTree, knowns, name, func);
+            newAlgEvents := part::newAlgEvents;
+          end for;
           () := match kind
             case NBPartition.Kind.ODE algorithm bdae.ode := newPartitions; then ();
             case NBPartition.Kind.DAE algorithm bdae.dae := SOME(newPartitions); then ();
+            else ();
           end match;
           bdae.ode_event := newEvents;
+          bdae.algebraic := newAlg;
+          bdae.alg_event := newAlgEvents;
           bdae.funcTree := funcTree;
       then bdae;
 
@@ -151,7 +162,8 @@ public
   end main;
 
   function nonlinear
-    input VariablePointers variables;
+    input VariablePointers seedCandidates;
+    input VariablePointers partialCandidates;
     input EquationPointers equations;
     input array<StrongComponent> comps;
     output Option<Jacobian> jacobian;
@@ -166,8 +178,8 @@ public
     (jacobian, funcTree) := func(
         name              = name,
         jacType           = JacobianType.NLS,
-        seedCandidates    = variables,
-        partialCandidates = EquationPointers.getResiduals(equations),      // these have to be updated once there are inner equations in torn partitions
+        seedCandidates    = seedCandidates,
+        partialCandidates = partialCandidates,
         equations         = equations,
         knowns            = VariablePointers.empty(0),      // remove them? are they necessary?
         strongComponents  = SOME(comps),
@@ -421,7 +433,7 @@ public
           // create row-wise sparsity pattern
           for cref in listReverse(partial_vars) loop
             // only create rows for derivatives
-            if jacType == JacobianType.NLS or BVariable.checkCref(cref, BVariable.isStateDerivative) then
+            if jacType == JacobianType.NLS or BVariable.checkCref(cref, BVariable.isStateDerivative, sourceInfo()) or BVariable.checkCref(cref, BVariable.isResidual, sourceInfo()) then
               if UnorderedMap.contains(cref, map) then
                 tmp := UnorderedSet.unique_list(UnorderedMap.getOrFail(cref, map), ComponentRef.hash, ComponentRef.isEqual);
                 rows := (cref, tmp) :: rows;
@@ -436,7 +448,7 @@ public
 
           // create column-wise sparsity pattern
           for cref in listReverse(seed_vars) loop
-            if jacType == JacobianType.NLS or BVariable.checkCref(cref, BVariable.isState) then
+            if jacType == JacobianType.NLS or BVariable.checkCref(cref, BVariable.isState, sourceInfo()) then
               tmp := UnorderedSet.unique_list(UnorderedMap.getSafe(cref, map, sourceInfo()), ComponentRef.hash, ComponentRef.isEqual);
               cols := (cref, tmp) :: cols;
               col_vars := cref :: col_vars;
@@ -533,13 +545,31 @@ public
       list<ComponentRef> deps;
       array<list<Integer>> cols, rows, colored_cols;
       array<SparsityColoringCol> cref_colored_cols;
+      function getIndices
+        input ComponentRef cref;
+        input UnorderedMap<ComponentRef, Integer> seed_indices;
+        input UnorderedMap<ComponentRef, Integer> partial_indices;
+        input array<list<Integer>> rows;
+        output list<Integer> indices;
+      algorithm
+        if UnorderedMap.contains(cref, seed_indices) then
+          indices := {UnorderedMap.getSafe(cref, seed_indices, sourceInfo())};
+        elseif UnorderedMap.contains(cref, partial_indices) then
+          indices := rows[UnorderedMap.getSafe(cref, partial_indices, sourceInfo())];
+        else
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because cref " + ComponentRef.toString(cref)
+            + " is neither a seed nor a partial candidate!"});
+          fail();
+        end if;
+      end getIndices;
     algorithm
       // create index -> cref arrays
       seeds := listArray(sparsityPattern.seed_vars);
       if jacType == JacobianType.NLS then
         partials := listArray(sparsityPattern.partial_vars);
       else
-        partials := listArray(list(cref for cref guard(BVariable.checkCref(cref, BVariable.isStateDerivative)) in sparsityPattern.partial_vars));
+        partials := listArray(list(cref for cref guard(BVariable.checkCref(cref, BVariable.isStateDerivative, sourceInfo()) or
+          BVariable.checkCref(cref, BVariable.isResidual, sourceInfo())) in sparsityPattern.partial_vars));
       end if;
 
       // create cref -> index maps
@@ -563,7 +593,7 @@ public
       end for;
       for tpl in sparsityPattern.row_wise_pattern loop
         (idx_cref, deps) := tpl;
-        rows[UnorderedMap.getSafe(idx_cref, partial_indices, sourceInfo())] := list(UnorderedMap.getSafe(dep, seed_indices, sourceInfo()) for dep in deps);
+        rows[UnorderedMap.getSafe(idx_cref, partial_indices, sourceInfo())] := listAppend(getIndices(dep, seed_indices,partial_indices, rows) for dep in deps);
       end for;
 
       // call C function (old backend - ToDo: port to new backend!)
@@ -674,30 +704,94 @@ protected
     input String name                                     "Context name for jacobian";
     input Module.jacobianInterface func;
   protected
+    JacobianType jacType;
+    VariablePointers unknowns;
     list<Pointer<Variable>> derivative_vars, state_vars;
     VariablePointers seedCandidates, partialCandidates;
     Option<Jacobian> jacobian                             "Resulting jacobian";
     Partition.Kind kind = Partition.Partition.getKind(part);
+    Boolean updated;
   algorithm
-    partialCandidates := part.unknowns;
-    derivative_vars := list(var for var guard(BVariable.isStateDerivative(var)) in VariablePointers.toList(part.unknowns));
-    state_vars := list(Util.getOption(BVariable.getVarState(var)) for var in derivative_vars);
-    seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
+    // create algebraic loop jacobians
+    part.strongComponents := match part.strongComponents
+      local
+        array<StrongComponent> comps;
+        StrongComponent tmp;
+      case SOME(comps) algorithm
+        for i in 1:arrayLength(comps) loop
+          (tmp, funcTree, updated) := compJacobian(comps[i], funcTree, kind);
+          if updated then arrayUpdate(comps, i, tmp); end if;
+        end for;
+      then SOME(comps);
+      else part.strongComponents;
+    end match;
 
-    (jacobian, funcTree) := func(name, JacobianType.ODE, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcTree, kind ==  NBPartition.Kind.INI);
-    part.association := Partition.Association.CONTINUOUS(kind, jacobian);
-    if Flags.isSet(Flags.JAC_DUMP) then
-      print(Partition.Partition.toString(part, 2));
+    // create the simulation jacobian
+    if Partition.Partition.isODEorDAE(part) then
+      partialCandidates := part.unknowns;
+      unknowns  := if Partition.Partition.getKind(part) == NBPartition.Kind.DAE then Util.getOption(part.daeUnknowns) else part.unknowns;
+      jacType   := if Partition.Partition.getKind(part) == NBPartition.Kind.DAE then JacobianType.DAE else JacobianType.ODE;
+
+      derivative_vars := list(var for var guard(BVariable.isStateDerivative(var)) in VariablePointers.toList(unknowns));
+      state_vars := list(Util.getOption(BVariable.getVarState(var)) for var in derivative_vars);
+      seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
+
+      (jacobian, funcTree) := func(name, jacType, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcTree, kind ==  NBPartition.Kind.INI);
+      part.association := Partition.Association.CONTINUOUS(kind, jacobian);
+      if Flags.isSet(Flags.JAC_DUMP) then
+        print(Partition.Partition.toString(part, 2));
+      end if;
     end if;
   end partJacobian;
+
+  function compJacobian
+    input output StrongComponent comp;
+    input output FunctionTree funcTree;
+    input Partition.Kind kind;
+    output Boolean updated;
+  protected
+    Tearing strict;
+    list<StrongComponent> residual_comps;
+    list<VariablePointer> seed_candidates, residual_vars, inner_vars;
+    Option<Jacobian> jacobian;
+    constant Boolean init = kind == NBPartition.Kind.INI;
+  algorithm
+    (comp, updated) := match comp
+      case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
+        // create residual components
+        residual_comps        := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
+
+        // create seed and partial candidates
+        seed_candidates := list(Slice.getT(var) for var in strict.iteration_vars);
+        residual_vars   := list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in strict.residual_eqns);
+        inner_vars      := listAppend(list(var for var guard(BVariable.isContinuous(var, init)) in StrongComponent.getVariables(comp)) for comp in strict.innerEquations);
+
+        // update jacobian to take slices (just to have correct inner variables and such)
+        (jacobian, funcTree) := nonlinear(
+          seedCandidates    = VariablePointers.fromList(seed_candidates),
+          partialCandidates = VariablePointers.fromList(listAppend(residual_vars, inner_vars)),
+          equations         = EquationPointers.fromList(list(Slice.getT(eqn) for eqn in strict.residual_eqns)),
+          comps             = Array.appendList(strict.innerEquations, residual_comps),
+          funcTree          = funcTree,
+          name              = Partition.Partition.kindToString(kind) + (if comp.linear then "_LS_JAC_" else "_NLS_JAC_") + intString(comp.idx),
+          init              = kind == NBPartition.Kind.INI);
+        strict.jac := jacobian;
+        comp.strict := strict;
+
+        if Flags.isSet(Flags.JAC_DUMP) then
+          print(StrongComponent.toString(comp) + "\n");
+        end if;
+      then (comp, true);
+      else (comp, false);
+    end match;
+  end compJacobian;
 
   function jacobianSymbolic extends Module.jacobianInterface;
   protected
     list<StrongComponent> comps, diffed_comps;
     Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
     Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
-    Pointer<UnorderedMap<ComponentRef,ComponentRef>> diff_map = Pointer.create(UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual));
-    Option<UnorderedMap<ComponentRef,ComponentRef>> optHT;
+    UnorderedMap<ComponentRef,ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
     Differentiate.DifferentiationArguments diffArguments;
     Pointer<Integer> idx = Pointer.create(0);
 
@@ -717,7 +811,7 @@ protected
     end if;
 
     // create seed vars
-    VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, ht = diff_map, makeVar = BVariable.makeSeedVar, init = init));
+    VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map, makeVar = BVariable.makeSeedVar, init = init));
 
     // create pDer vars (also filters out discrete vars)
     (res_vars, tmp_vars) := List.splitOnTrue(VariablePointers.toList(partialCandidates), func);
@@ -730,13 +824,11 @@ protected
     for v in tmp_vars loop makeVarTraverse(v, name, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), init = init); end for;
     tmp_vars := Pointer.access(pDer_vars_ptr);
 
-    optHT := SOME(Pointer.access(diff_map));
-
     // Build differentiation argument structure
     diffArguments := Differentiate.DIFFERENTIATION_ARGUMENTS(
-      diffCref        = ComponentRef.EMPTY(),   // no explicit cref necessary, rules are set by HT
+      diffCref        = ComponentRef.EMPTY(),   // no explicit cref necessary, rules are set by diff map
       new_vars        = {},
-      diff_map        = optHT,                  // seed and temporary cref hashtable
+      diff_map        = SOME(diff_map),         // seed and temporary cref map
       diffType        = NBDifferentiate.DifferentiationType.JACOBIAN,
       funcTree        = funcTree,
       scalarized      = seedCandidates.scalarized
@@ -824,14 +916,14 @@ protected
   end jacobianNone;
 
   function getTmpFilterFunction
-    " - ODE/DAE filter by state derivative / algebraic
-      - LS/NLS filter by residual / inner"
+    " - ODE filter by state derivative / algebraic
+      - LS/NLS/DAE filter by residual / inner"
     input JacobianType jacType;
     output BVariable.checkVar func;
   algorithm
     func := match jacType
       case JacobianType.ODE then BVariable.isStateDerivative;
-      case JacobianType.DAE then BVariable.isStateDerivative;
+      case JacobianType.DAE then BVariable.isResidual;
       case JacobianType.LS  then BVariable.isResidual;
       case JacobianType.NLS then BVariable.isResidual;
       else algorithm
@@ -844,27 +936,49 @@ protected
     input Pointer<Variable> var_ptr;
     input String name;
     input Pointer<list<Pointer<Variable>>> vars_ptr;
-    input Pointer<UnorderedMap<ComponentRef,ComponentRef>> ht;
+    input UnorderedMap<ComponentRef,ComponentRef> map;
     input Func makeVar;
     input Boolean init;
 
     partial function Func
       input output ComponentRef cref;
       input String name;
-      output Pointer<Variable> new_var_ptr;
+      output Pointer<Variable> diff_ptr;
     end Func;
   protected
     Variable var = Pointer.access(var_ptr);
-    ComponentRef cref;
-    Pointer<Variable> new_var_ptr;
+    ComponentRef diff, parent_name, diff_parent_name;
+    Pointer<Variable> diff_ptr, parent, diff_parent;
   algorithm
     // only create seed or pDer var if it is continuous
     if BVariable.isContinuous(var_ptr, init) then
-      (cref, new_var_ptr) := makeVar(var.name, name);
+      // make the new differentiated variable itself
+      (diff, diff_ptr) := makeVar(var.name, name);
       // add $<new>.x variable pointer to the variables
-      Pointer.update(vars_ptr, new_var_ptr :: Pointer.access(vars_ptr));
-      // add x -> $<new>.x to the hashTable for later lookup
-      UnorderedMap.add(var.name, cref, Pointer.access(ht));
+      Pointer.update(vars_ptr, diff_ptr :: Pointer.access(vars_ptr));
+      // add x -> $<new>.x to the map for later lookup
+      UnorderedMap.add(var.name, diff, map);
+
+      // differentiate parent and add to map
+      _ := match BVariable.getParent(var_ptr)
+        case SOME(parent) algorithm
+          parent_name := BVariable.getVarName(parent);
+          diff_parent := match UnorderedMap.get(parent_name, map)
+            case SOME(diff_parent_name) then BVariable.getVarPointer(diff_parent_name, sourceInfo());
+            else algorithm
+              (diff_parent_name, _) := makeVar(parent_name, name);
+              UnorderedMap.add(parent_name, diff_parent_name, map);
+            then BVariable.getVarPointer(diff_parent_name, sourceInfo());
+          end match;
+
+          // add the child to the list of children
+          BVariable.addRecordChild(diff_parent, diff_ptr);
+          // set the parent of the child
+          diff_ptr := BVariable.setParent(diff_ptr, diff_parent);
+        then ();
+
+        else ();
+      end match;
     end if;
   end makeVarTraverse;
 

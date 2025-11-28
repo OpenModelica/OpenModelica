@@ -35,7 +35,7 @@
 #include "../simulation_data.h"
 #include "../simulation/solver/solver_main.h"
 #include <string.h>
-#include <Ipopt/IpStdCInterface.h>
+#include <IpStdCInterface.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>

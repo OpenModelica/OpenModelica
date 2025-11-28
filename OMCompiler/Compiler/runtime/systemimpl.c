@@ -522,11 +522,8 @@ void* SystemImpl__trimChar(const char* str, char char_to_be_trimmed)
     while(str[end_pos] == char_to_be_trimmed) {
       end_pos--;
     }
-    res = (char*)omc_alloc_interface.malloc_atomic(end_pos - start_pos +2);
-    strncpy(res,&str[start_pos],end_pos - start_pos+1);
-    res[end_pos - start_pos+1] = '\0';
-    rmlRes = (void*) mmc_mk_scon(res);
-    return rmlRes;
+
+    return mmc_mk_scon_n(str + start_pos, end_pos - start_pos + 1);
   } else {
     return mmc_mk_scon("");
   }
@@ -1715,7 +1712,7 @@ static int SystemImpl__getVariableValue(double timeStamp, void* timeValues, void
 
   if(valueFound == 0){
     // value could not be found in the dataset, what do we do?
-    printf("\n WARNING: timestamp(%f) outside simulation timeline \n", timeStamp);
+    printf("\n WARNING: timestamp(%f) outside simulation timeline\n", timeStamp);
     return 1;
   }
   return 0;
@@ -2713,7 +2710,7 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
       const char **flagName;
       const char **flagDesc;
       if (sphinx) {
-        cur += snprintf(cur, CHECK_NONNEGATIVE_BUFFER(), ":ref:`-%s=value <simflag-%s>` *or* -%s value \n%s\n", FLAG_NAME[i], FLAG_NAME[i], FLAG_NAME[i], desc[i]);
+        cur += snprintf(cur, CHECK_NONNEGATIVE_BUFFER(), ":ref:`-%s=value <simflag-%s>` *or* -%s value\n%s\n", FLAG_NAME[i], FLAG_NAME[i], FLAG_NAME[i], desc[i]);
       } else {
         cur += snprintf(cur, CHECK_NONNEGATIVE_BUFFER(), "<-%s=value> or <-%s value>\n%s\n", FLAG_NAME[i], FLAG_NAME[i], desc[i]);
       }

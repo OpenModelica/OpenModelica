@@ -84,6 +84,8 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"testDID_18spd.c\" />
 //       <File name=\"testDID_init_fmu.c\" />
 //       <File name=\"testDID_FMU.c\" />
+//       <File name=\"fmi-export/fmu2_model_interface.c\" />
+//       <File name=\"fmi-export/fmu_read_flags.c\" />
 //       <File name=\"./gc/memory_pool.c\" />
 //       <File name=\"./gc/omc_gc.c\" />
 //       <File name=\"./util/base_array.c\" />
@@ -113,6 +115,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"./util/utility.c\" />
 //       <File name=\"./util/varinfo.c\" />
 //       <File name=\"./math-support/pivot.c\" />
+//       <File name=\"./simulation/arrayIndex.c\" />
 //       <File name=\"./simulation/jacobian_util.c\" />
 //       <File name=\"./simulation/omc_simulation_util.c\" />
 //       <File name=\"./simulation/options.c\" />

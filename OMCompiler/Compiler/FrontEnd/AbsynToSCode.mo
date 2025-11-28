@@ -59,6 +59,7 @@ import SCodeUtil;
 import System;
 import Util;
 import MetaModelica.Dangerous;
+import Dump;
 
 // Constant expression for AssertionLevel.error.
 protected constant Absyn.Exp ASSERTION_LEVEL_ERROR = Absyn.CREF(Absyn.CREF_FULLYQUALIFIED(
@@ -325,8 +326,8 @@ algorithm
   outBoolean := match (inClass)
     local
       list<Absyn.ClassPart> parts;
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts))) then List.exist(parts,AbsynUtil.isExternalPart);
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))) then List.exist(parts,AbsynUtil.isExternalPart);
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts))) then List.any(parts,AbsynUtil.isExternalPart);
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))) then List.any(parts,AbsynUtil.isExternalPart);
     else false;
   end match;
 end containsExternalFuncDecl;
@@ -1724,6 +1725,8 @@ protected
   SCode.Mod smod;
   SCode.Element elem;
   SCode.SubMod sub;
+  Absyn.ComponentRef cr1, cr2;
+  String name, s, s1, s2;
 algorithm
   for arg in args loop
     subMods := match arg
@@ -1752,7 +1755,16 @@ algorithm
               elem));
         then
           sub :: subMods;
+
       case Absyn.ELEMENTARGCOMMENT() then subMods;
+
+      case Absyn.INHERITANCEBREAK(Absyn.EQ_CONNECT(connector1 = Absyn.ComponentRef.CREF_IDENT(name = "break"),
+                                                   connector2 = Absyn.ComponentRef.CREF_IDENT(name = name)))
+        then SCode.SubMod.NAMEMOD(name, SCode.Mod.BREAK_COMPONENT(arg.info)) :: subMods;
+
+      case Absyn.INHERITANCEBREAK(Absyn.EQ_CONNECT(connector1 = cr1, connector2 = cr2))
+        then SCode.SubMod.NAMEMOD("", SCode.Mod.BREAK_CONNECT(cr1, cr2, arg.info)) :: subMods;
+
     end match;
   end for;
 

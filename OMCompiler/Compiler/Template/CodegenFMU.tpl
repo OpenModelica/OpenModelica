@@ -64,7 +64,7 @@ match simCode
 case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let guid = getUUIDStr()
   let target  = simulationCodeTarget()
-  let fileNamePrefixHash = '<%substring(intString(stringHashDjb2(fileNamePrefix)), 1, 3)%>'
+  let fileNamePrefixHash = Util.hashFileNamePrefix(fileNamePrefix)
   let fileNamePrefixTmpDir = '<%fileNamePrefixHash%>.fmutmp/sources/<%fileNamePrefix%>'
   let()= textFile(simulationLiteralsFile(fileNamePrefix, literals), '<%fileNamePrefixTmpDir%>_literals.h')
   let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls, sc.generic_loop_calls), '<%fileNamePrefixTmpDir%>_functions.h')
@@ -76,6 +76,7 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let _ = generateSimulationFiles(simCode,guid,fileNamePrefixTmpDir,FMUVersion)
 
   let()= textFile(simulationInitFunction(simCode,guid), '<%fileNamePrefixTmpDir%>_init_fmu.c')
+  let()= textFile(fmumodel_identifierHeaderFile(simCode,guid,FMUVersion,FMUType), '<%fileNamePrefixTmpDir%>_FMU.h')
   let()= textFile(fmumodel_identifierFile(simCode,guid,FMUVersion,FMUType), '<%fileNamePrefixTmpDir%>_FMU.c')
 
   /* Doesn't seem to work properly
@@ -232,27 +233,42 @@ case SIMCODE(__) then
   >>
 end VendorAnnotations;
 
-template fmumodel_identifierFile(SimCode simCode, String guid, String FMUVersion, String FMUType)
- "Generates code for ModelDescription file for FMU target."
+
+template fmumodel_identifierHeaderFile(SimCode simCode, String guid, String FMUVersion, String FMUType)
+ "Generates code for model defines."
 ::=
 match simCode
 case SIMCODE(__) then
   <<
+  #ifndef <%modelNamePrefix(simCode)%>_FMU_H
+  #define <%modelNamePrefix(simCode)%>_FMU_H
+
+  #include "simulation_data.h"
+
   // define class name and unique id
   #define MODEL_IDENTIFIER <%modelNamePrefix(simCode)%>
   #define MODEL_GUID "{<%guid%>}"
 
-  // include fmu header files, typedefs and macros
-  #include <stdio.h>
-  #include <string.h>
-  #include <assert.h>
-  #include "openmodelica.h"
-  #include "openmodelica_func.h"
-  #include "simulation_data.h"
-  #include "util/omc_error.h"
-  #include "<%fileNamePrefix%>_functions.h"
-  #include "simulation/solver/initialization/initialization.h"
-  #include "simulation/solver/events.h"
+  <%ModelDefineData(simCode, modelInfo)%>
+
+  #ifdef __cplusplus
+  extern "C" {
+  #endif
+
+  extern void <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>(DATA *data, threadData_t *threadData);
+  <%if isFMIVersion20(FMUVersion) then
+    <<
+    #define fmu2_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
+    #include "fmi-export/fmu2_model_interface.h"
+    #include "fmi-export/fmu_read_flags.h"
+    >>
+  else
+    <<
+    #define fmu1_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
+    #include "fmi-export/fmu1_model_interface.c.inc"
+    >>
+  %>
+
   <%if isFMIVersion20(FMUVersion) then
   <<
   #define FMI2_FUNCTION_PREFIX <%modelNamePrefix(simCode)%>_
@@ -265,10 +281,6 @@ case SIMCODE(__) then
   #include "fmi2Functions.h"
   #include "fmi-export/fmu1_model_interface.h"
   >>%>
-
-  #ifdef __cplusplus
-  extern "C" {
-  #endif
 
   void setStartValues(ModelInstance *comp);
   void setDefaultStartValues(ModelInstance *comp);
@@ -305,26 +317,37 @@ case SIMCODE(__) then
   >>
   %>
 
-  <%ModelDefineData(simCode, modelInfo)%>
+  #ifdef __cplusplus
+  }
+  #endif
 
-  // implementation of the Model Exchange functions
-  <%if isFMIVersion20(FMUVersion) then
-    <<
-    extern void <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>(DATA *data, threadData_t *threadData);
-    #define fmu2_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
-    #include "fmi-export/fmu2_model_interface.c.inc"
-    #include "fmi-export/fmu_read_flags.c.inc"
-    >>
-  else
-    <<
-    extern void <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>(DATA *data, threadData_t *threadData);
-    #define fmu1_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
-    #include "fmi-export/fmu1_model_interface.c.inc"
-    >>
-  %>
+  #endif /* <%modelNamePrefix(simCode)%>_FMU_H */
+  >>
+end fmumodel_identifierHeaderFile;
+
+template fmumodel_identifierFile(SimCode simCode, String guid, String FMUVersion, String FMUType)
+ "Generates code for ModelDescription file for FMU target."
+::=
+match simCode
+case SIMCODE(__) then
+  <<
+  #include "<%modelNamePrefix(simCode)%>_FMU.h"
+
+  // include fmu header files, typedefs and macros
+  #include <stdio.h>
+  #include <string.h>
+  #include <assert.h>
+  #include "openmodelica.h"
+  #include "openmodelica_func.h"
+  #include "util/omc_error.h"
+  #include "<%fileNamePrefix%>_functions.h"
+
+  #include "simulation/solver/events.h"
 
   <%setDefaultStartValues(modelInfo)%>
   <%setStartValues(modelInfo)%>
+
+  // implementation of the Model Exchange functions
   <%if isFMIVersion20(FMUVersion) then
   <<
   <%eventUpdateFunction2(simCode)%>
@@ -356,10 +379,6 @@ case SIMCODE(__) then
     <%setExternalFunction(modelInfo)%>
   >>
   %>
-
-  #ifdef __cplusplus
-  }
-  #endif
 
   >>
 end fmumodel_identifierFile;
@@ -488,39 +507,61 @@ end initializeFunction;
 
 template initVals(SimVar var, String arrayName) ::=
   match var
-    case SIMVAR(__) then
-    if stringEq(crefStr(name),"$dummy") then
-      ''
-    else if stringEq(crefStr(name),"der($dummy)") then
-      ''
-    else
-    let str = 'comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start'
-      '<%str%> =  comp->fmuData->localData[0]-><%arrayName%>[<%index%>];'
+    case var as SIMVAR(type_=type_) then
+      if stringEq(crefStr(name),"$dummy") then
+        ''
+      else if stringEq(crefStr(name),"der($dummy)") then
+        ''
+      else
+        match type_
+          case T_REAL() then
+            <<
+            put_real_element(comp->fmuData->localData[0]-><%arrayName%>[<%var.index%>], 0, &comp->fmuData->modelData-><%arrayName%>Data[<%var.index%>].attribute.start);
+            >>
+          else
+            <<
+            comp->fmuData->modelData-><%arrayName%>Data[<%var.index%>].attribute.start = comp->fmuData->localData[0]-><%arrayName%>[<%var.index%>];
+            >>
 end initVals;
 
 template initParams(SimVar var, String arrayName) ::=
   match var
-    case SIMVAR(__) then
-    let str = 'comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start'
-      '<%str%> = comp->fmuData->simulationInfo-><%arrayName%>[<%index%>];'
+    case SIMVAR(index=index, type_=T_REAL(__)) then
+      <<
+      put_real_element(comp->fmuData->simulationInfo-><%arrayName%>[<%index%>], 0, &comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
+      >>
+    case SIMVAR(index=index) then
+      <<
+      comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start = comp->fmuData->simulationInfo-><%arrayName%>[<%index%>];
+      >>
 end initParams;
 
 template initValsDefault(SimVar var, String arrayName) ::=
   match var
-    case SIMVAR(index=index, type_=type_) then
-    let str = 'comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start'
-    '<%str%> = <%initValDefault(var)%>;'
+    case SIMVAR(index=index, type_=T_REAL()) then
+      <<
+      put_real_element(<%initValDefault(var)%>, 0, &comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
+      >>
+    case SIMVAR(index=index) then
+      <<
+      comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start = <%initValDefault(var)%>;
+      >>
 end initValsDefault;
 
 template initParamsDefault(SimVar var, String arrayName) ::=
   match var
-    case SIMVAR(__) then
-    let str = 'comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start'
-    match initialValue
-      case SOME(v as SCONST(__)) then
-      '<%str%> = mmc_mk_scon_persist(<%initVal(v)%>); /* TODO: these are not freed currently, see #6161 */'
-      else
-      '<%str%> = <%initValDefault(var)%>;'
+    case SIMVAR(index=index, type_=T_REAL()) then
+      <<
+      put_real_element(<%initValDefault(var)%>, 0, &comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start);
+      >>
+    case SIMVAR(index=index, type_=T_STRING(), initialValue=SOME(v as SCONST(__))) then
+      <<
+      comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start = mmc_mk_scon_persist(<%initVal(v)%>); /* TODO: these are not freed currently, see #6161 */
+      >>
+    case SIMVAR(index=index) then
+      <<
+      comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start = <%initValDefault(var)%>;
+      >>
 end initParamsDefault;
 
 template initValDefault(SimVar var) ::=
@@ -808,7 +849,7 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numAlgAliasVars=numAlgAliasVars,
   fmi2Status setReal(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Real value) {
     // set start value attribute for all variable that has start value, till initialization mode
     if (vr < <%ixFirstParam%> && (comp->state == model_state_instantiated || comp->state == model_state_initialization_mode)) {
-      comp->fmuData->modelData->realVarsData[vr].attribute.start = value;
+      put_real_element(value, 0, &comp->fmuData->modelData->realVarsData[vr].attribute.start);
     }
     if (vr < <%ixFirstParam%>) {
       comp->fmuData->localData[0]->realVars[vr] = value;
@@ -1252,7 +1293,7 @@ end mapInitialUnknownsIndependentCrefs;
 template getPlatformString2(String modelNamePrefix, String platform, String fileNamePrefix, String fmuTargetName, String dirExtra, String libsPos1, String libsPos2, String omhome, String FMUVersion)
  "returns compilation commands for the platform. "
 ::=
-let fmudirname = '<%substring(intString(stringHashDjb2(fileNamePrefix)), 1, 3)%>.fmutmp'
+let fmudirname = '<%Util.hashFileNamePrefix(fileNamePrefix)%>.fmutmp'
 match platform
   case "win32"
   case "win64" then
@@ -1349,7 +1390,7 @@ template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<Str
       let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
       let libsPos1 = if not dirExtra then libsStr //else ""
       let libsPos2 = if dirExtra then libsStr // else ""
-      let fmudirname = '<%substring(intString(stringHashDjb2(fileNamePrefix)), 1, 3)%>.fmutmp'
+      let fmudirname = '<%Util.hashFileNamePrefix(fileNamePrefix)%>.fmutmp'
       let compilecmds = getPlatformString2(modelNamePrefix(simCode), makefileParams.platform, fileNamePrefix, fmuTargetName, dirExtra, libsPos1, libsPos2, makefileParams.omhome, FMUVersion)
       let mkdir = match makefileParams.platform case "win32" case "win64" then '"mkdir.exe"' else 'mkdir'
       <<
@@ -3202,6 +3243,7 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
   then
   <<
   #include "simulation_data.h"
+  #include "util/real_array.h"
 
   OMC_DISABLE_OPT<%/* This function is very simple and doesn't need to be optimized. GCC/clang spend way too much time looking at it. */%>
 
@@ -3230,6 +3272,7 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
     <%vars.realOptimizeFinalConstraintsVars
                            |> var => ScalarVariableFMU(var,"realVarsData") ;separator="\n";empty%>
     <%System.tmpTickResetIndex(0,2)%>
+    /* AHEU 1 */
     <%vars.paramVars       |> var => ScalarVariableFMU(var,"realParameterData") ;separator="\n";empty%>
     <%System.tmpTickResetIndex(0,2)%>
     <%vars.intAlgVars      |> var => ScalarVariableFMU(var,"integerVarsData") ;separator="\n";empty%>
@@ -3244,18 +3287,6 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
     <%System.tmpTickResetIndex(0,2)%>
     <%vars.stringParamVars |> var => ScalarVariableFMU(var,"stringParameterData") ;separator="\n";empty%>
     <%System.tmpTickResetIndex(0,2)%>
-    <%
-    /* Skip these; shouldn't be needed to look at in the FMU
-    <%vars.aliasVars       |> var => ScalarVariableFMU(var,"realAlias") ;separator="\n";empty%>
-    <%System.tmpTickResetIndex(0,2)%>
-    <%vars.intAliasVars    |> var => ScalarVariableFMU(var,"integerAlias") ;separator="\n";empty%>
-    <%System.tmpTickResetIndex(0,2)%>
-    <%vars.boolAliasVars   |> var => ScalarVariableFMU(var,"booleanAlias") ;separator="\n";empty%>
-    <%System.tmpTickResetIndex(0,2)%>
-    <%vars.stringAliasVars |> var => ScalarVariableFMU(var,"stringAlias") ;separator="\n";empty%>
-    <%System.tmpTickResetIndex(0,2)%>
-    */
-    %>
   }
   >>
 end simulationInitFunction;
@@ -3313,13 +3344,6 @@ template ScalarVariableTypeFMU(String attrstr, String unit, String displayUnit, 
  "Generates code for ScalarVariable Type file for FMU target."
 ::=
   match type_
-    case T_INTEGER(__) then
-      <<
-      <%attrstr%>.min = <%optInitValFMU(minValue,"-LONG_MAX")%>;
-      <%attrstr%>.max = <%optInitValFMU(maxValue,"LONG_MAX")%>;
-      <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
-      <%attrstr%>.start = <%optInitValFMU(startValue,"0")%>;
-      >>
     case T_REAL(__) then
       <<
       <%attrstr%>.unit = "<%Util.escapeModelicaStringToCString(unit)%>";
@@ -3329,7 +3353,14 @@ template ScalarVariableTypeFMU(String attrstr, String unit, String displayUnit, 
       <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
       <%attrstr%>.useNominal = <%if nominalValue then 1 else 0%>;
       <%attrstr%>.nominal = <%optInitValFMU(nominalValue,"1.0")%>;
-      <%attrstr%>.start = <%optInitValFMU(startValue,"0.0")%>;
+      put_real_element(<%optInitValFMU(startValue,"0.0")%>, 0, &<%attrstr%>.start);
+      >>
+    case T_INTEGER(__) then
+      <<
+      <%attrstr%>.min = <%optInitValFMU(minValue,"-LONG_MAX")%>;
+      <%attrstr%>.max = <%optInitValFMU(maxValue,"LONG_MAX")%>;
+      <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
+      <%attrstr%>.start = <%optInitValFMU(startValue,"0")%>;
       >>
     case T_BOOL(__) then
       <<

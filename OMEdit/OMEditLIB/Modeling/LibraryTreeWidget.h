@@ -58,8 +58,7 @@ public:
   enum LibraryType {
     Modelica,         /* Used to represent Modelica models. */
     Text,             /* Used to represent text based files. */
-    OMS,              /* Used to represent OMSimulator models. */
-    CRML              /* Used to represent CRML models. */
+    OMS               /* Used to represent OMSimulator models. */
   };
   enum Access {
     hide,
@@ -77,7 +76,7 @@ public:
     SaveFolderStructure
   };
   LibraryTreeItem(QAbstractItemModel *pParent);
-  LibraryTreeItem(LibraryType type, QString text, QString nameStructure, QString fileName, bool isSaved, LibraryTreeItem *pParent = 0);
+  LibraryTreeItem(LibraryType type, QString text, QString nameStructure, QString fileName, bool isSaved, bool isInternal, LibraryTreeItem *pParent = 0);
   ~LibraryTreeItem();
   bool isRootItem() const {return mIsRootItem;}
   int childrenSize() const {return mChildren.size();}
@@ -87,7 +86,6 @@ public:
   void setLibraryType(LibraryType libraryType) {mLibraryType = libraryType;}
   bool isModelica() const {return mLibraryType == LibraryTreeItem::Modelica;}
   bool isText() const {return mLibraryType == LibraryTreeItem::Text;}
-  bool isCRML() const {return mLibraryType == LibraryTreeItem::CRML;}
   bool isSSP() const {return mLibraryType == LibraryTreeItem::OMS;}
   void setSystemLibrary(bool systemLibrary) {mSystemLibrary = systemLibrary;}
   bool isSystemLibrary() {return mSystemLibrary;}
@@ -107,6 +105,7 @@ public:
   const QString& getDateModified() const;
   const QString& getRevisionId() const;
   bool isCRMLFile() const;
+  bool isModelicaFile() const {return mFileName.endsWith(".mo");}
   bool isMOSFile() const {return mFileName.endsWith(".mos");}
   bool isFilePathValid();
   void setReadOnly(bool readOnly) {mReadOnly = readOnly;}
@@ -118,7 +117,7 @@ public:
   StringHandler::ModelicaClasses getRestriction() const {return StringHandler::getModelicaClassType(mClassInformation.restriction);}
   bool isConnector() {return (getRestriction() == StringHandler::ExpandableConnector || getRestriction() == StringHandler::Connector);}
   bool isPartial() {return mClassInformation.partialPrefix;}
-  Access getAccess();
+  Access getAccess() const;
   void setSaveContentsType(LibraryTreeItem::SaveContentsType saveContentsType) {mSaveContentsType = saveContentsType;}
   SaveContentsType getSaveContentsType() {return mSaveContentsType;}
   bool isSaveInOneFile() const {return mSaveContentsType == LibraryTreeItem::SaveInOneFile;}
@@ -149,7 +148,6 @@ public:
   bool isTableComponent() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_table));}
   void setSystemType(oms_system_enu_t type) {mSystemType = type;}
   oms_system_enu_t getSystemType() {return mSystemType;}
-  bool isTLMSystem() const {return mSystemType == oms_system_tlm;}
   bool isWCSystem() const {return mSystemType == oms_system_wc;}
   bool isSCSystem() const {return mSystemType == oms_system_sc;}
   void setComponentType(oms_component_enu_t type) {mComponentType = type;}
@@ -159,12 +157,8 @@ public:
   oms_connector_t* getOMSConnector() const {return mpOMSConnector;}
   void setOMSBusConnector(oms_busconnector_t *pOMSBusConnector) {mpOMSBusConnector = pOMSBusConnector;}
   oms_busconnector_t* getOMSBusConnector() const {return mpOMSBusConnector;}
-  void setOMSTLMBusConnector(oms_tlmbusconnector_t *pOMSTLMBusConnector) {mpOMSTLMBusConnector = pOMSTLMBusConnector;}
-  oms_tlmbusconnector_t* getOMSTLMBusConnector() const {return mpOMSTLMBusConnector;}
   void setFMUInfo(const oms_fmu_info_t *pFMUInfo) {mpFMUInfo = pFMUInfo;}
   const oms_fmu_info_t* getFMUInfo() const {return mpFMUInfo;}
-  void setExternalTLMModelInfo(const oms_external_tlm_model_info_t *pExternalTLMModelInfo) { mpExternalTLMModelInfo = pExternalTLMModelInfo;}
-  const oms_external_tlm_model_info_t* getExternalTLMModelInfo() const {return mpExternalTLMModelInfo;}
   void setSubModelPath(QString subModelPath) {mSubModelPath = subModelPath;}
   QString getSubModelPath() const {return mSubModelPath;}
   QString getTooltip() const;
@@ -180,6 +174,7 @@ public:
   LibraryTreeItem *getDirectComponentsClass(const QString &name);
   LibraryTreeItem *getComponentsClass(const QString &name);
   void tryToComplete(QList<CompleterItem> &completionClasses, QList<CompleterItem> &completionComponents, const QString &lastPart);
+  void removeChildren();
   void removeChild(LibraryTreeItem *pLibraryTreeItem);
   QVariant data(int column, int role = Qt::DisplayRole) const;
   int row() const;
@@ -228,9 +223,7 @@ private:
   oms_component_enu_t mComponentType = oms_component_none;
   oms_connector_t *mpOMSConnector = 0;
   oms_busconnector_t *mpOMSBusConnector = 0;
-  oms_tlmbusconnector_t *mpOMSTLMBusConnector = 0;
   const oms_fmu_info_t *mpFMUInfo = 0;
-  const oms_external_tlm_model_info_t *mpExternalTLMModelInfo = 0;
   QString mSubModelPath;
 signals:
   void iconUpdated();
@@ -275,19 +268,17 @@ public:
   void addModelicaLibraries(const QVector<QPair<QString, QString> > libraries = QVector<QPair<QString, QString> >());
   LibraryTreeItem* createLibraryTreeItem(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
                                          bool isSystemLibrary = false, bool load = false, int row = -1, bool loadingMOL = false);
-  void createLibraryTreeItems(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem);
-  LibraryTreeItem* createLibraryTreeItem(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved,
+  void createLibraryTreeItems(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
+  LibraryTreeItem* createLibraryTreeItem(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved, bool isInternal,
                                          LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
-  LibraryTreeItem* createLibraryTreeItem(QString name, QString nameStructursre, QString path, bool isSaved,
-                                         LibraryTreeItem *pParentLibraryTreeItem, oms_element_t *pOMSElement = 0,
-                                         oms_connector_t *pOMSConnector = 0, oms_busconnector_t *pOMSBusConnector = 0,
-                                         oms_tlmbusconnector_t *pOMSTLMBusConnector = 0, int row = -1);
+  LibraryTreeItem* createLibraryTreeItem(QString name, QString nameStructursre, QString path, bool isSaved, LibraryTreeItem *pParentLibraryTreeItem,
+                                         oms_element_t *pOMSElement = 0, oms_connector_t *pOMSConnector = 0, oms_busconnector_t *pOMSBusConnector = 0, int row = -1);
   void updateLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   void updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName);
   void readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* getContainingFileParentLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
-  LibraryTreeItem* getTopLevelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  static LibraryTreeItem* getTopLevelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeItem);
   void loadDependentLibraries(QStringList libraries);
   LibraryTreeItem* getLibraryTreeItemFromFile(QString fileName, int lineNumber);
@@ -301,7 +292,7 @@ public:
   void expandLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem, QStringList expandedLibraryTreeItemsList);
   void reLoadOMSimulatorModel(const QString &modelName, const QString &editedCref, const QString &snapShot, const QString &oldEditedCref, const QString &newEditedCref);
   bool unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool doDeleteClass);
-  bool removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  void removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool deleteFile);
   bool deleteTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   void moveClassUpDown(LibraryTreeItem *pLibraryTreeItem, bool up);
   void moveClassTopBottom(LibraryTreeItem *pLibraryTreeItem, bool top);
@@ -310,33 +301,26 @@ public:
   QString getUniqueTopLevelItemName(QString name, int number = 1);
   void emitDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight) {emit dataChanged(topLeft, bottomRight);}
   void createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
-  void unloadFileChildren(LibraryTreeItem *pLibraryTreeItem);
   void emitModelStateChanged(const QString &name, bool unload) {emit modelStateChanged(name, unload);}
 private:
   LibraryWidget *mpLibraryWidget;
   LibraryTreeItem *mpRootLibraryTreeItem;
 
-  QModelIndex libraryTreeItemIndexHelper(const LibraryTreeItem *pLibraryTreeItem, const LibraryTreeItem *pParentLibraryTreeItem, const QModelIndex &parentIndex) const;
   LibraryTreeItem* getLibraryTreeItemFromFileHelper(LibraryTreeItem *pLibraryTreeItem, QString fileName, int lineNumber);
   void readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents);
   QString readLibraryTreeItemClassTextFromFile(LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* createLibraryTreeItemImpl(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
                                              bool isSystemLibrary = false, bool load = false, int row = -1, bool activateAccessAnnotations = false);
-  void createLibraryTreeItemsImpl(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem);
-  LibraryTreeItem* createLibraryTreeItemImpl(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved,
+  void createLibraryTreeItemsImpl(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
+  LibraryTreeItem* createLibraryTreeItemImpl(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved, bool isInternal,
                                              LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
   LibraryTreeItem* createOMSLibraryTreeItemImpl(QString name, QString nameStructure, QString path, bool isSaved,
                                                 LibraryTreeItem *pParentLibraryTreeItem, oms_element_t *pOMSElement = 0,
-                                                oms_connector_t *pOMSConnector = 0, oms_busconnector_t *pOMSBusConnector = 0,
-                                                oms_tlmbusconnector_t *pOMSTLMBusConnector = 0);
+                                                oms_connector_t *pOMSConnector = 0, oms_busconnector_t *pOMSBusConnector = 0);
   void createOMSConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
   void createOMSBusConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
-  void createOMSTLMBusConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
-  void unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
-  void unloadClassChildren(LibraryTreeItem *pLibraryTreeItem);
-  void unloadFileHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
-  void deleteFileHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
-  void deleteFileChildren(LibraryTreeItem *pLibraryTreeItem);
+  void unloadClassChildren(LibraryTreeItem *pLibraryTreeItem, bool deleteFile);
+  void unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, bool deleteFile);
 protected:
   Qt::DropActions supportedDropActions() const override;
 signals:
@@ -465,13 +449,13 @@ public:
   void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false, bool loadExternalModel = false);
   void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool secondAttempt = false, int row = -1);
   void openEncryptedModelicaLibrary(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
-  void openTextFile(QFileInfo fileInfo, bool showProgress = true);
+  void openTextFile(QFileInfo fileInfo, bool showProgress = true, bool skipAddRecentFile = false, int row = -1);
 
-  void openDirectory(QFileInfo fileInfo, bool showProgress = true);
+  void openDirectory(QFileInfo fileInfo, bool showProgress = true, bool skipAddRecentFile = false, int row = -1);
   void openOMSModelFile(QFileInfo fileInfo, bool showProgress = true);
   void parseAndLoadModelicaText(QString modelText);
   bool saveFile(QString fileName, QString contents);
-  bool saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  bool saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool skipValidate = false);
   void saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void saveTotalLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void openLibraryTreeItem(QString nameStructure);
@@ -492,6 +476,7 @@ private:
   LibraryTreeProxyModel *mpLibraryTreeProxyModel;
   LibraryTreeView *mpLibraryTreeView;
   bool multipleTopLevelClasses(const QStringList &classesList, const QString &fileName);
+  void openModelicaFileHelper(QString fileName, QString encoding, bool showProgress, bool parse, int row);
   bool saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool saveAs);
   bool saveModelicaLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem, bool saveAs);
   bool saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibraryTreeItem, bool saveAs);

@@ -131,7 +131,7 @@ algorithm
       end if;
 
       //partition graph
-      partitions = arrayList(partitionBipartiteGraph(m,mT));
+      partitions = partitionBipartiteGraph(m,mT);
       partitions = List.filterOnTrue(partitions,List.hasSeveralElements);
         //print("the partitions for system "+intString(inSysIdx)+" : \n"+stringDelimitList(List.map(partitions,HpcOmTaskGraph.intLstString),"\n")+"\n");
 
@@ -1579,12 +1579,12 @@ protected function priorizeEqsWithVarCrosses "author:Waurich TUD 2014-02
   output list<Integer> eqsOut;
 protected
   array<list<Integer>> priorities; //[0]eqs with no adjVarCross, [1] eqs with one adjVarCross, [2]rest
-  list<list<Integer>> priorityLst;
 algorithm
   priorities := arrayCreate(3,{});
-  List.map3_0(eqsIn,priorizeEqsWithVarCrosses2,mIn,varCrossLst,priorities);
-  priorityLst := arrayList(priorities);
-  eqsOut := List.flatten(priorityLst);
+  for eq in eqsIn loop
+    priorizeEqsWithVarCrosses2(eq, mIn, varCrossLst, priorities);
+  end for;
+  eqsOut := List.flatten(arrayList(priorities));
 end priorizeEqsWithVarCrosses;
 
 protected function priorizeEqsWithVarCrosses2
@@ -1840,21 +1840,20 @@ public function partitionBipartiteGraph "author: Waurich TUD 2013-12
   indeces refer to the equation indeces (rows in the adjacencyMatrix)."
   input BackendDAE.AdjacencyMatrix m;
   input BackendDAE.AdjacencyMatrixT mT;
-  output array<list<Integer>> partitionsOut;
+  output list<list<Integer>> partitions;
 protected
   Integer numEqs, numVars;
   array<Integer> markEqs, markVars;
-  list<list<Integer>> partitions;
 algorithm
-    numEqs := arrayLength(m);
-    numVars := arrayLength(mT);
-  if intEq(numEqs,0) or intEq(numVars,0) then
-    partitionsOut := arrayCreate(1,{});
+  numEqs := arrayLength(m);
+  numVars := arrayLength(mT);
+
+  if numEqs == 0 or numVars == 0 then
+    partitions := {{}};
   else
     markEqs := arrayCreate(numEqs,-1);
     markVars := arrayCreate(numVars,-1);
     (_,partitions) := colorNodePartitions(m,mT,{1},markEqs,markVars,1,{});
-    partitionsOut := listArray(partitions);
   end if;
 end partitionBipartiteGraph;
 
@@ -1868,67 +1867,74 @@ protected function colorNodePartitions "author:Waurich TUD 2013-12
   input array<Integer> markVars;
   input Integer currNumberIn;
   input list<list<Integer>> partitionsIn;
+  input Integer nextIndex = 1;
   output Integer currNumberOut;
   output list<list<Integer>> partitionsOut;
 protected
   Boolean hasChanged;
-  Integer eq, currNumber;
+  Integer eq, currNumber, next_index;
   array<Integer> markNodes;
   list<Integer> rest, vars, addEqs, eqs, part;
   list<list<Integer>> restPart, partitions;
 algorithm
-  (currNumberOut,partitionsOut) := match (m,mT,checkNextIn,markEqs,markVars,currNumberIn,partitionsIn)
-    local
-    case(_,_,{0},_,_,_,_)
-      equation
-        //found no unassigned eqnode
-        currNumber = currNumberIn-1;
-        then
-          (currNumber, partitionsIn);
-    case(_,_,eq::rest,_,_,_,partitions)
-      equation
+  (currNumberOut,partitionsOut) := match checkNextIn
+    //found no unassigned eqnode
+    case {0}
+      then (currNumberIn - 1, partitionsIn);
+
+    case eq::rest
+      algorithm
         //check unassigned node
         if arrayGetIsNotPositive(eq,markEqs) then
           //mark this eq and add to partition
           arrayUpdate(markEqs, eq, currNumberIn);
-          if listEmpty(partitions) then
-            partitions = {{eq}};
+          if listEmpty(partitionsIn) then
+            partitions := {{eq}};
           else
-            part::restPart = partitions;
-            part = eq::part;
-            partitions = part::restPart;
+            part::restPart := partitionsIn;
+            part := eq::part;
+            partitions := part::restPart;
           end if;
 
           // get adjacent equation nodes
-          vars = arrayGet(m,eq);
-          true = not listEmpty(vars);
+          vars := arrayGet(m,eq);
+          true := not listEmpty(vars);
 
           //all vars that havent been traversed
-          vars = List.filter1OnTrue(vars,arrayGetIsNotPositive,markVars);
+          vars := List.filter1OnTrue(vars,arrayGetIsNotPositive,markVars);
           List.map2_0(vars,Array.updateIndexFirst,currNumberIn,markVars);
 
           //all eqs that havent been traversed
-          eqs = List.fold1(vars,getArrayEntryAndAppend,mT,{});
-          eqs = List.filter1OnTrue(eqs,arrayGetIsNegative,markEqs); // all new equations which havent been queued
+          eqs := List.fold1(vars,getArrayEntryAndAppend,mT,{});
+          eqs := List.filter1OnTrue(eqs,arrayGetIsNegative,markEqs); // all new equations which havent been queued
           List.map2_0(eqs,Array.updateIndexFirst,0,markEqs);
 
           // check them later
-          rest = listAppend(rest,eqs) annotation(__OpenModelica_DisableListAppendWarning=true);
+          rest := listAppend(rest,eqs) annotation(__OpenModelica_DisableListAppendWarning=true);
         else
           //the node has been investigated already
-          partitions = partitionsIn;
+          partitions := partitionsIn;
         end if;
-        (currNumber,partitions) = colorNodePartitions(m,mT,rest,markEqs,markVars,currNumberIn,partitions);
       then
-        (currNumber,partitions);
+        colorNodePartitions(m,mT,rest,markEqs,markVars,currNumberIn,partitions,nextIndex);
 
-    case(_,_,{},_,_,_,_)
-      equation
+    case {}
+      algorithm
         //nothing left in this partition
-        eq = Array.position(markEqs,-1);
-        (currNumber,partitions) = colorNodePartitions(m,mT,{eq},markEqs,markVars,currNumberIn+1,{}::partitionsIn);
-        then
-          (currNumber,partitions);
+        eq := 0;
+        next_index := nextIndex;
+
+        // Search for the next unmarked equation, starting from the next unsearched index.
+        for i in nextIndex:arrayLength(markEqs) loop
+          if markEqs[i] == -1 then
+            eq := i;
+            next_index := i + 1;
+            break;
+          end if;
+        end for;
+      then
+        colorNodePartitions(m,mT,{eq},markEqs,markVars,currNumberIn+1,{}::partitionsIn, next_index);
+
   end match;
 end colorNodePartitions;
 

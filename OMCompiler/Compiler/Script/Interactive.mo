@@ -4312,7 +4312,7 @@ algorithm
 
   outProgram := InteractiveUtil.updateProgram(Absyn.PROGRAM({
     Absyn.CLASS(name, false, false, false, Absyn.R_MODEL(), AbsynUtil.dummyParts,
-        {}, {}, AbsynUtil.dummyInfo)}, w), inProgram);
+        {}, {}, {}, AbsynUtil.dummyInfo)}, w), inProgram);
 end createModel;
 
 public function newModel
@@ -5205,22 +5205,22 @@ algorithm
         (cdef,path);
 
     case (Absyn.IDENT(name = "Real"),_,_) then (Absyn.CLASS("Real",false,false,false,Absyn.R_PREDEFINED_REAL(),
-          AbsynUtil.dummyParts,{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Real"));
+          AbsynUtil.dummyParts,{},{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Real"));
 
     case (Absyn.IDENT(name = "Integer"),_,_) then (Absyn.CLASS("Integer",false,false,false,Absyn.R_PREDEFINED_INTEGER(),
-          AbsynUtil.dummyParts,{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Integer"));
+          AbsynUtil.dummyParts,{},{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Integer"));
 
     case (Absyn.IDENT(name = "String"),_,_) then (Absyn.CLASS("String",false,false,false,Absyn.R_PREDEFINED_STRING(),
-          AbsynUtil.dummyParts,{},{},AbsynUtil.dummyInfo),Absyn.IDENT("String"));
+          AbsynUtil.dummyParts,{},{},{},AbsynUtil.dummyInfo),Absyn.IDENT("String"));
 
     case (Absyn.IDENT(name = "Boolean"),_,_) then (Absyn.CLASS("Boolean",false,false,false,Absyn.R_PREDEFINED_BOOLEAN(),
-          AbsynUtil.dummyParts,{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Boolean"));
+          AbsynUtil.dummyParts,{},{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Boolean"));
     // BTH
     case (Absyn.IDENT(name = "Clock"),_,_)
       equation
         true = Config.synchronousFeaturesAllowed();
       then (Absyn.CLASS("Clock",false,false,false,Absyn.R_PREDEFINED_CLOCK(),
-          AbsynUtil.dummyParts,{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Clock"));
+          AbsynUtil.dummyParts,{},{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Clock"));
 
     case (path,inmodel,_)
       equation
@@ -5286,7 +5286,7 @@ algorithm
         l2 = listLength(publst2);
         l1 = listLength(publst);
         l1_1 = l1 - 1;
-        if (/*delete case*/(intEq(l1_1, l2) and boolNot(isSome(item)) and success) or
+        if (/*delete case*/(intEq(l1_1, l2) and isNone(item) and success) or
             /*update case*/(boolNot(intEq(l1_1, l2)) and isSome(item)) and success) then
           parts2 = InteractiveUtil.replacePublicList(parts, publst2);
         else
@@ -5307,7 +5307,7 @@ algorithm
         l2 = listLength(publst2);
         l1 = listLength(publst);
         l1_1 = l1 - 1;
-        if (/*delete case*/(intEq(l1_1, l2) and boolNot(isSome(item)) and success) or
+        if (/*delete case*/(intEq(l1_1, l2) and isNone(item) and success) or
             /*update case*/(boolNot(intEq(l1_1, l2)) and isSome(item)) and success) then
           parts2 = InteractiveUtil.replacePublicList(parts, publst2);
         else
@@ -5452,7 +5452,7 @@ algorithm
     modification := InteractiveUtil.makeModifierFromArgs(bindingExp, modifier, info);
     (io, redecl, attr) := getDefaultPrefixes(program, typeName);
 
-    ty_path := AbsynUtil.pathStripSamePrefix(typeName, classPath);
+    SOME(ty_path) := AbsynUtil.pathStripSamePrefix(typeName, classPath);
 
     if AbsynUtil.pathContains(classPath, AbsynUtil.pathFirstIdent(ty_path)) then
       // Keep the full type name if the first identifier of the stripped name

@@ -239,10 +239,10 @@ algorithm
         repl=BackendVarTransform.addReplacement(repl,DAE.crefTime,DAE.RCONST(stringReal(value)),NONE());
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-        Debug.trace("Add replacement for time \n" );
+        Debug.trace("Add replacement for time\n" );
     end if;
 
-        //Debug.fcall(Flags.CPP,print,"Add replacement for time \n" );
+        //Debug.fcall(Flags.CPP,print,"Add replacement for time\n" );
 
       then repl;
     //replacements for real values
@@ -294,7 +294,7 @@ algorithm
     case(repl,var::restVar,meanValue::restVal)
       equation
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-        Debug.trace("Add no replacement \n" );
+        Debug.trace("Add no replacement\n" );
     end if;
 
       then repl;
@@ -353,7 +353,7 @@ protected function addLabelToEquations
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-        Debug.trace("---Replace residuals  \n" );
+        Debug.trace("---Replace residuals\n" );
     end if;
 
         //label a residual equation
@@ -370,7 +370,7 @@ protected function addLabelToEquations
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-        Debug.trace("---Replace simple assignments  \n" );
+        Debug.trace("---Replace simple assignments\n" );
     end if;
         //label simple assigment
         (e2,vars_1,idx2,labels) = addLabelToExp(e,vars,idx,true,reduceList,inVarRepl);
@@ -386,10 +386,10 @@ protected function addLabelToEquations
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-        Debug.trace("---Replace algorithms  \n" );
+        Debug.trace("---Replace algorithms\n" );
     end if;
 
-        //Debug.fcall(Flags.CPP,print,"---Replace algorithms  \n" );
+        //Debug.fcall(Flags.CPP,print,"---Replace algorithms\n" );
 
         //call helper function for labeling algorithms
         (statements2,vars_1,idx2,labels)=addLabelToAlgorithms(statements,vars,idx,reduceList,inVarRepl);
@@ -404,7 +404,7 @@ protected function addLabelToEquations
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-        Debug.trace("---Replace linear equation systems  \n" );
+        Debug.trace("---Replace linear equation systems\n" );
     end if;
         //call helper function for labeling linear equation systems
         (A2,vars_1,idx2,labels)=addLabelToLinearEquationSystems(A,vars,idx,reduceList,inVarRepl);
@@ -420,7 +420,7 @@ protected function addLabelToEquations
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-        Debug.trace("---Replace non-linear equation systems  \n" );
+        Debug.trace("---Replace non-linear equation systems\n" );
     end if;
         //call addLabelToEquations for equations in a nonlinear equation system
         (nl_1,vars_1,idx2,labels)=addLabelToEquations(nl,vars,idx,reduceList,inVarRepl);
@@ -434,7 +434,7 @@ protected function addLabelToEquations
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-        Debug.trace("---Replace mixed equation systems  \n" );
+        Debug.trace("---Replace mixed equation systems\n" );
     end if;
         //call addLabelToEquations for equations in a mixed system
         ({cont_1},vars_1,idx2,labels)=addLabelToEquations({cont},vars,idx,reduceList,inVarRepl);
@@ -448,7 +448,7 @@ protected function addLabelToEquations
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-        Debug.trace("---Replace when equations without else statement  \n" );
+        Debug.trace("---Replace when equations without else statement\n" );
     end if;
         //label rest
         (es_1 ,vars_1,idx2,labels)= addLabelToEquations(es,vars,idx,reduceList,inVarRepl);
@@ -460,7 +460,7 @@ protected function addLabelToEquations
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-        Debug.trace("---Replace when equations with else statement  \n" );
+        Debug.trace("---Replace when equations with else statement\n" );
     end if;
         //label when equations
         //call addLabelToEquations for labeling else part
@@ -476,10 +476,10 @@ protected function addLabelToEquations
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-        Debug.trace("---Replace unknown equations  \n" );
+        Debug.trace("---Replace unknown equations\n" );
     end if;
 
-        //Debug.fcall(Flags.CPP,print,"---Replace unknown equations  \n" );
+        //Debug.fcall(Flags.CPP,print,"---Replace unknown equations\n" );
 
         (es_1,vars_1,idx2,labels) = addLabelToEquations(es,vars,idx,reduceList,inVarRepl);
       then
@@ -520,7 +520,7 @@ protected function addLabelToAlgorithms
       equation
 
       if Flags.isSet(Flags.REDUCE_DAE) then
-           Debug.trace("---Replace empty algorithm  \n" );
+           Debug.trace("---Replace empty algorithm\n" );
     end if;
       then ({},vars,idx,{});
 
@@ -528,7 +528,7 @@ protected function addLabelToAlgorithms
       equation
 
         if Flags.isSet(Flags.REDUCE_DAE) then
-          Debug.trace("---Replace assignment algorithm  \n");
+          Debug.trace("---Replace assignment algorithm\n");
         end if;
     (e2,vars_1,idx2,labels) = addLabelToExp(e,vars,idx,true,reduceList,inVarRepl);
         (rest2,vars_2,idx3,labels2) = addLabelToAlgorithms(rest,vars_1,idx2,reduceList,inVarRepl);
@@ -541,9 +541,9 @@ protected function addLabelToAlgorithms
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-        Debug.trace("---Replace if algorithm  \n" );
+        Debug.trace("---Replace if algorithm\n" );
     end if;
-       // //Debug.fcall(Flags.CPP,print,"---Replace if algorithm  \n" );
+       // //Debug.fcall(Flags.CPP,print,"---Replace if algorithm\n" );
         (stmtLst2,vars_1,idx2,labels) = addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
         (rest2,vars_2,idx3,labels2) = addLabelToAlgorithms(rest,vars_1,idx2,reduceList,inVarRepl);
 
@@ -555,7 +555,7 @@ protected function addLabelToAlgorithms
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-        Debug.trace("---Replace for algorithm  \n" );
+        Debug.trace("---Replace for algorithm\n" );
     end if;
         (stmtLst2,vars_1,idx2,labels) = addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
         (rest2,vars_2,idx3,labels2) = addLabelToAlgorithms(rest,vars_1,idx2,reduceList,inVarRepl);
@@ -566,7 +566,7 @@ protected function addLabelToAlgorithms
     case(DAE.STMT_WHILE(e,stmtLst,source)::rest,vars,idx,_,_)
       equation
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-        Debug.trace("---Replace while algorithm  \n" );
+        Debug.trace("---Replace while algorithm\n" );
     end if;
         (stmtLst2,vars_1,idx2,labels) = addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
         (rest2,vars_2,idx3,labels2) = addLabelToAlgorithms(rest,vars_1,idx2,reduceList,inVarRepl);
@@ -578,7 +578,7 @@ protected function addLabelToAlgorithms
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-        Debug.trace("---Replace when algorithm without else statement  \n" );
+        Debug.trace("---Replace when algorithm without else statement\n" );
     end if;
         (stmtLst2,vars_1,idx2,labels) = addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
         (rest2,vars_2,idx3,labels2) = addLabelToAlgorithms(rest,vars_1,idx2,reduceList,inVarRepl);
@@ -590,7 +590,7 @@ protected function addLabelToAlgorithms
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-        Debug.trace("---Replace when algorithm with else statement  \n" );
+        Debug.trace("---Replace when algorithm with else statement\n" );
     end if;
         (stmtLst2,vars_1,idx2,labels) = addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
         ({elseWhen2},vars_2,idx3,labels2) = addLabelToAlgorithms({elseWhen},vars_1,idx2,reduceList,inVarRepl);
@@ -604,7 +604,7 @@ protected function addLabelToAlgorithms
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-        Debug.trace("---Replace other algorithm  \n" );
+        Debug.trace("---Replace other algorithm\n" );
     end if;
         (rest2,vars_1,idx2,labels) = addLabelToAlgorithms(rest,vars,idx,reduceList,inVarRepl);
       then
@@ -636,7 +636,7 @@ protected function addLabelToElse
     case(DAE.NOELSE(),vars,idx,reduceList,inVarRepl) then (DAE.NOELSE(),vars,idx,{});
     case(DAE.ELSEIF(e,stmtLst,else_),vars,idx,reduceList,inVarRepl)
       equation
-        ////Debug.fcall(Flags.CPP,print,"---Replace elseif with else  \n" );
+        ////Debug.fcall(Flags.CPP,print,"---Replace elseif with else\n" );
         (stmtLst2,vars_1,idx2,labels) = addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
         (else2,vars_2,idx3,labels2) = addLabelToElse(else_,vars_1,idx2,reduceList,inVarRepl);
         labels3=listAppend(labels,labels2);
@@ -644,7 +644,7 @@ protected function addLabelToElse
         (DAE.ELSEIF(e,stmtLst2,else2),vars_2,idx3,labels3);
     case(DAE.ELSE(stmtLst),vars,idx,reduceList,inVarRepl)
       equation
-        //Debug.fcall(Flags.CPP,print,"---Replace else  \n" );
+        //Debug.fcall(Flags.CPP,print,"---Replace else\n" );
         (stmtLst2,vars_1,idx2,labels) = addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
       then
         (DAE.ELSE(stmtLst2),vars_1,idx2,labels) ;
@@ -915,7 +915,7 @@ algorithm
      equation
 
           if(Flags.isSet(Flags.REDUCE_DAE)) then
-    Debug.trace("add no label to pre arguments  \n");
+    Debug.trace("add no label to pre arguments\n");
     end if;
           //creates a label and multiplies it with the expression
           (e2,vars_1, idx1,labels) = addOneLabel(e,add,idx,vars,reduceList);
@@ -927,7 +927,7 @@ algorithm
       equation
 
           if(Flags.isSet(Flags.REDUCE_DAE)) then
-    Debug.trace("add no label to edge arguments \n");
+    Debug.trace("add no label to edge arguments\n");
     end if;
           //creates a label and multiplies it with the expression
           (e2,vars_1, idx1,labels) = addOneLabel(e,add,idx,vars,reduceList);
@@ -939,7 +939,7 @@ algorithm
         equation
 
           if(Flags.isSet(Flags.REDUCE_DAE)) then
-    Debug.trace("add no label to change arguments \n");
+    Debug.trace("add no label to change arguments\n");
     end if;
           //creates a label and multiplies it with the expression
           (e2,vars_1, idx1,labels) = addOneLabel(e,add,idx,vars,reduceList);
@@ -951,7 +951,7 @@ algorithm
         equation
 
           if(Flags.isSet(Flags.REDUCE_DAE)) then
-    Debug.trace("add no label to sample arguments \n");
+    Debug.trace("add no label to sample arguments\n");
     end if;
           //creates a label and multiplies it with the expression
           (e2,vars_1, idx1,labels) = addOneLabel(e,add,idx,vars,reduceList);
@@ -963,7 +963,7 @@ algorithm
         equation
 
           if(Flags.isSet(Flags.REDUCE_DAE)) then
-    Debug.trace("add no label for no event arguments \n");
+    Debug.trace("add no label for no event arguments\n");
     end if;
           //creates a label and multiplies it with the expression
           (e2,vars_1, idx1,labels) = addOneLabel(e,add,idx,vars,reduceList);
@@ -1159,7 +1159,7 @@ algorithm
          equality(valueR = 0.0);
 
          if(Flags.isSet(Flags.REDUCE_DAE)) then
-    Debug.trace("Add no label to const 0.0 \n");
+    Debug.trace("Add no label to const 0.0\n");
     end if;
        then
         (DAE.RCONST(0.0),vars,idx,{});
@@ -1180,7 +1180,7 @@ algorithm
         equality(valueI = 0);
 
           if(Flags.isSet(Flags.REDUCE_DAE)) then
-    Debug.trace("Add no label to const 0 \n");
+    Debug.trace("Add no label to const 0\n");
     end if;
         then
          (DAE.ICONST(0),vars,idx,{});

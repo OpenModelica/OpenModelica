@@ -32,11 +32,9 @@ simulate(initializationTests.bug_2994, simflags="-lv=LOG_INIT_V -override=a=2");
 // LOG_INIT          | info    | updating nominal-values
 // LOG_INIT          | info    | updating primary start-values
 // LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
-// LOG_INIT_HOMOTOPY | info    | Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. To disable initialization with homotopy operator use \"-noHomotopyOnFirstTry\".
 // LOG_INIT_V        | info    | parameter values
 // |                 | |       | | real parameters
 // |                 | |       | | | [1] parameter Real a(start=1, fixed=true) = 1
-// |                 | |       | | | [2] parameter Real x(start=0, fixed=true) = 1
 // LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
 // |                 | |       | | other real variables
 // |                 | |       | | | [1] Real y(start=1, nominal=1) = 1 (pre: 1)
@@ -56,11 +54,9 @@ simulate(initializationTests.bug_2994, simflags="-lv=LOG_INIT_V -override=a=2");
 // LOG_INIT          | info    | updating nominal-values
 // LOG_INIT          | info    | updating primary start-values
 // LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
-// LOG_INIT_HOMOTOPY | info    | Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. To disable initialization with homotopy operator use \"-noHomotopyOnFirstTry\".
 // LOG_INIT_V        | info    | parameter values
 // |                 | |       | | real parameters
 // |                 | |       | | | [1] parameter Real a(start=2, fixed=true) = 2
-// |                 | |       | | | [2] parameter Real x(start=0, fixed=true) = 2
 // LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
 // |                 | |       | | other real variables
 // |                 | |       | | | [1] Real y(start=1, nominal=1) = 2 (pre: 1)

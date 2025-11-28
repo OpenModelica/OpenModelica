@@ -1,0 +1,32 @@
+// name: GetReplaceableChoices1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+// Tests the getReplaceableChoices API function.
+//
+
+loadString("
+  model Base \"Comment for Base\"
+  end Base;
+
+  model M1 = Base \"Comment for M1\";
+
+  model M2 \"Comment for M2\"
+    extends Base;
+  end M2;
+
+  model M3 = Base;
+
+  model M
+  end M;
+");
+
+getReplaceableChoices(Base, M);
+getErrorString();
+
+// Result:
+// true
+// {{"Base", "Comment for Base"}, {"M1", "Comment for M1"}, {"M2", "Comment for M2"}, {"M3", ""}}
+// ""
+// endResult

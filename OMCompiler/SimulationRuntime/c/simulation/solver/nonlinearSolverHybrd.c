@@ -28,7 +28,9 @@
  *
  */
 
-/*! \file nonlinear_solver.c
+/*! \file nonlinearSolverHybrd.c
+ *
+ *
  */
 
 #ifdef __cplusplus
@@ -58,6 +60,7 @@ static void wrapper_fvec_hybrj(const integer *n_p, const double* x, double* f, d
  * @brief Allocate memory for non-linear hybrid solver.
  *
  * @param size            Size of non-linear system.
+ * @param userData        Information about the non-linear system (number, Jacobian, data, threadData, ...)
  * @return DATA_HYBRD*    Pointer to allocated hybrid data.
  */
 DATA_HYBRD* allocateHybrdData(size_t size, NLS_USERDATA* userData)
@@ -265,7 +268,8 @@ static int getAnalyticalJacobian(NLS_USERDATA* hybrdUserData, double* jac)
   DATA_HYBRD* solverData = (DATA_HYBRD*)(systemData->solverData);
   JACOBIAN* jacobian = hybrdUserData->analyticJacobian;
 
-  evalJacobian(data, threadData, jacobian, NULL, jac);
+  /* call generic dense Jacobian */
+  evalJacobian(data, threadData, jacobian, NULL, jac, TRUE);
 
   memcpy(solverData->fjacobian, jac, (jacobian->sizeRows) * (jacobian->sizeCols) * sizeof(modelica_real));
 

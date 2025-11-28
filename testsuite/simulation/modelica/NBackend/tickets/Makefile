@@ -4,6 +4,7 @@ TESTFILES = \
 13328.mos \
 13144.mos \
 13788.mos \
+14530.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

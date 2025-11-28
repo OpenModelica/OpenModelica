@@ -45,9 +45,9 @@ end SD;
 // //! base 0.1.0
 // package 'SD'
 //   model 'SD'
-//     final parameter Integer 'N' = 3;
+//     parameter Integer 'N' = 3;
 //     parameter Real[3] 'p' = {1.0, 1.5, 2.0};
-//     final parameter Integer[3] 'c.N' = {3, 4, 5};
+//     parameter Integer[3] 'c.N' = {3, 4, 5};
 //     parameter Real[3] 'c.p' = 'p'[:];
 //     Real[3, {3, 4, 5}] 'c.x';
 //     Real[3] 'c.c.e';
@@ -59,9 +59,9 @@ end SD;
 //     'c.x'[:,1] = 'c.c.e'[:];
 //     'c.x'[:,'c.N'[:]] = 'c.c.f'[:];
 //
-//     for '$i1' in 1:3 loop
-//       for 'i' in 2:({3, 4, 5})['$i1'] loop
-//         'c.x'['$i1','i'] = 'c.x'['$i1','i' - 1] + 'c.p'['$i1'];
+//     for '$i0' in 1:3 loop
+//       for 'i' in 2:({3, 4, 5})['$i0'] loop
+//         'c.x'['$i0','i'] = 'c.x'['$i0','i' - 1] + 'c.p'['$i0'];
 //       end for;
 //     end for;
 //

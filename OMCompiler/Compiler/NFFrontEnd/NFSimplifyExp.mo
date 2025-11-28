@@ -56,6 +56,7 @@ import Flags;
 import Debug;
 import Array;
 import MetaModelica.Dangerous.listReverseInPlace;
+import UnorderedMap;
 
 public
 
@@ -121,6 +122,7 @@ algorithm
     case Expression.RECORD_ELEMENT()    then simplifyRecordElement(exp);
     case Expression.BOX()               then Expression.BOX(simplify(exp.exp));
     case Expression.MUTABLE()           then simplify(Mutable.access(exp.exp));
+    case Expression.INSTANCE_NAME()     then Ceval.evalGetInstanceName(exp.scope);
                                         else exp;
   end match;
 
@@ -272,7 +274,6 @@ algorithm
     case "vector"           then simplifyVector(listHead(args), call);
     case "zeros"            then simplifyFill(Expression.INTEGER(0), args, call, expand);
     case "semiLinear"       then simplifySemiLinear(args, call);
-    case "getInstanceName"  then Ceval.evalGetInstanceName(listHead(args));
     case "$OMC$PositiveMax" then simplifyPositiveMax(args, call);
     case "$OMC$inStreamDiv" then simplifyInStreamDiv(args, call);
     case "OpenModelica_uriToFilename" then simplifyURIToFilename(listHead(args), call);
@@ -816,11 +817,23 @@ algorithm
       (arguments, inv_arguments, isNegative) := simplifyMultarySigns(arguments, inv_arguments, mcl);
 
       // split them into constant and non constant arguments
-      (const_args, arguments) := List.splitOnTrue(arguments, Expression.isConstNumber);
-      (inv_const_args, inv_arguments) := List.splitOnTrue(inv_arguments, Expression.isConstNumber);
+      (const_args, arguments) := List.splitOnTrue(arguments, Expression.isLiteral);
+      (inv_const_args, inv_arguments) := List.splitOnTrue(inv_arguments, Expression.isLiteral);
 
       // combine the constants
-      new_const := combineConstantNumbers(const_args, inv_const_args, mcl, Operator.typeOf(operator));
+      if mcl == NFOperator.MathClassification.ADDITION then
+        new_const := Ceval.evalMultaryAddSub(const_args, inv_const_args, Operator.typeOf(operator));
+      elseif mcl == NFOperator.MathClassification.MULTIPLICATION then
+        new_const := Ceval.evalMultaryMulDiv(const_args, inv_const_args, Operator.typeOf(operator));
+      else
+        Error.assertion(false, getInstanceName() + " detected non-commutative operator in MULTARY(): [" + Operator.mathSymbol(mcl) +
+          "]\n with following arguments: " + stringDelimitList(list(Expression.toString(e) for e in const_args), ", ") +
+          "\n and following inverse arguments: " + stringDelimitList(list(Expression.toString(e) for e in inv_const_args), ", "),
+          sourceInfo());
+      end if;
+
+      // remove expressions that are in both arguments and inv_arguments
+      (arguments, inv_arguments) := cancelTermsInMultary(arguments, inv_arguments);
 
       // return combined multary expression and check for trivial replacements
 
@@ -846,15 +859,6 @@ algorithm
 
         // 0 * {...} / {...} = 0
         case (NFOperator.MathClassification.MULTIPLICATION, _, _) guard(Expression.isZero(new_const)) then new_const;
-
-        // THIS SEEMS LIKE A BAD IDEA STRUCTURALLY
-        // apply negative constant to inverse list for addition
-        //case (NFOperator.MathClassification.ADDITION, _, _) guard(Expression.isNegative(new_const) and useConst)
-        //then Expression.MULTARY(
-        //    arguments     = arguments,
-        //    inv_arguments = Expression.negate(new_const) :: inv_arguments,
-        //    operator      = operator
-        //  );
 
         else Expression.MULTARY(
             arguments     = if useConst then new_const :: arguments else arguments,
@@ -1478,6 +1482,60 @@ algorithm
     Error.addInternalError(getInstanceName() + " expression is not known to be a constant number: " + Expression.toString(exp), sourceInfo());
   end try;
 end getConstantValue;
+
+function cancelTermsInMultary
+  input list<Expression> inArguments;
+  input list<Expression> inInv_arguments;
+  output list<Expression> outArguments = {};
+  output list<Expression> outInv_arguments = {};
+protected
+  UnorderedMap<Expression, Integer> counter;
+  Expression arg;
+  Integer count;
+
+  function inc
+    input Option<Integer> oldValue;
+    input Integer step;
+    output Integer value;
+  algorithm
+    value := match oldValue
+      case SOME(value) then value + step;
+      else step;
+    end match;
+  end inc;
+algorithm
+  if listEmpty(inArguments) or listEmpty(inInv_arguments) then
+    // nothing can cancel
+    outArguments := inArguments;
+    outInv_arguments := inInv_arguments;
+    return;
+  end if;
+
+  // count occurences of expressions (numerator +1, denominator -1)
+  counter := UnorderedMap.new<Integer>(Expression.hash, Expression.isEqual);
+  for arg in inArguments loop
+    UnorderedMap.addUpdate(arg, function inc(step = 1), counter);
+  end for;
+  for arg in inInv_arguments loop
+    UnorderedMap.addUpdate(arg, function inc(step = -1), counter);
+  end for;
+
+  // reconstruct numerator and denominator with remaining terms
+  for tpl in UnorderedMap.toList(counter) loop
+    (arg, count) := tpl;
+    if count > 0 then
+      for i in 1:count loop
+        outArguments := arg :: outArguments;
+      end for;
+    elseif count < 0 then
+      for i in 1:-count loop
+        outInv_arguments := arg :: outInv_arguments;
+      end for;
+    end if;
+  end for;
+  outArguments      := listReverseInPlace(outArguments);
+  outInv_arguments  := listReverseInPlace(outInv_arguments);
+end cancelTermsInMultary;
 
 public function combineBinaries
   "just a wrapper to remove the interface for traversal"

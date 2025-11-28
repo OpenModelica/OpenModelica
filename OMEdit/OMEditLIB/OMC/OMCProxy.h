@@ -162,10 +162,10 @@ public:
   QString getClassComment(QString className);
   QString changeDirectory(QString directory = QString(""));
   bool loadModel(QString className, QString priorityVersion = QString("default"), bool notify = true, QString languageStandard = QString(""), bool requireExactVersion = false);
-  bool loadFile(QString fileName, QString encoding = Helper::utf8, bool uses = true, bool notify = true, bool requireExactVersion = false, bool allowWithin = false);
+  bool loadFile(QString fileName, QString encoding = Helper::utf8, bool uses = true, bool notify = true, bool requireExactVersion = false, bool allowWithin = false, bool printErrors = true);
   bool loadString(QString value, QString fileName, QString encoding = Helper::utf8, bool merge = false, bool checkError = true);
   bool loadClassContentString(const QString &data, const QString &className, int offsetX = 0, int offsetY = 0);
-  QList<QString> parseFile(QString fileName, QString encoding = Helper::utf8);
+  QList<QString> parseFile(QString fileName, QString encoding = Helper::utf8, bool printErrors = true);
   QList<QString> parseString(QString value, QString fileName, bool printErrors = true);
   bool createClass(QString type, QString className, LibraryTreeItem *pExtendsLibraryTreeItem);
   bool createSubClass(QString type, QString className, LibraryTreeItem *pParentLibraryTreeItem, LibraryTreeItem *pExtendsLibraryTreeItem);
@@ -241,7 +241,8 @@ public:
   QString getAnnotationModifierValue(QString className, QString annotation, QString modifier);
   QString getSimulationFlagsAnnotation(QString className);
   int numProcessors();
-  QStringList getAllSubtypeOf(QString className, QString parentClassName = QString("AllLoadedClasses"), bool qualified = false, bool includePartial = false, bool sort = false);
+  QStringList getAllSubtypeOf(QString className, QString parentClassName = QString("AllLoadedClasses"), bool includePartial = false, bool sort = false);
+  QList<QList<QString>> getReplaceableChoices(QString baseClass, QString parentClass, bool includePartial = false, bool sort = false);
   QString help(QString topic);
   OMCInterface::getConfigFlagValidOptions_res getConfigFlagValidOptions(QString topic);
   QString getCompiler();

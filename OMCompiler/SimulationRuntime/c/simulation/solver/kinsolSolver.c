@@ -454,6 +454,252 @@ static void finishSparseColPtr(SUNMatrix A, int nnz) {
   }
 }
 
+// TODO: unify this up to a generic level, such that we can use this from pretty much every solver and
+// it does not take kinsolData and the matrix only as flat buffer + SPARSE_PATTERN
+
+/**
+ * @brief Perform derivative test comparing symbolic and numerical Jacobians for KINSOL
+ *
+ * Compares the symbolic Jacobian (sparse CSC format) with a numerically approximated
+ * dense Jacobian, checking for numerical and structural anomalies. The numerical
+ * Jacobian is computed using finite differences via nlsDenseJac.
+ *
+ * @param data              Runtime data structure
+ * @param nlsData           Nonlinear system data
+ * @param kinsolData        KINSOL solver data structure
+ * @param Jsym              Symbolic Jacobian in sparse CSC format
+ * @param tol               Tolerance, all relative errors above tol are considered anomalies
+ * @param newJac            TRUE if called from jacobian evaluation, FALSE if called from solver entry point
+ *
+ * @return int              1 derivative test failed and no error
+ *                          0 derivative test successful and no error
+ *                         -1 internal error
+ */
+static int nlsKinsolDenseDerivativeTest(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData,
+                                        NLS_KINSOL_DATA *kinsolData, SUNMatrix Jsym, SolverCaller caller)
+{
+  int row, col, nz, errorCount, numericalErrorCount, structuralErrorCount;
+  const int size = nlsData->size;
+  int ret = 0;
+
+  modelica_real symValue, numValue, absError, relError;
+  modelica_real maxError = 0.0;
+
+  modelica_boolean errorFound;
+
+  sunindextype nnz = SUNSparseMatrix_NNZ(Jsym);
+  sunindextype columns = SUNSparseMatrix_Columns(Jsym);
+  sunindextype rows = SUNSparseMatrix_Rows(Jsym);
+
+  sunindextype *colPointers = SM_INDEXPTRS_S(Jsym);
+  sunindextype *rowIndices = SM_INDEXVALS_S(Jsym);
+  realtype *symValues = SM_DATA_S(Jsym);
+
+  // allocate temporary memory for dense finite-diff matrix
+  N_Vector vecX = N_VNew_Serial(size);
+  N_Vector vecFX = N_VNew_Serial(size);
+  N_Vector tmp1 = N_VNew_Serial(size);
+  N_Vector tmp2 = N_VNew_Serial(size);
+  SUNMatrix Jnum = SUNDenseMatrix(size, size);
+
+  // set tolerances
+  modelica_real Atol = omc_flag[FLAG_NLS_JAC_TEST_ATOL] ? atof(omc_flagValue[FLAG_NLS_JAC_TEST_ATOL]) : 100 * DBL_EPSILON;
+  modelica_real Rtol = omc_flag[FLAG_NLS_JAC_TEST_RTOL] ? atof(omc_flagValue[FLAG_NLS_JAC_TEST_RTOL]) : 1e-4;
+
+  // copy current x into new vector, compute f(x) and corresponding dense finite-diff Jacobian
+  SUNMatZero(Jnum);
+  N_VScale(1.0, kinsolData->initialGuess, vecX);
+  nlsKinsolResiduals(vecX, vecFX, kinsolData->userData);
+  if (nlsDenseJac(size, vecX, vecFX, Jnum, kinsolData->userData, tmp1, tmp2) != 0)
+  {
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Numerical Jacobian computation failed in nlsKinsolDenseDerivativeTest");
+    ret = -1;
+    SUNMatDestroy(Jnum);
+    N_VDestroy_Serial(vecX);
+    N_VDestroy_Serial(vecFX);
+    N_VDestroy_Serial(tmp1);
+    N_VDestroy_Serial(tmp2);
+    return ret;
+  }
+
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "%s: Derivative test (atol=%.5e, rtol=%.5e, scaled = %s, Caller: %s):",
+                  SolverCaller_callerString(caller), Atol, Rtol, kinsolData->nominalJac ? "true" : "false", SolverCaller_toString(caller));
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "Matrix Info");
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "NLS index = %ld", nlsData->equationIndex);
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Columns   = %li", columns);
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Rows      = %li", rows);
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "NNZ       = %li", nnz);
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Curr Time = %-11.5e", data->localData[0]->timeValue);
+
+  messageClose(OMC_LOG_NLS_DERIVATIVE_TEST);
+
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "Anomalies");
+
+  nz = 0;
+  errorCount = 0;
+  numericalErrorCount = 0;
+  structuralErrorCount = 0;
+
+  for (col = 0; col < size; col++)
+  {
+    errorFound = FALSE;
+
+    for (row = 0; row < size; row++)
+    {
+      numValue = SM_ELEMENT_D(Jnum, row, col);
+
+      if (colPointers[col] <= nz && nz < colPointers[col+1] && rowIndices[nz] == row)
+      {
+        // structural non-zero -> compare values
+        symValue = symValues[nz++];
+        absError = fabs(symValue - numValue);
+        relError = (absError < Atol) ? 0.0 : absError / fmax(fabs(numValue), fabs(symValue));
+
+        if (relError > maxError)
+        {
+            maxError = relError;
+        }
+
+        if (relError > Rtol)
+        {
+          // tolerance exceeded -> numerical error
+          if (!errorFound)
+          {
+            infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "Column / Variable: %i, Name: %s",
+            col + 1, modelInfoGetEquation(&data->modelData->modelDataXml, nlsData->equationIndex).vars[col]);
+            infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "%-12s %-6s %-6s %-15s  %-15s  %-8s",
+                            "Type", "Col", "Row", "Symbolic", "Numerical", "RelError");
+            errorFound = TRUE;
+          }
+          infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "%-12s %-6d %-6d %+15.8e  %+15.8e  %+13.8e",
+                          "Numerical", col + 1, row + 1, symValue, numValue, relError);
+          numericalErrorCount++;
+        }
+      }
+      else if (fabs(numValue) > Atol)
+      {
+        // structural error with tolerance exceeded -> non-zero in numerical Jacobian but zero in symbolic
+        if (!errorFound)
+        {
+          infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "Column / Variable: %i, Name: %s",
+                          col + 1, modelInfoGetEquation(&data->modelData->modelDataXml, nlsData->equationIndex).vars[col]);
+          infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "%-12s %-6s %-6s %-15s  %-15s  %-8s",
+                          "Type", "Col", "Row", "Symbolic", "Numerical", "RelError");
+          errorFound = TRUE;
+        }
+        infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "%-12s %-6d %-6d %+15.8e  %+15.8e  %+13.8e",
+                        "Structural", col + 1, row + 1, 0.0, numValue, 1.0);
+        structuralErrorCount++;
+      }
+    }
+
+    if (errorFound)
+    {
+      messageClose(OMC_LOG_NLS_DERIVATIVE_TEST);
+    }
+  }
+  messageClose(OMC_LOG_NLS_DERIVATIVE_TEST);
+
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "Summary");
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Numerical errors:  %d (value mismatch w.r.t. reference)", numericalErrorCount);
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Structural errors: %d (non-zero not in sparsity pattern)", structuralErrorCount);
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Max relative error: %.3e", maxError);
+
+  if (numericalErrorCount + structuralErrorCount > 0)
+  {
+    warningStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Derivative test failed (%d numerical, %d structural errors)",
+                       numericalErrorCount, structuralErrorCount);
+    ret = 1;
+  }
+  messageClose(OMC_LOG_NLS_DERIVATIVE_TEST);
+
+  SUNMatDestroy(Jnum);
+  N_VDestroy_Serial(vecX);
+  N_VDestroy_Serial(vecFX);
+  N_VDestroy_Serial(tmp1);
+  N_VDestroy_Serial(tmp2);
+
+  messageClose(OMC_LOG_NLS_DERIVATIVE_TEST);
+
+  return ret;
+}
+
+/**
+ * @brief Computes symbolic Jacobian matrix Jac(vecX)
+ *
+ * @param vecX
+ * @param vecFX     just for interface compatibility, will not be used here
+ * @param Jac       Allocated Jacobian, contains symbolic Jacobian on exit
+ * @param userData  Void pointer to user data of type NLS_USERDATA*.
+ * @param tmp1      Unused, only to match interface of KINLsJacFn
+ * @param tmp2      Unused, only to match interface of KINLsJacFn
+ * @return int
+ */
+int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
+                    void *userData, N_Vector tmp1, N_Vector tmp2) {
+  /* Variables */
+  NLS_USERDATA* kinsolUserData = (NLS_USERDATA *)userData;;
+  DATA* data = kinsolUserData->data;
+  threadData_t* threadData = kinsolUserData->threadData;
+  NONLINEAR_SYSTEM_DATA* nlsData = kinsolUserData->nlsData;
+  NLS_KINSOL_DATA* kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
+  JACOBIAN* jacobian = kinsolUserData->analyticJacobian;
+  assertStreamPrint(threadData, NULL != jacobian, "jacobian is NULL");
+  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
+  assertStreamPrint(threadData, NULL != sp, "sp is NULL");
+  double *xScaling = NV_DATA_S(kinsolData->xScale);
+  long int column, nz;
+
+  if (SUNMatGetID(Jac) != SUNMATRIX_SPARSE || SM_SPARSETYPE_S(Jac) == CSR_MAT) {
+    errorStreamPrint(OMC_LOG_STDOUT, 0,
+                     "KINSOL: nlsSparseJac illegal input Jac. Matrix is not sparse!");
+    return -1;
+  }
+
+  /* performance measurement */
+  rt_ext_tp_tick(&nlsData->jacobianTimeClock);
+
+  /* call generic sparse Jacobian with CSC buffer "SM_DATA_S(Jac)" */
+  evalJacobian(data, threadData, jacobian, NULL, SM_DATA_S(Jac), FALSE);
+  setSundialsSparsePattern(jacobian, Jac);
+
+  /* scaling */
+  if (kinsolData->nominalJac) {
+    for (column = 0; column < jacobian->sizeCols; column++) {
+      for (nz = sp->leadindex[column]; nz < sp->leadindex[column + 1]; nz++) {
+        SM_DATA_S(Jac)[nz] /= xScaling[column];
+      }
+    }
+  }
+
+  /* Finish sparse matrix and do a cheap check for singularity */
+  finishSparseColPtr(Jac, sp->numberOfNonZeros);
+
+  /* Debug print */
+  if (OMC_ACTIVE_STREAM(OMC_LOG_NLS_JAC)) {
+    infoStreamPrint(OMC_LOG_NLS_JAC, 1, "KINSOL: Sparse Matrix.");
+    SUNSparseMatrix_Print(Jac, stdout); /* TODO: Print in OMC_LOG_NLS_JAC */
+    nlsKinsolJacSumSparse(Jac);
+    messageClose(OMC_LOG_NLS_JAC);
+  }
+
+  if (omc_useStream[OMC_LOG_NLS_DERIVATIVE_TEST])
+  {
+    nlsKinsolDenseDerivativeTest(data, nlsData, kinsolData, Jac, KINSOL_JAC_EVAL);
+  }
+
+  if (omc_useStream[OMC_LOG_NLS_JAC_SUMS])
+  {
+    nlsJacobianRowColSums(data, nlsData, Jac, KINSOL_JAC_EVAL /* called at evaluation */, kinsolData->nominalJac /* scaled */);
+  }
+
+  /* performance measurement and statistics */
+  nlsData->jacobianTime += rt_ext_tp_tock(&(nlsData->jacobianTimeClock));
+  nlsData->numberOfJEval++;
+
+  return 0;
+}
+
 /**
  * @brief Colored numeric Jacobian evaluation.
  *
@@ -569,91 +815,14 @@ static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
     sundialsPrintSparseMatrix(Jac, "A", OMC_LOG_JAC);
   }
 
-  /* performance measurement and statistics */
-  nlsData->jacobianTime += rt_ext_tp_tock(&(nlsData->jacobianTimeClock));
-  nlsData->numberOfJEval++;
-
-  return 0;
-}
-
-/**
- * @brief Computes symbolic Jacobian matrix Jac(vecX)
- *
- * @param vecX
- * @param vecFX     just for interface compatibility, will not be used here
- * @param Jac       Allocated Jacobian, contains symbolic Jacobian on exit
- * @param userData  Void pointer to user data of type NLS_USERDATA*.
- * @param tmp1      Unused, only to match interface of KINLsJacFn
- * @param tmp2      Unused, only to match interface of KINLsJacFn
- * @return int
- */
-int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
-                    void *userData, N_Vector tmp1, N_Vector tmp2) {
-  /* Variables */
-  NLS_USERDATA* kinsolUserData = (NLS_USERDATA *)userData;;
-  DATA* data = kinsolUserData->data;
-  threadData_t* threadData = kinsolUserData->threadData;
-  NONLINEAR_SYSTEM_DATA* nlsData = kinsolUserData->nlsData;
-  NLS_KINSOL_DATA* kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
-  JACOBIAN* jacobian = kinsolUserData->analyticJacobian;
-  assertStreamPrint(threadData, NULL != jacobian, "jacobian is NULL");
-  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
-  assertStreamPrint(threadData, NULL != sp, "sp is NULL");
-  double *xScaling = NV_DATA_S(kinsolData->xScale);
-  long int i, j, ii, l;
-
-  if (SUNMatGetID(Jac) != SUNMATRIX_SPARSE || SM_SPARSETYPE_S(Jac) == CSR_MAT) {
-    errorStreamPrint(OMC_LOG_STDOUT, 0,
-                     "KINSOL: nlsSparseJac illegal input Jac. Matrix is not sparse!");
-    return -1;
+  if (omc_useStream[OMC_LOG_NLS_DERIVATIVE_TEST])
+  {
+    nlsKinsolDenseDerivativeTest(data, nlsData, kinsolData, Jac, KINSOL_JAC_EVAL);
   }
 
-  /* performance measurement */
-  rt_ext_tp_tick(&nlsData->jacobianTimeClock);
-
-  /* reset matrix */
-  SUNMatZero(Jac);
-
-  /* Evaluate constant equations of Jacobian */
-  if (jacobian->constantEqns != NULL) {
-    jacobian->constantEqns(data, threadData, jacobian, NULL);
-  }
-
-  /* Evaluate Jacobian */
-  for (i = 0; i < sp->maxColors; i++) {
-    /* Set seed variables */
-    for (j = 0; j < jacobian->sizeCols; j++)
-      if (sp->colorCols[j] - 1 == i)
-        jacobian->seedVars[j] = 1.0;
-
-    /* Evaluate Jacobian column */
-    jacobian->evalColumn(data, threadData, jacobian, NULL);
-
-    /* Save column in Jac and unset seed variables */
-    for (j = 0; j < jacobian->sizeCols; j++) {
-      if (sp->colorCols[j] - 1 == i) {
-        for (ii = sp->leadindex[j]; ii < sp->leadindex[j + 1]; ii++) {
-          l = sp->index[ii];
-          if (kinsolData->nominalJac) {
-            setJacElementSundialsSparse(l, j, ii, jacobian->resultVars[l] / xScaling[j], Jac, SM_CONTENT_S(Jac)->M);
-          } else {
-            setJacElementSundialsSparse(l, j, ii, jacobian->resultVars[l], Jac, SM_CONTENT_S(Jac)->M);
-          }
-        }
-        jacobian->seedVars[j] = 0.0;
-      }
-    }
-  }
-
-  /* Finish sparse matrix and do a cheap check for singularity */
-  finishSparseColPtr(Jac, sp->numberOfNonZeros);
-
-  /* Debug print */
-  if (OMC_ACTIVE_STREAM(OMC_LOG_NLS_JAC)) {
-    infoStreamPrint(OMC_LOG_NLS_JAC, 1, "KINSOL: Sparse Matrix.");
-    SUNSparseMatrix_Print(Jac, stdout); /* TODO: Print in OMC_LOG_NLS_JAC */
-    nlsKinsolJacSumSparse(Jac);
-    messageClose(OMC_LOG_NLS_JAC);
+  if (omc_useStream[OMC_LOG_NLS_JAC_SUMS])
+  {
+    nlsJacobianRowColSums(data, nlsData, Jac, KINSOL_JAC_EVAL, kinsolData->nominalJac /* scaled */);
   }
 
   /* performance measurement and statistics */
@@ -965,13 +1134,15 @@ static void nlsKinsolConfigPrint(NLS_KINSOL_DATA *kinsolData,
   _omc_initVector(&vecFScaling, kinsolData->size,
                   NV_DATA_S(kinsolData->fScale));
 
-  _omc_printVectorWithEquationInfo(
+  if (eqSystemNumber>0) {
+    _omc_printVectorWithEquationInfo(
       &vecStart, "Initial guess values", OMC_LOG_NLS_V,
       modelInfoGetEquation(&data->modelData->modelDataXml, eqSystemNumber));
 
-  _omc_printVectorWithEquationInfo(
+    _omc_printVectorWithEquationInfo(
       &vecXScaling, "xScaling", OMC_LOG_NLS_V,
       modelInfoGetEquation(&data->modelData->modelDataXml, eqSystemNumber));
+  }
 
   _omc_printVector(&vecFScaling, "fScaling", OMC_LOG_NLS_V);
 
@@ -1191,6 +1362,27 @@ NLS_SOLVER_STATUS nlsKinsolSolve(DATA* data, threadData_t* threadData, NONLINEAR
 
     /* Dump configuration */
     nlsKinsolConfigPrint(kinsolData, nlsData);
+
+    /* TODO: This should be another flag, e.g. LOG_NLS_JAC_UPDATE and not OMC_LOG_NLS_DERIVATIVE_TEST
+             only in some cases this derivative test makes sense, since the scaled Jacobian is outdated frequently!
+             in most cases, we use an outdated jacobian here, such that errors explode and it detects wrong Jacobian mismatches
+             that are due to the dense Jacobian evaluated at the new point x_new.
+
+    if (omc_useStream[OMC_LOG_NLS_DERIVATIVE_TEST])
+    {
+      nlsKinsolDenseDerivativeTest(data, nlsData, kinsolData, kinsolData->J, KINSOL_ENTRY_POINT);
+    }
+    */
+
+    if (omc_useStream[OMC_LOG_NLS_JAC_SUMS])
+    {
+      nlsJacobianRowColSums(data, nlsData, kinsolData->J, KINSOL_ENTRY_POINT /* called at entry point */, kinsolData->nominalJac /* scaled */);
+    }
+
+    if (omc_useStream[OMC_LOG_NLS_SVD] || omc_useStream[OMC_LOG_NLS_SVD_V])
+    {
+      svd_compute(data, nlsData, SM_DATA_S(kinsolData->J), FALSE /* scaled */, KINSOL_ENTRY_POINT /* called at entry point */);
+    }
 
     flag = KINSol(
         kinsolData->kinsolMemory,   /* KINSol memory block */

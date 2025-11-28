@@ -215,7 +215,7 @@ public
           SimStrongComponent.Block columnEqn;
           list<SimStrongComponent.Block> columnEqns = {};
           VarData varData;
-          VariablePointers seed_scalar, res_scalar, tmp_scalar;
+          VariablePointers seed_vec, res_vec, tmp_vec;
           Pointer<list<SimVar>> seedVars_ptr = Pointer.create({});
           Pointer<list<SimVar>> resVars_ptr = Pointer.create({});
           Pointer<list<SimVar>> tmpVars_ptr = Pointer.create({});
@@ -245,13 +245,20 @@ public
           indices.generic_call_map := sim_map;
 
           // scalarize variables for sim code
-          seed_scalar := VariablePointers.scalarize(varData.seedVars);
-          res_scalar  := VariablePointers.scalarize(varData.resultVars);
-          tmp_scalar  := VariablePointers.scalarize(varData.tmpVars);
+          if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
+            seed_vec := VariablePointers.scalarize(varData.seedVars);
+            res_vec  := VariablePointers.scalarize(varData.resultVars);
+            tmp_vec  := VariablePointers.scalarize(varData.tmpVars);
+          else
+            seed_vec := varData.seedVars;
+            res_vec  := varData.resultVars;
+            tmp_vec  := varData.tmpVars;
+          end if;
+
           // use dummy simcode indices to always start at 0 for column and seed vars
-          VariablePointers.map(seed_scalar, function SimVar.traverseCreate(acc = seedVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType = VarType.SIMULATION));
-          VariablePointers.map(res_scalar,  function SimVar.traverseCreate(acc = resVars_ptr,  indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType = VarType.SIMULATION));
-          VariablePointers.map(tmp_scalar,  function SimVar.traverseCreate(acc = tmpVars_ptr,  indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType = VarType.SIMULATION));
+          VariablePointers.map(seed_vec,  function SimVar.traverseCreate(acc = seedVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType = VarType.SIMULATION));
+          VariablePointers.map(res_vec,   function SimVar.traverseCreate(acc = resVars_ptr,  indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType = VarType.SIMULATION));
+          VariablePointers.map(tmp_vec,   function SimVar.traverseCreate(acc = tmpVars_ptr,  indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES()), varType = VarType.SIMULATION));
           seedVars  := listReverse(Pointer.access(seedVars_ptr));
           resVars   := listReverse(Pointer.access(resVars_ptr));
           tmpVars   := listReverse(Pointer.access(tmpVars_ptr));
@@ -266,16 +273,26 @@ public
             if Jacobian.isDynamic(jacobian.jacType) then
               for var in seedVars loop
                 cref := SimVar.getName(var);
-                if BVariable.checkCref(cref, BVariable.isSeed) then
+                if BVariable.checkCref(cref, BVariable.isSeed, sourceInfo()) then
                   // FIXME this should not happen, fix it when collecting seedVars!
                   cref := BVariable.getPartnerCref(cref, BVariable.getVarSeed);
                 end if;
                 UnorderedMap.add(cref, var.index, idx_map);
-                if BVariable.checkCref(cref, BVariable.isState) then
+                if BVariable.checkCref(cref, BVariable.isState, sourceInfo()) then
                   cref := BVariable.getPartnerCref(cref, BVariable.getVarDer);
                   UnorderedMap.add(cref, var.index, idx_map);
                 end if;
               end for;
+
+              // also add residuals if its DAE Mode
+              if jacobian.jacType == NBJacobian.JacobianType.DAE then
+                for var in resVars loop
+                  cref := SimVar.getName(var);
+                  UnorderedMap.add(cref, var.index, idx_map);
+                  //cref := BVariable.getPartnerCref(cref, BVariable.getVarPDer);
+                  //UnorderedMap.add(cref, var.index, idx_map);
+                end for;
+              end if;
             else
               for var in seedVars loop
                 cref := SimVar.getName(var);
@@ -325,13 +342,11 @@ public
     end create;
 
     function createSimulationJacobian
-      input list<Partition.Partition> ode;
-      input list<Partition.Partition> ode_event;
+      input list<Partition.Partition> partitions;
       output SimJacobian simJac;
       input output SimCode.SimCodeIndices simCodeIndices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
     protected
-      list<Partition.Partition> partitions = listAppend(ode, ode_event);
       list<BackendDAE> jacobians = {};
       BackendDAE simJacobian;
       Option<SimJacobian> simJac_opt;

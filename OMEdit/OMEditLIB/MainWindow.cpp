@@ -268,7 +268,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpElementWidget = new ElementWidget(this);
   // Create ElementDockWidget
   mpElementDockWidget = new QDockWidget(Helper::elements, this);
-  mpElementDockWidget->setObjectName("ElementBrowser");
+  mpElementDockWidget->setObjectName("Elements");
   mpElementDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   mpElementDockWidget->setWidget(mpElementWidget);
   addDockWidget(Qt::LeftDockWidgetArea, mpElementDockWidget);
@@ -402,11 +402,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
     mpLibraryWidget->getLibraryTreeModel()->addModelicaLibraries();
   }
   // set command line options
-  if (OptionsDialog::instance()->getDebuggerPage()->getGenerateOperationsCheckBox()->isChecked()) {
-    mpOMCProxy->setCommandLineOptions("-d=infoXmlOperations");
-  }
   OptionsDialog::instance()->saveSimulationSettings();
-  OptionsDialog::instance()->saveNFAPISettings();
   // create tabs from MessagesWidget
   QTabBar::ButtonPosition closeSide = (QTabBar::ButtonPosition)style()->styleHint(QStyle::SH_TabBar_CloseButtonPosition, 0, mpMessagesTabWidget);
   MessagesTabWidget *pMessagesTabWidget = MessagesWidget::instance()->getMessagesTabWidget();
@@ -543,18 +539,6 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
   // show/hide toolbars
   QSettings *pSettings = Utilities::getApplicationSettings();
   if (pModelWidget && pModelWidget->getLibraryTreeItem()->isText()) {
-    pSettings->beginGroup(ToolBars::modelingTextPerspective);
-    SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpShapesToolBar, ToolBars::shapesToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpModelSwitcherToolBar, ToolBars::modelSwitcherToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
-    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
-    SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
-  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isCRML()) {
     pSettings->beginGroup(ToolBars::modelingTextPerspective);
     SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
     SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
@@ -769,6 +753,7 @@ int MainWindow::askForExit()
  */
 void MainWindow::beforeClosingMainWindow()
 {
+  mpAutoSaveTimer->stop();
   // Issue #9101. Close all top level windows
   foreach (QWidget *pWidget, QApplication::topLevelWidgets())  {
     if (pWidget == this) {
@@ -783,6 +768,7 @@ void MainWindow::beforeClosingMainWindow()
   delete mpLibraryWidget;
   delete mpElementWidget;
   delete mpModelWidgetContainer;
+  mpModelWidgetContainer = nullptr;
   // delete the ArchivedSimulationsWidget object
   ArchivedSimulationsWidget::destroy();
   if (mpSimulationDialog) {
@@ -928,7 +914,7 @@ void MainWindow::simulate(LibraryTreeItem *pLibraryTreeItem)
     mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false, false, false);
   } else if (pLibraryTreeItem->isSSP()) {
     // get the top level LibraryTreeItem
-    LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pLibraryTreeItem);
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pLibraryTreeItem);
     if (pTopLevelLibraryTreeItem) {
       if (!mpOMSSimulationDialog) {
         mpOMSSimulationDialog = new OMSSimulationDialog(this);
@@ -999,7 +985,7 @@ void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
     mpSimulationDialog->show(pLibraryTreeItem, false, SimulationOptions());
   } else if (pLibraryTreeItem->isSSP()) {
     // get the top level LibraryTreeItem
-    LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pLibraryTreeItem);
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pLibraryTreeItem);
     if (pTopLevelLibraryTreeItem) {
       if (!mpOMSSimulationDialog) {
         mpOMSSimulationDialog = new OMSSimulationDialog(this);
@@ -1513,17 +1499,19 @@ void MainWindow::createOMNotebookCodeCell(LibraryTreeItem *pLibraryTreeItem, QDo
 /*!
  * \brief MainWindow::showTransformationsWidget
  * Creates a TransformationsWidget and show it to the user.
- * \param fileName
+ * \param fileName - path to model_info.json file.
+ * \param profiling - enable/disable profiling
+ * \param checkProfilingExists - check profiling files exists
  * \return
  */
-TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, bool profiling)
+TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, bool profiling, bool checkProfilingExists)
 {
   TransformationsWidget *pTransformationsWidget = mTransformationsWidgetHash.value(fileName, 0);
   if (!pTransformationsWidget) {
-    pTransformationsWidget = new TransformationsWidget(fileName, profiling);
+    pTransformationsWidget = new TransformationsWidget(fileName, profiling, checkProfilingExists);
     mTransformationsWidgetHash.insert(fileName, pTransformationsWidget);
   } else {
-    pTransformationsWidget->reloadTransformations();
+    pTransformationsWidget->loadTransformations(profiling, checkProfilingExists);
   }
   pTransformationsWidget->show();
   pTransformationsWidget->raise();
@@ -1690,7 +1678,7 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
           }
         }
         pVariablesTreeModel->setData(index, Qt::Checked, Qt::CheckStateRole);
-        pMainWindow->getVariablesWidget()->plotVariables(index, pPlotWindow->getCurveWidth(), pPlotWindow->getCurveStyle(), false, pPlotCurve);
+        pMainWindow->getVariablesWidget()->plotVariables(index, pPlotWindow->getCurveWidth(), pPlotWindow->getCurveStyle(), Qt::NoModifier, pPlotCurve);
       }
     }
     // variables list is empty for plotAll
@@ -2053,7 +2041,7 @@ void MainWindow::showOpenTransformationFileDialog()
   }
   mpProgressBar->setRange(0, 0);
   mpStatusBar->showMessage(QString("%1: %2").arg(Helper::loading, fileName));
-  showTransformationsWidget(fileName, false);
+  showTransformationsWidget(fileName, false, true);
   mpStatusBar->clearMessage();
   hideProgressBar();
 }
@@ -2547,7 +2535,7 @@ void MainWindow::simulateModelInteractive()
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget && pModelWidget->getLibraryTreeItem() && pModelWidget->getLibraryTreeItem()->isSSP()) {
     // get the top level LibraryTreeItem
-    LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pModelWidget->getLibraryTreeItem());
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pModelWidget->getLibraryTreeItem());
     if (pTopLevelLibraryTreeItem) {
       if (!mpOMSSimulationDialog) {
         mpOMSSimulationDialog = new OMSSimulationDialog(this);
@@ -2996,11 +2984,19 @@ void MainWindow::runOMSensPlugin()
     }
   }
   // if OMSens plugin is already loaded.
-  InformationInterface *pInformationInterface = qobject_cast<InformationInterface*>(mpOMSensPlugin);
-  pInformationInterface->setOpenModelicaHome(Helper::OpenModelicaHome);
-  pInformationInterface->setTempPath(Utilities::tempDirectory());
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
+  if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+    if (!pModelWidget->getLibraryTreeItem()->isSaved()) {
+      // save the model
+      if (!MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pModelWidget->getLibraryTreeItem())) {
+        return;
+      }
+    }
+    InformationInterface *pInformationInterface = qobject_cast<InformationInterface*>(mpOMSensPlugin);
+    pInformationInterface->setOpenModelicaHome(Helper::OpenModelicaHome);
+    pInformationInterface->setTempPath(Utilities::tempDirectory());
+    pInformationInterface->setOMSensPath(OptionsDialog::instance()->getSensitivityOptimizationPage()->getOMSensBackendPathTextBox()->text());
+    pInformationInterface->setPython(OptionsDialog::instance()->getSensitivityOptimizationPage()->getPythonTextBox()->text());
     ModelInterface *pModelInterface = qobject_cast<ModelInterface*>(mpOMSensPlugin);
     pModelInterface->analyzeModel(pModelWidget->toOMSensData());
   } else {
@@ -3074,7 +3070,7 @@ void MainWindow::openModelicaDocumentation()
  */
 void MainWindow::openOMSimulatorUsersGuide()
 {
-  QUrl OMSimulatorUsersGuideUrl("https://openmodelica.org/doc/OMSimulator/master/html/");
+  QUrl OMSimulatorUsersGuideUrl("https://openmodelica.org/doc/OMSimulator/master/OMSimulator/UsersGuide/html/");
   QDesktopServices::openUrl(OMSimulatorUsersGuideUrl);
 }
 
@@ -4158,9 +4154,6 @@ void MainWindow::createActions()
   // Add bus action
   mpAddBusAction = new QAction(QIcon(":/Resources/icons/bus.svg"), Helper::addBus, this);
   mpAddBusAction->setStatusTip(Helper::addBusTip);
-  // Add tlm bus action
-  mpAddTLMBusAction = new QAction(QIcon(":/Resources/icons/tlm-bus.svg"), Helper::addTLMBus, this);
-  mpAddTLMBusAction->setStatusTip(Helper::addTLMBusTip);
   // Add SubModel Action
   mpAddSubModelAction = new QAction(QIcon(":/Resources/icons/import-fmu.svg"), Helper::addSubModel, this);
   mpAddSubModelAction->setStatusTip(Helper::addSubModelTip);
@@ -4323,7 +4316,6 @@ void MainWindow::createMenus()
   pSSPMenu->addSeparator();
   pSSPMenu->addAction(mpAddConnectorAction);
   pSSPMenu->addAction(mpAddBusAction);
-  pSSPMenu->addAction(mpAddTLMBusAction);
   pSSPMenu->addSeparator();
   pSSPMenu->addAction(mpAddSubModelAction);
   // add OMSimulator menu to menu bar
@@ -4366,7 +4358,7 @@ void MainWindow::createMenus()
 #ifndef Q_OS_MAC
   // Sensitivity Optimization menu
   QMenu *pSensitivityOptimizationMenu = new QMenu(menuBar());
-  pSensitivityOptimizationMenu->setTitle(tr("Sensitivity Optimization"));
+  pSensitivityOptimizationMenu->setTitle(Helper::sensitivityOptimization);
   // add actions to Sensitivity Optimization menu
   pSensitivityOptimizationMenu->addAction(mpRunOMSensAction);
   // add Sensitivity Optimization menu to menu bar
@@ -4504,11 +4496,6 @@ void MainWindow::switchToWelcomePerspective()
 #define ADD_SHOW_DIAGRAMVIEW() \
   if (mpPlotWindowContainer->getDiagramWindow() && mpPlotWindowContainer->getDiagramWindow()->getModelWidget()) { \
     ModelWidget *pModelWidget = mpPlotWindowContainer->getDiagramWindow()->getModelWidget(); \
-    pModelWidget->getDiagramGraphicsView()->setIsVisualizationView(false); \
-    if ((pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) \
-        || (pModelWidget->getEditor() && pModelWidget->getEditor()->isVisible())) { \
-      pModelWidget->getDiagramGraphicsView()->hide(); \
-    } \
     mpPlotWindowContainer->getDiagramWindow()->removeVisualizationDiagram(); \
     pModelWidget->getDiagramGraphicsView()->emitResetDynamicSelect(); \
     pModelWidget->getMainLayout()->addWidget(pModelWidget->getDiagramGraphicsView(), 1); \
@@ -4522,7 +4509,6 @@ void MainWindow::switchToModelingPerspective()
 {
   ADD_SHOW_DIAGRAMVIEW();
   mpCentralStackedWidget->setCurrentWidget(mpModelWidgetContainer);
-  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
     mpVariablesDockWidget->hide();
   }
@@ -4552,7 +4538,6 @@ void MainWindow::switchToPlottingPerspective()
   }
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   mpCentralStackedWidget->setCurrentWidget(mpPlotWindowContainer);
-  mpModelWidgetContainer->currentModelWidgetChanged(0);
   mpUndoAction->setEnabled(false);
   mpRedoAction->setEnabled(false);
   mpModelSwitcherToolButton->setEnabled(false);
@@ -4598,7 +4583,6 @@ void MainWindow::switchToPlottingPerspective()
 void MainWindow::switchToAlgorithmicDebuggingPerspective()
 {
   mpCentralStackedWidget->setCurrentWidget(mpModelWidgetContainer);
-  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
     mpVariablesDockWidget->hide();
   }
@@ -4836,7 +4820,6 @@ void MainWindow::createToolbars()
   mpOMSimulatorToolbar->addSeparator();
   mpOMSimulatorToolbar->addAction(mpAddConnectorAction);
   mpOMSimulatorToolbar->addAction(mpAddBusAction);
-  mpOMSimulatorToolbar->addAction(mpAddTLMBusAction);
   mpOMSimulatorToolbar->addSeparator();
   mpOMSimulatorToolbar->addAction(mpAddSubModelAction);
   connect(mpOMSimulatorToolbar, SIGNAL(visibilityChanged(bool)), SLOT(OMSimulatorToolBarVisibilityChanged(bool)));

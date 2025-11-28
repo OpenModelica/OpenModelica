@@ -37,9 +37,11 @@ SUBDIRS = Util \
   Homotopy \
   Expression \
   ModelInstance \
+  VariableValue \
   Utilities \
   StringHandler \
-  DynamicAnnotation
+  DynamicAnnotation \
+  AutoCompletion
 
 BrowseMSL.depends = Util
 Diagram.depends = Util
@@ -47,6 +49,8 @@ Transformation.depends = Util
 Homotopy.depends = Util
 Expression.depends = Util
 ModelInstance.depends = Util
+VariableValue.depends = Util
 Utilities.depends = Util
 StringHandler.depends = Util
 DynamicAnnotation.depends = Util
+AutoCompletion.depends = Util

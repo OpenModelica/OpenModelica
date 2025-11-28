@@ -1,9 +1,62 @@
+#include "MMAvlTree.h"
 #include "Absyn/ElementVisitor.h"
 #include "ClassNode.h"
 #include "Class.h"
+#include "Import.h"
 #include "ClassTree.h"
 
 using namespace OpenModelica;
+
+extern record_description NFClassTree_ClassTree_PARTIAL__TREE__desc;
+extern record_description NFClassTree_ClassTree_EXPANDED__TREE__desc;
+extern record_description NFClassTree_ClassTree_INSTANTIATED__TREE__desc;
+extern record_description NFClassTree_ClassTree_FLAT__TREE__desc;
+extern record_description NFClassTree_ClassTree_EMPTY__TREE__desc;
+
+constexpr int PARTIAL_TREE = 0;
+constexpr int EXPANDED_TREE = 1;
+constexpr int INSTANTIATED_TREE = 2;
+constexpr int FLAT_TREE = 3;
+constexpr int EMPTY_TREE = 4;
+
+extern record_description NFLookupTree_Entry_CLASS__desc;
+extern record_description NFLookupTree_Entry_COMPONENT__desc;
+extern record_description NFLookupTree_Entry_IMPORT__desc;
+
+constexpr int CLASS_ENTRY = 0;
+constexpr int COMPONENT_ENTRY = 1;
+constexpr int IMPORT_ENTRY = 2;
+
+int compareClassTreeKeys(MetaModelica::Value key1, MetaModelica::Value key2)
+{
+  return key1.toStringView().compare(key2.toStringView());
+}
+
+DEFINE_MM_AVL_TREE_TYPE(LookupTree, NFLookupTree_Tree, compareClassTreeKeys);
+DEFINE_MM_AVL_TREE_TYPE(DuplicateTree, NFDuplicateTree_Tree, compareClassTreeKeys);
+
+ClassTree::Entry::operator MetaModelica::Value() const noexcept
+{
+  int idx = 0;
+  record_description *desc = nullptr;
+
+  switch (type) {
+    case EntryType::Class:
+      idx = CLASS_ENTRY;
+      desc = &NFLookupTree_Entry_CLASS__desc;
+      break;
+    case EntryType::Component:
+      idx = COMPONENT_ENTRY;
+      desc = &NFLookupTree_Entry_COMPONENT__desc;
+      break;
+    case EntryType::Import:
+      idx = IMPORT_ENTRY;
+      desc = &NFLookupTree_Entry_IMPORT__desc;
+      break;
+  }
+
+  return MetaModelica::Record(idx, *desc, {MetaModelica::Value(static_cast<int64_t>(index + 1))});
+}
 
 ClassTree::Entry ClassTree::Entry::offset(size_t classOffset, size_t componentOffset) const
 {
@@ -178,6 +231,59 @@ void ClassTree::expand()
 void ClassTree::instantiate()
 {
 
+}
+
+MetaModelica::Record ClassTree::toNF() const
+{
+  LookupTree ltree;
+  for (auto &e: _table) {
+    ltree.add(MetaModelica::Value{e.first}, e.second);
+  }
+
+  switch (_state) {
+    case State::Partial:
+      return MetaModelica::Record{PARTIAL_TREE, NFClassTree_ClassTree_PARTIAL__TREE__desc, {
+        ltree,
+        MetaModelica::Array{_classes, [](auto &c) { return c->toMetaModelica(); }},
+        MetaModelica::Array{_components, [](auto &c) { return c->toMetaModelica(); }},
+        MetaModelica::Array{_extends, [](auto &e) { return e->toMetaModelica(); }},
+        MetaModelica::Array{_imports, [](auto &i) { return i.toNF(); }},
+        DuplicateTree{}
+      }};
+
+    case State::Expanded:
+      return MetaModelica::Record{EXPANDED_TREE, NFClassTree_ClassTree_EXPANDED__TREE__desc, {
+        ltree,
+        MetaModelica::Array{_classes, [](auto &c) { return c->toMetaModelica(); }},
+        MetaModelica::Array{_components, [](auto &c) { return c->toMetaModelica(); }},
+        MetaModelica::Array{_extends, [](auto &e) { return e->toMetaModelica(); }},
+        MetaModelica::Array{_imports, [](auto &i) { return i.toNF(); }},
+        DuplicateTree{},
+      }};
+
+    case State::Instantiated:
+      return MetaModelica::Record{INSTANTIATED_TREE, NFClassTree_ClassTree_INSTANTIATED__TREE__desc, {
+        ltree,
+        MetaModelica::Array{_classes, [](auto &c) { return MetaModelica::Mutable{c->toMetaModelica()}; }},
+        MetaModelica::Array{_components, [](auto &c) { return MetaModelica::Mutable{c->toMetaModelica()}; }},
+        MetaModelica::List{_localComponents, [](auto &c) { return MetaModelica::Value{static_cast<int64_t>(c)}; }},
+        MetaModelica::Array{_extends, [](auto &e) { return e->toMetaModelica(); }},
+        MetaModelica::Array{_imports, [](auto &i) { return i.toNF(); }},
+        DuplicateTree{}
+      }};
+
+    case State::Flat:
+      return MetaModelica::Record{FLAT_TREE, NFClassTree_ClassTree_FLAT__TREE__desc, {
+        ltree,
+        MetaModelica::Array{_classes, [](auto &c) { return c->toMetaModelica(); }},
+        MetaModelica::Array{_components, [](auto &c) { return c->toMetaModelica(); }},
+        MetaModelica::Array{_imports, [](auto &i) { return i.toNF(); }},
+        DuplicateTree{}
+      }};
+
+    default:
+      return MetaModelica::Record{EMPTY_TREE, NFClassTree_ClassTree_EMPTY__TREE__desc, {}};
+  }
 }
 
 void ClassTree::addLocalName(const std::string &name, Entry entry, const InstNode &/*node*/)

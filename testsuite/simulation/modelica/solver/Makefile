@@ -23,7 +23,6 @@ problem2-irksco.mos \
 problem2-ida.mos \
 problem2-idaLinearSolver.mos \
 problem2-idaJacobian.mos \
-problem2-imprkLS.mos \
 problem2-symSolverImp.mos \
 problem2-symSolverExp.mos \
 problem2-symSolverImpSsc.mos \
@@ -32,13 +31,13 @@ problem3-symSolverImp.mos \
 problem3-symSolverExp.mos \
 problem3-symSolverImpSsc.mos \
 problem3-symSolverExpSsc.mos \
-problem4-erk_ssc.mos \
+problem4-rungekuttaSsc.mos \
 problem4-symSolverImp.mos \
 problem4-symSolverExp.mos \
 problem5-symSolverImp.mos \
 problem5-symSolverExp.mos \
-problem6-irksco.mos \
 problem6-cvode.mos \
+problem6-irksco.mos \
 problem6-symSolverImp.mos \
 problem6-symSolverExp.mos \
 
@@ -71,6 +70,7 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile \
+gbode \
 
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
@@ -85,7 +85,7 @@ test:
 	rm -rf externalInput.csv
 	@$(TEST) $(TESTFILES)
 
-# Cleans all files that are not listed as dependencies 
+# Cleans all files that are not listed as dependencies
 clean :
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
 	@rm -f $(CLEAN)
@@ -94,11 +94,11 @@ clean :
 # do it after cleaning and updating the folder
 # then you can get a list of file names (which must be dependencies
 # since you got them from repository + your own new files)
-# then add them to the DEPENDENCIES. You can find the 
-# list in deps.txt 
-getdeps: 
+# then add them to the DEPENDENCIES. You can find the
+# list in deps.txt
+getdeps:
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
-	@echo $(CLEAN) | sed -r 's/deps.txt|deps.tmp//g' | sed 's/ / \\\n/g' > deps.txt	
+	@echo $(CLEAN) | sed -r 's/deps.txt|deps.tmp//g' | sed 's/ / \\\n/g' > deps.txt
 	@echo Dependency list saved in deps.txt.
 	@echo Copy the list from deps.txt and add it to the Makefile @DEPENDENCIES
 

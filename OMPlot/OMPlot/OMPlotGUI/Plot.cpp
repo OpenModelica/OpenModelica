@@ -57,6 +57,7 @@ Plot::Plot(PlotWindow *pParent)
 {
   setAutoReplot(false);
   mpParentPlotWindow = pParent;
+  enableAxis(QwtPlot::yRight);
   // create an instance of legend
   mpLegend = new Legend(this);
   insertLegend(mpLegend, QwtPlot::TopLegend);
@@ -69,11 +70,14 @@ Plot::Plot(PlotWindow *pParent)
   LinearScaleEngine *pYLinearScaleEngine = new LinearScaleEngine;
   setAxisScaleEngine(QwtPlot::yLeft, pYLinearScaleEngine);
   setAxisAutoScale(QwtPlot::yLeft);
+  setAxisVisible(QwtPlot::yRight, false);   // y axis initially hidden
   // create the scale draw
   mpXScaleDraw = new ScaleDraw(true, this);
   setAxisScaleDraw(QwtPlot::xBottom, mpXScaleDraw);
   mpYScaleDraw = new ScaleDraw(false, this);
   setAxisScaleDraw(QwtPlot::yLeft, mpYScaleDraw);
+  mpYRightScaleDraw = new ScaleDraw(false, this);
+  setAxisScaleDraw(QwtPlot::yRight, mpYRightScaleDraw);
   // create an instance of zoomer
   mpPlotZoomer = new PlotZoomer(QwtPlot::xBottom, QwtPlot::yLeft, canvas());
   // create an instance of panner
@@ -104,10 +108,13 @@ Plot::Plot(PlotWindow *pParent)
   QwtText bottomTitle = axisTitle(QwtPlot::xBottom);
   bottomTitle.setFont(QFont(monospaceFont.family(), 11));
   setAxisTitle(QwtPlot::xBottom, bottomTitle);
-  // set the left axis title font size small.
+  // set the left and right axis title font size small.
   QwtText leftTitle = axisTitle(QwtPlot::yLeft);
   leftTitle.setFont(QFont(monospaceFont.family(), 11));
   setAxisTitle(QwtPlot::yLeft, leftTitle);
+  QwtText rightTitle = axisTitle(QwtPlot::yRight);
+  rightTitle.setFont(QFont(monospaceFont.family(), 11));
+  setAxisTitle(QwtPlot::yRight, rightTitle);
   // fill colors list
   fillColorsList();
   setAutoReplot(true);
@@ -203,7 +210,8 @@ QColor Plot::getUniqueColor(int index, int total)
     return mColorsList.at(index);
 }
 
-void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, double verticalAxisNumbersFontSize, double horizontalAxisTitleFontSize,
+void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, double verticalAxisNumbersFontSize, 
+                        double rightVerticalAxisTitleFontSize, double rightVerticalAxisNumbersFontSize, double horizontalAxisTitleFontSize,
                         double horizontalAxisNumbersFontSize, double footerFontSize, double legendFontSize)
 {
   // title
@@ -220,6 +228,16 @@ void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, 
   font = axisWidget(QwtPlot::yLeft)->font();
   font.setPointSizeF(verticalAxisNumbersFontSize);
   axisWidget(QwtPlot::yLeft)->setFont(font);
+  // right vertical axis title
+  QwtText verticalRightTitle = axisWidget(QwtPlot::yRight)->title();
+  font = verticalRightTitle.font();
+  font.setPointSizeF(rightVerticalAxisTitleFontSize);
+  verticalRightTitle.setFont(font);
+  axisWidget(QwtPlot::yRight)->setTitle(verticalRightTitle);
+  // right vertical axis numbers
+  font = axisWidget(QwtPlot::yRight)->font();
+  font.setPointSizeF(rightVerticalAxisNumbersFontSize);
+  axisWidget(QwtPlot::yRight)->setFont(font);
   // horizontal axis title
   QwtText horizontalTitle = axisWidget(QwtPlot::xBottom)->title();
   font = horizontalTitle.font();
@@ -248,41 +266,41 @@ void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, 
  */
 bool Plot::prefixableUnit(const QString &unit)
 {
-  static QStringList prefixableUnits;
-  prefixableUnits << "s"
-                  << "m"
-                  << "m/s"
-                  << "m/s2"
-                  << "rad"
-                  << "rad/s"
-                  << "rad/s2"
-                  << "rpm"
-                  << "Hz"
-                  << "N"
-                  << "N.m"
-                  << "Pa"
-                  << "Pa.s"
-                  << "J"
-                  << "J/kg"
-                  << "J/(kg.K)"
-                  << "K"
-                  << "V"
-                  << "V/m"
-                  << "A"
-                  << "C"
-                  << "F"
-                  << "T"
-                  << "Wb"
-                  << "Wb/m"
-                  << "H"
-                  << "Ohm"
-                  << "S"
-                  << "W"
-                  << "W/m"
-                  << "W/m2"
-                  << "Wh"
-                  << "var";
-
+  static const QSet<QString> prefixableUnits = {
+    "s",
+    "m",
+    "m/s",
+    "m/s2",
+    "rad",
+    "rad/s",
+    "rad/s2",
+    "rpm",
+    "Hz",
+    "N",
+    "N.m",
+    "Pa",
+    "Pa.s",
+    "J",
+    "J/kg",
+    "J/(kg.K)",
+    "K",
+    "V",
+    "V/m",
+    "A",
+    "C",
+    "F",
+    "T",
+    "Wb",
+    "Wb/m",
+    "H",
+    "Ohm",
+    "S",
+    "W",
+    "W/m",
+    "W/m2",
+    "Wh",
+    "var"
+  };
   return prefixableUnits.contains(unit);
 }
 
@@ -406,9 +424,12 @@ void Plot::replot()
 {
   mpXScaleDraw->invalidateCache();
   mpYScaleDraw->invalidateCache();
+  mpYRightScaleDraw->invalidateCache();
   QwtPlot::replot();
 
   // Now we need to again loop through curves to set the color and title.
+  // Also display y-axis (left or right) only if axis is assigned to at least one curve
+  bool leftAxisVisible = false, rightAxisVisible = false;
   for (int i = 0 ; i < mPlotCurvesList.length() ; i++) {
     // if user has set the custom color for the curve then dont get automatic color for it
     if (!mPlotCurvesList[i]->hasCustomColor()) {
@@ -417,7 +438,11 @@ void Plot::replot()
       mPlotCurvesList[i]->setPen(pen);
     }
     mPlotCurvesList[i]->setTitleLocal();
+    rightAxisVisible = rightAxisVisible || mPlotCurvesList[i]->isYAxisRight();
+    leftAxisVisible = leftAxisVisible || (!mPlotCurvesList[i]->isYAxisRight());
   }
+  setAxisVisible(QwtPlot::yLeft, leftAxisVisible);
+  setAxisVisible(QwtPlot::yRight, rightAxisVisible);
 
   if (mpParentPlotWindow->getXCustomLabel().isEmpty()) {
     // ScaleDraw::getUnitPrefix is only set when time is on x-axis
@@ -440,6 +465,13 @@ void Plot::replot()
   } else {
     setAxisTitle(QwtPlot::yLeft, mpParentPlotWindow->getYCustomLabel());
   }
+
+  if (mpParentPlotWindow->getYRightCustomLabel().isEmpty()) {
+    setAxisTitle(QwtPlot::yRight, "");
+  } else {
+    setAxisTitle(QwtPlot::yRight, mpParentPlotWindow->getYRightCustomLabel());
+  }
+
 }
 
 } // namespace OMPlot

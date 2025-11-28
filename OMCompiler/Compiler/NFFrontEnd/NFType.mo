@@ -255,6 +255,7 @@ public
   algorithm
     isInteger := match ty
       case INTEGER() then true;
+      case METABOXED() then isInteger(ty.ty);
       else false;
     end match;
   end isInteger;
@@ -265,6 +266,7 @@ public
   algorithm
     isReal := match ty
       case REAL() then true;
+      case METABOXED() then isReal(ty.ty);
       else false;
     end match;
   end isReal;
@@ -275,6 +277,7 @@ public
   algorithm
     isBool := match ty
       case BOOLEAN() then true;
+      case METABOXED() then isBoolean(ty.ty);
       else false;
     end match;
   end isBoolean;
@@ -285,6 +288,7 @@ public
   algorithm
     isString := match ty
       case STRING() then true;
+      case METABOXED() then isString(ty.ty);
       else false;
     end match;
   end isString;
@@ -295,6 +299,7 @@ public
   algorithm
     isClock := match ty
       case CLOCK() then true;
+      case METABOXED() then isClock(ty.ty);
       else false;
     end match;
   end isClock;
@@ -453,7 +458,7 @@ public
     output Boolean isEmpty;
   algorithm
     isEmpty := match ty
-      case ARRAY() then List.exist(ty.dimensions, Dimension.isZero);
+      case ARRAY() then List.any(ty.dimensions, Dimension.isZero);
       case CONDITIONAL_ARRAY() then isEmptyArray(ty.trueType);
       else false;
     end match;
@@ -874,7 +879,7 @@ public
     output Boolean hasZero;
   algorithm
     hasZero := match ty
-      case ARRAY() then List.exist(ty.dimensions, Dimension.isZero);
+      case ARRAY() then List.any(ty.dimensions, Dimension.isZero);
       case CONDITIONAL_ARRAY() then hasZeroDimension(ty.trueType) and hasZeroDimension(ty.falseType);
       else false;
     end match;
@@ -982,7 +987,7 @@ public
 
       case Type.ANY() then "$ANY$";
       case Type.CONDITIONAL_ARRAY() then toString(ty.trueType) + "|" + toString(ty.falseType);
-      case Type.UNTYPED() then List.toString(arrayList(ty.dimensions), Dimension.toString, InstNode.name(ty.typeNode), "[", ", ", "]", false);
+      case Type.UNTYPED() then Array.toString(ty.dimensions, Dimension.toString, InstNode.name(ty.typeNode), "[", ", ", "]", false);
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown type: " + anyString(ty), sourceInfo());
@@ -1016,7 +1021,7 @@ public
       case Type.POLYMORPHIC() then "<" + ty.name + ">";
       case Type.ANY() then "$ANY$";
       case Type.CONDITIONAL_ARRAY() then toFlatString(ty.trueType, format) + "|" + toFlatString(ty.falseType, format);
-      case Type.UNTYPED() then List.toString(arrayList(ty.dimensions), function Dimension.toFlatString(format = format), InstNode.name(ty.typeNode), "[", ", ", "]", false);
+      case Type.UNTYPED() then Array.toString(ty.dimensions, function Dimension.toFlatString(format = format), InstNode.name(ty.typeNode), "[", ", ", "]", false);
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown type: " + anyString(ty), sourceInfo());
@@ -1445,7 +1450,7 @@ public
       case CLOCK() then 1;
       case ENUMERATION() then 1;
       case ARRAY() then sizeOf(ty.elementType) * Dimension.sizesProduct(ty.dimensions, resize);
-      case TUPLE() then List.fold(list(sizeOf(t) for t in ty.types), intAdd, 0);
+      case TUPLE() then sum(sizeOf(t) for t in ty.types);
       case COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()) then 1;
       case COMPLEX(complexTy = ComplexType.RECORD())
         then ClassTree.foldComponents(Class.classTree(InstNode.getClass(ty.cls)), fold_comp_size, 0);

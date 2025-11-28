@@ -5,7 +5,6 @@ simple_for.mos\
 simple_nested_for.mos\
 irregular_for.mos\
 diagonal_slice_for.mos\
-exemplary.mos\
 simple_der_for.mos\
 for_exp.mos\
 for_list.mos\
@@ -13,6 +12,12 @@ for_if.mos\
 Resizable_HeatTransfer_equations.mos\
 testVectorizedSolarSystem.mos\
 testVectorizedPowerSystem.mos\
+exemplary.mos\
+MultiDimensionalArrays1.mos\
+MultiDimensionalArrays2.mos\
+MultiDimensionalArrays3.mos\
+MultiDimensionalArrays4.mos\
+subscripted_expression.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
@@ -24,6 +29,7 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile \
+ReferenceFiles \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 

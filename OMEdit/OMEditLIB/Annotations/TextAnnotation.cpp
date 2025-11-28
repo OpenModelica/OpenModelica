@@ -252,30 +252,31 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
 
 void TextAnnotation::parseShapeAnnotation()
 {
-  GraphicItem::parseShapeAnnotation(mpText);
-  FilledShape::parseShapeAnnotation(mpText);
+  GraphicsView *pGraphicsView = getContainingGraphicsView();
+  GraphicItem::parseShapeAnnotation(mpText, pGraphicsView);
+  FilledShape::parseShapeAnnotation(mpText, pGraphicsView);
 
   mExtent = mpText->getExtent();
-  mExtent.evaluate(mpText->getParentModel());
+  mExtent.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mTextString = mpText->getTextString();
-  mTextString.evaluate(mpText->getParentModel());
+  mTextString.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mOriginalTextString = mTextString;
   initUpdateTextString();
 
   mFontSize = mpText->getFontSize();
-  mFontSize.evaluate(mpText->getParentModel());
+  mFontSize.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   if (mpText->getTextColor().isValid()) {
     mLineColor = mpText->getTextColor();
-    mLineColor.evaluate(mpText->getParentModel());
+    mLineColor.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   }
   if (!mpText->getFontName().isEmpty()) {
     mFontName = mpText->getFontName();
-    mFontName.evaluate(mpText->getParentModel());
+    mFontName.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   }
   mTextStyles = mpText->getTextStyle();
-  mTextStyles.evaluate(mpText->getParentModel());
+  mTextStyles.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mHorizontalAlignment = mpText->getHorizontalAlignment();
-  mHorizontalAlignment.evaluate(mpText->getParentModel());
+  mHorizontalAlignment.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
 }
 
 /*!
@@ -582,13 +583,14 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
           QString textValue = parameterValue.first;
           QPair<QString, bool> unit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "unit");
           QPair<QString, bool> displayUnit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "displayUnit");
-          ModelInstance::Component* pModelComponent = Element::getModelComponentByName(mpElement->getRootParentElement()->getModel(), variable);
-          if (pModelComponent) {
+          // Look for unit and displayUnit in the variable element.
+          auto pElement = mpElement->getRootParentElement()->getModel()->lookupElement(variable);
+          if (pElement) {
             if (!displayUnit.second) {
-              displayUnit = pModelComponent->getModifierValueFromType(QStringList() << "displayUnit");
+              displayUnit = pElement->getModifierValueFromType(QStringList() << "displayUnit");
             }
             if (!unit.second) {
-              unit = pModelComponent->getModifierValueFromType(QStringList() << "unit");
+              unit = pElement->getModifierValueFromType(QStringList() << "unit");
             }
           }
           // if display unit is still empty then use unit
@@ -629,8 +631,9 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
 /*!
  * \brief TextAnnotation::updateTextString
  * Updates the text to display.
+ * \param textString
  */
-void TextAnnotation::updateTextString()
+void TextAnnotation::updateTextString(const QString &textString)
 {
   /* From Modelica Spec 32revision2,
    * There are a number of common macros that can be used in the text, and they should be replaced when displaying
@@ -642,7 +645,15 @@ void TextAnnotation::updateTextString()
    * - %name replaced by the name of the element (i.e. the identifier for it in in the enclosing class).
    * - %class replaced by the name of the class.
    */
-  mTextString = mOriginalTextString;
+  /* if textString is empty then use the original text string.
+   * otherwise use the one passed by the user. This is used during DynamicSelect.
+   */
+  if (textString.isEmpty()) {
+    mTextString = mOriginalTextString;
+  } else {
+    mTextString = textString;
+  }
+
   LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(parentItem());
   if (pLineAnnotation) {
     if (mTextString.toLower().contains("%condition")) {

@@ -809,6 +809,7 @@ package SimCode
       String license;
       String copyright;
       String directory;
+      String fileName;
       VarInfo varInfo;
       SimCodeVar.SimVars vars;
       list<SimCodeFunction.Function> functions;
@@ -3554,6 +3555,11 @@ package Util
   output Boolean outBoolean;
   end stringBool;
 
+  function hashFileNamePrefix
+    input String inFileNamePrefix;
+    output String hashStr;
+  end hashFileNamePrefix;
+
 end Util;
 
 package List
@@ -3962,6 +3968,11 @@ package Expression
     output Boolean hasUnkown;
   end hasUnknownDims;
 
+  function isSimpleLiteralValue
+    input DAE.Exp exp;
+    input Boolean allow_arrays;
+    output Boolean b;
+  end isSimpleLiteralValue;
 end Expression;
 
 package ExpressionDump
@@ -4032,6 +4043,10 @@ package Config
   function globalHomotopy
     output Boolean outBoolean;
   end globalHomotopy;
+
+  function replacedHomotopy
+    output Boolean outBoolean;
+  end replacedHomotopy;
 
   function adaptiveHomotopy
     output Boolean outBoolean;

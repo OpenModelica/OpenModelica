@@ -7,6 +7,8 @@ set(FMU_NAME_HASH @FMU_NAME_HASH_IN@)
 # build the project with fmu hash string to make shorter paths (e.g) ToroidalCoreQuadraticCrossSection.dir => 759.dir
 project(${FMU_NAME_HASH} C)
 
+set(CMAKE_BUILD_TYPE @CMAKE_BUILD_TYPE@)
+
 # FMU compilation options
 set(BUILD_SHARED_LIBS
     ON
@@ -73,6 +75,7 @@ endif()
 
 # Source files
 file(GLOB_RECURSE FMU_RUNTIME_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/external_solvers/*.c
+                                      ${CMAKE_CURRENT_SOURCE_DIR}/fmi-export/*.c
                                       ${CMAKE_CURRENT_SOURCE_DIR}/gc/*.c
                                       ${CMAKE_CURRENT_SOURCE_DIR}/math-support/pivot.c
                                       ${CMAKE_CURRENT_SOURCE_DIR}/meta/*.c

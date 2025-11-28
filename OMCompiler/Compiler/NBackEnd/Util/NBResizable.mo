@@ -136,7 +136,7 @@ public
     input ComponentRef cref_to_solve;
     output UnorderedMap<ComponentRef, EvalOrder> order;
   protected
-    Pointer<Variable> var_ptr = BVariable.getVarPointer(cref_to_solve);
+    Pointer<Variable> var_ptr = BVariable.getVarPointer(cref_to_solve, sourceInfo());
     UnorderedSet<ComponentRef> var_occurences = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     UnorderedSet<ComponentRef> ite_occurences;
     list<ComponentRef> occ_lst, iterators;
@@ -375,7 +375,7 @@ protected
   algorithm
     if not b then
       b := match exp
-        case Expression.CREF() then BVariable.checkCref(exp.cref, BVariable.isResizableParameter);
+        case Expression.CREF() then BVariable.checkCref(exp.cref, BVariable.isResizableParameter, sourceInfo());
         else false;
       end match;
     end if;
@@ -387,7 +387,7 @@ protected
     input UnorderedSet<ComponentRef> collector;
   algorithm
     _ := match exp
-      case Expression.CREF() guard(BVariable.checkCref(exp.cref, BVariable.isResizableParameter)) algorithm
+      case Expression.CREF() guard(BVariable.checkCref(exp.cref, BVariable.isResizableParameter, sourceInfo())) algorithm
         UnorderedSet.add(exp.cref, collector);
       then ();
       else ();
@@ -449,7 +449,7 @@ protected
     input UnorderedSet<ComponentRef> collector;
   algorithm
     _ := match exp
-      case Expression.CREF() guard(func(BVariable.getVarPointer(exp.cref))) algorithm
+      case Expression.CREF() guard(func(BVariable.getVarPointer(exp.cref, sourceInfo()))) algorithm
         UnorderedSet.add(exp.cref, collector);
       then ();
       else();
@@ -601,7 +601,7 @@ protected
     input Option<UnorderedMap<ComponentRef, Expression>> replacements;
     input output UnorderedMap<Expression, ParameterList> c2pi;
   protected
-    Variable var = Pointer.access(BVariable.getVarPointer(cref));
+    Variable var = Pointer.access(BVariable.getVarPointer(cref, sourceInfo()));
     list<Dimension> dims = Type.arrayDims(var.ty);
     list<Subscript> subs = ComponentRef.subscriptsAllWithWholeFlat(cref); // needs list reverse?
     Dimension dim;
@@ -617,7 +617,7 @@ protected
         addConstraint(const, replacements, c2pi, Expression.isNonPositive, "variable", ">=");
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed.\nViolation of implicit constraint `" + Dimension.toString(dim) + " >= " + Subscript.toString(sub)
-          + "` for component reference `" + ComponentRef.toString(cref) + "` of variable `" + Variable.toString(Pointer.access(BVariable.getVarPointer(cref))) + "`\nin equation:\n" + Equation.toString(eqn)});
+          + "` for component reference `" + ComponentRef.toString(cref) + "` of variable `" + Variable.toString(Pointer.access(BVariable.getVarPointer(cref, sourceInfo()))) + "`\nin equation:\n" + Equation.toString(eqn)});
         fail();
       end try;
     end for;
@@ -704,7 +704,7 @@ protected
       // use max value as initial guess
     else
       // cannot be determined -> use actual binding value
-      var := Pointer.access(BVariable.getVarPointer(cref));
+      var := Pointer.access(BVariable.getVarPointer(cref, sourceInfo()));
       binding := Binding.getExp(var.binding);
       UnorderedMap.add(cref, binding, optimal_values);
     end if;
@@ -720,7 +720,7 @@ protected
     Expression value;
   algorithm
     if not UnorderedMap.contains(cref, optimal_values) then
-      var := Pointer.access(BVariable.getVarPointer(cref));
+      var := Pointer.access(BVariable.getVarPointer(cref, sourceInfo()));
       value := match var
         case Variable.VARIABLE(backendinfo = BackendInfo.BACKEND_INFO(attributes = attributes as VariableAttributes.VAR_ATTR_INT())) algorithm
           if UnorderedSet.contains(cref, min_parameters) then
@@ -812,7 +812,7 @@ protected
             (solved_eqn, _, status, _) := Solve.solveBody(eqn, cref, FunctionTreeImpl.EMPTY());
             if status == NBSolve.Status.EXPLICIT then
               // try to used solved value as new parameter value to fulfill constraint
-              _ := match checkConstraint(Equation.getRHS(solved_eqn), optimal_values)
+              _ := match checkConstraint(Util.getOption(Equation.getRHS(solved_eqn)), optimal_values)
                 case SOME(value) algorithm
                   // saving previous optimal value and checking new one
                   old_optimal_value := UnorderedMap.getSafe(cref, optimal_values, sourceInfo());
@@ -909,7 +909,7 @@ protected
   algorithm
     for tpl in UnorderedMap.toList(optimal_values) loop
       (param, value)  := tpl;
-      var             := Pointer.access(BVariable.getVarPointer(param));
+      var             := Pointer.access(BVariable.getVarPointer(param, sourceInfo()));
       names           := ComponentRef.toString(param) :: names;
       new_vals        := Expression.toString(value) :: new_vals;
       old_vals        := Binding.toString(var.binding) :: old_vals;

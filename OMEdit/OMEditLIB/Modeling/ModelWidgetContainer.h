@@ -540,6 +540,7 @@ public:
   ModelInstance::Model *getModelInstance() const {return mpModelInstance;}
   void setLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mpLibraryTreeItem = pLibraryTreeItem;}
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
+  LibraryTreeItem* getRootLibraryTreeItem() {return mpRootLibraryTreeItem;}
   QToolButton* getIconViewToolButton() {return mpIconViewToolButton;}
   QToolButton* getDiagramViewToolButton() {return mpDiagramViewToolButton;}
   QToolButton* getTextViewToolButton() {return mpTextViewToolButton;}
@@ -644,6 +645,8 @@ private:
   ModelInstance::Model *mpRootModelInstance;
   QList<ModelInstance::Model*> mModelInstanceList;
   int mModelInstancesPos = -1;
+  LibraryTreeItem *mpRootLibraryTreeItem;
+  QList<LibraryTreeItem*> mLibraryTreeItemList;
   QList<ShapeAnnotation*> mPreservedIconShapesList;
   QList<ShapeAnnotation*> mPreservedDiagramShapesList;
   ModelInfo mModelInfo;
@@ -697,7 +700,7 @@ public:
   bool eventFilter(QObject *object, QEvent *event);
   void changeRecentModelsListSelection(bool moveDown);
   bool validateText();
-  void getOpenedModelWidgetsAndSelectedElementsOfClass(const QString &modelName, QHash<QString, QPair<QStringList, QStringList> > *pOpenedModelWidgetsAndSelectedElements);
+  void getOpenedModelWidgetsAndSelectedElementsOfClass(LibraryTreeItem *pLibraryTreeItem, QHash<QString, QPair<QStringList, QStringList> > *pOpenedModelWidgetsAndSelectedElements);
   void openModelWidgetsAndSelectElement(QHash<QString, QPair<QStringList, QStringList> > closedModelWidgetsAndSelectedElements, bool skipSelection = false);
 
   QRect mCopiedItemsBoundingRect;
@@ -722,7 +725,6 @@ public slots:
   void deleteIcon();
   void addConnector();
   void addBus();
-  void addTLMBus();
   void addSubModel();
 };
 

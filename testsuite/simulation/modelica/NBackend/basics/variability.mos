@@ -23,8 +23,8 @@ simulate(variability); getErrorString();
 //     messages = "Failed to build model: variability"
 // end SimulationResult;
 // "Error: NBCausalize.checkSystemVariabilities failed. The following strong component has conflicting types: Integer != Real
-// BLOCK: Single Strong Component (status = Solve.UNPROCESSED)
-// -------------------------------------------------------------
+// BLOCK: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -----------------------------------------------------------------------
 // ### Variable:
 // 	Integer m
 // ### Equation:

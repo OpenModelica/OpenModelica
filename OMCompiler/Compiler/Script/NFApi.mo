@@ -800,38 +800,43 @@ protected
   String str;
   Modifier mod;
 algorithm
-  context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
-  context := InstContext.set(context, NFInstContext.INSTANCE_API);
-  inst_settings := InstSettings.SETTINGS(mergeExtendsSections = false, resizableArrays = false);
+  try
+    context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
+    context := InstContext.set(context, NFInstContext.INSTANCE_API);
+    inst_settings := InstSettings.SETTINGS(mergeExtendsSections = false, resizableArrays = false);
 
-  (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
-  mod := parseModifier(modifier, top);
-  cls_node := Inst.lookupRootClass(classPath, top, context);
+    (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
+    mod := parseModifier(modifier, top);
+    cls_node := Inst.lookupRootClass(classPath, top, context);
 
-  if SCodeUtil.isFunction(InstNode.definition(cls_node)) then
-    context := InstContext.unset(context, NFInstContext.CLASS);
-    context := InstContext.set(context, NFInstContext.FUNCTION);
-  end if;
+    if SCodeUtil.isFunction(InstNode.definition(cls_node)) then
+      context := InstContext.unset(context, NFInstContext.CLASS);
+      context := InstContext.set(context, NFInstContext.FUNCTION);
+    end if;
 
-  cls_node := Inst.instantiateRootClass(cls_node, context, mod);
-  execStat("Inst.instantiateRootClass");
-  inst_tree := buildInstanceTree(cls_node);
-  execStat("NFApi.buildInstanceTree");
-  Inst.instExpressions(cls_node, context = context, settings = inst_settings);
-  Inst.updateImplicitVariability(cls_node, Flags.isSet(Flags.EVAL_PARAM), context);
-  execStat("Inst.instExpressions");
+    cls_node := Inst.instantiateRootClass(cls_node, context, mod);
+    execStat("Inst.instantiateRootClass");
+    inst_tree := buildInstanceTree(cls_node);
+    execStat("NFApi.buildInstanceTree");
+    Inst.instExpressions(cls_node, context = context, settings = inst_settings);
+    Inst.updateImplicitVariability(cls_node, Flags.isSet(Flags.EVAL_PARAM), context);
+    execStat("Inst.instExpressions");
 
-  Typing.typeClassType(cls_node, NFBinding.EMPTY_BINDING, context, cls_node);
-  Typing.typeComponents(cls_node, context);
-  execStat("Typing.typeComponents");
-  Typing.typeBindings(cls_node, context);
-  execStat("Typing.typeBinding");
+    Typing.typeClassType(cls_node, NFBinding.EMPTY_BINDING, context, cls_node);
+    Typing.typeComponents(cls_node, context);
+    execStat("Typing.typeComponents");
+    Typing.typeBindings(cls_node, context);
+    execStat("Typing.typeBinding");
 
-  json := dumpJSONInstanceTree(inst_tree, cls_node);
-  execStat("NFApi.dumpJSONInstanceTree");
-  res := Values.STRING(JSON.toString(json, prettyPrint));
-  execStat("JSON.toString");
-  Inst.clearCaches();
+    json := dumpJSONInstanceTree(inst_tree, cls_node);
+    execStat("NFApi.dumpJSONInstanceTree");
+    res := Values.STRING(JSON.toString(json, prettyPrint));
+    execStat("JSON.toString");
+    Inst.clearCaches();
+  else
+    Inst.clearCaches();
+    fail();
+  end try;
 end getModelInstance;
 
 function getModelInstanceAnnotation
@@ -844,16 +849,21 @@ protected
   InstContext.Type context;
   JSON json;
 algorithm
-  context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
-  context := InstContext.set(context, NFInstContext.INSTANCE_API);
+  try
+    context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
+    context := InstContext.set(context, NFInstContext.INSTANCE_API);
 
-  (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
-  cls_node := Inst.lookupRootClass(classPath, top, context);
-  cls_node := InstNode.resolveInner(cls_node);
+    (_, top) := mkTop(SymbolTable.getAbsyn(), AbsynUtil.pathString(classPath));
+    cls_node := Inst.lookupRootClass(classPath, top, context);
+    cls_node := InstNode.resolveInner(cls_node);
 
-  json := dumpJSONInstanceAnnotation(cls_node, filter);
-  res := Values.STRING(JSON.toString(json, prettyPrint));
-  Inst.clearCaches();
+    json := dumpJSONInstanceAnnotation(cls_node, filter);
+    res := Values.STRING(JSON.toString(json, prettyPrint));
+    Inst.clearCaches();
+  else
+    Inst.clearCaches();
+    fail();
+  end try;
 end getModelInstanceAnnotation;
 
 function parseModifier
@@ -912,6 +922,10 @@ algorithm
     case (_, ClassTree.INSTANTIATED_TREE())
       algorithm
         elems := buildInstanceTreeElements(InstNode.definition(cls_node), cls_tree);
+
+        if InstNode.isRootClass(node) then
+          elems := buildInstanceTreeGeneratedInners(cls_tree, elems);
+        end if;
       then
         InstanceTree.CLASS(node, elems, isDerived);
 
@@ -987,6 +1001,32 @@ algorithm
   elements := listReverseInPlace(elements);
 end buildInstanceTreeElements;
 
+function buildInstanceTreeGeneratedInners
+  input ClassTree classTree;
+  input list<InstanceTree> elements;
+  output list<InstanceTree> outElements;
+protected
+  array<Mutable<InstNode>> comps;
+  InstNode comp;
+  list<InstanceTree> elems = {};
+algorithm
+  ClassTree.INSTANTIATED_TREE(components = comps) := classTree;
+
+  for i in arrayLength(comps):-1:1 loop
+    if InstNode.isGeneratedInner(Mutable.access(comps[i])) then
+      elems := buildInstanceTreeComponent(comps[i]) :: elems;
+    else
+      break;
+    end if;
+  end for;
+
+  if listEmpty(elems) then
+    outElements := elements;
+  else
+    outElements := listAppend(elements, elems);
+  end if;
+end buildInstanceTreeGeneratedInners;
+
 function buildInstanceTreeComponent
   input Mutable<InstNode> compNode;
   output InstanceTree tree;
@@ -1021,6 +1061,7 @@ function dumpJSONInstanceTree
   input InstNode scope;
   input Boolean root = true;
   input Boolean isDeleted = false;
+  input Boolean isExtends = false;
   output JSON json = JSON.makeNull();
 protected
   InstNode node;
@@ -1035,7 +1076,7 @@ algorithm
   def := InstNode.definition(node);
   cmt := SCodeUtil.getElementComment(def);
 
-  json := JSON.addPair("name", dumpJSONNodePath(node), json);
+  json := JSON.addPair("name", dumpJSONNodePath(node, not isExtends), json);
 
   json := JSON.addPairNotNull("dims", dumpJSONClassDims(node, def), json);
   json := JSON.addPair("restriction",
@@ -1137,7 +1178,8 @@ end dumpJSONInstanceAnnotationExtends;
 
 function dumpJSONNodePath
   input InstNode node;
-  output JSON json = dumpJSONPath(InstNode.fullPath(node, ignoreBaseClass = true));
+  input Boolean ignoreBaseClass = false;
+  output JSON json = dumpJSONPath(InstNode.enclosingScopePath(node, ignoreBaseClass = ignoreBaseClass));
 end dumpJSONNodePath;
 
 function dumpJSONNodeEnclosingPath
@@ -1194,7 +1236,7 @@ protected
 algorithm
   InstanceTree.CLASS(node = node) := ext;
   cls_def := InstNode.definition(node);
-  ext_def := InstNode.extendsDefinition(node);
+  SOME(ext_def) := InstNode.extendsDefinition(node);
 
   json := JSON.addPair("$kind", JSON.makeString("extends"), json);
   json := dumpJSONSCodeMod(getExtendsModifier(ext_def, node), node, json);
@@ -1204,7 +1246,7 @@ algorithm
   if Class.isOnlyBuiltin(cls) and not Class.isEnumeration(cls) then
     json := JSON.addPair("baseClass", JSON.makeString(InstNode.name(node)), json);
   else
-    json := JSON.addPair("baseClass", dumpJSONInstanceTree(ext, node, root = false, isDeleted = isDeleted), json);
+    json := JSON.addPair("baseClass", dumpJSONInstanceTree(ext, node, root = false, isDeleted = isDeleted, isExtends = true), json);
   end if;
 end dumpJSONExtends;
 
@@ -1261,12 +1303,6 @@ protected
   JSON j;
 algorithm
   node := InstNode.resolveInner(component);
-
-  // Skip dumping inner elements that were added by the compiler itself.
-  if InstNode.isGeneratedInner(node) then
-    return;
-  end if;
-
   comp := InstNode.component(node);
   elem := InstNode.definition(node);
   scope := InstNode.parent(node);
@@ -1322,6 +1358,10 @@ algorithm
 
         json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes, scope), json);
         json := dumpJSONComment(comp.comment, scope, json);
+
+        if InstNode.isGeneratedInner(node) then
+          json := JSON.addPair("generated", JSON.makeBoolean(true), json);
+        end if;
       then
         ();
 
@@ -2718,6 +2758,7 @@ function updateMovedPath
   input MoveEnv env;
 protected
   Absyn.Path qualified_path;
+  Option<Absyn.Path> opt_path;
 algorithm
   // Try to look up the qualified path needed to be able to find the name in
   // this scope even if the root class that contains the scope is moved elsewhere.
@@ -2736,10 +2777,14 @@ algorithm
     if AbsynUtil.pathIsQual(qualified_path) then
       // If the path is qualified it needs to be joined with the original path,
       // but we remove any part of the path that's the same as the destination.
-      qualified_path := AbsynUtil.pathStripSamePrefix(qualified_path, env.destinationPath);
+      opt_path := AbsynUtil.pathStripSamePrefix(qualified_path, env.destinationPath);
 
-      if AbsynUtil.pathIsQual(qualified_path) then
-        path := AbsynUtil.joinPaths(AbsynUtil.pathPrefix(qualified_path), path);
+      if isSome(opt_path) then
+        SOME(qualified_path) := opt_path;
+
+        if AbsynUtil.pathIsQual(qualified_path) then
+          path := AbsynUtil.joinPaths(AbsynUtil.pathPrefix(qualified_path), path);
+        end if;
       end if;
     elseif AbsynUtil.pathFirstIdent(qualified_path) == AbsynUtil.pathFirstIdent(env.destinationPath) then
       // Special case, the path refers to the destination package, e.g. moving path A.B.C into A.
@@ -2828,6 +2873,7 @@ function updateMovedCref
   input MoveEnv env;
 protected
   Absyn.Path qualified_path;
+  Option<Absyn.Path> opt_path;
 algorithm
   if AbsynUtil.crefIsFullyQualified(cref) or AbsynUtil.crefIsWild(cref) then
     return;
@@ -2850,10 +2896,14 @@ algorithm
     if AbsynUtil.pathIsQual(qualified_path) then
       // If the path is qualified it needs to be joined with the original cref,
       // but we remove any part of the path that's the same as the destination.
-      qualified_path := AbsynUtil.pathStripSamePrefix(qualified_path, env.destinationPath);
+      opt_path := AbsynUtil.pathStripSamePrefix(qualified_path, env.destinationPath);
 
-      if AbsynUtil.pathIsQual(qualified_path) then
-        cref := AbsynUtil.joinCrefs(AbsynUtil.pathToCref(AbsynUtil.pathPrefix(qualified_path)), cref);
+      if isSome(opt_path) then
+        SOME(qualified_path) := opt_path;
+
+        if AbsynUtil.pathIsQual(qualified_path) then
+          cref := AbsynUtil.joinCrefs(AbsynUtil.pathToCref(AbsynUtil.pathPrefix(qualified_path)), cref);
+        end if;
       end if;
     elseif AbsynUtil.pathFirstIdent(qualified_path) == AbsynUtil.pathFirstIdent(env.destinationPath) then
       // Special case, the cref refers to the destination package, e.g. moving path A.B.C into A.

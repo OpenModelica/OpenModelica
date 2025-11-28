@@ -1085,6 +1085,8 @@ Plot Window Menu
 
       -  *Toggle Sign* - Toggles the sign of curve.
 
+      -  *Plot on Right Y-Axis* - Display curve on right-side y-axis.
+
   -  *Titles* - Plot, axes and footer titles settings.
 
   -  *Legend* - Sets legend position and font.
@@ -1952,6 +1954,15 @@ OMSimulator/SSP Options
 
   -  *Logging Level* - OMSimulator logging level.
 
+Sensitivity Optimization Options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  General
+
+  -  *OMSens Backend Path* - sets the OMSens backend.
+
+  -  *python* - sets the Python executable to run OMSens scripts.
+
 __OpenModelica_commandLineOptions Annotation
 --------------------------------------------
 
@@ -1984,7 +1995,7 @@ default DASSL and would also like to see the cpu time then you can write the fol
 .. code-block :: modelica
 
   model Test
-    annotation(__OpenModelica_simulationFlags(s = "heun", cpu = "()"));
+    annotation(__OpenModelica_simulationFlags(s = "ida", cpu = "()"));
   end Test;
 
 The annotation is a comma separated list of options where each option is a simulation flag

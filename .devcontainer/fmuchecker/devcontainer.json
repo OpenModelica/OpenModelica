@@ -2,7 +2,8 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
 {
   "name": "fmuchecker",
-  // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+
+  // Dockerfile
   "build": {
     "dockerfile": "Dockerfile",
     "args": {
@@ -18,12 +19,6 @@
       "version": "latest"
     }
   },
-
-  // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  // "forwardPorts": [],
-
-  // Use 'postCreateCommand' to run commands after the container is created.
-  // "postCreateCommand": "uname -a",
 
   // Configure tool-specific properties.
   //"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",

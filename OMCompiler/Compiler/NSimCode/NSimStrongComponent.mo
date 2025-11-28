@@ -62,6 +62,7 @@ protected
   import Solve = NBSolve;
   import StrongComponent = NBStrongComponent;
   import Partition = NBPartition;
+  import Partitioning = NBPartitioning;
   import NBPartitioning.{BClock, ClockedInfo};
   import Tearing = NBTearing;
   import BVariable = NBVariable;
@@ -76,7 +77,6 @@ protected
   import NSimGenericCall.SimIterator;
   import NSimJacobian.SimJacobian;
   import SimPartition = NSimPartition;
-  import NSimPartition.SimPartitions;
   import NSimVar.{SimVar, SimVars, VarType};
 
   // Util imports
@@ -241,7 +241,7 @@ public
     end NONLINEAR;
 
     record HYBRID
-      "Hyprid system containing both continuous and discrete equations."
+      "Hybrid system containing both continuous and discrete equations."
       Integer index;
       Block continuous;
       list<SimVar> discreteVars;
@@ -321,7 +321,7 @@ public
         case NONLINEAR()          then blck.system.index;
         case HYBRID()             then blck.index;
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(blck)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + toString(blck)});
         then fail();
       end match;
     end getIndex;
@@ -492,7 +492,8 @@ public
     algorithm
       for partition in listReverse(partitions) loop
         indices_ptr := Pointer.create(simCodeIndices);
-        VariablePointers.map(partition.unknowns, function SimVar.traverseCreate(acc = vars_ptr, indices_ptr = indices_ptr, varType = VarType.RESIDUAL));
+        //VariablePointers.map(partition.unknowns, function SimVar.traverseCreate(acc = vars_ptr, indices_ptr = indices_ptr, varType = VarType.RESIDUAL));
+        Partition.Partition.mapStrongComponents(partition, function SimVar.createFromResidualComponent(acc = vars_ptr, indices_ptr = indices_ptr, varType = VarType.RESIDUAL));
         (tmp, simCodeIndices) := fromPartition(partition, Pointer.access(indices_ptr), simcode_map, equation_map);
         blcks := tmp :: blcks;
       end for;
@@ -501,28 +502,33 @@ public
 
     function createClockedBlocks
       input list<Partition.Partition> partitions;
-      output SimPartitions baseParts;
+      output list<SimPartition> baseParts;
       output list<Block> eventClocks;
       input output SimCodeIndices simCodeIndices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
       input UnorderedMap<ComponentRef, Block> equation_map;
       input ClockedInfo info;
     protected
+      // type for for double map. base clock -> {sub_clock -> partition}
+      type SimPartitions = list<SimPartition>;
       UnorderedMap<BClock, SimPartitions> clock_collector = UnorderedMap.new<SimPartitions>(BClock.hash, BClock.isEqual);
+      // set to collect the dependencies of a block
+      UnorderedSet<BClock> clock_dependencies;
       list<Block> blcks;
       list<SimVar> vars;
       BClock clock, subClock, baseClock;
       Boolean holdEvents;
       Option<BClock> baseClock_opt;
-      SimPartition basePart, subPart;
+      SimPartition subPart;
     algorithm
-      // collect all base clocks
+      // initialize all base clocks
       for c in UnorderedMap.valueList(info.baseClocks) loop
         UnorderedMap.add(c, {}, clock_collector);
       end for;
 
       // create all sub partition blocks and find the base partitions
       for partition in listReverse(partitions) loop
+        // create the partition and get all clock dependencies
         (blcks, simCodeIndices)             := fromPartition(partition, simCodeIndices, simcode_map, equation_map);
         vars                                := SimVars.getPartitionVars(partition, simcode_map);
         (clock, baseClock_opt, holdEvents)  := Partition.Partition.getClocks(partition);
@@ -535,6 +541,8 @@ public
           baseClock       := clock;
           subClock        := NBPartitioning.DEFAULT_SUB_CLOCK;
         end if;
+
+        // create and add sub partition
         subPart := SimPartition.createSubPartition(subClock, blcks, vars, holdEvents);
         UnorderedMap.add(baseClock, subPart :: UnorderedMap.getSafe(baseClock, clock_collector, sourceInfo()), clock_collector);
       end for;
@@ -562,7 +570,7 @@ public
               ComponentRef cref;
 
             case Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref))
-            then createEquation(NBVariable.getVar(cref), eqn, NBSolve.Status.EXPLICIT, simCodeIndices, kind, simcode_map, equation_map);
+            then createEquation(NBVariable.getVar(cref, sourceInfo()), eqn, NBSolve.Status.EXPLICIT, simCodeIndices, kind, simcode_map, equation_map);
 
             case Equation.WHEN_EQUATION()
             then createEquation(NBVariable.DUMMY_VARIABLE, eqn, NBSolve.Status.EXPLICIT, simCodeIndices, kind, simcode_map, equation_map);
@@ -576,7 +584,7 @@ public
             /* ToDo: ARRAY_EQUATION ... */
 
             else algorithm
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Equation.toString(eqn)});
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + Equation.toString(eqn)});
             then fail();
           end match;
 
@@ -614,7 +622,7 @@ public
         then result;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Partition.Partition.toString(partition)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + Partition.Partition.toString(partition)});
         then fail();
       end match;
     end fromPartition;
@@ -674,8 +682,7 @@ public
         then (tmp, getIndex(tmp));
 
         case StrongComponent.RESIZABLE_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn))) algorithm
-          // for now create algorithms
-          // ToDo: actually create resizable code
+          // create a resizable equation
           eqn_ptr := Slice.getT(comp.eqn);
           eqn     := Pointer.access(eqn_ptr);
           ident   := Identifier.IDENTIFIER(eqn_ptr, comp.var_cref, true);
@@ -758,7 +765,8 @@ public
 
         case StrongComponent.ALIAS() algorithm
           aliasOf := UnorderedMap.getOrDefault(comp.aliasInfo, simCodeIndices.alias_map, -1);
-          tmp := ALIAS(simCodeIndices.equationIndex, comp.aliasInfo, aliasOf, StrongComponent.isDiscrete(comp));
+          tmp := ALIAS(simCodeIndices.equationIndex, comp.aliasInfo, aliasOf,
+            StrongComponent.isDiscrete(comp) and not StrongComponent.isAlgebraicLoop(comp.original));
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then (tmp, getIndex(tmp));
 
@@ -768,7 +776,7 @@ public
         then fail();
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with unknown reason for \n" + StrongComponent.toString(comp)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with unknown reason for\n" + StrongComponent.toString(comp)});
         then fail();
       end match;
     end fromStrongComponent;
@@ -808,7 +816,7 @@ public
         // they can be executed in any order
         case (BEquation.FOR_EQUATION(body = {_}), {}) algorithm
           (names, ranges) := Iterator.getFrames(eqn.iter);
-          tmp := FOR_RESIDUAL(simCodeIndices.equationIndex, res_idx, List.zip(names, ranges), Equation.getRHS(eqn), eqn.source, eqn.attr);
+          tmp := FOR_RESIDUAL(simCodeIndices.equationIndex, res_idx, List.zip(names, ranges), Util.getOption(Equation.getRHS(eqn)), eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
           res_idx := res_idx + Equation.size(Slice.getT(slice));
         then tmp;
@@ -816,7 +824,7 @@ public
         // generic residual, for loop could not be fully recovered
         case (BEquation.FOR_EQUATION(body = {_}), _) algorithm
           (names, ranges) := Iterator.getFrames(eqn.iter);
-          tmp := GENERIC_RESIDUAL(simCodeIndices.equationIndex, res_idx, slice.indices, List.zip(names, ranges), Equation.getRHS(eqn), eqn.source, eqn.attr);
+          tmp := GENERIC_RESIDUAL(simCodeIndices.equationIndex, res_idx, slice.indices, List.zip(names, ranges), Util.getOption(Equation.getRHS(eqn)), eqn.source, eqn.attr);
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
           res_idx := res_idx + listLength(slice.indices);
         then tmp;
@@ -824,7 +832,7 @@ public
         // ToDo: add all other cases!
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Equation.toString(eqn)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + Equation.toString(eqn)});
         then fail();
 
       end match;
@@ -887,7 +895,7 @@ public
          then tmp;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with status " + Solve.statusString(status) + " for \n" + Equation.toString(eqn)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with status " + Solve.statusString(status) + " for\n" + Equation.toString(eqn)});
         then fail();
 
       end match;
@@ -1014,7 +1022,7 @@ public
         // ToDo: add all other cases!
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Equation.toString(eqn)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + Equation.toString(eqn)});
         then fail();
 
       end match;
@@ -1138,7 +1146,7 @@ public
         then fail();
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(blck)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + toString(blck)});
         then fail();
       end match;
     end convert;
@@ -1253,7 +1261,7 @@ public
         then blck;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(blck)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + toString(blck)});
         then fail();
       end match;
     end fixIndex;
@@ -1294,7 +1302,7 @@ public
         case RESIZABLE_ASSIGN() then blck.call_index;
         case GENERIC_ASSIGN() then blck.call_index;
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(blck)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + toString(blck)});
         then fail();
       end match;
     end getGenericAssignIndex;
@@ -1306,7 +1314,7 @@ public
       name := match comp
         case StrongComponent.GENERIC_COMPONENT() then Equation.getEqnName(Slice.getT(comp.eqn));
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + StrongComponent.toString(comp)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + StrongComponent.toString(comp)});
         then fail();
       end match;
     end getGenericEquationName;

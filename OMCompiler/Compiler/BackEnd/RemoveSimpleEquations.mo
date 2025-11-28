@@ -210,6 +210,12 @@ protected
   list<BackendDAE.Var> referencevar, tempreferencevar, knownVarList={}, aliasVarList={};
   BackendDAE.Var tempvar;
 algorithm
+  // only do this for FMUs
+  if not Flags.getConfigBool(Flags.BUILDING_FMU) then
+    outDAE := inDAE;
+    return;
+  end if;
+
   aliasVars := BackendDAEUtil.getAliasVars(inDAE);
   systvars := BackendVariable.listVar(BackendVariable.equationSystemsVarsLst(inDAE.eqs));
 
@@ -234,8 +240,8 @@ algorithm
       paramOrConst := false;
       const := false;
     else
-      paramOrConst := List.mapAllValueBool(referencevar, BackendVariable.isParamOrConstant, true);
-      const := List.mapAllValueBool(referencevar, BackendVariable.isConst, true);
+      paramOrConst := List.all(referencevar, BackendVariable.isParamOrConstant);
+      const := List.all(referencevar, BackendVariable.isConst);
     end if;
 
     // remove the variable from aliasVarList and add it to knownVarList after changing it to PARAM()/CONST() and fixed=true
@@ -1859,7 +1865,7 @@ algorithm
 
     case (DAE.CREF(cr, _), (b, vars, globalKnownVars, b1, b2, ilst)) equation
       (varlst, _::_)= BackendVariable.getVar(cr, globalKnownVars) "input variables stored in known variables are input on top level";
-      false = List.mapAllValueBool(varlst, toplevelInputOrUnfixed, false);
+      false = List.none(varlst, toplevelInputOrUnfixed);
     then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
 
     case (DAE.CALL(path = Absyn.IDENT(name="pre")), (b, vars, globalKnownVars, b1, b2, ilst)) then (inExp, false, if b then inTuple else (true, vars, globalKnownVars, b1, b2, ilst));
@@ -1937,7 +1943,7 @@ algorithm
       equation
         cr::crlst = List.map(vlst, BackendVariable.varCref);
         cr = ComponentReference.crefStripLastSubs(cr);
-        List.map1rAllValue(crlst, ComponentReference.crefPrefixOf, true, cr);
+        true = List.all(crlst, function ComponentReference.crefPrefixOf(prefixCref = cr));
         // try to solve the equation
         cre = Expression.crefExp(cr);
         (es, {}) = ExpressionSolve.solve(lhs, rhs, cre);
@@ -2032,7 +2038,7 @@ algorithm
         not Expression.isImpure(exp) and not Expression.containsRecordType(exp) // lochel: this is at least needed for impure functions
       equation
         //exp2 = Ceval.cevalSimpleWithFunctionTreeReturnExp(exp, functions);
-        exp2 = EvaluateFunctions.evaluateConstantFunctionCallExp(exp, functions, false);
+        exp2 = EvaluateFunctions.evaluateConstantFunctionCallExp(exp, functions, false, Flags.getConfigInt(Flags.EVAL_RECURSION_LIMIT));
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           BackendDump.debugStrCrefStrExpStr("Const Equation (through Ceval, case 1) ", cr, " = ", exp, " found.\n");
         end if;
@@ -3400,7 +3406,7 @@ algorithm
       Boolean b;
     case(SOME(e), _)
       equation
-        (e, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
+        (e, b) = replaceCrefWithBindExp(e, globalKnownVars);
         (e, _) = ExpressionSimplify.condsimplify(b, e);
       then
         SOME(e);
@@ -3434,7 +3440,7 @@ algorithm
         equalNonFreeStartValues(values, globalKnownVars, (NONE(), NONE(), cr));
     case (((SOME(e), _))::values, _, (SOME(e2), _, _))
       equation
-        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
+        (e1, b) = replaceCrefWithBindExp(e, globalKnownVars);
         (e1, _) = ExpressionSimplify.condsimplify(b, e1);
         true = Expression.expEqual(e1, e2);
       then
@@ -3461,14 +3467,14 @@ algorithm
         equalFreeStartValues(values, globalKnownVars, iValue);
     case (((SOME(e), cr))::values, _, (NONE(), _, _))
       equation
-        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
+        (e1, b) = replaceCrefWithBindExp(e, globalKnownVars);
         (e1, _) = ExpressionSimplify.condsimplify(b, e1);
       then
         equalFreeStartValues(values, globalKnownVars, (SOME(e1), SOME(e), cr));
     // compare
     case (((SOME(e), _))::values, _, (SOME(e2), _, _))
       equation
-        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
+        (e1, b) = replaceCrefWithBindExp(e, globalKnownVars);
         (e1, _) = ExpressionSimplify.condsimplify(b, e1);
         true = Expression.expEqual(e1, e2);
       then
@@ -3476,39 +3482,49 @@ algorithm
   end match;
 end equalFreeStartValues;
 
-protected function replaceCrefWithBindExp "author: Frenkel TUD 2012-12"
-  input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables, Boolean, HashSet.HashSet> inTuple;
+protected function replaceCrefWithBindExp
+  input DAE.Exp exp;
+  input BackendDAE.Variables vars;
   output DAE.Exp outExp;
-  output tuple<BackendDAE.Variables, Boolean, HashSet.HashSet> outTuple;
+  output Boolean replaced;
+protected
+  UnorderedSet<DAE.ComponentRef> replaced_crefs =
+    UnorderedSet.new(ComponentReference.hashComponentRef, ComponentReference.crefEqual);
 algorithm
-  (outExp,outTuple) := matchcontinue (inExp,inTuple)
-    local
-      DAE.Exp e;
-      BackendDAE.Variables vars;
-      DAE.ComponentRef cr;
-      HashSet.HashSet hs;
-    // true if crefs replaced in expression
-    case (DAE.CREF(componentRef=cr), (vars, _, hs))
-      guard
-        // check for cyclic bindings in start value
-        not BaseHashSet.has(cr, hs)
-      equation
-        (BackendDAE.VAR(bindExp = SOME(e)), _) = BackendVariable.getVarSingle(cr, vars);
-        hs = BaseHashSet.add(cr, hs);
-        (e, (_, _, hs)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (vars, false, hs));
-      then
-        (e, (vars, true, hs));
-    // true if crefs in expression
-    case (e as DAE.CREF(), (_, true, _))
-      then
-        (e, inTuple);
-    case (e as DAE.CREF(), (vars, _, hs))
-      then
-        (e, (vars, true, hs));
-    else (inExp,inTuple);
-  end matchcontinue;
+  (outExp, replaced) := Expression.traverseExpBottomUp(exp,
+    function replaceCrefWithBindExp_traverser(vars = vars, replacedCrefs = replaced_crefs), false);
 end replaceCrefWithBindExp;
+
+protected function replaceCrefWithBindExp_traverser
+  input DAE.Exp exp;
+  input Boolean replaced;
+  input BackendDAE.Variables vars;
+  input UnorderedSet<DAE.ComponentRef> replacedCrefs;
+  output DAE.Exp outExp;
+  output Boolean outReplaced;
+protected
+  DAE.ComponentRef cr;
+  DAE.Exp e;
+algorithm
+  (outExp, outReplaced) := matchcontinue (exp, replaced)
+    // true if crefs replaced in expression
+    case (DAE.CREF(componentRef = cr), _)
+      // check for cyclic bindings in start value
+      guard not UnorderedSet.contains(cr, replacedCrefs)
+      algorithm
+        (BackendDAE.VAR(bindExp = SOME(e)), _) := BackendVariable.getVarSingle(cr, vars);
+        UnorderedSet.add(cr, replacedCrefs);
+        e := Expression.traverseExpBottomUp(e,
+          function replaceCrefWithBindExp_traverser(vars = vars, replacedCrefs = replacedCrefs), false);
+      then
+        (e, true);
+
+    case (DAE.CREF(), _)
+      then (exp, true);
+
+    else (exp, replaced);
+  end matchcontinue;
+end replaceCrefWithBindExp_traverser;
 
 protected function getZeroFreeValues "author: Frenkel TUD 2012-12"
   input tuple<Option<DAE.Exp>, DAE.ComponentRef> inTpl;
@@ -3600,7 +3616,7 @@ algorithm
       ((e, cr, _)) = selectNonZeroExpression(rest);
       crVar = BackendVariable.varCref(inVar);
       if Flags.isSet(Flags.ALIAS_CONFLICTS) then
-        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
+        (e1, b) = replaceCrefWithBindExp(e, globalKnownVars);
         (e1, _) = ExpressionSimplify.condsimplify(b, e1);
         s2 = if b then " = " + ExpressionDump.printExpStr(e1) else "";
         s = iStr + "=> Select value from " +  ComponentReference.printComponentRefStr(cr) +  "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + s2 + ") for variable: " +  ComponentReference.printComponentRefStr(crVar) + "\n";
@@ -3616,7 +3632,7 @@ algorithm
         i = i + 5;
       end if;
       if Flags.isSet(Flags.ALIAS_CONFLICTS) then
-        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
+        (e1, b) = replaceCrefWithBindExp(e, globalKnownVars);
         (e1, _) = ExpressionSimplify.condsimplify(b, e1);
         s2 = if b then " = " + ExpressionDump.printExpStr(e1) else "";
         s = iStr + " * Candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + s2 + ", confidence number = " + intString(i) + ")\n";
@@ -3630,7 +3646,7 @@ algorithm
         i = i + 5;
       end if;
       if Flags.isSet(Flags.ALIAS_CONFLICTS) then
-        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
+        (e1, b) = replaceCrefWithBindExp(e, globalKnownVars);
         (e1, _) = ExpressionSimplify.condsimplify(b, e1);
         s2 = if b then " = " + ExpressionDump.printExpStr(e1) else "";
         s = iStr + " * Candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + s2 + ", confidence number = " + intString(i) + ")\n";
@@ -3648,7 +3664,7 @@ algorithm
         i = i + 5;
       end if;
       if Flags.isSet(Flags.ALIAS_CONFLICTS) then
-        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
+        (e1, b) = replaceCrefWithBindExp(e, globalKnownVars);
         (e1, _) = ExpressionSimplify.condsimplify(b, e1);
         s2 = if b then " = " + ExpressionDump.printExpStr(e1) else "";
         s = iStr + " * Candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + s2 + ", confidence number = " + intString(i) + ")\n";
@@ -4523,29 +4539,26 @@ algorithm
       HashSet.HashSet unReplaceable;
       Boolean b;
 
-    case (DAE.CREF_QUAL(ident=name, identType=ty, subscriptLst=subs, componentRef=cr), SOME(pcr)) equation
-      (_, b) = Expression.traverseExpTopDownCrefHelper(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
-      pcr = if b then ComponentReference.crefPrependIdent(pcr, name, {}, ty) else pcr;
-      unReplaceable = if b then BaseHashSet.add(pcr, iUnreplaceable) else iUnreplaceable;
-      pcr = ComponentReference.crefPrependIdent(pcr, name, subs, ty);
+    case (DAE.CREF_QUAL(ident=name, identType=ty, subscriptLst=subs, componentRef=cr), SOME(pcr)) algorithm
+      (_, b) := Expression.traverseExpTopDownSubs(subs, Expression.traversingComponentRefPresent, false);
+      pcr := if b then ComponentReference.crefPrependIdent(pcr, name, {}, ty) else pcr;
+      unReplaceable := if b then BaseHashSet.add(pcr, iUnreplaceable) else iUnreplaceable;
+      pcr := ComponentReference.crefPrependIdent(pcr, name, subs, ty);
     then traverseCrefUnreplaceable(cr, SOME(pcr), unReplaceable);
 
-    case (DAE.CREF_QUAL(ident=name, identType=ty, subscriptLst=subs, componentRef=cr), NONE()) equation
-      (_, b) = Expression.traverseExpTopDownCrefHelper(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
-      pcr = DAE.CREF_IDENT(name, ty, {});
-      unReplaceable = if b then BaseHashSet.add(pcr, iUnreplaceable) else iUnreplaceable;
+    case (DAE.CREF_QUAL(ident=name, identType=ty, subscriptLst=subs, componentRef=cr), NONE()) algorithm
+      (_, b) := Expression.traverseExpTopDownSubs(subs, Expression.traversingComponentRefPresent, false);
+      unReplaceable := if b then BaseHashSet.add(DAE.CREF_IDENT(name, ty, {}), iUnreplaceable) else iUnreplaceable;
     then traverseCrefUnreplaceable(cr, SOME(DAE.CREF_IDENT(name, ty, subs)), unReplaceable);
 
-    case (DAE.CREF_IDENT(ident=name, identType=ty, subscriptLst=subs), SOME(pcr)) equation
-      (_, b) = Expression.traverseExpTopDownCrefHelper(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
-      pcr = ComponentReference.crefPrependIdent(pcr, name, {}, ty);
-      unReplaceable = if b then BaseHashSet.add(pcr, iUnreplaceable) else iUnreplaceable;
+    case (DAE.CREF_IDENT(ident=name, identType=ty, subscriptLst=subs), SOME(pcr)) algorithm
+      (_, b) := Expression.traverseExpTopDownSubs(subs, Expression.traversingComponentRefPresent, false);
+      unReplaceable := if b then BaseHashSet.add(ComponentReference.crefPrependIdent(pcr, name, {}, ty), iUnreplaceable) else iUnreplaceable;
     then unReplaceable;
 
-    case (DAE.CREF_IDENT(ident=name, identType=ty, subscriptLst=subs), NONE()) equation
-      (_, b) = Expression.traverseExpTopDownCrefHelper(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
-      pcr = DAE.CREF_IDENT(name, ty, {});
-      unReplaceable = if b then BaseHashSet.add(pcr, iUnreplaceable) else iUnreplaceable;
+    case (DAE.CREF_IDENT(ident=name, identType=ty, subscriptLst=subs), NONE()) algorithm
+      (_, b) := Expression.traverseExpTopDownCrefHelper(inCref, Expression.traversingComponentRefPresent, false);
+      unReplaceable := if b then BaseHashSet.add(DAE.CREF_IDENT(name, ty, {}), iUnreplaceable) else iUnreplaceable;
     then unReplaceable;
 
     case (DAE.OPTIMICA_ATTR_INST_CREF(), _) then iUnreplaceable;

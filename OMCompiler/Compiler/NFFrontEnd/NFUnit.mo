@@ -203,12 +203,7 @@ end isMaster;
 
 public function hashUnit
   input Unit inKey;
-  output Integer outHash;
-protected
-  String str;
-algorithm
-  str := unit2string(inKey);
-  outHash := stringHashDjb2(str);
+  output Integer outHash = stringHashDjb2(unit2string(inKey));
 end hashUnit;
 
 public function unitEqual

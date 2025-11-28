@@ -36,9 +36,11 @@ AC_SUBST(RT_LDFLAGS_SHARED)
 AC_SUBST(OMCRUNTIME_SHARED_LDFLAGS)
 AC_SUBST(SUNDIALS_LDFLAGS)
 AC_SUBST(SUNDIALS_TARGET)
-AC_SUBST(IPOPT_LDFLAGS)
-AC_SUBST(IPOPT_CFLAGS)
-AC_SUBST(IPOPT_TARGET)
+AC_SUBST(PRIMME_LDFLAGS)
+AC_SUBST(PRIMME_TARGET)
+AC_SUBST(MOO_LDFLAGS)
+AC_SUBST(MOO_CFLAGS)
+AC_SUBST(MOO_TARGET)
 AC_SUBST(QMAKE)
 AC_SUBST(EXE)
 AC_SUBST(SOURCE_REVISION)
@@ -54,6 +56,7 @@ AC_SUBST(HAVE_LAPACK)
 AC_SUBST(HAVE_LAPACK_DEPRECATED)
 AC_SUBST(LD_LAPACK)
 AC_SUBST(OMC_HAVE_IPOPT)
+AC_SUBST(OMC_HAVE_PRIMME)
 AC_SUBST(WITH_SUITESPARSE)
 AC_SUBST(SUITESPARSE_TARGET)
 AC_SUBST(SUITESPARSE_LDFLAGS)
@@ -636,7 +639,8 @@ AC_CHECK_LIB(pthread,pthread_self,[RT_LDFLAGS="$RT_LDFLAGS $LIBS"],[AC_MSG_ERROR
 
 LIBS=""
 
-IPOPT_LDFLAGS="-lipopt -lcoinmumps"
+PRIMME_LDFLAGS="-lprimme"
+MOO_LDFLAGS="-lipopt -ldmumps -lmumps_common -lseq"
 
 # check for SuiteSparse
 AC_ARG_WITH(SUITESPARSE, [  --without-SUITESPARSE              Disable compilation with SUITESPARSE (UMFPACK, KLU)],
@@ -666,11 +670,24 @@ AC_ARG_WITH(ipopt, [  --without-ipopt              Disable compilation with IPOP
 
 AS_IF([test "x$with_ipopt" = xyes],
 [
-  IPOPT_TARGET="ipopt";
+  MOO_TARGET="moo";
   OMC_HAVE_IPOPT="#define OMC_HAVE_IPOPT"
 ],[
-  IPOPT_TARGET=""
+  MOO_TARGET=""
   OMC_HAVE_IPOPT="/* #define OMC_HAVE_IPOPT */ /* Without Ipopt*/"
+])
+
+# check for primme
+AC_ARG_WITH(primme, [  --without-primme              Disable compilation with PRIMME (only for bootstrapping; required for simulations)],
+[],[with_primme=yes])
+
+AS_IF([test "x$with_primme" = xyes],
+[
+  PRIMME_TARGET="primme";
+  OMC_HAVE_PRIMME="#define OMC_HAVE_PRIMME"
+],[
+  PRIMME_TARGET=""
+  OMC_HAVE_PRIMME="/* #define OMC_HAVE_PRIMME */ /* Without Ipopt*/"
 ])
 
 m4_include([common/m4/corba.m4])
@@ -699,7 +716,7 @@ if test "$DARWIN" = "1"; then
   LIBZMQLIB=libzmq.dylib
   CMINPACKLIB_SHARED=ON
   RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS -lexpat -lomcgc -lryu -lpthread -lm $LIBDL -lstdc++"
-  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcdaskr -lcminpack -liconv"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $MOO_LDFLAGS $PRIMME_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcdaskr -lcminpack -liconv"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc -lryu -lm -lpthread $LIBDL -lstdc++"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL -liconv"
   # All libraries are dynamically linked; we don't need anything else
@@ -733,7 +750,7 @@ elif echo "$host" | grep -iq "mingw"; then
   LIBZMQLIB=libzmq.a
   CMINPACKLIB_SHARED=OFF
   RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS -lstdc++ -lomcgc -lryu -lexpat -lm"
-  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcminpack"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $MOO_LDFLAGS $PRIMME_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcminpack"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc -lryu -lexpat -Wl,-Bstatic -lpthread -Wl,-Bdynamic -static-libgcc -lm"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $RT_LDFLAGS"
@@ -768,7 +785,7 @@ else
   # For static runtime on Linux:
   # -Wl,-whole-archive -lSimulationRuntimeC -Wl,-no-whole-archive
   RT_LDFLAGS_SIM="$LDFLAGS -Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN' $RT_LDFLAGS $LIBRT -lexpat -lomcgc -lryu -lpthread -lm $LIBDL -lstdc++ -rdynamic"
-  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcdaskr -lcminpack"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $MOO_LDFLAGS $PRIMME_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcdaskr -lcminpack"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc -lryu $LIBRT -lpthread -lm $LIBDL -lstdc++ -rdynamic"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   # All libraries are dynamically linked; we don't need anything else

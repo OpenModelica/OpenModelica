@@ -26,7 +26,8 @@ SET(solver_sources  ../../../../3rdParty/Cdaskr/solver/daux.c
                     gbode_tableau.c
                     gbode_util.c
                     external_input.c
-                    irksco.c
+                    jacobian_analysis.c
+                    kinsol_b.c
                     kinsolSolver.c
                     linearSolverLapack.c
                     linearSolverLis.c
@@ -43,8 +44,6 @@ SET(solver_sources  ../../../../3rdParty/Cdaskr/solver/daux.c
                     nonlinearSolverNewton.c
                     nonlinearSystem.c
                     omc_math.c
-                    radau.c
-                    sample.c
                     solver_main.c
                     spatialDistribution.c
                     stateset.c
@@ -67,7 +66,8 @@ SET(solver_headers  ../../../../3rdParty/Cdaskr/solver/ddaskr_types.h
                     gbode_util.h
                     events.h
                     external_input.h
-                    irksco.h
+                    jacobian_analysis.h
+                    kinsol_b.h
                     kinsolSolver.h
                     linearSolverLapack.h
                     linearSolverLis.h
@@ -84,7 +84,6 @@ SET(solver_headers  ../../../../3rdParty/Cdaskr/solver/ddaskr_types.h
                     nonlinearSolverNewton.h
                     nonlinearSystem.h
                     omc_math.h
-                    radau.h
                     solver_main.h
                     spatialDistribution.h
                     stateset.h
@@ -100,4 +99,3 @@ INSTALL(TARGETS solver
 		ARCHIVE DESTINATION lib/omc)
 
 #INSTALL(FILES ${solver_headers} DESTINATION include)
-
