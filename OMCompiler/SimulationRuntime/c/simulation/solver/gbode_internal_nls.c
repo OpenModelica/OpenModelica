@@ -33,9 +33,7 @@
 #include "gbode_main.h"
 #include "gbode_internal_nls.h"
 
-// TODO: some refactoring for tolerances?
-// TODO: is the transform of ATOL and RTOL only valid for superconvergened FIRK (Radau, Lobatto, Gauss)?
-// TODO: How to choose it for Richardson???
+// TODO: How to choose TOL for Richardson???
 // TODO: update guess routines
 // TODO: update embedded for FIRK with real eigenvalue: we have the contractive error, but
 //       it looks like its only useful for defect-based errors in collocation methods
@@ -462,10 +460,10 @@ static double gbScalesNorm(GB_INTERNAL_NLS_DATA *nls, double *vec, int stack_siz
 
 /** @brief Solve one stage of a DIRK method with the internal solve routine. */
 static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
-                                                  threadData_t *threadData,
-                                                  NONLINEAR_SYSTEM_DATA* nonlinsys,
-                                                  DATA_GBODE* gbData,
-                                                  GB_INTERNAL_NLS_DATA *nls)
+                                                 threadData_t *threadData,
+                                                 NONLINEAR_SYSTEM_DATA* nonlinsys,
+                                                 DATA_GBODE* gbData,
+                                                 GB_INTERNAL_NLS_DATA *nls)
 {
   int size = nonlinsys->size;
   int stage = gbData->act_stage;
@@ -491,7 +489,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
     {
       /* set values for known last point (simplified Newton) */
       memcpy(data->localData[0]->realVars, gbData->yOld, size * sizeof(double));
-      data->localData[0]->timeValue = gbData->timeRight;
+      data->localData[0]->timeValue = gbData->time;
 
       /* callback ODE + callback Jacobian of ODE -> nls_jacobian buffer */
       gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
@@ -697,7 +695,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
   {
     /* set values for known last point (simplified Newton) */
     memcpy(data->localData[0]->realVars, gbData->yOld, size * sizeof(double));
-    data->localData[0]->timeValue = gbData->timeRight;
+    data->localData[0]->timeValue = gbData->time;
 
     /* callback ODE + callback Jacobian of ODE -> nls_jacobian buffer */
     gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
@@ -906,7 +904,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
                &x[size * s_minus1], &size);
 
         memcpy(data->localData[0]->realVars, &x[size * s_minus1], size * sizeof(double));
-        data->localData[0]->timeValue = gbData->timeRight + gbData->stepSize * nls->tabl->c[s_minus1];
+        data->localData[0]->timeValue = gbData->time + gbData->stepSize * nls->tabl->c[s_minus1];
         gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
 
         // k_s = f(t + h * c_s, x0 + h * sum{j=1}^{s-1} A_{s, j} * k_j)
@@ -970,7 +968,6 @@ void *gbInternalNlsAllocate(int size,
 
   // We transform the error such that the error term err = || v || = sqrt(1/n * sum (v[i] / scal[i])^2) is scaled with same measure
   // As we later have v = sum (b - bt) * k = min of local error of b and bt -> scale ATOL and RTOL w.r.t. (min(b, bt) + 1) / (b + 1)
-  // TODO: check correctness of this! Do we cheat here?!
   // TODO: what to do for Richardson?
 
   if (tabl->richardson)
