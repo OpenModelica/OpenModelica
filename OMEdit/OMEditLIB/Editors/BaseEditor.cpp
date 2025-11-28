@@ -2599,11 +2599,16 @@ void BaseEditor::toggleCommentSelection()
 /*!
  * \brief BaseEditor::reloadAsModelica
  * Slot activated when reload button is clicked.
+ * Saves all files and reload them as Modelica model(s).
  */
 void BaseEditor::reloadAsModelica()
 {
   if (mpModelWidget && mpModelWidget->getLibraryTreeItem()) {
-    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->reloadClass(mpModelWidget->getLibraryTreeItem());
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpModelWidget->getLibraryTreeItem());
+    if (pTopLevelLibraryTreeItem) {
+      MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pTopLevelLibraryTreeItem);
+    }
+    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->reloadClass(mpModelWidget->getLibraryTreeItem(), false);
   }
 }
 
@@ -3025,8 +3030,21 @@ ReloadAsModelicaInfoBar::ReloadAsModelicaInfoBar(BaseEditor *pBaseEditor)
   setAutoFillBackground(true);
   mpInfoLabel = new Label;
   mpInfoLabel->setWordWrap(true);
-  mpInfoLabel->setText(tr("This Modelica file is opened in text mode. If syntactically correct, it can be reloaded in Modelica mode."));
-  mpReloadButton = new QPushButton(ResourceCache::getIcon(":/Resources/icons/refresh.svg"), Helper::reload);
+  if (pBaseEditor->getModelWidget() && pBaseEditor->getModelWidget()->getLibraryTreeItem()) {
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pBaseEditor->getModelWidget()->getLibraryTreeItem());
+    if (pTopLevelLibraryTreeItem) {
+      const QString saveAndReload(tr("Once they have all been fixed, you can save and reload it in Modelica mode"));
+      QFileInfo fileInfo(pTopLevelLibraryTreeItem->getFileName());
+      if (fileInfo.isDir()) {
+        mpInfoLabel->setText(tr("The Modelica package %1 is open in text mode because of syntax errors in the code. %2.")
+                             .arg(pTopLevelLibraryTreeItem->getName(), saveAndReload));
+      } else {
+        mpInfoLabel->setText(tr("This Modelica file is open in text mode because of syntax errors in the code. %1.")
+                             .arg(saveAndReload));
+      }
+    }
+  }
+  mpReloadButton = new QPushButton(ResourceCache::getIcon(":/Resources/icons/refresh.svg"), tr("Save && Reload"));
   connect(mpReloadButton, &QPushButton::clicked, pBaseEditor, &BaseEditor::reloadAsModelica);
   // set the layout
   QHBoxLayout *pMainLayout = new QHBoxLayout;
