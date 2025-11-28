@@ -8603,11 +8603,22 @@ algorithm
   // if it is an array parameter split it up. Do not do it for Cpp runtime, they can handle array parameters
   if Types.isArray(dlowVar.varType) then
     scalar_crefs := ComponentReference.expandCref(dlowVar.varName, false);
-    scalar_bindings := match dlowVar.bindExp
-      case SOME(binding as DAE.ARRAY())  guard(Expression.isSimpleLiteralValue(binding)) then list(SOME(b) for b in Expression.expandArray(binding));
-      case SOME(binding as DAE.MATRIX()) guard(Expression.isSimpleLiteralValue(binding)) then list(SOME(b) for b in Expression.expandArray(binding));
-      else List.fill(dlowVar.bindExp, listLength(scalar_crefs));
-    end match;
+
+    // try to scalarize bindings
+    try
+      scalar_bindings := match dlowVar.bindExp
+        case SOME(binding as DAE.ARRAY())  then list(SOME(b) for b in Expression.expandArray(binding));
+        case SOME(binding as DAE.MATRIX()) then list(SOME(b) for b in Expression.expandArray(binding));
+        else List.fill(dlowVar.bindExp, listLength(scalar_crefs));
+      end match;
+
+      // fail if they are not of equal length
+      if listLength(scalar_bindings) <> listLength(scalar_crefs) then fail(); end if;
+    else
+      scalar_bindings := List.fill(dlowVar.bindExp, listLength(scalar_crefs));
+    end try;
+
+
     if Config.simCodeTarget() <> "Cpp" then
       // Make sure the array does not get expanded again. The check for existence is made by the caller
       // of this function, extractVarsFromList. Which checks for the whole unxpanded array, which is never
