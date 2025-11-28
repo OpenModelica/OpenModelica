@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.5)
 
 # Needs to be included before Core/Modelica othwise environment variables are not set.
 IF(USE_DGESV)
-  ADD_SUBDIRECTORY(Solver/Dgesv)
+  add_subdirectory(Solver/Dgesv)
 ENDIF(USE_DGESV)
 
 # adrpo: make sure this is first for the precompiled headers!
@@ -14,7 +14,7 @@ endif(NOT FMU_TARGET)
 
 # add system default implemention project
 if(USE_FMILIB)
-    add_subdirectory(Core/ModelicaExternalC)
+  add_subdirectory(Core/ModelicaExternalC)
 endif(USE_FMILIB)
 
 add_subdirectory(Core/System)
