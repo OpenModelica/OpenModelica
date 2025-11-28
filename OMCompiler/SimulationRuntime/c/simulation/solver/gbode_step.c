@@ -101,7 +101,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
   if (solved != NLS_SOLVED) {
-    warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_MS at time t=%g", gbData->time);
+    if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_MS at time t=%g", gbData->time);
     return -1;
   }
 
@@ -196,7 +196,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
   if (solved != NLS_SOLVED) {
-    warningStreamPrint(OMC_LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in full_implicit_MS_MR at time t=%g", gbfData->time);
+    if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in full_implicit_MS_MR at time t=%g", gbfData->time);
     return -1;
   }
 
@@ -317,22 +317,22 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
       if (solved != NLS_SOLVED) {
-        warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage %d at time t=%g", stage_+1, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+        if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage %d at time t=%g", stage_+1, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
         return -1;
       }
 
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS_V)) {
         infoStreamPrint(OMC_LOG_GBODE_NLS_V, 1, "NLS - start values and solution of the NLS:");
-        printVector_gb(OMC_LOG_GBODE_NLS_V, "nlsxOld x0 (start)", nlsData->nlsxOld, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-        printVector_gb(OMC_LOG_GBODE_NLS_V, "nlsxExtr x0 (yOld)", nlsData->nlsxExtrapolation, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-        printVector_gb(OMC_LOG_GBODE_NLS_V, "nlsx (solution)", nlsData->nlsx, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+        printVector_gb(OMC_LOG_GBODE_NLS_V, "x0", nlsData->nlsxOld, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+        printVector_gb(OMC_LOG_GBODE_NLS_V, "xS", nlsData->nlsxExtrapolation, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+        printVector_gb(OMC_LOG_GBODE_NLS_V, "xL", nlsData->nlsx,              nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
         messageClose(OMC_LOG_GBODE_NLS_V);
       }
 
+      memcpy(gbData->x + stage_ * nStates, nlsData->nlsx, nStates*sizeof(double));
       if (/* non explicit stage of (E)SDIRK integrator */ (stage_ != 0 || gbData->tableau->A[0] != 0) && gbData->nlsSolverMethod == GB_NLS_INTERNAL)
       {
         // reconstruct k_{stage_} from the solution, avoids repeated call to functionODE()
-        memcpy(gbData->x + stage_ * nStates, nlsData->nlsx, nStates*sizeof(double));
         double ifac = 1.0 / (gbData->stepSize * gbData->tableau->A[stage_ * nStages + stage_]);
         for (int i = 0; i < nStates; i++)
         {
@@ -457,7 +457,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
       if (solved != NLS_SOLVED) {
-        warningStreamPrint(OMC_LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in expl_diag_impl_RK_MR in stage %d at time t=%g", stage_+1, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
+        if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in expl_diag_impl_RK_MR in stage %d at time t=%g", stage_+1, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
         return -1;
       }
 
@@ -549,8 +549,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
   if (solved != NLS_SOLVED) {
-    gbData->stats.nConvergenceTestFailures++;
-    warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_RK at time t=%g", gbData->time);
+    if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_RK at time t=%g", gbData->time);
     return -1;
   }
 
@@ -631,7 +630,7 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   if (step_info != 0) {
     stepSize = stepSize/2;
     lastStepSize = lastStepSize/2;
-    warningStreamPrint(OMC_LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (first half step)");
+    if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (first half step)");
   } else {
     // debug the approximations after performed step
     if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) {
@@ -661,7 +660,7 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     if (step_info != 0) {
       stepSize = stepSize/2;
       lastStepSize = lastStepSize/2;
-      warningStreamPrint(OMC_LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (second half step)");
+      if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (second half step)");
     } else {
       // debug the approximations after performed step
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) {
@@ -691,7 +690,7 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       if (step_info != 0) {
         stepSize = stepSize/2;
         lastStepSize = lastStepSize/2;
-        warningStreamPrint(OMC_LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (full step)");
+        if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (full step)");
       } else {
         if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) {
           infoStreamPrint(OMC_LOG_GBODE, 1, "Richardson extrapolation (full step) approximation");
@@ -765,7 +764,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   if (step_info != 0) {
     stepSize = stepSize/2;
     lastStepSize = lastStepSize/2;
-    warningStreamPrint(OMC_LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (first half step)");
+    if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (first half step)");
   } else {
     // debug the approximations after performed step
     if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) {
@@ -795,7 +794,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     if (step_info != 0) {
       stepSize = stepSize/2;
       lastStepSize = lastStepSize/2;
-      warningStreamPrint(OMC_LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (second half step)");
+      if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (second half step)");
     } else {
       // debug the approximations after performed step
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) {
@@ -825,7 +824,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
       if (step_info != 0) {
         stepSize = stepSize/2;
         lastStepSize = lastStepSize/2;
-        warningStreamPrint(OMC_LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (full step)");
+        if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (full step)");
       } else {
         if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) {
           infoStreamPrint(OMC_LOG_GBODE, 1, "Richardson extrapolation (full step) approximation");
