@@ -4385,7 +4385,9 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
  */
 bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool skipValidate)
 {
-  pLibraryTreeItem->getModelWidget()->processPendingModelUpdate();
+  if (pLibraryTreeItem->getModelWidget()) {
+    pLibraryTreeItem->getModelWidget()->processPendingModelUpdate();
+  }
   bool result = false;
   MainWindow::instance()->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
   MainWindow::instance()->showProgressBar();
@@ -4853,39 +4855,49 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
  */
 bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool saveAs)
 {
-  QString fileName;
-  if (pLibraryTreeItem->getFileName().isEmpty() || saveAs) {
-    QFileInfo fileInfo(pLibraryTreeItem->getFileName());
-    QString name = fileInfo.completeBaseName();
-    fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::saveFile), NULL, "", NULL, fileInfo.suffix(), &name);
-    if (fileName.isEmpty()) { // if user press ESC
-      return false;
+  // save all files recursively if it is a directory
+  QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+  if (fileInfo.isDir()) {
+    for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
+      saveTextLibraryTreeItem(pLibraryTreeItem->child(i), saveAs);
     }
-  } else {
-    fileName = pLibraryTreeItem->getFileName();
   }
 
-  if (saveFile(fileName, pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText())) {
-    // if saveAs and the new file location already exists then unload it
-    if (saveAs) {
-      LibraryTreeItem *pExistingLibraryTreeItem = mpLibraryTreeModel->findLibraryTreeItem(fileName);
-      if (pExistingLibraryTreeItem) {
-        mpLibraryTreeModel->unloadTextFile(pExistingLibraryTreeItem, false);
+  if (!pLibraryTreeItem->isSaved() || saveAs) {
+    QString fileName;
+    if (pLibraryTreeItem->getFileName().isEmpty() || saveAs) {
+      QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+      QString name = fileInfo.completeBaseName();
+      fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::saveFile), NULL, "", NULL, fileInfo.suffix(), &name);
+      if (fileName.isEmpty()) { // if user press ESC
+        return false;
       }
+    } else {
+      fileName = pLibraryTreeItem->getFileName();
     }
-    /* mark the file as saved and update the labels. */
-    pLibraryTreeItem->setIsSaved(true);
-    pLibraryTreeItem->setFileName(fileName);
-    QFileInfo fileInfo(pLibraryTreeItem->getFileName());
-    pLibraryTreeItem->setName(fileInfo.fileName());
-    pLibraryTreeItem->setNameStructure(fileName);
-    if (pLibraryTreeItem->getModelWidget()) {
-      pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName());
-      pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
+
+    if (saveFile(fileName, pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText())) {
+      // if saveAs and the new file location already exists then unload it
+      if (saveAs) {
+        LibraryTreeItem *pExistingLibraryTreeItem = mpLibraryTreeModel->findLibraryTreeItem(fileName);
+        if (pExistingLibraryTreeItem) {
+          mpLibraryTreeModel->unloadTextFile(pExistingLibraryTreeItem, false);
+        }
+      }
+      /* mark the file as saved and update the labels. */
+      pLibraryTreeItem->setIsSaved(true);
+      pLibraryTreeItem->setFileName(fileName);
+      QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+      pLibraryTreeItem->setName(fileInfo.fileName());
+      pLibraryTreeItem->setNameStructure(fileName);
+      if (pLibraryTreeItem->getModelWidget()) {
+        pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName());
+        pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
+      }
+      mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
+    } else {
+      return false;
     }
-    mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
-  } else {
-    return false;
   }
   return true;
 }

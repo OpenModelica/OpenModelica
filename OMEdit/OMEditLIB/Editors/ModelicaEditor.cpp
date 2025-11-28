@@ -479,10 +479,19 @@ bool ModelicaEditor::validateText(LibraryTreeItem **pLibraryTreeItem)
       }
       switch (answer) {
         case 2: { // save with errors
+            // for package saved in one file update the containing package text
+            LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+            LibraryTreeItem *pContainingLibraryTreeItem = pLibraryTreeModel->getContainingFileParentLibraryTreeItem(*pLibraryTreeItem);
+            if (pContainingLibraryTreeItem && pContainingLibraryTreeItem != *pLibraryTreeItem) {
+              const QString stringToLoad = (*pLibraryTreeItem)->getClassTextBefore() + StringHandler::trimmedEnd(getPlainText()) + "\n" + (*pLibraryTreeItem)->getClassTextAfter();
+              pContainingLibraryTreeItem->setClassText(stringToLoad);
+              pContainingLibraryTreeItem->setIsSaved(false);
+            }
+            // save and reload
             LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(*pLibraryTreeItem);
             if (pTopLevelLibraryTreeItem) {
               MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pTopLevelLibraryTreeItem, true);
-              MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->reloadClass(pTopLevelLibraryTreeItem, false);
+              pLibraryTreeModel->reloadClass(pTopLevelLibraryTreeItem, false);
             }
             setTextChanged(false);
             return false;
