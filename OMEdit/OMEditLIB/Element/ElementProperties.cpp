@@ -1526,10 +1526,6 @@ void ElementParameters::setUpDialog()
     pParametersScrollArea->getLayout()->addWidget(mpComponentGroupBox);
   }
   pParametersScrollArea->getLayout()->addWidget(mpComponentClassGroupBox);
-  GroupBox *pParametersGroupBox = new GroupBox("Parameters");
-  pParametersScrollArea->addGroupBox(pParametersGroupBox);
-  GroupBox *pInitializationGroupBox = new GroupBox("Initialization");
-  pParametersScrollArea->addGroupBox(pInitializationGroupBox);
   mTabsMap.insert("General", mpParametersTabWidget->addTab(pParametersScrollArea, "General"));
   // create parameters tabs and groupboxes
   createTabsGroupBoxesAndParameters(getModel(), hasElement());
