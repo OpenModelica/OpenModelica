@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.5)
 
 project(${ModelicaName})
 
-message(STATUS "AHEU: OMC_BUILD=${OMC_BUILD}")
-
 # this library is only for the precompiled header
 add_library(${ModelicaName} STATIC Modelica.cpp)
 
@@ -247,9 +245,7 @@ MESSAGE(STATUS "--CPPTHREADS_LIBRARY = ${CPPTHREADS_LIBRARY} ${CPPTHREADS_LIBRAR
 MESSAGE(STATUS " ")
 
 if(BUILD_SHARED_LIBS)
-  message(STATUS "AHEU: create_precompiled_header: start")
   create_precompiled_header(${ModelicaName} runtime/include/Core/Modelica.h)
-  message(STATUS "AHEU: create_precompiled_header: done")
 endif(BUILD_SHARED_LIBS)
 
 IF(MSVC)
@@ -277,9 +273,7 @@ IF(MSVC)
   endif(BUILD_SHARED_LIBS)
 ENDIF(MSVC)
 
-message(STATUS "AHeu: CMAKE_CXX_COMPILER_ID=${CMAKE_CXX_COMPILER_ID}")
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel" OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-  message(STATUS "AHeu: IN IF")
   configure_file (
     "ModelicaConfig_gcc.inc.in"
     "${PROJECT_BINARY_DIR}/ModelicaConfig_gcc.inc")
@@ -295,7 +289,6 @@ IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQ
         ${PROJECT_BINARY_DIR}/ModelicaLibraryConfig_gcc.inc
         DESTINATION include/omc/omsicpp)
 else()
-  message(STATUS "AHeu: NOT IN IF")
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel" OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
 install(TARGETS ${ModelicaName} DESTINATION ${LIBINSTALLEXT})
