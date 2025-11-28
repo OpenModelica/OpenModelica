@@ -191,19 +191,14 @@ static void svd_dense_calculate_statistics(SVD_DATA* svd_data)
     svd_data->least_one_percent = first_below;
 }
 
-static void svd_general_matrix_print_info(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, SolverCaller caller, modelica_boolean scaled, modelica_boolean sparse)
+static void svd_general_matrix_print_info(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data)
 {
-    infoStreamPrint(OMC_LOG_NLS_SVD, 1, "%s: %s SVD analysis (scaled = %s, Caller: %s).",
-                SolverCaller_callerString(caller), sparse ? "sparse" : "dense", scaled ? "true" : "false", SolverCaller_toString(caller));
-
     infoStreamPrint(OMC_LOG_NLS_SVD, 1, "Matrix Info");
     infoStreamPrint(OMC_LOG_NLS_SVD, 0, "NLS eq index = %ld", nls_data->equationIndex);
     infoStreamPrint(OMC_LOG_NLS_SVD, 0, "Columns      = %ld", nls_data->size);
     infoStreamPrint(OMC_LOG_NLS_SVD, 0, "Rows         = %ld", nls_data->size);
     infoStreamPrint(OMC_LOG_NLS_SVD, 0, "NNZ          = %u", nls_data->sparsePattern->numberOfNonZeros);
     infoStreamPrint(OMC_LOG_NLS_SVD, 0, "Curr Time    = %-11.5e", data->localData[0]->timeValue);
-
-    messageClose(OMC_LOG_NLS_SVD);
     messageClose(OMC_LOG_NLS_SVD);
 }
 
@@ -243,7 +238,7 @@ static void svd_dense_dump_statistics(const SVD_DATA *svd_data)
     int i, u, v, var_idx, eq_idx, start, end, count;
     modelica_real val;
     modelica_integer size_of_torns;
-    SVD_Component *entries = (SVD_Component*)malloc(svd_data->rows * sizeof(SVD_Component));
+    SVD_Component *entries = NULL;
     NONLINEAR_SYSTEM_DATA *nls_data = svd_data->nls_data;
     NONLINEAR_SOLVER solver = nls_data->nlsMethod;
 
@@ -252,7 +247,9 @@ static void svd_dense_dump_statistics(const SVD_DATA *svd_data)
         return;
     }
 
-    svd_general_matrix_print_info(svd_data->data, nls_data, svd_data->caller, svd_data->scaled, /* sparse */ FALSE);
+    infoStreamPrint(OMC_LOG_NLS_SVD, 1, "%s: dense SVD analysis (scaled = %s, Caller: %s).",
+                SolverCaller_callerString(svd_data->caller), svd_data->scaled ? "true" : "false", SolverCaller_toString(svd_data->caller));
+    svd_general_matrix_print_info(svd_data->data, nls_data);
     svd_general_matrix_print_cond(svd_data->cond);
 
     // singular values
@@ -280,6 +277,8 @@ static void svd_dense_dump_statistics(const SVD_DATA *svd_data)
 
     // print right singular vectors for singular values below 1% of sigma_max
     infoStreamPrint(OMC_LOG_NLS_SVD, 1, "Smallest right singular vectors (variable space)");
+
+    entries = (SVD_Component*)malloc(svd_data->rows * sizeof(SVD_Component));
 
     if (svd_data->least_one_percent == svd_data->min_rows_cols)
     {
@@ -363,9 +362,10 @@ static void svd_dense_dump_statistics(const SVD_DATA *svd_data)
             messageClose(OMC_LOG_NLS_SVD);
         }
     }
-    messageClose(OMC_LOG_NLS_SVD);
-
     free(entries);
+
+    messageClose(OMC_LOG_NLS_SVD);
+    messageClose(OMC_LOG_NLS_SVD);
 }
 
 static int svd_dense_main(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, modelica_real *values, modelica_boolean scaled, SolverCaller caller)
@@ -839,7 +839,9 @@ static void svd_sparse_dump_statistics(primme_callback_ctx_t *ctx, primme_handle
         return;
     }
 
-    svd_general_matrix_print_info(ctx->data, ctx->nls_data, ctx->caller, ctx->scaled, /* sparse */ TRUE);
+    infoStreamPrint(OMC_LOG_NLS_SVD, 1, "%s: sparse SVD analysis (scaled = %s, Caller: %s).",
+                SolverCaller_callerString(ctx->caller), ctx->scaled ? "true" : "false", SolverCaller_toString(ctx->caller));
+    svd_general_matrix_print_info(ctx->data, ctx->nls_data);
 
     modelica_real sigma_max = res_top->svals[0];
     modelica_real sigma_min = res_least->svals[0];
@@ -848,6 +850,8 @@ static void svd_sparse_dump_statistics(primme_callback_ctx_t *ctx, primme_handle
     svd_general_matrix_print_cond(cond);
     svd_sparse_print_singular_values(ctx, handle_top, handle_least, res_top, res_least);
     svd_sparse_print_vectors(ctx, handle_least, res_least, TRUE);
+
+    messageClose(OMC_LOG_NLS_SVD);
 }
 
 static int svd_sparse_main(DATA *data, NONLINEAR_SYSTEM_DATA *nls_data, modelica_real *values, modelica_boolean scaled, SolverCaller caller, int svd_count) {
