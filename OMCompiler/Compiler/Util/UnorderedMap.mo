@@ -67,6 +67,11 @@ public
     output String str;
   end ValueStringFn;
 
+  partial function PredFn
+    input V value;
+    output Boolean res;
+  end PredFn;
+
   record UNORDERED_MAP
     Vector<list<Integer>> buckets;
     Vector<K> keys;
@@ -641,11 +646,6 @@ public
     input UnorderedMap<K, V> map;
     input PredFn fn;
     output Boolean res;
-
-    partial function PredFn
-      input V value;
-      output Boolean res;
-    end PredFn;
   algorithm
     res := Vector.all(map.values, fn);
   end all;
@@ -656,11 +656,6 @@ public
     input UnorderedMap<K, V> map;
     input PredFn fn;
     output Boolean res;
-
-    partial function PredFn
-      input V value;
-      output Boolean res;
-    end PredFn;
   algorithm
     res := Vector.any(map.values, fn);
   end any;
@@ -671,11 +666,6 @@ public
     input UnorderedMap<K, V> map;
     input PredFn fn;
     output Boolean res;
-
-    partial function PredFn
-      input V value;
-      output Boolean res;
-    end PredFn;
   algorithm
     res := Vector.none(map.values, fn);
   end none;

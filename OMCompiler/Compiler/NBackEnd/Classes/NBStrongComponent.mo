@@ -416,11 +416,11 @@ public
     input list<SuperNode> nodes;
     output StrongComponent entwined;
   protected
-    UnorderedMap<Integer, Slice.IntLst> elem_map = UnorderedMap.new<Slice.IntLst>(Util.id, intEq);
-    UnorderedMap<Integer, ComponentRef> cref_map = UnorderedMap.new<ComponentRef>(Util.id, intEq);
-    list<tuple<Integer, Slice.IntLst>> flat_map;
+    type IntLst = list<Integer>; // needed for UnorderedMap.new
+    UnorderedMap<Integer, list<Integer>> elem_map = UnorderedMap.new<IntLst>(Util.id, intEq);
+    UnorderedMap<Integer, ComponentRef> cref_map = UnorderedMap.new<ComponentRef>(Util.id, intEq, listLength(nodes));
     Integer eqn_arr_idx, var_arr_idx;
-    Slice.IntLst scal_indices;
+    list<Integer> scal_indices;
     list<StrongComponent> entwined_slices = {};
     list<tuple<Pointer<Equation>, Integer>> entwined_tpl_lst;
   algorithm
@@ -1163,8 +1163,9 @@ protected
     Pointer<Variable> var;
     Pointer<Equation> eqn;
     Integer len_comps = listLength(comp_indices);
-    UnorderedMap<Integer, Slice.IntLst> var_map = UnorderedMap.new<Slice.IntLst>(Util.id, intEq, len_comps);
-    UnorderedMap<Integer, Slice.IntLst> eqn_map = UnorderedMap.new<Slice.IntLst>(Util.id, intEq, len_comps);
+    type IntLst = list<Integer>; // needed for UnorderedMap.new
+    UnorderedMap<Integer, list<Integer>> var_map = UnorderedMap.new<IntLst>(Util.id, intEq, len_comps);
+    UnorderedMap<Integer, list<Integer>> eqn_map = UnorderedMap.new<IntLst>(Util.id, intEq, len_comps);
   algorithm
     // store all component var and eqn indices in maps
     for eqn_idx in comp_indices loop

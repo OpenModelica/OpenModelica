@@ -248,7 +248,6 @@ public
     EqData equationData;
     Events.EventInfo eventInfo = Events.EventInfo.empty();
     Partitioning.ClockedInfo clockedInfo = Partitioning.ClockedInfo.new();
-    UnorderedMap<Path, Function> functions;
   algorithm
     variableData := lowerVariableData(flatModel.variables);
     (equationData, variableData) := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, variableData);
@@ -1561,7 +1560,7 @@ public
     input output FunctionTree funcTree;
   protected
     // ToDo: replace all function trees with this UnorderedMap
-    UnorderedMap<Path, Function> functions = UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual);
+    //UnorderedMap<Path, Function> functions = UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual);
   protected
     Path path;
     Function fn;
@@ -1569,7 +1568,7 @@ public
     for tpl in FunctionTree.toList(funcTree) loop
       (path, fn) := tpl;
       (fn, funcTree) := Differentiate.resolvePartialDerivatives(fn, funcTree);
-      UnorderedMap.add(path, fn, functions);
+      //UnorderedMap.add(path, fn, functions);
     end for;
   end lowerFunctions;
 

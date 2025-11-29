@@ -55,6 +55,16 @@ public
     output Boolean equal;
   end KeyEq;
 
+  partial function StringFn
+    input T key;
+    output String str;
+  end StringFn;
+
+  partial function PredFn
+    input T key;
+    output Boolean res;
+  end PredFn;
+
   record UNORDERED_SET
     Mutable<array<list<T>>> buckets;
     Mutable<Integer> size;
@@ -387,11 +397,6 @@ public
     input UnorderedSet<T> set;
     input PredFn fn;
     output Boolean res;
-
-    partial function PredFn
-      input T key;
-      output Boolean res;
-    end PredFn;
   algorithm
     if isEmpty(set) then
       res := true;
@@ -416,11 +421,6 @@ public
     input UnorderedSet<T> set;
     input PredFn fn;
     output Boolean res;
-
-    partial function PredFn
-      input T key;
-      output Boolean res;
-    end PredFn;
   algorithm
     if isEmpty(set) then
       res := false;
@@ -445,11 +445,6 @@ public
     input UnorderedSet<T> set;
     input PredFn fn;
     output Boolean res;
-
-    partial function PredFn
-      input T key;
-      output Boolean res;
-    end PredFn;
   algorithm
     if isEmpty(set) then
       res := true;
@@ -473,11 +468,6 @@ public
     input UnorderedSet<T> set;
     input PredFn fn;
     output UnorderedSet<T> falseSet = new<T>(set.hashFn, set.eqFn);
-
-    partial function PredFn
-      input T key;
-      output Boolean res;
-    end PredFn;
   algorithm
     for b in Mutable.access(set.buckets) loop
       for k in b loop
@@ -494,11 +484,6 @@ public
     input PredFn fn;
     output UnorderedSet<T> trueSet = new<T>(set.hashFn, set.eqFn);
     output UnorderedSet<T> falseSet = new<T>(set.hashFn, set.eqFn);
-
-    partial function PredFn
-      input T key;
-      output Boolean res;
-    end PredFn;
   algorithm
     for b in Mutable.access(set.buckets) loop
       for k in b loop
@@ -563,11 +548,6 @@ public
     input StringFn stringFn;
     input String delimiter = "\n";
     output String str;
-
-    partial function StringFn
-      input T key;
-      output String str;
-    end StringFn;
   algorithm
     str := stringDelimitList(list(stringFn(k) for k in toArray(set)), delimiter);
   end toString;
@@ -576,11 +556,6 @@ public
     "Prints the set to standard output using the given string function."
     input UnorderedSet<T> set;
     input StringFn stringFn;
-
-    partial function StringFn
-      input T key;
-      output String str;
-    end StringFn;
   algorithm
     print(toString(set, stringFn));
     print("\n");
