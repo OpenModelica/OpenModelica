@@ -19,6 +19,7 @@ MultiDimensionalArrays3.mos\
 MultiDimensionalArrays4.mos\
 subscripted_expression.mos\
 matrix_vector_product.mos\
+scalar_product.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
