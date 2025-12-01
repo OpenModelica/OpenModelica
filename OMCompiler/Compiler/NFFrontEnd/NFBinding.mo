@@ -189,16 +189,6 @@ public
     end match;
   end isInvalid;
 
-  function untypedExp
-    input Binding binding;
-    output Option<Expression> exp;
-  algorithm
-    exp := match binding
-      case UNTYPED_BINDING() then SOME(binding.bindingExp);
-      else NONE();
-    end match;
-  end untypedExp;
-
   function typedExp
     input Binding binding;
     output Option<Expression> exp;
