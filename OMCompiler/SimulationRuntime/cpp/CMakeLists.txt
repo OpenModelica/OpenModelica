@@ -833,7 +833,7 @@ get_target_filename(${DgesvSolverName} libDgesvSolverName)
 get_target_filename(${PeerName} libPeerName)
 
 IF(CDASKR_FOUND)
-  get_target_filename("${DASSLName}" libDASSLName)
+  get_target_filename(${DASSLName} libDASSLName)
 ENDIF(CDASKR_FOUND)
 
 IF(OPENMP_FOUND AND SUITESPARSE_UMFPACK_FOUND)

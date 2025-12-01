@@ -901,7 +901,7 @@ SET(ModelicaUtilitiesName ${LIBPREFIX}ModelicaUtilities${LIBSUFFIX})
 SET(ExtensionUtilitiesName ${LIBPREFIX}ExtensionUtilities${LIBSUFFIX})
 SET(BasiLibName ${LIBPREFIX}Base${LIBSUFFIX})
 SET(FMUName ${LIBPREFIX}FMU${LIBSUFFIX})
-SET(DgesvName ${LIBPREFIX}Dgesv) # only static version
+SET(DgesvName ${LIBPREFIX}Dgesv_static) # only static version
 SET(OSUSimName ${LIBPREFIX}OSUSimulation${LIBSUFFIX})
 SET(OSUName ${LIBPREFIX}OSU${LIBSUFFIX})
 
