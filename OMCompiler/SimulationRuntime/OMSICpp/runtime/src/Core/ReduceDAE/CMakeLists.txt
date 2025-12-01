@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required(VERSION 3.5)
 
 project(${ReduceDAEName})
 
@@ -22,8 +22,3 @@ install(FILES
   ${CMAKE_SOURCE_DIR}/runtime/include/Core/ReduceDAE/Reduction.h
   ${CMAKE_SOURCE_DIR}/runtime/include/Core/ReduceDAE/com/ModelicaCompiler.h
   DESTINATION include/omc/omsicpp/Core/ReduceDAE)
-
-
-
-
-

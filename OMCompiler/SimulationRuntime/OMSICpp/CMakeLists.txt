@@ -33,17 +33,17 @@
 #
 # The used defines are stored in the SYSTEM_CFLAGS variable, which is passed to the ModelicaConfig.inc and written in the PrecompiledHeader.cmake
 
+cmake_minimum_required(VERSION 3.5)
+
 PROJECT(CppOMSISimulation)
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.9)
 
 SET(CMAKE_VERBOSE_MAKEFILE ON)
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMake")
-SET(CMAKE_FIND_DEBUG_MODE ON)
 SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 MESSAGE(STATUS "CMake version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}")
 
-STRING(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
+STRING(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UPPER)
 
 #Set Options
 OPTION(USE_PARALLEL_OUTPUT "USE_PARALLEL_OUTPUT" OFF)
@@ -112,7 +112,7 @@ message(STATUS "Libs will be installed in MACHINE = ${MACHINE} PLATFORM = ${PLAT
 
 MESSAGE(STATUS "CMake version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}")
 
-STRING(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
+STRING(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UPPER)
 
 #Set Options
 OPTION(USE_PARALLEL_OUTPUT "USE_PARALLEL_OUTPUT" OFF)
@@ -169,10 +169,8 @@ SET(CVodeName ${LIBPREFIX}CVode${LIBSUFFIX})
 SET(IDAName ${LIBPREFIX}IDA${LIBSUFFIX})
 SET(PeerName ${LIBPREFIX}Peer${LIBSUFFIX})
 SET(CppDASSLName ${LIBPREFIX}CppDASSL${LIBSUFFIX})
-SET(RTRKName ${LIBPREFIX}RTRK${LIBSUFFIX})
 SET(EulerName ${LIBPREFIX}Euler${LIBSUFFIX})
 SET(RK12Name ${LIBPREFIX}RK12${LIBSUFFIX})
-#SET(kluName ${LIBPREFIX}klu${LIBSUFFIX})
 SET(RTEulerName ${LIBPREFIX}RTEuler${LIBSUFFIX})
 SET(IdaName ${LIBPREFIX}Ida${LIBSUFFIX})
 SET(IdasName ${LIBPREFIX}Idas${LIBSUFFIX})
@@ -188,9 +186,8 @@ SET(DataExchangeName ${LIBPREFIX}DataExchange${LIBSUFFIX})
 SET(ModelicaUtilitiesName ${LIBPREFIX}ModelicaUtilities${LIBSUFFIX})
 SET(ExtensionUtilitiesName ${LIBPREFIX}ExtensionUtilities${LIBSUFFIX})
 SET(BasiLibName ${LIBPREFIX}Base${LIBSUFFIX})
-SET(ModelicaCompilerName ${LIBPREFIX}ModelicaCompiler${LIBSUFFIX})
 SET(FMUName ${LIBPREFIX}FMU${LIBSUFFIX})
-SET(DgesvName ${LIBPREFIX}Dgesv) # only static version
+SET(DgesvName ${LIBPREFIX}Dgesv_static) # only static version
 SET(ReduceDAEName ${LIBPREFIX}ReduceDAE) # only static version
 
 SET(USE_MICO OFF)
@@ -886,10 +883,8 @@ SET(CVodeName ${LIBPREFIX}CVode${LIBSUFFIX})
 SET(IDAName ${LIBPREFIX}IDA${LIBSUFFIX})
 SET(PeerName ${LIBPREFIX}Peer${LIBSUFFIX})
 SET(CppDASSLName ${LIBPREFIX}CppDASSL${LIBSUFFIX})
-SET(RTRKName ${LIBPREFIX}RTRK${LIBSUFFIX})
 SET(EulerName ${LIBPREFIX}Euler${LIBSUFFIX})
 SET(RK12Name ${LIBPREFIX}RK12${LIBSUFFIX})
-#SET(kluName ${LIBPREFIX}klu${LIBSUFFIX})
 SET(RTEulerName ${LIBPREFIX}RTEuler${LIBSUFFIX})
 SET(IdaName ${LIBPREFIX}Ida${LIBSUFFIX})
 SET(IdasName ${LIBPREFIX}Idas${LIBSUFFIX})
@@ -905,9 +900,8 @@ SET(DataExchangeName ${LIBPREFIX}DataExchange${LIBSUFFIX})
 SET(ModelicaUtilitiesName ${LIBPREFIX}ModelicaUtilities${LIBSUFFIX})
 SET(ExtensionUtilitiesName ${LIBPREFIX}ExtensionUtilities${LIBSUFFIX})
 SET(BasiLibName ${LIBPREFIX}Base${LIBSUFFIX})
-SET(ModelicaCompilerName ${LIBPREFIX}ModelicaCompiler${LIBSUFFIX})
 SET(FMUName ${LIBPREFIX}FMU${LIBSUFFIX})
-SET(DgesvName ${LIBPREFIX}Dgesv) # only static version
+SET(DgesvName ${LIBPREFIX}Dgesv_static) # only static version
 SET(OSUSimName ${LIBPREFIX}OSUSimulation${LIBSUFFIX})
 SET(OSUName ${LIBPREFIX}OSU${LIBSUFFIX})
 
@@ -920,110 +914,72 @@ ADD_SUBDIRECTORY(runtime/src)
 
 
 #get library names for dynamic loading and linking simulation kernel
+# Helper function to extract library filename from target using generator expressions
+# This replaces deprecated GET_TARGET_PROPERTY with LOCATION
+function(get_target_filename TARGET_NAME OUTPUT_VAR)
+  # Use file(GENERATE) with generator expression to extract filename at build time
+  file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/get_target_filename_${TARGET_NAME}.cmake"
+    CONTENT "file(WRITE \"${CMAKE_BINARY_DIR}/target_filename_${TARGET_NAME}.txt\" \"$<TARGET_FILE_NAME:${TARGET_NAME}>\")"
+  )
+  # For now, we'll use a simpler approach: just use the target name variable
+  # Since we're extracting library names for configuration, we can derive them from the known target naming
+  get_target_property(TARGET_TYPE ${TARGET_NAME} TYPE)
+  if(TARGET_TYPE STREQUAL "SHARED_LIBRARY")
+    set(${OUTPUT_VAR} "${CMAKE_SHARED_LIBRARY_PREFIX}${TARGET_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX}" PARENT_SCOPE)
+  else()
+    set(${OUTPUT_VAR} "${CMAKE_STATIC_LIBRARY_PREFIX}${TARGET_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX}" PARENT_SCOPE)
+  endif()
+endfunction()
+
 IF(USE_SUNDIALS)
+  get_target_filename(${CVodeName} libCVodeName)
+  get_target_filename(${IDAName} libIDAName)
+  get_target_filename(${KinsolName} libKinsolName)
 
-  #add  Idas solver project
-  ##add_subdirectory (Solver/Idas/Implementation)
-  ##add_subdirectory (Solver/Ida/Implementation)
-  GET_TARGET_PROPERTY(libCVode ${CVodeName} LOCATION)
-  GET_FILENAME_COMPONENT(libCVodeName ${libCVode} NAME)
-
-  GET_TARGET_PROPERTY(libIDA ${IDAName} LOCATION)
-  GET_FILENAME_COMPONENT(libIDAName ${libIDA} NAME)
-
-  GET_TARGET_PROPERTY(libKinsol ${KinsolName} LOCATION)
-  GET_FILENAME_COMPONENT(libKinsolName ${libKinsol} NAME)
-
-  #GET_TARGET_PROPERTY(libIdas ${IdasName} LOCATION)
-  #GET_FILENAME_COMPONENT(libIdasName ${libIdas} NAME)
-  #GET_TARGET_PROPERTY(libIda ${IdaName} LOCATION)
-  #GET_FILENAME_COMPONENT(libIdaName ${libIda} NAME)
-
-  #set (IDAS_LIB ${libIdasName})
   SET(CVODE_LIB ${libCVodeName})
   SET(IDA_LIB ${libIDAName})
   SET(KINSOL_LIB ${libKinsolName})
-  #set(IDA_LIB ${libIdaName})
 ENDIF(USE_SUNDIALS)
 
-GET_TARGET_PROPERTY(libLinearSolver ${LinearSolverName} LOCATION)
-GET_FILENAME_COMPONENT(libLinearSolverName ${libLinearSolver} NAME)
+get_target_filename(${LinearSolverName} libLinearSolverName)
+get_target_filename(${DgesvSolverName} libDgesvSolverName)
 
-GET_TARGET_PROPERTY(libDgesvSolver ${DgesvSolverName} LOCATION)
-GET_FILENAME_COMPONENT(libDgesvSolverName ${libDgesvSolver} NAME)
+if(BUILD_PEER)
+  get_target_filename(${PeerName} libPeerName)
+endif(BUILD_PEER)
 
-GET_TARGET_PROPERTY(libPeer ${PeerName} LOCATION)
-GET_FILENAME_COMPONENT(libPeerName ${libPeer} NAME)
+IF(OPENMP_FOUND AND SUITESPARSE_UMFPACK_FOUND)
+  get_target_filename(${CppDASSLName} libCppDASSLName)
+ENDIF(OPENMP_FOUND AND SUITESPARSE_UMFPACK_FOUND)
 
-IF(OPENMP_FOUND)
-  GET_TARGET_PROPERTY(libCppDASSL ${CppDASSLName} LOCATION)
-  GET_FILENAME_COMPONENT(libCppDASSLName ${libCppDASSL} NAME)
-ENDIF(OPENMP_FOUND)
+get_target_filename(${NewtonName} libNewtonName)
 
-GET_TARGET_PROPERTY(libRTRK ${RTRKName} LOCATION)
-GET_FILENAME_COMPONENT(libRTRKName ${libRTRK} NAME)
+if(BUILD_BROYDEN)
+  get_target_filename(${BroydenName} libBroydenName)
+endif(BUILD_BROYDEN)
 
-GET_TARGET_PROPERTY(libNewton ${NewtonName} LOCATION)
-GET_FILENAME_COMPONENT(libNewtonName ${libNewton} NAME)
+get_target_filename(${UmfPackName} libUmfPackName)
+get_target_filename(${EulerName} libEulerName)
+get_target_filename(${RK12Name} libRK12Name)
+get_target_filename(${RTEulerName} libRTEulerName)
 
-GET_TARGET_PROPERTY(libBroyden ${BroydenName} LOCATION)
-GET_FILENAME_COMPONENT(libBroydenName ${libBroyden} NAME)
+if(USE_MINPACK)
+  get_target_filename(${HybrjName} libHybrjName)
+endif(USE_MINPACK)
 
-GET_TARGET_PROPERTY(libUmfPack ${UmfPackName} LOCATION)
-GET_FILENAME_COMPONENT(libUmfPackName ${libUmfPack} NAME)
+get_target_filename(${SimulationSettings} libSetFactoryName)
+get_target_filename(${ModelicaName} libModelicaName)
+get_target_filename(${SystemBaseName} libSystemBaseName)
+get_target_filename(${SystemOMSIName} libSystemOMSIName)
+get_target_filename(${ExtendedSystemName} libExtendedSystemName)
+get_target_filename(${SolverName} libSolverName)
+get_target_filename(${SimControllerName} libSimControllerName)
+get_target_filename(${MathName} libMathName)
+get_target_filename(${DataExchangeName} libDataExchangeName)
+get_target_filename(${OMCFactoryName} libSimObjFactoryName)
+get_target_filename(${FMUName} libFMUName)
+get_target_filename(${DgesvName} libDgesvName)
 
-GET_TARGET_PROPERTY(libEuler ${EulerName} LOCATION)
-GET_FILENAME_COMPONENT(libEulerName ${libEuler} NAME)
-
-GET_TARGET_PROPERTY(libRK12 ${RK12Name} LOCATION)
-GET_FILENAME_COMPONENT(libRK12Name ${libRK12} NAME)
-
-#GET_TARGET_PROPERTY(libKlu ${kluName} LOCATION)
-#GET_FILENAME_COMPONENT(libKluName ${libKlu} NAME)
-
-GET_TARGET_PROPERTY(libRTEuler ${RTEulerName} LOCATION)
-GET_FILENAME_COMPONENT(libRTEulerName ${libRTEuler} NAME)
-
-GET_TARGET_PROPERTY(libHybrj ${HybrjName} LOCATION)
-GET_FILENAME_COMPONENT(libHybrjName ${libHybrj} NAME)
-
-GET_TARGET_PROPERTY(libSetFactory ${SimulationSettings} LOCATION)
-GET_FILENAME_COMPONENT(libSetFactoryName ${libSetFactory} NAME)
-
-GET_TARGET_PROPERTY(libModelica ${ModelicaName} LOCATION)
-GET_FILENAME_COMPONENT(libModelicaName ${libModelica} NAME)
-
-GET_TARGET_PROPERTY(libSystemBase ${SystemBaseName} LOCATION)
-GET_FILENAME_COMPONENT(libSystemBaseName ${libSystemBase} NAME)
-
-GET_TARGET_PROPERTY(libSystemOMSI ${SystemOMSIName} LOCATION)
-GET_FILENAME_COMPONENT(libSystemOMSIName ${libSystemOMSI} NAME)
-
-GET_TARGET_PROPERTY(libExtendedSystem ${ExtendedSystemName} LOCATION)
-GET_FILENAME_COMPONENT(libExtendedSystemName ${libExtendedSystem} NAME)
-
-GET_TARGET_PROPERTY(libSolver ${SolverName} LOCATION)
-GET_FILENAME_COMPONENT(libSolverName ${libSolver} NAME)
-
-GET_TARGET_PROPERTY(libSimController ${SimControllerName} LOCATION)
-GET_FILENAME_COMPONENT(libSimControllerName ${libSimController} NAME)
-
-GET_TARGET_PROPERTY(libMath ${MathName} LOCATION)
-GET_FILENAME_COMPONENT(libMathName ${libMath} NAME)
-
-GET_TARGET_PROPERTY(libDataExchange ${DataExchangeName} LOCATION)
-GET_FILENAME_COMPONENT(libDataExchangeName ${libDataExchange} NAME)
-
-GET_TARGET_PROPERTY(libModelicaCompiler ${ModelicaCompilerName} LOCATION)
-GET_FILENAME_COMPONENT(libModelicaCompilerName ${libModelicaCompiler} NAME)
-
-GET_TARGET_PROPERTY(libSimObjFactory ${OMCFactoryName} LOCATION)
-GET_FILENAME_COMPONENT(libSimObjFactoryName ${libSimObjFactory} NAME)
-
-GET_TARGET_PROPERTY(libFMU ${FMUName} LOCATION)
-GET_FILENAME_COMPONENT(libFMUName ${libFMU} NAME)
-
-#set (KLU_LIB ${libKluName})
 set (EULER_LIB ${libEulerName})
 set (RK12_LIB ${libRK12Name})
 set (RTEULER_LIB ${libRTEulerName})
@@ -1031,10 +987,8 @@ set (SETTINGSFACTORY_LIB ${libSetFactoryName})
 set (MODELICASYSTEM_LIB ${libModelicaName})
 set (NEWTON_LIB ${libNewtonName})
 set (BROYDEN_LIB ${libBroydenName})
-#set (UMFPACK_LIB ${libUmfPackName})
 set (PEER_LIB ${libPeerName})
 set (CPPDASSL_LIB ${libCppDASSLName})
-set (RTRK_LIB ${libRTRKName})
 set (SYSTEMBASE_LIB ${libSystemBaseName})
 set (SYSTEMOMSI_LIB ${libSystemOMSIName})
 set (EXTENDEDSYSTEM_LIB ${libExtendedSystemName})
@@ -1046,10 +1000,6 @@ set (HYBRJ_LIB ${libHybrjName})
 set (SIMOBJFACTORY_LIB ${libSimObjFactoryName})
 set (DATAEXCHANGE_LIB ${libDataExchangeName})
 set (SIMCONTROLLER_LIB ${libSimControllerName})
-set (EXTENSIONUTILITIES_LIB ${libExtensionUtilitiesName})
-set (MODELICACOMPILER_LIB ${libModelicaCompilerName})
-set (FMU_LIB ${libFMUName})
-set (DGESV_LIB ${libDgesvName})
 
 # configure a header file to pass some library names
 # to the source code which are used to dynamic load and instantiate
@@ -1066,17 +1016,12 @@ ADD_SUBDIRECTORY(omsi)
 
 #install 3rdparty libraries
 if(INSTALL_OMDEV_LIBS)
-  #if(USE_SUNDIALS)
-  #  install (FILES "${SUNDIALS_NVECSERIAL_LIB}"  "${SUNDIALS_IDAS_LIB}" "${SUNDIALS_IDA_LIB}" "${SUNDIALS_CVODES_LIB}" DESTINATION bin)
-  #endif(USE_SUNDIALS)
-
   if(USE_MICO)
     install (FILES "${MICO_LIBRARY}"   DESTINATION bin)
   endif()
 
   install (FILES "${LAPACK_lapack_LIBRARY}"   DESTINATION bin)
   install (FILES "${BLAS_blas_LIBRARY}"   DESTINATION bin)
-  #install (FILES "${BOOST_SERIALIZATION_LIBRARY_RELEASE}"   DESTINATION bin)
 endif()
 
 

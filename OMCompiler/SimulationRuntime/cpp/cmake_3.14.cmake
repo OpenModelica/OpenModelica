@@ -77,7 +77,6 @@ omc_get_library_filename(omc::simrt::cpp::solver::dgesvsolver DGESVSOLVER_LIB)
 omc_get_library_filename(omc::simrt::cpp::solver::ida IDA_LIB)
 omc_get_library_filename(omc::simrt::cpp::solver::kinsol KINSOL_LIB)
 omc_get_library_filename(omc::simrt::cpp::solver::newton NEWTON_LIB)
-# omc_get_library_filename(omc::simrt::cpp::core::utils::extension EXTENSIONUTILITIES_LIB)
 omc_get_library_filename(omc::simrt::cpp::core::simcontroller SIMCONTROLLER_LIB)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/LibrariesConfig.h.in ${CMAKE_CURRENT_BINARY_DIR}/LibrariesConfig.h)

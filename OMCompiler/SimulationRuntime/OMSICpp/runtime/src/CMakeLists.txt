@@ -1,12 +1,9 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.5)
 
 
 # Needs to be included before Core/Modelica othwise environment variables are not set.
 IF(USE_DGESV)
-  ADD_SUBDIRECTORY(Solver/Dgesv)
-
-  GET_TARGET_PROPERTY(libDgesv ${DgesvName} LOCATION)
-  GET_FILENAME_COMPONENT(libDgesvName ${libDgesv} NAME)
+  add_subdirectory(Solver/Dgesv)
 ENDIF(USE_DGESV)
 
 # adrpo: make sure this is first for the precompiled headers!
@@ -17,7 +14,7 @@ endif(NOT FMU_TARGET)
 
 # add system default implemention project
 if(USE_FMILIB)
-    add_subdirectory(Core/ModelicaExternalC)
+  add_subdirectory(Core/ModelicaExternalC)
 endif(USE_FMILIB)
 
 add_subdirectory(Core/System)
@@ -38,7 +35,6 @@ if(NOT FMU_TARGET)
   if(REDUCE_DAE)
     add_subdirectory(Core/ReduceDAE)
   endif()
-  #add_subdirectory(ModelicaCompiler)
 endif(NOT FMU_TARGET)
 
 # add Newton solver
@@ -79,7 +75,6 @@ if(NOT FMU_TARGET)
   else(OPENMP_FOUND)
     message(STATUS "CppDassl disabled, because of missing OpenMP support")
   endif(OPENMP_FOUND)
-  ##add_subdirectory(Solver/RTRK)
 endif(NOT FMU_TARGET)
 
 add_subdirectory(FMU)
