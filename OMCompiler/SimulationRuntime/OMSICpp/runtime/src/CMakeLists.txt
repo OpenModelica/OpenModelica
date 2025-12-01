@@ -47,7 +47,6 @@ add_subdirectory(Solver/Newton)
 IF(USE_SUNDIALS)
   #add  Cvode solver project
   ADD_SUBDIRECTORY (Solver/CVode)
-  #add_subdirectory (Solver/ARKode)
   ADD_SUBDIRECTORY(Solver/IDA)
   ADD_SUBDIRECTORY(Solver/Kinsol)
 ENDIF(USE_SUNDIALS)
@@ -84,8 +83,3 @@ if(NOT FMU_TARGET)
 endif(NOT FMU_TARGET)
 
 add_subdirectory(FMU)
-
-
-
-
-
