@@ -509,19 +509,25 @@ void OpenModelicaFile::convertModelicaFiles(QStringList filesAndDirectories, QSt
 void OpenModelicaFile::convertModelicaFile(QString fileName, QTextCodec *pCodec)
 {
   QFile file(fileName);
-  file.open(QIODevice::ReadOnly);
-  QString fileData(pCodec->toUnicode(file.readAll()));
-  file.close();
-  file.open(QIODevice::WriteOnly | QIODevice::Truncate);
-  QTextStream out(&file);
+
+  if (file.open(QIODevice::ReadOnly))
+  {
+    QString fileData(pCodec->toUnicode(file.readAll()));
+    file.close();
+
+    if (file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+    {
+      QTextStream out(&file);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  out.setEncoding(QStringConverter::Utf8);
+      out.setEncoding(QStringConverter::Utf8);
 #else
-  out.setCodec(Helper::utf8.toUtf8().constData());
+      out.setCodec(Helper::utf8.toUtf8().constData());
 #endif
-  out.setGenerateByteOrderMark(false);
-  out << fileData;
-  file.close();
+      out.setGenerateByteOrderMark(false);
+      out << fileData;
+      file.close();
+    }
+  }
 }
 
 /*!
