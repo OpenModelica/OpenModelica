@@ -951,6 +951,8 @@ protected
   Integer cls_index = 1, comp_index = 1, ext_index = 1;
   InstanceTree tree;
   list<Integer> local_comps;
+  Mutable<InstNode> node_ptr;
+  InstNode node;
 algorithm
   ClassTree.INSTANTIATED_TREE(classes = clss, components = comps, exts = exts,
     localComponents = local_comps) := classTree;
@@ -983,13 +985,24 @@ algorithm
 
       case SCode.Element.COMPONENT()
         algorithm
-          while InstNode.name(Mutable.access(comps[comp_index])) <> e.name loop
+          while true loop
+            node := Mutable.access(comps[comp_index]);
+
+            if InstNode.name(node) == e.name and not InstNode.isGeneratedInner(node) then
+              break;
+            end if;
+
             comp_index :: local_comps := local_comps;
           end while;
+          //while InstNode.name(Mutable.access(comps[comp_index])) <> e.name loop
+          //  comp_index :: local_comps := local_comps;
+          //end while;
 
-          if not AbsynUtil.isOnlyOuter(SCodeUtil.elementInnerOuter(e)) then
-            tree := buildInstanceTreeComponent(comps[comp_index]);
-            elements := tree :: elements;
+          tree := buildInstanceTreeComponent(node);
+          elements := tree :: elements;
+
+          if not listEmpty(local_comps) then
+            comp_index :: local_comps := local_comps;
           end if;
         then
           elements;
@@ -1014,7 +1027,7 @@ algorithm
 
   for i in arrayLength(comps):-1:1 loop
     if InstNode.isGeneratedInner(Mutable.access(comps[i])) then
-      elems := buildInstanceTreeComponent(comps[i]) :: elems;
+      elems := buildInstanceTreeComponent(Mutable.access(comps[i])) :: elems;
     else
       break;
     end if;
@@ -1028,16 +1041,15 @@ algorithm
 end buildInstanceTreeGeneratedInners;
 
 function buildInstanceTreeComponent
-  input Mutable<InstNode> compNode;
+  input InstNode node;
   output InstanceTree tree;
 protected
-  InstNode node, inner_node, cls_node;
+  InstNode inner_node, cls_node;
   InstanceTree cls;
   Binding binding;
   Option<Binding> opt_binding;
 algorithm
-  node := Mutable.access(compNode);
-  inner_node := InstNode.resolveInner(node);
+  inner_node := InstNode.resolveOuter(node);
   cls_node := InstNode.classScope(inner_node);
 
   if InstNode.isEmpty(cls_node) then
@@ -1072,7 +1084,7 @@ protected
   SCode.Element def;
 algorithm
   InstanceTree.CLASS(node = node, elements = elems) := tree;
-  node := InstNode.resolveInner(node);
+  node := InstNode.resolveOuter(node);
   def := InstNode.definition(node);
   cmt := SCodeUtil.getElementComment(def);
 
@@ -1284,7 +1296,7 @@ protected
 algorithm
   node := InstNode.getRedeclaredNode(cls);
   elem := InstNode.definition(node);
-  json := dumpJSONSCodeClass(elem, scope, true, json);
+  json := dumpJSONSCodeClass(elem, scope, node, true, json);
   json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
 end dumpJSONReplaceableClass;
 
@@ -1294,25 +1306,27 @@ function dumpJSONComponent
   input InstanceTree cls;
   output JSON json = JSON.makeNull();
 protected
-  InstNode node, scope;
+  InstNode node, scope, ty_node;
   Component comp;
   SCode.Element elem;
   Boolean is_constant;
   SCode.Comment cmt;
   SCode.Annotation ann;
   JSON j;
+  Absyn.Path path;
 algorithm
-  node := InstNode.resolveInner(component);
+  node := InstNode.resolveOuter(component);
   comp := InstNode.component(node);
   elem := InstNode.definition(node);
   scope := InstNode.parent(node);
+
+  json := JSON.addPair("$kind", JSON.makeString("component"), json);
+  json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
 
   () := match (comp, elem)
     case (Component.COMPONENT(), SCode.Element.COMPONENT())
       guard Component.isDeleted(comp)
       algorithm
-        json := JSON.addPair("$kind", JSON.makeString("component"), json);
-        json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
         json := JSON.addPair("type", dumpJSONComponentType(cls, node, comp.ty, isDeleted = true), json);
         json := dumpJSONSCodeMod(elem.modifications, scope, json);
         json := JSON.addPair("condition", JSON.makeBoolean(false), json);
@@ -1323,8 +1337,6 @@ algorithm
 
     case (Component.INVALID_COMPONENT(), SCode.Element.COMPONENT())
       algorithm
-        json := JSON.addPair("$kind", JSON.makeString("component"), json);
-        json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
         json := JSON.addPair("type", dumpJSONComponentType(cls, node, Component.getType(comp)), json);
         json := dumpJSONSCodeMod(elem.modifications, scope, json);
         json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes, scope), json);
@@ -1335,8 +1347,6 @@ algorithm
 
     case (Component.COMPONENT(), SCode.Element.COMPONENT())
       algorithm
-        json := JSON.addPair("$kind", JSON.makeString("component"), json);
-        json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
         json := JSON.addPair("type", dumpJSONComponentType(cls, node, comp.ty), json);
 
         if Type.isArray(comp.ty) then
@@ -1362,6 +1372,25 @@ algorithm
         if InstNode.isGeneratedInner(node) then
           json := JSON.addPair("generated", JSON.makeBoolean(true), json);
         end if;
+      then
+        ();
+
+    case (Component.COMPONENT_DEF(), SCode.Element.COMPONENT())
+      guard AbsynUtil.isOnlyOuter(elem.prefixes.innerOuter)
+      algorithm
+        path := AbsynUtil.typeSpecPath(elem.typeSpec);
+
+        try
+          ty_node := Lookup.lookupName(path, scope, InstContext.set(NFInstContext.RELAXED, NFInstContext.FAST_LOOKUP),
+            checkAccessViolations = false);
+          json := JSON.addPair("type", dumpJSONSCodeClass(InstNode.definition(ty_node), ty_node, scope, isRedeclare = false), json);
+        else
+          json := JSON.addPair("type", dumpJSONPath(path), json);
+        end try;
+
+        json := JSON.addPairNotNull("prefixes", dumpJSONAttributes(elem.attributes, elem.prefixes, scope), json);
+        json := dumpJSONComment(elem.comment, scope, json);
+        //json := JSON.addPair("inner", dumpJSONPath(InstNode.scopePath(InstNode.resolveInner(component))), json);
       then
         ();
 
@@ -2271,14 +2300,31 @@ algorithm
         json;
 
     case SCode.Element.CLASS()
-      then dumpJSONSCodeClass(element, scope, false, json);
+      then dumpJSONSCodeClass(element, InstNode.EMPTY_NODE(), scope, false, json);
 
     else json;
   end match;
 end dumpJSONSCodeElement;
 
+function dumpJSONSCodeType
+  input Absyn.Path path;
+  input InstNode scope;
+  input output JSON json;
+protected
+  InstNode ty_node;
+algorithm
+  try
+    ty_node := Lookup.lookupName(path, scope, InstContext.set(NFInstContext.RELAXED, NFInstContext.FAST_LOOKUP),
+      checkAccessViolations = false);
+    json := JSON.addPair("type", dumpJSONSCodeClass(InstNode.definition(ty_node), ty_node, scope, isRedeclare = false), json);
+  else
+    json := JSON.addPair("type", dumpJSONPath(path), json);
+  end try;
+end dumpJSONSCodeType;
+
 function dumpJSONSCodeClass
   input SCode.Element element;
+  input InstNode node;
   input InstNode scope;
   input Boolean isRedeclare;
   input output JSON json = JSON.makeNull();
@@ -2289,7 +2335,13 @@ algorithm
     case SCode.CLASS()
       algorithm
         json := JSON.addPair("$kind", JSON.makeString("class"), json);
-        json := JSON.addPair("name", JSON.makeString(element.name), json);
+
+        if InstNode.isEmpty(node) or isRedeclare then
+          json := JSON.addPair("name", JSON.makeString(element.name), json);
+        else
+          json := JSON.addPair("name", dumpJSONNodeEnclosingPath(node), json);
+        end if;
+
         json := JSON.addPair("restriction",
           JSON.makeString(SCodeDump.restrictionStringPP(element.restriction)), json);
         json := JSON.addPairNotNull("prefixes", dumpJSONClassPrefixes(element, scope), json);
@@ -2300,10 +2352,47 @@ algorithm
           json := dumpJSONCommentAnnotation(SOME(element.cmt), scope, json,
             {"Dialog", "choices", "choicesAllMatching"});
         end if;
+
+        if not isRedeclare then
+          json := dumpJSONSCodeTypeExtends(node, scope, json);
+        end if;
       then
         ();
   end match;
 end dumpJSONSCodeClass;
+
+function dumpJSONSCodeTypeExtends
+  input InstNode node;
+  input InstNode scope;
+  input output JSON json;
+protected
+  InstNode expanded_node;
+  array<InstNode> exts;
+  JSON json_elements, json_ext;
+algorithm
+  if InstNode.isEmpty(node) then
+    return;
+  end if;
+
+  try
+    expanded_node := Inst.expand(node, NFInstContext.RELAXED);
+    exts := ClassTree.getExtends(Class.classTree(InstNode.getClass(expanded_node)));
+
+    if not arrayEmpty(exts) then
+      json_elements := JSON.makeNull();
+
+      for ext in exts loop
+        json_ext := JSON.makeNull();
+        json_ext := JSON.addPair("$kind", JSON.makeString("extends"), json_ext);
+        json_ext := JSON.addPair("baseClass", dumpJSONSCodeClass(InstNode.definition(ext), ext, scope, false), json_ext);
+        json_elements := JSON.addElement(json_ext, json_elements);
+      end for;
+
+      json := JSON.addPair("elements", json_elements, json);
+    end if;
+  else
+  end try;
+end dumpJSONSCodeTypeExtends;
 
 function dumpJSONSCodeClassDef
   input SCode.ClassDef classDef;
