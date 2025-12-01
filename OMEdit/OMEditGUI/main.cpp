@@ -39,7 +39,9 @@
 
 #include "OMEditApplication.h"
 #include "CrashReport/CrashReportDialog.h"
+#ifndef GC_THREADS
 #define GC_THREADS
+#endif
 
 extern "C" {
 #include "meta/meta_modelica.h"
