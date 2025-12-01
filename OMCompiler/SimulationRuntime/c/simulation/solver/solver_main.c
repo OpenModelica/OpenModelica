@@ -583,7 +583,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     infoStreamPrint(OMC_LOG_STATS_V, 0, "%12gs [%5.1f%%]", rt_accumulated(SIM_TIMER_ZC), rt_accumulated(SIM_TIMER_ZC)/total100);
     messageClose(OMC_LOG_STATS_V);
 
-    messageClose(OMC_LOG_STATS_V);
+    messageClose(OMC_LOG_STATS_V);  // closes section "function calls"
 
     infoStreamPrint(OMC_LOG_STATS_V, 1, "linear systems");
     for(ui=0; ui<data->modelData->nLinearSystems; ui++)
@@ -595,7 +595,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       printNonLinearSystemSolvingStatistics(&data->simulationInfo->nonlinearSystemData[ui], OMC_LOG_STATS_V);
     messageClose(OMC_LOG_STATS_V);
 
-    messageClose(OMC_LOG_STATS);
+    messageClose(OMC_LOG_STATS);  // closes section "### STATISTICS ###"
     rt_tick(SIM_TIMER_TOTAL);
   }
 
@@ -659,7 +659,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   if (!data->modelData->create_linearmodel && simInfo->stepSize > (simInfo->stopTime - simInfo->startTime + 1e-7)) {
     warningStreamPrint(OMC_LOG_STDOUT, 1, "Integrator step size greater than length of experiment");
     infoStreamPrint(OMC_LOG_STDOUT, 0, "start time: %f, stop time: %f, integrator step size: %f",simInfo->startTime, simInfo->stopTime, simInfo->stepSize);
-    messageClose(OMC_LOG_STDOUT);
+    messageCloseWarning(OMC_LOG_STDOUT);
   }
 #if !defined(OMC_EMCC)
     MMC_TRY_INTERNAL(simulationJumpBuffer)

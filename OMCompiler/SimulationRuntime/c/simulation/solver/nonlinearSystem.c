@@ -819,6 +819,7 @@ void freeNonlinearSystems(DATA *data, threadData_t *threadData)
  */
 void printNonLinearSystemSolvingStatistics(NONLINEAR_SYSTEM_DATA* nonlinsys, enum OMC_LOG_STREAM stream)
 {
+  if (!OMC_ACTIVE_STREAM(stream)) return;
   infoStreamPrint(stream, 1, "Non-linear system %d of size %d solver statistics:", (int)nonlinsys->equationIndex, (int)nonlinsys->size);
   infoStreamPrint(stream, 0, " number of calls                : %ld", nonlinsys->numberOfCall);
   infoStreamPrint(stream, 0, " number of iterations           : %ld", nonlinsys->numberOfIterations);
