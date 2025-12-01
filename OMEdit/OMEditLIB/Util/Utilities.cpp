@@ -262,6 +262,11 @@ QSize Label::minimumSizeHint() const
 #else // QT_VERSION_CHECK
   QSize size(fm.width("..."), fm.height()+5);
 #endif // QT_VERSION_CHECK
+  // use minimum size width 200 if mUseMinimumSize is true
+  // this is used in parameter dialogs
+  if (mUseMinimumSize && !mText.isEmpty()) {
+    size.setWidth(qMax(size.width(), 200));
+  }
   return size;
 }
 
@@ -315,6 +320,22 @@ ComboBox::ComboBox(QWidget *parent)
   : QComboBox(parent)
 {
   setFocusPolicy(Qt::StrongFocus);
+}
+
+/*!
+ * \brief ComboBox::addElidedItem
+ * Adds an item with elided text if it exceeds maximum width.
+ * Sets the full text as tooltip.
+ * \param text
+ * \param userData
+ */
+void ComboBox::addElidedItem(const QString &text, const QVariant &userData)
+{
+  QFontMetrics fm = fontMetrics();
+  // use elided text for the item with maximum width of 500 pixels
+  const QString elidedText = fm.elidedText(text, Qt::ElideMiddle, 500);
+  addItem(elidedText, userData);
+  setItemData(count() - 1, text, Qt::ToolTipRole);
 }
 
 void ComboBox::wheelEvent(QWheelEvent *event)
