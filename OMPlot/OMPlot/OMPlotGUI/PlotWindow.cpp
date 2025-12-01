@@ -262,7 +262,9 @@ void PlotWindow::getStartStopTime(double &start, double &stop){
   {
     QString currentLine;
     // open the file
-    mFile.open(QIODevice::ReadOnly);
+    if (!mFile.open(QIODevice::ReadOnly)) {
+      throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
+    }
     mpTextStream = new QTextStream(&mFile);
     // read the interval size from the file
     int intervalSize = 0;
@@ -468,7 +470,9 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
   if (mFile.fileName().endsWith("plt"))
   {
     // open the file
-    mFile.open(QIODevice::ReadOnly);
+    if (!mFile.open(QIODevice::ReadOnly)) {
+      throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
+    }
     mpTextStream = new QTextStream(&mFile);
     // read the interval size from the file
     int intervalSize = 0;
@@ -704,7 +708,9 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
     {
       QString currentLine;
       // open the file
-      mFile.open(QIODevice::ReadOnly);
+      if (!mFile.open(QIODevice::ReadOnly)) {
+        throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
+      }
       mpTextStream = new QTextStream(&mFile);
       // read the interval size from the file
       int intervalSize = 0;

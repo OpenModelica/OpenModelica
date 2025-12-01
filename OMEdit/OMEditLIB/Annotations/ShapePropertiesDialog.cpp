@@ -870,9 +870,10 @@ bool ShapePropertiesDialog::applyShapeProperties()
           fileName = "";
         }
         QFile imageFile(fileName);
-        imageFile.open(QIODevice::ReadOnly);
-        QByteArray imageByteArray = imageFile.readAll();
-        mpShapeAnnotation->setImageSource(imageByteArray.toBase64());
+        if (imageFile.open(QIODevice::ReadOnly)) {
+          QByteArray imageByteArray = imageFile.readAll();
+          mpShapeAnnotation->setImageSource(imageByteArray.toBase64());
+        }
       }
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
       mpShapeAnnotation->setImage(mpPreviewImageLabel->pixmap(Qt::ReturnByValue).toImage());
