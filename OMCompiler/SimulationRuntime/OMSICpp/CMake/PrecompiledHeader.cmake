@@ -128,10 +128,12 @@ MACRO(CREATE_PRECOMPILED_HEADER _targetName _input)
     #SYSTEM_FLAGS variable for configuration file to set used compiler flags
     GET_DIRECTORY_PROPERTY(_directory_flags DEFINITIONS)
     SET(_compiler_FLAGS "${_compiler_FLAGS} ${_directory_flags}")
-    # Explicitly add -DOMC_BUILD to precompiled header for gcc/g++
+    # Explicitly add OMC_BUILD to precompiled header
     IF(OMC_BUILD)
       SET(_compiler_FLAGS "${_compiler_FLAGS} -DOMC_BUILD ")
     ENDIF(OMC_BUILD)
+    # Explicitly add USE_THREAD to precompiled header
+    SET(_compiler_FLAGS "${_compiler_FLAGS} -DUSE_THREAD ")
     SET(SYSTEM_CFLAGS ${_compiler_FLAGS})
     GET_DIRECTORY_PROPERTY(_directory_flags INCLUDE_DIRECTORIES)
 
@@ -192,10 +194,12 @@ MACRO(CREATE_PRECOMPILED_HEADER _targetName _input)
     GET_DIRECTORY_PROPERTY(_directory_flags DEFINITIONS)
     #LIST(APPEND _compiler_FLAGS ${_directory_flags})
     SET(_compiler_FLAGS "${_compiler_FLAGS} ${_directory_flags}")
-    # Explicitly add -DOMC_BUILD to precompiled header for clang/clang++
+    # Explicitly add OMC_BUILD to precompiled header
     IF(OMC_BUILD)
       SET(_compiler_FLAGS "${_compiler_FLAGS} -DOMC_BUILD ")
     ENDIF(OMC_BUILD)
+    # Explicitly add USE_THREAD to precompiled header
+    SET(_compiler_FLAGS "${_compiler_FLAGS} -DUSE_THREAD ")
     SET(SYSTEM_CFLAGS ${_compiler_FLAGS})
     GET_DIRECTORY_PROPERTY(_directory_flags INCLUDE_DIRECTORIES)
 
