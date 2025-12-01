@@ -34,7 +34,8 @@
 #include "gbode_internal_nls.h"
 
 // TODO: How to choose TOL for Richardson???
-// TODO: update guess routines
+// TODO: Calibrate safety factor for internal tolerances
+// TODO: update guess routines (stage value predictors for (E)SDIRK)
 // TODO: update embedded for FIRK with real eigenvalue: we have the contractive error, but
 //       it looks like its only useful for defect-based errors in collocation methods
 
@@ -100,6 +101,7 @@ typedef struct GB_INTERNAL_NLS_DATA
   double fnewt;                      // Newton tolerance: if eta * norm(dx) <= fnewt -> convergence
   double theta_keep;                 // if norm(dx_k) / norm(dx_{k-1}) = theta_{k} < theta_keep -> keep old jacobian_callback
   modelica_boolean call_jac;         // call jacobian in the next call to NLS solve
+  int retry;                         // retry count for current Newton iteration
   double theta_divergence;           // if norm(dx_k) / norm(dx_{k-1}) = theta_{k} > theta_divergence (<= 1.0) -> divergence of Newton
   int max_newton_it;                 // maximum number of Newton iterations
   int size;                          // size of the system
@@ -480,11 +482,14 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
   const int flag = 1;
   modelica_boolean jac_called = FALSE;
 
-  modelica_boolean sdirk_first_stage = (stage == 0 && gbData->tableau->A[0] != 0);
-  modelica_boolean esdirk_first_stage = (stage == 1 && gbData->tableau->A[0] == 0);
+  modelica_boolean is_esdirk = (gbData->tableau->A[0] == 0.0);
+  modelica_boolean sdirk_first_stage = (stage == 0 && !is_esdirk);
+  modelica_boolean esdirk_first_stage = (stage == 1 && is_esdirk);
 
   if ((sdirk_first_stage || esdirk_first_stage) && gbData->type == GM_TYPE_DIRK)
   {
+    nls->retry = 0;
+
     if (nls->call_jac)
     {
       /* set values for known last point (simplified Newton) */
@@ -493,7 +498,10 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
 
       /* callback ODE + callback Jacobian of ODE -> nls_jacobian buffer */
       gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+      /* performance measurement */
+      rt_tick(SIM_TIMER_JACOBIAN);
       evalJacobian(data, threadData, jacobian_ODE, NULL, nls->jacobian_callback, FALSE);
+      rt_accumulate(SIM_TIMER_JACOBIAN);
       gbData->stats.nCallsJacobian++;
 
       jac_called = TRUE;
@@ -511,61 +519,104 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
 
   memcpy(x, x_start, size * sizeof(double));
 
-  // norms, convergence rate
-  double nrm_delta = 0;
-  double nrm_delta_prev = 0;
-  double theta = 0;
-
-  // Newton iteration count - we start with newt_it = 1, because we need this for the step size selection and conditions below
-  for (int newt_it = 1 ;; newt_it++)
+  /* start DIRK retry loop */
+  while (1)
   {
-    nonlinsys->residualFunc(&resUserData, x, res, &flag);
+    // norms, convergence rate
+    double nrm_delta = 0;
+    double nrm_delta_prev = 0;
+    double theta = 0;
 
-    gbInternal_dKLU_solve(nls->klu_internals_real, size, nonlinsys->sparsePattern->leadindex, nonlinsys->sparsePattern->index, res);
-    daxpy_(&size, &DBL_MINUS_ONE, res, &INT_ONE, x, &INT_ONE);
+    modelica_boolean retry_requested = FALSE;
 
-    nrm_delta_prev = nrm_delta;
-    nrm_delta = gbScalesNorm(nls, res, 1);
-
-    if (newt_it > 1)
+    // Newton iteration count - we start with newt_it = 1, because we need this for the step size selection and conditions below
+    for (int newt_it = 1 ;; newt_it++)
     {
-      theta = nrm_delta / nrm_delta_prev;
+      nonlinsys->residualFunc(&resUserData, x, res, &flag);
 
-      // Newton failed -> divergence
-      if (theta >= nls->theta_divergence)
+      gbInternal_dKLU_solve(nls->klu_internals_real, size, nonlinsys->sparsePattern->leadindex, nonlinsys->sparsePattern->index, res);
+      daxpy_(&size, &DBL_MINUS_ONE, res, &INT_ONE, x, &INT_ONE);
+
+      nrm_delta_prev = nrm_delta;
+      nrm_delta = gbScalesNorm(nls, res, 1);
+
+      if (newt_it > 1)
       {
-        nls->call_jac = TRUE;
-        return NLS_FAILED;
+        theta = nrm_delta / nrm_delta_prev;
+
+        // Newton failed -> divergence
+        if (theta >= nls->theta_divergence)
+        {
+          retry_requested = TRUE;
+          break;
+        }
+
+        nls->etas[stage] = theta / (1 - theta);
+      }
+      else
+      {
+        nls->etas[stage] = pow(fmax(nls->etas[stage], DBL_EPSILON), 0.8);
       }
 
-      nls->etas[stage] = theta / (1 - theta);
-    }
-    else
-    {
-      nls->etas[stage] = pow(fmax(nls->etas[stage], DBL_EPSILON), 0.8);
+      // Newton converged
+      if (nls->etas[stage] * nrm_delta < nls->fnewt)
+      {
+          if (theta < nls->theta_keep)
+          {
+            nls->call_jac = FALSE;
+          }
+          else
+          {
+            nls->call_jac = TRUE;
+          }
+          return NLS_SOLVED;
+      }
+
+      // Newton failed -> iteration limit exceeded or too slow convergence
+      if (newt_it == nls->max_newton_it || (pow(theta, nls->max_newton_it - newt_it) / (1 - theta) * nrm_delta > nls->fnewt))
+      {
+        retry_requested = TRUE;
+        break;
+      }
     }
 
-    // Newton converged
-    if (nls->etas[stage] * nrm_delta < nls->fnewt)
+    /* retry_dirk for constant step size */
+    if (retry_requested && nls->retry < 5 && gbData->ctrl_method == GB_CTRL_CNST)
     {
-        if (theta < nls->theta_keep)
-        {
-          nls->call_jac = FALSE;
-        }
-        else
-        {
-          nls->call_jac = TRUE;
-        }
-        return NLS_SOLVED;
+      /* try fresh Jacobian at start point */
+      nls->retry++;
+
+      memcpy(x, x_start, size * sizeof(double));
+
+      memcpy(data->localData[0]->realVars, x, size * sizeof(double));
+      data->localData[0]->timeValue = gbData->time + gbData->tableau->c[stage] * gbData->stepSize;
+
+      /* callback ODE + callback Jacobian of ODE -> nls_jacobian buffer */
+      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+
+      /* performance measurement */
+      rt_tick(SIM_TIMER_JACOBIAN);
+      evalJacobian(data, threadData, jacobian_ODE, NULL, nls->jacobian_callback, FALSE);
+      rt_accumulate(SIM_TIMER_JACOBIAN);
+      gbData->stats.nCallsJacobian++;
+
+      jacobian_SR_DIRK_assemble(data, threadData, gbData, nls, jacobian_ODE,
+                                nls->jacobian_callback, nls->real_nls_jacs[0]);
+
+      gbInternal_dKLU_factorize(nls->klu_internals_real, size,
+                                nonlinsys->sparsePattern->leadindex,
+                                nonlinsys->sparsePattern->index,
+                                nls->real_nls_jacs[0]);
+
+      continue;
     }
 
-    // Newton failed -> iteration limit exceeded or too slow convergence
-    if (newt_it == nls->max_newton_it || (pow(theta, nls->max_newton_it - newt_it) / (1 - theta) * nrm_delta > nls->fnewt))
-    {
-      nls->call_jac = TRUE;
-      return NLS_FAILED;
-    }
+    /* final failure */
+    break;
   }
+
+  nls->call_jac = TRUE;
+  return NLS_FAILED;
 }
 
 /** @brief Compute (T otimes I) * v for block vectors (applies T to block_count blocks of size block_size). */
@@ -708,7 +759,10 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
 
     if (nls->call_jac)
     {
+      /* performance measurement */
+      rt_tick(SIM_TIMER_JACOBIAN);
       evalJacobian(data, threadData, jacobian_ODE, NULL, nls->jacobian_callback, FALSE);
+      rt_accumulate(SIM_TIMER_JACOBIAN);
       gbData->stats.nCallsJacobian++;
 
       jac_called = TRUE;
@@ -968,7 +1022,6 @@ void *gbInternalNlsAllocate(int size,
 
   // We transform the error such that the error term err = || v || = sqrt(1/n * sum (v[i] / scal[i])^2) is scaled with same measure
   // As we later have v = sum (b - bt) * k = min of local error of b and bt -> scale ATOL and RTOL w.r.t. (min(b, bt) + 1) / (b + 1)
-  // TODO: what to do for Richardson?
 
   if (tabl->richardson)
   {
@@ -979,11 +1032,14 @@ void *gbInternalNlsAllocate(int size,
   else
   {
     // scale error measure to embedded method
-    const double safety = 0.4;
+    const double safety = 0.2; /* TODO: TBD: which coefficient should be used here, given as tableau specific tableau->fac? See "A comparison of Rosenbrock and ESDIRK methods
+                                             combined with iterative solvers for unsteady compressible flows" for a calibration technique */
     double quot = nls->tol_integrator.atol / nls->tol_integrator.rtol;
     double order_quot = ((double)tabl->error_order + 1.0) / ((double)tabl->order_b + 1.0);
-    nls->tol_scaled.rtol = safety * pow(nls->tol_integrator.rtol, order_quot);
-    nls->tol_scaled.atol = quot * nls->tol_scaled.rtol;
+    double rtol_pred = safety * pow(nls->tol_integrator.rtol, order_quot);
+    double atol_pred = quot * rtol_pred;
+    nls->tol_scaled.rtol = fmax(nls->tol_integrator.rtol, rtol_pred);
+    nls->tol_scaled.atol = fmax(nls->tol_integrator.atol, atol_pred);
     nls->fnewt = fmax(10 * DBL_EPSILON / nls->tol_scaled.rtol, fmin(3e-2, pow(nls->tol_scaled.rtol, 1.0 / order_quot - 1.0)));
   }
 
