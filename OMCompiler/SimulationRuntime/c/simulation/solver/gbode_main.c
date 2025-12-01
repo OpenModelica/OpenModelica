@@ -1317,12 +1317,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         gb_step_info = gbData->step_fun(data, threadData, solverInfo);
       }
 
-      /* remember kLast and yLast for dense output extrapolation */
-      gbData->extrapolationBaseTime = gbData->time;
-      gbData->extrapolationStepSize = gbData->stepSize;
-      memcpy(gbData->kLast, gbData->k, nStates * nStages * sizeof(double));
-      memcpy(gbData->yLast, gbData->yOld, nStates * sizeof(double));
-
       // debug the approximations after performed step
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) {
         infoStreamPrint(OMC_LOG_GBODE, 1, "Approximations after step calculation:");
@@ -1445,13 +1439,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
           }
         }
       }
-
-      // LL: we use the scaled 2-norm error measure now, so this part is not needed.
-      // else {
-      //   // If multi-rate is not enabled, use the maximum norm of the error vector over all states.
-      //   err_states = _omc_gen_maximumVectorNorm(gbData->err, nStates);
-      //   err = err_states;
-      // }
 
       // Reject the current integration step if the estimated error exceeds the tolerance,
       // and if the solver is not running with a fixed (constant) step size.
@@ -1608,6 +1595,10 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         retries = 0;
       }
 
+      /* remember last time values for dense output extrapolation with yLast, kLast */
+      gbData->extrapolationBaseTime = gbData->time;
+      gbData->extrapolationStepSize = gbData->stepSize;
+
       // Rotate the error and step size ring buffers to make room for the latest values.
       // The oldest entries are shifted one position towards the end,
       // and the newest error and step size values are stored at the front (index 0).
@@ -1758,6 +1749,10 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     /* update time with performed stepSize */
     gbData->time = gbData->timeRight;
 
+    /* remember kLast and yLast for dense output extrapolation */
+    memcpy(gbData->kLast, gbData->k, nStates * nStages * sizeof(double));
+    memcpy(gbData->yLast, gbData->yOld, nStates * sizeof(double));
+
     /* step is accepted and yOld needs to be updated */
     memcpy(gbData->yOld, gbData->yRight, nStates * sizeof(double));
 
@@ -1881,8 +1876,8 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
                                           && solverInfo->currentTime >= data->simulationInfo->nextSampleEvent;
 
   /* Solver statistics */
-  if (!gbData->isExplicit)
-   // gbData->stats.nCallsJacobian = gbData->nlsData->numberOfJEval;
+  if (!gbData->isExplicit && gbData->nlsSolverMethod != GB_NLS_INTERNAL)
+    gbData->stats.nCallsJacobian = gbData->nlsData->numberOfJEval;
   if (!solverInfo->solverNoEquidistantGrid && fabs(targetTime - stopTime) < GB_MINIMAL_STEP_SIZE && OMC_ACTIVE_STREAM(OMC_LOG_STATS)) {
     if (gbData->multi_rate) {
       infoStreamPrint(OMC_LOG_STATS, 0, "gbode (birate integration): slow: %s / fast: %s",
