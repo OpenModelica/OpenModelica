@@ -409,16 +409,17 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 #ifndef OMC_EMCC
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
+
+    messageClose(OMC_LOG_INIT_HOMOTOPY);
+
     /* Error handling in case an assert was thrown */
     if (!success)
     {
-      messageClose(OMC_LOG_INIT_HOMOTOPY);
       errorStreamPrint(OMC_LOG_ASSERT, 0, "Failed to solve the initialization problem with global homotopy with equidistant step size.");
       throwStreamPrint(threadData, "Unable to solve initialization problem.");
     }
 
     data->simulationInfo->homotopySteps += init_lambda_steps;
-    messageClose(OMC_LOG_INIT_HOMOTOPY);
   }
 
   /* If there is homotopy in the model and the adaptive global homotopy approach is activated
@@ -708,7 +709,7 @@ void initSample(DATA* data, threadData_t *threadData, double startTime, double s
   long i;
 
   data->callback->function_initSample(data, threadData);              /* set-up sample */
-  data->simulationInfo->nextSampleEvent = NAN;  /* should never be reached */
+  data->simulationInfo->nextSampleEvent = DBL_MAX;                    /* should never be reached */
   for(i=0; i<data->modelData->nSamples; ++i) {
     if(startTime < data->modelData->samplesInfo[i].start) {
       data->simulationInfo->nextSampleTimes[i] = data->modelData->samplesInfo[i].start;

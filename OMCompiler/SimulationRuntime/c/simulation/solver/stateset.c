@@ -206,7 +206,6 @@ static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsig
     }
     messageClose(OMC_LOG_DSS_JAC);
     free(buffer);
-
   }
 
   TRACE_POP
@@ -360,7 +359,7 @@ int stateSelectionSet(DATA *data, threadData_t *threadData, char reportError, in
 
       for(m=0; m<set->nCandidates; m++)
         warningStreamPrint(OMC_LOG_DSS, 0, "%s", set->statescandidates[m]->name);
-      messageClose(OMC_LOG_DSS);
+      messageCloseWarning(OMC_LOG_DSS);
 
       throwStreamPrint(threadData, "Error, singular Jacobian for dynamic state selection at time %f\nUse -lv LOG_DSS_JAC to get the Jacobian", data->localData[0]->timeValue);
     }

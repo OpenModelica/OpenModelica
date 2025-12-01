@@ -4380,17 +4380,20 @@ bool LibraryWidget::saveFile(QString fileName, QString contents)
  * \brief LibraryWidget::saveLibraryTreeItem
  * Saves the LibraryTreeItem
  * \param pLibraryTreeItem
+ * \param skipValidate
  * \return
  */
-bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
+bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool skipValidate)
 {
-  pLibraryTreeItem->getModelWidget()->processPendingModelUpdate();
+  if (pLibraryTreeItem->getModelWidget()) {
+    pLibraryTreeItem->getModelWidget()->processPendingModelUpdate();
+  }
   bool result = false;
   MainWindow::instance()->getStatusBar()->showMessage(tr("Saving %1").arg(pLibraryTreeItem->getNameStructure()));
   MainWindow::instance()->showProgressBar();
   if (pLibraryTreeItem->isModelica()) {
     /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
-    if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+    if (!skipValidate && pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
       return false;
     }
     result = saveModelicaLibraryTreeItem(pLibraryTreeItem, false);
@@ -4676,10 +4679,6 @@ bool LibraryWidget::saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibrary
       QFileInfo fileInfo(pLibraryTreeItem->parent()->getFileName());
       fileName = QString("%1/%2.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(pLibraryTreeItem->getName());
     }
-    /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
-    if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
-      return false;
-    }
     // save the class
     QString contents;
     if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->getEditor()) {
@@ -4772,10 +4771,6 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
       directoryName = QString("%1/%2").arg(fileInfo.absoluteDir().absolutePath()).arg(pLibraryTreeItem->getName());
       fileName = QString("%1/package.mo").arg(directoryName);
     }
-    /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
-    if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
-      return false;
-    }
     // create the folder
     if (!QDir().exists(directoryName)) {
       QDir().mkpath(directoryName);
@@ -4809,32 +4804,34 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
     QTextStream textStream(&file);
     while (!textStream.atEnd()) {
       QString currentLine = textStream.readLine();
-      bool classExists = false;
-      for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
-        // Issue #12567. Compare case insensitive on Windows as `a` and `A` means the same thing.
-#ifdef Q_OS_WIN
-        if (pLibraryTreeItem->child(i)->getName().compare(currentLine, Qt::CaseInsensitive) == 0) {
-#else // #ifdef Q_OS_WIN
-        if (pLibraryTreeItem->child(i)->getName().compare(currentLine) == 0) {
-#endif // #ifdef Q_OS_WIN
-          classExists = true;
-          break;
-        }
-      }
-      if (!classExists) {
-        if (QDir().exists(QString("%1/%2").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine))) {
-          if (OptionsDialog::instance()->getGeneralSettingsPage()->getCreateBackupFileCheckbox()->isChecked()) {
-            QFile::rename(QString("%1/%2/package.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine),
-                          QString("%1/%2/package.bak-mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
-          } else {
-            Utilities::removeDirectoryRecursively(QString("%1/%2").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+      if (!currentLine.isEmpty()) { // ignore empty lines in package.order
+        bool classExists = false;
+        for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
+          // Issue #12567. Compare case insensitive on Windows as `a` and `A` means the same thing.
+  #ifdef Q_OS_WIN
+          if (pLibraryTreeItem->child(i)->getName().compare(currentLine, Qt::CaseInsensitive) == 0) {
+  #else // #ifdef Q_OS_WIN
+          if (pLibraryTreeItem->child(i)->getName().compare(currentLine) == 0) {
+  #endif // #ifdef Q_OS_WIN
+            classExists = true;
+            break;
           }
-        } else {
-          if (OptionsDialog::instance()->getGeneralSettingsPage()->getCreateBackupFileCheckbox()->isChecked()) {
-            QFile::rename(QString("%1/%2.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine),
-                          QString("%1/%2.bak-mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+        }
+        if (!classExists) {
+          if (QDir().exists(QString("%1/%2").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine))) {
+            if (OptionsDialog::instance()->getGeneralSettingsPage()->getCreateBackupFileCheckbox()->isChecked()) {
+              QFile::rename(QString("%1/%2/package.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine),
+                            QString("%1/%2/package.bak-mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+            } else {
+              Utilities::removeDirectoryRecursively(QString("%1/%2").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+            }
           } else {
-            QFile::remove(QString("%1/%2.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+            if (OptionsDialog::instance()->getGeneralSettingsPage()->getCreateBackupFileCheckbox()->isChecked()) {
+              QFile::rename(QString("%1/%2.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine),
+                            QString("%1/%2.bak-mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+            } else {
+              QFile::remove(QString("%1/%2.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+            }
           }
         }
       }
@@ -4842,12 +4839,9 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
     file.close();
   }
   // create a package.order file
-  QString contents = "";
   /* Ticket #4152. package.order should contain constants and classes.*/
   QStringList childClasses = MainWindow::instance()->getOMCProxy()->getClassNames(pLibraryTreeItem->getNameStructure(), false, false, false, false, true, true);
-  for (int i = 0; i < childClasses.size(); i++) {
-    contents.append(childClasses.at(i)).append("\n");
-  }
+  const QString contents = childClasses.isEmpty() ? "" : childClasses.join("\n") + "\n";
   // create a new package.order file
   saveFile(QString("%1/package.order").arg(fileInfo.absoluteDir().absolutePath()), contents);
   return true;
@@ -4861,39 +4855,49 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
  */
 bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool saveAs)
 {
-  QString fileName;
-  if (pLibraryTreeItem->getFileName().isEmpty() || saveAs) {
-    QFileInfo fileInfo(pLibraryTreeItem->getFileName());
-    QString name = fileInfo.completeBaseName();
-    fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::saveFile), NULL, "", NULL, fileInfo.suffix(), &name);
-    if (fileName.isEmpty()) { // if user press ESC
-      return false;
+  // save all files recursively if it is a directory
+  QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+  if (fileInfo.isDir()) {
+    for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
+      saveTextLibraryTreeItem(pLibraryTreeItem->child(i), saveAs);
     }
-  } else {
-    fileName = pLibraryTreeItem->getFileName();
   }
 
-  if (saveFile(fileName, pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText())) {
-    // if saveAs and the new file location already exists then unload it
-    if (saveAs) {
-      LibraryTreeItem *pExistingLibraryTreeItem = mpLibraryTreeModel->findLibraryTreeItem(fileName);
-      if (pExistingLibraryTreeItem) {
-        mpLibraryTreeModel->unloadTextFile(pExistingLibraryTreeItem, false);
+  if (!pLibraryTreeItem->isSaved() || saveAs) {
+    QString fileName;
+    if (pLibraryTreeItem->getFileName().isEmpty() || saveAs) {
+      QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+      QString name = fileInfo.completeBaseName();
+      fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::saveFile), NULL, "", NULL, fileInfo.suffix(), &name);
+      if (fileName.isEmpty()) { // if user press ESC
+        return false;
       }
+    } else {
+      fileName = pLibraryTreeItem->getFileName();
     }
-    /* mark the file as saved and update the labels. */
-    pLibraryTreeItem->setIsSaved(true);
-    pLibraryTreeItem->setFileName(fileName);
-    QFileInfo fileInfo(pLibraryTreeItem->getFileName());
-    pLibraryTreeItem->setName(fileInfo.fileName());
-    pLibraryTreeItem->setNameStructure(fileName);
-    if (pLibraryTreeItem->getModelWidget()) {
-      pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName());
-      pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
+
+    if (saveFile(fileName, pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText())) {
+      // if saveAs and the new file location already exists then unload it
+      if (saveAs) {
+        LibraryTreeItem *pExistingLibraryTreeItem = mpLibraryTreeModel->findLibraryTreeItem(fileName);
+        if (pExistingLibraryTreeItem) {
+          mpLibraryTreeModel->unloadTextFile(pExistingLibraryTreeItem, false);
+        }
+      }
+      /* mark the file as saved and update the labels. */
+      pLibraryTreeItem->setIsSaved(true);
+      pLibraryTreeItem->setFileName(fileName);
+      QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+      pLibraryTreeItem->setName(fileInfo.fileName());
+      pLibraryTreeItem->setNameStructure(fileName);
+      if (pLibraryTreeItem->getModelWidget()) {
+        pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName());
+        pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
+      }
+      mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
+    } else {
+      return false;
     }
-    mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
-  } else {
-    return false;
   }
   return true;
 }

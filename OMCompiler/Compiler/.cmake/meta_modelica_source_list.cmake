@@ -331,6 +331,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFComplexType.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFComponent.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFComponentRef.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnectBreakTree.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnectEquations.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnection.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnectionSets.mo

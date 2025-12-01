@@ -340,7 +340,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
         for(i=1; i < IDA_LS_MAX; ++i) {
           warningStreamPrint(OMC_LOG_SOLVER, 0, "%-15s [%s]", IDA_LS_METHOD_NAME[i], IDA_LS_METHOD_DESC[i]);
         }
-        messageClose(OMC_LOG_SOLVER);
+        messageCloseWarning(OMC_LOG_SOLVER);
       }
       throwStreamPrint(threadData,"unrecognized ida linear solver method %s", (const char*)omc_flagValue[FLAG_IDA_LS]);
     }

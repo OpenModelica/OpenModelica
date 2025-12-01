@@ -47,6 +47,7 @@ import Binding = NFBinding;
 import Component = NFComponent;
 import NFComponent.ComponentState;
 import ComponentRef = NFComponentRef;
+import ConnectBreakTree = NFConnectBreakTree;
 import Dimension = NFDimension;
 import Expression = NFExpression;
 import Class = NFClass;
@@ -1528,6 +1529,7 @@ protected
   list<Mutable<InstNode>> node_ptrs;
   InstNode node;
   Component comp;
+  Boolean found;
 algorithm
   // Split the modifier into a list of submodifiers.
   mods := Modifier.toList(modifier);
@@ -1562,19 +1564,22 @@ algorithm
           try
             node_ptrs := ClassTree.lookupElementsPtr(Modifier.name(mod), cls);
           else
-            Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
-              {Modifier.name(mod), InstNode.name(parent)}, Modifier.info(mod));
-
-            if InstContext.inInstanceAPI(context) then
-              node_ptrs := {};
-            else
-              fail();
-            end if;
+            node_ptrs := {};
           end try;
+
+          found := false;
 
           // Apply the modifier to each found node.
           for node_ptr in node_ptrs loop
-            node := InstNode.resolveOuter(Mutable.access(node_ptr));
+            node := Mutable.access(node_ptr);
+
+            if InstNode.isEmpty(node) then
+              // Component removed by 'break'.
+              continue;
+            end if;
+
+            found := true;
+            node := InstNode.resolveOuter(node);
 
             if InstNode.isProtected(node) and not (InstNode.isExtends(parent) or InstNode.isBaseClass(parent)) then
               Error.addMultiSourceMessage(Error.NF_MODIFY_PROTECTED,
@@ -1608,6 +1613,12 @@ algorithm
               Mutable.update(node_ptr, node);
             end if;
           end for;
+
+          if not found and not InstContext.inInstanceAPI(context) then
+            Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+              {Modifier.name(mod), InstNode.name(parent)}, Modifier.info(mod));
+            fail();
+          end if;
         end for;
       then
         ();
@@ -1877,6 +1888,10 @@ protected
   InstContext.Type next_context;
   list<Subscript> propagated_subs;
 algorithm
+  if InstNode.isEmpty(node) then
+    return;
+  end if;
+
   checkOuterComponentMod(node);
   comp_node := InstNode.resolveInner(node);
   comp := InstNode.component(comp_node);
@@ -2456,6 +2471,7 @@ function instExpressions
   input InstNode node;
   input InstNode scope = node;
   input output Sections sections = Sections.EMPTY();
+  input ConnectBreakTree.Tree connectBreaks = ConnectBreakTree.new();
   input InstContext.Type context;
   input InstSettings settings;
 protected
@@ -2466,6 +2482,8 @@ protected
   SourceInfo info;
   Type ty;
   InstContext.Type next_context;
+  ConnectBreakTree.Tree connect_breaks;
+  list<Mutable<ConnectBreakTree.Entry>> local_connect_breaks;
 algorithm
   () := match cls
     // Long class declaration of a type.
@@ -2474,7 +2492,7 @@ algorithm
         // Instantiate expressions in the extends nodes.
         exts := ClassTree.getExtends(cls_tree);
         for ext in exts loop
-          instExpressions(ext, ext, sections, context, settings);
+          instExpressions(ext, ext, sections, connectBreaks, context, settings);
         end for;
 
         // A type must extend a basic type.
@@ -2496,14 +2514,16 @@ algorithm
 
     case Class.EXPANDED_CLASS(elements = cls_tree)
       algorithm
+        (connect_breaks, local_connect_breaks) := ConnectBreakTree.appendBreaksInNode(node, connectBreaks);
+
         // Instantiate expressions in the extends nodes.
         if settings.mergeExtendsSections then
           for ext in ClassTree.getExtends(cls_tree) loop
-            sections := instExpressions(ext, ext, sections, context, settings);
+            sections := instExpressions(ext, ext, sections, connect_breaks, context, settings);
           end for;
         else
           for ext in ClassTree.getExtends(cls_tree) loop
-            _ := instExpressions(ext, ext, sections, context, settings);
+            _ := instExpressions(ext, ext, sections, connect_breaks, context, settings);
           end for;
         end if;
 
@@ -2519,7 +2539,8 @@ algorithm
         next_context := if Restriction.isFunction(cls.restriction) then
           NFInstContext.FUNCTION else NFInstContext.CLASS;
         next_context := InstContext.set(context, next_context);
-        sections := instSections(node, scope, next_context, sections);
+        sections := instSections(node, scope, connect_breaks, next_context, sections);
+        ConnectBreakTree.checkUnmatchedBreaks(local_connect_breaks);
 
         ty := makeComplexType(cls.restriction, node, cls);
         inst_cls := Class.INSTANCED_CLASS(ty, cls.elements, sections, cls.prefixes, cls.restriction);
@@ -2531,7 +2552,7 @@ algorithm
 
     case Class.EXPANDED_DERIVED(dims = dims)
       algorithm
-        sections := instExpressions(cls.baseClass, scope, sections, context, settings);
+        sections := instExpressions(cls.baseClass, scope, sections, connectBreaks, context, settings);
 
         info := InstNode.info(node);
 
@@ -2675,10 +2696,17 @@ function instComponentExpressions
   input InstContext.Type context;
   input InstSettings settings;
 protected
-  InstNode node = InstNode.resolveInner(component);
-  Component c = InstNode.component(node);
+  InstNode node;
+  Component c;
   array<Dimension> dims;
 algorithm
+  if InstNode.isEmpty(component) then
+    return;
+  end if;
+
+  node := InstNode.resolveInner(component);
+  c := InstNode.component(node);
+
   () := match c
     case Component.COMPONENT(ty = Type.UNTYPED(dimensions = dims))
       guard c.state == ComponentState.PartiallyInstantiated
@@ -3116,6 +3144,7 @@ end instPartEvalFunction;
 function instSections
   input InstNode node;
   input InstNode scope;
+  input ConnectBreakTree.Tree connectBreaks;
   input InstContext.Type context;
   input output Sections sections;
 protected
@@ -3124,10 +3153,10 @@ protected
 algorithm
   sections := match el
     case SCode.CLASS(classDef = SCode.PARTS())
-      then instSections2(el.classDef, scope, context, sections);
+      then instSections2(el.classDef, scope, connectBreaks, context, sections);
 
     case SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = def as SCode.PARTS()))
-      then instSections2(def, scope, context, sections);
+      then instSections2(def, scope, connectBreaks, context, sections);
 
     else sections;
   end match;
@@ -3136,6 +3165,7 @@ end instSections;
 function instSections2
   input SCode.ClassDef parts;
   input InstNode scope;
+  input ConnectBreakTree.Tree connectBreaks;
   input InstContext.Type context;
   input output Sections sections;
 algorithm
@@ -3176,8 +3206,8 @@ algorithm
       algorithm
         icontext := InstContext.set(context, NFInstContext.INITIAL);
 
-        eq := instEquations(parts.normalEquationLst, scope, context);
-        ieq := instEquations(parts.initialEquationLst, scope, icontext);
+        eq := instEquations(parts.normalEquationLst, scope, connectBreaks, context);
+        ieq := instEquations(parts.initialEquationLst, scope, connectBreaks, icontext);
         alg := instAlgorithmSections(parts.normalAlgorithmLst, scope, context);
         ialg := instAlgorithmSections(parts.initialAlgorithmLst, scope, icontext);
       then
@@ -3244,25 +3274,24 @@ end checkExternalDeclLanguage;
 function instEquations
   input list<SCode.Equation> scodeEql;
   input InstNode scope;
+  input ConnectBreakTree.Tree connectBreaks;
   input InstContext.Type context;
-  output list<Equation> instEql;
-protected
-  list<SCode.Equation> scode_eql = scodeEql;
+  output list<Equation> instEql = {};
 algorithm
   if InstContext.inInstanceAPI(context) then
-    scode_eql := filterInstanceAPIEquations(scodeEql);
-
-    instEql := {};
-    for eq in scode_eql loop
+    for eq in filterInstanceAPIEquations(scodeEql) loop
       try
-        instEql := instEquation(eq, scope, context) :: instEql;
+        instEql := instEquation(eq, scope, connectBreaks, context, instEql);
       else
       end try;
     end for;
-    instEql := listReverseInPlace(instEql);
   else
-    instEql := list(instEquation(eq, scope, context) for eq in scode_eql);
+    for eq in scodeEql loop
+      instEql := instEquation(eq, scope, connectBreaks, context, instEql);
+    end for;
   end if;
+
+  instEql := listReverseInPlace(instEql);
 end instEquations;
 
 function filterInstanceAPIEquations
@@ -3302,10 +3331,11 @@ end filterInstanceAPIEquations;
 function instEquation
   input SCode.Equation scodeEq;
   input InstNode scope;
+  input ConnectBreakTree.Tree connectBreaks;
   input InstContext.Type context;
-  output Equation instEq;
+  input output list<Equation> equations;
 algorithm
-  instEq := match scodeEq
+  equations := match scodeEq
     local
       Expression exp1, exp2, exp3;
       Option<Expression> oexp;
@@ -3315,14 +3345,14 @@ algorithm
       SourceInfo info;
       InstNode for_scope, iter;
       ComponentRef lhs_cr, rhs_cr;
-      InstContext.Type next_origin;
+      InstContext.Type next_context;
 
     case SCode.Equation.EQ_EQUALS(info = info)
       algorithm
         exp1 := instExp(scodeEq.expLeft, scope, context, info);
         exp2 := instExp(scodeEq.expRight, scope, context, info);
       then
-        Equation.EQUALITY(exp1, exp2, Type.UNKNOWN(), scope, makeSource(scodeEq.comment, info));
+        Equation.EQUALITY(exp1, exp2, Type.UNKNOWN(), scope, makeSource(scodeEq.comment, info)) :: equations;
 
     case SCode.Equation.EQ_CONNECT(info = info)
       algorithm
@@ -3333,20 +3363,30 @@ algorithm
           fail();
         end if;
 
-        exp1 := instConnectorCref(scodeEq.crefLeft, scope, context, info);
-        exp2 := instConnectorCref(scodeEq.crefRight, scope, context, info);
+        if not ConnectBreakTree.isConnectBroken(scodeEq.crefLeft, scodeEq.crefRight, scope, connectBreaks) then
+          next_context := InstContext.set(context, NFInstContext.CONNECT);
+          lhs_cr := instConnectorCref(scodeEq.crefLeft, scope, next_context, info);
+          rhs_cr := instConnectorCref(scodeEq.crefRight, scope, next_context, info);
+
+          // Add the connection, unless either connector has been disabled with a 'break' modifier.
+          if not (InstNode.isEmpty(ComponentRef.node(lhs_cr)) or InstNode.isEmpty(ComponentRef.node(rhs_cr))) then
+            exp1 := Expression.CREF(Type.UNKNOWN(), lhs_cr);
+            exp2 := Expression.CREF(Type.UNKNOWN(), rhs_cr);
+            equations := Equation.CONNECT(exp1, exp2, scope, makeSource(scodeEq.comment, info)) :: equations;
+          end if;
+        end if;
       then
-        Equation.CONNECT(exp1, exp2, scope, makeSource(scodeEq.comment, info));
+        equations;
 
     case SCode.Equation.EQ_FOR(info = info)
       algorithm
         oexp := instExpOpt(scodeEq.range, scope, context, info);
         checkIteratorShadowing(scodeEq.index, scope, scodeEq.info);
         (for_scope, iter) := addIteratorToScope(scodeEq.index, scope, scodeEq.info);
-        next_origin := InstContext.set(context, NFInstContext.FOR);
-        eql := instEquations(scodeEq.eEquationLst, for_scope, next_origin);
+        next_context := InstContext.set(context, NFInstContext.FOR);
+        eql := instEquations(scodeEq.eEquationLst, for_scope, connectBreaks, next_context);
       then
-        Equation.FOR(iter, oexp, eql, scope, makeSource(scodeEq.comment, info));
+        Equation.FOR(iter, oexp, eql, scope, makeSource(scodeEq.comment, info)) :: equations;
 
     case SCode.Equation.EQ_IF(info = info)
       algorithm
@@ -3354,10 +3394,10 @@ algorithm
         expl := list(instExp(c, scope, context, info) for c in scodeEq.condition);
 
         // Instantiate each branch and pair it up with a condition.
-        next_origin := InstContext.set(context, NFInstContext.IF);
+        next_context := InstContext.set(context, NFInstContext.IF);
         branches := {};
         for branch in scodeEq.thenBranch loop
-          eql := instEquations(branch, scope, next_origin);
+          eql := instEquations(branch, scope, connectBreaks, next_context);
           exp1 :: expl := expl;
           branches := Equation.makeBranch(exp1, eql) :: branches;
         end for;
@@ -3365,11 +3405,11 @@ algorithm
         // Instantiate the else-branch, if there is one, and make it a branch
         // with condition true (so we only need a simple list of branches).
         if not listEmpty(scodeEq.elseBranch) then
-          eql := instEquations(scodeEq.elseBranch, scope, next_origin);
+          eql := instEquations(scodeEq.elseBranch, scope, connectBreaks, next_context);
           branches := Equation.makeBranch(Expression.BOOLEAN(true), eql) :: branches;
         end if;
       then
-        Equation.IF(listReverse(branches), scope, makeSource(scodeEq.comment, info));
+        Equation.IF(listReverse(branches), scope, makeSource(scodeEq.comment, info)) :: equations;
 
     case SCode.Equation.EQ_WHEN(info = info)
       algorithm
@@ -3379,18 +3419,18 @@ algorithm
           Error.addSourceMessageAndFail(Error.INITIAL_WHEN, {}, info);
         end if;
 
-        next_origin := InstContext.set(context, NFInstContext.WHEN);
+        next_context := InstContext.set(context, NFInstContext.WHEN);
         exp1 := instExp(scodeEq.condition, scope, context, info);
-        eql := instEquations(scodeEq.eEquationLst, scope, next_origin);
+        eql := instEquations(scodeEq.eEquationLst, scope, connectBreaks, next_context);
         branches := {Equation.makeBranch(exp1, eql)};
 
         for branch in scodeEq.elseBranches loop
           exp1 := instExp(Util.tuple21(branch), scope, context, info);
-          eql := instEquations(Util.tuple22(branch), scope, next_origin);
+          eql := instEquations(Util.tuple22(branch), scope, connectBreaks, next_context);
           branches := Equation.makeBranch(exp1, eql) :: branches;
         end for;
       then
-        Equation.WHEN(listReverse(branches), scope, makeSource(scodeEq.comment, info));
+        Equation.WHEN(listReverse(branches), scope, makeSource(scodeEq.comment, info)) :: equations;
 
     case SCode.Equation.EQ_ASSERT(info = info)
       algorithm
@@ -3398,13 +3438,13 @@ algorithm
         exp2 := instExp(scodeEq.message, scope, context, info);
         exp3 := instExp(scodeEq.level, scope, context, info);
       then
-        Equation.ASSERT(exp1, exp2, exp3, scope, makeSource(scodeEq.comment, info));
+        Equation.ASSERT(exp1, exp2, exp3, scope, makeSource(scodeEq.comment, info)) :: equations;
 
     case SCode.Equation.EQ_TERMINATE(info = info)
       algorithm
         exp1 := instExp(scodeEq.message, scope, context, info);
       then
-        Equation.TERMINATE(exp1, scope, makeSource(scodeEq.comment, info));
+        Equation.TERMINATE(exp1, scope, makeSource(scodeEq.comment, info)) :: equations;
 
     case SCode.Equation.EQ_REINIT(info = info)
       algorithm
@@ -3416,13 +3456,13 @@ algorithm
         exp1 := instExp(scodeEq.cref, scope, context, info);
         exp2 := instExp(scodeEq.expReinit, scope, context, info);
       then
-        Equation.REINIT(exp1, exp2, scope, makeSource(scodeEq.comment, info));
+        Equation.REINIT(exp1, exp2, scope, makeSource(scodeEq.comment, info)) :: equations;
 
     case SCode.Equation.EQ_NORETCALL(info = info)
       algorithm
         exp1 := instExp(scodeEq.exp, scope, context, info);
       then
-        Equation.NORETCALL(exp1, scope, makeSource(scodeEq.comment, info));
+        Equation.NORETCALL(exp1, scope, makeSource(scodeEq.comment, info)) :: equations;
 
     else
       algorithm
@@ -3438,15 +3478,14 @@ function instConnectorCref
   input InstNode scope;
   input InstContext.Type context;
   input SourceInfo info;
-  output Expression outExp;
+  output ComponentRef cref;
 protected
-  ComponentRef cref, prefix;
+  ComponentRef prefix;
   InstNode found_scope;
 algorithm
   (cref, found_scope) := Lookup.lookupConnector(absynCref, scope, context, info);
   cref := instCrefSubscripts(cref, scope, context, info);
   cref := ComponentRef.appendScope(found_scope, cref);
-  outExp := Expression.CREF(Type.UNKNOWN(), cref);
 end instConnectorCref;
 
 function makeSource
@@ -3506,7 +3545,7 @@ algorithm
       list<tuple<Expression, list<Statement>>> branches;
       SourceInfo info;
       InstNode for_scope, iter;
-      InstContext.Type next_origin;
+      InstContext.Type next_context;
 
     case SCode.Statement.ALG_ASSIGN(info = info)
       algorithm
@@ -3520,8 +3559,8 @@ algorithm
       algorithm
         oexp := instExpOpt(scodeStmt.range, scope, context, info);
         (for_scope, iter) := addIteratorToScope(scodeStmt.index, scope, info);
-        next_origin := InstContext.set(context, NFInstContext.FOR);
-        stmtl := instStatements(scodeStmt.forBody, for_scope, next_origin);
+        next_context := InstContext.set(context, NFInstContext.FOR);
+        stmtl := instStatements(scodeStmt.forBody, for_scope, next_context);
       then
         Statement.FOR(iter, oexp, stmtl, Statement.ForType.NORMAL(), makeSource(scodeStmt.comment, info));
 
@@ -3529,24 +3568,24 @@ algorithm
       algorithm
         oexp := instExpOpt(scodeStmt.range, scope, context, info);
         (for_scope, iter) := addIteratorToScope(scodeStmt.index, scope, info);
-        next_origin := InstContext.set(context, NFInstContext.FOR);
-        stmtl := instStatements(scodeStmt.parforBody, for_scope, next_origin);
+        next_context := InstContext.set(context, NFInstContext.FOR);
+        stmtl := instStatements(scodeStmt.parforBody, for_scope, next_context);
       then
         Statement.FOR(iter, oexp, stmtl, Statement.ForType.PARALLEL({}), makeSource(scodeStmt.comment, info));
 
     case SCode.Statement.ALG_IF(info = info)
       algorithm
         branches := {};
-        next_origin := InstContext.set(context, NFInstContext.FOR);
+        next_context := InstContext.set(context, NFInstContext.FOR);
 
         for branch in (scodeStmt.boolExpr, scodeStmt.trueBranch) :: scodeStmt.elseIfBranch loop
           exp1 := instExp(Util.tuple21(branch), scope, context, info);
-          stmtl := instStatements(Util.tuple22(branch), scope, next_origin);
+          stmtl := instStatements(Util.tuple22(branch), scope, next_context);
           branches := (exp1, stmtl) :: branches;
         end for;
 
         if not listEmpty(scodeStmt.elseBranch) then
-          stmtl := instStatements(scodeStmt.elseBranch, scope, next_origin);
+          stmtl := instStatements(scodeStmt.elseBranch, scope, next_context);
           branches := (Expression.BOOLEAN(true), stmtl) :: branches;
         end if;
       then
@@ -3567,8 +3606,8 @@ algorithm
         branches := {};
         for branch in scodeStmt.branches loop
           exp1 := instExp(Util.tuple21(branch), scope, context, info);
-          next_origin := InstContext.set(context, NFInstContext.WHEN);
-          stmtl := instStatements(Util.tuple22(branch), scope, next_origin);
+          next_context := InstContext.set(context, NFInstContext.WHEN);
+          stmtl := instStatements(Util.tuple22(branch), scope, next_context);
           branches := (exp1, stmtl) :: branches;
         end for;
       then
@@ -3614,8 +3653,8 @@ algorithm
     case SCode.Statement.ALG_WHILE(info = info)
       algorithm
         exp1 := instExp(scodeStmt.boolExpr, scope, context, info);
-        next_origin := InstContext.set(context, NFInstContext.WHILE);
-        stmtl := instStatements(scodeStmt.whileBody, scope, next_origin);
+        next_context := InstContext.set(context, NFInstContext.WHILE);
+        stmtl := instStatements(scodeStmt.whileBody, scope, next_context);
       then
         Statement.WHILE(exp1, stmtl, makeSource(scodeStmt.comment, info));
 
@@ -3897,9 +3936,16 @@ function updateImplicitVariabilityComp
   input Boolean parentEval;
   input InstContext.Type context;
 protected
-  InstNode node = InstNode.resolveOuter(component);
-  Component c = InstNode.component(node);
+  InstNode node;
+  Component c;
 algorithm
+  if InstNode.isEmpty(component) then
+    return;
+  end if;
+
+  node := InstNode.resolveOuter(component);
+  c := InstNode.component(node);
+
   () := match c
     local
       Binding binding, condition;

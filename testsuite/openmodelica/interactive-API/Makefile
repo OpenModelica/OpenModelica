@@ -157,7 +157,7 @@ UsesAnnotation2.mos \
 variables.mos \
 VendorAnnotation.mos \
 TestSpace.mos \
-
+Issue14178.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

@@ -191,7 +191,7 @@ void setGlobalVerboseLevel(int argc, char**argv)
         warningStreamPrint(OMC_LOG_STDOUT, 1, "current options are:");
         for(i=firstOMCErrorStream; i<OMC_SIM_LOG_MAX; ++i)
           warningStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", OMC_LOG_STREAM_NAME[i], OMC_LOG_STREAM_DESC[i]);
-        messageClose(OMC_LOG_STDOUT);
+        messageCloseWarning(OMC_LOG_STDOUT);
         throwStreamPrint(NULL,"unrecognized option -lv %s", flags->c_str());
       }
     }while(pos != string::npos);
@@ -319,7 +319,7 @@ static void readFlag(int *flag, int max, const char *value, const char *flagName
   for (i=1; i<max; ++i) {
     warningStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", names[i], desc[i]);
   }
-  messageClose(OMC_LOG_STDOUT);
+  messageCloseWarning(OMC_LOG_STDOUT);
   throwStreamPrint(NULL,"see last warning");
 }
 
@@ -1059,7 +1059,11 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
             }
             break;
         }
-        messageClose(OMC_LOG_STDOUT);
+        if(FLAG_TYPE[i] == FLAG_TYPE_FLAG || FLAG_TYPE[i] == FLAG_TYPE_OPTION) {
+          messageClose(OMC_LOG_STDOUT);
+        } else {
+          messageCloseWarning(OMC_LOG_STDOUT);
+        }
 
         EXIT(0);
       }

@@ -65,9 +65,9 @@ val(p9,0.0);
 //
 // ########### Updated globalKnownVars (simulation) (17)
 // ========================================
-// 1: a:DISCRETE(fixed = true )  = sin(/*Real*/(p2)) + /*Real*/(p1)  type: Integer
+// 1: a:DISCRETE(fixed = true final = true )  = sin(/*Real*/(p2)) + /*Real*/(p1)  type: Integer
 // 2: c:DISCRETE(fixed = false )  = 7 + p1 + p2 + p3 + p7 + p8 + pr1 + pr2 + c2  type: Integer
-// 3: input x:VARIABLE(fixed = true )  type: Integer
+// 3: input x:VARIABLE(fixed = true final = true )  type: Integer
 // 4: p1:PARAM()  = 1  type: Integer
 // 5: p2:PARAM()  = p1  type: Integer
 // 6: p3:PARAM()  = 5  type: Integer

@@ -180,7 +180,7 @@ val(y[10], 1.0);
 // 5: periodicClock1.solverMethod:PARAM()  = "ImplicitEuler"  "Integration method used for discretized continuous-time partitions" type: String
 // 6: periodicClock1.useSolver:PARAM(final = true )  = true  "= true, if solverMethod shall be explicitly defined" type: Boolean
 // 7: periodicClock1.period:PARAM(unit = "s" final = true )  = 0.1  "Period of clock (defined as Real number)" type: Real
-// 8: input u:VARIABLE(flow=false start = 1.0:10.0 fixed = true )  type: Real[10] [10]
+// 8: input u:VARIABLE(flow=false start = 1.0:10.0 fixed = true final = true )  type: Real[10] [10]
 // 9: n:PARAM(final = true )  = 10  type: Integer
 //
 //

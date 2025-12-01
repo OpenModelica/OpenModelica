@@ -319,7 +319,7 @@ public
     comp := Component.setFinal(comp, true);
     InstNode.updateComponent(comp, node);
 
-    binding := Binding.untypedExp(Component.getBinding(comp));
+    binding := Binding.getExpOpt(Component.getBinding(comp));
     if isSome(binding) then
       markExp(Util.getOption(binding));
     end if;
